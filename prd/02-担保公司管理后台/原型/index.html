@@ -1003,15 +1003,46 @@
             </el-tab-pane>
 
             <el-tab-pane label="系统配置" name="system">
+              <!-- 机构信息 -->
+              <div class="detail-card" style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">机构信息</div>
+                <el-form label-width="140px">
+                  <el-form-item label="机构名称">
+                    <el-input v-model="agencyConfigForm.name" placeholder="金融机构全称" style="width: 400px;" disabled></el-input>
+                  </el-form-item>
+                  <el-form-item label="统一信用代码">
+                    <el-input v-model="agencyConfigForm.creditCode" placeholder="统一社会信用代码" style="width: 400px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="机构类型">
+                    <el-select v-model="agencyConfigForm.agencyType" placeholder="选择机构类型" style="width: 200px;">
+                      <el-option label="银行" value="bank"></el-option>
+                      <el-option label="保险公司" value="insurance"></el-option>
+                      <el-option label="担保公司" value="guarantee"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="客服电话">
+                    <el-input v-model="agencyConfigForm.servicePhone" placeholder="客服联系电话" style="width: 300px;"></el-input>
+                  </el-form-item>
+                </el-form>
+              </div>
               <!-- 接口配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">接口配置</div>
                 <el-form label-width="140px">
-                  <el-form-item label="API接口地址">
-                    <el-input v-model="agencyConfigForm.apiUrl" placeholder="机构提供的API地址" style="width: 400px;"></el-input>
+                  <el-form-item label="生产API地址">
+                    <el-input v-model="agencyConfigForm.prodApiUrl" placeholder="生产环境API地址" style="width: 400px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="测试API地址">
+                    <el-input v-model="agencyConfigForm.testApiUrl" placeholder="测试环境API地址" style="width: 400px;"></el-input>
                   </el-form-item>
                   <el-form-item label="回调地址">
                     <el-input v-model="agencyConfigForm.callbackUrl" placeholder="接收通知的回调地址" style="width: 400px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="请求格式">
+                    <el-select v-model="agencyConfigForm.requestFormat" placeholder="选择请求格式" style="width: 200px;">
+                      <el-option label="JSON" value="JSON"></el-option>
+                      <el-option label="XML" value="XML"></el-option>
+                    </el-select>
                   </el-form-item>
                   <el-form-item label="连接超时">
                     <el-input-number v-model="agencyConfigForm.connectTimeout" :min="5" :max="60"></el-input-number>
@@ -1080,6 +1111,43 @@
                   </el-form-item>
                   <el-form-item label="证书密码">
                     <el-input v-model="agencyConfigForm.certPassword" placeholder="证书密码" style="width: 300px;" show-password></el-input>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <!-- 文件配置 -->
+              <div class="detail-card" style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">文件配置</div>
+                <el-form label-width="140px">
+                  <el-form-item label="保函文件格式">
+                    <el-checkbox-group v-model="agencyConfigForm.fileFormats">
+                      <el-checkbox label="PDF">PDF</el-checkbox>
+                      <el-checkbox label="OFD">OFD</el-checkbox>
+                      <el-checkbox label="XML">XML</el-checkbox>
+                    </el-checkbox-group>
+                  </el-form-item>
+                  <el-form-item label="电子签章">
+                    <el-switch v-model="agencyConfigForm.enableEseal" active-text="启用" inactive-text="停用"></el-switch>
+                  </el-form-item>
+                  <el-form-item label="时间戳">
+                    <el-switch v-model="agencyConfigForm.enableTimestamp" active-text="启用" inactive-text="停用"></el-switch>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <!-- 退保配置 -->
+              <div class="detail-card" style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #F56C6C;">退保配置</div>
+                <el-form label-width="140px">
+                  <el-form-item label="支持退保">
+                    <el-switch v-model="agencyConfigForm.enableSurrender" active-text="是" inactive-text="否"></el-switch>
+                  </el-form-item>
+                  <el-form-item label="退保条件">
+                    <el-input v-model="agencyConfigForm.surrenderCondition" type="textarea" rows="2" placeholder="退保条件说明" style="width: 400px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="需机构同意">
+                    <el-switch v-model="agencyConfigForm.surrenderNeedApprove"></el-switch>
+                  </el-form-item>
+                  <el-form-item label="赔付时效">
+                    <el-input v-model="agencyConfigForm.claimTimeLimit" placeholder="如：3个工作日内" style="width: 300px;"></el-input>
                   </el-form-item>
                 </el-form>
               </div>
@@ -1765,11 +1833,16 @@
         const agencyConfigForm = ref({
           name: '某某担保公司',
           type: '担保',
+          agencyType: 'guarantee',
+          creditCode: '',
+          servicePhone: '',
           contact: '王经理',
           phone: '137****7777',
           email: 'guarantee@example.com',
           remark: '',
-          apiUrl: '',
+          prodApiUrl: '',
+          testApiUrl: '',
+          requestFormat: 'JSON',
           appKey: '',
           appSecret: '',
           signAlgorithm: 'SM3',
@@ -1780,6 +1853,13 @@
           retryCount: 3,
           charset: 'UTF-8',
           certPassword: '',
+          fileFormats: ['PDF'],
+          enableEseal: true,
+          enableTimestamp: true,
+          enableSurrender: true,
+          surrenderCondition: '开标前退保/项目异常退保（流标、暂停、终止、作废）',
+          surrenderNeedApprove: true,
+          claimTimeLimit: '3个工作日内',
           enabled: true,
           status: 1
         });
