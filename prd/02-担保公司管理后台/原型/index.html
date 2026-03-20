@@ -775,6 +775,98 @@
               </el-table-column>
             </el-table>
           </div>
+
+          <!-- 新增保函类型弹窗（放在tabs外部） -->
+          <el-dialog v-model="channelCostDialogVisible" :title="channelCostDialogTitle" width="700px" destroy-on-close>
+            <el-form :model="channelCostForm" label-width="120px">
+              <el-form-item label="保函类型" required>
+                <el-select v-model="channelCostForm.guaranteeType" placeholder="请选择保函类型" style="width: 100%;">
+                  <el-option label="投标保函" value="投标保函"></el-option>
+                  <el-option label="履约保函" value="履约保函"></el-option>
+                  <el-option label="工程质量保证金" value="工程质量保证金"></el-option>
+                  <el-option label="农民工工资支付" value="农民工工资支付"></el-option>
+                  <el-option label="预付款保函" value="预付款保函"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="单笔上限">
+                <el-input-number v-model="channelCostForm.maxAmount" :min="0" :precision="2" placeholder="留空表示无限制" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+                <span style="color: #909399; font-size: 12px; margin-left: 10px;">留空表示无限制</span>
+              </el-form-item>
+              <el-form-item label="保函有效期">
+                <el-input-number v-model="channelCostForm.validityDays" :min="1" :max="3650" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">天</span>
+              </el-form-item>
+              <el-form-item label="收费方式" required>
+                <el-select v-model="channelCostForm.feeType" placeholder="请选择收费方式" style="width: 100%;">
+                  <el-option label="固定费率" value="ratio"></el-option>
+                  <el-option label="阶梯费率" value="ladder"></el-option>
+                  <el-option label="按笔固定" value="fixed"></el-option>
+                  <el-option label="保底累进" value="minimum"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <!-- 固定费率 -->
+              <el-form-item label="费率" v-if="channelCostForm.feeType === 'ratio'">
+                <el-input v-model="channelCostForm.feeRate" placeholder="如: 0.5" style="width: 200px;"></el-input>
+                <span style="margin-left: 10px;">%</span>
+              </el-form-item>
+
+              <!-- 按笔固定 -->
+              <el-form-item label="每笔金额" v-if="channelCostForm.feeType === 'fixed'">
+                <el-input-number v-model="channelCostForm.feeRate" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元/笔</span>
+              </el-form-item>
+
+              <!-- 阶梯费率 -->
+              <el-form-item label="阶梯配置" v-if="channelCostForm.feeType === 'ladder'">
+                <div v-for="(item, index) in channelCostForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <span style="color: #C0C4CC; font-size: 12px; min-width: 18px; text-align: center;">{{ index + 1 }}.</span>
+                  <el-input-number v-model="item.minAmount" :min="0" :precision="2" :controls="false" placeholder="起始" style="width: 120px;"></el-input-number>
+                  <span style="color: #909399; font-size: 12px;">-</span>
+                  <el-input-number v-model="item.maxAmount" :min="0" :precision="2" :controls="false" placeholder="终止" style="width: 120px;"></el-input-number>
+                  <span style="color: #909399; font-size: 12px;">元</span>
+                  <el-input-number v-model="item.rate" :min="0" :precision="2" :controls="false" placeholder="费率" style="width: 80px;"></el-input-number>
+                  <span style="color: #909399; font-size: 12px;">%</span>
+                  <el-button type="danger" text bg @click="channelCostForm.ladderRates.splice(index, 1)">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+                <div style="margin-top: 10px;">
+                  <el-button type="primary" link @click="channelCostForm.ladderRates.push({minAmount: 0, maxAmount: null, rate: 0})">+ 添加阶梯</el-button>
+                </div>
+                <div style="color: #909399; font-size: 12px; margin-top: 8px;">金额区间为左闭右开，终止金额留空表示无上限</div>
+              </el-form-item>
+
+              <!-- 保底累进 -->
+              <div v-if="channelCostForm.feeType === 'minimum'">
+                <el-form-item label="保底费用">
+                  <el-input-number v-model="channelCostForm.baseFee" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                  <span style="margin-left: 10px;">元</span>
+                </el-form-item>
+                <el-form-item label="超额费率">
+                  <el-input v-model="channelCostForm.excessRate" placeholder="如: 0.3" style="width: 200px;"></el-input>
+                  <span style="margin-left: 10px;">%</span>
+                  <div style="color: #909399; font-size: 12px; margin-top: 4px;">超过保底金额后，超额部分按此费率计算</div>
+                </el-form-item>
+              </div>
+
+              <!-- 最低/最高费用 -->
+              <el-form-item label="最低费用">
+                <el-input-number v-model="channelCostForm.feeMin" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+              </el-form-item>
+              <el-form-item label="最高费用">
+                <el-input-number v-model="channelCostForm.feeMax" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+                <div style="color: #909399; font-size: 12px; margin-top: 4px;">留空则不设上限</div>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="channelCostDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="handleSaveChannelRule">保存</el-button>
+            </template>
+          </el-dialog>
         </div>
 
         <!-- 交易平台手续费配置 -->
@@ -1169,100 +1261,9 @@
                     <el-button type="primary" @click="openChannelAgencyDialogVisible = false">确认开通</el-button>
                   </template>
                 </el-dialog>
-
-                <!-- 新增保函类型弹窗 -->
-                <el-dialog v-model="channelCostDialogVisible" :title="channelCostDialogTitle" width="700px" destroy-on-close>
-                  <el-form :model="channelCostForm" label-width="120px">
-                    <el-form-item label="保函类型" required>
-                      <el-select v-model="channelCostForm.guaranteeType" placeholder="请选择保函类型" style="width: 100%;">
-                        <el-option label="投标保函" value="投标保函"></el-option>
-                        <el-option label="履约保函" value="履约保函"></el-option>
-                        <el-option label="工程质量保证金" value="工程质量保证金"></el-option>
-                        <el-option label="农民工工资支付" value="农民工工资支付"></el-option>
-                        <el-option label="预付款保函" value="预付款保函"></el-option>
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item label="单笔上限">
-                      <el-input-number v-model="channelCostForm.maxAmount" :min="0" :precision="2" placeholder="留空表示无限制" style="width: 200px;"></el-input-number>
-                      <span style="margin-left: 10px;">元</span>
-                      <span style="color: #909399; font-size: 12px; margin-left: 10px;">留空表示无限制</span>
-                    </el-form-item>
-                    <el-form-item label="保函有效期">
-                      <el-input-number v-model="channelCostForm.validityDays" :min="1" :max="3650" style="width: 200px;"></el-input-number>
-                      <span style="margin-left: 10px;">天</span>
-                    </el-form-item>
-                    <el-form-item label="收费方式" required>
-                      <el-select v-model="channelCostForm.feeType" placeholder="请选择收费方式" style="width: 100%;">
-                        <el-option label="固定费率" value="ratio"></el-option>
-                        <el-option label="阶梯费率" value="ladder"></el-option>
-                        <el-option label="按笔固定" value="fixed"></el-option>
-                        <el-option label="保底累进" value="minimum"></el-option>
-                      </el-select>
-                    </el-form-item>
-
-                    <!-- 固定费率 -->
-                    <el-form-item label="费率" v-if="channelCostForm.feeType === 'ratio'">
-                      <el-input v-model="channelCostForm.feeRate" placeholder="如: 0.5" style="width: 200px;"></el-input>
-                      <span style="margin-left: 10px;">%</span>
-                    </el-form-item>
-
-                    <!-- 按笔固定 -->
-                    <el-form-item label="每笔金额" v-if="channelCostForm.feeType === 'fixed'">
-                      <el-input-number v-model="channelCostForm.feeRate" :min="0" :precision="2" style="width: 200px;"></el-input-number>
-                      <span style="margin-left: 10px;">元/笔</span>
-                    </el-form-item>
-
-                    <!-- 阶梯费率 -->
-                    <el-form-item label="阶梯配置" v-if="channelCostForm.feeType === 'ladder'">
-                      <div v-for="(item, index) in channelCostForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-                        <span style="color: #C0C4CC; font-size: 12px; min-width: 18px; text-align: center;">{{ index + 1 }}.</span>
-                        <el-input-number v-model="item.minAmount" :min="0" :precision="2" :controls="false" placeholder="起始" style="width: 120px;"></el-input-number>
-                        <span style="color: #909399; font-size: 12px;">-</span>
-                        <el-input-number v-model="item.maxAmount" :min="0" :precision="2" :controls="false" placeholder="终止" style="width: 120px;"></el-input-number>
-                        <span style="color: #909399; font-size: 12px;">元</span>
-                        <el-input-number v-model="item.rate" :min="0" :precision="2" :controls="false" placeholder="费率" style="width: 80px;"></el-input-number>
-                        <span style="color: #909399; font-size: 12px;">%</span>
-                        <el-button type="danger" text bg @click="channelCostForm.ladderRates.splice(index, 1)">
-                          <el-icon><Delete /></el-icon>
-                        </el-button>
-                      </div>
-                      <div style="margin-top: 10px;">
-                        <el-button type="primary" link @click="channelCostForm.ladderRates.push({minAmount: 0, maxAmount: null, rate: 0})">+ 添加阶梯</el-button>
-                      </div>
-                      <div style="color: #909399; font-size: 12px; margin-top: 8px;">金额区间为左闭右开，终止金额留空表示无上限</div>
-                    </el-form-item>
-
-                    <!-- 保底累进 -->
-                    <div v-if="channelCostForm.feeType === 'minimum'">
-                      <el-form-item label="保底费用">
-                        <el-input-number v-model="channelCostForm.baseFee" :min="0" :precision="2" style="width: 200px;"></el-input-number>
-                        <span style="margin-left: 10px;">元</span>
-                      </el-form-item>
-                      <el-form-item label="超额费率">
-                        <el-input v-model="channelCostForm.excessRate" placeholder="如: 0.3" style="width: 200px;"></el-input>
-                        <span style="margin-left: 10px;">%</span>
-                        <div style="color: #909399; font-size: 12px; margin-top: 4px;">超过保底金额后，超额部分按此费率计算</div>
-                      </el-form-item>
-                    </div>
-
-                    <!-- 最低/最高费用 -->
-                    <el-form-item label="最低费用">
-                      <el-input-number v-model="channelCostForm.feeMin" :min="0" :precision="2" style="width: 200px;"></el-input-number>
-                      <span style="margin-left: 10px;">元</span>
-                    </el-form-item>
-                    <el-form-item label="最高费用">
-                      <el-input-number v-model="channelCostForm.feeMax" :min="0" :precision="2" style="width: 200px;"></el-input-number>
-                      <span style="margin-left: 10px;">元</span>
-                      <div style="color: #909399; font-size: 12px; margin-top: 4px;">留空则不设上限</div>
-                    </el-form-item>
-                  </el-form>
-                  <template #footer>
-                    <el-button @click="channelCostDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="handleSaveChannelRule">保存</el-button>
-                  </template>
-                </el-dialog>
               </el-tab-pane>
               <el-tab-pane label="统计" name="stats">
+                <!-- 统计内容 -->
                 <div class="stats-section">
                   <div class="stats-card">
                     <div class="stats-title">今日数据</div>
