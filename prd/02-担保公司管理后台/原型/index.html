@@ -172,7 +172,7 @@
               <el-icon><Connection /></el-icon>
               <span>交易平台</span>
             </template>
-            <el-menu-item index="channel-list"><el-icon><List /></el-icon>交易平台维护</el-menu-item>
+            <el-menu-item index="channel-list"><el-icon><List /></el-icon>交易平台</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="risk">
             <template #title>
@@ -456,7 +456,7 @@
           </div>
         </div>
 
-        <!-- 交易平台维护 -->
+        <!-- 交易平台 -->
         <div v-if="currentView === 'channel-list'">
           <div style="margin-bottom: 20px;">
             <el-button type="primary" @click="channelDialogVisible = true">新增交易平台</el-button>
@@ -2119,7 +2119,7 @@
             'org-quota': '额度管理',
             'org-rate': '费率设置',
             'guarantee-type': '保函类型维护',
-            'channel-list': '交易平台维护',
+            'channel-list': '交易平台',
             'channel-detail': '交易平台详情',
             'channel-agency': '开通机构',
             'channel-fee': '手续费配置',
