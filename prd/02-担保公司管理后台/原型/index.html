@@ -308,13 +308,26 @@
           <div class="table-card">
             <el-table :data="applyList">
               <el-table-column prop="no" label="申请编号" width="180"></el-table-column>
-              <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+              <el-table-column prop="guaranteeType" label="保函类型" width="140">
+                <template #default="scope">
+                  <el-tag :type="scope.row.guaranteeType === '投标保函' ? 'primary' : scope.row.guaranteeType === '履约保函' ? 'success' : scope.row.guaranteeType === '工程质量保证金' ? 'warning' : scope.row.guaranteeType === '农民工工资支付' ? 'danger' : 'info'" size="small">
+                    {{ scope.row.guaranteeType }}
+                  </el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="bidder" label="投标人"></el-table-column>
               <el-table-column prop="amount" label="保证金" width="100"></el-table-column>
               <el-table-column prop="premium" label="保费" width="100"></el-table-column>
               <el-table-column prop="validPeriod" label="有效期" width="120"></el-table-column>
               <el-table-column prop="projectName" label="项目"></el-table-column>
               <el-table-column prop="channel" label="交易平台" width="120"></el-table-column>
+              <el-table-column prop="bidSection" label="标段" width="100">
+                <template #default="scope">
+                  <span :style="{ color: scope.row.ciphertext === '1' ? '#E6A23C' : '#606266' }">
+                    {{ scope.row.bidSection || '-' }}
+                  </span>
+                </template>
+              </el-table-column>
               <el-table-column prop="ciphertextText" label="密文" width="80">
                 <template #default="scope">
                   <el-tag :type="scope.row.ciphertext === '1' ? 'warning' : 'info'" size="small">{{ scope.row.ciphertextText }}</el-tag>
@@ -2166,9 +2179,16 @@
         ]);
 
         const applyList = ref([
-          { no: 'APP2024010001', guaranteeType: '投标保函', bidder: '某某建筑有限公司', amount: '800,000', premium: '4,000', validPeriod: '6个月', projectName: 'XX工程项目', channel: '公共资源中心', createTime: '2024-01-15 10:30', status: 'pending', statusText: '待审核', ciphertext: '1', ciphertextText: '密文' },
-          { no: 'APP2024010002', guaranteeType: '投标保函', bidder: '某某商贸公司', amount: '500,000', premium: '2,500', validPeriod: '12个月', projectName: 'YY采购项目', channel: '招标平台', createTime: '2024-01-15 09:20', status: 'success', statusText: '已通过', ciphertext: '0', ciphertextText: '明文' },
-          { no: 'APP2024010003', guaranteeType: '履约保函', bidder: '某某建设集团', amount: '300,000', premium: '1,500', validPeriod: '24个月', projectName: 'ZZ建设工程', channel: '公共资源中心', createTime: '2024-01-14 15:10', status: 'reject', statusText: '已拒绝', ciphertext: '0', ciphertextText: '明文' }
+          // 投标保函 - 密文（标段信息加密，投标人信息明文）
+          { no: 'APP2024010001', guaranteeType: '投标保函', bidder: '某某建筑有限公司', amount: '800,000', premium: '4,000', validPeriod: '6个月', projectName: 'XX工程项目施工招标', channel: '数字泸州', createTime: '2024-01-15 10:30', status: 'pending', statusText: '待审核', ciphertext: '1', ciphertextText: '密文', bidSection: '*****' },
+          // 投标保函 - 明文
+          { no: 'APP2024010002', guaranteeType: '投标保函', bidder: '某某商贸公司', amount: '500,000', premium: '2,500', validPeriod: '3个月', projectName: 'YY采购项目', channel: '江西省', createTime: '2024-01-15 09:20', status: 'success', statusText: '已通过', ciphertext: '0', ciphertextText: '明文', bidSection: 'A标段' },
+          // 履约保函 - 明文（已中标）
+          { no: 'APP2024010003', guaranteeType: '履约保函', bidder: '某某建设集团', amount: '3,000,000', premium: '15,000', validPeriod: '24个月', projectName: 'ZZ建设工程', channel: '公共资源中心', createTime: '2024-01-14 15:10', status: 'success', statusText: '已通过', ciphertext: '0', ciphertextText: '明文', bidSection: '-' },
+          // 工程质量保证金保函 - 明文
+          { no: 'APP2024010004', guaranteeType: '工程质量保证金', bidder: '某某建筑公司', amount: '900,000', premium: '4,500', validPeriod: '24个月', projectName: 'AAA工程项目', channel: '招标平台', createTime: '2024-01-14 11:00', status: 'processing', statusText: '审核中', ciphertext: '0', ciphertextText: '明文', bidSection: '-' },
+          // 农民工工资支付保函 - 明文
+          { no: 'APP2024010005', guaranteeType: '农民工工资支付', bidder: '某某劳务公司', amount: '200,000', premium: '2,000', validPeriod: '18个月', projectName: 'BBB项目', channel: '公共资源中心', createTime: '2024-01-13 16:30', status: 'pending', statusText: '待审核', ciphertext: '0', ciphertextText: '明文', bidSection: '-' }
         ]);
 
         const guaranteeList = ref([
