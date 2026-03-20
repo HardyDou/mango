@@ -134,42 +134,42 @@
               <el-icon><DocumentAdd /></el-icon>
               <span>投保管理</span>
             </template>
-            <el-menu-item index="apply-list">投保列表</el-menu-item>
-            <el-menu-item index="apply-review">投保审核</el-menu-item>
+            <el-menu-item index="apply-list"><el-icon><List /></el-icon>投保列表</el-menu-item>
+            <el-menu-item index="apply-review"><el-icon><Check /></el-icon>投保审核</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="guarantee">
             <template #title>
               <el-icon><Ticket /></el-icon>
               <span>保函管理</span>
             </template>
-            <el-menu-item index="guarantee-list">保函列表</el-menu-item>
-            <el-menu-item index="guarantee-sign">保函签章</el-menu-item>
+            <el-menu-item index="guarantee-list"><el-icon><List /></el-icon>保函列表</el-menu-item>
+            <el-menu-item index="guarantee-sign"><el-icon><EditPen /></el-icon>保函签章</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="surrender">
             <template #title>
               <el-icon><Remove /></el-icon>
               <span>退保管理</span>
             </template>
-            <el-menu-item index="surrender-list">退保列表</el-menu-item>
-            <el-menu-item index="surrender-review">退保审核</el-menu-item>
+            <el-menu-item index="surrender-list"><el-icon><List /></el-icon>退保列表</el-menu-item>
+            <el-menu-item index="surrender-review"><el-icon><Check /></el-icon>退保审核</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="org">
             <template #title>
               <el-icon><OfficeBuilding /></el-icon>
               <span>机构管理</span>
             </template>
-            <el-menu-item index="org-agency">出函机构维护</el-menu-item>
-            <el-menu-item index="org-quota">额度管理</el-menu-item>
-            <el-menu-item index="org-rate">费率设置</el-menu-item>
+            <el-menu-item index="org-agency"><el-icon><School /></el-icon>出函机构维护</el-menu-item>
+            <el-menu-item index="org-quota"><el-icon><Coin /></el-icon>额度管理</el-menu-item>
+            <el-menu-item index="org-rate"><el-icon><PriceTag /></el-icon>费率设置</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="channel">
             <template #title>
               <el-icon><Connection /></el-icon>
               <span>交易系统</span>
             </template>
-            <el-menu-item index="channel-list">交易系统维护</el-menu-item>
-            <el-menu-item index="channel-config">通道配置</el-menu-item>
-            <el-menu-item index="channel-key">密钥管理</el-menu-item>
+            <el-menu-item index="channel-list"><el-icon><List /></el-icon>交易系统维护</el-menu-item>
+            <el-menu-item index="channel-config"><el-icon><Setting /></el-icon>通道配置</el-menu-item>
+            <el-menu-item index="channel-key"><el-icon><Key /></el-icon>密钥管理</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="risk">
             <template #title>
@@ -455,24 +455,181 @@
         <!-- 交易系统维护 -->
         <div v-if="currentView === 'channel-list'">
           <div style="margin-bottom: 20px;">
-            <el-button type="primary">新增交易系统</el-button>
+            <el-button type="primary" @click="channelDialogVisible = true">新增交易系统</el-button>
             <el-button>导出</el-button>
           </div>
           <div class="table-card">
             <el-table :data="channelList">
               <el-table-column prop="name" label="交易系统名称"></el-table-column>
-              <el-table-column prop="code" label="平台编码" width="120"></el-table-column>
-              <el-table-column prop="region" label="地区"></el-table-column>
-              <el-table-column prop="version" label="接口版本" width="100"></el-table-column>
-              <el-table-column prop="signType" label="签名算法" width="100"></el-table-column>
+              <el-table-column prop="code" label="平台编码" width="100"></el-table-column>
+              <el-table-column prop="province" label="省份" width="80"></el-table-column>
+              <el-table-column prop="city" label="城市" width="80"></el-table-column>
+              <el-table-column prop="agencyCount" label="已开通机构" width="100">
+                <template #default="scope">
+                  <el-link type="primary">{{ scope.row.agencyCount }}家</el-link>
+                </template>
+              </el-table-column>
+              <el-table-column prop="version" label="接口版本" width="80"></el-table-column>
+              <el-table-column prop="signType" label="签名算法" width="80"></el-table-column>
+              <el-table-column prop="status" label="状态" width="70">
+                <template #default="scope">
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="180">
+                <template #default="scope">
+                  <el-button type="primary" link @click="currentView = 'channel-detail'">详情</el-button>
+                  <el-button type="primary" link @click="currentView = 'channel-agency'">机构</el-button>
+                  <el-button type="primary" link @click="currentView = 'channel-fee'">手续费</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 新增交易系统弹窗 -->
+          <el-dialog v-model="channelDialogVisible" title="新增交易系统" width="600px">
+            <el-form :model="newChannelForm" label-width="120px">
+              <el-form-item label="系统名称" required>
+                <el-input v-model="newChannelForm.name" placeholder="请输入交易系统名称"></el-input>
+              </el-form-item>
+              <el-form-item label="平台编码" required>
+                <el-input v-model="newChannelForm.code" placeholder="如：SL、JX、MS"></el-input>
+              </el-form-item>
+              <el-form-item label="所属地区" required>
+                <el-select v-model="newChannelForm.province" placeholder="省份" style="width: 120px;">
+                  <el-option label="四川省" value="四川省"></el-option>
+                  <el-option label="江西省" value="江西省"></el-option>
+                  <el-option label="广东省" value="广东省"></el-option>
+                </el-select>
+                <el-select v-model="newChannelForm.city" placeholder="城市" style="width: 120px; margin-left: 10px;">
+                  <el-option label="泸州市" value="泸州市"></el-option>
+                  <el-option label="南昌市" value="南昌市"></el-option>
+                  <el-option label="广州市" value="广州市"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="接口版本">
+                <el-input v-model="newChannelForm.version" placeholder="如：V1.0、V2.0"></el-input>
+              </el-form-item>
+              <el-form-item label="签名算法">
+                <el-select v-model="newChannelForm.signType" placeholder="请选择">
+                  <el-option label="SM3" value="SM3"></el-option>
+                  <el-option label="MD5" value="MD5"></el-option>
+                  <el-option label="SM2" value="SM2"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="加密算法">
+                <el-select v-model="newChannelForm.encryptType" placeholder="请选择">
+                  <el-option label="SM4" value="SM4"></el-option>
+                  <el-option label="AES" value="AES"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="channelDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="channelDialogVisible = false">保存</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- 交易系统详情 -->
+        <div v-if="currentView === 'channel-detail'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'channel-list'">返回</el-button>
+            <el-button type="primary">编辑</el-button>
+          </div>
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">交易系统详情</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">系统名称</div>
+              <div class="detail-value">数字泸州公共资源交易</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">平台编码</div>
+              <div class="detail-value">SL</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">所属地区</div>
+              <div class="detail-value">四川省 - 泸州市</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">接口版本</div>
+              <div class="detail-value">V2.0</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">签名算法</div>
+              <div class="detail-value">SM3</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">加密方式</div>
+              <div class="detail-value">数字信封(SM4+SM2)</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">API地址</div>
+              <div class="detail-value">https://api.lzggzy.gov.cn/</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">回调地址</div>
+              <div class="detail-value">https://callback.example.com/lz</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 交易系统开通机构 -->
+        <div v-if="currentView === 'channel-agency'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'channel-list'">返回</el-button>
+            <el-button type="primary">开通机构</el-button>
+          </div>
+          <div class="table-card">
+            <div style="font-weight: 600; margin-bottom: 16px;">已开通出函机构 - 数字泸州</div>
+            <el-table :data="channelAgencyList">
+              <el-table-column prop="agencyName" label="机构名称"></el-table-column>
+              <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
               <el-table-column prop="status" label="状态" width="80">
                 <template #default="scope">
                   <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="150">
+              <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
+              <el-table-column label="操作" width="120">
                 <template #default="scope">
                   <el-button type="primary" link>配置</el-button>
+                  <el-button type="danger" link>关闭</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 交易系统手续费配置 -->
+        <div v-if="currentView === 'channel-fee'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'channel-list'">返回</el-button>
+            <el-button type="primary">新增手续费</el-button>
+          </div>
+          <div class="table-card">
+            <div style="font-weight: 600; margin-bottom: 16px;">手续费配置 - 数字泸州</div>
+            <el-table :data="channelFeeList">
+              <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+              <el-table-column prop="feeType" label="收费方式" width="120">
+                <template #default="scope">
+                  <el-tag size="small">{{ scope.row.feeType }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="rate" label="手续费率/金额"></el-table-column>
+              <el-table-column prop="minFee" label="最低" width="80"></el-table-column>
+              <el-table-column prop="maxFee" label="最高" width="80"></el-table-column>
+              <el-table-column prop="effectiveDate" label="生效时间" width="120"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-tag type="success">启用</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="scope">
+                  <el-button type="primary" link>编辑</el-button>
                   <el-button type="danger" link>禁用</el-button>
                 </template>
               </el-table-column>
@@ -595,7 +752,7 @@
         <!-- 出函机构维护 -->
         <div v-if="currentView === 'org-agency'">
           <div style="margin-bottom: 20px;">
-            <el-button type="primary">新增机构</el-button>
+            <el-button type="primary" @click="agencyDialogVisible = true">新增机构</el-button>
             <el-button>导出</el-button>
           </div>
           <div class="table-card">
@@ -606,24 +763,147 @@
                   <el-tag :type="scope.row.typeTag">{{ scope.row.type }}</el-tag>
                 </template>
               </el-table-column>
+              <el-table-column prop="costType" label="成本核算方式" width="120">
+                <template #default="scope">
+                  <el-tag size="small">{{ scope.row.costType }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="channelCount" label="已开通交易系统" width="120">
+                <template #default="scope">
+                  <el-link type="primary">{{ scope.row.channelCount }}个</el-link>
+                </template>
+              </el-table-column>
               <el-table-column prop="contact" label="联系人"></el-table-column>
               <el-table-column prop="phone" label="联系电话" width="130"></el-table-column>
-              <el-table-column prop="email" label="邮箱"></el-table-column>
               <el-table-column prop="status" label="状态" width="80">
                 <template #default="scope">
                   <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
                 </template>
               </el-table-column>
-              <el-table-column prop="createTime" label="接入时间" width="160"></el-table-column>
-              <el-table-column label="操作" width="200">
+              <el-table-column label="操作" width="180">
                 <template #default="scope">
-                  <el-button type="primary" link>配置</el-button>
-                  <el-button type="primary" link>额度</el-button>
-                  <el-button type="primary" link>费率</el-button>
+                  <el-button type="primary" link @click="currentView = 'org-agency-config'">配置</el-button>
+                  <el-button type="primary" link @click="currentView = 'org-agency-cost'">成本费率</el-button>
                   <el-button type="danger" link>禁用</el-button>
                 </template>
               </el-table-column>
             </el-table>
+          </div>
+
+          <!-- 新增机构弹窗 -->
+          <el-dialog v-model="agencyDialogVisible" title="新增出函机构" width="600px">
+            <el-form :model="newAgencyForm" label-width="120px">
+              <el-form-item label="机构名称" required>
+                <el-input v-model="newAgencyForm.name" placeholder="请输入机构全称"></el-input>
+              </el-form-item>
+              <el-form-item label="机构类型" required>
+                <el-select v-model="newAgencyForm.type" placeholder="请选择">
+                  <el-option label="银行" value="银行"></el-option>
+                  <el-option label="保险公司" value="保险"></el-option>
+                  <el-option label="担保公司" value="担保"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="成本核算方式" required>
+                <el-select v-model="newAgencyForm.costType" placeholder="请选择">
+                  <el-option label="固定费率" value="固定费率"></el-option>
+                  <el-option label="阶梯费率" value="阶梯费率"></el-option>
+                  <el-option label="按笔固定收费" value="按笔固定"></el-option>
+                  <el-option label="保底费+超额累进" value="保底累进"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="联系人">
+                <el-input v-model="newAgencyForm.contact"></el-input>
+              </el-form-item>
+              <el-form-item label="联系电话">
+                <el-input v-model="newAgencyForm.phone"></el-input>
+              </el-form-item>
+              <el-form-item label="邮箱">
+                <el-input v-model="newAgencyForm.email"></el-input>
+              </el-form-item>
+              <el-form-item label="开通交易系统">
+                <el-checkbox-group v-model="newAgencyForm.channels">
+                  <el-checkbox label="数字泸州">数字泸州</el-checkbox>
+                  <el-checkbox label="江西省">江西省</el-checkbox>
+                  <el-checkbox label="眉山市">眉山市</el-checkbox>
+                </el-checkbox-group>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="agencyDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="agencyDialogVisible = false">保存</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- 出函机构成本费率配置 -->
+        <div v-if="currentView === 'org-agency-cost'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'org-agency'">返回</el-button>
+            <el-button type="primary">新增成本费率</el-button>
+          </div>
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">机构信息 - 某某担保公司</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">机构类型</div>
+              <div class="detail-value">担保公司</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">成本核算方式</div>
+              <div class="detail-value">阶梯费率</div>
+            </div>
+          </div>
+          <div class="table-card">
+            <div style="font-weight: 600; margin-bottom: 16px;">成本费率配置</div>
+            <el-table :data="agencyCostList">
+              <el-table-column prop="channelName" label="交易系统"></el-table-column>
+              <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+              <el-table-column prop="costType" label="计费方式" width="120"></el-table-column>
+              <el-table-column prop="rate" label="成本费率/金额"></el-table-column>
+              <el-table-column prop="minFee" label="最低费用" width="100"></el-table-column>
+              <el-table-column prop="maxFee" label="最高费用" width="100"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-tag type="success">启用</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="scope">
+                  <el-button type="primary" link>编辑</el-button>
+                  <el-button type="danger" link>删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 出函机构通道配置 -->
+        <div v-if="currentView === 'org-agency-config'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'org-agency'">返回</el-button>
+          </div>
+          <div class="table-card">
+            <div style="font-weight: 600; margin-bottom: 16px;">已开通交易系统</div>
+            <el-table :data="agencyChannelList">
+              <el-table-column prop="channelName" label="交易系统"></el-table-column>
+              <el-table-column prop="apiUrl" label="API地址"></el-table-column>
+              <el-table-column prop="signType" label="签名方式" width="100"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
+              <el-table-column label="操作" width="100">
+                <template #default="scope">
+                  <el-button type="danger" link>关闭</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div style="margin-top: 20px;">
+            <el-button type="primary">开通新交易系统</el-button>
           </div>
         </div>
 
@@ -819,8 +1099,13 @@
             'org-quota': '额度管理',
             'org-rate': '费率设置',
             'channel-list': '交易系统维护',
+            'channel-detail': '交易系统详情',
+            'channel-agency': '开通机构',
+            'channel-fee': '手续费配置',
             'channel-config': '通道配置',
             'channel-key': '密钥管理',
+            'org-agency-config': '机构通道配置',
+            'org-agency-cost': '成本费率配置',
             'risk-rules': '风控规则',
             'risk-blacklist': '黑名单管理',
             'finance-report': '收入统计',
@@ -882,16 +1167,71 @@
         const agencyList = ref([
           { name: '中国建设银行', type: '银行', typeTag: 'primary', contact: '张经理', phone: '138****8888', email: 'bank@example.com', status: 1, createTime: '2023-01-01' },
           { name: '中国平安保险', type: '保险', typeTag: 'success', contact: '李经理', phone: '139****9999', email: 'insurance@example.com', status: 1, createTime: '2023-02-01' },
-          { name: '某某担保公司', type: '担保', typeTag: 'warning', contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
+          { name: '某某担保公司', type: '担保', typeTag: 'warning', costType: '阶梯费率', channelCount: 3, contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
+        ]);
+
+        // 出函机构成本费率列表
+        const agencyCostList = ref([
+          { channelName: '数字泸州', guaranteeType: '投标保函', costType: '阶梯费率', rate: '0.3%-0.6%', minFee: '200', maxFee: '4000' },
+          { channelName: '数字泸州', guaranteeType: '履约保函', costType: '固定费率', rate: '0.5%', minFee: '500', maxFee: '-' },
+          { channelName: '江西省', guaranteeType: '投标保函', costType: '按笔固定', rate: '¥300/笔', minFee: '300', maxFee: '300' },
+          { channelName: '眉山市', guaranteeType: '投标保函', costType: '保底累进', rate: '保底100+0.3%', minFee: '100', maxFee: '-' }
+        ]);
+
+        // 出函机构开通的交易系统列表
+        const agencyChannelList = ref([
+          { channelName: '数字泸州', apiUrl: 'https://api.lzggzy.gov.cn', signType: 'SM3', status: 1, openTime: '2023-01-01 10:00' },
+          { channelName: '江西省', apiUrl: 'https://api.jxggzy.gov.cn', signType: 'SM4', status: 1, openTime: '2023-03-01 10:00' },
+          { channelName: '眉山市', apiUrl: 'https://api.msggzy.gov.cn', signType: 'SM3', status: 1, openTime: '2023-06-01 10:00' }
         ]);
 
         // 交易系统列表
         const channelList = ref([
-          { name: '数字泸州公共资源交易', code: 'SL', region: '四川省泸州市', version: 'V2.0', signType: 'SM3', status: 1 },
-          { name: '江西省公共资源交易', code: 'JX', region: '江西省', version: 'V3.0', signType: 'SM4', status: 1 },
-          { name: '眉山市公共资源交易', code: 'MS', region: '四川省眉山市', version: 'V4.0', signType: 'SM3', status: 1 },
-          { name: '蔓延交易平台', code: 'MY', region: '全国', version: 'V1.0', signType: 'MD5', status: 0 }
+          { name: '数字泸州公共资源交易', code: 'SL', province: '四川省', city: '泸州市', agencyCount: 3, version: 'V2.0', signType: 'SM3', status: 1 },
+          { name: '江西省公共资源交易', code: 'JX', province: '江西省', city: '南昌市', agencyCount: 2, version: 'V3.0', signType: 'SM4', status: 1 },
+          { name: '眉山市公共资源交易', code: 'MS', province: '四川省', city: '眉山市', agencyCount: 2, version: 'V4.0', signType: 'SM3', status: 1 },
+          { name: '蔓延交易平台', code: 'MY', province: '全国', city: '-', agencyCount: 1, version: 'V1.0', signType: 'MD5', status: 0 }
         ]);
+
+        // 交易系统开通的机构列表
+        const channelAgencyList = ref([
+          { agencyName: '中国建设银行', agencyType: '银行', status: 1, openTime: '2023-01-01' },
+          { agencyName: '中国平安保险', agencyType: '保险', status: 1, openTime: '2023-02-01' },
+          { agencyName: '某某担保公司', agencyType: '担保', status: 1, openTime: '2023-03-01' }
+        ]);
+
+        // 交易系统手续费列表
+        const channelFeeList = ref([
+          { guaranteeType: '投标保函', feeType: '阶梯费率', rate: '0.5%-0.8%', minFee: '200', maxFee: '5000', effectiveDate: '2024-01-01' },
+          { guaranteeType: '履约保函', feeType: '固定费率', rate: '0.6%', minFee: '500', maxFee: '-', effectiveDate: '2024-01-01' },
+          { guaranteeType: '农民工工资', feeType: '按笔固定', rate: '¥500/笔', minFee: '500', maxFee: '500', effectiveDate: '2024-01-01' }
+        ]);
+
+        // 新增机构表单
+        const newAgencyForm = ref({
+          name: '',
+          type: '',
+          costType: '',
+          contact: '',
+          phone: '',
+          email: '',
+          channels: []
+        });
+
+        // 新增交易系统表单
+        const newChannelForm = ref({
+          name: '',
+          code: '',
+          province: '',
+          city: '',
+          version: '',
+          signType: '',
+          encryptType: ''
+        });
+
+        // 弹窗控制
+        const agencyDialogVisible = ref(false);
+        const channelDialogVisible = ref(false);
 
         // 密钥列表
         const keyList = ref([
@@ -966,9 +1306,17 @@
           userList,
           roleList,
           agencyList,
+          agencyCostList,
+          agencyChannelList,
           channelList,
+          channelAgencyList,
+          channelFeeList,
           keyList,
           channelConfigForm,
+          newAgencyForm,
+          newChannelForm,
+          agencyDialogVisible,
+          channelDialogVisible,
           handleMenuSelect,
           handleTask,
           viewApply,
