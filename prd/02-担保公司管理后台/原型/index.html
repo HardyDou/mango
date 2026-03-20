@@ -126,12 +126,12 @@
       <div class="sidebar">
         <el-menu :default-active="currentView" class="sidebar-menu" @select="handleMenuSelect">
           <el-menu-item index="dashboard">
-            <el-icon><HomeFilled /></el-icon>
+            <el-icon><House /></el-icon>
             <span>工作台</span>
           </el-menu-item>
           <el-sub-menu index="apply">
             <template #title>
-              <el-icon><DocumentAdd /></el-icon>
+              <el-icon><Document /></el-icon>
               <span>投保管理</span>
             </template>
             <el-menu-item index="apply-list"><el-icon><List /></el-icon>投保列表</el-menu-item>
@@ -155,12 +155,10 @@
           </el-sub-menu>
           <el-sub-menu index="org">
             <template #title>
-              <el-icon><OfficeBuilding /></el-icon>
-              <span>机构管理</span>
+              <el-icon><School /></el-icon>
+              <span>出函机构</span>
             </template>
-            <el-menu-item index="org-agency"><el-icon><School /></el-icon>出函机构维护</el-menu-item>
-            <el-menu-item index="org-quota"><el-icon><Coin /></el-icon>额度管理</el-menu-item>
-            <el-menu-item index="org-rate"><el-icon><PriceTag /></el-icon>费率设置</el-menu-item>
+            <el-menu-item index="org-agency"><el-icon><School /></el-icon>出函机构</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="channel">
             <template #title>
@@ -901,33 +899,32 @@
           </div>
           <div class="table-card">
             <el-table :data="agencyList">
-              <el-table-column prop="name" label="机构名称"></el-table-column>
-              <el-table-column prop="type" label="机构类型" width="100">
+              <el-table-column prop="name" label="机构名称" width="180"></el-table-column>
+              <el-table-column prop="type" label="机构类型" width="90">
                 <template #default="scope">
                   <el-tag :type="scope.row.typeTag">{{ scope.row.type }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="costType" label="成本核算方式" width="120">
+              <el-table-column prop="guaranteeTypes" label="支持保函类型">
                 <template #default="scope">
-                  <el-tag size="small">{{ scope.row.costType }}</el-tag>
+                  <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small"
+                    :type="type === '投标保函' ? 'primary' : type === '履约保函' ? 'success' : type === '农民工工资支付' ? 'warning' : 'info'"
+                    style="margin-right: 4px;">{{ type }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="channelCount" label="已开通交易系统" width="120">
+              <el-table-column prop="contact" label="联系人" width="80"></el-table-column>
+              <el-table-column prop="phone" label="联系电话" width="120"></el-table-column>
+              <el-table-column prop="status" label="系统状态" width="80">
                 <template #default="scope">
-                  <el-link type="primary">{{ scope.row.channelCount }}个</el-link>
+                  <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+                    {{ scope.row.status === 1 ? '在线' : '掉线' }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="contact" label="联系人"></el-table-column>
-              <el-table-column prop="phone" label="联系电话" width="130"></el-table-column>
-              <el-table-column prop="status" label="状态" width="80">
-                <template #default="scope">
-                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="120">
+              <el-table-column label="操作" width="150">
                 <template #default="scope">
                   <el-button type="primary" link @click="currentView = 'org-agency-config'">配置</el-button>
-                  <el-button type="danger" link>禁用</el-button>
+                  <el-button type="primary" link @click="viewAgencyDetail(scope.row)">详情</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -1352,9 +1349,9 @@
 
         // 出函机构列表
         const agencyList = ref([
-          { name: '中国建设银行', type: '银行', typeTag: 'primary', contact: '张经理', phone: '138****8888', email: 'bank@example.com', status: 1, createTime: '2023-01-01' },
-          { name: '中国平安保险', type: '保险', typeTag: 'success', contact: '李经理', phone: '139****9999', email: 'insurance@example.com', status: 1, createTime: '2023-02-01' },
-          { name: '某某担保公司', type: '担保', typeTag: 'warning', costType: '阶梯费率', channelCount: 3, contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
+          { name: '中国建设银行', type: '银行', typeTag: 'primary', guaranteeTypes: ['投标保函', '履约保函'], contact: '张经理', phone: '138****8888', email: 'bank@example.com', status: 1, createTime: '2023-01-01' },
+          { name: '中国平安保险', type: '保险', typeTag: 'success', guaranteeTypes: ['投标保函', '履约保函', '农民工工资支付'], contact: '李经理', phone: '139****9999', email: 'insurance@example.com', status: 1, createTime: '2023-02-01' },
+          { name: '某某担保公司', type: '担保', typeTag: 'warning', guaranteeTypes: ['投标保函', '履约保函', '工程质量保证金', '预付款保函'], contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
         ]);
 
         // 出函机构成本费率列表（按交易系统+保函类型配置）
