@@ -1210,58 +1210,10 @@
               </div>
             </el-tab-pane>
 
-            <el-tab-pane label="纵览" name="quota">
-              <!-- 顶部汇总卡片 -->
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
-                <div class="dash-card">
-                  <div class="dash-icon" style="background: #e8f4ff; color: #409EFF;"><el-icon :size="28"><Ticket /></el-icon></div>
-                  <div class="dash-info">
-                    <div class="dash-value">45</div>
-                    <div class="dash-label">在保笔数</div>
-                  </div>
-                </div>
-                <div class="dash-card">
-                  <div class="dash-icon" style="background: #fef0f0; color: #F56C6C;"><el-icon :size="28"><Money /></el-icon></div>
-                  <div class="dash-info">
-                    <div class="dash-value">¥ 320万</div>
-                    <div class="dash-label">在保金额</div>
-                  </div>
-                </div>
-                <div class="dash-card">
-                  <div class="dash-icon" style="background: #f0f9ff; color: #67C23A;"><el-icon :size="28"><Check /></el-icon></div>
-                  <div class="dash-info">
-                    <div class="dash-value">12</div>
-                    <div class="dash-label">本月出函</div>
-                  </div>
-                </div>
-                <div class="dash-card">
-                  <div class="dash-icon" style="background: #f0f9f0; color: #E6A23C;"><el-icon :size="28"><Coin /></el-icon></div>
-                  <div class="dash-info">
-                    <div class="dash-value">¥ 2.85万</div>
-                    <div class="dash-label">本月收入</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 额度概况 -->
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
-                <div class="detail-card" style="text-align: center; padding: 20px;">
-                  <div style="color: #909399; font-size: 14px; margin-bottom: 8px;">总额度</div>
-                  <div style="font-size: 24px; font-weight: 600;">¥ 1000万</div>
-                </div>
-                <div class="detail-card" style="text-align: center; padding: 20px;">
-                  <div style="color: #909399; font-size: 14px; margin-bottom: 8px;">已用额度</div>
-                  <div style="font-size: 24px; font-weight: 600; color: #E6A23C;">¥ 350万</div>
-                </div>
-                <div class="detail-card" style="text-align: center; padding: 20px;">
-                  <div style="color: #909399; font-size: 14px; margin-bottom: 8px;">可用额度</div>
-                  <div style="font-size: 24px; font-weight: 600; color: #67C23A;">¥ 650万</div>
-                </div>
-              </div>
-
+            <el-tab-pane label="出函统计" name="quota">
               <!-- 各类型保函卡片 -->
-              <div style="font-weight: 600; margin-bottom: 16px;">各类型保函概览</div>
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+              <div style="font-weight: 600; margin-bottom: 16px;">各类型保函统计</div>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
                 <div class="detail-card">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div style="font-weight: 600; color: #409EFF;">投标保函</div>
@@ -1310,31 +1262,6 @@
                     <div><span style="color: #909399;">本月收入</span><div style="font-weight: 600; color: #67C23A;">¥ 0.08万</div></div>
                   </div>
                 </div>
-              </div>
-
-              <!-- 额度配置 -->
-              <div class="detail-card">
-                <div class="detail-header">
-                  <div class="detail-title">额度配置</div>
-                  <el-button type="primary" size="small">保存</el-button>
-                </div>
-                <el-form :model="quotaForm" label-width="140px">
-                  <el-form-item label="总额度">
-                    <el-input v-model="quotaForm.totalQuota" style="width: 200px;">
-                      <template #append>元</template>
-                    </el-input>
-                  </el-form-item>
-                  <el-form-item label="单笔额度上限">
-                    <el-input v-model="quotaForm.maxPerQuota" style="width: 200px;">
-                      <template #append>元</template>
-                    </el-input>
-                  </el-form-item>
-                  <el-form-item label="额度预警阈值">
-                    <el-input v-model="quotaForm.warningThreshold" style="width: 200px;">
-                      <template #append>%</template>
-                    </el-input>
-                  </el-form-item>
-                </el-form>
               </div>
             </el-tab-pane>
           </el-tabs>
@@ -1396,30 +1323,17 @@
               <!-- 阶梯费率 -->
               <el-form-item label="阶梯配置" v-if="costForm.costType === '阶梯费率'">
                 <div style="color: #909399; font-size: 12px; margin-bottom: 10px;">配置金额区间及对应的费率，区间为左闭右开 [起始金额, 终止金额)</div>
-                <el-table :data="costForm.ladderRates" border>
-                  <el-table-column label="序号" type="index" width="60" align="center"></el-table-column>
-                  <el-table-column label="起始金额(元)" min-width="120">
-                    <template #default="scope">
-                      <el-input-number v-model="scope.row.minAmount" :min="0" :precision="2" placeholder="起始" style="width: 100%;"></el-input-number>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="终止金额(元)" min-width="120">
-                    <template #default="scope">
-                      <el-input-number v-model="scope.row.maxAmount" :min="0" :precision="2" placeholder="终止" style="width: 100%;"></el-input-number>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="费率(%)" min-width="100">
-                    <template #default="scope">
-                      <el-input-number v-model="scope.row.rate" :min="0" :precision="3" placeholder="费率" style="width: 100%;"></el-input-number>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="80" align="center">
-                    <template #default="scope">
-                      <el-button type="danger" link @click="costForm.ladderRates.splice(scope.$index, 1)">删除</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-                <el-button type="primary" link style="margin-top: 10px;" @click="costForm.ladderRates.push({minAmount: 0, maxAmount: 0, rate: 0})">+ 添加阶梯</el-button>
+                <div v-for="(item, index) in costForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                  <span style="color: #909399; width: 60px;">阶梯{{ index + 1 }}</span>
+                  <el-input-number v-model="item.minAmount" :min="0" :precision="2" placeholder="起始" style="width: 140px;"></el-input-number>
+                  <span style="color: #909399;">-</span>
+                  <el-input-number v-model="item.maxAmount" :min="0" :precision="2" placeholder="终止" style="width: 140px;"></el-input-number>
+                  <span style="color: #909399;">元，费率</span>
+                  <el-input-number v-model="item.rate" :min="0" :precision="3" placeholder="费率" style="width: 100px;"></el-input-number>
+                  <span style="color: #909399;">%</span>
+                  <el-button type="danger" link @click="costForm.ladderRates.splice(index, 1)">删除</el-button>
+                </div>
+                <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: 0, maxAmount: 0, rate: 0})">+ 添加阶梯</el-button>
               </el-form-item>
 
               <!-- 保底累进 -->
