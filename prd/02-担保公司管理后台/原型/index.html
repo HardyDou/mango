@@ -607,10 +607,10 @@
                 </el-table>
               </el-tab-pane>
               <el-tab-pane label="出函机构" name="agency">
-                <el-table :data="channelAgencyList" border>
+                <el-table :data="channelAgencyList" border style="width: 100%;">
                   <el-table-column prop="agencyName" label="机构名称"></el-table-column>
                   <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
-                  <el-table-column prop="guaranteeTypes" label="开通保函类型">
+                  <el-table-column prop="guaranteeTypes" label="开通保函类型" min-width="200">
                     <template #default="scope">
                       <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small" style="margin-right: 4px;">{{ t }}</el-tag>
                     </template>
@@ -1090,10 +1090,10 @@
                 <div style="margin-bottom: 16px;">
                   <el-button type="primary" @click="openNewChannelAgencyDialog()">新增机构</el-button>
                 </div>
-                <el-table :data="channelAgencyList" border>
+                <el-table :data="channelAgencyList" border style="width: 100%;">
                   <el-table-column prop="agencyName" label="机构名称"></el-table-column>
                   <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
-                  <el-table-column prop="guaranteeTypes" label="开通保函类型">
+                  <el-table-column prop="guaranteeTypes" label="开通保函类型" min-width="200">
                     <template #default="scope">
                       <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small" style="margin-right: 4px;">{{ t }}</el-tag>
                     </template>
@@ -1129,19 +1129,6 @@
                       <el-checkbox-group v-model="newChannelAgencyForm.guaranteeTypes">
                         <el-checkbox v-for="type in newChannelAgencyForm.agencySupportTypes" :key="type" :label="type" :disabled="!newChannelAgencyForm.channelGuaranteeTypes.includes(type)">{{ type }}</el-checkbox>
                       </el-checkbox-group>
-                    </el-form-item>
-                    <el-divider>机构接口配置（选填）</el-divider>
-                    <el-form-item label="API地址">
-                      <el-input v-model="newChannelAgencyForm.apiUrl" placeholder="由机构提供的API地址"></el-input>
-                    </el-form-item>
-                    <el-form-item label="回调地址">
-                      <el-input v-model="newChannelAgencyForm.callbackUrl" placeholder="接收通知的回调地址"></el-input>
-                    </el-form-item>
-                    <el-form-item label="AppKey">
-                      <el-input v-model="newChannelAgencyForm.appKey" placeholder="机构分配的AppKey"></el-input>
-                    </el-form-item>
-                    <el-form-item label="AppSecret">
-                      <el-input v-model="newChannelAgencyForm.appSecret" placeholder="机构分配的AppSecret" show-password></el-input>
                     </el-form-item>
                   </el-form>
                   <template #footer>
