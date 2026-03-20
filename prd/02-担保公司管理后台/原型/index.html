@@ -1188,18 +1188,19 @@
                 <el-button type="primary">开通交易平台</el-button>
               </div>
               <div class="table-card">
-                <el-table :data="agencyChannelList">
-                  <el-table-column prop="channelName" label="交易平台"></el-table-column>
-                  <el-table-column prop="channelCode" label="平台编码" width="150"></el-table-column>
-                  <el-table-column prop="status" label="状态" width="80">
+                <el-table :data="agencyChannelList" :table-layout="'auto'">
+                  <el-table-column prop="channelName" label="交易平台" min-width="150"></el-table-column>
+                  <el-table-column prop="channelCode" label="平台编码" min-width="120"></el-table-column>
+                  <el-table-column prop="apiUrl" label="API地址" min-width="200"></el-table-column>
+                  <el-table-column prop="status" label="状态" min-width="80">
                     <template #default="scope">
                       <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
                         {{ scope.row.status === 1 ? '启用' : '停用' }}
                       </el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="openTime" label="开通时间" width="180"></el-table-column>
-                  <el-table-column label="操作" width="100">
+                  <el-table-column prop="openTime" label="开通时间" min-width="160"></el-table-column>
+                  <el-table-column label="操作" min-width="120" fixed="right">
                     <template #default="scope">
                       <el-button type="primary" link>配置</el-button>
                       <el-button type="danger" link>关闭</el-button>
@@ -1209,8 +1210,28 @@
               </div>
             </el-tab-pane>
 
-            <el-tab-pane label="额度管理" name="quota">
+            <el-tab-pane label="业务概览" name="quota">
+              <!-- 汇总信息 -->
               <div class="stats-section" style="margin-bottom: 20px;">
+                <div class="stats-card">
+                  <div class="stats-title">整体概览</div>
+                  <div class="stats-item">
+                    <span>在保笔数</span>
+                    <span style="font-weight: 600;">45 笔</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>在保金额</span>
+                    <span style="font-weight: 600;">¥ 3,200,000</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>本月出函</span>
+                    <span style="font-weight: 600; color: #409EFF;">12 笔</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>本月收入</span>
+                    <span style="font-weight: 600; color: #67C23A;">¥ 28,500</span>
+                  </div>
+                </div>
                 <div class="stats-card">
                   <div class="stats-title">额度概况</div>
                   <div class="stats-item">
@@ -1226,24 +1247,24 @@
                     <span style="font-weight: 600; color: #67C23A;">¥ 6,500,000</span>
                   </div>
                 </div>
-                <div class="stats-card">
-                  <div class="stats-title">在保情况</div>
-                  <div class="stats-item">
-                    <span>在保笔数</span>
-                    <span>45 笔</span>
-                  </div>
-                  <div class="stats-item">
-                    <span>在保金额</span>
-                    <span>¥ 3,200,000</span>
-                  </div>
-                  <div class="stats-item">
-                    <span>最大单笔</span>
-                    <span>¥ 800,000</span>
-                  </div>
-                </div>
               </div>
 
-              <div class="detail-card">
+              <!-- 各类型保函汇总 -->
+              <div class="table-card">
+                <div style="font-weight: 600; margin-bottom: 16px;">各类型保函汇总</div>
+                <el-table :data="guaranteeTypeSummary">
+                  <el-table-column prop="guaranteeType" label="保函类型" min-width="120"></el-table-column>
+                  <el-table-column prop="in保Count" label="在保笔数" width="100" align="center"></el-table-column>
+                  <el-table-column prop="in保Amount" label="在保金额" width="140" align="right"></el-table-column>
+                  <el-table-column prop="monthCount" label="本月出函" width="100" align="center"></el-table-column>
+                  <el-table-column prop="monthAmount" label="本月金额" width="140" align="right"></el-table-column>
+                  <el-table-column prop="monthIncome" label="本月收入" width="140" align="right"></el-table-column>
+                  <el-table-column prop="avgRate" label="平均费率" width="100" align="center"></el-table-column>
+                </el-table>
+              </div>
+
+              <!-- 额度配置 -->
+              <div class="detail-card" style="margin-top: 20px;">
                 <div class="detail-header">
                   <div class="detail-title">额度配置</div>
                   <el-button type="primary" size="small">保存</el-button>
@@ -1619,7 +1640,7 @@
   <script src="https://unpkg.com/element-plus"></script>
   <script src="https://unpkg.com/@element-plus/icons-vue"></script>
   <script>
-    const { createApp, ref, computed } = Vue;
+    const { createApp, ref, computed, watch } = Vue;
 
     const app = createApp({
       setup() {
@@ -1635,13 +1656,27 @@
         window.addEventListener('hashchange', () => {
           const hash = window.location.hash.slice(1);
           if (hash) {
-            currentView.value = hash;
+            // 处理机构配置页面的标签页hash
+            if (hash.startsWith('org-agency-config-')) {
+              currentView.value = 'org-agency-config';
+              agencyConfigTab.value = hash.replace('org-agency-config-', '');
+            } else {
+              currentView.value = hash;
+            }
           }
         });
         const dialogVisible = ref(false);
         const filterParams = ref({ status: '', keyword: '', guaranteeStatus: '' });
         const reviewForm = ref({ riskResult: 'pass', opinion: '' });
         const quotaForm = ref({ totalQuota: '10000000', maxPerQuota: '800000', warningThreshold: '80' });
+
+        // 各类型保函汇总
+        const guaranteeTypeSummary = ref([
+          { guaranteeType: '投标保函', in保Count: 25, in保Amount: '¥ 1,800,000', monthCount: 8, monthAmount: '¥ 650,000', monthIncome: '¥ 15,200', avgRate: '0.52%' },
+          { guaranteeType: '履约保函', in保Count: 15, in保Amount: '¥ 1,200,000', monthCount: 3, monthAmount: '¥ 350,000', monthIncome: '¥ 10,500', avgRate: '0.65%' },
+          { guaranteeType: '工程质量保证金', in保Count: 3, in保Amount: '¥ 150,000', monthCount: 1, monthAmount: '¥ 50,000', monthIncome: '¥ 2,000', avgRate: '0.40%' },
+          { guaranteeType: '农民工工资支付', in保Count: 2, in保Amount: '¥ 50,000', monthCount: 0, monthAmount: '¥ 0', monthIncome: '¥ 800', avgRate: '0.50%' }
+        ]);
 
         const breadcrumbTitle = computed(() => {
           const titles = {
@@ -1748,13 +1783,13 @@
 
         // 出函机构成本费率列表（按交易系统+保函类型配置）
         const agencyCostList = ref([
-          { channelName: '数字泸州', guaranteeType: '投标保函', costType: '阶梯费率', rate: '0.3%-0.6%', minFee: '200', maxFee: '4000' },
-          { channelName: '数字泸州', guaranteeType: '履约保函', costType: '固定费率', rate: '0.5%', minFee: '500', maxFee: '-' },
-          { channelName: '数字泸州', guaranteeType: '工程质量保证金', costType: '固定费率', rate: '0.4%', minFee: '300', maxFee: '-' },
-          { channelName: '江西省', guaranteeType: '投标保函', costType: '按笔固定', rate: '¥300/笔', minFee: '300', maxFee: '300' },
-          { channelName: '江西省', guaranteeType: '履约保函', costType: '阶梯费率', rate: '0.4%-0.7%', minFee: '500', maxFee: '-' },
-          { channelName: '眉山市', guaranteeType: '投标保函', costType: '保底累进', rate: '保底100+0.3%', minFee: '100', maxFee: '-' },
-          { channelName: '眉山市', guaranteeType: '农民工工资支付', costType: '按笔固定', rate: '¥400/笔', minFee: '400', maxFee: '400' }
+          { channelName: '数字泸州', guaranteeType: '投标保函', creditLimit: '-1', singleLimit: '80', costType: '阶梯费率', rate: '0.3%-0.6%', minFee: '200', maxFee: '4000', rateConfig: '0.3%-0.6%', status: 1 },
+          { channelName: '数字泸州', guaranteeType: '履约保函', creditLimit: '-1', singleLimit: '-1', costType: '固定费率', rate: '0.5%', minFee: '500', maxFee: '-', rateConfig: '0.5%', status: 1 },
+          { channelName: '数字泸州', guaranteeType: '工程质量保证金', creditLimit: '5000', singleLimit: '100', costType: '固定费率', rate: '0.4%', minFee: '300', maxFee: '-', rateConfig: '0.4%', status: 1 },
+          { channelName: '江西省', guaranteeType: '投标保函', creditLimit: '-1', singleLimit: '80', costType: '按笔固定', rate: '¥300/笔', minFee: '300', maxFee: '300', rateConfig: '¥300/笔', status: 1 },
+          { channelName: '江西省', guaranteeType: '履约保函', creditLimit: '-1', singleLimit: '-1', costType: '阶梯费率', rate: '0.4%-0.7%', minFee: '500', maxFee: '-', rateConfig: '0.4%-0.7%', status: 1 },
+          { channelName: '眉山市', guaranteeType: '投标保函', creditLimit: '10000', singleLimit: '80', costType: '保底累进', rate: '保底100+0.3%', minFee: '100', maxFee: '-', rateConfig: '保底100+0.3%', status: 1 },
+          { channelName: '眉山市', guaranteeType: '农民工工资支付', creditLimit: '-1', singleLimit: '50', costType: '按笔固定', rate: '¥400/笔', minFee: '400', maxFee: '400', rateConfig: '¥400/笔', status: 1 }
         ]);
 
         // 出函机构开通的交易系统列表
@@ -1811,6 +1846,21 @@
 
         // 出函机构配置标签页
         const agencyConfigTab = ref('base');
+
+        // 监听标签页切换，同步更新hash
+        watch(agencyConfigTab, (newTab) => {
+          window.location.hash = 'org-agency-config-' + newTab;
+        });
+
+        // 初始化从hash读取标签页
+        const initAgencyTabFromHash = () => {
+          const hash = window.location.hash.slice(1);
+          if (hash && hash.startsWith('org-agency-config-')) {
+            const tab = hash.replace('org-agency-config-', '');
+            agencyConfigTab.value = tab;
+          }
+        };
+        initAgencyTabFromHash();
         const agencyConfigForm = ref({
           name: '某某担保公司',
           type: '担保',
@@ -1885,10 +1935,18 @@
           id: null,
           channelName: '',
           guaranteeType: '',
+          creditLimitType: 'unlimited',
+          creditLimit: '',
+          singleLimitType: 'unlimited',
+          singleLimit: '',
           costType: '固定费率',
           rate: '',
+          ladderRates: [{threshold: '', rate: ''}],
+          baseFee: '',
+          excessRate: '',
           minFee: '',
-          maxFee: ''
+          maxFee: '',
+          rateConfig: ''
         });
 
         // 机构详情模式
@@ -1898,17 +1956,35 @@
         const openCostDialog = (row) => {
           if (row) {
             costDialogTitle.value = '编辑成本费率';
-            costForm.value = { ...row, id: row.id || Date.now() };
+            costForm.value = {
+              ...row,
+              id: row.id || Date.now(),
+              creditLimitType: row.creditLimit === '-1' ? 'unlimited' : 'limited',
+              creditLimit: row.creditLimit === '-1' ? '' : row.creditLimit,
+              singleLimitType: row.singleLimit === '-1' ? 'unlimited' : 'limited',
+              singleLimit: row.singleLimit === '-1' ? '' : row.singleLimit,
+              ladderRates: row.ladderRates || [{threshold: '', rate: ''}],
+              baseFee: row.baseFee || '',
+              excessRate: row.excessRate || ''
+            };
           } else {
             costDialogTitle.value = '添加成本费率';
             costForm.value = {
               id: null,
               channelName: '',
               guaranteeType: '',
+              creditLimitType: 'unlimited',
+              creditLimit: '',
+              singleLimitType: 'unlimited',
+              singleLimit: '',
               costType: '固定费率',
               rate: '',
+              ladderRates: [{threshold: '', rate: ''}],
+              baseFee: '',
+              excessRate: '',
               minFee: '',
-              maxFee: ''
+              maxFee: '',
+              rateConfig: ''
             };
           }
           costDialogVisible.value = true;
@@ -1957,7 +2033,12 @@
 
         const handleMenuSelect = (index) => {
           currentView.value = index;
-          window.location.hash = index;
+          // 如果是机构配置页面，保持当前标签页的hash
+          if (index === 'org-agency-config') {
+            window.location.hash = 'org-agency-config-' + agencyConfigTab.value;
+          } else {
+            window.location.hash = index;
+          }
         };
 
         const handleTask = (task) => {
