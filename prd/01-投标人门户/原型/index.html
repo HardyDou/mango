@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电子保函平台 - 投标人门户</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <link rel="stylesheet" href="https://unpkg.com/@element-plus/icons-vue">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; }
+    #app { min-height: 100vh; }
+
+    /* 顶部导航 */
+    .header { background: #fff; height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+    .header-content { max-width: 1400px; margin: 0 auto; height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 600; color: #409EFF; }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #409EFF, #67C23A); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .header-search { width: 280px; }
+    .user-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #409EFF; display: flex; align-items: center; justify-content: center; color: #fff; }
+
+    /* 主体布局 */
+    .main-container { display: flex; margin-top: 60px; min-height: calc(100vh - 60px); }
+    .sidebar { width: 200px; background: #fff; border-right: 1px solid #e4e7ed; position: fixed; top: 60px; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar-menu { border-right: none; }
+    .content { flex: 1; margin-left: 200px; padding: 20px; max-width: 1200px; }
+
+    /* 首页卡片 */
+    .welcome-card { background: linear-gradient(135deg, #409EFF 0%, #53a8ff 100%); border-radius: 12px; padding: 30px; color: #fff; margin-bottom: 20px; }
+    .welcome-title { font-size: 24px; margin-bottom: 8px; }
+    .welcome-subtitle { opacity: 0.9; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .stat-value { font-size: 28px; font-weight: 600; color: #303133; }
+    .stat-label { color: #909399; font-size: 14px; margin-top: 4px; }
+
+    /* 快捷入口 */
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .quick-action { background: #fff; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.3s; border: 1px solid #e4e7ed; }
+    .quick-action:hover { border-color: #409EFF; box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15); transform: translateY(-2px); }
+    .quick-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px; }
+    .quick-title { font-weight: 500; color: #303133; }
+
+    /* 项目卡片 */
+    .project-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .project-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .project-title { font-size: 16px; font-weight: 600; color: #303133; }
+    .project-tags { display: flex; gap: 8px; margin-top: 8px; }
+    .project-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; color: #606266; font-size: 14px; }
+    .project-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+
+    /* 筛选区域 */
+    .filter-bar { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .filter-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+    .filter-item { display: flex; align-items: center; gap: 8px; }
+    .filter-label { color: #909399; white-space: nowrap; }
+
+    /* 表格样式 */
+    .table-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+    /* 步骤条 */
+    .steps-container { background: #fff; border-radius: 8px; padding: 30px; margin-bottom: 20px; }
+
+    /* 表单 */
+    .form-card { background: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .form-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: #303133; }
+
+    /* 详情卡片 */
+    .detail-card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e4e7ed; }
+    .detail-title { font-size: 18px; font-weight: 600; }
+    .detail-row { display: flex; padding: 12px 0; border-bottom: 1px solid #f5f7fa; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { width: 120px; color: #909399; }
+    .detail-value { flex: 1; color: #303133; }
+
+    /* 状态标签 */
+    .status-tag { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .status-pending { background: #fdf6ec; color: #E6A23C; }
+    .status-success { background: #f0f9ff; color: #409EFF; }
+    .status-processing { background: #fef0f0; color: #F56C6C; }
+    .status-done { background: #f0f9f0; color: #67C23A; }
+
+    /* 空状态 */
+    .empty-state { text-align: center; padding: 60px 20px; color: #909399; }
+    .empty-icon { font-size: 64px; margin-bottom: 16px; }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { margin-left: 0; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .quick-actions { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 顶部导航 -->
+    <div class="header">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">保</div>
+          <span>电子保函平台</span>
+        </div>
+        <div class="header-right">
+          <el-input class="header-search" placeholder="搜索项目、保函..." prefix-icon="Search" v-model="searchKeyword"></el-input>
+          <el-badge :value="3" :max="99">
+            <el-icon :size="20"><Bell /></el-icon>
+          </el-badge>
+          <div class="user-info" @click="currentView = 'profile'">
+            <div class="user-avatar">企</div>
+            <span>某某企业</span>
+            <el-icon><ArrowDown /></el-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <!-- 侧边栏 -->
+      <div class="sidebar">
+        <el-menu :default-active="currentView" class="sidebar-menu" @select="handleMenuSelect">
+          <el-menu-item index="home">
+            <el-icon><HomeFilled /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
+          <el-menu-item index="projects">
+            <el-icon><Folder /></el-icon>
+            <span>项目大厅</span>
+          </el-menu-item>
+          <el-menu-item index="apply">
+            <el-icon><DocumentAdd /></el-icon>
+            <span>投保申请</span>
+          </el-menu-item>
+          <el-menu-item index="guarantees">
+            <el-icon><Ticket /></el-icon>
+            <span>我的保函</span>
+          </el-menu-item>
+          <el-menu-item index="orders">
+            <el-icon><List /></el-icon>
+            <span>订单管理</span>
+          </el-menu-item>
+          <el-menu-item index="invoices">
+            <el-icon><Ticket /></el-icon>
+            <span>发票管理</span>
+          </el-menu-item>
+          <el-menu-item index="profile">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
+          </el-menu-item>
+        </el-menu>
+      </div>
+
+      <!-- 主内容区 -->
+      <div class="content">
+        <!-- 首页 -->
+        <div v-if="currentView === 'home'">
+          <div class="welcome-card">
+            <div class="welcome-title">欢迎回来，某某企业</div>
+            <div class="welcome-subtitle">您有 <strong>3</strong> 项待处理事项</div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">12</div>
+              <div class="stat-label">我的保函</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">3</div>
+              <div class="stat-label">待支付订单</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">1</div>
+              <div class="stat-label">待确认退保</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">5</div>
+              <div class="stat-label">进行中投保</div>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <div class="quick-action" @click="currentView = 'apply'">
+              <div class="quick-icon" style="background: #e8f4ff; color: #409EFF;"><el-icon :size="28"><DocumentAdd /></el-icon></div>
+              <div class="quick-title">投保申请</div>
+            </div>
+            <div class="quick-action" @click="currentView = 'guarantees'">
+              <div class="quick-icon" style="background: #f0f9f0; color: #67C23A;"><el-icon :size="28"><Ticket /></el-icon></div>
+              <div class="quick-title">我的保函</div>
+            </div>
+            <div class="quick-action" @click="currentView = 'orders'">
+              <div class="quick-icon" style="background: #fdf6ec; color: #E6A23C;"><el-icon :size="28"><List /></el-icon></div>
+              <div class="quick-title">订单管理</div>
+            </div>
+            <div class="quick-action" @click="currentView = 'invoices'">
+              <div class="quick-icon" style="background: #fef0f0; color: #F56C6C;"><el-icon :size="28"><Ticket /></el-icon></div>
+              <div class="quick-title">发票管理</div>
+            </div>
+          </div>
+
+          <el-card header="最新项目">
+            <div class="project-card" v-for="project in projects.slice(0, 3)" :key="project.id">
+              <div class="project-header">
+                <div>
+                  <div class="project-title">{{ project.name }}</div>
+                  <div class="project-tags">
+                    <el-tag size="small">{{ project.type }}</el-tag>
+                    <el-tag size="small" type="success">{{ project.region }}</el-tag>
+                  </div>
+                </div>
+                <el-button type="primary" size="small" @click="startApply(project)">立即投保</el-button>
+              </div>
+              <div class="project-info">
+                <div>保证金：{{ project.amount }}元</div>
+                <div>投标截止：{{ project.deadline }}</div>
+                <div>可投保机构：{{ project.agencies }}</div>
+              </div>
+            </div>
+          </el-card>
+        </div>
+
+        <!-- 项目大厅 -->
+        <div v-if="currentView === 'projects'">
+          <div class="filter-bar">
+            <div class="filter-row">
+              <div class="filter-item">
+                <span class="filter-label">地区：</span>
+                <el-select v-model="filterParams.region" placeholder="请选择" style="width: 120px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option label="北京市" value="beijing"></el-option>
+                  <el-option label="上海市" value="shanghai"></el-option>
+                  <el-option label="广东省" value="guangdong"></el-option>
+                </el-select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">类型：</span>
+                <el-select v-model="filterParams.type" placeholder="请选择" style="width: 120px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option label="投标保函" value="bid"></el-option>
+                  <el-option label="履约保函" value="performance"></el-option>
+                </el-select>
+              </div>
+              <div class="filter-item">
+                <span class="filter-label">金额：</span>
+                <el-select v-model="filterParams.amount" placeholder="请选择" style="width: 120px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option label="0-10万" value="0-10"></el-option>
+                  <el-option label="10-50万" value="10-50"></el-option>
+                  <el-option label="50-80万" value="50-80"></el-option>
+                </el-select>
+              </div>
+              <el-input v-model="filterParams.keyword" placeholder="搜索项目名称" style="width: 200px;" prefix-icon="Search"></el-input>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="project-card" v-for="project in projects" :key="project.id">
+              <div class="project-header">
+                <div>
+                  <div class="project-title">{{ project.name }}</div>
+                  <div class="project-tags">
+                    <el-tag size="small">{{ project.type }}</el-tag>
+                    <el-tag size="small" type="success">{{ project.region }}</el-tag>
+                    <el-tag size="small" type="info">招标编号：{{ project.code }}</el-tag>
+                  </div>
+                </div>
+                <el-button type="primary" @click="startApply(project)">立即投保</el-button>
+              </div>
+              <div class="project-info">
+                <div>保证金金额：<strong>{{ project.amount }}元</strong></div>
+                <div>投标截止时间：{{ project.deadline }}</div>
+                <div>可投保机构：{{ project.agencies }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 投保申请 -->
+        <div v-if="currentView === 'apply'">
+          <div class="steps-container">
+            <el-steps :active="applyStep" finish-status="success" align-center>
+              <el-step title="确认项目" :icon="Document"></el-step>
+              <el-step title="填写信息" :icon="Edit"></el-step>
+              <el-step title="选择机构" :icon="OfficeBuilding"></el-step>
+              <el-step title="确认投保" :icon="Check"></el-step>
+              <el-step title="完成" :icon="CircleCheck"></el-step>
+            </el-steps>
+          </div>
+
+          <!-- 步骤1：确认项目 -->
+          <div v-if="applyStep === 0" class="form-card">
+            <div class="form-title">请选择投保项目</div>
+            <el-table :data="projects.slice(0, 5)" @row-click="selectProject" style="cursor: pointer;">
+              <el-table-column prop="name" label="项目名称"></el-table-column>
+              <el-table-column prop="amount" label="保证金"></el-table-column>
+              <el-table-column prop="deadline" label="投标截止"></el-table-column>
+              <el-table-column label="操作">
+                <template #default="scope">
+                  <el-button type="primary" size="small" @click.stop="selectProject(scope.row)">选择</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 步骤2：填写信息 -->
+          <div v-if="applyStep === 1" class="form-card">
+            <div class="form-title">填写投保信息</div>
+            <el-form :model="applyForm" label-width="120px">
+              <el-form-item label="投标人名称">
+                <el-input v-model="applyForm.bidderName" placeholder="请输入企业全称"></el-input>
+              </el-form-item>
+              <el-form-item label="统一信用代码">
+                <el-input v-model="applyForm.creditCode" placeholder="请输入18位统一社会信用代码"></el-input>
+              </el-form-item>
+              <el-form-item label="联系人">
+                <el-input v-model="applyForm.contact" placeholder="请输入联系人姓名"></el-input>
+              </el-form-item>
+              <el-form-item label="联系电话">
+                <el-input v-model="applyForm.phone" placeholder="请输入手机号"></el-input>
+              </el-form-item>
+              <el-form-item label="电子邮箱">
+                <el-input v-model="applyForm.email" placeholder="用于接收通知"></el-input>
+              </el-form-item>
+              <el-form-item>
+                <el-button @click="applyStep = 0">上一步</el-button>
+                <el-button type="primary" @click="applyStep = 2">下一步</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- 步骤3：选择机构 -->
+          <div v-if="applyStep === 2" class="form-card">
+            <div class="form-title">选择出函机构</div>
+            <el-radio-group v-model="applyForm.agency">
+              <div v-for="agency in agencies" :key="agency.id" style="margin-bottom: 16px;">
+                <el-card shadow="hover">
+                  <el-radio :value="agency.id">
+                    <div style="display: inline-block; margin-left: 12px;">
+                      <div style="font-weight: 600;">{{ agency.name }}</div>
+                      <div style="color: #909399; font-size: 14px; margin-top: 4px;">
+                        费率：{{ agency.rate }} | 预计保费：¥{{ agency.premium }} | 出函时效：{{ agency.time }}
+                      </div>
+                    </div>
+                  </el-radio>
+                </el-card>
+              </div>
+            </el-radio-group>
+            <el-form-item>
+              <el-button @click="applyStep = 1">上一步</el-button>
+              <el-button type="primary" @click="applyStep = 3">下一步</el-button>
+            </el-form-item>
+          </div>
+
+          <!-- 步骤4：确认投保 -->
+          <div v-if="applyStep === 3" class="form-card">
+            <div class="form-title">确认投保信息</div>
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="项目名称">{{ selectedProject?.name }}</el-descriptions-item>
+              <el-descriptions-item label="保证金金额">{{ selectedProject?.amount }}元</el-descriptions-item>
+              <el-descriptions-item label="投标人">{{ applyForm.bidderName }}</el-form-item>
+              <el-descriptions-item label="联系人">{{ applyForm.contact }}</el-descriptions-item>
+              <el-descriptions-item label="联系电话">{{ applyForm.phone }}</el-descriptions-item>
+              <el-descriptions-item label="出函机构">{{ selectedAgency?.name }}</el-descriptions-item>
+              <el-descriptions-item label="预计保费">¥{{ selectedAgency?.premium }}</el-descriptions-item>
+            </el-descriptions>
+            <div style="margin-top: 20px;">
+              <el-checkbox v-model="applyForm.agreed">我已阅读并同意《投保须知》</el-checkbox>
+            </div>
+            <el-form-item style="margin-top: 20px;">
+              <el-button @click="applyStep = 2">上一步</el-button>
+              <el-button type="primary" :disabled="!applyForm.agreed" @click="submitApply">提交申请</el-button>
+            </el-form-item>
+          </div>
+
+          <!-- 步骤5：完成 -->
+          <div v-if="applyStep === 4" class="form-card" style="text-align: center; padding: 60px;">
+            <el-icon :size="64" color="#67C23A"><CircleCheck /></el-icon>
+            <div style="font-size: 24px; font-weight: 600; margin: 20px 0;">投保申请提交成功</div>
+            <div style="color: #909399; margin-bottom: 30px;">您的投保申请已提交，请前往订单管理完成支付</div>
+            <el-button type="primary" @click="currentView = 'orders'">查看订单</el-button>
+            <el-button @click="resetApply">继续投保</el-button>
+          </div>
+        </div>
+
+        <!-- 我的保函 -->
+        <div v-if="currentView === 'guarantees'">
+          <div class="table-card">
+            <el-table :data="guarantees">
+              <el-table-column prop="no" label="保函编号" width="180"></el-table-column>
+              <el-table-column prop="projectName" label="项目名称"></el-table-column>
+              <el-table-column prop="amount" label="保证金" width="120"></el-table-column>
+              <el-table-column prop="agency" label="出函机构" width="120"></el-table-column>
+              <el-table-column prop="issueDate" label="开具时间" width="120"></el-table-column>
+              <el-table-column prop="expireDate" label="到期时间" width="120"></el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.statusType">{{ scope.status }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="180">
+                <template #default="scope">
+                  <el-button type="primary" link @click="viewGuarantee(scope.row)">查看</el-button>
+                  <el-button type="primary" link @click="downloadGuarantee(scope.row)">下载</el-button>
+                  <el-button type="primary" link @click="verifyGuarantee(scope.row)">验真</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 订单管理 -->
+        <div v-if="currentView === 'orders'">
+          <div class="table-card">
+            <el-table :data="orders">
+              <el-table-column prop="no" label="订单编号" width="180"></el-table-column>
+              <el-table-column prop="projectName" label="项目名称"></el-table-column>
+              <el-table-column prop="amount" label="金额" width="100"></el-table-column>
+              <el-table-column prop="createTime" label="创建时间" width="160"></el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.statusType">{{ scope.status }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200">
+                <template #default="scope">
+                  <el-button v-if="scope.row.status === '待支付'" type="primary" size="small" @click="payOrder(scope.row)">支付</el-button>
+                  <el-button v-if="scope.row.status === '待支付'" type="danger" size="small" link>取消</el-button>
+                  <el-button type="primary" link>查看</el-button>
+                  <el-button v-if="scope.row.status === '已完成'" type="warning" link>退保</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 发票管理 -->
+        <div v-if="currentView === 'invoices'">
+          <div style="margin-bottom: 20px;">
+            <el-button type="primary" @click="dialogVisible = true">申请开票</el-button>
+          </div>
+          <div class="table-card">
+            <el-table :data="invoices">
+              <el-table-column prop="no" label="发票编号" width="180"></el-table-column>
+              <el-table-column prop="orderNo" label="对应订单" width="180"></el-table-column>
+              <el-table-column prop="amount" label="金额" width="100"></el-table-column>
+              <el-table-column prop="type" label="类型" width="120"></el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.statusType">{{ scope.status }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作">
+                <template #default="scope">
+                  <el-button type="primary" link>查看</el-button>
+                  <el-button type="primary" link>下载</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 个人中心 -->
+        <div v-if="currentView === 'profile'">
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">账户信息</div>
+              <el-button type="primary" size="small">编辑资料</el-button>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">企业名称</div>
+              <div class="detail-value">某某企业有限公司</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">统一信用代码</div>
+              <div class="detail-value">91110000XXXXXXXXXX</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">联系人</div>
+              <div class="detail-value">张三</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">联系电话</div>
+              <div class="detail-value">138****8888</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">实名认证</div>
+              <div class="detail-value"><el-tag type="success">已认证</el-tag></div>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">账号安全</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">登录密码</div>
+              <div class="detail-value">•••••••• <el-button type="primary" link>修改</el-button></div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">绑定手机</div>
+              <div class="detail-value">138****8888 <el-button type="primary" link>修改</el-button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 支付弹窗 -->
+    <el-dialog v-model="payDialogVisible" title="订单支付" width="400px">
+      <div style="text-align: center; padding: 20px;">
+        <div style="font-size: 24px; font-weight: 600; margin-bottom: 20px;">¥{{ payAmount }}</div>
+        <el-radio-group v-model="payMethod">
+          <el-radio value="wechat"><el-icon><ChatDotRound /></el-icon> 微信支付</el-radio>
+          <el-radio value="alipay"><el-icon><ChatLineRound /></el-icon> 支付宝</el-radio>
+        </el-radio-group>
+      </div>
+      <template #footer>
+        <el-button @click="payDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmPay">确认支付</el-button>
+      </template>
+    </el-dialog>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/element-plus"></script>
+  <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+  <script>
+    const { createApp, ref, computed } = Vue;
+
+    const app = createApp({
+      setup() {
+        const currentView = ref('home');
+        const searchKeyword = ref('');
+        const applyStep = ref(0);
+        const payDialogVisible = ref(false);
+        const payAmount = ref('0');
+        const payMethod = ref('wechat');
+        const dialogVisible = ref(false);
+
+        const filterParams = ref({
+          region: '',
+          type: '',
+          amount: '',
+          keyword: ''
+        });
+
+        const selectedProject = ref(null);
+        const selectedAgency = ref(null);
+
+        const applyForm = ref({
+          bidderName: '',
+          creditCode: '',
+          contact: '',
+          phone: '',
+          email: '',
+          agency: '',
+          agreed: false
+        });
+
+        const projects = ref([
+          { id: 1, name: 'XX工程项目施工招标', code: 'TB2024001', type: '投标保函', region: '北京市', amount: '800000', deadline: '2024-12-31 18:00', agencies: 'XX银行、XX担保' },
+          { id: 2, name: 'YY采购项目', code: 'TB2024002', type: '投标保函', region: '上海市', amount: '500000', deadline: '2024-12-25 18:00', agencies: 'XX银行' },
+          { id: 3, name: 'ZZ建设工程', code: 'TB2024003', type: '投标保函', region: '广东省', amount: '300000', deadline: '2024-12-20 18:00', agencies: 'XX担保、XX保险' },
+          { id: 4, name: 'AAA项目招标', code: 'TB2024004', type: '投标保函', region: '北京市', amount: '200000', deadline: '2024-12-18 18:00', agencies: 'XX银行' },
+          { id: 5, name: 'BBB采购项目', code: 'TB2024005', type: '投标保函', region: '上海市', amount: '100000', deadline: '2024-12-15 18:00', agencies: 'XX银行、XX担保' }
+        ]);
+
+        const agencies = ref([
+          { id: 1, name: 'XX银行', rate: '0.5%', premium: '4000', time: '2分钟' },
+          { id: 2, name: 'XX担保公司', rate: '0.6%', premium: '4800', time: '5分钟' },
+          { id: 3, name: 'XX保险公司', rate: '0.4%', premium: '3200', time: '3分钟' }
+        ]);
+
+        const guarantees = ref([
+          { no: 'BG2024001001', projectName: 'XX工程项目', amount: '800000', agency: 'XX银行', issueDate: '2024-01-15', expireDate: '2025-01-15', status: '已开具', statusType: 'success' },
+          { no: 'BG2024001002', projectName: 'YY采购项目', amount: '500000', agency: 'XX担保', issueDate: '2024-01-10', expireDate: '2025-01-10', status: '已开具', statusType: 'success' },
+          { no: 'BG2024001003', projectName: 'ZZ建设工程', amount: '300000', agency: 'XX保险', issueDate: '2023-12-20', expireDate: '2024-12-20', status: '已过期', statusType: 'info' }
+        ]);
+
+        const orders = ref([
+          { no: 'OD2024001001', projectName: 'XX工程项目', amount: '4000', createTime: '2024-01-15 10:30', status: '已完成', statusType: 'success' },
+          { no: 'OD2024001002', projectName: 'YY采购项目', amount: '4800', createTime: '2024-01-10 14:20', status: '待支付', statusType: 'warning' },
+          { no: 'OD2024001003', projectName: 'ZZ建设工程', amount: '3200', createTime: '2023-12-20 09:15', status: '已完成', statusType: 'success' }
+        ]);
+
+        const invoices = ref([
+          { no: 'INV2024001', orderNo: 'OD2024001001', amount: '4000', type: '普通发票', status: '已开具', statusType: 'success' },
+          { no: 'INV2024002', orderNo: 'OD2024001003', amount: '3200', type: '普通发票', status: '已开具', statusType: 'success' }
+        ]);
+
+        const handleMenuSelect = (index) => {
+          currentView.value = index;
+        };
+
+        const startApply = (project) => {
+          selectedProject.value = project;
+          currentView.value = 'apply';
+          applyStep.value = 0;
+        };
+
+        const selectProject = (project) => {
+          selectedProject.value = project;
+          applyStep.value = 1;
+        };
+
+        const submitApply = () => {
+          selectedAgency.value = agencies.value.find(a => a.id === applyForm.value.agency);
+          applyStep.value = 4;
+        };
+
+        const resetApply = () => {
+          applyStep.value = 0;
+          applyForm.value = {
+            bidderName: '',
+            creditCode: '',
+            contact: '',
+            phone: '',
+            email: '',
+            agency: '',
+            agreed: false
+          };
+          selectedProject.value = null;
+          selectedAgency.value = null;
+        };
+
+        const payOrder = (order) => {
+          payAmount.value = order.amount;
+          payDialogVisible.value = true;
+        };
+
+        const confirmPay = () => {
+          payDialogVisible.value = false;
+          ElMessage.success('支付成功');
+        };
+
+        const viewGuarantee = (guarantee) => {
+          ElMessage.info('查看保函详情');
+        };
+
+        const downloadGuarantee = (guarantee) => {
+          ElMessage.success('开始下载保函');
+        };
+
+        const verifyGuarantee = (guarantee) => {
+          ElMessage.success('验真成功：保函真实有效');
+        };
+
+        return {
+          currentView,
+          searchKeyword,
+          applyStep,
+          filterParams,
+          projects,
+          agencies,
+          guarantees,
+          orders,
+          invoices,
+          applyForm,
+          selectedProject,
+          selectedAgency,
+          payDialogVisible,
+          payAmount,
+          payMethod,
+          dialogVisible,
+          handleMenuSelect,
+          startApply,
+          selectProject,
+          submitApply,
+          resetApply,
+          payOrder,
+          confirmPay,
+          viewGuarantee,
+          downloadGuarantee,
+          verifyGuarantee
+        };
+      }
+    });
+
+    app.use(ElementPlus);
+    for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+      app.component(key, component);
+    }
+    app.mount('#app');
+  </script>
+</body>
+</html>
