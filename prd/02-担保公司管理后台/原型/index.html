@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>电子保函平台 - 担保公司管理后台</title>
-  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; }
@@ -1006,20 +1006,50 @@
               <div class="detail-card">
                 <el-form label-width="140px">
                   <el-form-item label="API接口地址">
-                    <el-input v-model="agencyConfigForm.apiUrl" placeholder="机构提供的API地址" style="width: 300px;"></el-input>
+                    <el-input v-model="agencyConfigForm.apiUrl" placeholder="机构提供的API地址" style="width: 400px;"></el-input>
                   </el-form-item>
                   <el-form-item label="AppKey">
-                    <el-input v-model="agencyConfigForm.appKey" placeholder="应用密钥" style="width: 300px;"></el-input>
+                    <el-input v-model="agencyConfigForm.appKey" placeholder="应用密钥" style="width: 400px;"></el-input>
                   </el-form-item>
                   <el-form-item label="AppSecret">
-                    <el-input v-model="agencyConfigForm.appSecret" placeholder="应用密钥" style="width: 300px;" show-password></el-input>
+                    <el-input v-model="agencyConfigForm.appSecret" placeholder="应用密钥" style="width: 400px;" show-password></el-input>
+                  </el-form-item>
+                  <el-form-item label="签名算法">
+                    <el-select v-model="agencyConfigForm.signAlgorithm" placeholder="选择签名算法" style="width: 200px;">
+                      <el-option label="SM3" value="SM3"></el-option>
+                      <el-option label="MD5" value="MD5"></el-option>
+                      <el-option label="SM2" value="SM2"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="加密算法">
+                    <el-select v-model="agencyConfigForm.encryptAlgorithm" placeholder="选择加密算法" style="width: 200px;">
+                      <el-option label="SM4" value="SM4"></el-option>
+                      <el-option label="AES" value="AES"></el-option>
+                      <el-option label="不加密" value="none"></el-option>
+                    </el-select>
                   </el-form-item>
                   <el-form-item label="回调地址">
-                    <el-input v-model="agencyConfigForm.callbackUrl" placeholder="接收通知的回调地址" style="width: 300px;"></el-input>
+                    <el-input v-model="agencyConfigForm.callbackUrl" placeholder="接收通知的回调地址" style="width: 400px;"></el-input>
                   </el-form-item>
-                  <el-form-item label="超时时间">
-                    <el-input-number v-model="agencyConfigForm.timeout" :min="5" :max="60"></el-input-number>
+                  <el-form-item label="连接超时">
+                    <el-input-number v-model="agencyConfigForm.connectTimeout" :min="5" :max="60"></el-input-number>
                     <span style="margin-left: 10px;">秒</span>
+                  </el-form-item>
+                  <el-form-item label="读取超时">
+                    <el-input-number v-model="agencyConfigForm.timeout" :min="10" :max="120"></el-input-number>
+                    <span style="margin-left: 10px;">秒</span>
+                  </el-form-item>
+                  <el-form-item label="重试次数">
+                    <el-input-number v-model="agencyConfigForm.retryCount" :min="0" :max="5"></el-input-number>
+                  </el-form-item>
+                  <el-form-item label="编码格式">
+                    <el-select v-model="agencyConfigForm.charset" placeholder="选择编码" style="width: 200px;">
+                      <el-option label="UTF-8" value="UTF-8"></el-option>
+                      <el-option label="GBK" value="GBK"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="是否启用">
+                    <el-switch v-model="agencyConfigForm.enabled"></el-switch>
                   </el-form-item>
                   <el-form-item>
                     <el-button type="primary">保存系统配置</el-button>
@@ -1703,8 +1733,15 @@
           apiUrl: '',
           appKey: '',
           appSecret: '',
+          signAlgorithm: 'SM3',
+          encryptAlgorithm: 'SM4',
           callbackUrl: '',
-          timeout: 30
+          connectTimeout: 30,
+          timeout: 30,
+          retryCount: 3,
+          charset: 'UTF-8',
+          enabled: true,
+          status: 1
         });
 
         // 交易系统手续费列表
