@@ -54,8 +54,9 @@
 
     /* 筛选栏 */
     .filter-bar { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; width: 100%; box-sizing: border-box; }
-    .filter-item { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
-    .filter-bar .el-input, .filter-bar .el-select, .filter-bar .el-date-picker { flex: '1 1 auto'; min-width: 100px; max-width: 200px; }
+    .filter-item { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: auto; }
+    .filter-label { flex-shrink: 0; }
+    .filter-bar .el-input, .filter-bar .el-select, .filter-bar .el-date-picker { flex: 1 1 120px; min-width: 100px; max-width: 180px; }
     .filter-label { color: #909399; white-space: nowrap; }
 
     /* 详情卡片 */
@@ -293,11 +294,11 @@
           <div class="filter-bar">
             <div class="filter-item">
               <span class="filter-label">投标人：</span>
-              <el-input v-model="filterParams.bidder" placeholder="请输入投标人" style="width: 150px;"></el-input>
+              <el-input v-model="filterParams.bidder" placeholder="请输入投标人"></el-input>
             </div>
             <div class="filter-item">
               <span class="filter-label">交易平台：</span>
-              <el-select v-model="filterParams.channel" placeholder="全部" style="width: 140px;">
+              <el-select v-model="filterParams.channel" placeholder="全部">
                 <el-option label="全部" value=""></el-option>
                 <el-option label="数字泸州" value="数字泸州"></el-option>
                 <el-option label="江西省" value="江西省"></el-option>
@@ -307,19 +308,19 @@
             </div>
             <div class="filter-item">
               <span class="filter-label">项目名称：</span>
-              <el-input v-model="filterParams.projectName" placeholder="请输入项目名称" style="width: 150px;"></el-input>
+              <el-input v-model="filterParams.projectName" placeholder="请输入项目名称"></el-input>
             </div>
             <div class="filter-item">
               <span class="filter-label">标段名称：</span>
-              <el-input v-model="filterParams.bidSection" placeholder="请输入标段名称" style="width: 150px;"></el-input>
+              <el-input v-model="filterParams.bidSection" placeholder="请输入标段名称"></el-input>
             </div>
             <div class="filter-item">
               <span class="filter-label">申请时间：</span>
-              <el-date-picker v-model="filterParams.applyTimeRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 240px;"></el-date-picker>
+              <el-date-picker v-model="filterParams.applyTimeRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
             </div>
             <div class="filter-item">
               <span class="filter-label">状态：</span>
-              <el-select v-model="filterParams.status" placeholder="全部" style="width: 100px;">
+              <el-select v-model="filterParams.status" placeholder="全部">
                 <el-option label="全部" value=""></el-option>
                 <el-option label="待审核" value="pending"></el-option>
                 <el-option label="审核中" value="processing"></el-option>
