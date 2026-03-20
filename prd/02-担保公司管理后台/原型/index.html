@@ -924,10 +924,9 @@
                   <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="180">
+              <el-table-column label="操作" width="120">
                 <template #default="scope">
                   <el-button type="primary" link @click="currentView = 'org-agency-config'">配置</el-button>
-                  <el-button type="primary" link @click="currentView = 'org-agency-cost'">成本费率</el-button>
                   <el-button type="danger" link>禁用</el-button>
                 </template>
               </el-table-column>
@@ -964,72 +963,116 @@
           </el-dialog>
         </div>
 
-        <!-- 出函机构成本费率配置 -->
-        <div v-if="currentView === 'org-agency-cost'">
-          <div style="margin-bottom: 16px;">
-            <el-button @click="currentView = 'org-agency'">返回</el-button>
-            <el-button type="primary">新增成本费率</el-button>
-          </div>
-          <div class="detail-card">
-            <div class="detail-header">
-              <div class="detail-title">机构信息 - 某某担保公司</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">机构类型</div>
-              <div class="detail-value">担保公司</div>
-            </div>
-          </div>
-          <div class="table-card">
-            <div style="font-weight: 600; margin-bottom: 16px;">成本费率配置（按保函类型设置）</div>
-            <el-table :data="agencyCostList">
-              <el-table-column prop="channelName" label="交易系统"></el-table-column>
-              <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
-              <el-table-column prop="costType" label="计费方式" width="120"></el-table-column>
-              <el-table-column prop="rate" label="成本费率/金额"></el-table-column>
-              <el-table-column prop="minFee" label="最低费用" width="100"></el-table-column>
-              <el-table-column prop="maxFee" label="最高费用" width="100"></el-table-column>
-              <el-table-column prop="status" label="状态" width="80">
-                <template #default="scope">
-                  <el-tag type="success">启用</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="120">
-                <template #default="scope">
-                  <el-button type="primary" link>编辑</el-button>
-                  <el-button type="danger" link>删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </div>
-
-        <!-- 出函机构通道配置 -->
+        <!-- 出函机构配置 -->
         <div v-if="currentView === 'org-agency-config'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'org-agency'">返回</el-button>
           </div>
-          <div class="table-card">
-            <div style="font-weight: 600; margin-bottom: 16px;">已开通交易系统</div>
-            <el-table :data="agencyChannelList">
-              <el-table-column prop="channelName" label="交易系统"></el-table-column>
-              <el-table-column prop="apiUrl" label="API地址"></el-table-column>
-              <el-table-column prop="signType" label="签名方式" width="100"></el-table-column>
-              <el-table-column prop="status" label="状态" width="80">
-                <template #default="scope">
-                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
-                </template>
-              </el-table-column>
-              <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
-              <el-table-column label="操作" width="100">
-                <template #default="scope">
-                  <el-button type="danger" link>关闭</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-          <div style="margin-top: 20px;">
-            <el-button type="primary">开通新交易系统</el-button>
-          </div>
+          <el-tabs v-model="agencyConfigTab">
+            <el-tab-pane label="基础信息" name="base">
+              <div class="detail-card">
+                <el-form label-width="120px">
+                  <el-form-item label="机构名称">
+                    <el-input v-model="agencyConfigForm.name" disabled></el-input>
+                  </el-form-item>
+                  <el-form-item label="机构类型">
+                    <el-select v-model="agencyConfigForm.type" disabled style="width: 200px;">
+                      <el-option label="银行" value="银行"></el-option>
+                      <el-option label="保险公司" value="保险"></el-option>
+                      <el-option label="担保公司" value="担保"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="联系人">
+                    <el-input v-model="agencyConfigForm.contact"></el-input>
+                  </el-form-item>
+                  <el-form-item label="联系电话">
+                    <el-input v-model="agencyConfigForm.phone"></el-input>
+                  </el-form-item>
+                  <el-form-item label="电子邮箱">
+                    <el-input v-model="agencyConfigForm.email"></el-input>
+                  </el-form-item>
+                  <el-form-item label="备注">
+                    <el-input v-model="agencyConfigForm.remark" type="textarea" rows="3"></el-input>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary">保存</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="系统配置" name="system">
+              <div class="detail-card">
+                <el-form label-width="140px">
+                  <el-form-item label="API接口地址">
+                    <el-input v-model="agencyConfigForm.apiUrl" placeholder="机构提供的API地址" style="width: 300px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="AppKey">
+                    <el-input v-model="agencyConfigForm.appKey" placeholder="应用密钥" style="width: 300px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="AppSecret">
+                    <el-input v-model="agencyConfigForm.appSecret" placeholder="应用密钥" style="width: 300px;" show-password></el-input>
+                  </el-form-item>
+                  <el-form-item label="回调地址">
+                    <el-input v-model="agencyConfigForm.callbackUrl" placeholder="接收通知的回调地址" style="width: 300px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="超时时间">
+                    <el-input-number v-model="agencyConfigForm.timeout" :min="5" :max="60"></el-input-number>
+                    <span style="margin-left: 10px;">秒</span>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary">保存系统配置</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="业务配置" name="business">
+              <div style="margin-bottom: 16px;">
+                <el-button type="primary">添加保函类型</el-button>
+              </div>
+              <div class="table-card">
+                <el-table :data="agencyCostList">
+                  <el-table-column prop="channelName" label="交易系统"></el-table-column>
+                  <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+                  <el-table-column prop="costType" label="计费方式" width="120"></el-table-column>
+                  <el-table-column prop="rate" label="成本费率/金额"></el-table-column>
+                  <el-table-column prop="minFee" label="最低" width="80"></el-table-column>
+                  <el-table-column prop="maxFee" label="最高" width="80"></el-table-column>
+                  <el-table-column label="操作" width="120">
+                    <template #default="scope">
+                      <el-button type="primary" link>编辑</el-button>
+                      <el-button type="danger" link>删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="交易平台" name="channel">
+              <div style="margin-bottom: 16px;">
+                <el-button type="primary">开通交易平台</el-button>
+              </div>
+              <div class="table-card">
+                <el-table :data="agencyChannelList">
+                  <el-table-column prop="channelName" label="交易平台"></el-table-column>
+                  <el-table-column prop="apiUrl" label="API地址"></el-table-column>
+                  <el-table-column prop="signType" label="签名方式" width="100"></el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
+                  <el-table-column label="操作" width="100">
+                    <template #default="scope">
+                      <el-button type="danger" link>关闭</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
         </div>
 
         <!-- 额度管理 -->
@@ -1230,8 +1273,7 @@
             'channel-fee': '手续费配置',
             'channel-config': '通道配置',
             'channel-key': '密钥管理',
-            'org-agency-config': '机构通道配置',
-            'org-agency-cost': '成本费率配置',
+            'org-agency-config': '机构配置',
             'risk-rules': '风控规则',
             'risk-blacklist': '黑名单管理',
             'finance-report': '收入统计',
@@ -1378,6 +1420,22 @@
         });
         const openAgencyDialogVisible = ref(false);
 
+        // 出函机构配置标签页
+        const agencyConfigTab = ref('base');
+        const agencyConfigForm = ref({
+          name: '某某担保公司',
+          type: '担保',
+          contact: '王经理',
+          phone: '137****7777',
+          email: 'guarantee@example.com',
+          remark: '',
+          apiUrl: '',
+          appKey: '',
+          appSecret: '',
+          callbackUrl: '',
+          timeout: 30
+        });
+
         // 交易系统手续费列表
         const channelFeeList = ref([
           { guaranteeType: '投标保函', feeType: '阶梯费率', rate: '0.5%-0.8%', minFee: '200', maxFee: '5000', effectiveDate: '2024-01-01' },
@@ -1498,6 +1556,8 @@
           openAgencyDialogVisible,
           agencyDialogVisible,
           channelDialogVisible,
+          agencyConfigTab,
+          agencyConfigForm,
           guaranteeTypeList,
           newGuaranteeTypeForm,
           guaranteeTypeDialogVisible,
