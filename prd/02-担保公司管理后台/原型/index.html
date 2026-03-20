@@ -53,9 +53,9 @@
     .table-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
 
     /* 筛选栏 */
-    .filter-bar { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
-    .filter-item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .filter-bar .el-input, .filter-bar .el-select, .filter-bar .el-date-picker { flex-shrink: 0; }
+    .filter-bar { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; width: 100%; box-sizing: border-box; }
+    .filter-item { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+    .filter-bar .el-input, .filter-bar .el-select, .filter-bar .el-date-picker { flex: '1 1 auto'; min-width: 100px; max-width: 200px; }
     .filter-label { color: #909399; white-space: nowrap; }
 
     /* 详情卡片 */
