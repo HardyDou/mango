@@ -580,23 +580,98 @@
         <div v-if="currentView === 'channel-agency'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'channel-list'">返回</el-button>
-            <el-button type="primary">开通机构</el-button>
+            <el-button type="primary" @click="openAgencyDialogVisible = true">开通机构</el-button>
           </div>
           <div class="table-card">
             <div style="font-weight: 600; margin-bottom: 16px;">已开通出函机构 - 数字泸州</div>
             <el-table :data="channelAgencyList">
               <el-table-column prop="agencyName" label="机构名称"></el-table-column>
               <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
+              <el-table-column prop="guaranteeTypes" label="支持保函类型" width="200">
+                <template #default="scope">
+                  <el-tag size="small" v-for="t in scope.row.guaranteeTypes" :key="t" style="margin-right: 4px;">{{ t }}</el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="status" label="状态" width="80">
                 <template #default="scope">
                   <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
                 </template>
               </el-table-column>
               <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
-              <el-table-column label="操作" width="120">
+              <el-table-column label="操作" width="180">
                 <template #default="scope">
-                  <el-button type="primary" link>配置</el-button>
+                  <el-button type="primary" link @click="currentView = 'channel-agency-fee'">收费/成本</el-button>
                   <el-button type="danger" link>关闭</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 开通机构弹窗 -->
+          <el-dialog v-model="openAgencyDialogVisible" title="开通出函机构" width="500px">
+            <el-form label-width="120px">
+              <el-form-item label="选择机构" required>
+                <el-select v-model="openAgencyForm.agency" placeholder="请选择出函机构" style="width: 100%;">
+                  <el-option label="中国建设银行" value="bank"></el-option>
+                  <el-option label="中国平安保险" value="insurance"></el-option>
+                  <el-option label="某某担保公司" value="guarantee"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="支持保函类型" required>
+                <el-checkbox-group v-model="openAgencyForm.guaranteeTypes">
+                  <el-checkbox label="投标保函">投标保函</el-checkbox>
+                  <el-checkbox label="履约保函">履约保函</el-checkbox>
+                  <el-checkbox label="农民工工资">农民工工资</el-checkbox>
+                </el-checkbox-group>
+              </el-form-item>
+              <el-form-item label="机构API地址">
+                <el-input v-model="openAgencyForm.apiUrl" placeholder="由机构提供的API地址"></el-input>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="openAgencyDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="openAgencyDialogVisible = false">确认开通</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- 交易系统+机构 收费/成本配置 -->
+        <div v-if="currentView === 'channel-agency-fee'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'channel-agency'">返回</el-button>
+            <el-button type="primary">新增规则</el-button>
+          </div>
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">交易平台：数字泸州 + 机构：某某担保公司</div>
+            </div>
+          </div>
+          <div class="table-card">
+            <div style="font-weight: 600; margin-bottom: 16px;">
+              按保函类型配置收费规则（对客户）
+              <el-tag size="small" style="margin-left: 10px;">成本费率由出函机构配置</el-tag>
+            </div>
+            <el-table :data="channelAgencyFeeList">
+              <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+              <el-table-column label="收费规则（客户）" align="center">
+                <el-table-column prop="feeType" label="收费方式" width="100"></el-table-column>
+                <el-table-column prop="feeRate" label="费率/金额" width="100"></el-table-column>
+                <el-table-column prop="feeMin" label="最低" width="80"></el-table-column>
+                <el-table-column prop="feeMax" label="最高" width="80"></el-table-column>
+              </el-table-column>
+              <el-table-column prop="costRate" label="成本费率" width="100">
+                <template #default="scope">
+                  <el-tag size="small" type="info">{{ scope.row.costRate }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="profit" label="预计利润" width="100">
+                <template #default="scope">
+                  <span style="color: #67C23A; font-weight: 600;">{{ scope.row.profit }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="80">
+                <template #default="scope">
+                  <el-button type="primary" link>编辑</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -809,6 +884,7 @@
                   <el-option label="阶梯费率" value="阶梯费率"></el-option>
                   <el-option label="按笔固定收费" value="按笔固定"></el-option>
                   <el-option label="保底费+超额累进" value="保底累进"></el-option>
+                  <el-option label="免收" value="免收"></el-option>
                 </el-select>
               </el-form-item>
               <el-form-item label="联系人">
@@ -1170,12 +1246,15 @@
           { name: '某某担保公司', type: '担保', typeTag: 'warning', costType: '阶梯费率', channelCount: 3, contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
         ]);
 
-        // 出函机构成本费率列表
+        // 出函机构成本费率列表（按交易系统+保函类型配置）
         const agencyCostList = ref([
           { channelName: '数字泸州', guaranteeType: '投标保函', costType: '阶梯费率', rate: '0.3%-0.6%', minFee: '200', maxFee: '4000' },
           { channelName: '数字泸州', guaranteeType: '履约保函', costType: '固定费率', rate: '0.5%', minFee: '500', maxFee: '-' },
+          { channelName: '数字泸州', guaranteeType: '工程质量保证金', costType: '固定费率', rate: '0.4%', minFee: '300', maxFee: '-' },
           { channelName: '江西省', guaranteeType: '投标保函', costType: '按笔固定', rate: '¥300/笔', minFee: '300', maxFee: '300' },
-          { channelName: '眉山市', guaranteeType: '投标保函', costType: '保底累进', rate: '保底100+0.3%', minFee: '100', maxFee: '-' }
+          { channelName: '江西省', guaranteeType: '履约保函', costType: '阶梯费率', rate: '0.4%-0.7%', minFee: '500', maxFee: '-' },
+          { channelName: '眉山市', guaranteeType: '投标保函', costType: '保底累进', rate: '保底100+0.3%', minFee: '100', maxFee: '-' },
+          { channelName: '眉山市', guaranteeType: '农民工工资支付', costType: '按笔固定', rate: '¥400/笔', minFee: '400', maxFee: '400' }
         ]);
 
         // 出函机构开通的交易系统列表
@@ -1195,10 +1274,40 @@
 
         // 交易系统开通的机构列表
         const channelAgencyList = ref([
-          { agencyName: '中国建设银行', agencyType: '银行', status: 1, openTime: '2023-01-01' },
-          { agencyName: '中国平安保险', agencyType: '保险', status: 1, openTime: '2023-02-01' },
-          { agencyName: '某某担保公司', agencyType: '担保', status: 1, openTime: '2023-03-01' }
+          { agencyName: '中国建设银行', agencyType: '银行', guaranteeTypes: ['投标保函', '履约保函'], status: 1, openTime: '2023-01-01' },
+          { agencyName: '中国平安保险', agencyType: '保险', guaranteeTypes: ['投标保函', '履约保函', '农民工工资'], status: 1, openTime: '2023-02-01' },
+          { agencyName: '某某担保公司', agencyType: '担保', guaranteeTypes: ['投标保函', '履约保函'], status: 1, openTime: '2023-03-01' }
         ]);
+
+        // 交易系统+机构的收费规则列表（对客户）
+        const channelAgencyFeeList = ref([
+          {
+            guaranteeType: '投标保函',
+            feeType: '阶梯费率', feeRate: '0.5%-0.8%', feeMin: '200', feeMax: '5000',
+            costRate: '0.4%', // 从机构成本获取
+            profit: '差价约0.1%-0.4%'
+          },
+          {
+            guaranteeType: '履约保函',
+            feeType: '固定费率', feeRate: '0.6%', feeMin: '500', feeMax: '-',
+            costRate: '0.45%',
+            profit: '差价约0.15%'
+          },
+          {
+            guaranteeType: '农民工工资',
+            feeType: '按笔固定', feeRate: '¥500/笔', feeMin: '500', feeMax: '500',
+            costRate: '¥400/笔',
+            profit: '¥100/笔'
+          }
+        ]);
+
+        // 开通机构表单
+        const openAgencyForm = ref({
+          agency: '',
+          guaranteeTypes: [],
+          apiUrl: ''
+        });
+        const openAgencyDialogVisible = ref(false);
 
         // 交易系统手续费列表
         const channelFeeList = ref([
@@ -1310,11 +1419,14 @@
           agencyChannelList,
           channelList,
           channelAgencyList,
+          channelAgencyFeeList,
           channelFeeList,
           keyList,
           channelConfigForm,
           newAgencyForm,
           newChannelForm,
+          openAgencyForm,
+          openAgencyDialogVisible,
           agencyDialogVisible,
           channelDialogVisible,
           handleMenuSelect,
