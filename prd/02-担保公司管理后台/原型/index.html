@@ -1322,18 +1322,9 @@
 
               <!-- 阶梯费率 -->
               <el-form-item label="阶梯配置" v-if="costForm.costType === '阶梯费率'">
-                <div style="color: #909399; font-size: 12px; margin-bottom: 10px;">配置金额区间及对应的费率，区间为左闭右开 [起始金额, 终止金额)</div>
-                <div v-for="(item, index) in costForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                  <span style="color: #909399; width: 60px;">阶梯{{ index + 1 }}</span>
-                  <el-input v-model="item.minAmount" placeholder="起始" style="width: 120px;"></el-input>
-                  <span style="color: #909399;">-</span>
-                  <el-input v-model="item.maxAmount" placeholder="终止" style="width: 120px;"></el-input>
-                  <span style="color: #909399;">元，费率</span>
-                  <el-input v-model="item.rate" placeholder="费率" style="width: 80px;"></el-input>
-                  <span style="color: #909399;">%</span>
-                  <el-button type="danger" link @click="costForm.ladderRates.splice(index, 1)">删除</el-button>
-                </div>
-                <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: '', maxAmount: '', rate: ''})">+ 添加阶梯</el-button>
+                <div style="color: #909399; font-size: 12px; margin-bottom: 10px;">格式：起始金额-终止金额:费率%</div>
+                <el-input v-model="costForm.ladderConfig" type="textarea" rows="3" placeholder="例如：&#10;0-100000:0.5&#10;100000-500000:0.4&#10;500000-:0.3" style="width: 100%;"></el-input>
+                <div style="color: #909399; font-size: 12px; margin-top: 5px;">每行一个阶梯，格式：起始-终止:费率% ，终止为空表示无上限</div>
               </el-form-item>
 
               <!-- 保底累进 -->
