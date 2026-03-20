@@ -871,87 +871,76 @@
             </div>
             <el-tabs v-model="channelTab">
               <el-tab-pane label="基础信息" name="base">
-                <el-form label-width="120px" style="max-width: 700px;">
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="系统名称">
-                        <el-input v-model="channelConfigForm.name" placeholder="请输入系统名称"></el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="平台编码">
-                        <el-input v-model="channelConfigForm.code" placeholder="如：SL、JX、MS"></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="平台类型">
-                        <el-select v-model="channelConfigForm.platformType" placeholder="请选择平台类型" style="width: 100%;">
-                          <el-option label="公共资源交易中心" value="公共资源交易中心"></el-option>
-                          <el-option label="招标平台" value="招标平台"></el-option>
-                          <el-option label="政府采购系统" value="政府采购系统"></el-option>
-                          <el-option label="建设工程系统" value="建设工程系统"></el-option>
-                          <el-option label="其他" value="其他"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="所属地区">
-                        <el-input v-model="channelConfigForm.region" placeholder="如：四川省泸州市"></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="厂商/系统">
-                        <el-select v-model="channelConfigForm.vendor" placeholder="请选择厂商" style="width: 100%;">
-                          <el-option label="国泰新点" value="国泰新点"></el-option>
-                          <el-option label="广联达" value="广联达"></el-option>
-                          <el-option label="筑龙" value="筑龙"></el-option>
-                          <el-option label="金润" value="金润"></el-option>
-                          <el-option label="CA" value="CA"></el-option>
-                          <el-option label="其他" value="其他"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="对接模式">
-                        <el-select v-model="channelConfigForm.connectMode" placeholder="请选择对接模式" style="width: 100%;">
-                          <el-option label="API实时对接" value="API"></el-option>
-                          <el-option label="SDK接入" value="SDK"></el-option>
-                          <el-option label="消息队列" value="MQ"></el-option>
-                          <el-option label="文件交换" value="FILE"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="联系人">
-                        <el-input v-model="channelConfigForm.contact" placeholder="请输入联系人"></el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="联系方式">
-                        <el-input v-model="channelConfigForm.phone" placeholder="请输入联系方式"></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="邮箱">
-                        <el-input v-model="channelConfigForm.email" placeholder="请输入邮箱"></el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="系统状态">
-                        <el-switch v-model="channelConfigForm.status" :active-value="1" :inactive-value="0" active-text="正常" inactive-text="异常"></el-switch>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                </el-form>
+                <!-- 平台信息 -->
+                <div class="detail-card" style="margin-bottom: 16px;">
+                  <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">平台信息</div>
+                  <el-form label-width="140px" style="max-width: 600px;">
+                    <el-form-item label="系统名称">
+                      <el-input v-model="channelConfigForm.name" placeholder="请输入系统名称"></el-input>
+                    </el-form-item>
+                    <el-form-item label="平台编码">
+                      <el-input v-model="channelConfigForm.code" placeholder="如：SL、JX、MS"></el-input>
+                    </el-form-item>
+                    <el-form-item label="平台类型">
+                      <el-select v-model="channelConfigForm.platformType" placeholder="请选择平台类型" style="width: 100%;">
+                        <el-option label="公共资源交易中心" value="公共资源交易中心"></el-option>
+                        <el-option label="招标平台" value="招标平台"></el-option>
+                        <el-option label="政府采购系统" value="政府采购系统"></el-option>
+                        <el-option label="建设工程系统" value="建设工程系统"></el-option>
+                        <el-option label="其他" value="其他"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="所属地区">
+                      <el-input v-model="channelConfigForm.region" placeholder="如：四川省泸州市"></el-input>
+                    </el-form-item>
+                    <el-form-item label="厂商/系统">
+                      <el-select v-model="channelConfigForm.vendor" placeholder="请选择厂商" style="width: 100%;">
+                        <el-option label="国泰新点" value="国泰新点"></el-option>
+                        <el-option label="广联达" value="广联达"></el-option>
+                        <el-option label="筑龙" value="筑龙"></el-option>
+                        <el-option label="金润" value="金润"></el-option>
+                        <el-option label="CA" value="CA"></el-option>
+                        <el-option label="其他" value="其他"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="对接模式">
+                      <el-select v-model="channelConfigForm.connectMode" placeholder="请选择对接模式" style="width: 100%;">
+                        <el-option label="API实时对接" value="API"></el-option>
+                        <el-option label="SDK接入" value="SDK"></el-option>
+                        <el-option label="消息队列" value="MQ"></el-option>
+                        <el-option label="文件交换" value="FILE"></el-option>
+                      </el-select>
+                    </el-form-item>
+                  </el-form>
+                </div>
+
+                <!-- 联系人信息 -->
+                <div class="detail-card" style="margin-bottom: 16px;">
+                  <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">联系人信息</div>
+                  <el-form label-width="140px" style="max-width: 600px;">
+                    <el-form-item label="联系人">
+                      <el-input v-model="channelConfigForm.contact" placeholder="请输入联系人"></el-input>
+                    </el-form-item>
+                    <el-form-item label="联系方式">
+                      <el-input v-model="channelConfigForm.phone" placeholder="请输入联系方式"></el-input>
+                    </el-form-item>
+                    <el-form-item label="邮箱">
+                      <el-input v-model="channelConfigForm.email" placeholder="请输入邮箱"></el-input>
+                    </el-form-item>
+                  </el-form>
+                </div>
+
+                <!-- 系统状态 -->
+                <div class="detail-card">
+                  <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">系统状态</div>
+                  <el-form label-width="140px" style="max-width: 600px;">
+                    <el-form-item label="系统状态">
+                      <el-switch v-model="channelConfigForm.status" :active-value="1" :inactive-value="0" active-text="正常" inactive-text="异常"></el-switch>
+                    </el-form-item>
+                  </el-form>
+                </div>
               </el-tab-pane>
+
               <el-tab-pane label="系统配置" name="system">
                 <el-form label-width="120px" style="max-width: 700px;">
                   <div style="font-weight: 600; margin: 16px 0; color: #409EFF;">接口配置</div>
