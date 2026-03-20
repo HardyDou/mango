@@ -196,6 +196,7 @@
             <el-menu-item index="system-user"><el-icon><User /></el-icon>用户管理</el-menu-item>
             <el-menu-item index="system-role"><el-icon><Avatar /></el-icon>角色管理</el-menu-item>
             <el-menu-item index="system-log"><el-icon><Document /></el-icon>操作日志</el-menu-item>
+            <el-menu-item index="guarantee-type"><el-icon><Coin /></el-icon>保函类型维护</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </div>
@@ -712,6 +713,74 @@
           </div>
         </div>
 
+        <!-- 保函类型维护 -->
+        <div v-if="currentView === 'guarantee-type'">
+          <div style="margin-bottom: 20px;">
+            <el-button type="primary" @click="guaranteeTypeDialogVisible = true">新增保函类型</el-button>
+            <el-button>导出</el-button>
+          </div>
+          <div class="table-card">
+            <el-table :data="guaranteeTypeList">
+              <el-table-column prop="code" label="类型编码" width="120"></el-table-column>
+              <el-table-column prop="name" label="类型名称"></el-table-column>
+              <el-table-column prop="category" label="类别" width="120">
+                <template #default="scope">
+                  <el-tag :type="scope.row.categoryTag">{{ scope.row.category }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="minAmount" label="最低金额" width="100"></el-table-column>
+              <el-table-column prop="maxAmount" label="最高金额" width="100"></el-table-column>
+              <el-table-column prop="description" label="说明"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="150">
+                <template #default="scope">
+                  <el-button type="primary" link>编辑</el-button>
+                  <el-button type="danger" link>禁用</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 新增保函类型弹窗 -->
+          <el-dialog v-model="guaranteeTypeDialogVisible" title="新增保函类型" width="500px">
+            <el-form :model="newGuaranteeTypeForm" label-width="100px">
+              <el-form-item label="类型编码" required>
+                <el-input v-model="newGuaranteeTypeForm.code" placeholder="如：BID、PERF、WAGE"></el-input>
+              </el-form-item>
+              <el-form-item label="类型名称" required>
+                <el-input v-model="newGuaranteeTypeForm.name" placeholder="如：投标保函"></el-input>
+              </el-form-item>
+              <el-form-item label="类别" required>
+                <el-select v-model="newGuaranteeTypeForm.category" placeholder="请选择">
+                  <el-option label="保证金类" value="保证金类"></el-option>
+                  <el-option label="履约类" value="履约类"></el-option>
+                  <el-option label="支付类" value="支付类"></el-option>
+                  <el-option label="其他" value="其他"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="最低金额">
+                <el-input-number v-model="newGuaranteeTypeForm.minAmount" :min="0" :step="1000"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+              </el-form-item>
+              <el-form-item label="最高金额">
+                <el-input-number v-model="newGuaranteeTypeForm.maxAmount" :min="0" :step="1000"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+              </el-form-item>
+              <el-form-item label="说明">
+                <el-input v-model="newGuaranteeTypeForm.description" type="textarea" rows="2"></el-input>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="guaranteeTypeDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="guaranteeTypeDialogVisible = false">保存</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
         <!-- 通道配置 -->
         <div v-if="currentView === 'channel-config'">
           <div class="detail-card">
@@ -878,15 +947,6 @@
                   <el-option label="担保公司" value="担保"></el-option>
                 </el-select>
               </el-form-item>
-              <el-form-item label="成本核算方式" required>
-                <el-select v-model="newAgencyForm.costType" placeholder="请选择">
-                  <el-option label="固定费率" value="固定费率"></el-option>
-                  <el-option label="阶梯费率" value="阶梯费率"></el-option>
-                  <el-option label="按笔固定收费" value="按笔固定"></el-option>
-                  <el-option label="保底费+超额累进" value="保底累进"></el-option>
-                  <el-option label="免收" value="免收"></el-option>
-                </el-select>
-              </el-form-item>
               <el-form-item label="联系人">
                 <el-input v-model="newAgencyForm.contact"></el-input>
               </el-form-item>
@@ -895,13 +955,6 @@
               </el-form-item>
               <el-form-item label="邮箱">
                 <el-input v-model="newAgencyForm.email"></el-input>
-              </el-form-item>
-              <el-form-item label="开通交易系统">
-                <el-checkbox-group v-model="newAgencyForm.channels">
-                  <el-checkbox label="数字泸州">数字泸州</el-checkbox>
-                  <el-checkbox label="江西省">江西省</el-checkbox>
-                  <el-checkbox label="眉山市">眉山市</el-checkbox>
-                </el-checkbox-group>
               </el-form-item>
             </el-form>
             <template #footer>
@@ -925,13 +978,9 @@
               <div class="detail-label">机构类型</div>
               <div class="detail-value">担保公司</div>
             </div>
-            <div class="detail-row">
-              <div class="detail-label">成本核算方式</div>
-              <div class="detail-value">阶梯费率</div>
-            </div>
           </div>
           <div class="table-card">
-            <div style="font-weight: 600; margin-bottom: 16px;">成本费率配置</div>
+            <div style="font-weight: 600; margin-bottom: 16px;">成本费率配置（按保函类型设置）</div>
             <el-table :data="agencyCostList">
               <el-table-column prop="channelName" label="交易系统"></el-table-column>
               <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
@@ -1174,6 +1223,7 @@
             'org-agency': '出函机构维护',
             'org-quota': '额度管理',
             'org-rate': '费率设置',
+            'guarantee-type': '保函类型维护',
             'channel-list': '交易系统维护',
             'channel-detail': '交易系统详情',
             'channel-agency': '开通机构',
@@ -1232,6 +1282,25 @@
           { type: '投标保函', rateType: '固定费率', rate: '0.5%', minFee: '200', maxFee: '4000', effectiveDate: '2024-01-01', status: 'active' },
           { type: '履约保函', rateType: '阶梯费率', rate: '0.4-0.8%', minFee: '500', maxFee: '无上限', effectiveDate: '2024-01-01', status: 'active' }
         ]);
+
+        // 保函类型列表
+        const guaranteeTypeList = ref([
+          { code: 'BID', name: '投标保函', category: '保证金类', categoryTag: 'primary', minAmount: 0, maxAmount: 800000, description: '用于投标保证，金额≤80万', status: 1 },
+          { code: 'PERF', name: '履约保函', category: '履约类', categoryTag: 'success', minAmount: 0, maxAmount: 0, description: '用于合同履约担保，金额为合同价5-10%', status: 1 },
+          { code: 'QUAL', name: '工程质量保证金', category: '保证金类', categoryTag: 'primary', minAmount: 0, maxAmount: 0, description: '用于工程质量保证，金额为合同价3%', status: 1 },
+          { code: 'WAGE', name: '农民工工资支付', category: '支付类', categoryTag: 'warning', minAmount: 0, maxAmount: 0, description: '用于保障农民工工资支付', status: 1 },
+          { code: 'ADV', name: '预付款保函', category: '履约类', categoryTag: 'success', minAmount: 0, maxAmount: 0, description: '用于工程预付款担保', status: 1 }
+        ]);
+
+        const newGuaranteeTypeForm = ref({
+          code: '',
+          name: '',
+          category: '',
+          minAmount: 0,
+          maxAmount: 0,
+          description: ''
+        });
+        const guaranteeTypeDialogVisible = ref(false);
 
         const userList = ref([
           { username: 'admin', name: '管理员', role: '管理岗', phone: '138****8888', email: 'admin@example.com', status: '正常', createTime: '2023-01-01 10:00' },
@@ -1429,6 +1498,9 @@
           openAgencyDialogVisible,
           agencyDialogVisible,
           channelDialogVisible,
+          guaranteeTypeList,
+          newGuaranteeTypeForm,
+          guaranteeTypeDialogVisible,
           handleMenuSelect,
           handleTask,
           viewApply,
