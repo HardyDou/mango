@@ -157,8 +157,18 @@
               <el-icon><OfficeBuilding /></el-icon>
               <span>机构管理</span>
             </template>
+            <el-menu-item index="org-agency">出函机构维护</el-menu-item>
             <el-menu-item index="org-quota">额度管理</el-menu-item>
             <el-menu-item index="org-rate">费率设置</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="channel">
+            <template #title>
+              <el-icon><Connection /></el-icon>
+              <span>交易系统</span>
+            </template>
+            <el-menu-item index="channel-list">交易系统维护</el-menu-item>
+            <el-menu-item index="channel-config">通道配置</el-menu-item>
+            <el-menu-item index="channel-key">密钥管理</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="risk">
             <template #title>
@@ -441,6 +451,98 @@
           </div>
         </div>
 
+        <!-- 交易系统维护 -->
+        <div v-if="currentView === 'channel-list'">
+          <div style="margin-bottom: 20px;">
+            <el-button type="primary">新增交易系统</el-button>
+            <el-button>导出</el-button>
+          </div>
+          <div class="table-card">
+            <el-table :data="channelList">
+              <el-table-column prop="name" label="交易系统名称"></el-table-column>
+              <el-table-column prop="code" label="平台编码" width="120"></el-table-column>
+              <el-table-column prop="region" label="地区"></el-table-column>
+              <el-table-column prop="version" label="接口版本" width="100"></el-table-column>
+              <el-table-column prop="signType" label="签名算法" width="100"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="150">
+                <template #default="scope">
+                  <el-button type="primary" link>配置</el-button>
+                  <el-button type="danger" link>禁用</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 通道配置 -->
+        <div v-if="currentView === 'channel-config'">
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">通道配置</div>
+              <el-button type="primary" size="small">保存</el-button>
+            </div>
+            <el-form label-width="120px">
+              <el-form-item label="交易系统">
+                <el-select v-model="channelConfigForm.system" style="width: 300px;">
+                  <el-option label="数字泸州" value="sl"></el-option>
+                  <el-option label="江西省公共资源交易" value="jx"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="API地址">
+                <el-input v-model="channelConfigForm.apiUrl" style="width: 400px;"></el-input>
+              </el-form-item>
+              <el-form-item label="签名算法">
+                <el-select v-model="channelConfigForm.signAlgorithm" style="width: 200px;">
+                  <el-option label="SM3" value="SM3"></el-option>
+                  <el-option label="MD5" value="MD5"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="加密算法">
+                <el-select v-model="channelConfigForm.encryptAlgorithm" style="width: 200px;">
+                  <el-option label="SM4" value="SM4"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+
+        <!-- 密钥管理 -->
+        <div v-if="currentView === 'channel-key'">
+          <div style="margin-bottom: 20px;">
+            <el-button type="primary">新增密钥</el-button>
+          </div>
+          <div class="table-card">
+            <el-table :data="keyList">
+              <el-table-column prop="systemName" label="交易系统"></el-table-column>
+              <el-table-column prop="keyType" label="密钥类型" width="100"></el-table-column>
+              <el-table-column prop="keyName" label="密钥名称"></el-table-column>
+              <el-table-column prop="keyValue" label="密钥值" width="180">
+                <template #default="scope">
+                  ••••••••••••
+                  <el-button type="primary" link>显示</el-button>
+                </template>
+              </el-table-column>
+              <el-table-column prop="expireDate" label="过期时间" width="120"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-tag type="success">正常</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="scope">
+                  <el-button type="primary" link>编辑</el-button>
+                  <el-button type="danger" link>禁用</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
         <!-- 风控规则 -->
         <div v-if="currentView === 'risk-rules'">
           <div style="margin-bottom: 20px;">
@@ -483,6 +585,41 @@
                 <template #default="scope">
                   <el-button type="primary" link>查看</el-button>
                   <el-button type="danger" link>移除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+
+        <!-- 出函机构维护 -->
+        <div v-if="currentView === 'org-agency'">
+          <div style="margin-bottom: 20px;">
+            <el-button type="primary">新增机构</el-button>
+            <el-button>导出</el-button>
+          </div>
+          <div class="table-card">
+            <el-table :data="agencyList">
+              <el-table-column prop="name" label="机构名称"></el-table-column>
+              <el-table-column prop="type" label="机构类型" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.typeTag">{{ scope.row.type }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="contact" label="联系人"></el-table-column>
+              <el-table-column prop="phone" label="联系电话" width="130"></el-table-column>
+              <el-table-column prop="email" label="邮箱"></el-table-column>
+              <el-table-column prop="status" label="状态" width="80">
+                <template #default="scope">
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="接入时间" width="160"></el-table-column>
+              <el-table-column label="操作" width="200">
+                <template #default="scope">
+                  <el-button type="primary" link>配置</el-button>
+                  <el-button type="primary" link>额度</el-button>
+                  <el-button type="primary" link>费率</el-button>
+                  <el-button type="danger" link>禁用</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -677,8 +814,12 @@
             'guarantee-sign': '保函签章',
             'surrender-list': '退保列表',
             'surrender-review': '退保审核',
+            'org-agency': '出函机构维护',
             'org-quota': '额度管理',
             'org-rate': '费率设置',
+            'channel-list': '交易系统维护',
+            'channel-config': '通道配置',
+            'channel-key': '密钥管理',
             'risk-rules': '风控规则',
             'risk-blacklist': '黑名单管理',
             'finance-report': '收入统计',
@@ -735,6 +876,36 @@
           { username: 'risk01', name: '张三', role: '风控岗', phone: '139****9999', email: 'risk@example.com', status: '正常', createTime: '2023-06-01 10:00' },
           { username: 'issue01', name: '李四', role: '出函岗', phone: '137****7777', email: 'issue@example.com', status: '正常', createTime: '2023-06-01 10:00' }
         ]);
+
+        // 出函机构列表
+        const agencyList = ref([
+          { name: '中国建设银行', type: '银行', typeTag: 'primary', contact: '张经理', phone: '138****8888', email: 'bank@example.com', status: 1, createTime: '2023-01-01' },
+          { name: '中国平安保险', type: '保险', typeTag: 'success', contact: '李经理', phone: '139****9999', email: 'insurance@example.com', status: 1, createTime: '2023-02-01' },
+          { name: '某某担保公司', type: '担保', typeTag: 'warning', contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
+        ]);
+
+        // 交易系统列表
+        const channelList = ref([
+          { name: '数字泸州公共资源交易', code: 'SL', region: '四川省泸州市', version: 'V2.0', signType: 'SM3', status: 1 },
+          { name: '江西省公共资源交易', code: 'JX', region: '江西省', version: 'V3.0', signType: 'SM4', status: 1 },
+          { name: '眉山市公共资源交易', code: 'MS', region: '四川省眉山市', version: 'V4.0', signType: 'SM3', status: 1 },
+          { name: '蔓延交易平台', code: 'MY', region: '全国', version: 'V1.0', signType: 'MD5', status: 0 }
+        ]);
+
+        // 密钥列表
+        const keyList = ref([
+          { systemName: '数字泸州', keyType: '签名密钥', keyName: 'AppKey', keyValue: 'abc123456789', expireDate: '2025-12-31', status: '正常' },
+          { systemName: '数字泸州', keyType: '加密密钥', keyName: 'SecretKey', keyValue: '*************', expireDate: '2025-12-31', status: '正常' },
+          { systemName: '江西省', keyType: '签名密钥', keyName: 'AppKey', keyValue: 'jx987654321', expireDate: '2025-06-30', status: '正常' }
+        ]);
+
+        // 通道配置表单
+        const channelConfigForm = ref({
+          system: 'sl',
+          apiUrl: 'https://api.example.com',
+          signAlgorithm: 'SM3',
+          encryptAlgorithm: 'SM4'
+        });
 
         const roleList = ref([
           { name: '管理员', code: 'ADMIN', userCount: 1, description: '系统管理员，拥有全部权限', createTime: '2023-01-01' },
@@ -793,6 +964,10 @@
           rateList,
           userList,
           roleList,
+          agencyList,
+          channelList,
+          keyList,
+          channelConfigForm,
           handleMenuSelect,
           handleTask,
           viewApply,
