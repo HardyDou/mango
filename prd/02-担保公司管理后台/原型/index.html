@@ -1147,7 +1147,7 @@
             </el-tab-pane>
 
             <el-tab-pane label="业务配置" name="business">
-              <div style="margin-bottom: 16px;">
+              <div style="margin-bottom: 16px;" v-if="!isDetailMode">
                 <el-button type="primary" @click="openCostDialog()">添加保函类型</el-button>
               </div>
               <div class="table-card">
@@ -1173,7 +1173,7 @@
                   <el-table-column prop="minFee" label="最低费用"></el-table-column>
                   <el-table-column prop="maxFee" label="最高费用"></el-table-column>
                   <el-table-column prop="rateConfig" label="费率"></el-table-column>
-                  <el-table-column label="操作" width="120" fixed="right">
+                  <el-table-column label="操作" width="120" fixed="right" v-if="!isDetailMode">
                     <template #default="scope">
                       <el-button type="primary" link @click="openCostDialog(scope.row)">编辑</el-button>
                       <el-button type="danger" link @click="handleDeleteCost(scope.row)">删除</el-button>
@@ -1357,7 +1357,7 @@
                 <div style="color: #909399; font-size: 12px; margin-top: 4px;">留空则不设上限</div>
               </el-form-item>
             </el-form>
-            <template #footer>
+            <template #footer v-if="!isDetailMode">
               <el-button @click="costDialogVisible = false">取消</el-button>
               <el-button type="primary" @click="handleSaveCost">保存</el-button>
             </template>
@@ -1977,6 +1977,8 @@
         const viewAgencyDetail = (row) => {
           selectedAgency.value = row;
           isDetailMode.value = true;
+          currentView.value = 'org-agency-config';
+          window.location.hash = 'org-agency-config-base';
         };
 
         const closeAgencyDetail = () => {
