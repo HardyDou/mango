@@ -971,47 +971,11 @@
           </div>
           <el-tabs v-model="agencyConfigTab">
             <el-tab-pane label="基础信息" name="base">
-              <div class="detail-card">
-                <el-form label-width="120px">
-                  <el-form-item label="机构名称">
-                    <el-input v-model="agencyConfigForm.name" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="机构类型">
-                    <el-select v-model="agencyConfigForm.type" disabled style="width: 200px;">
-                      <el-option label="银行" value="银行"></el-option>
-                      <el-option label="保险公司" value="保险"></el-option>
-                      <el-option label="担保公司" value="担保"></el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="联系人">
-                    <el-input v-model="agencyConfigForm.contact"></el-input>
-                  </el-form-item>
-                  <el-form-item label="联系电话">
-                    <el-input v-model="agencyConfigForm.phone"></el-input>
-                  </el-form-item>
-                  <el-form-item label="电子邮箱">
-                    <el-input v-model="agencyConfigForm.email"></el-input>
-                  </el-form-item>
-                  <el-form-item label="备注">
-                    <el-input v-model="agencyConfigForm.remark" type="textarea" rows="3"></el-input>
-                  </el-form-item>
-                  <el-form-item>
-                    <el-button type="primary">保存</el-button>
-                  </el-form-item>
-                </el-form>
-              </div>
-            </el-tab-pane>
-
-            <el-tab-pane label="系统配置" name="system">
-              <!-- 机构信息 -->
               <div class="detail-card" style="margin-bottom: 16px;">
-                <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">机构信息</div>
+                <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">基本信息</div>
                 <el-form label-width="140px">
                   <el-form-item label="机构名称">
-                    <el-input v-model="agencyConfigForm.name" placeholder="金融机构全称" style="width: 400px;" disabled></el-input>
-                  </el-form-item>
-                  <el-form-item label="统一信用代码">
-                    <el-input v-model="agencyConfigForm.creditCode" placeholder="统一社会信用代码" style="width: 400px;"></el-input>
+                    <el-input v-model="agencyConfigForm.name" placeholder="金融机构全称" style="width: 300px;" disabled></el-input>
                   </el-form-item>
                   <el-form-item label="机构类型">
                     <el-select v-model="agencyConfigForm.agencyType" placeholder="选择机构类型" style="width: 200px;">
@@ -1020,11 +984,40 @@
                       <el-option label="担保公司" value="guarantee"></el-option>
                     </el-select>
                   </el-form-item>
+                  <el-form-item label="统一信用代码">
+                    <el-input v-model="agencyConfigForm.creditCode" placeholder="统一社会信用代码" style="width: 300px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="联系人">
+                    <el-input v-model="agencyConfigForm.contact" placeholder="联系人姓名" style="width: 300px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="联系电话">
+                    <el-input v-model="agencyConfigForm.phone" placeholder="联系电话" style="width: 300px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="电子邮箱">
+                    <el-input v-model="agencyConfigForm.email" placeholder="电子邮箱" style="width: 300px;"></el-input>
+                  </el-form-item>
                   <el-form-item label="客服电话">
                     <el-input v-model="agencyConfigForm.servicePhone" placeholder="客服联系电话" style="width: 300px;"></el-input>
                   </el-form-item>
                 </el-form>
               </div>
+              <div class="detail-card">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">其他信息</div>
+                <el-form label-width="140px">
+                  <el-form-item label="备注">
+                    <el-input v-model="agencyConfigForm.remark" type="textarea" rows="3" placeholder="备注信息" style="width: 400px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="是否启用">
+                    <el-switch v-model="agencyConfigForm.enabled" active-text="启用" inactive-text="停用"></el-switch>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary">保存基础信息</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="系统配置" name="system">
               <!-- 接口配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">接口配置</div>
@@ -1148,18 +1141,6 @@
                   </el-form-item>
                   <el-form-item label="赔付时效">
                     <el-input v-model="agencyConfigForm.claimTimeLimit" placeholder="如：3个工作日内" style="width: 300px;"></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-              <!-- 状态配置 -->
-              <div class="detail-card">
-                <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">状态配置</div>
-                <el-form label-width="140px">
-                  <el-form-item label="是否启用">
-                    <el-switch v-model="agencyConfigForm.enabled"></el-switch>
-                  </el-form-item>
-                  <el-form-item>
-                    <el-button type="primary">保存系统配置</el-button>
                   </el-form-item>
                 </el-form>
               </div>
