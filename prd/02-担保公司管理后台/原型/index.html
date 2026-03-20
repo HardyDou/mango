@@ -291,8 +291,34 @@
         <div v-if="currentView === 'apply-list'">
           <div class="filter-bar">
             <div class="filter-item">
+              <span class="filter-label">投标人：</span>
+              <el-input v-model="filterParams.bidder" placeholder="请输入投标人" style="width: 150px;"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">交易平台：</span>
+              <el-select v-model="filterParams.channel" placeholder="全部" style="width: 140px;">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="数字泸州" value="数字泸州"></el-option>
+                <el-option label="江西省" value="江西省"></el-option>
+                <el-option label="公共资源中心" value="公共资源中心"></el-option>
+                <el-option label="招标平台" value="招标平台"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">项目名称：</span>
+              <el-input v-model="filterParams.projectName" placeholder="请输入项目名称" style="width: 150px;"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">标段名称：</span>
+              <el-input v-model="filterParams.bidSection" placeholder="请输入标段名称" style="width: 150px;"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">申请时间：</span>
+              <el-date-picker v-model="filterParams.applyTimeRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 240px;"></el-date-picker>
+            </div>
+            <div class="filter-item">
               <span class="filter-label">状态：</span>
-              <el-select v-model="filterParams.status" placeholder="全部" style="width: 120px;">
+              <el-select v-model="filterParams.status" placeholder="全部" style="width: 100px;">
                 <el-option label="全部" value=""></el-option>
                 <el-option label="待审核" value="pending"></el-option>
                 <el-option label="审核中" value="processing"></el-option>
@@ -300,9 +326,9 @@
                 <el-option label="已拒绝" value="reject"></el-option>
               </el-select>
             </div>
-            <el-input v-model="filterParams.keyword" placeholder="搜索项目/投标人" style="width: 200px;" prefix-icon="Search"></el-input>
             <el-button type="primary">搜索</el-button>
-            <el-button>导出</el-button>
+            <el-button>重置</el-button>
+            <el-button type="primary">导出</el-button>
           </div>
 
           <div class="table-card">
@@ -2132,7 +2158,7 @@
           }
         });
         const dialogVisible = ref(false);
-        const filterParams = ref({ status: '', keyword: '', guaranteeStatus: '' });
+        const filterParams = ref({ status: '', keyword: '', guaranteeStatus: '', bidder: '', channel: '', projectName: '', bidSection: '', applyTimeRange: [] });
         const reviewForm = ref({ riskResult: 'pass', opinion: '' });
         const quotaForm = ref({ totalQuota: '10000000', maxPerQuota: '800000', warningThreshold: '80' });
 
