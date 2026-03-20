@@ -1395,14 +1395,31 @@
 
               <!-- 阶梯费率 -->
               <el-form-item label="阶梯配置" v-if="costForm.costType === '阶梯费率'">
-                <div v-for="(item, index) in costForm.ladderRates" :key="index" style="margin-bottom: 10px; display: flex; align-items: center;">
-                  <el-input v-model="item.threshold" placeholder="金额区间" style="width: 120px;"></el-input>
-                  <span style="margin: 0 10px;">：</span>
-                  <el-input v-model="item.rate" placeholder="费率" style="width: 100px;"></el-input>
-                  <span style="margin-left: 10px;">%</span>
-                  <el-button type="danger" link style="margin-left: 10px;" @click="costForm.ladderRates.splice(index, 1)">删除</el-button>
-                </div>
-                <el-button type="primary" link @click="costForm.ladderRates.push({threshold: '', rate: ''})">+ 添加阶梯</el-button>
+                <div style="color: #909399; font-size: 12px; margin-bottom: 10px;">配置金额区间及对应的费率，区间为左闭右开 [起始金额, 终止金额)</div>
+                <el-table :data="costForm.ladderRates" border>
+                  <el-table-column label="序号" type="index" width="60" align="center"></el-table-column>
+                  <el-table-column label="起始金额(元)" min-width="120">
+                    <template #default="scope">
+                      <el-input-number v-model="scope.row.minAmount" :min="0" :precision="2" placeholder="起始" style="width: 100%;"></el-input-number>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="终止金额(元)" min-width="120">
+                    <template #default="scope">
+                      <el-input-number v-model="scope.row.maxAmount" :min="0" :precision="2" placeholder="终止" style="width: 100%;"></el-input-number>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="费率(%)" min-width="100">
+                    <template #default="scope">
+                      <el-input-number v-model="scope.row.rate" :min="0" :precision="3" placeholder="费率" style="width: 100%;"></el-input-number>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="80" align="center">
+                    <template #default="scope">
+                      <el-button type="danger" link @click="costForm.ladderRates.splice(scope.$index, 1)">删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <el-button type="primary" link style="margin-top: 10px;" @click="costForm.ladderRates.push({minAmount: 0, maxAmount: 0, rate: 0})">+ 添加阶梯</el-button>
               </el-form-item>
 
               <!-- 保底累进 -->
@@ -1996,7 +2013,7 @@
           singleLimit: '',
           costType: '固定费率',
           rate: '',
-          ladderRates: [{threshold: '', rate: ''}],
+          ladderRates: [{minAmount: 0, maxAmount: 0, rate: 0}],
           baseFee: '',
           excessRate: '',
           minFee: '',
@@ -2018,7 +2035,7 @@
               creditLimit: row.creditLimit === '-1' ? '' : row.creditLimit,
               singleLimitType: row.singleLimit === '-1' ? 'unlimited' : 'limited',
               singleLimit: row.singleLimit === '-1' ? '' : row.singleLimit,
-              ladderRates: row.ladderRates || [{threshold: '', rate: ''}],
+              ladderRates: row.ladderRates && row.ladderRates.length > 0 ? row.ladderRates : [{minAmount: 0, maxAmount: 0, rate: 0}],
               baseFee: row.baseFee || '',
               excessRate: row.excessRate || ''
             };
@@ -2034,7 +2051,7 @@
               singleLimit: '',
               costType: '固定费率',
               rate: '',
-              ladderRates: [{threshold: '', rate: ''}],
+              ladderRates: [{minAmount: 0, maxAmount: 0, rate: 0}],
               baseFee: '',
               excessRate: '',
               minFee: '',
