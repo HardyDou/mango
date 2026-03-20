@@ -486,8 +486,8 @@
           </div>
 
           <!-- 新增交易平台弹窗 -->
-          <el-dialog v-model="channelDialogVisible" title="新增交易平台" width="600px">
-            <el-form :model="newChannelForm" label-width="120px">
+          <el-dialog v-model="channelDialogVisible" title="新增交易平台" width="500px">
+            <el-form :model="newChannelForm" label-width="100px">
               <el-form-item label="系统名称" required>
                 <el-input v-model="newChannelForm.name" placeholder="请输入交易平台名称"></el-input>
               </el-form-item>
@@ -495,34 +495,18 @@
                 <el-input v-model="newChannelForm.code" placeholder="如：SL、JX、MS"></el-input>
               </el-form-item>
               <el-form-item label="所属地区" required>
-                <el-select v-model="newChannelForm.province" placeholder="省份" style="width: 120px;">
-                  <el-option label="四川省" value="四川省"></el-option>
-                  <el-option label="江西省" value="江西省"></el-option>
-                  <el-option label="广东省" value="广东省"></el-option>
-                </el-select>
-                <el-select v-model="newChannelForm.city" placeholder="城市" style="width: 120px; margin-left: 10px;">
-                  <el-option label="泸州市" value="泸州市"></el-option>
-                  <el-option label="南昌市" value="南昌市"></el-option>
-                  <el-option label="广州市" value="广州市"></el-option>
-                </el-select>
+                <el-input v-model="newChannelForm.region" placeholder="如：四川省泸州市"></el-input>
               </el-form-item>
-              <el-form-item label="接口版本">
-                <el-input v-model="newChannelForm.version" placeholder="如：V1.0、V2.0"></el-input>
+              <el-form-item label="联系人">
+                <el-input v-model="newChannelForm.contact" placeholder="请输入联系人姓名"></el-input>
               </el-form-item>
-              <el-form-item label="签名算法">
-                <el-select v-model="newChannelForm.signType" placeholder="请选择">
-                  <el-option label="SM3" value="SM3"></el-option>
-                  <el-option label="MD5" value="MD5"></el-option>
-                  <el-option label="SM2" value="SM2"></el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="加密算法">
-                <el-select v-model="newChannelForm.encryptType" placeholder="请选择">
-                  <el-option label="SM4" value="SM4"></el-option>
-                  <el-option label="AES" value="AES"></el-option>
-                </el-select>
+              <el-form-item label="联系方式">
+                <el-input v-model="newChannelForm.phone" placeholder="请输入联系电话"></el-input>
               </el-form-item>
             </el-form>
+            <div style="color: #909399; font-size: 12px; margin-bottom: 20px;">
+              <p>提示：系统接口配置等信息，请在详情页「通道配置」中维护。</p>
+            </div>
             <template #footer>
               <el-button @click="channelDialogVisible = false">取消</el-button>
               <el-button type="primary" @click="channelDialogVisible = false">保存</el-button>
