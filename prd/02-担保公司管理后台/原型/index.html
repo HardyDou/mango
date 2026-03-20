@@ -466,7 +466,13 @@
               <el-table-column prop="name" label="交易系统名称"></el-table-column>
               <el-table-column prop="code" label="编号" width="100"></el-table-column>
               <el-table-column prop="region" label="地区" width="150"></el-table-column>
-              <el-table-column prop="guaranteeTypes" label="保函类型" width="150"></el-table-column>
+              <el-table-column prop="guaranteeTypes" label="保函类型" width="180">
+                <template #default="scope">
+                  <el-tag v-for="type in scope.row.guaranteeTypes.split(',')" :key="type" size="small"
+                    :type="type === '投标保函' ? 'primary' : type === '履约保函' ? 'success' : type === '工程质量保证金' ? 'warning' : type === '农民工工资支付' ? 'danger' : 'info'"
+                    style="margin-right: 4px;">{{ type }}</el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="contact" label="联系人" width="100"></el-table-column>
               <el-table-column prop="phone" label="联系方式" width="130"></el-table-column>
               <el-table-column prop="status" label="系统状态" width="100">
