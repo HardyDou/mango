@@ -21,14 +21,20 @@
 
     /* 主体布局 */
     .main-container { display: flex; margin-top: 50px; min-height: calc(100vh - 50px); }
-    .sidebar { width: 220px; background: #304156; position: fixed; top: 50px; bottom: 0; left: 0; overflow-y: auto; }
+    .sidebar { width: 220px; background: #1a1a1a; position: fixed; top: 50px; bottom: 0; left: 0; overflow-y: auto; }
     .sidebar::-webkit-scrollbar { width: 0; }
-    .sidebar-menu { border-right: none; background: #304156; }
-    :deep(.el-menu) { border-right: none; }
-    :deep(.el-menu-item) { color: #bfcbd9; }
-    :deep(.el-menu-item:hover) { background: #263445; color: #409EFF; }
-    :deep(.el-menu-item.is-active) { background: #409EFF; color: #fff; }
-    :deep(.el-sub-menu__title) { color: #bfcbd9; }
+    .sidebar-menu { border-right: none; background: #1a1a1a; }
+    :deep(.el-menu) { border-right: none; background: #1a1a1a; }
+    :deep(.el-menu-item) { color: #ffffff; font-weight: 500; }
+    :deep(.el-menu-item:hover) { background: #2d2d2d; color: #409EFF; }
+    :deep(.el-menu-item.is-active) { background: #409EFF; color: #ffffff; font-weight: 600; }
+    :deep(.el-sub-menu__title) { color: #ffffff; font-weight: 500; }
+    :deep(.el-sub-menu__title:hover) { background: #2d2d2d; color: #409EFF; }
+    :deep(.el-sub-menu .el-menu-item) { color: #cccccc; }
+    :deep(.el-sub-menu .el-menu-item:hover) { background: #2d2d2d; color: #409EFF; }
+    :deep(.el-sub-menu .el-menu-item.is-active) { background: #409EFF; color: #ffffff; }
+    :deep(.el-menu--collapse) { width: 64px; }
+    :deep(.el-menu--collapse .el-sub-menu) { margin: 0; }
     .content { flex: 1; margin-left: 220px; padding: 20px; }
 
     /* 面包屑 */
