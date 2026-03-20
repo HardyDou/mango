@@ -482,10 +482,10 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="150">
+              <el-table-column label="操作" width="120">
                 <template #default="scope">
+                  <el-button type="primary" link @click="currentView = 'channel-config'">配置</el-button>
                   <el-button type="primary" link @click="currentView = 'channel-detail'">详情</el-button>
-                  <el-button type="primary" link @click="currentView = 'channel-agency'">机构</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -524,44 +524,119 @@
         <div v-if="currentView === 'channel-detail'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'channel-list'">返回</el-button>
-            <el-button type="primary">编辑</el-button>
           </div>
           <div class="detail-card">
             <div class="detail-header">
-              <div class="detail-title">交易平台详情</div>
+              <div class="detail-title">交易平台详情 - 数字泸州</div>
             </div>
-            <div class="detail-row">
-              <div class="detail-label">系统名称</div>
-              <div class="detail-value">数字泸州公共资源交易</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">平台编码</div>
-              <div class="detail-value">SL</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">所属地区</div>
-              <div class="detail-value">四川省 - 泸州市</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">接口版本</div>
-              <div class="detail-value">V2.0</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">签名算法</div>
-              <div class="detail-value">SM3</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">加密方式</div>
-              <div class="detail-value">数字信封(SM4+SM2)</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">API地址</div>
-              <div class="detail-value">https://api.lzggzy.gov.cn/</div>
-            </div>
-            <div class="detail-row">
-              <div class="detail-label">回调地址</div>
-              <div class="detail-value">https://callback.example.com/lz</div>
-            </div>
+            <el-tabs v-model="channelTab">
+              <el-tab-pane label="基础信息" name="base">
+                <el-descriptions :column="2" border>
+                  <el-descriptions-item label="系统名称">数字泸州公共资源交易</el-descriptions-item>
+                  <el-descriptions-item label="平台编码">SL</el-descriptions-item>
+                  <el-descriptions-item label="所属地区">四川省泸州市</el-descriptions-item>
+                  <el-descriptions-item label="联系人">张三</el-descriptions-item>
+                  <el-descriptions-item label="联系方式">13800138000</el-descriptions-item>
+                  <el-descriptions-item label="系统状态">
+                    <el-tag type="success">正常</el-tag>
+                  </el-descriptions-item>
+                </el-descriptions>
+              </el-tab-pane>
+              <el-tab-pane label="系统配置" name="system">
+                <el-descriptions :column="2" border>
+                  <el-descriptions-item label="API地址">https://api.lzggzy.gov.cn/</el-descriptions-item>
+                  <el-descriptions-item label="回调地址">https://callback.example.com/lz</el-descriptions-item>
+                  <el-descriptions-item label="接口版本">V2.0</el-descriptions-item>
+                  <el-descriptions-item label="签名算法">SM3</el-descriptions-item>
+                  <el-descriptions-item label="加密算法">数字信封(SM4+SM2)</el-descriptions-item>
+                  <el-descriptions-item label="CA证书">已上传</el-descriptions-item>
+                </el-descriptions>
+              </el-tab-pane>
+              <el-tab-pane label="业务规则" name="rules">
+                <el-table :data="channelRulesList" border>
+                  <el-table-column prop="ruleName" label="规则名称"></el-table-column>
+                  <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+                  <el-table-column prop="minAmount" label="最低金额" width="100">
+                    <template #default="scope">{{ scope.row.minAmount ? scope.row.minAmount.toLocaleString() + '元' : '-' }}</template>
+                  </el-table-column>
+                  <el-table-column prop="maxAmount" label="最高金额" width="100">
+                    <template #default="scope">{{ scope.row.maxAmount ? scope.row.maxAmount.toLocaleString() + '元' : '无限制' }}</template>
+                  </el-table-column>
+                  <el-table-column prop="feeRate" label="费率" width="80"></el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">{{ scope.row.status === 1 ? '启用' : '禁用' }}</el-tag>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-tab-pane>
+              <el-tab-pane label="出函机构" name="agency">
+                <el-table :data="channelAgencyList" border>
+                  <el-table-column prop="agencyName" label="机构名称"></el-table-column>
+                  <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
+                  <el-table-column prop="guaranteeTypes" label="支持保函类型" width="200">
+                    <template #default="scope">
+                      <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small" style="margin-right: 4px;">{{ t }}</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">{{ scope.row.status === 1 ? '启用' : '禁用' }}</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
+                </el-table>
+              </el-tab-pane>
+              <el-tab-pane label="统计" name="stats">
+                <div class="stats-section">
+                  <div class="stats-card">
+                    <div class="stats-title">今日数据</div>
+                    <div class="stats-item">
+                      <span>投保申请</span>
+                      <span style="font-weight: 600;">15</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>成功出函</span>
+                      <span style="font-weight: 600;">12</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>保费收入</span>
+                      <span style="font-weight: 600; color: #67C23A;">¥ 8,500</span>
+                    </div>
+                  </div>
+                  <div class="stats-card">
+                    <div class="stats-title">本月数据</div>
+                    <div class="stats-item">
+                      <span>投保申请</span>
+                      <span style="font-weight: 600;">156</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>成功出函</span>
+                      <span style="font-weight: 600;">142</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>保费收入</span>
+                      <span style="font-weight: 600; color: #67C23A;">¥ 85,000</span>
+                    </div>
+                  </div>
+                  <div class="stats-card">
+                    <div class="stats-title">累计数据</div>
+                    <div class="stats-item">
+                      <span>投保申请</span>
+                      <span style="font-weight: 600;">2,856</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>成功出函</span>
+                      <span style="font-weight: 600;">2,691</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>保费收入</span>
+                      <span style="font-weight: 600; color: #67C23A;">¥ 1,256,800</span>
+                    </div>
+                  </div>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
           </div>
         </div>
 
@@ -771,33 +846,167 @@
 
         <!-- 通道配置 -->
         <div v-if="currentView === 'channel-config'">
+          <div style="margin-bottom: 16px;">
+            <el-button @click="currentView = 'channel-list'">返回</el-button>
+          </div>
           <div class="detail-card">
             <div class="detail-header">
-              <div class="detail-title">通道配置</div>
-              <el-button type="primary" size="small">保存</el-button>
+              <div class="detail-title">交易平台配置 - 数字泸州</div>
+              <el-button type="primary">保存</el-button>
             </div>
-            <el-form label-width="120px">
-              <el-form-item label="交易平台">
-                <el-select v-model="channelConfigForm.system" style="width: 300px;">
-                  <el-option label="数字泸州" value="sl"></el-option>
-                  <el-option label="江西省公共资源交易" value="jx"></el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="API地址">
-                <el-input v-model="channelConfigForm.apiUrl" style="width: 400px;"></el-input>
-              </el-form-item>
-              <el-form-item label="签名算法">
-                <el-select v-model="channelConfigForm.signAlgorithm" style="width: 200px;">
-                  <el-option label="SM3" value="SM3"></el-option>
-                  <el-option label="MD5" value="MD5"></el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="加密算法">
-                <el-select v-model="channelConfigForm.encryptAlgorithm" style="width: 200px;">
-                  <el-option label="SM4" value="SM4"></el-option>
-                </el-select>
-              </el-form-item>
-            </el-form>
+            <el-tabs v-model="channelTab">
+              <el-tab-pane label="基础信息" name="base">
+                <el-form label-width="100px" style="max-width: 600px;">
+                  <el-form-item label="系统名称">
+                    <el-input v-model="channelConfigForm.name" placeholder="请输入系统名称"></el-input>
+                  </el-form-item>
+                  <el-form-item label="平台编码">
+                    <el-input v-model="channelConfigForm.code" placeholder="如：SL、JX、MS"></el-input>
+                  </el-form-item>
+                  <el-form-item label="所属地区">
+                    <el-input v-model="channelConfigForm.region" placeholder="如：四川省泸州市"></el-input>
+                  </el-form-item>
+                  <el-form-item label="联系人">
+                    <el-input v-model="channelConfigForm.contact" placeholder="请输入联系人"></el-input>
+                  </el-form-item>
+                  <el-form-item label="联系方式">
+                    <el-input v-model="channelConfigForm.phone" placeholder="请输入联系方式"></el-input>
+                  </el-form-item>
+                  <el-form-item label="系统状态">
+                    <el-switch v-model="channelConfigForm.status" :active-value="1" :inactive-value="0" active-text="正常" inactive-text="异常"></el-switch>
+                  </el-form-item>
+                </el-form>
+              </el-tab-pane>
+              <el-tab-pane label="系统配置" name="system">
+                <el-form label-width="100px" style="max-width: 600px;">
+                  <el-form-item label="API地址">
+                    <el-input v-model="channelConfigForm.apiUrl" placeholder="请输入API地址"></el-input>
+                  </el-form-item>
+                  <el-form-item label="回调地址">
+                    <el-input v-model="channelConfigForm.callbackUrl" placeholder="请输入回调地址"></el-input>
+                  </el-form-item>
+                  <el-form-item label="接口版本">
+                    <el-input v-model="channelConfigForm.version" placeholder="如：V1.0、V2.0"></el-input>
+                  </el-form-item>
+                  <el-form-item label="签名算法">
+                    <el-select v-model="channelConfigForm.signAlgorithm" placeholder="请选择" style="width: 100%;">
+                      <el-option label="SM3" value="SM3"></el-option>
+                      <el-option label="MD5" value="MD5"></el-option>
+                      <el-option label="SM2" value="SM2"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="加密算法">
+                    <el-select v-model="channelConfigForm.encryptAlgorithm" placeholder="请选择" style="width: 100%;">
+                      <el-option label="SM4" value="SM4"></el-option>
+                      <el-option label="AES" value="AES"></el-option>
+                      <el-option label="数字信封(SM4+SM2)" value="SM4_SM2"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="CA证书">
+                    <el-upload>
+                      <el-button>上传证书</el-button>
+                    </el-upload>
+                  </el-form-item>
+                </el-form>
+              </el-tab-pane>
+              <el-tab-pane label="业务规则" name="rules">
+                <div style="margin-bottom: 16px;">
+                  <el-button type="primary">新增规则</el-button>
+                </div>
+                <el-table :data="channelRulesList" border>
+                  <el-table-column prop="ruleName" label="规则名称"></el-table-column>
+                  <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
+                  <el-table-column prop="minAmount" label="最低金额" width="100"></el-table-column>
+                  <el-table-column prop="maxAmount" label="最高金额" width="100"></el-table-column>
+                  <el-table-column prop="feeRate" label="费率" width="80"></el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="120">
+                    <template #default="scope">
+                      <el-button type="primary" link>编辑</el-button>
+                      <el-button type="danger" link>删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-tab-pane>
+              <el-tab-pane label="出函机构" name="agency">
+                <div style="margin-bottom: 16px;">
+                  <el-button type="primary">开通机构</el-button>
+                </div>
+                <el-table :data="channelAgencyList" border>
+                  <el-table-column prop="agencyName" label="机构名称"></el-table-column>
+                  <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
+                  <el-table-column prop="guaranteeTypes" label="支持保函类型" width="200">
+                    <template #default="scope">
+                      <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small" style="margin-right: 4px;">{{ t }}</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
+                  <el-table-column label="操作" width="100">
+                    <template #default="scope">
+                      <el-button type="primary" link>配置</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-tab-pane>
+              <el-tab-pane label="统计" name="stats">
+                <div class="stats-section">
+                  <div class="stats-card">
+                    <div class="stats-title">今日数据</div>
+                    <div class="stats-item">
+                      <span>投保申请</span>
+                      <span style="font-weight: 600;">15</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>成功出函</span>
+                      <span style="font-weight: 600;">12</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>保费收入</span>
+                      <span style="font-weight: 600; color: #67C23A;">¥ 8,500</span>
+                    </div>
+                  </div>
+                  <div class="stats-card">
+                    <div class="stats-title">本月数据</div>
+                    <div class="stats-item">
+                      <span>投保申请</span>
+                      <span style="font-weight: 600;">156</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>成功出函</span>
+                      <span style="font-weight: 600;">142</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>保费收入</span>
+                      <span style="font-weight: 600; color: #67C23A;">¥ 85,000</span>
+                    </div>
+                  </div>
+                  <div class="stats-card">
+                    <div class="stats-title">累计数据</div>
+                    <div class="stats-item">
+                      <span>投保申请</span>
+                      <span style="font-weight: 600;">2,856</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>成功出函</span>
+                      <span style="font-weight: 600;">2,691</span>
+                    </div>
+                    <div class="stats-item">
+                      <span>保费收入</span>
+                      <span style="font-weight: 600; color: #67C23A;">¥ 1,256,800</span>
+                    </div>
+                  </div>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
           </div>
         </div>
 
@@ -1603,6 +1812,7 @@
       setup() {
         const currentView = ref('dashboard');
         const agencyConfigTab = ref('base');
+        const channelTab = ref('base'); // 交易平台页签
         // Hash路由支持
         const initFromHash = () => {
           const hash = window.location.hash.slice(1);
@@ -1981,11 +2191,25 @@
 
         // 通道配置表单
         const channelConfigForm = ref({
-          system: 'sl',
-          apiUrl: 'https://api.example.com',
+          name: '数字泸州公共资源交易',
+          code: 'SL',
+          region: '四川省泸州市',
+          contact: '张三',
+          phone: '13800138000',
+          status: 1,
+          apiUrl: 'https://api.lzggzy.gov.cn/',
+          callbackUrl: 'https://callback.example.com/lz',
+          version: 'V2.0',
           signAlgorithm: 'SM3',
-          encryptAlgorithm: 'SM4'
+          encryptAlgorithm: 'SM4_SM2'
         });
+
+        // 交易平台业务规则列表
+        const channelRulesList = ref([
+          { ruleName: '投标保证金限额', guaranteeType: '投标保函', minAmount: 0, maxAmount: 800000, feeRate: '0.5%', status: 1 },
+          { ruleName: '履约保证金比例', guaranteeType: '履约保函', minAmount: 0, maxAmount: 0, feeRate: '5%-10%', status: 1 },
+          { ruleName: '工程质量保证金', guaranteeType: '工程质量保证金', minAmount: 0, maxAmount: 0, feeRate: '3%', status: 1 }
+        ]);
 
         const roleList = ref([
           { name: '管理员', code: 'ADMIN', userCount: 1, description: '系统管理员，拥有全部权限', createTime: '2023-01-01' },
@@ -2059,6 +2283,8 @@
           channelFeeList,
           keyList,
           channelConfigForm,
+          channelRulesList,
+          channelTab,
           newAgencyForm,
           newChannelForm,
           openAgencyForm,
