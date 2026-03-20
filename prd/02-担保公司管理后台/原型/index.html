@@ -1087,23 +1087,51 @@
                 </el-table>
               </el-tab-pane>
               <el-tab-pane label="出函机构" name="agency">
-                <div style="margin-bottom: 16px;">
-                  <el-button type="primary" @click="openNewChannelAgencyDialog()">新增机构</el-button>
+                <!-- 区域1: 交易平台开通的机构列表 -->
+                <div style="margin-bottom: 24px;">
+                  <div style="font-weight: 600; margin-bottom: 12px; color: #409EFF;">已开通机构</div>
+                  <div style="margin-bottom: 16px;">
+                    <el-button type="primary" @click="openNewChannelAgencyDialog()">新增机构</el-button>
+                  </div>
+                  <el-table :data="channelAgencyList" border style="width: 100%;">
+                    <el-table-column prop="agencyName" label="机构名称"></el-table-column>
+                    <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
+                    <el-table-column prop="guaranteeTypes" label="开通保函类型" min-width="200">
+                      <template #default="scope">
+                        <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small"
+                          :type="t === '投标保函' ? 'primary' : t === '履约保函' ? 'success' : t === '工程质量保证金' ? 'warning' : t === '农民工工资支付' ? 'danger' : 'info'"
+                          style="margin-right: 4px;">{{ t }}</el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="80">
+                      <template #default="scope">
+                        <el-button type="primary" link>编辑</el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
                 </div>
-                <el-table :data="channelAgencyList" border style="width: 100%;">
-                  <el-table-column prop="agencyName" label="机构名称"></el-table-column>
-                  <el-table-column prop="agencyType" label="机构类型" width="100"></el-table-column>
-                  <el-table-column prop="guaranteeTypes" label="开通保函类型" min-width="200">
-                    <template #default="scope">
-                      <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small" style="margin-right: 4px;">{{ t }}</el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="80">
-                    <template #default="scope">
-                      <el-button type="primary" link>编辑</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
+
+                <!-- 区域2: 可用出函机构列表 -->
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 12px; color: #409EFF;">可用出函机构</div>
+                  <el-table :data="agencyList" border style="width: 100%;">
+                    <el-table-column prop="name" label="机构名称"></el-table-column>
+                    <el-table-column prop="type" label="机构类型" width="100">
+                      <template #default="scope">
+                        <el-tag :type="scope.row.typeTag" size="small">{{ scope.row.type }}</el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="guaranteeTypes" label="支持保函类型" min-width="200">
+                      <template #default="scope">
+                        <el-tag v-for="t in scope.row.guaranteeTypes" :key="t" size="small"
+                          :type="t === '投标保函' ? 'primary' : t === '履约保函' ? 'success' : t === '工程质量保证金' ? 'warning' : t === '农民工工资支付' ? 'danger' : 'info'"
+                          style="margin-right: 4px;">{{ t }}</el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="contact" label="联系人" width="80"></el-table-column>
+                    <el-table-column prop="phone" label="联系方式" width="120"></el-table-column>
+                  </el-table>
+                </div>
 
                 <!-- 新增机构弹窗 -->
                 <el-dialog v-model="openChannelAgencyDialogVisible" title="新增机构" width="600px">
@@ -1112,7 +1140,9 @@
                       <el-input v-model="newChannelAgencyForm.channelName" disabled style="width: 100%;"></el-input>
                     </el-form-item>
                     <el-form-item label="支持保函类型">
-                      <el-tag v-for="t in newChannelAgencyForm.channelGuaranteeTypes" :key="t" size="small" style="margin-right: 8px;">{{ t }}</el-tag>
+                      <el-tag v-for="t in newChannelAgencyForm.channelGuaranteeTypes" :key="t" size="small"
+                        :type="t === '投标保函' ? 'primary' : t === '履约保函' ? 'success' : t === '工程质量保证金' ? 'warning' : t === '农民工工资支付' ? 'danger' : 'info'"
+                        style="margin-right: 8px;">{{ t }}</el-tag>
                     </el-form-item>
                     <el-divider></el-divider>
                     <el-form-item label="选择出函机构" required>
@@ -1127,7 +1157,10 @@
                     <el-form-item label="机构支持类型">
                       <div style="color: #909399; font-size: 12px;">该机构支持以下保函类型，请勾选本平台开通的类型：</div>
                       <el-checkbox-group v-model="newChannelAgencyForm.guaranteeTypes">
-                        <el-checkbox v-for="type in newChannelAgencyForm.agencySupportTypes" :key="type" :label="type" :disabled="!newChannelAgencyForm.channelGuaranteeTypes.includes(type)">{{ type }}</el-checkbox>
+                        <el-checkbox v-for="type in newChannelAgencyForm.agencySupportTypes" :key="type" :label="type" :disabled="!newChannelAgencyForm.channelGuaranteeTypes.includes(type)">
+                          <el-tag size="small"
+                            :type="type === '投标保函' ? 'primary' : type === '履约保函' ? 'success' : type === '工程质量保证金' ? 'warning' : type === '农民工工资支付' ? 'danger' : 'info'">{{ type }}</el-tag>
+                        </el-checkbox>
                       </el-checkbox-group>
                     </el-form-item>
                   </el-form>
@@ -2308,7 +2341,9 @@
         const agencyGuaranteeTypeMap = {
           'ccb': ['投标保函', '履约保函'],
           'pingan': ['投标保函', '履约保函', '农民工工资支付'],
-          'guarantee': ['投标保函', '履约保函', '工程质量保证金', '预付款保函']
+          'cpic': ['投标保函', '履约保函', '工程质量保证金'],
+          'guarantee1': ['投标保函', '履约保函'],
+          'guarantee2': ['投标保函', '履约保函', '农民工工资支付']
         };
 
         const handleAgencyChange = (agencyId) => {
