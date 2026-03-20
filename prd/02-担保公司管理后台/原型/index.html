@@ -1190,20 +1190,9 @@
               <div class="table-card">
                 <el-table :data="agencyChannelList" :table-layout="'auto'">
                   <el-table-column prop="channelName" label="交易平台" min-width="150"></el-table-column>
-                  <el-table-column prop="channelCode" label="平台编码" min-width="120"></el-table-column>
-                  <el-table-column prop="apiUrl" label="API地址" min-width="200"></el-table-column>
-                  <el-table-column prop="status" label="状态" min-width="80">
+                  <el-table-column label="保函类型" min-width="300">
                     <template #default="scope">
-                      <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-                        {{ scope.row.status === 1 ? '启用' : '停用' }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="openTime" label="开通时间" min-width="160"></el-table-column>
-                  <el-table-column label="操作" min-width="120" fixed="right">
-                    <template #default="scope">
-                      <el-button type="primary" link>配置</el-button>
-                      <el-button type="danger" link>关闭</el-button>
+                      <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small" style="margin-right: 6px; margin-bottom: 4px;">{{ type }}</el-tag>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -1436,15 +1425,12 @@
               <div class="table-card">
                 <el-table :data="agencyChannelList">
                   <el-table-column prop="channelName" label="交易平台"></el-table-column>
-                  <el-table-column prop="channelCode" label="平台编码" width="150"></el-table-column>
-                  <el-table-column prop="status" label="状态" width="80">
+                  <el-table-column prop="region" label="地区" width="150"></el-table-column>
+                  <el-table-column label="保函类型">
                     <template #default="scope">
-                      <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-                        {{ scope.row.status === 1 ? '启用' : '停用' }}
-                      </el-tag>
+                      <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small" style="margin-right: 6px; margin-bottom: 4px;">{{ type }}</el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="openTime" label="开通时间" width="180"></el-table-column>
                 </el-table>
               </div>
             </el-tab-pane>
@@ -1785,9 +1771,9 @@
 
         // 出函机构开通的交易系统列表
         const agencyChannelList = ref([
-          { channelName: '数字泸州', apiUrl: 'https://api.lzggzy.gov.cn', signType: 'SM3', status: 1, openTime: '2023-01-01 10:00' },
-          { channelName: '江西省', apiUrl: 'https://api.jxggzy.gov.cn', signType: 'SM4', status: 1, openTime: '2023-03-01 10:00' },
-          { channelName: '眉山市', apiUrl: 'https://api.msggzy.gov.cn', signType: 'SM3', status: 1, openTime: '2023-06-01 10:00' }
+          { channelName: '数字泸州', region: '四川省泸州市', guaranteeTypes: ['投标保函', '履约保函', '工程质量保证金'] },
+          { channelName: '江西省', region: '江西省南昌市', guaranteeTypes: ['投标保函', '履约保函'] },
+          { channelName: '眉山市', region: '四川省眉山市', guaranteeTypes: ['投标保函', '农民工工资支付'] }
         ]);
 
         // 交易系统列表
