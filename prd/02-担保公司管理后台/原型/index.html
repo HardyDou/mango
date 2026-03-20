@@ -1625,6 +1625,7 @@
     const app = createApp({
       setup() {
         const currentView = ref('dashboard');
+        const agencyConfigTab = ref('base');
         // Hash路由支持
         const initFromHash = () => {
           const hash = window.location.hash.slice(1);
@@ -1829,9 +1830,6 @@
           apiUrl: ''
         });
         const openAgencyDialogVisible = ref(false);
-
-        // 出函机构配置标签页
-        const agencyConfigTab = ref('base');
 
         // 监听标签页切换，同步更新hash
         watch(agencyConfigTab, (newTab) => {
