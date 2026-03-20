@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; overflow-x: hidden; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; }
-    #app { min-height: 100vh; }
+    #app { min-height: 100vh; width: 100%; }
 
     /* 顶部导航 */
     .header { background: #ffffff; height: 50px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #e4e7ed; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
@@ -36,7 +37,7 @@
     :deep(.el-sub-menu .el-menu-item.is-active) { background: #ecf5ff; color: #409EFF; font-weight: 600; }
     :deep(.el-menu--collapse) { width: 64px; }
     :deep(.el-menu--collapse .el-sub-menu) { margin: 0; }
-    .content { flex: 1; margin-left: 220px; padding: 20px; }
+    .content { flex: 1; margin-left: 220px; padding: 20px; width: calc(100% - 220px); overflow-x: hidden; }
 
     /* 面包屑 */
     .breadcrumb { margin-bottom: 20px; }
@@ -50,7 +51,7 @@
     .dash-label { color: #909399; font-size: 14px; margin-top: 4px; }
 
     /* 表格卡片 */
-    .table-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .table-card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow-x: auto; }
 
     /* 筛选栏 */
     .filter-bar { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; width: 100%; box-sizing: border-box; }
