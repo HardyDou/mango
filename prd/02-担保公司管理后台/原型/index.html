@@ -461,8 +461,40 @@
         <div v-if="currentView === 'guarantee-list'">
           <div class="filter-bar">
             <div class="filter-item">
+              <span class="filter-label">保函类型：</span>
+              <el-select v-model="filterParams.guaranteeType" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="投标保函" value="投标保函"></el-option>
+                <el-option label="履约保函" value="履约保函"></el-option>
+                <el-option label="工程质量保证金" value="工程质量保证金"></el-option>
+                <el-option label="农民工工资支付" value="农民工工资支付"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">投标人：</span>
+              <el-input v-model="filterParams.guaranteeBidder" placeholder="请输入投标人"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">交易平台：</span>
+              <el-select v-model="filterParams.guaranteeChannel" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="数字泸州" value="数字泸州"></el-option>
+                <el-option label="江西省" value="江西省"></el-option>
+                <el-option label="公共资源中心" value="公共资源中心"></el-option>
+                <el-option label="招标平台" value="招标平台"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">项目名称：</span>
+              <el-input v-model="filterParams.guaranteeProject" placeholder="请输入项目名称"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">开函时间：</span>
+              <el-date-picker v-model="filterParams.issueTimeRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+            </div>
+            <div class="filter-item">
               <span class="filter-label">状态：</span>
-              <el-select v-model="filterParams.guaranteeStatus" placeholder="全部" style="width: 120px;">
+              <el-select v-model="filterParams.guaranteeStatus" placeholder="全部">
                 <el-option label="全部" value=""></el-option>
                 <el-option label="出函中" value="processing"></el-option>
                 <el-option label="已开具" value="success"></el-option>
@@ -470,14 +502,24 @@
                 <el-option label="已过期" value="expired"></el-option>
               </el-select>
             </div>
-            <el-input v-model="filterParams.keyword" placeholder="搜索项目/保函编号" style="width: 200px;" prefix-icon="Search"></el-input>
+            <el-button type="primary">搜索</el-button>
+            <el-button>重置</el-button>
+            <el-button type="primary">导出</el-button>
           </div>
 
           <div class="table-card">
             <el-table :data="guaranteeList">
               <el-table-column prop="no" label="保函编号" width="180"></el-table-column>
+              <el-table-column prop="guaranteeType" label="保函类型" width="140">
+                <template #default="scope">
+                  <el-tag :type="scope.row.guaranteeType === '投标保函' ? 'primary' : scope.row.guaranteeType === '履约保函' ? 'success' : scope.row.guaranteeType === '工程质量保证金' ? 'warning' : scope.row.guaranteeType === '农民工工资支付' ? 'danger' : 'info'" size="small">
+                    {{ scope.row.guaranteeType }}
+                  </el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="projectName" label="项目名称"></el-table-column>
               <el-table-column prop="bidder" label="投标人"></el-table-column>
+              <el-table-column prop="channel" label="交易平台" width="120"></el-table-column>
               <el-table-column prop="amount" label="保证金" width="100"></el-table-column>
               <el-table-column prop="premium" label="保费" width="100"></el-table-column>
               <el-table-column prop="issueDate" label="开具时间" width="120"></el-table-column>
@@ -495,6 +537,10 @@
                 </template>
               </el-table-column>
             </el-table>
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="color: #909399; font-size: 14px;">共 3 条记录，第 1/1 页</div>
+              <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="3" :page-sizes="[10, 20, 50, 100]" :page-size="10"></el-pagination>
+            </div>
           </div>
         </div>
 
@@ -2162,7 +2208,7 @@
           }
         });
         const dialogVisible = ref(false);
-        const filterParams = ref({ status: '', keyword: '', guaranteeStatus: '', bidder: '', channel: '', projectName: '', bidSection: '', applyTimeRange: [] });
+        const filterParams = ref({ status: '', keyword: '', guaranteeStatus: '', bidder: '', channel: '', projectName: '', bidSection: '', applyTimeRange: [], guaranteeType: '', guaranteeBidder: '', guaranteeChannel: '', guaranteeProject: '', issueTimeRange: [] });
         const reviewForm = ref({ riskResult: 'pass', opinion: '' });
         const quotaForm = ref({ totalQuota: '10000000', maxPerQuota: '800000', warningThreshold: '80' });
 
@@ -2225,9 +2271,9 @@
         ]);
 
         const guaranteeList = ref([
-          { no: 'BG2024010001', projectName: 'XX工程项目', bidder: '某某建筑有限公司', amount: '800,000', premium: '4,000', issueDate: '2024-01-15', expireDate: '2025-01-15', status: 'done', statusText: '已发放' },
-          { no: 'BG2024010002', projectName: 'YY采购项目', bidder: '某某商贸公司', amount: '500,000', premium: '2,500', issueDate: '2024-01-14', expireDate: '2025-01-14', status: 'success', statusText: '已开具' },
-          { no: 'BG2024010003', projectName: 'ZZ工程', bidder: '某某建设', amount: '200,000', premium: '1,000', issueDate: '2024-01-10', expireDate: '2025-01-10', status: 'expired', statusText: '已过期' }
+          { no: 'BG2024010001', guaranteeType: '投标保函', projectName: 'XX工程项目', bidder: '某某建筑有限公司', channel: '数字泸州', amount: '800,000', premium: '4,000', issueDate: '2024-01-15', expireDate: '2025-01-15', status: 'done', statusText: '已发放' },
+          { no: 'BG2024010002', guaranteeType: '履约保函', projectName: 'YY采购项目', bidder: '某某商贸公司', channel: '江西省', amount: '3,000,000', premium: '15,000', issueDate: '2024-01-14', expireDate: '2026-01-14', status: 'success', statusText: '已开具' },
+          { no: 'BG2024010003', guaranteeType: '工程质量保证金', projectName: 'ZZ工程', bidder: '某某建设', channel: '公共资源中心', amount: '200,000', premium: '1,000', issueDate: '2024-01-10', expireDate: '2026-01-10', status: 'expired', statusText: '已过期' }
         ]);
 
         const surrenderList = ref([
