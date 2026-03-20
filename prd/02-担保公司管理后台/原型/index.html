@@ -90,6 +90,10 @@
     .status-done { background: #f0f9f0; color: #67C23A; }
     .status-reject { background: #fef0f0; color: #F56C6C; }
 
+    /* 页面标题 */
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 18px; font-weight: 600; }
+
     /* 响应式 */
     @media (max-width: 1200px) {
       .dashboard-cards { grid-template-columns: repeat(2, 1fr); }
@@ -1832,6 +1836,11 @@
           isDetailMode.value = true;
         };
 
+        const closeAgencyDetail = () => {
+          isDetailMode.value = false;
+          selectedAgency.value = null;
+        };
+
         // 密钥列表
         const keyList = ref([
           { systemName: '数字泸州', keyType: '签名密钥', keyName: 'AppKey', keyValue: 'abc123456789', expireDate: '2025-12-31', status: '正常' },
@@ -1940,7 +1949,8 @@
           openCostDialog,
           handleSaveCost,
           handleDeleteCost,
-          viewAgencyDetail
+          viewAgencyDetail,
+          closeAgencyDetail
         };
       }
     });
