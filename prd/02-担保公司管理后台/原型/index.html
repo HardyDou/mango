@@ -1325,15 +1325,15 @@
                 <div style="color: #909399; font-size: 12px; margin-bottom: 10px;">配置金额区间及对应的费率，区间为左闭右开 [起始金额, 终止金额)</div>
                 <div v-for="(item, index) in costForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                   <span style="color: #909399; width: 60px;">阶梯{{ index + 1 }}</span>
-                  <el-input-number v-model="item.minAmount" :min="0" :precision="2" placeholder="起始" style="width: 140px;"></el-input-number>
+                  <el-input v-model="item.minAmount" placeholder="起始" style="width: 120px;"></el-input>
                   <span style="color: #909399;">-</span>
-                  <el-input-number v-model="item.maxAmount" :min="0" :precision="2" placeholder="终止" style="width: 140px;"></el-input-number>
+                  <el-input v-model="item.maxAmount" placeholder="终止" style="width: 120px;"></el-input>
                   <span style="color: #909399;">元，费率</span>
-                  <el-input-number v-model="item.rate" :min="0" :precision="3" placeholder="费率" style="width: 100px;"></el-input-number>
+                  <el-input v-model="item.rate" placeholder="费率" style="width: 80px;"></el-input>
                   <span style="color: #909399;">%</span>
                   <el-button type="danger" link @click="costForm.ladderRates.splice(index, 1)">删除</el-button>
                 </div>
-                <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: 0, maxAmount: 0, rate: 0})">+ 添加阶梯</el-button>
+                <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: '', maxAmount: '', rate: ''})">+ 添加阶梯</el-button>
               </el-form-item>
 
               <!-- 保底累进 -->
@@ -1925,7 +1925,7 @@
           singleLimit: '',
           costType: '固定费率',
           rate: '',
-          ladderRates: [{minAmount: 0, maxAmount: 0, rate: 0}],
+          ladderRates: [{minAmount: '', maxAmount: '', rate: ''}],
           baseFee: '',
           excessRate: '',
           minFee: '',
@@ -1947,7 +1947,7 @@
               creditLimit: row.creditLimit === '-1' ? '' : row.creditLimit,
               singleLimitType: row.singleLimit === '-1' ? 'unlimited' : 'limited',
               singleLimit: row.singleLimit === '-1' ? '' : row.singleLimit,
-              ladderRates: row.ladderRates && row.ladderRates.length > 0 ? row.ladderRates : [{minAmount: 0, maxAmount: 0, rate: 0}],
+              ladderRates: row.ladderRates && row.ladderRates.length > 0 ? row.ladderRates : [{minAmount: '', maxAmount: '', rate: ''}],
               baseFee: row.baseFee || '',
               excessRate: row.excessRate || ''
             };
@@ -1963,7 +1963,7 @@
               singleLimit: '',
               costType: '固定费率',
               rate: '',
-              ladderRates: [{minAmount: 0, maxAmount: 0, rate: 0}],
+              ladderRates: [{minAmount: '', maxAmount: '', rate: ''}],
               baseFee: '',
               excessRate: '',
               minFee: '',
