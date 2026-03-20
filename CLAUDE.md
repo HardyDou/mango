@@ -92,3 +92,34 @@ Each upstream platform requires independent configuration:
 - Check upstream interface specifications in `docs/01_上游交易系统对接/`
 - Review downstream interface specs in `docs/03_下游出函机构/`
 - Reference AGENTS.md for technical overview
+
+## PRD Output
+
+Product requirements and prototypes in `prd/`:
+
+```
+prd/
+├── plan_prd.md                           # PRD development plan
+├── 01-投标人门户/
+│   ├── PRD-投标人门户.md                 # Portal system PRD
+│   └── 原型/
+│       └── index.html                    # Vue3 + Element Plus prototype
+└── 02-担保公司管理后台/
+    ├── PRD-担保公司管理后台.md           # Admin system PRD
+    └── 原型/
+        └── index.html                    # Vue3 + Element Plus prototype
+```
+
+### Portal System (投标人门户)
+- **Target Users**: Bidders (enterprises)
+- **Core Features**: Project hall, Application, Guarantee management, Order management, Invoice management
+
+### Admin System (担保公司管理后台)
+- **Target Users**: Guarantee companies, banks, insurance companies
+- **Core Features**: Dashboard, Application review, Guarantee issuance, Surrender management, Risk control, Finance reports
+
+### Technology Stack (Frontend)
+- Vue 3 + Element Plus
+- Vite (build tool)
+- Vue Router 4
+- Pinia (state management)
