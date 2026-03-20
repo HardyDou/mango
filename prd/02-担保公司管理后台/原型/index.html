@@ -1003,30 +1003,12 @@
             </el-tab-pane>
 
             <el-tab-pane label="系统配置" name="system">
-              <div class="detail-card">
+              <!-- 接口配置 -->
+              <div class="detail-card" style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">接口配置</div>
                 <el-form label-width="140px">
                   <el-form-item label="API接口地址">
                     <el-input v-model="agencyConfigForm.apiUrl" placeholder="机构提供的API地址" style="width: 400px;"></el-input>
-                  </el-form-item>
-                  <el-form-item label="AppKey">
-                    <el-input v-model="agencyConfigForm.appKey" placeholder="应用密钥" style="width: 400px;"></el-input>
-                  </el-form-item>
-                  <el-form-item label="AppSecret">
-                    <el-input v-model="agencyConfigForm.appSecret" placeholder="应用密钥" style="width: 400px;" show-password></el-input>
-                  </el-form-item>
-                  <el-form-item label="签名算法">
-                    <el-select v-model="agencyConfigForm.signAlgorithm" placeholder="选择签名算法" style="width: 200px;">
-                      <el-option label="SM3" value="SM3"></el-option>
-                      <el-option label="MD5" value="MD5"></el-option>
-                      <el-option label="SM2" value="SM2"></el-option>
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="加密算法">
-                    <el-select v-model="agencyConfigForm.encryptAlgorithm" placeholder="选择加密算法" style="width: 200px;">
-                      <el-option label="SM4" value="SM4"></el-option>
-                      <el-option label="AES" value="AES"></el-option>
-                      <el-option label="不加密" value="none"></el-option>
-                    </el-select>
                   </el-form-item>
                   <el-form-item label="回调地址">
                     <el-input v-model="agencyConfigForm.callbackUrl" placeholder="接收通知的回调地址" style="width: 400px;"></el-input>
@@ -1048,6 +1030,63 @@
                       <el-option label="GBK" value="GBK"></el-option>
                     </el-select>
                   </el-form-item>
+                </el-form>
+              </div>
+              <!-- 安全配置 -->
+              <div class="detail-card" style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #67C23A;">安全配置</div>
+                <el-form label-width="140px">
+                  <el-form-item label="AppKey">
+                    <el-input v-model="agencyConfigForm.appKey" placeholder="应用密钥" style="width: 400px;"></el-input>
+                  </el-form-item>
+                  <el-form-item label="AppSecret">
+                    <el-input v-model="agencyConfigForm.appSecret" placeholder="应用密钥" style="width: 400px;" show-password></el-input>
+                  </el-form-item>
+                  <el-form-item label="签名算法">
+                    <el-select v-model="agencyConfigForm.signAlgorithm" placeholder="选择签名算法" style="width: 200px;">
+                      <el-option label="SM3" value="SM3"></el-option>
+                      <el-option label="MD5" value="MD5"></el-option>
+                      <el-option label="SM2" value="SM2"></el-option>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="加密算法">
+                    <el-select v-model="agencyConfigForm.encryptAlgorithm" placeholder="选择加密算法" style="width: 200px;">
+                      <el-option label="SM4" value="SM4"></el-option>
+                      <el-option label="AES" value="AES"></el-option>
+                      <el-option label="不加密" value="none"></el-option>
+                    </el-select>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <!-- 证书配置 -->
+              <div class="detail-card" style="margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #E6A23C;">证书配置</div>
+                <el-form label-width="140px">
+                  <el-form-item label="CA证书">
+                    <el-upload action="#" :auto-upload="false" accept=".cer,.crt,.pem">
+                      <el-button>选择证书文件</el-button>
+                      <template #tip>
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">支持 .cer, .crt, .pem 格式</div>
+                      </template>
+                    </el-upload>
+                  </el-form-item>
+                  <el-form-item label="私钥文件">
+                    <el-upload action="#" :auto-upload="false" accept=".key,.pem">
+                      <el-button>选择私钥文件</el-button>
+                      <template #tip>
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">支持 .key, .pem 格式</div>
+                      </template>
+                    </el-upload>
+                  </el-form-item>
+                  <el-form-item label="证书密码">
+                    <el-input v-model="agencyConfigForm.certPassword" placeholder="证书密码" style="width: 300px;" show-password></el-input>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <!-- 状态配置 -->
+              <div class="detail-card">
+                <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">状态配置</div>
+                <el-form label-width="140px">
                   <el-form-item label="是否启用">
                     <el-switch v-model="agencyConfigForm.enabled"></el-switch>
                   </el-form-item>
@@ -1740,6 +1779,7 @@
           timeout: 30,
           retryCount: 3,
           charset: 'UTF-8',
+          certPassword: '',
           enabled: true,
           status: 1
         });
