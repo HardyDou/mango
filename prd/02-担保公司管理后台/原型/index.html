@@ -1030,52 +1030,6 @@
 
             <el-tab-pane label="业务配置" name="business">
               <div style="margin-bottom: 16px;">
-                <el-button type="primary">添加保函类型</el-button>
-              </div>
-              <div class="table-card">
-                <el-table :data="agencyCostList">
-                  <el-table-column prop="channelName" label="交易系统"></el-table-column>
-                  <el-table-column prop="guaranteeType" label="保函类型" width="120"></el-table-column>
-                  <el-table-column prop="costType" label="计费方式" width="120"></el-table-column>
-                  <el-table-column prop="rate" label="成本费率/金额"></el-table-column>
-                  <el-table-column prop="minFee" label="最低" width="80"></el-table-column>
-                  <el-table-column prop="maxFee" label="最高" width="80"></el-table-column>
-                  <el-table-column label="操作" width="120">
-                    <template #default="scope">
-                      <el-button type="primary" link>编辑</el-button>
-                      <el-button type="danger" link>删除</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-tab-pane>
-
-            <el-tab-pane label="交易平台" name="channel">
-              <div style="margin-bottom: 16px;">
-                <el-button type="primary">开通交易平台</el-button>
-              </div>
-              <div class="table-card">
-                <el-table :data="agencyChannelList">
-                  <el-table-column prop="channelName" label="交易平台"></el-table-column>
-                  <el-table-column prop="apiUrl" label="API地址"></el-table-column>
-                  <el-table-column prop="signType" label="签名方式" width="100"></el-table-column>
-                  <el-table-column prop="status" label="状态" width="80">
-                    <template #default="scope">
-                      <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="openTime" label="开通时间" width="160"></el-table-column>
-                  <el-table-column label="操作" width="100">
-                    <template #default="scope">
-                      <el-button type="danger" link>关闭</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-tab-pane>
-
-            <el-tab-pane label="业务配置" name="business">
-              <div style="margin-bottom: 16px;">
                 <el-button type="primary" @click="openCostDialog()">添加保函类型</el-button>
               </div>
               <div class="table-card">
