@@ -1192,7 +1192,9 @@
                   <el-table-column prop="channelName" label="交易平台" min-width="150"></el-table-column>
                   <el-table-column label="保函类型" min-width="300">
                     <template #default="scope">
-                      <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small" style="margin-right: 6px; margin-bottom: 4px;">{{ type }}</el-tag>
+                      <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small"
+                        :type="type === '投标保函' ? 'primary' : type === '履约保函' ? 'success' : type === '工程质量保证金' ? 'warning' : type === '农民工工资支付' ? 'danger' : type === '预付款保函' ? 'info' : ''"
+                        style="margin-right: 6px; margin-bottom: 4px;">{{ type }}</el-tag>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -1428,7 +1430,9 @@
                   <el-table-column prop="region" label="地区" width="150"></el-table-column>
                   <el-table-column label="保函类型">
                     <template #default="scope">
-                      <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small" style="margin-right: 6px; margin-bottom: 4px;">{{ type }}</el-tag>
+                      <el-tag v-for="type in scope.row.guaranteeTypes" :key="type" size="small"
+                        :type="type === '投标保函' ? 'primary' : type === '履约保函' ? 'success' : type === '工程质量保证金' ? 'warning' : type === '农民工工资支付' ? 'danger' : type === '预付款保函' ? 'info' : ''"
+                        style="margin-right: 6px; margin-bottom: 4px;">{{ type }}</el-tag>
                     </template>
                   </el-table-column>
                 </el-table>
