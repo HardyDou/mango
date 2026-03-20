@@ -576,33 +576,32 @@
                       </el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="ruleName" label="规则名称" width="150"></el-table-column>
-                  <el-table-column label="金额限制" width="150">
+                  <el-table-column label="单笔上限" width="100">
                     <template #default="scope">
-                      <span>{{ scope.row.minAmount ? scope.row.minAmount.toLocaleString() : '0' }} - {{ scope.row.maxAmount ? scope.row.maxAmount.toLocaleString() : '无限制' }}元</span>
+                      {{ scope.row.maxAmount ? scope.row.maxAmount.toLocaleString() + '元' : '无限制' }}
                     </template>
                   </el-table-column>
                   <el-table-column label="收费方式" width="100">
                     <template #default="scope">
-                      {{ scope.row.feeType === 'ratio' ? '比例' : scope.row.feeType === 'fixed' ? '固定金额' : '阶梯' }}
+                      <span v-if="scope.row.feeType === 'ratio'">固定费率</span>
+                      <span v-else-if="scope.row.feeType === 'ladder'">阶梯费率</span>
+                      <span v-else-if="scope.row.feeType === 'fixed'">按笔固定</span>
+                      <span v-else-if="scope.row.feeType === 'minimum'">保底累进</span>
+                      <span v-else>-</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="费率/金额" width="120">
+                  <el-table-column label="收费规则" min-width="180">
                     <template #default="scope">
-                      <span style="color: #E6A23C; font-weight: 600;">{{ scope.row.feeRate }}</span>
+                      <div style="color: #E6A23C; font-weight: 600;">{{ scope.row.feeRate }}</div>
+                      <div style="font-size: 12px; color: #909399;">
+                        最低{{ scope.row.feeMin || '0' }}元
+                        <span v-if="scope.row.feeMax">，最高{{ scope.row.feeMax }}元</span>
+                      </div>
                     </template>
                   </el-table-column>
-                  <el-table-column label="收费区间" width="120">
+                  <el-table-column label="保函有效期" width="100">
                     <template #default="scope">
-                      <span>{{ scope.row.feeMin || '0' }} - {{ scope.row.feeMax || '无限制' }}元</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="validityDays" label="有效期" width="80">
-                    <template #default="scope">{{ scope.row.validityDays }}天</template>
-                  </el-table-column>
-                  <el-table-column prop="status" label="状态" width="70">
-                    <template #default="scope">
-                      <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">{{ scope.row.status === 1 ? '启用' : '禁用' }}</el-tag>
+                      {{ scope.row.validityDays || '-' }}天
                     </template>
                   </el-table-column>
                 </el-table>
@@ -1050,33 +1049,32 @@
                       </el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="ruleName" label="规则名称" width="150"></el-table-column>
-                  <el-table-column label="金额限制" width="150">
+                  <el-table-column label="单笔上限" width="100">
                     <template #default="scope">
-                      <span>{{ scope.row.minAmount ? scope.row.minAmount.toLocaleString() : '0' }} - {{ scope.row.maxAmount ? scope.row.maxAmount.toLocaleString() : '无限制' }}元</span>
+                      {{ scope.row.maxAmount ? scope.row.maxAmount.toLocaleString() + '元' : '无限制' }}
                     </template>
                   </el-table-column>
                   <el-table-column label="收费方式" width="100">
                     <template #default="scope">
-                      {{ scope.row.feeType === 'ratio' ? '比例' : scope.row.feeType === 'fixed' ? '固定金额' : '阶梯' }}
+                      <span v-if="scope.row.feeType === 'ratio'">固定费率</span>
+                      <span v-else-if="scope.row.feeType === 'ladder'">阶梯费率</span>
+                      <span v-else-if="scope.row.feeType === 'fixed'">按笔固定</span>
+                      <span v-else-if="scope.row.feeType === 'minimum'">保底累进</span>
+                      <span v-else>-</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="费率/金额" width="120">
+                  <el-table-column label="收费规则" min-width="180">
                     <template #default="scope">
-                      <span style="color: #E6A23C; font-weight: 600;">{{ scope.row.feeRate }}</span>
+                      <div style="color: #E6A23C; font-weight: 600;">{{ scope.row.feeRate }}</div>
+                      <div style="font-size: 12px; color: #909399;">
+                        最低{{ scope.row.feeMin || '0' }}元
+                        <span v-if="scope.row.feeMax">，最高{{ scope.row.feeMax }}元</span>
+                      </div>
                     </template>
                   </el-table-column>
-                  <el-table-column label="收费区间" width="120">
+                  <el-table-column label="保函有效期" width="100">
                     <template #default="scope">
-                      <span>{{ scope.row.feeMin || '0' }} - {{ scope.row.feeMax || '无限制' }}元</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="validityDays" label="有效期" width="80">
-                    <template #default="scope">{{ scope.row.validityDays }}天</template>
-                  </el-table-column>
-                  <el-table-column prop="status" label="状态" width="70">
-                    <template #default="scope">
-                      <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
+                      {{ scope.row.validityDays || '-' }}天
                     </template>
                   </el-table-column>
                   <el-table-column label="操作" width="100">
@@ -2373,10 +2371,11 @@
 
         // 交易平台业务规则列表
         const channelRulesList = ref([
-          { ruleName: '投标保证金限额', guaranteeType: '投标保函', feeType: 'ratio', minAmount: 0, maxAmount: 800000, feeRate: '0.5%', feeMin: 300, feeMax: 4000, validityDays: 90, status: 1 },
-          { ruleName: '履约保证金比例', guaranteeType: '履约保函', feeType: 'ratio', minAmount: 0, maxAmount: 0, feeRate: '5%-10%', feeMin: 500, feeMax: null, validityDays: 365, status: 1 },
-          { ruleName: '工程质量保证金', guaranteeType: '工程质量保证金', feeType: 'ratio', minAmount: 0, maxAmount: 0, feeRate: '3%', feeMin: 500, feeMax: null, validityDays: 730, status: 1 },
-          { ruleName: '农民工工资支付', guaranteeType: '农民工工资支付', feeType: 'fixed', minAmount: 0, maxAmount: 0, feeRate: '500元/笔', feeMin: 500, feeMax: 500, validityDays: 365, status: 1 }
+          { guaranteeType: '投标保函', feeType: 'ladder', maxAmount: 800000, feeRate: '0.5%-0.8%', feeMin: 200, feeMax: 5000, validityDays: 90, status: 1 },
+          { guaranteeType: '投标保函', feeType: 'minimum', maxAmount: 800000, feeRate: '保底100+0.3%', feeMin: 100, feeMax: null, validityDays: 90, status: 1 },
+          { guaranteeType: '履约保函', feeType: 'ratio', maxAmount: 0, feeRate: '0.6%', feeMin: 500, feeMax: null, validityDays: 365, status: 1 },
+          { guaranteeType: '工程质量保证金', feeType: 'ratio', maxAmount: 0, feeRate: '3%', feeMin: 500, feeMax: null, validityDays: 730, status: 1 },
+          { guaranteeType: '农民工工资支付', feeType: 'fixed', maxAmount: 0, feeRate: '500元/笔', feeMin: 500, feeMax: 500, validityDays: 365, status: 1 }
         ]);
 
         const roleList = ref([
