@@ -1210,61 +1210,110 @@
               </div>
             </el-tab-pane>
 
-            <el-tab-pane label="业务概览" name="quota">
-              <!-- 汇总信息 -->
-              <div class="stats-section" style="margin-bottom: 20px;">
-                <div class="stats-card">
-                  <div class="stats-title">整体概览</div>
-                  <div class="stats-item">
-                    <span>在保笔数</span>
-                    <span style="font-weight: 600;">45 笔</span>
-                  </div>
-                  <div class="stats-item">
-                    <span>在保金额</span>
-                    <span style="font-weight: 600;">¥ 3,200,000</span>
-                  </div>
-                  <div class="stats-item">
-                    <span>本月出函</span>
-                    <span style="font-weight: 600; color: #409EFF;">12 笔</span>
-                  </div>
-                  <div class="stats-item">
-                    <span>本月收入</span>
-                    <span style="font-weight: 600; color: #67C23A;">¥ 28,500</span>
+            <el-tab-pane label="纵览" name="quota">
+              <!-- 顶部汇总卡片 -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+                <div class="dash-card">
+                  <div class="dash-icon" style="background: #e8f4ff; color: #409EFF;"><el-icon :size="28"><Ticket /></el-icon></div>
+                  <div class="dash-info">
+                    <div class="dash-value">45</div>
+                    <div class="dash-label">在保笔数</div>
                   </div>
                 </div>
-                <div class="stats-card">
-                  <div class="stats-title">额度概况</div>
-                  <div class="stats-item">
-                    <span>总额度</span>
-                    <span style="font-weight: 600;">¥ 10,000,000</span>
+                <div class="dash-card">
+                  <div class="dash-icon" style="background: #fef0f0; color: #F56C6C;"><el-icon :size="28"><Money /></el-icon></div>
+                  <div class="dash-info">
+                    <div class="dash-value">¥ 320万</div>
+                    <div class="dash-label">在保金额</div>
                   </div>
-                  <div class="stats-item">
-                    <span>已用额度</span>
-                    <span style="font-weight: 600; color: #E6A23C;">¥ 3,500,000</span>
+                </div>
+                <div class="dash-card">
+                  <div class="dash-icon" style="background: #f0f9ff; color: #67C23A;"><el-icon :size="28"><Check /></el-icon></div>
+                  <div class="dash-info">
+                    <div class="dash-value">12</div>
+                    <div class="dash-label">本月出函</div>
                   </div>
-                  <div class="stats-item">
-                    <span>可用额度</span>
-                    <span style="font-weight: 600; color: #67C23A;">¥ 6,500,000</span>
+                </div>
+                <div class="dash-card">
+                  <div class="dash-icon" style="background: #f0f9f0; color: #E6A23C;"><el-icon :size="28"><Coin /></el-icon></div>
+                  <div class="dash-info">
+                    <div class="dash-value">¥ 2.85万</div>
+                    <div class="dash-label">本月收入</div>
                   </div>
                 </div>
               </div>
 
-              <!-- 各类型保函汇总 -->
-              <div class="table-card">
-                <div style="font-weight: 600; margin-bottom: 16px;">各类型保函汇总</div>
-                <el-table :data="guaranteeTypeSummary">
-                  <el-table-column prop="guaranteeType" label="保函类型" min-width="120"></el-table-column>
-                  <el-table-column prop="in保Count" label="在保笔数" width="100" align="center"></el-table-column>
-                  <el-table-column prop="in保Amount" label="在保金额" width="140" align="right"></el-table-column>
-                  <el-table-column prop="monthCount" label="本月出函" width="100" align="center"></el-table-column>
-                  <el-table-column prop="monthAmount" label="本月金额" width="140" align="right"></el-table-column>
-                  <el-table-column prop="monthIncome" label="本月收入" width="140" align="right"></el-table-column>
-                  <el-table-column prop="avgRate" label="平均费率" width="100" align="center"></el-table-column>
-                </el-table>
+              <!-- 额度概况 -->
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+                <div class="detail-card" style="text-align: center; padding: 20px;">
+                  <div style="color: #909399; font-size: 14px; margin-bottom: 8px;">总额度</div>
+                  <div style="font-size: 24px; font-weight: 600;">¥ 1000万</div>
+                </div>
+                <div class="detail-card" style="text-align: center; padding: 20px;">
+                  <div style="color: #909399; font-size: 14px; margin-bottom: 8px;">已用额度</div>
+                  <div style="font-size: 24px; font-weight: 600; color: #E6A23C;">¥ 350万</div>
+                </div>
+                <div class="detail-card" style="text-align: center; padding: 20px;">
+                  <div style="color: #909399; font-size: 14px; margin-bottom: 8px;">可用额度</div>
+                  <div style="font-size: 24px; font-weight: 600; color: #67C23A;">¥ 650万</div>
+                </div>
+              </div>
+
+              <!-- 各类型保函卡片 -->
+              <div style="font-weight: 600; margin-bottom: 16px;">各类型保函概览</div>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+                <div class="detail-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-weight: 600; color: #409EFF;">投标保函</div>
+                    <el-tag type="primary">在保 25 笔</el-tag>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div><span style="color: #909399;">在保金额</span><div style="font-weight: 600;">¥ 180万</div></div>
+                    <div><span style="color: #909399;">本月出函</span><div style="font-weight: 600;">8 笔</div></div>
+                    <div><span style="color: #909399;">本月金额</span><div style="font-weight: 600;">¥ 65万</div></div>
+                    <div><span style="color: #909399;">本月收入</span><div style="font-weight: 600; color: #67C23A;">¥ 1.52万</div></div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-weight: 600; color: #67C23A;">履约保函</div>
+                    <el-tag type="success">在保 15 笔</el-tag>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div><span style="color: #909399;">在保金额</span><div style="font-weight: 600;">¥ 120万</div></div>
+                    <div><span style="color: #909399;">本月出函</span><div style="font-weight: 600;">3 笔</div></div>
+                    <div><span style="color: #909399;">本月金额</span><div style="font-weight: 600;">¥ 35万</div></div>
+                    <div><span style="color: #909399;">本月收入</span><div style="font-weight: 600; color: #67C23A;">¥ 1.05万</div></div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-weight: 600; color: #E6A23C;">工程质量保证金</div>
+                    <el-tag type="warning">在保 3 笔</el-tag>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div><span style="color: #909399;">在保金额</span><div style="font-weight: 600;">¥ 15万</div></div>
+                    <div><span style="color: #909399;">本月出函</span><div style="font-weight: 600;">1 笔</div></div>
+                    <div><span style="color: #909399;">本月金额</span><div style="font-weight: 600;">¥ 5万</div></div>
+                    <div><span style="color: #909399;">本月收入</span><div style="font-weight: 600; color: #67C23A;">¥ 0.2万</div></div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-weight: 600; color: #F56C6C;">农民工工资支付</div>
+                    <el-tag type="danger">在保 2 笔</el-tag>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div><span style="color: #909399;">在保金额</span><div style="font-weight: 600;">¥ 5万</div></div>
+                    <div><span style="color: #909399;">本月出函</span><div style="font-weight: 600;">0 笔</div></div>
+                    <div><span style="color: #909399;">本月金额</span><div style="font-weight: 600;">¥ 0</div></div>
+                    <div><span style="color: #909399;">本月收入</span><div style="font-weight: 600; color: #67C23A;">¥ 0.08万</div></div>
+                  </div>
+                </div>
               </div>
 
               <!-- 额度配置 -->
-              <div class="detail-card" style="margin-top: 20px;">
+              <div class="detail-card">
                 <div class="detail-header">
                   <div class="detail-title">额度配置</div>
                   <el-button type="primary" size="small">保存</el-button>
@@ -1649,7 +1698,13 @@
         const initFromHash = () => {
           const hash = window.location.hash.slice(1);
           if (hash) {
-            currentView.value = hash;
+            // 处理机构配置页面的标签页hash
+            if (hash.startsWith('org-agency-config-')) {
+              currentView.value = 'org-agency-config';
+              agencyConfigTab.value = hash.replace('org-agency-config-', '');
+            } else {
+              currentView.value = hash;
+            }
           }
         };
         initFromHash();
