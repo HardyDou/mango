@@ -1069,7 +1069,309 @@
                 </el-table>
               </div>
             </el-tab-pane>
+
+            <el-tab-pane label="业务配置" name="business">
+              <div style="margin-bottom: 16px;">
+                <el-button type="primary" @click="openCostDialog()">添加保函类型</el-button>
+              </div>
+              <div class="table-card">
+                <el-table :data="agencyCostList">
+                  <el-table-column prop="guaranteeType" label="保函类型" min-width="120"></el-table-column>
+                  <el-table-column prop="creditLimit" label="授信额度">
+                    <template #default="scope">
+                      {{ scope.row.creditLimit === '-1' ? '无上限' : scope.row.creditLimit + '万' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="singleLimit" label="单笔上限">
+                    <template #default="scope">
+                      {{ scope.row.singleLimit === '-1' ? '无上限' : scope.row.singleLimit + '万' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="costType" label="计费方式">
+                    <template #default="scope">
+                      <el-tag size="small" :type="scope.row.costType === '固定费率' ? 'primary' : scope.row.costType === '阶梯费率' ? 'success' : scope.row.costType === '按笔固定' ? 'warning' : scope.row.costType === '保底累进' ? 'danger' : 'info'">
+                        {{ scope.row.costType }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="minFee" label="最低费用"></el-table-column>
+                  <el-table-column prop="maxFee" label="最高费用"></el-table-column>
+                  <el-table-column prop="rateConfig" label="费率"></el-table-column>
+                  <el-table-column label="操作" width="120" fixed="right">
+                    <template #default="scope">
+                      <el-button type="primary" link @click="openCostDialog(scope.row)">编辑</el-button>
+                      <el-button type="danger" link @click="handleDeleteCost(scope.row)">删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="交易平台" name="channel">
+              <div style="margin-bottom: 16px;">
+                <el-button type="primary">开通交易平台</el-button>
+              </div>
+              <div class="table-card">
+                <el-table :data="agencyChannelList">
+                  <el-table-column prop="channelName" label="交易平台"></el-table-column>
+                  <el-table-column prop="channelCode" label="平台编码" width="150"></el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
+                        {{ scope.row.status === 1 ? '启用' : '停用' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="openTime" label="开通时间" width="180"></el-table-column>
+                  <el-table-column label="操作" width="100">
+                    <template #default="scope">
+                      <el-button type="primary" link>配置</el-button>
+                      <el-button type="danger" link>关闭</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="额度管理" name="quota">
+              <div class="stats-section" style="margin-bottom: 20px;">
+                <div class="stats-card">
+                  <div class="stats-title">额度概况</div>
+                  <div class="stats-item">
+                    <span>总额度</span>
+                    <span style="font-weight: 600;">¥ 10,000,000</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>已用额度</span>
+                    <span style="font-weight: 600; color: #E6A23C;">¥ 3,500,000</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>可用额度</span>
+                    <span style="font-weight: 600; color: #67C23A;">¥ 6,500,000</span>
+                  </div>
+                </div>
+                <div class="stats-card">
+                  <div class="stats-title">在保情况</div>
+                  <div class="stats-item">
+                    <span>在保笔数</span>
+                    <span>45 笔</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>在保金额</span>
+                    <span>¥ 3,200,000</span>
+                  </div>
+                  <div class="stats-item">
+                    <span>最大单笔</span>
+                    <span>¥ 800,000</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-card">
+                <div class="detail-header">
+                  <div class="detail-title">额度配置</div>
+                  <el-button type="primary" size="small">保存</el-button>
+                </div>
+                <el-form :model="quotaForm" label-width="140px">
+                  <el-form-item label="总额度">
+                    <el-input v-model="quotaForm.totalQuota" style="width: 200px;">
+                      <template #append>元</template>
+                    </el-input>
+                  </el-form-item>
+                  <el-form-item label="单笔额度上限">
+                    <el-input v-model="quotaForm.maxPerQuota" style="width: 200px;">
+                      <template #append>元</template>
+                    </el-input>
+                  </el-form-item>
+                  <el-form-item label="额度预警阈值">
+                    <el-input v-model="quotaForm.warningThreshold" style="width: 200px;">
+                      <template #append>%</template>
+                    </el-input>
+                  </el-form-item>
+                </el-form>
+              </div>
+            </el-tab-pane>
           </el-tabs>
+
+          <!-- 添加/编辑保函类型弹窗 -->
+          <el-dialog v-model="costDialogVisible" :title="costDialogTitle" width="600px" destroy-on-close>
+            <el-form :model="costForm" label-width="120px">
+              <el-form-item label="保函类型" required>
+                <el-select v-model="costForm.guaranteeType" placeholder="请选择保函类型" style="width: 100%;">
+                  <el-option label="投标保函" value="投标保函"></el-option>
+                  <el-option label="履约保函" value="履约保函"></el-option>
+                  <el-option label="工程质量保证金" value="工程质量保证金"></el-option>
+                  <el-option label="农民工工资支付" value="农民工工资支付"></el-option>
+                  <el-option label="预付款保函" value="预付款保函"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="授信额度">
+                <div style="display: flex; align-items: center;">
+                  <el-radio-group v-model="costForm.creditLimitType">
+                    <el-radio label="unlimited">无上限</el-radio>
+                    <el-radio label="limited">有限额</el-radio>
+                  </el-radio-group>
+                  <el-input-number v-if="costForm.creditLimitType === 'limited'" v-model="costForm.creditLimit" :min="1" :max="999999" style="margin-left: 20px; width: 150px;"></el-input-number>
+                  <span v-if="costForm.creditLimitType === 'limited'" style="margin-left: 10px;">万元</span>
+                </div>
+              </el-form-item>
+              <el-form-item label="单笔上限">
+                <div style="display: flex; align-items: center;">
+                  <el-radio-group v-model="costForm.singleLimitType">
+                    <el-radio label="unlimited">无上限</el-radio>
+                    <el-radio label="limited">有限额</el-radio>
+                  </el-radio-group>
+                  <el-input-number v-if="costForm.singleLimitType === 'limited'" v-model="costForm.singleLimit" :min="1" :max="99999" style="margin-left: 20px; width: 150px;"></el-input-number>
+                  <span v-if="costForm.singleLimitType === 'limited'" style="margin-left: 10px;">万元</span>
+                </div>
+              </el-form-item>
+              <el-form-item label="计费方式" required>
+                <el-select v-model="costForm.costType" placeholder="请选择计费方式" style="width: 100%;" @change="handleCostTypeChange">
+                  <el-option label="固定费率" value="固定费率"></el-option>
+                  <el-option label="阶梯费率" value="阶梯费率"></el-option>
+                  <el-option label="按笔固定" value="按笔固定"></el-option>
+                  <el-option label="保底累进" value="保底累进"></el-option>
+                  <el-option label="免收" value="免收"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <!-- 固定费率 -->
+              <el-form-item label="费率" v-if="costForm.costType === '固定费率'">
+                <el-input v-model="costForm.rate" placeholder="如: 0.5%" style="width: 200px;"></el-input>
+                <span style="margin-left: 10px;">%</span>
+              </el-form-item>
+
+              <!-- 按笔固定 -->
+              <el-form-item label="每笔金额" v-if="costForm.costType === '按笔固定'">
+                <el-input-number v-model="costForm.rate" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元/笔</span>
+              </el-form-item>
+
+              <!-- 阶梯费率 -->
+              <el-form-item label="阶梯配置" v-if="costForm.costType === '阶梯费率'">
+                <div v-for="(item, index) in costForm.ladderRates" :key="index" style="margin-bottom: 10px; display: flex; align-items: center;">
+                  <el-input v-model="item.threshold" placeholder="金额区间" style="width: 120px;"></el-input>
+                  <span style="margin: 0 10px;">：</span>
+                  <el-input v-model="item.rate" placeholder="费率" style="width: 100px;"></el-input>
+                  <span style="margin-left: 10px;">%</span>
+                  <el-button type="danger" link style="margin-left: 10px;" @click="costForm.ladderRates.splice(index, 1)">删除</el-button>
+                </div>
+                <el-button type="primary" link @click="costForm.ladderRates.push({threshold: '', rate: ''})">+ 添加阶梯</el-button>
+              </el-form-item>
+
+              <!-- 保底累进 -->
+              <div v-if="costForm.costType === '保底累进'">
+                <el-form-item label="保底费用">
+                  <el-input-number v-model="costForm.baseFee" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                  <span style="margin-left: 10px;">元</span>
+                </el-form-item>
+                <el-form-item label="超额费率">
+                  <el-input v-model="costForm.excessRate" placeholder="如: 0.3" style="width: 200px;"></el-input>
+                  <span style="margin-left: 10px;">%</span>
+                  <div style="color: #909399; font-size: 12px; margin-top: 4px;">超过保底金额后，超额部分按此费率计算</div>
+                </el-form-item>
+              </div>
+
+              <!-- 免收 -->
+              <el-form-item v-if="costForm.costType === '免收'">
+                <el-alert type="info" :closable="false">该保函类型免收费用</el-alert>
+              </el-form-item>
+
+              <!-- 最低/最高费用 -->
+              <el-form-item label="最低费用">
+                <el-input-number v-model="costForm.minFee" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+              </el-form-item>
+              <el-form-item label="最高费用">
+                <el-input-number v-model="costForm.maxFee" :min="0" :precision="2" style="width: 200px;"></el-input-number>
+                <span style="margin-left: 10px;">元</span>
+                <div style="color: #909399; font-size: 12px; margin-top: 4px;">留空则不设上限</div>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="costDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="handleSaveCost">保存</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- 机构详情（只读） -->
+        <div v-if="currentView === 'org-agency-view'">
+          <div class="page-header">
+            <div class="page-title">机构详情</div>
+          </div>
+
+          <el-tabs v-model="agencyConfigTab">
+            <el-tab-pane label="基础信息" name="base">
+              <div class="detail-card">
+                <el-descriptions :column="2" border>
+                  <el-descriptions-item label="机构名称">{{ agencyConfigForm.name }}</el-descriptions-item>
+                  <el-descriptions-item label="机构类型">
+                    <el-tag :type="agencyConfigForm.type === '银行' ? 'primary' : agencyConfigForm.type === '保险' ? 'success' : 'warning'">
+                      {{ agencyConfigForm.type }}
+                    </el-tag>
+                  </el-descriptions-item>
+                  <el-descriptions-item label="联系人">{{ agencyConfigForm.contact }}</el-descriptions-item>
+                  <el-descriptions-item label="联系电话">{{ agencyConfigForm.phone }}</el-descriptions-item>
+                  <el-descriptions-item label="邮箱">{{ agencyConfigForm.email }}</el-descriptions-item>
+                  <el-descriptions-item label="系统状态">
+                    <el-tag :type="agencyConfigForm.status === 1 ? 'success' : 'info'">
+                      {{ agencyConfigForm.status === 1 ? '在线' : '掉线' }}
+                    </el-tag>
+                  </el-descriptions-item>
+                </el-descriptions>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="业务配置" name="business">
+              <div class="table-card">
+                <el-table :data="agencyCostList">
+                  <el-table-column prop="guaranteeType" label="保函类型" min-width="120"></el-table-column>
+                  <el-table-column prop="creditLimit" label="授信额度">
+                    <template #default="scope">
+                      {{ scope.row.creditLimit === '-1' ? '无上限' : scope.row.creditLimit + '万' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="singleLimit" label="单笔上限">
+                    <template #default="scope">
+                      {{ scope.row.singleLimit === '-1' ? '无上限' : scope.row.singleLimit + '万' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="costType" label="计费方式">
+                    <template #default="scope">
+                      <el-tag size="small" :type="scope.row.costType === '固定费率' ? 'primary' : scope.row.costType === '阶梯费率' ? 'success' : scope.row.costType === '按笔固定' ? 'warning' : scope.row.costType === '保底累进' ? 'danger' : 'info'">
+                        {{ scope.row.costType }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="minFee" label="最低费用"></el-table-column>
+                  <el-table-column prop="maxFee" label="最高费用"></el-table-column>
+                  <el-table-column prop="rateConfig" label="费率"></el-table-column>
+                </el-table>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="交易平台" name="channel">
+              <div class="table-card">
+                <el-table :data="agencyChannelList">
+                  <el-table-column prop="channelName" label="交易平台"></el-table-column>
+                  <el-table-column prop="channelCode" label="平台编码" width="150"></el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="scope">
+                      <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
+                        {{ scope.row.status === 1 ? '启用' : '停用' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="openTime" label="开通时间" width="180"></el-table-column>
+                </el-table>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
+
+          <div style="margin-top: 20px;">
+            <el-button @click="currentView = 'org-agency'">返回</el-button>
+          </div>
         </div>
 
         <!-- 额度管理 -->
@@ -1246,6 +1548,20 @@
     const app = createApp({
       setup() {
         const currentView = ref('dashboard');
+        // Hash路由支持
+        const initFromHash = () => {
+          const hash = window.location.hash.slice(1);
+          if (hash) {
+            currentView.value = hash;
+          }
+        };
+        initFromHash();
+        window.addEventListener('hashchange', () => {
+          const hash = window.location.hash.slice(1);
+          if (hash) {
+            currentView.value = hash;
+          }
+        });
         const dialogVisible = ref(false);
         const filterParams = ref({ status: '', keyword: '', guaranteeStatus: '' });
         const reviewForm = ref({ riskResult: 'pass', opinion: '' });
@@ -1466,6 +1782,56 @@
         const agencyDialogVisible = ref(false);
         const channelDialogVisible = ref(false);
 
+        // 成本费率弹窗
+        const costDialogVisible = ref(false);
+        const costDialogTitle = ref('添加成本费率');
+        const costForm = ref({
+          id: null,
+          channelName: '',
+          guaranteeType: '',
+          costType: '固定费率',
+          rate: '',
+          minFee: '',
+          maxFee: ''
+        });
+
+        // 机构详情模式
+        const isDetailMode = ref(false);
+        const selectedAgency = ref(null);
+
+        const openCostDialog = (row) => {
+          if (row) {
+            costDialogTitle.value = '编辑成本费率';
+            costForm.value = { ...row, id: row.id || Date.now() };
+          } else {
+            costDialogTitle.value = '添加成本费率';
+            costForm.value = {
+              id: null,
+              channelName: '',
+              guaranteeType: '',
+              costType: '固定费率',
+              rate: '',
+              minFee: '',
+              maxFee: ''
+            };
+          }
+          costDialogVisible.value = true;
+        };
+
+        const handleSaveCost = () => {
+          ElMessage.success('保存成功');
+          costDialogVisible.value = false;
+        };
+
+        const handleDeleteCost = (row) => {
+          ElMessage.warning('已删除');
+        };
+
+        const viewAgencyDetail = (row) => {
+          selectedAgency.value = row;
+          isDetailMode.value = true;
+        };
+
         // 密钥列表
         const keyList = ref([
           { systemName: '数字泸州', keyType: '签名密钥', keyName: 'AppKey', keyValue: 'abc123456789', expireDate: '2025-12-31', status: '正常' },
@@ -1490,6 +1856,7 @@
 
         const handleMenuSelect = (index) => {
           currentView.value = index;
+          window.location.hash = index;
         };
 
         const handleTask = (task) => {
@@ -1558,13 +1925,22 @@
           guaranteeTypeList,
           newGuaranteeTypeForm,
           guaranteeTypeDialogVisible,
+          costDialogVisible,
+          costDialogTitle,
+          costForm,
+          isDetailMode,
+          selectedAgency,
           handleMenuSelect,
           handleTask,
           viewApply,
           reviewApply,
           approveApply,
           rejectApply,
-          submitReview
+          submitReview,
+          openCostDialog,
+          handleSaveCost,
+          handleDeleteCost,
+          viewAgencyDetail
         };
       }
     });
