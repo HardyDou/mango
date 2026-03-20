@@ -1322,9 +1322,37 @@
 
               <!-- 阶梯费率 -->
               <el-form-item label="阶梯配置" v-if="costForm.costType === '阶梯费率'">
-                <div style="color: #909399; font-size: 12px; margin-bottom: 10px;">格式：起始金额-终止金额:费率%</div>
-                <el-input v-model="costForm.ladderConfig" type="textarea" rows="3" placeholder="例如：&#10;0-100000:0.5&#10;100000-500000:0.4&#10;500000-:0.3" style="width: 100%;"></el-input>
-                <div style="color: #909399; font-size: 12px; margin-top: 5px;">每行一个阶梯，格式：起始-终止:费率% ，终止为空表示无上限</div>
+                <el-table :data="costForm.ladderRates" border style="width: 100%; margin-bottom: 10px;" size="small">
+                  <el-table-column label="序号" width="60" align="center">
+                    <template #default="{ $index }">
+                      <span>{{ $index + 1 }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="起始金额(元)" min-width="120">
+                    <template #default="{ row }">
+                      <el-input-number v-model="row.minAmount" :min="0" :precision="2" :controls="false" placeholder="0" size="small" style="width: 100%;"></el-input-number>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="终止金额(元)" min-width="120">
+                    <template #default="{ row }">
+                      <el-input-number v-model="row.maxAmount" :min="0" :precision="2" :controls="false" placeholder="无上限留空" size="small" style="width: 100%;"></el-input-number>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="费率(%)" min-width="100">
+                    <template #default="{ row }">
+                      <el-input-number v-model="row.rate" :min="0" :max="100" :precision="2" :controls="false" placeholder="0" size="small" style="width: 100%;"></el-input-number>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="80" align="center">
+                    <template #default="{ $index }">
+                      <el-button type="danger" link size="small" @click="costForm.ladderRates.splice($index, 1)">删除</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: 0, maxAmount: null, rate: 0})">
+                  <el-icon><Plus /></el-icon>添加阶梯
+                </el-button>
+                <div style="color: #909399; font-size: 12px; margin-top: 8px;">说明：金额区间为左闭右开 [起始, 终止)，终止金额留空表示无上限</div>
               </el-form-item>
 
               <!-- 保底累进 -->
