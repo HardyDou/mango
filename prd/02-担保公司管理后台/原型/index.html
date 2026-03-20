@@ -973,12 +973,12 @@
             <el-tab-pane label="基础信息" name="base">
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">基本信息</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="机构名称">
                     <el-input v-model="agencyConfigForm.name" placeholder="金融机构全称" style="width: 300px;" disabled></el-input>
                   </el-form-item>
                   <el-form-item label="机构类型">
-                    <el-select v-model="agencyConfigForm.agencyType" placeholder="选择机构类型" style="width: 200px;">
+                    <el-select v-model="agencyConfigForm.agencyType" placeholder="选择机构类型" style="width: 200px;" :disabled="isDetailMode">
                       <el-option label="银行" value="bank"></el-option>
                       <el-option label="保险公司" value="insurance"></el-option>
                       <el-option label="担保公司" value="guarantee"></el-option>
@@ -1003,12 +1003,12 @@
               </div>
               <div class="detail-card">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">其他信息</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="备注">
                     <el-input v-model="agencyConfigForm.remark" type="textarea" rows="3" placeholder="备注信息" style="width: 400px;"></el-input>
                   </el-form-item>
                   <el-form-item label="是否启用">
-                    <el-switch v-model="agencyConfigForm.enabled" active-text="启用" inactive-text="停用"></el-switch>
+                    <el-switch v-model="agencyConfigForm.enabled" active-text="启用" inactive-text="停用" :disabled="isDetailMode"></el-switch>
                   </el-form-item>
                   <el-form-item>
                     <el-button type="primary">保存基础信息</el-button>
@@ -1021,7 +1021,7 @@
               <!-- 接口配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">接口配置</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="生产API地址">
                     <el-input v-model="agencyConfigForm.prodApiUrl" placeholder="生产环境API地址" style="width: 400px;"></el-input>
                   </el-form-item>
@@ -1032,7 +1032,7 @@
                     <el-input v-model="agencyConfigForm.callbackUrl" placeholder="接收通知的回调地址" style="width: 400px;"></el-input>
                   </el-form-item>
                   <el-form-item label="请求格式">
-                    <el-select v-model="agencyConfigForm.requestFormat" placeholder="选择请求格式" style="width: 200px;">
+                    <el-select v-model="agencyConfigForm.requestFormat" placeholder="选择请求格式" style="width: 200px;" :disabled="isDetailMode">
                       <el-option label="JSON" value="JSON"></el-option>
                       <el-option label="XML" value="XML"></el-option>
                     </el-select>
@@ -1049,7 +1049,7 @@
                     <el-input-number v-model="agencyConfigForm.retryCount" :min="0" :max="5"></el-input-number>
                   </el-form-item>
                   <el-form-item label="编码格式">
-                    <el-select v-model="agencyConfigForm.charset" placeholder="选择编码" style="width: 200px;">
+                    <el-select v-model="agencyConfigForm.charset" placeholder="选择编码" style="width: 200px;" :disabled="isDetailMode">
                       <el-option label="UTF-8" value="UTF-8"></el-option>
                       <el-option label="GBK" value="GBK"></el-option>
                     </el-select>
@@ -1059,7 +1059,7 @@
               <!-- 安全配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #67C23A;">安全配置</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="AppKey">
                     <el-input v-model="agencyConfigForm.appKey" placeholder="应用密钥" style="width: 400px;"></el-input>
                   </el-form-item>
@@ -1067,14 +1067,14 @@
                     <el-input v-model="agencyConfigForm.appSecret" placeholder="应用密钥" style="width: 400px;" show-password></el-input>
                   </el-form-item>
                   <el-form-item label="签名算法">
-                    <el-select v-model="agencyConfigForm.signAlgorithm" placeholder="选择签名算法" style="width: 200px;">
+                    <el-select v-model="agencyConfigForm.signAlgorithm" placeholder="选择签名算法" style="width: 200px;" :disabled="isDetailMode">
                       <el-option label="SM3" value="SM3"></el-option>
                       <el-option label="MD5" value="MD5"></el-option>
                       <el-option label="SM2" value="SM2"></el-option>
                     </el-select>
                   </el-form-item>
                   <el-form-item label="加密算法">
-                    <el-select v-model="agencyConfigForm.encryptAlgorithm" placeholder="选择加密算法" style="width: 200px;">
+                    <el-select v-model="agencyConfigForm.encryptAlgorithm" placeholder="选择加密算法" style="width: 200px;" :disabled="isDetailMode">
                       <el-option label="SM4" value="SM4"></el-option>
                       <el-option label="AES" value="AES"></el-option>
                       <el-option label="不加密" value="none"></el-option>
@@ -1085,7 +1085,7 @@
               <!-- 证书配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #E6A23C;">证书配置</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="CA证书">
                     <el-upload action="#" :auto-upload="false" accept=".cer,.crt,.pem">
                       <el-button>选择证书文件</el-button>
@@ -1110,7 +1110,7 @@
               <!-- 文件配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #909399;">文件配置</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="保函文件格式">
                     <el-checkbox-group v-model="agencyConfigForm.fileFormats">
                       <el-checkbox label="PDF">PDF</el-checkbox>
@@ -1119,25 +1119,25 @@
                     </el-checkbox-group>
                   </el-form-item>
                   <el-form-item label="电子签章">
-                    <el-switch v-model="agencyConfigForm.enableEseal" active-text="启用" inactive-text="停用"></el-switch>
+                    <el-switch v-model="agencyConfigForm.enableEseal" active-text="启用" inactive-text="停用" :disabled="isDetailMode"></el-switch>
                   </el-form-item>
                   <el-form-item label="时间戳">
-                    <el-switch v-model="agencyConfigForm.enableTimestamp" active-text="启用" inactive-text="停用"></el-switch>
+                    <el-switch v-model="agencyConfigForm.enableTimestamp" active-text="启用" inactive-text="停用" :disabled="isDetailMode"></el-switch>
                   </el-form-item>
                 </el-form>
               </div>
               <!-- 退保配置 -->
               <div class="detail-card" style="margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 16px; color: #F56C6C;">退保配置</div>
-                <el-form label-width="140px">
+                <el-form label-width="140px" :disabled="isDetailMode">
                   <el-form-item label="支持退保">
-                    <el-switch v-model="agencyConfigForm.enableSurrender" active-text="是" inactive-text="否"></el-switch>
+                    <el-switch v-model="agencyConfigForm.enableSurrender" active-text="是" inactive-text="否" :disabled="isDetailMode"></el-switch>
                   </el-form-item>
                   <el-form-item label="退保条件">
                     <el-input v-model="agencyConfigForm.surrenderCondition" type="textarea" rows="2" placeholder="退保条件说明" style="width: 400px;"></el-input>
                   </el-form-item>
                   <el-form-item label="需机构同意">
-                    <el-switch v-model="agencyConfigForm.surrenderNeedApprove"></el-switch>
+                    <el-switch v-model="agencyConfigForm.surrenderNeedApprove" :disabled="isDetailMode"></el-switch>
                   </el-form-item>
                   <el-form-item label="赔付时效">
                     <el-input v-model="agencyConfigForm.claimTimeLimit" placeholder="如：3个工作日内" style="width: 300px;"></el-input>
