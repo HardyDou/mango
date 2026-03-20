@@ -167,9 +167,9 @@
           <el-sub-menu index="channel">
             <template #title>
               <el-icon><Connection /></el-icon>
-              <span>交易系统</span>
+              <span>交易平台</span>
             </template>
-            <el-menu-item index="channel-list"><el-icon><List /></el-icon>交易系统维护</el-menu-item>
+            <el-menu-item index="channel-list"><el-icon><List /></el-icon>交易平台维护</el-menu-item>
             <el-menu-item index="channel-config"><el-icon><Setting /></el-icon>通道配置</el-menu-item>
             <el-menu-item index="channel-key"><el-icon><Key /></el-icon>密钥管理</el-menu-item>
           </el-sub-menu>
@@ -455,45 +455,41 @@
           </div>
         </div>
 
-        <!-- 交易系统维护 -->
+        <!-- 交易平台维护 -->
         <div v-if="currentView === 'channel-list'">
           <div style="margin-bottom: 20px;">
-            <el-button type="primary" @click="channelDialogVisible = true">新增交易系统</el-button>
+            <el-button type="primary" @click="channelDialogVisible = true">新增交易平台</el-button>
             <el-button>导出</el-button>
           </div>
           <div class="table-card">
             <el-table :data="channelList">
               <el-table-column prop="name" label="交易系统名称"></el-table-column>
-              <el-table-column prop="code" label="平台编码" width="100"></el-table-column>
-              <el-table-column prop="province" label="省份" width="80"></el-table-column>
-              <el-table-column prop="city" label="城市" width="80"></el-table-column>
-              <el-table-column prop="agencyCount" label="已开通机构" width="100">
+              <el-table-column prop="code" label="编号" width="100"></el-table-column>
+              <el-table-column prop="region" label="地区" width="150"></el-table-column>
+              <el-table-column prop="guaranteeTypes" label="保函类型" width="150"></el-table-column>
+              <el-table-column prop="contact" label="联系人" width="100"></el-table-column>
+              <el-table-column prop="phone" label="联系方式" width="130"></el-table-column>
+              <el-table-column prop="status" label="系统状态" width="100">
                 <template #default="scope">
-                  <el-link type="primary">{{ scope.row.agencyCount }}家</el-link>
+                  <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+                    {{ scope.row.status === 1 ? '正常' : '异常' }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="version" label="接口版本" width="80"></el-table-column>
-              <el-table-column prop="signType" label="签名算法" width="80"></el-table-column>
-              <el-table-column prop="status" label="状态" width="70">
-                <template #default="scope">
-                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0"></el-switch>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="180">
+              <el-table-column label="操作" width="150">
                 <template #default="scope">
                   <el-button type="primary" link @click="currentView = 'channel-detail'">详情</el-button>
                   <el-button type="primary" link @click="currentView = 'channel-agency'">机构</el-button>
-                  <el-button type="primary" link @click="currentView = 'channel-fee'">手续费</el-button>
                 </template>
               </el-table-column>
             </el-table>
           </div>
 
-          <!-- 新增交易系统弹窗 -->
-          <el-dialog v-model="channelDialogVisible" title="新增交易系统" width="600px">
+          <!-- 新增交易平台弹窗 -->
+          <el-dialog v-model="channelDialogVisible" title="新增交易平台" width="600px">
             <el-form :model="newChannelForm" label-width="120px">
               <el-form-item label="系统名称" required>
-                <el-input v-model="newChannelForm.name" placeholder="请输入交易系统名称"></el-input>
+                <el-input v-model="newChannelForm.name" placeholder="请输入交易平台名称"></el-input>
               </el-form-item>
               <el-form-item label="平台编码" required>
                 <el-input v-model="newChannelForm.code" placeholder="如：SL、JX、MS"></el-input>
@@ -534,7 +530,7 @@
           </el-dialog>
         </div>
 
-        <!-- 交易系统详情 -->
+        <!-- 交易平台详情 -->
         <div v-if="currentView === 'channel-detail'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'channel-list'">返回</el-button>
@@ -542,7 +538,7 @@
           </div>
           <div class="detail-card">
             <div class="detail-header">
-              <div class="detail-title">交易系统详情</div>
+              <div class="detail-title">交易平台详情</div>
             </div>
             <div class="detail-row">
               <div class="detail-label">系统名称</div>
@@ -579,7 +575,7 @@
           </div>
         </div>
 
-        <!-- 交易系统开通机构 -->
+        <!-- 交易平台开通机构 -->
         <div v-if="currentView === 'channel-agency'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'channel-list'">返回</el-button>
@@ -638,7 +634,7 @@
           </el-dialog>
         </div>
 
-        <!-- 交易系统+机构 收费/成本配置 -->
+        <!-- 交易平台+机构 收费/成本配置 -->
         <div v-if="currentView === 'channel-agency-fee'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'channel-agency'">返回</el-button>
@@ -681,7 +677,7 @@
           </div>
         </div>
 
-        <!-- 交易系统手续费配置 -->
+        <!-- 交易平台手续费配置 -->
         <div v-if="currentView === 'channel-fee'">
           <div style="margin-bottom: 16px;">
             <el-button @click="currentView = 'channel-list'">返回</el-button>
@@ -791,7 +787,7 @@
               <el-button type="primary" size="small">保存</el-button>
             </div>
             <el-form label-width="120px">
-              <el-form-item label="交易系统">
+              <el-form-item label="交易平台">
                 <el-select v-model="channelConfigForm.system" style="width: 300px;">
                   <el-option label="数字泸州" value="sl"></el-option>
                   <el-option label="江西省公共资源交易" value="jx"></el-option>
@@ -822,7 +818,7 @@
           </div>
           <div class="table-card">
             <el-table :data="keyList">
-              <el-table-column prop="systemName" label="交易系统"></el-table-column>
+              <el-table-column prop="systemName" label="交易平台"></el-table-column>
               <el-table-column prop="keyType" label="密钥类型" width="100"></el-table-column>
               <el-table-column prop="keyName" label="密钥名称"></el-table-column>
               <el-table-column prop="keyValue" label="密钥值" width="180">
@@ -1669,8 +1665,8 @@
             'org-quota': '额度管理',
             'org-rate': '费率设置',
             'guarantee-type': '保函类型维护',
-            'channel-list': '交易系统维护',
-            'channel-detail': '交易系统详情',
+            'channel-list': '交易平台维护',
+            'channel-detail': '交易平台详情',
             'channel-agency': '开通机构',
             'channel-fee': '手续费配置',
             'channel-config': '通道配置',
@@ -1759,7 +1755,7 @@
           { name: '某某担保公司', type: '担保', typeTag: 'warning', guaranteeTypes: ['投标保函', '履约保函', '工程质量保证金', '预付款保函'], contact: '王经理', phone: '137****7777', email: 'guarantee@example.com', status: 1, createTime: '2023-03-01' }
         ]);
 
-        // 出函机构成本费率列表（按交易系统+保函类型配置）
+        // 出函机构成本费率列表（按交易平台+保函类型配置）
         const agencyCostList = ref([
           { channelName: '数字泸州', guaranteeType: '投标保函', creditLimit: '-1', singleLimit: '80', costType: '阶梯费率', rate: '0.3%-0.6%', minFee: '200', maxFee: '4000', rateConfig: '0.3%-0.6%', status: 1 },
           { channelName: '数字泸州', guaranteeType: '履约保函', creditLimit: '-1', singleLimit: '-1', costType: '固定费率', rate: '0.5%', minFee: '500', maxFee: '-', rateConfig: '0.5%', status: 1 },
@@ -1770,29 +1766,29 @@
           { channelName: '眉山市', guaranteeType: '农民工工资支付', creditLimit: '-1', singleLimit: '50', costType: '按笔固定', rate: '¥400/笔', minFee: '400', maxFee: '400', rateConfig: '¥400/笔', status: 1 }
         ]);
 
-        // 出函机构开通的交易系统列表
+        // 出函机构开通的交易平台列表
         const agencyChannelList = ref([
           { channelName: '数字泸州', region: '四川省泸州市', guaranteeTypes: ['投标保函', '履约保函', '工程质量保证金'] },
           { channelName: '江西省', region: '江西省南昌市', guaranteeTypes: ['投标保函', '履约保函'] },
           { channelName: '眉山市', region: '四川省眉山市', guaranteeTypes: ['投标保函', '农民工工资支付'] }
         ]);
 
-        // 交易系统列表
+        // 交易平台列表
         const channelList = ref([
-          { name: '数字泸州公共资源交易', code: 'SL', province: '四川省', city: '泸州市', agencyCount: 3, version: 'V2.0', signType: 'SM3', status: 1 },
-          { name: '江西省公共资源交易', code: 'JX', province: '江西省', city: '南昌市', agencyCount: 2, version: 'V3.0', signType: 'SM4', status: 1 },
-          { name: '眉山市公共资源交易', code: 'MS', province: '四川省', city: '眉山市', agencyCount: 2, version: 'V4.0', signType: 'SM3', status: 1 },
-          { name: '蔓延交易平台', code: 'MY', province: '全国', city: '-', agencyCount: 1, version: 'V1.0', signType: 'MD5', status: 0 }
+          { name: '数字泸州公共资源交易', code: 'SL', region: '四川省泸州市', guaranteeTypes: '投标保函,履约保函', contact: '张三', phone: '13800138000', status: 1 },
+          { name: '江西省公共资源交易', code: 'JX', region: '江西省南昌市', guaranteeTypes: '投标保函,履约保函', contact: '李四', phone: '13900139000', status: 1 },
+          { name: '眉山市公共资源交易', code: 'MS', region: '四川省眉山市', guaranteeTypes: '投标保函,农民工工资支付', contact: '王五', phone: '13700137000', status: 1 },
+          { name: '蔓延交易平台', code: 'MY', region: '全国', guaranteeTypes: '投标保函', contact: '赵六', phone: '13600136000', status: 0 }
         ]);
 
-        // 交易系统开通的机构列表
+        // 交易平台开通的机构列表
         const channelAgencyList = ref([
           { agencyName: '中国建设银行', agencyType: '银行', guaranteeTypes: ['投标保函', '履约保函'], status: 1, openTime: '2023-01-01' },
           { agencyName: '中国平安保险', agencyType: '保险', guaranteeTypes: ['投标保函', '履约保函', '农民工工资'], status: 1, openTime: '2023-02-01' },
           { agencyName: '某某担保公司', agencyType: '担保', guaranteeTypes: ['投标保函', '履约保函'], status: 1, openTime: '2023-03-01' }
         ]);
 
-        // 交易系统+机构的收费规则列表（对客户）
+        // 交易平台+机构的收费规则列表（对客户）
         const channelAgencyFeeList = ref([
           {
             guaranteeType: '投标保函',
@@ -1870,7 +1866,7 @@
           status: 1
         });
 
-        // 交易系统手续费列表
+        // 交易平台手续费列表
         const channelFeeList = ref([
           { guaranteeType: '投标保函', feeType: '阶梯费率', rate: '0.5%-0.8%', minFee: '200', maxFee: '5000', effectiveDate: '2024-01-01' },
           { guaranteeType: '履约保函', feeType: '固定费率', rate: '0.6%', minFee: '500', maxFee: '-', effectiveDate: '2024-01-01' },
@@ -1888,7 +1884,7 @@
           channels: []
         });
 
-        // 新增交易系统表单
+        // 新增交易平台表单
         const newChannelForm = ref({
           name: '',
           code: '',
