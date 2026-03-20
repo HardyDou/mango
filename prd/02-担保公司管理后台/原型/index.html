@@ -1267,7 +1267,7 @@
           </el-tabs>
 
           <!-- 添加/编辑保函类型弹窗 -->
-          <el-dialog v-model="costDialogVisible" :title="costDialogTitle" width="800px" destroy-on-close>
+          <el-dialog v-model="costDialogVisible" :title="costDialogTitle" width="700px" destroy-on-close>
             <el-form :model="costForm" label-width="120px">
               <el-form-item label="保函类型" required>
                 <el-select v-model="costForm.guaranteeType" placeholder="请选择保函类型" style="width: 100%;">
@@ -1322,18 +1322,18 @@
 
               <!-- 阶梯费率 -->
               <el-form-item label="阶梯配置" v-if="costForm.costType === '阶梯费率'">
-                <div v-for="(item, index) in costForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                  <span style="color: #909399; font-size: 12px; width: 24px;">{{ index + 1 }}</span>
-                  <el-input-number v-model="item.minAmount" :min="0" :precision="2" :controls="false" placeholder="起始" size="small" style="width: 100px;"></el-input-number>
+                <div v-for="(item, index) in costForm.ladderRates" :key="index" style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <span style="color: #C0C4CC; font-size: 12px; min-width: 18px; text-align: center;">{{ index + 1 }}.</span>
+                  <el-input-number v-model="item.minAmount" :min="0" :precision="2" :controls="false" placeholder="起始" style="width: 120px;"></el-input-number>
                   <span style="color: #909399; font-size: 12px;">-</span>
-                  <el-input-number v-model="item.maxAmount" :min="0" :precision="2" :controls="false" placeholder="终止" size="small" style="width: 100px;"></el-input-number>
+                  <el-input-number v-model="item.maxAmount" :min="0" :precision="2" :controls="false" placeholder="终止" style="width: 120px;"></el-input-number>
                   <span style="color: #909399; font-size: 12px;">元</span>
-                  <el-input-number v-model="item.rate" :min="0" :precision="2" :controls="false" placeholder="费率" size="small" style="width: 70px;"></el-input-number>
+                  <el-input-number v-model="item.rate" :min="0" :precision="2" :controls="false" placeholder="费率" style="width: 80px;"></el-input-number>
                   <span style="color: #909399; font-size: 12px;">%</span>
-                  <el-button type="danger" link size="small" @click="costForm.ladderRates.splice(index, 1)">×</el-button>
+                  <el-button type="danger" text bg @click="costForm.ladderRates.splice(index, 1)">删除</el-button>
                 </div>
                 <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: 0, maxAmount: null, rate: 0})">+ 添加阶梯</el-button>
-                <div style="color: #909399; font-size: 12px; margin-top: 8px;">说明：终止金额留空表示无上限</div>
+                <div style="color: #909399; font-size: 12px; margin-top: 8px;">金额区间为左闭右开，终止金额留空表示无上限</div>
               </el-form-item>
 
               <!-- 保底累进 -->
