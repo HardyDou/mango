@@ -932,114 +932,89 @@
               </el-tab-pane>
 
               <el-tab-pane label="系统配置" name="system">
-                <el-form label-width="120px" style="max-width: 700px;">
-                  <div style="font-weight: 600; margin: 16px 0; color: #409EFF;">接口配置</div>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="API地址">
-                        <el-input v-model="channelConfigForm.apiUrl" placeholder="请输入API地址"></el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="回调地址">
-                        <el-input v-model="channelConfigForm.callbackUrl" placeholder="请输入回调地址"></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="8">
-                      <el-form-item label="通讯协议">
-                        <el-select v-model="channelConfigForm.protocol" placeholder="请选择" style="width: 100%;">
-                          <el-option label="HTTP" value="HTTP"></el-option>
-                          <el-option label="HTTPS" value="HTTPS"></el-option>
-                          <el-option label="国密SSL" value="GMSSL"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="数据格式">
-                        <el-select v-model="channelConfigForm.dataFormat" placeholder="请选择" style="width: 100%;">
-                          <el-option label="JSON" value="JSON"></el-option>
-                          <el-option label="XML" value="XML"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="接口版本">
-                        <el-input v-model="channelConfigForm.version" placeholder="如：V1.0、V2.0"></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="超时时间">
-                        <el-input-number v-model="channelConfigForm.timeout" :min="5" :max="300" style="width: 100%;"></el-input-number>
-                        <span style="margin-left: 8px; color: #909399;">秒</span>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="IP白名单">
-                        <el-input v-model="channelConfigForm.ipWhitelist" placeholder="多个IP用逗号分隔"></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
+                <!-- 接口配置 -->
+                <div class="detail-card" style="margin-bottom: 16px;">
+                  <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">接口配置</div>
+                  <el-form label-width="140px" style="max-width: 600px;">
+                    <el-form-item label="API地址">
+                      <el-input v-model="channelConfigForm.apiUrl" placeholder="请输入API地址"></el-input>
+                    </el-form-item>
+                    <el-form-item label="回调地址">
+                      <el-input v-model="channelConfigForm.callbackUrl" placeholder="请输入回调地址"></el-input>
+                    </el-form-item>
+                    <el-form-item label="通讯协议">
+                      <el-select v-model="channelConfigForm.protocol" placeholder="请选择" style="width: 100%;">
+                        <el-option label="HTTP" value="HTTP"></el-option>
+                        <el-option label="HTTPS" value="HTTPS"></el-option>
+                        <el-option label="国密SSL" value="GMSSL"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="数据格式">
+                      <el-select v-model="channelConfigForm.dataFormat" placeholder="请选择" style="width: 100%;">
+                        <el-option label="JSON" value="JSON"></el-option>
+                        <el-option label="XML" value="XML"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="接口版本">
+                      <el-input v-model="channelConfigForm.version" placeholder="如：V1.0、V2.0"></el-input>
+                    </el-form-item>
+                    <el-form-item label="超时时间">
+                      <el-input-number v-model="channelConfigForm.timeout" :min="5" :max="300" style="width: 100%;"></el-input-number>
+                      <span style="margin-left: 8px; color: #909399;">秒</span>
+                    </el-form-item>
+                    <el-form-item label="IP白名单">
+                      <el-input v-model="channelConfigForm.ipWhitelist" placeholder="多个IP用逗号分隔"></el-input>
+                    </el-form-item>
+                  </el-form>
+                </div>
 
-                  <div style="font-weight: 600; margin: 24px 0 16px; color: #409EFF;">密钥配置</div>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="AppKey">
-                        <el-input v-model="channelConfigForm.appKey" placeholder="平台分配的AppKey"></el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="AppSecret">
-                        <el-input v-model="channelConfigForm.appSecret" placeholder="平台分配的AppSecret" show-password></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="8">
-                      <el-form-item label="签名算法">
-                        <el-select v-model="channelConfigForm.signAlgorithm" placeholder="请选择" style="width: 100%;">
-                          <el-option label="SM3" value="SM3"></el-option>
-                          <el-option label="MD5" value="MD5"></el-option>
-                          <el-option label="SM2" value="SM2"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="加密算法">
-                        <el-select v-model="channelConfigForm.encryptAlgorithm" placeholder="请选择" style="width: 100%;">
-                          <el-option label="SM4" value="SM4"></el-option>
-                          <el-option label="AES" value="AES"></el-option>
-                          <el-option label="数字信封(SM4+SM2)" value="SM4_SM2"></el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="SM4密钥">
-                        <el-input v-model="channelConfigForm.sm4Key" placeholder="SM4加密密钥" show-password></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row :gutter="20">
-                    <el-col :span="12">
-                      <el-form-item label="CA证书">
-                        <el-upload>
-                          <el-button>上传证书</el-button>
-                          <template #tip>
-                            <div style="color: #909399; font-size: 12px; margin-top: 4px;">支持.pfx/.p12/.cer格式</div>
-                          </template>
-                        </el-upload>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="证书密码">
-                        <el-input v-model="channelConfigForm.certPassword" placeholder="CA证书密码" show-password></el-input>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                </el-form>
+                <!-- 密钥配置 -->
+                <div class="detail-card" style="margin-bottom: 16px;">
+                  <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">密钥配置</div>
+                  <el-form label-width="140px" style="max-width: 600px;">
+                    <el-form-item label="AppKey">
+                      <el-input v-model="channelConfigForm.appKey" placeholder="平台分配的AppKey"></el-input>
+                    </el-form-item>
+                    <el-form-item label="AppSecret">
+                      <el-input v-model="channelConfigForm.appSecret" placeholder="平台分配的AppSecret" show-password></el-input>
+                    </el-form-item>
+                    <el-form-item label="签名算法">
+                      <el-select v-model="channelConfigForm.signAlgorithm" placeholder="请选择" style="width: 100%;">
+                        <el-option label="SM3" value="SM3"></el-option>
+                        <el-option label="MD5" value="MD5"></el-option>
+                        <el-option label="SM2" value="SM2"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="加密算法">
+                      <el-select v-model="channelConfigForm.encryptAlgorithm" placeholder="请选择" style="width: 100%;">
+                        <el-option label="SM4" value="SM4"></el-option>
+                        <el-option label="AES" value="AES"></el-option>
+                        <el-option label="数字信封(SM4+SM2)" value="SM4_SM2"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="SM4密钥">
+                      <el-input v-model="channelConfigForm.sm4Key" placeholder="SM4加密密钥" show-password></el-input>
+                    </el-form-item>
+                  </el-form>
+                </div>
+
+                <!-- 证书配置 -->
+                <div class="detail-card">
+                  <div style="font-weight: 600; margin-bottom: 16px; color: #409EFF;">证书配置</div>
+                  <el-form label-width="140px" style="max-width: 600px;">
+                    <el-form-item label="CA证书">
+                      <el-upload>
+                        <el-button>上传证书</el-button>
+                        <template #tip>
+                          <div style="color: #909399; font-size: 12px; margin-top: 4px;">支持.pfx/.p12/.cer格式</div>
+                        </template>
+                      </el-upload>
+                    </el-form-item>
+                    <el-form-item label="证书密码">
+                      <el-input v-model="channelConfigForm.certPassword" placeholder="CA证书密码" show-password></el-input>
+                    </el-form-item>
+                  </el-form>
+                </div>
               </el-tab-pane>
               <el-tab-pane label="业务规则" name="rules">
                 <div style="margin-bottom: 16px;">
