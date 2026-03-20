@@ -315,6 +315,11 @@
               <el-table-column prop="validPeriod" label="有效期" width="120"></el-table-column>
               <el-table-column prop="projectName" label="项目"></el-table-column>
               <el-table-column prop="channel" label="交易平台" width="120"></el-table-column>
+              <el-table-column prop="ciphertextText" label="密文" width="80">
+                <template #default="scope">
+                  <el-tag :type="scope.row.ciphertext === '1' ? 'warning' : 'info'" size="small">{{ scope.row.ciphertextText }}</el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="createTime" label="申请时间" width="160"></el-table-column>
               <el-table-column prop="status" label="状态" width="100">
                 <template #default="scope">
@@ -348,13 +353,13 @@
 
             <!-- 申请人信息 -->
             <div style="margin-bottom: 20px;">
-              <div style="font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed;">申请人信息</div>
+              <div style="font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed;">申请人信息 <el-tag type="warning" size="small" style="margin-left: 8px;">密文</el-tag></div>
               <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-                <div><span style="color: #909399;">投标人：</span>某某建筑有限公司</div>
-                <div><span style="color: #909399;">统一信用代码：</span>91110000XXXXXXXXXX</div>
-                <div><span style="color: #909399;">联系人：</span>张三</div>
-                <div><span style="color: #909399;">联系电话：</span>13800138000</div>
-                <div><span style="color: #909399;">联系地址：</span>北京市朝阳区XX路XX号</div>
+                <div><span style="color: #909399;">投标人：</span><span style="color: #E6A23C; font-weight: 500;">******</span> <el-tooltip content="开标前投标人信息已加密"><el-icon :size="14" style="margin-left: 4px;"><Lock /></el-tooltip></div>
+                <div><span style="color: #909399;">统一信用代码：</span><span style="color: #E6A23C; font-weight: 500;">******</span></div>
+                <div><span style="color: #909399;">联系人：</span><span style="color: #E6A23C; font-weight: 500;">******</span></div>
+                <div><span style="color: #909399;">联系电话：</span><span style="color: #E6A23C; font-weight: 500;">******</span></div>
+                <div><span style="color: #909399;">联系地址：</span><span style="color: #E6A23C; font-weight: 500;">******</span></div>
               </div>
             </div>
 
@@ -367,6 +372,7 @@
                 <div><span style="color: #909399;">交易平台：</span>公共资源中心</div>
                 <div><span style="color: #909399;">保函类型：</span>投标保函</div>
                 <div><span style="color: #909399;">保证金金额：</span>800,000 元</div>
+                <div><span style="color: #909399;">是否密文：</span><el-tag type="warning" size="small">是</el-tag></div>
                 <div><span style="color: #909399;">申请时间：</span>2024-01-15 10:30:00</div>
               </div>
             </div>
@@ -2160,9 +2166,9 @@
         ]);
 
         const applyList = ref([
-          { no: 'APP2024010001', guaranteeType: '投标保函', bidder: '某某建筑有限公司', amount: '800,000', premium: '4,000', validPeriod: '6个月', projectName: 'XX工程项目', channel: '公共资源中心', createTime: '2024-01-15 10:30', status: 'pending', statusText: '待审核' },
-          { no: 'APP2024010002', guaranteeType: '履约保函', bidder: '某某商贸公司', amount: '500,000', premium: '2,500', validPeriod: '12个月', projectName: 'YY采购项目', channel: '招标平台', createTime: '2024-01-15 09:20', status: 'success', statusText: '已通过' },
-          { no: 'APP2024010003', guaranteeType: '工程质量保证金', bidder: '某某建设集团', amount: '300,000', premium: '1,500', validPeriod: '24个月', projectName: 'ZZ建设工程', channel: '公共资源中心', createTime: '2024-01-14 15:10', status: 'reject', statusText: '已拒绝' }
+          { no: 'APP2024010001', guaranteeType: '投标保函', bidder: '某某建筑有限公司', amount: '800,000', premium: '4,000', validPeriod: '6个月', projectName: 'XX工程项目', channel: '公共资源中心', createTime: '2024-01-15 10:30', status: 'pending', statusText: '待审核', ciphertext: '1', ciphertextText: '密文' },
+          { no: 'APP2024010002', guaranteeType: '投标保函', bidder: '某某商贸公司', amount: '500,000', premium: '2,500', validPeriod: '12个月', projectName: 'YY采购项目', channel: '招标平台', createTime: '2024-01-15 09:20', status: 'success', statusText: '已通过', ciphertext: '0', ciphertextText: '明文' },
+          { no: 'APP2024010003', guaranteeType: '履约保函', bidder: '某某建设集团', amount: '300,000', premium: '1,500', validPeriod: '24个月', projectName: 'ZZ建设工程', channel: '公共资源中心', createTime: '2024-01-14 15:10', status: 'reject', statusText: '已拒绝', ciphertext: '0', ciphertextText: '明文' }
         ]);
 
         const guaranteeList = ref([
