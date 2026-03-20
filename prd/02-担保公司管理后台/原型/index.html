@@ -1331,8 +1331,7 @@
                   <el-input-number v-model="item.rate" :min="0" :precision="2" :controls="false" placeholder="费率" size="small" style="width: 70px;"></el-input-number>
                   <span style="color: #909399; font-size: 12px;">%</span>
                   <el-button type="danger" link size="small" @click="costForm.ladderRates.splice(index, 1)">×</el-button>
-                    </template>
-                  </el-table-column>
+                </div>
                 <el-button type="primary" link @click="costForm.ladderRates.push({minAmount: 0, maxAmount: null, rate: 0})">+ 添加阶梯</el-button>
                 <div style="color: #909399; font-size: 12px; margin-top: 8px;">说明：终止金额留空表示无上限</div>
               </el-form-item>
