@@ -170,8 +170,6 @@
               <span>交易平台</span>
             </template>
             <el-menu-item index="channel-list"><el-icon><List /></el-icon>交易平台维护</el-menu-item>
-            <el-menu-item index="channel-config"><el-icon><Setting /></el-icon>通道配置</el-menu-item>
-            <el-menu-item index="channel-key"><el-icon><Key /></el-icon>密钥管理</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="risk">
             <template #title>
@@ -1316,38 +1314,6 @@
           </div>
         </div>
 
-        <!-- 密钥管理 -->
-        <div v-if="currentView === 'channel-key'">
-          <div style="margin-bottom: 20px;">
-            <el-button type="primary">新增密钥</el-button>
-          </div>
-          <div class="table-card">
-            <el-table :data="keyList">
-              <el-table-column prop="systemName" label="交易平台"></el-table-column>
-              <el-table-column prop="keyType" label="密钥类型" width="100"></el-table-column>
-              <el-table-column prop="keyName" label="密钥名称"></el-table-column>
-              <el-table-column prop="keyValue" label="密钥值" width="180">
-                <template #default="scope">
-                  ••••••••••••
-                  <el-button type="primary" link>显示</el-button>
-                </template>
-              </el-table-column>
-              <el-table-column prop="expireDate" label="过期时间" width="120"></el-table-column>
-              <el-table-column prop="status" label="状态" width="80">
-                <template #default="scope">
-                  <el-tag type="success">正常</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="120">
-                <template #default="scope">
-                  <el-button type="primary" link>编辑</el-button>
-                  <el-button type="danger" link>禁用</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </div>
-
         <!-- 风控规则 -->
         <div v-if="currentView === 'risk-rules'">
           <div style="margin-bottom: 20px;">
@@ -2176,7 +2142,6 @@
             'channel-agency': '开通机构',
             'channel-fee': '手续费配置',
             'channel-config': '通道配置',
-            'channel-key': '密钥管理',
             'org-agency-config': '机构配置',
             'risk-rules': '风控规则',
             'risk-blacklist': '黑名单管理',
