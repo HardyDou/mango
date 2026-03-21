@@ -194,6 +194,22 @@
             <el-menu-item index="finance-reconcile"><el-icon><Tickets /></el-icon>对账管理</el-menu-item>
             <el-menu-item index="finance-invoice"><el-icon><Ticket /></el-icon>发票管理</el-menu-item>
           </el-sub-menu>
+          <el-sub-menu index="payment">
+            <template #title>
+              <el-icon><Wallet /></el-icon>
+              <span>支付管理</span>
+            </template>
+            <el-menu-item index="payment-order"><el-icon><List /></el-icon>支付订单</el-menu-item>
+            <el-menu-item index="payment-refund"><el-icon><RefreshLeft /></el-icon>退款管理</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="claim">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>理赔管理</span>
+            </template>
+            <el-menu-item index="claim-list"><el-icon><List /></el-icon>理赔申请</el-menu-item>
+            <el-menu-item index="claim-review"><el-icon><Check /></el-icon>理赔审核</el-menu-item>
+          </el-sub-menu>
           <el-sub-menu index="system">
             <template #title>
               <el-icon><Setting /></el-icon>
@@ -2118,6 +2134,257 @@
           </div>
         </div>
 
+        <!-- 支付订单 -->
+        <div v-if="currentView === 'payment-order'">
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">订单号：</span>
+              <el-input v-model="filterParams.paymentNo" placeholder="请输入订单号"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">投保人：</span>
+              <el-input v-model="filterParams.paymentBidder" placeholder="请输入投保人"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">交易平台：</span>
+              <el-select v-model="filterParams.paymentChannel" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="数字泸州" value="数字泸州"></el-option>
+                <el-option label="江西省" value="江西省"></el-option>
+                <el-option label="公共资源中心" value="公共资源中心"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">支付方式：</span>
+              <el-select v-model="filterParams.paymentMethod" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="微信支付" value="wechat"></el-option>
+                <el-option label="支付宝" value="alipay"></el-option>
+                <el-option label="企业网银" value="bank"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">支付时间：</span>
+              <el-date-picker v-model="filterParams.paymentTimeRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">支付状态：</span>
+              <el-select v-model="filterParams.paymentStatus" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="待支付" value="pending"></el-option>
+                <el-option label="支付中" value="processing"></el-option>
+                <el-option label="支付成功" value="success"></el-option>
+                <el-option label="支付失败" value="failed"></el-option>
+                <el-option label="已退款" value="refunded"></el-option>
+              </el-select>
+            </div>
+            <el-button type="primary">搜索</el-button>
+            <el-button>重置</el-button>
+          </div>
+
+          <div class="table-card">
+            <el-table :data="paymentList">
+              <el-table-column prop="paymentNo" label="订单号" width="180"></el-table-column>
+              <el-table-column prop="applyNo" label="投保申请号" width="180"></el-table-column>
+              <el-table-column prop="bidder" label="投保人"></el-table-column>
+              <el-table-column prop="guaranteeType" label="保函类型" width="120">
+                <template #default="scope">
+                  <el-tag :type="scope.row.guaranteeType === '投标保函' ? 'primary' : scope.row.guaranteeType === '履约保函' ? 'success' : scope.row.guaranteeType === '工程质量保证金' ? 'warning' : 'info'" size="small">
+                    {{ scope.row.guaranteeType }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="amount" label="保费金额" width="100"></el-table-column>
+              <el-table-column prop="paymentMethod" label="支付方式" width="100">
+                <template #default="scope">
+                  <span>{{ scope.row.paymentMethod === 'wechat' ? '微信支付' : scope.row.paymentMethod === 'alipay' ? '支付宝' : scope.row.paymentMethod === 'bank' ? '企业网银' : '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="channel" label="交易平台" width="120"></el-table-column>
+              <el-table-column prop="createTime" label="创建时间" width="160"></el-table-column>
+              <el-table-column prop="payTime" label="支付时间" width="160"></el-table-column>
+              <el-table-column prop="status" label="支付状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.status === 'success' ? 'success' : scope.row.status === 'pending' ? 'warning' : scope.row.status === 'failed' ? 'danger' : scope.row.status === 'refunded' ? 'info' : ''" size="small">
+                    {{ scope.row.statusText }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="scope">
+                  <el-button type="primary" link>查看</el-button>
+                  <el-button v-if="scope.row.status === 'success'" type="warning" link>退款</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="color: #909399; font-size: 14px;">共 5 条记录，第 1/1 页</div>
+              <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="5" :page-sizes="[10, 20, 50, 100]" :page-size="10"></el-pagination>
+            </div>
+          </div>
+        </div>
+
+        <!-- 理赔申请 -->
+        <div v-if="currentView === 'claim-list'">
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">理赔单号：</span>
+              <el-input v-model="filterParams.claimNo" placeholder="请输入理赔单号"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">保函编号：</span>
+              <el-input v-model="filterParams.claimGuaranteeNo" placeholder="请输入保函编号"></el-input>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">交易平台：</span>
+              <el-select v-model="filterParams.claimChannel" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="数字泸州" value="数字泸州"></el-option>
+                <el-option label="江西省" value="江西省"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">理赔类型：</span>
+              <el-select v-model="filterParams.claimType" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="出险理赔" value="claim"></el-option>
+                <el-option label="追偿" value="追偿"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">申请时间：</span>
+              <el-date-picker v-model="filterParams.claimTimeRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">状态：</span>
+              <el-select v-model="filterParams.claimStatus" placeholder="全部">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="待处理" value="pending"></el-option>
+                <el-option label="处理中" value="processing"></el-option>
+                <el-option label="已赔付" value="paid"></el-option>
+                <el-option label="已拒绝" value="rejected"></el-option>
+                <el-option label="已结案" value="closed"></el-option>
+              </el-select>
+            </div>
+            <el-button type="primary">搜索</el-button>
+            <el-button>重置</el-button>
+          </div>
+
+          <div class="table-card">
+            <el-table :data="claimList">
+              <el-table-column prop="claimNo" label="理赔单号" width="180"></el-table-column>
+              <el-table-column prop="guaranteeNo" label="保函编号" width="180"></el-table-column>
+              <el-table-column prop="guaranteeType" label="保函类型" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.guaranteeType === '投标保函' ? 'primary' : scope.row.guaranteeType === '履约保函' ? 'success' : 'warning'" size="small">
+                    {{ scope.row.guaranteeType }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="bidder" label="投标人"></el-table-column>
+              <el-table-column prop="beneficiary" label="受益人"></el-table-column>
+              <el-table-column prop="claimAmount" label="理赔金额" width="100"></el-table-column>
+              <el-table-column prop="channel" label="交易平台" width="100"></el-table-column>
+              <el-table-column prop="claimType" label="理赔类型" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.claimType === 'claim' ? 'danger' : 'warning'" size="small">
+                    {{ scope.row.claimType === 'claim' ? '出险理赔' : '追偿' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="申请时间" width="160"></el-table-column>
+              <el-table-column prop="status" label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.status === 'pending' ? 'warning' : scope.row.status === 'processing' ? 'primary' : scope.row.status === 'paid' ? 'success' : scope.row.status === 'rejected' ? 'danger' : 'info'" size="small">
+                    {{ scope.row.statusText }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120">
+                <template #default="scope">
+                  <el-button type="primary" link @click="currentView = 'claim-review'">处理</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="color: #909399; font-size: 14px;">共 3 条记录，第 1/1 页</div>
+              <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="3" :page-sizes="[10, 20, 50, 100]" :page-size="10"></el-pagination>
+            </div>
+          </div>
+        </div>
+
+        <!-- 理赔审核 -->
+        <div v-if="currentView === 'claim-review'">
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">理赔申请详情</div>
+              <div>
+                <el-button @click="currentView = 'claim-list'">返回</el-button>
+                <el-button type="danger" @click="rejectClaim">拒绝</el-button>
+                <el-button type="success" @click="approveClaim">通过</el-button>
+              </div>
+            </div>
+
+            <!-- 保函信息 -->
+            <div style="margin-bottom: 20px;">
+              <div style="font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed;">保函信息</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div><span style="color: #909399;">理赔单号：</span>CLM2024010001</div>
+                <div><span style="color: #909399;">保函编号：</span>G2024010001</div>
+                <div><span style="color: #909399;">保函类型：</span>投标保函</div>
+                <div><span style="color: #909399;">投标人：</span>某某建筑有限公司</div>
+                <div><span style="color: #909399;">受益人：</span>某某招标中心</div>
+                <div><span style="color: #909399;">保函金额：</span>800,000 元</div>
+              </div>
+            </div>
+
+            <!-- 理赔信息 -->
+            <div style="margin-bottom: 20px;">
+              <div style="font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed;">理赔信息</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div><span style="color: #909399;">理赔类型：</span>出险理赔</div>
+                <div><span style="color: #909399;">理赔金额：</span>800,000 元</div>
+                <div><span style="color: #909399;">申请时间：</span>2024-01-20 10:30:00</div>
+                <div><span style="color: #909399;">出险原因：</span>投标人未中标，保证金需退还</div>
+                <div><span style="color: #909399;">理赔状态：</span>待审核</div>
+              </div>
+            </div>
+
+            <!-- 附件材料 -->
+            <div style="margin-bottom: 20px;">
+              <div style="font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed;">附件材料</div>
+              <div>
+                <el-button type="primary" link>中标结果通知书.pdf</el-button>
+                <el-button type="primary" link>保证金退还说明.pdf</el-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 审核表单 -->
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">理赔审核</div>
+            </div>
+            <el-form label-width="120px">
+              <el-form-item label="审核结果">
+                <el-radio-group v-model="claimReviewForm.result">
+                  <el-radio value="pass">通过</el-radio>
+                  <el-radio value="reject">拒绝</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="赔付金额">
+                <el-input v-model="claimReviewForm.amount" placeholder="请输入赔付金额"></el-input>
+              </el-form-item>
+              <el-form-item label="审核意见">
+                <el-input v-model="claimReviewForm.opinion" type="textarea" rows="3" placeholder="请输入审核意见"></el-input>
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="submitClaimReview">提交审核</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+
         <!-- 用户管理 -->
         <div v-if="currentView === 'system-user'">
           <div style="margin-bottom: 20px;">
@@ -2244,6 +2511,10 @@
             'finance-report': '收入统计',
             'finance-reconcile': '对账管理',
             'finance-invoice': '发票管理',
+            'payment-order': '支付订单',
+            'payment-refund': '退款管理',
+            'claim-list': '理赔申请',
+            'claim-review': '理赔审核',
             'system-user': '用户管理',
             'system-role': '角色管理',
             'system-log': '操作日志'
@@ -2750,6 +3021,44 @@
           { name: '出函岗', code: 'ISSUE', userCount: 3, description: '负责保函签发和管理', createTime: '2023-01-01' },
           { name: '财务岗', code: 'FINANCE', userCount: 2, description: '负责财务和发票管理', createTime: '2023-01-01' }
         ]);
+
+        // 支付订单数据
+        const paymentList = ref([
+          { paymentNo: 'PAY2024010001', applyNo: 'APP2024010001', bidder: '某某建筑有限公司', guaranteeType: '投标保函', amount: '4,000', paymentMethod: 'wechat', channel: '数字泸州', createTime: '2024-01-15 10:30:00', payTime: '2024-01-15 10:32:00', status: 'success', statusText: '支付成功' },
+          { paymentNo: 'PAY2024010002', applyNo: 'APP2024010002', bidder: '某某商贸公司', guaranteeType: '投标保函', amount: '2,000', paymentMethod: 'alipay', channel: '江西省', createTime: '2024-01-15 11:00:00', payTime: '2024-01-15 11:05:00', status: 'success', statusText: '支付成功' },
+          { paymentNo: 'PAY2024010003', applyNo: 'APP2024010003', bidder: '某某建设集团', guaranteeType: '履约保函', amount: '8,000', paymentMethod: 'bank', channel: '数字泸州', createTime: '2024-01-15 14:00:00', payTime: '', status: 'pending', statusText: '待支付' },
+          { paymentNo: 'PAY2024010004', applyNo: 'APP2024010004', bidder: '某某工程公司', guaranteeType: '投标保函', amount: '1,500', paymentMethod: 'wechat', channel: '公共资源中心', createTime: '2024-01-14 09:00:00', payTime: '2024-01-14 09:02:00', status: 'failed', statusText: '支付失败' },
+          { paymentNo: 'PAY2024010005', applyNo: 'APP2024010005', bidder: '某某投标企业', guaranteeType: '农民工工资支付', amount: '500', paymentMethod: 'alipay', channel: '江西省', createTime: '2024-01-14 16:00:00', payTime: '2024-01-14 16:10:00', status: 'refunded', statusText: '已退款' }
+        ]);
+
+        // 理赔申请数据
+        const claimList = ref([
+          { claimNo: 'CLM2024010001', guaranteeNo: 'G2024010001', guaranteeType: '投标保函', bidder: '某某建筑有限公司', beneficiary: '某某招标中心', claimAmount: '800,000', channel: '数字泸州', claimType: 'claim', createTime: '2024-01-20 10:30:00', status: 'pending', statusText: '待处理' },
+          { claimNo: 'CLM2024010002', guaranteeNo: 'G2024010002', guaranteeType: '履约保函', bidder: '某某建设公司', beneficiary: '某某业主单位', claimAmount: '500,000', channel: '江西省', claimType: '追偿', createTime: '2024-01-19 14:00:00', status: 'processing', statusText: '处理中' },
+          { claimNo: 'CLM2024010003', guaranteeNo: 'G2024010003', guaranteeType: '投标保函', bidder: '某某商贸公司', beneficiary: '某某采购中心', claimAmount: '200,000', channel: '公共资源中心', claimType: 'claim', createTime: '2024-01-18 09:00:00', status: 'paid', statusText: '已赔付' }
+        ]);
+
+        // 理赔审核表单
+        const claimReviewForm = ref({
+          result: 'pass',
+          amount: '800,000',
+          opinion: ''
+        });
+
+        const submitClaimReview = () => {
+          alert('理赔审核提交成功');
+          currentView.value = 'claim-list';
+        };
+
+        const rejectClaim = () => {
+          claimReviewForm.value.result = 'reject';
+          submitClaimReview();
+        };
+
+        const approveClaim = () => {
+          claimReviewForm.value.result = 'pass';
+          submitClaimReview();
+        };
 
         const handleMenuSelect = (index) => {
           currentView.value = index;
