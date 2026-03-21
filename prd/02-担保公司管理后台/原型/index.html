@@ -135,6 +135,10 @@
       <!-- 侧边栏 -->
       <div class="sidebar">
         <el-menu :default-active="currentView" class="sidebar-menu" @select="handleMenuSelect">
+          <el-menu-item index="lifecycle">
+            <el-icon><Connection /></el-icon>
+            <span>业务流程</span>
+          </el-menu-item>
           <el-menu-item index="dashboard">
             <el-icon><House /></el-icon>
             <span>工作台</span>
@@ -153,7 +157,6 @@
               <span>保函管理</span>
             </template>
             <el-menu-item index="guarantee-list"><el-icon><List /></el-icon>保函列表</el-menu-item>
-            <el-menu-item index="guarantee-lifecycle"><el-icon><Connection /></el-icon>保函生命周期</el-menu-item>
             <el-menu-item index="guarantee-sign"><el-icon><EditPen /></el-icon>保函签章</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="surrender">
@@ -562,7 +565,7 @@
         </div>
 
         <!-- 保函全生命周期 -->
-        <div v-if="currentView === 'guarantee-lifecycle'">
+        <div v-if="currentView === 'lifecycle'">
           <div class="detail-card">
             <div class="detail-header">
               <div class="detail-title">电子保函全生命周期</div>
@@ -2601,7 +2604,7 @@
             'apply-list': '投保列表',
             'apply-review': '投保审核',
             'guarantee-list': '保函列表',
-            'guarantee-lifecycle': '保函生命周期',
+            'lifecycle': '业务流程',
             'guarantee-sign': '保函签章',
             'surrender-list': '退保列表',
             'surrender-review': '退保审核',
