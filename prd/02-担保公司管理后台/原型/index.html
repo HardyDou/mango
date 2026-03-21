@@ -151,6 +151,14 @@
             <el-menu-item index="apply-list"><el-icon><List /></el-icon>投保列表</el-menu-item>
             <el-menu-item index="apply-review"><el-icon><Check /></el-icon>投保审核</el-menu-item>
           </el-sub-menu>
+          <el-sub-menu index="payment">
+            <template #title>
+              <el-icon><Wallet /></el-icon>
+              <span>支付管理</span>
+            </template>
+            <el-menu-item index="payment-order"><el-icon><List /></el-icon>支付订单</el-menu-item>
+            <el-menu-item index="payment-refund"><el-icon><RefreshLeft /></el-icon>退款管理</el-menu-item>
+          </el-sub-menu>
           <el-sub-menu index="guarantee">
             <template #title>
               <el-icon><Ticket /></el-icon>
@@ -166,6 +174,14 @@
             </template>
             <el-menu-item index="surrender-list"><el-icon><List /></el-icon>退保列表</el-menu-item>
             <el-menu-item index="surrender-review"><el-icon><Check /></el-icon>退保审核</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu index="claim">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>理赔管理</span>
+            </template>
+            <el-menu-item index="claim-list"><el-icon><List /></el-icon>理赔申请</el-menu-item>
+            <el-menu-item index="claim-review"><el-icon><Check /></el-icon>理赔审核</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="org">
             <template #title>
@@ -197,22 +213,6 @@
             <el-menu-item index="finance-report"><el-icon><DataAnalysis /></el-icon>收入统计</el-menu-item>
             <el-menu-item index="finance-reconcile"><el-icon><Tickets /></el-icon>对账管理</el-menu-item>
             <el-menu-item index="finance-invoice"><el-icon><Ticket /></el-icon>发票管理</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="payment">
-            <template #title>
-              <el-icon><Wallet /></el-icon>
-              <span>支付管理</span>
-            </template>
-            <el-menu-item index="payment-order"><el-icon><List /></el-icon>支付订单</el-menu-item>
-            <el-menu-item index="payment-refund"><el-icon><RefreshLeft /></el-icon>退款管理</el-menu-item>
-          </el-sub-menu>
-          <el-sub-menu index="claim">
-            <template #title>
-              <el-icon><Coin /></el-icon>
-              <span>理赔管理</span>
-            </template>
-            <el-menu-item index="claim-list"><el-icon><List /></el-icon>理赔申请</el-menu-item>
-            <el-menu-item index="claim-review"><el-icon><Check /></el-icon>理赔审核</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="system">
             <template #title>
