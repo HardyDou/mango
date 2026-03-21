@@ -153,6 +153,7 @@
               <span>保函管理</span>
             </template>
             <el-menu-item index="guarantee-list"><el-icon><List /></el-icon>保函列表</el-menu-item>
+            <el-menu-item index="guarantee-lifecycle"><el-icon><Connection /></el-icon>保函生命周期</el-menu-item>
             <el-menu-item index="guarantee-sign"><el-icon><EditPen /></el-icon>保函签章</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="surrender">
@@ -556,6 +557,113 @@
             <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
               <div style="color: #909399; font-size: 14px;">共 3 条记录，第 1/1 页</div>
               <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="3" :page-sizes="[10, 20, 50, 100]" :page-size="10"></el-pagination>
+            </div>
+          </div>
+        </div>
+
+        <!-- 保函全生命周期 -->
+        <div v-if="currentView === 'guarantee-lifecycle'">
+          <div class="detail-card">
+            <div class="detail-header">
+              <div class="detail-title">电子保函全生命周期</div>
+              <el-tag type="primary">按保函类型划分</el-tag>
+            </div>
+
+            <!-- 生命周期流程图 -->
+            <div style="display: flex; gap: 16px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 10px;">
+              <div v-for="type in lifecycleTypes" :key="type.code" style="flex: 1; min-width: 280px;">
+                <div class="stats-card" style="margin-bottom: 0;">
+                  <div class="stats-card-title" :style="{ color: type.color }">{{ type.name }}</div>
+                  <div class="stats-card-row" style="padding: 8px 0;">
+                    <span>保函形式：</span>
+                    <el-tag :type="type.formTag" size="small">{{ type.form }}</el-tag>
+                  </div>
+                  <div class="stats-card-row" style="padding: 8px 0;">
+                    <span>适用场景：</span>
+                    <span>{{ type.scenario }}</span>
+                  </div>
+                  <div class="stats-card-row" style="padding: 8px 0;">
+                    <span>有效期限：</span>
+                    <span>{{ type.period }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 生命周期阶段说明 -->
+            <el-tabs v-model="lifecycleTab" type="card">
+              <el-tab-pane label="投标保函" name="bid">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                  <div v-for="(stage, index) in bidLifecycle" :key="index" class="stats-card">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                      <div style="width: 28px; height: 28px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600;">{{ index + 1 }}</div>
+                      <div style="font-weight: 600; color: #303133;">{{ stage.name }}</div>
+                    </div>
+                    <div style="font-size: 13px; color: #606266; line-height: 1.8;">
+                      <div v-for="(item, i) in stage.items" :key="i" style="margin-bottom: 4px;">• {{ item }}</div>
+                    </div>
+                    <div v-if="stage.dataFlow" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e4e7ed; font-size: 12px; color: #909399;">
+                      数据流：{{ stage.dataFlow }}
+                    </div>
+                  </div>
+                </div>
+              </el-tab-pane>
+
+              <el-tab-pane label="履约/预付款/质量保函" name="perf">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                  <div v-for="(stage, index) in perfLifecycle" :key="index" class="stats-card">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                      <div style="width: 28px; height: 28px; border-radius: 50%; background: #67C23A; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600;">{{ index + 1 }}</div>
+                      <div style="font-weight: 600; color: #303133;">{{ stage.name }}</div>
+                    </div>
+                    <div style="font-size: 13px; color: #606266; line-height: 1.8;">
+                      <div v-for="(item, i) in stage.items" :key="i" style="margin-bottom: 4px;">• {{ item }}</div>
+                    </div>
+                  </div>
+                </div>
+              </el-tab-pane>
+
+              <el-tab-pane label="农民工工资保函" name="wage">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                  <div v-for="(stage, index) in wageLifecycle" :key="index" class="stats-card">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                      <div style="width: 28px; height: 28px; border-radius: 50%; background: #E6A23C; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600;">{{ index + 1 }}</div>
+                      <div style="font-weight: 600; color: #303133;">{{ stage.name }}</div>
+                    </div>
+                    <div style="font-size: 13px; color: #606266; line-height: 1.8;">
+                      <div v-for="(item, i) in stage.items" :key="i" style="margin-bottom: 4px;">• {{ item }}</div>
+                    </div>
+                  </div>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
+
+            <!-- 密文函vs明文函对比 -->
+            <div style="margin-top: 24px;">
+              <div style="font-weight: 600; margin-bottom: 16px;">密文函 vs 明文函 对比</div>
+              <el-table :data="ciphertextCompare" border>
+                <el-table-column prop="dimension" label="对比维度" width="140"></el-table-column>
+                <el-table-column label="密文函（投标保函）">
+                  <template #default="scope">
+                    <div style="color: #E6A23C; font-weight: 500;">{{ scope.row.ciphertext }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="明文函（其他保函）">
+                  <template #default="scope">
+                    <div style="color: #67C23A; font-weight: 500;">{{ scope.row.plaintext }}</div>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+
+            <!-- 状态流转说明 -->
+            <div style="margin-top: 24px;">
+              <div style="font-weight: 600; margin-bottom: 16px;">保函状态流转</div>
+              <el-table :data="guaranteeStatusFlow" border>
+                <el-table-column prop="phase" label="阶段" width="120"></el-table-column>
+                <el-table-column prop="status" label="状态" width="140"></el-table-column>
+                <el-table-column prop="description" label="说明"></el-table-column>
+              </el-table>
             </div>
           </div>
         </div>
@@ -2493,6 +2601,7 @@
             'apply-list': '投保列表',
             'apply-review': '投保审核',
             'guarantee-list': '保函列表',
+            'guarantee-lifecycle': '保函生命周期',
             'guarantee-sign': '保函签章',
             'surrender-list': '退保列表',
             'surrender-review': '退保审核',
@@ -2539,6 +2648,67 @@
           { no: 'APP2024010004', guaranteeType: '工程质量保证金', bidder: '某某建筑公司', amount: '900,000', premium: '4,500', validPeriod: '24个月', projectName: 'AAA工程项目', channel: '招标平台', createTime: '2024-01-14 11:00', status: 'processing', statusText: '审核中', ciphertext: '0', ciphertextText: '明文', bidSection: '-' },
           // 农民工工资支付保函 - 明文
           { no: 'APP2024010005', guaranteeType: '农民工工资支付', bidder: '某某劳务公司', amount: '200,000', premium: '2,000', validPeriod: '18个月', projectName: 'BBB项目', channel: '公共资源中心', createTime: '2024-01-13 16:30', status: 'pending', statusText: '待审核', ciphertext: '0', ciphertextText: '明文', bidSection: '-' }
+        ]);
+
+        // 保函全生命周期数据
+        const lifecycleTab = ref('bid');
+
+        const lifecycleTypes = ref([
+          { code: 'BID', name: '投标保函', form: '密文函', formTag: 'warning', scenario: '投标阶段，保证不弃标、不造假', period: '投标截止日后30天' },
+          { code: 'PERF', name: '履约保函', form: '明文函', formTag: 'success', scenario: '中标后，保证按合同完工', period: '合同工期+质保期' },
+          { code: 'ADV', name: '预付款保函', form: '明文函', formTag: 'success', scenario: '保证业主预付款专款专用', period: '合同工期' },
+          { code: 'QUAL', name: '质量保函', form: '明文函', formTag: 'success', scenario: '保证工程在质保期内履行维修责任', period: '质保期满后2年' },
+          { code: 'WAGE', name: '农民工工资保函', form: '明文函', formTag: 'warning', scenario: '保证按时足额支付农民工工资', period: '工期结束后1年' }
+        ]);
+
+        // 投标保函生命周期（密文函）
+        const bidLifecycle = ref([
+          { name: '1. 项目与准入准备', items: ['招标人发布项目，交易中心备案', '金融机构入围、额度备案、接口联调', '技术服务商提供出函系统'] },
+          { name: '2. 投标人申请', items: ['投标人选择项目 → 电子保函', '选择出函机构（银行/担保/保险）', '提交投保信息'], dataFlow: '交易中心 → 金融机构（申请推送）' },
+          { name: '3. 风控审核', items: ['机构自动审核：工商、失信、司法、黑名单', '审核投标人资质', '额度检查'], dataFlow: '金融机构 → 交易中心（审核结果）' },
+          { name: '4. 支付', items: ['投标人支付保费（交易中心代收/机构直收/线下转账）', '保费计算：金额×费率（0.2%-1.5%）'], dataFlow: '交易中心 → 金融机构（支付结果）' },
+          { name: '5. 出函（密文）', items: ['接收交易中心加密的标段/招标人信息', '生成密文保函（4字段加密：标段编号、标段名称、招标人、招标人代码）', '国密SM4加密+SM2签名+SM3验签'], dataFlow: '金融机构 → 交易中心（出函结果）' },
+          { name: '6. 生效与投标', items: ['交易中心验签、核验', '投标保函保持密文状态，标记生效', '投标人凭密文保函投标'], dataFlow: '交易中心 → 金融机构（生效通知）' },
+          { name: '7. 开标与终结', items: ['项目开标', '调用还原保函接口，推送解密Key', '自动解密 → 生成明文保函 → 明文归档', '额度释放、保函失效、业务终结'], dataFlow: '交易中心 → 金融机构（开标结果）' }
+        ]);
+
+        // 履约/预付款/质量保函生命周期（明文函）
+        const perfLifecycle = ref([
+          { name: '1. 项目与准入准备', items: ['招标人发布项目，交易中心备案', '金融机构入围、额度备案', '技术服务商提供出函系统'] },
+          { name: '2. 申请人申请', items: ['申请人选择项目 → 电子保函', '选择出函机构', '提交投保信息'], dataFlow: '交易中心 → 金融机构（申请推送）' },
+          { name: '3. 风控审核', items: ['机构自动审核：工商、失信、司法', '审核申请人资质', '额度检查'], dataFlow: '金融机构 → 交易中心（审核结果）' },
+          { name: '4. 支付', items: ['申请人支付保费', '保费计算：金额×费率'], dataFlow: '交易中心 → 金融机构（支付结果）' },
+          { name: '5. 出函（明文）', items: ['直接生成明文保函', '电子签章（右下角签章+时间戳）', 'PDF/OFD格式输出'], dataFlow: '金融机构 → 交易中心（出函结果）' },
+          { name: '6. 生效', items: ['交易中心验签、核验', '明文保函直接生效'], dataFlow: '交易中心 → 金融机构（生效通知）' },
+          { name: '7. 到期/终结', items: ['保函到期自动失效', '额度释放', '明文归档'], dataFlow: '交易中心 → 金融机构（到期通知）' }
+        ]);
+
+        // 农民工工资保函生命周期
+        const wageLifecycle = ref([
+          { name: '1. 项目准入', items: ['企业（业主）向金融机构申请', '金融机构额度备案', '强制类险种'] },
+          { name: '2. 申请出函', items: ['企业（业主）申请开函', '金融机构审核', '出具明文保函'], dataFlow: '交易中心/业主 → 金融机构' },
+          { name: '3. 生效', items: ['明文保函生效', '向监管部门备案'], dataFlow: '金融机构 → 交易中心（生效）' },
+          { name: '4. 保障与索赔', items: ['保函有效期内保障农民工工资', '如遇拖欠，农民工/监管部门可索赔', '金融机构赔付'], dataFlow: '农民工/监管 → 金融机构（索赔）' },
+          { name: '5. 终结', items: ['工期结束 + 满1年后', '保函失效', '额度释放'], dataFlow: '自动终结' }
+        ]);
+
+        // 密文函vs明文函对比
+        const ciphertextCompare = ref([
+          { dimension: '保函类型', ciphertext: '仅投标保函', plaintext: '履约/预付款/质量/农民工工资保函' },
+          { dimension: '加密内容', ciphertext: '4个核心字段（标段编号、标段名称、招标人、招标人代码）', plaintext: '无加密，全文明文' },
+          { dimension: '加密算法', ciphertext: 'SM4对称加密 + SM2非对称加密密钥', plaintext: '无' },
+          { dimension: '签名算法', ciphertext: 'SM3哈希 + SM2签名', plaintext: 'SM3哈希 + SM2签名' },
+          { dimension: '开标前状态', ciphertext: '密文存储，投标人信息不可见', plaintext: '明文可查' },
+          { dimension: '开标后', ciphertext: '调用还原接口解密 → 明文归档', plaintext: '保持明文' },
+          { dimension: '目的', ciphertext: '防止围标串标、保护投标人信息', plaintext: '全程透明可查' }
+        ]);
+
+        // 保函状态流转
+        const guaranteeStatusFlow = ref([
+          { phase: '投保阶段', status: 'SUBMITTED / REVIEWING / APPROVED / REJECTED', description: '已提交 → 审核中 → 审核通过 → 审核拒绝' },
+          { phase: '支付阶段', status: 'PENDING / PAID', description: '待支付 → 已支付' },
+          { phase: '出函阶段', status: 'PENDING / ISSUING / ISSUED / FAILED', description: '待出函 → 出函中 → 已出函 → 出函失败' },
+          { phase: '生效阶段', status: 'ACTIVE / VERIFIED / EXPIRED / CANCELLED', description: '生效中 → 验真通过 → 已到期 → 已注销' }
         ]);
 
         const guaranteeList = ref([
@@ -3110,6 +3280,13 @@
           pendingTasks,
           applyList,
           guaranteeList,
+          lifecycleTab,
+          lifecycleTypes,
+          bidLifecycle,
+          perfLifecycle,
+          wageLifecycle,
+          ciphertextCompare,
+          guaranteeStatusFlow,
           surrenderList,
           riskRules,
           blacklist,
