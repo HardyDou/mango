@@ -10,14 +10,18 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>mango-tools</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>mango-generator</artifactId>
+    <packaging>jar</packaging>
 
-    <name>Mango Tools</name>
-    <description>AI-Friendly Java Scaffold Tools - Maven Plugin, CLI</description>
+    <name>Mango Generator</name>
+    <description>Code generation templates for Mango Scaffold</description>
 
-    <modules>
-        <module>mango-maven-plugin</module>
-    </modules>
+    <dependencies>
+        <!-- Velocity for template rendering -->
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

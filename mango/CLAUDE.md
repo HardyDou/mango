@@ -18,7 +18,9 @@ Mango 是一个 For AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agent 
 
 | 模块 | 说明 |
 |------|------|
+| `mango-parent` | Maven 父项目，统一管理依赖和插件版本 |
 | `mango-common` | 公共基础组件 (R/Require/BizCode/BasePO/BaseVO/PageVO) |
+| `mango-generator` | 代码生成模板 (Velocity 模板) |
 | `mango-tools` | Mango Maven 插件 (gen-module/gen-crud/gen-permission/check/evaluate) |
 
 ## 模块结构
@@ -28,6 +30,8 @@ mango/
 ├── CLAUDE.md                    # 本文件 - 项目说明
 ├── rules/                       # AI-Executable 规范 (code/api/db/security 等)
 ├── .mango/roles/               # AI 角色定义
+├── mango-parent/                # Maven 父项目（依赖版本管理）
+├── mango-generator/             # 代码生成模板
 ├── mango-tools/                 # Mango CLI 工具链
 │   └── mango-maven-plugin/     # Maven 插件 (gen/check/evaluate)
 └── mango-common/                # 公共模块
