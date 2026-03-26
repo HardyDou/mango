@@ -4,23 +4,27 @@
 
 ### 1.1 URL 格式规范
 
+**格式**: `/{model}/{module}/{resource}`
+
 | 方法 | URL | 说明 |
 |------|-----|------|
-| GET | /api/users | 列表 |
-| GET | /api/users/{id} | 详情 |
-| POST | /api/users | 创建 |
-| PUT | /api/users/{id} | 全量更新 |
-| PATCH | /api/users/{id} | 部分更新 |
-| DELETE | /api/users/{id} | 删除 |
+| GET | /sys/user | 列表 |
+| GET | /sys/user/{id} | 详情 |
+| POST | /sys/user | 创建 |
+| PUT | /sys/user/{id} | 全量更新 |
+| PATCH | /sys/user/{id} | 部分更新 |
+| DELETE | /sys/user/{id} | 删除 |
 
 ### 1.2 URL 命名规则
 
 ```
+- 格式: /{model}/{module}/{resource}
 - 使用小写字母
-- 使用横杠分隔单词: /api/user-orders
-- 禁用下划线: /api/user_orders (❌)
-- 禁用动词: /api/getUser (❌)
-- 资源用复数: /api/users (不是 /api/user)
+- 使用横杠分隔单词: /sys/user-order
+- 禁用下划线: /sys/user_order (❌)
+- 禁用动词: /sys/getUser (❌)
+- 资源用复数: /sys/user (不是 /sys/users)
+- 无 /api 前缀
 ```
 
 ---
@@ -38,7 +42,7 @@ Authorization: Bearer {token}
 ### 2.2 分页请求
 
 ```json
-GET /api/users?page=1&size=20&sort=createdAt,desc
+GET /sys/user?page=1&size=20&sort=createdAt,desc
 
 {
   "page": 1,
@@ -50,7 +54,7 @@ GET /api/users?page=1&size=20&sort=createdAt,desc
 ### 2.3 搜索请求
 
 ```json
-GET /api/users?keyword=张三&status=ACTIVE
+GET /sys/user?keyword=张三&status=ACTIVE
 
 {
   "keyword": "张三",
@@ -139,8 +143,8 @@ GET /api/users?keyword=张三&status=ACTIVE
 ### 5.1 URL 版本
 
 ```
-/api/v1/users
-/api/v2/users
+/v1/sys/user
+/v2/sys/user
 ```
 
 ### 5.2 Header 版本
@@ -157,7 +161,7 @@ Accept: application/vnd.mango.v1+json
 
 ```java
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/sys/user")
 @Api(tags = "用户管理")
 public class UserController {
 
@@ -178,13 +182,13 @@ public class UserController {
 
 ```java
 // ✅ 需要登录
-@GetMapping("/api/user")
+@GetMapping("/sys/user/current")
 @PreAuthorize("isAuthenticated()")
 public User getCurrentUser() { }
 
 // ✅ 需要特定权限
-@DeleteMapping("/api/users/{id}")
-@PreAuthorize("hasAuthority('user:delete')")
+@DeleteMapping("/sys/user/{id}")
+@PreAuthorize("hasAuthority('sys:user:delete')")
 public void deleteUser(@PathVariable Long id) { }
 ```
 
