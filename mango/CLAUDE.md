@@ -9,20 +9,35 @@ Mango 是一个 For AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agent 
 | 组件 | 技术 |
 |------|------|
 | 前端 | Vue 3 + Element Plus |
-| 后端 | Java + Spring Boot + Spring Cloud Alibaba |
+| 后端 | Java 17 + Spring Boot 3.x + MyBatis-Plus |
 | 数据库 | MySQL |
 | 缓存 | Redis |
 | 注册/配置 | Nacos |
+
+## 已实现模块
+
+| 模块 | 说明 |
+|------|------|
+| `mango-common` | 公共基础组件 (R/Require/BizCode/BasePO/BaseVO/PageVO) |
+| `mango-tools` | Mango Maven 插件 (gen-module/gen-crud/gen-permission/check/evaluate) |
 
 ## 模块结构
 
 ```
 mango/
-├── rules/                       # AI-Executable 规范
+├── CLAUDE.md                    # 本文件 - 项目说明
+├── rules/                       # AI-Executable 规范 (code/api/db/security 等)
 ├── .mango/roles/               # AI 角色定义
-├── tools/                       # Mango CLI 工具链
-├── mango-parent/               # Maven 父项目
-└── mango-common/               # 公共模块
+├── mango-tools/                 # Mango CLI 工具链
+│   └── mango-maven-plugin/     # Maven 插件 (gen/check/evaluate)
+└── mango-common/                # 公共模块
+    └── src/main/java/io/mango/common/
+        ├── result/              # R, BizCode, Require
+        ├── exception/           # BizException, GlobalExceptionHandler
+        ├── po/                  # BasePO (请求参数基类)
+        ├── vo/                  # BaseVO, PageVO (返回参数基类)
+        ├── valid/               # Phone, IdCard 校验注解
+        └── annotation/          # @Perm, @Log
 ```
 
 ## 规范文件索引
@@ -82,16 +97,17 @@ mango/
 
 ```bash
 # 代码生成
-mvn mango:gen-module -Dname=<name>
-mvn mango:gen-crud -Dmodule=<module>
+mvn mango:gen-module -Dname=<name>          # 生成模块脚手架
+mvn mango:gen-crud -Dmodule=<module> -Dentity=<Entity> -Dtable=<table>  # 生成 CRUD
+mvn mango:gen-permission -Dmodule=<module> # 生成权限菜单 SQL
 
 # 代码检查
-mvn mango:check
-mvn mango:check -Drule=duplicate
+mvn mango:check              # 检查所有规则
+mvn mango:check -Drule=duplicate  # 检查重复代码
 
 # 质检评估
-mvn mango:evaluate -Dartifact=prd
-mvn mango:evaluate -Dartifact=code
+mvn mango:evaluate -Dartifact=prd   # PRD 质量评估
+mvn mango:evaluate -Dartifact=code  # 代码质量评估
 ```
 
 ---
