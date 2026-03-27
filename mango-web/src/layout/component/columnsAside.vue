@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts" name="layoutColumnsAside">
-import { defineAsyncComponent, onMounted, reactive, ref } from 'vue';
+import { defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
@@ -19,11 +19,15 @@ const storesTagsViewRoutes = useTagsViewRoutes();
 const { routesList } = storeToRefs(storesRoutesList);
 const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
-const menuList = reactive<any[]>([]);
+const menuList = ref<any[]>([]);
 
-onMounted(() => {
-  menuList = routesList.value as any[];
-});
+watch(
+  () => routesList.value,
+  (newVal) => {
+    menuList.value = newVal as any[];
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="scss">
