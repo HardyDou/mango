@@ -1,0 +1,104 @@
+/* Mango Light Theme - CSS Variables */
+
+:root {
+  /* Base colors */
+  --mango-color-white: #ffffff;
+  --mango-color-black: #000000;
+
+  /* Background */
+  --mango-bg-main: #f5f5f5;
+  --mango-bg-color: #ffffff;
+  --mango-bg-overlay: #ffffff;
+
+  /* Border */
+  --mango-border-color: #ebeef5;
+  --mango-border-light: #f1f2f3;
+
+  /* Text */
+  --mango-text-color: #333333;
+  --mango-text-color-regular: #606266;
+  --mango-text-color-placeholder: #a8abb2;
+  --mango-text-color-disabled: #c0c4cc;
+
+  /* Primary */
+  --mango-color-primary: #2e5cf6;
+  --mango-color-primary-light: #5b8af6;
+  --mango-color-primary-lighter: #ecf5ff;
+  --mango-color-primary-dark: #1e3cc4;
+
+  /* Menu / Sidebar */
+  --mango-bg-menu-bar: #ffffff;
+  --mango-color-menu-bar: #505968;
+  --mango-color-menu-active-bg: rgba(46, 92, 246, 0.1);
+  --mango-color-menu-hover: rgba(0, 0, 0, 0.06);
+
+  /* Top Bar */
+  --mango-bg-top-bar: #2e5cf6;
+  --mango-color-top-bar: #ffffff;
+
+  /* Layout */
+  --mango-layout-bg: #f5f5f5;
+  --mango-aside-width: 220px;
+  --mango-header-height: 56px;
+  --mango-tags-view-height: 36px;
+
+  /* Shadow */
+  --mango-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
+  --mango-shadow-dark: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+
+  /* Transition */
+  --mango-transition-duration: 0.3s;
+}
+
+/* Global reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  outline: none !important;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'SimSun', sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  background-color: var(--mango-bg-main);
+  font-size: 14px;
+  overflow: hidden;
+  position: relative;
+  color: var(--mango-text-color);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mango-bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mango-border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mango-text-color-disabled);
+}
+
+/* Hard breakpoint - preserved from pigx-ui */
+@media (max-width: 1000px) {
+  html {
+    font-size: 13px;
+  }
+}

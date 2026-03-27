@@ -1,0 +1,41 @@
+/* Mango Dark Theme - CSS Variables */
+
+[data-theme='dark'] {
+  /* Background */
+  --mango-bg-main: #17202a;
+  --mango-bg-color: #1e2732;
+  --mango-bg-overlay: #273041;
+
+  /* Border */
+  --mango-border-color: #38444d;
+  --mango-border-light: #2f3336;
+
+  /* Text */
+  --mango-text-color: #f7f9f9;
+  --mango-text-color-regular: #8b98a5;
+  --mango-text-color-placeholder: #536471;
+  --mango-text-color-disabled: #3d4a56;
+
+  /* Primary */
+  --mango-color-primary: #3b6ef6;
+  --mango-color-primary-light: #5b8af6;
+  --mango-color-primary-lighter: #1e2732;
+  --mango-color-primary-dark: #2a50d4;
+
+  /* Menu / Sidebar */
+  --mango-bg-menu-bar: #1e2732;
+  --mango-color-menu-bar: #e6e6e6;
+  --mango-color-menu-active-bg: rgba(59, 110, 246, 0.15);
+  --mango-color-menu-hover: rgba(255, 255, 255, 0.06);
+
+  /* Top Bar */
+  --mango-bg-top-bar: #1e2732;
+  --mango-color-top-bar: #e6e6e6;
+
+  /* Layout */
+  --mango-layout-bg: #17202a;
+
+  /* Shadow */
+  --mango-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.4);
+  --mango-shadow-dark: 0 2px 12px 0 rgba(0, 0, 0, 0.6);
+}

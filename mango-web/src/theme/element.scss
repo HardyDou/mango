@@ -1,0 +1,29 @@
+/* Element Plus Theme Override Variables */
+:root {
+  /* Primary */
+  --el-color-primary: var(--mango-color-primary);
+  --el-color-primary-light-3: var(--mango-color-primary-light);
+  --el-color-primary-light-5: var(--mango-color-primary-lighter);
+  --el-color-primary-dark-2: var(--mango-color-primary-dark);
+
+  /* Text */
+  --el-text-color-primary: var(--mango-text-color);
+  --el-text-color-regular: var(--mango-text-color-regular);
+  --el-text-color-secondary: var(--mango-text-color-placeholder);
+  --el-text-color-placeholder: var(--mango-text-color-placeholder);
+  --el-text-color-disabled: var(--mango-text-color-disabled);
+
+  /* Background */
+  --el-bg-color: var(--mango-bg-color);
+  --el-bg-color-page: var(--mango-bg-main);
+  --el-bg-color-overlay: var(--mango-bg-overlay);
+
+  /* Border */
+  --el-border-color: var(--mango-border-color);
+  --el-border-color-light: var(--mango-border-light);
+  --el-border-color-lighter: var(--mango-border-light);
+  --el-border-color-extra-light: var(--mango-border-light);
+
+  /* Fill */
+  --el-fill-color-blank: var(--mango-bg-color);
+}
