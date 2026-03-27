@@ -5,6 +5,7 @@
       frameborder="0"
       class="iframe"
       :style="iframeStyle"
+      sandbox="allow-scripts allow-same-origin"
     />
   </div>
 </template>
