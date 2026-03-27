@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts" name="layoutAside">
-import { computed, defineAsyncComponent, onMounted, reactive, ref } from 'vue';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useThemeConfig } from '@/stores/themeConfig';
@@ -35,10 +35,15 @@ const { routesList } = storeToRefs(storesRoutesList);
 const { themeConfig } = storeToRefs(storesThemeConfig);
 const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
-const state = reactive({
-  menuList: [] as any[],
-  clientWidth: 0,
-});
+const menuList = ref<any[]>([]);
+
+watch(
+  () => routesList.value,
+  (newVal) => {
+    menuList.value = newVal;
+  },
+  { immediate: true }
+);
 
 const setShowAside = computed(() => {
   const { layout } = themeConfig.value;
@@ -55,10 +60,6 @@ const onAsideEnterLeave = (bool: boolean) => {
     storesRoutesList.setColumnsMenuHover(bool);
   }
 };
-
-onMounted(() => {
-  state.menuList = routesList.value;
-});
 </script>
 
 <style scoped lang="scss">

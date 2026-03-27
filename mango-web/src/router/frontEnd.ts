@@ -20,15 +20,6 @@ export function getFrontEndRoutes(): RouteRecordRaw[] {
       },
     },
     {
-      path: '/home',
-      name: 'Home',
-      component: () => import('@/views/home/index.vue'),
-      meta: {
-        title: '首页',
-        isAffix: true,
-      },
-    },
-    {
       path: '/404',
       name: 'NotFound',
       component: () => import('@/views/error/404.vue'),
@@ -51,6 +42,15 @@ export function getFrontEndRoutes(): RouteRecordRaw[] {
       component: () => import('@/layout/index.vue'),
       redirect: '/home',
       children: [
+        {
+          path: '/home',
+          name: 'Home',
+          component: () => import('@/views/home/index.vue'),
+          meta: {
+            title: '首页',
+            isAffix: true,
+          },
+        },
         {
           path: '/profile',
           name: 'Profile',

@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus';
 import { Session } from '@/utils/storage';
 import { useUserInfo } from '@/stores/userInfo';
 import { useThemeConfig } from '@/stores/themeConfig';
+import { useRoutesList } from '@/stores/routesList';
 import { staticRoutes } from './route';
 import { initBackEndControlRoutes } from './backEnd';
 import { getFrontEndRoutes } from './frontEnd';
@@ -34,6 +35,7 @@ async function initRoutes(): Promise<void> {
   if (isRoutesInitialized) return;
 
   const storesThemeConfig = useThemeConfig();
+  const storesRoutesList = useRoutesList();
   const { isRequestRoutes } = storesThemeConfig.themeConfig;
 
   if (isRequestRoutes) {
@@ -45,6 +47,12 @@ async function initRoutes(): Promise<void> {
     frontEndRoutes.forEach((route) => {
       router.addRoute(route as RouteRecordRaw);
     });
+    // 前端模式也需要填充 routesList store 以供菜单使用
+    // 从 frontEndRoutes 的根路由 children 中提取业务路由
+    const rootRoute = frontEndRoutes.find((r) => r.path === '/');
+    if (rootRoute && rootRoute.children) {
+      storesRoutesList.setRoutesList(rootRoute.children);
+    }
   }
 
   isRoutesInitialized = true;
@@ -61,7 +69,7 @@ router.beforeEach(async (to, from, next) => {
   document.title = title ? `${title} - Mango Admin` : 'Mango Admin';
 
   // 白名单路由直接放行
-  const whiteList = ['/login', '/404', '/401', '/home'];
+  const whiteList = ['/login', '/404', '/401'];
   if (whiteList.includes(to.path)) {
     next();
     return;

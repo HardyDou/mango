@@ -67,6 +67,9 @@ import { ElMessage } from 'element-plus';
 import { User, Lock, CircleCheck } from '@element-plus/icons-vue';
 import { Session } from '@/utils/storage';
 import { login } from '@/api/admin/sys';
+import { initBackEndControlRoutes } from '@/router/backEnd';
+import { getFrontEndRoutes } from '@/router/frontEnd';
+import { useRoutesList } from '@/stores/routesList';
 
 const router = useRouter();
 const loginFormRef = ref();
@@ -123,6 +126,17 @@ const handleLogin = async () => {
       // 保存 Token
       Session.setToken(mockRes.token);
       Session.set('userInfo', mockRes.userInfo);
+
+      // 初始化路由（前端模式）
+      const storesRoutesList = useRoutesList();
+      const frontEndRoutes = getFrontEndRoutes();
+      frontEndRoutes.forEach((route) => {
+        router.addRoute(route as any);
+      });
+      const rootRoute = frontEndRoutes.find((r) => r.path === '/');
+      if (rootRoute && rootRoute.children) {
+        storesRoutesList.setRoutesList(rootRoute.children);
+      }
 
       ElMessage.success('登录成功');
       router.push('/home');
