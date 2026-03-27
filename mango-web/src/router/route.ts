@@ -11,15 +11,6 @@ export const staticRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/home',
-    name: 'Home',
-    component: () => import('@/views/home/index.vue'),
-    meta: {
-      title: '首页',
-      isAffix: true,
-    },
-  },
-  {
     path: '/404',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
