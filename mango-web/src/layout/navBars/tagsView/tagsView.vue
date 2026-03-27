@@ -30,8 +30,9 @@
 </template>
 
 <script setup lang="ts" name="tagsView">
-import { computed, reactive, ref, watch, storeToRefs } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
 import ContextMenu from './contextmenu.vue';

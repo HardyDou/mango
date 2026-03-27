@@ -7,7 +7,7 @@ import { onBeforeMount, onUnmounted, defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
 import { Local } from '@/utils/storage';
-import mittBus from '@/utils/mitt';
+import { mittBus } from '@/utils/mitt';
 
 const layouts: Record<string, any> = {
   defaults: defineAsyncComponent(() => import('./main/defaults.vue')),
