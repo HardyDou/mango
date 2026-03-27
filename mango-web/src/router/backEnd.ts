@@ -90,6 +90,15 @@ function getMockBackEndRoutes(): RouteRecordRaw {
     },
     children: [
       {
+        path: '/home',
+        name: 'Home',
+        component: () => import('@/views/home/index.vue'),
+        meta: {
+          title: '首页',
+          isAffix: true,
+        },
+      },
+      {
         path: '/system',
         name: 'System',
         meta: {
