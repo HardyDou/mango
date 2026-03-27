@@ -21,7 +21,6 @@ interface ImportMeta {
 
 declare global {
   interface Window {
-    __MANGO_ROUTER__: any;
     __MANGO_PINIA__: any;
     __MANGO_MITT_BUS__: any;
   }

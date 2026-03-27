@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router';
+import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Session } from '@/utils/storage';
 import { useUserInfo } from '@/stores/userInfo';
@@ -8,13 +9,6 @@ import { staticRoutes } from './route';
 import { initBackEndControlRoutes } from './backEnd';
 import { getFrontEndRoutes } from './frontEnd';
 
-// 声明 window 类型扩展
-declare global {
-  interface Window {
-    __MANGO_ROUTER__: ReturnType<typeof createRouter>;
-  }
-}
-
 const router = createRouter({
   // 使用 hash 模式
   history: createWebHashHistory(),
@@ -23,17 +17,33 @@ const router = createRouter({
   scrollBehavior: () => ({ left: 0, top: 0 }),
 });
 
-// 挂载 router 实例到 window
-window.__MANGO_ROUTER__ = router;
-
-let isRoutesInitialized = false;
+// 使用 reactive ref + promise lock 防止竞态条件
+const isRoutesInitialized = ref(false);
+let initPromise: Promise<void> | null = null;
 
 /**
  * 路由守卫：初始化路由
  */
 async function initRoutes(): Promise<void> {
-  if (isRoutesInitialized) return;
+  // 如果已经在初始化中，返回现有 promise 等待完成
+  if (initPromise) {
+    return initPromise;
+  }
 
+  // 如果已经初始化完成，直接返回
+  if (isRoutesInitialized.value) {
+    return;
+  }
+
+  initPromise = doInitRoutes().finally(() => {
+    isRoutesInitialized.value = true;
+    initPromise = null;
+  });
+
+  return initPromise;
+}
+
+async function doInitRoutes(): Promise<void> {
   const storesThemeConfig = useThemeConfig();
   const storesRoutesList = useRoutesList();
   const { isRequestRoutes } = storesThemeConfig.themeConfig;
@@ -54,8 +64,6 @@ async function initRoutes(): Promise<void> {
       storesRoutesList.setRoutesList(rootRoute.children);
     }
   }
-
-  isRoutesInitialized = true;
 }
 
 /**
@@ -88,13 +96,8 @@ router.beforeEach(async (to, from, next) => {
     if (userInfo) {
       storesUserInfo.setUserInfos(userInfo);
 
-      // 确保路由已初始化
+      // 确保路由已初始化（使用 promise lock 防止竞态条件）
       await initRoutes();
-
-      // 动态添加路由后需要确保路由已完全加载
-      if (!isRoutesInitialized) {
-        await initRoutes();
-      }
 
       next();
     } else {
@@ -115,4 +118,5 @@ router.afterEach((to) => {
   // 路由切换后的处理
 });
 
+export { router };
 export default router;

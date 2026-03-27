@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import { router } from './index';
 import { Session } from '@/utils/storage';
 import { useUserInfo } from '@/stores/userInfo';
 import { useRoutesList } from '@/stores/routesList';
@@ -33,7 +34,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
     tabBarRoutes.forEach((route) => {
       if (!route.children || route.children.length === 0) {
         // 添加到最顶层
-        window.__MANGO_ROUTER__.addRoute(route);
+        router.addRoute(route);
       } else {
         // 二级路由需要嵌套在父级路由下
         const parentRoute: RouteRecordRaw = {
@@ -43,7 +44,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
           children: route.children,
           meta: route.meta,
         };
-        window.__MANGO_ROUTER__.addRoute(parentRoute);
+        router.addRoute(parentRoute);
       }
     });
 
@@ -61,7 +62,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
     console.error('初始化后端路由失败:', error);
     Session.clearSession();
     ElMessage.error('路由加载失败，请重新登录');
-    window.__MANGO_ROUTER__.push('/login');
+    router.push('/login');
   }
 }
 
