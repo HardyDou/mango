@@ -125,12 +125,14 @@ com.mango_order_service
 ### 4.1 URL 路径 (小写横杠分隔)
 
 ```
-GET    /api/user         # 用户列表
-GET    /api/user/{id}    # 用户详情
-POST   /api/user         # 创建用户
-PUT    /api/user/{id}    # 更新用户
-DELETE /api/user/{id}    # 删除用户
+GET    /user             # 用户列表
+GET    /user/{id}        # 用户详情
+POST   /user             # 创建用户
+PUT    /user/{id}        # 更新用户
+DELETE /user/{id}        # 删除用户
 ```
+
+> 注意：`/api` 前缀由网关/Vite 代理在接入层添加，后端服务不需要也不应该添加 `/api` 前缀（参见 api-rules.md 第 1.1 节）。
 
 ### 4.2 变量命名 (驼峰)
 

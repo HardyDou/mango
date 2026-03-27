@@ -92,8 +92,19 @@ mango/
 {model}:{module}:{action}
 ```
 
-### AI 角色
-在 `.mango/roles/` 定义角色，触发对应角色后按角色思维执行。
+### AI 角色 Subagent
+
+使用 `/mango-evaluator`、`/mango-engineer` 等调用独立 Agent：
+
+| Agent | 用途 | 调用方式 |
+|-------|------|---------|
+| mango-evaluator | 质检评估 | `/mango-evaluator` |
+| mango-engineer | 生成代码 | `/mango-engineer` |
+| mango-product-manager | 编写 PRD | `/mango-product-manager` |
+| mango-architect | 架构设计 | `/mango-architect` |
+| mango-tester | 编写测试 | `/mango-tester` |
+
+Agent 定义在 `.mango/agents/*.md`
 
 ---
 

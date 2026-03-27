@@ -206,7 +206,8 @@ PRD 中 UI/UX 分为**全局风格规范** + **模块特定规范**：
 ├── architect.md          # 架构师角色
 ├── engineer.md          # 研发工程师角色
 ├── tester.md            # 测试工程师角色
-└── project-manager.md   # 项目经理角色
+├── project-manager.md   # 项目经理角色
+└── evaluator.md         # 质检员角色
 ```
 
 ### 5.3 三执行器架构
