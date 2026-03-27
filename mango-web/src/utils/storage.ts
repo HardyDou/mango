@@ -35,6 +35,8 @@ export const Session = {
   },
 
   setToken(token: string): void {
+    // SECURITY: Using localStorage for tokens is XSS-vulnerable.
+    // For production, migrate to httpOnly cookies (requires backend support).
     localStorage.setItem('MANGO_TOKEN', token);
   },
 

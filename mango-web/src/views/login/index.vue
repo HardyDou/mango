@@ -73,8 +73,8 @@ const loginFormRef = ref();
 
 // 表单数据
 const form = reactive({
-  username: 'admin',
-  password: 'admin123',
+  username: '',
+  password: '',
   captcha: '',
 });
 

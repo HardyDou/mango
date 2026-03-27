@@ -28,13 +28,15 @@
 </template>
 
 <script setup lang="ts" name="RightToolbar">
+import { computed } from 'vue';
 import { Refresh, Setting, ScaleToOriginal } from '@element-plus/icons-vue';
 import { useThemeConfig } from '@/stores/themeConfig';
+import { storeToRefs } from 'pinia';
 
 const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storesThemeConfig;
+const { themeConfig } = storeToRefs(storesThemeConfig);
 
-const size = themeConfig.value.size;
+const size = computed(() => themeConfig.value.size);
 
 const emit = defineEmits(['refresh', 'columnSetting', 'sizeChange']);
 

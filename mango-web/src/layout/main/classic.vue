@@ -57,11 +57,11 @@ watch(
   { immediate: true }
 );
 
+// Watch only properties that affect scrollbar layout
 watch(
-  themeConfig,
+  () => [themeConfig.value.isCollapse, themeConfig.value.layout, themeConfig.value.isTagsview],
   () => {
     updateScrollbar();
-  },
-  { deep: true }
+  }
 );
 </script>

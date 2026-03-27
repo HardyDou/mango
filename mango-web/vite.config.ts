@@ -66,7 +66,8 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       host: '0.0.0.0',
       port: (env.VITE_PORT as unknown as number) || 5173,
       open: env.VITE_OPEN === 'true',
-      allowedHosts: true,
+      // SECURITY: Restrict allowed hosts in production
+      allowedHosts: isDev ? ['localhost', '127.0.0.1'] : false,
       hmr: true,
       proxy: {
         '/api': {
