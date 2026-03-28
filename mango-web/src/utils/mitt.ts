@@ -8,6 +8,8 @@ type Events = {
   'layoutMobileResize': { isMobile: boolean; windowWidth: number };
   'setIsThreeMenu': boolean;
   'openGlobalCollapse': boolean;
+  'setSendColumnsChildren': any;
+  'restoreDefault': void;
 };
 
 export const mittBus: Emitter<Events> = mitt<Events>();

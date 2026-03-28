@@ -24,6 +24,7 @@ import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useThemeConfig } from '@/stores/themeConfig';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
+import { mittBus } from '@/utils/mitt';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));
@@ -70,29 +71,19 @@ const onAsideEnterLeave = (bool: boolean) => {
 };
 
 // mittBus event handling
-const mittBusOn = (name: string, callback: (data: unknown) => void) => {
-  const handler = (e: CustomEvent) => callback(e.detail);
-  window.addEventListener(name, handler as EventListener);
-  return () => window.removeEventListener(name, handler as EventListener);
-};
-
-const mittBusEmit = (name: string, data?: unknown) => {
-  window.dispatchEvent(new CustomEvent(name, { detail: data }));
-};
-
 let cleanupSendColumns: (() => void) | undefined;
 let cleanupRestore: (() => void) | undefined;
 
 onMounted(() => {
   // Listen for columns children data
-  cleanupSendColumns = mittBusOn('setSendColumnsChildren', (data: any) => {
+  cleanupSendColumns = mittBus.on('setSendColumnsChildren', (data: any) => {
     if (data?.children) {
       columnsChildren.value = data.children;
     }
   });
 
   // Listen for restore default
-  cleanupRestore = mittBusOn('restoreDefault', () => {
+  cleanupRestore = mittBus.on('restoreDefault', () => {
     columnsChildren.value = [];
   });
 });

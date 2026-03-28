@@ -38,6 +38,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
 import { useRoutesList } from '@/stores/routesList';
+import { mittBus } from '@/utils/mitt';
 import {
   HomeFilled,
   User,
@@ -113,7 +114,7 @@ const onColumnsAsideMenuClick = (v: MenuItem, k: number) => {
   setColumnsAsideMove(k);
   if (v.children && v.children.length > 0) {
     storesRoutesList.setColumnsMenuHover(true);
-    mittBusEmit('setSendColumnsChildren', setSendChildren(v.path));
+    mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));
   } else {
     router.push(v.path);
   }
@@ -125,7 +126,7 @@ const onColumnsAsideMenuMouseenter = (v: MenuItem, k: number) => {
   liHoverIndex.value = k;
   if (v.children && v.children.length > 0) {
     storesRoutesList.setColumnsMenuHover(true);
-    mittBusEmit('setSendColumnsChildren', setSendChildren(v.path));
+    mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));
   }
 };
 
@@ -133,7 +134,7 @@ const onColumnsAsideMenuMouseleave = async () => {
   await storesRoutesList.setColumnsNavHover(false);
   setTimeout(() => {
     if (!isColumnsMenuHover.value && !isColumnsNavHover.value) {
-      mittBusEmit('restoreDefault');
+      mittBus.emit('restoreDefault');
     }
   }, 100);
 };
@@ -176,22 +177,11 @@ const setColumnsMenuHighlight = (path: string) => {
   }, 0);
 };
 
-const mittBusEmit = (name: string, data?: unknown) => {
-  // Simple event emitter implementation
-  window.dispatchEvent(new CustomEvent(name, { detail: data }));
-};
-
-const mittBusOn = (name: string, callback: (data: unknown) => void) => {
-  const handler = (e: CustomEvent) => callback(e.detail);
-  window.addEventListener(name, handler as EventListener);
-  return () => window.removeEventListener(name, handler as EventListener);
-};
-
 let cleanupRestore: (() => void) | undefined;
 
 onMounted(() => {
   setFilterRoutes();
-  cleanupRestore = mittBusOn('restoreDefault', () => {
+  cleanupRestore = mittBus.on('restoreDefault', () => {
     liOldIndex.value = null;
     liOldPath.value = null;
   });
@@ -205,7 +195,7 @@ const setFilterRoutes = () => {
   const resData = setSendChildren(route.path);
   if (Object.keys(resData).length <= 0) return false;
   setColumnsAsideMove(resData.item?.k || 0);
-  mittBusEmit('setSendColumnsChildren', resData);
+  mittBus.emit('setSendColumnsChildren', resData);
 };
 
 onMounted(() => {
@@ -216,7 +206,7 @@ watch(
   () => route.path,
   () => {
     setColumnsMenuHighlight(route.path);
-    mittBusEmit('setSendColumnsChildren', setSendChildren(route.path));
+    mittBus.emit('setSendColumnsChildren', setSendChildren(route.path));
   }
 );
 
