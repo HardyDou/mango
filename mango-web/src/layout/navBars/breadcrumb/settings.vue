@@ -320,15 +320,8 @@ const isValidColor = (color: string): boolean => {
 // 颜色选择器变化 - 全局主题
 const onColorPickerChange = () => {
   if (!getThemeConfig.value.primary) return;
-  // 设置 Element Plus 主题色
-  document.documentElement.style.setProperty('--el-color-primary-dark-2', `${getDarkColor(getThemeConfig.value.primary, 0.1)}`);
-  document.documentElement.style.setProperty('--el-color-primary', getThemeConfig.value.primary);
-  // 设置颜色变浅
-  for (let i = 1; i <= 9; i++) {
-    document.documentElement.style.setProperty(`--el-color-primary-light-${i}`, `${getLightColor(getThemeConfig.value.primary, i / 10)}`);
-  }
-  // 更新 Mango 主题色
-  document.documentElement.style.setProperty('--mango-color-primary', getThemeConfig.value.primary);
+  // 颜色变化现在由 layout/index.vue 的 watcher 处理
+  // 这里只更新本地存储
   setLocalThemeConfig();
 };
 
@@ -339,11 +332,8 @@ const onBgColorPickerChange = (bg: BgColorProperty) => {
   const colorValue = themeConfig.value[bg];
   if (!isValidColor(colorValue)) return;
 
-  document.documentElement.style.setProperty(`--mango-bg-${bg}`, colorValue);
-  if (bg === 'menuBar') {
-    document.documentElement.style.setProperty(`--mango-bg-menuBar-light-1`, getLightColor(getThemeConfig.value.menuBar, 0.05));
-  }
-  // 只触发相关的 gradient 函数，避免不必要的 DOM 操作
+  // 颜色变化现在由 layout/index.vue 的 watcher 处理
+  // 只触发相关的 gradient 函数
   if (bg === 'topBar' || bg === 'topBarColor') {
     onTopBarGradualChange();
   } else if (bg === 'menuBar' || bg === 'menuBarColor' || bg === 'menuBarActiveColor') {
@@ -377,7 +367,7 @@ const setGraduaFun = (el: string, bool: boolean, color: string) => {
     const els = document.querySelector(el);
     if (!els) return false;
     if (bool) {
-      els.setAttribute('style', `background: linear-gradient(to bottom left, ${color}, ${getLightColor(color, 0.6)}) !important;`);
+      els.setAttribute('style', `background: linear-gradient(to bottom left, ${color}, ${getLightColor(color, 0.6)});`);
     } else {
       els.setAttribute('style', '');
     }
