@@ -57,3 +57,27 @@ watch(
   { deep: true }
 );
 </script>
+
+<style scoped lang="scss">
+.layout-container {
+  width: 100%;
+  height: 100%;
+}
+
+.layout-mian-height-50 {
+  display: flex;
+  height: calc(100vh - 56px);
+}
+
+.flex-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.layout-backtop {
+  flex: 1;
+  overflow: hidden;
+}
+</style>

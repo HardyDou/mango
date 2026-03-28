@@ -1,9 +1,9 @@
 <template>
-  <div class="layout-logo" v-if="setShowLogo" @click="onLogoClick">
-    <span :style="{ color: setFontColor }">{{ themeConfig.globalTitle }}</span>
+  <div class="layout-logo" v-if="!themeConfig.isCollapse" @click="onLogoClick">
+    <span class="logo-text" :style="{ color: setFontColor }">{{ themeConfig.globalTitle }}</span>
   </div>
-  <div class="layout-logo-size" v-else @click="onLogoClick">
-    <span class="layout-logo-size-text">M</span>
+  <div class="layout-logo-collapsed" v-else @click="onLogoClick">
+    <span class="logo-icon" :style="{ color: setFontColor }">M</span>
   </div>
 </template>
 
@@ -14,11 +14,6 @@ import { useThemeConfig } from '@/stores/themeConfig';
 
 const storesThemeConfig = useThemeConfig();
 const { themeConfig } = storeToRefs(storesThemeConfig);
-
-const setShowLogo = computed(() => {
-  const { isCollapse, layout } = themeConfig.value;
-  return !isCollapse || layout === 'classic' || document.body.clientWidth < 1000;
-});
 
 const setFontColor = computed(() => {
   const { layout } = themeConfig.value;
@@ -35,35 +30,35 @@ const onLogoClick = () => {
 
 <style scoped lang="scss">
 .layout-logo {
-  width: 220px;
-  height: 50px;
+  width: auto;
+  min-width: 160px;
+  max-width: 220px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  white-space: nowrap;
-  overflow: hidden;
+  transition: all 0.3s;
 
-  span {
-    color: var(--mango-color-primary);
+  .logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
   }
 }
 
-.layout-logo-size {
-  width: 100%;
-  height: 50px;
+.layout-logo-collapsed {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.3s;
 
-  &-text {
+  .logo-icon {
     font-size: 20px;
     font-weight: 700;
-    color: var(--mango-color-primary);
   }
 }
 </style>

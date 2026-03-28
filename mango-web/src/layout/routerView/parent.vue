@@ -19,6 +19,8 @@ const { keepAliveNames } = storeToRefs(storesKeepAliveNames);
 <style scoped lang="scss">
 .router-view-parent {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
+  padding: 20px;
+  background-color: var(--mango-bg-main);
 }
 </style>

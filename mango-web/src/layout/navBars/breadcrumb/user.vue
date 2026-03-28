@@ -66,11 +66,11 @@ const handleCommand = (command: string) => {
   padding: 0 12px;
   height: 40px;
   cursor: pointer;
-  color: var(--mango-text-color-regular);
+  color: var(--mango-color-top-bar);
   transition: color 0.2s;
 
   &:hover {
-    color: var(--mango-color-primary);
+    opacity: 0.85;
   }
 
   .username {
@@ -81,6 +81,20 @@ const handleCommand = (command: string) => {
   .arrow-icon {
     margin-left: 4px;
     font-size: 12px;
+  }
+}
+
+// 下拉菜单样式 - 修复在蓝色背景上的显示
+:deep(.el-dropdown-menu) {
+  background: var(--mango-bg-color);
+  border: 1px solid var(--mango-border-color);
+
+  .el-dropdown-menu__item {
+    color: var(--mango-text-color-regular);
+    &:hover {
+      color: var(--mango-color-primary);
+      background: var(--mango-color-menu-hover);
+    }
   }
 }
 </style>

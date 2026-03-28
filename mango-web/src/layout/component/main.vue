@@ -45,14 +45,16 @@ const setBacktopClass = computed(() => {
   padding: 0 !important;
   overflow: hidden;
   width: 100%;
+  height: 100%;
   background-color: var(--mango-bg-main);
 }
 
 .layout-main-scroll {
   height: 100%;
+  overflow-y: auto;
 }
 
 .layout-backtop-header-fixed {
-  height: calc(100% - 92px) !important;
+  height: 100% !important;
 }
 </style>

@@ -56,7 +56,7 @@ export const useThemeConfig = defineStore('themeConfig', {
       layout: 'classic',
 
       // 后端控制路由
-      isRequestRoutes: true,
+      isRequestRoutes: false,
 
       // 语言
       language: 'zh-cn',
@@ -103,15 +103,7 @@ export const useThemeConfig = defineStore('themeConfig', {
       document.documentElement.style.setProperty('--mango-color-primary', color);
     },
   },
-  persist: {
-    enabled: true,
-    strategies: [
-      {
-        key: 'mango-theme-config',
-        storage: localStorage,
-      },
-    ],
-  },
+  persist: false,
 });
 
 export interface ThemeConfigState {

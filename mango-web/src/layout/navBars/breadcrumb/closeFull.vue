@@ -1,19 +1,21 @@
 <template>
   <div class="layout-breadcrumb-close-full" @click="toggleFullscreen">
-    <el-tooltip :content="isFullscreen ? '退出全屏' : '全屏' " placement="bottom">
-      <el-icon>
-        <Close v-if="isFullscreen" />
-        <FullScreen v-else />
-      </el-icon>
-    </el-tooltip>
+    <el-icon :size="20">
+      <component :is="CloseIcon" v-if="isFullscreen" />
+      <component :is="FullScreenIcon" v-else />
+    </el-icon>
   </div>
 </template>
 
 <script setup lang="ts" name="breadcrumbCloseFull">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, markRaw } from 'vue';
 import { FullScreen, Close } from '@element-plus/icons-vue';
 
 const isFullscreen = ref(false);
+
+// 使用 markRaw 包装图标组件
+const CloseIcon = markRaw(Close);
+const FullScreenIcon = markRaw(FullScreen);
 
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
@@ -45,11 +47,11 @@ onUnmounted(() => {
   padding: 0 12px;
   height: 40px;
   cursor: pointer;
-  color: var(--mango-text-color-regular);
-  transition: color 0.2s;
+  color: var(--mango-color-top-bar);
+  transition: opacity 0.2s;
 
   &:hover {
-    color: var(--mango-color-primary);
+    opacity: 0.8;
   }
 }
 </style>

@@ -28,4 +28,40 @@ export const staticRoutes: RouteRecordRaw[] = [
       isAffix: true,
     },
   },
+  {
+    path: '/',
+    name: 'Layout',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/home',
+    children: [
+      {
+        path: '/home',
+        name: 'Home',
+        component: () => import('@/views/home/index.vue'),
+        meta: {
+          title: '首页',
+          icon: 'HomeFilled',
+          isAffix: true,
+        },
+      },
+      {
+        path: '/profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/index.vue'),
+        meta: {
+          title: '个人中心',
+          icon: 'User',
+        },
+      },
+      {
+        path: '/password',
+        name: 'Password',
+        component: () => import('@/views/password/index.vue'),
+        meta: {
+          title: '修改密码',
+          icon: 'Lock',
+        },
+      },
+    ],
+  },
 ];

@@ -31,10 +31,25 @@ export async function initBackEndControlRoutes(): Promise<void> {
     storesRoutesList.setRoutesList(accessRoutes);
 
     // 动态添加路由
+    // 首先添加布局路由（如果不存在）
+    if (!router.hasRoute('Layout')) {
+      console.log('[backEnd] Adding Layout route');
+      router.addRoute({
+        path: '/',
+        name: 'Layout',
+        component: () => import('@/layout/index.vue'),
+      });
+    } else {
+      console.log('[backEnd] Layout route already exists');
+    }
+
+    console.log('[backEnd] tabBarRoutes:', tabBarRoutes.map(r => ({ path: r.path, name: r.name })));
+
     tabBarRoutes.forEach((route) => {
+      console.log('[backEnd] Adding route to Layout:', route.path, route.name);
       if (!route.children || route.children.length === 0) {
-        // 添加到最顶层
-        router.addRoute(route);
+        // 添加到布局路由下
+        router.addRoute('Layout', route);
       } else {
         // 二级路由需要嵌套在父级路由下
         const parentRoute: RouteRecordRaw = {
@@ -44,9 +59,11 @@ export async function initBackEndControlRoutes(): Promise<void> {
           children: route.children,
           meta: route.meta,
         };
-        router.addRoute(parentRoute);
+        router.addRoute('Layout', parentRoute);
       }
     });
+
+    console.log('[backEnd] Final routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.map(c => c.path) })));
 
     // 设置用户信息
     storesUserInfo.setUserInfos({

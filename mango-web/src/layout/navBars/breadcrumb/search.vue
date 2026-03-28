@@ -1,8 +1,6 @@
 <template>
   <div class="layout-breadcrumb-search" @click="openSearch">
-    <el-tooltip content="菜单搜索" placement="bottom">
-      <el-icon><Search /></el-icon>
-    </el-tooltip>
+    <el-icon :size="20"><Search /></el-icon>
   </div>
 </template>
 
@@ -16,18 +14,17 @@ const openSearch = () => {
 };
 </script>
 
-<style scoped lang="scss">
+<style>
 .layout-breadcrumb-search {
   display: flex;
   align-items: center;
   padding: 0 12px;
   height: 40px;
   cursor: pointer;
-  color: var(--mango-text-color-regular);
-  transition: color 0.2s;
-
-  &:hover {
-    color: var(--mango-color-primary);
-  }
+  color: #ffffff;
+  transition: opacity 0.2s;
+}
+.layout-breadcrumb-search:hover {
+  opacity: 0.8;
 }
 </style>

@@ -1,12 +1,13 @@
 <template>
   <div class="layout-breadcrumb-settings" @click="openSettings">
-    <el-tooltip content="主题配置" placement="bottom">
-      <el-icon><Setting /></el-icon>
-    </el-tooltip>
+    <el-icon :size="20">
+      <component :is="SettingIcon" />
+    </el-icon>
   </div>
 </template>
 
 <script setup lang="ts" name="breadcrumbSettings">
+import { markRaw } from 'vue';
 import { Setting } from '@element-plus/icons-vue';
 
 const emit = defineEmits(['open']);
@@ -14,6 +15,9 @@ const emit = defineEmits(['open']);
 const openSettings = () => {
   emit('open');
 };
+
+// 使用 markRaw 包装图标组件
+const SettingIcon = markRaw(Setting);
 </script>
 
 <style scoped lang="scss">
@@ -23,11 +27,11 @@ const openSettings = () => {
   padding: 0 12px;
   height: 40px;
   cursor: pointer;
-  color: var(--mango-text-color-regular);
-  transition: color 0.2s;
+  color: var(--mango-color-top-bar);
+  transition: opacity 0.2s;
 
   &:hover {
-    color: var(--mango-color-primary);
+    opacity: 0.8;
   }
 }
 </style>

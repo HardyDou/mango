@@ -6,10 +6,16 @@ import App from './App.vue';
 import router from './router';
 import { i18n } from './i18n';
 import ElementPlus from 'element-plus';
+import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import 'element-plus/dist/index.css';
 import '@/theme/index.scss';
 
 const app = createApp(App);
+
+// 全局注册 Element Plus 图标
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component);
+}
 
 // 全局错误处理
 app.config.errorHandler = (err, instance, info) => {

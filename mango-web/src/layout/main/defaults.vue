@@ -42,3 +42,31 @@ onMounted(() => {
   initScrollHeight();
 });
 </script>
+
+<style scoped lang="scss">
+.layout-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.layout-container-view {
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.h100 {
+  height: 100%;
+}
+
+.layout-backtop {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+</style>

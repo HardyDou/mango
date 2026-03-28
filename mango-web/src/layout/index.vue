@@ -24,12 +24,14 @@ const onLayoutResize = () => {
   if (!Local.get('oldLayout')) Local.set('oldLayout', themeConfig.value.layout);
   const clientWidth = document.body.clientWidth;
   if (clientWidth < 1000) {
-    themeConfig.value.isCollapse = false;
+    // 移动端：收起侧边栏
+    themeConfig.value.isCollapse = true;
     mittBus.emit('layoutMobileResize', {
       isMobile: true,
       windowWidth: clientWidth,
     });
   } else {
+    // PC端：保持当前状态
     mittBus.emit('layoutMobileResize', {
       isMobile: false,
       windowWidth: clientWidth,

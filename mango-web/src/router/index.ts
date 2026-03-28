@@ -48,20 +48,19 @@ async function doInitRoutes(): Promise<void> {
   const storesRoutesList = useRoutesList();
   const { isRequestRoutes } = storesThemeConfig.themeConfig;
 
+  console.log('[Router] doInitRoutes called, isRequestRoutes:', isRequestRoutes);
+  console.log('[Router] Current routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
+
   if (isRequestRoutes) {
     // 后端路由模式
     await initBackEndControlRoutes();
+    console.log('[Router] After backEnd init:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
   } else {
-    // 前端路由模式
-    const frontEndRoutes = getFrontEndRoutes();
-    frontEndRoutes.forEach((route) => {
-      router.addRoute(route as RouteRecordRaw);
-    });
-    // 前端模式也需要填充 routesList store 以供菜单使用
-    // 从 frontEndRoutes 的根路由 children 中提取业务路由
-    const rootRoute = frontEndRoutes.find((r) => r.path === '/');
-    if (rootRoute && rootRoute.children) {
-      storesRoutesList.setRoutesList(rootRoute.children);
+    // 前端路由模式 - 静态路由已在 staticRoutes 中，直接使用
+    // 填充 routesList store 以供菜单使用
+    const staticRoute = staticRoutes.find((r) => r.path === '/');
+    if (staticRoute && staticRoute.children) {
+      storesRoutesList.setRoutesList(staticRoute.children);
     }
   }
 }

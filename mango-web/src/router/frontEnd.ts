@@ -37,40 +37,6 @@ export function getFrontEndRoutes(): RouteRecordRaw[] {
         isAffix: true,
       },
     },
-    {
-      path: '/',
-      component: () => import('@/layout/index.vue'),
-      redirect: '/home',
-      children: [
-        {
-          path: '/home',
-          name: 'Home',
-          component: () => import('@/views/home/index.vue'),
-          meta: {
-            title: '首页',
-            isAffix: true,
-          },
-        },
-        {
-          path: '/profile',
-          name: 'Profile',
-          component: () => import('@/views/profile/index.vue'),
-          meta: {
-            title: '个人中心',
-            icon: 'User',
-          },
-        },
-        {
-          path: '/password',
-          name: 'Password',
-          component: () => import('@/views/password/index.vue'),
-          meta: {
-            title: '修改密码',
-            icon: 'Lock',
-          },
-        },
-      ],
-    },
   ];
 
   // 添加业务路由（从 routesList store 获取）

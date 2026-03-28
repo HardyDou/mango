@@ -33,7 +33,19 @@ const breadcrumbs = computed(() => {
   align-items: center;
   padding: 0 16px;
   height: 40px;
-  background: var(--mango-bg-color);
-  border-bottom: 1px solid var(--mango-border-color);
+  background: transparent;
+  color: var(--mango-color-top-bar);
+
+  :deep(.el-breadcrumb__item) {
+    .el-breadcrumb__inner {
+      color: var(--mango-color-top-bar);
+      &.is-link:hover {
+        color: rgba(255, 255, 255, 0.8);
+      }
+    }
+    .el-breadcrumb__separator {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
 }
 </style>

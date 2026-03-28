@@ -60,3 +60,28 @@ watch(
   { deep: true }
 );
 </script>
+
+<style scoped lang="scss">
+.layout-container {
+  width: 100%;
+  height: 100%;
+}
+
+.layout-columns-warp {
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-container-view {
+  flex-direction: column;
+}
+
+.h100 {
+  height: 100%;
+}
+
+.layout-backtop {
+  flex: 1;
+  overflow: hidden;
+}
+</style>

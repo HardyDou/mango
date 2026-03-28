@@ -5,7 +5,7 @@
       :class="setCollapseStyle"
       v-if="setShowAside"
     >
-      <Logo v-if="themeConfig.isShowLogo" />
+      <Logo v-if="themeConfig.isShowLogo && (themeConfig.layout === 'defaults' || themeConfig.layout === 'columns')" />
       <el-scrollbar
         class="flex-auto"
         @mouseenter="onAsideEnterLeave(true)"
