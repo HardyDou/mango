@@ -17,7 +17,7 @@
     <div class="layout-navbars-container-right">
       <el-icon :size="20"><Search /></el-icon>
       <el-icon :size="20"><FullScreen /></el-icon>
-      <el-icon :size="20"><Setting /></el-icon>
+      <Settings />
       <User />
     </div>
     <TagsView v-if="setShowTagsView" />
@@ -28,12 +28,13 @@
 import { defineAsyncComponent, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
-import { Fold, Expand, Search, FullScreen, Setting } from '@element-plus/icons-vue';
+import { Fold, Expand, Search, FullScreen } from '@element-plus/icons-vue';
 
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const TagsView = defineAsyncComponent(() => import('./tagsView/tagsView.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
+const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 
 const storesThemeConfig = useThemeConfig();
 const { themeConfig } = storeToRefs(storesThemeConfig);
@@ -72,6 +73,7 @@ const toggleCollapse = () => {
     height: 40px;
     gap: 12px;
     padding-right: 8px;
+    margin-left: auto;
   }
 
   .hamburger {

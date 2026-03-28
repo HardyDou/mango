@@ -24,6 +24,7 @@ const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
   color: var(--mango-color-top-bar);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }

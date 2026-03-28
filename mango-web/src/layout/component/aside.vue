@@ -73,9 +73,15 @@ const onAsideEnterLeave = (bool: boolean) => {
   flex-direction: column;
   overflow-x: hidden !important;
   transition: width var(--mango-transition-duration);
+  width: var(--mango-aside-width) !important;
+  min-width: var(--mango-aside-width) !important;
+  max-width: var(--mango-aside-width) !important;
+  flex-shrink: 0;
 
   &.aside-collapse {
     width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
   }
 
   :deep(.el-scrollbar__view) {
