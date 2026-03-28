@@ -333,21 +333,24 @@ const onColorPickerChange = () => {
 };
 
 // 背景颜色选择器变化
-const onBgColorPickerChange = (bg: string) => {
-  // 验证 bg 参数为安全的颜色属性名，防止 CSS 注入
-  const validBgProps = ['topBar', 'topBarColor', 'menuBar', 'menuBarColor', 'menuBarActiveColor', 'columnsMenuBar', 'columnsMenuBarColor'];
-  if (!validBgProps.includes(bg)) return;
+type BgColorProperty = 'topBar' | 'topBarColor' | 'menuBar' | 'menuBarColor' | 'menuBarActiveColor' | 'columnsMenuBar' | 'columnsMenuBarColor';
 
-  const colorValue = themeConfig.value[bg as keyof typeof themeConfig.value];
-  if (!isValidColor(colorValue as string)) return;
+const onBgColorPickerChange = (bg: BgColorProperty) => {
+  const colorValue = themeConfig.value[bg];
+  if (!isValidColor(colorValue)) return;
 
-  document.documentElement.style.setProperty(`--mango-bg-${bg}`, colorValue as string);
+  document.documentElement.style.setProperty(`--mango-bg-${bg}`, colorValue);
   if (bg === 'menuBar') {
     document.documentElement.style.setProperty(`--mango-bg-menuBar-light-1`, getLightColor(getThemeConfig.value.menuBar, 0.05));
   }
-  onTopBarGradualChange();
-  onMenuBarGradualChange();
-  onColumnsMenuBarGradualChange();
+  // 只触发相关的 gradient 函数，避免不必要的 DOM 操作
+  if (bg === 'topBar' || bg === 'topBarColor') {
+    onTopBarGradualChange();
+  } else if (bg === 'menuBar' || bg === 'menuBarColor' || bg === 'menuBarActiveColor') {
+    onMenuBarGradualChange();
+  } else if (bg === 'columnsMenuBar' || bg === 'columnsMenuBarColor') {
+    onColumnsMenuBarGradualChange();
+  }
   setLocalThemeConfig();
 };
 
