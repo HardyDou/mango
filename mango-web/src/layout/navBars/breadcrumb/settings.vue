@@ -308,7 +308,6 @@ const { themeConfig } = storeToRefs(storesThemeConfig);
 const { getLightColor, getDarkColor } = useChangeColor();
 
 const state = reactive({
-  isMobile: false,
 });
 
 const getThemeConfig = computed(() => themeConfig.value);

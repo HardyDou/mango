@@ -1,5 +1,57 @@
 import { defineStore } from 'pinia';
 
+export interface ThemeConfigState {
+  themeConfig: {
+    isDrawer: boolean;
+    primary: string;
+    isDark: boolean;
+    topBar: string;
+    topBarColor: string;
+    isTopBarColorGradual: boolean;
+    menuBar: string;
+    menuBarColor: string;
+    menuBarActiveColor: string;
+    isMenuBarColorGradual: boolean;
+    columnsMenuBar: string;
+    columnsMenuBarColor: string;
+    isColumnsMenuBarColorGradual: boolean;
+    isColumnsMenuHoverPreload: boolean;
+    isCollapse: boolean;
+    isUniqueOpened: boolean;
+    isFixedHeader: boolean;
+    isFixedHeaderChange: boolean;
+    isClassicSplitMenu: boolean;
+    isLockScreen: boolean;
+    lockScreenTime: number;
+    isShowLogo: boolean;
+    isShowLogoChange: boolean;
+    isBreadcrumb: boolean;
+    isTagsview: boolean;
+    isBreadcrumbIcon: boolean;
+    isTagsviewIcon: boolean;
+    isCacheTagsView: boolean;
+    isSortableTagsView: boolean;
+    isShareTagsView: boolean;
+    isFooter: boolean;
+    isGrayscale: boolean;
+    isInvert: boolean;
+    isWartermark: boolean;
+    wartermarkText: string;
+    tagsStyle: string;
+    animation: string;
+    columnsAsideStyle: string;
+    columnsAsideLayout: string;
+    layout: 'defaults' | 'classic' | 'transverse' | 'columns';
+    isRequestRoutes: boolean;
+    language: string;
+    size: 'large' | 'default' | 'small';
+    globalI18n: string;
+    globalComponentSize: string;
+    globalTitle: string;
+    footerAuthor: string;
+  };
+}
+
 export const useThemeConfig = defineStore('themeConfig', {
   state: (): { themeConfig: ThemeConfigState['themeConfig'] } => ({
     themeConfig: {
@@ -51,6 +103,12 @@ export const useThemeConfig = defineStore('themeConfig', {
       isInvert: false,
       isWartermark: true,
       wartermarkText: 'Mango',
+
+      // 其它设置
+      tagsStyle: 'tags-style-five',
+      animation: 'slide-right',
+      columnsAsideStyle: 'columns-round',
+      columnsAsideLayout: 'columns-vertical',
 
       // 布局切换
       layout: 'classic',
@@ -105,51 +163,3 @@ export const useThemeConfig = defineStore('themeConfig', {
   },
   persist: false,
 });
-
-export interface ThemeConfigState {
-  themeConfig: {
-    isDrawer: boolean;
-    primary: string;
-    isDark: boolean;
-    topBar: string;
-    topBarColor: string;
-    isTopBarColorGradual: boolean;
-    menuBar: string;
-    menuBarColor: string;
-    menuBarActiveColor: string;
-    isMenuBarColorGradual: boolean;
-    columnsMenuBar: string;
-    columnsMenuBarColor: string;
-    isColumnsMenuBarColorGradual: boolean;
-    isColumnsMenuHoverPreload: boolean;
-    isCollapse: boolean;
-    isUniqueOpened: boolean;
-    isFixedHeader: boolean;
-    isFixedHeaderChange: boolean;
-    isClassicSplitMenu: boolean;
-    isLockScreen: boolean;
-    lockScreenTime: number;
-    isShowLogo: boolean;
-    isShowLogoChange: boolean;
-    isBreadcrumb: boolean;
-    isTagsview: boolean;
-    isBreadcrumbIcon: boolean;
-    isTagsviewIcon: boolean;
-    isCacheTagsView: boolean;
-    isSortableTagsView: boolean;
-    isShareTagsView: boolean;
-    isFooter: boolean;
-    isGrayscale: boolean;
-    isInvert: boolean;
-    isWartermark: boolean;
-    wartermarkText: string;
-    layout: 'defaults' | 'classic' | 'transverse' | 'columns';
-    isRequestRoutes: boolean;
-    language: string;
-    size: 'large' | 'default' | 'small';
-    globalI18n: string;
-    globalComponentSize: string;
-    globalTitle: string;
-    footerAuthor: string;
-  };
-}
