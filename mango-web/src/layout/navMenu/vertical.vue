@@ -3,7 +3,7 @@
     router
     :default-active="state.defaultActive"
     background-color="transparent"
-    :collapse="themeConfig.isCollapse"
+    :collapse="props.disableCollapse ? false : themeConfig.isCollapse"
     :unique-opened="themeConfig.isUniqueOpened"
     :collapse-transition="false"
     class="nav-menu-vertical"
@@ -70,8 +70,9 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
-defineProps<{
+const props = defineProps<{
   menuList: MenuItem[];
+  disableCollapse?: boolean;
 }>();
 
 const route = useRoute();
