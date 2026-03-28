@@ -4,11 +4,19 @@
   /* Base colors */
   --mango-color-white: #ffffff;
   --mango-color-black: #000000;
+  --mango-color-primary: #2e5cf6;
+  --mango-color-primary-light: #5b8af6;
+  --mango-color-primary-lighter: #ecf5ff;
+  --mango-color-primary-dark: #1e3cc4;
 
   /* Background */
   --mango-bg-main: #f5f5f5;
   --mango-bg-color: #ffffff;
   --mango-bg-overlay: #ffffff;
+  --mango-bg-top-bar: #2e5cf6;
+  --mango-bg-menu-bar: #ffffff;
+  --mango-bg-columns-menu-bar: #545c64;
+  --mango-bg-menuBar-light-1: #ffffff;
 
   /* Border */
   --mango-border-color: #ebeef5;
@@ -19,22 +27,12 @@
   --mango-text-color-regular: #606266;
   --mango-text-color-placeholder: #a8abb2;
   --mango-text-color-disabled: #c0c4cc;
-
-  /* Primary */
-  --mango-color-primary: #2e5cf6;
-  --mango-color-primary-light: #5b8af6;
-  --mango-color-primary-lighter: #ecf5ff;
-  --mango-color-primary-dark: #1e3cc4;
-
-  /* Menu / Sidebar */
-  --mango-bg-menu-bar: #ffffff;
+  --mango-color-top-bar: #ffffff;
   --mango-color-menu-bar: #505968;
+
+  /* Menu */
   --mango-color-menu-active-bg: rgba(46, 92, 246, 0.1);
   --mango-color-menu-hover: rgba(0, 0, 0, 0.06);
-
-  /* Top Bar */
-  --mango-bg-top-bar: #2e5cf6;
-  --mango-color-top-bar: #ffffff;
 
   /* Layout */
   --mango-layout-bg: #f5f5f5;
@@ -48,6 +46,19 @@
 
   /* Transition */
   --mango-transition-duration: 0.3s;
+
+  /* Element Plus Theme Colors */
+  --el-color-primary: #2e5cf6;
+  --el-color-primary-dark-2: #2644d4;
+  --el-color-primary-light-1: #4975f7;
+  --el-color-primary-light-2: #618af8;
+  --el-color-primary-light-3: #799ff9;
+  --el-color-primary-light-4: #91b4fa;
+  --el-color-primary-light-5: #a9c9fb;
+  --el-color-primary-light-6: #c1defc;
+  --el-color-primary-light-7: #d9f3fd;
+  --el-color-primary-light-8: #f1f8fe;
+  --el-color-primary-light-9: #f9fcff;
 }
 
 /* Global reset */
