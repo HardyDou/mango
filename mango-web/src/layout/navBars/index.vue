@@ -1,6 +1,13 @@
 <template>
   <div class="layout-navbars-container">
     <div class="layout-navbars-container-left">
+      <!-- 移动端汉堡菜单按钮 - 所有布局都显示 -->
+      <div class="hamburger hamburger-mobile" @click="onToggleMobileMenu">
+        <el-icon :size="20">
+          <Fold v-if="!themeConfig.isMobileMenuOpen" />
+          <Close v-else />
+        </el-icon>
+      </div>
       <!-- 经典布局：显示 Logo + 折叠按钮 -->
       <template v-if="themeConfig.layout === 'classic'">
         <Logo class="layout-logo-link" />
@@ -20,32 +27,29 @@
       <Settings />
       <User />
     </div>
-    <TagsView v-if="setShowTagsView" />
   </div>
 </template>
 
 <script setup lang="ts" name="layoutNavBars">
-import { defineAsyncComponent, computed } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
-import { Fold, Expand, Search, FullScreen } from '@element-plus/icons-vue';
+import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
-const TagsView = defineAsyncComponent(() => import('./tagsView/tagsView.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
 const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 
 const storesThemeConfig = useThemeConfig();
 const { themeConfig } = storeToRefs(storesThemeConfig);
 
-const setShowTagsView = computed(() => {
-  const { layout, isTagsview } = themeConfig.value;
-  return layout !== 'classic' && isTagsview;
-});
-
 const toggleCollapse = () => {
   themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
+};
+
+const onToggleMobileMenu = () => {
+  storesThemeConfig.toggleMobileMenu();
 };
 </script>
 
@@ -56,7 +60,7 @@ const toggleCollapse = () => {
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding: 0 16px;
+  padding: 0px;
   background: var(--mango-bg-top-bar);
   color: var(--mango-color-top-bar);
 

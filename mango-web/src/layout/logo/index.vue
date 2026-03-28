@@ -33,7 +33,7 @@ const onLogoClick = () => {
   width: auto;
   min-width: 160px;
   max-width: 220px;
-  height: 40px;
+  height: var(--mango-header-height);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,8 +48,8 @@ const onLogoClick = () => {
 }
 
 .layout-logo-collapsed {
-  width: 40px;
-  height: 40px;
+  width: 64px;
+  height: var(--mango-header-height);
   display: flex;
   align-items: center;
   justify-content: center;

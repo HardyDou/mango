@@ -22,6 +22,7 @@ export interface ThemeConfigState {
     isFixedHeaderChange: boolean;
     isClassicSplitMenu: boolean;
     isLockScreen: boolean;
+    isMobileMenuOpen: boolean;
     lockScreenTime: number;
     isShowLogo: boolean;
     isShowLogoChange: boolean;
@@ -86,6 +87,7 @@ export const useThemeConfig = defineStore('themeConfig', {
       isFixedHeaderChange: false,
       isClassicSplitMenu: true,
       isLockScreen: false,
+      isMobileMenuOpen: false,
       lockScreenTime: 30,
 
       // 界面显示
@@ -159,6 +161,12 @@ export const useThemeConfig = defineStore('themeConfig', {
     setPrimary(color: string) {
       this.themeConfig.primary = color;
       document.documentElement.style.setProperty('--mango-color-primary', color);
+    },
+    toggleMobileMenu() {
+      this.themeConfig.isMobileMenuOpen = !this.themeConfig.isMobileMenuOpen;
+    },
+    closeMobileMenu() {
+      this.themeConfig.isMobileMenuOpen = false;
     },
   },
   persist: false,

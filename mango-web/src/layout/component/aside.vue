@@ -1,8 +1,15 @@
 <template>
   <div class="h100" v-show="!isTagsViewCurrenFull">
+    <!-- 移动端遮罩层 -->
+    <div
+      v-if="themeConfig.isMobileMenuOpen"
+      class="layout-aside-overlay"
+      :class="{ visible: themeConfig.isMobileMenuOpen }"
+      @click="onCloseMobileMenu"
+    />
     <el-aside
       class="layout-aside"
-      :class="setCollapseStyle"
+      :class="[setCollapseStyle, { 'aside-mobile-open': themeConfig.isMobileMenuOpen }]"
       v-if="setShowAside"
     >
       <Logo v-if="themeConfig.isShowLogo && (themeConfig.layout === 'defaults' || themeConfig.layout === 'columns')" />
@@ -20,6 +27,7 @@
 
 <script setup lang="ts" name="layoutAside">
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useThemeConfig } from '@/stores/themeConfig';
@@ -28,6 +36,7 @@ import { mittBus } from '@/utils/mitt';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));
+const route = useRoute();
 
 const layoutAsideScrollbarRef = ref();
 const storesRoutesList = useRoutesList();
@@ -46,6 +55,14 @@ watch(
     menuList.value = newVal;
   },
   { immediate: true }
+);
+
+// 路由变化时关闭移动端菜单
+watch(
+  () => route.path,
+  () => {
+    storesThemeConfig.closeMobileMenu();
+  }
 );
 
 const setShowAside = computed(() => {
@@ -68,6 +85,10 @@ const onAsideEnterLeave = (bool: boolean) => {
   if (themeConfig.value.layout === 'columns') {
     storesRoutesList.setColumnsMenuHover(bool);
   }
+};
+
+const onCloseMobileMenu = () => {
+  storesThemeConfig.closeMobileMenu();
 };
 
 // mittBus event handling
@@ -108,7 +129,7 @@ watch(
 .layout-aside {
   background: var(--mango-bg-menu-bar);
   box-shadow: 2px 0 6px rgb(0 21 41 / 8%);
-  height: inherit;
+  height: 100%;
   position: relative;
   z-index: 1;
   display: flex;

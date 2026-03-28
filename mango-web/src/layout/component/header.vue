@@ -25,7 +25,7 @@ const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

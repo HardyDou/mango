@@ -224,7 +224,7 @@ watch(
 .layout-columns-aside {
   width: 64px;
   height: 100%;
-  background: var(--mango-bg-columns-menu-bar, var(--mango-bg-menu-bar));
+  background: white;
 
   ul {
     position: relative;

@@ -4,6 +4,7 @@
     <el-container class="layout-container-view h100">
       <el-scrollbar ref="layoutScrollbarRef" class="layout-backtop">
         <LayoutHeader />
+        <LayoutTagsView v-if="isTagsView" />
         <LayoutMain ref="layoutMainRef" />
       </el-scrollbar>
     </el-container>
@@ -11,17 +12,21 @@
 </template>
 
 <script setup lang="ts" name="layoutDefaults">
-import { defineAsyncComponent, onMounted, ref } from 'vue';
+import { defineAsyncComponent, computed, onMounted, ref } from 'vue';
 import { useThemeConfig } from '@/stores/themeConfig';
 import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
 const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
+const LayoutTagsView = defineAsyncComponent(() => import('../navBars/tagsView/tagsView.vue'));
 
 const layoutScrollbarRef = ref();
 const layoutMainRef = ref();
 const storesThemeConfig = useThemeConfig();
+const { themeConfig } = storeToRefs(storesThemeConfig);
+
+const isTagsView = computed(() => themeConfig.value.isTagsview);
 
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef, layoutScrollbarRef);
 
