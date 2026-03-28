@@ -12,10 +12,11 @@
 </template>
 
 <script setup lang="ts" name="layoutColumns">
-import { defineAsyncComponent, nextTick, ref, watch } from 'vue';
+import { defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
+import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
@@ -28,21 +29,7 @@ const route = useRoute();
 const storesThemeConfig = useThemeConfig();
 const { themeConfig } = storeToRefs(storesThemeConfig);
 
-const updateScrollbar = () => {
-  layoutScrollbarRef.value?.update();
-  layoutMainRef.value?.layoutMainScrollbarRef?.update();
-};
-
-const initScrollHeight = () => {
-  nextTick(() => {
-    setTimeout(() => {
-      updateScrollbar();
-      layoutScrollbarRef.value?.wrapRef && (layoutScrollbarRef.value.wrapRef.scrollTop = 0);
-      layoutMainRef.value?.layoutMainScrollbarRef?.wrapRef &&
-        (layoutMainRef.value.layoutMainScrollbarRef.wrapRef.scrollTop = 0);
-    }, 500);
-  });
-};
+const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef, layoutScrollbarRef);
 
 watch(
   () => route.path,
@@ -64,16 +51,24 @@ watch(
 <style scoped lang="scss">
 .layout-container {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
 }
 
 .layout-columns-warp {
   display: flex;
-  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .layout-container-view {
-  flex-direction: column;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .h100 {
@@ -82,6 +77,7 @@ watch(
 
 .layout-backtop {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
 }
 </style>

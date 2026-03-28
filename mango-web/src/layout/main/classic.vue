@@ -12,10 +12,11 @@
 </template>
 
 <script setup lang="ts" name="layoutClassic">
-import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
+import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
@@ -35,19 +36,7 @@ const isTagsView = computed(() => {
   return themeConfig.value.isTagsview;
 });
 
-const updateScrollbar = () => {
-  layoutMainRef.value?.layoutMainScrollbarRef?.update();
-};
-
-const initScrollHeight = () => {
-  nextTick(() => {
-    setTimeout(() => {
-      updateScrollbar();
-      layoutMainRef.value?.layoutMainScrollbarRef?.wrapRef &&
-        (layoutMainRef.value.layoutMainScrollbarRef.wrapRef.scrollTop = 0);
-    }, 500);
-  });
-};
+const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef);
 
 watch(
   () => route.path,

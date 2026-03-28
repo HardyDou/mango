@@ -11,8 +11,9 @@
 </template>
 
 <script setup lang="ts" name="layoutDefaults">
-import { defineAsyncComponent, nextTick, ref } from 'vue';
+import { defineAsyncComponent, onMounted, ref } from 'vue';
 import { useThemeConfig } from '@/stores/themeConfig';
+import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
@@ -22,21 +23,7 @@ const layoutScrollbarRef = ref();
 const layoutMainRef = ref();
 const storesThemeConfig = useThemeConfig();
 
-const updateScrollbar = () => {
-  layoutScrollbarRef.value?.update();
-  layoutMainRef.value?.layoutMainScrollbarRef?.update();
-};
-
-const initScrollHeight = () => {
-  nextTick(() => {
-    setTimeout(() => {
-      updateScrollbar();
-      layoutScrollbarRef.value?.wrapRef && (layoutScrollbarRef.value.wrapRef.scrollTop = 0);
-      layoutMainRef.value?.layoutMainScrollbarRef?.wrapRef &&
-        (layoutMainRef.value.layoutMainScrollbarRef.wrapRef.scrollTop = 0);
-    }, 500);
-  });
-};
+const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef, layoutScrollbarRef);
 
 onMounted(() => {
   initScrollHeight();
