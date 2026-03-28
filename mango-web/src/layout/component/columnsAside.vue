@@ -233,7 +233,7 @@ watch(
     margin: 0;
 
     .layout-columns-active {
-      color: var(--mango-color-primary) !important;
+      color: var(--mango-color-primary);
       transition: 0.3s ease-in-out;
     }
 
