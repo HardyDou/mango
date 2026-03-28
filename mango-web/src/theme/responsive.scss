@@ -1,59 +1,19 @@
-/* Mango Responsive Styles */
+/* Mango Responsive Styles - NavBars */
 
-/* Mobile: hide aside, show hamburger */
-@media screen and (max-width: var(--mango-mobile-breakpoint)) {
-  .layout-aside {
-    position: fixed !important;
-    left: -220px !important;
-    top: 0 !important;
-    height: 100vh !important;
-    z-index: 2000 !important;
-    transition: left var(--mango-transition-duration);
-
-    &.aside-mobile-open {
-      left: 0 !important;
+/* Mobile: show hamburger, adjust nav */
+@media screen and (max-width: 768px) {
+  .layout-navbars-container {
+    .hamburger:not(.hamburger-mobile) {
+      display: none !important;
     }
-  }
-
-  .layout-container {
-    .layout-aside-overlay {
-      display: block !important;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1999;
-      opacity: 0;
-      transition: opacity var(--mango-transition-duration);
-
-      &.visible {
-        opacity: 1;
-      }
-    }
-  }
-
-  .layout-header {
-    .hamburger-mobile {
-      display: flex !important;
-    }
-  }
-
-  .layout-main-scrollbar {
-    padding-top: 0 !important;
   }
 }
 
 /* Desktop: hide mobile hamburger */
-@media screen and (min-width: calc(var(--mango-mobile-breakpoint) + 1px)) {
-  .layout-header {
-    .hamburger-mobile {
+@media screen and (min-width: 769px) {
+  .layout-navbars-container {
+    .hamburger.hamburger-mobile {
       display: none !important;
     }
-  }
-
-  .layout-aside-overlay {
-    display: none !important;
   }
 }

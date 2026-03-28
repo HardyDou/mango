@@ -91,6 +91,11 @@ const onToggleMobileMenu = () => {
     &:hover {
       opacity: 0.8;
     }
+
+    // 移动端汉堡按钮的显示/隐藏由下面的 media query 处理
+    &.hamburger-mobile {
+      // display: none; // 移除这里，让 media query 控制
+    }
   }
 
   .layout-logo-link {
@@ -123,6 +128,23 @@ const onToggleMobileMenu = () => {
         font-weight: 700;
       }
     }
+  }
+}
+
+// 桌面端：隐藏移动端汉堡按钮
+@media screen and (min-width: 769px) {
+  .hamburger.hamburger-mobile {
+    display: none !important;
+  }
+}
+
+// 移动端：显示汉堡按钮 + 隐藏经典布局的折叠按钮
+@media screen and (max-width: 768px) {
+  .hamburger:not(.hamburger-mobile) {
+    display: none !important;
+  }
+  .hamburger.hamburger-mobile {
+    display: flex !important;
   }
 }
 </style>

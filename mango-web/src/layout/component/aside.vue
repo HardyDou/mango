@@ -18,7 +18,7 @@
         @mouseenter="onAsideEnterLeave(true)"
         @mouseleave="onAsideEnterLeave(false)"
       >
-        <Vertical v-if="themeConfig.layout !== 'columns'" :menu-list="menuList" />
+        <Vertical v-if="themeConfig.layout !== 'columns'" :menu-list="menuList" :disable-collapse="themeConfig.isMobileMenuOpen" />
         <Vertical v-else :menu-list="columnsChildren.length > 0 ? columnsChildren : menuList" :disable-collapse="true" />
       </el-scrollbar>
     </el-aside>
@@ -126,16 +126,32 @@ watch(
 </script>
 
 <style scoped lang="scss">
+.layout-aside-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
+  opacity: 0;
+  transition: opacity var(--mango-transition-duration);
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
 .layout-aside {
   background: var(--mango-bg-menu-bar);
   box-shadow: 2px 0 6px rgb(0 21 41 / 8%);
   height: 100%;
   position: relative;
-  z-index: 1;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   overflow-x: hidden !important;
-  transition: width var(--mango-transition-duration);
+  transition: width var(--mango-transition-duration), left var(--mango-transition-duration);
   width: var(--mango-aside-width) !important;
   min-width: var(--mango-aside-width) !important;
   max-width: var(--mango-aside-width) !important;
@@ -145,6 +161,13 @@ watch(
     width: 64px !important;
     min-width: 64px !important;
     max-width: 64px !important;
+  }
+
+  &.aside-mobile-open {
+    left: 0 !important;
+    width: var(--mango-aside-width) !important;
+    min-width: var(--mango-aside-width) !important;
+    max-width: var(--mango-aside-width) !important;
   }
 
   :deep(.el-scrollbar__view) {
@@ -159,6 +182,27 @@ watch(
     min-width: var(--mango-aside-width) !important;
     max-width: var(--mango-aside-width) !important;
     box-shadow: none;
+  }
+}
+</style>
+
+<style lang="scss">
+// Non-scoped for mobile responsive sidebar positioning
+@media screen and (max-width: 768px) {
+  .layout-aside {
+    position: fixed !important;
+    left: -220px !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 2000 !important;
+    transition: left var(--mango-transition-duration);
+
+    &.aside-mobile-open {
+      left: 0 !important;
+      width: var(--mango-aside-width) !important;
+      min-width: var(--mango-aside-width) !important;
+      max-width: var(--mango-aside-width) !important;
+    }
   }
 }
 </style>
