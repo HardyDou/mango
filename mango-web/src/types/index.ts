@@ -42,6 +42,4 @@ interface RouteMeta {
   cacheName?: string;
 }
 
-// ThemeConfigState - re-export from stores
-export type { ThemeConfigState } from '@/stores/themeConfig';
 export type { UserInfosState } from '@/stores/userInfo';
