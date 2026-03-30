@@ -163,8 +163,8 @@ AI Agent:
 | D21: 集成测试复杂 | 微服务 Mock 规范 | 规范体系 | rules/test-rules.md |
 | D22: 测试数据准备 | 测试数据生成器 | 工具链 | tools/test-data-gen/ |
 | **F. 工具与流程** | | | |
-| D23: 规范执行难 | AI-Executable 规范 + CLI 强制检查 | 规范体系 | rules/*.md |
-| D24: 工具使用障碍 | Mango CLI 工具链 | 工具链 | tools/mango-cli |
+| D23: 规范执行难 | AI-Executable 规范 + SonarQube 强制检查 | 规范体系 | rules/*.md |
+| D24: 工具使用障碍 | SonarQube + Alibaba P3C 代码规范 | 工具链 | SonarQube + p3c规则集 |
 | D25: 部署方式适配 | SPI 机制 + App POM 依赖切换（local/remote starter） | 架构设计 | 每个服务：api/core/starter/starter-remote |
 | D26: 权限配置复杂 | permission-gen CLI 自动生成 | 工具链 | tools/gen/permission-gen |
 | **G. 项目管理** | | | |
@@ -300,30 +300,25 @@ mango-order-core（业务实现）
 
 ### 3.4 工具链
 
-#### S5: Mango CLI 工具
+#### S5: SonarQube + Alibaba P3C 代码检查
 
-**目标**: AI 可以通过 CLI 调用所有功能，无需浏览器手动操作
+**目标**: 使用业界成熟的 SonarQube 平台 + 阿里巴巴 Java 代码规范（Alibaba P3C），AI 无需自建检查工具
 
-**工具列表**:
-```bash
-# 代码生成
-mango gen module --name <name>           # 生成模块
-mango gen crud --module <module>         # 生成 CRUD
-mango gen permission --module <module>   # 生成权限SQL
+**Alibaba P3C 规范要点**:
+- 命名规约（命名不做俯视的强制检查）
+- 常量定义
+- 格式规约
+- OOP 规约
+- 集合处理
+- 并发处理
+- 控制语句
+- 注释规约
 
-# 执行
-mango exec sql --file <path>            # 执行SQL
-
-# 检查
-mango check module-boundary             # 检查模块边界
-mango check api-contract                # 检查 API 契约
-mango check test-coverage               # 检查测试覆盖率
-```
-
-**技术选型**:
-- CLI 框架: Python Click（跨平台、快速开发）
-- 代码生成: Jinja2 模板
-- SQL 生成: sqlglot（SQL 解析验证）
+**SonarQube 集成**:
+- 安装 `sonar-p3c-plugin`（阿里巴巴 P3C 规则集）
+- 在 `mango-parent/pom.xml` 中配置 `sonar-maven-plugin`
+- CI 门禁：`mvn sonar:sonar`
+- 支持增量扫描 + Git 提交前检查
 
 ### 3.4 流程机制
 
@@ -430,8 +425,8 @@ mango check test-coverage               # 检查测试覆盖率
 
 | 困难 | 解决方案 | 验证结果 | 风险等级 |
 |------|---------|---------|---------|
-| D23: 规范执行难 | AI-Executable 规范 + CLI 检查 | ✅ 可解决 | 🟢 低 |
-| D24: 工具使用障碍 | Mango CLI 工具链 | ✅ 可解决 | 🟢 低 |
+| D23: 规范执行难 | AI-Executable 规范 + SonarQube P3C 检查 | ✅ 可解决 | 🟢 低 |
+| D24: 工具使用障碍 | SonarQube + Alibaba P3C 代码规范 | ✅ 可解决 | 🟢 低 |
 | D25: 部署方式适配 | SPI 机制 + App POM 依赖切换 | ✅ 可解决 | 🟢 低 |
 | D26: 权限配置复杂 | permission-gen CLI | ✅ 可解决 | 🟢 低 |
 
@@ -514,17 +509,14 @@ mango/
 │   ├── db-rules.md            # 数据库规范
 │   └── ui-rules.md            # UI/UX 规范
 ├── tools/                       # Mango CLI 工具链
-│   ├── mango-cli              # 主命令入口
-│   ├── gen/                   # 代码生成
-│   │   ├── module-gen.py
-│   │   ├── crud-gen.py
-│   │   └── permission-gen.py
-│   ├── check/                 # 检查工具
-│   │   ├── duplicate-check
-│   │   ├── method-length-check
-│   │   └── security-scan
-│   └── test/                  # 测试工具
-│       └── playwright-mcp
+│   ├── gen/                   # 代码生成（mango-maven-plugin）
+│   │   ├── gen-module         # 生成模块脚手架
+│   │   ├── gen-crud           # 生成 CRUD 代码
+│   │   └── gen-permission     # 生成权限 SQL
+│   └── sonar/                  # SonarQube 集成
+│       └── p3c-rules.xml      # Alibaba P3C 规则集
+└── skills/                      # AI Agent Skills
+    └── mango-evaluator/        # 代码质检 Agent（基于 SonarQube 报告）
 ├── templates/                  # 代码模板
 ├── prompts/                    # AI 提示词
 │   ├── requirement-expand.md
@@ -546,16 +538,16 @@ mango/
         ↓
 3. Sprint 执行循环 (Generator-Evaluator):
    ├─ Generator: 生成代码 (≤200行/文件)
-   ├─ Evaluator: CLI 检查
-   │   ├─ check duplicate
-   │   ├─ check method-length
-   │   ├─ check security
-   │   └─ check coverage
+   ├─ Evaluator: SonarQube + Alibaba P3C 检查
+   │   ├─ 规范扫描（命名/格式/OOP/集合/并发/控制语句/注释）
+   │   ├─ 重复代码检测
+   │   ├─ 圈复杂度检查
+   │   └─ 安全规则检查（SQL注入/硬编码等）
    └─ 反馈循环 → 最多3次重试
         ↓
-4. 权限配置 → mango gen permission
+4. 权限配置 → mvn mango:gen-permission
         ↓
-5. 最终验证 → mango check all
+5. 最终验证 → mvn sonar:sonar
         ↓
 6. 人工 Review → 关键节点确认
 ```

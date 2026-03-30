@@ -116,13 +116,15 @@ mvn mango:gen-module -Dname=<name>          # 生成模块脚手架
 mvn mango:gen-crud -Dmodule=<module> -Dentity=<Entity> -Dtable=<table>  # 生成 CRUD
 mvn mango:gen-permission -Dmodule=<module> # 生成权限菜单 SQL
 
-# 代码检查
-mvn mango:check              # 检查所有规则
-mvn mango:check -Drule=duplicate  # 检查重复代码
+# SonarQube 代码扫描（需要先启动 SonarQube）
+cd sonar && docker-compose up -d   # 启动 SonarQube
+mvn sonar:sonar                    # 扫描所有模块
+mvn sonar:sonar -pl mango-common   # 扫描指定模块
 
-# 质检评估
-mvn mango:evaluate -Dartifact=prd   # PRD 质量评估
-mvn mango:evaluate -Dartifact=code  # 代码质量评估
+# 快速扫描脚本
+./sonar/sonar-scan.sh start   # 启动 SonarQube
+./sonar/sonar-scan.sh scan   # 运行扫描
+./sonar/sonar-scan.sh status  # 检查状态
 ```
 
 ---

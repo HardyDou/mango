@@ -25,7 +25,7 @@ origin: docs/plans/2026-03-26-001-feat-aiagent-springboot-scaffold-plan.md
 | 脚手架定位 | For AI Agent（AI 原生友好） |
 | 困难数量 | 29 个（已识别） |
 | 解决方案 | 26 已解决 / 2 部分 / 1 高风险 |
-| 代码规范 | 10 条 (C1-C10) |
+| 代码规范 | Alibaba P3C + SonarQube（替代 C1-C10 自建规则） |
 | UI/UX 方案 | M* 组件包装 + ESLint + CSS 变量 |
 | E2E 测试 | Playwright 组件级截图 + 验收标准 |
 
@@ -35,8 +35,8 @@ origin: docs/plans/2026-03-26-001-feat-aiagent-springboot-scaffold-plan.md
 
 | 决策 | 确认内容 |
 |------|---------|
-| CLI 技术栈 | **Java (Picocli)** ✅ 已改 |
-| 评估阈值 | 可配置 (config.yaml) |
+| 代码检查工具 | **SonarQube + Alibaba P3C** ✅ 已改 |
+| 评估阈值 | SonarQube 内置阈值（可配置） |
 | 规范格式 | Markdown |
 | Generator 分离 | 可选（保留灵活性） |
 | 前端规范 | 两者结合 |
@@ -119,15 +119,24 @@ mango-order-core（业务实现）
 | 文件 | 内容 | 优先级 |
 |------|------|--------|
 | `rules/dev-flow-rules.md` | Sprint 机制、任务分解、人工 Review 时机 | 🔴 高 |
-| `rules/code-rules.md` | C1-C5 代码规范（重复检测、长度限制、命名、异常、安全） | 🔴 高 |
+| `rules/code-rules.md` | AI-Executable 规范（参考 Alibaba P3C，差异化补充） | 🔴 高 |
 | `rules/naming-rules.md` | Java/Database 命名规范 | 🔴 高 |
-| `rules/api-rules.md` | C7 RESTful API 设计规范 | 🔴 高 |
-| `rules/security-rules.md` | C6 安全规范（无硬编码、SQL 安全） | 🔴 高 |
-| `rules/test-rules.md` | C8 测试覆盖率、C11 边界条件 | 🔴 高 |
-| `rules/db-rules.md` | C10 数据库设计规范 | 🟡 中 |
+| `rules/api-rules.md` | RESTful API 设计规范 | 🔴 高 |
+| `rules/security-rules.md` | 安全规范（无硬编码、SQL 安全） | 🔴 高 |
+| `rules/test-rules.md` | 测试覆盖率、边界条件 | 🔴 高 |
+| `rules/db-rules.md` | 数据库设计规范 | 🟡 中 |
 | `rules/persistence-rules.md` | @MangoMode + 事务处理规范 | 🟡 中 |
 | `rules/module-rules.md` | **模块分层 + SPI 机制 + Starter 命名规则** | 🔴 高 |
 | `rules/ui-rules.md` | M* 组件使用规则、ESLint 配置 | 🟡 中 |
+
+#### 1.2 搭建 SonarQube + Alibaba P3C 检查体系
+
+| 任务 | 说明 | 优先级 |
+|------|------|--------|
+| 搭建 SonarQube 环境 | Docker 部署 SonarQube + 安装 `sonar-p3c-plugin` | 🔴 高 |
+| 配置 `mango-parent/pom.xml` | 集成 `sonar-maven-plugin`，配置项目质量门禁 | 🔴 高 |
+| 编写 `tools/sonar/p3c-rules.xml` | Alibaba P3C 补充规则（如有需差异化） | 🟡 中 |
+| 编写 `skills/mango-evaluator/SKILL.md` | Evaluator Agent 读取 SonarQube 报告进行质量评估 | 🔴 高 |
 
 #### 1.3 rules/module-rules.md 规范内容（实施时创建）
 
@@ -962,15 +971,16 @@ public class MangoTransactionAspect {
 
 ## 实施优先级总结
 
-| 阶段 | 任务 | 优先级 | 依赖 |
+| 阶段 | 任务 | 优先级 | 状态 |
 |------|------|--------|------|
-| **1** | rules/ 规范文件 | 🔴 高 | 无 |
-| **2** | Mango CLI 核心命令 | 🔴 高 | 阶段 1 |
-| **3** | 脚手架项目结构 | 🔴 高 | 阶段 1 |
-| **4** | Generator-Evaluator 原型 | 🔴 高 | 阶段 2, 3 |
-| **5** | M* 组件库 | 🟡 中 | 阶段 3 |
-| **6** | Playwright E2E 集成 | 🟡 中 | 阶段 3 |
-| **7** | 高风险项处理 | ⚠️ | 阶段 4 后评估 |
+| **1** | rules/ 规范文件 | 🔴 高 | ✅ 完成 |
+| **2** | SonarQube + Alibaba P3C 集成 | 🔴 高 | 🔄 进行中 |
+| **3** | 脚手架项目结构（mango-parent/common/generator/tools） | 🔴 高 | ✅ 完成 |
+| **4** | Generator-Evaluator 原型（Maven Plugin + Agent Skill） | 🔴 高 | ✅ 完成 |
+| **5** | M* 组件库（mango-web Vue3 管理后台） | 🟡 中 | ✅ 完成 |
+| **6** | Playwright E2E 集成（mango-web） | 🟡 中 | ✅ 完成 |
+| **7** | Evaluator Agent Skill 完善（读取 SonarQube 报告） | 🔴 高 | 🔄 进行中 |
+| **8** | 高风险项处理（D17 分布式事务/D28 多Agent） | ⚠️ | ⏸ 搁置 |
 
 ---
 

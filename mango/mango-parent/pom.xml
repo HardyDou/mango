@@ -35,6 +35,10 @@
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <maven-gitee-plugin.version>1.0.1</maven-gitee-plugin.version>
 
+        <!-- SonarQube -->
+        <sonar-maven-plugin.version>3.11.0</sonar-maven-plugin.version>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+
         <!-- Test -->
         <junit.version>5.10.1</junit.version>
     </properties>
@@ -107,6 +111,13 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                </plugin>
+
+                <!-- SonarQube -->
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>${sonar-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

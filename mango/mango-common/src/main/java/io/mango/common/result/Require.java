@@ -2,6 +2,10 @@ package io.mango.common.result;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
+
+import io.mango.common.exception.BizException;
+
 /**
  * 断言工具
  * 抛出异常时只打印 warn 日志，不走 err 处理
