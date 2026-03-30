@@ -5,6 +5,7 @@
         <li
           v-for="(v, k) in columnsAsideList"
           :key="k"
+          :ref="(el) => { if (el) columnsAsideOffsetTopRefs[k] = el as HTMLElement }"
           :class="{ 'layout-columns-active': liIndex === k, 'layout-columns-hover': liHoverIndex === k }"
           :title="v.meta?.title || v.name"
           @click="onColumnsAsideMenuClick(v, k)"
@@ -105,9 +106,11 @@ const filterRoutes = <T extends MenuItem>(arr: T[]): T[] => {
 
 const setColumnsAsideMove = (k: number) => {
   liIndex.value = k;
-  if (columnsAsideActiveRef.value && columnsAsideOffsetTopRefs.value[k]) {
-    columnsAsideActiveRef.value.style.top = `${columnsAsideOffsetTopRefs.value[k].offsetTop + difference.value}px`;
-  }
+  nextTick(() => {
+    if (columnsAsideActiveRef.value && columnsAsideOffsetTopRefs.value[k]) {
+      columnsAsideActiveRef.value.style.top = `${columnsAsideOffsetTopRefs.value[k].offsetTop + difference.value}px`;
+    }
+  });
 };
 
 const onColumnsAsideMenuClick = (v: MenuItem, k: number) => {
@@ -224,7 +227,7 @@ watch(
 .layout-columns-aside {
   width: 64px;
   height: 100%;
-  background: white;
+  background: var(--mango-bg-columns-menu-bar);
 
   ul {
     position: relative;
@@ -233,20 +236,20 @@ watch(
     margin: 0;
 
     .layout-columns-active {
-      color: var(--mango-color-primary);
+      color: #fff;
       transition: 0.3s ease-in-out;
     }
 
     .layout-columns-hover {
-      color: var(--mango-color-primary);
+      color: #fff;
 
       a {
-        color: var(--mango-color-primary);
+        color: #fff;
       }
     }
 
     li {
-      color: var(--mango-color-menu-bar);
+      color: #fff;
       width: 100%;
       height: 50px;
       text-align: center;

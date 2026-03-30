@@ -151,6 +151,19 @@ export const useThemeConfig = defineStore('themeConfig', {
         'data-theme',
         this.themeConfig.isDark ? 'dark' : 'light'
       );
+      // Clear inline color styles so dark/light CSS variables take precedence
+      if (this.themeConfig.isDark) {
+        document.documentElement.style.removeProperty('--mango-color-primary');
+        document.documentElement.style.removeProperty('--mango-bg-top-bar');
+        document.documentElement.style.removeProperty('--mango-bg-menu-bar');
+        document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
+      } else {
+        // Light mode: re-apply the stored theme colors as inline styles
+        document.documentElement.style.setProperty('--mango-color-primary', this.themeConfig.primary);
+        document.documentElement.style.setProperty('--mango-bg-top-bar', this.themeConfig.topBar);
+        document.documentElement.style.setProperty('--mango-bg-menu-bar', this.themeConfig.menuBar);
+        document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', this.themeConfig.columnsMenuBar);
+      }
     },
     setLayout(layout: 'defaults' | 'classic' | 'transverse' | 'columns') {
       this.themeConfig.layout = layout;

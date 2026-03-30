@@ -96,17 +96,30 @@ const onLayoutResize = () => {
   if (!Local.get('oldLayout')) Local.set('oldLayout', themeConfig.value.layout);
   const clientWidth = document.body.clientWidth;
   if (clientWidth < 1000) {
-    // 移动端：收起侧边栏
-    themeConfig.value.isCollapse = true;
+    // 移动端：确保侧边栏展开（不折叠），关闭移动菜单，切换到默认布局
+    themeConfig.value.isCollapse = false;
+    themeConfig.value.isMobileMenuOpen = false;
+    // 记住当前布局，切换到 defaults 布局（与 pigx-ui 一致）
+    const currentLayout = themeConfig.value.layout;
+    if (currentLayout !== 'defaults') {
+      Local.set('oldLayout', currentLayout);
+      themeConfig.value.layout = 'defaults';
+    }
     mittBus.emit('layoutMobileResize', {
       isMobile: true,
       windowWidth: clientWidth,
+      layout: 'defaults',
     });
   } else {
-    // PC端：保持当前状态
+    // PC端：恢复之前的布局
+    const oldLayout = Local.get('oldLayout');
+    if (oldLayout && oldLayout !== 'defaults' && themeConfig.value.layout === 'defaults') {
+      themeConfig.value.layout = oldLayout as 'defaults' | 'classic' | 'transverse' | 'columns';
+    }
     mittBus.emit('layoutMobileResize', {
       isMobile: false,
       windowWidth: clientWidth,
+      layout: themeConfig.value.layout,
     });
   }
 };

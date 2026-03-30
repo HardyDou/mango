@@ -1,7 +1,7 @@
 /* Mango Responsive Styles - NavBars */
 
-/* Mobile: show hamburger, adjust nav */
-@media screen and (max-width: 768px) {
+/* Mobile: show hamburger, adjust nav (1000px breakpoint to match JS) */
+@media screen and (max-width: 1000px) {
   .layout-navbars-container {
     .hamburger:not(.hamburger-mobile) {
       display: none !important;
@@ -10,7 +10,7 @@
 }
 
 /* Desktop: hide mobile hamburger */
-@media screen and (min-width: 769px) {
+@media screen and (min-width: 1001px) {
   .layout-navbars-container {
     .hamburger.hamburger-mobile {
       display: none !important;

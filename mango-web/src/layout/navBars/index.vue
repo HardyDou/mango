@@ -131,15 +131,15 @@ const onToggleMobileMenu = () => {
   }
 }
 
-// 桌面端：隐藏移动端汉堡按钮
-@media screen and (min-width: 769px) {
+// 桌面端：隐藏移动端汉堡按钮 (1000px breakpoint)
+@media screen and (min-width: 1001px) {
   .hamburger.hamburger-mobile {
     display: none !important;
   }
 }
 
 // 移动端：显示汉堡按钮 + 隐藏经典布局的折叠按钮
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 1000px) {
   .hamburger:not(.hamburger-mobile) {
     display: none !important;
   }

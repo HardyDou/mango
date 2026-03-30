@@ -297,10 +297,11 @@
 </template>
 
 <script setup lang="ts" name="layoutBreadcrumbSettings">
-import { computed, nextTick, onMounted, reactive } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '@/stores/themeConfig';
 import { useChangeColor } from '@/utils/theme';
+import { mittBus } from '@/utils/mitt';
 import { Setting, RefreshRight } from '@element-plus/icons-vue';
 
 const storesThemeConfig = useThemeConfig();
@@ -408,8 +409,18 @@ const onAddFilterChange = (attr: string) => {
 const onAddDarkChange = () => {
   if (getThemeConfig.value.isDark) {
     document.documentElement.setAttribute('data-theme', 'dark');
+    // Clear inline color styles so dark CSS variables take precedence
+    document.documentElement.style.removeProperty('--mango-color-primary');
+    document.documentElement.style.removeProperty('--mango-bg-top-bar');
+    document.documentElement.style.removeProperty('--mango-bg-menu-bar');
+    document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
   } else {
     document.documentElement.setAttribute('data-theme', 'light');
+    // Re-apply light mode colors as inline styles
+    document.documentElement.style.setProperty('--mango-color-primary', getThemeConfig.value.primary);
+    document.documentElement.style.setProperty('--mango-bg-top-bar', getThemeConfig.value.topBar);
+    document.documentElement.style.setProperty('--mango-bg-menu-bar', getThemeConfig.value.menuBar);
+    document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', getThemeConfig.value.columnsMenuBar);
   }
   setLocalThemeConfig();
 };
@@ -484,6 +495,19 @@ onMounted(() => {
       initSetStyle();
     }, 100);
   });
+
+  // 监听窗口大小改变，非默认布局，设置成默认布局（适配移动端）
+  mittBus.on('layoutMobileResize', (res: { isMobile: boolean; windowWidth: number; layout?: string }) => {
+    if (res.layout && res.layout !== getThemeConfig.value.layout) {
+      getThemeConfig.value.layout = res.layout as 'defaults' | 'classic' | 'transverse' | 'columns';
+      getThemeConfig.value.isDrawer = false;
+      initLayoutChangeFun();
+    }
+  });
+});
+
+onUnmounted(() => {
+  mittBus.off('layoutMobileResize', () => {});
 });
 </script>
 

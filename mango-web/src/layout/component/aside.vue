@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts" name="layoutAside">
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
@@ -48,11 +48,15 @@ const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
 const menuList = ref<any[]>([]);
 const columnsChildren = ref<any[]>([]);
+const clientWidth = ref(document.body.clientWidth);
 
 watch(
   () => routesList.value,
   (newVal) => {
-    menuList.value = newVal;
+    // columns 布局时，菜单由 mitt setSendColumnsChildren 事件管理，不直接使用 routesList
+    if (themeConfig.value.layout !== 'columns') {
+      menuList.value = newVal;
+    }
   },
   { immediate: true }
 );
@@ -75,10 +79,15 @@ const setShowAside = computed(() => {
 });
 
 const setCollapseStyle = computed(() => {
-  if (themeConfig.value.layout === 'columns') {
-    return 'aside-collapse';
+  // 移动端（<= 1000px）或移动端菜单打开时，不使用 collapse 样式
+  if (clientWidth.value <= 1000 || themeConfig.value.isMobileMenuOpen) {
+    return '';
   }
-  return themeConfig.value.isCollapse ? 'aside-collapse' : '';
+  if (themeConfig.value.layout === 'columns') {
+    // 分栏布局：收起时 1px 宽度（几乎隐藏），展开时 220px
+    return themeConfig.value.isCollapse ? 'layout-aside-pc-1' : 'layout-aside-pc-220';
+  }
+  return themeConfig.value.isCollapse ? 'layout-aside-pc-64' : 'layout-aside-pc-220';
 });
 
 const onAsideEnterLeave = (bool: boolean) => {
@@ -94,6 +103,7 @@ const onCloseMobileMenu = () => {
 // mittBus event handling
 let cleanupSendColumns: (() => void) | undefined;
 let cleanupRestore: (() => void) | undefined;
+let cleanupMobileResize: (() => void) | undefined;
 
 onMounted(() => {
   // Listen for columns children data
@@ -107,11 +117,23 @@ onMounted(() => {
   cleanupRestore = mittBus.on('restoreDefault', () => {
     columnsChildren.value = [];
   });
+
+  // Listen for mobile resize events
+  cleanupMobileResize = mittBus.on('layoutMobileResize', (res: { isMobile: boolean; windowWidth: number }) => {
+    clientWidth.value = res.windowWidth;
+    if (!res.isMobile) {
+      // Desktop: close mobile menu if open
+      if (themeConfig.value.isMobileMenuOpen) {
+        storesThemeConfig.closeMobileMenu();
+      }
+    }
+  });
 });
 
 onUnmounted(() => {
   cleanupSendColumns?.();
   cleanupRestore?.();
+  cleanupMobileResize?.();
 });
 
 // When in columns mode, watch for hover state to update menu
@@ -157,10 +179,23 @@ watch(
   max-width: var(--mango-aside-width) !important;
   flex-shrink: 0;
 
-  &.aside-collapse {
+  &.aside-collapse,
+  &.layout-aside-pc-64 {
     width: 64px !important;
     min-width: 64px !important;
     max-width: 64px !important;
+  }
+
+  &.layout-aside-pc-1 {
+    width: 1px !important;
+    min-width: 1px !important;
+    max-width: 1px !important;
+  }
+
+  &.layout-aside-pc-220 {
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
   }
 
   &.aside-mobile-open {
@@ -187,8 +222,8 @@ watch(
 </style>
 
 <style lang="scss">
-// Non-scoped for mobile responsive sidebar positioning
-@media screen and (max-width: 768px) {
+// Non-scoped for mobile responsive sidebar positioning (1000px breakpoint to match JS)
+@media screen and (max-width: 1000px) {
   .layout-aside {
     position: fixed !important;
     left: -220px !important;

@@ -105,13 +105,13 @@ import { User, Document, TrendCharts, Setting, DataLine } from '@element-plus/ic
     .stat-value {
       font-size: 28px;
       font-weight: 700;
-      color: #333;
+      color: var(--mango-text-color);
     }
 
     .stat-label {
       margin-top: 4px;
       font-size: 14px;
-      color: #999;
+      color: var(--mango-text-color-regular);
     }
   }
 }

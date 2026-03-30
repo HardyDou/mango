@@ -5,7 +5,7 @@ type Events = {
   'collapses': boolean;
   'mobile': boolean;
   'layoutMobile': boolean;
-  'layoutMobileResize': { isMobile: boolean; windowWidth: number };
+  'layoutMobileResize': { isMobile: boolean; windowWidth: number; layout?: 'defaults' | 'classic' | 'transverse' | 'columns' };
   'setIsThreeMenu': boolean;
   'openGlobalCollapse': boolean;
   'setSendColumnsChildren': any;
