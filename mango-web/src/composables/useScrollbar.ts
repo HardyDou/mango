@@ -5,8 +5,8 @@ import { nextTick, type Ref } from 'vue';
  * 消除 layout 文件中的重复代码
  */
 export function useScrollbar(
-  layoutMainRef: Ref<any>,
-  layoutScrollbarRef?: Ref<any>
+  layoutMainRef: Ref<Record<string, any> | undefined>,
+  layoutScrollbarRef?: Ref<Record<string, any> | undefined>
 ) {
   const updateScrollbar = () => {
     if (layoutScrollbarRef?.value) {

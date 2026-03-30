@@ -27,14 +27,17 @@
             </div>
           </div>
         </li>
-        <div ref="columnsAsideActiveRef" :class="layoutStore.columnsAsideStyle"></div>
+        <div
+          ref="columnsAsideActiveRef"
+          :class="layoutStore.columnsAsideStyle"
+        />
       </ul>
     </el-scrollbar>
   </div>
 </template>
 
 <script setup lang="ts" name="layoutColumnsAside">
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
@@ -59,18 +62,8 @@ interface MenuItem {
   k?: number;
 }
 
-interface ColumnsAsideState {
-  columnsAsideList: MenuItem[];
-  liIndex: number;
-  liOldIndex: number | null;
-  liHoverIndex: number | null;
-  liOldPath: string | null;
-  difference: number;
-}
-
 const columnsAsideOffsetTopRefs = ref<HTMLElement[]>([]);
 const columnsAsideActiveRef = ref<HTMLElement>();
-const layoutAsideRef = ref();
 const route = useRoute();
 const router = useRouter();
 const layoutStore = useLayoutStore();
@@ -199,10 +192,6 @@ const setFilterRoutes = () => {
   setColumnsAsideMove(resData.item?.k || 0);
   mittBus.emit('setSendColumnsChildren', resData);
 };
-
-onMounted(() => {
-  setFilterRoutes();
-});
 
 watch(
   () => route.path,

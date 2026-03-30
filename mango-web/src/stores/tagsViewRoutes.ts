@@ -1,28 +1,29 @@
 import { defineStore } from 'pinia';
+import type { RouteRecordRaw } from 'vue-router';
 import { Session } from '@/utils/storage';
 
 export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
   state: (): {
-    tagsViewRoutes: any[];
+    tagsViewRoutes: RouteRecordRaw[];
     isTagsViewCurrenFull: boolean;
-    favoriteRoutes: any[];
+    favoriteRoutes: RouteRecordRaw[];
   } => ({
     tagsViewRoutes: [],
     isTagsViewCurrenFull: false,
     favoriteRoutes: [],
   }),
   actions: {
-    setTagsViewRoutes(data: any[]) {
+    setTagsViewRoutes(data: RouteRecordRaw[]) {
       this.tagsViewRoutes = data;
     },
     setCurrenFullscreen(bool: boolean) {
       Session.set('isTagsViewCurrenFull', bool);
       this.isTagsViewCurrenFull = bool;
     },
-    addFavoriteRoutes(item: any) {
+    addFavoriteRoutes(item: RouteRecordRaw) {
       this.favoriteRoutes.unshift(item);
     },
-    delFavoriteRoutes(item: any) {
+    delFavoriteRoutes(item: RouteRecordRaw) {
       const idx = this.favoriteRoutes.indexOf(item);
       if (idx > -1) this.favoriteRoutes.splice(idx, 1);
     },

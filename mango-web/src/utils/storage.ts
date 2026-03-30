@@ -31,17 +31,20 @@ export const Session = {
   },
 
   getToken(): string | null {
-    return localStorage.getItem('MANGO_TOKEN');
+    // Use sessionStorage for tokens - cleared when tab closes.
+    // TODO (P1): For production, use httpOnly cookies (requires backend support).
+    // XSS can still read sessionStorage, but data doesn't persist across sessions.
+    return sessionStorage.getItem('MANGO_TOKEN');
   },
 
   setToken(token: string): void {
-    // SECURITY: Using localStorage for tokens is XSS-vulnerable.
-    // For production, migrate to httpOnly cookies (requires backend support).
-    localStorage.setItem('MANGO_TOKEN', token);
+    // SECURITY: sessionStorage is still XSS-vulnerable but better than localStorage.
+    // The real fix requires httpOnly cookies (backend change needed).
+    sessionStorage.setItem('MANGO_TOKEN', token);
   },
 
   clearToken(): void {
-    localStorage.removeItem('MANGO_TOKEN');
+    sessionStorage.removeItem('MANGO_TOKEN');
   },
 
   clearSession(): void {

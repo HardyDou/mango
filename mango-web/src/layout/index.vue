@@ -9,12 +9,29 @@ import { useLayoutStore } from '@/stores/layout';
 import { Local } from '@/utils/storage';
 import { mittBus } from '@/utils/mitt';
 import { useChangeColor } from '@/utils/theme';
+import LayoutMainDefaults from './main/defaults.vue';
+import LayoutMainClassic from './main/classic.vue';
+import LayoutMainTransverse from './main/transverse.vue';
+import LayoutMainColumns from './main/columns.vue';
 
+// 动态导入的组件用于异步加载
 const layouts: Record<string, any> = {
-  defaults: defineAsyncComponent(() => import('./main/defaults.vue')),
-  classic: defineAsyncComponent(() => import('./main/classic.vue')),
-  transverse: defineAsyncComponent(() => import('./main/transverse.vue')),
-  columns: defineAsyncComponent(() => import('./main/columns.vue')),
+  defaults: defineAsyncComponent({
+    loader: () => import('./main/defaults.vue'),
+    loadingComponent: LayoutMainDefaults,
+  }),
+  classic: defineAsyncComponent({
+    loader: () => import('./main/classic.vue'),
+    loadingComponent: LayoutMainClassic,
+  }),
+  transverse: defineAsyncComponent({
+    loader: () => import('./main/transverse.vue'),
+    loadingComponent: LayoutMainTransverse,
+  }),
+  columns: defineAsyncComponent({
+    loader: () => import('./main/columns.vue'),
+    loadingComponent: LayoutMainColumns,
+  }),
 };
 
 

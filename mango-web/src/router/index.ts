@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Session } from '@/utils/storage';
@@ -7,7 +7,6 @@ import { usePreferencesStore } from '@/stores/preferences';
 import { useRoutesList } from '@/stores/routesList';
 import { staticRoutes } from './route';
 import { initBackEndControlRoutes } from './backEnd';
-import { getFrontEndRoutes } from './frontEnd';
 
 const router = createRouter({
   // 使用 hash 模式
@@ -113,7 +112,7 @@ router.beforeEach(async (to, from, next) => {
 /**
  * 全局后置守卫
  */
-router.afterEach((to) => {
+router.afterEach(() => {
   // 路由切换后的处理
 });
 

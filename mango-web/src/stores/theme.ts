@@ -15,6 +15,26 @@ export interface ThemeState {
   isColumnsMenuBarColorGradual: boolean;
 }
 
+/**
+ * 同步主题状态到 CSS 变量
+ * 当状态变化时，确保 DOM 与状态同步
+ */
+function syncThemeToDOM(state: ThemeState) {
+  if (state.isDark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.style.removeProperty('--mango-color-primary');
+    document.documentElement.style.removeProperty('--mango-bg-top-bar');
+    document.documentElement.style.removeProperty('--mango-bg-menu-bar');
+    document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.style.setProperty('--mango-color-primary', state.primary);
+    document.documentElement.style.setProperty('--mango-bg-top-bar', state.topBar);
+    document.documentElement.style.setProperty('--mango-bg-menu-bar', state.menuBar);
+    document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', state.columnsMenuBar);
+  }
+}
+
 export const useThemeStore = defineStore('theme', {
   state: (): ThemeState => ({
     primary: '#2E5CF6',
@@ -37,18 +57,7 @@ export const useThemeStore = defineStore('theme', {
     },
     toggleDarkMode() {
       this.isDark = !this.isDark;
-      document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
-      if (this.isDark) {
-        document.documentElement.style.removeProperty('--mango-color-primary');
-        document.documentElement.style.removeProperty('--mango-bg-top-bar');
-        document.documentElement.style.removeProperty('--mango-bg-menu-bar');
-        document.documentElement.style.removeProperty('--mango-bg-columns-menu-bar');
-      } else {
-        document.documentElement.style.setProperty('--mango-color-primary', this.primary);
-        document.documentElement.style.setProperty('--mango-bg-top-bar', this.topBar);
-        document.documentElement.style.setProperty('--mango-bg-menu-bar', this.menuBar);
-        document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', this.columnsMenuBar);
-      }
+      syncThemeToDOM(this.$state);
     },
     setTopBar(color: string) {
       this.topBar = color;
