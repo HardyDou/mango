@@ -13,7 +13,7 @@
 
 <script setup lang="ts" name="layoutDefaults">
 import { defineAsyncComponent, computed, onMounted, ref } from 'vue';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
@@ -23,10 +23,9 @@ const LayoutTagsView = defineAsyncComponent(() => import('../navBars/tagsView/ta
 
 const layoutScrollbarRef = ref();
 const layoutMainRef = ref();
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
 
-const isTagsView = computed(() => themeConfig.value.isTagsview);
+const isTagsView = computed(() => layoutStore.isTagsview);
 
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef, layoutScrollbarRef);
 

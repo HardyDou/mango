@@ -3,7 +3,7 @@
  * @param date 日期
  * @param format 格式
  */
-export function formatDate(date: Date | string | number, format: string = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatDate(date: Date | string | number, format = 'YYYY-MM-DD HH:mm:ss'): string {
   if (!date) return '';
 
   const d = new Date(date);
@@ -58,7 +58,7 @@ export function formatRelativeTime(date: Date | string | number): string {
  * @param timestamp 时间戳
  * @param format 格式
  */
-export function formatTimestamp(timestamp: number, format: string = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatTimestamp(timestamp: number, format = 'YYYY-MM-DD HH:mm:ss'): string {
   if (!timestamp) return '';
   return formatDate(new Date(timestamp), format);
 }

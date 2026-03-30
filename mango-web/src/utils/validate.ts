@@ -43,7 +43,7 @@ export function validateIdCard(idCard: string): boolean {
  * @param password 密码
  * @param minLength 最小长度
  */
-export function validatePassword(password: string, minLength: number = 8): boolean {
+export function validatePassword(password: string, minLength = 8): boolean {
   if (password.length < minLength) return false;
   return true;
 }

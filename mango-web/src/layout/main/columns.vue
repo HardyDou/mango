@@ -15,7 +15,7 @@
 import { defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
@@ -26,8 +26,8 @@ const ColumnsAside = defineAsyncComponent(() => import('../component/columnsAsid
 const layoutScrollbarRef = ref();
 const layoutMainRef = ref();
 const route = useRoute();
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
+const { isCollapse, isFixedHeader, isTagsview, layout } = storeToRefs(layoutStore);
 
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef, layoutScrollbarRef);
 
@@ -42,10 +42,10 @@ watch(
 // Watch only properties that affect scrollbar layout
 watch(
   () => [
-    themeConfig.value.isCollapse,
-    themeConfig.value.isFixedHeader,
-    themeConfig.value.isTagsview,
-    themeConfig.value.layout
+    isCollapse.value,
+    isFixedHeader.value,
+    isTagsview.value,
+    layout.value
   ],
   () => {
     updateScrollbar();

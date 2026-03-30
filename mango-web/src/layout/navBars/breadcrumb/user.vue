@@ -30,11 +30,9 @@ import { ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { Session } from '@/utils/storage';
 import { useUserInfo } from '@/stores/userInfo';
-import { useThemeConfig } from '@/stores/themeConfig';
 
 const router = useRouter();
 const storesUserInfo = useUserInfo();
-const storesThemeConfig = useThemeConfig();
 const { userInfos } = storesUserInfo;
 
 const handleCommand = (command: string) => {

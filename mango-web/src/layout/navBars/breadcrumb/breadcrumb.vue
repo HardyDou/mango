@@ -1,5 +1,5 @@
 <template>
-  <div class="layout-breadcrumb" v-if="themeConfig.isBreadcrumb">
+  <div class="layout-breadcrumb" v-if="layoutStore.isBreadcrumb">
     <el-breadcrumb separator="/">
       <el-breadcrumb-item
         v-for="item in breadcrumbs"
@@ -15,12 +15,10 @@
 <script setup lang="ts" name="breadcrumb">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 
 const route = useRoute();
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
 
 const breadcrumbs = computed(() => {
   return route.matched.filter((item) => item.meta?.title);

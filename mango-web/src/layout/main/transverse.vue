@@ -6,7 +6,7 @@
     </div>
     <el-container class="layout-main-container">
       <div class="flex-center layout-backtop">
-        <LayoutTagsView v-if="themeConfig.isTagsview" />
+        <LayoutTagsView v-if="isTagsview" />
         <LayoutMain ref="layoutMainRef" />
       </div>
     </el-container>
@@ -17,7 +17,7 @@
 import { defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { useScrollbar } from '@/composables/useScrollbar';
 
@@ -28,8 +28,8 @@ const NavMenuHorizontal = defineAsyncComponent(() => import('../navMenu/horizont
 
 const route = useRoute();
 const layoutMainRef = ref();
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
+const { isCollapse, isFixedHeader, isTagsview, layout } = storeToRefs(layoutStore);
 const storesRoutesList = useRoutesList();
 const { routesList } = storeToRefs(storesRoutesList);
 
@@ -56,10 +56,10 @@ watch(
 // Watch only properties that affect scrollbar layout
 watch(
   () => [
-    themeConfig.value.isCollapse,
-    themeConfig.value.isFixedHeader,
-    themeConfig.value.isTagsview,
-    themeConfig.value.layout
+    isCollapse.value,
+    isFixedHeader.value,
+    isTagsview.value,
+    layout.value
   ],
   () => {
     updateScrollbar();

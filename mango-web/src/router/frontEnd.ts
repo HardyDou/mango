@@ -1,5 +1,4 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { useThemeConfig } from '@/stores/themeConfig';
 import { useRoutesList } from '@/stores/routesList';
 
 /**

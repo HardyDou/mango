@@ -30,13 +30,11 @@
 <script setup lang="ts" name="RightToolbar">
 import { computed } from 'vue';
 import { Refresh, Setting, ScaleToOriginal } from '@element-plus/icons-vue';
-import { useThemeConfig } from '@/stores/themeConfig';
-import { storeToRefs } from 'pinia';
+import { usePreferencesStore } from '@/stores/preferences';
 
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const preferencesStore = usePreferencesStore();
 
-const size = computed(() => themeConfig.value.size);
+const size = computed(() => preferencesStore.size);
 
 const emit = defineEmits(['refresh', 'columnSetting', 'sizeChange']);
 
@@ -49,7 +47,7 @@ const handleColumnSetting = () => {
 };
 
 const handleCommand = (command: string) => {
-  storesThemeConfig.setThemeConfig({ size: command as 'large' | 'default' | 'small' });
+  preferencesStore.size = command as 'large' | 'default' | 'small';
   emit('sizeChange', command);
 };
 </script>

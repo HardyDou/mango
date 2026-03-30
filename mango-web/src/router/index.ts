@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Session } from '@/utils/storage';
 import { useUserInfo } from '@/stores/userInfo';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { usePreferencesStore } from '@/stores/preferences';
 import { useRoutesList } from '@/stores/routesList';
 import { staticRoutes } from './route';
 import { initBackEndControlRoutes } from './backEnd';
@@ -44,9 +44,9 @@ async function initRoutes(): Promise<void> {
 }
 
 async function doInitRoutes(): Promise<void> {
-  const storesThemeConfig = useThemeConfig();
+  const storesPreferences = usePreferencesStore();
   const storesRoutesList = useRoutesList();
-  const { isRequestRoutes } = storesThemeConfig.themeConfig;
+  const isRequestRoutes = storesPreferences.isRequestRoutes;
 
   console.log('[Router] doInitRoutes called, isRequestRoutes:', isRequestRoutes);
   console.log('[Router] Current routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));

@@ -2,23 +2,23 @@
   <div class="h100" v-show="!isTagsViewCurrenFull">
     <!-- 移动端遮罩层 -->
     <div
-      v-if="themeConfig.isMobileMenuOpen"
+      v-if="layoutStore.isMobileMenuOpen"
       class="layout-aside-overlay"
-      :class="{ visible: themeConfig.isMobileMenuOpen }"
+      :class="{ visible: layoutStore.isMobileMenuOpen }"
       @click="onCloseMobileMenu"
     />
     <el-aside
       class="layout-aside"
-      :class="[setCollapseStyle, { 'aside-mobile-open': themeConfig.isMobileMenuOpen }]"
+      :class="[setCollapseStyle, { 'aside-mobile-open': layoutStore.isMobileMenuOpen }]"
       v-if="setShowAside"
     >
-      <Logo v-if="themeConfig.isShowLogo && (themeConfig.layout === 'defaults' || themeConfig.layout === 'columns')" />
+      <Logo v-if="layoutStore.isShowLogo && (layoutStore.layout === 'defaults' || layoutStore.layout === 'columns')" />
       <el-scrollbar
         class="flex-auto"
         @mouseenter="onAsideEnterLeave(true)"
         @mouseleave="onAsideEnterLeave(false)"
       >
-        <Vertical v-if="themeConfig.layout !== 'columns'" :menu-list="menuList" :disable-collapse="themeConfig.isMobileMenuOpen" />
+        <Vertical v-if="layoutStore.layout !== 'columns'" :menu-list="menuList" :disable-collapse="layoutStore.isMobileMenuOpen" />
         <Vertical v-else :menu-list="columnsChildren.length > 0 ? columnsChildren : menuList" :disable-collapse="true" />
       </el-scrollbar>
     </el-aside>
@@ -30,7 +30,7 @@ import { computed, defineAsyncComponent, onMounted, onUnmounted, reactive, ref, 
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
 import { mittBus } from '@/utils/mitt';
 
@@ -40,10 +40,9 @@ const route = useRoute();
 
 const layoutAsideScrollbarRef = ref();
 const storesRoutesList = useRoutesList();
-const storesThemeConfig = useThemeConfig();
+const layoutStore = useLayoutStore();
 const storesTagsViewRoutes = useTagsViewRoutes();
 const { routesList, isColumnsMenuHover, isColumnsNavHover } = storeToRefs(storesRoutesList);
-const { themeConfig } = storeToRefs(storesThemeConfig);
 const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
 const menuList = ref<any[]>([]);
@@ -54,7 +53,7 @@ watch(
   () => routesList.value,
   (newVal) => {
     // columns 布局时，菜单由 mitt setSendColumnsChildren 事件管理，不直接使用 routesList
-    if (themeConfig.value.layout !== 'columns') {
+    if (layoutStore.layout !== 'columns') {
       menuList.value = newVal;
     }
   },
@@ -65,14 +64,13 @@ watch(
 watch(
   () => route.path,
   () => {
-    storesThemeConfig.closeMobileMenu();
+    layoutStore.closeMobileMenu();
   }
 );
 
 const setShowAside = computed(() => {
-  const { layout } = themeConfig.value;
   // 分栏布局时，鼠标悬停在分栏菜单上才显示侧边菜单
-  if (layout === 'columns') {
+  if (layoutStore.layout === 'columns') {
     return isColumnsMenuHover.value;
   }
   return true;
@@ -80,24 +78,24 @@ const setShowAside = computed(() => {
 
 const setCollapseStyle = computed(() => {
   // 移动端（<= 1000px）或移动端菜单打开时，不使用 collapse 样式
-  if (clientWidth.value <= 1000 || themeConfig.value.isMobileMenuOpen) {
+  if (clientWidth.value <= 1000 || layoutStore.isMobileMenuOpen) {
     return '';
   }
-  if (themeConfig.value.layout === 'columns') {
+  if (layoutStore.layout === 'columns') {
     // 分栏布局：收起时 1px 宽度（几乎隐藏），展开时 220px
-    return themeConfig.value.isCollapse ? 'layout-aside-pc-1' : 'layout-aside-pc-220';
+    return layoutStore.isCollapse ? 'layout-aside-pc-1' : 'layout-aside-pc-220';
   }
-  return themeConfig.value.isCollapse ? 'layout-aside-pc-64' : 'layout-aside-pc-220';
+  return layoutStore.isCollapse ? 'layout-aside-pc-64' : 'layout-aside-pc-220';
 });
 
 const onAsideEnterLeave = (bool: boolean) => {
-  if (themeConfig.value.layout === 'columns') {
+  if (layoutStore.layout === 'columns') {
     storesRoutesList.setColumnsMenuHover(bool);
   }
 };
 
 const onCloseMobileMenu = () => {
-  storesThemeConfig.closeMobileMenu();
+  layoutStore.closeMobileMenu();
 };
 
 // mittBus event handling
@@ -123,8 +121,8 @@ onMounted(() => {
     clientWidth.value = res.windowWidth;
     if (!res.isMobile) {
       // Desktop: close mobile menu if open
-      if (themeConfig.value.isMobileMenuOpen) {
-        storesThemeConfig.closeMobileMenu();
+      if (layoutStore.isMobileMenuOpen) {
+        layoutStore.closeMobileMenu();
       }
     }
   });

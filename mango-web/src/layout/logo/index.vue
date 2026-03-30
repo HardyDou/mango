@@ -1,6 +1,6 @@
 <template>
-  <div class="layout-logo" v-if="!themeConfig.isCollapse" @click="onLogoClick">
-    <span class="logo-text" :style="{ color: setFontColor }">{{ themeConfig.globalTitle }}</span>
+  <div class="layout-logo" v-if="!layoutStore.isCollapse" @click="onLogoClick">
+    <span class="logo-text" :style="{ color: setFontColor }">{{ preferencesStore.globalTitle }}</span>
   </div>
   <div class="layout-logo-collapsed" v-else @click="onLogoClick">
     <span class="logo-icon" :style="{ color: setFontColor }">M</span>
@@ -9,22 +9,21 @@
 
 <script setup lang="ts" name="layoutLogo">
 import { computed } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
+import { usePreferencesStore } from '@/stores/preferences';
 
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
+const preferencesStore = usePreferencesStore();
 
 const setFontColor = computed(() => {
-  const { layout } = themeConfig.value;
-  return layout === 'classic' || layout === 'transverse'
+  return layoutStore.layout === 'classic' || layoutStore.layout === 'transverse'
     ? 'var(--mango-color-top-bar)'
     : 'var(--mango-color-primary)';
 });
 
 const onLogoClick = () => {
-  if (themeConfig.value.layout === 'transverse') return false;
-  themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
+  if (layoutStore.layout === 'transverse') return false;
+  layoutStore.toggleCollapse();
 };
 </script>
 

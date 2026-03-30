@@ -9,6 +9,7 @@ import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import 'element-plus/dist/index.css';
 import '@/theme/index.scss';
+import { initThemeBeforeRender } from './utils/themeInit';
 
 const app = createApp(App);
 
@@ -29,5 +30,8 @@ app.use(createPinia().use(piniaPluginPersist));
 app.use(router);
 app.use(i18n);
 app.use(ElementPlus);
+
+// 在 Vue 首帧渲染前同步恢复 store 状态（布局/深色模式等），避免闪屏
+initThemeBeforeRender();
 
 app.mount('#app');

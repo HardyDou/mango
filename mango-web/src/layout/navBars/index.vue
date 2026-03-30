@@ -4,16 +4,16 @@
       <!-- 移动端汉堡菜单按钮 - 所有布局都显示 -->
       <div class="hamburger hamburger-mobile" @click="onToggleMobileMenu">
         <el-icon :size="20">
-          <Fold v-if="!themeConfig.isMobileMenuOpen" />
+          <Fold v-if="!layoutStore.isMobileMenuOpen" />
           <Close v-else />
         </el-icon>
       </div>
       <!-- 经典布局：显示 Logo + 折叠按钮 -->
-      <template v-if="themeConfig.layout === 'classic'">
+      <template v-if="layoutStore.layout === 'classic'">
         <Logo class="layout-logo-link" />
         <div class="hamburger" @click="toggleCollapse">
           <el-icon :size="20">
-            <Fold v-if="!themeConfig.isCollapse" />
+            <Fold v-if="!layoutStore.isCollapse" />
             <Expand v-else />
           </el-icon>
         </div>
@@ -32,8 +32,7 @@
 
 <script setup lang="ts" name="layoutNavBars">
 import { defineAsyncComponent } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -41,15 +40,14 @@ const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
 const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
 
 const toggleCollapse = () => {
-  themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
+  layoutStore.toggleCollapse();
 };
 
 const onToggleMobileMenu = () => {
-  storesThemeConfig.toggleMobileMenu();
+  layoutStore.toggleMobileMenu();
 };
 </script>
 

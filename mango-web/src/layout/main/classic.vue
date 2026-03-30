@@ -15,7 +15,7 @@
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
@@ -25,15 +25,15 @@ const LayoutTagsView = defineAsyncComponent(() => import('../navBars/tagsView/ta
 
 const route = useRoute();
 const layoutMainRef = ref();
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
+const { layout, isCollapse, isTagsview } = storeToRefs(layoutStore);
 
 const isTagsView = computed(() => {
   // 经典模式首页没有 tagview
-  if (themeConfig.value.layout === 'classic' && route.path === '/home') {
+  if (layout.value === 'classic' && route.path === '/home') {
     return false;
   }
-  return themeConfig.value.isTagsview;
+  return isTagsview.value;
 });
 
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef);
@@ -48,7 +48,7 @@ watch(
 
 // Watch only properties that affect scrollbar layout
 watch(
-  () => [themeConfig.value.isCollapse, themeConfig.value.layout, themeConfig.value.isTagsview],
+  () => [isCollapse.value, layout.value, isTagsview.value],
   () => {
     updateScrollbar();
   }

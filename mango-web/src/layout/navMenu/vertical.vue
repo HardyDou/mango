@@ -3,8 +3,8 @@
     router
     :default-active="state.defaultActive"
     background-color="transparent"
-    :collapse="props.disableCollapse ? false : themeConfig.isCollapse"
-    :unique-opened="themeConfig.isUniqueOpened"
+    :collapse="props.disableCollapse ? false : layoutStore.isCollapse"
+    :unique-opened="layoutStore.isUniqueOpened"
     :collapse-transition="false"
     class="nav-menu-vertical"
   >
@@ -48,8 +48,7 @@
 <script setup lang="ts" name="navMenuVertical">
 import { defineAsyncComponent, reactive, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import {
   HomeFilled,
   User,
@@ -76,8 +75,7 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
 
 const state = reactive({
   defaultActive: route.path,

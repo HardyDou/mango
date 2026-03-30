@@ -7,7 +7,7 @@
 
   <el-drawer
     title="布局配置"
-    v-model="themeConfig.isDrawer"
+    v-model="preferencesStore.isDrawer"
     direction="rtl"
     destroy-on-close
     size="280px"
@@ -17,14 +17,14 @@
       <el-divider content-position="left">布局切换</el-divider>
       <div class="layout-drawer-content-flex">
         <div class="layout-drawer-content-item" @click="onSetLayout('defaults')">
-          <section class="el-container el-circular" :class="{ 'drawer-layout-active': getThemeConfig.layout === 'defaults' }">
+          <section class="el-container el-circular" :class="{ 'drawer-layout-active': layoutStore.layout === 'defaults' }">
             <aside class="el-aside" style="width: 20px"></aside>
             <section class="el-container is-vertical">
               <header class="el-header" style="height: 10px"></header>
               <main class="el-main"></main>
             </section>
           </section>
-          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': getThemeConfig.layout === 'defaults' }">
+          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': layoutStore.layout === 'defaults' }">
             <div class="layout-tips-box">
               <p class="layout-tips-txt">默认</p>
             </div>
@@ -32,7 +32,7 @@
         </div>
 
         <div class="layout-drawer-content-item" @click="onSetLayout('classic')">
-          <section class="el-container is-vertical el-circular" :class="{ 'drawer-layout-active': getThemeConfig.layout === 'classic' }">
+          <section class="el-container is-vertical el-circular" :class="{ 'drawer-layout-active': layoutStore.layout === 'classic' }">
             <header class="el-header" style="height: 10px"></header>
             <section class="el-container">
               <aside class="el-aside" style="width: 20px"></aside>
@@ -41,7 +41,7 @@
               </section>
             </section>
           </section>
-          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': getThemeConfig.layout === 'classic' }">
+          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': layoutStore.layout === 'classic' }">
             <div class="layout-tips-box">
               <p class="layout-tips-txt">经典</p>
             </div>
@@ -49,7 +49,7 @@
         </div>
 
         <div class="layout-drawer-content-item" @click="onSetLayout('transverse')">
-          <section class="el-container is-vertical el-circular" :class="{ 'drawer-layout-active': getThemeConfig.layout === 'transverse' }">
+          <section class="el-container is-vertical el-circular" :class="{ 'drawer-layout-active': layoutStore.layout === 'transverse' }">
             <header class="el-header" style="height: 10px"></header>
             <section class="el-container">
               <section class="el-container is-vertical">
@@ -57,7 +57,7 @@
               </section>
             </section>
           </section>
-          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': getThemeConfig.layout === 'transverse' }">
+          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': layoutStore.layout === 'transverse' }">
             <div class="layout-tips-box">
               <p class="layout-tips-txt">横向</p>
             </div>
@@ -65,7 +65,7 @@
         </div>
 
         <div class="layout-drawer-content-item" @click="onSetLayout('columns')">
-          <section class="el-container el-circular" :class="{ 'drawer-layout-active': getThemeConfig.layout === 'columns' }">
+          <section class="el-container el-circular" :class="{ 'drawer-layout-active': layoutStore.layout === 'columns' }">
             <aside class="el-aside-dark" style="width: 10px"></aside>
             <aside class="el-aside" style="width: 20px"></aside>
             <section class="el-container is-vertical">
@@ -73,7 +73,7 @@
               <main class="el-main"></main>
             </section>
           </section>
-          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': getThemeConfig.layout === 'columns' }">
+          <div class="layout-tips-warp" :class="{ 'layout-tips-warp-active': layoutStore.layout === 'columns' }">
             <div class="layout-tips-box">
               <p class="layout-tips-txt">分栏</p>
             </div>
@@ -86,19 +86,19 @@
       <div class="layout-settings-item">
         <span class="layout-settings-label">primary 主题色</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.primary" @change="onColorPickerChange" :disabled="themeConfig.isDark" />
+          <el-color-picker v-model="themeStore.primary" @change="onColorPickerChange" :disabled="themeStore.isDark" />
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">深色模式</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isDark" size="small" @change="onAddDarkChange"></el-switch>
+          <el-switch v-model="themeStore.isDark" size="small" @change="onAddDarkChange"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">组件大小</span>
         <div class="layout-settings-value">
-          <el-select v-model="themeConfig.globalComponentSize" style="width: 90px" @change="onComponentSizeChange">
+          <el-select v-model="preferencesStore.globalComponentSize" style="width: 90px" @change="onComponentSizeChange">
             <el-option label="大型" value="large"></el-option>
             <el-option label="默认" value="default"></el-option>
             <el-option label="小型" value="small"></el-option>
@@ -111,19 +111,19 @@
       <div class="layout-settings-item">
         <span class="layout-settings-label">背景颜色</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.topBar" @change="onBgColorPickerChange('topBar')" :disabled="getThemeConfig.isDark" />
+          <el-color-picker v-model="themeStore.topBar" @change="onBgColorPickerChange('topBar')" :disabled="themeStore.isDark" />
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">文字颜色</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.topBarColor" @change="onBgColorPickerChange('topBarColor')" :disabled="getThemeConfig.isDark" />
+          <el-color-picker v-model="themeStore.topBarColor" @change="onBgColorPickerChange('topBarColor')" :disabled="themeStore.isDark" />
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">背景渐变</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isTopBarColorGradual" size="small" @change="onTopBarGradualChange"></el-switch>
+          <el-switch v-model="themeStore.isTopBarColorGradual" size="small" @change="onTopBarGradualChange"></el-switch>
         </div>
       </div>
 
@@ -132,73 +132,73 @@
       <div class="layout-settings-item">
         <span class="layout-settings-label">背景颜色</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.menuBar" @change="onBgColorPickerChange('menuBar')" :disabled="getThemeConfig.isDark" />
+          <el-color-picker v-model="themeStore.menuBar" @change="onBgColorPickerChange('menuBar')" :disabled="themeStore.isDark" />
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">文字颜色</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.menuBarColor" @change="onBgColorPickerChange('menuBarColor')" :disabled="getThemeConfig.isDark" />
+          <el-color-picker v-model="themeStore.menuBarColor" @change="onBgColorPickerChange('menuBarColor')" :disabled="themeStore.isDark" />
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">高亮背景</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.menuBarActiveColor" show-alpha @change="onBgColorPickerChange('menuBarActiveColor')" :disabled="getThemeConfig.isDark" />
+          <el-color-picker v-model="themeStore.menuBarActiveColor" show-alpha @change="onBgColorPickerChange('menuBarActiveColor')" :disabled="themeStore.isDark" />
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">背景渐变</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isMenuBarColorGradual" size="small" @change="onMenuBarGradualChange"></el-switch>
+          <el-switch v-model="themeStore.isMenuBarColorGradual" size="small" @change="onMenuBarGradualChange"></el-switch>
         </div>
       </div>
 
       <!-- 分栏设置 -->
-      <el-divider content-position="left" :style="{ opacity: getThemeConfig.layout !== 'columns' ? 0.5 : 1 }">分栏设置</el-divider>
-      <div class="layout-settings-item" :style="{ opacity: getThemeConfig.layout !== 'columns' ? 0.5 : 1 }">
+      <el-divider content-position="left" :style="{ opacity: layoutStore.layout !== 'columns' ? 0.5 : 1 }">分栏设置</el-divider>
+      <div class="layout-settings-item" :style="{ opacity: layoutStore.layout !== 'columns' ? 0.5 : 1 }">
         <span class="layout-settings-label">分栏背景</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.columnsMenuBar" @change="onBgColorPickerChange('columnsMenuBar')" :disabled="getThemeConfig.isDark || getThemeConfig.layout !== 'columns'" />
+          <el-color-picker v-model="themeStore.columnsMenuBar" @change="onBgColorPickerChange('columnsMenuBar')" :disabled="themeStore.isDark || layoutStore.layout !== 'columns'" />
         </div>
       </div>
-      <div class="layout-settings-item mt15" :style="{ opacity: getThemeConfig.layout !== 'columns' ? 0.5 : 1 }">
+      <div class="layout-settings-item mt15" :style="{ opacity: layoutStore.layout !== 'columns' ? 0.5 : 1 }">
         <span class="layout-settings-label">分栏文字</span>
         <div class="layout-settings-value">
-          <el-color-picker v-model="themeConfig.columnsMenuBarColor" @change="onBgColorPickerChange('columnsMenuBarColor')" :disabled="getThemeConfig.isDark || getThemeConfig.layout !== 'columns'" />
+          <el-color-picker v-model="themeStore.columnsMenuBarColor" @change="onBgColorPickerChange('columnsMenuBarColor')" :disabled="themeStore.isDark || layoutStore.layout !== 'columns'" />
         </div>
       </div>
-      <div class="layout-settings-item mt15" :style="{ opacity: getThemeConfig.layout !== 'columns' ? 0.5 : 1 }">
+      <div class="layout-settings-item mt15" :style="{ opacity: layoutStore.layout !== 'columns' ? 0.5 : 1 }">
         <span class="layout-settings-label">分栏渐变</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isColumnsMenuBarColorGradual" size="small" @change="onColumnsMenuBarGradualChange" :disabled="getThemeConfig.isDark || getThemeConfig.layout !== 'columns'"></el-switch>
+          <el-switch v-model="themeStore.isColumnsMenuBarColorGradual" size="small" @change="onColumnsMenuBarGradualChange" :disabled="themeStore.isDark || layoutStore.layout !== 'columns'"></el-switch>
         </div>
       </div>
 
       <!-- 界面设置 -->
       <el-divider content-position="left">界面设置</el-divider>
-      <div class="layout-settings-item" :style="{ opacity: getThemeConfig.layout === 'transverse' ? 0.5 : 1 }">
+      <div class="layout-settings-item" :style="{ opacity: layoutStore.layout === 'transverse' ? 0.5 : 1 }">
         <span class="layout-settings-label">菜单折叠</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isCollapse" :disabled="getThemeConfig.layout === 'transverse'" size="small" @change="onThemeConfigChange"></el-switch>
+          <el-switch v-model="layoutStore.isCollapse" :disabled="layoutStore.layout === 'transverse'" size="small" @change="onThemeConfigChange"></el-switch>
         </div>
       </div>
-      <div class="layout-settings-item mt15" :style="{ opacity: getThemeConfig.layout === 'transverse' ? 0.5 : 1 }">
+      <div class="layout-settings-item mt15" :style="{ opacity: layoutStore.layout === 'transverse' ? 0.5 : 1 }">
         <span class="layout-settings-label">手风琴模式</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isUniqueOpened" :disabled="getThemeConfig.layout === 'transverse'" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isUniqueOpened" :disabled="layoutStore.layout === 'transverse'" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">固定 Header</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isFixedHeader" size="small" @change="onIsFixedHeaderChange"></el-switch>
+          <el-switch v-model="layoutStore.isFixedHeader" size="small" @change="onIsFixedHeaderChange"></el-switch>
         </div>
       </div>
-      <div class="layout-settings-item mt15" :style="{ opacity: getThemeConfig.layout !== 'classic' ? 0.5 : 1 }">
+      <div class="layout-settings-item mt15" :style="{ opacity: layoutStore.layout !== 'classic' ? 0.5 : 1 }">
         <span class="layout-settings-label">经典分割菜单</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isClassicSplitMenu" :disabled="getThemeConfig.layout !== 'classic'" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isClassicSplitMenu" :disabled="layoutStore.layout !== 'classic'" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
 
@@ -207,55 +207,55 @@
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">显示 Logo</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isShowLogo" size="small" @change="onIsShowLogoChange"></el-switch>
+          <el-switch v-model="layoutStore.isShowLogo" size="small" @change="onIsShowLogoChange"></el-switch>
         </div>
       </div>
-      <div class="layout-settings-item mt15" :style="{ opacity: getThemeConfig.layout === 'classic' || getThemeConfig.layout === 'transverse' ? 0.5 : 1 }">
+      <div class="layout-settings-item mt15" :style="{ opacity: layoutStore.layout === 'classic' || layoutStore.layout === 'transverse' ? 0.5 : 1 }">
         <span class="layout-settings-label">显示面包屑</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isBreadcrumb" :disabled="getThemeConfig.layout === 'classic' || getThemeConfig.layout === 'transverse'" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isBreadcrumb" :disabled="layoutStore.layout === 'classic' || layoutStore.layout === 'transverse'" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">显示 Tagsview</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isTagsview" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isTagsview" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">Tagsview 图标</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isTagsviewIcon" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isTagsviewIcon" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">缓存 Tagsview</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isCacheTagsView" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isCacheTagsView" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">显示 Footer</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isFooter" size="small" @change="setLocalThemeConfig"></el-switch>
+          <el-switch v-model="layoutStore.isFooter" size="small" @change="setLocalThemeConfig"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">灰色模式</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isGrayscale" size="small" @change="onAddFilterChange('grayscale')"></el-switch>
+          <el-switch v-model="preferencesStore.isGrayscale" size="small" @change="onAddFilterChange('grayscale')"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">色弱模式</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isInvert" size="small" @change="onAddFilterChange('invert')"></el-switch>
+          <el-switch v-model="preferencesStore.isInvert" size="small" @change="onAddFilterChange('invert')"></el-switch>
         </div>
       </div>
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">水印</span>
         <div class="layout-settings-value">
-          <el-switch v-model="themeConfig.isWartermark" size="small" @change="onWartermarkChange"></el-switch>
+          <el-switch v-model="preferencesStore.isWartermark" size="small" @change="onWartermarkChange"></el-switch>
         </div>
       </div>
 
@@ -264,7 +264,7 @@
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">页面动画</span>
         <div class="layout-settings-value">
-          <el-select v-model="themeConfig.animation" style="width: 90px" @change="setLocalThemeConfig">
+          <el-select v-model="preferencesStore.animation" style="width: 90px" @change="setLocalThemeConfig">
             <el-option label="右侧滑入" value="slide-right"></el-option>
             <el-option label="左侧滑入" value="slide-left"></el-option>
             <el-option label="渐变" value="opacitys"></el-option>
@@ -274,7 +274,7 @@
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">Tagsview 样式</span>
         <div class="layout-settings-value">
-          <el-select v-model="themeConfig.tagsStyle" style="width: 90px" @change="setLocalThemeConfig">
+          <el-select v-model="preferencesStore.tagsStyle" style="width: 90px" @change="setLocalThemeConfig">
             <el-option label="风格1" value="tags-style-one"></el-option>
             <el-option label="风格4" value="tags-style-four"></el-option>
             <el-option label="风格5" value="tags-style-five"></el-option>
@@ -297,21 +297,22 @@
 </template>
 
 <script setup lang="ts" name="layoutBreadcrumbSettings">
-import { computed, nextTick, onMounted, onUnmounted, reactive } from 'vue';
+import { nextTick, onMounted, onUnmounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useThemeStore } from '@/stores/theme';
+import { useLayoutStore } from '@/stores/layout';
+import { usePreferencesStore } from '@/stores/preferences';
 import { useChangeColor } from '@/utils/theme';
 import { mittBus } from '@/utils/mitt';
 import { Setting, RefreshRight } from '@element-plus/icons-vue';
 
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const themeStore = useThemeStore();
+const layoutStore = useLayoutStore();
+const preferencesStore = usePreferencesStore();
 const { getLightColor, getDarkColor } = useChangeColor();
 
 const state = reactive({
 });
-
-const getThemeConfig = computed(() => themeConfig.value);
 
 // 验证颜色值是否为有效的 hex 格式，防止 CSS 注入
 const isValidColor = (color: string): boolean => {
@@ -320,7 +321,7 @@ const isValidColor = (color: string): boolean => {
 
 // 颜色选择器变化 - 全局主题
 const onColorPickerChange = () => {
-  if (!getThemeConfig.value.primary) return;
+  if (!themeStore.primary) return;
   // 颜色变化现在由 layout/index.vue 的 watcher 处理
   // 这里只更新本地存储
   setLocalThemeConfig();
@@ -330,7 +331,7 @@ const onColorPickerChange = () => {
 type BgColorProperty = 'topBar' | 'topBarColor' | 'menuBar' | 'menuBarColor' | 'menuBarActiveColor' | 'columnsMenuBar' | 'columnsMenuBarColor';
 
 const onBgColorPickerChange = (bg: BgColorProperty) => {
-  const colorValue = themeConfig.value[bg];
+  const colorValue = themeStore[bg as keyof typeof themeStore];
   if (!isValidColor(colorValue)) return;
 
   // 颜色变化现在由 layout/index.vue 的 watcher 处理
@@ -347,17 +348,17 @@ const onBgColorPickerChange = (bg: BgColorProperty) => {
 
 // 顶栏背景渐变
 const onTopBarGradualChange = () => {
-  setGraduaFun('.layout-navbars-container', getThemeConfig.value.isTopBarColorGradual, getThemeConfig.value.topBar);
+  setGraduaFun('.layout-navbars-container', themeStore.isTopBarColorGradual, themeStore.topBar);
 };
 
 // 菜单背景渐变
 const onMenuBarGradualChange = () => {
-  setGraduaFun('.layout-aside', getThemeConfig.value.isMenuBarColorGradual, getThemeConfig.value.menuBar);
+  setGraduaFun('.layout-aside', themeStore.isMenuBarColorGradual, themeStore.menuBar);
 };
 
 // 分栏菜单背景渐变
 const onColumnsMenuBarGradualChange = () => {
-  setGraduaFun('.layout-columns-aside', getThemeConfig.value.isColumnsMenuBarColorGradual, getThemeConfig.value.columnsMenuBar);
+  setGraduaFun('.layout-columns-aside', themeStore.isColumnsMenuBarColorGradual, themeStore.columnsMenuBar);
 };
 
 // 渐变函数
@@ -383,31 +384,31 @@ const onThemeConfigChange = () => {
 
 // 固定 Header 变化
 const onIsFixedHeaderChange = () => {
-  getThemeConfig.value.isFixedHeaderChange = getThemeConfig.value.isFixedHeader ? false : true;
+  layoutStore.isFixedHeaderChange = layoutStore.isFixedHeader ? false : true;
   setLocalThemeConfig();
 };
 
 // 显示 Logo 变化
 const onIsShowLogoChange = () => {
-  getThemeConfig.value.isShowLogoChange = getThemeConfig.value.isShowLogo ? false : true;
+  layoutStore.isShowLogoChange = layoutStore.isShowLogo ? false : true;
   setLocalThemeConfig();
 };
 
 // 灰色/色弱模式
 const onAddFilterChange = (attr: string) => {
   if (attr === 'grayscale') {
-    if (getThemeConfig.value.isGrayscale) getThemeConfig.value.isInvert = false;
+    if (preferencesStore.isGrayscale) preferencesStore.isInvert = false;
   } else {
-    if (getThemeConfig.value.isInvert) getThemeConfig.value.isGrayscale = false;
+    if (preferencesStore.isInvert) preferencesStore.isGrayscale = false;
   }
-  const cssAttr = attr === 'grayscale' ? `grayscale(${getThemeConfig.value.isGrayscale ? 1 : 0})` : `invert(${getThemeConfig.value.isInvert ? '80%' : '0%'})`;
+  const cssAttr = attr === 'grayscale' ? `grayscale(${preferencesStore.isGrayscale ? 1 : 0})` : `invert(${preferencesStore.isInvert ? '80%' : '0%'})`;
   document.body.setAttribute('style', `filter: ${cssAttr}`);
   setLocalThemeConfig();
 };
 
 // 深色模式
 const onAddDarkChange = () => {
-  if (getThemeConfig.value.isDark) {
+  if (themeStore.isDark) {
     document.documentElement.setAttribute('data-theme', 'dark');
     // Clear inline color styles so dark CSS variables take precedence
     document.documentElement.style.removeProperty('--mango-color-primary');
@@ -417,10 +418,10 @@ const onAddDarkChange = () => {
   } else {
     document.documentElement.setAttribute('data-theme', 'light');
     // Re-apply light mode colors as inline styles
-    document.documentElement.style.setProperty('--mango-color-primary', getThemeConfig.value.primary);
-    document.documentElement.style.setProperty('--mango-bg-top-bar', getThemeConfig.value.topBar);
-    document.documentElement.style.setProperty('--mango-bg-menu-bar', getThemeConfig.value.menuBar);
-    document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', getThemeConfig.value.columnsMenuBar);
+    document.documentElement.style.setProperty('--mango-color-primary', themeStore.primary);
+    document.documentElement.style.setProperty('--mango-bg-top-bar', themeStore.topBar);
+    document.documentElement.style.setProperty('--mango-bg-menu-bar', themeStore.menuBar);
+    document.documentElement.style.setProperty('--mango-bg-columns-menu-bar', themeStore.columnsMenuBar);
   }
   setLocalThemeConfig();
 };
@@ -432,10 +433,10 @@ const onWartermarkChange = () => {
 
 // 布局切换
 const onSetLayout = (layout: 'defaults' | 'classic' | 'transverse' | 'columns') => {
-  if (getThemeConfig.value.layout === layout) return false;
-  if (layout === 'transverse') getThemeConfig.value.isCollapse = false;
-  getThemeConfig.value.layout = layout;
-  getThemeConfig.value.isDrawer = false;
+  if (layoutStore.layout === layout) return false;
+  if (layout === 'transverse') layoutStore.isCollapse = false;
+  layoutStore.setLayout(layout);
+  preferencesStore.isDrawer = false;
   initLayoutChangeFun();
 };
 
@@ -459,12 +460,18 @@ const onComponentSizeChange = () => {
 
 // 打开抽屉
 const openDrawer = () => {
-  getThemeConfig.value.isDrawer = true;
+  preferencesStore.isDrawer = true;
 };
 
 // 存储配置到本地
 const setLocalThemeConfig = () => {
-  localStorage.setItem('themeConfig', JSON.stringify(getThemeConfig.value));
+  // 合并三个 store 的状态保存到 localStorage
+  const combined = {
+    ...themeStore.$state,
+    ...layoutStore.$state,
+    ...preferencesStore.$state,
+  };
+  localStorage.setItem('themeConfig', JSON.stringify(combined));
 };
 
 // 恢复默认配置
@@ -486,11 +493,11 @@ onMounted(() => {
       // 默认样式
       onColorPickerChange();
       // 灰色模式
-      if (getThemeConfig.value.isGrayscale) onAddFilterChange('grayscale');
+      if (preferencesStore.isGrayscale) onAddFilterChange('grayscale');
       // 色弱模式
-      if (getThemeConfig.value.isInvert) onAddFilterChange('invert');
+      if (preferencesStore.isInvert) onAddFilterChange('invert');
       // 深色模式
-      if (getThemeConfig.value.isDark) onAddDarkChange();
+      if (themeStore.isDark) onAddDarkChange();
       // 初始化菜单样式
       initSetStyle();
     }, 100);
@@ -498,9 +505,9 @@ onMounted(() => {
 
   // 监听窗口大小改变，非默认布局，设置成默认布局（适配移动端）
   mittBus.on('layoutMobileResize', (res: { isMobile: boolean; windowWidth: number; layout?: string }) => {
-    if (res.layout && res.layout !== getThemeConfig.value.layout) {
-      getThemeConfig.value.layout = res.layout as 'defaults' | 'classic' | 'transverse' | 'columns';
-      getThemeConfig.value.isDrawer = false;
+    if (res.layout && res.layout !== layoutStore.layout) {
+      layoutStore.setLayout(res.layout as 'defaults' | 'classic' | 'transverse' | 'columns');
+      preferencesStore.isDrawer = false;
       initLayoutChangeFun();
     }
   });

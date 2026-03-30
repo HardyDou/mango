@@ -4,7 +4,7 @@ import { router } from './index';
 import { Session } from '@/utils/storage';
 import { useUserInfo } from '@/stores/userInfo';
 import { useRoutesList } from '@/stores/routesList';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { usePreferencesStore } from '@/stores/preferences';
 import { getTabBarRoutes } from './frontEnd';
 
 /**
@@ -14,7 +14,7 @@ import { getTabBarRoutes } from './frontEnd';
 export async function initBackEndControlRoutes(): Promise<void> {
   const storesUserInfo = useUserInfo();
   const storesRoutesList = useRoutesList();
-  const storesThemeConfig = useThemeConfig();
+  const preferencesStore = usePreferencesStore();
 
   try {
     // 模拟从后端获取路由数据
@@ -72,9 +72,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
     });
 
     // 更新主题配置中的路由权限模式
-    storesThemeConfig.setThemeConfig({
-      isRequestRoutes: true,
-    });
+    preferencesStore.isRequestRoutes = true;
   } catch (error) {
     console.error('初始化后端路由失败:', error);
     Session.clearSession();

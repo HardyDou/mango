@@ -11,7 +11,7 @@
           @click="onColumnsAsideMenuClick(v, k)"
           @mouseenter="onColumnsAsideMenuMouseenter(v, k)"
         >
-          <div :class="themeConfig.columnsAsideLayout">
+          <div :class="layoutStore.columnsAsideLayout">
             <el-icon class="menu-icon">
               <HomeFilled v-if="v.meta?.icon === 'HomeFilled'" />
               <User v-else-if="v.meta?.icon === 'User'" />
@@ -27,7 +27,7 @@
             </div>
           </div>
         </li>
-        <div ref="columnsAsideActiveRef" :class="themeConfig.columnsAsideStyle"></div>
+        <div ref="columnsAsideActiveRef" :class="layoutStore.columnsAsideStyle"></div>
       </ul>
     </el-scrollbar>
   </div>
@@ -37,7 +37,7 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
+import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { mittBus } from '@/utils/mitt';
 import {
@@ -73,16 +73,15 @@ const columnsAsideActiveRef = ref<HTMLElement>();
 const layoutAsideRef = ref();
 const route = useRoute();
 const router = useRouter();
-const storesThemeConfig = useThemeConfig();
+const layoutStore = useLayoutStore();
 const storesRoutesList = useRoutesList();
-const { themeConfig } = storeToRefs(storesThemeConfig);
 const { routesList, isColumnsMenuHover, isColumnsNavHover } = storeToRefs(storesRoutesList);
 
 const liIndex = ref(0);
 const liHoverIndex = ref<number | null>(null);
 const liOldIndex = ref<number | null>(null);
 const liOldPath = ref<string | null>(null);
-const difference = computed(() => (themeConfig.value.columnsAsideStyle === 'columns-round' ? 3 : 0));
+const difference = computed(() => (layoutStore.columnsAsideStyle === 'columns-round' ? 3 : 0));
 
 const columnsAsideList = computed(() => {
   return filterRoutes(routesList.value);
@@ -90,7 +89,7 @@ const columnsAsideList = computed(() => {
 
 const getTitle = (v: MenuItem) => {
   const title = v.meta?.title || v.name || '';
-  const maxLen = themeConfig.value.columnsAsideLayout === 'columns-vertical' ? 4 : 3;
+  const maxLen = layoutStore.columnsAsideLayout === 'columns-vertical' ? 4 : 3;
   return title.length >= maxLen ? title.substring(0, maxLen) : title;
 };
 
@@ -214,9 +213,9 @@ watch(
 );
 
 watch(
-  () => themeConfig.value.columnsAsideStyle,
+  () => layoutStore.columnsAsideStyle,
   () => {
-    if (themeConfig.value.columnsAsideStyle === 'columns-round') {
+    if (layoutStore.columnsAsideStyle === 'columns-round') {
       difference.value;
     }
   }

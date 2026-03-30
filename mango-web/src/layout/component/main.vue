@@ -1,7 +1,7 @@
 <template>
   <el-main
     class="layout-main"
-    :style="themeConfig.isFixedHeader ? `height: calc(100% - ${setMainHeight})` : `minHeight: calc(100% - ${setMainHeight})`"
+    :style="layoutStore.isFixedHeader ? `height: calc(100% - ${setMainHeight})` : `minHeight: calc(100% - ${setMainHeight})`"
   >
     <el-scrollbar
       ref="layoutMainScrollbarRef"
@@ -17,22 +17,17 @@
 
 <script setup lang="ts" name="layoutMain">
 import { computed, defineAsyncComponent, ref } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useThemeConfig } from '@/stores/themeConfig';
-import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
+import { useLayoutStore } from '@/stores/layout';
 
 const LayoutParentView = defineAsyncComponent(() => import('../routerView/parent.vue'));
 
 const layoutMainScrollbarRef = ref();
-const storesThemeConfig = useThemeConfig();
-const storesTagsViewRoutes = useTagsViewRoutes();
-const { themeConfig } = storeToRefs(storesThemeConfig);
+const layoutStore = useLayoutStore();
 
 const setMainHeight = computed(() => {
-  let headerHeight = themeConfig.value.isTagsview ? '36px' : '0px';
-  return themeConfig.value.isFixedHeader
-    ? `calc(100% - ${themeConfig.value.isTagsview ? '92px' : '56px'})`
-    : `calc(100% - ${themeConfig.value.isTagsview ? '92px' : '56px'})`;
+  return layoutStore.isFixedHeader
+    ? `calc(100% - ${layoutStore.isTagsview ? '92px' : '56px'})`
+    : `calc(100% - ${layoutStore.isTagsview ? '92px' : '56px'})`;
 });
 
 const setBacktopClass = computed(() => {

@@ -1,6 +1,5 @@
 import { createI18n } from 'vue-i18n';
-import { useThemeConfig } from '@/stores/themeConfig';
-import { storeToRefs } from 'pinia';
+import { usePreferencesStore } from '@/stores/preferences';
 
 // 导入语言文件
 import zhCn from './lang/zh-cn';
@@ -24,9 +23,8 @@ export const i18n = createI18n({
  * @description 从 stores 获取当前语言设置并应用
  */
 export function initI18n(): void {
-  const storesThemeConfig = useThemeConfig();
-  const { themeConfig } = storeToRefs(storesThemeConfig);
-  const { language } = themeConfig.value;
+  const preferencesStore = usePreferencesStore();
+  const { language } = preferencesStore;
 
   if (language) {
     i18n.global.locale.value = language;
