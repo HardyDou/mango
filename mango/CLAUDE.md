@@ -116,15 +116,20 @@ mvn mango:gen-module -Dname=<name>          # 生成模块脚手架
 mvn mango:gen-crud -Dmodule=<module> -Dentity=<Entity> -Dtable=<table>  # 生成 CRUD
 mvn mango:gen-permission -Dmodule=<module> # 生成权限菜单 SQL
 
-# SonarQube 代码扫描（需要先启动 SonarQube）
-cd sonar && docker-compose up -d   # 启动 SonarQube
-mvn sonar:sonar                    # 扫描所有模块
-mvn sonar:sonar -pl mango-common   # 扫描指定模块
+# 本地代码质量检查（从项目根目录运行）
+cd mango
+mvn clean verify                    # 运行所有检查（checkstyle + spotbugs + pmd）
 
-# 快速扫描脚本
-./sonar/sonar-scan.sh start   # 启动 SonarQube
-./sonar/sonar-scan.sh scan   # 运行扫描
-./sonar/sonar-scan.sh status  # 检查状态
+# 单独运行各项检查（可在子模块目录运行）
+cd mango/mango-common
+mvn checkstyle:check   # Checkstyle 代码风格检查
+mvn spotbugs:check     # SpotBugs Bug 检测
+mvn pmd:check          # PMD 代码分析（含阿里 P3C 规则）
+
+# 查看详细报告
+cat target/checkstyle.html  # Checkstyle 报告
+cat target/spotbugs.xml      # SpotBugs 报告
+cat target/pmd.xml           # PMD 报告
 ```
 
 ---

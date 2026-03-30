@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,7 +14,7 @@ import java.util.List;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = "list")
 public class PageVO<T extends BaseVO> extends BaseVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -21,7 +22,7 @@ public class PageVO<T extends BaseVO> extends BaseVO implements Serializable {
     /**
      * 数据列表
      */
-    private List<T> list;
+    private List<T> list = new ArrayList<>();
 
     /**
      * 总数
@@ -42,6 +43,20 @@ public class PageVO<T extends BaseVO> extends BaseVO implements Serializable {
      * 总页数
      */
     private long pages;
+
+    /**
+     * 获取列表副本，防止外部修改内部状态
+     */
+    public List<T> getList() {
+        return list == null ? new ArrayList<>() : new ArrayList<>(list);
+    }
+
+    /**
+     * 设置列表副本，防止外部修改内部状态
+     */
+    public void setList(List<T> list) {
+        this.list = list == null ? new ArrayList<>() : new ArrayList<>(list);
+    }
 
     public static <T extends BaseVO> PageVO<T> of(List<T> list, long total, long page, long size) {
         PageVO<T> vo = new PageVO<>();
