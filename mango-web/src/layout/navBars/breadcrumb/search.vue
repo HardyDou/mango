@@ -1,6 +1,11 @@
 <template>
-  <div class="layout-breadcrumb-search" @click="openSearch">
-    <el-icon :size="20"><Search /></el-icon>
+  <div
+    class="layout-breadcrumb-search"
+    @click="openSearch"
+  >
+    <el-icon :size="20">
+      <Search />
+    </el-icon>
   </div>
 </template>
 

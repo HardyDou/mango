@@ -4,9 +4,16 @@
       <el-col :span="8">
         <el-card>
           <div class="user-info">
-            <el-avatar :size="80" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-            <h3 class="username">管理员</h3>
-            <p class="role">超级管理员</p>
+            <el-avatar
+              :size="80"
+              src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+            />
+            <h3 class="username">
+              管理员
+            </h3>
+            <p class="role">
+              超级管理员
+            </p>
           </div>
           <el-divider />
           <div class="info-list">
@@ -28,8 +35,14 @@
       <el-col :span="16">
         <el-card>
           <el-tabs v-model="activeTab">
-            <el-tab-pane label="基本信息" name="info">
-              <el-form :model="form" label-width="100px">
+            <el-tab-pane
+              label="基本信息"
+              name="info"
+            >
+              <el-form
+                :model="form"
+                label-width="100px"
+              >
                 <el-form-item label="用户名">
                   <el-input v-model="form.username" />
                 </el-form-item>
@@ -43,7 +56,12 @@
                   <el-input v-model="form.phone" />
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="handleSave">保存</el-button>
+                  <el-button
+                    type="primary"
+                    @click="handleSave"
+                  >
+                    保存
+                  </el-button>
                 </el-form-item>
               </el-form>
             </el-tab-pane>

@@ -1,8 +1,14 @@
 <template>
-  <div v-if="hasAuth" class="auth-container">
+  <div
+    v-if="hasAuth"
+    class="auth-container"
+  >
     <slot />
   </div>
-  <div v-else class="auth-empty">
+  <div
+    v-else
+    class="auth-empty"
+  >
     <el-empty description="无权限访问" />
   </div>
 </template>

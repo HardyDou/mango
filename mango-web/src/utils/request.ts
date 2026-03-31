@@ -4,7 +4,7 @@ import { Session } from './storage';
 import router from '@/router';
 
 // 环境变量（当前未使用，预留）
-// const VITE_ADMIN_PROXY_PATH = import.meta.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:9999';
+// const VITE_ADMIN_PROXY_PATH = import.meta.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555';
 
 export interface RequestConfig extends AxiosRequestConfig {
   /** 是否显示 Loading */

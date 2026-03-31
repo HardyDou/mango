@@ -1,5 +1,8 @@
 <template>
-  <div class="layout-breadcrumb" v-if="layoutStore.isBreadcrumb">
+  <div
+    v-if="layoutStore.isBreadcrumb"
+    class="layout-breadcrumb"
+  >
     <el-breadcrumb separator="/">
       <el-breadcrumb-item
         v-for="item in breadcrumbs"

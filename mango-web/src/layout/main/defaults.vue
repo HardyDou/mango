@@ -2,7 +2,10 @@
   <el-container class="layout-container">
     <LayoutAside />
     <el-container class="layout-container-view h100">
-      <el-scrollbar ref="layoutScrollbarRef" class="layout-backtop">
+      <el-scrollbar
+        ref="layoutScrollbarRef"
+        class="layout-backtop"
+      >
         <LayoutHeader />
         <LayoutTagsView v-if="isTagsView" />
         <LayoutMain ref="layoutMainRef" />

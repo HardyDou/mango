@@ -8,8 +8,15 @@
         </div>
       </div>
       <div class="login-form">
-        <h2 class="form-title">{{ $t('login.title') }}</h2>
-        <el-form ref="loginFormRef" :model="form" :rules="rules" @keyup.enter="handleLogin">
+        <h2 class="form-title">
+          {{ $t('login.title') }}
+        </h2>
+        <el-form
+          ref="loginFormRef"
+          :model="form"
+          :rules="rules"
+          @keyup.enter="handleLogin"
+        >
           <el-form-item prop="username">
             <el-input
               v-model="form.username"
@@ -30,7 +37,10 @@
               clearable
             />
           </el-form-item>
-          <el-form-item prop="captcha" v-if="captchaEnabled">
+          <el-form-item
+            v-if="captchaEnabled"
+            prop="captcha"
+          >
             <el-input
               v-model="form.captcha"
               :placeholder="$t('login.captcha.placeholder')"
@@ -39,8 +49,14 @@
               prefix-icon="CircleCheck"
               clearable
             />
-            <div class="captcha-img" @click="refreshCaptcha">
-              <img :src="captchaUrl" alt="验证码" />
+            <div
+              class="captcha-img"
+              @click="refreshCaptcha"
+            >
+              <img
+                :src="captchaUrl"
+                alt="验证码"
+              >
             </div>
           </el-form-item>
           <el-form-item>

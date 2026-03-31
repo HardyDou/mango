@@ -2,7 +2,10 @@
   <div class="layout-navbars-container">
     <div class="layout-navbars-container-left">
       <!-- 移动端汉堡菜单按钮 - 所有布局都显示 -->
-      <div class="hamburger hamburger-mobile" @click="onToggleMobileMenu">
+      <div
+        class="hamburger hamburger-mobile"
+        @click="onToggleMobileMenu"
+      >
         <el-icon :size="20">
           <Fold v-if="!layoutStore.isMobileMenuOpen" />
           <Close v-else />
@@ -11,7 +14,10 @@
       <!-- 经典布局：显示 Logo + 折叠按钮 -->
       <template v-if="layoutStore.layout === 'classic'">
         <Logo class="layout-logo-link" />
-        <div class="hamburger" @click="toggleCollapse">
+        <div
+          class="hamburger"
+          @click="toggleCollapse"
+        >
           <el-icon :size="20">
             <Fold v-if="!layoutStore.isCollapse" />
             <Expand v-else />
@@ -22,8 +28,12 @@
       <BreadcrumbIndex v-else />
     </div>
     <div class="layout-navbars-container-right">
-      <el-icon :size="20"><Search /></el-icon>
-      <el-icon :size="20"><FullScreen /></el-icon>
+      <el-icon :size="20">
+        <Search />
+      </el-icon>
+      <el-icon :size="20">
+        <FullScreen />
+      </el-icon>
       <Settings />
       <User />
     </div>

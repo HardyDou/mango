@@ -3,7 +3,10 @@
     <ColumnsAside />
     <el-container class="layout-columns-warp layout-container-view h100">
       <LayoutAside />
-      <el-scrollbar ref="layoutScrollbarRef" class="layout-backtop">
+      <el-scrollbar
+        ref="layoutScrollbarRef"
+        class="layout-backtop"
+      >
         <LayoutHeader />
         <LayoutMain ref="layoutMainRef" />
       </el-scrollbar>

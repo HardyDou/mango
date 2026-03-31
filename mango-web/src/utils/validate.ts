@@ -72,3 +72,6 @@ export function hasChinese(str: string): boolean {
 export function trim(str: string): string {
   return str.replace(/\s+/g, '');
 }
+
+// Alias for backward compatibility
+export const validateNull = isEmpty;

@@ -5,7 +5,12 @@
         <span>图标示例</span>
       </template>
       <div class="icon-grid">
-        <div v-for="icon in icons" :key="icon" class="icon-item" @click="handleCopy(icon)">
+        <div
+          v-for="icon in icons"
+          :key="icon"
+          class="icon-item"
+          @click="handleCopy(icon)"
+        >
           <el-icon :size="32">
             <component :is="icon" />
           </el-icon>

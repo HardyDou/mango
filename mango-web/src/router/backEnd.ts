@@ -6,6 +6,7 @@ import { useUserInfo } from '@/stores/userInfo';
 import { useRoutesList } from '@/stores/routesList';
 import { usePreferencesStore } from '@/stores/preferences';
 import { getTabBarRoutes } from './frontEnd';
+import { generateBackEndRoutes } from '@/config/menuConfig';
 
 /**
  * 初始化后端控制路由
@@ -93,98 +94,8 @@ function filterAuthRoutes(routes: RouteRecordRaw): RouteRecordRaw[] {
 
 /**
  * 获取模拟后端路由
- * @description 开发阶段使用静态数据模拟后端返回的路由配置
+ * @description 从菜单配置生成路由配置
  */
 function getMockBackEndRoutes(): RouteRecordRaw {
-  return {
-    path: '/',
-    name: 'Layout',
-    meta: {
-      title: '主布局',
-      permissions: ['admin'],
-    },
-    children: [
-      {
-        path: '/home',
-        name: 'Home',
-        component: () => import('@/views/home/index.vue'),
-        meta: {
-          title: '首页',
-          isAffix: true,
-        },
-      },
-      {
-        path: '/system',
-        name: 'System',
-        meta: {
-          title: '系统管理',
-          icon: 'Setting',
-          permissions: ['admin'],
-        },
-        children: [
-          {
-            path: '/system/user',
-            name: 'SystemUser',
-            component: () => import('@/views/system/user/index.vue'),
-            meta: {
-              title: '用户管理',
-              icon: 'User',
-              permissions: ['admin'],
-            },
-          },
-          {
-            path: '/system/role',
-            name: 'SystemRole',
-            component: () => import('@/views/system/role/index.vue'),
-            meta: {
-              title: '角色管理',
-              icon: 'Lock',
-              permissions: ['admin'],
-            },
-          },
-          {
-            path: '/system/menu',
-            name: 'SystemMenu',
-            component: () => import('@/views/system/menu/index.vue'),
-            meta: {
-              title: '菜单管理',
-              icon: 'Menu',
-              permissions: ['admin'],
-            },
-          },
-        ],
-      },
-      {
-        path: '/components',
-        name: 'Components',
-        meta: {
-          title: '组件示例',
-          icon: 'Grid',
-          permissions: ['admin'],
-        },
-        children: [
-          {
-            path: '/components/icon',
-            name: 'ComponentsIcon',
-            component: () => import('@/views/components/icon/index.vue'),
-            meta: {
-              title: '图标',
-              icon: 'Coin',
-              permissions: ['admin'],
-            },
-          },
-          {
-            path: '/components/table',
-            name: 'ComponentsTable',
-            component: () => import('@/views/components/table/index.vue'),
-            meta: {
-              title: '表格',
-              icon: 'List',
-              permissions: ['admin'],
-            },
-          },
-        ],
-      },
-    ],
-  } as RouteRecordRaw;
+  return generateBackEndRoutes()[0] as RouteRecordRaw;
 }

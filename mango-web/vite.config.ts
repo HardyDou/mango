@@ -35,7 +35,7 @@ const alias: Record<string, string> = {
 const viteConfig = defineConfig((mode: ConfigEnv) => {
   const env = loadEnv(mode.mode, process.cwd());
   const isDev = mode.command === 'serve';
-  const proxyTarget = validateProxyTarget(env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:9999');
+  const proxyTarget = validateProxyTarget(env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555');
 
   return {
     plugins: [

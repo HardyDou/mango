@@ -4,16 +4,33 @@
       <template #header>
         <div class="card-header">
           <span>菜单管理</span>
-          <el-button type="primary" @click="handleAdd">新增菜单</el-button>
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增菜单
+          </el-button>
         </div>
       </template>
-      <el-tree :data="treeData" :props="{ children: 'children', label: 'title' }" default-expand-all>
+      <el-tree
+        :data="treeData"
+        :props="{ children: 'children', label: 'title' }"
+        default-expand-all
+      >
         <template #default="{ data }">
           <span class="tree-node">
             <span>{{ data.title }}</span>
             <span class="tree-actions">
-              <el-button link type="primary" size="small">编辑</el-button>
-              <el-button link type="danger" size="small">删除</el-button>
+              <el-button
+                link
+                type="primary"
+                size="small"
+              >编辑</el-button>
+              <el-button
+                link
+                type="danger"
+                size="small"
+              >删除</el-button>
             </span>
           </span>
         </template>

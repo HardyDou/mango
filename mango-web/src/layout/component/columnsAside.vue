@@ -21,6 +21,15 @@
               <Fold v-else-if="v.meta?.icon === 'Fold'" />
               <Expand v-else-if="v.meta?.icon === 'Expand'" />
               <Close v-else-if="v.meta?.icon === 'Close'" />
+              <Box v-else-if="v.meta?.icon === 'Box'" />
+              <Document v-else-if="v.meta?.icon === 'Document'" />
+              <Edit v-else-if="v.meta?.icon === 'Edit'" />
+              <Upload v-else-if="v.meta?.icon === 'Upload'" />
+              <DataLine v-else-if="v.meta?.icon === 'DataLine'" />
+              <Key v-else-if="v.meta?.icon === 'Key'" />
+              <Grid v-else-if="v.meta?.icon === 'Grid'" />
+              <Coin v-else-if="v.meta?.icon === 'Coin'" />
+              <List v-else-if="v.meta?.icon === 'List'" />
             </el-icon>
             <div class="columns-vertical-title font12">
               {{ getTitle(v) }}
@@ -51,7 +60,16 @@ import {
   Setting,
   Close,
   Fold,
-  Expand
+  Expand,
+  Box,
+  Document,
+  Edit,
+  Upload,
+  DataLine,
+  Key,
+  Grid,
+  Coin,
+  List,
 } from '@element-plus/icons-vue';
 
 interface MenuItem {

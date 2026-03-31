@@ -1,5 +1,8 @@
 <template>
-  <el-header class="layout-header" v-show="!isTagsViewCurrenFull">
+  <el-header
+    v-show="!isTagsViewCurrenFull"
+    class="layout-header"
+  >
     <NavBarsIndex />
   </el-header>
 </template>

@@ -61,3 +61,8 @@ export function getUsername(): string {
   const userInfo = getUserInfo();
   return userInfo?.username || '未知用户';
 }
+
+// Alias exports for auth directive compatibility
+export const auth = hasPermission;
+export const auths = hasAnyPermission;
+export const authAll = hasAllPermissions;

@@ -1,9 +1,18 @@
 <template>
   <div class="error-container">
     <div class="error-content">
-      <div class="error-code">404</div>
-      <div class="error-message">{{ $t('notFound.message') }}</div>
-      <el-button type="primary" @click="goHome">{{ $t('notFound.btn') }}</el-button>
+      <div class="error-code">
+        404
+      </div>
+      <div class="error-message">
+        {{ $t('notFound.message') }}
+      </div>
+      <el-button
+        type="primary"
+        @click="goHome"
+      >
+        {{ $t('notFound.btn') }}
+      </el-button>
     </div>
   </div>
 </template>

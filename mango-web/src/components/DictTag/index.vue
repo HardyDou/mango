@@ -1,5 +1,13 @@
 <template>
-  <el-tag :type="dictType" :effect="effect" :size="size" :hit="hit" :closable="closable" :disable-transitions="disableTransitions" @close="handleClose">
+  <el-tag
+    :type="dictType"
+    :effect="effect"
+    :size="size"
+    :hit="hit"
+    :closable="closable"
+    :disable-transitions="disableTransitions"
+    @close="handleClose"
+  >
     {{ label }}
   </el-tag>
 </template>

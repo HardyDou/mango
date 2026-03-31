@@ -2,7 +2,10 @@
   <div class="router-view-parent">
     <router-view v-slot="{ Component, route }">
       <keep-alive :include="keepAliveNames">
-        <component :is="Component" :key="route.path" />
+        <component
+          :is="Component"
+          :key="route.path"
+        />
       </keep-alive>
     </router-view>
   </div>

@@ -1,9 +1,17 @@
 <template>
-  <el-dropdown trigger="click" @command="handleCommand">
+  <el-dropdown
+    trigger="click"
+    @command="handleCommand"
+  >
     <div class="layout-breadcrumb-user">
-      <el-avatar :size="28" src="/logo.png" />
+      <el-avatar
+        :size="28"
+        src="/logo.png"
+      />
       <span class="username">{{ userInfos.userInfos?.username || 'Admin' }}</span>
-      <el-icon class="arrow-icon"><ArrowDown /></el-icon>
+      <el-icon class="arrow-icon">
+        <ArrowDown />
+      </el-icon>
     </div>
     <template #dropdown>
       <el-dropdown-menu>
@@ -15,7 +23,10 @@
           <el-icon><Lock /></el-icon>
           修改密码
         </el-dropdown-item>
-        <el-dropdown-item divided command="logout">
+        <el-dropdown-item
+          divided
+          command="logout"
+        >
           <el-icon><SwitchButton /></el-icon>
           退出登录
         </el-dropdown-item>

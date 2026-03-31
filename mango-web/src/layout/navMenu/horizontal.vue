@@ -5,11 +5,20 @@
     :default-active="state.defaultActive"
     class="nav-menu-horizontal"
   >
-    <template v-for="val in menuList" :key="val.path">
-      <el-menu-item :index="val.path" v-if="!val.children || val.children.length === 0">
+    <template
+      v-for="val in menuList"
+      :key="val.path"
+    >
+      <el-menu-item
+        v-if="!val.children || val.children.length === 0"
+        :index="val.path"
+      >
         <span>{{ val.meta?.title || val.name }}</span>
       </el-menu-item>
-      <el-sub-menu :index="val.path" v-else>
+      <el-sub-menu
+        v-else
+        :index="val.path"
+      >
         <template #title>
           <span>{{ val.meta?.title || val.name }}</span>
         </template>

@@ -1,9 +1,23 @@
 <template>
-  <div class="layout-logo" v-if="!layoutStore.isCollapse" @click="onLogoClick">
-    <span class="logo-text" :style="{ color: setFontColor }">{{ preferencesStore.globalTitle }}</span>
+  <div
+    v-if="!layoutStore.isCollapse"
+    class="layout-logo"
+    @click="onLogoClick"
+  >
+    <span
+      class="logo-text"
+      :style="{ color: setFontColor }"
+    >{{ preferencesStore.globalTitle }}</span>
   </div>
-  <div class="layout-logo-collapsed" v-else @click="onLogoClick">
-    <span class="logo-icon" :style="{ color: setFontColor }">M</span>
+  <div
+    v-else
+    class="layout-logo-collapsed"
+    @click="onLogoClick"
+  >
+    <span
+      class="logo-icon"
+      :style="{ color: setFontColor }"
+    >M</span>
   </div>
 </template>
 

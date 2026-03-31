@@ -6,19 +6,52 @@
           <template #header>
             <span>修改密码</span>
           </template>
-          <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-            <el-form-item label="旧密码" prop="oldPassword">
-              <el-input v-model="form.oldPassword" type="password" show-password />
+          <el-form
+            ref="formRef"
+            :model="form"
+            :rules="rules"
+            label-width="100px"
+          >
+            <el-form-item
+              label="旧密码"
+              prop="oldPassword"
+            >
+              <el-input
+                v-model="form.oldPassword"
+                type="password"
+                show-password
+              />
             </el-form-item>
-            <el-form-item label="新密码" prop="newPassword">
-              <el-input v-model="form.newPassword" type="password" show-password />
+            <el-form-item
+              label="新密码"
+              prop="newPassword"
+            >
+              <el-input
+                v-model="form.newPassword"
+                type="password"
+                show-password
+              />
             </el-form-item>
-            <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input v-model="form.confirmPassword" type="password" show-password />
+            <el-form-item
+              label="确认密码"
+              prop="confirmPassword"
+            >
+              <el-input
+                v-model="form.confirmPassword"
+                type="password"
+                show-password
+              />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleSubmit">提交</el-button>
-              <el-button @click="handleReset">重置</el-button>
+              <el-button
+                type="primary"
+                @click="handleSubmit"
+              >
+                提交
+              </el-button>
+              <el-button @click="handleReset">
+                重置
+              </el-button>
             </el-form-item>
           </el-form>
         </el-card>

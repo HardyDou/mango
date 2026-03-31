@@ -1,6 +1,10 @@
 <template>
   <div class="router-view-link">
-    <a :href="url" target="_blank" rel="noopener">
+    <a
+      :href="url"
+      target="_blank"
+      rel="noopener"
+    >
       <slot />
     </a>
   </div>

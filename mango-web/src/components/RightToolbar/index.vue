@@ -1,25 +1,58 @@
 <template>
   <div class="right-toolbar">
-    <el-tooltip content="刷新" placement="top">
-      <el-icon class="toolbar-icon" @click="handleRefresh">
+    <el-tooltip
+      content="刷新"
+      placement="top"
+    >
+      <el-icon
+        class="toolbar-icon"
+        @click="handleRefresh"
+      >
         <Refresh />
       </el-icon>
     </el-tooltip>
-    <el-tooltip content="列设置" placement="top">
-      <el-icon class="toolbar-icon" @click="handleColumnSetting">
+    <el-tooltip
+      content="列设置"
+      placement="top"
+    >
+      <el-icon
+        class="toolbar-icon"
+        @click="handleColumnSetting"
+      >
         <Setting />
       </el-icon>
     </el-tooltip>
-    <el-tooltip content="密度" placement="top">
-      <el-dropdown trigger="click" @command="handleCommand">
+    <el-tooltip
+      content="密度"
+      placement="top"
+    >
+      <el-dropdown
+        trigger="click"
+        @command="handleCommand"
+      >
         <el-icon class="toolbar-icon">
           <ScaleToOriginal />
         </el-icon>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="large" :class="{ active: size === 'large' }">大</el-dropdown-item>
-            <el-dropdown-item command="default" :class="{ active: size === 'default' }">中</el-dropdown-item>
-            <el-dropdown-item command="small" :class="{ active: size === 'small' }">小</el-dropdown-item>
+            <el-dropdown-item
+              command="large"
+              :class="{ active: size === 'large' }"
+            >
+              大
+            </el-dropdown-item>
+            <el-dropdown-item
+              command="default"
+              :class="{ active: size === 'default' }"
+            >
+              中
+            </el-dropdown-item>
+            <el-dropdown-item
+              command="small"
+              :class="{ active: size === 'small' }"
+            >
+              小
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>

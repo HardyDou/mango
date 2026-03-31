@@ -1,9 +1,32 @@
 <template>
-  <div class="context-menu" v-if="visible">
-    <div class="context-menu-item" @click="onRefresh">刷新</div>
-    <div class="context-menu-item" @click="onClose">关闭</div>
-    <div class="context-menu-item" @click="onCloseOthers">关闭其他</div>
-    <div class="context-menu-item" @click="onCloseAll">关闭全部</div>
+  <div
+    v-if="visible"
+    class="context-menu"
+  >
+    <div
+      class="context-menu-item"
+      @click="onRefresh"
+    >
+      刷新
+    </div>
+    <div
+      class="context-menu-item"
+      @click="onClose"
+    >
+      关闭
+    </div>
+    <div
+      class="context-menu-item"
+      @click="onCloseOthers"
+    >
+      关闭其他
+    </div>
+    <div
+      class="context-menu-item"
+      @click="onCloseAll"
+    >
+      关闭全部
+    </div>
   </div>
 </template>
 

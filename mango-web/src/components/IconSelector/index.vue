@@ -1,7 +1,17 @@
 <template>
-  <el-dialog v-model="visible" title="选择图标" width="800px" destroy-on-close>
+  <el-dialog
+    v-model="visible"
+    title="选择图标"
+    width="800px"
+    destroy-on-close
+  >
     <div class="icon-selector">
-      <el-input v-model="keyword" placeholder="搜索图标" clearable class="search-input" />
+      <el-input
+        v-model="keyword"
+        placeholder="搜索图标"
+        clearable
+        class="search-input"
+      />
       <div class="icon-list">
         <div
           v-for="icon in filteredIcons"

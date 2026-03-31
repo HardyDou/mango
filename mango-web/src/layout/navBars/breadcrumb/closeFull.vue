@@ -1,8 +1,17 @@
 <template>
-  <div class="layout-breadcrumb-close-full" @click="toggleFullscreen">
+  <div
+    class="layout-breadcrumb-close-full"
+    @click="toggleFullscreen"
+  >
     <el-icon :size="20">
-      <component :is="CloseIcon" v-if="isFullscreen" />
-      <component :is="FullScreenIcon" v-else />
+      <component
+        :is="CloseIcon"
+        v-if="isFullscreen"
+      />
+      <component
+        :is="FullScreenIcon"
+        v-else
+      />
     </el-icon>
   </div>
 </template>

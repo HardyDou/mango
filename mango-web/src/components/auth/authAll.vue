@@ -1,7 +1,10 @@
 <template>
   <div class="auth-all-container">
     <slot v-if="hasAllAuth" />
-    <slot v-else name="no-auth">
+    <slot
+      v-else
+      name="no-auth"
+    >
       <el-empty description="无权限访问" />
     </slot>
   </div>

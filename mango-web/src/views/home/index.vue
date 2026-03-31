@@ -3,40 +3,70 @@
     <el-row :gutter="20">
       <el-col :span="8">
         <el-card class="stat-card">
-          <div class="stat-icon" style="background: #409eff">
-            <el-icon :size="32"><User /></el-icon>
+          <div
+            class="stat-icon"
+            style="background: #409eff"
+          >
+            <el-icon :size="32">
+              <User />
+            </el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">1,234</div>
-            <div class="stat-label">用户总数</div>
+            <div class="stat-value">
+              1,234
+            </div>
+            <div class="stat-label">
+              用户总数
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card class="stat-card">
-          <div class="stat-icon" style="background: #67c23a">
-            <el-icon :size="32"><Document /></el-icon>
+          <div
+            class="stat-icon"
+            style="background: #67c23a"
+          >
+            <el-icon :size="32">
+              <Document />
+            </el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">5,678</div>
-            <div class="stat-label">订单总数</div>
+            <div class="stat-value">
+              5,678
+            </div>
+            <div class="stat-label">
+              订单总数
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card class="stat-card">
-          <div class="stat-icon" style="background: #e6a23c">
-            <el-icon :size="32"><TrendCharts /></el-icon>
+          <div
+            class="stat-icon"
+            style="background: #e6a23c"
+          >
+            <el-icon :size="32">
+              <TrendCharts />
+            </el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">98.5%</div>
-            <div class="stat-label">系统效率</div>
+            <div class="stat-value">
+              98.5%
+            </div>
+            <div class="stat-label">
+              系统效率
+            </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="16">
         <el-card>
           <template #header>
@@ -54,19 +84,27 @@
           </template>
           <div class="quick-entry">
             <div class="quick-item">
-              <el-icon :size="24"><Setting /></el-icon>
+              <el-icon :size="24">
+                <Setting />
+              </el-icon>
               <span>系统设置</span>
             </div>
             <div class="quick-item">
-              <el-icon :size="24"><User /></el-icon>
+              <el-icon :size="24">
+                <User />
+              </el-icon>
               <span>用户管理</span>
             </div>
             <div class="quick-item">
-              <el-icon :size="24"><Document /></el-icon>
+              <el-icon :size="24">
+                <Document />
+              </el-icon>
               <span>订单管理</span>
             </div>
             <div class="quick-item">
-              <el-icon :size="24"><DataLine /></el-icon>
+              <el-icon :size="24">
+                <DataLine />
+              </el-icon>
               <span>数据分析</span>
             </div>
           </div>

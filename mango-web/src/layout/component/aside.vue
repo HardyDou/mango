@@ -1,5 +1,8 @@
 <template>
-  <div class="h100" v-show="!isTagsViewCurrenFull">
+  <div
+    v-show="!isTagsViewCurrenFull"
+    class="h100"
+  >
     <!-- 移动端遮罩层 -->
     <div
       v-if="layoutStore.isMobileMenuOpen"
@@ -8,9 +11,9 @@
       @click="onCloseMobileMenu"
     />
     <el-aside
+      v-if="setShowAside"
       class="layout-aside"
       :class="[setCollapseStyle, { 'aside-mobile-open': layoutStore.isMobileMenuOpen }]"
-      v-if="setShowAside"
     >
       <Logo v-if="layoutStore.isShowLogo && (layoutStore.layout === 'defaults' || layoutStore.layout === 'columns')" />
       <el-scrollbar
@@ -18,8 +21,16 @@
         @mouseenter="onAsideEnterLeave(true)"
         @mouseleave="onAsideEnterLeave(false)"
       >
-        <Vertical v-if="layoutStore.layout !== 'columns'" :menu-list="menuList" :disable-collapse="layoutStore.isMobileMenuOpen" />
-        <Vertical v-else :menu-list="columnsChildren.length > 0 ? columnsChildren : menuList" :disable-collapse="true" />
+        <Vertical
+          v-if="layoutStore.layout !== 'columns'"
+          :menu-list="menuList"
+          :disable-collapse="layoutStore.isMobileMenuOpen"
+        />
+        <Vertical
+          v-else
+          :menu-list="columnsChildren.length > 0 ? columnsChildren : menuList"
+          :disable-collapse="true"
+        />
       </el-scrollbar>
     </el-aside>
   </div>

@@ -1,6 +1,9 @@
 <template>
   <div class="tags-view-container">
-    <el-scrollbar class="tags-view-scrollbar" @scroll="onScroll">
+    <el-scrollbar
+      class="tags-view-scrollbar"
+      @scroll="onScroll"
+    >
       <router-link
         v-for="tag in visitedViews"
         :key="tag.path"
