@@ -10,6 +10,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import 'element-plus/dist/index.css';
 import '@/theme/index.scss';
 import { initThemeBeforeRender } from './utils/themeInit';
+import { registerAuthDirectives } from './directive/authDirective';
 
 const app = createApp(App);
 
@@ -33,5 +34,8 @@ app.use(ElementPlus);
 
 // 在 Vue 首帧渲染前同步恢复 store 状态（布局/深色模式等），避免闪屏
 initThemeBeforeRender();
+
+// 注册权限指令
+registerAuthDirectives(app);
 
 app.mount('#app');

@@ -82,9 +82,12 @@ export function difference<T>(arr1: T[], arr2: T[]): T[] {
  * @param arr 多维数组
  * @returns 扁平化后的一维数组
  */
-export function flatten<T>(arr: any[]): T[] {
+export function flatten<T>(arr: (T | T[] | unknown)[]): T[] {
   return arr.reduce<T[]>((result, item) => {
-    return result.concat(Array.isArray(item) ? flatten<T>(item) : item);
+    if (Array.isArray(item)) {
+      return result.concat(flatten<T>(item as T[]));
+    }
+    return result.concat(item as T);
   }, []);
 }
 
@@ -119,7 +122,7 @@ export function takeRight<T>(arr: T[], n = 1): T[] {
  * @returns 过滤空值后的数组
  */
 export function filterEmpty<T>(arr: (T | null | undefined | '' | 0)[]): T[] {
-  return arr.filter((item) => item !== null && item !== undefined && item !== '' && item !== 0) as T[];
+  return arr.filter((item): item is T => item !== null && item !== undefined && item !== '' && item !== 0);
 }
 
 /**

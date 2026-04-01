@@ -8,26 +8,45 @@ import { nextTick } from 'vue';
 import { validateNull } from './validate';
 
 /**
+ * 树节点基础接口
+ */
+interface TreeNode {
+  [key: string]: unknown;
+  children?: TreeNode[];
+}
+
+/**
+ * 图片懒加载数据项接口
+ */
+interface LazyImgItem {
+  loading?: boolean;
+  [key: string]: unknown;
+}
+
+/**
  * 图片懒加载
  * @param el dom 目标元素选择器
  * @param arr 列表数据
  * @description 使用 IntersectionObserver 实现图片懒加载
  */
-export const lazyImg = (el: string, arr: any[]): void => {
+export const lazyImg = (el: string, arr: LazyImgItem[]): void => {
   const io = new IntersectionObserver((res) => {
-    res.forEach((v: any) => {
+    res.forEach((v) => {
       if (v.isIntersecting) {
-        const { img, key } = v.target.dataset;
-        v.target.src = img;
-        v.target.onload = () => {
-          io.unobserve(v.target);
-          arr[key]['loading'] = false;
+        const target = v.target as HTMLImageElement & { dataset: { img?: string; key?: string } };
+        const { img, key } = target.dataset;
+        if (img) target.src = img;
+        target.onload = () => {
+          io.unobserve(target);
+          if (key !== undefined && arr[Number(key)]) {
+            arr[Number(key)].loading = false;
+          }
         };
       }
     });
   });
   nextTick(() => {
-    document.querySelectorAll(el).forEach((img) => io.observe(img));
+    document.querySelectorAll<HTMLImageElement>(el).forEach((img) => io.observe(img));
   });
 };
 
@@ -40,39 +59,37 @@ export const lazyImg = (el: string, arr: any[]): void => {
  * @param rootId 根节点父级 ID
  * @returns 树结构数据
  */
-export function handleTree(
-  data: any[],
+export function handleTree<T extends TreeNode = TreeNode>(
+  data: T[],
   id = 'id',
   parentId = 'parentId',
   children = 'children',
-  rootId?: any
-): any[] {
-  id = id || 'id';
-  parentId = parentId || 'parentId';
-  children = children || 'children';
-  rootId =
-    rootId ||
-    Math.min.apply(
-      Math,
-      data.map((item: any) => item[parentId])
-    ) ||
-    0;
+  rootId?: string | number
+): T[] {
+  const safeId = id || 'id';
+  const safeParentId = parentId || 'parentId';
+  const safeChildren = children || 'children';
+
+  // 计算 rootId（处理空数组情况）
+  if (rootId === undefined) {
+    const parentIds = data.map((item) => item[safeParentId]);
+    const validParentIds = parentIds.filter((pid) => pid !== undefined && pid !== null);
+    rootId = validParentIds.length > 0 ? Math.min(...validParentIds.map((p) => Number(p))) : 0;
+  }
 
   // 对源数据深度克隆
-  const cloneData = JSON.parse(JSON.stringify(data));
+  const cloneData: TreeNode[] = JSON.parse(JSON.stringify(data));
 
   // 循环所有项
-  const treeData = cloneData.filter((father: any) => {
-    const branchArr = cloneData.filter((child: any) => {
-      // 返回每一项的子级数组
-      return father[id] === child[parentId];
-    });
-    branchArr.length > 0 ? (father[children] = branchArr) : '';
-    // 返回第一层
-    return father[parentId] === rootId;
+  const treeData = cloneData.filter((father) => {
+    const branchArr = cloneData.filter((child) => father[safeId] === child[safeParentId]);
+    if (branchArr.length > 0) {
+      father[safeChildren] = branchArr as TreeNode[];
+    }
+    return father[safeParentId] === rootId;
   });
 
-  return treeData.length > 0 ? treeData : data;
+  return (treeData.length > 0 ? treeData : data) as T[];
 }
 
 /**
@@ -85,7 +102,7 @@ export function generateUUID(): string {
       return crypto.randomUUID();
     }
     if (typeof crypto.getRandomValues === 'function' && typeof Uint8Array === 'function') {
-      const callback = (c: any) => {
+      const callback = (c: string): string => {
         const num = Number(c);
         return (num ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (num / 4)))).toString(16);
       };
@@ -117,13 +134,12 @@ export function getQueryString(url: string, paraName: string): string {
   const arrObj = url.split('?');
   if (arrObj.length > 1) {
     const arrPara = arrObj[1].split('&');
-    for (let i = 0; i < arrPara.length; i++) {
-      const arr = arrPara[i].split('=');
-      if (arr != null && arr[0] === paraName) {
-        return arr[1];
+    for (const param of arrPara) {
+      const [key, value] = param.split('=');
+      if (key === paraName) {
+        return value ?? ''; // 返回空字符串而非 undefined
       }
     }
-    return '';
   }
   return '';
 }
@@ -171,19 +187,11 @@ export function getNonDuplicateID(length = 8): string {
  * @param list 数组对象
  * @returns 删除空值后的数组对象
  */
-export function handleEmpty(list: any[]): any[] {
-  const arr: any[] = [];
-  for (const i in list) {
-    const d: any[] = [];
-    for (const j in list[i]) {
-      d.push(list[i][j]);
-    }
-    const leng = d.filter((item) => item === '').length;
-    if (leng !== d.length) {
-      arr.push(list[i]);
-    }
-  }
-  return arr;
+export function handleEmpty<T extends Record<string, unknown>>(list: T[]): T[] {
+  return list.filter((item) => {
+    const values = Object.values(item);
+    return !values.every((v) => v === '' || v === null || v === undefined);
+  });
 }
 
 /**
@@ -224,24 +232,14 @@ export function isMobile(): boolean {
  * @param obj 源对象
  * @returns 克隆后的对象
  */
-export function deepClone<T = any>(obj: T): T {
-  let newObj: T;
-  try {
-    newObj = Array.isArray(obj) ? [] : ({} as T);
-  } catch (error) {
-    newObj = {} as T;
+export function deepClone<T>(obj: T): T {
+  // 使用原生 structuredClone（现代浏览器/API）
+  if (typeof structuredClone === 'function') {
+    return structuredClone(obj);
   }
-  for (const attr in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, attr)) {
-      const value = (obj as any)[attr];
-      if (value && typeof value === 'object') {
-        newObj[attr] = deepClone(value);
-      } else {
-        newObj[attr] = value;
-      }
-    }
-  }
-  return newObj;
+
+  // 降级方案：JSON 序列化（无法处理 undefined、Symbol、函数等）
+  return JSON.parse(JSON.stringify(obj)) as T;
 }
 
 /**

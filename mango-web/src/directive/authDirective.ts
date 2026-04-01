@@ -106,16 +106,20 @@ const vAuth: Directive = {
 };
 
 /**
- * v-auths directive (alias for v-auth with OR logic)
+ * v-auths directive (OR logic - any permission match shows element)
  */
 const vAuths: Directive = {
   mounted(el: HTMLElement, binding: AuthDirectiveBinding) {
-    if (!auths(binding.value as string[])) {
+    updateCachedAuthBtnList();
+    if (cachedAuthBtnList.length === 0) return;
+    if (!auths(Array.isArray(binding.value) ? binding.value : [binding.value as string])) {
       removeElement(el);
     }
   },
   updated(el: HTMLElement, binding: AuthDirectiveBinding) {
-    if (!auths(binding.value as string[])) {
+    updateCachedAuthBtnList();
+    if (cachedAuthBtnList.length === 0) return;
+    if (!auths(Array.isArray(binding.value) ? binding.value : [binding.value as string])) {
       removeElement(el);
     }
   },
@@ -126,12 +130,16 @@ const vAuths: Directive = {
  */
 const vAuthAll: Directive = {
   mounted(el: HTMLElement, binding: AuthDirectiveBinding) {
-    if (!authAll(binding.value as string[])) {
+    updateCachedAuthBtnList();
+    if (cachedAuthBtnList.length === 0) return;
+    if (!authAll(Array.isArray(binding.value) ? binding.value : [binding.value as string])) {
       removeElement(el);
     }
   },
   updated(el: HTMLElement, binding: AuthDirectiveBinding) {
-    if (!authAll(binding.value as string[])) {
+    updateCachedAuthBtnList();
+    if (cachedAuthBtnList.length === 0) return;
+    if (!authAll(Array.isArray(binding.value) ? binding.value : [binding.value as string])) {
       removeElement(el);
     }
   },

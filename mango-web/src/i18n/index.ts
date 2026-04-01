@@ -22,7 +22,7 @@ export const i18n = createI18n({
 /**
  * 从后端获取国际化语言包并合并到 i18n
  * @param initialLoad 是否为初始加载
- * - true: 调用 /admin/i18n/public 获取所有语言（应用启动时）
+ * - true: 调用 /i18n/public 获取所有语言（应用启动时）
  * - false: 调用 /bff/admin/i18n?lang=xxx 获取单一语言（运行时切换）
  */
 export async function fetchI18n(initialLoad = true): Promise<void> {
