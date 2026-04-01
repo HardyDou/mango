@@ -1,0 +1,55 @@
+package io.mango.infra.feign.starter;
+
+import feign.Logger;
+import feign.Retryer;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Feign auto configuration
+ * <p>
+ * Provides OpenFeign infrastructure: timeout, retry, logging, and request interception.
+ *
+ * @author Mango
+ */
+@AutoConfiguration
+@EnableConfigurationProperties(FeignProperties.class)
+@ConditionalOnClass({feign.Feign.class})
+@ConditionalOnProperty(prefix = "mango.feign", name = "enabled", havingValue = "true", matchIfMissing = true)
+public class FeignAutoConfiguration {
+
+    /**
+     * Configure Feign retryer based on properties
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public Retryer feignRetryer(FeignProperties properties) {
+        return new Retryer.Default(properties.getConnectTimeout(),
+                properties.getReadTimeout(),
+                properties.getRetry());
+    }
+
+    /**
+     * Configure Feign logger level
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public Logger.Level feignLoggerLevel(FeignProperties properties) {
+        return properties.getLoggerLevel();
+    }
+
+    /**
+     * Configure Feign request interceptor for context propagation
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.feign", name = "interceptor-enabled", havingValue = "true", matchIfMissing = true)
+    public FeignRequestInterceptor feignRequestInterceptor() {
+        return new FeignRequestInterceptor();
+    }
+}
