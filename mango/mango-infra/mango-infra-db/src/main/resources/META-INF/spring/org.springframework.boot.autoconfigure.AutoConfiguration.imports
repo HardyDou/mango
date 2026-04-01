@@ -1,0 +1,2 @@
+io.mango.infra.db.starter.DbAutoConfiguration
+io.mango.infra.db.starter.MangoFlywayAutoConfiguration
