@@ -33,6 +33,75 @@
 - ✅ E2E 截图验证
 - ✅ 代码规范检查通过
 
+### 1.5 数据库迁移规范
+
+**DDL 变更必须通过 Flyway migration 文件，禁止直接修改生产数据库。**
+
+#### 迁移文件命名
+
+```
+db/migration/{module}/V{version}__{description}.sql
+```
+
+**命名规范：**
+- `{module}`：领域模块名（小写，如 `user`、`area`、`org`）
+- `V{version}`：版本号，从 1 开始，每次变更递增
+- `description`：描述性名称，使用下划线分隔
+
+| 示例 | 说明 |
+|------|------|
+| `V1__init.sql` | 初始化建表 |
+| `V2__add_column.sql` | 新增字段 |
+| `V3__seed_data.sql` | 种子数据 |
+| `V4__rename_column.sql` | 重命名字段 |
+| `V5__create_index.sql` | 创建索引 |
+
+#### 迁移文件创建规则
+
+1. **新增不修改**：每次 DDL 变更新增一个 migration 文件，不修改历史文件
+2. **版本递增**：V1 → V2 → V3，持续递增
+3. **模块隔离**：每个领域模块独立子目录，禁止跨域表依赖
+4. **不可逆变更**：删除表、删除列等高风险操作需在迁移步骤中明确标注
+
+#### 本地开发
+
+```bash
+# 开发时自动执行（应用启动时）
+mvn spring-boot:run
+
+# 或手动执行迁移
+mvn flyway:migrate
+
+# 查看迁移状态
+mvn flyway:info
+
+# 清理本地数据库（慎用）
+mvn flyway:clean
+```
+
+#### PRD 中的数据库设计
+
+PRD 必须包含完整的表结构设计（对应 §5 数据库设计），格式：
+
+```markdown
+## 5. 数据库设计
+
+### sys_user（用户表）
+
+| 字段 | 类型 | 长度 | 必填 | 说明 |
+|------|------|------|------|------|
+| id | bigint | - | 是 | 主键 |
+| username | varchar | 50 | 是 | 用户名 |
+| tenant_id | bigint | - | 是 | 租户ID |
+
+### 索引设计
+
+| 索引名 | 字段 | 类型 |
+|--------|------|------|
+| uk_username | username | UNIQUE |
+| idx_tenant_id | tenant_id | NORMAL |
+```
+
 ---
 
 ## 2. 人工介入时机
