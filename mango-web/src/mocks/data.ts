@@ -144,7 +144,7 @@ export const mockMenus: SysMenuVO[] = [
         menuId: 23,
         parentId: 4,
         menuType: 1,
-        menuName: '权限管理',
+        menuName: '资源管理',
         menuCode: 'system:permission',
         path: '/system/permission',
         component: '/views/system/permission/index.vue',
