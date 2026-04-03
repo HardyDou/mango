@@ -88,14 +88,14 @@ export function generateBlockPuzzle() {
  * 发送短信验证码（需认证）
  */
 export function sendSms(mobile: string) {
-  return post<string>(`/auth/captcha/sms/send?mobile=${mobile}`);
+  return post<string>('/auth/captcha/send', { type: CaptchaType.SMS, target: mobile });
 }
 
 /**
  * 发送邮件验证码（需认证）
  */
 export function sendEmail(email: string) {
-  return post<string>(`/auth/captcha/email/send?email=${email}`);
+  return post<string>('/auth/captcha/send', { type: CaptchaType.EMAIL, target: email });
 }
 
 /**
