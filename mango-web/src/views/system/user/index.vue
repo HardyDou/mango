@@ -87,7 +87,7 @@ const tableData = ref([
 ]);
 
 const handleAdd = () => {
-  console.log('add user');
+  if (import.meta.env.DEV) console.log('add user');
 };
 </script>
 
