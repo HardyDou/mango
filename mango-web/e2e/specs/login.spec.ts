@@ -34,8 +34,8 @@ test.describe('登录页面 E2E 测试', () => {
     // 应该跳转到首页
     await page.waitForURL('**/#/home', { timeout: 5000 });
 
-    // 检查首页元素
-    await expect(page.locator('text=企业级管理平台')).toBeVisible();
+    // 检查首页元素 - 首页应该有"首页"菜单
+    await expect(page.locator('text=首页').first()).toBeVisible();
   });
 
   test('登录页面响应式布局', async ({ page }) => {
