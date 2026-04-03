@@ -40,7 +40,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
   return {
     plugins: [
       vue(),
-      vueSetupExtend(),
+      // vueSetupExtend(), // Temporarily disabled due to TypeScript type import issue
       AutoImport({
         imports: ['vue', 'vue-router', 'pinia'],
         dts: './auto-imports.d.ts',
@@ -70,12 +70,26 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       allowedHosts: isDev ? ['localhost', '127.0.0.1'] : false,
       hmr: true,
       proxy: {
-        '/api': {
-          target: proxyTarget,
-          ws: true,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
-        },
+        // Mock 模式下跳过 /api/* 路径，由 MSW 处理
+        ...(env.VITE_USE_MOCK !== 'true' ? {
+          '/api': {
+            target: proxyTarget,
+            ws: true,
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, ''),
+          },
+          '/mango-message': {
+            target: proxyTarget,
+            ws: true,
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/mango-message/, ''),
+          },
+          '/ai': {
+            target: proxyTarget,
+            ws: true,
+            changeOrigin: true,
+          },
+        } : {}),
       },
     },
     build: {
