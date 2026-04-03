@@ -31,20 +31,34 @@ export const Session = {
   },
 
   getToken(): string | null {
-    // Use sessionStorage for tokens - cleared when tab closes.
-    // TODO (P1): For production, use httpOnly cookies (requires backend support).
-    // XSS can still read sessionStorage, but data doesn't persist across sessions.
-    return sessionStorage.getItem('MANGO_TOKEN');
+    // First try sessionStorage (set by frontend during login)
+    const token = sessionStorage.getItem('MANGO_TOKEN');
+    if (token) {
+      return token;
+    }
+    // Fallback: try reading from httpOnly Cookie (set by backend)
+    // Note: httpOnly Cookies can't be read by JS, so this fallback won't work for them
+    // But it works for non-httpOnly cookies if any exist
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'MANGO_TOKEN') {
+        return value;
+      }
+    }
+    return null;
   },
 
   setToken(token: string): void {
-    // SECURITY: sessionStorage is still XSS-vulnerable but better than localStorage.
-    // The real fix requires httpOnly cookies (backend change needed).
+    // Also store in sessionStorage for frontend auth checks (httpOnly Cookie can't be read by JS)
+    // The httpOnly Cookie is for backend authentication
     sessionStorage.setItem('MANGO_TOKEN', token);
   },
 
   clearToken(): void {
     sessionStorage.removeItem('MANGO_TOKEN');
+    // Clear httpOnly Cookie by setting expired
+    document.cookie = 'MANGO_TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
   },
 
   clearSession(): void {

@@ -19,6 +19,8 @@ const router = createRouter({
 // 使用 reactive ref + promise lock 防止竞态条件
 const isRoutesInitialized = ref(false);
 let initPromise: Promise<void> | null = null;
+// 标记当前导航是否已经等待过路由初始化
+let isNavigatingAfterInit = false;
 
 /**
  * 路由守卫：初始化路由
@@ -45,15 +47,17 @@ async function initRoutes(): Promise<void> {
 async function doInitRoutes(): Promise<void> {
   const storesPreferences = usePreferencesStore();
   const storesRoutesList = useRoutesList();
-  const isRequestRoutes = storesPreferences.isRequestRoutes;
+  // Mock 模式下强制启用后端路由模式，以加载完整的菜单（前端配置 + 后端配置）
+  const useMock = import.meta.env.VITE_USE_MOCK === 'true';
+  const isRequestRoutes = useMock || storesPreferences.isRequestRoutes;
 
-  console.log('[Router] doInitRoutes called, isRequestRoutes:', isRequestRoutes);
-  console.log('[Router] Current routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
+  if (import.meta.env.DEV) console.log('[Router] doInitRoutes called, isRequestRoutes:', isRequestRoutes, '(useMock:', useMock, ')');
+  if (import.meta.env.DEV) console.log('[Router] Current routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
 
   if (isRequestRoutes) {
     // 后端路由模式
     await initBackEndControlRoutes();
-    console.log('[Router] After backEnd init:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
+    if (import.meta.env.DEV) console.log('[Router] After backEnd init:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.length })));
   } else {
     // 前端路由模式 - 静态路由已在 staticRoutes 中，直接使用
     // 填充 routesList store 以供菜单使用
@@ -95,7 +99,14 @@ router.beforeEach(async (to, from, next) => {
       storesUserInfo.setUserInfos(userInfo);
 
       // 确保路由已初始化（使用 promise lock 防止竞态条件）
-      await initRoutes();
+      if (!isRoutesInitialized.value && !isNavigatingAfterInit) {
+        isNavigatingAfterInit = true;
+        await initRoutes();
+        isNavigatingAfterInit = false;
+        // 重新触发当前导航，让路由有机会匹配新加载的动态路由
+        next(to.fullPath);
+        return;
+      }
 
       next();
     } else {

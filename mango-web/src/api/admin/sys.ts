@@ -3,36 +3,23 @@ import { get, post } from '@/utils/request';
 /**
  * 登录
  */
-export function login(data: { username: string; password: string; captcha?: string }) {
-  return post('/admin/sys/login', data);
+export function login(data: { username: string; password: string; captchaCode?: string; captchaKey?: string }) {
+  return post('/auth/login', data);
 }
 
 /**
  * 获取用户信息
+ * Issue B Fix: 路径更新为 /auth/info（根据 Plan 011 auth 域收敛）
  */
 export function getUserInfo() {
-  return get('/admin/sys/userInfo');
-}
-
-/**
- * 获取路由列表
- */
-export function getRoutes() {
-  return get('/admin/sys/routes');
-}
-
-/**
- * 获取菜单列表
- */
-export function getMenus() {
-  return get('/admin/sys/menus');
+  return get('/auth/info');
 }
 
 /**
  * 登出
  */
 export function logout() {
-  return post('/admin/sys/logout');
+  return post('/auth/logout');
 }
 
 /**
@@ -46,7 +33,7 @@ export function getCaptcha() {
  * 修改密码
  */
 export function updatePassword(data: { oldPassword: string; newPassword: string }) {
-  return post('/admin/sys/password', data);
+  return post('/user/password', data);
 }
 
 /**

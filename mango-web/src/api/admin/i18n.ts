@@ -10,12 +10,12 @@ export function getI18nPublic() {
 }
 
 /**
- * 通过 BFF 获取单一语言的国际化语言包
+ * 获取单一语言的国际化语言包
  * @param lang 语言代码，如 'zh-cn', 'en'
- * @description 调用 /bff/admin/i18n?lang=xxx，用于运行时语言切换
+ * @description 调用 /i18n?lang=xxx，用于运行时语言切换
  */
 export function getI18nBff(lang: string) {
-  return get(`/bff/admin/i18n?lang=${lang}`);
+  return get(`/i18n?lang=${lang}`);
 }
 
 /**

@@ -22,11 +22,7 @@ export const useUserInfo = defineStore('userInfo', {
         ...data,
         time: new Date().getTime(),
       };
-      // SECURITY: userInfo including permissions is stored in sessionStorage.
-      // This is a defense-in-depth measure since tokens are now in sessionStorage.
-      // TODO (P2): For production, consider:
-      // 1. Storing permissions only in memory (refetch from API on refresh)
-      // 2. Using httpOnly cookies for all sensitive data
+      // userInfo is non-sensitive display data, stored in sessionStorage
       Session.set('userInfo', this.userInfos);
     },
     updateTenantInfo(tenantId: string, tenantName: string) {

@@ -12,7 +12,6 @@
     :filter-node-method="filterNodeMethod"
     :node-key="nodeKey"
     :default-expand-all="defaultExpandAll"
-    :expand-on-click-node="expandOnClickNode"
     @change="handleChange"
     @node-click="handleNodeClick"
     @check-change="handleCheckChange"

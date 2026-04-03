@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick, PropType } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import * as echarts from 'echarts';
 import { useThemeStore } from '@/stores/theme';
 import { storeToRefs } from 'pinia';

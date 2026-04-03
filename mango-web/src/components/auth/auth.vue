@@ -9,7 +9,9 @@
     v-else
     class="auth-empty"
   >
-    <el-empty description="无权限访问" />
+    <slot name="no-auth">
+      <el-empty description="无权限访问" />
+    </slot>
   </div>
 </template>
 
@@ -17,22 +19,24 @@
 import { computed } from 'vue';
 import { hasPermission } from '@/utils/authFunction';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   value?: string;
   /** 权限模式：all=全部拥有，any=拥有任意一个 */
   mode?: 'all' | 'any';
-}>();
+}>(), {
+  mode: 'any'
+});
 
 const hasAuth = computed(() => {
   if (!props.value) return true;
 
-  const permissions = props.value.split(',');
+  const permissions = props.value.split(',').map(p => p.trim());
 
-  if (props.mode === 'any') {
-    return permissions.some((p) => hasPermission(p.trim()));
+  if (props.mode === 'all') {
+    return permissions.every((p) => hasPermission(p));
   }
 
-  return permissions.every((p) => hasPermission(p.trim()));
+  return permissions.some((p) => hasPermission(p));
 });
 </script>
 

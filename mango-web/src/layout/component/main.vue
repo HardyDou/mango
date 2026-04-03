@@ -31,7 +31,12 @@ const setMainHeight = computed(() => {
 });
 
 const setBacktopClass = computed(() => {
-  return layoutMainScrollbarRef.value?.wrapRef;
+  const wrapRef = layoutMainScrollbarRef.value?.wrapRef;
+  // el-backtop expects a CSS selector string when passed as prop
+  if (wrapRef) {
+    return '.layout-main-scroll';
+  }
+  return '';
 });
 </script>
 

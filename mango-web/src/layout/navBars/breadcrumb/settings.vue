@@ -771,18 +771,21 @@ onMounted(() => {
   });
 
   // 监听窗口大小改变，非默认布局，设置成默认布局（适配移动端）
-  mittBus.on('layoutMobileResize', (res: { isMobile: boolean; windowWidth: number; layout?: string }) => {
-    if (res.layout && res.layout !== layoutStore.layout) {
-      layoutStore.setLayout(res.layout as 'defaults' | 'classic' | 'transverse' | 'columns');
-      preferencesStore.isDrawer = false;
-      initLayoutChangeFun();
-    }
-  });
+  mittBus.on('layoutMobileResize', handleMobileResize);
 });
 
 onUnmounted(() => {
-  mittBus.off('layoutMobileResize', () => {});
+  mittBus.off('layoutMobileResize', handleMobileResize);
 });
+
+// 监听窗口大小改变，非默认布局，设置成默认布局（适配移动端）
+const handleMobileResize = (res: { isMobile: boolean; windowWidth: number; layout?: string }) => {
+  if (res.layout && res.layout !== layoutStore.layout) {
+    layoutStore.setLayout(res.layout as 'defaults' | 'classic' | 'transverse' | 'columns');
+    preferencesStore.isDrawer = false;
+    initLayoutChangeFun();
+  }
+};
 </script>
 
 <style scoped lang="scss">

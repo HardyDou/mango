@@ -71,4 +71,60 @@ export default {
   'theme.title': 'Theme Settings',
   'theme.language': 'Language',
   'theme.primary': 'Primary Color',
+
+  // ChinaArea Component
+  'chinaArea.placeholder': 'Please select province/city/district',
+  'chinaArea.noMatch': 'No matching data',
+  'chinaArea.noData': 'No data',
+  'chinaArea.loading': 'Loading...',
+
+  // OrgSelector Component
+  'orgSelector.placeholder': 'Please select organization',
+  'orgSelector.title': 'Select Organization',
+  'orgSelector.confirm': 'Confirm',
+  'orgSelector.cancel': 'Cancel',
+  'orgSelector.noData': 'No organizations available',
+  'orgSelector.loading': 'Loading...',
+  'orgSelector.maxSelected': 'Maximum {max} organizations can be selected',
+
+  // Sign Component
+  'sign.placeholder': 'Please sign here',
+  'sign.clear': 'Clear',
+  'sign.color': 'Color',
+  'sign.error': 'Failed to generate signature, please retry',
+
+  // WebSocket Component
+  'websocket.connected': 'Connected',
+  'websocket.connecting': 'Connecting...',
+  'websocket.retrying': 'Retrying ({count}/{max})...',
+  'websocket.error': 'Connection error',
+  'websocket.disconnected': 'Disconnected',
+  'websocket.message': 'Message',
+  'websocket.reconnect': 'Reconnect',
+
+  // SSE Component
+  'sse.connected': 'Connected',
+  'sse.connecting': 'Connecting...',
+  'sse.retrying': 'Retrying ({count}/{max})...',
+  'sse.error': 'Connection error',
+  'sse.disconnected': 'Disconnected',
+  'sse.notification': 'Notification',
+  'sse.alert': 'Alert',
+  'sse.reconnect': 'Reconnect',
+
+  // Chat Component
+  'chat.title': 'AI Assistant',
+  'chat.welcome': 'Hello, I am your AI assistant. How can I help you?',
+  'chat.placeholder': 'Please enter your question...',
+  'chat.send': 'Send',
+  'chat.sessionNew': 'New Session',
+  'chat.recommended': 'Recommended',
+  'chat.thinking': 'Thinking...',
+  'chat.error': 'Sorry, something went wrong. Please try again later.',
+  'chat.retry': 'Retry',
+
+  // FormCreate Component
+  'formCreate.submit': 'Submit',
+  'formCreate.reset': 'Reset',
+  'formCreate.validateFailed': 'Form validation failed',
 };

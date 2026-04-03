@@ -37,28 +37,6 @@
               clearable
             />
           </el-form-item>
-          <el-form-item
-            v-if="captchaEnabled"
-            prop="captcha"
-          >
-            <el-input
-              v-model="form.captcha"
-              :placeholder="$t('login.captcha.placeholder')"
-              size="large"
-              style="width: 60%"
-              prefix-icon="CircleCheck"
-              clearable
-            />
-            <div
-              class="captcha-img"
-              @click="refreshCaptcha"
-            >
-              <img
-                :src="captchaUrl"
-                alt="验证码"
-              >
-            </div>
-          </el-form-item>
           <el-form-item>
             <el-button
               type="primary"
@@ -77,13 +55,11 @@
 </template>
 
 <script setup lang="ts" name="Login">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { User, Lock, CircleCheck } from '@element-plus/icons-vue';
 import { Session } from '@/utils/storage';
 import { login } from '@/api/admin/sys';
-import { initBackEndControlRoutes } from '@/router/backEnd';
 import { getFrontEndRoutes } from '@/router/frontEnd';
 import { useRoutesList } from '@/stores/routesList';
 
@@ -94,25 +70,16 @@ const loginFormRef = ref();
 const form = reactive({
   username: '',
   password: '',
-  captcha: '',
 });
 
 // 校验规则
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
 };
 
 // 状态
 const loading = ref(false);
-const captchaEnabled = ref(false);
-const captchaUrl = ref('');
-
-// 获取验证码
-const refreshCaptcha = () => {
-  captchaUrl.value = `/api/admin/sys/captcha?t=${Date.now()}`;
-};
 
 // 登录处理
 const handleLogin = async () => {
@@ -123,30 +90,30 @@ const handleLogin = async () => {
 
     loading.value = true;
     try {
-      // 模拟登录（实际项目中调用接口）
-      // const res = await login(form);
-      const mockRes = {
-        token: 'mock-token-' + Date.now(),
-        userInfo: {
-          username: form.username,
-          nickname: '管理员',
-          photo: '',
-          roles: ['admin'],
-          permissions: ['*'],
-          authBtnList: [],
-          tenantId: 'master',
-          tenantName: '默认租户',
-        },
+      // 构造登录数据
+      const loginData = {
+        username: form.username,
+        password: form.password,
       };
 
-      // 保存 Token
-      Session.setToken(mockRes.token);
-      Session.set('userInfo', mockRes.userInfo);
+      // 调用真实登录接口
+      const res = await login(loginData);
+
+      // 校验响应数据 - 兼容多种响应格式
+      const token = res?.accessToken || res?.token;
+      if (!res || !token) {
+        throw new Error('登录响应无效');
+      }
+
+      // 保存 Token 和用户信息
+      Session.setToken(token);
+      Session.set('userInfo', res.userInfo || res);
 
       // 初始化路由（前端模式）
       const storesRoutesList = useRoutesList();
       const frontEndRoutes = getFrontEndRoutes();
       frontEndRoutes.forEach((route) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         router.addRoute(route as any);
       });
       const rootRoute = frontEndRoutes.find((r) => r.path === '/');
@@ -164,9 +131,6 @@ const handleLogin = async () => {
     }
   });
 };
-
-// 初始化验证码
-refreshCaptcha();
 </script>
 
 <style scoped lang="scss">
@@ -230,18 +194,6 @@ refreshCaptcha();
 
   .login-btn {
     width: 100%;
-  }
-
-  .captcha-img {
-    margin-left: 12px;
-    height: 40px;
-    border-radius: 4px;
-    overflow: hidden;
-    cursor: pointer;
-
-    img {
-      height: 100%;
-    }
   }
 }
 

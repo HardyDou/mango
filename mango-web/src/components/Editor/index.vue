@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount, shallowRef } from 'vue';
+import { ref, watch, onBeforeUnmount, shallowRef, nextTick } from 'vue';
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
 import '@wangeditor/editor/dist/css/style.css';
 import { uploadImage } from '@/api/admin/upload';

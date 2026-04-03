@@ -88,6 +88,31 @@ export function verifyPort(port: string | number): boolean {
 }
 
 /**
+ * 校验是否为空
+ */
+export function isEmpty(value: unknown): boolean {
+  if (value === null || value === undefined || value === '') return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  if (typeof value === 'object' && value !== null && Object.keys(value).length === 0) return true;
+  return false;
+}
+
+/**
+ * 校验是否包含中文
+ */
+export function hasChinese(str: string): boolean {
+  const reg = /[\u4e00-\u9fa5]/;
+  return reg.test(str);
+}
+
+/**
+ * 去除字符串空格
+ */
+export function trim(str: string): string {
+  return str.replace(/\s+/g, '');
+}
+
+/**
  * 统一批量导出
  */
 const toolsValidate = {
@@ -100,6 +125,9 @@ const toolsValidate = {
   verifyPassword,
   verifyIP,
   verifyPort,
+  isEmpty,
+  hasChinese,
+  trim,
 };
 
 export default toolsValidate;

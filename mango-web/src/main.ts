@@ -12,6 +12,14 @@ import '@/theme/index.scss';
 import { initThemeBeforeRender } from './utils/themeInit';
 import { registerAuthDirectives } from './directive/authDirective';
 
+// MSW Mock 支持（开发环境且启用时）
+async function enableMock() {
+  if (import.meta.env.VITE_USE_MOCK === 'true') {
+    const { startMockWorker } = await import('./mocks/browser');
+    await startMockWorker();
+  }
+}
+
 const app = createApp(App);
 
 // 全局注册 Element Plus 图标
@@ -37,5 +45,8 @@ initThemeBeforeRender();
 
 // 注册权限指令
 registerAuthDirectives(app);
+
+// 启用 Mock（如果配置了）
+await enableMock();
 
 app.mount('#app');

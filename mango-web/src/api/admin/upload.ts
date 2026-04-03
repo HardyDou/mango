@@ -13,6 +13,15 @@ export interface UploadResult {
 }
 
 /**
+ * Excel upload result
+ */
+export interface ExcelUploadResult {
+  fileName: string;
+  fileSize: number;
+  data: Record<string, unknown>[];
+}
+
+/**
  * 通用文件上传
  * @param file 文件对象
  * @returns 上传结果
@@ -20,6 +29,7 @@ export interface UploadResult {
 export function uploadFile(file: File): Promise<UploadResult> {
   const formData = new FormData();
   formData.append('file', file);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return post<UploadResult>('/admin/upload/file', formData as any, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -35,6 +45,7 @@ export function uploadFile(file: File): Promise<UploadResult> {
 export function uploadImage(file: File): Promise<UploadResult> {
   const formData = new FormData();
   formData.append('file', file);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return post<UploadResult>('/admin/upload/image', formData as any, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -47,10 +58,11 @@ export function uploadImage(file: File): Promise<UploadResult> {
  * @param file Excel 文件
  * @returns 上传结果（包含解析后的数据）
  */
-export function uploadExcel(file: File): Promise<any> {
+export function uploadExcel(file: File): Promise<ExcelUploadResult> {
   const formData = new FormData();
   formData.append('file', file);
-  return post<any>('/admin/upload/excel', formData as any, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return post<ExcelUploadResult>('/admin/upload/excel', formData as any, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -67,6 +79,7 @@ export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
   files.forEach((file) => {
     formData.append('files', file);
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return post<UploadResult[]>('/admin/upload/multiple', formData as any, {
     headers: {
       'Content-Type': 'multipart/form-data',

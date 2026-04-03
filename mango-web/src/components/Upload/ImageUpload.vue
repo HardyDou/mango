@@ -130,7 +130,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, file) => {
 };
 
 // Handle error
-const handleError: UploadProps['onError'] = (error) => {
+const handleError: UploadProps['onError'] = (error, file) => {
   ElMessage.error('上传失败');
 };
 

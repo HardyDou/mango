@@ -33,4 +33,10 @@ export interface SignExpose {
   isEmpty(): boolean;
 }
 
-export type SignInstance = InstanceType<typeof import('./index.vue').default>;
+// SignInstance should be defined by the consuming component using typeof defineComponent
+// For now, we define it based on the exposed methods
+export type SignInstance = {
+  clear(): void;
+  getSignature(): string;
+  isEmpty(): boolean;
+};

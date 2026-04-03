@@ -32,16 +32,13 @@ export function useTitle(titleKey?: string, customAppName?: string) {
     }
   }
 
-  // Set initial title
-  updateTitle();
-
   // Watch for language changes and update title
   const stopWatch = watch(
     locale,
     () => {
       updateTitle();
     },
-    { immediate: false }
+    { immediate: true }
   );
 
   // Cleanup on unmount

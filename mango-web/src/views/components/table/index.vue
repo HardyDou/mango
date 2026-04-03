@@ -129,7 +129,7 @@ const handleRefresh = () => {
 };
 
 const handleEdit = (row: any) => {
-  console.log('edit', row);
+  if (import.meta.env.DEV) console.log('edit', row);
   ElMessage.info(`编辑: ${row.name}`);
 };
 

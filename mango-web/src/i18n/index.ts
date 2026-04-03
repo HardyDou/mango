@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n';
+import { ElMessage } from 'element-plus';
 import { usePreferencesStore } from '@/stores/preferences';
 import { getI18nPublic, getI18nBff } from '@/api/admin/i18n';
 
@@ -50,6 +51,7 @@ export async function fetchI18n(initialLoad = true): Promise<void> {
     }
   } catch (error) {
     console.warn('[i18n] Failed to fetch i18n from backend, using fallback:', error);
+    ElMessage.warning('语言包加载失败，已使用默认语言');
   }
 }
 

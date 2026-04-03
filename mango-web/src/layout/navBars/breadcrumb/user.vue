@@ -6,8 +6,9 @@
     <div class="layout-breadcrumb-user">
       <el-avatar
         :size="28"
-        src="/logo.png"
-      />
+      >
+        <el-icon><User /></el-icon>
+      </el-avatar>
       <span class="username">{{ userInfos.userInfos?.username || 'Admin' }}</span>
       <el-icon class="arrow-icon">
         <ArrowDown />
@@ -62,7 +63,9 @@ const handleCommand = (command: string) => {
       }).then(() => {
         Session.clearSession();
         router.push('/login');
-      }).catch(() => {});
+      }).catch(() => {
+        // User canceled, do nothing
+      });
       break;
   }
 };

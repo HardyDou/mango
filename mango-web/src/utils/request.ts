@@ -40,6 +40,9 @@ const service: AxiosInstance = axios.create({
 // 请求队列
 let requestCount = 0;
 
+// 401 重定向保护标志
+let isRedirecting = false;
+
 /**
  * 显示 Loading
  */
@@ -83,16 +86,6 @@ function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
   return config;
 }
 
-/**
- * SM4 加密（可选）
- */
-async function handleSM4Encrypt(data: any): Promise<any> {
-  // 如果后端启用了 SM4 加密，在这里处理
-  // const sm4 = require('sm-crypto').sm4;
-  // const key = import.meta.env.VITE_SM4_KEY;
-  // return sm4.encrypt(JSON.stringify(data), key);
-  return data;
-}
 
 /**
  * 请求拦截器
@@ -108,11 +101,6 @@ service.interceptors.request.use(
 
     // 添加租户 ID
     handleTenantId(config);
-
-    // SM4 加密（如果启用）
-    if (config.method === 'post' && config.data) {
-      config.data = await handleSM4Encrypt(config.data);
-    }
 
     return config;
   },
@@ -138,6 +126,10 @@ service.interceptors.response.use(
 
     // token 过期
     if (code === 401) {
+      if (isRedirecting) {
+        return Promise.reject(new Error(message || '登录已过期'));
+      }
+      isRedirecting = true;
       ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -145,6 +137,8 @@ service.interceptors.response.use(
       }).then(() => {
         Session.clearSession();
         router.push('/login');
+      }).finally(() => {
+        isRedirecting = false;
       });
       return Promise.reject(new Error(message || '登录已过期'));
     }

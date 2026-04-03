@@ -1,34 +1,25 @@
 <template>
-  <div class="auth-all-container">
-    <slot v-if="hasAllAuth" />
-    <slot
-      v-else
-      name="no-auth"
-    >
-      <el-empty description="无权限访问" />
-    </slot>
-  </div>
+  <Auth v-bind="$props" mode="all">
+    <template v-if="$slots.default">
+      <slot />
+    </template>
+    <template #no-auth>
+      <slot name="no-auth">
+        <el-empty description="无权限访问" />
+      </slot>
+    </template>
+  </Auth>
 </template>
 
-<script setup lang="ts" name="AuthAll">
-import { computed } from 'vue';
-import { hasPermission } from '@/utils/authFunction';
+<script setup lang="ts">
+import Auth from './auth.vue';
 
-const props = defineProps<{
-  value: string;
+defineProps<{
+  value?: string;
 }>();
 
-const hasAllAuth = computed(() => {
-  if (!props.value) return true;
-
-  const permissions = props.value.split(',').map((p) => p.trim());
-  return permissions.every((p) => hasPermission(p));
-});
+defineSlots<{
+  default?: any;
+  'no-auth'?: any;
+}>();
 </script>
-
-<style scoped lang="scss">
-.auth-all-container {
-  width: 100%;
-  height: 100%;
-}
-</style>

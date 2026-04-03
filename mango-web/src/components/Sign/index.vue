@@ -96,6 +96,8 @@ let lastY = 0;
 let hasDrawn = false;
 let hasError = false;
 let errorMessage = '';
+let imageLoadTimestamp = 0; // Track image load order to ignore stale callbacks
+const currentStrokeColor = ref(props.strokeColor);
 
 const colors = [
   { label: 'Black', value: '#000000' },
@@ -113,7 +115,7 @@ function initCanvas() {
   ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  ctx.strokeStyle = props.strokeColor;
+  ctx.strokeStyle = currentStrokeColor.value;
   ctx.lineWidth = props.lineWidth;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -137,7 +139,7 @@ function getPosition(e: MouseEvent | TouchEvent): { x: number; y: number } {
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
 
-  if ('touches' in e) {
+  if ('touches' in e && e.touches.length > 0) {
     return {
       x: (e.touches[0].clientX - rect.left) * scaleX,
       y: (e.touches[0].clientY - rect.top) * scaleY,
@@ -203,11 +205,10 @@ function handleClear() {
 
 function selectColor(color: string) {
   if (props.disabled) return;
+  currentStrokeColor.value = color;
   if (ctx) {
     ctx.strokeStyle = color;
   }
-  // Note: In a full implementation, we would update strokeColor prop
-  // For now, the color selection is visual only
 }
 
 function generateSignature() {
@@ -249,8 +250,12 @@ watch(
       const canvas = canvasRef.value;
       if (!canvas || !ctx) return;
 
+      const currentTimestamp = Date.now();
+      imageLoadTimestamp = currentTimestamp;
       const img = new Image();
       img.onload = () => {
+        // Ignore stale callbacks from previous loads
+        if (imageLoadTimestamp !== currentTimestamp) return;
         ctx?.clearRect(0, 0, canvas.width, canvas.height);
         ctx?.drawImage(img, 0, 0);
         hasDrawn = true;

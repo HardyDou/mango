@@ -71,4 +71,60 @@ export default {
   'theme.title': '主题设置',
   'theme.language': '语言',
   'theme.primary': '主题色',
+
+  // 行政区划组件
+  'chinaArea.placeholder': '请选择省市区',
+  'chinaArea.noMatch': '无匹配数据',
+  'chinaArea.noData': '无数据',
+  'chinaArea.loading': '加载中...',
+
+  // 组织选择器组件
+  'orgSelector.placeholder': '请选择组织',
+  'orgSelector.title': '选择组织',
+  'orgSelector.confirm': '确定',
+  'orgSelector.cancel': '取消',
+  'orgSelector.noData': '暂无可选组织',
+  'orgSelector.loading': '加载中...',
+  'orgSelector.maxSelected': '最多选择 {max} 个组织',
+
+  // Sign 签名组件
+  'sign.placeholder': '请在此处签名',
+  'sign.clear': '清除',
+  'sign.color': '颜色',
+  'sign.error': '签名生成失败，请重试',
+
+  // WebSocket 组件
+  'websocket.connected': '已连接',
+  'websocket.connecting': '连接中...',
+  'websocket.retrying': '重试中 ({count}/{max})...',
+  'websocket.error': '连接错误',
+  'websocket.disconnected': '已断开',
+  'websocket.message': '消息',
+  'websocket.reconnect': '重新连接',
+
+  // SSE 组件
+  'sse.connected': '已连接',
+  'sse.connecting': '连接中...',
+  'sse.retrying': '重试中 ({count}/{max})...',
+  'sse.error': '连接错误',
+  'sse.disconnected': '已断开',
+  'sse.notification': '通知',
+  'sse.alert': '告警',
+  'sse.reconnect': '重新连接',
+
+  // Chat 组件
+  'chat.title': '智能助手',
+  'chat.welcome': '您好，我是智能助手，有什么可以帮助您的吗？',
+  'chat.placeholder': '请输入您的问题...',
+  'chat.send': '发送',
+  'chat.sessionNew': '新会话',
+  'chat.recommended': '推荐问题',
+  'chat.thinking': '思考中...',
+  'chat.error': '抱歉，服务出现异常，请稍后重试',
+  'chat.retry': '重试',
+
+  // FormCreate 组件
+  'formCreate.submit': '提交',
+  'formCreate.reset': '重置',
+  'formCreate.validateFailed': '表单验证失败',
 };

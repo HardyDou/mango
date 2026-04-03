@@ -50,9 +50,11 @@ describe('权限函数', () => {
       expect(hasPermission('test:permission')).toBe(true);
     });
 
-    it('应该返回 true 当用户有 admin 权限 (*)', () => {
+    it('应该返回 false 当用户有 * 通配符权限（前端不信任 * 作为安全判断）', () => {
       vi.mocked(Session.get).mockReturnValue({ permissions: ['*'] });
-      expect(hasPermission('any:permission')).toBe(true);
+      // Issue 009: 前端不再信任 '*' 作为超级权限标志
+      // 安全控制在后端 API 层，前端仅用于 UI 渲染辅助
+      expect(hasPermission('any:permission')).toBe(false);
     });
   });
 
