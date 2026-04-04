@@ -2,14 +2,16 @@ package io.mango.infra.feign.starter;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import io.mango.common.context.TenantContextHolder;
+import io.mango.common.context.TokenContextHolder;
+import io.mango.common.context.TraceContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Feign request interceptor for context propagation
+ * Feign request interceptor for context propagation.
  * <p>
- * Propagates tenant ID and trace ID through Feign calls.
- * TODO: Integrate with TenantContextHolder and TraceContextHolder when implemented
+ * Propagates tenant ID, trace ID, and JWT token through Feign calls.
  *
  * @author Mango
  */
@@ -19,41 +21,29 @@ public class FeignRequestInterceptor implements RequestInterceptor {
 
     private static final String TENANT_HEADER = "TENANT-ID";
     private static final String TRACE_HEADER = "TRACE-ID";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
 
     @Override
     public void apply(RequestTemplate template) {
-        // Try to get tenant ID from context holder
-        String tenantId = getTenantId();
+        // Propagate JWT token
+        String token = TokenContextHolder.getToken();
+        if (token != null && !token.isEmpty()) {
+            template.header(AUTHORIZATION_HEADER, token);
+            log.debug("Propagating JWT token");
+        }
+
+        // Propagate tenant ID
+        String tenantId = TenantContextHolder.getTenantId();
         if (tenantId != null && !tenantId.isEmpty()) {
             template.header(TENANT_HEADER, tenantId);
             log.debug("Propagating tenant ID: {}", tenantId);
         }
 
-        // Try to get trace ID from context holder
-        String traceId = getTraceId();
+        // Propagate trace ID
+        String traceId = TraceContextHolder.getTraceId();
         if (traceId != null && !traceId.isEmpty()) {
             template.header(TRACE_HEADER, traceId);
             log.debug("Propagating trace ID: {}", traceId);
         }
-    }
-
-    /**
-     * Get tenant ID from context holder
-     * TODO: Replace with TenantContextHolder.getTenantId() when available
-     */
-    private String getTenantId() {
-        // Placeholder - when TenantContextHolder is implemented, use:
-        // return TenantContextHolder.getTenantId();
-        return System.getProperty("mango.tenant.id");
-    }
-
-    /**
-     * Get trace ID from context holder
-     * TODO: Replace with TraceContextHolder.getTraceId() when available
-     */
-    private String getTraceId() {
-        // Placeholder - when TraceContextHolder is implemented, use:
-        // return TraceContextHolder.getTraceId();
-        return System.getProperty("mango.trace.id");
     }
 }

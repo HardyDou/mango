@@ -1,6 +1,6 @@
 package io.mango.user.starter.remote;
 
-import io.mango.common.result.R;
+import io.mango.user.api.UserApi;
 import io.mango.user.api.po.User;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,46 +11,26 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * User Feign client for remote user operations
+ * User Feign client - implements UserApi for remote calls
  *
  * @author Mango
  */
 @FeignClient(name = "user-service", path = "/user/profile")
-public interface UserFeignClient {
+public interface UserFeignClient extends UserApi {
 
-    /**
-     * Get user by ID
-     *
-     * @param userId user ID
-     * @return user profile
-     */
+    @Override
     @GetMapping("/{userId}")
-    R<User> getById(@PathVariable Long userId);
+    User getById(@PathVariable Long userId);
 
-    /**
-     * Create user profile
-     *
-     * @param user user profile
-     * @return void
-     */
+    @Override
     @PostMapping
-    R<Void> create(@RequestBody User user);
+    void create(@RequestBody User user);
 
-    /**
-     * Update user profile
-     *
-     * @param user user profile
-     * @return void
-     */
+    @Override
     @PutMapping
-    R<Void> update(@RequestBody User user);
+    void update(@RequestBody User user);
 
-    /**
-     * Delete user profile
-     *
-     * @param userId user ID
-     * @return void
-     */
+    @Override
     @DeleteMapping("/{userId}")
-    R<Void> delete(@PathVariable Long userId);
+    void delete(@PathVariable Long userId);
 }

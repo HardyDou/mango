@@ -19,6 +19,8 @@
     <modules>
         <module>mango-i18n-api</module>
         <module>mango-i18n-core</module>
+        <module>mango-i18n-starter</module>
+        <module>mango-i18n-starter-remote</module>
     </modules>
 
 </project>

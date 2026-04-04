@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -27,7 +28,7 @@ import java.util.*;
 public class CheckMojo extends AbstractMojo {
 
     /**
-     * 检查规则: all, duplicate, naming, method-length, class-length
+     * 检查规则: all, duplicate, naming, method-length, class-length, dependency
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -47,8 +48,14 @@ public class CheckMojo extends AbstractMojo {
     /**
      * 源码目录
      */
-    @Parameter(property = "baseDir", defaultValue = "${project.basedir}")
+    @Parameter(property = "baseDir")
     private String baseDir;
+
+    /**
+     * Maven Session
+     */
+    @org.apache.maven.plugins.annotations.Parameter(defaultValue = "${session}", readonly = true)
+    private org.apache.maven.execution.MavenSession session;
 
     /**
      * 方法最大行数
@@ -86,11 +93,13 @@ public class CheckMojo extends AbstractMojo {
             case "naming" -> checkNaming();
             case "method-length" -> checkMethodLength();
             case "class-length" -> checkClassLength();
+            case "dependency" -> checkDependency();
             case "all" -> {
                 checkDuplicates();
                 checkNaming();
                 checkMethodLength();
                 checkClassLength();
+                checkDependency();
             }
             default -> getLog().warn("Unknown rule: " + rule);
         }
@@ -271,6 +280,226 @@ public class CheckMojo extends AbstractMojo {
             }
             getLog().warn("Found " + issues.size() + " classes exceeding length limit");
         }
+    }
+
+    /**
+     * 检查模块依赖规范
+     *
+     * 规则:
+     * 1. *-api 模块不能依赖 *-core, *-starter, *-starter-remote
+     * 2. *-core 模块不能依赖 *-starter, *-starter-remote
+     * 3. bff-* 模块只能依赖 *-starter 或 *-starter-remote (不能直接依赖 *-api 或 *-core)
+     */
+    private void checkDependency() {
+        getLog().info("Checking module dependencies...");
+
+        // Resolve baseDir from session if not explicitly set
+        String effectiveBaseDir = baseDir;
+        if (effectiveBaseDir == null || effectiveBaseDir.isEmpty()) {
+            if (session != null && session.getExecutionRootDirectory() != null) {
+                effectiveBaseDir = session.getExecutionRootDirectory();
+            } else {
+                getLog().error("Cannot determine base directory. Please set -DbaseDir=<path>");
+                return;
+            }
+        }
+        getLog().info("Base directory: " + effectiveBaseDir);
+
+        Path rootPath = Paths.get(effectiveBaseDir);
+        if (rootPath == null || !Files.exists(rootPath)) {
+            getLog().error("Base directory does not exist: " + effectiveBaseDir);
+            return;
+        }
+
+        List<DependencyIssue> issues = new ArrayList<>();
+
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (file.toString().endsWith("/pom.xml")) {
+                        try {
+                            analyzePomDependency(file, issues);
+                        } catch (Exception e) {
+                            getLog().warn("Failed to analyze: " + file + " - " + e.getMessage());
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (DependencyIssue issue : issues) {
+                result.addIssue("DEPENDENCY", issue.severity, issue.file, 0,
+                        issue.description, "module-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " dependency violation(s)");
+        } else {
+            getLog().info("All dependency checks passed");
+        }
+    }
+
+    private void analyzePomDependency(Path pomFile, List<DependencyIssue> issues) {
+        try {
+            if (!Files.exists(pomFile)) {
+                getLog().warn("Pom file does not exist: " + pomFile);
+                return;
+            }
+            String content = Files.readString(pomFile);
+            if (content == null || content.isEmpty()) {
+                getLog().warn("Empty pom file: " + pomFile);
+                return;
+            }
+            String artifactId = extractArtifactId(content);
+            if (artifactId == null) return;
+
+            String groupId = extractGroupId(content);
+
+            // 确定模块类型
+            ModuleType moduleType = classifyModule(artifactId);
+
+            // 提取所有依赖
+            List<String> dependencies = extractDependencies(content);
+
+            for (String dep : dependencies) {
+                if (dep == null) continue;
+                String depArtifactId = extractArtifactIdFromDep(dep);
+                if (depArtifactId == null || depArtifactId.isEmpty()) continue;
+                String depGroupId = extractGroupIdFromDep(dep);
+
+                // 跳过外部依赖（非 io.mango）
+                if (!"io.mango".equals(depGroupId)) continue;
+
+                DependencyIssue issue = validateDependency(moduleType, artifactId, depArtifactId);
+                if (issue != null) {
+                    issue.file = pomFile.toString();
+                    issues.add(issue);
+                }
+            }
+        } catch (Exception e) {
+            getLog().warn("Error analyzing pom: " + pomFile + " - " + e.getClass().getName() + ": " + e.getMessage());
+        }
+    }
+
+    private ModuleType classifyModule(String artifactId) {
+        if (artifactId.endsWith("-api")) return ModuleType.API;
+        if (artifactId.endsWith("-core")) return ModuleType.CORE;
+        if (artifactId.endsWith("-starter-remote")) return ModuleType.STARTER_REMOTE;
+        if (artifactId.endsWith("-starter")) return ModuleType.STARTER;
+        if (artifactId.startsWith("bff-")) return ModuleType.BFF;
+        if (artifactId.startsWith("mango-") && !artifactId.equals("mango") && !artifactId.equals("mango-parent"))
+            return ModuleType.OTHER;
+        return ModuleType.ROOT;
+    }
+
+    private DependencyIssue validateDependency(ModuleType consumer, String consumerArtifact, String depArtifact) {
+        // API 模块规则
+        if (consumer == ModuleType.API) {
+            if (depArtifact.endsWith("-core")) {
+                return new DependencyIssue("CRITICAL", "*_api 模块不能依赖 *-core: " + consumerArtifact + " -> " + depArtifact);
+            }
+            if (depArtifact.endsWith("-starter")) {
+                return new DependencyIssue("CRITICAL", "*_api 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
+            }
+            if (depArtifact.endsWith("-starter-remote")) {
+                return new DependencyIssue("CRITICAL", "*_api 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
+            }
+        }
+
+        // Core 模块规则
+        if (consumer == ModuleType.CORE) {
+            if (depArtifact.endsWith("-starter")) {
+                return new DependencyIssue("CRITICAL", "*_core 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
+            }
+            if (depArtifact.endsWith("-starter-remote")) {
+                return new DependencyIssue("CRITICAL", "*_core 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
+            }
+        }
+
+        // BFF 模块规则
+        if (consumer == ModuleType.BFF) {
+            if (depArtifact.endsWith("-api")) {
+                return new DependencyIssue("MAJOR", "BFF 模块不能直接依赖 *-api，请使用 *-starter: " + consumerArtifact + " -> " + depArtifact);
+            }
+            if (depArtifact.endsWith("-core")) {
+                return new DependencyIssue("MAJOR", "BFF 模块不能直接依赖 *-core，请使用 *-starter: " + consumerArtifact + " -> " + depArtifact);
+            }
+        }
+
+        return null;
+    }
+
+    private String extractArtifactId(String content) {
+        int start = content.indexOf("<artifactId>");
+        if (start == -1) return null;
+        start += "<artifactId>".length();
+        int end = content.indexOf("</artifactId>", start);
+        if (end == -1) return null;
+        return content.substring(start, end).trim();
+    }
+
+    private String extractGroupId(String content) {
+        int start = content.indexOf("<groupId>");
+        if (start == -1) return null;
+        start += "<groupId>".length();
+        int end = content.indexOf("</groupId>", start);
+        if (end == -1) return null;
+        return content.substring(start, end).trim();
+    }
+
+    private List<String> extractDependencies(String content) {
+        List<String> deps = new ArrayList<>();
+        int depStart = content.indexOf("<dependencies>");
+        if (depStart == -1) return deps;
+        int depEnd = content.indexOf("</dependencies>", depStart);
+        if (depEnd == -1) return deps;
+
+        String depsSection = content.substring(depStart, depEnd);
+        int marker = 0;
+        while ((marker = depsSection.indexOf("<dependency>", marker)) != -1) {
+            int end = depsSection.indexOf("</dependency>", marker);
+            if (end == -1) break;
+            deps.add(depsSection.substring(marker, end + "</dependency>".length()));
+            marker = end + "</dependency>".length();
+        }
+        return deps;
+    }
+
+    private String extractArtifactIdFromDep(String dep) {
+        int start = dep.indexOf("<artifactId>");
+        if (start == -1) return "";
+        start += "<artifactId>".length();
+        int end = dep.indexOf("</artifactId>", start);
+        if (end == -1) return "";
+        return dep.substring(start, end).trim();
+    }
+
+    private String extractGroupIdFromDep(String dep) {
+        int start = dep.indexOf("<groupId>");
+        if (start == -1) return "";
+        start += "<groupId>".length();
+        int end = dep.indexOf("</groupId>", start);
+        if (end == -1) return "";
+        return dep.substring(start, end).trim();
+    }
+
+    private static class DependencyIssue {
+        String severity;
+        String description;
+        String file;
+
+        DependencyIssue(String severity, String description) {
+            this.severity = severity;
+            this.description = description;
+        }
+    }
+
+    private enum ModuleType {
+        ROOT, OTHER, API, CORE, STARTER, STARTER_REMOTE, BFF
     }
 
     private List<LengthIssue> findLongClasses() {

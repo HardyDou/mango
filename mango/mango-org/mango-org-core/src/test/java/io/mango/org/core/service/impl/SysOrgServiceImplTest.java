@@ -1,0 +1,124 @@
+package io.mango.org.core.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.org.api.entity.SysOrg;
+import io.mango.org.core.mapper.SysOrgMapper;
+import io.mango.org.core.service.ISysOrgService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+/**
+ * Unit tests for SysOrgServiceImpl
+ *
+ * @author Mango
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("SysOrgServiceImpl Tests")
+class SysOrgServiceImplTest {
+
+    @Mock
+    private SysOrgMapper orgMapper;
+
+    private SysOrgServiceImpl sysOrgService;
+
+    @BeforeEach
+    void setUp() {
+        sysOrgService = new SysOrgServiceImpl(orgMapper);
+    }
+
+    @Test
+    @DisplayName("tree should return organizations for given parentId and type")
+    void tree_withParentIdAndType_returnsOrganizations() {
+        SysOrg org1 = createSysOrg(1L, "Org 1", 1L, 1);
+        SysOrg org2 = createSysOrg(2L, "Org 2", 1L, 2);
+        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(org1, org2));
+
+        List<SysOrg> result = sysOrgService.tree(1L, 1);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    @DisplayName("tree should return empty list when no organizations")
+    void tree_noOrganizations_returnsEmptyList() {
+        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<SysOrg> result = sysOrgService.tree(null, null);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("children should return child organizations")
+    void children_withParentId_returnsChildren() {
+        SysOrg child = createSysOrg(2L, "Child Org", 1L, 1);
+        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(child));
+
+        List<SysOrg> result = sysOrgService.children(1L);
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).getPid());
+    }
+
+    @Test
+    @DisplayName("children should return empty list when no children")
+    void children_noChildren_returnsEmptyList() {
+        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<SysOrg> result = sysOrgService.children(999L);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("getById should return organization when exists")
+    void getById_existingOrg_returnsOrg() {
+        SysOrg org = createSysOrg(1L, "Test Org", 0L, 1);
+        when(orgMapper.selectById(1L)).thenReturn(org);
+
+        SysOrg result = sysOrgService.getById(1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+    }
+
+    @Test
+    @DisplayName("getById should return null when organization not found")
+    void getById_nonExistingOrg_returnsNull() {
+        when(orgMapper.selectById(999L)).thenReturn(null);
+
+        SysOrg result = sysOrgService.getById(999L);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("SysOrgServiceImpl implements ISysOrgService")
+    void implementsISysOrgService() {
+        assertTrue(sysOrgService instanceof ISysOrgService);
+    }
+
+    private SysOrg createSysOrg(Long id, String orgName, Long pid, Integer orgType) {
+        SysOrg org = new SysOrg();
+        org.setId(id);
+        org.setOrgName(orgName);
+        org.setPid(pid);
+        org.setOrgType(orgType);
+        org.setOrgCode("CODE_" + id);
+        org.setOrgStatus("1");
+        org.setOrgSort(1);
+        return org;
+    }
+}

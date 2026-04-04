@@ -2,11 +2,13 @@ package io.mango.infra.feign.starter;
 
 import feign.Logger;
 import feign.Retryer;
+import jakarta.servlet.Filter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(FeignProperties.class)
-@ConditionalOnClass({feign.Feign.class})
+@ConditionalOnClass({feign.Feign.class, Filter.class})
 @ConditionalOnProperty(prefix = "mango.feign", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FeignAutoConfiguration {
 
@@ -51,5 +53,30 @@ public class FeignAutoConfiguration {
     @ConditionalOnProperty(prefix = "mango.feign", name = "interceptor-enabled", havingValue = "true", matchIfMissing = true)
     public FeignRequestInterceptor feignRequestInterceptor() {
         return new FeignRequestInterceptor();
+    }
+
+    /**
+     * Configure Feign request interceptor for internal call HMAC signature
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.feign", name = "internal-call-enabled", havingValue = "true", matchIfMissing = true)
+    public InternalCallFeignInterceptor internalCallFeignInterceptor() {
+        return new InternalCallFeignInterceptor();
+    }
+
+    /**
+     * Configure Feign token filter to capture JWT from incoming requests
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.feign", name = "token-propagation-enabled", havingValue = "true", matchIfMissing = true)
+    public FilterRegistrationBean<FeignTokenFilter> feignTokenFilter() {
+        FilterRegistrationBean<FeignTokenFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new FeignTokenFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("feignTokenFilter");
+        registration.setOrder(FeignTokenFilter.ORDER);
+        return registration;
     }
 }

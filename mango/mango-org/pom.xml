@@ -19,6 +19,8 @@
     <modules>
         <module>mango-org-api</module>
         <module>mango-org-core</module>
+        <module>mango-org-starter</module>
+        <module>mango-org-starter-remote</module>
     </modules>
 
 </project>

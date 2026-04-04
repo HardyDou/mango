@@ -221,3 +221,59 @@ if (!passwordEncoder.matches(rawPassword, storedPassword)) {
 | 权限检查 | 接口必须有权限控制 |
 | 敏感数据 | 密码/身份证等需要脱敏 |
 | 加密 | 敏感数据传输必须 HTTPS |
+
+---
+
+## 8. 内部API双重保护
+
+### 8.1 流量架构
+
+| 流量类型 | 路径 | 保护 |
+|----------|------|------|
+| 外部请求 | 必须过Gateway | Gateway检查path_type |
+| 微服务间调用 | 不过Gateway | Feign传X-Internal-Call+签名 |
+| 直接访问微服务 | 禁止 | 网络层+InternalCallFilter+签名验签 |
+
+### 8.2 path_type 定义
+
+| type | 说明 | 行为 |
+|------|------|------|
+| 1 | 公开 | 放行 |
+| 2 | 需登录 | 验证Token |
+| 3 | 权限专用 | 验证权限码 |
+| 4 | 内部专用 | 403拒绝 |
+
+### 8.3 内部调用签名协议
+
+| Header | 说明 |
+|--------|------|
+| X-Internal-Call | 固定值 "true" |
+| X-Internal-Timestamp | 时间戳（毫秒） |
+| X-Internal-Nonce | UUID 防重放 |
+| X-Internal-Secret-Version | 密钥版本号 |
+| X-Internal-Signature | HMAC-SHA256(timestamp:nonce:method:path:query, secret) |
+
+**验签规则：**
+1. timestamp 偏差 < 5分钟
+2. nonce 不在 IKvStore 黑名单中（防重放）
+3. HMAC 签名匹配（支持多版本密钥）
+
+### 8.4 Nonce黑名单规范
+
+| 项目 | 规范 |
+|------|------|
+| 存储 | IKvStore（infra-kv） |
+| Key格式 | `nonce:{nonce}` |
+| TTL | = timestamp tolerance (300秒) |
+| 用途 | 防重放攻击 |
+
+### 8.5 密钥轮换规范
+
+- 支持多版本密钥同时生效
+- X-Internal-Secret-Version header 标识当前版本
+- 轮换完成后旧版本密钥可下线
+
+### 8.6 @Inner注解
+
+用于标识内部API（**仅代码文档作用**，无运行时拦截）。
+运行时拦截由 InternalCallFilter + Gateway path_type 实现。

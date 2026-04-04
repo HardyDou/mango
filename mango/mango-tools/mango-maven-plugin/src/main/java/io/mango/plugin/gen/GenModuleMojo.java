@@ -91,35 +91,28 @@ public class GenModuleMojo extends AbstractMojo {
     }
 
     private void createPom(Path moduleDir, String name) throws IOException {
-        String content = """
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>io.mango</groupId>
-    <artifactId>mango-%s</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
-
-    <name>Mango %s</name>
-
-    <modules>
-        <module>mango-%s-api</module>
-        <module>mango-%s-core</module>
-        <module>mango-%s-starter</module>
-        <module>mango-%s-starter-remote</module>
-    </modules>
-</project>
-""".formatted(
-                name.toLowerCase(),
-                capitalize(name),
-                name.toLowerCase(),
-                name.toLowerCase(),
-                name.toLowerCase(),
-                name.toLowerCase()
-        );
+        String lowerName = name.toLowerCase();
+        String capName = capitalize(name);
+        String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n" +
+                "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                "         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n" +
+                "    <modelVersion>4.0.0</modelVersion>\n" +
+                "\n" +
+                "    <groupId>io.mango</groupId>\n" +
+                "    <artifactId>mango-" + lowerName + "</artifactId>\n" +
+                "    <version>1.0.0-SNAPSHOT</version>\n" +
+                "    <packaging>pom</packaging>\n" +
+                "\n" +
+                "    <name>Mango " + capName + "</name>\n" +
+                "\n" +
+                "    <modules>\n" +
+                "        <module>mango-" + lowerName + "-api</module>\n" +
+                "        <module>mango-" + lowerName + "-core</module>\n" +
+                "        <module>mango-" + lowerName + "-starter</module>\n" +
+                "        <module>mango-" + lowerName + "-starter-remote</module>\n" +
+                "    </modules>\n" +
+                "</project>\n";
         Files.writeString(moduleDir.resolve("pom.xml"), content);
     }
 

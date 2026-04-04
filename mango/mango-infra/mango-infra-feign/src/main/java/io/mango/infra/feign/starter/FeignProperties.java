@@ -1,8 +1,8 @@
 package io.mango.infra.feign.starter;
 
+import feign.Logger;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.openfeign.Logger;
 
 /**
  * Feign properties configuration

@@ -24,16 +24,93 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Boot Web -->
+        <!-- MyBatis-Plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Mango Common -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+
+        <!-- Spring Security Crypto (for BCrypt password encoding) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Web (for WebMvcConfigurer) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- MyBatis-Plus -->
+        <!-- Mango Permission API (for SysUserApi) -->
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-permission-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango Permission Core (for mappers like SysRoleMapper) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-permission-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango KV Store API (for AntiService) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-kv-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango KV Store Redis (default Redis implementation) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-kv-redis</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango Captcha API (for CaptchaInterceptor) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-captcha-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

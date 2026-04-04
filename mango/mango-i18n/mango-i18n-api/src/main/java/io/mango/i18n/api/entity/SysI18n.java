@@ -1,6 +1,7 @@
 package io.mango.i18n.api.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.mango.common.po.BasePO;
@@ -31,6 +32,7 @@ public class SysI18n extends BasePO {
     /**
      * Chinese content
      */
+    @TableField("zh_cn")
     private String zhCn;
 
     /**

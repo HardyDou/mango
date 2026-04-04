@@ -11,14 +11,137 @@
     </parent>
 
     <artifactId>mango-bff-admin</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <name>Mango BFF Admin</name>
-    <description>Mango BFF Admin Module - Frontend aggregation layer</description>
+    <description>Mango BFF layer for admin frontend - aggregates user, permission, i18n services</description>
 
-    <modules>
-        <module>mango-bff-admin-api</module>
-        <module>mango-bff-admin-core</module>
-    </modules>
+    <dependencies>
+        <!-- Mango Common -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+
+        <!-- ========== 业务 Starter (BFF 通过 starter 获得 API 访问能力) ========== -->
+        <!-- 单体模式使用本地 starter，微服务部署时使用 starter-remote -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-user-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-org-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-area-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-ai-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-i18n-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-permission-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-captcha-starter</artifactId>
+        </dependency>
+
+        <!-- ========== 认证安全 (Auth) ========== -->
+        <!-- gateway-starter: AuthFilter (JWT验证过滤器) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-gateway-starter</artifactId>
+        </dependency>
+        <!-- KV Store (for captcha and other modules) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-kv-starter</artifactId>
+        </dependency>
+        <!-- auth-starter: AuthController (登录接口) + AuthSecurityConfig (安全配置) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-auth-starter</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starters -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <!-- H2 Database -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- MyBatis-Plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+
+        <!-- MyBatis-Spring override for Spring 6.1 compatibility -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+        </dependency>
+
+        <!-- OpenAPI Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.2.3</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

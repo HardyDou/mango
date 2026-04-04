@@ -19,6 +19,8 @@
     <modules>
         <module>mango-permission-api</module>
         <module>mango-permission-core</module>
+        <module>mango-permission-starter</module>
+        <module>mango-permission-starter-remote</module>
     </modules>
 
 </project>

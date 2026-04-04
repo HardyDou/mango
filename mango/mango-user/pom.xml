@@ -19,6 +19,8 @@
     <modules>
         <module>mango-user-api</module>
         <module>mango-user-core</module>
+        <module>mango-user-starter</module>
+        <module>mango-user-starter-remote</module>
     </modules>
 
 </project>

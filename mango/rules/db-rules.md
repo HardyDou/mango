@@ -44,19 +44,62 @@ userName VARCHAR(50);
 orderStatus VARCHAR(20);
 ```
 
-### 2.2 通用字段
+### 2.2 通用字段（必须）
 
 ```sql
--- 每个表必须包含
+-- 每个表必须包含以下统一字段
 id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-deleted TINYINT DEFAULT 0 COMMENT '删除标记 0-未删除 1-已删除',
-
--- 大表加
-creator BIGINT COMMENT '创建人ID',
-modifier BIGINT COMMENT '更新人ID',
+create_by VARCHAR(64) DEFAULT NULL COMMENT '创建人',
+create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+update_by VARCHAR(64) DEFAULT NULL COMMENT '修改人',
+update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+del_flag TINYINT NOT NULL DEFAULT 0 COMMENT '删除标记: 0-正常, 1-已删除',
+version INT NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
 ```
+
+### 2.3 租户字段（按需）
+
+```sql
+-- 开启多租户时必须包含
+tenant_id BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
+```
+
+### 2.4 Auto Fill 配置
+
+MyBatis-Plus 自动填充字段，无需手动处理：
+
+| 字段 | 填充时机 | 填充值 |
+|------|---------|--------|
+| `create_by` | INSERT | 当前用户ID/用户名 |
+| `create_time` | INSERT | 当前时间 |
+| `update_by` | INSERT/UPDATE | 当前用户ID/用户名 |
+| `update_time` | INSERT/UPDATE | 当前时间 |
+| `del_flag` | INSERT | 0（正常） |
+
+配置示例：
+```java
+@Component
+public class MangoMetaObjectHandler implements MetaObjectHandler {
+    @Override
+    public void insertFill(MetaObject metaObject) {
+        this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictInsertFill(metaObject, "createBy", String.class, getCurrentUser());
+        this.strictInsertFill(metaObject, "updateBy", String.class, getCurrentUser());
+        this.strictInsertFill(metaObject, "delFlag", Integer.class, 0);
+        this.strictInsertFill(metaObject, "version", Integer.class, 0);
+    }
+
+    @Override
+    public void updateFill(MetaObject metaObject) {
+        this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+        this.strictUpdateFill(metaObject, "updateBy", String.class, getCurrentUser());
+    }
+}
+```
+
+### 2.5 字段类型选择
 
 ### 2.3 字段类型选择
 
@@ -164,12 +207,13 @@ WHERE id IN (1, 2, 3);
 | 检查项 | 说明 |
 |--------|------|
 | 表名 | 是否符合命名规范 |
-| 字段 | 是否有通用字段（id, created_at, updated_at, deleted） |
-| 主键 | 是否使用 BIGINT 自增 |
-| 索引 | 是否有合适索引 |
+| 字段 | 是否有统一字段（id, create_by, create_time, update_by, update_time, del_flag, version, remark） |
+| 主键 | 是否使用 BIGINT AUTO_INCREMENT |
+| 索引 | 是否有合适索引（注意 del_flag 不适合单独索引） |
 | 字段类型 | 是否合适 |
 | 注释 | 是否有注释 |
 | 敏感数据 | 是否脱敏 |
+| 租户 | 多租户表是否包含 tenant_id |
 
 ### 6.2 DDL 模板
 
@@ -186,11 +230,19 @@ CREATE TABLE sys_user (
     real_name VARCHAR(50) COMMENT '真实姓名',
     mobile VARCHAR(20) COMMENT '手机号',
     email VARCHAR(100) COMMENT '邮箱',
-    status TINYINT DEFAULT 1 COMMENT '状态 0-禁用 1-启用',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    deleted TINYINT DEFAULT 0 COMMENT '删除标记 0-未删除 1-已删除',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
+    -- 统一字段（必须）
+    create_by VARCHAR(64) DEFAULT NULL COMMENT '创建人',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_by VARCHAR(64) DEFAULT NULL COMMENT '修改人',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    del_flag TINYINT NOT NULL DEFAULT 0 COMMENT '删除标记: 0-正常, 1-已删除',
+    version INT NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+    remark VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    -- 租户字段（按需）
+    -- tenant_id BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
     INDEX idx_username (username),
-    INDEX idx_mobile (mobile)
+    INDEX idx_mobile (mobile),
+    INDEX idx_del_flag (del_flag)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 ```

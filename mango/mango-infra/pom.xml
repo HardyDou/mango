@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mango-infra</artifactId>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <name>Mango Infra</name>
+    <description>Mango Infrastructure Module - Third-party middleware integration</description>
+
+    <modules>
+        <!-- Web 层基础设施 -->
+        <module>mango-infra-web</module>
+        <!-- Database & MyBatis -->
+        <module>mango-infra-db</module>
+        <!-- Redis -->
+        <module>mango-infra-redis</module>
+        <!-- Feign RPC (OpenFeign) -->
+        <module>mango-infra-feign</module>
+        <!-- Observability (Micrometer/Tracing) -->
+        <module>mango-infra-observability</module>
+        <!-- API Documentation (OpenAPI/Swagger) -->
+        <module>mango-infra-doc</module>
+        <!-- SSE (Server-Sent Events) -->
+        <module>mango-infra-sse</module>
+        <!-- WebSocket -->
+        <module>mango-infra-websocket</module>
+        <!-- KV Store (Replay Protection / Idempotency / Rate Limiting) -->
+        <module>mango-infra-kv</module>
+    </modules>
+
+</project>

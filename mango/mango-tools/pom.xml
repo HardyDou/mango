@@ -20,4 +20,8 @@
         <module>mango-maven-plugin</module>
     </modules>
 
+    <properties>
+        <maven.version>3.9.6</maven.version>
+    </properties>
+
 </project>

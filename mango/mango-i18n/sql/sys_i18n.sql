@@ -4,7 +4,7 @@
 
 -- Create sys_i18n table
 CREATE TABLE IF NOT EXISTS `sys_i18n` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+  `id` BIGINT(20) NOT NULL COMMENT 'Primary key',
   `name` VARCHAR(100) NOT NULL COMMENT 'i18n key',
   `zh_cn` VARCHAR(500) DEFAULT NULL COMMENT 'Chinese content',
   `en` VARCHAR(500) DEFAULT NULL COMMENT 'English content',

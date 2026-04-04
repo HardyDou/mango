@@ -1,0 +1,39 @@
+package io.mango.bff.admin.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+/**
+ * Spring Security configuration for BFF Admin
+ * Security is disabled for /auth/** endpoints, enabled for everything else
+ *
+ * @author Mango
+ */
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // Only apply security to non-auth endpoints
+        RequestMatcher nonAuthMatcher = new NegatedRequestMatcher(
+            new AntPathRequestMatcher("/auth/**")
+        );
+        
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .securityMatcher(nonAuthMatcher)
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .httpBasic(basic -> basic.realmName("Mango"))
+            .formLogin(form -> form.disable());
+
+        return http.build();
+    }
+}

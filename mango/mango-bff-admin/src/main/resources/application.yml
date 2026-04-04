@@ -1,0 +1,76 @@
+server:
+  port: 5555
+
+spring:
+  application:
+    name: mango-bff-admin
+
+  # H2 Embedded Database
+  datasource:
+    url: jdbc:h2:mem:mangodb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+  # H2 Console (for debugging)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # SQL init disabled - schema created by MyBatis-Plus
+  sql:
+    init:
+      mode: never
+
+# MyBatis-Plus
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+
+# Mango JWT (must match mango.jwt.secret in auth module)
+mango:
+  jwt:
+    secret: mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits
+  gateway:
+    jwt-secret: mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits
+  crypto:
+    sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
+    sm4-iv:
+  flyway:
+    enabled: false
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    io.mango: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+    org.mybatis: DEBUG
+
+# OpenAPI Documentation
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  packages-to-scan: io.mango

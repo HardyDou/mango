@@ -10,8 +10,8 @@ Mango 是一个 For AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agent 
 |------|------|
 | 前端 | Vue 3 + Element Plus |
 | 后端 | Java 17 + Spring Boot 3.x + MyBatis-Plus |
-| 数据库 | MySQL |
-| 缓存 | Redis |
+| 数据库 |H2/MySQL/可扩展 |
+| KV存储方案 | Redis/db/memory |
 | 注册/配置 | Nacos |
 
 ## 已实现模块
@@ -21,7 +21,7 @@ Mango 是一个 For AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agent 
 | `mango-parent` | Maven 父项目，统一管理依赖和插件版本 |
 | `mango-common` | 公共基础组件 (R/Require/BizCode/BasePO/BaseVO/PageVO) |
 | `mango-generator` | 代码生成模板 (Velocity 模板) |
-| `mango-tools` | Mango Maven 插件 (gen-module/gen-crud/gen-permission/check/evaluate) |
+| `mango-tools` | Mango Maven 插件 (gen-module/gen-crud/gen-permission/check) |
 
 ## 模块结构
 
@@ -60,6 +60,7 @@ mango/
 
 ### 测试
 - `rules/test-rules.md` → 测试覆盖率、边界条件
+- `rules/backend-development-rules.md` → 后端开发规范（交付前端前必须通过测试）
 
 ### 持久化
 - `rules/persistence-rules.md` → 事务规范

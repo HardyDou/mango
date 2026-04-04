@@ -16,6 +16,8 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class UserInfoVO extends BaseVO {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * User ID
      */

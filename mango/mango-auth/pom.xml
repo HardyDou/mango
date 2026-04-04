@@ -19,6 +19,8 @@
     <modules>
         <module>mango-auth-api</module>
         <module>mango-auth-core</module>
+        <module>mango-auth-starter</module>
+        <module>mango-auth-starter-remote</module>
     </modules>
 
 </project>

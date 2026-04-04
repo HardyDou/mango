@@ -1,0 +1,2 @@
+io.mango.infra.websocket.config.MangoWebSocketAutoConfiguration
+io.mango.infra.websocket.config.WebSocketConfig
