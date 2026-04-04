@@ -1,3 +1,9 @@
+---
+paths:
+  - "**/*.java"
+  - "**/*.sql"
+---
+
 # 命名规范 (naming-rules)
 
 ## 1. Java 命名

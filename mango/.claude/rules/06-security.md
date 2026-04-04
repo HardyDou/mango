@@ -1,3 +1,10 @@
+---
+paths:
+  - "**/*Controller.java"
+  - "**/*Service.java"
+  - "**/*Mapper.java"
+---
+
 # 安全规范 (security-rules)
 
 ## 1. 硬编码禁止

@@ -1,125 +1,114 @@
-# CLAUDE.md
+# 电子保函系统 - AI 协作指南
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 项目概述
 
-## Project Overview
+电子保函系统是 B2B 平台，连接上游招标平台与下游金融机构（银行、保险、担保公司）。
 
-Electronic Guarantee System (电子保函系统) - A B2B platform connecting:
-- **Upstream**: Trading systems (public resource transaction centers, bidding platforms)
-- **Downstream**: Financial institutions (banks, insurance companies, guarantee companies)
+### 业务类型
+- 银行电子保函
+- 分离保函（担保公司 + 银行）
+- 保险保证险
+- 担保保函
 
-## Documentation Structure
-
-The project currently contains requirement documents in `docs/`:
-
+### 核心流程
 ```
-docs/
-├── 01_上游交易系统对接/      # Upstream interface documentation
-├── 02_电子保函平台说明/      # Core business documentation
-├── 03_下游出函机构/          # Downstream interface documentation
-├── 04_其它/                  # Other documents
-├── 05_电子保函需求分析/       # Original requirement analysis
-└── 05_电子保函需求分析_v2/   # Latest requirement analysis (v2)
+项目同步 → 申请 → 支付 → 出函 → 签章 → 验真 → 注销/索赔
 ```
 
-Key documentation:
-- `docs/05_电子保函需求分析_v2/README.md` - Main requirement index
-- `AGENTS.md` - Project guidelines and technical overview
+---
 
-## Business Domain
+## ⚠️ 强制规范
 
-### Business Types
-- Bank electronic guarantees
-- Separate bank guarantees (guarantee company + bank)
-- Insurance guarantee policies
-- Guarantee guarantees
+### 业务系统（电子保函）
 
-### Use Cases
-- Bid guarantee (≤80万)
-- Performance guarantee (5-10% of contract value)
-- Quality guarantee (3% of contract value)
-- Migrant worker wage guarantee
+业务规范在 `docs/` 目录，**违反即错误**：
 
-### Core Flow
-```
-Project Info Sync → Application → Payment → Guarantee Issuance → E-Signature → Verification
-                                    ↓
-                            Cancellation/Claims
-```
+| 任务 | 规范 |
+|------|------|
+| 上游对接 | `docs/01_上游交易系统对接/` |
+| 平台核心 | `docs/02_电子保函平台说明/` |
+| 下游对接 | `docs/03_下游出函机构/` |
+| 需求分析 | `docs/05_电子保函需求分析_v2/` |
 
-## Key Technical Points
+### 技术实现（mango/mango-web）
 
-### 1. Interface Security (Critical)
+技术规范在 `mango/` 目录，**必须遵循**：
 
-**Signature Algorithms**:
-| Algorithm | Key | Platforms |
-|-----------|-----|----------|
-| SM3 | appkey + appsecret | 数字泸州, 眉山 |
-| MD5 | appkey + appsecret | 蔓延 |
-| SM2 | CA certificate | Some standards |
+| 任务 | 规范 |
+|------|------|
+| Java 代码 | `mango/rules/01-code.md` |
+| 命名规范 | `mango/rules/02-naming.md` |
+| API 设计 | `mango/rules/03-api.md` |
+| 数据库 | `mango/rules/04-db.md` |
+| 模块分层 | `mango/rules/05-module.md` |
+| 安全规范 | `mango/rules/06-security.md` |
+| 事务处理 | `mango/rules/07-persistence.md` |
+| 测试 | `mango/rules/08-test.md` |
+| UI 组件 | `mango/rules/09-ui.md` |
+| 开发流程 | `mango/rules/10-dev-flow.md` |
 
-**Encryption**:
-| Scheme | Key Source | Platform |
-|--------|------------|----------|
-| Digital envelope (SM4 + SM2) | Bidder CA certificate | 数字泸州 |
-| Platform key (SM4) | Platform appSecret | 江西省 |
+---
 
-### 2. Technology Stack
+## 关键技术点
 
-| Component | Selection |
-|-----------|-----------|
-| Framework | Pig (Spring Cloud Alibaba) |
-| Workflow | Flowable |
-| Distributed Transaction | Seata AT |
-| Gateway | Spring Cloud Gateway |
-| Registry/Config | Nacos |
-| Database | MySQL |
-| Cache | Redis |
+### 接口签名算法
 
-## Platform Configuration
+| 算法 | 平台 |
+|------|------|
+| SM3 | 数字泸州、眉山 |
+| MD5 | 蔓延 |
+| SM2 | 部分标准 |
 
-Each upstream platform requires independent configuration:
-- `platformCode` - Platform code
-- `signAlgorithm` - Signature algorithm (SM3/MD5/SM2)
-- `encryptAlgorithm` - Encryption algorithm
-- `signParams` - Parameters for signing
+### 加密方案
+
+| 方案 | 密钥来源 | 平台 |
+|------|---------|------|
+| 数字信封 (SM4+SM2) | 投标人 CA 证书 | 数字泸州 |
+| 平台密钥 (SM4) | 平台 appSecret | 江西省 |
+
+### 平台配置
+
+每个上游平台需独立配置：
+- `platformCode` - 平台代码
+- `signAlgorithm` - 签名算法
+- `encryptAlgorithm` - 加密算法
+- `signParams` - 签名参数
 - `secretKey` - appSecret
-- `caCertPath` - CA certificate path (digital envelope mode)
+- `caCertPath` - CA 证书路径
 
-## Common Tasks
+---
 
-- Read requirement documents in `docs/05_电子保函需求分析_v2/`
-- Check upstream interface specifications in `docs/01_上游交易系统对接/`
-- Review downstream interface specs in `docs/03_下游出函机构/`
-- Reference AGENTS.md for technical overview
-
-## PRD Output
-
-Product requirements and prototypes in `prd/`:
+## 目录结构
 
 ```
-prd/
-├── plan_prd.md                           # PRD development plan
-├── 01-投标人门户/
-│   ├── PRD-投标人门户.md                 # Portal system PRD
-│   └── 原型/
-│       └── index.html                    # Vue3 + Element Plus prototype
-└── 02-担保公司管理后台/
-    ├── PRD-担保公司管理后台.md           # Admin system PRD
-    └── 原型/
-        └── index.html                    # Vue3 + Element Plus prototype
+company02/
+├── CLAUDE.md              # 本文件
+├── docs/                  # 业务文档
+│   ├── 01_上游交易系统对接/
+│   ├── 02_电子保函平台说明/
+│   ├── 03_下游出函机构/
+│   └── 05_电子保函需求分析_v2/
+├── prd/                   # PRD + 原型
+├── mango/                 # 后端脚手架
+│   ├── rules/            # 技术规范
+│   └── CLAUDE.md         # 技术实现指南
+└── mango-web/            # 前端脚手架
 ```
 
-### Portal System (投标人门户)
-- **Target Users**: Bidders (enterprises)
-- **Core Features**: Project hall, Application, Guarantee management, Order management, Invoice management
+---
 
-### Admin System (担保公司管理后台)
-- **Target Users**: Guarantee companies, banks, insurance companies
-- **Core Features**: Dashboard, Application review, Guarantee issuance, Surrender management, Risk control, Finance reports
+## PRD 输出
 
-### Technology Stack (Frontend)
-- Vue 3 + Element Plus
-- Vite (build tool)
-- Vue Router 4
-- Pinia (state management)
+PRD 放在 `prd/` 目录，包含：
+- `01-投标人门户/` - 投标人端 PRD + 原型
+- `02-担保公司管理后台/` - 管理端 PRD + 原型
+
+---
+
+## 上下文管理
+
+| 条件 | AI 行为 |
+|------|---------|
+| 超过 60% | 提示用户 |
+| 超过 80% | 建议总结 |
+| 超过 90% | 强制总结 |

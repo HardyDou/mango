@@ -1,3 +1,10 @@
+---
+paths:
+  - "**/pom.xml"
+  - "**/*Starter.java"
+  - "**/*Api.java"
+---
+
 # 模块分层规范 (module-rules)
 
 ## 一，三层架构

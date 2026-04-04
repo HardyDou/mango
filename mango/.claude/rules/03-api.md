@@ -1,3 +1,9 @@
+---
+paths:
+  - "**/*Controller.java"
+  - "**/*Api.java"
+---
+
 # API 规范 (api-rules)
 
 ## 1. RESTful URL 设计

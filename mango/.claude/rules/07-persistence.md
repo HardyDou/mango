@@ -1,3 +1,9 @@
+---
+paths:
+  - "**/*Service.java"
+  - "**/*Controller.java"
+---
+
 # 持久化规范 (persistence-rules)
 
 ## 1. 事务配置切换
