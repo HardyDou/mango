@@ -81,7 +81,57 @@ mvn pmd:check                      # PMD 代码分析
 
 ## 核心规范要点
 
-### 模块分层
+### 原则 1: 业务与部署拓扑分离
+
+同一份代码支持单体/微服务/任意聚合部署：
+```
+*-core      → 纯业务逻辑，不知道怎么被调用
+*-starter   → 本地调用（单体部署时注入）
+*-starter-remote → Feign 调用（微服务部署时注入）
+```
+
+### 原则 2: Gateway 协议无关
+
+Gateway 不绑定技术栈。业务代码感知不到网关存在。
+
+### 原则 3: 禁止条件分支
+
+不要 `if (deployment == microservices)`。用 SPI 注入替代：
+```java
+// ✅ 正确
+@Autowired ILocker locker;
+
+// ❌ 禁止
+if (isMicroservice()) {
+    redisLocker.lock(...);
+} else {
+    localLocker.lock(...);
+}
+```
+
+### 原则 4: SPI 注入替代条件
+
+`@Autowired IXxxService` + `@ConditionalOnProperty` 自动决定实现。
+
+### 原则 5: 数据访问层抽象（强制）
+
+**所有 Redis/DB/Memory 场景必须通过 IUseCase 接口，禁止直接调用实现。**
+
+| 接口 | 用途 | 禁止直接调用 |
+|------|------|------------|
+| ICache | 缓存 | `redisTemplate.opsForValue()` |
+| ILocker | 分布式锁 | `RedissonClient.getLock()` |
+| ITokenStore | Token 存储 | 直接操作 Redis String |
+| IIdempotent | 防重复提交 | 直接 setnx |
+| ITimeWindow | 时间窗口限流 | `zadd` + `zrangebyscore` |
+| IRateLimiter | 令牌桶限流 | 任何限流实现 |
+
+**TTL 是每个接口的第一等公民**，禁止硬编码 TTL。
+
+**强制检查**：`mvn mango:check` 检测以下违规，违者构建失败：
+1. `new RedisLockerImpl()` — 必须 `@Autowired ILocker`
+2. `redisTemplate.opsForZSet()` — 必须注入 IZSet
+3. 硬编码 TTL — 必须从配置或参数传入
 
 每个服务包含 4 个子模块：
 - `-api` - 接口定义（po/vo/dto/XxxApi）
