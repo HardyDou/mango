@@ -81,7 +81,7 @@ temp/
 
 # ============ Claude / AI Tooling ============
 .claude/
-.mango/sessions/
+.mango/
 *.claude.backup
 
 # ============ Database ============
