@@ -38,8 +38,8 @@
         <module>mango-infra-sse</module>
         <!-- WebSocket -->
         <module>mango-infra-websocket</module>
-        <!-- KV Store (Replay Protection / Idempotency / Rate Limiting) -->
-        <module>mango-infra-kv</module>
+        <!-- DAL (Data Access Layer - KV/ICache/ILocker abstraction) -->
+        <module>mango-infra-dal</module>
     </modules>
 
 </project>
