@@ -1,0 +1,102 @@
+# ============ Build Artifacts ============
+**/target/
+**/build/
+**/out/
+
+# ============ Java ============
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+!.mvn/wrapper/maven-wrapper.jar
+
+# ============ Maven ============
+.mvn/
+mvnw
+mvnw.cmd
+
+# ============ Gradle ============
+.gradle/
+**/build/
+
+# ============ Node / Frontend ============
+**/node_modules/
+**/.npm
+**/.eslintcache
+**/.parcel-cache
+**/.vite
+**/dist
+**/dist-ssr
+**/*.local
+
+# ============ IDE ============
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============ Logs ============
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============ Test ============
+**/test-output/
+**/surefire-reports/
+**/junit.xml
+*.test.output
+
+# ============ Coverage ============
+**/jacoco/
+*.exec
+coverage/
+
+# ============ Environment / Secrets ============
+.env
+.env.local
+.env.*.local
+*.pem
+*.pkcs8
+*.key
+secrets/
+credentials/
+
+# ============ Temp Files ============
+*.tmp
+*.bak
+*.backup
+*.swp
+tmp/
+temp/
+
+# ============ Claude / AI Tooling ============
+.claude/
+.mango/sessions/
+*.claude.backup
+
+# ============ Database ============
+**/db.mv.db
+**/db.trace.db
+**/*.h2.db
+
+# ============ Large SQL Data (China Area Division) ============
+**/mango-area/sql/*.sql
+!**/mango-area/sql/README.md
+
+# ============ Spring Boot ============
+**/spring-boot-devtools.properties
+**/devtools.launch
+
+# ============ Misc ============
+*.orig
+replay_pid*
