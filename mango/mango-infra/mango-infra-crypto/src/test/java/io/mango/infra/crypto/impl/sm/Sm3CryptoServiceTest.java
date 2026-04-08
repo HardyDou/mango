@@ -52,4 +52,14 @@ class Sm3CryptoServiceTest {
         String hash = sm3Service.hash("abc");
         assertEquals("66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0", hash);
     }
+
+    @Test
+    void hash_nullString_throwsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> sm3Service.hash((String) null));
+    }
+
+    @Test
+    void hash_nullBytes_throwsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> sm3Service.hash((byte[]) null));
+    }
 }
