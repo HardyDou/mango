@@ -10,22 +10,29 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * SM4 symmetric encryption/decryption service implementation.
- * Supports ECB and CBC modes with PKCS5Padding.
+ * Supports ECB and CBC modes with configurable padding.
  */
 @Service
 public class Sm4CryptoService implements ICryptoService {
 
     private static final String ALGORITHM = "SM4";
-    private static final String ECB_TRANSFORMATION = "SM4/ECB/PKCS5Padding";
-    private static final String CBC_TRANSFORMATION = "SM4/CBC/PKCS5Padding";
 
     private final CryptoProperties.Sm4Config config;
 
     public Sm4CryptoService(CryptoProperties properties) {
         this.config = properties.getSm4();
+        validateConfig();
+    }
+
+    private void validateConfig() {
+        String mode = config.getMode();
+        if (mode == null || (!mode.equalsIgnoreCase("CBC") && !mode.equalsIgnoreCase("ECB"))) {
+            throw new IllegalStateException("SM4 mode must be CBC or ECB, got: " + mode);
+        }
     }
 
     @Override
@@ -37,11 +44,13 @@ public class Sm4CryptoService implements ICryptoService {
     public String encrypt(String plaintext, String iv) {
         try {
             SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
-            String transformation = (iv != null) ? CBC_TRANSFORMATION : ECB_TRANSFORMATION;
+            String transformation = buildTransformation();
+            boolean isCbc = "CBC".equalsIgnoreCase(config.getMode());
 
             Cipher cipher = Cipher.getInstance(transformation);
-            if (iv != null) {
-                IvParameterSpec ivSpec = new IvParameterSpec(decodeKey(iv));
+            if (isCbc) {
+                byte[] ivBytes = (iv != null) ? decodeKey(iv) : generateIv();
+                IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
                 cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
             } else {
                 cipher.init(Cipher.ENCRYPT_MODE, keySpec);
@@ -63,10 +72,14 @@ public class Sm4CryptoService implements ICryptoService {
     public String decrypt(String ciphertext, String iv) {
         try {
             SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
-            String transformation = (iv != null) ? CBC_TRANSFORMATION : ECB_TRANSFORMATION;
+            String transformation = buildTransformation();
+            boolean isCbc = "CBC".equalsIgnoreCase(config.getMode());
 
             Cipher cipher = Cipher.getInstance(transformation);
-            if (iv != null) {
+            if (isCbc) {
+                if (iv == null) {
+                    throw new IllegalArgumentException("IV is required for CBC mode decryption");
+                }
                 IvParameterSpec ivSpec = new IvParameterSpec(decodeKey(iv));
                 cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
             } else {
@@ -80,11 +93,22 @@ public class Sm4CryptoService implements ICryptoService {
         }
     }
 
+    private String buildTransformation() {
+        String mode = config.getMode().toUpperCase();
+        String padding = config.getPadding();
+        return ALGORITHM + "/" + mode + "/" + padding;
+    }
+
+    private byte[] generateIv() {
+        byte[] iv = new byte[16];
+        new java.security.SecureRandom().nextBytes(iv);
+        return iv;
+    }
+
     private byte[] decodeKey(String key) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }
-        // Try Base64 first, then Hex
         try {
             return Base64.decode(key);
         } catch (Exception e) {

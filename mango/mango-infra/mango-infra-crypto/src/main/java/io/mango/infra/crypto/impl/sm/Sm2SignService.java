@@ -60,8 +60,9 @@ public class Sm2SignService implements ISignService {
 
             SM2Signer signer = new SM2Signer();
             ParametersWithID params = new ParametersWithID(privateKeyParams, config.getUserId().getBytes(StandardCharsets.UTF_8));
+            byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
             signer.init(true, params);
-            signer.update(data.getBytes(StandardCharsets.UTF_8), 0, data.getBytes(StandardCharsets.UTF_8).length);
+            signer.update(dataBytes, 0, dataBytes.length);
 
             byte[] signature = signer.generateSignature();
             return Base64.toBase64String(signature);
@@ -90,8 +91,9 @@ public class Sm2SignService implements ISignService {
 
             SM2Signer verifier = new SM2Signer();
             ParametersWithID params = new ParametersWithID(publicKeyParams, config.getUserId().getBytes(StandardCharsets.UTF_8));
+            byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
             verifier.init(false, params);
-            verifier.update(data.getBytes(StandardCharsets.UTF_8), 0, data.getBytes(StandardCharsets.UTF_8).length);
+            verifier.update(dataBytes, 0, dataBytes.length);
 
             return verifier.verifySignature(Base64.decode(signature));
         } catch (Exception e) {

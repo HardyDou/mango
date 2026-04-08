@@ -13,8 +13,6 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class Sm3CryptoService {
 
-    private static final String ALGORITHM = "SM3";
-
     /**
      * Hash data using SM3.
      *
