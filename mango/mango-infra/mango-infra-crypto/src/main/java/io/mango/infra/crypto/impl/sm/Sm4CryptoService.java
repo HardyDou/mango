@@ -122,8 +122,11 @@ public class Sm4CryptoService implements ICryptoService {
         if (ciphertext == null) {
             throw new IllegalArgumentException("ciphertext cannot be null");
         }
-        // iv parameter is ignored — ciphertext always contains embedded IV in CBC mode
-        // (encrypt always prepends IV regardless of whether IV was auto-generated or explicit)
+        // Note: iv parameter is ignored in CBC mode. Ciphertext must have IV
+        // prepended (Base64(IV(16 bytes) || encryptedPayload)) — encrypt()
+        // always embeds IV regardless of whether it was auto-generated or
+        // provided via encrypt(plaintext, iv). This is intentional: self-contained
+        // ciphertext does not require external IV management.
         try {
             boolean isCbc = "CBC".equalsIgnoreCase(config.getMode());
 

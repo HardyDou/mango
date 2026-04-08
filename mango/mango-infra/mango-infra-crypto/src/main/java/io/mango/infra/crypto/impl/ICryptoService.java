@@ -31,10 +31,20 @@ public interface ICryptoService {
     String decrypt(String ciphertext);
 
     /**
-     * Decrypt ciphertext with custom IV.
+     * Decrypt ciphertext.
      *
-     * @param ciphertext ciphertext (Base64 encoded)
-     * @param iv         IV (Base64 encoded)
+     * <p>IV handling: this method always extracts the IV from the ciphertext prefix
+     * (first 16 bytes in CBC mode). The {@code iv} parameter is accepted for
+     * API compatibility but is ignored — ciphertext must have IV prepended during
+     * encryption ({@link #encrypt(String)} or {@link #encrypt(String, String)}).
+     *
+     * <p>If you need to decrypt ciphertext without an embedded IV, use a separate
+     * service configuration that stores the IV externally, or provide the raw
+     * ciphertext bytes directly to the underlying cipher.
+     *
+     * @param ciphertext ciphertext (Base64 encoded); in CBC mode must be
+     *                  Base64(IV(16 bytes) || encryptedPayload)
+     * @param iv        ignored — kept for API compatibility only
      * @return plaintext
      */
     String decrypt(String ciphertext, String iv);
