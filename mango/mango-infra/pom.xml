@@ -40,6 +40,8 @@
         <module>mango-infra-websocket</module>
         <!-- DAL (Data Access Layer - KV/ICache/ILocker abstraction) -->
         <module>mango-infra-dal</module>
+        <!-- Crypto (SM2/SM3/SM4 encryption, signing, hashing) -->
+        <module>mango-infra-crypto</module>
     </modules>
 
 </project>
