@@ -22,6 +22,5 @@
         <module>mango-infra-dal-api</module>
         <module>mango-infra-dal-core</module>
         <module>mango-infra-dal-starter</module>
-        <module>mango-infra-dal-starter-remote</module>
     </modules>
 </project>

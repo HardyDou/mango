@@ -162,4 +162,41 @@ class MemoryXivStoreTest {
         // After close, operations should still work (cleaner thread terminates gracefully)
         assertEquals("v1", localStore.get("k1"));
     }
+
+    // ==================== bucketCount constructor tests ====================
+
+    @Test
+    void constructor_customBucketCount_succeeds() {
+        // 2 buckets should work fine
+        MemoryXivStore store2 = new MemoryXivStore(1, 2);
+        store2.put("k1", "v1", 3600);
+        assertEquals("v1", store2.get("k1"));
+        store2.close();
+    }
+
+    @Test
+    void constructor_zeroBucketCount_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new MemoryXivStore(1, 0));
+    }
+
+    @Test
+    void constructor_negativeBucketCount_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new MemoryXivStore(1, -1));
+    }
+
+    // ==================== concurrent increment on same key ====================
+
+    @Test
+    void increment_concurrentSameKey_correctFinalCount() throws InterruptedException {
+        String key = "concurrent-counter";
+        int threadCount = 10;
+        Thread[] threads = new Thread[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = new Thread(() -> store.increment(key, 60));
+        }
+        for (Thread t : threads) t.start();
+        for (Thread t : threads) t.join();
+        // Final count should equal number of threads
+        assertEquals(threadCount, store.increment(key, 60) - 1);
+    }
 }
