@@ -16,6 +16,10 @@ class Sm4CryptoServiceTest {
     // A 16-byte IV in hex (used for explicit IV tests)
     private static final String TEST_IV = "1234567890abcdef1234567890abcdef";
 
+    // Valid 16-byte SM4 key in Base64 (16 bytes = 22 Base64 chars with padding)
+    // echo -n "0123456789abcdef" | base64 -> MDEyMzQ1Njc4OWFiY2RlZg==
+    private static final String TEST_KEY_BASE64 = "MDEyMzQ1Njc4OWFiY2RlZg==";
+
     private Sm4CryptoService cbcService;
     private Sm4CryptoService ecbService;
 
@@ -128,6 +132,81 @@ class Sm4CryptoServiceTest {
         // CBC ciphertext must be at least IV (16 bytes) + 1 block (16 bytes) = 32 bytes
         // After Base64, at least ~44 chars
         assertThrows(RuntimeException.class, () -> cbcService.decrypt("dG9vLXNob3J0"));
+    }
+
+    // --- Explicit IV tests (P1 coverage) ---
+
+    @Test
+    void encrypt_decrypt_with_explicit_iv_roundtrip() {
+        String plaintext = "explicit IV test data";
+        String ciphertext = cbcService.encrypt(plaintext, TEST_IV);
+        String decrypted = cbcService.decrypt(ciphertext, TEST_IV);
+        assertEquals(plaintext, decrypted);
+    }
+
+    @Test
+    void decrypt_wrong_iv_throws_bad_padding() {
+        String plaintext = "secret data";
+        String ciphertext = cbcService.encrypt(plaintext, TEST_IV);
+        // Use a different IV for decryption — padding check fails, throws exception
+        String wrongIv = "00000000000000000000000000000000";
+        assertThrows(RuntimeException.class, () -> cbcService.decrypt(ciphertext, wrongIv));
+    }
+
+    @Test
+    void decrypt_with_explicit_iv_ignores_ciphertext_prefix() {
+        // When iv is provided, the IV prepended to ciphertext is NOT used
+        String plaintext = "explicit iv ignores prefix";
+        String ciphertext = cbcService.encrypt(plaintext, TEST_IV);
+        // Decrypt with explicit iv — should work correctly
+        String decrypted = cbcService.decrypt(ciphertext, TEST_IV);
+        assertEquals(plaintext, decrypted);
+    }
+
+    // --- validateIvLength tests (P1 coverage) ---
+
+    @Test
+    void decrypt_wrong_iv_length_throws() {
+        String plaintext = "test";
+        String ciphertext = cbcService.encrypt(plaintext);
+        // 15-byte IV is invalid
+        String shortIv = "1234567890abcdef1";
+        assertThrows(RuntimeException.class, () -> cbcService.decrypt(ciphertext, shortIv));
+    }
+
+    @Test
+    void encrypt_wrong_iv_length_throws() {
+        String plaintext = "test";
+        String shortIv = "1234567890abcdef1"; // 15 bytes
+        assertThrows(RuntimeException.class, () -> cbcService.encrypt(plaintext, shortIv));
+    }
+
+    // --- decodeKey Base64 branch tests (P2 coverage) ---
+
+    @Test
+    void decodeKey_valid_base64_key_works() {
+        CryptoProperties props = new CryptoProperties();
+        CryptoProperties.Sm4Config sm4 = new CryptoProperties.Sm4Config();
+        sm4.setSecretKey(TEST_KEY_BASE64); // Base64-encoded 16-byte key
+        sm4.setMode("CBC");
+        sm4.setPadding("PKCS5Padding");
+        props.setSm4(sm4);
+        Sm4CryptoService svc = new Sm4CryptoService(props);
+        String ciphertext = svc.encrypt("hello");
+        assertEquals("hello", svc.decrypt(ciphertext));
+    }
+
+    // --- Invalid config tests ---
+
+    @Test
+    void constructor_invalid_key_length_throws() {
+        CryptoProperties props = new CryptoProperties();
+        CryptoProperties.Sm4Config sm4 = new CryptoProperties.Sm4Config();
+        sm4.setSecretKey("0123456789abcdef01"); // 34 hex chars = 17 bytes, not 16
+        sm4.setMode("CBC");
+        sm4.setPadding("PKCS5Padding");
+        props.setSm4(sm4);
+        assertThrows(IllegalStateException.class, () -> new Sm4CryptoService(props));
     }
 
     // --- ECB mode tests (no IV) ---

@@ -39,6 +39,16 @@ public class Sm4CryptoService implements ICryptoService {
         if (mode == null || (!mode.equalsIgnoreCase("CBC") && !mode.equalsIgnoreCase("ECB"))) {
             throw new IllegalStateException("SM4 mode must be CBC or ECB, got: " + mode);
         }
+        validateSecretKey();
+    }
+
+    private void validateSecretKey() {
+        byte[] keyBytes = decodeKey(config.getSecretKey());
+        if (keyBytes == null || keyBytes.length != 16) {
+            throw new IllegalStateException(
+                    "SM4 secretKey must be 16 bytes (128 bits), got: " +
+                    (keyBytes == null ? "null" : keyBytes.length + " bytes"));
+        }
     }
 
     @Override
@@ -82,11 +92,16 @@ public class Sm4CryptoService implements ICryptoService {
             byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
             if (isCbc) {
-                // Prepend IV to ciphertext: [IV(16 bytes)][ciphertext]
-                ByteBuffer buffer = ByteBuffer.allocate(IV_SIZE + encrypted.length);
-                buffer.put(ivBytes);
-                buffer.put(encrypted);
-                return Base64.toBase64String(buffer.array());
+                if (iv != null) {
+                    // Explicit IV: caller already has it, no need to prepend
+                    return Base64.toBase64String(encrypted);
+                } else {
+                    // Auto-generated IV: prepend to ciphertext for self-contained decryption
+                    ByteBuffer buffer = ByteBuffer.allocate(IV_SIZE + encrypted.length);
+                    buffer.put(ivBytes);
+                    buffer.put(encrypted);
+                    return Base64.toBase64String(buffer.array());
+                }
             } else {
                 return Base64.toBase64String(encrypted);
             }
@@ -110,17 +125,23 @@ public class Sm4CryptoService implements ICryptoService {
             byte[] ivBytes = null;
 
             if (isCbc) {
-                // Extract IV from the first 16 bytes of ciphertext
-                byte[] decoded = Base64.decode(ciphertext);
-                if (decoded.length < IV_SIZE) {
-                    throw new IllegalArgumentException("ciphertext is too short, expected at least " + (IV_SIZE + 1) + " bytes for CBC mode");
+                if (iv != null) {
+                    // Use explicitly provided IV
+                    ivBytes = decodeKey(iv);
+                    validateIvLength(ivBytes);
+                } else {
+                    // Extract IV from the first 16 bytes of ciphertext prefix
+                    byte[] decoded = Base64.decode(ciphertext);
+                    if (decoded.length < IV_SIZE) {
+                        throw new IllegalArgumentException("ciphertext is too short, expected at least " + (IV_SIZE + 1) + " bytes for CBC mode");
+                    }
+                    ivBytes = new byte[IV_SIZE];
+                    byte[] actualCiphertext = new byte[decoded.length - IV_SIZE];
+                    ByteBuffer buffer = ByteBuffer.wrap(decoded);
+                    buffer.get(ivBytes);
+                    buffer.get(actualCiphertext);
+                    ciphertext = Base64.toBase64String(actualCiphertext);
                 }
-                ivBytes = new byte[IV_SIZE];
-                byte[] actualCiphertext = new byte[decoded.length - IV_SIZE];
-                ByteBuffer buffer = ByteBuffer.wrap(decoded);
-                buffer.get(ivBytes);
-                buffer.get(actualCiphertext);
-                ciphertext = Base64.toBase64String(actualCiphertext);
             }
 
             SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
@@ -157,8 +178,6 @@ public class Sm4CryptoService implements ICryptoService {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }
-        // Detect encoding: hex strings contain only 0-9a-fA-F and have even length.
-        // If valid hex, decode as hex. Otherwise try Base64.
         if (isHexString(key)) {
             try {
                 return Hex.decode(key);
@@ -168,18 +187,12 @@ public class Sm4CryptoService implements ICryptoService {
                         (key.length() <= 64 ? key : key.substring(0, 64) + "..."), e);
             }
         }
-        // Try Base64
         try {
             return Base64.decode(key);
         } catch (Exception e) {
-            // Not Base64 either, try Hex as last resort
-            try {
-                return Hex.decode(key);
-            } catch (Exception hexEx) {
-                throw new IllegalArgumentException(
-                        "Key is neither valid Base64 nor Hex: " +
-                        (key.length() <= 64 ? key : key.substring(0, 64) + "..."), hexEx);
-            }
+            throw new IllegalArgumentException(
+                    "Key is neither valid Base64 nor Hex: " +
+                    (key.length() <= 64 ? key : key.substring(0, 64) + "..."), e);
         }
     }
 

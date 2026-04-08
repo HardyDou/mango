@@ -30,11 +30,12 @@ public class Sm2SignService implements ISignService {
 
     static {
         BouncyCastleLoader.ensure();
+        var domainParams = GMNamedCurves.getByName("sm2p256v1");
         DOMAIN_PARAMS = new ECDomainParameters(
-                GMNamedCurves.getByName("sm2p256v1").getCurve(),
-                GMNamedCurves.getByName("sm2p256v1").getG(),
-                GMNamedCurves.getByName("sm2p256v1").getN(),
-                GMNamedCurves.getByName("sm2p256v1").getH()
+                domainParams.getCurve(),
+                domainParams.getG(),
+                domainParams.getN(),
+                domainParams.getH()
         );
     }
 
