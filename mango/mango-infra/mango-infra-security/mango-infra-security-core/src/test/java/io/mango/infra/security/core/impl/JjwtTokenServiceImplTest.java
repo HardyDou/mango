@@ -17,9 +17,11 @@ class JjwtTokenServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl();
+        // Pass null for IKvStore (no blacklist in unit tests)
+        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
         // Inject test values via reflection (simulates @Value injection)
-        setField(impl, "secret", "mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits");
+        setField(impl, "newSecret", "mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits");
+        setField(impl, "legacySecret", "");
         setField(impl, "accessTokenValiditySeconds", 7200L);
         setField(impl, "refreshTokenValiditySeconds", 604800L);
         impl.init();

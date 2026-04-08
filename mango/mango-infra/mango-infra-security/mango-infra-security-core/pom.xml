@@ -18,6 +18,13 @@
             <artifactId>mango-infra-security-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- DAL API (for IKvStore - refresh token jti blacklist) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-dal-api</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -58,6 +65,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
