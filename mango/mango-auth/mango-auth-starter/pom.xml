@@ -36,10 +36,16 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango Auth Core (contains AuthJwtUtil and AuthConstant) -->
+        <!-- Spring Security Crypto (for BCryptPasswordEncoder bean) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Mango Infra Security (ITokenService implementation via auto-config) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-auth-core</artifactId>
+            <artifactId>mango-infra-security-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 

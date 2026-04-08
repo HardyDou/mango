@@ -42,23 +42,18 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- JWT support -->
+        <!-- Mango Infra Security API (IPermissionService) -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.12.3</version>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-security-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
+
+        <!-- Mango Infra Security Starter (ITokenService impl via auto-config) -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.12.3</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.3</version>
-            <scope>runtime</scope>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-security-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Lombok -->

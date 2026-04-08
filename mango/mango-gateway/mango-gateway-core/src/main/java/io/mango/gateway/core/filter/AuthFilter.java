@@ -3,7 +3,7 @@ package io.mango.gateway.core.filter;
 import io.mango.gateway.api.GatewayConstant;
 import io.mango.gateway.core.config.DynamicWhiteListConfig;
 import io.mango.gateway.core.config.GatewayProperties;
-import io.mango.gateway.core.util.JwtUtil;
+import io.mango.infra.security.api.ITokenService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,21 +23,12 @@ import java.io.IOException;
  */
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@RequiredArgsConstructor
 public class AuthFilter implements Filter {
 
     private final GatewayProperties properties;
-    private final JwtUtil jwtUtil;
+    private final ITokenService tokenService;
     private final DynamicWhiteListConfig whiteListConfig;
-
-    public AuthFilter(GatewayProperties properties, JwtUtil jwtUtil) {
-        this(properties, jwtUtil, null);
-    }
-
-    public AuthFilter(GatewayProperties properties, JwtUtil jwtUtil, DynamicWhiteListConfig whiteListConfig) {
-        this.properties = properties;
-        this.jwtUtil = jwtUtil;
-        this.whiteListConfig = whiteListConfig;
-    }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain)
@@ -61,22 +52,29 @@ public class AuthFilter implements Filter {
 
         // 获取Token
         String authHeader = request.getHeader(GatewayConstant.TOKEN_HEADER);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(ITokenService.BEARER_PREFIX)) {
             unauthorized(response, "Missing or invalid Authorization header");
             return;
         }
 
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(ITokenService.BEARER_PREFIX.length());
 
         // 验证Token
-        if (!jwtUtil.validateToken(token)) {
+        if (!tokenService.validateToken(token)) {
             unauthorized(response, "Invalid or expired token");
             return;
         }
 
+        // 验证Token类型（拒绝refresh token作为bearer token）
+        String tokenType = tokenService.getTokenType(token);
+        if (!ITokenService.TOKEN_TYPE_ACCESS.equals(tokenType)) {
+            unauthorized(response, "Invalid token type: bearer token must be access token");
+            return;
+        }
+
         // 获取用户信息
-        Long userId = jwtUtil.getUserId(token);
-        String username = jwtUtil.getUsername(token);
+        Long userId = tokenService.getUserId(token);
+        String username = tokenService.getUsername(token);
 
         // 设置到请求属性中，供后续Controller使用
         request.setAttribute("userId", userId);
@@ -93,7 +91,6 @@ public class AuthFilter implements Filter {
         if (whiteListConfig.isPublicPath(path)) {
             return true;
         }
-
         // 2. 回退到静态白名单
         return isStaticWhiteList(path);
     }

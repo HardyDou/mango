@@ -1,7 +1,6 @@
 package io.mango.gateway.starter.remote.config;
 
 import io.mango.gateway.core.config.GatewayProperties;
-import io.mango.gateway.core.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -22,11 +21,6 @@ import org.springframework.context.annotation.Configuration;
 public class GatewayRemoteConfig {
 
     private final GatewayProperties properties;
-
-    @Bean
-    public JwtUtil jwtUtil() {
-        return new JwtUtil(properties.getJwtSecret(), properties.getTokenExpireSeconds() * 1000);
-    }
 
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
