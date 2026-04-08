@@ -46,9 +46,15 @@ class MemoryKvStoreTest {
     @Test
     void put_zeroTtl_expiresImmediately() throws Exception {
         // TTL=0 should expire immediately
-        store.put("k1", "v1", 0);
-        String result = store.get("k1");
-        assertNull(result);
+        assertFalse(store.put("k1", "v1", 0));
+        assertNull(store.get("k1"));
+    }
+
+    @Test
+    void put_negativeTtl_expiresImmediately() throws Exception {
+        // Negative TTL should also delete immediately
+        assertFalse(store.put("k1", "v1", -1));
+        assertNull(store.get("k1"));
     }
 
     // ==================== get() tests ====================
