@@ -8,10 +8,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RedissonClient;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -46,29 +46,34 @@ class DbXivStoreTest {
     void put_insertSucceeds_returnsTrue() {
         when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
         when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(jdbcTemplate.update(anyString(), anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+        // Mock SELECT returning empty (key doesn't exist or is expired) → DELETE + INSERT path
+        when(jdbcTemplate.query(
+                contains("SELECT kv_value FROM sys_kv_record"),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());
+        when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
+        when(jdbcTemplate.update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
                 .thenReturn(1);
 
         boolean result = store.put("k1", "v1", 3600);
 
         assertTrue(result);
-        verify(jdbcTemplate).update(
-                contains("INSERT INTO sys_kv_record"),
-                eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)
-        );
+        verify(jdbcTemplate).update(contains("DELETE FROM"), eq("k1"));
+        verify(jdbcTemplate).update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class));
     }
 
     @Test
     void put_updateSucceeds_returnsFalse() {
-        // ON DUPLICATE KEY UPDATE returns 2 when updated
-        when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(jdbcTemplate.update(anyString(), anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
-                .thenReturn(2);
+        // Mock SELECT returning existing non-expired key → UPDATE path
+        when(jdbcTemplate.query(
+                contains("SELECT kv_value FROM sys_kv_record"),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(List.of("old_value"));
 
         boolean result = store.put("k1", "v1", 3600);
 
         assertFalse(result);
+        verify(jdbcTemplate).update(contains("UPDATE sys_kv_record"), eq("v1"), any(LocalDateTime.class), eq("k1"), any(LocalDateTime.class));
     }
 
     @Test
@@ -85,20 +90,20 @@ class DbXivStoreTest {
 
     @Test
     void get_recordExists_returnsValue() {
-        when(jdbcTemplate.queryForObject(
+        when(jdbcTemplate.query(
                 contains("SELECT kv_value FROM sys_kv_record"),
-                eq(String.class), eq("k1"), any(LocalDateTime.class)
-        )).thenReturn("v1");
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(List.of("v1"));
 
         assertEquals("v1", store.get("k1"));
     }
 
     @Test
     void get_recordDoesNotExist_returnsNull() {
-        when(jdbcTemplate.queryForObject(
+        when(jdbcTemplate.query(
                 contains("SELECT kv_value FROM sys_kv_record"),
-                eq(String.class), eq("nonExisting"), any(LocalDateTime.class)
-        )).thenReturn(null);
+                any(org.springframework.jdbc.core.RowMapper.class), eq("nonExisting"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());
 
         assertNull(store.get("nonExisting"));
     }
@@ -112,14 +117,18 @@ class DbXivStoreTest {
 
     @Test
     void increment_firstCall_returns1() {
-        when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(100L);
-        when(jdbcTemplate.update(anyString(), anyLong(), eq("counter1"), any(LocalDateTime.class)))
+        lenient().when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
+        lenient().when(atomicLong.incrementAndGet()).thenReturn(100L);
+        // UPDATE: 3 params (expireTime, key, now) — use lenient for varargs matching
+        lenient().when(jdbcTemplate.update(
+                anyString(),
+                any(LocalDateTime.class), eq("counter1"), any(LocalDateTime.class)))
                 .thenReturn(1);
-        when(jdbcTemplate.queryForObject(
-                contains("SELECT kv_value FROM sys_kv_record"),
-                eq(String.class), eq("counter1"), any(LocalDateTime.class)
-        )).thenReturn("1");
+        // SELECT: 3 params (sql, RowMapper, key, now)
+        lenient().when(jdbcTemplate.query(
+                anyString(),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("counter1"), any(LocalDateTime.class)
+        )).thenReturn(List.of("1"));
 
         long count = store.increment("counter1", 60);
 
@@ -128,14 +137,16 @@ class DbXivStoreTest {
 
     @Test
     void increment_subsequentCall_incrementsValue() {
-        when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(100L);
-        when(jdbcTemplate.update(anyString(), anyLong(), eq("counter1"), any(LocalDateTime.class)))
+        lenient().when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
+        lenient().when(atomicLong.incrementAndGet()).thenReturn(100L);
+        lenient().when(jdbcTemplate.update(
+                anyString(),
+                any(LocalDateTime.class), eq("counter1"), any(LocalDateTime.class)))
                 .thenReturn(1);
-        when(jdbcTemplate.queryForObject(
-                contains("SELECT kv_value FROM sys_kv_record"),
-                eq(String.class), eq("counter1"), any(LocalDateTime.class)
-        )).thenReturn("5");
+        lenient().when(jdbcTemplate.query(
+                anyString(),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("counter1"), any(LocalDateTime.class)
+        )).thenReturn(List.of("5"));
 
         long count = store.increment("counter1", 60);
 
@@ -145,6 +156,11 @@ class DbXivStoreTest {
     @Test
     void increment_nullKey_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> store.increment(null, 60));
+    }
+
+    @Test
+    void increment_blankKey_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.increment("  ", 60));
     }
 
     // ==================== delete() tests ====================
@@ -175,20 +191,20 @@ class DbXivStoreTest {
 
     @Test
     void exists_recordExists_returnsTrue() {
-        when(jdbcTemplate.queryForObject(
+        when(jdbcTemplate.query(
                 contains("SELECT COUNT(*) FROM sys_kv_record"),
-                eq(Integer.class), eq("k1"), any(LocalDateTime.class)
-        )).thenReturn(1);
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(List.of(1));
 
         assertTrue(store.exists("k1"));
     }
 
     @Test
     void exists_recordDoesNotExist_returnsFalse() {
-        when(jdbcTemplate.queryForObject(
+        when(jdbcTemplate.query(
                 contains("SELECT COUNT(*) FROM sys_kv_record"),
-                eq(Integer.class), eq("nonExisting"), any(LocalDateTime.class)
-        )).thenReturn(0);
+                any(org.springframework.jdbc.core.RowMapper.class), eq("nonExisting"), any(LocalDateTime.class)
+        )).thenReturn(List.of(0));
 
         assertFalse(store.exists("nonExisting"));
     }
@@ -203,9 +219,15 @@ class DbXivStoreTest {
     @Test
     void put_zeroTtl_insertSucceeds_returnsTrue() {
         // TTL=0 means expire_time = LocalDateTime.now(), record is already expired
+        // SELECT returns empty (expired records filtered) → DELETE + INSERT path
         when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
         when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(jdbcTemplate.update(anyString(), anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+        when(jdbcTemplate.query(
+                contains("SELECT kv_value FROM sys_kv_record"),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());
+        when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
+        when(jdbcTemplate.update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
                 .thenReturn(1);
 
         boolean result = store.put("k1", "v1", 0);
@@ -215,9 +237,15 @@ class DbXivStoreTest {
 
     @Test
     void put_negativeTtl_insertSucceeds() {
+        // Negative TTL: same as TTL=0, expired → DELETE + INSERT path
         when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
         when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(jdbcTemplate.update(anyString(), anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+        when(jdbcTemplate.query(
+                contains("SELECT kv_value FROM sys_kv_record"),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());
+        when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
+        when(jdbcTemplate.update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
                 .thenReturn(1);
 
         boolean result = store.put("k1", "v1", -1);
@@ -228,10 +256,10 @@ class DbXivStoreTest {
     @Test
     void get_expiredKey_returnsNull() {
         // Query with expire_time > NOW() filter — expired record is excluded
-        when(jdbcTemplate.queryForObject(
+        when(jdbcTemplate.query(
                 contains("SELECT kv_value FROM sys_kv_record"),
-                eq(String.class), eq("k1"), any(LocalDateTime.class)
-        )).thenReturn(null);  // expired record filtered out
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());  // expired record filtered out
 
         assertNull(store.get("k1"));
     }
@@ -239,10 +267,10 @@ class DbXivStoreTest {
     @Test
     void exists_expiredKey_returnsFalse() {
         // COUNT with expire_time > NOW() — expired record not counted
-        when(jdbcTemplate.queryForObject(
+        when(jdbcTemplate.query(
                 contains("SELECT COUNT(*) FROM sys_kv_record"),
-                eq(Integer.class), eq("k1"), any(LocalDateTime.class)
-        )).thenReturn(0);
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(List.of(0));
 
         assertFalse(store.exists("k1"));
     }
@@ -253,10 +281,13 @@ class DbXivStoreTest {
     void nextId_usesRedissonAtomicLong() {
         when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
         when(atomicLong.incrementAndGet()).thenReturn(42L);
-
-        // Use reflection or a test-specific method to verify nextId
-        // Since nextId is private, we verify via behavior (put call uses it)
-        when(jdbcTemplate.update(anyString(), eq(42L), anyString(), anyString(), any(LocalDateTime.class)))
+        // put() now does SELECT → DELETE + INSERT (key not found)
+        when(jdbcTemplate.query(
+                contains("SELECT kv_value FROM sys_kv_record"),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());
+        when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
+        when(jdbcTemplate.update(contains("INSERT INTO"), eq(42L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
                 .thenReturn(1);
 
         store.put("k1", "v1", 3600);
@@ -270,7 +301,13 @@ class DbXivStoreTest {
         when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
         when(atomicLong.incrementAndGet()).thenReturn(Long.MAX_VALUE);
         doNothing().when(atomicLong).set(1L);
-        when(jdbcTemplate.update(anyString(), eq(1L), anyString(), anyString(), any(LocalDateTime.class)))
+        // put() does SELECT → DELETE + INSERT with reset id=1
+        when(jdbcTemplate.query(
+                contains("SELECT kv_value FROM sys_kv_record"),
+                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
+        )).thenReturn(Collections.emptyList());
+        when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
+        when(jdbcTemplate.update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
                 .thenReturn(1);
 
         store.put("k1", "v1", 3600);
