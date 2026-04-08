@@ -103,6 +103,11 @@ class MemoryXivStoreTest {
         assertThrows(IllegalArgumentException.class, () -> store.increment(null, 60));
     }
 
+    @Test
+    void increment_blankKey_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.increment("  ", 60));
+    }
+
     // ==================== delete() tests ====================
 
     @Test

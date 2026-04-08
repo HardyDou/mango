@@ -1,6 +1,7 @@
 package io.mango.dal.core;
 
 import io.mango.dal.api.IKvStore;
+import jakarta.annotation.PreDestroy;
 
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * MemoryXivStore implementation using ConcurrentHashMap with background cleanup.
  * Implements AutoCloseable for use with try-with-resources.
+ * Spring automatically calls close() via @PreDestroy when the bean is destroyed.
  */
 public class MemoryXivStore implements IKvStore, AutoCloseable {
 
@@ -21,10 +23,20 @@ public class MemoryXivStore implements IKvStore, AutoCloseable {
         return t;
     });
 
+    /**
+     * 使用默认清理间隔（1分钟）
+     */
     public MemoryXivStore() {
+        this(1);
+    }
+
+    /**
+     * @param cleanupIntervalMinutes 过期 key 清理任务间隔（分钟）
+     */
+    public MemoryXivStore(int cleanupIntervalMinutes) {
         cleaner.scheduleAtFixedRate(() ->
             map.entrySet().removeIf(e -> e.getValue().expired())
-        , 1, 1, TimeUnit.MINUTES);
+        , cleanupIntervalMinutes, cleanupIntervalMinutes, TimeUnit.MINUTES);
     }
 
     @Override
@@ -74,6 +86,7 @@ public class MemoryXivStore implements IKvStore, AutoCloseable {
         return entry != null && !entry.expired();
     }
 
+    @PreDestroy
     @Override
     public void close() {
         cleaner.shutdown();
