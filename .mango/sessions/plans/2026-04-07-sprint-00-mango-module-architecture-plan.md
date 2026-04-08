@@ -732,9 +732,9 @@ guarantee-app
 
 | # | 任务 | 类型 | 状态 | 说明 |
 |---|------|------|------|------|
-| T1 | `mango-infra-kv` → `mango-infra-dal` 重构：4 层结构 + `@Conditional*` 注入 | 架构重构 | 待执行 | 目录重命名 + 4 层结构（-api/-core/-starter/-starter-remote）+ `@ConditionalOnProperty` 显式指定 + 自动检测 + 删除 CascadingXivStore |
+| T1 | `mango-infra-kv` → `mango-infra-dal` 重构：4 层结构 + `@Conditional*` 注入 | 架构重构 | ✅ 已完成 | commit c0b7df41 |
 | T2 | `mango-bff-admin` → `mango-admin-app` 重命名 | 重构 | 待执行 | 目录重命名 + pom artifactId 更新 + import 修正 |
-| T3 | IUseCase 9 个接口定义 | 新增 | 待执行 | 接口签名待业务场景明确后补充 |
+| T3 | IUseCase 9 个接口定义 | 新增 | 🔄 已拆分 | 拆分为 `plans/2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md` |
 | T4 | Memory 实现 TTL=0 清理逻辑修复 | Bug修复 | 待执行 | `TTL=0` 时应立即清理而非永久保留 |
 | T5 | `mango-infra-crypto` 新建：crypto/ 从 common 移入 | 新建模块 | 待执行 | 13 个文件从 common/crypto 移入，包含 Sm4Cipher/AesCipher/RsaSigner/Sm2Signer/CryptoFactory |
 | T6 | `mango-infra-security` 新建：permission/ 从 common 移入 | 新建模块 | 待执行 | PermAspect + IPermissionService 从 common 移入 |
