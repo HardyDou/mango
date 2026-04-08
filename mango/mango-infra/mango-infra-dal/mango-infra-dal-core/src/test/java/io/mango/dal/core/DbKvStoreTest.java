@@ -18,11 +18,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for DbXivStore.
+ * Unit tests for DbKvStore.
  * Mocks JdbcTemplate and RedissonClient to test IKvStore contract without real DB.
  */
 @ExtendWith(MockitoExtension.class)
-class DbXivStoreTest {
+class DbKvStoreTest {
 
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -33,11 +33,11 @@ class DbXivStoreTest {
     @Mock
     private RAtomicLong atomicLong;
 
-    private DbXivStore store;
+    private DbKvStore store;
 
     @BeforeEach
     void setUp() {
-        store = new DbXivStore(jdbcTemplate, redissonClient);
+        store = new DbKvStore(jdbcTemplate, redissonClient);
     }
 
     // ==================== put() tests ====================
@@ -217,40 +217,39 @@ class DbXivStoreTest {
     // ==================== TTL edge cases ====================
 
     @Test
-    void put_zeroTtl_insertSucceeds_returnsTrue() {
-        // TTL=0 means expire_time = LocalDateTime.now(), record is already expired
-        // SELECT returns empty (expired records filtered) → DELETE + INSERT path
-        when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(jdbcTemplate.query(
-                contains("SELECT kv_value FROM sys_kv_record"),
-                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
-        )).thenReturn(Collections.emptyList());
+    void put_zeroTtl_shouldReturnFalseAndDeleteOnly() {
+        // TTL=0: delete immediately, do NOT insert
         when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
-        when(jdbcTemplate.update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
-                .thenReturn(1);
 
         boolean result = store.put("k1", "v1", 0);
 
-        assertTrue(result);
+        assertFalse(result);
+        verify(jdbcTemplate).update(contains("DELETE FROM"), eq("k1"));
+        verify(jdbcTemplate, never()).update(contains("INSERT INTO"), any(), any(), any(), any());
     }
 
     @Test
-    void put_negativeTtl_insertSucceeds() {
-        // Negative TTL: same as TTL=0, expired → DELETE + INSERT path
-        when(redissonClient.getAtomicLong("kv:db:id")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(jdbcTemplate.query(
-                contains("SELECT kv_value FROM sys_kv_record"),
-                any(org.springframework.jdbc.core.RowMapper.class), eq("k1"), any(LocalDateTime.class)
-        )).thenReturn(Collections.emptyList());
+    void put_negativeTtl_shouldReturnFalseAndDeleteOnly() {
+        // Negative TTL: same as TTL=0, delete immediately, do NOT insert
         when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(0);
-        when(jdbcTemplate.update(contains("INSERT INTO"), eq(1L), eq("k1"), eq("v1"), any(LocalDateTime.class)))
-                .thenReturn(1);
 
         boolean result = store.put("k1", "v1", -1);
 
-        assertTrue(result);
+        assertFalse(result);
+        verify(jdbcTemplate).update(contains("DELETE FROM"), eq("k1"));
+        verify(jdbcTemplate, never()).update(contains("INSERT INTO"), any(), any(), any(), any());
+    }
+
+    @Test
+    void put_zeroTtl_existingKey_shouldReturnFalseAndDelete() {
+        // TTL=0 on existing key: delete, do not re-insert
+        when(jdbcTemplate.update(contains("DELETE FROM"), eq("k1"))).thenReturn(1);
+
+        boolean result = store.put("k1", "v1", 0);
+
+        assertFalse(result);
+        verify(jdbcTemplate).update(contains("DELETE FROM"), eq("k1"));
+        verify(jdbcTemplate, never()).update(contains("INSERT INTO"), any(), any(), any(), any());
     }
 
     @Test

@@ -6,12 +6,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for MemoryXivStore.
+ * Unit tests for MemoryKvStore.
  * Pure in-memory implementation - no external dependencies.
  */
-class MemoryXivStoreTest {
+class MemoryKvStoreTest {
 
-    private final MemoryXivStore store = new MemoryXivStore();
+    private final MemoryKvStore store = new MemoryKvStore();
 
     @AfterEach
     void tearDown() throws Exception {
@@ -155,7 +155,7 @@ class MemoryXivStoreTest {
 
     @Test
     void close_afterClose_storeStillUsable() throws Exception {
-        MemoryXivStore localStore = new MemoryXivStore();
+        MemoryKvStore localStore = new MemoryKvStore();
         localStore.put("k1", "v1", 3600);
         localStore.close();
 
@@ -168,7 +168,7 @@ class MemoryXivStoreTest {
     @Test
     void constructor_customBucketCount_succeeds() {
         // 2 buckets should work fine
-        MemoryXivStore store2 = new MemoryXivStore(1, 2);
+        MemoryKvStore store2 = new MemoryKvStore(1, 2);
         store2.put("k1", "v1", 3600);
         assertEquals("v1", store2.get("k1"));
         store2.close();
@@ -176,12 +176,12 @@ class MemoryXivStoreTest {
 
     @Test
     void constructor_zeroBucketCount_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new MemoryXivStore(1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new MemoryKvStore(1, 0));
     }
 
     @Test
     void constructor_negativeBucketCount_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new MemoryXivStore(1, -1));
+        assertThrows(IllegalArgumentException.class, () -> new MemoryKvStore(1, -1));
     }
 
     // ==================== concurrent increment on same key ====================

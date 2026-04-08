@@ -17,11 +17,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for RedisXivStore.
+ * Unit tests for RedisKvStore.
  * Mocks RedissonClient to test IKvStore contract without real Redis.
  */
 @ExtendWith(MockitoExtension.class)
-class RedisXivStoreTest {
+class RedisKvStoreTest {
 
     @Mock
     private RedissonClient redissonClient;
@@ -29,11 +29,11 @@ class RedisXivStoreTest {
     @Mock
     private RBucket<String> bucket;
 
-    private RedisXivStore store;
+    private RedisKvStore store;
 
     @BeforeEach
     void setUp() {
-        store = new RedisXivStore(redissonClient);
+        store = new RedisKvStore(redissonClient);
     }
 
     // ==================== put() tests ====================

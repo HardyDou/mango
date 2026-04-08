@@ -1,6 +1,6 @@
 package io.mango.dal.starter;
 
-import io.mango.dal.core.DbXivStore;
+import io.mango.dal.core.DbKvStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RAtomicLong;
@@ -19,9 +19,9 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * DbXivStore 集成测试 - H2 内存数据库（MySQL 兼容模式）
+ * DbKvStore 集成测试 - H2 内存数据库（MySQL 兼容模式）
  *
- * 验证 DbXivStore 在 H2（MySQL 兼容模式）下的真实 SQL 执行。
+ * 验证 DbKvStore 在 H2（MySQL 兼容模式）下的真实 SQL 执行。
  * 复用 MySQL 版 SQL 脚本，无需单独写 H2 SQL。
  */
 @SpringBootTest(classes = {DataSourceAutoConfiguration.class, JdbcTemplateAutoConfiguration.class, DalStoreAutoConfiguration.class})
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
         "mango.dal.provider.redis.host=localhost",
         "mango.dal.provider.redis.port=6379"
 })
-class DbXivStoreH2IntegrationTest {
+class DbKvStoreH2IntegrationTest {
 
         @MockBean
         private RedissonClient redissonClient;
@@ -46,7 +46,7 @@ class DbXivStoreH2IntegrationTest {
         @Autowired
         private JdbcTemplate jdbcTemplate;
 
-        private DbXivStore store;
+        private DbKvStore store;
 
         @BeforeEach
         void setUp() {
@@ -70,7 +70,7 @@ class DbXivStoreH2IntegrationTest {
                         )
                         """);
 
-                store = new DbXivStore(jdbcTemplate, redissonClient);
+                store = new DbKvStore(jdbcTemplate, redissonClient);
         }
 
         @Test

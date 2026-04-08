@@ -11,11 +11,11 @@ import java.time.Duration;
 import java.util.Collections;
 
 /**
- * RedisXivStore implementation using Redisson.
+ * RedisKvStore implementation using Redisson.
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisXivStore implements IKvStore {
+public class RedisKvStore implements IKvStore {
 
     private final RedissonClient redissonClient;
 
