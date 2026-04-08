@@ -305,6 +305,26 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
+                <artifactId>mango-infra-security-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-security-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-security-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-security-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
                 <artifactId>mango-captcha-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

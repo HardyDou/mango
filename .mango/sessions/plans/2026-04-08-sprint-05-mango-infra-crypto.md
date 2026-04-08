@@ -1,8 +1,8 @@
 # Sprint 05: mango-infra-crypto 新建
 
 - 起始日期：2026-04-08
-- 状态：待执行
-- 所属任务：T5
+- 状态：⚠️ 已合并到 sprint-06
+- 所属任务：T5（已合并到 T6）
 - 关联 plan：`2026-04-07-sprint-00-mango-module-architecture-plan.md`
 
 ---

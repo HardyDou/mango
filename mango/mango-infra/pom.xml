@@ -40,6 +40,8 @@
         <module>mango-infra-websocket</module>
         <!-- DAL (Data Access Layer - KV/ICache/ILocker abstraction) -->
         <module>mango-infra-dal</module>
+        <!-- Security (Permission aspect - @Perm) -->
+        <module>mango-infra-security</module>
     </modules>
 
 </project>
