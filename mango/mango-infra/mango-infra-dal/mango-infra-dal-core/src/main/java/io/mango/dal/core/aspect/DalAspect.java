@@ -11,8 +11,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +33,6 @@ public class DalAspect {
     private final IIdempotent idempotent;
     private final ISerializer serializer;
 
-    private static final ExpressionParser SPEL_PARSER = new SpelExpressionParser();
     private static final java.util.regex.Pattern SPEL_PARAM_PATTERN = java.util.regex.Pattern.compile("#(\\w+)");
 
     public DalAspect(ICache cache, ILocker locker, ICounter counter,
