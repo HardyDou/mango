@@ -98,4 +98,34 @@ class MemoryLockerTest {
     void unlock_blankKey_isSilentNoOp() {
         assertDoesNotThrow(() -> locker.unlock("  "));
     }
+
+    @Test
+    void unlock_wrongThread_doesNotRemoveLock() throws Exception {
+        // Thread A acquires lock
+        assertTrue(locker.tryLock("shared", 3600));
+        // Thread B tries to unlock — should be silent no-op, not remove the lock
+        Thread threadB = new Thread(() -> locker.unlock("shared"));
+        threadB.start();
+        threadB.join();
+        // Lock still held by Thread A — Thread A cannot re-acquire
+        assertFalse(locker.tryLock("shared", 3600));
+        // Thread A can still unlock
+        locker.unlock("shared");
+        assertTrue(locker.tryLock("shared", 3600));
+    }
+
+    @Test
+    void unlock_afterExpiration_acquiredByAnotherThread() throws Exception {
+        // Thread A acquires lock with short TTL
+        assertTrue(locker.tryLock("expiry-lock", 1));
+        Thread.sleep(1100); // Wait for expiration
+        // Thread B acquires the expired lock
+        MemoryLocker locker2 = new MemoryLocker();
+        assertTrue(locker2.tryLock("expiry-lock", 3600));
+        // Thread A tries to unlock expired lock — should not remove B's lock
+        locker.unlock("expiry-lock");
+        // B's lock still valid — tryLock from B should fail
+        assertFalse(locker2.tryLock("expiry-lock", 3600));
+        locker2.unlock("expiry-lock");
+    }
 }

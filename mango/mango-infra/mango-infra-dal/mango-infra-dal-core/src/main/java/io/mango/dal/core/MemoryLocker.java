@@ -18,7 +18,8 @@ public class MemoryLocker implements ILocker {
         validateKey(key);
         validateTtl(ttlSeconds);
         long expireTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ttlSeconds);
-        LockEntry newEntry = new LockEntry(expireTime);
+        long holderThreadId = Thread.currentThread().getId();
+        LockEntry newEntry = new LockEntry(expireTime, holderThreadId);
         // Use compute() to atomically: insert if absent, or replace if existing entry expired
         // This avoids the putIfAbsent bug where expired entries were never replaced
         LockEntry result = locks.compute(key, (k, existing) -> {
@@ -35,7 +36,15 @@ public class MemoryLocker implements ILocker {
         if (key == null || key.trim().isEmpty()) {
             return; // no-op for invalid key — ILocker contract: unlock never throws
         }
-        locks.remove(key);
+        // Verify holder before removing — prevents releasing another thread's lock
+        // (can happen if lock expired and another thread acquired the same key)
+        long callerId = Thread.currentThread().getId();
+        locks.compute(key, (k, existing) -> {
+            if (existing != null && existing.holderThreadId() == callerId) {
+                return null; // remove only if we own it
+            }
+            return existing; // don't remove if not our lock
+        });
     }
 
     private void validateKey(String key) {
@@ -52,13 +61,19 @@ public class MemoryLocker implements ILocker {
 
     private static final class LockEntry {
         private final long expireTime;
+        private final long holderThreadId;
 
-        LockEntry(long expireTime) {
+        LockEntry(long expireTime, long holderThreadId) {
             this.expireTime = expireTime;
+            this.holderThreadId = holderThreadId;
         }
 
         boolean expired() {
             return System.currentTimeMillis() > expireTime;
+        }
+
+        long holderThreadId() {
+            return holderThreadId;
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.mango.dal.core;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -10,6 +11,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class MemoryIdempotentTest {
 
     private final MemoryIdempotent idempotent = new MemoryIdempotent();
+
+    @AfterEach
+    void tearDown() throws Exception {
+        idempotent.close();
+    }
 
     // ==================== isDuplicate() tests ====================
 
@@ -117,25 +123,26 @@ class MemoryIdempotentTest {
     void checkAndMark_concurrentRace_bothReturnOneTrueOneFalse() throws InterruptedException {
         // Simulate race: two threads, one should win
         String key = "racekey";
-        MemoryIdempotent shared = new MemoryIdempotent();
-        boolean[] results = new boolean[2];
-        Thread[] threads = new Thread[2];
-        for (int i = 0; i < 2; i++) {
-            final int idx = i;
-            threads[i] = new Thread(() -> {
-                results[idx] = shared.checkAndMark(key, 3600);
-            });
+        try (MemoryIdempotent shared = new MemoryIdempotent()) {
+            boolean[] results = new boolean[2];
+            Thread[] threads = new Thread[2];
+            for (int i = 0; i < 2; i++) {
+                final int idx = i;
+                threads[i] = new Thread(() -> {
+                    results[idx] = shared.checkAndMark(key, 3600);
+                });
+            }
+            for (Thread t : threads) t.start();
+            for (Thread t : threads) t.join();
+            // One got false (new), one got true (duplicate)
+            int trueCount = 0, falseCount = 0;
+            for (boolean b : results) {
+                if (b) trueCount++;
+                else falseCount++;
+            }
+            assertEquals(1, trueCount);
+            assertEquals(1, falseCount);
         }
-        for (Thread t : threads) t.start();
-        for (Thread t : threads) t.join();
-        // One got false (new), one got true (duplicate)
-        int trueCount = 0, falseCount = 0;
-        for (boolean b : results) {
-            if (b) trueCount++;
-            else falseCount++;
-        }
-        assertEquals(1, trueCount);
-        assertEquals(1, falseCount);
     }
 
     @Test
@@ -156,5 +163,26 @@ class MemoryIdempotentTest {
     @Test
     void checkAndMark_blankKey_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> idempotent.checkAndMark("  ", 3600));
+    }
+
+    // ==================== cleanup / AutoCloseable tests ====================
+
+    @Test
+    void constructor_zeroCleanupInterval_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new MemoryIdempotent(0));
+    }
+
+    @Test
+    void constructor_negativeCleanupInterval_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new MemoryIdempotent(-1));
+    }
+
+    @Test
+    void close_afterClose_storeStillUsable() {
+        MemoryIdempotent local = new MemoryIdempotent();
+        local.mark("key1", 3600);
+        local.close();
+        // After close, operations should still work (cleaner thread terminates gracefully)
+        assertTrue(local.isDuplicate("key1", 3600));
     }
 }
