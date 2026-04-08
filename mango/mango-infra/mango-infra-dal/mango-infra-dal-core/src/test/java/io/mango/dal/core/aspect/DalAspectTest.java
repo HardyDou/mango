@@ -103,13 +103,13 @@ class DalAspectTest {
         when(pjp.getArgs()).thenReturn(new Object[]{"123"});
         when(signature.getMethod()).thenReturn(method);
         when(signature.getParameterNames()).thenReturn(new String[]{"orderNo"});
-        when(idempotent.isDuplicate("idempot:order:123", 60)).thenReturn(false);
+        when(idempotent.checkAndMark("idempot:order:123", 60)).thenReturn(false);
         when(pjp.proceed()).thenReturn("result");
 
         Object result = dalAspect.aroundIdempotent(pjp);
 
         assertEquals("result", result);
-        verify(idempotent).mark("idempot:order:123", 60);
+        verify(idempotent).checkAndMark("idempot:order:123", 60);
     }
 
     @Test
@@ -119,10 +119,23 @@ class DalAspectTest {
         when(pjp.getArgs()).thenReturn(new Object[]{"123"});
         when(signature.getMethod()).thenReturn(method);
         when(signature.getParameterNames()).thenReturn(new String[]{"orderNo"});
-        when(idempotent.isDuplicate("idempot:order:123", 60)).thenReturn(true);
+        when(idempotent.checkAndMark("idempot:order:123", 60)).thenReturn(true);
 
         assertThrows(DalAspect.DuplicateOperationException.class, () -> dalAspect.aroundIdempotent(pjp));
         verify(pjp, never()).proceed();
+    }
+
+    @Test
+    void aroundIdempotent_proceedThrows_exceptionPropagates() throws Throwable {
+        Method method = TestService.class.getMethod("idempotentMethod", String.class);
+        when(pjp.getSignature()).thenReturn(signature);
+        when(pjp.getArgs()).thenReturn(new Object[]{"123"});
+        when(signature.getMethod()).thenReturn(method);
+        when(signature.getParameterNames()).thenReturn(new String[]{"orderNo"});
+        when(idempotent.checkAndMark("idempot:order:123", 60)).thenReturn(false);
+        when(pjp.proceed()).thenThrow(new RuntimeException("operation failed"));
+
+        assertThrows(RuntimeException.class, () -> dalAspect.aroundIdempotent(pjp));
     }
 
     // ==================== @Locker tests ====================

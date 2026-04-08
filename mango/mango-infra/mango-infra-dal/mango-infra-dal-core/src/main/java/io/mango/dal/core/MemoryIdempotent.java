@@ -32,6 +32,25 @@ public class MemoryIdempotent implements IIdempotent {
         entries.put(key, new IdempotentEntry(Instant.now().plusSeconds(windowSeconds)));
     }
 
+    @Override
+    public boolean checkAndMark(String key, long windowSeconds) {
+        validateKey(key);
+        validateWindow(windowSeconds);
+        Instant now = Instant.now();
+        Instant expireTime = now.plusSeconds(windowSeconds);
+        // isDuplicate[0] is set inside compute to avoid capturing non-final variables
+        boolean[] isDuplicate = {false};
+        entries.compute(key, (k, existing) -> {
+            if (existing != null && !existing.expired(now)) {
+                isDuplicate[0] = true;
+                return existing; // keep existing, don't overwrite
+            }
+            isDuplicate[0] = false;
+            return new IdempotentEntry(expireTime);
+        });
+        return isDuplicate[0];
+    }
+
     private void validateKey(String key) {
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalArgumentException("key cannot be null or blank");

@@ -18,17 +18,23 @@ public class MemoryLocker implements ILocker {
         validateKey(key);
         validateTtl(ttlSeconds);
         long expireTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ttlSeconds);
-        LockEntry existing = locks.get(key);
-        if (existing != null && !existing.expired()) {
-            return false;
-        }
-        locks.put(key, new LockEntry(expireTime));
-        return true;
+        LockEntry newEntry = new LockEntry(expireTime);
+        // Use compute() to atomically: insert if absent, or replace if existing entry expired
+        // This avoids the putIfAbsent bug where expired entries were never replaced
+        LockEntry result = locks.compute(key, (k, existing) -> {
+            if (existing != null && !existing.expired()) {
+                return existing; // keep valid lock, don't overwrite
+            }
+            return newEntry; // insert or replace expired entry
+        });
+        return result == newEntry; // true only if our entry was inserted
     }
 
     @Override
     public void unlock(String key) {
-        validateKey(key);
+        if (key == null || key.trim().isEmpty()) {
+            return; // no-op for invalid key — ILocker contract: unlock never throws
+        }
         locks.remove(key);
     }
 

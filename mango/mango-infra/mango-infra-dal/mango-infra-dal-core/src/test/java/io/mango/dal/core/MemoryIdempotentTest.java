@@ -84,4 +84,77 @@ class MemoryIdempotentTest {
     void mark_blankKey_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> idempotent.mark("  ", 3600));
     }
+
+    // ==================== checkAndMark() tests ====================
+
+    @Test
+    void checkAndMark_newKey_returnsFalseAndMarks() {
+        assertFalse(idempotent.checkAndMark("key1", 3600));
+        assertTrue(idempotent.isDuplicate("key1", 3600)); // now marked
+    }
+
+    @Test
+    void checkAndMark_alreadyMarked_returnsTrue() {
+        idempotent.mark("key1", 3600);
+        assertTrue(idempotent.checkAndMark("key1", 3600));
+    }
+
+    @Test
+    void checkAndMark_expiredKey_returnsFalseAndReMarks() throws InterruptedException {
+        idempotent.mark("key1", 1);
+        Thread.sleep(1100);
+        assertFalse(idempotent.checkAndMark("key1", 3600)); // expired, re-marked
+        assertTrue(idempotent.isDuplicate("key1", 3600));
+    }
+
+    @Test
+    void checkAndMark_differentKeys_independent() {
+        idempotent.checkAndMark("key1", 3600);
+        assertFalse(idempotent.checkAndMark("key2", 3600));
+    }
+
+    @Test
+    void checkAndMark_concurrentRace_bothReturnOneTrueOneFalse() throws InterruptedException {
+        // Simulate race: two threads, one should win
+        String key = "racekey";
+        MemoryIdempotent shared = new MemoryIdempotent();
+        boolean[] results = new boolean[2];
+        Thread[] threads = new Thread[2];
+        for (int i = 0; i < 2; i++) {
+            final int idx = i;
+            threads[i] = new Thread(() -> {
+                results[idx] = shared.checkAndMark(key, 3600);
+            });
+        }
+        for (Thread t : threads) t.start();
+        for (Thread t : threads) t.join();
+        // One got false (new), one got true (duplicate)
+        int trueCount = 0, falseCount = 0;
+        for (boolean b : results) {
+            if (b) trueCount++;
+            else falseCount++;
+        }
+        assertEquals(1, trueCount);
+        assertEquals(1, falseCount);
+    }
+
+    @Test
+    void checkAndMark_zeroWindow_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> idempotent.checkAndMark("key1", 0));
+    }
+
+    @Test
+    void checkAndMark_negativeWindow_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> idempotent.checkAndMark("key1", -1));
+    }
+
+    @Test
+    void checkAndMark_nullKey_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> idempotent.checkAndMark(null, 3600));
+    }
+
+    @Test
+    void checkAndMark_blankKey_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> idempotent.checkAndMark("  ", 3600));
+    }
 }

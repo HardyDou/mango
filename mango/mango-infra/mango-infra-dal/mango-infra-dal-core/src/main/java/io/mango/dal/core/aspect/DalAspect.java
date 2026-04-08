@@ -35,7 +35,8 @@ public class DalAspect {
     private final IIdempotent idempotent;
     private final ISerializer serializer;
 
-    private final ExpressionParser spelParser = new SpelExpressionParser();
+    private static final ExpressionParser SPEL_PARSER = new SpelExpressionParser();
+    private static final java.util.regex.Pattern SPEL_PARAM_PATTERN = java.util.regex.Pattern.compile("#(\\w+)");
 
     public DalAspect(ICache cache, ILocker locker, ICounter counter,
                      IRateLimiter rateLimiter, IIdempotent idempotent, ISerializer serializer) {
@@ -97,18 +98,11 @@ public class DalAspect {
         Idempotent annotation = method.getAnnotation(Idempotent.class);
         String key = resolveKey(annotation.key(), pjp);
 
-        if (idempotent.isDuplicate(key, annotation.window())) {
+        if (idempotent.checkAndMark(key, annotation.window())) {
             throw new DuplicateOperationException("Duplicate operation detected for key: " + key);
         }
 
-        try {
-            Object result = pjp.proceed();
-            idempotent.mark(key, annotation.window());
-            return result;
-        } catch (Exception e) {
-            // Don't mark if operation failed
-            throw e;
-        }
+        return pjp.proceed();
     }
 
     // ==================== @Locker ====================
@@ -155,8 +149,7 @@ public class DalAspect {
 
         // Replace each #param reference with its value
         String result = keyExpression;
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("#(\\w+)");
-        java.util.regex.Matcher matcher = pattern.matcher(keyExpression);
+        java.util.regex.Matcher matcher = SPEL_PARAM_PATTERN.matcher(keyExpression);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
             String paramName = matcher.group(1);

@@ -20,4 +20,13 @@ public interface IIdempotent {
      * @param windowSeconds validity window in seconds, must be positive
      */
     void mark(String key, long windowSeconds);
+
+    /**
+     * Atomically check if duplicate and mark as processed in one call.
+     * This eliminates the race window between isDuplicate() + mark() called separately.
+     * @param key           idempotency key (must not be null or blank after trim)
+     * @param windowSeconds validity window in seconds, must be positive
+     * @return true if was duplicate (already marked), false if newly marked
+     */
+    boolean checkAndMark(String key, long windowSeconds);
 }

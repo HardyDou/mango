@@ -57,6 +57,24 @@ class MemoryLockerTest {
         assertThrows(IllegalArgumentException.class, () -> locker.tryLock("  ", 3600));
     }
 
+    @Test
+    void tryLock_concurrentRaceOnlyOneSucceeds() throws InterruptedException {
+        String key = "race-lock";
+        int threadCount = 10;
+        Thread[] threads = new Thread[threadCount];
+        boolean[] results = new boolean[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            final int idx = i;
+            threads[i] = new Thread(() -> results[idx] = locker.tryLock(key, 3600));
+        }
+        for (Thread t : threads) t.start();
+        for (Thread t : threads) t.join();
+        // Exactly one thread should acquire the lock
+        int successCount = 0;
+        for (boolean b : results) if (b) successCount++;
+        assertEquals(1, successCount);
+    }
+
     // ==================== unlock() tests ====================
 
     @Test
@@ -72,12 +90,12 @@ class MemoryLockerTest {
     }
 
     @Test
-    void unlock_nullKey_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> locker.unlock(null));
+    void unlock_nullKey_isSilentNoOp() {
+        assertDoesNotThrow(() -> locker.unlock(null));
     }
 
     @Test
-    void unlock_blankKey_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> locker.unlock("  "));
+    void unlock_blankKey_isSilentNoOp() {
+        assertDoesNotThrow(() -> locker.unlock("  "));
     }
 }
