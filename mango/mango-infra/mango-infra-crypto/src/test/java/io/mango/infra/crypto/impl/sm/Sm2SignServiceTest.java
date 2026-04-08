@@ -121,6 +121,28 @@ class Sm2SignServiceTest {
         assertThrows(IllegalStateException.class, () -> new Sm2SignService(props));
     }
 
+    @Test
+    void constructor_null_privateKey_throws_illegal_state() {
+        CryptoProperties props = new CryptoProperties();
+        CryptoProperties.Sm2Config sm2 = new CryptoProperties.Sm2Config();
+        sm2.setPrivateKey(null);
+        sm2.setPublicKey(TEST_PUBLIC_KEY);
+        sm2.setUserId("1234567812345678");
+        props.setSm2(sm2);
+        assertThrows(IllegalStateException.class, () -> new Sm2SignService(props));
+    }
+
+    @Test
+    void constructor_null_publicKey_throws_illegal_state() {
+        CryptoProperties props = new CryptoProperties();
+        CryptoProperties.Sm2Config sm2 = new CryptoProperties.Sm2Config();
+        sm2.setPrivateKey(TEST_PRIVATE_KEY);
+        sm2.setPublicKey(null);
+        sm2.setUserId("1234567812345678");
+        props.setSm2(sm2);
+        assertThrows(IllegalStateException.class, () -> new Sm2SignService(props));
+    }
+
     // --- decodeKey error path tests ---
 
     @Test

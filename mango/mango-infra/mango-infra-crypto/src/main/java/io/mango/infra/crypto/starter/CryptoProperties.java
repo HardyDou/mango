@@ -71,12 +71,6 @@ public class CryptoProperties {
          */
         private String padding = "PKCS5Padding";
 
-        /**
-         * IV for CBC mode (Base64 encoded, 16 bytes).
-         * Optional - will be auto-generated if not provided.
-         */
-        private String iv;
-
         public String getSecretKey() {
             return secretKey;
         }
@@ -99,14 +93,6 @@ public class CryptoProperties {
 
         public void setPadding(String padding) {
             this.padding = padding;
-        }
-
-        public String getIv() {
-            return iv;
-        }
-
-        public void setIv(String iv) {
-            this.iv = iv;
         }
     }
 

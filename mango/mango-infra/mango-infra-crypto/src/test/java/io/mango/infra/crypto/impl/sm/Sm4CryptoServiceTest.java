@@ -135,31 +135,25 @@ class Sm4CryptoServiceTest {
     }
 
     // --- Explicit IV tests (P1 coverage) ---
+    // encrypt with explicit IV: IV is embedded in ciphertext prefix
+    // decrypt: IV is always extracted from ciphertext prefix (iv param is ignored)
 
     @Test
-    void encrypt_decrypt_with_explicit_iv_roundtrip() {
+    void encrypt_with_explicit_iv_decrypt_extracts_from_prefix() {
         String plaintext = "explicit IV test data";
         String ciphertext = cbcService.encrypt(plaintext, TEST_IV);
-        String decrypted = cbcService.decrypt(ciphertext, TEST_IV);
+        // decrypt always extracts IV from ciphertext prefix, iv param is ignored
+        String decrypted = cbcService.decrypt(ciphertext);
         assertEquals(plaintext, decrypted);
     }
 
     @Test
-    void decrypt_wrong_iv_throws_bad_padding() {
-        String plaintext = "secret data";
+    void encrypt_with_explicit_iv_decrypt_with_wrong_iv_still_succeeds() {
+        // Wrong IV passed to decrypt is ignored — embedded IV is used
+        String plaintext = "explicit iv uses embedded iv";
         String ciphertext = cbcService.encrypt(plaintext, TEST_IV);
-        // Use a different IV for decryption — padding check fails, throws exception
         String wrongIv = "00000000000000000000000000000000";
-        assertThrows(RuntimeException.class, () -> cbcService.decrypt(ciphertext, wrongIv));
-    }
-
-    @Test
-    void decrypt_with_explicit_iv_ignores_ciphertext_prefix() {
-        // When iv is provided, the IV prepended to ciphertext is NOT used
-        String plaintext = "explicit iv ignores prefix";
-        String ciphertext = cbcService.encrypt(plaintext, TEST_IV);
-        // Decrypt with explicit iv — should work correctly
-        String decrypted = cbcService.decrypt(ciphertext, TEST_IV);
+        String decrypted = cbcService.decrypt(ciphertext, wrongIv);
         assertEquals(plaintext, decrypted);
     }
 
@@ -167,11 +161,10 @@ class Sm4CryptoServiceTest {
 
     @Test
     void decrypt_wrong_iv_length_throws() {
-        String plaintext = "test";
-        String ciphertext = cbcService.encrypt(plaintext);
-        // 15-byte IV is invalid
-        String shortIv = "1234567890abcdef1";
-        assertThrows(RuntimeException.class, () -> cbcService.decrypt(ciphertext, shortIv));
+        // decrypt in CBC mode extracts IV from ciphertext prefix — iv param is ignored
+        // So this test validates that encrypt with wrong IV length throws
+        String shortIv = "1234567890abcdef1"; // 15 bytes
+        assertThrows(RuntimeException.class, () -> cbcService.encrypt("test", shortIv));
     }
 
     @Test
@@ -237,5 +230,70 @@ class Sm4CryptoServiceTest {
         String plaintext = "!@#$%^&*()_+-=[]{}|;':\",./<>?";
         String ciphertext = ecbService.encrypt(plaintext);
         assertEquals(plaintext, ecbService.decrypt(ciphertext));
+    }
+
+    // --- Concurrency tests ---
+
+    @Test
+    void concurrent_encrypt_decrypt_same_instance() throws InterruptedException {
+        int threadCount = 10;
+        int opsPerThread = 50;
+        String[] plaintexts = {"hello", "world", "中文", "123456", ""};
+
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount);
+        java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        for (int t = 0; t < threadCount; t++) {
+            new Thread(() -> {
+                for (int i = 0; i < opsPerThread; i++) {
+                    String pt = plaintexts[i % plaintexts.length] + "_" + Thread.currentThread().getId() + "_" + i;
+                    try {
+                        String ct = cbcService.encrypt(pt);
+                        String dec = cbcService.decrypt(ct);
+                        if (!pt.equals(dec)) {
+                            errors.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        errors.incrementAndGet();
+                    }
+                }
+                latch.countDown();
+            }).start();
+        }
+
+        latch.await();
+        assertEquals(0, errors.get(), "Concurrent encrypt/decrypt should produce no errors");
+    }
+
+    @Test
+    void concurrent_encrypt_decrypt_with_explicit_iv() throws InterruptedException {
+        // All threads use the same cbcService instance
+        // Both encrypt and decrypt use the embedded IV from ciphertext prefix
+        int threadCount = 10;
+        int opsPerThread = 50;
+
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount);
+        java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        for (int t = 0; t < threadCount; t++) {
+            new Thread(() -> {
+                for (int i = 0; i < opsPerThread; i++) {
+                    String pt = "data_" + Thread.currentThread().getId() + "_" + i;
+                    try {
+                        String ct = cbcService.encrypt(pt, TEST_IV);
+                        String dec = cbcService.decrypt(ct);
+                        if (!pt.equals(dec)) {
+                            errors.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        errors.incrementAndGet();
+                    }
+                }
+                latch.countDown();
+            }).start();
+        }
+
+        latch.await();
+        assertEquals(0, errors.get(), "Concurrent explicit-IV encrypt/decrypt should produce no errors");
     }
 }

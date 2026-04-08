@@ -44,6 +44,12 @@ public class Sm2SignService implements ISignService {
         if (config.getUserId() == null || config.getUserId().isEmpty()) {
             throw new IllegalStateException("SM2 userId cannot be null or empty");
         }
+        if (config.getPrivateKey() == null || config.getPrivateKey().isEmpty()) {
+            throw new IllegalStateException("SM2 privateKey cannot be null or empty");
+        }
+        if (config.getPublicKey() == null || config.getPublicKey().isEmpty()) {
+            throw new IllegalStateException("SM2 publicKey cannot be null or empty");
+        }
     }
 
     @Override

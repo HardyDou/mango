@@ -6,6 +6,9 @@ import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,6 +23,7 @@ import java.security.SecureRandom;
  */
 public class Sm4CryptoService implements ICryptoService {
 
+    private static final Logger log = LoggerFactory.getLogger(Sm4CryptoService.class);
     private static final String ALGORITHM = "SM4";
     private static final int IV_SIZE = 16;
 
@@ -63,18 +67,20 @@ public class Sm4CryptoService implements ICryptoService {
         }
         try {
             boolean isCbc = "CBC".equalsIgnoreCase(config.getMode());
+            boolean isEcb = "ECB".equalsIgnoreCase(config.getMode());
             byte[] ivBytes;
 
-            if (isCbc) {
+            if (isEcb) {
+                log.warn("SM4 ECB mode is insecure and should only be used for testing or non-sensitive data");
+                ivBytes = null;
+            } else if (isCbc) {
                 if (iv != null) {
                     ivBytes = decodeKey(iv);
                     validateIvLength(ivBytes);
                 } else {
-                    // Auto-generate IV and prepend to ciphertext
                     ivBytes = generateIv();
                 }
             } else {
-                // ECB mode: no IV needed
                 ivBytes = null;
             }
 
@@ -92,16 +98,12 @@ public class Sm4CryptoService implements ICryptoService {
             byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
             if (isCbc) {
-                if (iv != null) {
-                    // Explicit IV: caller already has it, no need to prepend
-                    return Base64.toBase64String(encrypted);
-                } else {
-                    // Auto-generated IV: prepend to ciphertext for self-contained decryption
-                    ByteBuffer buffer = ByteBuffer.allocate(IV_SIZE + encrypted.length);
-                    buffer.put(ivBytes);
-                    buffer.put(encrypted);
-                    return Base64.toBase64String(buffer.array());
-                }
+                // Always prepend IV to ciphertext: [IV(16 bytes)][ciphertext]
+                // This makes decrypt(ciphertext) work regardless of whether IV was auto or explicit
+                ByteBuffer buffer = ByteBuffer.allocate(IV_SIZE + encrypted.length);
+                buffer.put(ivBytes);
+                buffer.put(encrypted);
+                return Base64.toBase64String(buffer.array());
             } else {
                 return Base64.toBase64String(encrypted);
             }
@@ -120,43 +122,36 @@ public class Sm4CryptoService implements ICryptoService {
         if (ciphertext == null) {
             throw new IllegalArgumentException("ciphertext cannot be null");
         }
+        // iv parameter is ignored — ciphertext always contains embedded IV in CBC mode
+        // (encrypt always prepends IV regardless of whether IV was auto-generated or explicit)
         try {
             boolean isCbc = "CBC".equalsIgnoreCase(config.getMode());
-            byte[] ivBytes = null;
 
             if (isCbc) {
-                if (iv != null) {
-                    // Use explicitly provided IV
-                    ivBytes = decodeKey(iv);
-                    validateIvLength(ivBytes);
-                } else {
-                    // Extract IV from the first 16 bytes of ciphertext prefix
-                    byte[] decoded = Base64.decode(ciphertext);
-                    if (decoded.length < IV_SIZE) {
-                        throw new IllegalArgumentException("ciphertext is too short, expected at least " + (IV_SIZE + 1) + " bytes for CBC mode");
-                    }
-                    ivBytes = new byte[IV_SIZE];
-                    byte[] actualCiphertext = new byte[decoded.length - IV_SIZE];
-                    ByteBuffer buffer = ByteBuffer.wrap(decoded);
-                    buffer.get(ivBytes);
-                    buffer.get(actualCiphertext);
-                    ciphertext = Base64.toBase64String(actualCiphertext);
+                // Extract IV from the first 16 bytes of ciphertext prefix
+                byte[] decoded = Base64.decode(ciphertext);
+                if (decoded.length < IV_SIZE) {
+                    throw new IllegalArgumentException("ciphertext is too short, expected at least " + (IV_SIZE + 1) + " bytes for CBC mode");
                 }
-            }
+                byte[] ivBytes = new byte[IV_SIZE];
+                byte[] actualCiphertext = new byte[decoded.length - IV_SIZE];
+                ByteBuffer buffer = ByteBuffer.wrap(decoded);
+                buffer.get(ivBytes);
+                buffer.get(actualCiphertext);
+                ciphertext = Base64.toBase64String(actualCiphertext);
 
-            SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
-            String transformation = buildTransformation();
-
-            Cipher cipher = Cipher.getInstance(transformation, BouncyCastleLoader.PROVIDER_NAME);
-            if (isCbc) {
-                IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
-                cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+                SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
+                Cipher cipher = Cipher.getInstance(buildTransformation(), BouncyCastleLoader.PROVIDER_NAME);
+                cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(ivBytes));
+                byte[] decrypted = cipher.doFinal(Base64.decode(ciphertext));
+                return new String(decrypted, StandardCharsets.UTF_8);
             } else {
+                SecretKeySpec keySpec = new SecretKeySpec(decodeKey(config.getSecretKey()), ALGORITHM);
+                Cipher cipher = Cipher.getInstance(buildTransformation(), BouncyCastleLoader.PROVIDER_NAME);
                 cipher.init(Cipher.DECRYPT_MODE, keySpec);
+                byte[] decrypted = cipher.doFinal(Base64.decode(ciphertext));
+                return new String(decrypted, StandardCharsets.UTF_8);
             }
-
-            byte[] decrypted = cipher.doFinal(Base64.decode(ciphertext));
-            return new String(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new RuntimeException("SM4 decryption failed", e);
         }
