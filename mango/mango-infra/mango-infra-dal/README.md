@@ -2,27 +2,27 @@
 
 ## 职责
 
-DAL（Data Access Layer）抽象层，通过 `IKvStore` 接口提供统一的 KV 存储能力，用于防重复、防抖、限流等场景。
+DAL（Data Access Layer）抽象层，通过 **IUseCase 接口体系**提供统一的通用能力：缓存、锁、计数器、限流、防重、Token、ID生成、序列化、对象转换。
 
 ## 技术实现
 
 - 核心框架：Spring Boot 3.x + Redisson / JDBC
 - 数据存储：Redis（Redisson）/ Database / Memory 自动选择
-- 通信方式：SPI + `@ConditionalOnProperty` 注入
+- 通信方式：SPI + `@ConditionalOnMissingBean` 注入
 
 ## 模块结构（4 层）
 
 ```
 mango-infra-dal/
-├── mango-infra-dal-api/              ← IKvStore 接口定义
-├── mango-infra-dal-core/              ← RedisXivStore / DbXivStore / MemoryXivStore 实现
-├── mango-infra-dal-starter/           ← 本地调用启动器（@ConditionalOnBean 注入）
+├── mango-infra-dal-api/              ← IUseCase 接口定义（9个）
+├── mango-infra-dal-core/              ← MemoryXivStore + 9个 Memory 实现
+├── mango-infra-dal-starter/           ← 本地调用启动器（@ConditionalOnMissingBean 注入）
 └── mango-infra-dal-starter-remote/    ← Feign Client（微服务时跨进程调用）
 ```
 
-## 核心接口
+## 核心接口（IUseCase 体系）
 
-### IKvStore
+### IKvStore（底层KV存储）
 
 | 方法 | 说明 |
 |------|------|
@@ -31,6 +31,69 @@ mango-infra-dal/
 | `increment(key, windowSeconds)` | 计数器递增，自动设置滚动窗口过期时间 |
 | `delete(key)` | 删除 key |
 | `exists(key)` | 检查 key 是否存在（不考虑过期） |
+
+### ICache（通用缓存）
+
+| 方法 | 说明 |
+|------|------|
+| `set(key, value, ttlSeconds)` | 设置缓存，TTL 必须为正数 |
+| `get(key)` | 获取缓存，过期返回 null |
+| `exists(key)` | 检查 key 是否存在（考虑过期） |
+| `delete(key)` | 删除缓存 |
+
+### ILocker（分布式锁）
+
+| 方法 | 说明 |
+|------|------|
+| `tryLock(key, ttlSeconds)` | 尝试获取锁，TTL 必须为正数 |
+| `unlock(key)` | 释放锁 |
+
+### ICounter（原子计数器）
+
+| 方法 | 说明 |
+|------|------|
+| `increment(key, delta, windowSeconds)` | 递增/递减计数器，自动设置滚动窗口 |
+| `get(key)` | 获取当前值 |
+
+### IRateLimiter（令牌桶限流）
+
+| 方法 | 说明 |
+|------|------|
+| `tryAcquire(key, permits)` | 尝试获取令牌 |
+
+### IIdempotent（防重复提交）
+
+| 方法 | 说明 |
+|------|------|
+| `isDuplicate(key, windowSeconds)` | 检查是否重复 |
+| `mark(key, windowSeconds)` | 标记为已处理 |
+
+### ITokenStore（Token 存储）
+
+| 方法 | 说明 |
+|------|------|
+| `store(token, value, ttlSeconds)` | 存储 Token |
+| `get(token)` | 获取 Token 值 |
+| `remove(token)` | 删除 Token |
+
+### IIdGenerator（ID 生成器）
+
+| 方法 | 说明 |
+|------|------|
+| `nextId()` | 生成下一个唯一 ID |
+
+### ISerializer（JSON 序列化）
+
+| 方法 | 说明 |
+|------|------|
+| `serialize(object)` | 对象序列化为 JSON 字符串 |
+| `deserialize(content, classType)` | JSON 字符串反序列化 |
+
+### IConverter（对象转换）
+
+| 方法 | 说明 |
+|------|------|
+| `convert(source, classType)` | 对象类型转换（通过 JSON 中转） |
 
 ## 依赖关系
 
@@ -282,6 +345,8 @@ mango:
 
 ## SPI 注入机制
 
+### IKvStore 注入
+
 | 条件 | 效果 |
 |------|------|
 | `mango.dal.type=redis` | 强制使用 RedisXivStore（无 RedissonClient 则启动失败） |
@@ -291,14 +356,62 @@ mango:
 
 > **自动检测不会级联到 DbXivStore**。如果需要使用 DbXivStore，必须显式设置 `type=db`。
 
-> 注意：**无运行时降级，无自动级联**。通过 Spring `@ConditionalOnBean` / `@ConditionalOnMissingBean` 在启动时确定用哪个实现，部署拓扑变更需重启服务。
+### IUseCase 接口注入
+
+所有 9 个 IUseCase 接口通过 `@ConditionalOnMissingBean` 自动注入 **Memory 实现**：
+
+| 接口 | 默认实现 |
+|------|---------|
+| `ICache` | MemoryCache |
+| `ILocker` | MemoryLocker |
+| `ICounter` | MemoryCounter |
+| `IRateLimiter` | MemoryRateLimiter |
+| `IIdempotent` | MemoryIdempotent |
+| `ITokenStore` | MemoryTokenStore |
+| `IIdGenerator` | MemoryIdGenerator |
+| `ISerializer` | JsonSerializer |
+| `IConverter` | JsonConverter |
+
+> 注意：**无运行时降级，无自动级联**。通过 Spring `@ConditionalOnMissingBean` 在启动时确定用哪个实现，部署拓扑变更需重启服务。
 
 ## 约束（强制）
 
-- ✅ 必须通过 SPI 注入使用 `IKvStore`
-- ✅ 禁止直接 `new RedisXivStore()` 等实现类
+- ✅ 必须通过 SPI 注入使用 `IKvStore` / `ICache` 等 IUseCase 接口
+- ✅ 禁止直接 `new MemoryCache()` / `new RedisXivStore()` 等实现类
 - ✅ TTL 必须显式传入（每个方法参数）
-- ✅ `expireSeconds` / `windowSeconds` 必须为正数
+- ✅ TTL / windowSeconds 必须为正数（不得为 0 或负数）
 - ❌ 禁止硬编码 TTL
 - ❌ 禁止在单机部署使用 RedisXivStore（微服务才用）
 - ❌ type=db 需同时有 RedissonClient（用于 ID 生成）
+
+## 使用示例
+
+```java
+@Autowired
+private ICache cache;
+
+@Autowired
+private ILocker locker;
+
+@Autowired
+private ICounter counter;
+
+// 缓存
+cache.set("user:1", "John", 3600);
+String user = cache.get("user:1");
+
+// 分布式锁
+if (locker.tryLock("order:create", 30)) {
+    try {
+        // 业务逻辑
+    } finally {
+        locker.unlock("order:create");
+    }
+}
+
+// 计数器（限流）
+long count = counter.increment("api:rate:user1", 1, 60);
+if (count > 100) {
+    throw new RateLimitException();
+}
+```

@@ -1,1 +1,2 @@
 io.mango.dal.starter.DalStoreAutoConfiguration
+io.mango.dal.starter.UseCaseAutoConfiguration
