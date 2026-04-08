@@ -22,6 +22,5 @@
         <module>mango-infra-security-api</module>
         <module>mango-infra-security-core</module>
         <module>mango-infra-security-starter</module>
-        <module>mango-infra-security-starter-remote</module>
     </modules>
 </project>

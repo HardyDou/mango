@@ -197,6 +197,30 @@ UserVO user = userApi.getUserById(area.getUserId());
 
 ## 七，Infra 层
 
+### 7.1 模块结构
+
+Infra 层是基础设施，**不需要 `starter-remote`**（微服务远程调用）。因为基础设施必须跟应用一起部署，不存在独立微服务形态。
+
+```
+mango-infra-xxx/
+├── mango-infra-xxx-api/       # 接口定义（如 IPermissionService）
+├── mango-infra-xxx-core/      # 核心实现（如 DefaultPermissionServiceImpl）
+└── mango-infra-xxx-starter/   # 本地注入（AutoConfiguration）
+    └── XxxAutoConfiguration.java
+```
+
+> **注意**：Infra 层禁止创建 `*-starter-remote` 子模块。基础设施是嵌入式库，不是微服务。
+
+### 7.2 依赖规则
+
+| Infra 子模块 | 能依赖 | 禁止依赖 |
+|-------------|--------|---------|
+| `*-api` | 无业务依赖 | 所有模块 |
+| `*-core` | 本域 api | 其他 infra 模块的 core、starter |
+| `*-starter` | 本域 api、本域 core | 其他 infra 模块 |
+
+### 7.3 通用结构
+
 ```
 mango-infra-xxx/
 └── src/main/java/io/mango/infra/xxx/
