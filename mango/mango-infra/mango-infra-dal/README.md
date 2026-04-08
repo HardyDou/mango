@@ -374,6 +374,109 @@ mango:
 
 > 注意：**无运行时降级，无自动级联**。通过 Spring `@ConditionalOnMissingBean` 在启动时确定用哪个实现，部署拓扑变更需重启服务。
 
+## AOP 注解支持
+
+除了编程式调用（`@Autowired ICache`），还支持注解方式使用：
+
+### 注解列表
+
+| 注解 | 功能 | 切面 |
+|------|------|------|
+| `@Cacheable` | 缓存方法结果 | CacheAspect |
+| `@RateLimit` | 令牌桶限流 | RateLimitAspect |
+| `@Idempotent` | 防重复提交 | IdempotentAspect |
+| `@Locker` | 分布式锁 | LockerAspect |
+
+### @Cacheable
+
+```java
+@Cacheable(key = "user:#userId", ttl = 3600)
+public User getUser(String userId) {
+    // 首次调用执行方法，结果缓存
+    // 后续调用直接返回缓存结果
+    return userRepository.findById(userId);
+}
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `key` | String | - | 缓存 key，支持 SpEL `#参数名` |
+| `ttl` | long | 3600 | 过期时间（秒） |
+| `cacheValue` | boolean | true | 是否缓存返回值 |
+
+### @RateLimit
+
+```java
+@RateLimit(key = "api:#userId", permits = 100)
+public Result apiEndpoint(String userId) {
+    // 超过 100 次/秒 限制时抛出 RateLimitExceededException
+    return doSomething();
+}
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `key` | String | - | 限流 key，支持 SpEL |
+| `permits` | int | 1 | 每次请求消耗的令牌数 |
+
+### @Idempotent
+
+```java
+@Idempotent(key = "order:#orderNo", window = 60)
+public void createOrder(String orderNo) {
+    // 60 秒内相同 orderNo 只允许执行一次
+    // 重复调用抛出 DuplicateOperationException
+    orderService.submit(orderNo);
+}
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `key` | String | - | 防重 key，支持 SpEL |
+| `window` | long | 60 | 有效时间窗口（秒） |
+
+### @Locker
+
+```java
+@Locker(key = "order:#orderId", ttl = 30)
+public void processOrder(Long orderId) {
+    // 获取分布式锁后执行，30 秒自动释放
+    // 锁获取失败抛出 LockAcquisitionException
+    orderService.process(orderId);
+}
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `key` | String | - | 锁 key，支持 SpEL |
+| `ttl` | long | 30 | 锁 TTL（秒） |
+
+### SpEL 表达式
+
+注解的 `key` 属性支持 SpEL 表达式，使用 `#参数名` 引用方法参数：
+
+```java
+// 单参数
+@Cacheable(key = "user:#userId")
+public User getUser(String userId) { ... }
+
+// 多参数
+@Locker(key = "order:#userId:#orderId")
+public void updateOrder(String userId, Long orderId) { ... }
+
+// 直接值（无 SpEL）
+@RateLimit(key = "api:global", permits = 1000)
+public Result globalLimit() { ... }
+```
+
+### 异常处理
+
+| 注解 | 异常类型 | 说明 |
+|------|---------|------|
+| `@RateLimit` | `RateLimitExceededException` | 超过限流阈值 |
+| `@Idempotent` | `DuplicateOperationException` | 检测到重复操作 |
+| `@Locker` | `LockAcquisitionException` | 锁获取失败 |
+
 ## 约束（强制）
 
 - ✅ 必须通过 SPI 注入使用 `IKvStore` / `ICache` 等 IUseCase 接口
