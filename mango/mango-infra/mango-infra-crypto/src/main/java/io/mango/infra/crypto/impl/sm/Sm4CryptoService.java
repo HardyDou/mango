@@ -43,7 +43,21 @@ public class Sm4CryptoService implements ICryptoService {
         if (mode == null || (!mode.equalsIgnoreCase("CBC") && !mode.equalsIgnoreCase("ECB"))) {
             throw new IllegalStateException("SM4 mode must be CBC or ECB, got: " + mode);
         }
+        validatePadding();
         validateSecretKey();
+    }
+
+    private void validatePadding() {
+        String padding = config.getPadding();
+        if (padding == null) {
+            throw new IllegalStateException("SM4 padding cannot be null");
+        }
+        String upper = padding.toUpperCase();
+        if (!upper.equals("PKCS5PADDING") && !upper.equals("PKCS7PADDING")
+                && !upper.equals("ZEROPADDING") && !upper.equals("NOPADDING")) {
+            throw new IllegalStateException(
+                    "SM4 padding must be one of: PKCS5Padding, PKCS7Padding, ZeroPadding, NoPadding, got: " + padding);
+        }
     }
 
     private void validateSecretKey() {
