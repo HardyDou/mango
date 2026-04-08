@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.RScript;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -28,9 +28,6 @@ class RedisXivStoreTest {
 
     @Mock
     private RBucket<String> bucket;
-
-    @Mock
-    private RAtomicLong atomicLong;
 
     private RedisXivStore store;
 
@@ -72,6 +69,16 @@ class RedisXivStoreTest {
         assertThrows(IllegalArgumentException.class, () -> store.put("  ", "v", 3600));
     }
 
+    @Test
+    void put_zeroTtl_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.put("k1", "v1", 0));
+    }
+
+    @Test
+    void put_negativeTtl_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.put("k1", "v1", -1));
+    }
+
     // ==================== get() tests ====================
 
     @Test
@@ -103,32 +110,47 @@ class RedisXivStoreTest {
     // ==================== increment() tests ====================
 
     @Test
-    void increment_firstCall_returns1AndSetsExpiry() {
-        when(redissonClient.getAtomicLong("counter1")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(1L);
-        when(atomicLong.expire(anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
+    @SuppressWarnings("unchecked")
+    void increment_firstCall_returns1() {
+        RScript script = mock(RScript.class);
+        when(redissonClient.getScript()).thenReturn(script);
+        when(script.eval(any(), anyString(), any(), anyList(), any())).thenReturn(1L);
 
         long count = store.increment("counter1", 60);
 
         assertEquals(1, count);
-        verify(atomicLong).expire(60, TimeUnit.SECONDS);
     }
 
     @Test
-    void increment_subsequentCalls_incrementsWithoutResettingExpiry() {
-        when(redissonClient.getAtomicLong("counter1")).thenReturn(atomicLong);
-        when(atomicLong.incrementAndGet()).thenReturn(2L);
+    @SuppressWarnings("unchecked")
+    void increment_subsequentCall_increments() {
+        RScript script = mock(RScript.class);
+        when(redissonClient.getScript()).thenReturn(script);
+        when(script.eval(any(), anyString(), any(), anyList(), any())).thenReturn(5L);
 
         long count = store.increment("counter1", 60);
 
-        assertEquals(2, count);
-        // expire should NOT be called when count > 1
-        verify(atomicLong, never()).expire(anyLong(), any(TimeUnit.class));
+        assertEquals(5, count);
     }
 
     @Test
     void increment_nullKey_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> store.increment(null, 60));
+    }
+
+    @Test
+    void increment_blankKey_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.increment("  ", 60));
+    }
+
+    @Test
+    void increment_zeroWindow_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.increment("counter", 0));
+    }
+
+    @Test
+    void increment_negativeWindow_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> store.increment("counter", -1));
     }
 
     // ==================== delete() tests ====================
@@ -177,30 +199,6 @@ class RedisXivStoreTest {
     @Test
     void exists_nullKey_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> store.exists(null));
-    }
-
-    // ==================== TTL edge cases ====================
-
-    @Test
-    void put_zeroTtl_setIfAbsentReturnsFalse_butValueStillStored() {
-        // Redis setIfAbsent with Duration.ofSeconds(0) stores value without expiry
-        doReturn(bucket).when(redissonClient).getBucket("k1");
-        when(bucket.setIfAbsent(eq("v1"), eq(Duration.ofSeconds(0)))).thenReturn(false);
-
-        boolean result = store.put("k1", "v1", 0);
-
-        assertFalse(result);
-        verify(bucket).setIfAbsent("v1", Duration.ofSeconds(0));
-    }
-
-    @Test
-    void put_negativeTtl_stillStores() {
-        doReturn(bucket).when(redissonClient).getBucket("k1");
-        when(bucket.setIfAbsent(eq("v1"), eq(Duration.ofSeconds(-1)))).thenReturn(true);
-
-        boolean result = store.put("k1", "v1", -1);
-
-        assertTrue(result);
     }
 
     @Test
