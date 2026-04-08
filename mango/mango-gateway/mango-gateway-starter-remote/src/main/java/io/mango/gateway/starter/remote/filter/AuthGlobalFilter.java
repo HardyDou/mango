@@ -3,7 +3,7 @@ package io.mango.gateway.starter.remote.filter;
 import io.mango.gateway.api.GatewayConstant;
 import io.mango.gateway.core.config.DynamicWhiteListConfig;
 import io.mango.gateway.core.config.GatewayProperties;
-import io.mango.gateway.core.util.JwtUtil;
+import io.mango.infra.security.api.ITokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
     private final GatewayProperties properties;
-    private final JwtUtil jwtUtil;
+    private final ITokenService tokenService;
     private final DynamicWhiteListConfig whiteListConfig;
 
     @Override
@@ -53,20 +53,26 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
         // 获取Token
         String authHeader = request.getHeaders().getFirst(GatewayConstant.TOKEN_HEADER);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(ITokenService.BEARER_PREFIX)) {
             return unauthorized(exchange, "Missing or invalid Authorization header");
         }
 
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(ITokenService.BEARER_PREFIX.length());
 
         // 验证Token
-        if (!jwtUtil.validateToken(token)) {
+        if (!tokenService.validateToken(token)) {
             return unauthorized(exchange, "Invalid or expired token");
         }
 
+        // 验证Token类型（拒绝refresh token作为bearer token）
+        String tokenType = tokenService.getTokenType(token);
+        if (!ITokenService.TOKEN_TYPE_ACCESS.equals(tokenType)) {
+            return unauthorized(exchange, "Invalid token type: bearer token must be access token");
+        }
+
         // 获取用户信息
-        Long userId = jwtUtil.getUserId(token);
-        String username = jwtUtil.getUsername(token);
+        Long userId = tokenService.getUserId(token);
+        String username = tokenService.getUsername(token);
 
         // 构建转发的请求头
         ServerHttpRequest mutatedRequest = request.mutate()

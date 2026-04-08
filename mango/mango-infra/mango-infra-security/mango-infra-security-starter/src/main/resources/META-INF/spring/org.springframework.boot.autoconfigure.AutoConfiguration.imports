@@ -1,0 +1,2 @@
+io.mango.infra.security.starter.SecurityAutoConfiguration
+io.mango.infra.security.starter.TokenAutoConfiguration

@@ -1,10 +1,11 @@
 package io.mango.auth.starter.config;
 
 import io.mango.auth.core.constant.AuthConstant;
-import io.mango.auth.core.util.AuthJwtUtil;
+import io.mango.infra.security.api.ITokenService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -25,27 +26,19 @@ import java.util.Arrays;
  */
 @Slf4j
 @Configuration
+@RequiredArgsConstructor
 public class AuthSecurityConfig {
 
-    /**
-     * JWT工具类
-     */
-    @Bean("authJwtUtil")
-    @ConditionalOnProperty(name = "mango.gateway.auth-enabled", havingValue = "true", matchIfMissing = true)
-    public AuthJwtUtil jwtUtil(
-            @org.springframework.beans.factory.annotation.Value("${mango.gateway.jwt-secret:mango-secret-key-change-in-production-must-be-at-least-256-bits-long}") String secret,
-            @org.springframework.beans.factory.annotation.Value("${mango.gateway.token-expire-seconds:7200}") long expireSeconds) {
-        return new AuthJwtUtil(secret, expireSeconds * 1000L);
-    }
+    private final ITokenService tokenService;
 
     /**
      * 认证过滤器
      */
     @Bean("authAuthFilterRegistration")
     @ConditionalOnProperty(name = "mango.gateway.auth-enabled", havingValue = "true", matchIfMissing = true)
-    public FilterRegistrationBean<AuthFilterBean> authAuthFilterRegistration(AuthJwtUtil jwtUtil) {
+    public FilterRegistrationBean<AuthFilterBean> authAuthFilterRegistration() {
         FilterRegistrationBean<AuthFilterBean> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new AuthFilterBean(jwtUtil));
+        registration.setFilter(new AuthFilterBean(tokenService));
         registration.addUrlPatterns("/*");
         registration.setName("authAuthFilter");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
@@ -59,10 +52,10 @@ public class AuthSecurityConfig {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public static class AuthFilterBean implements Filter {
 
-        private final AuthJwtUtil jwtUtil;
+        private final ITokenService tokenService;
 
-        public AuthFilterBean(AuthJwtUtil jwtUtil) {
-            this.jwtUtil = jwtUtil;
+        public AuthFilterBean(ITokenService tokenService) {
+            this.tokenService = tokenService;
         }
 
         @Override
@@ -81,22 +74,29 @@ public class AuthSecurityConfig {
 
             // 获取Token
             String authHeader = request.getHeader(AuthConstant.TOKEN_HEADER);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (authHeader == null || !authHeader.startsWith(ITokenService.BEARER_PREFIX)) {
                 unauthorized(response, "Missing or invalid Authorization header");
                 return;
             }
 
-            String token = authHeader.substring(7);
+            String token = authHeader.substring(ITokenService.BEARER_PREFIX.length());
 
             // 验证Token
-            if (!jwtUtil.validateToken(token)) {
+            if (!tokenService.validateToken(token)) {
                 unauthorized(response, "Invalid or expired token");
                 return;
             }
 
+            // 验证Token类型：只允许access token，refresh token不能用于认证
+            String tokenType = tokenService.getTokenType(token);
+            if (!ITokenService.TOKEN_TYPE_ACCESS.equals(tokenType)) {
+                unauthorized(response, "Invalid token type: expected access token");
+                return;
+            }
+
             // 获取用户信息
-            Long userId = jwtUtil.getUserId(token);
-            String username = jwtUtil.getUsername(token);
+            Long userId = tokenService.getUserId(token);
+            String username = tokenService.getUsername(token);
 
             // 设置到请求属性中，供后续Controller使用
             request.setAttribute("userId", userId);

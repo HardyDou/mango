@@ -1,77 +1,56 @@
 package io.mango.auth.core.service.impl;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
 import io.mango.auth.api.vo.LoginRequest;
 import io.mango.auth.api.vo.LoginResponse;
 import io.mango.auth.api.vo.SysRoleVO;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.ISysRoleService;
+import io.mango.infra.security.api.ITokenService;
 import io.mango.permission.api.po.SysUser;
-import io.mango.permission.api.SysUserApi;
 import io.mango.permission.api.SysMenuApi;
+import io.mango.permission.api.SysUserApi;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Authentication service implementation
+ * Authentication service implementation.
+ * Delegates JWT operations to {@link ITokenService}.
  *
  * @author Mango
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthServiceImpl implements IAuthService {
-
-    private static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     private final SysUserApi sysUserApi;
     private final ISysRoleService sysRoleService;
     private final SysMenuApi sysMenuApi;
+    private final ITokenService tokenService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthServiceImpl(SysUserApi sysUserApi, ISysRoleService sysRoleService, SysMenuApi sysMenuApi) {
-        this.sysUserApi = sysUserApi;
-        this.sysRoleService = sysRoleService;
-        this.sysMenuApi = sysMenuApi;
-    }
-
-    @Value("${mango.jwt.secret:mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}")
-    private String jwtSecret;
-
-    @Value("${mango.jwt.access-token-validity:7200}")
-    private Long accessTokenValidity; // seconds, default 2 hours
-
-    @Value("${mango.jwt.refresh-token-validity:604800}")
-    private Long refreshTokenValidity; // seconds, default 7 days
+    @Value("${mango.security.jwt.access-token-validity:7200}")
+    private long accessTokenValiditySeconds;
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
-        // 1. Validate credentials (use ForAuth method to get password)
+        // 1. Validate credentials
         SysUser user = sysUserApi.getByUsernameForAuth(loginRequest.getUsername());
         if (user == null) {
             log.warn("Login failed: user not found - {}", loginRequest.getUsername());
             return null;
         }
 
-        // 2. Verify password using BCrypt
-        if (!matchesPassword(loginRequest.getPassword(), user.getPassword())) {
+        // 2. Verify password
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             log.warn("Login failed: invalid password for user - {}", loginRequest.getUsername());
             return null;
         }
@@ -83,14 +62,15 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         // 4. Generate tokens
-        String accessToken = generateAccessToken(user);
-        String refreshToken = generateRefreshToken(user);
+        String accessToken = tokenService.generateAccessToken(
+                user.getUserId(), user.getUsername(), Map.of("username", user.getUsername()));
+        String refreshToken = tokenService.generateRefreshToken(user.getUserId(), user.getUsername());
 
         // 5. Build response
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
-        response.setExpiresIn(accessTokenValidity);
+        response.setExpiresIn(accessTokenValiditySeconds);
         response.setTokenType("Bearer");
         response.setUserId(user.getUserId());
         response.setUsername(user.getUsername());
@@ -98,12 +78,10 @@ public class AuthServiceImpl implements IAuthService {
 
         // 6. Load roles and permissions
         List<SysRoleVO> userRoles = sysRoleService.getUserRoles(user.getUserId());
-        if (userRoles != null && !userRoles.isEmpty()) {
-            response.setRoles(userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList()));
-        } else {
-            response.setRoles(List.of());
-        }
-        // Load permissions from permission service via SysMenuApi
+        response.setRoles(userRoles != null && !userRoles.isEmpty()
+                ? userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList())
+                : List.of());
+
         Set<String> userPermissions = sysMenuApi.getUserPermissions(user.getUserId());
         response.setPermissions(userPermissions != null ? List.copyOf(userPermissions) : List.of());
 
@@ -113,54 +91,47 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public LoginResponse refreshToken(String refreshToken) {
-        // 1. Validate refresh token
-        if (!validateToken(refreshToken)) {
-            log.warn("Refresh token is invalid");
+        // Strip "Bearer " prefix if present
+        if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
+
+        // 1. Validate and refresh
+        ITokenService.TokenPair tokenPair = tokenService.refresh(refreshToken);
+        if (tokenPair == null) {
+            log.warn("Refresh token is invalid or expired");
             return null;
         }
 
-        // 2. Verify token type is refresh
-        String tokenType = getTokenType(refreshToken);
-        if (!"refresh".equals(tokenType)) {
-            log.warn("Token type mismatch: expected 'refresh' but got '{}'", tokenType);
-            return null;
-        }
-
-        // 3. Get user ID from refresh token
-        Long userId = getUserIdFromToken(refreshToken);
+        // 2. Get userId from the old refresh token (still valid at this point)
+        Long userId = tokenService.getUserId(refreshToken);
         if (userId == null) {
-            log.warn("Could not get user ID from refresh token");
             return null;
         }
 
-        // 3. Get user with password (ForAuth method)
+        // 3. Load user
         SysUser user = sysUserApi.getByIdForAuth(userId);
         if (user == null || user.getStatus() != 1) {
-            log.warn("User not found or disabled: {}", userId);
+            log.warn("User not found or disabled during refresh: {}", userId);
             return null;
         }
 
-        // 4. Generate new tokens
-        String newAccessToken = generateAccessToken(user);
-        String newRefreshToken = generateRefreshToken(user);
-
-        // 5. Build response
+        // 4. Build response
         LoginResponse response = new LoginResponse();
-        response.setAccessToken(newAccessToken);
-        response.setRefreshToken(newRefreshToken);
-        response.setExpiresIn(accessTokenValidity);
+        response.setAccessToken(tokenPair.accessToken());
+        response.setRefreshToken(tokenPair.refreshToken());
+        response.setExpiresIn(accessTokenValiditySeconds);
         response.setTokenType("Bearer");
         response.setUserId(user.getUserId());
         response.setUsername(user.getUsername());
         response.setNickname(user.getNickname());
 
-        // 6. Load roles and permissions for refresh token response
+        // 5. Load roles and permissions
         List<SysRoleVO> userRoles = sysRoleService.getUserRoles(user.getUserId());
-        if (userRoles != null && !userRoles.isEmpty()) {
-            response.setRoles(userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList()));
-        } else {
-            response.setRoles(List.of());
-        }
+        response.setRoles(userRoles != null && !userRoles.isEmpty()
+                ? userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList())
+                : List.of());
+
         Set<String> userPermissions = sysMenuApi.getUserPermissions(user.getUserId());
         response.setPermissions(userPermissions != null ? List.copyOf(userPermissions) : List.of());
 
@@ -169,14 +140,10 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     public void logout(String token) {
-        // In a real implementation, you might want to:
-        // 1. Add the token to a blacklist
-        // 2. Or remove from whitelist in Redis
-        // For simplicity, we just log the logout
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        Long userId = getUserIdFromToken(token);
+        Long userId = tokenService.getUserId(token);
         log.info("User logged out: userId={}", userId);
     }
 
@@ -188,25 +155,7 @@ public class AuthServiceImpl implements IAuthService {
         if (token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-            Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (SignatureException e) {
-            log.error("Invalid JWT signature: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            log.error("JWT token is expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.error("JWT token is unsupported: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.error("JWT claims string is empty: {}", e.getMessage());
-        }
-        return false;
+        return tokenService.validateToken(token);
     }
 
     @Override
@@ -217,126 +166,10 @@ public class AuthServiceImpl implements IAuthService {
         if (token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-            Claims claims = Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            return Long.valueOf(claims.getSubject());
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT token is expired: {}", e.getMessage());
-            return null;
-        } catch (MalformedJwtException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
-            return null;
-        } catch (UnsupportedJwtException e) {
-            log.warn("JWT token is unsupported: {}", e.getMessage());
-            return null;
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT claims string is empty: {}", e.getMessage());
-            return null;
-        } catch (SignatureException e) {
-            log.warn("JWT signature validation failed: {}", e.getMessage());
-            return null;
-        } catch (Exception e) {
-            log.error("Failed to get user ID from token: {}", e.getMessage());
+        // Validate token before extracting userId to prevent tampered/expired token exploitation
+        if (!tokenService.validateToken(token)) {
             return null;
         }
-    }
-
-    /**
-     * Get token type from token
-     */
-    private String getTokenType(String token) {
-        if (token == null || token.isEmpty()) {
-            return null;
-        }
-        if (token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-            Claims claims = Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            Object type = claims.get("type");
-            return type != null ? type.toString() : null;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT token is expired: {}", e.getMessage());
-            return null;
-        } catch (MalformedJwtException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
-            return null;
-        } catch (UnsupportedJwtException e) {
-            log.warn("JWT token is unsupported: {}", e.getMessage());
-            return null;
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT claims string is empty: {}", e.getMessage());
-            return null;
-        } catch (SignatureException e) {
-            log.warn("JWT signature validation failed: {}", e.getMessage());
-            return null;
-        } catch (Exception e) {
-            log.error("Failed to get token type: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Generate access token
-     */
-    private String generateAccessToken(SysUser user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", user.getUsername());
-        claims.put("type", "access");
-        return generateToken(user.getUserId().toString(), claims, accessTokenValidity);
-    }
-
-    /**
-     * Generate refresh token
-     */
-    private String generateRefreshToken(SysUser user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("username", user.getUsername());
-        claims.put("type", "refresh");
-        return generateToken(user.getUserId().toString(), claims, refreshTokenValidity);
-    }
-
-    /**
-     * Generate JWT token
-     */
-    private String generateToken(String subject, Map<String, Object> claims, Long validity) {
-        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + TimeUnit.SECONDS.toMillis(validity));
-
-        return Jwts.builder()
-                .claims(claims)
-                .subject(subject)
-                .issuedAt(now)
-                .expiration(expiry)
-                .signWith(key)
-                .compact();
-    }
-
-    /**
-     * Match password using BCrypt
-     */
-    private boolean matchesPassword(String rawPassword, String encodedPassword) {
-        if (rawPassword == null || encodedPassword == null) {
-            return false;
-        }
-        return PASSWORD_ENCODER.matches(rawPassword, encodedPassword);
-    }
-
-    /**
-     * Encode password (for initial password setup)
-     */
-    public String encodePassword(String rawPassword) {
-        return PASSWORD_ENCODER.encode(rawPassword);
+        return tokenService.getUserId(token);
     }
 }

@@ -2,7 +2,7 @@ package io.mango.gateway.starter.config;
 
 import io.mango.gateway.core.config.GatewayProperties;
 import io.mango.gateway.core.filter.AuthFilter;
-import io.mango.gateway.core.util.JwtUtil;
+import io.mango.infra.security.api.ITokenService;
 import jakarta.servlet.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,19 +27,9 @@ public class GatewayStarterConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public JwtUtil jwtUtil() {
-        return new JwtUtil(properties.getJwtSecret(), properties.getTokenExpireSeconds() * 1000);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public AuthFilter authFilter(JwtUtil jwtUtil) {
-        return new AuthFilter(properties, jwtUtil);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public FilterRegistrationBean<AuthFilter> authFilterRegistration(AuthFilter authFilter) {
+    public FilterRegistrationBean<AuthFilter> authFilterRegistration(
+            ITokenService tokenService) {
+        AuthFilter authFilter = new AuthFilter(properties, tokenService, null);
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(authFilter);
         registration.addUrlPatterns("/*");

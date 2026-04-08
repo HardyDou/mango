@@ -1,4 +1,4 @@
-package io.mango.common.permission;
+package io.mango.infra.security.api;
 
 import java.util.List;
 

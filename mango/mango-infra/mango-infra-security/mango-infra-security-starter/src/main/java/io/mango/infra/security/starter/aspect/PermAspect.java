@@ -1,7 +1,8 @@
-package io.mango.common.permission;
+package io.mango.infra.security.starter.aspect;
 
 import io.mango.common.annotation.Perm;
 import io.mango.common.exception.BizException;
+import io.mango.infra.security.api.IPermissionService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,7 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -32,16 +34,12 @@ public class PermAspect {
     private static final String USER_ID_ATTRIBUTE = "userId";
 
     /**
-     * Permission service - injected via setter for flexibility
+     * Permission service - injected via Spring DI
      */
-    private static IPermissionService permissionService;
-
-    /**
-     * Set the permission service (called by Spring or manually)
-     */
-    public void setPermissionService(IPermissionService service) {
-        permissionService = service;
-    }
+    // Impl note: IPermissionService is created by mango-permission-starter
+    // and auto-wired here via Spring's @Autowired
+    @Autowired(required = false)
+    private IPermissionService permissionService;
 
     @Before("@annotation(io.mango.common.annotation.Perm)")
     public void checkPermission(JoinPoint joinPoint) {

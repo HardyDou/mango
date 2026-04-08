@@ -24,19 +24,18 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango Infra Security API (ITokenService) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-security-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Jakarta Servlet API -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>6.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- JWT (Token解析) -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.12.5</version>
             <scope>provided</scope>
         </dependency>
 
