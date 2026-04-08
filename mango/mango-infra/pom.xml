@@ -42,6 +42,8 @@
         <module>mango-infra-dal</module>
         <!-- Security (Permission aspect - @Perm) -->
         <module>mango-infra-security</module>
+        <!-- Crypto (SM2/SM3/SM4 encryption, signing, hashing) -->
+        <module>mango-infra-crypto</module>
     </modules>
 
 </project>
