@@ -735,7 +735,7 @@ guarantee-app
 | T1 | `mango-infra-kv` → `mango-infra-dal` 重构：4 层结构 + `@Conditional*` 注入 | 架构重构 | ✅ 已完成 | commit c0b7df41 |
 | T2 | `mango-bff-admin` → `mango-admin-app` 重命名 | 重构 | 待执行 | 目录重命名 + pom artifactId 更新 + import 修正 |
 | T3 | IUseCase 9 个接口定义 | 新增 | 🔄 已拆分 | 拆分为 `plans/2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md` |
-| T4 | Memory 实现 TTL=0 清理逻辑修复 | Bug修复 | 待执行 | `TTL=0` 时应立即清理而非永久保留 |
+| T4 | MemoryXivStore TTL=0 清理逻辑修复 | Bug修复 | 🔄 已拆分 | 拆分为 `plans/2026-04-08-sprint-04-mango-infra-dal-memoryxistore-fix.md` |
 | T5 | `mango-infra-crypto` 新建：crypto/ 从 common 移入 | 新建模块 | 待执行 | 13 个文件从 common/crypto 移入，包含 Sm4Cipher/AesCipher/RsaSigner/Sm2Signer/CryptoFactory |
 | T6 | `mango-infra-security` 新建：permission/ 从 common 移入 | 新建模块 | 待执行 | PermAspect + IPermissionService 从 common 移入 |
 | T7 | `mango-infra-context` 新建：context/ 从 common 移入 | 新建模块 | 待执行 | TenantContextHolder + TokenContextHolder + TraceContextHolder 从 common 移入，支持 TransmittableThreadLocal |
