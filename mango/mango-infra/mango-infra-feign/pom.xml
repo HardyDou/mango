@@ -41,6 +41,13 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
+        <!-- Mango Infra Context Core (TTL TenantContextHolder & TraceContextHolder) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-context-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -83,6 +83,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango Infra Context Starter (TtlExecutorDecorator for context propagation) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-context-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

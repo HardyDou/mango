@@ -1,7 +1,7 @@
 ---
 title: "feat: Mango - For AI Agent 的 Java SpringBoot 脚手架"
 type: feat
-status: draft
+status: active
 date: 2026-03-26
 deepened: 2026-03-26
 ---
@@ -455,7 +455,7 @@ mango-order-core（业务实现）
 
 | 困难 | 原因 | 建议 |
 |------|------|------|
-| D17: 分布式事务 | Seata AT 模式有局限性，复杂场景可能失效 | 限制微服务数量，优先聚合部署 |
+| D17: 分布式事务 | Seata AT 模式有局限性，复杂场景可能失效 | 限制微服务数量，优先部署层聚合 |
 | D28: 多 Agent 协作 | 状态竞争、冲突解决机制复杂 | 初期限制单 Agent 模式 |
 
 ### 4.4 剩余风险
@@ -471,7 +471,7 @@ mango-order-core（业务实现）
 **核心困难（26/29）已有完整解决方案，2个部分解决需要持续迭代，1个高风险需要架构约束。**
 
 **整体方案可行，但需要注意：**
-1. 分布式事务需要架构约束（优先聚合部署）
+1. 分布式事务需要架构约束（优先部署层聚合）
 2. 多 Agent 协作需要渐进式引入
 
 ---
@@ -1045,6 +1045,201 @@ export default defineConfig({
 | D18: UI/UX质量差 | ⚠️ 部分解决 | ✅ 可解决 | 🟢 低 |
 | D19: 前端代码质量 | ⚠️ 部分解决 | ✅ 可解决 | 🟢 低 |
 | D20: E2E测试困难 | ⚠️ 部分解决 | ✅ 可解决 | 🟡 中 |
+
+---
+
+## 第七步：模块清单
+
+### 7.1 已实现模块（15个）
+
+| 模块 | artifactId | 职责 | 状态 |
+|------|-----------|------|------|
+| **公共模块** | | | |
+| `mango-common` | `mango-common` | 全局异常、工具类、常量 | ✅ |
+| **业务域** | | | |
+| `mango-user` | `mango-user-api/core/starter/remote` | 用户管理 | ✅ |
+| `mango-auth` | `mango-auth-api/core/starter/remote` | 认证（登录/登出/Token） | ✅ |
+| `mango-permission` | `mango-permission-api/core/starter/remote` | RBAC 权限（菜单/角色） | ✅ |
+| `mango-org` | `mango-org-api/core/starter/remote` | 组织架构 | ✅ |
+| `mango-i18n` | `mango-i18n-api/core/starter/remote` | 国际化 | ✅ |
+| `mango-area` | `mango-area-api/core/starter/remote` | 行政区划 | ✅ |
+| `mango-system` | `mango-system-api/core/starter/remote` | 系统配置 | ✅ |
+| `mango-captcha` | `mango-captcha-api/core/starter` | 验证码 | ✅ |
+| `mango-message` | `mango-message-api/core/starter` | 消息通知 | ✅ |
+| `mango-ai` | `mango-ai-api/core/starter` | AI 能力集成 | ✅ |
+| **基础设施** | | | |
+| `mango-infra-dal` | `api/core/starter` | 数据访问层抽象（ICache/ILocker/ITokenStore/IIdempotent） | ✅ |
+| `mango-infra-crypto` | `api/core/starter` | 国密算法（SM2/SM3/SM4） | ✅ |
+| `mango-infra-security` | `api/core/starter` | 权限注解、IPermissionService、AOP 切面 | ✅ |
+| `mango-infra-redis` | `api/core/starter` | Redis 封装 | ✅ |
+| `mango-infra-db` | `api/core/starter` | 数据库封装 | ✅ |
+| `mango-infra-feign` | `api/core/starter` | 远程调用 | ✅ |
+| `mango-infra-web` | `api/core/starter` | Web 封装 | ✅ |
+| `mango-infra-observability` | `api/core/starter` | 可观测性（链路追踪/日志） | ✅ |
+| `mango-infra-sse` | `api/core/starter` | SSE 封装 | ✅ |
+| `mango-infra-websocket` | `api/core/starter` | WebSocket 封装 | ✅ |
+| `mango-infra-doc` | `api/core/starter` | API 文档 | ✅ |
+| **部署层** | | | |
+| `mango-bff-admin` | `mango-bff-admin` | 管理后台应用（聚合用户、权限、国际化等服务） | ✅ |
+| `mango-gateway` | `mango-gateway` | API 网关 | ✅ |
+| **工具链** | | | |
+| `mango-tools` | `mango-tools` | Mango CLI 工具 | 🚧 |
+| `mango-generator` | `mango-generator` | 代码生成器 | 🚧 |
+| `mango-parent` | `mango-parent` | Maven 父项目 | ✅ |
+
+### 7.2 业务域子模块结构（标准模板）
+
+每个业务域包含 4 个子模块：
+
+```
+mango-{domain}/
+├── mango-{domain}-api/                    # 接口定义（po/vo/dto/XxxApi）
+├── mango-{domain}-core/                 # 核心实现（entity/service/mapper）
+├── mango-{domain}-starter/               # 本地调用（Controller implements XxxApi）
+└── mango-{domain}-starter-remote/         # 远程调用（FeignClient extends XxxApi）
+```
+
+### 7.3 Infra 子模块结构
+
+Infra 层不需要 `starter-remote`（基础设施跟应用一起部署，不存在微服务形态）：
+
+```
+mango-infra-{name}/
+├── mango-infra-{name}-api/              # 接口定义
+├── mango-infra-{name}-core/             # 核心实现
+└── mango-infra-{name}-starter/           # 本地注入（AutoConfiguration）
+```
+
+---
+
+## 第八步：技术栈版本锁定
+
+### 8.1 核心技术版本
+
+| 组件 | 技术 | 版本 | 说明 |
+|------|------|------|------|
+| Java | OpenJDK | **17** | LTS 版本 |
+| Spring Boot | Boot | **3.2.3** | 最新稳定版 |
+| Spring Cloud | Cloud | **2023.0.0** | 最新季度版 |
+| MyBatis-Plus | MyBatis-Plus | **3.5.5** | ORM 增强 |
+| MyBatis-Spring | MyBatis | **3.0.4** | Spring Boot 3.2 兼容 |
+| 数据库 | MySQL/H2 | — | 开发用 H2，生产用 MySQL |
+| Redis | — | — | KV 存储 |
+| Nacos | — | — | 注册中心/配置中心 |
+| Sentinel | — | — | 流量控制 |
+
+### 8.2 依赖管理原则
+
+- **所有外部依赖版本锁定在 `mango-parent/pom.xml`** 的 `<dependencyManagement>`
+- 禁止子模块直接声明带版本的依赖
+- 新增依赖必须先在 `mango-parent` 中声明
+
+---
+
+## 第九步：SPI 接口清单（IUCASE 模式）
+
+### 9.1 数据访问层抽象（mango-infra-dal）
+
+| 接口 | 包路径 | 用途 | 禁止直接调用 |
+|------|--------|------|-------------|
+| `ICache` | `io.mango.dal.api` | 缓存读写 | `redisTemplate.opsForValue()` |
+| `ILocker` | `io.mango.dal.api` | 分布式锁 | `RedissonClient.getLock()` |
+| `ITokenStore` | `io.mango.dal.api` | Token 存储 | 直接操作 Redis String |
+| `IIdempotent` | `io.mango.dal.api` | 防重复提交 | 直接 `setnx` |
+
+**实现变体**（通过 `@ConditionalOnProperty` 切换）：
+
+| 实现 | artifactId | 存储介质 |
+|------|-----------|---------|
+| `MemoryXivStore` | `mango-infra-dal-core` | JVM Memory（开发/测试） |
+| `RedisXivStore` | `mango-infra-dal-core` | Redis（生产） |
+| `DbXivStore` | `mango-infra-dal-core` | Database（生产） |
+
+### 9.2 权限层抽象（mango-infra-security）
+
+| 接口 | 包路径 | 用途 | 实现者 |
+|------|--------|------|--------|
+| `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-permission-starter` |
+| `ITokenService` | `io.mango.infra.security.api` | Token 生成/校验 | `mango-auth-starter` |
+
+### 9.3 Sprint-07 DIP 重构（待执行）
+
+**注入型接口（DIP 接口）**：
+
+| 接口 | 定义位置 | 调用者 | 实现者 | 说明 |
+|------|---------|--------|--------|------|
+| `IPermissionChecker` | `mango-auth-api` | `AuthServiceImpl` | `RbacPermissionChecker`（rbac-starter） | 权限校验能力 |
+| `IUserContextProvider` | `mango-auth-api` | `AuthServiceImpl` | `RbacUserContextProvider`（rbac-starter） | 当前用户上下文 |
+
+> **DIP 核心原则**：Auth 只关心"有没有权限"这个能力，不知道"菜单是什么"。
+
+---
+
+## 第十步：规范文件清单
+
+| 编号 | 规范文件 | 核心内容 |
+|------|---------|---------|
+| C1 | `01-code.md` | 重复代码检测、方法/类长度限制 |
+| C2 | `02-naming.md` | Java/数据库/包命名规范 |
+| C3 | `03-api.md` | RESTful API 设计规范 |
+| C4 | `04-db.md` | 数据库设计（表/字段/索引） |
+| C5 | `05-module.md` | SPI + Starter 机制、模块分层 |
+| C6 | `06-security.md` | 安全规范（SQL注入/硬编码） |
+| C7 | `07-persistence.md` | 事务规范（@MangoTransactional） |
+| C8 | `08-test.md` | 测试规范（覆盖率/E2E） |
+| C9 | `09-ui.md` | M* 组件 + CSS 变量约束 |
+| C10 | `10-dev-flow.md` | Sprint 机制 + 人类介入时机 |
+
+---
+
+## 第十一步：质量门禁矩阵
+
+### 11.1 已实现的 CLI 检查
+
+| 命令 | 检查项 | 阈值 | 违规处理 |
+|------|--------|------|---------|
+| `mvn mango:check` |全套检查 | — | 🔴 构建失败 |
+| `mvn mango:check -Drule=duplicate` | 重复代码 | ≤3% | 🔴 拒绝 |
+| `mvn mango:check -Drule=naming` | 命名规范 | 100%合规 | 🔴 拒绝 |
+| `mvn mango:check -Drule=method-length` | 方法长度 | ≤50行 | 🔴 拒绝 |
+| `mvn mango:check -Drule=class-length` | 类长度 | ≤500行 | 🔴 拒绝 |
+| `mvn mango:check -Drule=dependency` | 依赖规范 | 无循环依赖 | 🔴 拒绝 |
+
+### 11.2 尚未实现的质量门禁
+
+| 原规划 | 状态 | 说明 |
+|--------|------|------|
+| 安全扫描 | ❌ 未实现 | 依赖人工 code review |
+| SonarQube 集成 | ❌ 未实现 | 无对应 Maven goal |
+| 覆盖率检查 | ❌ 未实现 | 无 jacoco 集成 |
+| Checkstyle | ❌ 未实现 | 无 P3C 格式化 |
+| SpotBugs | ❌ 未实现 | 无 Bug 检测集成 |
+
+---
+
+## 第十二步：新增业务模块上手
+
+### 12.1 最短路径（3步）
+
+```bash
+# Step 1: 生成模块脚手架
+mvn mango:gen-module -Dname=supplier
+
+# Step 2: 生成 CRUD 代码
+mvn mango:gen-crud -Dmodule=supplier -Dentity=Supplier -Dtable=sup_supplier
+
+# Step 3: 生成权限SQL
+mvn mango:gen-permission -Dmodule=supplier -Dmenu=供应商管理
+```
+
+### 12.2 模块清单（必读）
+
+| 文件 | 作用 |
+|------|------|
+| `mango/.claude/rules/05-module.md` | 模块分层规范（SPI/接口类型/依赖方向） |
+| `mango/.claude/rules/02-naming.md` | 表前缀规范（`sup_` 开头） |
+| `mango/.claude/rules/08-test.md` | 单元测试要求（覆盖率 ≥80%） |
+| `mango-infra/mango-infra-dal/README.md` | IUCASE 接口使用指南 |
 
 ---
 

@@ -3,14 +3,17 @@ package io.mango.auth.starter.controller;
 import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.vo.LoginRequest;
 import io.mango.auth.api.vo.LoginResponse;
+import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.common.result.R;
+import io.mango.infra.context.starter.TtlExecutorDecorator;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +21,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Authentication controller - HTTP endpoints for auth operations.
@@ -28,11 +34,29 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthApi {
 
-    private final AuthApi authService;
-    private final LoginAttemptTracker loginAttemptTracker = new LoginAttemptTracker();
+    private final IAuthService authService;
+    private final TtlExecutorDecorator ttlExecutorDecorator;
+    private LoginAttemptTracker loginAttemptTracker;
+
+    @Autowired
+    public AuthController(IAuthService authService, TtlExecutorDecorator ttlExecutorDecorator) {
+        this.authService = authService;
+        this.ttlExecutorDecorator = ttlExecutorDecorator;
+    }
+
+    @PostConstruct
+    public void init() {
+        ScheduledExecutorService decorated = ttlExecutorDecorator.decorate(
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "login-attempt-cleanup");
+                t.setDaemon(true);
+                return t;
+            })
+        );
+        this.loginAttemptTracker = new LoginAttemptTracker(decorated);
+    }
 
     /**
      * User login

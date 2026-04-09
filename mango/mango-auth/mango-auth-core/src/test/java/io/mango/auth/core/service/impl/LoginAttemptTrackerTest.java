@@ -5,6 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -19,7 +22,8 @@ class LoginAttemptTrackerTest {
 
     @BeforeEach
     void setUp() {
-        tracker = new LoginAttemptTracker();
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        tracker = new LoginAttemptTracker(executor);
     }
 
     @AfterEach

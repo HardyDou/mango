@@ -18,10 +18,10 @@ import java.io.IOException;
  *
  * @author Mango
  */
-@Order(Ordered.HIGHEST_PRECEDENCE + 10)
+@Order(Ordered.HIGHEST_PRECEDENCE + 4)
 public class FeignTokenFilter implements Filter {
 
-    public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 10;
+    public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 4;
 
     private static final Logger log = LoggerFactory.getLogger(FeignTokenFilter.class);
 

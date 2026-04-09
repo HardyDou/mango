@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.mango.i18n.api.entity.SysI18n;
 import io.mango.i18n.core.mapper.SysI18nMapper;
 import io.mango.i18n.core.service.ISysI18nService;
+import io.mango.infra.context.starter.TtlExecutorDecorator;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,21 +27,31 @@ public class SysI18nServiceImpl implements ISysI18nService {
     /** Cache TTL in milliseconds (default 5 minutes) */
     private static final long CACHE_TTL_MS = 5 * 60 * 1000L;
 
+    /** Shutdown await timeout in seconds */
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
+
     @Autowired
     private SysI18nMapper sysI18nMapper;
 
     /** Cached i18n list, refreshed after TTL */
     private volatile List<SysI18n> cachedList;
     private volatile long cacheTimestamp;
-    private final ScheduledExecutorService cacheRefreshExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "i18n-cache-refresh");
-        t.setDaemon(true);
-        return t;
-    });
+
+    @Autowired
+    private TtlExecutorDecorator ttlExecutorDecorator;
+
+    private ScheduledExecutorService cacheRefreshExecutor;
 
     @PostConstruct
     public void init() {
         refreshCache();
+        this.cacheRefreshExecutor = ttlExecutorDecorator.decorate(
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "i18n-cache-refresh");
+                t.setDaemon(true);
+                return t;
+            })
+        );
         // Schedule periodic cache refresh
         cacheRefreshExecutor.scheduleAtFixedRate(this::refreshCache, 5, 5, TimeUnit.MINUTES);
     }
@@ -49,7 +60,7 @@ public class SysI18nServiceImpl implements ISysI18nService {
     public void shutdown() {
         cacheRefreshExecutor.shutdown();
         try {
-            if (!cacheRefreshExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+            if (!cacheRefreshExecutor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 cacheRefreshExecutor.shutdownNow();
             }
         } catch (InterruptedException e) {

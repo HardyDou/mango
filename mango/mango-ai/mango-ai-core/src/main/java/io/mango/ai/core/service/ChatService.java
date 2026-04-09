@@ -2,6 +2,7 @@ package io.mango.ai.core.service;
 
 import io.mango.ai.api.dto.ChatRequest;
 import io.mango.ai.core.provider.DeepSeekProvider;
+import io.mango.infra.context.starter.TtlExecutorDecorator;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import java.util.concurrent.*;
 public class ChatService {
 
     private final DeepSeekProvider deepSeekProvider;
+    private final TtlExecutorDecorator ttlExecutorDecorator;
 
     /**
      * Session TTL in milliseconds (default 30 minutes)
@@ -52,23 +54,43 @@ public class ChatService {
     private ScheduledExecutorService cleanupExecutor;
 
     /**
+     * Executor for async chat processing (TTL-decorated)
+     */
+    private ExecutorService chatExecutor;
+
+    /**
      * SSE timeout in milliseconds
      */
     private static final long SSE_TIMEOUT = 5 * 60 * 1000L;
 
+    /**
+     * Shutdown await timeout in seconds
+     */
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
+
     @Autowired
-    public ChatService(DeepSeekProvider deepSeekProvider) {
+    public ChatService(DeepSeekProvider deepSeekProvider, TtlExecutorDecorator ttlExecutorDecorator) {
         this.deepSeekProvider = deepSeekProvider;
+        this.ttlExecutorDecorator = ttlExecutorDecorator;
     }
 
     @PostConstruct
     public void init() {
-        this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "chat-session-cleanup");
-            t.setDaemon(true);
-            return t;
-        });
+        this.cleanupExecutor = ttlExecutorDecorator.decorate(
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "chat-session-cleanup");
+                t.setDaemon(true);
+                return t;
+            })
+        );
         this.cleanupExecutor.scheduleAtFixedRate(this::cleanupExpiredSessions, 1, 1, TimeUnit.MINUTES);
+        this.chatExecutor = ttlExecutorDecorator.decorate(
+            Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "chat-async");
+                t.setDaemon(true);
+                return t;
+            })
+        );
     }
 
     @PreDestroy
@@ -76,7 +98,7 @@ public class ChatService {
         if (cleanupExecutor != null) {
             cleanupExecutor.shutdown();
             try {
-                if (!cleanupExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                if (!cleanupExecutor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                     cleanupExecutor.shutdownNow();
                 }
             } catch (InterruptedException e) {
@@ -84,6 +106,18 @@ public class ChatService {
                 Thread.currentThread().interrupt();
             }
             log.info("ChatService cleanupExecutor shut down");
+        }
+        if (chatExecutor != null) {
+            chatExecutor.shutdown();
+            try {
+                if (!chatExecutor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    chatExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                chatExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            log.info("ChatService chatExecutor shut down");
         }
     }
 
@@ -126,7 +160,7 @@ public class ChatService {
         // Create SSE emitter
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
 
-        // Process chat in async thread
+        // Process chat in async thread (TTL-decorated executor preserves tenant context)
         CompletableFuture.runAsync(() -> {
             try {
                 // Get conversation history
@@ -177,7 +211,7 @@ public class ChatService {
                     log.warn("Failed to send error event", ex);
                 }
             }
-        });
+        }, chatExecutor);
 
         return emitter;
     }

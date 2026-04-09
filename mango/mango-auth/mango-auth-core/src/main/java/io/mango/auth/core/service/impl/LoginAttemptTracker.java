@@ -23,9 +23,10 @@ public class LoginAttemptTracker {
     private static final long WINDOW_MINUTES = 10;
 
     private final Map<String, LoginAttempt> attempts = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService cleanupScheduler = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService cleanupScheduler;
 
-    public LoginAttemptTracker() {
+    public LoginAttemptTracker(ScheduledExecutorService cleanupScheduler) {
+        this.cleanupScheduler = cleanupScheduler;
         // Cleanup expired entries every minute
         cleanupScheduler.scheduleAtFixedRate(this::cleanupExpiredAttempts, 1, 1, TimeUnit.MINUTES);
     }
