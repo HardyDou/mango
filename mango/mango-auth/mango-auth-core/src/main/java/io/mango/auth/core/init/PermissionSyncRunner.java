@@ -1,7 +1,7 @@
 package io.mango.auth.core.init;
 
 import io.mango.common.annotation.Perm;
-import io.mango.permission.api.SysPermissionApi;
+import io.mango.rbac.api.SysPermissionApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;

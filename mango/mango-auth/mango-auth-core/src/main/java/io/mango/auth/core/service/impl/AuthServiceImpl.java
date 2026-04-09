@@ -1,14 +1,12 @@
 package io.mango.auth.core.service.impl;
 
+import io.mango.auth.api.AuthApi;
+import io.mango.auth.api.IPermissionChecker;
 import io.mango.auth.api.vo.LoginRequest;
 import io.mango.auth.api.vo.LoginResponse;
-import io.mango.auth.api.vo.SysRoleVO;
-import io.mango.auth.core.service.IAuthService;
-import io.mango.auth.core.service.ISysRoleService;
 import io.mango.infra.security.api.ITokenService;
-import io.mango.permission.api.po.SysUser;
-import io.mango.permission.api.SysMenuApi;
-import io.mango.permission.api.SysUserApi;
+import io.mango.rbac.api.po.SysUser;
+import io.mango.rbac.api.SysUserApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,23 +15,21 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Authentication service implementation.
  * Delegates JWT operations to {@link ITokenService}.
+ * Uses {@link IPermissionChecker} for permission checking (DIP pattern).
  *
  * @author Mango
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements IAuthService {
+public class AuthServiceImpl implements AuthApi {
 
     private final SysUserApi sysUserApi;
-    private final ISysRoleService sysRoleService;
-    private final SysMenuApi sysMenuApi;
+    private final IPermissionChecker permissionChecker;
     private final ITokenService tokenService;
     private final PasswordEncoder passwordEncoder;
 
@@ -146,7 +142,6 @@ public class AuthServiceImpl implements IAuthService {
         return tokenService.validateToken(token);
     }
 
-    @Override
     public Long getUserIdFromToken(String token) {
         if (token == null || token.isEmpty()) {
             return null;
@@ -164,15 +159,13 @@ public class AuthServiceImpl implements IAuthService {
     /**
      * DRY extraction: loads user roles and permissions into LoginResponse.
      * Used by both login() and refreshToken().
-     * TODO: Replace sysRoleService/sysMenuApi with IPermissionChecker in Sprint-07 A6.
+     * Uses IPermissionChecker (DIP pattern): Auth defines interface, RBAC implements it.
      */
     private void loadUserRolesAndPermissions(Long userId, LoginResponse response) {
-        List<SysRoleVO> userRoles = sysRoleService.getUserRoles(userId);
-        response.setRoles(userRoles != null && !userRoles.isEmpty()
-                ? userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList())
-                : List.of());
+        List<String> userRoles = permissionChecker.getUserRoles(userId);
+        response.setRoles(userRoles != null && !userRoles.isEmpty() ? userRoles : List.of());
 
-        Set<String> userPermissions = sysMenuApi.getUserPermissions(userId);
-        response.setPermissions(userPermissions != null ? List.copyOf(userPermissions) : List.of());
+        List<String> userPermissions = permissionChecker.getUserPermissions(userId);
+        response.setPermissions(userPermissions != null ? userPermissions : List.of());
     }
 }

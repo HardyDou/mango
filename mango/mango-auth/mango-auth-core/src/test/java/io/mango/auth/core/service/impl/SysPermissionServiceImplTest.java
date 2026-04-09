@@ -1,6 +1,6 @@
 package io.mango.auth.core.service.impl;
 
-import io.mango.permission.api.SysPermissionApi;
+import io.mango.rbac.api.SysPermissionApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

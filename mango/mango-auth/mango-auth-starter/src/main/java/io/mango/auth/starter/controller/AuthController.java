@@ -3,7 +3,6 @@ package io.mango.auth.starter.controller;
 import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.vo.LoginRequest;
 import io.mango.auth.api.vo.LoginResponse;
-import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.common.result.R;
 import jakarta.servlet.http.Cookie;
@@ -21,7 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Authentication controller - implements AuthApi
+ * Authentication controller - HTTP endpoints for auth operations.
+ * Delegates to {@link AuthApi} implementation.
  *
  * @author Mango
  */
@@ -29,12 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController implements AuthApi {
+public class AuthController {
 
-    private final IAuthService authService;
+    private final AuthApi authService;
     private final LoginAttemptTracker loginAttemptTracker = new LoginAttemptTracker();
 
-    @Override
+    /**
+     * User login
+     */
     public LoginResponse login(LoginRequest loginRequest) {
         LoginResponse response = authService.login(loginRequest);
         if (response == null) {
@@ -43,7 +45,9 @@ public class AuthController implements AuthApi {
         return response;
     }
 
-    @Override
+    /**
+     * Refresh token
+     */
     public LoginResponse refreshToken(String refreshToken) {
         LoginResponse response = authService.refreshToken(refreshToken);
         if (response == null) {
@@ -52,12 +56,16 @@ public class AuthController implements AuthApi {
         return response;
     }
 
-    @Override
+    /**
+     * User logout
+     */
     public void logout(String token) {
         authService.logout(token);
     }
 
-    @Override
+    /**
+     * Validate token
+     */
     public Boolean validateToken(String token) {
         return authService.validateToken(token);
     }

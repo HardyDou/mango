@@ -1,7 +1,7 @@
 package io.mango.auth.starter.controller;
 
-import io.mango.auth.api.SysRoleApi;
-import io.mango.auth.api.vo.SysRoleVO;
+import io.mango.rbac.api.SysRoleApi;
+import io.mango.rbac.api.vo.SysRoleVO;
 import io.mango.common.annotation.Perm;
 import io.mango.common.result.R;
 import lombok.RequiredArgsConstructor;

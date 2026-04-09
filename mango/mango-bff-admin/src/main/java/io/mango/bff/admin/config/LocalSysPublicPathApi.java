@@ -2,7 +2,7 @@ package io.mango.bff.admin.config;
 
 import io.mango.common.result.R;
 import io.mango.gateway.api.SysPublicPathApi;
-import io.mango.permission.core.service.ISysPublicPathService;
+import io.mango.rbac.core.service.ISysPublicPathService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

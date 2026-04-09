@@ -49,6 +49,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango Permission Starter (provides RbacPermissionChecker for IPermissionChecker) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-rbac-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Servlet API for Filter -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
