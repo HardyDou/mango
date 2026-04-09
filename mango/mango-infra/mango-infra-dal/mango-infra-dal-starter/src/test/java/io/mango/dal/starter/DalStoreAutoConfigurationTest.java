@@ -1,9 +1,9 @@
 package io.mango.dal.starter;
 
 import io.mango.dal.api.IKvStore;
-import io.mango.dal.core.DbXivStore;
-import io.mango.dal.core.MemoryXivStore;
-import io.mango.dal.core.RedisXivStore;
+import io.mango.dal.core.DbKvStore;
+import io.mango.dal.core.MemoryKvStore;
+import io.mango.dal.core.RedisKvStore;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -23,13 +23,13 @@ class DalStoreAutoConfigurationTest {
     // ==================== Explicit Type: redis ====================
 
     @Test
-    void typeRedis_withRedissonBean_injectsRedisXivStore() {
+    void typeRedis_withRedissonBean_injectsRedisKvStore() {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)  // placeholder bean
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=redis")
                 .run(context -> {
-                    assertThat(context).hasBean("redisXivStore");
+                    assertThat(context).hasBean("redisKvStore");
                 });
     }
 
@@ -39,7 +39,7 @@ class DalStoreAutoConfigurationTest {
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=redis")
                 .run(context -> {
-                    assertThat(context).doesNotHaveBean("redisXivStore");
+                    assertThat(context).doesNotHaveBean("redisKvStore");
                     assertThat(context).doesNotHaveBean(IKvStore.class);
                 });
     }
@@ -47,7 +47,7 @@ class DalStoreAutoConfigurationTest {
     // ==================== Explicit Type: db ====================
 
     @Test
-    void typeDb_withDataSourceAndRedissonBean_injectsDbXivStore() {
+    void typeDb_withDataSourceAndRedissonBean_injectsDbKvStore() {
         new ApplicationContextRunner()
                 .withBean(DataSource.class, () -> null)  // placeholder bean
                 .withBean(RedissonClient.class, () -> null)
@@ -55,7 +55,7 @@ class DalStoreAutoConfigurationTest {
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=db")
                 .run(context -> {
-                    assertThat(context).hasBean("dbXivStore");
+                    assertThat(context).hasBean("dbKvStore");
                 });
     }
 
@@ -66,7 +66,7 @@ class DalStoreAutoConfigurationTest {
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=db")
                 .run(context -> {
-                    assertThat(context).doesNotHaveBean("dbXivStore");
+                    assertThat(context).doesNotHaveBean("dbKvStore");
                     assertThat(context).doesNotHaveBean(IKvStore.class);
                 });
     }
@@ -74,33 +74,33 @@ class DalStoreAutoConfigurationTest {
     // ==================== Explicit Type: memory ====================
 
     @Test
-    void typeMemory_injectsMemoryXivStore() {
+    void typeMemory_injectsMemoryKvStore() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=memory")
                 .run(context -> {
-                    assertThat(context).hasBean("memoryXivStore");
+                    assertThat(context).hasBean("memoryKvStore");
                 });
     }
 
     // ==================== Auto-detect: type=auto ====================
 
     @Test
-    void typeAuto_withRedissonBean_injectsRedisXivStore() {
+    void typeAuto_withRedissonBean_injectsRedisKvStore() {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=auto")
                 .run(context -> {
-                    assertThat(context).hasBean("autoRedisXivStore");
-                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(RedisXivStore.class);
+                    assertThat(context).hasBean("autoRedisKvStore");
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(RedisKvStore.class);
                 });
     }
 
     @Test
-    void typeAuto_withDataSourceOnly_noRedis_injectsMemoryXivStore() {
-        // When no RedissonClient, even with DataSource, auto-detect falls through to MemoryXivStore
-        // because DbXivStore requires RedissonClient for ID generation
+    void typeAuto_withDataSourceOnly_noRedis_injectsMemoryKvStore() {
+        // When no RedissonClient, even with DataSource, auto-detect falls through to MemoryKvStore
+        // because DbKvStore requires RedissonClient for ID generation
         new ApplicationContextRunner()
                 .withBean(DataSource.class, () -> null)
                 .withBean(JdbcTemplate.class, () -> null)
@@ -108,45 +108,45 @@ class DalStoreAutoConfigurationTest {
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=auto")
                 .run(context -> {
-                    assertThat(context).hasBean("autoMemoryXivStore");
-                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryXivStore.class);
+                    assertThat(context).hasBean("autoMemoryKvStore");
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
                 });
     }
 
     @Test
-    void typeAuto_noExternalDeps_injectsMemoryXivStore() {
+    void typeAuto_noExternalDeps_injectsMemoryKvStore() {
         new ApplicationContextRunner()
                 // No RedissonClient, no DataSource
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=auto")
                 .run(context -> {
-                    assertThat(context).hasBean("autoMemoryXivStore");
-                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryXivStore.class);
+                    assertThat(context).hasBean("autoMemoryKvStore");
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
                 });
     }
 
     // ==================== Auto-detect: type not configured (matchIfMissing) ====================
 
     @Test
-    void typeNotConfigured_withRedissonBean_injectsRedisXivStore() {
+    void typeNotConfigured_withRedissonBean_injectsRedisKvStore() {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 // No mango.dal.type property at all
                 .run(context -> {
-                    assertThat(context).hasBean("autoRedisXivStore");
-                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(RedisXivStore.class);
+                    assertThat(context).hasBean("autoRedisKvStore");
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(RedisKvStore.class);
                 });
     }
 
     @Test
-    void typeNotConfigured_noDeps_injectsMemoryXivStore() {
+    void typeNotConfigured_noDeps_injectsMemoryKvStore() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 // No property, no external beans
                 .run(context -> {
-                    assertThat(context).hasBean("autoMemoryXivStore");
-                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryXivStore.class);
+                    assertThat(context).hasBean("autoMemoryKvStore");
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
                 });
     }
 
@@ -156,14 +156,14 @@ class DalStoreAutoConfigurationTest {
     void ikvStoreAlreadyExists_doesNotInject() {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)
-                .withBean(IKvStore.class, () -> new MemoryXivStore())  // pre-existing bean factory
+                .withBean(IKvStore.class, () -> new MemoryKvStore())  // pre-existing bean factory
                 .withConfiguration(AutoConfigurations.of(DalStoreAutoConfiguration.class))
                 .withPropertyValues("mango.dal.type=redis")
                 .run(context -> {
-                    // Should NOT create a new redisXivStore bean
-                    assertThat(context).doesNotHaveBean("redisXivStore");
+                    // Should NOT create a new redisKvStore bean
+                    assertThat(context).doesNotHaveBean("redisKvStore");
                     // Original bean should still be there
-                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryXivStore.class);
+                    assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
                 });
     }
 

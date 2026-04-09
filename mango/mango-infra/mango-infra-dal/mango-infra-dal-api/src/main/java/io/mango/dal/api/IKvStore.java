@@ -9,10 +9,23 @@ public interface IKvStore {
      * Write a key with specified expiration time (seconds).
      * @param key key (must not be null or blank after trim)
      * @param value value
-     * @param expireSeconds expiration in seconds
+     * @param expireSeconds expiration in seconds (must be positive)
      * @return true=new key added, false=key already exists (for replay protection)
+     * @throws IllegalArgumentException if key is null or blank
      */
     boolean put(String key, String value, long expireSeconds);
+
+    /**
+     * Handle TTL <= 0: delete key immediately and return false.
+     * All implementations share this contract. Redis can also throw if Redis
+     * semantics forbid negative TTL (but the interface contract says delete+false).
+     * @param key key (assumed pre-validated)
+     * @return false (key was not stored due to non-positive TTL)
+     */
+    default boolean putNonPositiveTtl(String key) {
+        delete(key);
+        return false;
+    }
 
     /**
      * Read a key, returns null if expired or not found.

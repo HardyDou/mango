@@ -10,12 +10,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.time.LocalDateTime;
 
 /**
- * DbXivStore implementation using try-UPDATE-then-INSERT pattern.
+ * DbKvStore implementation using try-UPDATE-then-INSERT pattern.
  * Avoids ON DUPLICATE KEY UPDATE for better cross-database compatibility.
  */
 @Slf4j
 @RequiredArgsConstructor
-public class DbXivStore implements IKvStore {
+public class DbKvStore implements IKvStore {
 
     private static final String ID_KEY = "kv:db:id";
 
@@ -25,6 +25,9 @@ public class DbXivStore implements IKvStore {
     @Override
     public boolean put(String key, String value, long expireSeconds) {
         validateKey(key);
+        if (expireSeconds <= 0) {
+            return putNonPositiveTtl(key);
+        }
         // 先检查是否存在且未过期 — 过期记录视为不存在，需要删除后重新插入
         var existing = jdbcTemplate.query(
             "SELECT kv_value FROM sys_kv_record WHERE kv_key = ? AND expire_time > ?",

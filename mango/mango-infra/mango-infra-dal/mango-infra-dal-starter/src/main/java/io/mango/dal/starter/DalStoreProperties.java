@@ -35,10 +35,10 @@ public class DalStoreProperties {
 
     /**
      * DAL store type: auto / redis / db / memory
-     * - auto: auto-detect (RedissonClient → MemoryXivStore)
-     * - redis: force RedisXivStore (requires RedissonClient)
-     * - db: force DbXivStore (requires DataSource)
-     * - memory: force MemoryXivStore (no dependencies)
+     * - auto: auto-detect (RedissonClient → MemoryKvStore)
+     * - redis: force RedisKvStore (requires RedissonClient)
+     * - db: force DbKvStore (requires DataSource)
+     * - memory: force MemoryKvStore (no dependencies)
      */
     private String type = "auto";
 
@@ -58,7 +58,7 @@ public class DalStoreProperties {
     }
 
     /**
-     * RedisXivStore configuration
+     * RedisKvStore configuration
      */
     @Data
     public static class Redis {
@@ -79,7 +79,7 @@ public class DalStoreProperties {
     }
 
     /**
-     * DbXivStore configuration
+     * DbKvStore configuration
      *
      * 数据库连接配置优先级：
      * - mango.dal.provider.db.url        > spring.datasource.url
@@ -137,7 +137,7 @@ public class DalStoreProperties {
     }
 
     /**
-     * MemoryXivStore configuration
+     * MemoryKvStore configuration
      */
     @Data
     public static class Memory {

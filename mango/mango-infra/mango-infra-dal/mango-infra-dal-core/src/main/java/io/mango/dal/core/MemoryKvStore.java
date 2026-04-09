@@ -10,12 +10,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MemoryXivStore implementation using segmented ConcurrentHashMap with background cleanup.
+ * MemoryKvStore implementation using segmented ConcurrentHashMap with background cleanup.
  * Uses N buckets to reduce lock contention — operations on different keys rarely collide.
  * Implements AutoCloseable for use with try-with-resources.
  * Spring automatically calls close() via @PreDestroy when the bean is destroyed.
  */
-public class MemoryXivStore implements IKvStore, AutoCloseable {
+public class MemoryKvStore implements IKvStore, AutoCloseable {
 
     private static final int BUCKET_COUNT = 32;
 
@@ -29,14 +29,14 @@ public class MemoryXivStore implements IKvStore, AutoCloseable {
     /**
      * 使用默认清理间隔（1分钟）和 32 个分桶
      */
-    public MemoryXivStore() {
+    public MemoryKvStore() {
         this(1, BUCKET_COUNT);
     }
 
     /**
      * @param cleanupIntervalMinutes 过期 key 清理任务间隔（分钟）
      */
-    public MemoryXivStore(int cleanupIntervalMinutes) {
+    public MemoryKvStore(int cleanupIntervalMinutes) {
         this(cleanupIntervalMinutes, BUCKET_COUNT);
     }
 
@@ -45,7 +45,7 @@ public class MemoryXivStore implements IKvStore, AutoCloseable {
      * @param bucketCount             分桶数量（必须是正整数）
      */
     @SuppressWarnings("unchecked")
-    public MemoryXivStore(int cleanupIntervalMinutes, int bucketCount) {
+    public MemoryKvStore(int cleanupIntervalMinutes, int bucketCount) {
         if (cleanupIntervalMinutes <= 0) {
             throw new IllegalArgumentException("cleanupIntervalMinutes must be positive");
         }
@@ -77,6 +77,9 @@ public class MemoryXivStore implements IKvStore, AutoCloseable {
     @Override
     public boolean put(String key, String value, long expireSeconds) {
         validateKey(key);
+        if (expireSeconds <= 0) {
+            return putNonPositiveTtl(key);
+        }
         KvEntry prev = bucket(key).putIfAbsent(key, new KvEntry(value, Instant.now().plusSeconds(expireSeconds)));
         return prev == null;
     }

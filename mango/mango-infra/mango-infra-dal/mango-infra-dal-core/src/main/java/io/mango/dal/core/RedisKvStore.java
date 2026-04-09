@@ -11,11 +11,11 @@ import java.time.Duration;
 import java.util.Collections;
 
 /**
- * RedisXivStore implementation using Redisson.
+ * RedisKvStore implementation using Redisson.
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisXivStore implements IKvStore {
+public class RedisKvStore implements IKvStore {
 
     private final RedissonClient redissonClient;
 
@@ -34,7 +34,7 @@ public class RedisXivStore implements IKvStore {
     public boolean put(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
-            throw new IllegalArgumentException("expireSeconds must be positive, was: " + expireSeconds);
+            return putNonPositiveTtl(key);
         }
         RBucket<String> bucket = redissonClient.getBucket(key);
         return bucket.setIfAbsent(value, Duration.ofSeconds(expireSeconds));

@@ -17,11 +17,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for RedisXivStore.
+ * Unit tests for RedisKvStore.
  * Mocks RedissonClient to test IKvStore contract without real Redis.
  */
 @ExtendWith(MockitoExtension.class)
-class RedisXivStoreTest {
+class RedisKvStoreTest {
 
     @Mock
     private RedissonClient redissonClient;
@@ -29,11 +29,11 @@ class RedisXivStoreTest {
     @Mock
     private RBucket<String> bucket;
 
-    private RedisXivStore store;
+    private RedisKvStore store;
 
     @BeforeEach
     void setUp() {
-        store = new RedisXivStore(redissonClient);
+        store = new RedisKvStore(redissonClient);
     }
 
     // ==================== put() tests ====================
@@ -70,13 +70,25 @@ class RedisXivStoreTest {
     }
 
     @Test
-    void put_zeroTtl_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> store.put("k1", "v1", 0));
+    void put_zeroTtl_shouldReturnFalseAndDelete() {
+        doReturn(bucket).when(redissonClient).getBucket("k1");
+        when(bucket.delete()).thenReturn(false);
+
+        boolean result = store.put("k1", "v1", 0);
+
+        assertFalse(result);
+        verify(bucket).delete();
     }
 
     @Test
-    void put_negativeTtl_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> store.put("k1", "v1", -1));
+    void put_negativeTtl_shouldReturnFalseAndDelete() {
+        doReturn(bucket).when(redissonClient).getBucket("k1");
+        when(bucket.delete()).thenReturn(false);
+
+        boolean result = store.put("k1", "v1", -1);
+
+        assertFalse(result);
+        verify(bucket).delete();
     }
 
     // ==================== get() tests ====================
