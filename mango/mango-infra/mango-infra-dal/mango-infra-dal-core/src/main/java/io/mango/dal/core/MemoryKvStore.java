@@ -78,9 +78,7 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
     public boolean put(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
-            // TTL=0 或负数：立即删除，不存储
-            bucket(key).remove(key);
-            return false;
+            return putNonPositiveTtl(key);
         }
         KvEntry prev = bucket(key).putIfAbsent(key, new KvEntry(value, Instant.now().plusSeconds(expireSeconds)));
         return prev == null;

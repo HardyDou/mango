@@ -34,7 +34,7 @@ public class RedisKvStore implements IKvStore {
     public boolean put(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
-            throw new IllegalArgumentException("expireSeconds must be positive, was: " + expireSeconds);
+            return putNonPositiveTtl(key);
         }
         RBucket<String> bucket = redissonClient.getBucket(key);
         return bucket.setIfAbsent(value, Duration.ofSeconds(expireSeconds));
