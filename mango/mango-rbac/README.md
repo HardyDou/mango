@@ -105,7 +105,7 @@ mango-permission/
 
 | 表名 | 说明 |
 |------|------|
-| `perm_menu_group` | 菜单分组表 |
+| `rbac_menu_group` | 菜单分组表 |
 | `sys_menu` | 菜单表 |
 | `sys_role` | 角色表 |
 | `sys_user` | 用户表 |

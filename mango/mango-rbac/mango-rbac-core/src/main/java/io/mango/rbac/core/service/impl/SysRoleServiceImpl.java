@@ -2,7 +2,7 @@ package io.mango.rbac.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import io.mango.common.context.TenantContextHolder;
+import io.mango.infra.context.core.TenantContextHolder;
 import io.mango.rbac.api.po.SysRolePo;
 import io.mango.rbac.api.vo.SysRoleVO;
 import io.mango.rbac.core.entity.SysRole;

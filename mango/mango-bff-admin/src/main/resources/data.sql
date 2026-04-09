@@ -15,7 +15,7 @@ INSERT INTO sys_role (role_code, role_name, description, status) VALUES
 ('disabled_role', '已禁用角色', 'Disabled role for testing', 0);
 
 -- Insert menu groups
-INSERT INTO perm_menu_group (group_id, group_name, group_code, icon, sort, status) VALUES
+INSERT INTO rbac_menu_group (group_id, group_name, group_code, icon, sort, status) VALUES
 (1, '系统管理', 'system', 'setting', 1, 1),
 (2, '工作台', 'workbench', 'desktop', 2, 1),
 (3, '运维管理', 'ops', 'cloud', 3, 1);

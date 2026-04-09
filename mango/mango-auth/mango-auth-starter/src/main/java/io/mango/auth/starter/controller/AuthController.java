@@ -8,6 +8,7 @@ import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.common.result.R;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Authentication controller - HTTP endpoints for auth operations.
@@ -39,6 +41,7 @@ public class AuthController implements AuthApi {
     private final IAuthService authService;
     private final TtlExecutorDecorator ttlExecutorDecorator;
     private LoginAttemptTracker loginAttemptTracker;
+    private ScheduledExecutorService executorForTracker;
 
     @Autowired
     public AuthController(IAuthService authService, TtlExecutorDecorator ttlExecutorDecorator) {
@@ -48,14 +51,32 @@ public class AuthController implements AuthApi {
 
     @PostConstruct
     public void init() {
-        ScheduledExecutorService decorated = ttlExecutorDecorator.decorate(
+        this.executorForTracker = ttlExecutorDecorator.decorate(
             Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "login-attempt-cleanup");
                 t.setDaemon(true);
                 return t;
             })
         );
-        this.loginAttemptTracker = new LoginAttemptTracker(decorated);
+        this.loginAttemptTracker = new LoginAttemptTracker(executorForTracker);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (loginAttemptTracker != null) {
+            loginAttemptTracker.shutdown();
+        }
+        if (executorForTracker != null) {
+            executorForTracker.shutdown();
+            try {
+                if (!executorForTracker.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executorForTracker.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorForTracker.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**

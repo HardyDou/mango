@@ -81,7 +81,7 @@ entity: 实体名称（小写下划线）
 | user（业务用户） | `usr_` | `usr_user`（业务用户）、`usr_profile`（用户档案）、`usr_contact`（联系人） |
 | area（区域） | `area_` | `area_tree`（区域树）、`area_district`（区县） |
 | org（组织） | `org_` | `org_dept`（部门）、`org_post`（岗位） |
-| permission（权限） | `perm_` | `perm_menu`（菜单）、`perm_role`（角色）、`perm_resource`（资源） |
+| rbac（权限） | `rbac_` | `rbac_menu`（菜单）、`rbac_role`（角色）、`rbac_resource`（资源） |
 | i18n（国际化） | `i18n_` | `i18n_lang`（语言包）、`i18n_message`（消息模板） |
 | order（订单） | `ord_` | `ord_order`（订单）、`ord_item`（订单明细） |
 | ai | `ai_` | `ai_provider`（AI供应商）、`ai_model`（AI模型） |

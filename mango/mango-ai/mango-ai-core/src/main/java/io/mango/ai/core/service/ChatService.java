@@ -157,8 +157,25 @@ public class ChatService {
             sessionIdFinal = sessionId;
         }
 
-        // Create SSE emitter
+        // Create SSE emitter with timeout and error callbacks
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
+        emitter.onTimeout(() -> {
+            try {
+                emitter.send(SseEmitter.event().data("data: {\"type\":\"error\",\"message\":\"Request timeout\"}"));
+                emitter.complete();
+            } catch (IOException e) {
+                log.warn("Failed to send timeout event", e);
+            }
+        });
+        emitter.onError(e -> {
+            log.warn("SSE error for tenant: {}", tenantId, e);
+            try {
+                emitter.send(SseEmitter.event().data("data: {\"type\":\"error\",\"message\":\"Connection error\"}"));
+                emitter.complete();
+            } catch (IOException ex) {
+                log.warn("Failed to send error event", ex);
+            }
+        });
 
         // Process chat in async thread (TTL-decorated executor preserves tenant context)
         CompletableFuture.runAsync(() -> {
@@ -195,7 +212,7 @@ public class ChatService {
                 }).doOnError(e -> {
                     log.error("Chat stream error for tenant: {}", tenantId, e);
                     try {
-                        emitter.send(SseEmitter.event().data("data: {\"type\":\"error\",\"message\":\"" + e.getMessage() + "\"}"));
+                        emitter.send(SseEmitter.event().data("data: {\"type\":\"error\",\"message\":\"AI service error\"}"));
                         emitter.completeWithError(e);
                     } catch (IOException ex) {
                         log.warn("Failed to send error event", ex);
@@ -205,7 +222,7 @@ public class ChatService {
             } catch (Exception e) {
                 log.error("Chat error for tenant: {}", tenantId, e);
                 try {
-                    emitter.send(SseEmitter.event().data("data: {\"type\":\"error\",\"message\":\"" + e.getMessage() + "\"}"));
+                    emitter.send(SseEmitter.event().data("data: {\"type\":\"error\",\"message\":\"AI service error\"}"));
                     emitter.completeWithError(e);
                 } catch (IOException ex) {
                     log.warn("Failed to send error event", ex);

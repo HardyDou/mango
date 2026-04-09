@@ -19,7 +19,6 @@
     </properties>
 
     <modules>
-        <module>mango-infra-context-api</module>
         <module>mango-infra-context-core</module>
         <module>mango-infra-context-starter</module>
     </modules>

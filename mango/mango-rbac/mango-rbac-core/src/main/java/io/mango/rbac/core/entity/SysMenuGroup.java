@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
  * @author Mango
  */
 @Data
-@TableName("perm_menu_group")
+@TableName("rbac_menu_group")
 @Schema(description = "菜单分组")
 public class SysMenuGroup implements Serializable {
 

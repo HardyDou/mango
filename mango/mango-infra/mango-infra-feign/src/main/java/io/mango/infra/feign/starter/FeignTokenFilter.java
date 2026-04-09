@@ -21,8 +21,6 @@ import java.io.IOException;
 @Order(Ordered.HIGHEST_PRECEDENCE + 4)
 public class FeignTokenFilter implements Filter {
 
-    public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 4;
-
     private static final Logger log = LoggerFactory.getLogger(FeignTokenFilter.class);
 
     private static final String AUTHORIZATION_HEADER = "Authorization";

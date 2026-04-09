@@ -13,12 +13,6 @@
     <description>Context Core - TTL ThreadLocal holders for tenant and trace</description>
 
     <dependencies>
-        <!-- Context API -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-context-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <!-- Alibaba TTL for TransmittableThreadLocal -->
         <dependency>
             <groupId>com.alibaba</groupId>
