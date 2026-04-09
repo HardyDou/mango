@@ -68,9 +68,9 @@
 | `mango-infra-db` | MyBatis-Plus + Druid + Flyway | 60% | ✅ 已有 |
 | `mango-infra-redis` | Redisson 客户端配置 | 80% | ✅ 已有 |
 | `mango-infra-feign` | OpenFeign + 重试 + 拦截器 | 70% | ✅ 已有 |
-| `mango-infra-dal` | **DAL 抽象层（IUseCase 体系）** | 30% | ❌ 待重构 |
-| `mango-infra-crypto` | **SM2/SM4/AES/RSA 加密实现** | 0% | ❌ 新建 |
-| `mango-infra-security` | **权限 AOP 切面 + 认证** | 0% | ❌ 新建 |
+| `mango-infra-dal` | **DAL 抽象层（IUseCase 体系）** | 90% | ✅ 已完成 | → commit 8908595c |
+| `mango-infra-crypto` | **SM2/SM4/AES/RSA 加密实现** | 80% | ✅ 已合并 | → sprint-05 merge, commit 5152d585 |
+| `mango-infra-security` | **权限 AOP 切面 + JWT Token** | 80% | ✅ 开发中 | → sprint-06, PR#3 |
 | `mango-infra-context` | **上下文传递（ThreadLocal 封装）** | 0% | ❌ 新建 |
 | `mango-infra-observability` | Micrometer + OTLP 追踪 | 50% | ✅ 已有 |
 | `mango-infra-doc` | SpringDoc OpenAPI 3.0 | 60% | ✅ 已有 |
@@ -266,45 +266,80 @@ POST /xxx/xxx
 
 ---
 
-### mango-infra-crypto（基础设施子模块）⚠️ 新建
+### mango-infra-crypto（基础设施子模块）✅ 已完成
 
 **职责边界**：
 - 提供：SM2/SM4/AES/RSA 加密解密实现（带 `@Component`）
-- 提供：`CryptoFactory`、`CryptoProperties`
-- 依赖：BouncyCastle（BC Provider）、Hutool
-- **不提供**：加密接口定义（→ `mango-common` 的 `IEncryptor` SPI 接口）
+- 提供：`ICryptoService`、`ISignService` 接口 + `Sm2SignService`、`Sm3CryptoService`、`Sm4CryptoService` 实现
+- 提供：`CryptoProperties`、`CryptoAutoConfiguration`（SPI 注入）
+- 依赖：BouncyCastle（BC Provider）
+- **不提供**：加密接口定义（→ `mango-common` 的 `ISymmetricCipher`/`IAsymmetricCipher`/`ISigner`/`IDigester` SPI 接口）
 
 **子模块结构**：
 
 ```
-mango-infra-crypto/
-├── Sm4CipherImpl        ← 从 common 移入
-├── AesCipherImpl        ← 从 common 移入
-├── RsaSignerImpl       ← 从 common 移入
-├── Sm2SignerImpl       ← 从 common 移入
-├── RsaCipherImpl        ← 从 common 移入
-├── CryptoFactoryImpl    ← 从 common 移入
-├── CryptoProperties     ← @ConfigurationProperties
-└── CryptoAutoConfig     ← @Configuration + @Bean 注入
+mango-infra-crypto/                      ← 4 层结构
+├── mango-infra-crypto-api/             ← 接口定义
+│   └── io/mango/infra/crypto/api/
+│       ├── ICryptoService.java          ← 加密服务接口（encrypt/decrypt）
+│       └── ISignService.java           ← 签名服务接口（sign/verify）
+├── mango-infra-crypto-core/             ← 核心实现
+│   └── io/mango/infra/crypto/impl/
+│       ├── sm/Sm2SignService.java      ← SM2 签名实现
+│       ├── sm/Sm3CryptoService.java    ← SM3 摘要实现
+│       ├── sm/Sm4CryptoService.java     ← SM4 加解密实现
+│       └── sm/BouncyCastleLoader.java  ← BC Provider 加载器
+├── mango-infra-crypto-starter/          ← SPI 自动配置
+│   └── io/mango/infra/crypto/starter/
+│       ├── CryptoProperties.java        ← @ConfigurationProperties
+│       └── CryptoAutoConfiguration.java ← @AutoConfiguration
+└── (无 starter-remote — crypto 无远程调用场景)
+
+已合并至 origin/main，commit 5152d585
 ```
 
 ---
 
-### mango-infra-security（基础设施子模块）⚠️ 新建
+### mango-infra-security（基础设施子模块）✅ 开发中
 
 **职责边界**：
 - 提供：`PermAspect`（`@Aspect` + `@Component`）
-- 提供：`IPermissionService` 实现
-- 依赖：Spring AOP
-- **不提供**：`IPermissionService` 接口（留在 `mango-common`）
+- 提供：`IPermissionService` + `DefaultPermissionServiceImpl` 实现
+- 提供：`ITokenService` + `JjwtTokenServiceImpl` 实现（JWT 管理）
+- 依赖：Spring AOP、JJWT 0.12.x、可选 `mango-infra-dal`（IKvStore 用于 refresh token 黑名单）
+- **不提供**：`IPermissionService` 接口（留在 `mango-infra-security-api`）
 
 **子模块结构**：
 
 ```
-mango-infra-security/
-├── PermAspect           ← 从 common 移入
-├── IpPermissionServiceImpl ← 从 common 移入
-└── SecurityProperties    ← @ConfigurationProperties
+mango-infra-security/                      ← 4 层结构
+├── mango-infra-security-api/              ← 接口定义
+│   └── io/mango/infra/security/api/
+│       ├── IPermissionService.java       ← 权限校验接口
+│       └── ITokenService.java           ← JWT 服务接口
+│           record TokenPair(String accessToken, String refreshToken) {}
+├── mango-infra-security-core/              ← 核心实现
+│   └── io/mango/infra/security/core/impl/
+│       ├── DefaultPermissionServiceImpl.java ← @Component 权限实现
+│       └── JjwtTokenServiceImpl.java      ← @Component JWT 实现
+│           - generateAccessToken / generateRefreshToken
+│           - validateToken / getUserId / getUsername / getTokenType
+│           - refresh (带 jti 黑名单防重放，可选 IKvStore)
+│           - 支持 mango.security.jwt.secret(新) + mango.jwt.secret(旧) 兼容
+├── mango-infra-security-starter/            ← SPI 自动配置
+│   └── io/mango/infra/security/starter/
+│       ├── SecurityAutoConfiguration.java  ← @AutoConfiguration
+│       ├── TokenAutoConfiguration.java   ← @ComponentScan 注入
+│       └── aspect/PermAspect.java        ← @Aspect 权限切面
+└── mango-infra-security-starter-remote/    ← (空壳，待微服务场景)
+
+JWT 配置：
+  mango.security.jwt.secret   ← 新配置路径（优先）
+  mango.jwt.secret           ← 旧配置路径（兼容 fallback）
+  mango.security.jwt.access-token-validity-seconds   ← Access Token 有效期
+  mango.security.jwt.refresh-token-validity-seconds ← Refresh Token 有效期
+
+开发中：PR#3 open，sprint-06 分支
 ```
 
 ---
@@ -692,8 +727,8 @@ guarantee-app
 | 模块 | 操作 | 模板章节重点 |
 |------|------|------------|
 | `mango-common` | 重构 | 纯粹化 + API 速查 |
-| `mango-infra-crypto` | 新建 | 加密实现 + CryptoFactory |
-| `mango-infra-security` | 新建 | 权限 AOP + IPermissionService |
+| `mango-infra-crypto` | ✅ 已完成 | 加密实现 + ICryptoService/ISignService |
+| `mango-infra-security` | 🔄 开发中 | 权限 AOP + IPermissionService + ITokenService |
 | `mango-infra-context` | 新建 | 上下文传递 |
 | `mango-infra-dal` | 重写 | IUseCase 接口体系 + 实现选择 |
 | `mango-tools` | 新建 | CLI 命令速查 |
@@ -736,7 +771,7 @@ guarantee-app
 | T2 | `mango-bff-admin` → `mango-admin-app` 重命名 | 重构 | 待执行 | 目录重命名 + pom artifactId 更新 + import 修正 |
 | T3 | IUseCase 9 个接口定义 | 新增 | 🔄 已拆分 | 拆分为 `plans/2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md` |
 | T4 | MemoryXivStore TTL=0 清理逻辑修复 | Bug修复 | 🔄 已拆分 | 拆分为 `plans/2026-04-08-sprint-04-mango-infra-dal-memoryxistore-fix.md` |
-| T5 | `mango-infra-crypto` 新建：crypto/ 从 common 移入 | 新建模块 | 待执行 | 13 个文件从 common/crypto 移入，包含 Sm4Cipher/AesCipher/RsaSigner/Sm2Signer/CryptoFactory |
-| T6 | `mango-infra-security` 新建：permission/ 从 common 移入 | 新建模块 | 待执行 | PermAspect + IPermissionService 从 common 移入 |
+| T5 | `mango-infra-crypto` 新建：crypto/ 从 common 移入 | 新建模块 | ✅ 已完成 | 13 个文件从 common/crypto 移入，包含 Sm4Cipher/AesCipher/RsaSigner/Sm2Signer/CryptoFactory → sprint-05 merge commit 5152d585 |
+| T6 | `mango-infra-security` 新建：permission/ 从 common 移入 + JWT 合并 | 新建模块 | 🔄 开发中 | PermAspect + IPermissionService + ITokenService(JJWT) → sprint-06, PR#3 |
 | T7 | `mango-infra-context` 新建：context/ 从 common 移入 | 新建模块 | 待执行 | TenantContextHolder + TokenContextHolder + TraceContextHolder 从 common 移入，支持 TransmittableThreadLocal |
 | T8 | `mango-common` 纯粹化：新增注解/枚举/SPI 接口 | 重构 | 待执行 | 新增 @Sensitive/@Version/@Encrypt、StatusEnum/YesNoEnum/DeleteFlagEnum、IConverter、ISerializer、PageParam、PageResult |

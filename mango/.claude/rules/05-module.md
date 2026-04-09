@@ -172,7 +172,7 @@ mango-bff-admin/
 | user | `usr_` | `usr_user` |
 | area | `area_` | `area_tree` |
 | org | `org_` | `org_dept` |
-| permission | `perm_` | `perm_menu` |
+| rbac | `rbac_` | `rbac_menu`（原 `perm_menu`，Phase B 迁移后生效） |
 | i18n | `i18n_` | `i18n_lang` |
 | system | `sys_` | `sys_config` |
 
@@ -191,6 +191,127 @@ SELECT a.*, u.username FROM area_tree a LEFT JOIN usr_user u ON ...
 
 <!-- ✅ 正确：跨域通过 API -->
 UserVO user = userApi.getUserById(area.getUserId());
+```
+
+---
+
+## 六，接口命名规范
+
+### 6.1 三种接口类型
+
+| 接口类型 | 命名 | 定义者 | 调用者 | 实现者 | 示例 |
+|----------|------|--------|--------|--------|------|
+| **暴露型** | `XxxApi` | 本模块 | 外部模块 | 本模块 starter | `AuthApi`、`SysMenuApi` |
+| **注入型** | `IxxxProvider` | 本模块 | 本模块 | 他模块注入 | `IUserContextProvider` |
+| **内部型** | `IXxxService` | 本模块 | 本模块 starter | 本模块 core | `ISysMenuService` |
+
+### 6.2 暴露型接口（XxxApi）
+
+**定义者**：本模块
+**调用者**：外部模块（网关/BFF/其他业务域）
+**命名**：`XxxApi`（必须以 `Api` 结尾）
+
+```
+mango-auth-api/
+└── AuthApi.java              ← 认证接口，外部调用
+mango-rbac-api/
+├── SysMenuApi.java           ← 菜单接口，外部调用
+└── SysRoleApi.java           ← 角色接口，外部调用
+```
+
+**特征**：本模块用 `starter` 实现接口，他模块直接调用。
+
+### 6.3 注入型接口（DIP 接口）
+
+**定义者**：本模块
+**调用者**：本模块内部（core）
+**实现者**：外部模块通过 Spring IoC 注入
+**命名**：`I` + 能力 + `Provider` / `Validator` / `Checker`
+
+```
+mango-auth-api/
+├── IUserContextProvider    ← 用户上下文，rbac/ldap/oauth2 实现
+├── ITokenValidator         ← Token 验证器，jwt/redis 实现
+└── IAntiBruteForce        ← 防暴力破解，第三方实现
+```
+
+| 接口名 | 能力 | 实现者 |
+|--------|------|--------|
+| `IUserContextProvider` | 用户上下文提供 | rbac / ldap / oauth2 |
+| `ITokenValidator` | Token 验证 | jwt / redis / external |
+| `IAntiBruteForce` | 防暴力破解 | memory / redis / external |
+| `IPermissionChecker` | 权限校验 | rbac / custom |
+
+**特征**：本模块定义接口契约，本模块 core 调用，**他模块实现后注入**。
+
+### 6.4 内部型接口（IXxxService）
+
+**定义者**：本模块
+**调用者**：本模块 starter
+**实现者**：本模块 core
+**命名**：`I` + 能力 + `Service`
+
+```
+mango-rbac-api/
+├── ISysMenuService.java     ← 菜单内部服务
+└── ISysRoleService.java     ← 角色内部服务
+mango-rbac-core/
+├── SysMenuServiceImpl.java  ← 实现
+└── SysRoleServiceImpl.java  ← 实现
+```
+
+**特征**：本模块内部使用，不对外暴露。
+
+### 6.5 依赖倒置示例
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ mango-auth                                               │
+│                                                          │
+│  auth-api:                                               │
+│  ├── AuthApi              ← 暴露型，外部调用              │
+│  ├── TokenApi             ← 暴露型，外部调用              │
+│  └── IUserContextProvider ← 注入型，外部实现后注入         │
+│         ▲                                                │
+│         │ Spring IoC 注入                                │
+└─────────┼────────────────────────────────────────────────┘
+          │
+┌─────────▼────────────────────────────────────────────────┐
+│ mango-rbac                                              │
+│                                                          │
+│  rbac-starter:                                          │
+│  └── RbacUserContextProvider implements IUserContextProvider
+│         │                                                │
+│         ▼                                                │
+│  rbac-core:                                             │
+│  └── SysMenuServiceImpl / SysRoleServiceImpl            │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 6.6 代码示例
+
+```java
+// ✅ 暴露型：本模块定义，外部调用
+public interface AuthApi {
+    LoginVO login(LoginDTO dto);
+}
+
+// ✅ 注入型：本模块定义，他模块实现后注入
+public interface IUserContextProvider {
+    UserContext getCurrentUser();
+    boolean hasRole(String roleCode);
+}
+
+// ✅ core：调用注入型接口，不知道谁实现
+public class AuthServiceImpl {
+    @Autowired
+    private IUserContextProvider userContextProvider;  // 不知道谁实现
+}
+
+// ✅ starter-remote：继承暴露型接口
+@FeignClient(name = "auth-service")
+public interface AuthFeignClient extends AuthApi {
+}
 ```
 
 ---

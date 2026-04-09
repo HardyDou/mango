@@ -77,13 +77,7 @@ public class AuthServiceImpl implements IAuthService {
         response.setNickname(user.getNickname());
 
         // 6. Load roles and permissions
-        List<SysRoleVO> userRoles = sysRoleService.getUserRoles(user.getUserId());
-        response.setRoles(userRoles != null && !userRoles.isEmpty()
-                ? userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList())
-                : List.of());
-
-        Set<String> userPermissions = sysMenuApi.getUserPermissions(user.getUserId());
-        response.setPermissions(userPermissions != null ? List.copyOf(userPermissions) : List.of());
+        loadUserRolesAndPermissions(user.getUserId(), response);
 
         log.info("User logged in successfully: {}", loginRequest.getUsername());
         return response;
@@ -127,13 +121,7 @@ public class AuthServiceImpl implements IAuthService {
         response.setNickname(user.getNickname());
 
         // 5. Load roles and permissions
-        List<SysRoleVO> userRoles = sysRoleService.getUserRoles(user.getUserId());
-        response.setRoles(userRoles != null && !userRoles.isEmpty()
-                ? userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList())
-                : List.of());
-
-        Set<String> userPermissions = sysMenuApi.getUserPermissions(user.getUserId());
-        response.setPermissions(userPermissions != null ? List.copyOf(userPermissions) : List.of());
+        loadUserRolesAndPermissions(user.getUserId(), response);
 
         return response;
     }
@@ -171,5 +159,20 @@ public class AuthServiceImpl implements IAuthService {
             return null;
         }
         return tokenService.getUserId(token);
+    }
+
+    /**
+     * DRY extraction: loads user roles and permissions into LoginResponse.
+     * Used by both login() and refreshToken().
+     * TODO: Replace sysRoleService/sysMenuApi with IPermissionChecker in Sprint-07 A6.
+     */
+    private void loadUserRolesAndPermissions(Long userId, LoginResponse response) {
+        List<SysRoleVO> userRoles = sysRoleService.getUserRoles(userId);
+        response.setRoles(userRoles != null && !userRoles.isEmpty()
+                ? userRoles.stream().map(SysRoleVO::getRoleCode).collect(Collectors.toList())
+                : List.of());
+
+        Set<String> userPermissions = sysMenuApi.getUserPermissions(userId);
+        response.setPermissions(userPermissions != null ? List.copyOf(userPermissions) : List.of());
     }
 }
