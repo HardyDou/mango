@@ -132,7 +132,7 @@ public class AuthServiceImpl implements AuthApi {
     }
 
     @Override
-    public Boolean validateToken(String token) {
+    public boolean validateToken(String token) {
         if (token == null || token.isEmpty()) {
             return false;
         }

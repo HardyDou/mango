@@ -31,5 +31,5 @@ public interface AuthFeignClient extends AuthApi {
 
     @Override
     @GetMapping("/validate")
-    Boolean validateToken(@RequestHeader("Authorization") String token);
+    boolean validateToken(@RequestHeader("Authorization") String token);
 }

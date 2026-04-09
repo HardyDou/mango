@@ -40,5 +40,5 @@ public interface AuthApi {
      * @param token authorization token (passed as Authorization header)
      * @return true if token is valid
      */
-    Boolean validateToken(String token);
+    boolean validateToken(String token);
 }
