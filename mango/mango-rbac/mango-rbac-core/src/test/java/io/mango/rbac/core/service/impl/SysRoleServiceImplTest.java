@@ -7,8 +7,10 @@ import io.mango.rbac.api.vo.SysRoleVO;
 import io.mango.rbac.core.entity.SysRole;
 import io.mango.rbac.core.entity.SysRoleMenu;
 import io.mango.rbac.core.entity.SysUserRole;
+import io.mango.rbac.core.entity.SysUser;
 import io.mango.rbac.core.mapper.SysRoleMapper;
 import io.mango.rbac.core.mapper.SysRoleMenuMapper;
+import io.mango.rbac.core.mapper.SysUserMapper;
 import io.mango.rbac.core.mapper.SysUserRoleMapper;
 import io.mango.rbac.core.service.ISysRoleService;
 import org.junit.jupiter.api.AfterEach;
@@ -46,11 +48,14 @@ class SysRoleServiceImplTest {
     @Mock
     private SysRoleMenuMapper roleMenuMapper;
 
+    @Mock
+    private SysUserMapper userMapper;
+
     private SysRoleServiceImpl sysRoleService;
 
     @BeforeEach
     void setUp() {
-        sysRoleService = new SysRoleServiceImpl(roleMapper, userRoleMapper, roleMenuMapper);
+        sysRoleService = new SysRoleServiceImpl(roleMapper, userRoleMapper, roleMenuMapper, userMapper);
         TenantContextHolder.setTenantId("1");
     }
 
@@ -255,6 +260,8 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("assignRoles with null roleIds should clear all roles")
     void assignRoles_nullRoleIds_clearsAllRoles() {
+        // Tenant isolation: user belongs to current tenant
+        when(userMapper.selectById(1L)).thenReturn(createSysUser(1L));
         when(userRoleMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
 
         Boolean result = sysRoleService.assignRoles(1L, null);
@@ -267,6 +274,8 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("assignRoles with empty roleIds should clear all roles")
     void assignRoles_emptyRoleIds_clearsAllRoles() {
+        // Tenant isolation: user belongs to current tenant
+        when(userMapper.selectById(1L)).thenReturn(createSysUser(1L));
         when(userRoleMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
 
         Boolean result = sysRoleService.assignRoles(1L, Collections.emptyList());
@@ -279,6 +288,8 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("assignRoles should insert new role assignments")
     void assignRoles_withRoleIds_insertsAssignments() {
+        // Tenant isolation: user belongs to current tenant
+        when(userMapper.selectById(1L)).thenReturn(createSysUser(1L));
         when(userRoleMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
         when(userRoleMapper.insert(any(SysUserRole.class))).thenReturn(1);
 
@@ -291,6 +302,8 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("assignMenus with null menuIds should clear all menus")
     void assignMenus_nullMenuIds_clearsAllMenus() {
+        // Tenant isolation: role belongs to current tenant
+        when(roleMapper.selectById(1L)).thenReturn(createSysRole(1L, "admin", "Admin", 1));
         when(roleMenuMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
 
         Boolean result = sysRoleService.assignMenus(1L, null);
@@ -303,6 +316,8 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("assignMenus with empty menuIds should clear all menus")
     void assignMenus_emptyMenuIds_clearsAllMenus() {
+        // Tenant isolation: role belongs to current tenant
+        when(roleMapper.selectById(1L)).thenReturn(createSysRole(1L, "admin", "Admin", 1));
         when(roleMenuMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
 
         Boolean result = sysRoleService.assignMenus(1L, Collections.emptyList());
@@ -315,6 +330,8 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("assignMenus should insert new menu assignments")
     void assignMenus_withMenuIds_insertsAssignments() {
+        // Tenant isolation: role belongs to current tenant
+        when(roleMapper.selectById(1L)).thenReturn(createSysRole(1L, "admin", "Admin", 1));
         when(roleMenuMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
         when(roleMenuMapper.insert(any(SysRoleMenu.class))).thenReturn(1);
 
@@ -342,6 +359,14 @@ class SysRoleServiceImplTest {
         role.setCreateTime(LocalDateTime.now());
         role.setUpdateTime(LocalDateTime.now());
         return role;
+    }
+
+    private SysUser createSysUser(Long userId) {
+        SysUser user = new SysUser();
+        user.setUserId(userId);
+        user.setUsername("testuser");
+        user.setStatus(1);
+        return user;
     }
 
     private SysRolePo createSysRolePo(Long roleId, String roleCode, String roleName, Integer status) {

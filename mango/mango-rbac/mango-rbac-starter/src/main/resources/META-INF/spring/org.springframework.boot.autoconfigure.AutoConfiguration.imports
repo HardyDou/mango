@@ -1,2 +1,2 @@
-io.mango.permission.starter.PermissionAutoConfiguration
-io.mango.permission.starter.config.PermAnnotationConfig
+io.mango.rbac.starter.RbacAutoConfiguration
+io.mango.rbac.starter.config.RbacAnnotationConfig

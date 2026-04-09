@@ -8,8 +8,10 @@ import io.mango.rbac.api.vo.SysRoleVO;
 import io.mango.rbac.core.entity.SysRole;
 import io.mango.rbac.core.entity.SysRoleMenu;
 import io.mango.rbac.core.entity.SysUserRole;
+import io.mango.rbac.core.entity.SysUser;
 import io.mango.rbac.core.mapper.SysRoleMapper;
 import io.mango.rbac.core.mapper.SysRoleMenuMapper;
+import io.mango.rbac.core.mapper.SysUserMapper;
 import io.mango.rbac.core.mapper.SysUserRoleMapper;
 import io.mango.rbac.core.service.ISysRoleService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class SysRoleServiceImpl implements ISysRoleService {
     private final SysRoleMapper roleMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final SysRoleMenuMapper roleMenuMapper;
+    private final SysUserMapper userMapper;
 
     @Override
     public List<SysRoleVO> list() {
@@ -142,6 +145,16 @@ public class SysRoleServiceImpl implements ISysRoleService {
     @Override
     @Transactional
     public Boolean assignRoles(Long userId, List<Long> roleIds) {
+        // Tenant isolation: verify user exists (SysUser has no tenantId field, only existence check)
+        Long currentTenantId = getTenantIdLong();
+        if (currentTenantId != null) {
+            SysUser user = userMapper.selectById(userId);
+            if (user == null) {
+                log.warn("assignRoles failed: user {} not found", userId);
+                return false;
+            }
+            // Note: SysUser lacks tenantId field; full tenant isolation requires schema change
+        }
         // Remove existing roles for user
         LambdaQueryWrapper<SysUserRole> delWrapper = new LambdaQueryWrapper<>();
         delWrapper.eq(SysUserRole::getUserId, userId);
@@ -163,6 +176,15 @@ public class SysRoleServiceImpl implements ISysRoleService {
     @Override
     @Transactional
     public Boolean assignMenus(Long roleId, List<Long> menuIds) {
+        // Tenant isolation: verify role belongs to current tenant
+        Long currentTenantId = getTenantIdLong();
+        if (currentTenantId != null) {
+            SysRole role = roleMapper.selectById(roleId);
+            if (role == null || !currentTenantId.equals(role.getTenantId())) {
+                log.warn("Tenant isolation violation: attempt to assign menus to role {} by tenant {}", roleId, currentTenantId);
+                return false;
+            }
+        }
         // Remove existing menus for role
         LambdaQueryWrapper<SysRoleMenu> delWrapper = new LambdaQueryWrapper<>();
         delWrapper.eq(SysRoleMenu::getRoleId, roleId);
