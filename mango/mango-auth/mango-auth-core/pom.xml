@@ -65,15 +65,8 @@
         <!-- Mango KV Store API (for AntiService) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-kv-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Mango KV Store Redis (default Redis implementation) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-kv-redis</artifactId>
-            <version>${project.version}</version>
+            <artifactId>mango-infra-dal-starter</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <!-- Mango Captcha API (for CaptchaInterceptor) -->
@@ -104,5 +97,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
