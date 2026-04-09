@@ -58,14 +58,7 @@
         <!-- Mango Permission API (for SysUserApi) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-permission-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Mango Permission Core (for mappers like SysRoleMapper) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-permission-core</artifactId>
+            <artifactId>mango-rbac-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -32,7 +32,7 @@
         <!-- Mango Permission API (for SysPublicPathApi) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-permission-api</artifactId>
+            <artifactId>mango-rbac-api</artifactId>
         </dependency>
 
         <!-- Spring Boot Web -->

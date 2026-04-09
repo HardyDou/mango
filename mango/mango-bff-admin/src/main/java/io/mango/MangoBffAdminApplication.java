@@ -5,7 +5,7 @@ import io.mango.area.starter.MangoAreaAutoConfiguration;
 import io.mango.captcha.starter.config.CaptchaAutoConfiguration;
 import io.mango.i18n.starter.I18nAutoConfiguration;
 import io.mango.org.starter.MangoOrgAutoConfiguration;
-import io.mango.permission.starter.PermissionAutoConfiguration;
+import io.mango.rbac.starter.RbacAutoConfiguration;
 import io.mango.user.starter.UserAutoConfiguration;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Import;
         MangoAiAutoConfiguration.class,
         I18nAutoConfiguration.class,
         UserAutoConfiguration.class,
-        PermissionAutoConfiguration.class,
+        RbacAutoConfiguration.class,
         CaptchaAutoConfiguration.class
 })
 @ComponentScan(basePackages = {"io.mango"},
@@ -45,7 +45,7 @@ import org.springframework.context.annotation.Import;
         })
 @MapperScan({
         "io.mango.user.core.mapper",
-        "io.mango.permission.core.mapper",
+        "io.mango.rbac.core.mapper",
         "io.mango.i18n.core.mapper",
         "io.mango.org.core.mapper",
         "io.mango.area.core.mapper"

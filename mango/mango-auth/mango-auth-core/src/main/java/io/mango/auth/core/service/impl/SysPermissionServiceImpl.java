@@ -1,6 +1,6 @@
 package io.mango.auth.core.service.impl;
 
-import io.mango.permission.api.SysPermissionApi;
+import io.mango.rbac.api.SysPermissionApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
