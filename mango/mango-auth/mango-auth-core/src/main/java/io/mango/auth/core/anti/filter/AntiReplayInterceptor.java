@@ -1,16 +1,17 @@
 package io.mango.auth.core.anti.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.auth.core.anti.IdempotencyGuard;
 import io.mango.auth.core.anti.ReplayGuard;
 import io.mango.auth.core.anti.SignatureValidator;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -40,7 +41,6 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
     private final ReplayGuard replayGuard;
     private final IdempotencyGuard idempotencyGuard;
     private final SignatureValidator signatureValidator;
-    private final ObjectMapper objectMapper;
 
     @Value("${mango.auth.app-secret.default:#{null}}")
     private String defaultSecret;
@@ -60,7 +60,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
         String method = request.getMethod();
 
         // 1. Validate timestamp
@@ -139,7 +139,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
             throw new IllegalArgumentException("appKey cannot be null or blank");
         }
         // Check local cache first
-        return secretCache.computeIfAbsent(appKey, key -> loadSecret(key));
+        return secretCache.computeIfAbsent(appKey, this::loadSecret);
     }
 
     private String loadSecret(String appKey) {
@@ -156,6 +156,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
     /**
      * Simple cached body request wrapper to allow reading body multiple times.
      */
+    @Getter
     @Slf4j
     public static class CachedBodyHttpServletRequest extends jakarta.servlet.http.HttpServletRequestWrapper {
         private final String body;
@@ -171,8 +172,5 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
             this.body = bodyStr;
         }
 
-        public String getBody() {
-            return body;
-        }
     }
 }

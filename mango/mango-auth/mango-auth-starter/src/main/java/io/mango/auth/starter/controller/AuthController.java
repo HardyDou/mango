@@ -83,7 +83,7 @@ public class AuthController implements AuthApi {
      * User login
      */
     public LoginResponse login(LoginRequest loginRequest) {
-        LoginResponse response = authService.login(loginRequest);
+        LoginResponse response = authService.login(loginRequest.getUsername(),loginRequest.getPassword());
         if (response == null) {
             throw new SecurityException("Invalid username or password");
         }
@@ -111,7 +111,7 @@ public class AuthController implements AuthApi {
     /**
      * Validate token
      */
-    public Boolean validateToken(String token) {
+    public boolean validateToken(String token) {
         return authService.validateToken(token);
     }
 

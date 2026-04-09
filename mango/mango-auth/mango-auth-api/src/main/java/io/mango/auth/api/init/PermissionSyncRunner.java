@@ -1,7 +1,7 @@
-package io.mango.auth.core.init;
+package io.mango.auth.api.init;
 
+import io.mango.auth.api.IAuthPermissionServiceProvider;
 import io.mango.common.annotation.Perm;
-import io.mango.rbac.api.SysPermissionApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -37,11 +37,11 @@ public class PermissionSyncRunner implements ApplicationRunner {
     private boolean syncEnabled;
 
     private final RequestMappingHandlerMapping handlerMapping;
-    private final SysPermissionApi sysPermissionApi;
+    private final IAuthPermissionServiceProvider permissionServiceProvider;
 
-    public PermissionSyncRunner(RequestMappingHandlerMapping handlerMapping, SysPermissionApi sysPermissionApi) {
+    public PermissionSyncRunner(RequestMappingHandlerMapping handlerMapping, IAuthPermissionServiceProvider permissionServiceProvider, IAuthPermissionServiceProvider permissionServiceProvider1) {
         this.handlerMapping = handlerMapping;
-        this.sysPermissionApi = sysPermissionApi;
+        this.permissionServiceProvider = permissionServiceProvider1;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class PermissionSyncRunner implements ApplicationRunner {
         Map<String, PermInfo> scannedPerms = scanPermAnnotations();
 
         // 2. Get existing permissions from DB via SysPermissionApi
-        Set<String> existingPerms = sysPermissionApi.getAllPermissionCodes();
+        Set<String> existingPerms = permissionServiceProvider.getAllPermissionCodes();
 
         // 3. Compute diff
         Set<String> newPerms = scannedPerms.keySet().stream()
@@ -85,7 +85,8 @@ public class PermissionSyncRunner implements ApplicationRunner {
             PermInfo info = scannedPerms.get(permCode);
             log.info("Permission sync [DEV]: code={}, module={}, action={}",
                 permCode, info.module, info.action);
-            // In production, call: sysPermissionApi.addPermission(permCode, info.module, info.action)
+            // In production, call:
+            permissionServiceProvider.addPermission(permCode, info.module, info.action);
         }
 
         log.info("Permission sync complete: {} permissions logged for sync", newPerms.size());

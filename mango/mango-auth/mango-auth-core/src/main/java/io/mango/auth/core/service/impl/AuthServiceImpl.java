@@ -1,9 +1,11 @@
 package io.mango.auth.core.service.impl;
 
-import io.mango.auth.api.AuthApi;
+import io.mango.auth.api.IAuthUserProvider;
 import io.mango.auth.api.IPermissionChecker;
+import io.mango.auth.api.po.AuthUserInfo;
 import io.mango.auth.api.vo.LoginRequest;
 import io.mango.auth.api.vo.LoginResponse;
+import io.mango.auth.core.service.IAuthService;
 import io.mango.infra.security.api.ITokenService;
 import io.mango.rbac.api.po.SysUser;
 import io.mango.rbac.api.SysUserApi;
@@ -26,9 +28,9 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthServiceImpl implements AuthApi {
+public class AuthServiceImpl implements IAuthService {
 
-    private final SysUserApi sysUserApi;
+    private final IAuthUserProvider sysUserApi;
     private final IPermissionChecker permissionChecker;
     private final ITokenService tokenService;
     private final PasswordEncoder passwordEncoder;
@@ -37,23 +39,23 @@ public class AuthServiceImpl implements AuthApi {
     private long accessTokenValiditySeconds;
 
     @Override
-    public LoginResponse login(LoginRequest loginRequest) {
+    public LoginResponse login(String username, String password) {
         // 1. Validate credentials
-        SysUser user = sysUserApi.getByUsernameForAuth(loginRequest.getUsername());
+        AuthUserInfo user = sysUserApi.getByUsernameForAuth(username);
         if (user == null) {
-            log.warn("Login failed: user not found - {}", loginRequest.getUsername());
+            log.warn("Login failed: user not found - {}", username);
             return null;
         }
 
         // 2. Verify password
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            log.warn("Login failed: invalid password for user - {}", loginRequest.getUsername());
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            log.warn("Login failed: invalid password for user - {}", username);
             return null;
         }
 
         // 3. Check user status
         if (user.getStatus() != 1) {
-            log.warn("Login failed: user is disabled - {}", loginRequest.getUsername());
+            log.warn("Login failed: user is disabled - {}", username);
             return null;
         }
 
@@ -75,7 +77,7 @@ public class AuthServiceImpl implements AuthApi {
         // 6. Load roles and permissions
         loadUserRolesAndPermissions(user.getUserId(), response);
 
-        log.info("User logged in successfully: {}", loginRequest.getUsername());
+        log.info("User logged in successfully: {}", username);
         return response;
     }
 
@@ -100,7 +102,7 @@ public class AuthServiceImpl implements AuthApi {
         }
 
         // 3. Load user
-        SysUser user = sysUserApi.getByIdForAuth(userId);
+        AuthUserInfo user = sysUserApi.getByIdForAuth(userId);
         if (user == null || user.getStatus() != 1) {
             log.warn("User not found or disabled during refresh: {}", userId);
             return null;
@@ -121,6 +123,7 @@ public class AuthServiceImpl implements AuthApi {
 
         return response;
     }
+
 
     @Override
     public void logout(String token) {

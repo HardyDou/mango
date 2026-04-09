@@ -2,7 +2,7 @@ package io.mango.auth.api;
 
 import java.util.Set;
 
-public interface IPermissionServiceProvider {
+public interface IAuthPermissionServiceProvider {
 
     Set<String> getAllPermissionCodes();
 

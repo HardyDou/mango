@@ -1,6 +1,6 @@
 package io.mango.auth.core.anti;
 
-import io.mango.kv.api.IKvStore;
+import io.mango.dal.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,6 +19,7 @@ public class IdempotencyGuard {
     private static final String PROCESSING = "PROCESSING";
 
     private final IKvStore kvStore;
+
 
     /**
      * Try to acquire idempotency key for a request.
