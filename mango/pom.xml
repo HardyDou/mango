@@ -12,22 +12,34 @@
     <name>Mango</name>
     <description>Mango Scaffold - AI-Native Java Development Framework</description>
 
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
     <modules>
+        <!--layer0-->
+        <module>mango-tools</module>
+
         <module>mango-common</module>
-        <module>mango-user</module>
+
+        <!--layer1-->
+        <module>mango-infra</module>
+
+        <!--layer2-->
         <module>mango-auth</module>
         <module>mango-rbac</module>
         <module>mango-org</module>
         <module>mango-i18n</module>
         <module>mango-area</module>
         <module>mango-ai</module>
-        <module>mango-infra</module>
-        <module>mango-bff-admin</module>
-        <module>mango-gateway</module>
-        <module>mango-tools</module>
         <module>mango-captcha</module>
         <module>mango-system</module>
         <module>mango-message</module>
+
+        <!--layer3-->
+        <module>mango-bff-admin</module>
+        <module>mango-gateway</module>
     </modules>
 
     <!-- ==================== 依赖管理 ==================== -->
