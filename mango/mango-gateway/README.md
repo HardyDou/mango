@@ -27,7 +27,7 @@ mango-gateway/
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Mango Gateway (AuthFilter)                     │
+│              Mango Gateway (AuthFilter)                      │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ AuthFilter (JWT验证)                                │   │
 │  │  - 验证 Authorization Header                        │   │
@@ -54,7 +54,7 @@ mango-gateway/
 ## 依赖关系
 
 ```
-BFF (mango-bff-admin)
+BFF (mango-admin-app)
 ├── mango-gateway-starter    # AuthFilter
 └── mango-auth-starter       # AuthController (登录接口)
 

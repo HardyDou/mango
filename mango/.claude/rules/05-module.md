@@ -145,12 +145,12 @@ mango-xxx-starter-remote/
     └── XxxFeignClient.java     # extends XxxApi
 ```
 
-### 4.5 BFF（理想状态）
+### 4.5 admin-app（理想状态）
 
 ```
-mango-bff-admin/
-├── src/main/java/io/mango/bff/admin/
-│   └── BffAdminApplication.java   # 启动类
+mango-admin-app/
+├── src/main/java/io/mango/admin/
+│   └── MangoAdminAppApplication.java   # 启动类
 └── src/main/resources/
     └── application.yml             # 配置文件
 ```

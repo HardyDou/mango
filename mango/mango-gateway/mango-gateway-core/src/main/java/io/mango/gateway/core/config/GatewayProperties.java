@@ -77,7 +77,7 @@ public class GatewayProperties {
         /**
          * BFF Admin服务 (微服务模式)
          */
-        private String bffAdminService = "mango-bff-admin";
+        private String bffAdminService = "mango-admin-app";
 
         /**
          * AI服务 (微服务模式)

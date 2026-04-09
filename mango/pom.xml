@@ -38,7 +38,7 @@
         <module>mango-message</module>
 
         <!--layer3-->
-        <module>mango-bff-admin</module>
+        <module>mango-admin-app</module>
         <module>mango-gateway</module>
     </modules>
 
