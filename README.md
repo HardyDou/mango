@@ -5,7 +5,7 @@
 ## 项目组成
 
 ```
-company02/
+mango/
 ├── mango/          # Java 后端底座
 ├── mango-web/      # Vue 3 管理前端
 └── mango-docs/     # 设计文档 & Sprint 计划
