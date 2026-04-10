@@ -1,6 +1,6 @@
 package io.mango.message.core.controller;
 
-import io.mango.common.annotation.Perm;
+import io.mango.infra.security.api.Perm;
 import io.mango.common.result.R;
 import io.mango.message.api.MessageApi;
 import io.mango.message.api.po.SysMessagePo;

@@ -1,6 +1,6 @@
 package io.mango.infra.security.starter.aspect;
 
-import io.mango.common.annotation.Perm;
+import io.mango.infra.security.api.Perm;
 import io.mango.common.exception.BizException;
 import io.mango.infra.security.api.IPermissionService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +41,7 @@ public class PermAspect {
     @Autowired(required = false)
     private IPermissionService permissionService;
 
-    @Before("@annotation(io.mango.common.annotation.Perm)")
+    @Before("@annotation(io.mango.infra.security.api.Perm)")
     public void checkPermission(JoinPoint joinPoint) {
         if (permissionService == null) {
             log.warn("PermissionService not configured, skipping permission check");

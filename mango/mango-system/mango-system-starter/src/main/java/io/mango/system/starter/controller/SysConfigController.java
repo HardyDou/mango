@@ -1,6 +1,6 @@
 package io.mango.system.starter.controller;
 
-import io.mango.common.annotation.Perm;
+import io.mango.infra.security.api.Perm;
 import io.mango.common.result.R;
 import io.mango.system.api.po.SysConfigPo;
 import io.mango.system.api.enums.ConfigTypeEnum;

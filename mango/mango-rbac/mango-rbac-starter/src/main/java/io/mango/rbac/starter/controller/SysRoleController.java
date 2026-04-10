@@ -1,6 +1,6 @@
 package io.mango.rbac.starter.controller;
 
-import io.mango.common.annotation.Perm;
+import io.mango.infra.security.api.Perm;
 import io.mango.common.result.R;
 import io.mango.rbac.api.SysRoleApi;
 import io.mango.rbac.api.po.SysRolePo;

@@ -1,6 +1,6 @@
 package io.mango.infra.security.starter.aspect;
 
-import io.mango.common.annotation.Perm;
+import io.mango.infra.security.api.Perm;
 import io.mango.common.exception.BizException;
 import io.mango.infra.security.api.IPermissionService;
 import org.aspectj.lang.JoinPoint;

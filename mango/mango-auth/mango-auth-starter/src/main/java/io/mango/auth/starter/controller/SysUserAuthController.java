@@ -2,7 +2,7 @@ package io.mango.auth.starter.controller;
 
 import io.mango.rbac.api.SysRoleApi;
 import io.mango.rbac.api.vo.SysRoleVO;
-import io.mango.common.annotation.Perm;
+import io.mango.infra.security.api.Perm;
 import io.mango.common.result.R;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

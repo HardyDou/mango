@@ -24,6 +24,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango Infra Security API (Perm annotation) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-security-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- MyBatis-Plus Annotations -->
         <dependency>
             <groupId>com.baomidou</groupId>
