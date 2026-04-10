@@ -84,11 +84,19 @@ mvn pmd:check                      # PMD 代码分析
 ### 原则 1: 业务与部署拓扑分离
 
 同一份代码支持单体/微服务/任意聚合部署：
-```
-*-core      → 纯业务逻辑，不知道怎么被调用
-*-starter   → 本地调用（单体部署时注入）
-*-starter-remote → Feign 调用（微服务部署时注入）
-```
+每个服务包含 4 个子模块：
+
+- `-api`
+  - 业务对外提供API以及所需po/vo/util/dip接口定义（po/vo/dto/XxxApi）
+- `-core`
+  - 核心实现（entity/service/mapper）
+  - 纯业务逻辑，不知道怎么被调用
+- `-starter`
+  - 本地调用（单体部署时注入），利用Controller 实现api中的接口
+  - 本地调用启动器
+- `-starter-remote`
+  - 远程调用
+  - Feign 调用（微服务部署时注入）
 
 ### 原则 2: Gateway 协议无关
 
@@ -133,11 +141,7 @@ if (isMicroservice()) {
 2. `redisTemplate.opsForZSet()` — 必须注入 IZSet
 3. 硬编码 TTL — 必须从配置或参数传入
 
-每个服务包含 4 个子模块：
-- `-api` - 接口定义（po/vo/dto/XxxApi）
-- `-core` - 核心实现（entity/service/mapper）
-- `-starter` - 本地调用启动器
-- `-starter-remote` - 远程调用
+
 
 ### 事务配置
 

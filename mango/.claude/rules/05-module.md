@@ -11,11 +11,11 @@ paths:
 
 > Maven 坐标：`groupId=io.mango`，`artifactId=mango-xxx`（如 `io.mango` / `mango-area-api`）
 
-| 层 | 模块前缀 | 职责 |
-|---|---------|------|
-| 应用层（BFF） | `mango-bff-*` | 聚合接口（仅跨领域组合），参见 api-rules.md §1.3 |
-| 领域层（Domain） | `mango-xxx-api/core/starter/remote` | 业务逻辑，4 子模块 |
-| 基础设施层（Infra） | `mango-infra-*` | 第三方中间件集成，零侵入业务 |
+| 层            | 模块前缀                              | 职责                        |
+|--------------|-----------------------------------|---------------------------|
+| 应用层（APP）     | `mango-*-app`                     | 部署单元，参见 api-rules.md §1.3 |
+| 领域层（Domain）  | `mango-*-api/core/starter/remote` | 业务逻辑，4 子模块                |
+| 基础设施层（Infra） | `mango-infra-*`                   | 第三方中间件集成，零侵入业务            |
 
 ---
 
