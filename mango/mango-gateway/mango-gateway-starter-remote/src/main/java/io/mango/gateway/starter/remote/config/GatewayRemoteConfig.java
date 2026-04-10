@@ -32,8 +32,8 @@ public class GatewayRemoteConfig {
                         .path("/auth/**")
                         .filters(f -> f.stripPrefix(0))
                         .uri("lb://" + routes.getAuthService()))
-                // BFF Admin服务
-                .route("bff-admin-service", r -> r
+                // Admin App服务
+                .route("admin-app-service", r -> r
                         .path("/bff/admin/**")
                         .filters(f -> f.stripPrefix(0))
                         .uri("lb://" + routes.getBffAdminService()))
