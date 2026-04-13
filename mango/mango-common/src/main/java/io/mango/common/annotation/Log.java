@@ -18,38 +18,7 @@ public @interface Log {
     String value();
 
     /**
-     * 操作类型
+     * 日志类型
      */
-    OperateType type() default OperateType.OTHER;
-
-    enum OperateType {
-        /**
-         * 查询
-         */
-        GET,
-        /**
-         * 新增
-         */
-        ADD,
-        /**
-         * 修改
-         */
-        EDIT,
-        /**
-         * 删除
-         */
-        DELETE,
-        /**
-         * 导出
-         */
-        EXPORT,
-        /**
-         * 导入
-         */
-        IMPORT,
-        /**
-         * 其他
-         */
-        OTHER
-    }
+    LogType type() default LogType.OPERATION;
 }

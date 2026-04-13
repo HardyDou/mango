@@ -24,6 +24,7 @@
         <module>mango-platform</module>
         <module>mango-parent</module>
         <module>mango-tools</module>
+        <module>mango-infra-test</module>
     </modules>
 
     <!-- ==================== 依赖管理 ==================== -->
@@ -332,6 +333,11 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-captcha-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-log-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

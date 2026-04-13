@@ -48,6 +48,8 @@
         <module>mango-infra-crypto</module>
         <!-- Context (TTL ThreadLocal holders - tenant/trace, TtlExecutorDecorator) -->
         <module>mango-infra-context</module>
+        <!-- Log (Logback configuration with traceId, multi-env support) -->
+        <module>mango-infra-log</module>
     </modules>
 
 </project>
