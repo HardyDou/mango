@@ -1,0 +1,134 @@
+# ==================== 日志配置示例 ====================
+# 复制到 application.yml 中使用
+
+# ==================== 环境说明 ====================
+# dev/local: 彩色控制台 + 普通文本审计日志
+# test: 控制台 + JSON 文件 + JSON 审计日志
+# prod: JSON 文件 + 错误分离 + JSON 审计日志
+
+# ==================== mango.log 配置域 ====================
+mango:
+  log:
+    # ---------- 日志级别 ----------
+    level:
+      # 全局级别: TRACE/DEBUG/INFO/WARN/ERROR
+      root: INFO
+      # 业务代码级别
+      mango: DEBUG
+      # Spring 全局
+      spring: WARN
+      # MyBatis
+      mybatis: WARN
+      # HTTP 请求（Apache HttpClient）
+      http: INFO
+
+    # ---------- 文件滚动策略 ----------
+    file:
+      # 单文件最大大小
+      maxSize: 100MB
+      # 保留天数
+      maxHistory: 30
+      # 总大小上限
+      totalSizeCap: 3GB
+
+    # ---------- 审计日志 ----------
+    operation:
+      # 是否开启审计日志（默认 true）
+      enabled: true
+      # 保留天数（默认 90）
+      maxHistory: 90
+      # 总大小上限（默认 10GB）
+      totalSizeCap: 10GB
+
+    # ---------- JSON 输出 ----------
+    json:
+      # 是否启用 JSON 格式（生产默认 true，dev 默认 false）
+      enabled: false
+
+    # ---------- TraceId 配置 ----------
+    trace:
+      # 是否启用 traceId 注入（默认 true，自动从 SkyWalking/Micrometer 获取）
+      enabled: true
+      # 自定义 traceId header（默认不启用，仅当 APM 未生效时使用）
+      # headerName: X-Trace-Id
+
+# ==================== 兼容标准 logging 配置 ====================
+# 也支持标准 Spring Boot logging 配置，会与 mango.log 合并
+logging:
+  level:
+    # 标准格式（效果同 mango.log.level.root）
+    root: INFO
+    # 第三方库精细控制
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - traceId=[%X{traceId:-}] %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ==================== 常见场景配置 ====================
+
+# ---------- 场景1: 本地开发 - 降低噪音 ----------
+# mango:
+#   log:
+#     level:
+#       root: WARN
+#       mango: DEBUG
+#       spring: ERROR
+
+# ---------- 场景2: 排查问题 - 开启 DEBUG ----------
+# mango:
+#   log:
+#     level:
+#       root: DEBUG
+#       mango: TRACE
+#       spring: INFO
+#       http: DEBUG
+
+# ---------- 场景3: 生产环境 - 减少存储 ----------
+# mango:
+#   log:
+#     level:
+#       root: WARN
+#       mango: INFO
+#       spring: ERROR
+#       http: ERROR
+#     file:
+#       maxSize: 200MB
+#       maxHistory: 60
+#       totalSizeCap: 5GB
+#     operation:
+#       maxHistory: 30
+#       totalSizeCap: 5GB
+
+# ---------- 场景4: 单独调试某模块 ----------
+# mango:
+#   log:
+#     level:
+#       io.mango.auth: TRACE
+#       io.mango.rbac: DEBUG
+#       io.mango: INFO
+
+# ---------- 场景5: 关闭审计日志 ----------
+# mango:
+#   log:
+#     operation:
+#       enabled: false
+
+# ---------- 场景6: 开启 JSON 输出 ----------
+# mango:
+#   log:
+#     json:
+#       enabled: true
+
+# ---------- 场景7: 测试环境配置 ----------
+# mango:
+#   log:
+#     level:
+#       root: INFO
+#       mango: DEBUG
+#       spring: WARN
+#       mybatis: WARN
+#     operation:
+#       enabled: true
+#       maxHistory: 30
+#       totalSizeCap: 3GB

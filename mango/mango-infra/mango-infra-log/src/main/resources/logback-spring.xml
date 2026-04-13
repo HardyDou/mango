@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- ==================== 全局属性 ==================== -->
+    <property name="LOG_PATH" value="${LOG_PATH:-./logs}"/>
+    <property name="APP_NAME" value="${APP_NAME:-mango}"/>
+
+    <!-- ==================== mango.log 配置域 ==================== -->
+    <!-- 日志级别 -->
+    <property name="LOG_LEVEL_ROOT" value="${mango.log.level.root:-INFO}"/>
+    <property name="LOG_LEVEL_MANGO" value="${mango.log.level.mango:-DEBUG}"/>
+    <property name="LOG_LEVEL_SPRING" value="${mango.log.level.spring:-WARN}"/>
+    <property name="LOG_LEVEL_MYBATIS" value="${mango.log.level.mybatis:-WARN}"/>
+    <property name="LOG_LEVEL_HTTP" value="${mango.log.level.http:-INFO}"/>
+
+    <!-- 文件滚动 -->
+    <property name="MAX_FILE_SIZE" value="${mango.log.file.maxSize:-100MB}"/>
+    <property name="MAX_HISTORY" value="${mango.log.file.maxHistory:-30}"/>
+    <property name="TOTAL_SIZE_CAP" value="${mango.log.file.totalSizeCap:-3GB}"/>
+
+    <!-- 审计日志 -->
+    <property name="OPERATION_LOG_ENABLED" value="${mango.log.operation.enabled:-true}"/>
+    <property name="OPERATION_LOG_MAX_HISTORY" value="${mango.log.operation.maxHistory:-90}"/>
+    <property name="OPERATION_LOG_TOTAL_SIZE_CAP" value="${mango.log.operation.totalSizeCap:-10GB}"/>
+
+    <!-- JSON 输出 -->
+    <property name="JSON_OUTPUT_ENABLED" value="${mango.log.json.enabled:-false}"/>
+
+    <!-- ==================== 转换器 ==================== -->
+    <!-- SkyWalking TraceId 转换器（非必须，存在时自动生效） -->
+    <converter class="io.mango.infra.log.layout.SkyWalkingTraceIdConverter"/>
+
+    <!-- ==================== 控制台 Appender ==================== -->
+    <!-- 标准格式 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!--
+                %sw_traceId{DEFAULT} - SkyWalking traceId（可选，自动兼容）
+                %X{traceId} - MDC 中的 traceId（Micrometer/SkyWalking 会自动注入）
+                %X{X-Correlation-ID} - 关联 ID
+            -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%sw_traceId{'-'}] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 彩色格式（dev/local） -->
+    <appender name="COLOR_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){thread} %clr(%-5level) %clr(%logger{36}){cyan} - [%sw_traceId{'-'}] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ==================== 文件 Appender（JSON） ==================== -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}"}</customFields>
+            <!-- SkyWalking traceId 字段映射 -->
+            <fieldNames>
+                <trace>traceId</trace>
+            </fieldNames>
+        </encoder>
+    </appender>
+
+    <!-- ==================== 错误日志 ==================== -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- ==================== 审计日志（JSON） ==================== -->
+    <appender name="OPERATION_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-operation.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-operation.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>${OPERATION_LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${OPERATION_LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}","type":"operation"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- ==================== 审计日志（普通文本，dev） ==================== -->
+    <appender name="OPERATION_LOG_PLAIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-operation.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-operation.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%sw_traceId{'-'}] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ==================== JSON 文件（生产） ==================== -->
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}.json.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.%i.json.log.gz</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}","env":"${SPRING_PROFILES_ACTIVE:-default}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- ==================== Profile: dev / local ==================== -->
+    <springProfile name="dev,local">
+        <root level="${LOG_LEVEL_ROOT}">
+            <appender-ref ref="COLOR_CONSOLE"/>
+        </root>
+        <logger name="org.springframework" level="${LOG_LEVEL_SPRING}"/>
+        <logger name="org.springframework.web" level="${LOG_LEVEL_SPRING}"/>
+        <logger name="org.springframework.web.servlet" level="${LOG_LEVEL_HTTP}"/>
+        <logger name="org.apache.http" level="${LOG_LEVEL_HTTP}"/>
+        <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
+        <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
+        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+            <then>
+                <logger name="io.mango.common.annotation.Log" level="INFO" additivity="false">
+                    <appender-ref ref="OPERATION_LOG_PLAIN"/>
+                </logger>
+            </then>
+        </if>
+    </springProfile>
+
+    <!-- ==================== Profile: test ==================== -->
+    <springProfile name="test">
+        <root level="${LOG_LEVEL_ROOT}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+        <logger name="org.springframework" level="${LOG_LEVEL_SPRING}"/>
+        <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
+        <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
+        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+            <then>
+                <logger name="io.mango.common.annotation.Log" level="INFO" additivity="false">
+                    <appender-ref ref="OPERATION_LOG"/>
+                </logger>
+            </then>
+        </if>
+    </springProfile>
+
+    <!-- ==================== Profile: prod ==================== -->
+    <springProfile name="prod">
+        <root level="${LOG_LEVEL_ROOT}">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_JSON"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+        <logger name="org.springframework" level="${LOG_LEVEL_SPRING}"/>
+        <logger name="org.springframework.web" level="${LOG_LEVEL_SPRING}"/>
+        <logger name="org.springframework.web.servlet" level="${LOG_LEVEL_HTTP}"/>
+        <logger name="org.apache.http" level="${LOG_LEVEL_HTTP}"/>
+        <logger name="com.baomidou" level="${LOG_LEVEL_MYBATIS}"/>
+        <logger name="io.mango" level="${LOG_LEVEL_MANGO}"/>
+        <if condition='property("OPERATION_LOG_ENABLED").equals("true")'>
+            <then>
+                <logger name="io.mango.common.annotation.Log" level="INFO" additivity="false">
+                    <appender-ref ref="OPERATION_LOG"/>
+                </logger>
+            </then>
+        </if>
+    </springProfile>
+
+</configuration>
