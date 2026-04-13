@@ -1,4 +1,4 @@
-package io.mango.orm.api;
+package io.mango.infra.orm.api;
 
 /**
  * Base repository interface for DDD-style data access.

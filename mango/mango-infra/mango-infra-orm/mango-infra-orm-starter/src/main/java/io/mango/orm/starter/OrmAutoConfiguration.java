@@ -1,4 +1,4 @@
-package io.mango.orm.starter;
+package io.mango.infra.orm.starter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

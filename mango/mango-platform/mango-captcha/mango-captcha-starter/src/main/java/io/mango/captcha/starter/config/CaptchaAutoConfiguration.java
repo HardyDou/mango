@@ -9,7 +9,7 @@ import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
 import io.mango.captcha.core.service.impl.ArithmeticCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.CaptchaServiceImpl;
-import io.mango.kv.api.IKvStore;
+import io.mango.infra.kv.api.IKvStore;
 import io.mango.captcha.starter.controller.CaptchaController;
 import io.mango.captcha.starter.properties.CaptchaProperties;
 import io.mango.captcha.starter.provider.DefaultEmailProvider;

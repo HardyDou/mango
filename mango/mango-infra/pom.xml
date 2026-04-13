@@ -52,6 +52,8 @@
         <module>mango-infra-context</module>
         <!-- Log (Logback configuration with traceId, multi-env support) -->
         <module>mango-infra-log</module>
+        <!-- Test (Unified test module for all infrastructure components) -->
+        <module>mango-infra-test</module>
     </modules>
 
 </project>

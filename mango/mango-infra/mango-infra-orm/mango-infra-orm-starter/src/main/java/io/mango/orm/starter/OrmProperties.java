@@ -1,4 +1,4 @@
-package io.mango.orm.starter;
+package io.mango.infra.orm.starter;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

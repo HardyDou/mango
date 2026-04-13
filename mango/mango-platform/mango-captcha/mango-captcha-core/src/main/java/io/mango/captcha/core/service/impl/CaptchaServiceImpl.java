@@ -11,7 +11,7 @@ import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.service.ArithmeticCaptchaService;
 import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
-import io.mango.kv.api.IKvStore;
+import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

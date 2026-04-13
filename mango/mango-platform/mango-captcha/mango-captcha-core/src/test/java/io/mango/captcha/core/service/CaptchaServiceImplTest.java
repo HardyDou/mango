@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 class CaptchaServiceImplTest {
 
     @Mock
-    private io.mango.kv.api.IKvStore kvStore;
+    private io.mango.infra.kv.api.IKvStore kvStore;
 
     @Mock
     private ArithmeticCaptchaService arithmeticCaptchaService;

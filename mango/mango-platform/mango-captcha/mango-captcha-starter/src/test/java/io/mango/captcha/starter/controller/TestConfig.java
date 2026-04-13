@@ -2,7 +2,7 @@ package io.mango.captcha.starter.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.captcha.starter.config.CaptchaAutoConfiguration;
-import io.mango.kv.api.IKvStore;
+import io.mango.infra.kv.api.IKvStore;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;

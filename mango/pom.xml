@@ -24,7 +24,6 @@
         <module>mango-platform</module>
         <module>mango-parent</module>
         <module>mango-tools</module>
-        <module>mango-infra-test</module>
     </modules>
 
     <!-- ==================== 依赖管理 ==================== -->
