@@ -38,6 +38,8 @@
         <module>mango-infra-sse</module>
         <!-- WebSocket -->
         <module>mango-infra-websocket</module>
+        <!-- Gateway -->
+        <module>mango-gateway</module>
         <!-- DAL (Data Access Layer - KV/ICache/ILocker abstraction) -->
         <module>mango-infra-dal</module>
         <!-- Security (Permission aspect - @Perm) -->

@@ -51,15 +51,55 @@ Mango 是一个 For AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agent 
 ```
 mango/
 ├── CLAUDE.md                    # 本文件
+├── README.md                    # 模块说明
 ├── .claude/
 │   ├── rules/                   # 规范（按路径加载）
 │   ├── skills/                  # 可复用工作流
 │   └── sessions/                 # 共识沉淀
+│
+├── 公共层
+│   └── mango-common/            # 公共代码（工具类/常量/注解）
+│
+├── 基础设施层
+│   └── mango-infra/             # 技术组件
+│       ├── mango-gateway/      # 网关
+│       ├── mango-infra-crypto/ # 国密算法
+│       ├── mango-infra-security/ # 权限安全
+│       ├── mango-infra-dal/    # 数据访问抽象
+│       └── mango-infra-*/      # 其他技术组件
+│
+├── 平台能力层
+│   └── mango-platform/          # 通用业务能力
+│       ├── mango-ai/          # AI 能力
+│       ├── mango-auth/        # 认证
+│       ├── mango-rbac/        # 权限
+│       ├── mango-org/         # 组织
+│       ├── mango-system/     # 系统
+│       ├── mango-i18n/       # 国际化
+│       ├── mango-area/       # 区域
+│       ├── mango-captcha/     # 验证码
+│       └── mango-message/     # 消息
+│
+├── 应用层
+│   └── mango-app/              # 部署单元
+│       └── mango-admin-app/    # 管理后台
+│
 ├── mango-parent/                # Maven 父项目
-├── mango-generator/             # 代码生成模板
-├── mango-tools/                 # Mango CLI (gen/check)
-└── mango-common/                # 公共模块
+└── mango-tools/                 # Maven 插件 & 代码规则
+    └── mango-maven-plugin/      # Mango CLI 插件（含模板和规则）
+        └── src/main/resources/
+            ├── templates/       # 代码生成模板
+            └── rulesets/       # Checkstyle/PMD/SpotBugs 规则集
 ```
+
+### 层次结构
+
+| 层级 | 模块前缀 | 说明 |
+|------|---------|------|
+| 公共层 | mango-common | 项目级公共代码（工具类/常量/注解） |
+| 基础设施层 | mango-infra-* | 技术组件（Redis/Cache/加密/可观测性/网关） |
+| 平台能力层 | mango-xxx | 通用业务能力（用户/权限/认证/组织/消息等） |
+| 应用层 | mango-*-app | 部署单元（管理后台/Web/移动端） |
 
 ---
 

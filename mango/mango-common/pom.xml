@@ -81,7 +81,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <configLocation>${project.basedir}/../rulesets/java/checkstyle.xml</configLocation>
+                    <configLocation>${project.basedir}/../mango-maven-plugin/src/main/resources/rulesets/java/checkstyle.xml</configLocation>
                     <failsOnError>true</failsOnError>
                 </configuration>
                 <executions>
@@ -100,7 +100,7 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
-                    <includeFilterFile>${project.basedir}/../rulesets/java/spotbugs-security.xml</includeFilterFile>
+                    <includeFilterFile>${project.basedir}/../mango-maven-plugin/src/main/resources/rulesets/java/spotbugs-security.xml</includeFilterFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -119,7 +119,7 @@
                 <artifactId>maven-pmd-plugin</artifactId>
                 <configuration>
                     <rulesets>
-                        <ruleset>${project.basedir}/../rulesets/java/pmd-p3c.xml</ruleset>
+                        <ruleset>${project.basedir}/../mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
                     </rulesets>
                     <failOnViolation>false</failOnViolation>
                 </configuration>

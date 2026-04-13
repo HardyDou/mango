@@ -46,17 +46,39 @@ mvn mango:gen-crud -Dmodule=xxx -Dentity=User -Dtable=usr_user
 
 ```
 mango/
-├── mango-admin-app/           # 管理后台聚合服务
-├── mango-auth/                # 认证服务
-├── mango-gateway/             # 网关
-├── mango-infra/               # 基础设施
-│   ├── mango-infra-crypto     # 国密算法
-│   ├── mango-infra-security   # 权限安全
-│   └── mango-infra-dal       # 数据访问抽象
-├── mango-rbac/                # 权限管理
-├── mango-system/              # 系统管理
-└── mango-common/              # 公共模块
+├── mango-app/                   # 应用层
+│   └── mango-admin-app/       # 管理后台
+├── mango-common/               # 公共代码
+├── mango-generator/            # 代码生成器
+├── mango-infra/                # 基础设施
+│   ├── mango-gateway/         # 网关
+│   ├── mango-infra-crypto/    # 国密算法
+│   ├── mango-infra-security/  # 权限安全
+│   ├── mango-infra-dal/       # 数据访问抽象
+│   └── mango-infra-*/         # 其他技术组件
+├── mango-platform/             # 平台能力
+│   ├── mango-ai/             # AI 能力
+│   ├── mango-auth/           # 认证
+│   ├── mango-rbac/           # 权限
+│   ├── mango-org/           # 组织
+│   ├── mango-system/        # 系统
+│   ├── mango-i18n/          # 国际化
+│   ├── mango-area/          # 区域
+│   ├── mango-captcha/       # 验证码
+│   └── mango-message/       # 消息
+├── mango-parent/               # 父 POM
+└── mango-tools/               # Maven 插件 & 代码规则
+    └── mango-maven-plugin/    # Mango CLI 插件（含模板和规则）
 ```
+
+### 层次结构
+
+| 层级 | 模块 | 说明 |
+|------|------|------|
+| 应用层 | mango-app | 部署单元 |
+| 平台能力层 | mango-platform | 通用业务能力 |
+| 基础设施层 | mango-infra | 技术组件 |
+| 公共层 | mango-common | 公共代码 |
 
 ## SPI + Starter 机制
 

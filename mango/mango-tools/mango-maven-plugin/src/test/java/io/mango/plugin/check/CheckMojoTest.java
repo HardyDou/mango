@@ -1,0 +1,158 @@
+package io.mango.plugin.check;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * CheckMojo 单元测试
+ */
+class CheckMojoTest {
+
+    @TempDir
+    Path tempDir;
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    @Test
+    void checkNaming_ruleProvided_executesSuccessfully() throws Exception {
+        // given
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // when & then - should not throw
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkMethodLength_withLongMethod_reportsIssue() throws Exception {
+        // given - create a file with a long method
+        Path javaFile = tempDir.resolve("TestService.java");
+        StringBuilder longMethod = new StringBuilder();
+        longMethod.append("public class TestService {\n");
+        longMethod.append("    public void longMethod() {\n");
+        // Add 60 lines (over 50 limit)
+        for (int i = 0; i < 60; i++) {
+            longMethod.append("        System.out.println(\"line " + i + "\");\n");
+        }
+        longMethod.append("    }\n");
+        longMethod.append("}\n");
+        Files.writeString(javaFile, longMethod.toString());
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "method-length");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+        setField(mojo, "maxMethodLength", 50);
+
+        // then - it should throw because issues are found
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkClassLength_withShortClass_passes() throws Exception {
+        // given
+        Path javaFile = tempDir.resolve("ShortClass.java");
+        String content = """
+                public class ShortClass {
+                    public void doSomething() {
+                        System.out.println("hello");
+                    }
+                }
+                """;
+        Files.writeString(javaFile, content);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "class-length");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+        setField(mojo, "maxClassLength", 500);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDuplicate_withUniqueMethods_passes() throws Exception {
+        // given
+        Path javaFile = tempDir.resolve("UniqueService.java");
+        String content = """
+                public class UniqueService {
+                    public void methodA() { }
+                    public void methodB() { }
+                    public void methodC() { }
+                }
+                """;
+        Files.writeString(javaFile, content);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "duplicate");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withValidPom_passes() throws Exception {
+        // given
+        Path projectDir = tempDir.resolve("mango-user");
+        Files.createDirectories(projectDir);
+        Path pomFile = projectDir.resolve("pom.xml");
+        String pomContent = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-user-api</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """;
+        Files.writeString(pomFile, pomContent);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void extractSignature_withValidMethod_returnsSignature() throws Exception {
+        // given
+        Path javaFile = tempDir.resolve("Test.java");
+        Files.writeString(javaFile, "public void doSomething(String arg1, int arg2) { }");
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then - invoke private method via reflection
+        Method method = CheckMojo.class.getDeclaredMethod("extractSignature", String.class);
+        method.setAccessible(true);
+        String signature = (String) method.invoke(mojo, "public void doSomething(String arg1, int arg2) { }");
+
+        assertNotNull(signature);
+        assertTrue(signature.contains("doSomething"));
+    }
+}

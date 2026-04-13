@@ -107,6 +107,8 @@ INSERT INTO sys_menu (name, permission, path, component, type, sort) VALUES
                 permPrefix,
                 permPrefix,
                 permPrefix,
+                permPrefix,
+                permPrefix,
                 permPrefix
         );
     }

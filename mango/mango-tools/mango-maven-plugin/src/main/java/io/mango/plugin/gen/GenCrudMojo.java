@@ -146,13 +146,13 @@ public class %sController {
                 resourcePath,
                 entityName,
                 entityName, entityName,
-                camelEntity,
                 entityName,
-                camelEntity,
-                camelEntity,
-                camelEntity,
-                camelEntity,
-                camelEntity
+                entityName,
+                entityName,
+                entityName,
+                entityName,
+                entityName,
+                entityName
         );
         Files.writeString(dir.resolve(entityName + "Controller.java"), content);
     }

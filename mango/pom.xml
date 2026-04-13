@@ -18,28 +18,12 @@
     </properties>
 
     <modules>
-        <!--layer0-->
-        <module>mango-tools</module>
-
+        <module>mango-app</module>
         <module>mango-common</module>
-
-        <!--layer1-->
         <module>mango-infra</module>
-
-        <!--layer2-->
-        <module>mango-auth</module>
-        <module>mango-rbac</module>
-        <module>mango-org</module>
-        <module>mango-i18n</module>
-        <module>mango-area</module>
-        <module>mango-ai</module>
-        <module>mango-captcha</module>
-        <module>mango-system</module>
-        <module>mango-message</module>
-
-        <!--layer3-->
-        <module>mango-admin-app</module>
-        <module>mango-gateway</module>
+        <module>mango-platform</module>
+        <module>mango-parent</module>
+        <module>mango-tools</module>
     </modules>
 
     <!-- ==================== 依赖管理 ==================== -->

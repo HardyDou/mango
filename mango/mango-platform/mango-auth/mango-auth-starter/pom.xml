@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango-auth</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mango-auth-starter</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Mango Auth Starter</name>
+    <description>Auth service starter for local usage</description>
+
+    <dependencies>
+        <!-- Mango Auth Core -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-auth-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Mango Common -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-common</artifactId>
+        </dependency>
+
+        <!-- Spring Security Crypto (for BCryptPasswordEncoder bean) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Mango Infra Security (ITokenService implementation via auto-config) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-security-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango Permission Starter (provides RbacPermissionChecker for IPermissionChecker) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-rbac-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Servlet API for Filter -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+</project>

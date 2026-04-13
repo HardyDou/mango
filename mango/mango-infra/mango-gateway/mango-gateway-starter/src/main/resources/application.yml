@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mango-gateway
+
+mango:
+  gateway:
+    # 是否启用网关认证 (单体模式可设为false，由BFF Admin统一认证)
+    auth-enabled: true
+    # JWT密钥
+    jwt-secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
+    # Token过期时间(秒)
+    token-expire-seconds: 7200
+
+logging:
+  level:
+    io.mango: DEBUG
