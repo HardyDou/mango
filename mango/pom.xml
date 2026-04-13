@@ -140,17 +140,7 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-infra-kv-redis</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-infra-kv-db</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-infra-kv-memory</artifactId>
+                <artifactId>mango-infra-kv-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
