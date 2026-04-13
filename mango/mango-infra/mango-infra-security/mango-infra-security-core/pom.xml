@@ -18,10 +18,10 @@
             <artifactId>mango-infra-security-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- DAL API (for IKvStore - refresh token jti blacklist) -->
+        <!-- KV API (for IKvStore - refresh token jti blacklist) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-dal-api</artifactId>
+            <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>

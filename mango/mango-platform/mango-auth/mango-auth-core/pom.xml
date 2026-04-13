@@ -65,7 +65,7 @@
         <!-- Mango KV Store API (for AntiService) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-dal-starter</artifactId>
+            <artifactId>mango-infra-kv-starter</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
