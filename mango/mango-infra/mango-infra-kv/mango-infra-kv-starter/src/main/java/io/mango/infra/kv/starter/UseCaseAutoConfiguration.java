@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Bean;
  * </pre>
  */
 @AutoConfiguration
-@EnableConfigurationProperties(DalStoreProperties.class)
+@EnableConfigurationProperties(KvStoreProperties.class)
 @ConditionalOnClass({ICache.class, ILocker.class})
 public class UseCaseAutoConfiguration {
 
@@ -36,7 +36,7 @@ public class UseCaseAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ICache.class)
-    public ICache memoryCache(DalStoreProperties props) {
+    public ICache memoryCache(KvStoreProperties props) {
         log.info("ICache initialized: MemoryCache (cleanupInterval={}min)",
                 props.getProvider().getMemory().getCleanupIntervalMinutes());
         return new MemoryCache(props.getProvider().getMemory().getCleanupIntervalMinutes());
@@ -82,7 +82,7 @@ public class UseCaseAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ITokenStore.class)
-    public ITokenStore memoryTokenStore(DalStoreProperties props) {
+    public ITokenStore memoryTokenStore(KvStoreProperties props) {
         log.info("ITokenStore initialized: MemoryTokenStore (cleanupInterval={}min)",
                 props.getProvider().getMemory().getCleanupIntervalMinutes());
         return new MemoryTokenStore(props.getProvider().getMemory().getCleanupIntervalMinutes());

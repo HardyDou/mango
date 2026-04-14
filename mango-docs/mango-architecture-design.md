@@ -1068,7 +1068,7 @@ export default defineConfig({
 | `mango-message` | `mango-message-api/core/starter` | 消息通知 | ✅ |
 | `mango-ai` | `mango-ai-api/core/starter` | AI 能力集成 | ✅ |
 | **基础设施** | | | |
-| `mango-infra-dal` | `api/core/starter` | 数据访问层抽象（ICache/ILocker/ITokenStore/IIdempotent） | ✅ |
+| `mango-infra-kv` | `api/core/starter` | KV 存储抽象（ICache/ILocker/ITokenStore/IIdempotent） | ✅ |
 | `mango-infra-crypto` | `api/core/starter` | 国密算法（SM2/SM3/SM4） | ✅ |
 | `mango-infra-security` | `api/core/starter` | 权限注解、IPermissionService、AOP 切面 | ✅ |
 | `mango-infra-redis` | `api/core/starter` | Redis 封装 | ✅ |
@@ -1138,22 +1138,22 @@ mango-infra-{name}/
 
 ## 第九步：SPI 接口清单（IUCASE 模式）
 
-### 9.1 数据访问层抽象（mango-infra-dal）
+### 9.1 KV 存储抽象（mango-infra-kv）
 
 | 接口 | 包路径 | 用途 | 禁止直接调用 |
 |------|--------|------|-------------|
-| `ICache` | `io.mango.dal.api` | 缓存读写 | `redisTemplate.opsForValue()` |
-| `ILocker` | `io.mango.dal.api` | 分布式锁 | `RedissonClient.getLock()` |
-| `ITokenStore` | `io.mango.dal.api` | Token 存储 | 直接操作 Redis String |
-| `IIdempotent` | `io.mango.dal.api` | 防重复提交 | 直接 `setnx` |
+| `ICache` | `io.mango.infra.kv.api` | 缓存读写 | `redisTemplate.opsForValue()` |
+| `ILocker` | `io.mango.infra.kv.api` | 分布式锁 | `RedissonClient.getLock()` |
+| `ITokenStore` | `io.mango.infra.kv.api` | Token 存储 | 直接操作 Redis String |
+| `IIdempotent` | `io.mango.infra.kv.api` | 防重复提交 | 直接 `setnx` |
 
 **实现变体**（通过 `@ConditionalOnProperty` 切换）：
 
 | 实现 | artifactId | 存储介质 |
 |------|-----------|---------|
-| `MemoryXivStore` | `mango-infra-dal-core` | JVM Memory（开发/测试） |
-| `RedisXivStore` | `mango-infra-dal-core` | Redis（生产） |
-| `DbXivStore` | `mango-infra-dal-core` | Database（生产） |
+| `MemoryXivStore` | `mango-infra-kv-core` | JVM Memory（开发/测试） |
+| `RedisXivStore` | `mango-infra-kv-core` | Redis（生产） |
+| `DbXivStore` | `mango-infra-kv-core` | Database（生产） |
 
 ### 9.2 权限层抽象（mango-infra-security）
 
@@ -1239,7 +1239,7 @@ mvn mango:gen-permission -Dmodule=supplier -Dmenu=供应商管理
 | `mango/.claude/rules/05-module.md` | 模块分层规范（SPI/接口类型/依赖方向） |
 | `mango/.claude/rules/02-naming.md` | 表前缀规范（`sup_` 开头） |
 | `mango/.claude/rules/08-test.md` | 单元测试要求（覆盖率 ≥80%） |
-| `mango-infra/mango-infra-dal/README.md` | IUCASE 接口使用指南 |
+| `mango-infra/mango-infra-kv/README.md` | IUCASE 接口使用指南 |
 
 ---
 

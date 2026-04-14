@@ -1,6 +1,6 @@
 package io.mango.auth.core.anti;
 
-import io.mango.dal.api.IKvStore;
+import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

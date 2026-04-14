@@ -1,6 +1,6 @@
 package io.mango.infra.security.core.impl;
 
-import io.mango.dal.api.IKvStore;
+import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.security.api.ITokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

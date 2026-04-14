@@ -24,16 +24,16 @@ import static org.mockito.Mockito.*;
  * 验证 JdbcKvStore 在 H2（MySQL 兼容模式）下的真实 SQL 执行。
  * 复用 MySQL 版 SQL 脚本，无需单独写 H2 SQL。
  */
-@SpringBootTest(classes = {DataSourceAutoConfiguration.class, JdbcTemplateAutoConfiguration.class, DalStoreAutoConfiguration.class})
+@SpringBootTest(classes = {DataSourceAutoConfiguration.class, JdbcTemplateAutoConfiguration.class, KvStoreAutoConfiguration.class})
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.flyway.enabled=false",
-        "mango.dal.type=db",
-        "mango.dal.provider.redis.host=localhost",
-        "mango.dal.provider.redis.port=6379"
+        "mango.kv.type=db",
+        "mango.kv.provider.redis.host=localhost",
+        "mango.kv.provider.redis.port=6379"
 })
 class JdbcKvStoreH2IntegrationTest {
 

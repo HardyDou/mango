@@ -54,7 +54,7 @@ mango/
 │   ├── mango-gateway/         # 网关
 │   ├── mango-infra-crypto/    # 国密算法
 │   ├── mango-infra-security/  # 权限安全
-│   ├── mango-infra-dal/       # 数据访问抽象
+│   ├── mango-infra-kv/        # KV 存储抽象
 │   └── mango-infra-*/         # 其他技术组件
 ├── mango-platform/             # 平台能力
 │   ├── mango-ai/             # AI 能力

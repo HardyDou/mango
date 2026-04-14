@@ -39,7 +39,7 @@ Java 后端脚手架，AI Agent 高效率编码指南。
 mango/
 ├── mango-common/           # 公共代码（注解/工具类）
 ├── mango-infra/             # 基础设施
-│   ├── mango-infra-dal/     # DAL 层（dal-api/dal-core/dal-starter）
+│   ├── mango-infra-kv/      # KV 存储（kv-api/kv-core/kv-starter）
 │   ├── mango-infra-redis/   # Redis 封装
 │   ├── mango-infra-security/# 安全（security-api/security-core/security-starter）
 │   ├── mango-infra-web/     # Web 封装

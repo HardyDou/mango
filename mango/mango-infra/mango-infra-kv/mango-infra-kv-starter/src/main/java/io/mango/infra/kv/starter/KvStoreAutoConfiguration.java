@@ -53,11 +53,11 @@ import javax.sql.DataSource;
  * </pre>
  */
 @AutoConfiguration
-@EnableConfigurationProperties(DalStoreProperties.class)
+@EnableConfigurationProperties(KvStoreProperties.class)
 @ConditionalOnClass(IKvStore.class)
-public class DalStoreAutoConfiguration {
+public class KvStoreAutoConfiguration {
 
-    private static final Logger log = LoggerFactory.getLogger(DalStoreAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(KvStoreAutoConfiguration.class);
 
     // ==================== Explicit Type Selection ====================
 
@@ -65,7 +65,7 @@ public class DalStoreAutoConfiguration {
      * Force RedisKvStore when mango.dal.type=redis
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.dal", name = "type", havingValue = "redis")
+    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "redis")
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore redisKvStore(RedissonClient redissonClient) {
@@ -77,7 +77,7 @@ public class DalStoreAutoConfiguration {
      * Force JdbcKvStore when mango.dal.type=db
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.dal", name = "type", havingValue = "db")
+    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "db")
     @ConditionalOnBean(DataSource.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore dbKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient) {
@@ -89,9 +89,9 @@ public class DalStoreAutoConfiguration {
      * Force MemoryKvStore when mango.dal.type=memory
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.dal", name = "type", havingValue = "memory")
+    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "memory")
     @ConditionalOnMissingBean(IKvStore.class)
-    public IKvStore memoryKvStore(DalStoreProperties props) {
+    public IKvStore memoryKvStore(KvStoreProperties props) {
         int interval = props.getProvider().getMemory().getCleanupIntervalMinutes();
         log.info("DAL Store initialized: MemoryKvStore (mango.dal.type=memory, cleanupInterval={}min)", interval);
         return new MemoryKvStore(interval);
@@ -104,7 +104,7 @@ public class DalStoreAutoConfiguration {
      * Only active when type=auto or not configured (matchIfMissing=true)
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.dal", name = "type", havingValue = "auto", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "auto", matchIfMissing = true)
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore autoRedisKvStore(RedissonClient redissonClient) {
@@ -117,9 +117,9 @@ public class DalStoreAutoConfiguration {
      * Only active when type=auto or not configured and no RedissonClient present
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.dal", name = "type", havingValue = "auto", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "auto", matchIfMissing = true)
     @ConditionalOnMissingBean(value = RedissonClient.class, ignored = IKvStore.class)
-    public IKvStore autoMemoryKvStore(DalStoreProperties props) {
+    public IKvStore autoMemoryKvStore(KvStoreProperties props) {
         int interval = props.getProvider().getMemory().getCleanupIntervalMinutes();
         log.info("DAL Store auto-detected: MemoryKvStore (no RedissonClient)");
         return new MemoryKvStore(interval);

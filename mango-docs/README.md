@@ -10,8 +10,8 @@ mango-docs/
 ├── mango-architecture-design.md  # 架构设计
 └── plans/                 # Sprint 计划
     ├── 2026-04-07-sprint-00-mango-module-architecture-plan.md
-    ├── 2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md
-    ├── 2026-04-08-sprint-04-mango-infra-dal-memoryxistore-fix.md
+    ├── 2026-04-08-sprint-03-mango-infra-kv-iucase-refactor.md
+    ├── 2026-04-08-sprint-04-mango-infra-kv-memoryxistore-fix.md
     ├── 2026-04-08-sprint-04b-dal-naming-fix.md
     ├── 2026-04-08-sprint-05-mango-infra-crypto.md
     ├── 2026-04-08-sprint-06-mango-infra-security.md

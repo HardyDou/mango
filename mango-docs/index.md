@@ -23,9 +23,9 @@ Mango 是一个面向 AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agen
 | 计划 | 状态 | 说明 |
 |------|------|------|
 | [sprint-00](./plans/2026-04-07-sprint-00-mango-module-architecture-plan.md) | 已完成 | 模块架构总纲 |
-| [sprint-03](./plans/2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md) | 已完成 | mango-infra-dal IUCASE 重构 |
-| [sprint-04](./plans/2026-04-08-sprint-04-mango-infra-dal-memoryxistore-fix.md) | 已完成 | dal MemoryXistore 修复 |
-| [sprint-04b](./plans/2026-04-08-sprint-04b-dal-naming-fix.md) | 已完成 | dal 命名修复（kv→dal） |
+| [sprint-03](./plans/2026-04-08-sprint-03-mango-infra-kv-iucase-refactor.md) | 已完成 | mango-infra-kv IUCASE 重构 |
+| [sprint-04](./plans/2026-04-08-sprint-04-mango-infra-kv-memoryxistore-fix.md) | 已完成 | kv MemoryXistore 修复 |
+| [sprint-04b](./plans/2026-04-08-sprint-04b-dal-naming-fix.md) | 已完成 | kv 命名修复（Xiv→Kv） |
 | [sprint-05](./plans/2026-04-08-sprint-05-mango-infra-crypto.md) | 已完成 | 国密算法实现（SM2/SM3/SM4） |
 | [sprint-06](./plans/2026-04-08-sprint-06-mango-infra-security.md) | 已完成 | 权限注解、AOP 切面 |
 | [sprint-07](./plans/2026-04-08-sprint-07-mango-rbac-refactor.md) | 待执行 | mango-auth × mango-rbac DIP 重构 + 命名规范化 |
@@ -76,7 +76,7 @@ Mango 是一个面向 AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agen
 
 **业务域**：`user` `auth` `permission` `org` `i18n` `area` `system` `captcha` `message` `ai`
 
-**基础设施**：`infra-dal` `infra-crypto` `infra-security` `infra-redis` `infra-db` `infra-feign` `infra-web` `infra-observability` `infra-sse` `infra-websocket` `infra-doc`
+**基础设施**：`infra-kv` `infra-crypto` `infra-security` `infra-redis` `infra-db` `infra-feign` `infra-web` `infra-observability` `infra-sse` `infra-websocket` `infra-doc`
 
 **部署层**：`bff-admin` `gateway`
 

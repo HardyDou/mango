@@ -3,7 +3,7 @@ package io.mango.infra.security.core.impl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import io.mango.dal.api.IKvStore;
+import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.security.api.ITokenService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;

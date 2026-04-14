@@ -30,8 +30,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * </pre>
  */
 @Data
-@ConfigurationProperties(prefix = "mango.dal")
-public class DalStoreProperties {
+@ConfigurationProperties(prefix = "mango.kv")
+public class KvStoreProperties {
 
     /**
      * DAL store type: auto / redis / db / memory

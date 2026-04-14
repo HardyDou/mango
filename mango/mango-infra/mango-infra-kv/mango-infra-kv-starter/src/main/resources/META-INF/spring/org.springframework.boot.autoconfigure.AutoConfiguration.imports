@@ -1,2 +1,2 @@
-io.mango.dal.starter.DalStoreAutoConfiguration
-io.mango.dal.starter.UseCaseAutoConfiguration
+io.mango.infra.kv.starter.KvStoreAutoConfiguration
+io.mango.infra.kv.starter.UseCaseAutoConfiguration
