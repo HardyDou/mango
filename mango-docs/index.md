@@ -17,6 +17,7 @@ Mango 是一个面向 AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agen
 | 文档 | 说明 |
 |------|------|
 | [mango-architecture-design.md](./mango-architecture-design.md) | 顶层设计（D1-D29 困难）、模块清单（15个）、SPI 接口清单、技术栈版本、CLI 命令索引 |
+| [mango-backend-architecture-boundary-refactor-master-plan.md](./mango-backend-architecture-boundary-refactor-master-plan.md) | 后端架构边界收敛总文档，定义总目标、问题、原则与子 Sprint 路线 |
 
 ### 实施计划
 
@@ -29,6 +30,10 @@ Mango 是一个面向 AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agen
 | [sprint-05](./plans/2026-04-08-sprint-05-mango-infra-crypto.md) | 已完成 | 国密算法实现（SM2/SM3/SM4） |
 | [sprint-06](./plans/2026-04-08-sprint-06-mango-infra-security.md) | 已完成 | 权限注解、AOP 切面 |
 | [sprint-07](./plans/2026-04-08-sprint-07-mango-rbac-refactor.md) | 待执行 | mango-auth × mango-rbac DIP 重构 + 命名规范化 |
+| [sprint-09](./plans/2026-04-14-sprint-09-mango-common-kernel-contract-refactor.md) | 待执行 | `mango-common` 公共内核与契约收敛 |
+| [sprint-10](./plans/2026-04-14-sprint-10-infra-web-security-boundary-decoupling.md) | 待执行 | `infra-web` / `infra-security` 去业务依赖 |
+| [sprint-11](./plans/2026-04-14-sprint-11-platform-rbac-system-boundary-phase1.md) | 待执行 | `mango-rbac` / `mango-system` 第一阶段边界收敛 |
+| [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | `mango-auth` 与 `mango-admin-app` 边界收口 |
 
 ---
 
