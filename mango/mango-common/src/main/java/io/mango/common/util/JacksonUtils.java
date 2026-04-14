@@ -6,7 +6,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Jackson utility class for JSON serialization.
+ *
+ * @author Mango
+ * @deprecated Use {@link io.mango.infra.web.util.JacksonUtils} instead.
+ *             This class remains here for backward compatibility.
+ *             Will be removed in a future version.
  */
+@Deprecated
 public class JacksonUtils {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

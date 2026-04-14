@@ -10,6 +10,9 @@ import io.mango.common.exception.BizException;
  */
 public final class Require {
 
+    /** 默认业务错误码：参数校验失败 */
+    private static final int ERR_BAD_REQUEST = 400;
+
     private Require() {
     }
 
@@ -20,7 +23,7 @@ public final class Require {
      */
     public static void notNull(Object obj, String message) {
         if (obj == null) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -47,7 +50,7 @@ public final class Require {
      */
     public static void isNull(Object obj, String message) {
         if (obj != null) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -67,7 +70,7 @@ public final class Require {
      */
     public static void isTrue(boolean expression, String message) {
         if (!expression) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -94,7 +97,7 @@ public final class Require {
      */
     public static void isFalse(boolean expression, String message) {
         if (expression) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -114,7 +117,7 @@ public final class Require {
      */
     public static void notEmpty(String str, String message) {
         if (str == null || str.isEmpty()) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -123,7 +126,7 @@ public final class Require {
      */
     public static void notBlank(String str, String message) {
         if (str == null || str.isBlank()) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -143,7 +146,7 @@ public final class Require {
      */
     public static void notEmpty(java.util.Collection<?> collection, String message) {
         if (collection == null || collection.isEmpty()) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -163,7 +166,7 @@ public final class Require {
      */
     public static void positive(long number, String message) {
         if (number <= 0) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -172,7 +175,7 @@ public final class Require {
      */
     public static void nonNegative(long number, String message) {
         if (number < 0) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 
@@ -181,7 +184,7 @@ public final class Require {
      */
     public static void inRange(long value, long min, long max, String message) {
         if (value < min || value > max) {
-            throw new BizException(400, message);
+            throw new BizException(ERR_BAD_REQUEST, message);
         }
     }
 }
