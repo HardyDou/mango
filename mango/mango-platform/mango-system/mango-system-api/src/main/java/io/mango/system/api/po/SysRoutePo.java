@@ -1,14 +1,11 @@
 package io.mango.system.api.po;
 
-import io.mango.common.po.BasePO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class SysRoutePo extends BasePO {
+public class SysRoutePo {
     private Long id;
 
     @NotBlank(message = "routeName不能为空")

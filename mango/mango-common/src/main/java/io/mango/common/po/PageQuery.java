@@ -6,12 +6,9 @@ import lombok.Data;
  * 分页请求参数
  *
  * @author Mango
- * @deprecated Use {@link PageQuery} instead. This class remains here for
- *             backward compatibility and will be removed in a future version.
  */
 @Data
-@Deprecated
-public class PagePO {
+public class PageQuery {
 
     private static final long serialVersionUID = 1L;
 

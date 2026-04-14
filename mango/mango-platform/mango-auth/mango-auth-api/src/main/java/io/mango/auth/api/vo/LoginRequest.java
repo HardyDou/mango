@@ -1,9 +1,7 @@
 package io.mango.auth.api.vo;
 
-import io.mango.common.vo.BaseVO;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * Login request VO
@@ -11,8 +9,7 @@ import lombok.EqualsAndHashCode;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class LoginRequest extends BaseVO {
+public class LoginRequest {
 
     private static final long serialVersionUID = 1L;
 

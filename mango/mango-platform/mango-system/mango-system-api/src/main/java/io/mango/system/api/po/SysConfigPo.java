@@ -1,16 +1,13 @@
 package io.mango.system.api.po;
 
-import io.mango.common.po.BasePO;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class SysConfigPo extends BasePO {
+public class SysConfigPo {
     private Long id;
 
     @NotBlank(message = "configKey不能为空")

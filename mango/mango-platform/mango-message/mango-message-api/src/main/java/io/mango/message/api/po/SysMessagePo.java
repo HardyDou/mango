@@ -1,6 +1,5 @@
 package io.mango.message.api.po;
 
-import io.mango.common.po.BasePO;
 import io.mango.message.api.enums.MessageType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +8,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class SysMessagePo extends BasePO {
+public class SysMessagePo {
     @NotNull(message = "messageType不能为空")
     private MessageType messageType;
 

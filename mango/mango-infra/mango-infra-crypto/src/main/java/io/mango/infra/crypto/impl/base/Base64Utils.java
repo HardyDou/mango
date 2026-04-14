@@ -1,17 +1,13 @@
-package io.mango.common.crypto.base;
+package io.mango.infra.crypto.impl.base;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * Base64 utility class.
+ * Base64 utility class for encoding and decoding.
  *
  * @author Mango
- * @deprecated Use {@link io.mango.infra.crypto.impl.base.Base64Utils} instead.
- *             This class remains here for backward compatibility.
- *             Will be removed in a future version.
  */
-@Deprecated
 public final class Base64Utils {
 
     private Base64Utils() {

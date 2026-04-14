@@ -1,10 +1,10 @@
 package io.mango.ai.api.dto;
 
-import io.mango.common.vo.BaseVO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
 
 /**
  * Chat request DTO
@@ -12,8 +12,7 @@ import lombok.EqualsAndHashCode;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class ChatRequest extends BaseVO {
+public class ChatRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -1,9 +1,5 @@
 package io.mango.common.result;
 
-import lombok.extern.slf4j.Slf4j;
-
-import java.util.Collection;
-
 import io.mango.common.exception.BizException;
 
 /**
@@ -12,7 +8,6 @@ import io.mango.common.exception.BizException;
  *
  * @author Mango
  */
-@Slf4j
 public final class Require {
 
     private Require() {
@@ -146,7 +141,7 @@ public final class Require {
     /**
      * 不能为空集合
      */
-    public static void notEmpty(Collection<?> collection, String message) {
+    public static void notEmpty(java.util.Collection<?> collection, String message) {
         if (collection == null || collection.isEmpty()) {
             throw new BizException(400, message);
         }
@@ -155,7 +150,7 @@ public final class Require {
     /**
      * 不能为空集合
      */
-    public static void notEmpty(Collection<?> collection, BizCode bizCode) {
+    public static void notEmpty(java.util.Collection<?> collection, BizCode bizCode) {
         if (collection == null || collection.isEmpty()) {
             throw new BizException(bizCode.getCode(), bizCode.getMessage());
         }

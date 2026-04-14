@@ -1,8 +1,8 @@
 package io.mango.auth.api.vo;
 
-import io.mango.common.vo.BaseVO;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 /**
  * Login response VO
@@ -10,8 +10,7 @@ import lombok.EqualsAndHashCode;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class LoginResponse extends BaseVO {
+public class LoginResponse {
 
     private static final long serialVersionUID = 1L;
 
@@ -53,10 +52,10 @@ public class LoginResponse extends BaseVO {
     /**
      * User roles
      */
-    private java.util.List<String> roles;
+    private List<String> roles;
 
     /**
      * User permissions
      */
-    private java.util.List<String> permissions;
+    private List<String> permissions;
 }

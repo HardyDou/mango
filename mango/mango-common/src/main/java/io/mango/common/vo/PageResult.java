@@ -10,12 +10,9 @@ import java.util.List;
  * 分页返回
  *
  * @author Mango
- * @deprecated Use {@link PageResult} instead. This class remains here for
- *             backward compatibility and will be removed in a future version.
  */
 @Data
-@Deprecated
-public class PageVO<T> implements Serializable {
+public class PageResult<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -58,8 +55,8 @@ public class PageVO<T> implements Serializable {
         this.list = list == null ? new ArrayList<>() : new ArrayList<>(list);
     }
 
-    public static <T> PageVO<T> of(List<T> list, long total, long page, long size) {
-        PageVO<T> vo = new PageVO<>();
+    public static <T> PageResult<T> of(List<T> list, long total, long page, long size) {
+        PageResult<T> vo = new PageResult<>();
         vo.setList(list);
         vo.setTotal(total);
         vo.setPage(page);
