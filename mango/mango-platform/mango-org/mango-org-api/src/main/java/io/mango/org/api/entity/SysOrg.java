@@ -3,6 +3,7 @@ package io.mango.org.api.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,9 @@ import java.util.List;
  */
 @Data
 @TableName("sys_org")
-public class SysOrg {
+public class SysOrg implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Primary key

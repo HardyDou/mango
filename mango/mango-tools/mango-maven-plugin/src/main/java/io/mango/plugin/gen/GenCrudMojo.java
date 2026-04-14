@@ -166,7 +166,6 @@ public class GenCrudMojo extends AbstractMojo {
             entityName,
             entityName,
             entityName,
-            entityName,
             entityName
         );
         Files.writeString(serviceDir.resolve("I" + entityName + "Service.java"), content);
@@ -228,24 +227,6 @@ public class GenCrudMojo extends AbstractMojo {
             module, entityName,
             entityName,
             camelEntity,
-            entityName, entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
-            entityName,
             entityName
         );
         Files.writeString(serviceImplDir.resolve(entityName + "ServiceImpl.java"), implContent);
@@ -304,7 +285,6 @@ public class GenCrudMojo extends AbstractMojo {
             "    private Long id;\n\n" +
             "}\n",
             module,
-            entityName,
             entityName
         );
         Files.writeString(dir.resolve(entityName + "VO.java"), content);
@@ -328,7 +308,6 @@ public class GenCrudMojo extends AbstractMojo {
             "    private final String message;\n" +
             "}\n",
             module,
-            entityName,
             entityName
         );
         Files.writeString(dir.resolve(entityName + "Code.java"), content);
