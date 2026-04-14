@@ -1,15 +1,12 @@
 package io.mango.system.api.po;
 
-import io.mango.common.po.BasePO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class SysTenantPo extends BasePO {
+public class SysTenantPo {
     private Long id;
 
     @NotBlank(message = "tenantName不能为空")

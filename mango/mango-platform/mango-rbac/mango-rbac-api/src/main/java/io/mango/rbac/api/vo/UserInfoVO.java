@@ -1,8 +1,6 @@
 package io.mango.rbac.api.vo;
 
-import io.mango.common.vo.BaseVO;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +11,7 @@ import java.util.List;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class UserInfoVO extends BaseVO {
+public class UserInfoVO {
 
     private static final long serialVersionUID = 1L;
 

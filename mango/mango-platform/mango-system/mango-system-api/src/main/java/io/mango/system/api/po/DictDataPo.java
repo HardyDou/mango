@@ -1,14 +1,11 @@
 package io.mango.system.api.po;
 
-import io.mango.common.po.BasePO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class DictDataPo extends BasePO {
+public class DictDataPo {
     private Long id;
 
     @NotBlank(message = "dictLabel不能为空")

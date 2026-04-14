@@ -8,6 +8,7 @@
         <groupId>io.mango</groupId>
         <artifactId>mango-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../mango-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>mango-common</artifactId>
@@ -117,7 +118,7 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
-                    <includeFilterFile>${project.basedir}/../mango-maven-plugin/src/main/resources/rulesets/java/spotbugs-security.xml</includeFilterFile>
+                    <includeFilterFile>${project.basedir}/../mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/spotbugs-security.xml</includeFilterFile>
                 </configuration>
                 <executions>
                     <execution>
@@ -134,9 +135,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.21.0</version>
                 <configuration>
                     <rulesets>
-                        <ruleset>${project.basedir}/../mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
+                        <ruleset>${project.basedir}/../mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
                     </rulesets>
                     <failOnViolation>false</failOnViolation>
                 </configuration>

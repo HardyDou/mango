@@ -1,4 +1,4 @@
-package io.mango.common.annotation;
+package io.mango.infra.log.annotation;
 
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Log 注解测试
+ * Moved from mango-common to mango-infra-log.
  *
  * @author Mango
  */

@@ -1,9 +1,7 @@
 package io.mango.rbac.api.vo;
 
-import io.mango.common.vo.BaseVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,9 +12,8 @@ import java.util.List;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Schema(description = "菜单分组VO")
-public class SysMenuGroupVO extends BaseVO {
+public class SysMenuGroupVO {
 
     private static final long serialVersionUID = 1L;
 

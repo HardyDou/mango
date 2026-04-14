@@ -20,6 +20,11 @@ public class R<T> implements Serializable {
     private int code;
 
     /**
+     * 是否成功
+     */
+    private boolean success;
+
+    /**
      * 消息
      */
     private String msg;
@@ -34,12 +39,13 @@ public class R<T> implements Serializable {
     }
 
     public static <T> R<T> ok(T data) {
-        return ok(data, "success");
+        return ok(data, CommonCode.SUCCESS.getMessage());
     }
 
     public static <T> R<T> ok(T data, String msg) {
         R<T> r = new R<>();
-        r.setCode(200);
+        r.setCode(CommonCode.SUCCESS.getCode());
+        r.setSuccess(true);
         r.setMsg(msg);
         r.setData(data);
         return r;
@@ -48,12 +54,13 @@ public class R<T> implements Serializable {
     public static <T> R<T> fail(int code, String msg) {
         R<T> r = new R<>();
         r.setCode(code);
+        r.setSuccess(false);
         r.setMsg(msg);
         return r;
     }
 
     public static <T> R<T> fail(String msg) {
-        return fail(500, msg);
+        return fail(CommonCode.SERVER_ERROR.getCode(), msg);
     }
 
     public static <T> R<T> fail(BizCode bizCode) {
@@ -63,12 +70,17 @@ public class R<T> implements Serializable {
     public static <T> R<T> fail(int code, String msg, T data) {
         R<T> r = new R<>();
         r.setCode(code);
+        r.setSuccess(false);
         r.setMsg(msg);
         r.setData(data);
         return r;
     }
 
+    /**
+     * 判断是否成功
+     */
     public boolean isSuccess() {
-        return code == 200;
+        return success;
     }
 }
+

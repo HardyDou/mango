@@ -16,33 +16,33 @@
     </description>
 
     <!-- 命名规范 -->
-    <rule ref="p3c/ali-naming.xml"/>
+    <rule ref="rulesets/java/ali-naming.xml"/>
 
     <!-- 注释规范 -->
-    <rule ref="p3c/ali-comment.xml"/>
+    <rule ref="rulesets/java/ali-comment.xml"/>
 
     <!-- 并发规范 -->
-    <rule ref="p3c/ali-concurrent.xml"/>
+    <rule ref="rulesets/java/ali-concurrent.xml"/>
 
     <!-- OOP 规范 -->
-    <rule ref="p3c/ali-oop.xml"/>
+    <rule ref="rulesets/java/ali-oop.xml"/>
 
     <!-- 异常规范 -->
-    <rule ref="p3c/ali-exception.xml"/>
+    <rule ref="rulesets/java/ali-exception.xml"/>
 
     <!-- 集合规范 -->
-    <rule ref="p3c/ali-set.xml"/>
+    <rule ref="rulesets/java/ali-set.xml"/>
 
     <!-- 控制语句 -->
-    <rule ref="p3c/ali-flowcontrol.xml"/>
+    <rule ref="rulesets/java/ali-flowcontrol.xml"/>
 
     <!-- 常量规范 -->
-    <rule ref="p3c/ali-constant.xml"/>
+    <rule ref="rulesets/java/ali-constant.xml"/>
 
     <!-- ORM 规范 -->
-    <rule ref="p3c/ali-orm.xml"/>
+    <rule ref="rulesets/java/ali-orm.xml"/>
 
     <!-- 其他规范 -->
-    <rule ref="p3c/ali-other.xml"/>
+    <rule ref="rulesets/java/ali-other.xml"/>
 
 </ruleset>

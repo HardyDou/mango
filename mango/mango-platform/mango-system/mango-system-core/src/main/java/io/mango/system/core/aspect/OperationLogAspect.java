@@ -1,7 +1,7 @@
 package io.mango.system.core.aspect;
 
-import io.mango.common.annotation.Log;
-import io.mango.common.util.JacksonUtils;
+import io.mango.infra.log.annotation.Log;
+import io.mango.infra.web.util.JacksonUtils;
 import io.mango.system.core.entity.SysOperationLog;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RequiredArgsConstructor
 public class OperationLogAspect {
 
-    @Around("@annotation(io.mango.common.annotation.Log)")
+    @Around("@annotation(io.mango.infra.log.annotation.Log)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
         long start = System.currentTimeMillis();
         Object result = point.proceed();

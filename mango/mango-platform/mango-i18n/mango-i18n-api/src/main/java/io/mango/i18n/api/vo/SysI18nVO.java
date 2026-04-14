@@ -1,8 +1,6 @@
 package io.mango.i18n.api.vo;
 
-import io.mango.common.vo.BaseVO;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * i18n value object
@@ -10,8 +8,7 @@ import lombok.EqualsAndHashCode;
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class SysI18nVO extends BaseVO {
+public class SysI18nVO {
 
     private Long id;
 

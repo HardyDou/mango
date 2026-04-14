@@ -1,17 +1,14 @@
 package io.mango.common.po;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * 分页请求参数
- * 继承 BasePO，用于分页查询的请求参数
  *
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class PagePO extends BasePO {
+public class PageQuery {
 
     private static final long serialVersionUID = 1L;
 

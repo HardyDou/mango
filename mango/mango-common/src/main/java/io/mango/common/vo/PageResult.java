@@ -1,7 +1,6 @@
 package io.mango.common.vo;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -9,13 +8,11 @@ import java.util.List;
 
 /**
  * 分页返回
- * 继承 BaseVO
  *
  * @author Mango
  */
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = "list")
-public class PageVO<T extends BaseVO> extends BaseVO implements Serializable {
+public class PageResult<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -58,8 +55,8 @@ public class PageVO<T extends BaseVO> extends BaseVO implements Serializable {
         this.list = list == null ? new ArrayList<>() : new ArrayList<>(list);
     }
 
-    public static <T extends BaseVO> PageVO<T> of(List<T> list, long total, long page, long size) {
-        PageVO<T> vo = new PageVO<>();
+    public static <T> PageResult<T> of(List<T> list, long total, long page, long size) {
+        PageResult<T> vo = new PageResult<>();
         vo.setList(list);
         vo.setTotal(total);
         vo.setPage(page);

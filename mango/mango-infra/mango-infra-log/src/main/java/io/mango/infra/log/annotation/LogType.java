@@ -1,7 +1,8 @@
-package io.mango.common.annotation;
+package io.mango.infra.log.annotation;
 
 /**
  * 日志类型
+ * Moved from mango-common to mango-infra-log.
  *
  * @author Mango
  */
