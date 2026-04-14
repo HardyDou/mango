@@ -1,0 +1,14 @@
+{
+  "name": "mango-ui",
+  "private": true,
+  "description": "Mango UI - Micro Frontend Monorepo",
+  "scripts": {
+    "dev": "pnpm -F mango-admin dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4"
+  }
+}
