@@ -1,7 +1,6 @@
 package io.mango.org.api.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import io.mango.common.po.BasePO;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,7 +13,7 @@ import java.util.List;
  */
 @Data
 @TableName("sys_org")
-public class SysOrg extends BasePO {
+public class SysOrg {
 
     /**
      * Primary key
