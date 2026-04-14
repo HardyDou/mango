@@ -29,12 +29,6 @@
             <artifactId>mango-infra-kv-api</artifactId>
         </dependency>
 
-        <!-- Mango Permission API (for SysPublicPathApi) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-rbac-api</artifactId>
-        </dependency>
-
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

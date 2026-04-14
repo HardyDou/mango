@@ -1,8 +1,7 @@
 package io.mango.infra.web.filter;
 
-import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.rbac.api.SysPublicPathApi;
+import io.mango.infra.web.api.IInternalPathProvider;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,6 +16,7 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InternalCallFilter implements Filter {
 
-    private final SysPublicPathApi sysPublicPathApi;
+    private final IInternalPathProvider internalPathProvider;
     private final IKvStore kvStore;
 
     /**
@@ -114,13 +114,11 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Load internal paths from database
+     * Load internal paths from provider
      */
     private void loadInternalPaths() {
-        R<?> result = sysPublicPathApi.listInternalPaths();
-        if (result != null && result.getData() != null) {
-            @SuppressWarnings("unchecked")
-            var paths = (java.util.List<String>) result.getData();
+        List<String> paths = internalPathProvider.getInternalPaths();
+        if (paths != null) {
             this.internalPaths.clear();
             this.internalPaths.addAll(paths);
         }

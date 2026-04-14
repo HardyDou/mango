@@ -30,12 +30,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Security -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
         <!-- Mango Common -->
         <dependency>
             <groupId>io.mango</groupId>
@@ -53,6 +47,13 @@
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango Infra Web Starter (IInternalPathProvider) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-web-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 

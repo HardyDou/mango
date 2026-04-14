@@ -1,6 +1,8 @@
 package io.mango.rbac.starter.controller;
 
 import io.mango.common.result.R;
+import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.core.TokenContextHolder;
 import io.mango.rbac.api.SysMenuApi;
 import io.mango.rbac.api.po.SysMenu;
 import io.mango.rbac.api.vo.SysMenuVO;
@@ -10,8 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +29,7 @@ public class SysMenuController implements SysMenuApi {
 
     private final ISysMenuService sysMenuService;
     private final ISysUserService sysUserService;
+    private final ITokenService tokenService;
 
     @Override
     @GetMapping
@@ -42,26 +43,14 @@ public class SysMenuController implements SysMenuApi {
     }
 
     /**
-     * Get current authenticated user ID from security context
+     * Get current authenticated user ID from token context
      */
     private Long getCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() != null) {
-            try {
-                // Principal can be username (String) or userId (Long)
-                Object principal = auth.getPrincipal();
-                if (principal instanceof Long) {
-                    return (Long) principal;
-                } else if (principal instanceof String) {
-                    // If principal is username, we need to look up the user
-                    // For now, return null which means "current user" context
-                    return null;
-                }
-            } catch (Exception e) {
-                // Fall through to null
-            }
+        String token = TokenContextHolder.getToken();
+        if (token == null) {
+            return null;
         }
-        return null;
+        return tokenService.getUserId(token);
     }
 
     @Override
