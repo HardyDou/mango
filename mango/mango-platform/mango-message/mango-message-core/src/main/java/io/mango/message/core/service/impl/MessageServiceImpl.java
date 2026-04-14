@@ -2,7 +2,7 @@ package io.mango.message.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.R;
-import io.mango.common.util.JacksonUtils;
+import io.mango.infra.web.util.JacksonUtils;
 import io.mango.message.api.MessageApi;
 import io.mango.message.api.po.SysMessagePo;
 import io.mango.message.api.vo.SysMessageVO;

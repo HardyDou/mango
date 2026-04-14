@@ -1,5 +1,6 @@
 package io.mango.common.exception;
 
+import io.mango.common.result.CommonCode;
 import lombok.Getter;
 
 /**
@@ -20,6 +21,7 @@ public class BizException extends RuntimeException {
     }
 
     public BizException(String message) {
-        this(400, message);
+        this(CommonCode.BAD_REQUEST.getCode(), message);
     }
 }
+

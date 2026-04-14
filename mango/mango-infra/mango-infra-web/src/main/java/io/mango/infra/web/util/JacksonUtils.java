@@ -1,4 +1,4 @@
-package io.mango.common.util;
+package io.mango.infra.web.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,13 +6,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Jackson utility class for JSON serialization.
+ * Moved from mango-common to mango-infra-web.
  *
  * @author Mango
- * @deprecated Use {@link io.mango.infra.web.util.JacksonUtils} instead.
- *             This class remains here for backward compatibility.
- *             Will be removed in a future version.
  */
-@Deprecated
 public class JacksonUtils {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

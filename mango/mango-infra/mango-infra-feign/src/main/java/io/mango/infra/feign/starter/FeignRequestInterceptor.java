@@ -4,7 +4,7 @@ import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import io.mango.infra.context.core.TenantContextHolder;
 import io.mango.infra.context.core.TraceContextHolder;
-import io.mango.common.context.TokenContextHolder;
+import io.mango.infra.security.core.TokenContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

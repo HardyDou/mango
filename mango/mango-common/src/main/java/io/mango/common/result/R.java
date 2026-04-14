@@ -39,12 +39,12 @@ public class R<T> implements Serializable {
     }
 
     public static <T> R<T> ok(T data) {
-        return ok(data, "success");
+        return ok(data, CommonCode.SUCCESS.getMessage());
     }
 
     public static <T> R<T> ok(T data, String msg) {
         R<T> r = new R<>();
-        r.setCode(200);
+        r.setCode(CommonCode.SUCCESS.getCode());
         r.setSuccess(true);
         r.setMsg(msg);
         r.setData(data);
@@ -60,7 +60,7 @@ public class R<T> implements Serializable {
     }
 
     public static <T> R<T> fail(String msg) {
-        return fail(500, msg);
+        return fail(CommonCode.SERVER_ERROR.getCode(), msg);
     }
 
     public static <T> R<T> fail(BizCode bizCode) {
@@ -83,3 +83,4 @@ public class R<T> implements Serializable {
         return success;
     }
 }
+

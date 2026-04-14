@@ -1,16 +1,13 @@
-package io.mango.common.annotation;
+package io.mango.infra.log.annotation;
 
 import java.lang.annotation.*;
 
 /**
  * 操作日志注解
+ * Moved from mango-common to mango-infra-log.
  *
  * @author Mango
- * @deprecated Use {@link io.mango.infra.log.annotation.Log} instead.
- *             This class remains here for backward compatibility.
- *             Will be removed in a future version.
  */
-@Deprecated
 @Documented
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

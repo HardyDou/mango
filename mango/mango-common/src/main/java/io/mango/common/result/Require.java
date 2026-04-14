@@ -11,7 +11,7 @@ import io.mango.common.exception.BizException;
 public final class Require {
 
     /** 默认业务错误码：参数校验失败 */
-    private static final int ERR_BAD_REQUEST = 400;
+    public static final int ERR_BAD_REQUEST = 400;
 
     private Require() {
     }
@@ -22,18 +22,14 @@ public final class Require {
      * 不能为空
      */
     public static void notNull(Object obj, String message) {
-        if (obj == null) {
-            throw new BizException(ERR_BAD_REQUEST, message);
-        }
+        notNull(obj, ERR_BAD_REQUEST, message);
     }
 
     /**
      * 不能为空
      */
     public static void notNull(Object obj, BizCode bizCode) {
-        if (obj == null) {
-            throw new BizException(bizCode.getCode(), bizCode.getMessage());
-        }
+        notNull(obj, bizCode.getCode(), bizCode.getMessage());
     }
 
     /**
@@ -49,17 +45,22 @@ public final class Require {
      * 必须为空
      */
     public static void isNull(Object obj, String message) {
-        if (obj != null) {
-            throw new BizException(ERR_BAD_REQUEST, message);
-        }
+        isNull(obj, ERR_BAD_REQUEST, message);
     }
 
     /**
      * 必须为空
      */
     public static void isNull(Object obj, BizCode bizCode) {
+        isNull(obj, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 必须为空
+     */
+    public static void isNull(Object obj, int code, String message) {
         if (obj != null) {
-            throw new BizException(bizCode.getCode(), bizCode.getMessage());
+            throw new BizException(code, message);
         }
     }
 
@@ -69,18 +70,14 @@ public final class Require {
      * 必须为 true
      */
     public static void isTrue(boolean expression, String message) {
-        if (!expression) {
-            throw new BizException(ERR_BAD_REQUEST, message);
-        }
+        isTrue(expression, ERR_BAD_REQUEST, message);
     }
 
     /**
      * 必须为 true
      */
     public static void isTrue(boolean expression, BizCode bizCode) {
-        if (!expression) {
-            throw new BizException(bizCode.getCode(), bizCode.getMessage());
-        }
+        isTrue(expression, bizCode.getCode(), bizCode.getMessage());
     }
 
     /**
@@ -96,17 +93,22 @@ public final class Require {
      * 必须为 false
      */
     public static void isFalse(boolean expression, String message) {
-        if (expression) {
-            throw new BizException(ERR_BAD_REQUEST, message);
-        }
+        isFalse(expression, ERR_BAD_REQUEST, message);
     }
 
     /**
      * 必须为 false
      */
     public static void isFalse(boolean expression, BizCode bizCode) {
+        isFalse(expression, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 必须为 false
+     */
+    public static void isFalse(boolean expression, int code, String message) {
         if (expression) {
-            throw new BizException(bizCode.getCode(), bizCode.getMessage());
+            throw new BizException(code, message);
         }
     }
 
@@ -125,17 +127,22 @@ public final class Require {
      * 不能为空白字符串
      */
     public static void notBlank(String str, String message) {
-        if (str == null || str.isBlank()) {
-            throw new BizException(ERR_BAD_REQUEST, message);
-        }
+        notBlank(str, ERR_BAD_REQUEST, message);
     }
 
     /**
      * 不能为空白字符串
      */
     public static void notBlank(String str, BizCode bizCode) {
+        notBlank(str, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 不能为空白字符串
+     */
+    public static void notBlank(String str, int code, String message) {
         if (str == null || str.isBlank()) {
-            throw new BizException(bizCode.getCode(), bizCode.getMessage());
+            throw new BizException(code, message);
         }
     }
 
@@ -145,17 +152,22 @@ public final class Require {
      * 不能为空集合
      */
     public static void notEmpty(java.util.Collection<?> collection, String message) {
-        if (collection == null || collection.isEmpty()) {
-            throw new BizException(ERR_BAD_REQUEST, message);
-        }
+        notEmpty(collection, ERR_BAD_REQUEST, message);
     }
 
     /**
      * 不能为空集合
      */
     public static void notEmpty(java.util.Collection<?> collection, BizCode bizCode) {
+        notEmpty(collection, bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 不能为空集合
+     */
+    public static void notEmpty(java.util.Collection<?> collection, int code, String message) {
         if (collection == null || collection.isEmpty()) {
-            throw new BizException(bizCode.getCode(), bizCode.getMessage());
+            throw new BizException(code, message);
         }
     }
 
@@ -188,3 +200,4 @@ public final class Require {
         }
     }
 }
+

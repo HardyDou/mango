@@ -1,6 +1,6 @@
 package io.mango.infra.feign.starter;
 
-import io.mango.common.context.TokenContextHolder;
+import io.mango.infra.security.core.TokenContextHolder;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
