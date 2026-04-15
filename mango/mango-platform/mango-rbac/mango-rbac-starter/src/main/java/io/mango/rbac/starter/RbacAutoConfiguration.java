@@ -13,9 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @MapperScan("io.mango.rbac.core.mapper")
 @ComponentScan({
         "io.mango.rbac.core.service",
-        "io.mango.rbac.core.service.impl",
-        "io.mango.rbac.starter.controller",
-        "io.mango.rbac.starter.config"
+        "io.mango.rbac.starter"
 })
 public class RbacAutoConfiguration {
 }
