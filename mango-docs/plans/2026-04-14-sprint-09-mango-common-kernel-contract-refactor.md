@@ -1,7 +1,7 @@
 # Sprint 09: `mango-common` 公共内核与契约收敛
 
 - 起始日期：2026-04-14
-- 状态：待执行
+- 状态：已完成
 - 所属任务：T9
 - 关联总文档：`../mango-backend-architecture-boundary-refactor-master-plan.md`
 

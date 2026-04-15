@@ -30,7 +30,8 @@ Mango 是一个面向 AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agen
 | [sprint-05](./plans/2026-04-08-sprint-05-mango-infra-crypto.md) | 已完成 | 国密算法实现（SM2/SM3/SM4） |
 | [sprint-06](./plans/2026-04-08-sprint-06-mango-infra-security.md) | 已完成 | 权限注解、AOP 切面 |
 | [sprint-07](./plans/2026-04-08-sprint-07-mango-rbac-refactor.md) | 待执行 | mango-auth × mango-rbac DIP 重构 + 命名规范化 |
-| [sprint-09](./plans/2026-04-14-sprint-09-mango-common-kernel-contract-refactor.md) | 待执行 | `mango-common` 公共内核与契约收敛 |
+| [sprint-09](./plans/2026-04-14-sprint-09-mango-common-kernel-contract-refactor.md) | 已完成 | `mango-common` 公共内核与契约收敛 |
+| [sprint-09-delivery](./plans/2026-04-15-sprint-09-delivery-record.md) | 已完成 | Sprint 09 交付记录与验证留痕 |
 | [sprint-10](./plans/2026-04-14-sprint-10-infra-web-security-boundary-decoupling.md) | 待执行 | `infra-web` / `infra-security` 去业务依赖 |
 | [sprint-11](./plans/2026-04-14-sprint-11-platform-rbac-system-boundary-phase1.md) | 待执行 | `mango-rbac` / `mango-system` 第一阶段边界收敛 |
 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | `mango-auth` 与 `mango-admin-app` 边界收口 |

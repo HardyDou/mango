@@ -16,6 +16,8 @@ mango-docs/
     ├── 2026-04-08-sprint-05-mango-infra-crypto.md
     ├── 2026-04-08-sprint-06-mango-infra-security.md
     ├── 2026-04-08-sprint-07-mango-rbac-refactor.md
+    ├── 2026-04-14-sprint-09-mango-common-kernel-contract-refactor.md
+    ├── 2026-04-15-sprint-09-delivery-record.md
     └── mango-common-cleanup-plan.md
 ```
 
