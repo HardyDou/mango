@@ -21,6 +21,18 @@
 
 **把 `mango-common` 收敛为“公共内核 + 公共契约”，并清理不应长期留在 `common` 的内容。**
 
+### 目标解释
+
+这里的“公共内核 + 公共契约”描述的是**职责目标**，不是本 Sprint 必须新增的 Maven 子模块名称。
+
+本 Sprint 的默认交付方式是：
+
+- 继续使用现有单模块 `mango-common`
+- 在单模块内完成职责收敛、包结构整理、类迁移与引用修正
+- 不要求在本 Sprint 内新增 `mango-common-kernel`、`mango-common-contract` 等子模块
+
+如果后续决定把 `mango-common` 再拆成多个 Maven 子模块，必须单独立项，并提供新的模块拆分设计文档与迁移计划。
+
 ---
 
 ## 3. 范围
@@ -28,6 +40,7 @@
 ### In Scope
 
 - 统一 `mango-common` 的职责定义
+- 在**现有单模块** `mango-common` 内完成职责收敛与包结构整理
 - 重构或替换 `BizException`
 - 统一 `R<T>` 返回契约
 - 重构分页模型命名与语义
@@ -41,6 +54,7 @@
 
 ### Out of Scope
 
+- 把 `mango-common` 拆成新的 Maven 子模块（例如 `mango-common-kernel`、`mango-common-contract`）
 - `mango-infra-web` 去业务依赖
 - `mango-infra-kv` 模块拆分
 - `mango-rbac` / `mango-system` 大范围拆分
@@ -59,6 +73,11 @@
 5. 集成测试或兼容性验证代码
 6. 构建与规范检查结果
 7. API / 关键行为验证截图
+
+说明：
+
+- “新的包结构或模块结构”在本 Sprint 中优先指**包结构整理**。
+- 只有在实现阶段明确批准时，才允许升级为模块拆分；当前 Sprint 文档不默认要求模块拆分。
 
 ---
 
@@ -136,3 +155,4 @@
 - 不允许为了兼容而长期保留双套公共模型
 - 不允许把迁出内容简单复制到别处后保留旧实现
 - 所有变更必须优先保持调用方语义稳定
+- 不允许把“公共内核 + 公共契约”误解为“本 Sprint 必须新建 `mango-common-kernel` 等子模块”

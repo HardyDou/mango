@@ -5,33 +5,27 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 统一返回结果
+ * 统一返回结果。
  *
+ * @param <T> 数据类型。
  * @author Mango
  */
 @Data
+@SuppressWarnings("PMD.ShortClassName")
 public class R<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 状态码
-     */
+    /** 状态码。 */
     private int code;
 
-    /**
-     * 是否成功
-     */
+    /** 是否成功。 */
     private boolean success;
 
-    /**
-     * 消息
-     */
+    /** 消息。 */
     private String msg;
 
-    /**
-     * 数据
-     */
+    /** 数据。 */
     private T data;
 
     public static <T> R<T> ok() {
@@ -77,10 +71,11 @@ public class R<T> implements Serializable {
     }
 
     /**
-     * 判断是否成功
+     * 返回请求是否成功。
+     *
+     * @return 请求是否成功。
      */
     public boolean isSuccess() {
         return success;
     }
 }
-

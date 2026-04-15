@@ -4,7 +4,7 @@ import io.mango.common.result.CommonCode;
 import lombok.Getter;
 
 /**
- * 业务异常
+ * 业务异常。
  *
  * @author Mango
  */
@@ -13,6 +13,7 @@ public class BizException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    /** 业务错误码。 */
     private final int code;
 
     public BizException(int code, String message) {
@@ -24,4 +25,3 @@ public class BizException extends RuntimeException {
         this(CommonCode.BAD_REQUEST.getCode(), message);
     }
 }
-

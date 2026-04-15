@@ -6,12 +6,13 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.regex.Pattern;
 
 /**
- * 手机号校验器
+ * 手机号校验器。
  *
  * @author Mango
  */
 public class PhoneValidator implements ConstraintValidator<Phone, String> {
 
+    /** 中国大陆手机号正则。 */
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
 
     @Override

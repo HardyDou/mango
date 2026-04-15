@@ -78,8 +78,7 @@ public class GenCrudMojo extends AbstractMojo {
     private void generateController(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
         String camelEntity = toCamelCase(entity);
-        String moduleName = module.replace("mango-", "");
-        String resourcePath = moduleName + "/" + camelEntity.toLowerCase();
+        String resourcePath = camelEntity.toLowerCase();
 
         String content =
             "package io.mango." + module + ".controller;\n\n" +
@@ -130,7 +129,7 @@ public class GenCrudMojo extends AbstractMojo {
             "package io.mango." + module + ".service;\n\n" +
             "import io.mango." + module + ".po." + entityName + "PO;\n" +
             "import io.mango." + module + ".vo." + entityName + "VO;\n" +
-            "import io.mango.common.result.PageResult;\n\n" +
+            "import io.mango.common.vo.PageResult;\n\n" +
             "public interface I" + entityName + "Service<T> {\n\n" +
             "    " + entityName + "VO getById(Long id);\n\n" +
             "    PageResult<" + entityName + "VO> page(" + entityName + "PO po);\n\n" +
@@ -150,7 +149,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".po." + entityName + "PO;\n" +
             "import io.mango." + module + ".service.I" + entityName + "Service;\n" +
             "import io.mango." + module + ".vo." + entityName + "VO;\n" +
-            "import io.mango.common.result.PageResult;\n" +
+            "import io.mango.common.vo.PageResult;\n" +
             "import io.mango.common.result.Require;\n" +
             "import lombok.RequiredArgsConstructor;\n" +
             "import org.springframework.stereotype.Service;\n\n" +
