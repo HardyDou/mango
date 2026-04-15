@@ -71,6 +71,7 @@ npx playwright test
 
 ## 文档入口
 
+- [前端索引](./mango-ui/index.md)
 - [前端项目说明](./mango-ui/README.md)
 - [协作入口](./CLAUDE.md)
 - [研发总流程](./mango-pmo/rules/00-dev-flow.md)

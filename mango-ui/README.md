@@ -4,6 +4,12 @@
 
 当前工作区已经完成 `dev / build / E2E` 主链路修复，`mango-admin` 可以作为统一宿主装配认证、权限、系统管理和公共能力。
 
+文档快速入口：
+
+- [mango-ui 文档索引](./index.md)
+- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
+- [Sprint 13 迁移计划](../mango-docs/plans/2026-04-14-sprint-13-frontend-monorepo-migration.md)
+
 ## 项目结构
 
 ```text

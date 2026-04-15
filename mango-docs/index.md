@@ -34,6 +34,16 @@ Mango 是一个面向 AI Agent 的 Java SpringBoot 脚手架，目标让 AI Agen
 | [sprint-10](./plans/2026-04-14-sprint-10-infra-web-security-boundary-decoupling.md) | 待执行 | `infra-web` / `infra-security` 去业务依赖 |
 | [sprint-11](./plans/2026-04-14-sprint-11-platform-rbac-system-boundary-phase1.md) | 待执行 | `mango-rbac` / `mango-system` 第一阶段边界收敛 |
 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | `mango-auth` 与 `mango-admin-app` 边界收口 |
+| [sprint-13](./plans/2026-04-14-sprint-13-frontend-monorepo-migration.md) | 已完成 | 前端 `mango-web` → `mango-ui` Monorepo 迁移 |
+
+### 前端文档入口
+
+| 文档 | 说明 |
+|------|------|
+| [仓库根 README](../README.md) | 顶层项目入口与子项目导航 |
+| [mango-ui 索引](../mango-ui/index.md) | 前端 Monorepo 文档入口、目录导航与常用命令 |
+| [mango-ui README](../mango-ui/README.md) | 前端架构、开发流程、验收要求 |
+| [前端 Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md) | 前端分层、依赖与 API 隔离规范 |
 
 ---
 
