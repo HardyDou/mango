@@ -12,6 +12,7 @@ import java.io.Serializable;
  */
 @Data
 @SuppressWarnings("PMD.ShortClassName")
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class R<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -48,7 +48,7 @@ public class CheckMojo extends AbstractMojo {
     /**
      * 源码目录
      */
-    @Parameter(property = "baseDir")
+    @Parameter(property = "baseDir", defaultValue = "${project.basedir}")
     private String baseDir;
 
     /**
@@ -85,6 +85,14 @@ public class CheckMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (baseDir == null || baseDir.isEmpty()) {
+            if (session != null && session.getExecutionRootDirectory() != null) {
+                baseDir = session.getExecutionRootDirectory();
+            } else {
+                baseDir = System.getProperty("user.dir");
+            }
+        }
+        
         getLog().info("Running Mango Check - rule: " + rule);
         result = new CheckResult();
 

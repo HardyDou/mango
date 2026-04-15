@@ -134,7 +134,7 @@ class GenCrudMojoTest {
         // then
         Path controllerFile = tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/controller/UserController.java");
         String content = Files.readString(controllerFile);
-        assertTrue(content.contains("@RequestMapping(\"/user\")"), "Controller should have @RequestMapping");
+        assertTrue(content.contains("@RequestMapping(\"/user/user\")"), "Controller should have @RequestMapping");
         assertTrue(content.contains("@GetMapping(\"/page\")"), "Controller should have page endpoint");
         assertTrue(content.contains("@PostMapping"), "Controller should have POST endpoint");
     }
