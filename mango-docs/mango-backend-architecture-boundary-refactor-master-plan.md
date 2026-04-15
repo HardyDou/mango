@@ -171,6 +171,29 @@ app -> starter/adapter -> core -> api -> common-kernel
 - 收敛 `mango-auth` 的认证职责
 - 清理 `mango-admin-app` 的装配层职责与错误依赖
 
+### Backlog 候选：持久化抽象层收敛
+
+状态：待规划，当前不进入执行
+
+目标：
+
+- 为 `core` 层提供稳定的持久化抽象端口
+- 让业务模块默认依赖 Mango 自己的 CRUD / Page 能力，而不是直接绑定 `mybatis-plus`
+- 保留 `mybatis-plus`、`jpa` 等不同持久化实现的适配空间
+
+当前结论：
+
+- 这件事值得做
+- 但现在只适合进入 Backlog，不适合立即做全仓重构
+- 后续如启动，建议先做设计和单模块 POC，再决定是否推广到生成器和全仓模块
+
+建议切入范围：
+
+1. 定义持久化抽象端口（Repository / Page / CRUD）
+2. 先仅提供 `mybatis-plus` 适配实现
+3. 选择简单模块做 POC（如 `Post`）
+4. 验证通过后再决定是否落入正式 Sprint
+
 ---
 
 ## 6. 各 Sprint 之间的依赖关系

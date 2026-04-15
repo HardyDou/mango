@@ -25,8 +25,8 @@ paths:
 
 | 子模块 | 后缀 | 职责 | 能有什么 | 禁止有什么 |
 |--------|------|------|---------|-----------|
-| 接口定义 | `-api` | 暴露跨模块 API | `po`、`vo`、`dto`、`XxxApi` 接口 | `entity`、`service`、`controller`、`mapper` |
-| 核心实现 | `-core` | 业务逻辑 | `entity`、`service`、`mapper`、`dto` | `controller` |
+| 接口定义 | `-api` | 暴露跨模块 API | `command`、`query`、`vo`、`enums`、`XxxApi` 接口 | `entity`、`service`、`controller`、`mapper` |
+| 核心实现 | `-core` | 业务逻辑 | `entity`、`service`、`mapper`、`convert` | `controller` |
 | 本地调用 | `-starter` | 实现 api | controller（实现 `XxxApi`）、AutoConfiguration | — |
 | 远程调用 | `-starter-remote` | 继承 api | FeignClient（继承 `XxxApi`）、AutoConfiguration | — |
 
@@ -102,9 +102,10 @@ public interface SysUserFeignClient extends SysUserApi {
 mango-xxx-api/
 └── src/main/java/io/mango/xxx/api/
     ├── XxxApi.java      # XxxApi 接口
-    ├── po/              # 纯数据对象（无 DB 注解）
+    ├── command/         # 写操作入参
+    ├── query/           # 查询入参
     ├── vo/              # 视图对象
-    └── dto/             # 数据传输对象
+    └── enums/           # 领域枚举/错误码
 ```
 
 ### 4.2 core
@@ -117,7 +118,7 @@ mango-xxx-core/
 │   │   ├── IXxxService.java
 │   │   └── impl/
 │   ├── mapper/          # 数据访问
-│   └── dto/             # 内部 DTO
+│   └── convert/         # 对象转换
 └── src/main/resources/
     └── db/migration/    # Flyway 数据库迁移文件（按 module 子目录隔离）
         └── user/        # user 模块独立目录（其他模块同理）
@@ -293,7 +294,7 @@ mango-rbac-core/
 ```java
 // ✅ 暴露型：本模块定义，外部调用
 public interface AuthApi {
-    LoginVO login(LoginDTO dto);
+    LoginVO login(LoginCommand command);
 }
 
 // ✅ 注入型：本模块定义，他模块实现后注入
@@ -372,7 +373,7 @@ mango-infra-xxx/
 
 ## 九，新建服务
 
-1. `mango-xxx-api` — 定义 `XxxApi` 接口、`po`、`vo`、`dto`
+1. `mango-xxx-api` — 定义 `XxxApi` 接口、`command`、`query`、`vo`、`enums`
 2. `mango-xxx-core` — 实现 `entity`、`service`、`mapper`
 3. `mango-xxx-starter` — Controller **实现** `XxxApi`
 4. `mango-xxx-starter-remote` — FeignClient **继承** `XxxApi`
