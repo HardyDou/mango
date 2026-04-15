@@ -1,0 +1,194 @@
+<template>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-left">
+        <div class="login-title">
+          <h1>Mango Admin</h1>
+          <p>企业级管理平台</p>
+        </div>
+      </div>
+      <div class="login-form">
+        <h2 class="form-title">
+          {{ $t('login.title') }}
+        </h2>
+        <el-form
+          ref="loginFormRef"
+          :model="form"
+          :rules="rules"
+          @keyup.enter="handleLogin"
+        >
+          <el-form-item prop="username">
+            <el-input
+              v-model="form.username"
+              :placeholder="$t('login.username.placeholder')"
+              size="large"
+              prefix-icon="User"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input
+              v-model="form.password"
+              :placeholder="$t('login.password.placeholder')"
+              type="password"
+              size="large"
+              prefix-icon="Lock"
+              show-password
+              clearable
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="primary"
+              size="large"
+              :loading="loading"
+              class="login-btn"
+              @click="handleLogin"
+            >
+              {{ $t('login.btn') }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts" name="Login">
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { Session } from '@mango/common';
+import { login } from '../api/sys';
+
+const router = useRouter();
+const loginFormRef = ref();
+
+// 表单数据
+const form = reactive({
+  username: '',
+  password: '',
+});
+
+// 校验规则
+const rules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+};
+
+// 状态
+const loading = ref(false);
+
+// 登录处理
+const handleLogin = async () => {
+  if (!loginFormRef.value) return;
+
+  await loginFormRef.value.validate(async (valid) => {
+    if (!valid) return;
+
+    loading.value = true;
+    const loadingStartedAt = Date.now();
+    try {
+      // 构造登录数据
+      const loginData = {
+        username: form.username,
+        password: form.password,
+      };
+
+      // 调用真实登录接口
+      const res = await login(loginData);
+
+      // 校验响应数据 - 兼容多种响应格式
+      const token = res?.accessToken || res?.token;
+      if (!res || !token) {
+        throw new Error('登录响应无效');
+      }
+
+      // 保存 Token 和用户信息
+      Session.setToken(token);
+      Session.set('userInfo', res.userInfo || res);
+
+      ElMessage.success('登录成功');
+      await router.push('/home');
+    } catch (error) {
+      console.error('登录失败:', error);
+      ElMessage.error('登录失败，请检查用户名和密码');
+    } finally {
+      const remaining = 500 - (Date.now() - loadingStartedAt);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      loading.value = false;
+    }
+  });
+};
+</script>
+
+<style scoped lang="scss">
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-box {
+  display: flex;
+  width: 900px;
+  height: 500px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.login-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 50%;
+  padding: 40px;
+  background: linear-gradient(135deg, #2E5CF6 0%, #764ba2 100%);
+
+  .login-title {
+    color: #fff;
+
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 50%;
+  padding: 40px;
+
+  .form-title {
+    margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+  }
+
+  .login-btn {
+    width: 100%;
+  }
+}
+
+:deep(.el-input__wrapper) {
+  padding: 4px 12px;
+}
+</style>

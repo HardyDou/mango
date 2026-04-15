@@ -25,8 +25,18 @@
 1. **mango-admin-host**：创建基座应用，负责布局 (Layout)、路由聚合 (Router Registry) 和子包集成。
 
 ## 3. 验收内容 (Acceptance Criteria)
-- [ ] **目录结构合规**：`mango-ui/packages` 和 `mango-ui/apps` 结构符合规范。
-- [ ] **模块依赖正确**：业务包禁止相互引用，只能引用 `common` 包。
-- [ ] **全量构建通过**：在根目录执行 `pnpm build` 成功。
-- [ ] **运行正常**：主应用启动后，登录、权限管理等核心流程功能与原项目一致。
-- [ ] **API 隔离验证**：验证可通过配置切换 Mock 实现与 Axios 实现。
+- [x] **目录结构合规**：`mango-ui/packages` 和 `mango-ui/apps` 结构符合规范。
+- [x] **模块依赖正确**：业务包禁止相互引用，只能引用 `common` 包。
+- [x] **全量构建通过**：在根目录执行 `pnpm build` 成功。
+- [x] **运行正常**：主应用启动后，登录、权限管理等核心流程功能与原项目一致。
+- [x] **API 隔离验证**：验证可通过配置切换 Mock 实现与 Axios 实现。
+
+## 4. 验证记录 (Validation Notes)
+
+验证日期：2026-04-15
+
+- 目录结构检查：`mango-ui` 下已形成 `apps/mango-admin` 与 `packages/{api-schema,auth,common,rbac,system}`。
+- 依赖边界检查：清理了 `packages/common` 对宿主路由的直接依赖，以及 `packages/auth` 对宿主路由与 store 的直接依赖；当前非测试代码中未发现 `packages/*` 反向引用 `apps/mango-admin/src/**`。
+- 构建验证：在 `mango-ui` 根目录执行 `pnpm build` 成功。
+- 运行验证：在 `apps/mango-admin` 执行 `pnpm test:e2e --project=chromium`，结果为 `31 passed / 2 skipped`，覆盖登录、布局、主题、组件页与基础可访问性。
+- API 隔离验证：开发环境 `.env.development` 配置 `VITE_USE_MOCK=true`，生产环境 `.env.production` 配置 `VITE_USE_MOCK=false`；`packages/common/api/*` 与相关业务 API 已按配置在 Mock 返回与 Axios 请求之间切换。

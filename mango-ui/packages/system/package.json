@@ -1,0 +1,14 @@
+{
+  "name": "@mango/system",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "vue": "3.5.13",
+    "vue-router": "^4.1.6",
+    "element-plus": "2.5.5",
+    "@element-plus/icons-vue": "^2.0.10",
+    "@mango/common": "workspace:*",
+    "@mango/api-schema": "workspace:*"
+  }
+}
