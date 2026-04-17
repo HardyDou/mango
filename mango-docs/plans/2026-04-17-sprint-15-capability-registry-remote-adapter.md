@@ -218,6 +218,25 @@ public record ModuleInfo(
 
 ---
 
+## 11. 后续执行跟踪
+
+### 2026-04-17 后端模块级重构计划 Review
+
+| 跟踪项 | 结论 | 证据 |
+|--------|------|------|
+| 模块级重构计划纳入后续执行 | 已纳入 | `./2026-04-17-backend-module-by-module-refactor-plan.md` 作为后端后续 Phase 执行主入口 |
+| Phase 0 review 结果 | 已补齐 | `./2026-04-17-phase-0-fact-source-delivery-record.md` |
+| `mango-user` 残留验证 | 已分类 | 当前有效源码/POM 无 `mango-rbac` 或根 POM 旧依赖；剩余命中为工具生成器示例/测试与 gateway 默认服务名 |
+| `mango-rbac` 删除 `mango-user-api` 后编译 | 通过 | `mvn -q -pl mango-platform/mango-rbac -am -DskipTests compile` |
+| gateway 旧服务名 | 后续处理 | `GatewayProperties.userService = "mango-user-starter"` 登记为 Phase 5 输入 |
+
+执行规则：
+
+- 后续后端重构按模块级 Phase 计划推进，不再以 Sprint 12 / Sprint 15 的历史顺序覆盖当前 Phase 顺序。
+- Sprint 15 的模块信息机制作为后续 Phase 的能力输入；涉及 auth / admin-app / gateway 的边界调整，进入对应 Phase 后再实施。
+
+---
+
 ## 11. 后续计划
 
 - 管理后台展示模块部署信息

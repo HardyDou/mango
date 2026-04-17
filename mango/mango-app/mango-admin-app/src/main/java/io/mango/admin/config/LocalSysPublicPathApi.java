@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Local implementation of SysPublicPathApi for admin app.
- * In admin-app monolith mode, the gateway's Feign client cannot reach the permission service
+ * In admin-app monolith mode, the gateway's Feign client cannot reach the RBAC public path API
  * via service discovery, so we provide a direct local implementation.
  */
 @Configuration

@@ -47,25 +47,35 @@ mvn mango:gen-crud -Dmodule=xxx -Dentity=User -Dtable=usr_user
 ```
 mango/
 ├── mango-app/                   # 应用层
-│   └── mango-admin-app/       # 管理后台
+│   └── mango-admin-app/         # 管理后台装配应用
 ├── mango-common/               # 公共代码
-├── mango-generator/            # 代码生成器
 ├── mango-infra/                # 基础设施
-│   ├── mango-gateway/         # 网关
-│   ├── mango-infra-crypto/    # 国密算法
-│   ├── mango-infra-security/  # 权限安全
-│   ├── mango-infra-kv/        # KV 存储抽象
-│   └── mango-infra-*/         # 其他技术组件
+│   ├── mango-gateway/           # 网关
+│   ├── mango-infra-context/     # 上下文
+│   ├── mango-infra-crypto/      # 国密算法
+│   ├── mango-infra-db/          # 数据库基础能力
+│   ├── mango-infra-doc/         # OpenAPI 文档
+│   ├── mango-infra-feign/       # OpenFeign
+│   ├── mango-infra-kv/          # KV 存储抽象
+│   ├── mango-infra-log/         # 日志配置
+│   ├── mango-infra-module/      # 模块元数据与部署映射
+│   ├── mango-infra-orm/         # Repository/ORM 抽象
+│   ├── mango-infra-redis/       # Redis 封装
+│   ├── mango-infra-security/    # 权限安全
+│   ├── mango-infra-sse/         # SSE
+│   ├── mango-infra-test/        # 基础设施测试支撑
+│   ├── mango-infra-web/         # Web 封装
+│   └── mango-infra-websocket/   # WebSocket
 ├── mango-platform/             # 平台能力
-│   ├── mango-ai/             # AI 能力
-│   ├── mango-auth/           # 认证
-│   ├── mango-rbac/           # 权限
-│   ├── mango-org/           # 组织
-│   ├── mango-system/        # 系统
-│   ├── mango-i18n/          # 国际化
-│   ├── mango-area/          # 区域
-│   ├── mango-captcha/       # 验证码
-│   └── mango-message/       # 消息
+│   ├── mango-ai/               # AI 能力
+│   ├── mango-area/             # 区域
+│   ├── mango-auth/             # 认证
+│   ├── mango-captcha/          # 验证码
+│   ├── mango-i18n/             # 国际化
+│   ├── mango-message/          # 消息
+│   ├── mango-org/              # 组织
+│   ├── mango-rbac/             # RBAC、授权侧用户事实、菜单与公共路径
+│   └── mango-system/           # 系统配置、字典、租户、日志、路由
 ├── mango-parent/               # 父 POM
 └── mango-tools/               # Maven 插件 & 代码规则
     └── mango-maven-plugin/    # Mango CLI 插件（含模板和规则）

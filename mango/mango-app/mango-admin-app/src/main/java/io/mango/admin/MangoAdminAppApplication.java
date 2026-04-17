@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Import;
 
 /**
  * Mango Admin App Application
- * Entry point for the admin app that aggregates user, permission, i18n services
+ * Entry point for the admin app that assembles RBAC, auth, i18n, org, area, AI and captcha capabilities.
  *
  * @author Mango
  */

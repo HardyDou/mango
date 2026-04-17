@@ -38,5 +38,6 @@
 
 | 顺序 | Sprint | 原因 |
 |------|--------|------|
-| 1 | [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 先实现能力自动注册和 remote adapter 重构 |
-| 2 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 再基于新机制清理 auth / admin-app 装配边界 |
+| 1 | [backend-refactor-2026-04-17](./plans/2026-04-17-backend-module-by-module-refactor-plan.md) | 当前代码基线以后端模块级 Phase 顺序执行，先完成 Phase -1 / Phase 0，再进入 `mango-common` |
+| 2 | [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 作为后续相关 Phase 的参考输入，不再越过当前模块级计划单独前置 |
+| 3 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 作为 auth / admin-app 后续 Phase 的历史计划输入 |

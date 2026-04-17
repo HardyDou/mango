@@ -1,204 +1,115 @@
 # Mango Admin App
 
-> 管理后台应用 - 聚合用户、权限、国际化和组织架构服务
+> 管理后台应用装配层，聚合 RBAC、认证、国际化、组织、区域、AI 与验证码能力。
 
 ## 模块职责
 
 | 职责 | 说明 |
 |------|------|
-| 数据聚合 | 聚合多个后端服务的数据，提供前端所需格式 |
-| 协议转换 | 将内部服务协议转换为 RESTful API |
-| 粗粒度数据 | 提供前端使用的粗粒度数据，减少前端计算 |
-| 认证委托 | 委托给 gateway-starter 进行认证 |
+| 部署装配 | 作为管理后台 Spring Boot 启动单元，装配本地 starter |
+| 能力聚合 | 聚合平台能力并向前端暴露管理后台 API |
+| 认证委托 | 通过 `mango-gateway-starter` 与 `mango-auth-starter` 完成认证过滤和登录能力 |
+| 本地适配 | 单体模式下为 gateway 需要的公共路径 API 提供本地实现 |
 
 ## 架构定位
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      前端 (Vue 3)                          │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ RESTful API
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    BFF Admin (BFF层)                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ User        │  │ Permission  │  │ I18n                │ │
-│  │ Aggregation │  │ Aggregation │  │ Aggregation         │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │ Gateway Starter (认证委托)                               ││
-│  │  - AuthFilter (JWT验证)                                 ││
-│  │  - WhiteList (白名单)                                   ││
-│  └─────────────────────────────────────────────────────────┘│
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-          ┌───────────────┼───────────────┐
-          ▼               ▼               ▼
-    ┌──────────┐    ┌──────────┐    ┌──────────┐
-    │ User     │    │Permission │    │ I18n     │
-    │ Service  │    │ Service   │    │ Service  │
-    └──────────┘    └──────────┘    └──────────┘
-```
-
-## 依赖关系
-
-```
+```text
+frontend
+  |
+  v
 mango-admin-app
-├── mango-gateway-starter     # 认证委托
-│   └── mango-auth-starter    # 认证配置
-│       └── mango-auth-core   # 认证业务
-├── mango-user-starter        # 用户服务
-├── mango-permission-starter  # 权限服务
-├── mango-i18n-starter        # 国际化服务
-├── mango-org-starter         # 组织架构服务
-├── mango-area-starter        # 地区服务
-├── mango-ai-starter          # AI服务
-└── mango-captcha-starter    # 验证码服务
+  |-- mango-gateway-starter
+  |-- mango-auth-starter
+  |-- mango-rbac-starter
+  |-- mango-i18n-starter
+  |-- mango-org-starter
+  |-- mango-area-starter
+  |-- mango-ai-starter
+  |-- mango-captcha-starter
+  |-- mango-infra-kv-starter
+  `-- mango-infra-module-starter
 ```
 
-## 单体模式 vs 微服务模式
+`mango-admin-app` 只负责应用装配和必要的本地 adapter，不承载长期领域逻辑。
 
-### 单体模式
+## 当前依赖清单
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Mango Admin App                            │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ Spring Boot Application                                 │ │
-│  │                                                         │ │
-│  │  ┌──────────────────────────────────────────────────┐   │ │
-│  │  │ Auto Configurations                               │   │ │
-│  │  │  - AuthAutoConfiguration                         │   │ │
-│  │  │  - UserAutoConfiguration                         │   │ │
-│  │  │  - PermissionAutoConfiguration                   │   │ │
-│  │  │  - I18nAutoConfiguration                         │   │ │
-│  │  │  - OrgAutoConfiguration                          │   │ │
-│  │  │  - AreaAutoConfiguration                         │   │ │
-│  │  │  - AiAutoConfiguration                           │   │ │
-│  │  │  - CaptchaAutoConfiguration                      │   │ │
-│  │  └──────────────────────────────────────────────────┘   │ │
-│  │                                                         │ │
-│  │  ┌──────────────────────────────────────────────────┐   │ │
-│  │  │ REST Controllers (聚合层)                         │   │ │
-│  │  │  - MenuController (菜单管理)                       │   │ │
-│  │  │  - UserController (用户管理)                     │   │ │
-│  │  │  - RoleController (角色管理)                     │   │ │
-│  │  │  - DictController (字典管理)                     │   │ │
-│  │  └──────────────────────────────────────────────────┘   │ │
-│  │                                                         │ │
-│  │  ┌──────────────────────────────────────────────────┐   │ │
-│  │  │ Service Layer (本地调用)                          │   │ │
-│  │  │  - UserService → IUserService (本地)             │   │ │
-│  │  │  - MenuService → ISysMenuService (本地)         │   │ │
-│  │  └──────────────────────────────────────────────────┘   │ │
-│  └────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+| 类型 | artifactId | 判断 |
+|------|------------|------|
+| Mango | `mango-common` | 合法，公共契约 |
+| Mango | `mango-infra-module-starter` | 合法，模块元数据与部署映射 |
+| Mango | `mango-org-starter` | 合法，平台组织能力装配 |
+| Mango | `mango-area-starter` | 合法，平台区域能力装配 |
+| Mango | `mango-ai-starter` | 合法，平台 AI 能力装配 |
+| Mango | `mango-i18n-starter` | 合法，平台国际化能力装配 |
+| Mango | `mango-rbac-starter` | 合法，当前 RBAC 本地装配 |
+| Mango | `mango-captcha-starter` | 合法，验证码能力装配 |
+| Mango | `mango-gateway-starter` | 合法，网关认证过滤装配 |
+| Mango | `mango-infra-kv-starter` | 合法，KV 能力装配 |
+| Mango | `mango-auth-starter` | 合法，认证能力装配 |
+| Spring/第三方 | `spring-boot-starter-web`、`spring-boot-starter-jdbc`、`spring-boot-starter-actuator`、`spring-boot-starter-websocket`、`h2`、`mybatis-spring`、`springdoc-openapi-starter-webmvc-ui`、`lombok` | 合法；`spring-boot-starter-websocket` 在 messaging 收敛后复核是否改由 infra messaging 间接提供 |
 
-**特点**:
-- 所有服务打包在同一个应用中
-- 本地方法调用，无网络开销
-- 认证通过 AuthSecurityConfig 处理
-- 数据库共享（同一 MySQL 实例）
+## 单体模式
 
-### 微服务模式
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     API Gateway                              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │ AuthFilter (JWT验证)                                     │ │
-│  │  - 验证通过后，传递 X-User-Id, X-Tenant-Id 头            │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-        ┌───────────────┼───────────────────────┐
-        ▼               ▼                       ▼
-┌───────────────┐ ┌───────────────┐      ┌───────────────┐
-│ BFF Admin     │ │ BFF Portal    │      │ BFF Open      │
-│ (用户管理)     │ │ (投标门户)     │      │ (开放平台)     │
-│               │ │               │      │               │
-│ REST Controllers│ REST Controllers│    REST Controllers│
-└───────┬───────┘ └───────┬───────┘      └───────┬───────┘
-        │ Feign            │ Feign              │ Feign
-        │ Client           │ Client             │ Client
-        └───────┬──────────┴───────┬────────────┘
-                ▼                  ▼
-        ┌───────────────┐  ┌───────────────┐
-        │ User Service  │  │Permission Svc │
-        │               │  │               │
-        │ MySQL + Redis │  │ MySQL + Redis │
-        └───────────────┘  └───────────────┘
+```text
+MangoAdminAppApplication
+  imports:
+    - MangoOrgAutoConfiguration
+    - MangoAreaAutoConfiguration
+    - MangoAiAutoConfiguration
+    - I18nAutoConfiguration
+    - RbacAutoConfiguration
+    - CaptchaAutoConfiguration
+  component scan:
+    - io.mango
+  mapper scan:
+    - io.mango.rbac.core.mapper
+    - io.mango.i18n.core.mapper
+    - io.mango.org.core.mapper
+    - io.mango.area.core.mapper
 ```
 
-**特点**:
-- 每个服务独立部署
-- 通过 Feign Client 进行远程调用
-- 认证在网关层统一处理
-- BFF 无需引入安全依赖
+`AuthSecurityConfig` 通过 `io.mango` 的 component scan 加载；auth controller 与初始化逻辑在 admin 单体模式下被排除，避免依赖无法通过服务发现访问的远程客户端。
+
+## 微服务模式
+
+微服务部署时，各平台能力可以通过对应 `starter-remote` 或网关路由完成远程访问。当前 `mango-admin-app` POM 使用本地 starter，后续 remote adapter 装配清理由对应 Phase 单独处理。
 
 ## BFF 实现原则
 
-> **核心原则**: BFF 不实现任何业务逻辑，只做数据聚合和协议转换
+`mango-admin-app` 不实现 RBAC、认证、组织、国际化等领域规则，只做部署装配、协议入口和必要的本地 adapter。
 
-### 应该做的
+应该做：
 
 ```java
-// ✅ 聚合多个服务的数据
-@Service
-public class MenuAggregationService {
-    public MenuTreeVO getMenuTree() {
-        // 调用权限服务获取菜单
-        List<SysMenuVO> menus = sysMenuService.listMenus();
-        // 调用国际化服务获取翻译
-        Map<String, String> i18nMap = i18nService.getTranslations();
-        // 聚合返回
-        return buildMenuTree(menus, i18nMap);
-    }
+@Configuration
+class LocalAdapterConfiguration {
+    // 将本地 starter 暴露的能力适配给装配层需要的接口
 }
 ```
 
-### 不应该做的
+不应该做：
 
 ```java
-// ❌ BFF 不应该实现业务逻辑
 @Service
-public class MenuAggregationService {
-    // 错误：不应该在这里实现 CRUD
-    public void createMenu(SysMenu menu) {
-        sysMenuMapper.insert(menu);
-    }
-
-    // 错误：不应该在这里实现复杂业务规则
+class AdminBusinessService {
     public boolean hasPermission(Long userId, String permission) {
-        // ... 复杂的权限计算逻辑
+        // 错误：权限计算应由 RBAC 或认证桥接接口提供
+        return false;
     }
 }
 ```
 
-## 核心聚合接口
-
-### 菜单聚合
+## 核心接口
 
 | 接口 | 说明 |
 |------|------|
-| `GET /permission/menu` | 获取菜单树（含国际化） |
-| `GET /permission/menu/{id}` | 获取单个菜单详情 |
-
-### 用户聚合
-
-| 接口 | 说明 |
-|------|------|
-| `GET /admin/user` | 分页查询用户（含组织信息） |
-| `GET /admin/user/{id}` | 获取用户详情（含角色、岗位） |
+| `SysPublicPathApi` | gateway 查询匿名路径、登录必需路径和内部路径的 API |
+| `ISysPublicPathService` | RBAC core 当前提供的公共路径服务，本地单体模式由 adapter 调用 |
 
 ## 配置
 
 ### 认证配置
-
-BFF 通过 gateway-starter 委托认证：
 
 ```yaml
 mango:
@@ -211,73 +122,18 @@ mango:
 ### 服务扫描
 
 ```java
-@SpringBootApplication
 @MapperScan({
-    "io.mango.user.core.mapper",
-    "io.mango.permission.core.mapper",
+    "io.mango.rbac.core.mapper",
     "io.mango.i18n.core.mapper",
     "io.mango.org.core.mapper",
     "io.mango.area.core.mapper"
 })
-public class MangoBffAdminApplication {
+public class MangoAdminAppApplication {
 }
 ```
 
-## 开发指南
+## 开发约束
 
-### 新增聚合接口
-
-1. 在对应的 `-api` 模块定义 VO
-2. 在 BFF 创建 Controller
-3. 注入需要的 Service Starter
-4. 聚合数据返回
-
-```java
-@RestController
-@RequestMapping("/admin/example")
-public class ExampleController {
-
-    private final UserService userService;
-    private final I18nService i18nService;
-
-    @GetMapping("/{id}")
-    public R<ExampleAggregationVO> getExample(@PathVariable Long id) {
-        // 聚合多个服务的数据
-        UserVO user = userService.getUser(id);
-        Map<String, String> i18n = i18nService.getTranslations();
-        return R.ok(buildAggregation(user, i18n));
-    }
-}
-```
-
-### 禁用认证（仅开发环境）
-
-```yaml
-mango:
-  gateway:
-    auth-enabled: false  # 禁用认证过滤器
-```
-
-## 常见问题
-
-### Q: BFF 和 直接调用微服务的区别？
-
-| 对比 | BFF 模式 | 直接调用 |
-|------|---------|---------|
-| 数据聚合 | BFF 聚合 | 前端多次调用 |
-| 网络开销 | 内部通信 | 客户端多次请求 |
-| 协议转换 | BFF 转换 | 需要前端处理 |
-| 复杂度 | BFF 维护成本 | 前端复杂度高 |
-
-### Q: 微服务模式下 BFF 需要认证吗？
-
-**不需要**。认证在 API Gateway 层完成，BFF 信任网关传递的用户信息（`X-User-Id` Header）。
-
-### Q: BFF 如何选择单体还是微服务？
-
-| 场景 | 推荐模式 |
-|------|---------|
-| 创业初期、快速迭代 | 单体模式 |
-| 多团队并行开发 | 微服务模式 |
-| 需要独立扩缩容 | 微服务模式 |
-| 简单后台系统 | 单体模式 |
+1. 新增管理后台能力优先放到对应 platform 模块，再由 starter 装配。
+2. `mango-admin-app` 不直接访问 mapper，现有 mapper scan 仅服务本地 starter 装配，后续在 app Phase 统一复核。
+3. local / remote 选择不通过业务代码中的条件分支实现。

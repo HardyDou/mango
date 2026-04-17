@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Mango Admin App</name>
-    <description>Mango Admin App - aggregates user, permission, i18n services for admin frontend</description>
+    <description>Mango Admin App - aggregates rbac, auth, i18n, org, area, ai and captcha capabilities for admin frontend</description>
 
     <dependencies>
         <!-- Mango Common -->

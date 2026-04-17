@@ -1049,16 +1049,15 @@ export default defineConfig({
 
 ## 第七步：模块清单
 
-### 7.1 已实现模块（15个）
+### 7.1 当前有效后端模块
 
 | 模块 | artifactId | 职责 | 状态 |
 |------|-----------|------|------|
 | **公共模块** | | | |
 | `mango-common` | `mango-common` | 全局异常、工具类、常量 | ✅ |
-| **业务域** | | | |
-| `mango-user` | `mango-user-api/core/starter/remote` | 用户管理 | ✅ |
+| **平台能力** | | | |
 | `mango-auth` | `mango-auth-api/core/starter/remote` | 认证（登录/登出/Token） | ✅ |
-| `mango-permission` | `mango-permission-api/core/starter/remote` | RBAC 权限（菜单/角色） | ✅ |
+| `mango-rbac` | `mango-rbac-api/core/starter/remote` | 授权侧用户事实、角色、菜单、权限、公共路径 | ✅ |
 | `mango-org` | `mango-org-api/core/starter/remote` | 组织架构 | ✅ |
 | `mango-i18n` | `mango-i18n-api/core/starter/remote` | 国际化 | ✅ |
 | `mango-area` | `mango-area-api/core/starter/remote` | 行政区划 | ✅ |
@@ -1074,17 +1073,21 @@ export default defineConfig({
 | `mango-infra-db` | `api/core/starter` | 数据库封装 | ✅ |
 | `mango-infra-feign` | `api/core/starter` | 远程调用 | ✅ |
 | `mango-infra-web` | `api/core/starter` | Web 封装 | ✅ |
-| `mango-infra-observability` | `api/core/starter` | 可观测性（链路追踪/日志） | ✅ |
+| `mango-infra-context` | `api/core/starter` | 上下文、租户、链路信息传递 | ✅ |
+| `mango-infra-module` | `api/core/starter` | 模块元数据与部署映射 | ✅ |
+| `mango-infra-log` | `mango-infra-log` | 日志配置 | ✅ |
+| `mango-infra-test` | `mango-infra-test` | 基础设施测试支撑 | ✅ |
 | `mango-infra-sse` | `api/core/starter` | SSE 封装 | ✅ |
 | `mango-infra-websocket` | `api/core/starter` | WebSocket 封装 | ✅ |
 | `mango-infra-doc` | `api/core/starter` | API 文档 | ✅ |
+| `mango-gateway` | `api/core/starter/remote` | API 网关与认证过滤装配 | ✅ |
 | **部署层** | | | |
-| `mango-bff-admin` | `mango-bff-admin` | 管理后台应用（聚合用户、权限、国际化等服务） | ✅ |
-| `mango-gateway` | `mango-gateway` | API 网关 | ✅ |
+| `mango-admin-app` | `mango-admin-app` | 管理后台应用装配层 | ✅ |
 | **工具链** | | | |
 | `mango-tools` | `mango-tools` | Mango CLI 工具 | 🚧 |
-| `mango-generator` | `mango-generator` | 代码生成器 | 🚧 |
 | `mango-parent` | `mango-parent` | Maven 父项目 | ✅ |
+
+说明：当前有效 infra 源码模块共 16 个，platform 模块共 9 个，app 模块共 1 个。历史命名不作为当前事实源；`mango-infra-observability` 不在聚合 POM 中，不作为有效源码模块处理。
 
 ### 7.2 业务域子模块结构（标准模板）
 
@@ -1158,7 +1161,7 @@ mango-infra-{name}/
 
 | 接口 | 包路径 | 用途 | 实现者 |
 |------|--------|------|--------|
-| `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-permission-starter` |
+| `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-rbac-starter` 或认证桥接 adapter |
 | `ITokenService` | `io.mango.infra.security.api` | Token 生成/校验 | `mango-auth-starter` |
 
 ### 9.3 Sprint-07 DIP 重构（已完成）
