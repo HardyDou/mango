@@ -1,165 +1,43 @@
----
-paths:
-  - "**/*.spec.ts"
-  - "**/*.test.ts"
----
+# 前端测试规范
 
-# 前端测试规范 (test-rules)
+## 1. 基本要求
 
-## 1. 测试框架
+- 有前端改动，必须有对应验证。
+- 新增交互，必须覆盖主要流程。
+- 修复缺陷，必须补回归验证。
 
-| 类型 | 工具 |
-|------|------|
-| 单元测试 | Vitest |
-| 组件测试 | Vue Test Utils |
-| E2E 测试 | Playwright |
-| 覆盖率 | c8 |
+## 2. 测试层次
 
----
+- 单元测试：工具函数、组合式函数、独立逻辑。
+- 组件测试：组件渲染、输入输出、事件。
+- E2E 测试：页面主流程、路由、接口联动。
+- 是否需要视觉截图，按改动影响面决定。
 
-## 2. 单元测试规范
+## 3. 测试范围
 
-### 2.1 测试文件命名
+至少覆盖：
 
-```
-src/
-├── utils/
-│   ├── format-date.spec.ts    # 工具函数测试
-│   └── validate.spec.ts       # 校验函数测试
-├── composables/
-│   ├── useUser.spec.ts         # Composable 测试
-│   └── useAuth.spec.ts         # Composable 测试
-└── components/
-    └── UserCard.spec.ts        # 组件测试
-```
+- 正常场景
+- 空状态
+- 错误场景
+- 关键交互
+- 权限或路由限制
 
-### 2.2 测试结构
+## 4. 命名规则
 
-```typescript
-// src/utils/format-date.spec.ts
-import { describe, it, expect } from 'vitest';
-import { formatDate, formatDateTime } from './format-date';
+- 测试文件使用 `*.spec.ts` 或 `*.test.ts`。
+- 用例名称直接描述场景和结果。
 
-describe('formatDate', () => {
-  // ✅ 使用 describe/it清晰组织
-  it('should format date correctly', () => {
-    const date = new Date('2024-01-15');
-    expect(formatDate(date)).toBe('2024-01-15');
-  });
+## 5. 提交前检查
 
-  it('should handle invalid date', () => {
-    expect(formatDate(null)).toBe('-');
-  });
-});
-```
+至少执行与改动范围对应的检查：
 
-### 2.3 Composable 测试
+- `pnpm test`
+- `pnpm build`
+- `pnpm playwright test`
 
-```typescript
-// src/composables/useUser.spec.ts
-import { describe, it, expect, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { useUser } from './useUser';
-import { getUserList } from '@/api/user';
+## 6. 禁止事项
 
-vi.mock('@/api/user');
-
-describe('useUser', () => {
-  it('should fetch users on mount', async () => {
-    const mockUsers = [{ id: 1, username: 'test' }];
-    (getUserList as any).mockResolvedValue({ list: mockUsers, total: 1 });
-
-    const { users, fetchUsers } = useUser();
-    await fetchUsers();
-
-    expect(users.value).toEqual(mockUsers);
-  });
-});
-```
-
----
-
-## 3. 组件测试
-
-### 3.1 测试结构
-
-```typescript
-// src/components/UserCard.spec.ts
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
-import UserCard from './UserCard.vue';
-
-describe('UserCard', () => {
-  it('should render user info', () => {
-    const wrapper = mount(UserCard, {
-      props: { user: { id: 1, username: 'test', email: 'test@example.com' } }
-    });
-
-    expect(wrapper.find('.user-card__name').text()).toBe('test');
-    expect(wrapper.find('.user-card__email').text()).toBe('test@example.com');
-  });
-
-  it('should emit edit event', () => {
-    const wrapper = mount(UserCard, {
-      props: { user: { id: 1, username: 'test' } }
-    });
-
-    wrapper.find('.edit-btn').trigger('click');
-    expect(wrapper.emitted('edit')).toBeTruthy();
-  });
-});
-```
-
----
-
-## 4. E2E 测试
-
-### 4.1 测试文件
-
-```typescript
-// e2e/user.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('用户管理', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/user/list');
-  });
-
-  test('should display user list', async ({ page }) => {
-    await expect(page.locator('.user-table')).toBeVisible();
-  });
-
-  test('should create user', async ({ page }) => {
-    await page.click('.add-btn');
-    await page.fill('.user-form input[name="username"]', 'test');
-    await page.click('.submit-btn');
-    await expect(page.locator('.el-message')).toContainText('创建成功');
-  });
-});
-```
-
----
-
-## 5. 测试覆盖率
-
-### 5.1 覆盖率阈值
-
-| 指标 | 阈值 |
-|------|------|
-| 语句覆盖率 | ≥ 70% |
-| 分支覆盖率 | ≥ 60% |
-| 函数覆盖率 | ≥ 80% |
-| 行覆盖率 | ≥ 70% |
-
-### 5.2 运行测试
-
-```bash
-# 运行所有测试
-npm run test
-
-# 运行覆盖率
-npm run test:coverage
-
-# 运行 E2E
-npx playwright test
-```
+- 页面改动没有任何验证
+- 只测 happy path
+- 发现回归后不补测试

@@ -41,11 +41,10 @@
 
 ## 4. 可交付结果
 
-1. 收敛后的 `mango-auth` 代码
-2. 清理后的 `mango-admin-app` 依赖与装配代码
-3. 受影响模块适配代码
-4. 单元测试 / 集成测试
-5. 构建、检查与验证截图
+- 收敛后的 `mango-auth` 代码
+- 清理后的 `mango-admin-app` 装配代码
+- 受影响模块适配代码
+- 对应测试与验证结果
 
 ---
 
@@ -72,10 +71,7 @@
 - [ ] 执行 `mvn test`
 - [ ] 执行 `mvn verify`
 - [ ] 执行 `mvn mango:check`
-- [ ] 执行 `mvn checkstyle:check`
-- [ ] 执行 `mvn spotbugs:check`
-- [ ] 执行 `mvn pmd:check`
-- [ ] 输出关键认证流程截图
+- [ ] 记录验证结果与遗留问题
 
 ---
 
@@ -87,7 +83,5 @@
 - [ ] `mvn test` 通过
 - [ ] `mvn verify` 通过
 - [ ] `mvn mango:check` 通过
-- [ ] `mvn checkstyle:check` 通过
-- [ ] `mvn spotbugs:check` 通过
-- [ ] `mvn pmd:check` 通过
-- [ ] 有关键行为截图留痕
+- [ ] 验证结果已记录
+- [ ] 遗留问题已记录

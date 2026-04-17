@@ -8,6 +8,8 @@ deepened: 2026-03-26
 
 # Mango（芒果）- For AI Agent 的 Java SpringBoot 脚手架
 
+> 本文件是架构设计与历史方案记录，不是规范源。现行规范、流程、Agent、Skill 统一以 `mango-pmo` 为准。
+
 ---
 
 ## 第一步：Mango 定位
@@ -140,43 +142,43 @@ AI Agent:
 | D2: 长程记忆缺失 | 状态文件持久化 (.mango/state.json) | 规范体系 | .mango/ |
 | D3: 自我纠错弱 | Generator-Evaluator 架构 + CLI 验证 | 流程机制 | Evaluator |
 | D4: 输出不确定性 | 模板强制 + 四维评估 | 工具链 | templates/ |
-| D5: 规划能力有限 | Sprint 机制 + 强制任务分解 | 流程机制 | dev-flow-rules.md |
+| D5: 规划能力有限 | Sprint 机制 + 强制任务分解 | 流程机制 | mango-pmo/rules/00-dev-flow.md |
 | **B. 代码质量** | | | |
-| D6: 不抽象/复用差 | 重复代码检测规则 (C1) | 规范体系 | rules/code-rules.md |
-| D7: 方法/类过大 | 方法/类长度限制 (C2,C3) | 规范体系 | rules/code-rules.md |
-| D8: 命名不规范 | 命名规范强制 (C4) | 规范体系 | rules/naming-rules.md |
-| D9: 错误处理缺失 | 错误处理规范强制 (C5) | 规范体系 | rules/code-rules.md |
-| D10: 安全问题 | 安全规范扫描 (C6) | 规范体系 | rules/security-rules.md |
-| D11: 测试覆盖不足 | 测试覆盖率门禁 (C8) | 规范体系 | rules/test-rules.md |
-| D12: JavaDoc 缺失 | 文档规范强制 (C9) | 规范体系 | rules/code-rules.md |
+| D6: 不抽象/复用差 | 代码规范 | 规范体系 | mango-pmo/rules/backend/01-code.md |
+| D7: 方法/类过大 | 代码规范 | 规范体系 | mango-pmo/rules/backend/01-code.md |
+| D8: 命名不规范 | 命名规范强制 | 规范体系 | mango-pmo/rules/backend/02-naming.md |
+| D9: 错误处理缺失 | 代码规范 | 规范体系 | mango-pmo/rules/backend/01-code.md |
+| D10: 安全问题 | 安全规范 | 规范体系 | mango-pmo/rules/backend/06-security.md |
+| D11: 测试覆盖不足 | 测试规范 | 规范体系 | mango-pmo/rules/backend/08-test.md |
+| D12: JavaDoc 缺失 | 代码规范 | 规范体系 | mango-pmo/rules/backend/01-code.md |
 | **C. 架构与设计** | | | |
-| D13: 数据库事务 | @MangoMode 注解 + 事务规范 | 规范体系 | rules/persistence-rules.md |
-| D14: 数据库设计 | DB 设计规范强制 (C10) | 规范体系 | rules/db-rules.md |
-| D15: API 设计不一致 | API 契约规范强制 (C7) | 规范体系 | rules/api-rules.md |
-| D16: 模块边界模糊 | 模块边界检查 + 接口契约 | 规范体系 | rules/module-rules.md |
+| D13: 数据库事务 | 事务规范 | 规范体系 | mango-pmo/rules/backend/07-persistence.md |
+| D14: 数据库设计 | 数据库规范 | 规范体系 | mango-pmo/rules/backend/04-db.md |
+| D15: API 设计不一致 | API 契约规范 | 规范体系 | mango-pmo/rules/backend/03-api.md |
+| D16: 模块边界模糊 | 模块分层规范 | 规范体系 | mango-pmo/rules/backend/05-module.md |
 | D17: 分布式事务 | Seata AT 模式 + 开关控制 | 架构设计 | mango-common/ |
 | **D. 用户体验** | | | |
-| D18: UI/UX 质量差 | M*组件包装 + ESLint规则 + CSS变量约束 | 规范体系 | rules/ui-rules.md, src/components/common/M*.vue |
-| D19: 前端代码质量 | 组件使用强制 + 禁止原生HTML生成 | 规范体系 | rules/ui-rules.md, .eslintrc-auto.json |
+| D18: UI/UX 质量差 | Monorepo 约束 + 组件复用 + 主题变量 | 规范体系 | mango-pmo/rules/frontend/*.md |
+| D19: 前端代码质量 | Vue 代码规范 + 测试规范 | 规范体系 | mango-pmo/rules/frontend/*.md |
 | **E. 测试问题** | | | |
-| D20: E2E 测试困难 | Playwright组件级截图 + 截图优先验收标准 | 工具链 | tools/playwright/, rules/ui-rules.md |
-| D21: 集成测试复杂 | 微服务 Mock 规范 | 规范体系 | rules/test-rules.md |
+| D20: E2E 测试困难 | Playwright 测试规范 | 工具链 | mango-pmo/rules/frontend/04-test.md |
+| D21: 集成测试复杂 | 测试规范 | 规范体系 | mango-pmo/rules/backend/08-test.md |
 | D22: 测试数据准备 | 测试数据生成器 | 工具链 | tools/test-data-gen/ |
 | **F. 工具与流程** | | | |
-| D23: 规范执行难 | AI-Executable 规范 + SonarQube 强制检查 | 规范体系 | rules/*.md |
+| D23: 规范执行难 | 规范与检查流程 | 规范体系 | mango-pmo/rules/* |
 | D24: 工具使用障碍 | SonarQube + Alibaba P3C 代码规范 | 工具链 | SonarQube + p3c规则集 |
 | D25: 部署方式适配 | SPI 机制 + App POM 依赖切换（local/remote starter） | 架构设计 | 每个服务：api/core/starter/starter-remote |
 | D26: 权限配置复杂 | permission-gen CLI 自动生成 | 工具链 | tools/gen/permission-gen |
 | **G. 项目管理** | | | |
-| D27: Sprint 任务分解 | Sprint 规范 + 任务模板 | 流程机制 | rules/dev-flow-rules.md |
+| D27: Sprint 任务分解 | Sprint 规范 + 任务模板 | 流程机制 | mango-pmo/rules/product/02-sprint.md |
 | D28: 多 Agent 协作 | 状态锁 + 冲突解决机制 | 流程机制 | .mango/state.lock |
-| D29: 人类介入时机 | 关键节点强制人工 Review | 流程机制 | rules/dev-flow-rules.md |
+| D29: 人类介入时机 | 关键节点人工确认 | 流程机制 | mango-pmo/rules/00-dev-flow.md |
 
 ### 3.2 解决方案分类
 
 | 方案类别 | 组件 | 解决的困难 |
 |---------|------|----------|
-| **规范体系** | CLAUDE.md, rules/*.md, .mango/ | D1,D2,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D18,D19,D21,D23,D26,D27,D29 |
+| **规范体系** | CLAUDE.md, mango-pmo/rules/*, .mango/ | D1,D2,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D18,D19,D21,D23,D26,D27,D29 |
 | **工具链** | tools/mango-cli, tools/gen/*, tools/check/* | D4,D6,D10,D20,D22,D24 |
 | **流程机制** | Generator-Evaluator, Sprint, Review | D3,D4,D5,D27,D28,D29 |
 | **架构设计** | SPI + App POM 切换, Seata, 接口契约 | D13,D16,D17,D25 |
@@ -202,18 +204,18 @@ AI Agent:
 # AI 协作流程 (< 400 tokens)
 ```
 
-#### S2: AI-Executable 规范 (rules/)
+#### S2: AI-Executable 规范 (mango-pmo/rules/)
 
 **目标**: 规范可被 AI 解析和执行，不是给人看的参考文档
 
 **文件结构**:
 ```
-rules/
-├── dev-flow-rules.md      # 开发流程
-├── module-rules.md        # 模块规范
-├── api-rules.md           # API 规范
-├── persistence-rules.md    # 持久化规范
-└── security-rules.md      # 安全规范
+mango-pmo/rules/
+├── 00-dev-flow.md             # 开发流程
+├── backend/05-module.md       # 模块规范
+├── backend/03-api.md          # API 规范
+├── backend/07-persistence.md  # 持久化规范
+└── backend/06-security.md     # 安全规范
 ```
 
 **规范格式**:
@@ -499,15 +501,15 @@ mango-order-core（业务实现）
 ```
 mango/
 ├── CLAUDE.md                    # AI 核心上下文 (<2000 tokens)
-├── rules/                       # AI-Executable 规范
-│   ├── dev-flow-rules.md        # 开发流程规范
-│   ├── code-rules.md           # 代码规范 (C1-C10)
-│   ├── naming-rules.md         # 命名规范
-│   ├── api-rules.md           # API 设计规范
-│   ├── security-rules.md       # 安全规范
-│   ├── test-rules.md          # 测试规范
-│   ├── db-rules.md            # 数据库规范
-│   └── ui-rules.md            # UI/UX 规范
+├── mango-pmo/rules/            # AI 执行规范
+│   ├── 00-dev-flow.md          # 开发流程规范
+│   ├── backend/01-code.md      # 代码规范
+│   ├── backend/02-naming.md    # 命名规范
+│   ├── backend/03-api.md       # API 设计规范
+│   ├── backend/06-security.md  # 安全规范
+│   ├── backend/08-test.md      # 测试规范
+│   ├── backend/04-db.md        # 数据库规范
+│   └── frontend/*.md           # 前端规范
 ├── tools/                       # Mango CLI 工具链
 │   ├── gen/                   # 代码生成（mango-maven-plugin）
 │   │   ├── gen-module         # 生成模块脚手架
@@ -567,7 +569,7 @@ mango/
 
 | 阶段 | 任务 | 优先级 |
 |------|------|--------|
-| 1 | 编写完整的 rules/ 规范文件 | 🔴 高 |
+| 1 | 编写完整的 `mango-pmo/rules/` 规范文件 | 🔴 高 |
 | 2 | 实现 Mango CLI 核心命令 | 🔴 高 |
 | 3 | 搭建 Mango 脚手架项目结构 | 🔴 高 |
 | 4 | 原型验证 Generator-Evaluator 流程 | 🔴 高 |
@@ -848,13 +850,13 @@ public UserVO getUserById(Long userId) { ... }
 ### 6.5 规范文件结构
 
 ```
-mango/rules/
-├── code-rules.md              # 核心代码规范
-├── naming-rules.md             # 命名规范
-├── api-rules.md                # API 设计规范
-├── security-rules.md            # 安全规范
-├── test-rules.md               # 测试规范
-└── db-rules.md                 # 数据库规范
+mango-pmo/rules/
+├── backend/01-code.md          # 核心代码规范
+├── backend/02-naming.md        # 命名规范
+├── backend/03-api.md           # API 设计规范
+├── backend/06-security.md      # 安全规范
+├── backend/08-test.md          # 测试规范
+└── backend/04-db.md            # 数据库规范
 ```
 
 ### 6.6 规范与 Generator-Evaluator 集成
@@ -889,9 +891,9 @@ Evaluator 运行 CLI 检查
 | 人类验收时失望 | 无客观验收标准 | 仅靠截图对比不够系统 |
 | E2E测试难以执行 | Playwright脚本需要人工编写 | AI难以生成可维护的测试 |
 
-#### 6.7.2 解决方案：M* 组件包装策略
+#### 6.7.2 历史方案：M* 组件包装策略
 
-**原理**：不禁止AI生成代码，而是让正确使用组件成为**唯一简单的方式**。
+> 说明：以下内容是历史设计方案，不是当前规范。当前前端规范统一以 `mango-pmo/rules/frontend/*.md` 为准。
 
 ```
 src/components/common/          # M* 组件是AI唯一合理的选择
@@ -909,7 +911,7 @@ src/components/common/          # M* 组件是AI唯一合理的选择
 **MButton.vue 示例**：
 ```vue
 <template>
-  <!-- AI 必须使用 MButton，不得使用 el-button 或原生 <button> -->
+  <!-- 历史方案曾要求统一走 MButton 包装 -->
   <el-button v-bind="$attrs" :type="type" :size="size" :loading="loading">
     <slot />
   </el-button>
@@ -1032,10 +1034,7 @@ export default defineConfig({
 - [ ] 提交有效表单 → 成功提示
 
 ### 组件使用合规
-- [ ] 使用 MButton（不是 el-button 或原生 button）
-- [ ] 使用 MTable（不是 el-table）
-- [ ] 使用 MForm（不是 el-form）
-- [ ] 无 <style> 块（除 M* 组件）
+- [ ] 历史方案检查项，仅用于回顾旧方案
 ```
 
 #### 6.7.7 更新后验证矩阵
