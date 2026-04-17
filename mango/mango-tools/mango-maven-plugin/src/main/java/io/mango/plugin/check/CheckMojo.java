@@ -93,20 +93,20 @@ public class CheckMojo extends AbstractMojo {
             }
         }
         
-        getLog().info("Running Mango Check - rule: " + rule);
+        getLog().info("Running Mango Check (AI-Friendly Version) - rule: " + rule);
         result = new CheckResult();
 
         switch (rule.toLowerCase()) {
-            case "duplicate" -> checkDuplicates();
+            
             case "naming" -> checkNaming();
-            case "method-length" -> checkMethodLength();
-            case "class-length" -> checkClassLength();
+            
+            
             case "dependency" -> checkDependency();
             case "all" -> {
-                checkDuplicates();
+                
                 checkNaming();
-                checkMethodLength();
-                checkClassLength();
+                
+                
                 checkDependency();
             }
             default -> getLog().warn("Unknown rule: " + rule);

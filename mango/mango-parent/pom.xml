@@ -156,6 +156,7 @@
                     <configuration>
                         <rulesets>
                             <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
+                            <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/mango-project-pmd.xml</ruleset>
                         </rulesets>
                         <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                         <failOnViolation>false</failOnViolation>
