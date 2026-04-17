@@ -24,13 +24,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Cloud OpenFeign -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-            <version>4.1.0</version>
-        </dependency>
-
         <!-- Spring Web (for annotations) -->
         <dependency>
             <groupId>org.springframework</groupId>

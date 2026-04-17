@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * @author Mango
  */
-@FeignClient(name = "i18n-service", path = "/i18n")
+@FeignClient(name = "mango-i18n", path = "/i18n")
 public interface I18nFeignClient extends SysI18nApi {
 
     @Override

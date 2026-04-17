@@ -23,6 +23,13 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
+        <!-- Mango Module Info (required for aggregated deployment mapping) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-module-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- ========== 业务 Starter (BFF 通过 starter 获得 API 访问能力) ========== -->
         <!-- 单体模式使用本地 starter，微服务部署时使用 starter-remote -->
         <dependency>

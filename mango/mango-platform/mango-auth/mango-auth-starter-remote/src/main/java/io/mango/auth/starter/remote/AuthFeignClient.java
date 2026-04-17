@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
  *
  * @author Mango
  */
-@FeignClient(name = "auth-service", path = "/auth")
+@FeignClient(name = "mango-auth", path = "/auth")
 public interface AuthFeignClient extends AuthApi {
 
     @Override

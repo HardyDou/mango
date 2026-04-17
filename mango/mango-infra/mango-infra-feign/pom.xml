@@ -55,10 +55,24 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango Module Info -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-module-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

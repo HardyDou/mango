@@ -14,7 +14,7 @@ import java.util.List;
  *
  * @author Mango
  */
-@FeignClient(name = "area-service", path = "/mango/area")
+@FeignClient(name = "mango-area", path = "/area")
 public interface AreaFeignClient {
 
     /**

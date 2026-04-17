@@ -26,6 +26,7 @@
 | BE-MOD-009 | PMD | `*-api` 源码 | 出现 `@FeignClient` |
 | BE-MOD-010 | `mango-maven-plugin` | `*-core` 目录 | 出现 Controller |
 | BE-MOD-012 | PMD | `starter-remote` 源码 | 服务名常量或 `@FeignClient(name = "...")` 硬编码 |
+| BE-MOD-015 | `mango-maven-plugin` | `*-starter` 目录 | 缺少 `META-INF/mango/module.properties` 或 `module-name` 非法 |
 | BE-SEC-001 | PMD | Java / YAML / properties | 出现疑似明文密钥、口令、token |
 | BE-SEC-006 | PMD | 日志语句 | 日志输出 token、password、secret、credential |
 
@@ -39,10 +40,9 @@
 | BE-CODE-016 | `mango-maven-plugin` | 方法前半段出现 `if (...) return ...` | 是否为非法参数吞掉 |
 | BE-API-011 | `mango-maven-plugin` | API 方法入参无校验注解 | 是否需要校验 |
 | BE-API-013 | `mango-maven-plugin` | `@PathVariable`、`@RequestParam` 无约束 | 是否属于外部输入 |
-| BE-MOD-003 | `mango-maven-plugin` | `starter` 暴露 `XxxApi` 但无能力注册 | 是否为对外能力 |
+| BE-MOD-003 | `mango-maven-plugin` | `starter` 暴露 `XxxApi` 但无模块信息声明 | 是否为本地 starter |
 | BE-MOD-004 | `mango-maven-plugin` | `starter-remote` 直接声明 Feign 调用 | 是否已通过 Remote Adapter |
-| BE-MOD-013 | `mango-maven-plugin` | 远程调用未读取能力注册表或配置 | 是否为本地直连 |
-| BE-MOD-015 | `mango-maven-plugin` | `starter` 无 capability registration bean | 是否为内部 starter |
+| BE-MOD-013 | `mango-maven-plugin` | 远程调用未读取模块信息 | 是否为本地直连 |
 | BE-SEC-005 | `mango-maven-plugin` | 受保护 Controller 无权限注解 | 是否为公开接口 |
 
 ## 3. `mango-maven-plugin` 新增检查项
@@ -53,6 +53,7 @@
 | Validation | `mvn mango:check -Drule=validation` | Bean Validation、`@Validated`、路径参数校验 |
 | Require | `mvn mango:check -Drule=require` | 业务入口前置条件、散写 `if/throw` 候选 |
 | Module boundary | `mvn mango:check -Drule=module-boundary` | 模块依赖、目录职责、跨域依赖 |
+| Module info | `mvn mango:check -Drule=module-info` | 本地 starter 模块信息资源文件 |
 | Remote adapter | `mvn mango:check -Drule=remote-adapter` | 服务名硬编码、Feign 直接使用、能力解析 |
 | Security | `mvn mango:check -Drule=security` | 敏感信息、日志敏感字段、SQL 拼接候选 |
 
@@ -73,4 +74,3 @@
 | 一个表只服务一个领域 | 依赖领域模型判断 |
 | 测试覆盖范围完整 | 依赖需求影响面判断 |
 | 只改本次需求相关代码 | 依赖任务上下文判断 |
-
