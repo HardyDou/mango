@@ -30,3 +30,4 @@
 | [sprint-11](./plans/2026-04-14-sprint-11-platform-rbac-system-boundary-phase1.md) | 进行中 | rbac / system 第一阶段边界收敛 |
 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | auth / admin-app 边界收口 |
 | [sprint-13](./plans/2026-04-14-sprint-13-frontend-monorepo-migration.md) | 已完成 | 前端 Monorepo 迁移 |
+| [sprint-14](./plans/2026-04-17-sprint-14-pmo-backend-rules-engineering.md) | 待执行 | PMO 后端规则工程化 |

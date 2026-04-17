@@ -15,6 +15,10 @@
 - 查询使用 `XxxQuery` 或 `XxxPageQuery`。
 - 简单路径参数和查询参数直接放方法签名。
 - `GET` 默认不用 `@RequestBody`。
+- API 参数必须使用 Bean Validation 校验。
+- `Command`、`Query` 字段必须声明 `jakarta.validation` 约束注解。
+- 路径参数和查询参数必须声明校验约束。
+- Controller 或 `Api` 必须使用 `@Validated` 或等效机制开启参数校验。
 
 ## 3. 返回规则
 
@@ -51,3 +55,5 @@
 - `R<PageResult<XxxEntity>>`
 - `UserDTO` 作为仓内业务 API 返回
 - `Map<String, Object>` 作为通用业务接口模型
+- 无校验注解的 `Command` / `Query`
+- API 参数绕过 Bean Validation 直接进入业务层
