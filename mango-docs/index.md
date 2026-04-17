@@ -31,7 +31,7 @@
 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | auth / admin-app 边界收口 |
 | [sprint-13](./plans/2026-04-14-sprint-13-frontend-monorepo-migration.md) | 已完成 | 前端 Monorepo 迁移 |
 | [sprint-14](./plans/2026-04-17-sprint-14-pmo-backend-rules-engineering.md) | 已完成 | PMO 后端规则工程化 |
-| [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 待执行 | 能力自动注册与 Remote Adapter 重构 |
+| [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 进行中 | 能力自动注册与 Remote Adapter 重构 |
 
 ## 后端待执行顺序
 
