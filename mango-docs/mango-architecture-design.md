@@ -803,7 +803,7 @@ userRepository.save(user);  // 无异常处理
  * @return 用户信息，不存在返回 null
  * @throws IllegalArgumentException when userId is null
  */
-public UserDTO getUserById(Long userId) { ... }
+public UserVO getUserById(Long userId) { ... }
 ```
 
 ### 检测命令
@@ -1162,7 +1162,7 @@ mango-infra-{name}/
 | `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-permission-starter` |
 | `ITokenService` | `io.mango.infra.security.api` | Token 生成/校验 | `mango-auth-starter` |
 
-### 9.3 Sprint-07 DIP 重构（待执行）
+### 9.3 Sprint-07 DIP 重构（已完成）
 
 **注入型接口（DIP 接口）**：
 

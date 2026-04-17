@@ -172,7 +172,7 @@ IUseCase 体系     → 管"缓存、锁、计数、防重、ID 生成"
 
 ```
 {module-name}/
-├── {module}-api/          ← 接口定义（PO/VO/DTO/Api 接口）
+├── {module}-api/          ← 接口定义（Command/Query/VO/Api 接口）
 ├── {module}-core/          ← 核心业务逻辑（Service/Mapper/Entity）
 ├── {module}-starter/       ← 本地调用启动器（@Autowired 直接用）
 └── {module}-starter-remote/ ← 远程调用（Feign Client，微服务时注入）
@@ -248,7 +248,7 @@ POST /xxx/xxx
 ### mango-common（基础设施）
 
 **职责边界**：
-- 提供：`BasePO`、`BaseVO`、`PageVO`、`PageParam`、`PageResult<T>`
+- 提供：`PageQuery`、`PageResult<T>`、`R<T>`、`BizCode`、`Require`
 - 提供：统一结果封装 `R<T>` 和错误码接口 `BizCode`、断言工具 `Require`
 - 提供：通用校验注解（`@NotBlank`、`@Size`、`@IdCard`、`@Phone` 等）
 - 提供：业务特有注解（`@Perm`、`@Log`、`@Sensitive`、`@Version`、`@Encrypt`）
@@ -754,7 +754,7 @@ guarantee-app
 ## 七、强制规范
 
 每个模块 **必须** 遵守：
-1. `*-api` 只定义接口和 PO/VO/DTO，不写业务逻辑
+1. `*-api` 只定义接口和 `command/query/vo`，不写业务逻辑
 2. `*-core` 只写业务逻辑，不知道被谁调用（本地还是远程）
 3. `*-starter` 提供本地调用实现（单体部署时生效）
 4. `*-starter-remote` 提供 Feign 调用实现（微服务部署时生效）
@@ -774,4 +774,4 @@ guarantee-app
 | T5 | `mango-infra-crypto` 新建：crypto/ 从 common 移入 | 新建模块 | ✅ 已完成 | 13 个文件从 common/crypto 移入，包含 Sm4Cipher/AesCipher/RsaSigner/Sm2Signer/CryptoFactory → sprint-05 merge commit 5152d585 |
 | T6 | `mango-infra-security` 新建：permission/ 从 common 移入 + JWT 合并 | 新建模块 | 🔄 开发中 | PermAspect + IPermissionService + ITokenService(JJWT) → sprint-06, PR#3 |
 | T7 | `mango-infra-context` 新建：context/ 从 common 移入 | 新建模块 | 待执行 | TenantContextHolder + TokenContextHolder + TraceContextHolder 从 common 移入，支持 TransmittableThreadLocal |
-| T8 | `mango-common` 纯粹化：新增注解/枚举/SPI 接口 | 重构 | 待执行 | 新增 @Sensitive/@Version/@Encrypt、StatusEnum/YesNoEnum/DeleteFlagEnum、IConverter、ISerializer、PageParam、PageResult |
+| T8 | `mango-common` 纯粹化：新增注解/枚举/SPI 接口 | 重构 | 待执行 | 新增 @Sensitive/@Version/@Encrypt、StatusEnum/YesNoEnum/DeleteFlagEnum、IConverter、ISerializer、PageQuery、PageResult |

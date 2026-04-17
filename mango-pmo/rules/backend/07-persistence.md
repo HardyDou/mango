@@ -121,13 +121,13 @@ public void save(User user) {
 ```java
 // ✅ 正确 - 事务边界清晰
 @MangoTransactional
-public void createOrder(OrderDTO dto) {
+public void createOrder(CreateOrderCommand command) {
     // 校验
-    validateOrder(dto);
+    validateOrder(command);
     // 创建订单
-    Order order = orderMapper.insert(dto);
+    Order order = orderMapper.insert(command);
     // 扣库存
-    inventoryService.deduct(dto.getProductId(), dto.getQuantity());
+    inventoryService.deduct(command.getProductId(), command.getQuantity());
     // 发送消息
     messageService.send("order.created", order);
 }

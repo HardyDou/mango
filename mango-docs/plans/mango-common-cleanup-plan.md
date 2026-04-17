@@ -7,7 +7,7 @@
 - **Layer 1** `mango-infra-*`：中间件依赖（Redis/Spring AOP/TTL/BouncyCastle 等）
 
 Sprint-00 §2 明确了 `mango-common` 的职责边界：
-- ✅ 应该保留：BasePO/BaseVO/PageVO、R/BizCode/Require、校验注解、@Perm/@Log、JacksonUtils、SPI 接口
+- ✅ 应该保留：PageQuery/PageResult、R/BizCode/Require、校验注解、@Perm/@Log、JacksonUtils、SPI 接口
 - ❌ 不应包含：加密实现、权限 AOP 逻辑、上下文实现
 
 ## 用户决策记录

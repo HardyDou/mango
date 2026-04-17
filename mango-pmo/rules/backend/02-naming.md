@@ -86,20 +86,21 @@ paths:
 
 - `PO`
 - `DO`
-- `DTO` 作为接口入参/返回默认命名
+- `DTO` 作为仓内业务 API 入参/返回命名
 
 解释：
 
 - `PO` 容易在“接口入参”和“持久化对象”之间歧义
 - `DO` 在仓库里没有稳定共识
-- `DTO` 只适合少数明确的数据传输场景，不适合作为所有对象的统称
+- Mango 仓内业务 API 返回统一使用 `VO`，入参统一使用 `Command` / `Query`
+- `DTO` 只适合少数明确的数据传输场景，不适合作为仓内业务 API 的统称
 
 ### 4.3 `DTO` 的保留场景
 
 `DTO` 不是完全禁用，只允许用于以下场景：
 
 - 明确的第三方集成传输对象
-- 明确的跨层装配临时对象
+- 明确的第三方适配层临时对象
 - 历史接口兼容层，且有迁移计划
 
 示例：
@@ -112,7 +113,8 @@ paths:
 
 - `CreateUserDTO`
 - `UserPageDTO`
-- `UserDTO` 既当入参又当返回又当实体
+- `UserDTO` 作为仓内业务 API 返回对象
+- `UserDTO` 作为仓内业务 API `@RequestBody`
 
 ### 4.4 推荐组合
 
@@ -134,6 +136,12 @@ PostApi
 PageQuery
 PageResult<PostVO>
 ```
+
+补充约束：
+
+- `R<T>` 的 `T` 如果是业务对象，统一使用 `VO`
+- 禁止 `R<UserDTO>`、`R<PageResult<UserDTO>>`
+- 禁止 `create(UserDTO dto)`、`update(UserDTO dto)` 这类仓内业务 API 命名
 
 ---
 
