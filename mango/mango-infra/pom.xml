@@ -30,8 +30,6 @@
         <module>mango-infra-redis</module>
         <!-- Feign RPC (OpenFeign) -->
         <module>mango-infra-feign</module>
-        <!-- Observability (Micrometer/Tracing) -->
-        <module>mango-infra-observability</module>
         <!-- API Documentation (OpenAPI/Swagger) -->
         <module>mango-infra-doc</module>
         <!-- SSE (Server-Sent Events) -->

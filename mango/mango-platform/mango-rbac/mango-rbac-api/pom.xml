@@ -45,13 +45,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Mango User API -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-user-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Mango Org API -->
         <dependency>
             <groupId>io.mango</groupId>

@@ -6,7 +6,6 @@ import io.mango.captcha.starter.config.CaptchaAutoConfiguration;
 import io.mango.i18n.starter.I18nAutoConfiguration;
 import io.mango.org.starter.MangoOrgAutoConfiguration;
 import io.mango.rbac.starter.RbacAutoConfiguration;
-import io.mango.user.starter.UserAutoConfiguration;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,9 +13,6 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
-
-import java.lang.reflect.Array;
-import java.util.Arrays;
 
 /**
  * Mango Admin App Application
@@ -37,7 +33,6 @@ import java.util.Arrays;
         MangoAreaAutoConfiguration.class,
         MangoAiAutoConfiguration.class,
         I18nAutoConfiguration.class,
-        UserAutoConfiguration.class,
         RbacAutoConfiguration.class,
         CaptchaAutoConfiguration.class
 })
@@ -47,7 +42,6 @@ import java.util.Arrays;
                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = "io\\.mango\\.auth\\.core\\.init\\..*")
         })
 @MapperScan({
-        "io.mango.user.core.mapper",
         "io.mango.rbac.core.mapper",
         "io.mango.i18n.core.mapper",
         "io.mango.org.core.mapper",

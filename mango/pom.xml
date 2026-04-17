@@ -76,16 +76,6 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-user-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-user-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
                 <artifactId>mango-rbac-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -102,11 +92,6 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-i18n-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-user-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -192,11 +177,6 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-message-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-user-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -294,11 +274,6 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-infra-feign-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-infra-observability-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
