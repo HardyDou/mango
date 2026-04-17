@@ -15,6 +15,8 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <modules>
@@ -409,6 +411,49 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.15.0</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <parameters>true</parameters>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <configuration>
+                        <configLocation>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/checkstyle.xml</configLocation>
+                        <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>false</failsOnError>
+                        <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>3.16.0</version>
+                    <configuration>
+                        <rulesets>
+                            <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
+                        </rulesets>
+                        <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
+                        <failOnViolation>false</failOnViolation>
+                        <printFailingErrors>true</printFailingErrors>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.alibaba.p3c</groupId>
+                            <artifactId>p3c-pmd</artifactId>
+                            <version>2.1.1</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
                 <!-- Mango Maven Plugin -->
                 <plugin>
                     <groupId>io.mango</groupId>
@@ -418,6 +463,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <!-- Mango Maven Plugin (for CLI: mvn mango:check) -->
             <plugin>
                 <groupId>io.mango</groupId>

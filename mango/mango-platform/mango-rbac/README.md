@@ -1,6 +1,6 @@
-# Mango Permission
+# Mango RBAC
 
-> 权限模块 - 菜单、角色、权限管理
+> RBAC 模块 - 菜单、角色、权限管理
 
 ## 模块职责
 
@@ -13,11 +13,11 @@
 ## 子模块
 
 ```
-mango-permission/
-├── mango-permission-api/           # API 定义（接口、PO、VO）
-├── mango-permission-core/          # 核心业务（Service、Mapper）
-├── mango-permission-starter/       # 本地调用启动器
-└── mango-permission-starter-remote/ # 远程调用启动器（Feign）
+mango-rbac/
+├── mango-rbac-api/            # API 定义（接口、PO、VO）
+├── mango-rbac-core/           # 核心业务（Service、Mapper）
+├── mango-rbac-starter/        # 本地调用启动器
+└── mango-rbac-starter-remote/ # 远程调用启动器（Feign）
 ```
 
 ## 核心实体
@@ -70,18 +70,18 @@ mango-permission/
 
 | 接口 | 说明 |
 |------|------|
-| `GET /permission/menu/group` | 获取所有菜单分组（含菜单树） |
-| `GET /permission/menu/group/{groupId}` | 获取单个分组详情 |
-| `POST /permission/menu/group` | 创建菜单分组 |
-| `PUT /permission/menu/group` | 更新菜单分组 |
-| `DELETE /permission/menu/group/{groupId}` | 删除菜单分组（级联删除菜单） |
+| `GET /sys/menu/group` | 获取所有菜单分组（含菜单树） |
+| `GET /sys/menu/group/{groupId}` | 获取单个分组详情 |
+| `POST /sys/menu/group` | 创建菜单分组 |
+| `PUT /sys/menu/group` | 更新菜单分组 |
+| `DELETE /sys/menu/group/{groupId}` | 删除菜单分组（级联删除菜单） |
 
 ### 菜单 API
 
 | 接口 | 说明 |
 |------|------|
-| `GET /permission/menu` | 获取菜单树 |
-| `GET /permission/menu/tree` | 获取完整菜单树 |
+| `GET /sys/menu` | 获取菜单树 |
+| `GET /sys/menu/tree` | 获取完整菜单树 |
 
 ## 菜单类型
 
@@ -115,17 +115,17 @@ mango-permission/
 ## 依赖关系
 
 ```
-permission-api
+rbac-api
 ├── mango-common
 ├── swagger-annotations
 └── mybatis-plus-annotation
 
-permission-core
-├── permission-api
+rbac-core
+├── rbac-api
 ├── user-api (跨域API)
 └── org-api (跨域API)
 
-permission-starter
-├── permission-core
+rbac-starter
+├── rbac-core
 └── spring-boot-starter-web
 ```

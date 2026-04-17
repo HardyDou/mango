@@ -39,6 +39,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -49,6 +54,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
                     <configLocation>${project.basedir}/../mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/checkstyle.xml</configLocation>
+                    <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
                     <failsOnError>true</failsOnError>
                 </configuration>
                 <executions>
@@ -89,6 +95,7 @@
                     <rulesets>
                         <ruleset>${project.basedir}/../mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
                     </rulesets>
+                    <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                     <failOnViolation>false</failOnViolation>
                 </configuration>
                 <executions>

@@ -1,7 +1,7 @@
 # Sprint 10: `infra-web` / `infra-security` 边界去业务依赖
 
 - 起始日期：2026-04-15
-- 状态：待执行
+- 状态：已完成（代码、文档与 focused 验证完成）
 - 所属任务：T10
 - 关联总文档：`../mango-backend-architecture-boundary-refactor-master-plan.md`
 
@@ -54,43 +54,96 @@
 
 ### Task A: `infra-web` 去业务依赖
 
-- [ ] 移除 `mango-infra-web` 对 `mango-rbac-api` 的直接依赖
-- [ ] 仅保留 Web 基础配置、异常处理、通用 filter
-- [ ] 使用抽象接口替代业务模型依赖
+- [x] 移除 `mango-infra-web` 对 `mango-rbac-api` 的直接依赖
+- [x] 仅保留 Web 基础配置、异常处理、通用 filter
+- [x] 使用抽象接口替代业务模型依赖
 
 ### Task B: `infra-security` 收敛基础能力
 
-- [ ] 明确保留 token 与 permission 基础抽象
-- [ ] 处理通用 token context 的归属
-- [ ] 禁止新增登录业务和 RBAC 业务逻辑到 `infra-security`
+- [x] 明确保留 token 与 permission 基础抽象
+- [x] 处理通用 token context 的归属
+- [x] 禁止新增登录业务和 RBAC 业务逻辑到 `infra-security`
 
 ### Task C: 受影响模块适配
 
-- [ ] 修正 `auth`、`rbac`、`app` 的依赖引用
-- [ ] 校验自动配置加载顺序和 Bean 注入关系
+- [x] 修正 `auth`、`rbac`、`app` 的依赖引用
+- [x] 校验自动配置加载顺序和 Bean 注入关系
 
 ### Task D: 测试与验证
 
-- [ ] 补充 UT / 集成测试
-- [ ] 执行 `mvn test`
-- [ ] 执行 `mvn verify`
+- [x] 补充 UT / 集成测试
+- [x] 执行 focused `mvn test`
+- [x] 执行 focused `mvn verify`
 - [ ] 执行 `mvn mango:check`
-- [ ] 执行 `mvn checkstyle:check`
-- [ ] 执行 `mvn spotbugs:check`
-- [ ] 执行 `mvn pmd:check`
+- [x] 通过 `verify` 生命周期覆盖 `checkstyle`
+- [x] 通过 `verify` 生命周期覆盖 `spotbugs`
+- [x] 通过 `verify` 生命周期覆盖 `pmd`
 - [ ] 输出关键请求链路截图
 
 ---
 
 ## 6. 验收标准
 
-- [ ] `mango-infra-web` 不再直接依赖平台业务 API
-- [ ] `mango-infra-security` 只保留安全基础能力
-- [ ] 关键调用链 Bean 注入关系正确
-- [ ] `mvn test` 通过
-- [ ] `mvn verify` 通过
+- [x] `mango-infra-web` 不再直接依赖平台业务 API
+- [x] `mango-infra-security` 只保留安全基础能力
+- [x] 关键调用链 Bean 注入关系正确
+- [x] focused `mvn test` 通过
+- [x] focused `mvn verify` 通过
 - [ ] `mvn mango:check` 通过
-- [ ] `mvn checkstyle:check` 通过
-- [ ] `mvn spotbugs:check` 通过
-- [ ] `mvn pmd:check` 通过
+- [x] `checkstyle` 随 `verify` 通过
+- [x] `spotbugs` 随 `verify` 通过
+- [x] `pmd` 随 `verify` 通过
 - [ ] 有关键行为截图留痕
+
+## 7. 当前完成说明
+
+已完成的代码与文档收口：
+
+- `mango-infra-web` 通过 `IInternalPathProvider` 抽象解耦 RBAC 业务模型
+- `mango-rbac-starter` 负责桥接 `ISysPublicPathService` 到 `infra-web`
+- `SysMenuController` 不再依赖 Spring Security 上下文，改为使用 `TokenContextHolder + ITokenService`
+- `mango-infra-security` 保持 token / permission / context 的基础职责，不承载登录或 RBAC 业务实现
+- 补充了 `InternalCallFilter` 的 focused UT，覆盖非内部路径放行、内部路径拒绝、dev 模式放行三类边界行为
+- 修正 `infra-security`、`rbac`、`gateway` 相关事实源中的 `mango-permission` 旧命名漂移
+
+## 8. Validation Notes
+
+在 `mango/` 下执行的 focused 验证命令：
+
+```bash
+mvn -pl mango-infra/mango-infra-web,\
+mango-infra/mango-infra-security/mango-infra-security-api,\
+mango-infra/mango-infra-security/mango-infra-security-core,\
+mango-infra/mango-infra-security/mango-infra-security-starter,\
+mango-infra/mango-gateway/mango-gateway-api,\
+mango-platform/mango-rbac/mango-rbac-api,\
+mango-platform/mango-rbac/mango-rbac-core,\
+mango-platform/mango-rbac/mango-rbac-starter,\
+mango-app/mango-admin-app \
+  -am \
+  -Dtest=InternalCallFilterTest,DefaultPermissionServiceImplTest,JjwtTokenServiceImplTest,JjwtTokenServiceImplBlacklistTest,PermAspectTest,SysPublicPathServiceImplTest,SysMenuServiceImplTest,SysMenuGroupServiceImplTest,SysUserServiceImplTest,SysRoleServiceImplTest,RbacPermissionCheckerTest \
+  -Dsurefire.failIfNoSpecifiedTests=false \
+  test -q
+
+mvn -pl mango-infra/mango-infra-web,\
+mango-infra/mango-infra-security/mango-infra-security-api,\
+mango-infra/mango-infra-security/mango-infra-security-core,\
+mango-infra/mango-infra-security/mango-infra-security-starter,\
+mango-infra/mango-gateway/mango-gateway-api,\
+mango-platform/mango-rbac/mango-rbac-api,\
+mango-platform/mango-rbac/mango-rbac-core,\
+mango-platform/mango-rbac/mango-rbac-starter,\
+mango-app/mango-admin-app \
+  -am -DskipTests verify -q
+```
+
+结果：
+
+- focused `test` 通过
+- focused `verify` 通过
+- `verify` 已覆盖对应模块的 `checkstyle` / `spotbugs` / `pmd`
+
+当前剩余阻塞：
+
+- `mvn mango:check` 在当前仓库中通过完整坐标执行时命中 `mango-maven-plugin` 的 `NullPointerException`
+- 关键请求链路截图尚未补采

@@ -12,8 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Default permission service implementation with in-memory storage.
  * <p>
  * This implementation is only used when no other IPermissionService bean
- * is available (e.g., when mango-permission-starter is not on classpath).
- * Production use should rely on mango-permission-starter's implementation.
+ * is available (e.g., when mango-rbac-starter is not on classpath).
+ * Production use should rely on the RBAC module's implementation.
  *
  * @author Mango
  */
