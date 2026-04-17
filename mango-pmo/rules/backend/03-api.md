@@ -35,6 +35,8 @@
 - Controller 只做协议适配。
 - Controller 不直接操作 `Mapper`。
 - Controller 不直接返回持久化对象。
+- `XxxApi` 只定义能力契约。
+- `XxxApi` 禁止声明 `@FeignClient`。
 
 ## 5. DTO 规则
 
@@ -57,3 +59,5 @@
 - `Map<String, Object>` 作为通用业务接口模型
 - 无校验注解的 `Command` / `Query`
 - API 参数绕过 Bean Validation 直接进入业务层
+- 在 `*-api` 中写 `@FeignClient`
+- 在 API 契约中硬编码服务发现名

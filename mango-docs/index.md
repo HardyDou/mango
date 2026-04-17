@@ -30,4 +30,13 @@
 | [sprint-11](./plans/2026-04-14-sprint-11-platform-rbac-system-boundary-phase1.md) | 进行中 | rbac / system 第一阶段边界收敛 |
 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 待执行 | auth / admin-app 边界收口 |
 | [sprint-13](./plans/2026-04-14-sprint-13-frontend-monorepo-migration.md) | 已完成 | 前端 Monorepo 迁移 |
-| [sprint-14](./plans/2026-04-17-sprint-14-pmo-backend-rules-engineering.md) | 待执行 | PMO 后端规则工程化 |
+| [sprint-14](./plans/2026-04-17-sprint-14-pmo-backend-rules-engineering.md) | 进行中 | PMO 后端规则工程化 |
+| [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 待执行 | 能力自动注册与 Remote Adapter 重构 |
+
+## 后端待执行顺序
+
+| 顺序 | Sprint | 原因 |
+|------|--------|------|
+| 1 | [sprint-14](./plans/2026-04-17-sprint-14-pmo-backend-rules-engineering.md) | 先固化规则分类和自动检查落点 |
+| 2 | [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 再实现能力自动注册和 remote adapter 重构 |
+| 3 | [sprint-12](./plans/2026-04-14-sprint-12-auth-admin-app-boundary-assembly-cleanup.md) | 最后基于新机制清理 auth / admin-app 装配边界 |

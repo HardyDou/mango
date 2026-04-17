@@ -1,7 +1,7 @@
 # Sprint 14: PMO 后端规则工程化
 
 - 起始日期：2026-04-17
-- 状态：待执行
+- 状态：进行中
 - 所属任务：T14
 - 关联规范：
   - `mango-pmo/rules/backend/*.md`
@@ -105,11 +105,14 @@
 | BE-API-005 | 查询入参统一 `XxxQuery` / `XxxPageQuery` | 自动 | PMD |
 | BE-API-006 | API 参数必须使用 Bean Validation 注解 | 半自动 | `mango-maven-plugin` |
 | BE-API-007 | Controller / Api 必须开启 `@Validated` 或等效校验 | 自动 | PMD |
+| BE-API-008 | `*-api` 禁止声明 `@FeignClient` | 自动 | `mango-maven-plugin` |
 | BE-CODE-001 | 业务前置条件统一使用 `Require` | 半自动 | `mango-maven-plugin` |
 | BE-CODE-002 | 禁止业务入口散写参数 `if/throw` | 半自动 | `mango-maven-plugin` |
 | BE-MOD-001 | `api` 模块禁止出现 `entity` / `mapper` / `service` / `controller` | 自动 | `mango-maven-plugin` |
 | BE-MOD-002 | `core` 模块禁止出现 `controller` | 自动 | `mango-maven-plugin` |
 | BE-MOD-003 | 禁止直接依赖其他域 `core` | 自动 | `mango-maven-plugin` |
+| BE-REM-001 | `starter-remote` 禁止硬编码服务发现名 | 半自动 | `mango-maven-plugin` |
+| BE-REM-002 | `starter` 对外能力必须注册 | 半自动 | `mango-maven-plugin` |
 | BE-SEC-001 | 禁止硬编码密钥 / 口令 / token | 自动 | PMD |
 | BE-EX-001 | 禁止吞异常 | 自动 | P3C / PMD |
 | BE-EX-002 | 禁止业务代码直接捕获 `Throwable` | 自动 | P3C / PMD |
@@ -179,7 +182,7 @@
 - [ ] 明确测试命令
 - [ ] 明确规则样例工程
 - [ ] 明确误报回归样例
-- [ ] 拆出 Sprint 15 实施计划
+- [ ] 确认 Sprint 15 依赖的自动检查候选规则
 
 ---
 
@@ -208,7 +211,7 @@
 - [ ] 每条人工规则都进入 PR checklist 或 Sprint 验收
 - [ ] 阿里规则已完成保留 / 裁剪 / 去除判断
 - [ ] 第一批实施规则已确认
-- [ ] Sprint 15 实施计划已产出
+- [ ] Sprint 15 依赖的规则已纳入自动化候选清单
 
 ---
 
