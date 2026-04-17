@@ -15,7 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
  * Enables PermAspect for @Perm annotation permission checking.
  * IPermissionService resolution order:
  * <ol>
- *   <li>If {@code mango-permission-starter} is on classpath → uses that (via its @Bean)</li>
+ *   <li>If {@code mango-rbac-starter} is on classpath → uses that (via its @Bean)</li>
  *   <li>Otherwise → falls back to {@link DefaultPermissionServiceImpl}</li>
  * </ol>
  *
@@ -27,7 +27,7 @@ public class SecurityAutoConfiguration {
 
     /**
      * Default IPermissionService — only created when no other implementation exists.
-     * This handles the case where mango-permission-starter is not on classpath.
+     * This handles the case where mango-rbac-starter is not on classpath.
      */
     @Bean
     @ConditionalOnMissingBean(IPermissionService.class)

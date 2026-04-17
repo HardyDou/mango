@@ -36,7 +36,7 @@ public class PermAspect {
     /**
      * Permission service - injected via Spring DI
      */
-    // Impl note: IPermissionService is created by mango-permission-starter
+    // Impl note: IPermissionService is typically created by mango-rbac-starter
     // and auto-wired here via Spring's @Autowired
     @Autowired(required = false)
     private IPermissionService permissionService;

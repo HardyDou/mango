@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @author Mango
  */
-@FeignClient(name = "mango-permission", path = "/admin/public-path")
+@FeignClient(name = "mango-rbac", path = "/admin/public-path")
 public interface SysPublicPathApi {
 
     /**

@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * Public path API for Gateway to call Permission service
+ * Public path API for Gateway to call the RBAC service
  *
  * @author Mango
  */
-@FeignClient(name = "mango-permission", path = "/admin/public-path")
+@FeignClient(name = "mango-rbac", path = "/admin/public-path")
 public interface SysPublicPathApi {
 
     /**

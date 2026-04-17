@@ -45,13 +45,13 @@ class GenCrudMojoTest {
         mojo.execute();
 
         // then
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/po/UserPO.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/vo/UserVO.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/mapper/UserMapper.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/service/IUserService.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/service/impl/UserServiceImpl.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/controller/UserController.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/enums/UserCode.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/entity/UserEntity.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/api/vo/UserVO.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/mapper/UserMapper.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/service/IUserService.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/service/impl/UserServiceImpl.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/api/enums/UserCode.java")));
     }
 
     @Test
@@ -69,8 +69,8 @@ class GenCrudMojoTest {
         mojo.execute();
 
         // then
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/po/UserProfilePO.java")));
-        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/vo/UserProfileVO.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/entity/UserProfileEntity.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/api/vo/UserProfileVO.java")));
     }
 
     @Test
@@ -111,10 +111,10 @@ class GenCrudMojoTest {
         mojo.execute();
 
         // then
-        Path poFile = tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/po/UserPO.java");
+        Path poFile = tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/entity/UserEntity.java");
         String content = Files.readString(poFile);
         assertTrue(content.contains("@TableName(\"sys_user\")"), "PO should contain @TableName annotation");
-        assertTrue(content.contains("class UserPO"), "PO should have correct class name");
+        assertTrue(content.contains("class UserEntity"), "Entity should have correct class name");
     }
 
     @Test
@@ -132,9 +132,9 @@ class GenCrudMojoTest {
         mojo.execute();
 
         // then
-        Path controllerFile = tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/controller/UserController.java");
+        Path controllerFile = tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java");
         String content = Files.readString(controllerFile);
-        assertTrue(content.contains("@RequestMapping(\"/user/user\")"), "Controller should have @RequestMapping");
+        assertTrue(content.contains("@RequestMapping(\"/user\")"), "Controller should have @RequestMapping");
         assertTrue(content.contains("@GetMapping(\"/page\")"), "Controller should have page endpoint");
         assertTrue(content.contains("@PostMapping"), "Controller should have POST endpoint");
     }
@@ -154,7 +154,7 @@ class GenCrudMojoTest {
         mojo.execute();
 
         // then
-        Path bizCodeFile = tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/enums/UserCode.java");
+        Path bizCodeFile = tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/api/enums/UserCode.java");
         String content = Files.readString(bizCodeFile);
         assertTrue(content.contains("SUCCESS(200"), "BizCode should contain SUCCESS code");
         assertTrue(content.contains("NOT_FOUND(404"), "BizCode should contain NOT_FOUND code");
@@ -165,13 +165,13 @@ class GenCrudMojoTest {
      */
     private void createModuleStructure() throws Exception {
         Path moduleDir = tempDir.resolve("mango-user");
-        Files.createDirectories(moduleDir.resolve("mango-user-api/src/main/java/io/mango/user/enums"));
-        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/po"));
-        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/vo"));
-        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/mapper"));
-        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/service/impl"));
-        Files.createDirectories(moduleDir.resolve("mango-user-starter/src/main/java/io/mango/user/controller"));
-        Files.createDirectories(moduleDir.resolve("mango-user-starter-remote/src/main/java/io/mango/user"));
+        Files.createDirectories(moduleDir.resolve("mango-user-api/src/main/java/io/mango/user/api/enums"));
+        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/core/entity"));
+        Files.createDirectories(moduleDir.resolve("mango-user-api/src/main/java/io/mango/user/api/vo"));
+        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/core/mapper"));
+        Files.createDirectories(moduleDir.resolve("mango-user-core/src/main/java/io/mango/user/core/service/impl"));
+        Files.createDirectories(moduleDir.resolve("mango-user-starter/src/main/java/io/mango/user/starter/controller"));
+        Files.createDirectories(moduleDir.resolve("mango-user-starter-remote/src/main/java/io/mango/user/starter/remote"));
 
         // Create minimal parent pom
         Files.writeString(moduleDir.resolve("pom.xml"), """

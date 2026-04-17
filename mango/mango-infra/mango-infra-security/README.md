@@ -38,17 +38,17 @@ mango-infra-security/
 
 本模块被依赖：
 ├── mango-*-starter               ← 业务模块的本地 starter
-└── mango-permission-starter       ← 提供 IPermissionService 生产实现
+└── mango-rbac-starter            ← 提供 IPermissionService 生产实现
 ```
 
 ## IPermissionService 实现优先级
 
 | 优先级 | 实现 | 来源 | 条件 |
 |--------|------|------|------|
-| 1 | `mango-permission-starter` | `SysUserService` | `ISysUserService` 存在于 classpath |
+| 1 | `mango-rbac-starter` | `SysUserService` | `ISysUserService` 存在于 classpath |
 | 2 | `DefaultPermissionServiceImpl` | 内存存储 | `@ConditionalOnMissingBean` 回退 |
 
-> 业务系统应使用 `mango-permission-starter` 的实现，`-core` 的默认实现仅用于测试或无 permission 模块的简单场景。
+> 业务系统应使用 `mango-rbac-starter` 的实现，`-core` 的默认实现仅用于测试或无 RBAC 模块的简单场景。
 
 ## 使用方式
 
@@ -94,7 +94,7 @@ public class MySecurityConfig {
 
 ## 约束（强制）
 
-- ✅ `@Perm` 注解放在 `mango-common`（Layer 0）
+- ✅ `@Perm` 注解放在 `mango-infra-security-api`
 - ✅ `IPermissionService` 接口放在 `mango-infra-security-api`（Layer 1）
 - ✅ `PermAspect` 必须放在 `mango-infra-security-starter`（依赖 Spring AOP）
 - ✅ `IPermissionService` 禁止直接实现，应通过 `@Bean` 注入
