@@ -23,6 +23,12 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
+        <!-- Validation annotations used by API DTOs -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
