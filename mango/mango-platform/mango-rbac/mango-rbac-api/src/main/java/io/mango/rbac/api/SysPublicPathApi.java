@@ -2,7 +2,6 @@ package io.mango.rbac.api;
 
 import io.mango.common.result.R;
 import io.mango.rbac.api.vo.SysPublicPathVO;
-import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.List;
  *
  * @author Mango
  */
-@FeignClient(name = "mango-rbac", path = "/admin/public-path")
 public interface SysPublicPathApi {
 
     /**

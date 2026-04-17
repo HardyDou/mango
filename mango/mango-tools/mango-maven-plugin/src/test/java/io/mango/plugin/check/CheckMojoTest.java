@@ -136,6 +136,158 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkModuleInfo_withStarterModuleProperties_passes() throws Exception {
+        // given
+        Path starterDir = tempDir.resolve("mango-rbac-starter");
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <parent>
+                        <groupId>io.mango</groupId>
+                        <artifactId>mango-parent</artifactId>
+                        <version>1.0.0</version>
+                    </parent>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-rbac-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"),
+                "module-name=mango-rbac\n");
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleInfo_withMissingModuleProperties_reportsIssue() throws Exception {
+        // given
+        Path starterDir = tempDir.resolve("mango-rbac-starter");
+        Files.createDirectories(starterDir);
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-rbac-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withModuleName_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", path = "/user")
+                public interface SysUserFeignClient {
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withServiceName_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "permission-service", path = "/user")
+                public interface SysUserFeignClient {
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withoutFeignClient_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-rbac-api/src/main/java/io/mango/rbac/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserApi.java"), """
+                package io.mango.rbac.api;
+
+                public interface SysUserApi {
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withFeignClient_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-rbac-api/src/main/java/io/mango/rbac/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserApi.java"), """
+                package io.mango.rbac.api;
+
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac")
+                public interface SysUserApi {
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void extractSignature_withValidMethod_returnsSignature() throws Exception {
         // given
         Path javaFile = tempDir.resolve("Test.java");

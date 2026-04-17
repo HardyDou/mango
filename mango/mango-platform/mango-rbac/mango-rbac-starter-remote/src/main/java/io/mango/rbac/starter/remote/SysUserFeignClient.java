@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  *
  * @author Mango
  */
-@FeignClient(name = "permission-service", path = "/user")
+@FeignClient(name = "mango-rbac", path = "/user")
 public interface SysUserFeignClient extends SysUserApi {
 
     @Override

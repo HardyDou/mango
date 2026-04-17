@@ -151,6 +151,21 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
+                <artifactId>mango-infra-module-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-module-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-module-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
                 <artifactId>mango-system-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

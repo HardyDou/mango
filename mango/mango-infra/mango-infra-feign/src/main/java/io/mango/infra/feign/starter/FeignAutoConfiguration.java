@@ -2,7 +2,9 @@ package io.mango.infra.feign.starter;
 
 import feign.Logger;
 import feign.Retryer;
+import io.mango.infra.module.api.ModuleInfoResolver;
 import jakarta.servlet.Filter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -54,6 +56,16 @@ public class FeignAutoConfiguration {
     @ConditionalOnProperty(prefix = "mango.feign", name = "interceptor-enabled", havingValue = "true", matchIfMissing = true)
     public FeignRequestInterceptor feignRequestInterceptor() {
         return new FeignRequestInterceptor();
+    }
+
+    /**
+     * Configure Feign module target interceptor.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.feign", name = "module-target-enabled", havingValue = "true", matchIfMissing = true)
+    public ModuleTargetFeignInterceptor moduleTargetFeignInterceptor(ObjectProvider<ModuleInfoResolver> resolverProvider) {
+        return new ModuleTargetFeignInterceptor(resolverProvider);
     }
 
     /**

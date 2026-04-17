@@ -14,7 +14,7 @@ import java.util.List;
  *
  * @author Mango
  */
-@FeignClient(name = "org-service", path = "/admin/sysOrg")
+@FeignClient(name = "mango-org", path = "/org")
 public interface OrgFeignClient {
 
     /**

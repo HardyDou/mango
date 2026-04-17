@@ -50,6 +50,8 @@
         <module>mango-infra-crypto</module>
         <!-- Context (TTL ThreadLocal holders - tenant/trace, TtlExecutorDecorator) -->
         <module>mango-infra-context</module>
+        <!-- Module metadata and deployment mapping -->
+        <module>mango-infra-module</module>
         <!-- Log (Logback configuration with traceId, multi-env support) -->
         <module>mango-infra-log</module>
         <!-- Test (Unified test module for all infrastructure components) -->

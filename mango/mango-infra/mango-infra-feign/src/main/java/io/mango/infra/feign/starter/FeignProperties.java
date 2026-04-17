@@ -37,4 +37,9 @@ public class FeignProperties {
      * Enable Feign request interceptor for tenant/trace context propagation
      */
     private boolean interceptorEnabled = true;
+
+    /**
+     * Enable module-name target rewriting.
+     */
+    private boolean moduleTargetEnabled = true;
 }

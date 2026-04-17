@@ -20,15 +20,16 @@
 
 - `api` 只放契约模型和 `XxxApi`。
 - `core` 只放业务实现、实体、Mapper、转换。
-- `starter` 负责实现 `XxxApi`、自动装配、能力自动注册。
-- `starter-remote` 负责远程调用适配和能力解析。
+- `starter` 负责实现 `XxxApi`、自动装配、模块信息声明。
+- `starter-remote` 负责远程调用适配和模块信息解析。
 
 ## 4. 依赖规则
 
 - `app` 依赖 `starter` 或 `starter-remote`。
 - `core` 只依赖本域 `api` 和其他域 `api`。
 - `starter` 依赖本域 `api` 和本域 `core`。
-- `starter-remote` 只依赖本域 `api`。
+- `starter-remote` 业务依赖只允许本域 `api`。
+- `starter-remote` 技术依赖允许 `mango-infra-feign-starter`。
 - `api` 不依赖业务实现。
 
 ## 5. 边界规则
@@ -42,25 +43,39 @@
 - 本地聚合部署优先注入本地 `starter` 实现。
 - 远程部署通过 `starter-remote` 调用。
 - 远程目标服务不得写死在业务代码中。
-- 远程目标必须通过能力注册表或配置解析。
+- 远程目标必须通过模块信息解析。
 
-## 6. 能力注册规则
+## 6. 模块信息规则
 
-- 服务能力维护属于 `mango-infra`。
-- 每个 `starter` 必须注册自己提供的能力。
-- 能力注册内容必须包含能力名、提供模块、服务名、基础路径、部署模式。
-- 能力注册后端必须支持 `memory` 和 `config`。
-- 后续可扩展 `nacos`、`redis`、`db`。
-- 管理后台只负责查看、管理和运维能力注册数据。
-- 管理后台不承载能力注册核心逻辑。
+- 模块信息维护属于 `mango-infra-module`。
+- 每个本地 `starter` 必须提供 `META-INF/mango/module.properties`。
+- `module.properties` 必须声明 `module-name`。
+- `module-name` 必须是 Mango 模块名，禁止使用别名。
+- `mango-app` 必须依赖 `mango-infra-module-starter`。
+- `mango-infra-module-starter` 负责自动采集模块名、服务名和 contextPath。
+- 服务名必须读取当前服务注册名。
+- contextPath 必须读取当前服务上下文路径。
+- 配置覆盖必须使用 `mango.module.module-service`。
+- 禁止新增或使用 `mango.remote.*`。
+- 管理后台只负责查看、管理和运维模块信息。
+- 管理后台不承载模块信息采集核心逻辑。
 
-## 7. 命名规则
+## 7. Remote Adapter 规则
+
+- Feign adapter 必须放在 `starter-remote`。
+- Feign adapter 必须继承本域 `XxxApi`。
+- `@FeignClient(name = "...")` 必须填写目标模块名。
+- Feign 请求必须通过模块信息解析真实服务名和 contextPath。
+- Feign adapter 禁止硬编码真实服务名。
+- Feign adapter 禁止硬编码目标服务 contextPath。
+
+## 8. 命名规则
 
 - 对外接口使用 `XxxApi`。
 - 模块内部服务使用 `IXxxService`。
 - DIP 接口使用 `I...Provider`、`I...Checker`、`I...Validator`。
 
-## 8. 禁止事项
+## 9. 禁止事项
 
 - 直接依赖其他域 `core`
 - 在 `api` 放数据库对象
@@ -68,4 +83,4 @@
 - 在 `core` 放对外接口实现
 - 在应用装配层堆业务代码
 - 在 `starter-remote` 中硬编码服务发现名
-- 让管理后台承载能力注册核心逻辑
+- 让管理后台承载模块信息采集核心逻辑

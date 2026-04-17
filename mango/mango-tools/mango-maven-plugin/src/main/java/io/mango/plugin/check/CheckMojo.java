@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 代码检查 Mojo
@@ -28,7 +30,7 @@ import java.util.*;
 public class CheckMojo extends AbstractMojo {
 
     /**
-     * 检查规则: all, duplicate, naming, method-length, class-length, dependency
+     * 检查规则: all, duplicate, naming, method-length, class-length, dependency, module-info, remote-adapter, api-contract
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -102,12 +104,18 @@ public class CheckMojo extends AbstractMojo {
             case "method-length" -> checkMethodLength();
             case "class-length" -> checkClassLength();
             case "dependency" -> checkDependency();
+            case "module-info" -> checkModuleInfo();
+            case "remote-adapter" -> checkRemoteAdapter();
+            case "api-contract" -> checkApiContract();
             case "all" -> {
                 checkDuplicates();
                 checkNaming();
                 checkMethodLength();
                 checkClassLength();
                 checkDependency();
+                checkModuleInfo();
+                checkRemoteAdapter();
+                checkApiContract();
             }
             default -> getLog().warn("Unknown rule: " + rule);
         }
@@ -442,12 +450,13 @@ public class CheckMojo extends AbstractMojo {
     }
 
     private String extractArtifactId(String content) {
-        int start = content.indexOf("<artifactId>");
+        String projectContent = content.replaceFirst("(?s)<parent>.*?</parent>", "");
+        int start = projectContent.indexOf("<artifactId>");
         if (start == -1) return null;
         start += "<artifactId>".length();
-        int end = content.indexOf("</artifactId>", start);
+        int end = projectContent.indexOf("</artifactId>", start);
         if (end == -1) return null;
-        return content.substring(start, end).trim();
+        return projectContent.substring(start, end).trim();
     }
 
     private String extractGroupId(String content) {
@@ -502,6 +511,269 @@ public class CheckMojo extends AbstractMojo {
 
         DependencyIssue(String severity, String description) {
             this.severity = severity;
+            this.description = description;
+        }
+    }
+
+    /**
+     * 检查模块信息声明。
+     *
+     * 规则:
+     * 1. 本地 *-starter 必须提供 META-INF/mango/module.properties
+     * 2. module.properties 必须声明 module-name
+     * 3. module-name 必须使用稳定模块名，不允许空值或非法字符
+     */
+    private void checkModuleInfo() {
+        getLog().info("Checking module info declarations...");
+
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<ModuleInfoIssue> issues = new ArrayList<>();
+
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (file.toString().endsWith("/pom.xml")) {
+                        analyzeModuleInfo(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (ModuleInfoIssue issue : issues) {
+                result.addIssue("MODULE_INFO", issue.severity, issue.file, 0,
+                        issue.description, "module-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " module info violation(s)");
+        } else {
+            getLog().info("All module info checks passed");
+        }
+    }
+
+    private Path resolveBasePath() {
+        String effectiveBaseDir = baseDir;
+        if (effectiveBaseDir == null || effectiveBaseDir.isEmpty()) {
+            if (session != null && session.getExecutionRootDirectory() != null) {
+                effectiveBaseDir = session.getExecutionRootDirectory();
+            } else {
+                getLog().error("Cannot determine base directory. Please set -DbaseDir=<path>");
+                return null;
+            }
+        }
+
+        Path rootPath = Paths.get(effectiveBaseDir);
+        if (!Files.exists(rootPath)) {
+            getLog().error("Base directory does not exist: " + effectiveBaseDir);
+            return null;
+        }
+        return rootPath;
+    }
+
+    private void analyzeModuleInfo(Path pomFile, List<ModuleInfoIssue> issues) {
+        try {
+            String content = Files.readString(pomFile);
+            String artifactId = extractArtifactId(content);
+            if (artifactId == null || classifyModule(artifactId) != ModuleType.STARTER) {
+                return;
+            }
+            if ("mango-infra-module-starter".equals(artifactId)) {
+                return;
+            }
+
+            Path moduleInfoFile = pomFile.getParent()
+                    .resolve("src/main/resources/META-INF/mango/module.properties");
+            if (!Files.exists(moduleInfoFile)) {
+                issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
+                        artifactId + " 缺少 META-INF/mango/module.properties"));
+                return;
+            }
+
+            Properties properties = new Properties();
+            try (var inputStream = Files.newInputStream(moduleInfoFile)) {
+                properties.load(inputStream);
+            }
+
+            String moduleName = properties.getProperty("module-name", "").trim();
+            if (moduleName.isEmpty()) {
+                issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
+                        artifactId + " 的 module-name 不能为空"));
+                return;
+            }
+            if (!moduleName.matches("[a-z0-9]+(-[a-z0-9]+)*")) {
+                issues.add(new ModuleInfoIssue("MAJOR", moduleInfoFile.toString(),
+                        artifactId + " 的 module-name 只能使用小写字母、数字和中划线: " + moduleName));
+            }
+        } catch (Exception e) {
+            issues.add(new ModuleInfoIssue("MAJOR", pomFile.toString(),
+                    "模块信息检查失败: " + e.getMessage()));
+        }
+    }
+
+    private static class ModuleInfoIssue {
+        String severity;
+        String file;
+        String description;
+
+        ModuleInfoIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.description = description;
+        }
+    }
+
+    /**
+     * 检查远程适配器。
+     *
+     * 规则:
+     * 1. starter-remote 的 @FeignClient name 必须使用 Mango 模块名
+     * 2. 禁止使用 auth-service、permission-service 等真实服务发现名
+     */
+    private void checkRemoteAdapter() {
+        getLog().info("Checking remote adapter declarations...");
+
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<RemoteAdapterIssue> issues = new ArrayList<>();
+        Pattern feignClientNamePattern = Pattern.compile("@FeignClient\\s*\\([^)]*name\\s*=\\s*\"([^\"]+)\"");
+
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isStarterRemoteJavaFile(file)) {
+                        analyzeRemoteAdapter(file, feignClientNamePattern, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (RemoteAdapterIssue issue : issues) {
+                result.addIssue("REMOTE_ADAPTER", issue.severity, issue.file, 0,
+                        issue.description, "module-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " remote adapter violation(s)");
+        } else {
+            getLog().info("All remote adapter checks passed");
+        }
+    }
+
+    private boolean isStarterRemoteJavaFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("-starter-remote/src/main/java/") && normalized.endsWith(".java");
+    }
+
+    private void analyzeRemoteAdapter(Path file, Pattern feignClientNamePattern, List<RemoteAdapterIssue> issues) {
+        try {
+            Matcher matcher = feignClientNamePattern.matcher(Files.readString(file));
+            while (matcher.find()) {
+                String feignName = matcher.group(1).trim();
+                if (!feignName.matches("mango-[a-z0-9]+(-[a-z0-9]+)*")) {
+                    issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                            "@FeignClient name 必须使用 Mango 模块名: " + feignName));
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new RemoteAdapterIssue("MAJOR", file.toString(),
+                    "远程适配器检查失败: " + e.getMessage()));
+        }
+    }
+
+    private static class RemoteAdapterIssue {
+        String severity;
+        String file;
+        String description;
+
+        RemoteAdapterIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.description = description;
+        }
+    }
+
+    /**
+     * 检查 API 契约。
+     *
+     * 规则:
+     * 1. *-api 源码禁止声明 @FeignClient
+     */
+    private void checkApiContract() {
+        getLog().info("Checking API contracts...");
+
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<ApiContractIssue> issues = new ArrayList<>();
+
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isApiJavaFile(file)) {
+                        analyzeApiContract(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (ApiContractIssue issue : issues) {
+                result.addIssue("API_CONTRACT", issue.severity, issue.file, 0,
+                        issue.description, "api-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " API contract violation(s)");
+        } else {
+            getLog().info("All API contract checks passed");
+        }
+    }
+
+    private boolean isApiJavaFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("-api/src/main/java/") && normalized.endsWith(".java");
+    }
+
+    private void analyzeApiContract(Path file, List<ApiContractIssue> issues) {
+        try {
+            if (Files.readString(file).contains("@FeignClient")) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "*-api 禁止声明 @FeignClient"));
+            }
+        } catch (IOException e) {
+            issues.add(new ApiContractIssue("MAJOR", file.toString(),
+                    "API 契约检查失败: " + e.getMessage()));
+        }
+    }
+
+    private static class ApiContractIssue {
+        String severity;
+        String file;
+        String description;
+
+        ApiContractIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
             this.description = description;
         }
     }

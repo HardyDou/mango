@@ -1,7 +1,7 @@
-# Sprint 15: 能力自动注册与 Remote Adapter 重构
+# Sprint 15: 模块信息自动采集与 Remote Adapter 重构
 
 - 起始日期：2026-04-17
-- 状态：进行中
+- 状态：已完成
 - 所属任务：T15
 - 前置 Sprint：`Sprint 14`
 - 关联规范：
@@ -12,24 +12,26 @@
 
 ## 1. 目标
 
-建立 Mango 能力自动注册机制。
+建立 Mango 模块信息自动采集机制。
 
 解决问题：
 
 - `*-api` 中不再直接使用 `@FeignClient`
-- `starter-remote` 不再硬编码服务发现名
-- 聚合部署优先走本地实现
-- 微服务部署通过能力解析找到远程服务
-- 管理后台后续可查看和维护能力注册信息
+- Feign 代码按模块名声明目标
+- 聚合部署时可解析真实服务名和 contextPath
+- 本地聚合部署优先走本地实现
+- 管理后台后续可查看模块部署信息
 
 ---
 
 ## 2. 架构定位
 
-- 能力注册属于 `mango-infra`。
-- 业务模块只声明和注册自己提供的能力。
-- 管理后台只做能力数据查看、配置和运维。
-- 管理后台不实现能力注册核心逻辑。
+- 模块信息属于 `mango-infra`。
+- 模块名是调用方唯一稳定标识。
+- `starter` 只提供 `META-INF/mango/module.properties`。
+- 应用装配层必须依赖 `mango-infra-module-starter`。
+- 管理后台只做模块信息查看、配置和运维。
+- 管理后台不实现模块信息采集核心逻辑。
 
 ---
 
@@ -37,39 +39,27 @@
 
 ### In Scope
 
-- 新增能力注册抽象
-- 支持进程内 `memory` 注册
-- 支持配置文件 `config` 注册
-- 调整 `starter` 自动注册能力
-- 调整 `starter-remote` 通过能力解析远程目标
+- 新增 `mango-infra-module`
+- 支持进程内 `memory` 模块信息
+- 支持配置文件覆盖模块信息
+- `starter` 通过资源文件声明模块名
+- 自动采集当前 `spring.application.name`
+- 自动采集当前 contextPath
 - 清理 `*-api` 中的 `@FeignClient`
-- 清理硬编码服务发现名
+- 清理硬编码真实服务名
 - 增加程序检查候选规则
 
 ### Out of Scope
 
 - 本 Sprint 不实现管理后台页面
-- 本 Sprint 不实现 Redis / DB / Nacos 注册后端
+- 本 Sprint 不实现 Redis / DB / Nacos 后端
 - 本 Sprint 不自研 Raft / Gossip / 区块链式注册
 - 本 Sprint 不重构全部业务功能
 - 本 Sprint 不处理 `mango-auth` / `mango-admin-app` 职责收口
 
 ---
 
-## 4. 执行前置
-
-本 Sprint 必须在 `Sprint 14` 之后执行。
-
-前置要求：
-
-- `*-api` 禁止 `@FeignClient` 已进入规则候选
-- `starter-remote` 禁止硬编码服务发现名已进入规则候选
-- `starter` 对外能力必须注册已进入规则候选
-- 自动检查落点已明确
-
----
-
-## 5. 设计规则
+## 4. 设计规则
 
 ### API 契约
 
@@ -80,145 +70,156 @@
 ### 本地实现
 
 - `starter` 实现 `XxxApi`。
-- `starter` 启动时注册本模块能力。
+- `starter` 必须提供 `META-INF/mango/module.properties`。
+- `module.properties` 必须声明 `module-name`。
+- 应用启动时自动采集本地模块信息。
 - 同进程存在本地实现时优先使用本地实现。
 
 ### 远程实现
 
 - `starter-remote` 提供 Feign adapter。
 - Feign adapter 继承 `XxxApi`。
-- 远程服务名通过能力解析获得。
-- 不允许在代码中硬编码服务发现名。
+- Feign `name` 保持目标模块名。
+- 真实服务名和 contextPath 通过模块信息解析获得。
+- 不允许在代码中硬编码真实服务名。
+- 禁止新增 `mango.remote.*`。
 
-### 能力注册
+### 模块信息
 
-能力注册信息必须包含：
+模块信息必须包含：
 
-- `capability`
-- `providerModule`
+- `moduleName`
 - `serviceName`
-- `basePath`
-- `mode`
-- `version`
+- `contextPath`
+- `source`
+
+配置前缀：
+
+```yaml
+mango:
+  module:
+    module-service:
+      modules:
+        mango-rbac:
+          service-name: mango-admin-app
+          context-path: /admin
+```
 
 ---
 
-## 6. 建议模块
+## 5. 模块
 
 新增基础设施模块：
 
-- `mango-infra-capability-api`
-- `mango-infra-capability-core`
-- `mango-infra-capability-starter`
+- `mango-infra-module-api`
+- `mango-infra-module-core`
+- `mango-infra-module-starter`
 
 后续可选模块：
 
-- `mango-infra-capability-starter-nacos`
-- `mango-infra-capability-starter-redis`
-- `mango-infra-capability-starter-db`
+- `mango-infra-module-nacos`
+- `mango-infra-module-redis`
+- `mango-infra-module-db`
 
 ---
 
-## 7. 核心接口
+## 6. 核心接口
 
 ```java
-public interface MangoCapabilityRegistry {
+public interface ModuleInfoRegistry {
 
-    void register(CapabilityRegistration registration);
+    void register(ModuleInfo moduleInfo);
 
-    Optional<CapabilityEndpoint> resolve(String capability);
+    Optional<ModuleInfo> resolve(String moduleName);
 }
 ```
 
 ```java
-public record CapabilityRegistration(
-        String capability,
-        String providerModule,
+public record ModuleInfo(
+        String moduleName,
         String serviceName,
-        String basePath,
-        String mode,
-        String version) {
+        String contextPath,
+        String source) {
 }
 ```
 
 ---
 
-## 8. 第一批改造对象
+## 7. 第一批改造对象
 
 - `mango-gateway-api` 的 `SysPublicPathApi`
 - `mango-rbac-api` 的 `SysPublicPathApi`
-- `mango-auth-starter-remote`
-- `mango-rbac-starter-remote`
-- `mango-org-starter-remote`
-- `mango-area-starter-remote`
-- `mango-i18n-starter-remote`
+- `mango-rbac-starter`
+- `mango-auth-starter`
+- `mango-org-starter`
+- `mango-area-starter`
+- `mango-i18n-starter`
 
 ---
 
-## 9. 实施步骤
+## 8. 实施步骤
 
-### Task A: 能力注册抽象
+### Task A: 模块信息抽象
 
-- [ ] 新增 `mango-infra-capability`
-- [ ] 定义 `MangoCapabilityRegistry`
-- [ ] 定义 `CapabilityRegistration`
-- [ ] 定义 `CapabilityEndpoint`
+- [x] 新增 `mango-infra-module`
+- [x] 定义 `ModuleInfoRegistry`
+- [x] 定义 `ModuleInfoResolver`
+- [x] 定义 `ModuleInfo`
 
 ### Task B: Memory / Config 实现
 
-- [ ] 实现进程内 memory registry
-- [ ] 实现配置文件 registry
-- [ ] 支持 `mango.capability.registry.type=auto`
-- [ ] 支持本地优先、配置兜底
+- [x] 实现进程内 memory registry
+- [x] 支持配置文件覆盖
+- [x] 支持 `mango.module.module-service`
+- [x] 明确配置覆盖优先级：配置覆盖自动采集结果
 
-### Task C: Starter 自动注册
+### Task C: Starter 自动采集
 
-- [ ] 为首批模块增加能力注册逻辑
-- [ ] 注册能力名、服务名、路径、部署模式
-- [ ] 服务名默认读取 `spring.application.name`
+- [x] 定义 `META-INF/mango/module.properties`
+- [x] 采集模块名、服务名、contextPath
+- [x] 服务名默认读取 `spring.application.name`
+- [x] 为首批 starter 补齐 `module.properties`
 
 ### Task D: Remote Adapter 改造
 
-- [ ] 从 `*-api` 移除 `@FeignClient`
-- [ ] 在 `*-starter-remote` 增加 Feign adapter
-- [ ] Feign 目标通过能力解析或配置得到
-- [ ] 移除硬编码服务发现名
+- [x] 从 `*-api` 移除 `@FeignClient`
+- [x] 在 `*-starter-remote` 增加或调整 Feign adapter
+- [x] Feign 目标通过模块信息解析得到
+- [x] 移除硬编码真实服务名
 
 ### Task E: 检查规则
 
-- [ ] 新增规则：`*-api` 禁止 `@FeignClient`
-- [ ] 新增规则：`starter-remote` 禁止硬编码服务发现名
-- [ ] 新增规则：`starter` 必须注册对外能力
+- [x] 新增规则：`*-api` 禁止 `@FeignClient`
+- [x] 新增规则：`starter-remote` 禁止硬编码真实服务名
+- [x] 新增规则：`starter` 必须提供 `META-INF/mango/module.properties`
 
 ---
 
-## 10. 验收标准
+## 9. 验收标准
 
-- [ ] `*-api` 不再包含 `@FeignClient`
-- [ ] 首批 remote adapter 已迁移到 `starter-remote`
-- [ ] 本地聚合部署可走本地实现
-- [ ] 远程部署可通过能力解析找到目标服务
-- [ ] `memory` registry 可用
-- [ ] `config` registry 可用
-- [ ] 首批检查规则已进入 Sprint 14 自动化候选清单
-- [ ] focused `mvn test` 通过
-- [ ] focused `mvn verify` 通过
+- [x] `*-api` 不再包含 `@FeignClient`
+- [x] 首批 starter 已提供 `META-INF/mango/module.properties`
+- [x] 本地聚合部署可自动采集模块信息
+- [x] 远程部署可通过模块信息解析目标服务
+- [x] `memory` registry 可用
+- [x] `config` 覆盖可用
+- [x] 首批检查规则已进入 `mango:check`
+- [x] focused `mvn test` 通过
+- [x] focused `mvn verify` 通过
 
 ---
 
-## 11. 对后续 Sprint 的影响
+## 10. 对后续 Sprint 的影响
 
 - `Sprint 12` 必须在本 Sprint 完成后执行。
-- `Sprint 12` 需要基于能力注册机制清理 auth / admin-app 装配关系。
-- 后续管理后台只展示和维护能力注册数据。
-- 后续管理后台不承载能力注册核心逻辑。
+- `Sprint 12` 需要基于模块信息机制清理 auth / admin-app 装配关系。
+- 后续管理后台只展示和维护模块信息。
+- 后续管理后台不承载模块信息采集核心逻辑。
 
 ---
 
-## 12. 后续计划
+## 11. 后续计划
 
-- 管理后台展示能力注册表
-- 支持能力启停和覆盖配置
-- 支持 Nacos registry
-- 支持 Redis / DB registry
-- 支持能力调用健康状态展示
+- 管理后台展示模块部署信息
+- 支持 Nacos 后端
+- 支持 Redis / DB 后端
