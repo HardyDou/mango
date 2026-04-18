@@ -32,12 +32,39 @@ class CheckMojoTest {
         setField(mojo, "baseDir", tempDir.toString());
         setField(mojo, "session", null);
 
-        // when & then - should not throw
+        // when & then
         assertDoesNotThrow(() -> mojo.execute());
     }
 
     @Test
-    void checkMethodLength_withLongMethod_reportsIssue() throws Exception {
+    void checkNaming_withNonKebabArtifactId_reportsIssue() throws Exception {
+        // given
+        Path pomFile = tempDir.resolve("mango-demo/pom.xml");
+        Files.createDirectories(pomFile.getParent());
+        Files.writeString(pomFile, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <parent>
+                        <groupId>io.mango</groupId>
+                        <artifactId>mango-parent</artifactId>
+                        <version>1.0.0</version>
+                    </parent>
+                    <artifactId>mangoDemoCore</artifactId>
+                </project>
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkMethodLength_genericRule_reportsUnsupported() throws Exception {
         // given - create a file with a long method
         Path javaFile = tempDir.resolve("TestService.java");
         StringBuilder longMethod = new StringBuilder();
@@ -58,12 +85,12 @@ class CheckMojoTest {
         setField(mojo, "session", null);
         setField(mojo, "maxMethodLength", 50);
 
-        // then - it should throw because issues are found
+        // then - generic code quality belongs to PMD/P3C/Checkstyle
         assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test
-    void checkMethodLength_withLongClassAndShortMethods_passes() throws Exception {
+    void checkClassLength_genericRule_reportsUnsupported() throws Exception {
         // given - public class declarations must not be counted as methods
         Path javaFile = tempDir.resolve("Response.java");
         StringBuilder source = new StringBuilder();
@@ -83,41 +110,17 @@ class CheckMojoTest {
 
         // when
         CheckMojo mojo = new CheckMojo();
-        setField(mojo, "rule", "method-length");
-        setField(mojo, "baseDir", tempDir.toString());
-        setField(mojo, "session", null);
-        setField(mojo, "maxMethodLength", 50);
-
-        // then
-        assertDoesNotThrow(() -> mojo.execute());
-    }
-
-    @Test
-    void checkClassLength_withShortClass_passes() throws Exception {
-        // given
-        Path javaFile = tempDir.resolve("ShortClass.java");
-        String content = """
-                public class ShortClass {
-                    public void doSomething() {
-                        System.out.println("hello");
-                    }
-                }
-                """;
-        Files.writeString(javaFile, content);
-
-        // when
-        CheckMojo mojo = new CheckMojo();
         setField(mojo, "rule", "class-length");
         setField(mojo, "baseDir", tempDir.toString());
         setField(mojo, "session", null);
-        setField(mojo, "maxClassLength", 500);
+        setField(mojo, "maxClassLength", 50);
 
         // then
-        assertDoesNotThrow(() -> mojo.execute());
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test
-    void checkDuplicate_withUniqueMethods_passes() throws Exception {
+    void checkDuplicate_genericRule_reportsUnsupported() throws Exception {
         // given
         Path javaFile = tempDir.resolve("UniqueService.java");
         String content = """
@@ -132,6 +135,32 @@ class CheckMojoTest {
         // when
         CheckMojo mojo = new CheckMojo();
         setField(mojo, "rule", "duplicate");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkAll_withGenericQualityIssue_runsOnlyMangoSpecificRules() throws Exception {
+        // given - generic code quality is delegated to PMD/P3C/Checkstyle, not mango:check
+        Path javaFile = tempDir.resolve("src/main/java/io/mango/demo/TestService.java");
+        Files.createDirectories(javaFile.getParent());
+        StringBuilder source = new StringBuilder();
+        source.append("package io.mango.demo;\n");
+        source.append("public class TestService {\n");
+        source.append("    public void longMethod() {\n");
+        for (int i = 0; i < 60; i++) {
+            source.append("        System.out.println(\"line " + i + "\");\n");
+        }
+        source.append("    }\n");
+        source.append("}\n");
+        Files.writeString(javaFile, source.toString());
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "all");
         setField(mojo, "baseDir", tempDir.toString());
         setField(mojo, "session", null);
 

@@ -49,8 +49,11 @@
 
 ## 3. `mango-maven-plugin` 新增检查项
 
+`mango:check` 只承载 Mango 项目特有规则。通用 Java 代码质量规则由 P3C/PMD/Checkstyle 执行。
+
 | Rule Group | Command | Scope |
 |---|---|---|
+| Naming | `mvn mango:check -Drule=naming` | P3C/Checkstyle 覆盖不到的 Mango 模块命名，例如 Maven `artifactId` kebab-case |
 | API contract | `mvn mango:check -Drule=api-contract` | API 签名、包结构、`@FeignClient`、DTO/Entity 暴露 |
 | Validation | `mvn mango:check -Drule=validation` | Bean Validation、`@Validated`、路径参数校验 |
 | Require | `mvn mango:check -Drule=require` | 业务入口前置条件、散写 `if/throw` 候选 |
@@ -61,7 +64,14 @@
 | KV key | `mvn mango:check -Drule=kv-key` | KV 注解 key 前缀和 SpEL 写法 |
 | Test fixture | `mvn mango:check -Drule=test-fixture` | 测试类名和核心测试物料一致性 |
 
-## 4. 执行模式
+## 4. 通用代码质量检查
+
+| Rule Group | Command | Scope |
+|---|---|---|
+| P3C / PMD | `mvn pmd:check` | 命名、异常、集合、并发、OOP、ORM、控制语句等通用 Java 规则 |
+| Checkstyle | `mvn checkstyle:check` | 格式、复杂度、长度、命名、注释等通用 Java 规则 |
+
+## 5. 执行模式
 
 | Mode | Purpose | Behavior |
 |---|---|---|
@@ -69,7 +79,7 @@
 | `strict` | 稳定模块 | 自动规则失败阻断构建 |
 | `report` | 盘点 | 只生成报告，不阻断构建 |
 
-## 5. 不做自动硬检查的规则
+## 6. 不做自动硬检查的规则
 
 | Rule | Reason |
 |---|---|

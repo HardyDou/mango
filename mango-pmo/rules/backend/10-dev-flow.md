@@ -40,6 +40,8 @@
 
 - `mvn test`
 - `mvn verify`
+- `mvn pmd:check`
+- `mvn checkstyle:check`
 - `mvn mango:check`
 
 ## 6. 提交要求

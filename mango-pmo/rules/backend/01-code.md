@@ -38,7 +38,10 @@
 
 ## 6. 质量要求
 
-- 提交前执行 `mvn mango:check`。
+- 提交前执行 `mvn pmd:check`、`mvn checkstyle:check` 和 `mvn mango:check`。
+- 通用代码质量规则由 P3C/PMD/Checkstyle 负责，例如方法长度、类长度、复杂度、异常吞掉、空 catch、硬编码等。
+- `mango:check` 只负责 Mango 项目特有规则，例如模块命名、模块边界、`api/core/starter` 职责、KV key、测试物料一致性、`module.properties`、远程适配。
+- 命名规则按工具分工执行：Java 类、方法、字段命名交给 P3C/Checkstyle；P3C/Checkstyle 覆盖不到的 Mango 模块命名保留在 `mvn mango:check -Drule=naming`。
 - 明显重复代码必须抽取。
 - 明显无用代码必须删除。
 

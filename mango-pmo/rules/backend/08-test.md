@@ -48,6 +48,8 @@
 
 - `mvn test`
 - `mvn verify`
+- `mvn pmd:check`
+- `mvn checkstyle:check`
 - `mvn mango:check`
 - 涉及 KV、缓存、锁、限流、幂等、token、id 等能力时，执行 `mvn mango:check -Drule=test-fixture`
 

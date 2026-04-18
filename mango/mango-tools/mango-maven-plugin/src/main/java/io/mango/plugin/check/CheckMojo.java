@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * 代码检查 Mojo
  *
  * mvn mango:check
- * mvn mango:check -Drule=duplicate
+ * mvn mango:check -Drule=api-contract
  * mvn mango:check -Drule=all -Doutput=json
  *
  * @author Mango
@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 public class CheckMojo extends AbstractMojo {
 
     /**
-     * 检查规则: all, duplicate, naming, method-length, class-length, dependency,
-     * module-info, remote-adapter, api-contract, kv-key, test-fixture
+     * 检查规则: all, naming, dependency, module-boundary, module-info, remote-adapter,
+     * api-contract, kv-key, test-fixture
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -100,21 +100,17 @@ public class CheckMojo extends AbstractMojo {
         result = new CheckResult();
 
         switch (rule.toLowerCase()) {
-            case "duplicate" -> checkDuplicates();
+            case "duplicate", "method-length", "class-length" -> unsupportedGenericRule(rule);
             case "naming" -> checkNaming();
-            case "method-length" -> checkMethodLength();
-            case "class-length" -> checkClassLength();
             case "dependency" -> checkDependency();
+            case "module-boundary" -> checkDependency();
             case "module-info" -> checkModuleInfo();
             case "remote-adapter" -> checkRemoteAdapter();
             case "api-contract" -> checkApiContract();
             case "kv-key" -> checkKvKey();
             case "test-fixture" -> checkTestFixture();
             case "all" -> {
-                checkDuplicates();
                 checkNaming();
-                checkMethodLength();
-                checkClassLength();
                 checkDependency();
                 checkModuleInfo();
                 checkRemoteAdapter();
@@ -143,6 +139,13 @@ public class CheckMojo extends AbstractMojo {
         }
 
         getLog().info("Check completed. " + result.issues.size() + " issue(s) found.");
+    }
+
+    private void unsupportedGenericRule(String selectedRule) {
+        String description = "mango:check only runs Mango-specific rules. Generic rule '" + selectedRule
+                + "' is handled by PMD/P3C/Checkstyle; use mvn pmd:check or mvn checkstyle:check.";
+        getLog().warn(description);
+        result.addIssue("UNSUPPORTED_RULE", "MAJOR", null, 0, description, "auto-check-mapping.md");
     }
 
     private void checkDuplicates() {
@@ -247,9 +250,57 @@ public class CheckMojo extends AbstractMojo {
     }
 
     private void checkNaming() {
-        getLog().info("Checking naming conventions...");
-        // 简化实现
-        getLog().info("Naming check passed");
+        getLog().info("Checking Mango-specific naming conventions...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<NamingIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if ("pom.xml".equals(file.getFileName().toString())) {
+                        analyzeMavenModuleName(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (NamingIssue issue : issues) {
+                result.addIssue("NAMING", issue.severity, issue.file, issue.line,
+                        issue.description, "naming-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " naming violation(s)");
+        } else {
+            getLog().info("Mango-specific naming checks passed");
+        }
+    }
+
+    private void analyzeMavenModuleName(Path file, List<NamingIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            String projectContent = content.replaceFirst("(?s)<parent>.*?</parent>", "");
+            Matcher matcher = Pattern.compile("<artifactId>\\s*([^<\\s]+)\\s*</artifactId>").matcher(projectContent);
+            if (!matcher.find()) {
+                return;
+            }
+
+            String artifactId = matcher.group(1).trim();
+            if (!artifactId.matches("[a-z][a-z0-9]*(?:-[a-z0-9]+)*")) {
+                issues.add(new NamingIssue("MAJOR", file.toString(), lineNumber(content, content.indexOf(artifactId)),
+                        "Mango module artifactId must use kebab-case: " + artifactId));
+            }
+        } catch (IOException e) {
+            issues.add(new NamingIssue("MAJOR", file.toString(), 0,
+                    "模块命名检查失败: " + e.getMessage()));
+        }
     }
 
     private void checkMethodLength() {
@@ -1136,6 +1187,20 @@ public class CheckMojo extends AbstractMojo {
             issue.rule = rule;
             issues.add(issue);
             passed = false;
+        }
+    }
+
+    private static class NamingIssue {
+        String severity;
+        String file;
+        int line;
+        String description;
+
+        NamingIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
         }
     }
 
