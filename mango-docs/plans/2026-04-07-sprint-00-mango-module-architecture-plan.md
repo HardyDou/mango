@@ -13,7 +13,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                     通用业务层 BUSINESS                       │
 │  mango-auth | mango-permission | mango-user | mango-captcha  │
-│  mango-org | mango-system | mango-area | mango-message       │
+│  mango-org | mango-system | mango-area | mango-biz-notification       │
 │  mango-i18n | mango-ai                                   │
 └─────────────────────────────────────────────────────────────┘
                               ↓ 复用
@@ -44,7 +44,7 @@
 | `mango-org` | 业务 | 组织、租户、部门、岗位 | 100% | ❌ 缺失 |
 | `mango-system` | 业务 | 字典、配置、日志、租户 | 100% | ❌ 缺失 |
 | `mango-area` | 业务 | 中国行政区划 | 100% | ❌ 缺失 |
-| `mango-message` | 业务 | WebSocket/SSE 实时推送 | 100% | ❌ 缺失 |
+| `mango-biz-notification` | 业务 | WebSocket/SSE 实时推送 | 100% | ❌ 缺失 |
 | `mango-i18n` | 业务 | 国际化 | 100% | ❌ 缺失 |
 | `mango-ai` | 业务 | AI 对话（DeepSeek） | 100% | ❌ 缺失 |
 
@@ -502,7 +502,7 @@ mango-infra-context/
 
 ---
 
-### mango-message（通用业务）
+### mango-biz-notification（通用业务）
 
 **职责边界**：
 - 提供：实时消息推送（WebSocket / SSE）
@@ -723,7 +723,7 @@ guarantee-app
     ├── org-starter         → 复用 mango-org
     ├── captcha-starter     → 复用 mango-captcha
     ├── area-starter        → 复用 mango-area
-    └── message-starter     → 复用 mango-message
+    └── notification-starter     → 复用 mango-biz-notification
 ```
 
 ---
@@ -742,7 +742,7 @@ guarantee-app
 | `mango-org` | 新建 | OrgApi（租户/部门/岗位） |
 | `mango-system` | 新建 | DictApi / SysConfigApi |
 | `mango-area` | 新建 | AreaApi（行政区划） |
-| `mango-message` | 新建 | MessageChannel / WebSocket-SSE |
+| `mango-biz-notification` | 新建 | MessageChannel / WebSocket-SSE |
 | `mango-i18n` | 新建 | I18nApi |
 | `mango-ai` | 新建 | AiApi |
 | `mango-infra-sse` | 新建 | SSE 使用方式 |

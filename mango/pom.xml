@@ -166,17 +166,17 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-message-api</artifactId>
+                <artifactId>mango-biz-notification-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-message-core</artifactId>
+                <artifactId>mango-biz-notification-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-message-starter</artifactId>
+                <artifactId>mango-biz-notification-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -211,12 +211,22 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-infra-sse</artifactId>
+                <artifactId>mango-infra-realtime-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-infra-websocket</artifactId>
+                <artifactId>mango-infra-realtime-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-realtime-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-realtime-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

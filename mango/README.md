@@ -62,17 +62,16 @@ mango/
 │   ├── mango-infra-orm/         # Repository/ORM 抽象
 │   ├── mango-infra-redis/       # Redis 封装
 │   ├── mango-infra-security/    # 权限安全
-│   ├── mango-infra-sse/         # SSE
+│   ├── mango-infra-realtime/   # 客户端消息通信，含 SSE/WebSocket adapter
 │   ├── mango-infra-test/        # 基础设施测试支撑
-│   ├── mango-infra-web/         # Web 封装
-│   └── mango-infra-websocket/   # WebSocket
+│   └── mango-infra-web/         # Web 封装
 ├── mango-platform/             # 平台能力
 │   ├── mango-ai/               # AI 能力
 │   ├── mango-area/             # 区域
 │   ├── mango-auth/             # 认证
 │   ├── mango-captcha/          # 验证码
 │   ├── mango-i18n/             # 国际化
-│   ├── mango-message/          # 消息
+│   ├── mango-biz-notification/          # 消息
 │   ├── mango-org/              # 组织
 │   ├── mango-rbac/             # RBAC、授权侧用户事实、菜单与公共路径
 │   └── mango-system/           # 系统配置、字典、租户、日志、路由

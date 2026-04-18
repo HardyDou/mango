@@ -26,6 +26,7 @@ mango-admin-app
   |-- mango-area-starter
   |-- mango-ai-starter
   |-- mango-captcha-starter
+  |-- mango-infra-realtime-starter
   |-- mango-infra-kv-starter
   `-- mango-infra-module-starter
 ```
@@ -46,8 +47,9 @@ mango-admin-app
 | Mango | `mango-captcha-starter` | 合法，验证码能力装配 |
 | Mango | `mango-gateway-starter` | 合法，网关认证过滤装配 |
 | Mango | `mango-infra-kv-starter` | 合法，KV 能力装配 |
+| Mango | `mango-infra-realtime-starter` | 合法，客户端消息通信协议入口装配 |
 | Mango | `mango-auth-starter` | 合法，认证能力装配 |
-| Spring/第三方 | `spring-boot-starter-web`、`spring-boot-starter-jdbc`、`spring-boot-starter-actuator`、`spring-boot-starter-websocket`、`h2`、`mybatis-spring`、`springdoc-openapi-starter-webmvc-ui`、`lombok` | 合法；`spring-boot-starter-websocket` 在 messaging 收敛后复核是否改由 infra messaging 间接提供 |
+| Spring/第三方 | `spring-boot-starter-web`、`spring-boot-starter-jdbc`、`spring-boot-starter-actuator`、`h2`、`mybatis-spring`、`springdoc-openapi-starter-webmvc-ui`、`lombok` | 合法；WebSocket 由 `mango-infra-realtime-starter` 间接提供 |
 
 ## 单体模式
 

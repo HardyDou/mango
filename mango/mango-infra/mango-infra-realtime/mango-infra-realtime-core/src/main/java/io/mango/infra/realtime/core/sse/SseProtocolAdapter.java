@@ -1,0 +1,81 @@
+package io.mango.infra.realtime.core.sse;
+
+import io.mango.infra.realtime.api.RealtimeMessage;
+import io.mango.infra.realtime.api.RealtimeProtocols;
+import io.mango.infra.realtime.api.RealtimeSubscriptionManager;
+import io.mango.infra.realtime.core.dispatcher.ProtocolRealtimeSender;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@Slf4j
+public class SseProtocolAdapter implements ProtocolRealtimeSender {
+
+    public static final long DEFAULT_TIMEOUT_MILLIS = 5 * 60 * 1000L;
+
+    private final RealtimeSubscriptionManager subscriptionManager;
+    private final long timeoutMillis;
+
+    public SseProtocolAdapter(RealtimeSubscriptionManager subscriptionManager) {
+        this(subscriptionManager, DEFAULT_TIMEOUT_MILLIS);
+    }
+
+    public SseProtocolAdapter(RealtimeSubscriptionManager subscriptionManager, long timeoutMillis) {
+        this.subscriptionManager = subscriptionManager;
+        this.timeoutMillis = timeoutMillis <= 0 ? DEFAULT_TIMEOUT_MILLIS : timeoutMillis;
+    }
+
+    public SseEmitter createEmitter(String tenantId, Long userId) {
+        SseEmitter emitter = createSseEmitter();
+        String sessionId = UUID.randomUUID().toString();
+        String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        AtomicBoolean closed = new AtomicBoolean(false);
+
+        Runnable closeCallback = () -> {
+            if (closed.compareAndSet(false, true)) {
+                subscriptionManager.unsubscribe(sessionId);
+                log.info("SSE session removed for tenant: {}, remaining connections: {}",
+                        resolvedTenantId, subscriptionManager.countByTenant(resolvedTenantId));
+            }
+        };
+
+        SseRealtimeSession session = new SseRealtimeSession(sessionId, resolvedTenantId, userId, emitter, closeCallback);
+        subscriptionManager.subscribe(session);
+
+        log.info("SSE session created for tenant: {}, total connections: {}",
+                resolvedTenantId, subscriptionManager.countByTenant(resolvedTenantId));
+        return emitter;
+    }
+
+    protected SseEmitter createSseEmitter() {
+        return new SseEmitter(timeoutMillis);
+    }
+
+    @Override
+    public String protocol() {
+        return RealtimeProtocols.SSE;
+    }
+
+    @Override
+    public void sendToUser(Long userId, RealtimeMessage envelope) {
+        subscriptionManager.findByUser(userId).stream()
+                .filter(session -> protocol().equals(session.protocol()))
+                .forEach(session -> session.send(envelope));
+    }
+
+    @Override
+    public void sendToTenant(String tenantId, RealtimeMessage envelope) {
+        subscriptionManager.findByTenant(tenantId).stream()
+                .filter(session -> protocol().equals(session.protocol()))
+                .forEach(session -> session.send(envelope));
+    }
+
+    @Override
+    public void broadcast(RealtimeMessage envelope) {
+        subscriptionManager.findAll().stream()
+                .filter(session -> protocol().equals(session.protocol()))
+                .forEach(session -> session.send(envelope));
+    }
+}

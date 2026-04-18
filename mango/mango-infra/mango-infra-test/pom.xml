@@ -30,6 +30,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- AssertJ -->
         <dependency>
@@ -81,6 +86,28 @@
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-db-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango Infra Realtime (for testing realtime components) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-realtime-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-realtime-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-realtime-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-realtime-starter-remote</artifactId>
             <version>${project.version}</version>
         </dependency>
 

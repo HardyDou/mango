@@ -21,7 +21,7 @@
         <module>mango-auth</module>
         <module>mango-captcha</module>
         <module>mango-i18n</module>
-        <module>mango-message</module>
+        <module>mango-biz-notification</module>
         <module>mango-org</module>
         <module>mango-rbac</module>
         <module>mango-system</module>

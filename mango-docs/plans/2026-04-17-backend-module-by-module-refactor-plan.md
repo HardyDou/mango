@@ -89,7 +89,7 @@ app -> starter/starter-remote -> core -> api -> common/infra
 - `mango-auth`
 - `mango-captcha`
 - `mango-i18n`
-- `mango-message`
+- `mango-biz-notification`
 - `mango-org`
 - `mango-rbac`
 - `mango-system`
@@ -389,7 +389,7 @@ Phase 0 开始前必须以此表为交接基线。
 
 当前已确认结论：
 
-- `sse + websocket -> mango-infra-messaging`：通过，原因是同属 server-client messaging，存在共同连接/会话/订阅/投递抽象。
+- `sse + websocket -> mango-infra-realtime`：通过，原因是同属 server-client messaging，存在共同连接/会话/订阅/投递抽象。
 - `feign + sse/websocket`：否决，原因是 Feign 是 service-to-service RPC，SSE/WebSocket 是 server-client messaging。
 - `db + redis`：否决，原因是 DB 是持久化数据访问，Redis 是缓存/分布式数据结构/临时状态能力，变化原因和使用模型不同。
 - `log + observability`：否决，原因是 observability 当前缺少实际能力，已删除；log 有实际内容，先独立保留。
@@ -462,7 +462,7 @@ Phase 0 开始前必须以此表为交接基线。
 示例：
 
 - `Phase 1: mango-common` 是单主模块 Phase。
-- `Phase 3: mango-infra-messaging` 是新能力域 Phase，涉及 `mango-infra-sse`、`mango-infra-websocket` 和新模块 `mango-infra-messaging`。
+- `Phase 3: mango-infra-realtime` 是新能力域 Phase，涉及 `mango-infra-sse`、`mango-infra-websocket` 和新模块 `mango-infra-realtime`。
 - `Phase 4: mango-infra-security + mango-infra-web` 是双主模块 Phase，因为二者共同处理 Web/Security 横切边界。
 - `Phase 10` 是模块组标准化 Phase，内部必须拆成多个独立 Task 执行。
 
@@ -618,7 +618,7 @@ warning 处理策略：
 
 - Phase -1 到 Phase 9 全部完成
 - `mango-common`、核心 infra、`rbac/system/auth/admin-app` 的边界已经收口
-- `mango-infra-messaging` 已替代旧 `sse/websocket` 直接依赖
+- `mango-infra-realtime` 已替代旧 `sse/websocket` 直接依赖
 - 所有 blocking 验证通过
 - POM、README、计划文档、源码事实一致
 - 没有新增循环依赖或跨层倒挂
@@ -928,7 +928,7 @@ mvn -q -DskipTests compile
 
 ---
 
-## Phase 3：`mango-infra-messaging`
+## Phase 3：`mango-infra-realtime`
 
 ### 目标
 
@@ -937,7 +937,7 @@ mvn -q -DskipTests compile
 提前到 Phase 3 的原因：
 
 - messaging 是 infra 能力域收口的一部分，应在 platform 重构前完成
-- 后续 `mango-message`、`admin-app`、其它平台模块如果需要实时能力，应依赖统一 messaging 抽象，而不是继续依赖旧协议模块
+- 后续 `mango-biz-notification`、`admin-app`、其它平台模块如果需要实时能力，应依赖统一 messaging 抽象，而不是继续依赖旧协议模块
 - 越晚合并，越容易产生下游重复适配
 
 ### 本阶段重点
@@ -946,7 +946,7 @@ mvn -q -DskipTests compile
 - 支持 push / pull 两类交互模式
 - 保留 SSE 与 WebSocket 作为协议实现，而不是对上层暴露为两个能力域
 - 让平台模块依赖“消息通信能力”，而不是依赖具体协议
-- 明确 `mango-infra-messaging` 与 `mango-message` 的边界
+- 明确 `mango-infra-realtime` 与 `mango-biz-notification` 的边界
 
 ### 当前消费者清单
 
@@ -954,18 +954,18 @@ Phase 3 开始前以此清单作为迁移输入。
 
 | 位置 | 当前依赖 | 迁移要求 |
 |------|----------|----------|
-| 根 `mango/pom.xml` | `mango-infra-sse`、`mango-infra-websocket` dependencyManagement | 删除旧 artifact，新增 `mango-infra-messaging-*` |
-| `mango/mango-infra/pom.xml` | 聚合 `mango-infra-sse`、`mango-infra-websocket` | 删除旧 module，新增 `mango-infra-messaging` |
-| `mango-message-core` | 直接依赖 `mango-infra-sse` / `mango-infra-websocket`，并 import `SseService` / `WebSocketHandler` | 改为依赖 `mango-infra-messaging-api` |
-| `mango-message-starter` | import `WebSocketHandshakeInterceptor` | 改为 messaging starter 暴露的协议配置或 adapter |
+| 根 `mango/pom.xml` | `mango-infra-sse`、`mango-infra-websocket` dependencyManagement | 删除旧 artifact，新增 `mango-infra-realtime-*` |
+| `mango/mango-infra/pom.xml` | 聚合 `mango-infra-sse`、`mango-infra-websocket` | 删除旧 module，新增 `mango-infra-realtime` |
+| `mango-biz-notification-core` | 直接依赖 `mango-infra-sse` / `mango-infra-websocket`，并 import `SseService` / `WebSocketHandler` | 改为依赖 `mango-infra-realtime-api` |
+| `mango-biz-notification-starter` | import `WebSocketHandshakeInterceptor` | 改为 realtime starter 暴露的协议配置或 adapter |
 | `mango-ai-core` | 直接使用 Spring `SseEmitter` | 评估是否迁入 messaging；如保留原生 SSE，必须说明它是 AI 流式响应例外，不属于旧 infra sse 模块依赖 |
-| `mango-admin-app/pom.xml` | 直接依赖 `spring-boot-starter-websocket` | messaging 完成后复核是否由 `mango-infra-messaging-starter` 间接提供 |
+| `mango-admin-app/pom.xml` | 直接依赖 `spring-boot-starter-websocket` | messaging 完成后复核是否由 `mango-infra-realtime-starter` 间接提供 |
 
-当前未发现除旧 infra 模块自身外的 `WebSocketSession` 直接上层使用；发现了 `mango-message` 对旧 infra websocket handler 的直接依赖。
+当前未发现除旧 infra 模块自身外的 `WebSocketSession` 直接上层使用；发现了 `mango-biz-notification` 对旧 infra websocket handler 的直接依赖。
 
 ### 命名
 
-采用 `mango-infra-messaging`。
+采用 `mango-infra-realtime`。
 
 原因：
 
@@ -973,17 +973,17 @@ Phase 3 开始前以此清单作为迁移输入。
 - 能自然覆盖 SSE、WebSocket、push、pull、message dispatcher、subscription
 - 借鉴 `Spring Messaging` 的能力域命名
 
-### 和 `mango-message` 的边界
+### 和 `mango-biz-notification` 的边界
 
-- `mango-infra-messaging` 是基础设施能力，只负责连接、会话、订阅、消息投递、SSE/WebSocket 协议适配。
-- `mango-infra-messaging` 不定义业务消息模型，不负责收件人、通知状态、消息记录、站内信业务语义。
-- `mango-message` 是平台业务消息/通知域，负责业务消息模型、消息存储、通知状态、业务投递规则。
-- `mango-message` 可以依赖 `mango-infra-messaging` 完成实时投递，但不能把基础通信协议实现写回业务域。
+- `mango-infra-realtime` 是基础设施能力，只负责连接、会话、订阅、消息投递、SSE/WebSocket 协议适配。
+- `mango-infra-realtime` 不定义业务消息模型，不负责收件人、通知状态、消息记录、站内信业务语义。
+- `mango-biz-notification` 是平台业务消息/通知域，负责业务消息模型、消息存储、通知状态、业务投递规则。
+- `mango-biz-notification` 可以依赖 `mango-infra-realtime` 完成实时投递，但不能把基础通信协议实现写回业务域。
 
 ### 执行顺序
 
 1. 盘点 `mango-infra-sse` 与 `mango-infra-websocket` 的现有 API、配置项、自动配置和下游依赖。
-2. 新建 `mango-infra-messaging` 聚合模块，按 `api/core/starter` 组织能力。
+2. 新建 `mango-infra-realtime` 聚合模块，按 `api/core/starter` 组织能力。
 3. 在 `api` 中定义连接、订阅、push/pull、消息投递的最小抽象。
 4. 将 SSE 与 WebSocket 迁入 `core` 的 protocol adapter，不再作为上层直接依赖入口。
 5. 在 `starter` 中提供条件化自动配置，避免强行启用所有协议。
@@ -994,11 +994,11 @@ Phase 3 开始前以此清单作为迁移输入。
 
 本阶段采用“先抽象、再适配、后替换”的迁移方式，不允许无计划地一次性删除旧入口。
 
-1. 先冻结新 `mango-infra-messaging-api`，定义上层只允许依赖的最小接口。
+1. 先冻结新 `mango-infra-realtime-api`，定义上层只允许依赖的最小接口。
 2. 将 SSE/WebSocket 现有能力迁入 protocol adapter，保持行为等价。
-3. 在 `mango-infra-messaging-starter` 中提供条件化自动配置。
+3. 在 `mango-infra-realtime-starter` 中提供条件化自动配置。
 4. 搜索所有下游对 `mango-infra-sse` / `mango-infra-websocket` / `spring-boot-starter-websocket` 的直接依赖。
-5. 对下游逐个替换为 `mango-infra-messaging-api/starter`。
+5. 对下游逐个替换为 `mango-infra-realtime-api/starter`。
 6. 删除旧 `mango-infra-sse` / `mango-infra-websocket` 模块目录、聚合 POM module、root dependencyManagement。
 7. 搜索确认旧 artifact、旧包名、旧自动配置不再存在有效源码引用。
 
@@ -1016,47 +1016,47 @@ Phase 3 开始前以此清单作为迁移输入。
 | P3-T1 | 盘点 `mango-infra-sse` API/配置/自动配置 | 可并行 | 只读 |
 | P3-T2 | 盘点 `mango-infra-websocket` API/配置/自动配置 | 可并行 | 只读 |
 | P3-T3 | 搜索下游对 SSE/WebSocket 的依赖 | 可并行 | 只读 |
-| P3-T4 | 设计 `mango-infra-messaging-api` 最小 API | 不并行 | 新 API/文档 |
-| P3-T5 | 新建 `mango-infra-messaging` POM 与模块结构 | 不并行 | `mango-infra-messaging`、父 POM |
-| P3-T6 | 迁移 SSE protocol adapter | 可与 P3-T7 并行，前提是 P3-T4/P3-T5 已完成 | `mango-infra-messaging-core.sse` |
-| P3-T7 | 迁移 WebSocket protocol adapter | 可与 P3-T6 并行，前提是 P3-T4/P3-T5 已完成 | `mango-infra-messaging-core.websocket` |
-| P3-T8 | 实现 starter 条件化自动配置 | 不并行 | `mango-infra-messaging-starter` |
+| P3-T4 | 设计 `mango-infra-realtime-api` 最小 API | 不并行 | 新 API/文档 |
+| P3-T5 | 新建 `mango-infra-realtime` POM 与模块结构 | 不并行 | `mango-infra-realtime`、父 POM |
+| P3-T6 | 迁移 SSE protocol adapter | 可与 P3-T7 并行，前提是 P3-T4/P3-T5 已完成 | `mango-infra-realtime-core.sse` |
+| P3-T7 | 迁移 WebSocket protocol adapter | 可与 P3-T6 并行，前提是 P3-T4/P3-T5 已完成 | `mango-infra-realtime-core.websocket` |
+| P3-T8 | 实现 starter 条件化自动配置 | 不并行 | `mango-infra-realtime-starter` |
 | P3-T9 | 替换下游依赖并删除旧模块 | 不并行 | 父 POM、下游 POM、旧模块 |
 | P3-T10 | 编译验证和搜索确认 | 不并行 | 交付记录 |
 
 ### 目标目录结构
 
 ```text
-mango-infra-messaging/
+mango-infra-realtime/
 ├── pom.xml
-├── mango-infra-messaging-api/
-├── mango-infra-messaging-core/
-└── mango-infra-messaging-starter/
+├── mango-infra-realtime-api/
+├── mango-infra-realtime-core/
+└── mango-infra-realtime-starter/
 ```
 
 包结构：
 
 ```text
-io.mango.infra.messaging.api
-io.mango.infra.messaging.core.sse
-io.mango.infra.messaging.core.websocket
-io.mango.infra.messaging.core.session
-io.mango.infra.messaging.core.dispatcher
-io.mango.infra.messaging.starter
+io.mango.infra.realtime.api
+io.mango.infra.realtime.core.sse
+io.mango.infra.realtime.core.websocket
+io.mango.infra.realtime.core.session
+io.mango.infra.realtime.core.dispatcher
+io.mango.infra.realtime.starter
 ```
 
 最小 API：
 
-- `MessagePublisher`
-- `MessagePullService`
-- `MessageSession`
+- `RealtimePublisher`
+- `RealtimePullService`
+- `RealtimeSession`
 - `SubscriptionManager`
-- `MessageEnvelope`
+- `RealtimeMessage`
 
 ### 禁止做
 
-- 禁止把 Feign 并入 `mango-infra-messaging`
-- 禁止把 `mango-message` 的业务实体迁入 `mango-infra-messaging`
+- 禁止把 Feign 并入 `mango-infra-realtime`
+- 禁止把 `mango-biz-notification` 的业务实体迁入 `mango-infra-realtime`
 - 禁止让上层继续直接依赖 `mango-infra-sse` / `mango-infra-websocket`
 - 禁止一次性引入外部消息中间件，除非当前代码已有依赖
 - 禁止保留旧 `mango-infra-sse` / `mango-infra-websocket` 兼容空壳
@@ -1068,7 +1068,7 @@ io.mango.infra.messaging.starter
 - `sse` / `websocket` 作为内部 protocol adapter 存在
 - 旧 `mango-infra-sse` / `mango-infra-websocket` Maven 模块已删除
 - 不再把 Feign、SSE、WebSocket 混为一个“通信大包”
-- `mango-message` 与 `mango-infra-messaging` 的业务/基础设施边界清晰
+- `mango-biz-notification` 与 `mango-infra-realtime` 的业务/基础设施边界清晰
 
 ### 验收命令
 
@@ -1080,7 +1080,7 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 
 ### 产出
 
-- 新 `mango-infra-messaging` 模块
+- 新 `mango-infra-realtime` 模块
 - SSE/WebSocket 迁移记录
 - 旧模块删除记录
 
@@ -1097,11 +1097,13 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 - 收口注解、上下文、请求工具、权限切面边界
 - 避免业务 DTO/VO 再进入 infra
 - 保证 Web / Security 仅依赖技术契约
+- 冻结统一请求上下文 / 安全上下文契约，供 realtime、notification、audit、业务模块等统一消费
 
 ### 完成标志
 
 - `infra` 不再依赖平台业务模型
 - 横切能力可被平台层稳定复用
+- 请求身份、租户、trace/request 元信息的读取方式统一，不再由各模块各自解析 header/token
 
 ### 必须做
 
@@ -1109,6 +1111,10 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 - 将业务路径、权限、用户等领域事实抽象为 infra 接口或 provider
 - Web 层只保留 HTTP、异常处理、序列化、请求上下文等基础能力
 - Security 层只保留安全注解、切面、token/security 基础能力
+- 设计并冻结统一请求上下文 / 安全上下文契约，至少覆盖用户 ID、租户 ID、认证状态、请求 ID、trace ID、client IP 的来源和读取方式
+- 明确 `mango-infra-web`、`mango-infra-security`、`mango-infra-context` 三者分工：web 负责 HTTP 请求上下文，security 负责认证/token/权限技术契约，context 负责跨线程/跨调用上下文传播
+- 为需要消费当前身份的模块提供稳定 provider/interface，例如 `CurrentUserProvider`、`RequestContextProvider`、`SecurityContextProvider` 或等价命名；具体命名以 P4-T3 设计结论为准
+- 明确 realtime 等协议模块只能消费统一上下文契约或被动适配 resolver，不允许自行实现 token 解析、权限校验或业务租户规则
 
 ### 业务 DTO/VO 判定与验证
 
@@ -1143,10 +1149,10 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 |------|------|------------|----------|
 | P4-T1 | 盘点 `infra-web` 依赖与业务感知点 | 可并行 | 只读 |
 | P4-T2 | 盘点 `infra-security` 依赖与业务感知点 | 可并行 | 只读 |
-| P4-T3 | 统一 provider/interface 设计 | 不并行 | 文档/API |
+| P4-T3 | 统一 provider/interface 设计，冻结请求上下文 / 安全上下文契约 | 不并行 | 文档/API |
 | P4-T4 | 修改 `infra-web` | 可与 P4-T5 并行，前提是 P4-T3 已完成 | `mango-infra-web` |
 | P4-T5 | 修改 `infra-security` | 可与 P4-T4 并行，前提是 P4-T3 已完成 | `mango-infra-security` |
-| P4-T6 | 下游被动适配 | 不并行 | 受影响 platform/app |
+| P4-T6 | 下游被动适配；如 realtime 需要接入统一身份，只允许通过 resolver/provider 适配 | 不并行 | 受影响 infra/platform/app |
 | P4-T7 | 编译和依赖方向验证 | 不并行 | 交付记录 |
 
 ### 禁止做
@@ -1154,6 +1160,8 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 - 禁止 `infra` 依赖 `rbac-api`、`auth-core`、`system-core` 等平台模块
 - 禁止在 `infra-web` 中硬编码平台业务路径
 - 禁止在 `infra-security` 中实现 RBAC 业务规则
+- 禁止在 `mango-infra-realtime`、`mango-infra-web` 或其它 infra 协议模块中各自解析 JWT、实现登录认证或执行业务权限规则
+- 禁止把 `SysUser`、`Role`、`Tenant` 等平台业务模型作为统一上下文契约类型
 
 ### 验收命令
 
@@ -1168,6 +1176,8 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 
 - infra 依赖方向检查结果
 - 被动适配清单
+- 统一请求上下文 / 安全上下文契约说明
+- realtime 等下游模块的被动适配点清单
 
 ---
 
@@ -1182,6 +1192,7 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 - 清理默认 service name、旧命名配置
 - 统一白名单与登录要求路径的来源
 - 和 `rbac` / `auth` 的边界对齐
+- 明确 gateway 对外部认证结果、可信 header 注入和 header 清洗的责任边界
 
 说明：
 
@@ -1203,6 +1214,7 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 
 - 网关不再持有错误历史命名
 - 路径策略来源明确且可替换
+- gateway 与下游服务之间的可信身份/租户/header 传递约定明确
 
 ### 必须做
 
@@ -1211,13 +1223,16 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 - 网关只依赖稳定路径策略接口，不直接感知 RBAC 存储模型
 - 保留 local / remote 两种模式的配置入口
 - 输出 Phase 6/8 需要补齐的 adapter 清单
+- 明确 gateway 负责外部请求的认证结果治理、外部伪造 header 清洗、内部可信 header 注入；下游服务不得直接信任来自公网的身份/租户 header
+- 冻结 gateway 注入给下游的可信 header 命名和语义，例如用户 ID、租户 ID、请求 ID、trace ID、认证类型；具体 header 名称以 P5-T2 设计结论为准
+- 明确 WebSocket Upgrade、SSE、HTTP Polling 等长连接/长请求路径的 gateway 路由、超时、限流、CORS/Origin 策略归属；realtime 只消费 Phase 4 冻结的上下文契约
 
 ### Task 拆分
 
 | Task | 内容 | 是否可并行 | 写入范围 |
 |------|------|------------|----------|
 | P5-T1 | 搜索网关旧命名和业务耦合 | 可并行 | 只读 |
-| P5-T2 | 设计路径策略来源接口 | 不并行 | 文档/API |
+| P5-T2 | 设计路径策略来源接口，并冻结可信 header 注入/清洗规则 | 不并行 | 文档/API |
 | P5-T3 | 修改 gateway 配置与默认值 | 不并行 | `mango-gateway` |
 | P5-T4 | 适配路径 provider 来源 | 不并行 | `gateway` 与必要下游 |
 | P5-T5 | 输出 Phase 6/8 adapter 待办清单 | 不并行 | 交付记录 |
@@ -1228,6 +1243,8 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 - 禁止网关直接查询 RBAC 数据库表
 - 禁止网关依赖 `rbac-core`
 - 禁止在网关里写业务权限规则
+- 禁止下游服务把公网传入的身份/租户 header 当作可信来源；必须由 gateway 清洗后重新注入或由统一 security/web 上下文提供
+- 禁止在 gateway 中实现 RBAC 角色菜单、组织租户等业务规则；gateway 只消费稳定接口的策略结果
 
 ### 验收命令
 
@@ -1240,6 +1257,8 @@ rg -n "mango-user|user-starter|permission-starter|mango-permission" mango/mango-
 ### 产出
 
 - 网关路径策略来源说明
+- 可信 header 注入与清洗规则说明
+- WebSocket/SSE/Polling 等长连接入口的 gateway 接入约定
 - 旧命名搜索结果
 
 ---
@@ -1556,7 +1575,7 @@ rg -n "core\\.mapper|@Service|@Mapper" mango/mango-app/mango-admin-app/src/main/
 - `mango-captcha`
 - `mango-area`
 - `mango-i18n`
-- `mango-message`
+- `mango-biz-notification`
 - `mango-ai`
 
 这些模块的目标不是大拆，而是统一到同一套模块标准：
@@ -1569,7 +1588,7 @@ rg -n "core\\.mapper|@Service|@Mapper" mango/mango-app/mango-admin-app/src/main/
 说明：
 
 - `mango-org` 是独立组织域，不是低价值长尾模块；放在本阶段是因为它不在 `rbac/system/auth` 主链路中。
-- `mango-message` 是业务消息/通知域；它可以使用 `mango-infra-messaging` 投递实时消息，但不应与 infra messaging 合并。
+- `mango-biz-notification` 是业务消息/通知域；它可以使用 `mango-infra-realtime` 投递实时消息，但不应与 infra messaging 合并。
 - 本阶段的目标是标准化非主链路平台模块，不代表这些模块都要合并或降级。
 
 ### 必须做
@@ -1584,7 +1603,7 @@ rg -n "core\\.mapper|@Service|@Mapper" mango/mango-app/mango-admin-app/src/main/
 
 ```bash
 cd mango
-for m in mango-org mango-captcha mango-area mango-i18n mango-message mango-ai; do
+for m in mango-org mango-captcha mango-area mango-i18n mango-biz-notification mango-ai; do
   echo "## $m"
   rg -n "$m|io\\.mango\\.${m#mango-}" mango/mango-platform mango/mango-app mango/mango-infra --glob 'pom.xml' --glob '*.java'
 done
@@ -1604,7 +1623,7 @@ done
 | P10-T3 | 标准化盘点 `mango-captcha` | 可并行，按需执行 | `mango-captcha` |
 | P10-T4 | 标准化盘点 `mango-area` | 可并行，按需执行 | `mango-area` |
 | P10-T5 | 标准化盘点 `mango-i18n` | 可并行，按需执行 | `mango-i18n` |
-| P10-T6 | 标准化盘点 `mango-message` | 可并行，按需执行 | `mango-message` |
+| P10-T6 | 标准化盘点 `mango-biz-notification` | 可并行，按需执行 | `mango-biz-notification` |
 | P10-T7 | 标准化盘点 `mango-ai` | 可并行，按需执行 | `mango-ai` |
 | P10-T8 | 汇总判断和统一文档 | 不并行 | 计划/交付记录 |
 
@@ -1666,13 +1685,13 @@ mvn -q -DskipTests compile
 
 | 目标模块 | 来源模块 | 定位 | 合并理由 | 借鉴 |
 |----------|----------|------|----------|------|
-| `mango-infra-messaging` | `mango-infra-sse` + `mango-infra-websocket` | server-client messaging，支持 push/pull、连接、订阅、消息分发 | SSE/WebSocket 都服务服务端与客户端消息通信；上层应依赖 messaging 抽象，而不是协议实现；合并后能统一连接管理、消息分发、订阅模型 | Spring Messaging |
+| `mango-infra-realtime` | `mango-infra-sse` + `mango-infra-websocket` | server-client messaging，支持 push/pull、连接、订阅、消息分发 | SSE/WebSocket 都服务服务端与客户端消息通信；上层应依赖 messaging 抽象，而不是协议实现；合并后能统一连接管理、消息分发、订阅模型 | Spring Messaging |
 
 说明：
 
 - 本合并不是因为二者“代码少”或“名字相似”。
 - 决策依据是共同上游、共同协议抽象、共同连接/会话/订阅/投递模型。
-- 旧 `mango-infra-sse` / `mango-infra-websocket` 模块本轮删除，SSE/WebSocket 只作为 `mango-infra-messaging-core` 内部 protocol adapter。
+- 旧 `mango-infra-sse` / `mango-infra-websocket` 模块本轮删除，SSE/WebSocket 只作为 `mango-infra-realtime-core` 内部 protocol adapter。
 
 #### 本轮明确不合并
 
@@ -1709,7 +1728,7 @@ mvn -q -DskipTests compile
 | `mango-system` | 系统通用能力集合 | 本轮先做内部子域化，不急物理拆分 | DDD Bounded Context / 中后台系统实践 |
 | `mango-org` | 组织域 | 组织、部门、岗位是企业组织事实，不应并入 RBAC | IAM / HR domain |
 | `mango-captcha` | 验证码与人机校验 | 验证码不只服务登录，不应并入 auth | reCAPTCHA 类能力 |
-| `mango-message` | 业务消息/通知域 | 不应并入 system，避免 system 继续膨胀 | Notification Center |
+| `mango-biz-notification` | 业务消息/通知域 | 不应并入 system，避免 system 继续膨胀 | Notification Center |
 | `mango-ai` | AI 能力域 | AI 是增长域，不应因当前体量小而被合并 | AI capability domain |
 | `mango-area` | 地区事实域 | 地区、行政区划是事实数据，不等同于翻译文案 | Locale/Region data |
 | `mango-i18n` | 国际化翻译域 | 语言、文案、翻译资源是独立本地化能力 | Spring MessageSource |
@@ -1882,7 +1901,7 @@ mvn -q -DskipTests compile
 
 - `SysUser` 本轮暂留 `mango-rbac`
 - `mango-common` 不接收业务实体
-- `mango-infra-messaging` 是本轮必做项
+- `mango-infra-realtime` 是本轮必做项
 - 空壳 `observability` 不保留
 
 ### 第二件事
@@ -1893,7 +1912,7 @@ mvn -q -DskipTests compile
 
 正式进入 `Phase 1: mango-common` 重构。
 
-`mango-common` 稳定后，按 `mango-infra-kv`、`mango-infra-messaging`、`mango-infra-security/web`、`mango-gateway` 的顺序完成 infra 层收口，再进入平台层。
+`mango-common` 稳定后，按 `mango-infra-kv`、`mango-infra-realtime`、`mango-infra-security/web`、`mango-gateway` 的顺序完成 infra 层收口，再进入平台层。
 
 ---
 

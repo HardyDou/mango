@@ -16,7 +16,7 @@
 | `mango-i18n` | 国际化 |
 | `mango-area` | 区域数据 |
 | `mango-captcha` | 验证码 |
-| `mango-message` | 消息中心 |
+| `mango-biz-notification` | 消息中心 |
 
 ## 设计原则
 

@@ -32,10 +32,8 @@
         <module>mango-infra-feign</module>
         <!-- API Documentation (OpenAPI/Swagger) -->
         <module>mango-infra-doc</module>
-        <!-- SSE (Server-Sent Events) -->
-        <module>mango-infra-sse</module>
-        <!-- WebSocket -->
-        <module>mango-infra-websocket</module>
+        <!-- Client messaging (SSE/WebSocket protocol adapters) -->
+        <module>mango-infra-realtime</module>
         <!-- Gateway -->
         <module>mango-gateway</module>
         <!-- KV (Key-Value Storage - Memory/Redis/JDBC abstraction) -->

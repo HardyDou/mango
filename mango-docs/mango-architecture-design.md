@@ -1063,7 +1063,7 @@ export default defineConfig({
 | `mango-area` | `mango-area-api/core/starter/remote` | 行政区划 | ✅ |
 | `mango-system` | `mango-system-api/core/starter/remote` | 系统配置 | ✅ |
 | `mango-captcha` | `mango-captcha-api/core/starter` | 验证码 | ✅ |
-| `mango-message` | `mango-message-api/core/starter` | 消息通知 | ✅ |
+| `mango-biz-notification` | `mango-biz-notification-api/core/starter` | 消息通知 | ✅ |
 | `mango-ai` | `mango-ai-api/core/starter` | AI 能力集成 | ✅ |
 | **基础设施** | | | |
 | `mango-infra-kv` | `api/core/starter` | KV 存储抽象（ICache/ILocker/ITokenStore/IIdempotent） | ✅ |

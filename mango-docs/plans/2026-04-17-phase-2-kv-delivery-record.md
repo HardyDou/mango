@@ -77,6 +77,6 @@
 
 ## 下一 Phase 前置条件
 
-- [x] Phase 3 可以在 KV store/capability 装配边界已明确的基础上进入 `mango-infra-messaging`。
+- [x] Phase 3 可以在 KV store/capability 装配边界已明确的基础上进入 `mango-infra-realtime`。
 - [x] 后续业务模块不得直接依赖 `mango-infra-kv-core`；只能依赖 `mango-infra-kv-api` 或通过 starter 装配。
 - [x] 后续如启用 cache/lock/rate-limit/idempotent 注解能力，必须显式打开对应 `mango.kv.capability.*` 开关。
