@@ -22,6 +22,9 @@
 | Checkstyle `CyclomaticComplexity` | 裁剪 | 保持 30；超过阈值阻断或告警按模块阶段决定 |
 | Checkstyle `NPathComplexity` | 裁剪 | 保持 500；先用于发现复杂方法 |
 | Checkstyle `MagicNumber` | 裁剪 | 保持 info；不作为阻断规则 |
+| P3C `ClassMustHaveAuthorRule` | 裁剪 | `@author` 不提供 AI 可用契约信息 |
+| P3C `CommentsMustBeJavadocFormatRule` | 裁剪 | 形式化 Javadoc 容易制造无信息注释 |
+| P3C `AvoidCommentBehindStatementRule` | 裁剪 | 行尾注释不是 Mango 当前质量风险，避免噪声 |
 
 ## 3. 去除
 
@@ -29,11 +32,22 @@
 |---|---|---|
 | 强制方法 Javadoc | 去除 | 容易制造无信息注释 |
 | 强制类型 Javadoc | 去除 | 容易制造无信息注释 |
+| 强制字段 Javadoc | 去除 | 简单字段注释通常只是复述命名 |
+| Javadoc 首句句号 | 去除 | 格式收益低，不服务 AI 理解 |
 | 低价值词法限制 | 去除 | 与业务语义无关，误报高 |
 | 与 Mango 后缀冲突的规则 | 去除 | 项目规范优先 |
 | 对生成代码误报高的规则 | 去除 | 不产生质量收益 |
 
-## 4. Mango 优先规则
+## 4. Javadoc 契约优先
+
+| Target | Decision |
+|---|---|
+| API / SPI / Annotation / Properties | 必须描述业务语义、参数约束、返回语义或边界条件 |
+| public 契约方法 | 必须说明调用方需要依赖的行为契约 |
+| Enum constants | 必须说明业务含义 |
+| Getter / Setter / 简单字段 / 显然方法 | 不强制 Javadoc |
+
+## 5. Mango 优先规则
 
 以下规则覆盖阿里规则时，以 Mango 规则为准：
 
@@ -46,10 +60,9 @@
 | 远程调用 | `starter-remote` 不硬编码服务发现名 |
 | 前置条件 | 业务逻辑入口使用 `Require` |
 
-## 5. 后续处理
+## 6. 后续处理
 
 - 当前 P3C 规则集不直接扩大。
 - 每条去除规则必须有误报样例或项目冲突说明。
 - 每条新增规则必须有正例、反例、测试样例。
 - 自动规则先进入 `report` 模式，再进入 `migration` 或 `strict`。
-

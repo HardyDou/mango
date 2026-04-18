@@ -68,8 +68,8 @@
 
 | Rule Group | Command | Scope |
 |---|---|---|
-| P3C / PMD | `mvn pmd:check` | 命名、异常、集合、并发、OOP、ORM、控制语句等通用 Java 规则 |
-| Checkstyle | `mvn checkstyle:check` | 格式、复杂度、长度、命名、注释等通用 Java 规则 |
+| P3C / PMD | `mvn pmd:check` | 命名、异常、集合、并发、OOP、ORM、控制语句、契约型注释等通用 Java 规则 |
+| Checkstyle | `mvn checkstyle:check` | 格式、复杂度、长度、命名等通用 Java 规则；不检查形式化 Javadoc |
 
 ## 5. 执行模式
 

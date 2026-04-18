@@ -42,6 +42,12 @@
 - 通用代码质量规则由 P3C/PMD/Checkstyle 负责，例如方法长度、类长度、复杂度、异常吞掉、空 catch、硬编码等。
 - `mango:check` 只负责 Mango 项目特有规则，例如模块命名、模块边界、`api/core/starter` 职责、KV key、测试物料一致性、`module.properties`、远程适配。
 - 命名规则按工具分工执行：Java 类、方法、字段命名交给 P3C/Checkstyle；P3C/Checkstyle 覆盖不到的 Mango 模块命名保留在 `mvn mango:check -Drule=naming`。
+- Javadoc 采用契约优先策略，不追求形式完整：
+  - API、SPI、注解、配置类必须写有语义的 Javadoc。
+  - public 方法暴露契约时，说明参数约束、返回语义、异常或边界。
+  - 枚举值必须说明业务含义。
+  - getter/setter、简单字段、显然方法不强制写 Javadoc。
+  - `@author`、Javadoc 首句句号等形式规则不作为 Mango 质量规则。
 - 明显重复代码必须抽取。
 - 明显无用代码必须删除。
 

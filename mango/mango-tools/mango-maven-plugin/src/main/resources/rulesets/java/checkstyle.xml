@@ -70,12 +70,12 @@
         <module name="MissingSwitchDefault"/>
         <module name="NeedBraces"/>
 
-        <!-- 注释规范 -->
-        <module name="JavadocMethod"/>
-        <module name="JavadocType"/>
-        <module name="JavadocVariable"/>
-        <module name="JavadocStyle"/>
-        <module name="WriteTag"/>
+        <!--
+            Javadoc 采用契约优先策略：
+            - API/SPI/注解/配置契约由 PMD/P3C 的接口方法、枚举值等规则检查。
+            - 不用 Checkstyle 强制普通类、普通方法、字段 Javadoc 或首句句号，
+              避免产生无语义注释和 AI 噪声。
+        -->
 
         <!-- 编码规范 -->
         <module name="DefaultComesLast"/>

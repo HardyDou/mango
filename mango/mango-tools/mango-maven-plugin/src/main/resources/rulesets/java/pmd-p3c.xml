@@ -18,8 +18,16 @@
     <!-- 命名规范 -->
     <rule ref="rulesets/java/ali-naming.xml"/>
 
-    <!-- 注释规范 -->
-    <rule ref="rulesets/java/ali-comment.xml"/>
+    <!--
+        注释规范采用契约优先策略：
+        - 保留接口/抽象方法 Javadoc、枚举常量注释、注释掉代码检查。
+        - 裁剪 @author、形式化 Javadoc、行尾注释等不服务 Mango 项目质量的告警。
+    -->
+    <rule ref="rulesets/java/ali-comment.xml">
+        <exclude name="CommentsMustBeJavadocFormatRule"/>
+        <exclude name="ClassMustHaveAuthorRule"/>
+        <exclude name="AvoidCommentBehindStatementRule"/>
+    </rule>
 
     <!-- 并发规范 -->
     <rule ref="rulesets/java/ali-concurrent.xml"/>
