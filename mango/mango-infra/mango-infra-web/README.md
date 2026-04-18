@@ -1,12 +1,13 @@
 # mango-infra-web
 
-> Web 层基础设施 - Spring MVC、CORS、响应封装
+> Web 层基础设施 - Spring MVC、CORS、响应封装、请求上下文 Web 增强
 
 ## 已实现
 
 - **CORS 跨域配置** - 允许所有来源/方法/头部，支持凭证
 - **WebMvcConfigurer 集成** - Spring Boot 3.x 标准配置方式
 - **Actuator 端点** - 健康检查等运维端点
+- **RequestContextContributor** - 为请求型 infra 能力提供 `request` / `headers` / `cookies` 属性
 
 ## 配置属性
 
@@ -48,3 +49,4 @@ mango:
 - 使用 `spring-boot-starter-actuator` 提供运维端点
 - CORS 配置开放所有来源，便于开发环境；生产环境建议通过网关统一处理
 - 采用 `@AutoConfiguration` + `WebMvcConfigurer` 方式，不影响用户自定义配置
+- Web 运行时变量增强由 `mango-infra-web` 提供，`mango-common` 只定义扩展协议，`mango-infra-kv-core` 不直接依赖 Servlet API

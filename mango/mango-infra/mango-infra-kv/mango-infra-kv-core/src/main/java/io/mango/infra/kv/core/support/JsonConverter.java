@@ -1,4 +1,4 @@
-package io.mango.infra.kv.core;
+package io.mango.infra.kv.core.support;
 
 import io.mango.infra.kv.api.IConverter;
 

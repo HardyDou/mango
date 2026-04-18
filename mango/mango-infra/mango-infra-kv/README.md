@@ -1,543 +1,242 @@
 # mango-infra-kv
 
-## 职责
+`mango-infra-kv` 是 Mango 的 KV 技术底座，提供底层 KV store 抽象和可选 capability bean 装配。
 
-KV（Key-Value）存储抽象层，通过 **IKvStore 接口体系**提供统一的通用能力：缓存、锁、计数器、限流、防重、Token、ID生成、序列化、对象转换。
+## 职责边界
 
-## 技术实现
+| 概念 | 定义 | 示例 |
+|------|------|------|
+| `store` | 实际 KV 存储实现，只回答“底层用哪个存储” | `MemoryKvStore`、`RedisKvStore`、`JdbcKvStore` |
+| `capability bean` | 基于 `IKvStore` 组装出的通用使用场景能力，只回答“哪些能力启用” | `ICache`、`ILocker`、`IRateLimiter`、`IIdempotent` |
 
-- 核心框架：Spring Boot 3.x + Redisson / JDBC
-- 数据存储：Redis（Redisson）/ Database / Memory 自动选择
-- 通信方式：SPI + `@ConditionalOnMissingBean` 注入
+`store` 选择和 `capability bean` 装配是两个独立职责。选择了 Redis store 不代表自动启用所有 cache/lock/rate-limit/idempotent bean。
 
 ## 模块结构
 
-```
+```text
 mango-infra-kv/
-├── mango-infra-kv-api/        ← 接口定义（10个接口）
-├── mango-infra-kv-core/      ← 实现（Memory/Redis/JDBC）
-└── mango-infra-kv-starter/   ← SPI 注入配置
+├── mango-infra-kv-api        # 接口、注解、枚举
+├── mango-infra-kv-core       # memory / redis / jdbc / support 实现
+└── mango-infra-kv-starter    # 自动配置
 ```
 
-## 包路径
+`mango-infra-kv-core` 按职责分包：
 
-```
-io.mango.infra.kv.api        ← 接口定义
-io.mango.infra.kv.core       ← 实现类
-io.mango.infra.kv.starter    ← 自动配置
-```
+| 包 | 职责 |
+|----|------|
+| `io.mango.infra.kv.core.memory` | 内存 store 实现 |
+| `io.mango.infra.kv.core.redis` | Redis store 实现 |
+| `io.mango.infra.kv.core.jdbc` | JDBC store 实现 |
+| `io.mango.infra.kv.core.capability` | 基于 `IKvStore` 的通用 capability 实现 |
+| `io.mango.infra.kv.core.support` | JSON serializer / converter 等通用支撑 |
+| `io.mango.infra.kv.core.aspect` | KV 能力切面与请求上下文消费 |
 
-## 核心接口
+## API 清单
 
-### IKvStore（底层 KV 存储）
-
-| 方法 | 说明 |
+| 类型 | 清单 |
 |------|------|
-| `put(key, value, expireSeconds)` | 写入 key-value，返回是否新增成功 |
-| `get(key)` | 读取 key，过期或不存在返回 null |
-| `increment(key, windowSeconds)` | 计数器递增，自动设置滚动窗口过期时间 |
-| `delete(key)` | 删除 key |
-| `exists(key)` | 检查 key 是否存在（不考虑过期） |
+| Store | `IKvStore` |
+| Capability | `ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator` |
+| 辅助 | `ISerializer`、`IConverter` |
+| 注解 | `@Cacheable`、`@RateLimit`、`@Idempotent`、`@Locker` |
+| 枚举 | `KvStoreTypeEnum` |
 
-### ICache（通用缓存）
+## 配置前缀
 
-| 方法 | 说明 |
-|------|------|
-| `set(key, value, ttlSeconds)` | 设置缓存，TTL 必须为正数 |
-| `get(key)` | 获取缓存，过期返回 null |
-| `exists(key)` | 检查 key 是否存在（考虑过期） |
-| `delete(key)` | 删除缓存 |
-
-### ILocker（分布式锁）
-
-| 方法 | 说明 |
-|------|------|
-| `tryLock(key, ttlSeconds)` | 尝试获取锁，TTL 必须为正数 |
-| `unlock(key)` | 释放锁 |
-
-### ICounter（原子计数器）
-
-| 方法 | 说明 |
-|------|------|
-| `increment(key, delta, windowSeconds)` | 递增/递减计数器，自动设置滚动窗口 |
-| `get(key)` | 获取当前值 |
-
-### IRateLimiter（令牌桶限流）
-
-| 方法 | 说明 |
-|------|------|
-| `tryAcquire(key, permits)` | 尝试获取令牌 |
-
-### IIdempotent（防重复提交）
-
-| 方法 | 说明 |
-|------|------|
-| `isDuplicate(key, windowSeconds)` | 检查是否重复 |
-| `mark(key, windowSeconds)` | 标记为已处理 |
-| `checkAndMark(key, windowSeconds)` | 原子检查并标记 |
-
-### ITokenStore（Token 存储）
-
-| 方法 | 说明 |
-|------|------|
-| `store(token, value, ttlSeconds)` | 存储 Token |
-| `get(token)` | 获取 Token 值 |
-| `remove(token)` | 删除 Token |
-
-### IIdGenerator（ID 生成器）
-
-| 方法 | 说明 |
-|------|------|
-| `nextId()` | 生成下一个唯一 ID |
-
-### ISerializer（JSON 序列化）
-
-| 方法 | 说明 |
-|------|------|
-| `serialize(object)` | 对象序列化为 JSON 字符串 |
-| `deserialize(content, classType)` | JSON 字符串反序列化 |
-
-### IConverter（对象转换）
-
-| 方法 | 说明 |
-|------|------|
-| `convert(source, classType)` | 对象类型转换（通过 JSON 中转） |
-
-## 实现矩阵
-
-| 接口 | Memory | Redis | JDBC |
-|------|--------|-------|------|
-| ICache | MemoryCache | RedisCache | JdbcCache |
-| ILocker | MemoryLocker | RedisLocker | JdbcLocker |
-| ICounter | MemoryCounter | RedisCounter | JdbcCounter |
-| IRateLimiter | MemoryRateLimiter | RedisRateLimiter | JdbcRateLimiter |
-| IIdempotent | MemoryIdempotent | RedisIdempotent | JdbcIdempotent |
-| ITokenStore | MemoryTokenStore | RedisTokenStore | JdbcTokenStore |
-| IIdGenerator | MemoryIdGenerator | RedisIdGenerator | JdbcIdGenerator |
-| IKvStore | MemoryKvStore | RedisKvStore | JdbcKvStore |
-| ISerializer | JsonSerializer | - | - |
-| IConverter | JsonConverter | - | - |
-
-## 依赖关系
-
-```
-本模块依赖：
-├── mango-common                    ← 基础对象
-├── mango-infra-redis-starter      ← RedissonClient
-└── mango-infra-db-starter        ← DataSource / JdbcTemplate
-
-本模块被依赖：
-├── mango-*-starter               ← 业务模块的本地 starter
-└── mango-*-starter-remote       ← 微服务部署时的远程调用
-```
-
-## 配置项
-
-所有配置收敛在 `mango.kv.*` 下，Redis 连接兼容 Spring 标准 `spring.redis.*`。
-
-### 配置结构
+当前统一前缀为 `mango.kv.*`。不再新增或推荐 `mango.dal.*`。
 
 ```yaml
 mango:
   kv:
-    type: auto/redis/db/memory
+    store:
+      type: auto # auto | memory | redis | jdbc
     provider:
-      redis:
-        host: localhost
-        port: 6379
-        password:
-        database: 0
-        timeout: 3000
-        pool:
-          maxActive: 8
-          maxIdle: 8
-          minIdle: 0
-          maxWait: -1
-      db:
-        tableName: sys_kv_record
-        url: jdbc:postgresql://localhost:5432/mydb
-        username:
-        password:
-        driver:
-        druid:
-          initialSize: 5
-          maxActive: 20
-          minIdle: 5
-          maxWait: 60000
-          validationQuery: SELECT 1
-        hikari:
-          maxPoolSize: 10
-          minIdle: 5
-          connectionTimeout: 30000
-          idleTimeout: 600000
-          maxLifetime: 1800000
+      jdbc:
+        table-name: infra_kv_entry
       memory:
-        cleanupIntervalMinutes: 1
+        cleanup-interval-minutes: 1
+    key:
+      enabled: true
+      prefix: mango:infra:kv
+      env: default
+      app-enabled: false
+      app: app
+    capability:
+      enabled: false
+      cache: false
+      locker: false
+      counter: false
+      rate-limiter: false
+      idempotent: false
+      token-store: false
+      id-generator: false
+      serializer: false
+      converter: false
 ```
 
-### 配置项说明
+兼容说明：
 
-#### mango.kv — 主配置
+- `mango.kv.type` 作为旧配置兼容入口保留。
+- `db` 作为 `jdbc` 的旧别名保留。
+- `mango.kv.provider.db.*` 作为 `mango.kv.provider.jdbc.*` 的旧配置兼容入口保留。
+- 文档、日志和新增配置统一使用 `mango.kv.store.type` 与 `jdbc`。
+- JDBC 当前默认表名为 `infra_kv_entry`；老库通过后续迁移从 `sys_kv_record` 前向迁移到新表名。
 
-| 配置 | 默认值 | 说明 |
-|------|--------|------|
-| `mango.kv.type` | `auto` | 存储类型：`auto` / `redis` / `db` / `memory` |
+## Store 选择规则
 
-#### mango.kv.provider.redis — Redis 连接配置
+| 配置 | 条件 | 注入结果 |
+|------|------|----------|
+| `mango.kv.store.type=memory` | 无额外依赖 | `MemoryKvStore` |
+| `mango.kv.store.type=redis` | 存在 `RedissonClient` | `RedisKvStore` |
+| `mango.kv.store.type=jdbc` | 存在 `JdbcTemplate` 与 `RedissonClient` | `JdbcKvStore` |
+| `mango.kv.store.type=db` | 兼容别名 | `JdbcKvStore` |
+| `mango.kv.store.type=auto` 或未配置 | 存在 `RedissonClient` | `RedisKvStore` |
+| `mango.kv.store.type=auto` 或未配置 | 不存在 `RedissonClient` | `MemoryKvStore` |
 
-| 配置 | 默认值 | 说明 |
-|------|--------|------|
-| `host` | `localhost` | 服务器地址 |
-| `port` | `6379` | 端口 |
-| `password` | - | 密码 |
-| `database` | `0` | DB 索引 |
-| `timeout` | `3000` | 连接超时（ms） |
-| `pool.maxActive` | `8` | 最大连接数 |
-| `pool.maxIdle` | `8` | 最大空闲连接 |
-| `pool.minIdle` | `0` | 最小空闲连接 |
-| `pool.maxWait` | `-1` | 等待时间（ms） |
+说明：
 
-#### mango.kv.provider.db — 数据库配置
+- `auto` 不自动选择 jdbc，避免应用只因存在 DataSource 就把 KV store 切到数据库。
+- `JdbcKvStore` 当前仍依赖 `RedissonClient` 生成递增 ID，Phase 2 不改变该实现。
+- `JdbcKvStore` 会读取 `mango.kv.provider.jdbc.table-name`，默认表名为 `infra_kv_entry`，并校验表名只允许字母、数字和下划线。
+- Flyway 迁移保持 `V1=sys_kv_record`、`V2=rename to infra_kv_entry`，保证老环境升级时向前兼容。
+- 所有 store bean 都有 `@ConditionalOnMissingBean(IKvStore.class)`，应用可覆盖。
+- `KvStoreAutoConfiguration` 声明晚于 Redis、DB、Spring JDBC/JdbcTemplate 和 Redisson 自动配置执行，保证 `@ConditionalOnBean` 判断有稳定的 bean definition 基线。
 
-| 配置 | 默认值 | 说明 |
-|------|--------|------|
-| `tableName` | `sys_kv_record` | KV 存储表名 |
-| `url` | - | JDBC URL（fallback 至 spring.datasource.url） |
-| `username` | - | 用户名（fallback 至 spring.datasource.username） |
-| `password` | - | 密码（fallback 至 spring.datasource.password） |
-| `driver` | - | 驱动类（fallback 至 spring.datasource.driver-class-name） |
-| `druid.initialSize` | `5` | 初始连接数 |
-| `druid.maxActive` | `20` | 最大连接数 |
-| `druid.minIdle` | `5` | 最小空闲连接 |
-| `druid.maxWait` | `60000` | 最大等待时间（ms） |
-| `druid.validationQuery` | `SELECT 1` | 验证查询 |
-| `druid.testWhileIdle` | `true` | 空闲时检测 |
-| `hikari.maxPoolSize` | `10` | 最大连接数 |
-| `hikari.minIdle` | `5` | 最小空闲连接 |
-| `hikari.connectionTimeout` | `30000` | 连接超时（ms） |
-| `hikari.idleTimeout` | `600000` | 空闲超时（ms） |
-| `hikari.maxLifetime` | `1800000` | 最大生命周期（ms） |
+## Capability Bean 装配规则
 
-#### mango.kv.provider.memory — 内存配置
-
-| 配置 | 默认值 | 说明 |
-|------|--------|------|
-| `cleanupIntervalMinutes` | `1` | 过期 key 清理间隔（分钟） |
-
----
-
-### 兼容规则
-
-**Redis 配置优先级（从高到低）：**
-```
-mango.kv.provider.redis.*  >  mango.redis.*  >  spring.redis.*  >  内置默认值
-```
-
-**数据库配置：**
-- 优先使用 `mango.kv.provider.db.*`
-- Druid 参数 fallback 至 `spring.datasource.druid.*`
-- Hikari 参数 fallback 至 `spring.datasource.hikari.*`
-- 基础参数 fallback 至 `spring.datasource.*`
-- 天然兼容 `spring.datasource.*` 和 `dynamic-datasource` 多数据源
-
----
-
-## 配置示例
-
-### RedisKvStore — 默认配置（零配置接入 Spring 标准）
-
-```yaml
-# 使用 Spring 标准前缀，KV 自动兼容
-spring:
-  redis:
-    host: 10.0.0.1
-    port: 6379
-    password: redis123
-    jedis:
-      pool:
-        max-active: 16
-        min-idle: 4
-
-mango:
-  kv:
-    type: redis
-```
-
-### RedisKvStore — 使用 KV 专属前缀
-
-```yaml
-# mango.kv.provider.redis.* 优先级最高
-mango:
-  kv:
-    type: redis
-    provider:
-      redis:
-        host: 10.0.0.1
-        port: 6379
-        pool:
-          maxActive: 32
-```
-
-### JdbcKvStore — 使用 KV 专属配置（ Druid 连接池）
+默认不强启 capability bean。需要显式打开总开关和具体能力开关：
 
 ```yaml
 mango:
   kv:
-    type: db
-    provider:
-      redis:
-        host: 10.0.0.1
-        port: 6379
-      db:
-        url: jdbc:postgresql://localhost:5432/mydb
-        username: postgres
-        password: postgres
-        druid:
-          initialSize: 5
-          maxActive: 20
-          minIdle: 5
+    capability:
+      enabled: true
+      cache: true
+      locker: true
 ```
 
-### JdbcKvStore — 使用 HikariCP 连接池
+| 配置 | 注入接口 | 实现选择 |
+|------|----------|----------|
+| `cache=true` | `ICache` | `KvStoreCache` |
+| `locker=true` | `ILocker` | `KvStoreLocker` |
+| `counter=true` | `ICounter` | `KvStoreCounter` |
+| `rate-limiter=true` | `IRateLimiter` | `KvStoreRateLimiter` |
+| `idempotent=true` | `IIdempotent` | `KvStoreIdempotent` |
+| `token-store=true` | `ITokenStore` | `KvStoreTokenStore` |
+| `id-generator=true` | `IIdGenerator` | `KvStoreIdGenerator` |
+| `serializer=true` | `ISerializer` | `JsonSerializer` |
+| `converter=true` | `IConverter` | `JsonConverter` |
+
+每个 capability bean 都有 `@ConditionalOnMissingBean`，允许业务、测试或应用装配层覆盖。
+
+Capability 实现不再按 memory / redis / jdbc 分裂。具体存储差异必须封装在 `IKvStore`
+实现内：
+
+| Store 语义 | 用途 | 要求 |
+|-----------|------|------|
+| `setIfAbsent(key, value, ttl)` | lock、idempotent、replay 防重 | 原子写入，已过期 key 视为不存在 |
+| `set(key, value, ttl)` | cache、token、captcha 等可覆盖值 | 写入或覆盖，并刷新 TTL |
+| `incrementBy(key, delta, window)` | counter、rate-limit、id-generator | 单 key 原子递增，支持正负 delta |
+| `get/delete/exists` | 通用读取、删除、存在判断 | 必须遵守过期语义 |
+
+`put(key, value, ttl)` 仅作为旧接口兼容入口保留，语义等同于 `setIfAbsent`。新增代码不得使用
+`put` 表达缓存覆盖写入，应使用 `set`。
+
+`IRateLimiter` 当前基于 `incrementBy` 实现固定窗口限流，不再宣称 token bucket。
+
+## Redis Key 规范
+
+自动装配出的 KV capability 默认会给业务 key 增加统一命名空间：
+
+```text
+mango:infra:kv:{env}:{capability}:{biz-key}
+```
+
+如确实需要按应用隔离，可打开 `mango.kv.key.app-enabled=true`，格式变为：
+
+```text
+mango:infra:kv:{env}:{app}:{capability}:{biz-key}
+```
+
+默认配置：
 
 ```yaml
 mango:
   kv:
-    type: db
-    provider:
-      redis:
-        host: 10.0.0.1
-        port: 6379
-      db:
-        url: jdbc:postgresql://localhost:5432/mydb
-        username: postgres
-        password: postgres
-        hikari:
-          maxPoolSize: 20
-          minIdle: 5
+    key:
+      enabled: true
+      prefix: mango:infra:kv
+      env: default
+      app-enabled: false
+      app: app
 ```
 
-### JdbcKvStore — 兼容 dynamic-datasource
+能力段固定如下：
 
-```yaml
-# 使用 spring.datasource.dynamic.* 配置多数据源
-spring:
-  datasource:
-    dynamic:
-      primary: master
-      datasource:
-        master:
-          url: jdbc:postgresql://localhost:5432/mydb
-          username: postgres
-          password: postgres
-  redis:
-    host: 10.0.0.1
-    port: 6379
+| 能力 | capability 段 | 示例 |
+|------|---------------|------|
+| `ICache` | `cache` | `mango:infra:kv:prod:cache:user:10001` |
+| `ILocker` | `lock` | `mango:infra:kv:prod:lock:order:202604170001` |
+| `ICounter` | `counter` | `mango:infra:kv:prod:counter:sms:18800000000` |
+| `IRateLimiter` | `rate-limit` | `mango:infra:kv:prod:rate-limit:login:ip:127.0.0.1` |
+| `IIdempotent` | `idempotent` | `mango:infra:kv:prod:idempotent:payment:req-abc` |
+| `ITokenStore` | `token` | `mango:infra:kv:prod:token:access:sha256-xxx` |
+| `IIdGenerator` | `idgen` | `mango:infra:kv:prod:idgen:global` |
+| `JdbcKvStore` 内部 ID | `jdbc-id` | `mango:infra:kv:prod:jdbc-id:infra_kv_entry` |
 
-mango:
-  kv:
-    type: db
-```
+约束：
 
-### MemoryKvStore — 零配置
+- 业务只传业务段 key，例如 `user:#{#userId}`，不得手写 `mango:infra:kv` 前缀。
+- 默认不加应用名，保证同一环境内 infra KV 可以跨应用共享。
+- 环境段用于隔离 dev/test/prod，避免共享 Redis 时串数据。
+- `app-enabled=true` 仅用于明确需要应用级隔离的部署。
+- 底层 `IKvStore` 只处理最终 key；统一前缀在 capability 层完成。
 
-```yaml
-mango:
-  kv:
-    type: memory
-```
+## 注解 Key 表达式
 
-### 显式指定类型
+`KvCapabilityAspect` 支持以下 key 写法：
 
-```yaml
-# 强制 RedisKvStore（无 RedissonClient 则启动失败）
-mango:
-  kv:
-    type: redis
-
-# 强制 JdbcKvStore（需 DataSource + RedissonClient）
-mango:
-  kv:
-    type: db
-
-# 强制 MemoryKvStore（单机 / 测试环境）
-mango:
-  kv:
-    type: memory
-```
-
-## SPI 注入机制
-
-### IKvStore 注入
-
-| 条件 | 效果 |
-|------|------|
-| `mango.kv.type=redis` | 强制使用 RedisKvStore（无 RedissonClient 则启动失败） |
-| `mango.kv.type=db` | 强制使用 JdbcKvStore（需同时有 DataSource 和 RedissonClient） |
-| `mango.kv.type=memory` | 强制使用 MemoryKvStore |
-| `mango.kv.type=auto`（默认） | RedissonClient 存在 → RedisKvStore；否则 → MemoryKvStore |
-
-> **自动检测不会级联到 JdbcKvStore**。如果需要使用 JdbcKvStore，必须显式设置 `type=db`。
-
-### 接口注入
-
-所有接口通过 `@ConditionalOnMissingBean` 自动注入 **Memory 实现**：
-
-| 接口 | 默认实现 |
-|------|---------|
-| `ICache` | MemoryCache |
-| `ILocker` | MemoryLocker |
-| `ICounter` | MemoryCounter |
-| `IRateLimiter` | MemoryRateLimiter |
-| `IIdempotent` | MemoryIdempotent |
-| `ITokenStore` | MemoryTokenStore |
-| `IIdGenerator` | MemoryIdGenerator |
-| `ISerializer` | JsonSerializer |
-| `IConverter` | JsonConverter |
-
-> 注意：**无运行时降级，无自动级联**。通过 Spring `@ConditionalOnMissingBean` 在启动时确定用哪个实现，部署拓扑变更需重启服务。
-
-## AOP 注解支持
-
-除了编程式调用（`@Autowired ICache`），还支持注解方式使用：
-
-### 注解列表
-
-| 注解 | 功能 | 切面 |
+| 写法 | 示例 | 说明 |
 |------|------|------|
-| `@Cacheable` | 缓存方法结果 | CacheAspect |
-| `@RateLimit` | 令牌桶限流 | RateLimitAspect |
-| `@Idempotent` | 防重复提交 | IdempotentAspect |
-| `@Locker` | 分布式锁 | LockerAspect |
+| 静态字符串 | `user:static:key` | 不含 `#` 或 `@`，直接返回，无任何解析开销 |
+| SpEL 模板 | `user:#{#userId}:#{#headers['X-Tenant']}` | 推荐写法，支持方法参数、请求上下文变量和容器 bean |
+| 直接 SpEL | `#userId`、`@tenantKey.prefix()` | 整个 key 为一个表达式时使用 |
 
-### @Cacheable
+**语法要求：**
+- 新增 key 建议统一使用 `#{...}` 模板，例如 `user:#{#userId}:#{@tenantKey.prefix()}`。
+- 请求 header/cookie 访问建议使用模板表达式，例如 `#{#headers['X-Tenant']}`、`#{#cookies['SESSION']}`。
+- 不支持 `user:#userId` 这类内联占位写法；必须写成 `user:#{#userId}`。
+- 编译后的 `SpelExpression` 被缓存，同一 key 表达式只解析一次
 
-```java
-@Cacheable(key = "user:#userId", ttl = 3600)
-public User getUser(String userId) {
-    // 首次调用执行方法，结果缓存
-    // 后续调用直接返回缓存结果
-    return userRepository.findById(userId);
-}
-```
+可用上下文变量：
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `key` | String | - | 缓存 key，支持 SpEL `#参数名` |
-| `ttl` | long | 3600 | 过期时间（秒） |
-| `cacheValue` | boolean | true | 是否缓存返回值 |
+- 方法入参：如 `#userId`（模板中写为 `#{#userId}`）。
+- `#args`：方法入参数组。
+- `#headers`：由 Web contributor 提供；非 Web 场景默认不存在。
+- `#cookies`：由 Web contributor 提供；非 Web 场景默认不存在。
+- `#request`：由 Web contributor 提供；仅 Web 场景存在。
 
-### @RateLimit
+请求上下文扩展规则：
 
-```java
-@RateLimit(key = "api:#userId", permits = 100)
-public Result apiEndpoint(String userId) {
-    // 超过 100 次/秒 限制时抛出 RateLimitExceededException
-    return doSomething();
-}
-```
+- `mango-infra-kv-core` 只消费 `mango-common` 中的 `RequestContextContributor` 协议，不直接依赖 Web/Servlet。
+- `mango-infra-web` 当前提供 servlet request/header/cookie 变量增强。
+- 后续 Security、Trace、RPC 等模块如需扩展表达式变量，应各自提供 contributor，不得把运行时技术依赖压进 `kv-core`。
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `key` | String | - | 限流 key，支持 SpEL |
-| `permits` | int | 1 | 每次请求消耗的令牌数 |
+## 参数校验口径
 
-### @Idempotent
+- `kv-api` 不新增 `jakarta.validation` 注解，避免扩大 API 依赖。
+- 接口 Javadoc 定义 key、ttl、value 等参数契约。
+- core 实现使用 `IllegalArgumentException` 校验参数。
+- infra 层不使用 `Require`，避免把业务异常语义带入技术底座。
 
-```java
-@Idempotent(key = "order:#orderNo", window = 60)
-public void createOrder(String orderNo) {
-    // 60 秒内相同 orderNo 只允许执行一次
-    // 重复调用抛出 DuplicateOperationException
-    orderService.submit(orderNo);
-}
-```
+## 禁止事项
 
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `key` | String | - | 防重 key，支持 SpEL |
-| `window` | long | 60 | 有效时间窗口（秒） |
+- 业务模块不得直接依赖 `mango-infra-kv-core` 具体实现。
+- 业务代码不得通过 if/else 选择 memory / redis / jdbc。
+- 不得默认强启全部 capability bean。
+- 不得继续新增 `mango.dal.*` 配置或 DAL 术语。
 
-### @Locker
+## 参考文档
 
-```java
-@Locker(key = "order:#orderId", ttl = 30)
-public void processOrder(Long orderId) {
-    // 获取分布式锁后执行，30 秒自动释放
-    // 锁获取失败抛出 LockAcquisitionException
-    orderService.process(orderId);
-}
-```
-
-| 属性 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `key` | String | - | 锁 key，支持 SpEL |
-| `ttl` | long | 30 | 锁 TTL（秒） |
-
-### SpEL 表达式
-
-注解的 `key` 属性支持 SpEL 表达式，使用 `#参数名` 引用方法参数：
-
-```java
-// 单参数
-@Cacheable(key = "user:#userId")
-public User getUser(String userId) { ... }
-
-// 多参数
-@Locker(key = "order:#userId:#orderId")
-public void updateOrder(String userId, Long orderId) { ... }
-
-// 直接值（无 SpEL）
-@RateLimit(key = "api:global", permits = 1000)
-public Result globalLimit() { ... }
-```
-
-### 异常处理
-
-| 注解 | 异常类型 | 说明 |
-|------|---------|------|
-| `@RateLimit` | `RateLimitExceededException` | 超过限流阈值 |
-| `@Idempotent` | `DuplicateOperationException` | 检测到重复操作 |
-| `@Locker` | `LockAcquisitionException` | 锁获取失败 |
-
-## 约束（强制）
-
-- ✅ 必须通过 SPI 注入使用 `IKvStore` / `ICache` 等接口
-- ✅ 禁止直接 `new MemoryCache()` / `new RedisKvStore()` 等实现类
-- ✅ TTL 必须显式传入（每个方法参数）
-- ✅ TTL / windowSeconds 必须为正数（不得为 0 或负数）
-- ❌ 禁止硬编码 TTL
-- ❌ 禁止在单机部署使用 RedisKvStore（微服务才用）
-- ❌ type=db 需同时有 RedissonClient（用于 ID 生成）
-
-## 使用示例
-
-```java
-@Autowired
-private ICache cache;
-
-@Autowired
-private ILocker locker;
-
-@Autowired
-private ICounter counter;
-
-// 缓存
-cache.set("user:1", "John", 3600);
-String user = cache.get("user:1");
-
-// 分布式锁
-if (locker.tryLock("order:create", 30)) {
-    try {
-        // 业务逻辑
-    } finally {
-        locker.unlock("order:create");
-    }
-}
-
-// 计数器（限流）
-long count = counter.increment("api:rate:user1", 1, 60);
-if (count > 100) {
-    throw new RateLimitException();
-}
-```
+- [Phase 2 配置与装配规则](../../../mango-docs/plans/2026-04-17-phase-2-kv-configuration-rules.md)
+- [后端模块级重构计划](../../../mango-docs/plans/2026-04-17-backend-module-by-module-refactor-plan.md)

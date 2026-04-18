@@ -184,7 +184,7 @@ public class InternalCallFilter implements Filter {
         // Nonce passed verification, add to blacklist
         if (StringUtils.hasText(nonce)) {
             try {
-                kvStore.put("nonce:" + nonce, "1", nonceTtlSeconds);
+                kvStore.setIfAbsent("nonce:" + nonce, "1", nonceTtlSeconds);
             } catch (Exception e) {
                 log.warn("Failed to add nonce to blacklist", e);
             }

@@ -288,6 +288,199 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkKvKey_withSpelTemplate_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core;
+
+                import io.mango.infra.kv.api.annotation.Cacheable;
+
+                public class DemoService {
+                    @Cacheable(key = "user:#{#userId}")
+                    public String find(String userId) {
+                        return userId;
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "kv-key");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkKvKey_withInlinePlaceholder_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core;
+
+                import io.mango.infra.kv.api.annotation.Cacheable;
+
+                public class DemoService {
+                    @Cacheable(key = "user:#userId")
+                    public String find(String userId) {
+                        return userId;
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "kv-key");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkKvKey_withMultilineInlinePlaceholder_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core;
+
+                import io.mango.infra.kv.api.annotation.Cacheable;
+
+                public class DemoService {
+                    @Cacheable(
+                            key = "user:#userId",
+                            ttl = 60
+                    )
+                    public String find(String userId) {
+                        return userId;
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "kv-key");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkKvKey_withInfraPrefix_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core;
+
+                import io.mango.infra.kv.api.annotation.Locker;
+
+                public class DemoService {
+                    @Locker(key = "mango:infra:kv:prod:lock:order:1")
+                    public void lock() {
+                    }
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "kv-key");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkTestFixture_withMatchingRedisFixture_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-infra-test/src/test/java/io/mango/infra/kv/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("RedisKvStoreTest.java"), """
+                package io.mango.infra.kv.core;
+
+                import io.mango.infra.kv.core.redis.RedisKvStore;
+
+                class RedisKvStoreTest {
+                    private RedisKvStore kvStore;
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "test-fixture");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkTestFixture_withRedisTestUsingMemoryFixture_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-infra-test/src/test/java/io/mango/infra/kv/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("RedisCacheTest.java"), """
+                package io.mango.infra.kv.core;
+
+                import io.mango.infra.kv.core.memory.MemoryKvStore;
+
+                class RedisCacheTest {
+                    private MemoryKvStore kvStore;
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "test-fixture");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkTestFixture_withCapabilityParameterizedFixture_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-infra-test/src/test/java/io/mango/infra/kv/core/capability");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("CacheTest.java"), """
+                package io.mango.infra.kv.core.capability;
+
+                import io.mango.infra.kv.core.jdbc.JdbcKvStore;
+                import io.mango.infra.kv.core.memory.MemoryKvStore;
+                import io.mango.infra.kv.core.redis.RedisKvStore;
+
+                class CacheTest {
+                    private MemoryKvStore memory;
+                    private JdbcKvStore jdbc;
+                    private RedisKvStore redis;
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "test-fixture");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void extractSignature_withValidMethod_returnsSignature() throws Exception {
         // given
         Path javaFile = tempDir.resolve("Test.java");

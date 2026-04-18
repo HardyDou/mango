@@ -6,13 +6,13 @@ import io.mango.infra.kv.api.IIdempotent;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.kv.api.IRateLimiter;
 import io.mango.infra.kv.api.ITokenStore;
-import io.mango.infra.kv.core.redis.RedisCache;
-import io.mango.infra.kv.core.redis.RedisCounter;
-import io.mango.infra.kv.core.redis.RedisIdempotent;
+import io.mango.infra.kv.core.capability.KvStoreCache;
+import io.mango.infra.kv.core.capability.KvStoreCounter;
+import io.mango.infra.kv.core.capability.KvStoreIdempotent;
+import io.mango.infra.kv.core.capability.KvStoreLocker;
+import io.mango.infra.kv.core.capability.KvStoreRateLimiter;
+import io.mango.infra.kv.core.capability.KvStoreTokenStore;
 import io.mango.infra.kv.core.redis.RedisKvStore;
-import io.mango.infra.kv.core.redis.RedisLocker;
-import io.mango.infra.kv.core.redis.RedisRateLimiter;
-import io.mango.infra.kv.core.redis.RedisTokenStore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,12 +72,12 @@ class RedisRealIntegrationTest {
     void setUp() {
         // Clear all test keys before each test
         redisson.getKeys().deleteByPattern(KEY_PREFIX + "*");
-        cache = new RedisCache(kvStore);
-        locker = new RedisLocker(kvStore);
-        counter = new RedisCounter(kvStore);
-        rateLimiter = new RedisRateLimiter(kvStore);
-        idempotent = new RedisIdempotent(kvStore);
-        tokenStore = new RedisTokenStore(kvStore);
+        cache = new KvStoreCache(kvStore);
+        locker = new KvStoreLocker(kvStore);
+        counter = new KvStoreCounter(kvStore);
+        rateLimiter = new KvStoreRateLimiter(kvStore);
+        idempotent = new KvStoreIdempotent(kvStore);
+        tokenStore = new KvStoreTokenStore(kvStore);
     }
 
     // ==================== ICache ====================
@@ -146,15 +146,11 @@ class RedisRealIntegrationTest {
     @Test
     void rateLimiter_tryAcquire() {
         String key = KEY_PREFIX + "ratelimit:key1";
-        // With defaultLimit=100 and permits=3:
-        // After n successful calls, counter=n. Next call checks: n + 3 <= 100
-        // Call #98: counter=97, 97+3=100 <= 100, succeeds
-        // Call #99: counter=98, 98+3=101 > 100, fails
-        // So 98 successful calls are allowed before rejection
-        for (int i = 0; i < 98; i++) {
+        // Fixed window: each call consumes 3 permits from the default limit 100.
+        // 33 calls consume 99 permits; the 34th call exceeds the limit.
+        for (int i = 0; i < 33; i++) {
             assertThat(rateLimiter.tryAcquire(key, 3)).isTrue();
         }
-        // 99th call should be rejected
         assertThat(rateLimiter.tryAcquire(key, 3)).isFalse();
     }
 

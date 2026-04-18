@@ -4,29 +4,25 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * DAL store configuration properties.
+ * KV store and capability configuration properties.
  *
  * 配置结构：
  * <pre>
  * mango:
- *   dal:
- *     type: auto/redis/db/memory
+ *   kv:
+ *     store:
+ *       type: auto/redis/jdbc/memory
  *     provider:
- *       redis:
- *         host: localhost
- *         port: 6379
- *         password:
- *         database: 0
- *         timeout: 3000
- *         pool:
- *           maxActive: 8
- *           maxIdle: 8
- *           minIdle: 0
- *           maxWait: -1
- *       db:
- *         tableName: sys_kv_record
+ *       jdbc:
+ *         tableName: infra_kv_entry
  *       memory:
  *         cleanupIntervalMinutes: 1
+ *     key:
+ *       prefix: mango:infra:kv
+ *       env: default
+ *       appEnabled: false
+ *     capability:
+ *       enabled: false
  * </pre>
  */
 @Data
@@ -34,31 +30,72 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class KvStoreProperties {
 
     /**
-     * DAL store type: auto / redis / db / memory
-     * - auto: auto-detect (RedissonClient → MemoryKvStore)
-     * - redis: force RedisKvStore (requires RedissonClient)
-     * - db: force JdbcKvStore (requires DataSource)
-     * - memory: force MemoryKvStore (no dependencies)
+     * Legacy store type alias. Prefer store.type.
      */
     private String type = "auto";
+
+    /**
+     * Store selection configuration.
+     */
+    private Store store = new Store();
 
     /**
      * Provider-specific configurations
      */
     private Provider provider = new Provider();
 
+    /**
+     * Capability bean default assembly configuration.
+     */
+    private Capability capability = new Capability();
+
+    /**
+     * KV key namespace configuration.
+     */
+    private Key key = new Key();
+
+    /**
+     * Return configured store type with legacy mango.kv.type fallback.
+     *
+     * @return normalized store type.
+     */
+    public String effectiveStoreType() {
+        String configured = store.getType();
+        if (configured == null || configured.isBlank()) {
+            configured = type;
+        }
+        if (configured == null || configured.isBlank()) {
+            return "auto";
+        }
+        return configured.trim().toLowerCase();
+    }
+
+    @Data
+    public static class Store {
+        /**
+         * KV store type: auto / redis / jdbc / memory.
+         * db is accepted as a legacy alias of jdbc.
+         */
+        private String type;
+    }
+
     @Data
     public static class Provider {
 
         private Redis redis = new Redis();
 
+        private Jdbc jdbc = new Jdbc();
+
+        /**
+         * Legacy provider alias. Prefer jdbc.
+         */
         private Db db = new Db();
 
         private Memory memory = new Memory();
     }
 
     /**
-     * RedisKvStore configuration
+     * RedisKvStore configuration.
      */
     @Data
     public static class Redis {
@@ -79,20 +116,20 @@ public class KvStoreProperties {
     }
 
     /**
-     * JdbcKvStore configuration
+     * JdbcKvStore configuration.
      *
      * 数据库连接配置优先级：
-     * - mango.dal.provider.db.url        > spring.datasource.url
-     * - mango.dal.provider.db.username     > spring.datasource.username
-     * - mango.dal.provider.db.password     > spring.datasource.password
-     * - mango.dal.provider.db.driver       > spring.datasource.driver-class-name
-     * - Druid: mango.dal.provider.db.druid.* > spring.datasource.druid.*
-     * - Hikari: mango.dal.provider.db.hikari.* > spring.datasource.hikari.*
+     * - mango.kv.provider.jdbc.url        > spring.datasource.url
+     * - mango.kv.provider.jdbc.username   > spring.datasource.username
+     * - mango.kv.provider.jdbc.password   > spring.datasource.password
+     * - mango.kv.provider.jdbc.driver     > spring.datasource.driver-class-name
+     * - Druid: mango.kv.provider.jdbc.druid.* > spring.datasource.druid.*
+     * - Hikari: mango.kv.provider.jdbc.hikari.* > spring.datasource.hikari.*
      */
     @Data
-    public static class Db {
-        /** KV 存储表名，默认 sys_kv_record */
-        private String tableName = "sys_kv_record";
+    public static class Jdbc {
+        /** KV 存储表名，默认 infra_kv_entry */
+        private String tableName = "infra_kv_entry";
 
         /** JDBC URL，fallback 到 spring.datasource.url */
         private String url;
@@ -137,7 +174,14 @@ public class KvStoreProperties {
     }
 
     /**
-     * MemoryKvStore configuration
+     * Legacy alias for provider.jdbc.
+     */
+    @Deprecated
+    public static class Db extends Jdbc {
+    }
+
+    /**
+     * MemoryKvStore configuration.
      */
     @Data
     public static class Memory {
@@ -145,5 +189,54 @@ public class KvStoreProperties {
          * 过期 key 清理任务间隔（分钟），默认 1
          */
         private int cleanupIntervalMinutes = 1;
+    }
+
+    /**
+     * KV key namespace configuration.
+     */
+    @Data
+    public static class Key {
+        /**
+         * Whether capability beans should prepend the Mango KV namespace.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Stable namespace root. Final format:
+         * {prefix}:{env}[:{app}]:{capability}:{biz-key}
+         */
+        private String prefix = "mango:infra:kv";
+
+        /**
+         * Runtime environment segment. Keep dev/test/prod data isolated.
+         */
+        private String env = "default";
+
+        /**
+         * Optional app segment. Disabled by default so infra KV can be shared across applications.
+         */
+        private boolean appEnabled;
+
+        /**
+         * Optional app segment value when appEnabled=true.
+         */
+        private String app = "app";
+    }
+
+    /**
+     * Capability bean default assembly switches.
+     */
+    @Data
+    public static class Capability {
+        private boolean enabled;
+        private boolean cache;
+        private boolean locker;
+        private boolean counter;
+        private boolean rateLimiter;
+        private boolean idempotent;
+        private boolean tokenStore;
+        private boolean idGenerator;
+        private boolean serializer;
+        private boolean converter;
     }
 }

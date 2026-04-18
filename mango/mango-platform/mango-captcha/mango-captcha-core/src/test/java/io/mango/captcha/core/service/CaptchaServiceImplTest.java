@@ -67,7 +67,7 @@ class CaptchaServiceImplTest {
 
         assertNotNull(result);
         assertEquals(CaptchaType.ARITHMETIC, result.getType());
-        verify(kvStore).put(startsWith("captcha:"), eq("5"), anyLong());
+        verify(kvStore).set(startsWith("captcha:"), eq("5"), anyLong());
     }
 
     @Test
@@ -81,7 +81,7 @@ class CaptchaServiceImplTest {
 
         assertNotNull(result);
         assertEquals(CaptchaType.BLOCK_PUZZLE, result.getType());
-        verify(kvStore).put(startsWith("captcha:"), eq("100"), anyLong());
+        verify(kvStore).set(startsWith("captcha:"), eq("100"), anyLong());
     }
 
     @Test
@@ -142,7 +142,7 @@ class CaptchaServiceImplTest {
 
         assertNotNull(key);
         assertTrue(key.startsWith("captcha:sms:LOGIN:"));
-        verify(kvStore).put(eq("captcha:sms:LOGIN:13800138000"), anyString(), eq(300L));
+        verify(kvStore).set(eq("captcha:sms:LOGIN:13800138000"), anyString(), eq(300L));
         verify(smsProvider).send(eq("13800138000"), isNull(), anyString());
     }
 
@@ -154,7 +154,7 @@ class CaptchaServiceImplTest {
 
         assertNotNull(key);
         assertTrue(key.startsWith("captcha:email:REGISTER:"));
-        verify(kvStore).put(eq("captcha:email:REGISTER:test@example.com"), anyString(), eq(300L));
+        verify(kvStore).set(eq("captcha:email:REGISTER:test@example.com"), anyString(), eq(300L));
     }
 
     @Test
@@ -169,7 +169,7 @@ class CaptchaServiceImplTest {
 
         assertNotNull(key);
         assertTrue(key.startsWith("captcha:LOGIN:"));
-        verify(kvStore).put(eq("captcha:LOGIN:13800138000"), anyString(), anyLong());
+        verify(kvStore).set(eq("captcha:LOGIN:13800138000"), anyString(), anyLong());
         verify(smsProvider).send(eq("13800138000"), isNull(), anyString());
     }
 
@@ -185,7 +185,7 @@ class CaptchaServiceImplTest {
 
         assertNotNull(key);
         assertTrue(key.startsWith("captcha:REGISTER:"));
-        verify(kvStore).put(eq("captcha:REGISTER:test@example.com"), anyString(), anyLong());
+        verify(kvStore).set(eq("captcha:REGISTER:test@example.com"), anyString(), anyLong());
         verify(emailProvider).send(eq("test@example.com"), eq("验证码"), anyString());
     }
 

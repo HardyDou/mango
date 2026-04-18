@@ -141,7 +141,7 @@ public class JjwtTokenServiceImpl implements ITokenService {
         String jti = claims.getId();
         if (jti != null && kvStore != null) {
             // If jti already in blacklist, this is a replay attack
-            if (!kvStore.put(BLACKLIST_PREFIX + jti, "1", getRemainingSeconds(claims))) {
+            if (!kvStore.setIfAbsent(BLACKLIST_PREFIX + jti, "1", getRemainingSeconds(claims))) {
                 log.warn("Refresh token replay detected, jti={}", jti);
                 return null;
             }

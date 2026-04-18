@@ -20,6 +20,8 @@
 | BE-NAME-011 | PMD | 返回对象 | 返回对象不是 `XxxVO` |
 | BE-NAME-015 | PMD | 类名、包名、API 签名 | 出现 `PO`、`DO` |
 | BE-NAME-016 | PMD | 仓内业务 API | 入参或返回使用 `DTO` |
+| BE-NAME-017 | `mango-maven-plugin` | KV 注解 key | 手写 `mango:infra:kv` 前缀，或使用 `user:#userId` / `user:@bean` 非标准写法 |
+| BE-TEST-005 | `mango-maven-plugin` | `src/test/java/**/*Test.java` | `Redis*Test`、`Jdbc*Test`、`Memory*Test` 使用不同实现类型的 KV 测试物料 |
 | BE-MOD-001 | `mango-maven-plugin` | `*-api` 目录 | 出现非契约包或实现类 |
 | BE-MOD-006 | `mango-maven-plugin` | `*-core/pom.xml` | 依赖非 API 的跨域模块 |
 | BE-MOD-007 | `mango-maven-plugin` | `*-starter-remote/pom.xml` | 依赖非本域 API 模块 |
@@ -56,6 +58,8 @@
 | Module info | `mvn mango:check -Drule=module-info` | 本地 starter 模块信息资源文件 |
 | Remote adapter | `mvn mango:check -Drule=remote-adapter` | 服务名硬编码、Feign 直接使用、能力解析 |
 | Security | `mvn mango:check -Drule=security` | 敏感信息、日志敏感字段、SQL 拼接候选 |
+| KV key | `mvn mango:check -Drule=kv-key` | KV 注解 key 前缀和 SpEL 写法 |
+| Test fixture | `mvn mango:check -Drule=test-fixture` | 测试类名和核心测试物料一致性 |
 
 ## 4. 执行模式
 

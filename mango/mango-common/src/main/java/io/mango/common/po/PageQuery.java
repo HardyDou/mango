@@ -2,13 +2,15 @@ package io.mango.common.po;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 分页请求参数。
  *
  * @author Mango
  */
 @Data
-public class PageQuery {
+public class PageQuery implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final long DEFAULT_PAGE = 1L;

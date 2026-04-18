@@ -61,7 +61,7 @@ public class CaptchaServiceImpl implements CaptchaApi {
                 response.setImage(arithmetic.getImage());
                 response.setExpireTime(defaultTtl);
                 response.setExtra(arithmetic.getExtra());
-                kvStore.put(KEY_PREFIX + key, arithmetic.getExtra(), defaultTtl);
+                kvStore.set(KEY_PREFIX + key, arithmetic.getExtra(), defaultTtl);
             }
             case BLOCK_PUZZLE -> {
                 CaptchaResponse puzzle = blockPuzzleCaptchaService.generate();
@@ -69,7 +69,7 @@ public class CaptchaServiceImpl implements CaptchaApi {
                 response.setSliderImage(puzzle.getSliderImage());
                 response.setX(puzzle.getX());
                 response.setExpireTime(defaultTtl);
-                kvStore.put(KEY_PREFIX + key, String.valueOf(puzzle.getX()), defaultTtl);
+                kvStore.set(KEY_PREFIX + key, String.valueOf(puzzle.getX()), defaultTtl);
             }
             case SMS -> {
                 // 短信验证码由sendSms生成
@@ -136,7 +136,7 @@ public class CaptchaServiceImpl implements CaptchaApi {
         String code = generateCode(smsCodeLength);
         String key = KEY_PREFIX + "sms:" + bizCode + ":" + mobile;
 
-        kvStore.put(key, code, expire);
+        kvStore.set(key, code, expire);
         log.info("短信验证码已生成: mobile={}, bizCode={}, code={}", mobile, bizCode, code);
 
         // 如果配置了短信供应商，发送短信
@@ -152,7 +152,7 @@ public class CaptchaServiceImpl implements CaptchaApi {
         String code = generateCode(emailCodeLength);
         String key = KEY_PREFIX + "email:" + bizCode + ":" + email;
 
-        kvStore.put(key, code, expire);
+        kvStore.set(key, code, expire);
         log.info("邮件验证码已生成: email={}, bizCode={}, code={}", email, bizCode, code);
 
         // 如果配置了邮件供应商，发送邮件
@@ -173,7 +173,7 @@ public class CaptchaServiceImpl implements CaptchaApi {
         String code = generateCode(type == CaptchaType.SMS ? smsCodeLength : emailCodeLength);
         String key = KEY_PREFIX + businessType + ":" + target;
 
-        kvStore.put(key, code, expire);
+        kvStore.set(key, code, expire);
         log.info("验证码已生成: type={}, target={}, businessType={}", type, target, businessType);
 
         // 发送通知

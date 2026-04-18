@@ -31,7 +31,7 @@ public class IdempotencyGuard {
             throw new IllegalArgumentException("idempotency key cannot be null or blank");
         }
         String fullKey = KEY_PREFIX + key;
-        boolean acquired = kvStore.put(fullKey, PROCESSING, IDEM_TTL_SECONDS);
+        boolean acquired = kvStore.setIfAbsent(fullKey, PROCESSING, IDEM_TTL_SECONDS);
         if (!acquired) {
             log.info("Idempotent request detected: key={}", key);
         }
@@ -47,7 +47,7 @@ public class IdempotencyGuard {
         if (key == null || key.isBlank()) {
             return;
         }
-        kvStore.put(KEY_PREFIX + key, response, IDEM_TTL_SECONDS);
+        kvStore.set(KEY_PREFIX + key, response, IDEM_TTL_SECONDS);
     }
 
     /**

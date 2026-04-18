@@ -126,7 +126,7 @@
 | BE-TEST-002 | `08-test.md` | 新增业务逻辑必须补测试 | 人工 | PR checklist | 中 | 保留 |
 | BE-TEST-003 | `08-test.md` | 修复缺陷必须补回归测试 | 人工 | PR checklist | 中 | 保留 |
 | BE-TEST-004 | `08-test.md` | 测试类名使用 `XxxTest` | 自动 | Checkstyle | 低 | 保留 |
+| BE-TEST-005 | `08-test.md` | 实现类型测试类名必须和测试物料一致 | 自动 | `mango-maven-plugin` | 高 | 新增 |
 | BE-FLOW-001 | `10-dev-flow.md` | 只改本次需求相关代码 | 人工 | PR checklist | 中 | 保留 |
 | BE-FLOW-002 | `10-dev-flow.md` | DDL 变更必须使用 Flyway migration | 半自动 | `mango-maven-plugin` | 中 | 保留 |
 | BE-FLOW-003 | `10-dev-flow.md` | 提交前执行对应检查 | 人工 | PR checklist | 中 | 保留 |
-

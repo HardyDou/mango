@@ -10,7 +10,7 @@
     </parent>
     <artifactId>mango-infra-kv-starter</artifactId>
     <name>Mango KV Starter</name>
-    <description>KV Starter - Memory/Redis/JDBC injection with @ConditionalOnProperty auto-configuration</description>
+    <description>KV Starter - store selection and optional capability bean auto-configuration</description>
     <dependencies>
         <!-- KV API -->
         <dependency>

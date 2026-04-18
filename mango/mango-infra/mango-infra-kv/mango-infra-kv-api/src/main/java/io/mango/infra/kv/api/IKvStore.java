@@ -6,14 +6,40 @@ package io.mango.infra.kv.api;
 public interface IKvStore {
 
     /**
-     * Write a key with specified expiration time (seconds).
+     * Write a key only if it does not already exist, with specified expiration time (seconds).
+     * Existing expired entries must be treated as absent.
      * @param key key (must not be null or blank after trim)
      * @param value value
      * @param expireSeconds expiration in seconds (must be positive)
-     * @return true=new key added, false=key already exists (for replay protection)
+     * @return true=new key added, false=key already exists
      * @throws IllegalArgumentException if key is null or blank
      */
-    boolean put(String key, String value, long expireSeconds);
+    default boolean setIfAbsent(String key, String value, long expireSeconds) {
+        return put(key, value, expireSeconds);
+    }
+
+    /**
+     * Write or replace a key with specified expiration time (seconds).
+     * This is the correct operation for cache and token values.
+     * @param key key (must not be null or blank after trim)
+     * @param value value
+     * @param expireSeconds expiration in seconds (must be positive)
+     */
+    default void set(String key, String value, long expireSeconds) {
+        delete(key);
+        setIfAbsent(key, value, expireSeconds);
+    }
+
+    /**
+     * Legacy alias for setIfAbsent.
+     * @param key key (must not be null or blank after trim)
+     * @param value value
+     * @param expireSeconds expiration in seconds (must be positive)
+     * @return true=new key added, false=key already exists
+     */
+    default boolean put(String key, String value, long expireSeconds) {
+        return setIfAbsent(key, value, expireSeconds);
+    }
 
     /**
      * Handle TTL <= 0: delete key immediately and return false.
@@ -40,7 +66,28 @@ public interface IKvStore {
      * @param windowSeconds rolling window in seconds
      * @return incremented value
      */
-    long increment(String key, long windowSeconds);
+    default long increment(String key, long windowSeconds) {
+        return incrementBy(key, 1, windowSeconds);
+    }
+
+    /**
+     * Increment counter by delta, automatically sets expiration to windowSeconds.
+     * Implementations must keep this operation atomic for a single key.
+     * @param key key (must not be null or blank after trim)
+     * @param delta increment value, may be positive or negative
+     * @param windowSeconds rolling window in seconds
+     * @return incremented value
+     */
+    default long incrementBy(String key, long delta, long windowSeconds) {
+        if (delta < 0) {
+            throw new UnsupportedOperationException("negative delta is not supported by this IKvStore implementation");
+        }
+        long current = 0;
+        for (long i = 0; i < delta; i++) {
+            current = increment(key, windowSeconds);
+        }
+        return current;
+    }
 
     /**
      * Delete a key.

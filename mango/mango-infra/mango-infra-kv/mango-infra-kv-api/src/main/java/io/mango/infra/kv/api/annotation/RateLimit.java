@@ -12,9 +12,9 @@ import java.lang.annotation.*;
 public @interface RateLimit {
 
     /**
-     * Rate limiter key.
-     * SpEL expression supported using # prefix.
-     * Example: "api:#userId"
+     * Rate limiter key expression.
+     * Prefer SpEL template syntax for dynamic values.
+     * Example: "api:#{#userId}"
      */
     String key();
 

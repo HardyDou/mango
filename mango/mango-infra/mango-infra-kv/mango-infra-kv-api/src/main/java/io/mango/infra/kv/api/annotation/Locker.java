@@ -12,9 +12,9 @@ import java.lang.annotation.*;
 public @interface Locker {
 
     /**
-     * Lock key.
-     * SpEL expression supported using # prefix.
-     * Example: "order:#orderId"
+     * Lock key expression.
+     * Prefer SpEL template syntax for dynamic values.
+     * Example: "order:#{#orderId}"
      */
     String key();
 

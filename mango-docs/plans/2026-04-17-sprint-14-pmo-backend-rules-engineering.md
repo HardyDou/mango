@@ -103,6 +103,7 @@
 | BE-API-003 | 返回对象统一 `XxxVO` | 自动 | PMD |
 | BE-API-004 | 写入参统一 `CreateXxxCommand` / `UpdateXxxCommand` | 自动 | PMD |
 | BE-API-005 | 查询入参统一 `XxxQuery` / `XxxPageQuery` | 自动 | PMD |
+| BE-NAME-017 | KV 注解 key 禁止手写 infra 前缀，动态 key 统一 SpEL | 自动 | `mango-maven-plugin` |
 | BE-API-006 | API 参数必须使用 Bean Validation 注解 | 半自动 | `mango-maven-plugin` |
 | BE-API-007 | Controller / Api 必须开启 `@Validated` 或等效校验 | 自动 | PMD |
 | BE-API-008 | `*-api` 禁止声明 `@FeignClient` | 自动 | `mango-maven-plugin` |

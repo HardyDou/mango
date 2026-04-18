@@ -1,9 +1,10 @@
 package io.mango.infra.kv.starter;
 
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.kv.core.JdbcKvStore;
-import io.mango.infra.kv.core.MemoryKvStore;
-import io.mango.infra.kv.core.RedisKvStore;
+import io.mango.infra.kv.core.aspect.KvCapabilityAspect;
+import io.mango.infra.kv.core.jdbc.JdbcKvStore;
+import io.mango.infra.kv.core.memory.MemoryKvStore;
+import io.mango.infra.kv.core.redis.RedisKvStore;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -80,6 +81,20 @@ class KvStoreAutoConfigurationTest {
                 .withPropertyValues("mango.kv.type=memory")
                 .run(context -> {
                     assertThat(context).hasBean("memoryKvStore");
+                });
+    }
+
+    @Test
+    void capabilityEnabled_registersKvCapabilityAspectFromStarter() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class, KvCapabilityAutoConfiguration.class))
+                .withPropertyValues(
+                        "mango.kv.type=memory",
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.cache=true",
+                        "mango.kv.capability.serializer=true")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(KvCapabilityAspect.class);
                 });
     }
 

@@ -28,23 +28,41 @@
 
 - 测试类名使用 `XxxTest`。
 - 测试方法名使用 `方法_场景_结果`。
+- 测试类名如果以实现类型开头，测试物料必须和类名一致：
+  - `RedisXxxTest` 必须使用 Redis 实现或真实 Redis 集成物料。
+  - `JdbcXxxTest` 必须使用 JDBC 实现和数据库物料。
+  - `MemoryXxxTest` 必须使用 Memory 实现。
+- 通用能力或契约测试不要以实现类型命名，应按能力命名，例如 `CacheTest`、`LockerTest`、`RateLimiterTest`。
+- 同一能力需要覆盖多个实现时，使用参数化测试或明确的 fixture 注入，每个参数必须能看出实际实现类型。
 
-## 5. 提交前检查
+## 5. 测试物料
+
+- 测试名声称验证 Redis/JDBC/Memory 时，不得用其他实现替代核心被测物料。
+- mock、stub 只能用于隔离外部协作者，不能替代被测实现本身。
+- 集成测试必须使用真实集成物料或等价容器/嵌入式环境；无法运行时必须在交付记录说明跳过原因。
+- 能力测试应验证能力语义，不只验证一次方法返回值；至少覆盖成功、拒绝或失败、key 隔离、TTL/窗口、非法参数。
+
+## 6. 提交前检查
 
 至少执行与改动范围对应的检查：
 
 - `mvn test`
 - `mvn verify`
 - `mvn mango:check`
+- 涉及 KV、缓存、锁、限流、幂等、token、id 等能力时，执行 `mvn mango:check -Drule=test-fixture`
 
-## 6. 交付要求
+## 7. 交付要求
 
 - 功能可运行
 - 测试通过
 - 验证结果可说明
+- 说明测试覆盖了哪些实现物料，哪些实现因环境原因未执行
 
-## 7. 禁止事项
+## 8. 禁止事项
 
 - 不写测试直接提交业务改动
 - 用 mock 覆盖真实集成问题
 - 发现回归后不补测试
+- `RedisXxxTest` 内实际使用 `MemoryKvStore`、`JdbcKvStore` 等错配物料
+- `JdbcXxxTest` 内实际使用 `MemoryKvStore`、`RedisKvStore` 等错配物料
+- 为了让测试通过而降低测试名、断言或物料真实性

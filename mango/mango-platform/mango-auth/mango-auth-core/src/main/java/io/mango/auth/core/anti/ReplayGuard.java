@@ -29,7 +29,7 @@ public class ReplayGuard {
             throw new IllegalArgumentException("nonce cannot be null or blank");
         }
         String key = KEY_PREFIX + nonce;
-        boolean acquired = kvStore.put(key, "1", NONCE_TTL_SECONDS);
+        boolean acquired = kvStore.setIfAbsent(key, "1", NONCE_TTL_SECONDS);
         if (!acquired) {
             log.warn("Replay attack detected: nonce={}", nonce);
         }

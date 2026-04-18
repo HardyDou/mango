@@ -33,17 +33,17 @@ class JjwtTokenServiceImplBlacklistTest {
 
     @Test
     void refresh_withReplayToken_rejectedByBlacklist() {
-        // First refresh: token not in blacklist, put() returns true
-        when(kvStore.put(anyString(), eq("1"), anyLong())).thenReturn(true);
+        // First refresh: token not in blacklist, setIfAbsent() returns true
+        when(kvStore.setIfAbsent(anyString(), eq("1"), anyLong())).thenReturn(true);
 
         String refreshToken = tokenService.generateRefreshToken(1L, "admin");
         ITokenService.TokenPair firstRefresh = tokenService.refresh(refreshToken);
         assertNotNull(firstRefresh, "First refresh should succeed");
 
         // Simulate blacklist check: jti key already exists (replay attack)
-        // put() returns false means key was already in blacklist
+        // setIfAbsent() returns false means key was already in blacklist
         reset(kvStore);
-        when(kvStore.put(anyString(), eq("1"), anyLong())).thenReturn(false);
+        when(kvStore.setIfAbsent(anyString(), eq("1"), anyLong())).thenReturn(false);
 
         // Second refresh with SAME token: should be rejected as replay
         ITokenService.TokenPair secondRefresh = tokenService.refresh(refreshToken);
@@ -69,13 +69,13 @@ class JjwtTokenServiceImplBlacklistTest {
     @Test
     void refresh_blacklistUsesCorrectPrefix() {
         // Verify the blacklist key format is "jwt:refresh:jti:{jti}"
-        when(kvStore.put(anyString(), eq("1"), anyLong())).thenReturn(true);
+        when(kvStore.setIfAbsent(anyString(), eq("1"), anyLong())).thenReturn(true);
 
         String refreshToken = tokenService.generateRefreshToken(1L, "admin");
         tokenService.refresh(refreshToken);
 
-        // Capture the key argument passed to kvStore.put()
-        verify(kvStore).put(argThat((String key) -> key.startsWith("jwt:refresh:jti:")),
+        // Capture the key argument passed to kvStore.setIfAbsent()
+        verify(kvStore).setIfAbsent(argThat((String key) -> key.startsWith("jwt:refresh:jti:")),
                 eq("1"),
                 longThat(val -> val > 0));
     }

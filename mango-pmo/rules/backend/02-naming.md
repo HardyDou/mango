@@ -38,7 +38,20 @@
 - 不允许同一模块出现多套命名。
 - 历史命名迁移后不保留第二套新实现。
 
-## 6. 禁止事项
+## 6. KV Key 规则
+
+- Redis/KV key 统一由 `mango-infra-kv` capability 层增加基础设施前缀。
+- 默认格式：`mango:infra:kv:{env}:{capability}:{biz-key}`。
+- 可选应用隔离格式：`mango:infra:kv:{env}:{app}:{capability}:{biz-key}`。
+- 默认不加应用名，保证同一环境内 infra KV 可跨应用共享。
+- 环境段用于隔离 dev/test/prod。
+- 能力段固定为：`cache`、`lock`、`counter`、`rate-limit`、`idempotent`、`token`、`idgen`、`jdbc-id`。
+- 业务代码只传业务段 key，例如 `user:#{#userId}`。
+- KV 注解动态 key 必须使用 SpEL 模板或直接 SpEL 表达式。
+- 禁止业务代码手写 `mango:infra:kv` 完整前缀。
+- 禁止 `user:#userId`、`user:@bean` 这类非标准内联占位写法。
+
+## 7. 禁止事项
 
 - 混用多种命名风格
 - 使用无语义缩写

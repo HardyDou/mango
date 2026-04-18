@@ -1,99 +1,84 @@
 package io.mango.infra.kv.starter;
 
 import io.mango.infra.kv.api.IKvStore;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import io.mango.infra.kv.core.JdbcKvStore;
-import io.mango.infra.kv.core.MemoryKvStore;
-import io.mango.infra.kv.core.RedisKvStore;
+import io.mango.infra.kv.core.jdbc.JdbcKvStore;
+import io.mango.infra.kv.core.memory.MemoryKvStore;
+import io.mango.infra.kv.core.redis.RedisKvStore;
+import io.mango.infra.kv.core.support.KvKeyNormalizer;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-
 /**
- * DAL store auto-configuration.
+ * KV store auto-configuration.
  *
- * Creates IKvStore bean based on mango.dal.type property:
+ * Creates one IKvStore bean based on mango.kv.store.type:
  * <ul>
  *   <li>redis - RedisKvStore (uses injected RedissonClient)</li>
  *   <li>db - JdbcKvStore (uses JdbcTemplate + injected RedissonClient)</li>
- *   <li>memory - MemoryKvStore (可配置清理间隔)</li>
+ *   <li>jdbc - JdbcKvStore (uses JdbcTemplate + injected RedissonClient)</li>
+ *   <li>memory - MemoryKvStore (configurable cleanup interval)</li>
  *   <li>auto (default) - auto-detect: RedissonClient → MemoryKvStore</li>
  * </ul>
- *
- * 配置结构：
- * <pre>
- * mango:
- *   dal:
- *     type: auto/redis/db/memory
- *     provider:
- *       redis:
- *         host: localhost
- *         port: 6379
- *         password:
- *         database: 0
- *         timeout: 3000
- *         pool:
- *           maxActive: 8
- *           maxIdle: 8
- *           minIdle: 0
- *           maxWait: -1
- *       db:
- *         tableName: sys_kv_record
- *       memory:
- *         cleanupIntervalMinutes: 1
- * </pre>
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = {
+        "io.mango.infra.redis.starter.RedisAutoConfiguration",
+        "io.mango.infra.db.starter.DbAutoConfiguration",
+        "org.redisson.spring.starter.RedissonAutoConfiguration",
+        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
+        "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration"
+})
 @EnableConfigurationProperties(KvStoreProperties.class)
 @ConditionalOnClass(IKvStore.class)
 public class KvStoreAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(KvStoreAutoConfiguration.class);
 
-    // ==================== Explicit Type Selection ====================
+    // ==================== Explicit Store Selection ====================
 
     /**
-     * Force RedisKvStore when mango.dal.type=redis
+     * Force RedisKvStore when mango.kv.store.type=redis.
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "redis")
+    @ConditionalOnExpression("'${mango.kv.store.type:${mango.kv.type:auto}}' == 'redis'")
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore redisKvStore(RedissonClient redissonClient) {
-        log.info("DAL Store initialized: RedisKvStore (mango.dal.type=redis)");
+        log.info("KV store initialized: RedisKvStore (mango.kv.store.type=redis)");
         return new RedisKvStore(redissonClient);
     }
 
     /**
-     * Force JdbcKvStore when mango.dal.type=db
+     * Force JdbcKvStore when mango.kv.store.type=jdbc or legacy db.
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "db")
-    @ConditionalOnBean(DataSource.class)
+    @ConditionalOnExpression("'${mango.kv.store.type:${mango.kv.type:auto}}' == 'jdbc' || '${mango.kv.store.type:${mango.kv.type:auto}}' == 'db'")
+    @ConditionalOnBean({JdbcTemplate.class, RedissonClient.class})
     @ConditionalOnMissingBean(IKvStore.class)
-    public IKvStore dbKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient) {
-        log.info("DAL Store initialized: JdbcKvStore (mango.dal.type=db)");
-        return new JdbcKvStore(jdbcTemplate, redissonClient);
+    public IKvStore dbKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient, KvStoreProperties props) {
+        String tableName = props.getProvider().getJdbc().getTableName();
+        String idKey = keyNormalizer(props).normalize(KvKeyNormalizer.JDBC_ID, tableName);
+        log.info("KV store initialized: JdbcKvStore (mango.kv.store.type=jdbc, tableName={})", tableName);
+        return new JdbcKvStore(jdbcTemplate, redissonClient, tableName, idKey);
     }
 
     /**
-     * Force MemoryKvStore when mango.dal.type=memory
+     * Force MemoryKvStore when mango.kv.store.type=memory.
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "memory")
+    @ConditionalOnExpression("'${mango.kv.store.type:${mango.kv.type:auto}}' == 'memory'")
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore memoryKvStore(KvStoreProperties props) {
         int interval = props.getProvider().getMemory().getCleanupIntervalMinutes();
-        log.info("DAL Store initialized: MemoryKvStore (mango.dal.type=memory, cleanupInterval={}min)", interval);
+        log.info("KV store initialized: MemoryKvStore (mango.kv.store.type=memory, cleanupInterval={}min)", interval);
         return new MemoryKvStore(interval);
     }
 
@@ -104,11 +89,11 @@ public class KvStoreAutoConfiguration {
      * Only active when type=auto or not configured (matchIfMissing=true)
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "auto", matchIfMissing = true)
+    @ConditionalOnExpression("'${mango.kv.store.type:${mango.kv.type:auto}}' == 'auto'")
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore autoRedisKvStore(RedissonClient redissonClient) {
-        log.info("DAL Store auto-detected: RedisKvStore (RedissonClient available)");
+        log.info("KV store auto-detected: RedisKvStore (RedissonClient available)");
         return new RedisKvStore(redissonClient);
     }
 
@@ -117,11 +102,16 @@ public class KvStoreAutoConfiguration {
      * Only active when type=auto or not configured and no RedissonClient present
      */
     @Bean
-    @ConditionalOnProperty(prefix = "mango.kv", name = "type", havingValue = "auto", matchIfMissing = true)
+    @ConditionalOnExpression("'${mango.kv.store.type:${mango.kv.type:auto}}' == 'auto'")
     @ConditionalOnMissingBean(value = RedissonClient.class, ignored = IKvStore.class)
     public IKvStore autoMemoryKvStore(KvStoreProperties props) {
         int interval = props.getProvider().getMemory().getCleanupIntervalMinutes();
-        log.info("DAL Store auto-detected: MemoryKvStore (no RedissonClient)");
+        log.info("KV store auto-detected: MemoryKvStore (no RedissonClient)");
         return new MemoryKvStore(interval);
+    }
+
+    private KvKeyNormalizer keyNormalizer(KvStoreProperties props) {
+        KvStoreProperties.Key key = props.getKey();
+        return new KvKeyNormalizer(key.isEnabled(), key.getPrefix(), key.getEnv(), key.isAppEnabled(), key.getApp());
     }
 }

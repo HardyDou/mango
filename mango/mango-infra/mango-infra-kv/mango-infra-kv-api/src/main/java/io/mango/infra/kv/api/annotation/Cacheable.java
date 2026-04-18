@@ -12,9 +12,9 @@ import java.lang.annotation.*;
 public @interface Cacheable {
 
     /**
-     * Cache key prefix.
-     * SpEL expression supported using # prefix.
-     * Example: "user:#userId"
+     * Cache key expression.
+     * Prefer SpEL template syntax for dynamic values.
+     * Example: "user:#{#userId}:#{#headers['X-Tenant']}"
      */
     String key();
 

@@ -1,7 +1,7 @@
 package io.mango.infra.kv.api;
 
 /**
- * Token bucket rate limiter interface.
+ * Fixed-window rate limiter interface.
  * TTL is a first-class parameter - never hardcode TTL values.
  */
 public interface IRateLimiter {

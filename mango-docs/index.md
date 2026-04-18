@@ -36,6 +36,8 @@
 | [backend-refactor-phase-0-delivery](./plans/2026-04-17-phase-0-fact-source-delivery-record.md) | 已完成 | Phase 0 事实源校准交付记录 |
 | [backend-refactor-phase-1-common-ownership](./plans/2026-04-17-phase-1-common-class-ownership.md) | 进行中 | Phase 1 `mango-common` 类归属表 |
 | [backend-refactor-phase-1-delivery](./plans/2026-04-17-phase-1-common-delivery-record.md) | 已完成 | Phase 1 `mango-common` 收敛交付记录 |
+| [backend-refactor-phase-2-kv-rules](./plans/2026-04-17-phase-2-kv-configuration-rules.md) | 已完成 | Phase 2 `mango-infra-kv` 配置与装配规则 |
+| [backend-refactor-phase-2-delivery](./plans/2026-04-17-phase-2-kv-delivery-record.md) | 已完成 | Phase 2 `mango-infra-kv` 收敛交付记录 |
 
 ## 后端待执行顺序
 

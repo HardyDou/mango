@@ -50,12 +50,5 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- KV Core for testing MemoryKvStore -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-kv-core</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 </project>

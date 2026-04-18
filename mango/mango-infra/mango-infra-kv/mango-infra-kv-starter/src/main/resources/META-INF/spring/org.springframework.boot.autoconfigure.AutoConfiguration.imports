@@ -1,2 +1,2 @@
 io.mango.infra.kv.starter.KvStoreAutoConfiguration
-io.mango.infra.kv.starter.UseCaseAutoConfiguration
+io.mango.infra.kv.starter.KvCapabilityAutoConfiguration

@@ -30,7 +30,8 @@ import java.util.regex.Pattern;
 public class CheckMojo extends AbstractMojo {
 
     /**
-     * 检查规则: all, duplicate, naming, method-length, class-length, dependency, module-info, remote-adapter, api-contract
+     * 检查规则: all, duplicate, naming, method-length, class-length, dependency,
+     * module-info, remote-adapter, api-contract, kv-key, test-fixture
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -107,6 +108,8 @@ public class CheckMojo extends AbstractMojo {
             case "module-info" -> checkModuleInfo();
             case "remote-adapter" -> checkRemoteAdapter();
             case "api-contract" -> checkApiContract();
+            case "kv-key" -> checkKvKey();
+            case "test-fixture" -> checkTestFixture();
             case "all" -> {
                 checkDuplicates();
                 checkNaming();
@@ -116,6 +119,8 @@ public class CheckMojo extends AbstractMojo {
                 checkModuleInfo();
                 checkRemoteAdapter();
                 checkApiContract();
+                checkKvKey();
+                checkTestFixture();
             }
             default -> getLog().warn("Unknown rule: " + rule);
         }
@@ -774,6 +779,215 @@ public class CheckMojo extends AbstractMojo {
         ApiContractIssue(String severity, String file, String description) {
             this.severity = severity;
             this.file = file;
+            this.description = description;
+        }
+    }
+
+    /**
+     * 检查 KV key 规范。
+     *
+     * 规则:
+     * 1. 注解 key 不得写完整基础设施前缀 mango:infra:kv，由 KV capability 自动补齐。
+     * 2. 动态 key 必须使用 SpEL 模板 user:#{#userId} 或直接 SpEL #userId。
+     */
+    private void checkKvKey() {
+        getLog().info("Checking KV key declarations...");
+
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<KvKeyIssue> issues = new ArrayList<>();
+
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file)) {
+                        analyzeKvKey(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (KvKeyIssue issue : issues) {
+                result.addIssue("KV_KEY", issue.severity, issue.file, issue.line,
+                        issue.description, "naming-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " KV key violation(s)");
+        } else {
+            getLog().info("All KV key checks passed");
+        }
+    }
+
+    private boolean isMainJavaFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("/src/main/java/") && normalized.endsWith(".java");
+    }
+
+    private void analyzeKvKey(Path file, List<KvKeyIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            Pattern annotationPattern = Pattern.compile(
+                    "@(Cacheable|Locker|RateLimit|Idempotent)\\s*\\([\\s\\S]*?\\bkey\\s*=\\s*\"([^\"]*)\"");
+            Matcher matcher = annotationPattern.matcher(content);
+            while (matcher.find()) {
+                String key = matcher.group(2).trim();
+                int line = lineNumber(content, matcher.start(2));
+                if (key.startsWith("mango:infra:kv:")) {
+                    issues.add(new KvKeyIssue("CRITICAL", file.toString(), line,
+                            "KV 注解 key 不得手写 mango:infra:kv 前缀，应由 capability 自动补齐"));
+                }
+                if (usesInlinePlaceholder(key, "#")) {
+                    issues.add(new KvKeyIssue("CRITICAL", file.toString(), line,
+                            "KV 注解 key 不支持 user:#userId 写法，应使用 user:#{#userId}"));
+                }
+                if (usesInlinePlaceholder(key, "@")) {
+                    issues.add(new KvKeyIssue("CRITICAL", file.toString(), line,
+                            "KV 注解 key 不支持 user:@bean 写法，应使用 user:#{@bean.method()}"));
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new KvKeyIssue("MAJOR", file.toString(), 0,
+                    "KV key 检查失败: " + e.getMessage()));
+        }
+    }
+
+    private int lineNumber(String content, int offset) {
+        int line = 1;
+        for (int i = 0; i < offset && i < content.length(); i++) {
+            if (content.charAt(i) == '\n') {
+                line++;
+            }
+        }
+        return line;
+    }
+
+    private boolean usesInlinePlaceholder(String key, String token) {
+        if (!key.contains(token) || key.startsWith(token)) {
+            return false;
+        }
+        return !key.contains("#{" + token);
+    }
+
+    private static class KvKeyIssue {
+        String severity;
+        String file;
+        int line;
+        String description;
+
+        KvKeyIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
+    /**
+     * 检查测试命名和测试物料是否一致。
+     *
+     * 自动覆盖的高风险错配:
+     * 1. Redis*Test 中使用 MemoryKvStore/JdbcKvStore 作为核心被测物料。
+     * 2. Jdbc*Test 中使用 MemoryKvStore/RedisKvStore 作为核心被测物料。
+     * 3. Memory*Test 中使用 RedisKvStore/JdbcKvStore 作为核心被测物料。
+     */
+    private void checkTestFixture() {
+        getLog().info("Checking test fixture consistency...");
+
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<TestFixtureIssue> issues = new ArrayList<>();
+
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isTestJavaFile(file)) {
+                        analyzeTestFixture(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (TestFixtureIssue issue : issues) {
+                result.addIssue("TEST_FIXTURE", issue.severity, issue.file, issue.line,
+                        issue.description, "test-rules.md");
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " test fixture violation(s)");
+        } else {
+            getLog().info("All test fixture checks passed");
+        }
+    }
+
+    private boolean isTestJavaFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("/src/test/java/") && normalized.endsWith("Test.java");
+    }
+
+    private void analyzeTestFixture(Path file, List<TestFixtureIssue> issues) {
+        String fileName = file.getFileName().toString();
+        try {
+            String content = Files.readString(file);
+            String expected = implementationPrefix(fileName);
+            if (expected == null) {
+                return;
+            }
+
+            List<String> mismatches = new ArrayList<>();
+            for (String candidate : List.of("MemoryKvStore", "RedisKvStore", "JdbcKvStore")) {
+                if (!candidate.startsWith(expected) && content.contains(candidate)) {
+                    mismatches.add(candidate);
+                }
+            }
+            for (String mismatch : mismatches) {
+                issues.add(new TestFixtureIssue("CRITICAL", file.toString(), lineNumber(content, content.indexOf(mismatch)),
+                        fileName + " 表示测试 " + expected + " 实现，但测试物料出现 " + mismatch
+                                + "；实现类型测试必须使用同名实现，通用能力测试应按能力命名并参数化注入"));
+            }
+        } catch (IOException e) {
+            issues.add(new TestFixtureIssue("MAJOR", file.toString(), 0,
+                    "测试物料一致性检查失败: " + e.getMessage()));
+        }
+    }
+
+    private String implementationPrefix(String fileName) {
+        if (fileName.startsWith("Redis")) {
+            return "Redis";
+        }
+        if (fileName.startsWith("Jdbc")) {
+            return "Jdbc";
+        }
+        if (fileName.startsWith("Memory")) {
+            return "Memory";
+        }
+        return null;
+    }
+
+    private static class TestFixtureIssue {
+        String severity;
+        String file;
+        int line;
+        String description;
+
+        TestFixtureIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
             this.description = description;
         }
     }

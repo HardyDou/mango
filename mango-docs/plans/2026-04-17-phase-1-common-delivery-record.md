@@ -15,6 +15,7 @@
 - [x] 已删除无外部引用且带地区/业务语义的校验类：`Phone`、`PhoneValidator`、`IdCard`、`IdCardValidator`。
 - [x] 已从 `mango-common/pom.xml` 移除 `spring-boot-starter-validation`，避免公共内核承载 validation starter。
 - [x] 已更新 `mango-common/README.md`，写入准入规则、禁止进入清单和 Phase 1 结论。
+- [x] 已在 `mango-common` 增加请求上下文扩展协议：`RequestContextContributor`、`RequestContext`，用于承接跨模块的请求级运行时属性增强协议。
 - [x] 已明确 `SysUser`、权限模型、组织模型、业务消息模型禁止进入 `mango-common`。
 - [x] 已更新 `mango-docs/index.md`，补充 Phase 0 交付记录、Phase 1 类归属表和 Phase 1 交付记录入口。
 
@@ -32,10 +33,12 @@
 ## 被动适配
 
 - [x] `mango-ai-api` 的 `ChatRequest` 使用 `jakarta.validation` 注解，但此前依赖由 `mango-common` 的 validation starter 间接提供；移除 common validation 依赖后，已在 `mango-ai-api/pom.xml` 显式补充 `jakarta.validation-api`。
+- [x] `mango-infra-kv` 等请求型 infra 能力改为依赖 `mango-common` 的协议扩展点，而非在自身 core 模块内直接固化 Web 上下文依赖。
 
 ## 验证结果
 
 - `mvn -q -DskipTests compile`：通过。
+- 本次 review 改进回归：`mvn -q -pl mango-common,mango-infra/mango-infra-kv,mango-infra/mango-infra-web -am -DskipTests compile`：通过。
 - `mvn test`：未执行；Phase 1 验收命令未要求。
 - 其它搜索/检查命令：
   - `find mango-common/src/main/java -type f | sort`：删除后 `mango-common` 剩余 7 个 Java 类。

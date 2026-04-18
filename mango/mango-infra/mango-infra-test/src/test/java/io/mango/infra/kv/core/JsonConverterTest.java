@@ -1,4 +1,4 @@
-package io.mango.infra.kv.core;
+package io.mango.infra.kv.core.support;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

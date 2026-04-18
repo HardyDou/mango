@@ -11,7 +11,7 @@
     <artifactId>mango-infra-kv</artifactId>
     <packaging>pom</packaging>
     <name>Mango KV (Key-Value Storage)</name>
-    <description>KV abstraction layer - Memory/Redis/JDBC implementations via ICache/ILocker interfaces</description>
+    <description>KV abstraction layer - Memory/Redis/JDBC store and optional capability beans</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

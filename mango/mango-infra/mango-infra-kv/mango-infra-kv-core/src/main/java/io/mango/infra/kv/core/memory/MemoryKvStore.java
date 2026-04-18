@@ -1,4 +1,4 @@
-package io.mango.infra.kv.core;
+package io.mango.infra.kv.core.memory;
 
 import io.mango.infra.kv.api.IKvStore;
 import jakarta.annotation.PreDestroy;
@@ -75,13 +75,37 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
     }
 
     @Override
-    public boolean put(String key, String value, long expireSeconds) {
+    public boolean setIfAbsent(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
             return putNonPositiveTtl(key);
         }
-        KvEntry prev = bucket(key).putIfAbsent(key, new KvEntry(value, Instant.now().plusSeconds(expireSeconds)));
-        return prev == null;
+        ConcurrentHashMap<String, KvEntry> b = bucket(key);
+        Instant expireTime = Instant.now().plusSeconds(expireSeconds);
+        boolean[] inserted = {false};
+        b.compute(key, (k, existing) -> {
+            if (existing != null && !existing.expired()) {
+                return existing;
+            }
+            inserted[0] = true;
+            return new KvEntry(value, expireTime);
+        });
+        return inserted[0];
+    }
+
+    @Override
+    public void set(String key, String value, long expireSeconds) {
+        validateKey(key);
+        if (expireSeconds <= 0) {
+            putNonPositiveTtl(key);
+            return;
+        }
+        bucket(key).put(key, new KvEntry(value, Instant.now().plusSeconds(expireSeconds)));
+    }
+
+    @Override
+    public boolean put(String key, String value, long expireSeconds) {
+        return setIfAbsent(key, value, expireSeconds);
     }
 
     @Override
@@ -96,28 +120,36 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
     }
 
     @Override
-    public long increment(String key, long windowSeconds) {
+    public long incrementBy(String key, long delta, long windowSeconds) {
         validateKey(key);
+        if (windowSeconds <= 0) {
+            throw new IllegalArgumentException("windowSeconds must be positive, was: " + windowSeconds);
+        }
         ConcurrentHashMap<String, KvEntry> b = bucket(key);
         Instant expiry = Instant.now().plusSeconds(windowSeconds);
         // Per-bucket lock replaces global lock — less contention under high concurrency
         synchronized (b) {
             KvEntry existing = b.get(key);
             if (existing == null || existing.expired()) {
-                b.put(key, new KvEntry("1", expiry));
-                return 1;
+                b.put(key, new KvEntry(String.valueOf(delta), expiry));
+                return delta;
             }
             long newCount;
             try {
-                newCount = Long.parseLong(existing.value()) + 1;
+                newCount = Long.parseLong(existing.value()) + delta;
             } catch (NumberFormatException e) {
                 // Corrupted value — treat as expired, re-insert as new counter
-                b.put(key, new KvEntry("1", expiry));
-                return 1;
+                b.put(key, new KvEntry(String.valueOf(delta), expiry));
+                return delta;
             }
             b.put(key, new KvEntry(String.valueOf(newCount), expiry));
             return newCount;
         }
+    }
+
+    @Override
+    public long increment(String key, long windowSeconds) {
+        return incrementBy(key, 1, windowSeconds);
     }
 
     @Override

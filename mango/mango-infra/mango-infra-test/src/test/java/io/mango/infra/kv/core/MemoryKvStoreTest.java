@@ -1,4 +1,4 @@
-package io.mango.infra.kv.core;
+package io.mango.infra.kv.core.memory;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +31,27 @@ class MemoryKvStoreTest {
         store.put("k1", "v1", 3600);
         boolean result = store.put("k1", "v2", 3600);
         assertFalse(result);
+        assertEquals("v1", store.get("k1"));
+    }
+
+    @Test
+    void set_existingKey_overwritesValue() {
+        store.put("k1", "v1", 3600);
+
+        store.set("k1", "v2", 3600);
+
+        assertEquals("v2", store.get("k1"));
+    }
+
+    @Test
+    void setIfAbsent_expiredKey_replacesValue() throws Exception {
+        store.put("k1", "v1", 1);
+        Thread.sleep(1100);
+
+        boolean result = store.setIfAbsent("k1", "v2", 3600);
+
+        assertTrue(result);
+        assertEquals("v2", store.get("k1"));
     }
 
     @Test
@@ -102,6 +123,12 @@ class MemoryKvStoreTest {
         store.increment("counter1", 60);
         long count2 = store.increment("counter2", 60);
         assertEquals(1, count2);
+    }
+
+    @Test
+    void incrementBy_withPositiveAndNegativeDelta() {
+        assertEquals(5, store.incrementBy("counter1", 5, 60));
+        assertEquals(3, store.incrementBy("counter1", -2, 60));
     }
 
     @Test

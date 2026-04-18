@@ -3,6 +3,7 @@ package io.mango.infra.kv.core.redis;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.client.codec.StringCodec;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
@@ -26,82 +27,69 @@ public class RedisKvStore implements IKvStore {
     private final RedissonClient redissonClient;
 
     @Override
-    public boolean put(String key, String value, long expireSeconds) {
+    public boolean setIfAbsent(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
             return putNonPositiveTtl(key);
         }
-        RBucket<String> bucket = redissonClient.getBucket(key);
+        RBucket<String> bucket = redissonClient.getBucket(key, StringCodec.INSTANCE);
         return bucket.setIfAbsent(value, Duration.ofSeconds(expireSeconds));
+    }
+
+    @Override
+    public void set(String key, String value, long expireSeconds) {
+        validateKey(key);
+        if (expireSeconds <= 0) {
+            putNonPositiveTtl(key);
+            return;
+        }
+        RBucket<String> bucket = redissonClient.getBucket(key, StringCodec.INSTANCE);
+        bucket.set(value, Duration.ofSeconds(expireSeconds));
+    }
+
+    @Override
+    public boolean put(String key, String value, long expireSeconds) {
+        return setIfAbsent(key, value, expireSeconds);
     }
 
     @Override
     public String get(String key) {
         validateKey(key);
-        RBucket<String> bucket = redissonClient.getBucket(key);
-        RAtomicLong atomic = redissonClient.getAtomicLong(key);
-
-        // Try bucket first (string values from put)
-        try {
-            return bucket.get();
-        } catch (Exception e) {
-            // bucket.get() failed - key might not exist or is not STRING type
-        }
-
-        // Try atomic (counter values from increment)
-        try {
-            return String.valueOf(atomic.get());
-        } catch (Exception e) {
-            // atomic.get() failed - key might not exist or is not LONG type
-            return null;
-        }
+        RBucket<String> bucket = redissonClient.getBucket(key, StringCodec.INSTANCE);
+        return bucket.get();
     }
 
     @Override
-    public long increment(String key, long windowSeconds) {
+    public long incrementBy(String key, long delta, long windowSeconds) {
         validateKey(key);
         if (windowSeconds <= 0) {
             throw new IllegalArgumentException("windowSeconds must be positive, was: " + windowSeconds);
         }
         RAtomicLong atomic = redissonClient.getAtomicLong(key);
-        long count = atomic.incrementAndGet();
-        // Set TTL on first increment (when count == 1)
+        long count = atomic.addAndGet(delta);
+        // Set TTL on first increment of a new key.
         // Use expireAsync to avoid blocking
-        if (count == 1) {
+        if (count == delta) {
             atomic.expire(Duration.ofSeconds(windowSeconds));
         }
         return count;
     }
 
     @Override
+    public long increment(String key, long windowSeconds) {
+        return incrementBy(key, 1, windowSeconds);
+    }
+
+    @Override
     public void delete(String key) {
         validateKey(key);
-        // Delete both bucket and atomic - one of them may have the key
-        redissonClient.getBucket(key).delete();
-        redissonClient.getAtomicLong(key).delete();
+        redissonClient.getKeys().delete(key);
     }
 
     @Override
     public boolean exists(String key) {
         validateKey(key);
-        RBucket<String> bucket = redissonClient.getBucket(key);
-        RAtomicLong atomic = redissonClient.getAtomicLong(key);
-
-        // Try bucket (string values from put)
-        try {
-            if (bucket.isExists()) {
-                return true;
-            }
-        } catch (Exception e) {
-            // bucket.isExists() may throw if key is not STRING type
-        }
-
-        // Try atomic (counter values from increment)
-        try {
-            return atomic.isExists();
-        } catch (Exception e) {
-            return false;
-        }
+        return redissonClient.getKeys().countExists(key) > 0;
     }
 
     private void validateKey(String key) {

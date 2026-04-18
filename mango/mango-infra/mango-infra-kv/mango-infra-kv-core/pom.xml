@@ -10,20 +10,25 @@
     </parent>
     <artifactId>mango-infra-kv-core</artifactId>
     <name>Mango KV Core</name>
-    <description>KV implementations - RedisKVStore / JdbcKVStore / MemoryKVStore</description>
+    <description>KV implementations - RedisKvStore / JdbcKvStore / MemoryKvStore</description>
     <dependencies>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- KV API -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Redisson for RedisXivStore -->
+        <!-- Redisson for RedisKvStore -->
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
         </dependency>
-        <!-- JDBC for DbKvStore -->
+        <!-- JDBC for JdbcKvStore -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>

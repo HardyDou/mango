@@ -1,6 +1,6 @@
 package io.mango.infra.kv.starter;
 
-import io.mango.infra.kv.core.JdbcKvStore;
+import io.mango.infra.kv.core.jdbc.JdbcKvStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RAtomicLong;
@@ -57,9 +57,9 @@ class JdbcKvStoreH2IntegrationTest {
                         11L, 12L, 13L, 14L, 15L, 16L, 17L, 18L, 19L, 20L);
                 when(atomicLong.get()).thenReturn(1L);
 
-                jdbcTemplate.execute("DROP TABLE IF EXISTS sys_kv_record");
+                jdbcTemplate.execute("DROP TABLE IF EXISTS infra_kv_entry");
                 jdbcTemplate.execute("""
-                        CREATE TABLE sys_kv_record (
+                        CREATE TABLE infra_kv_entry (
                             id          BIGINT NOT NULL,
                             kv_key      VARCHAR(200) NOT NULL,
                             kv_value    TEXT,
