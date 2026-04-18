@@ -20,7 +20,10 @@ public class KvStoreCounter implements ICounter {
     public long get(String key) {
         validateKey(key);
         String value = kvStore.get(key);
-        return value == null ? 0L : Long.parseLong(value);
+        if (value == null) {
+            return 0L;
+        }
+        return Long.parseLong(value);
     }
 
     private void validateKey(String key) {

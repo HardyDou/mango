@@ -30,17 +30,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * </ul>
  */
 @AutoConfiguration(afterName = {
-        "io.mango.infra.redis.starter.RedisAutoConfiguration",
-        "io.mango.infra.db.starter.DbAutoConfiguration",
-        "org.redisson.spring.starter.RedissonAutoConfiguration",
-        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
-        "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration"
+    "io.mango.infra.redis.starter.RedisAutoConfiguration",
+    "io.mango.infra.db.starter.DbAutoConfiguration",
+    "org.redisson.spring.starter.RedissonAutoConfiguration",
+    "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
+    "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration"
 })
 @EnableConfigurationProperties(KvStoreProperties.class)
 @ConditionalOnClass(IKvStore.class)
 public class KvStoreAutoConfiguration {
 
-    private static final Logger log = LoggerFactory.getLogger(KvStoreAutoConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KvStoreAutoConfiguration.class);
 
     // ==================== Explicit Store Selection ====================
 
@@ -52,7 +52,7 @@ public class KvStoreAutoConfiguration {
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore redisKvStore(RedissonClient redissonClient) {
-        log.info("KV store initialized: RedisKvStore (mango.kv.store.type=redis)");
+        LOGGER.info("KV store initialized: RedisKvStore (mango.kv.store.type=redis)");
         return new RedisKvStore(redissonClient);
     }
 
@@ -66,7 +66,7 @@ public class KvStoreAutoConfiguration {
     public IKvStore dbKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient, KvStoreProperties props) {
         String tableName = props.getProvider().getJdbc().getTableName();
         String idKey = keyNormalizer(props).normalize(KvKeyNormalizer.JDBC_ID, tableName);
-        log.info("KV store initialized: JdbcKvStore (mango.kv.store.type=jdbc, tableName={})", tableName);
+        LOGGER.info("KV store initialized: JdbcKvStore (mango.kv.store.type=jdbc, tableName={})", tableName);
         return new JdbcKvStore(jdbcTemplate, redissonClient, tableName, idKey);
     }
 
@@ -78,7 +78,7 @@ public class KvStoreAutoConfiguration {
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore memoryKvStore(KvStoreProperties props) {
         int interval = props.getProvider().getMemory().getCleanupIntervalMinutes();
-        log.info("KV store initialized: MemoryKvStore (mango.kv.store.type=memory, cleanupInterval={}min)", interval);
+        LOGGER.info("KV store initialized: MemoryKvStore (mango.kv.store.type=memory, cleanupInterval={}min)", interval);
         return new MemoryKvStore(interval);
     }
 
@@ -93,7 +93,7 @@ public class KvStoreAutoConfiguration {
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(IKvStore.class)
     public IKvStore autoRedisKvStore(RedissonClient redissonClient) {
-        log.info("KV store auto-detected: RedisKvStore (RedissonClient available)");
+        LOGGER.info("KV store auto-detected: RedisKvStore (RedissonClient available)");
         return new RedisKvStore(redissonClient);
     }
 
@@ -106,7 +106,7 @@ public class KvStoreAutoConfiguration {
     @ConditionalOnMissingBean(value = RedissonClient.class, ignored = IKvStore.class)
     public IKvStore autoMemoryKvStore(KvStoreProperties props) {
         int interval = props.getProvider().getMemory().getCleanupIntervalMinutes();
-        log.info("KV store auto-detected: MemoryKvStore (no RedissonClient)");
+        LOGGER.info("KV store auto-detected: MemoryKvStore (no RedissonClient)");
         return new MemoryKvStore(interval);
     }
 

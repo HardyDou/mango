@@ -18,13 +18,16 @@ import java.util.concurrent.TimeUnit;
 public class MemoryKvStore implements IKvStore, AutoCloseable {
 
     private static final int BUCKET_COUNT = 32;
+    private static final int POSITIVE_HASH_MASK = Integer.MAX_VALUE;
+    private static final int TERMINATION_TIMEOUT_SECONDS = 5;
 
     private final ConcurrentHashMap<String, KvEntry>[] buckets;
+    @SuppressWarnings({"checkstyle:abbreviationaswordinname", "PMD.ThreadPoolCreationRule"})
     private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "kv-memory-cleaner");
-        t.setDaemon(true);
-        return t;
-    });
+            Thread t = new Thread(r, "kv-memory-cleaner");
+            t.setDaemon(true);
+            return t;
+        });
 
     /**
      * 使用默认清理间隔（1分钟）和 32 个分桶
@@ -60,8 +63,8 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
     }
 
     private int bucketIndex(String key) {
-        // Use & 0x7FFFFFFF instead of Math.abs to avoid Integer.MIN_VALUE overflow
-        return (key.hashCode() & 0x7FFFFFFF) % buckets.length;
+        // Use POSITIVE_HASH_MASK instead of Math.abs to avoid Integer.MIN_VALUE overflow.
+        return (key.hashCode() & POSITIVE_HASH_MASK) % buckets.length;
     }
 
     private ConcurrentHashMap<String, KvEntry> bucket(String key) {
@@ -170,7 +173,7 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
     public void close() {
         cleaner.shutdown();
         try {
-            if (!cleaner.awaitTermination(5, TimeUnit.SECONDS)) {
+            if (!cleaner.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 cleaner.shutdownNow();
             }
         } catch (InterruptedException e) {
@@ -194,7 +197,12 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
             this.expireTime = expireTime;
         }
 
-        String value() { return value; }
-        boolean expired() { return expireTime.isBefore(Instant.now()); }
+        String value() {
+            return value;
+        }
+
+        boolean expired() {
+            return expireTime.isBefore(Instant.now());
+        }
     }
 }

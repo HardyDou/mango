@@ -75,9 +75,15 @@ MangoAdminAppApplication
 
 微服务部署时，各平台能力可以通过对应 `starter-remote` 或网关路由完成远程访问。当前 `mango-admin-app` POM 使用本地 starter，后续 remote adapter 装配清理由对应 Phase 单独处理。
 
-## BFF 实现原则
+## 应用装配原则
 
-`mango-admin-app` 不实现 RBAC、认证、组织、国际化等领域规则，只做部署装配、协议入口和必要的本地 adapter。
+`mango-admin-app` 是部署分组应用，不是 BFF 层。它不实现 RBAC、认证、组织、国际化等领域规则，只负责把多个 `*-starter` 装配到同一个 Spring Boot 进程，并提供部署所需的协议入口和本地 adapter。
+
+这里采用的定义是：
+
+- `app`：部署单元 / 运行时组合层，负责装配领域能力、基础设施和入口协议。
+- `BFF`：可选的前端体验适配层，只在需要为某一类前端单独裁剪接口聚合、交互编排、会话收敛或体验模型时独立存在。
+- Mango 当前脚手架默认概念是 `app`，不是 `BFF`。
 
 应该做：
 

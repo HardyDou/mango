@@ -5,9 +5,14 @@ package io.mango.infra.kv.api.enums;
  * When type is auto, detection order is RedissonClient then MemoryKvStore.
  */
 public enum KvStoreTypeEnum {
-    AUTO,   // Auto-detect RedisKvStore, then MemoryKvStore
-    REDIS,  // Force RedisKvStore (requires RedissonClient)
-    JDBC,   // Force JdbcKvStore (requires JdbcTemplate and RedissonClient)
-    DB,     // Legacy alias of JDBC
-    MEMORY  // Force MemoryKvStore (no dependencies)
+    /** Auto-detect RedisKvStore first, then fall back to MemoryKvStore. */
+    AUTO,
+    /** Force RedisKvStore and require RedissonClient. */
+    REDIS,
+    /** Force JdbcKvStore and require JdbcTemplate plus RedissonClient. */
+    JDBC,
+    /** Legacy alias of JDBC for backward compatibility. */
+    DB,
+    /** Force MemoryKvStore and require no external dependency. */
+    MEMORY
 }

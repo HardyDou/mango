@@ -30,8 +30,8 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- ========== 业务 Starter (BFF 通过 starter 获得 API 访问能力) ========== -->
-        <!-- 单体模式使用本地 starter，微服务部署时使用 starter-remote -->
+        <!-- ========== 业务 Starter（app 通过 starter 装配领域能力） ========== -->
+        <!-- 单体模式使用本地 starter；远程部署模式再切换为 starter-remote 或 gateway 路由 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-org-starter</artifactId>

@@ -50,7 +50,7 @@ import java.util.List;
 @ConditionalOnExpression("${mango.kv.capability.enabled:false}")
 public class KvCapabilityAutoConfiguration {
 
-    private static final Logger log = LoggerFactory.getLogger(KvCapabilityAutoConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KvCapabilityAutoConfiguration.class);
 
     @Bean
     @ConditionalOnMissingBean(KvCapabilityAspect.class)
@@ -72,7 +72,7 @@ public class KvCapabilityAutoConfiguration {
     public ICache cache(IKvStore kvStore, KvStoreProperties props) {
         ICache rawBean = new KvStoreCache(kvStore);
         ICache bean = new PrefixedCapabilities.Cache(rawBean, keyNormalizer(props));
-        log.info("KV capability initialized: ICache ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: ICache ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -83,7 +83,7 @@ public class KvCapabilityAutoConfiguration {
     public ILocker locker(IKvStore kvStore, KvStoreProperties props) {
         ILocker rawBean = new KvStoreLocker(kvStore);
         ILocker bean = new PrefixedCapabilities.Locker(rawBean, keyNormalizer(props));
-        log.info("KV capability initialized: ILocker ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: ILocker ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -94,7 +94,7 @@ public class KvCapabilityAutoConfiguration {
     public ICounter counter(IKvStore kvStore, KvStoreProperties props) {
         ICounter rawBean = new KvStoreCounter(kvStore);
         ICounter bean = new PrefixedCapabilities.Counter(rawBean, keyNormalizer(props));
-        log.info("KV capability initialized: ICounter ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: ICounter ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -105,7 +105,7 @@ public class KvCapabilityAutoConfiguration {
     public IRateLimiter rateLimiter(IKvStore kvStore, KvStoreProperties props) {
         IRateLimiter rawBean = new KvStoreRateLimiter(kvStore);
         IRateLimiter bean = new PrefixedCapabilities.RateLimiter(rawBean, keyNormalizer(props));
-        log.info("KV capability initialized: IRateLimiter ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: IRateLimiter ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -116,7 +116,7 @@ public class KvCapabilityAutoConfiguration {
     public IIdempotent idempotent(IKvStore kvStore, KvStoreProperties props) {
         IIdempotent rawBean = new KvStoreIdempotent(kvStore);
         IIdempotent bean = new PrefixedCapabilities.Idempotent(rawBean, keyNormalizer(props));
-        log.info("KV capability initialized: IIdempotent ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: IIdempotent ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -127,7 +127,7 @@ public class KvCapabilityAutoConfiguration {
     public ITokenStore tokenStore(IKvStore kvStore, KvStoreProperties props) {
         ITokenStore rawBean = new KvStoreTokenStore(kvStore);
         ITokenStore bean = new PrefixedCapabilities.TokenStore(rawBean, keyNormalizer(props));
-        log.info("KV capability initialized: ITokenStore ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: ITokenStore ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -138,7 +138,7 @@ public class KvCapabilityAutoConfiguration {
     public IIdGenerator idGenerator(IKvStore kvStore, KvStoreProperties props) {
         IKvStore prefixedStore = prefixedStore(kvStore, props, KvKeyNormalizer.IDGEN);
         IIdGenerator bean = new KvStoreIdGenerator(prefixedStore);
-        log.info("KV capability initialized: IIdGenerator ({})", bean.getClass().getSimpleName());
+        LOGGER.info("KV capability initialized: IIdGenerator ({})", bean.getClass().getSimpleName());
         return bean;
     }
 
@@ -146,7 +146,7 @@ public class KvCapabilityAutoConfiguration {
     @ConditionalOnExpression("${mango.kv.capability.serializer:false}")
     @ConditionalOnMissingBean(ISerializer.class)
     public ISerializer jsonSerializer() {
-        log.info("KV support initialized: ISerializer (JsonSerializer)");
+        LOGGER.info("KV support initialized: ISerializer (JsonSerializer)");
         return new JsonSerializer();
     }
 
@@ -154,7 +154,7 @@ public class KvCapabilityAutoConfiguration {
     @ConditionalOnExpression("${mango.kv.capability.converter:false}")
     @ConditionalOnMissingBean(IConverter.class)
     public IConverter jsonConverter() {
-        log.info("KV support initialized: IConverter (JsonConverter)");
+        LOGGER.info("KV support initialized: IConverter (JsonConverter)");
         return new JsonConverter();
     }
 

@@ -35,16 +35,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class KvCapabilityAspect {
 
-    private static final Logger log = LoggerFactory.getLogger(KvCapabilityAspect.class);
-
-    private final ObjectProvider<ICache> cacheProvider;
-    private final ObjectProvider<ILocker> lockerProvider;
-    private final ObjectProvider<IRateLimiter> rateLimiterProvider;
-    private final ObjectProvider<IIdempotent> idempotentProvider;
-    private final ObjectProvider<ISerializer> serializerProvider;
-    private final BeanFactory beanFactory;
-    private final List<RequestContextContributor> contextContributors;
-
+    private static final char SPEL_VARIABLE_PREFIX = '#';
+    private static final char SPEL_BEAN_PREFIX = '@';
+    private static final String TEMPLATE_EXPRESSION_MARKER = "#{";
+    private static final String NULL_LITERAL = "null";
+    private static final Logger LOGGER = LoggerFactory.getLogger(KvCapabilityAspect.class);
     private static final ExpressionParser SPEL_PARSER = new SpelExpressionParser();
     private static final TemplateParserContext TEMPLATE_CONTEXT = new TemplateParserContext();
 
@@ -55,6 +50,14 @@ public class KvCapabilityAspect {
      */
     private static final Map<String, org.springframework.expression.Expression> EXPRESSION_CACHE =
             new ConcurrentHashMap<>(32);
+
+    private final ObjectProvider<ICache> cacheProvider;
+    private final ObjectProvider<ILocker> lockerProvider;
+    private final ObjectProvider<IRateLimiter> rateLimiterProvider;
+    private final ObjectProvider<IIdempotent> idempotentProvider;
+    private final ObjectProvider<ISerializer> serializerProvider;
+    private final BeanFactory beanFactory;
+    private final List<RequestContextContributor> contextContributors;
 
     public KvCapabilityAspect(ObjectProvider<ICache> cacheProvider,
                               ObjectProvider<ILocker> lockerProvider,
@@ -85,7 +88,7 @@ public class KvCapabilityAspect {
         // Try to get from cache
         String cached = cache.get(key);
         if (cached != null) {
-            log.debug("Cache hit for key: {}", key);
+            LOGGER.debug("Cache hit for key: {}", key);
             return deserializeResult(cached, method);
         }
 
@@ -95,7 +98,7 @@ public class KvCapabilityAspect {
         // Store in cache if cacheValue is true
         if (annotation.cacheValue() && result != null) {
             cache.set(key, serializer.serialize(result), annotation.ttl());
-            log.debug("Cache set for key: {}, ttl: {}s", key, annotation.ttl());
+            LOGGER.debug("Cache set for key: {}, ttl: {}s", key, annotation.ttl());
         }
 
         return result;
@@ -172,7 +175,7 @@ public class KvCapabilityAspect {
      */
     private String resolveKey(String keyExpression, ProceedingJoinPoint pjp) {
         // Fast path: static key, no parsing needed
-        if (keyExpression.indexOf('#') < 0 && keyExpression.indexOf('@') < 0) {
+        if (keyExpression.indexOf(SPEL_VARIABLE_PREFIX) < 0 && keyExpression.indexOf(SPEL_BEAN_PREFIX) < 0) {
             return keyExpression;
         }
 
@@ -192,7 +195,7 @@ public class KvCapabilityAspect {
         contextContributors.forEach(contributor -> contributor.contribute(context::setVariable));
 
         // SpEL template: #{#paramName} - cache compiled expression
-        if (keyExpression.contains("#{")) {
+        if (keyExpression.contains(TEMPLATE_EXPRESSION_MARKER)) {
             org.springframework.expression.Expression expr = EXPRESSION_CACHE.computeIfAbsent(
                     keyExpression,
                     k -> SPEL_PARSER.parseExpression(k, TEMPLATE_CONTEXT)
@@ -212,11 +215,15 @@ public class KvCapabilityAspect {
                 k -> SPEL_PARSER.parseExpression(k)
         );
         Object value = expr.getValue(context);
-        return value == null ? "null" : String.valueOf(value);
+        if (value == null) {
+            return NULL_LITERAL;
+        }
+        return String.valueOf(value);
     }
 
     private boolean isDirectExpression(String keyExpression) {
-        return keyExpression.startsWith("#") || keyExpression.startsWith("@");
+        return keyExpression.startsWith(String.valueOf(SPEL_VARIABLE_PREFIX))
+                || keyExpression.startsWith(String.valueOf(SPEL_BEAN_PREFIX));
     }
 
     private <T> T requireCapability(ObjectProvider<T> provider, Class<T> capabilityType, String annotationName) {

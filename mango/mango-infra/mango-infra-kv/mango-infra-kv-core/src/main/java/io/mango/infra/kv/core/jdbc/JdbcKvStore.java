@@ -162,9 +162,10 @@ public class JdbcKvStore implements IKvStore {
     }
 
     private String normalizeTableName(String configuredTableName) {
-        String candidate = configuredTableName == null || configuredTableName.isBlank()
-                ? DEFAULT_TABLE_NAME
-                : configuredTableName.trim();
+        String candidate = DEFAULT_TABLE_NAME;
+        if (configuredTableName != null && !configuredTableName.isBlank()) {
+            candidate = configuredTableName.trim();
+        }
         if (!TABLE_NAME_PATTERN.matcher(candidate).matches()) {
             throw new IllegalArgumentException("tableName must match [A-Za-z_][A-Za-z0-9_]*");
         }

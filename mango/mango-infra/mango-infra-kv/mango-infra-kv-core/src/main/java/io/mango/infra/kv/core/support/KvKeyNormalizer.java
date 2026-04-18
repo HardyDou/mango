@@ -30,7 +30,11 @@ public class KvKeyNormalizer {
         this.prefix = normalizePrefix(prefix);
         this.env = normalizeSegment(env, "env");
         this.appEnabled = appEnabled;
-        this.app = appEnabled ? normalizeSegment(app, "app") : null;
+        if (appEnabled) {
+            this.app = normalizeSegment(app, "app");
+        } else {
+            this.app = null;
+        }
     }
 
     public String normalize(String capability, String key) {
@@ -51,8 +55,8 @@ public class KvKeyNormalizer {
 
     private String rootPrefix(String capability) {
         StringBuilder builder = new StringBuilder(prefix)
-                .append(SEPARATOR)
-                .append(env);
+            .append(SEPARATOR)
+            .append(env);
         if (appEnabled) {
             builder.append(SEPARATOR).append(app);
         }

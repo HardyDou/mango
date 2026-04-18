@@ -4,86 +4,76 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 代码检查 Mojo
+ * Mango project-specific check Mojo.
  *
- * mvn mango:check
- * mvn mango:check -Drule=api-contract
- * mvn mango:check -Drule=all -Doutput=json
- *
- * @author Mango
+ * <p>`mango:check` only owns Mango-specific rules. Generic Java static analysis
+ * such as method length, class length, duplicate code, complexity, and common
+ * language best practices are delegated to PMD/P3C, Checkstyle, and SpotBugs.</p>
  */
 @Mojo(name = "check", defaultPhase = LifecyclePhase.VERIFY)
 public class CheckMojo extends AbstractMojo {
 
+    private static final String SOURCE_MANGO_CHECK = "mango-check";
+    private static final String DOC_AUTO_CHECK_MAPPING = "auto-check-mapping.md";
+    private static final String DOC_NAMING_RULES = "naming-rules.md";
+    private static final String DOC_MODULE_RULES = "module-rules.md";
+    private static final String DOC_API_RULES = "api-rules.md";
+    private static final String DOC_TEST_RULES = "test-rules.md";
+
     /**
-     * 检查规则: all, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, kv-key, test-fixture
+     * Check rule: all, naming, dependency, module-boundary, module-info, remote-adapter,
+     * api-contract, kv-key, test-fixture.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
 
     /**
-     * 输出格式: text, json
+     * Output format: text, json.
      */
     @Parameter(property = "output", defaultValue = "text")
     private String output;
 
     /**
-     * 检查报告输出路径
+     * Report output path.
      */
     @Parameter(property = "reportFile")
     private String reportFile;
 
     /**
-     * 源码目录
+     * Source root.
      */
     @Parameter(property = "baseDir", defaultValue = "${project.basedir}")
     private String baseDir;
 
     /**
-     * Maven Session
+     * Maven session.
      */
-    @org.apache.maven.plugins.annotations.Parameter(defaultValue = "${session}", readonly = true)
+    @Parameter(defaultValue = "${session}", readonly = true)
     private org.apache.maven.execution.MavenSession session;
-
-    /**
-     * 方法最大行数
-     */
-    @Parameter(property = "maxMethodLength", defaultValue = "50")
-    private int maxMethodLength;
-
-    /**
-     * 类最大行数
-     */
-    @Parameter(property = "maxClassLength", defaultValue = "500")
-    private int maxClassLength;
-
-    /**
-     * 重复代码阈值（行数）
-     */
-    @Parameter(property = "duplicateThreshold", defaultValue = "5")
-    private int duplicateThreshold;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    /**
-     * 检查结果
-     */
     private CheckResult result;
 
     @Override
@@ -95,15 +85,14 @@ public class CheckMojo extends AbstractMojo {
                 baseDir = System.getProperty("user.dir");
             }
         }
-        
+
         getLog().info("Running Mango Check - rule: " + rule);
         result = new CheckResult();
 
-        switch (rule.toLowerCase()) {
-            case "duplicate", "method-length", "class-length" -> unsupportedGenericRule(rule);
+        switch (rule.toLowerCase(Locale.ROOT)) {
+            case "duplicate", "method-length", "class-length", "complexity" -> unsupportedGenericRule(rule);
             case "naming" -> checkNaming();
-            case "dependency" -> checkDependency();
-            case "module-boundary" -> checkDependency();
+            case "dependency", "module-boundary" -> checkDependency();
             case "module-info" -> checkModuleInfo();
             case "remote-adapter" -> checkRemoteAdapter();
             case "api-contract" -> checkApiContract();
@@ -121,19 +110,16 @@ public class CheckMojo extends AbstractMojo {
             default -> getLog().warn("Unknown rule: " + rule);
         }
 
-        // 输出结果
         if ("json".equalsIgnoreCase(output)) {
             outputJson();
         } else {
             outputText();
         }
 
-        // 保存报告
         if (reportFile != null) {
             saveReport();
         }
 
-        // 检查是否通过
         if (!result.passed) {
             throw new MojoExecutionException("Check failed: " + result.issues.size() + " issue(s) found");
         }
@@ -143,110 +129,11 @@ public class CheckMojo extends AbstractMojo {
 
     private void unsupportedGenericRule(String selectedRule) {
         String description = "mango:check only runs Mango-specific rules. Generic rule '" + selectedRule
-                + "' is handled by PMD/P3C/Checkstyle; use mvn pmd:check or mvn checkstyle:check.";
+                + "' is handled by PMD/P3C/Checkstyle; use the static-analysis mapping in "
+                + DOC_AUTO_CHECK_MAPPING + ".";
         getLog().warn(description);
-        result.addIssue("UNSUPPORTED_RULE", "MAJOR", null, 0, description, "auto-check-mapping.md");
-    }
-
-    private void checkDuplicates() {
-        getLog().info("Checking for duplicate code...");
-        List<DuplicateIssue> duplicates = findDuplicateMethods();
-
-        if (!duplicates.isEmpty()) {
-            getLog().warn("Found " + duplicates.size() + " potential duplicates:");
-            for (DuplicateIssue dup : duplicates) {
-                getLog().warn("  - " + dup.signature + " at " + dup.file);
-                result.addIssue("DUPLICATE", "MAJOR", dup.file, 0,
-                        "Duplicate code: " + dup.signature, "code-rules.md");
-            }
-        } else {
-            getLog().info("No duplicate methods found");
-        }
-    }
-
-    private List<DuplicateIssue> findDuplicateMethods() {
-        List<DuplicateIssue> duplicates = new ArrayList<>();
-        Map<String, String> signatures = new HashMap<>();
-
-        try {
-            Files.walkFileTree(Paths.get(baseDir), new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (file.toString().endsWith(".java")) {
-                        detectDuplicateSignatures(file, signatures, duplicates);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            getLog().error("Error walking file tree", e);
-        }
-
-        return duplicates;
-    }
-
-    private void detectDuplicateSignatures(Path file, Map<String, String> signatures, List<DuplicateIssue> duplicates) {
-        try {
-            String content = Files.readString(file);
-            String[] lines = content.split("\n");
-            for (int i = 0; i < lines.length; i++) {
-                String line = lines[i].trim();
-                if (isMethodDeclaration(line)) {
-                    String signature = extractSignature(line);
-                    if (signature != null) {
-                        String existing = signatures.put(signature, file.toString());
-                        if (existing != null && !existing.equals(file.toString())) {
-                            duplicates.add(new DuplicateIssue(signature, file.toString()));
-                        }
-                    }
-                }
-            }
-        } catch (IOException e) {
-            // ignore
-        }
-    }
-
-    private boolean isMethodDeclaration(String line) {
-        String trimmed = line.trim();
-        if (trimmed.isEmpty() || trimmed.startsWith("//") || trimmed.startsWith("*")) {
-            return false;
-        }
-        if (!trimmed.contains("(") || !trimmed.contains(")")) {
-            return false;
-        }
-        if (trimmed.endsWith(";")) {
-            return false;
-        }
-
-        String declaration = trimmed.replaceFirst("^(public|private|protected)\\s+", "");
-        while (declaration.matches("^(static|final|synchronized|abstract|native|strictfp|default)\\b.*")) {
-            declaration = declaration.replaceFirst("^(static|final|synchronized|abstract|native|strictfp|default)\\s+", "");
-        }
-
-        if (declaration.matches("^(class|interface|enum|record|@interface)\\b.*")) {
-            return false;
-        }
-        if (declaration.matches("^(if|for|while|switch|catch|return|throw|new|do)\\b.*")) {
-            return false;
-        }
-
-        int equalsIndex = declaration.indexOf('=');
-        int parenIndex = declaration.indexOf('(');
-        return equalsIndex < 0 || equalsIndex > parenIndex;
-    }
-
-    private String extractSignature(String line) {
-        int parenStart = line.indexOf("(");
-        int parenEnd = line.lastIndexOf(")");
-        if (parenStart > 0 && parenEnd > parenStart) {
-            int braceStart = line.indexOf("{");
-            String sig = line.substring(0, parenEnd + 1).trim();
-            if (braceStart > 0) {
-                sig = line.substring(0, braceStart).trim();
-            }
-            return sig.replaceAll("\\s+", "");
-        }
-        return null;
+        result.addIssue("UNSUPPORTED_RULE", "MAJOR", null, 0, description,
+                DOC_AUTO_CHECK_MAPPING, SOURCE_MANGO_CHECK);
     }
 
     private void checkNaming() {
@@ -274,7 +161,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (NamingIssue issue : issues) {
                 result.addIssue("NAMING", issue.severity, issue.file, issue.line,
-                        issue.description, "naming-rules.md");
+                        issue.description, DOC_NAMING_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " naming violation(s)");
@@ -303,147 +190,28 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private void checkMethodLength() {
-        getLog().info("Checking method lengths...");
-        List<LengthIssue> issues = findLongMethods();
-
-        if (!issues.isEmpty()) {
-            for (LengthIssue issue : issues) {
-                result.addIssue("METHOD_LENGTH", "MAJOR", issue.file, issue.line,
-                        "Method too long: " + issue.length + " lines (max: " + maxMethodLength + ")",
-                        "code-rules.md");
-            }
-            getLog().warn("Found " + issues.size() + " methods exceeding length limit");
-        }
-    }
-
-    private List<LengthIssue> findLongMethods() {
-        List<LengthIssue> issues = new ArrayList<>();
-
-        try {
-            Files.walkFileTree(Paths.get(baseDir), new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (file.toString().endsWith(".java")) {
-                        checkFileMethodLength(file, issues);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            getLog().error("Error walking file tree", e);
-        }
-
-        return issues;
-    }
-
-    private void checkFileMethodLength(Path file, List<LengthIssue> issues) throws IOException {
-        String content = Files.readString(file);
-        String[] lines = content.split("\n");
-
-        int braceCount = 0;
-        int methodStart = -1;
-        int methodDepth = -1;
-        int pendingMethodStart = -1;
-        String currentMethod = "";
-        String pendingMethod = "";
-
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i];
-            String trimmed = line.trim();
-            int depthBeforeLine = braceCount;
-
-            if (methodStart < 0 && pendingMethodStart < 0
-                    && depthBeforeLine >= 1 && isMethodDeclaration(trimmed)) {
-                if (trimmed.contains("{")) {
-                    methodStart = i;
-                    methodDepth = depthBeforeLine + 1;
-                    currentMethod = extractSignature(trimmed);
-                } else {
-                    pendingMethodStart = i;
-                    pendingMethod = extractSignature(trimmed);
-                }
-            } else if (methodStart < 0 && pendingMethodStart >= 0 && trimmed.startsWith("{")) {
-                methodStart = pendingMethodStart;
-                methodDepth = depthBeforeLine + 1;
-                currentMethod = pendingMethod;
-                pendingMethodStart = -1;
-                pendingMethod = "";
-            } else if (pendingMethodStart >= 0 && trimmed.endsWith(";")) {
-                pendingMethodStart = -1;
-                pendingMethod = "";
-            }
-
-            braceCount += line.length() - line.replace("{", "").length();
-            braceCount -= line.length() - line.replace("}", "").length();
-
-            if (methodStart >= 0 && braceCount < methodDepth) {
-                int length = i - methodStart + 1;
-                if (length > maxMethodLength) {
-                    issues.add(new LengthIssue(file.toString(), methodStart + 1, length, currentMethod));
-                }
-                methodStart = -1;
-                methodDepth = -1;
-                currentMethod = "";
-            }
-        }
-    }
-
-    private void checkClassLength() {
-        getLog().info("Checking class lengths...");
-        List<LengthIssue> issues = findLongClasses();
-
-        if (!issues.isEmpty()) {
-            for (LengthIssue issue : issues) {
-                result.addIssue("CLASS_LENGTH", "MAJOR", issue.file, issue.line,
-                        "Class too long: " + issue.length + " lines (max: " + maxClassLength + ")",
-                        "code-rules.md");
-            }
-            getLog().warn("Found " + issues.size() + " classes exceeding length limit");
-        }
-    }
-
     /**
-     * 检查模块依赖规范
-     *
-     * 规则:
-     * 1. *-api 模块不能依赖 *-core, *-starter, *-starter-remote
-     * 2. *-core 模块不能依赖 *-starter, *-starter-remote
-     * 3. bff-* 模块只能依赖 *-starter 或 *-starter-remote (不能直接依赖 *-api 或 *-core)
+     * Rules:
+     * 1. Mango modules are evaluated in two dimensions: first-level layer
+     *    (common / infra / platform / app), then second-level role
+     *    (api / core / starter / starter-remote).
+     * 2. *-api cannot depend on *-core, *-starter, *-starter-remote.
+     * 3. *-core cannot depend on *-starter, *-starter-remote.
      */
     private void checkDependency() {
         getLog().info("Checking module dependencies...");
-
-        // Resolve baseDir from session if not explicitly set
-        String effectiveBaseDir = baseDir;
-        if (effectiveBaseDir == null || effectiveBaseDir.isEmpty()) {
-            if (session != null && session.getExecutionRootDirectory() != null) {
-                effectiveBaseDir = session.getExecutionRootDirectory();
-            } else {
-                getLog().error("Cannot determine base directory. Please set -DbaseDir=<path>");
-                return;
-            }
-        }
-        getLog().info("Base directory: " + effectiveBaseDir);
-
-        Path rootPath = Paths.get(effectiveBaseDir);
-        if (rootPath == null || !Files.exists(rootPath)) {
-            getLog().error("Base directory does not exist: " + effectiveBaseDir);
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
             return;
         }
 
         List<DependencyIssue> issues = new ArrayList<>();
-
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (file.toString().endsWith("/pom.xml")) {
-                        try {
-                            analyzePomDependency(file, issues);
-                        } catch (Exception e) {
-                            getLog().warn("Failed to analyze: " + file + " - " + e.getMessage());
-                        }
+                        analyzePomDependency(file, issues);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -455,7 +223,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (DependencyIssue issue : issues) {
                 result.addIssue("DEPENDENCY", issue.severity, issue.file, 0,
-                        issue.description, "module-rules.md");
+                        issue.description, DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " dependency violation(s)");
@@ -466,34 +234,22 @@ public class CheckMojo extends AbstractMojo {
 
     private void analyzePomDependency(Path pomFile, List<DependencyIssue> issues) {
         try {
-            if (!Files.exists(pomFile)) {
-                getLog().warn("Pom file does not exist: " + pomFile);
-                return;
-            }
             String content = Files.readString(pomFile);
-            if (content == null || content.isEmpty()) {
-                getLog().warn("Empty pom file: " + pomFile);
+            String artifactId = extractArtifactId(content);
+            if (artifactId == null) {
                 return;
             }
-            String artifactId = extractArtifactId(content);
-            if (artifactId == null) return;
 
-            String groupId = extractGroupId(content);
-
-            // 确定模块类型
             ModuleType moduleType = classifyModule(artifactId);
-
-            // 提取所有依赖
-            List<String> dependencies = extractDependencies(content);
-
-            for (String dep : dependencies) {
-                if (dep == null) continue;
-                String depArtifactId = extractArtifactIdFromDep(dep);
-                if (depArtifactId == null || depArtifactId.isEmpty()) continue;
-                String depGroupId = extractGroupIdFromDep(dep);
-
-                // 跳过外部依赖（非 io.mango）
-                if (!"io.mango".equals(depGroupId)) continue;
+            for (String dependencyBlock : extractDependencies(content)) {
+                String depArtifactId = extractArtifactIdFromDep(dependencyBlock);
+                if (depArtifactId == null || depArtifactId.isEmpty()) {
+                    continue;
+                }
+                String depGroupId = extractGroupIdFromDep(dependencyBlock);
+                if (!"io.mango".equals(depGroupId)) {
+                    continue;
+                }
 
                 DependencyIssue issue = validateDependency(moduleType, artifactId, depArtifactId);
                 if (issue != null) {
@@ -502,142 +258,76 @@ public class CheckMojo extends AbstractMojo {
                 }
             }
         } catch (Exception e) {
-            getLog().warn("Error analyzing pom: " + pomFile + " - " + e.getClass().getName() + ": " + e.getMessage());
+            getLog().warn("Failed to analyze " + pomFile + ": " + e.getMessage());
         }
     }
 
     private ModuleType classifyModule(String artifactId) {
-        if (artifactId.endsWith("-api")) return ModuleType.API;
-        if (artifactId.endsWith("-core")) return ModuleType.CORE;
-        if (artifactId.endsWith("-starter-remote")) return ModuleType.STARTER_REMOTE;
-        if (artifactId.endsWith("-starter")) return ModuleType.STARTER;
-        if (artifactId.startsWith("bff-")) return ModuleType.BFF;
-        if (artifactId.startsWith("mango-") && !artifactId.equals("mango") && !artifactId.equals("mango-parent"))
+        if (artifactId.endsWith("-api")) {
+            return ModuleType.API;
+        }
+        if (artifactId.endsWith("-core")) {
+            return ModuleType.CORE;
+        }
+        if (artifactId.endsWith("-starter-remote")) {
+            return ModuleType.STARTER_REMOTE;
+        }
+        if (artifactId.endsWith("-starter")) {
+            return ModuleType.STARTER;
+        }
+        if (artifactId.endsWith("-app")) {
+            return ModuleType.APP;
+        }
+        if (artifactId.startsWith("mango-") && !"mango".equals(artifactId) && !"mango-parent".equals(artifactId)) {
             return ModuleType.OTHER;
+        }
         return ModuleType.ROOT;
     }
 
     private DependencyIssue validateDependency(ModuleType consumer, String consumerArtifact, String depArtifact) {
-        // API 模块规则
         if (consumer == ModuleType.API) {
             if (depArtifact.endsWith("-core")) {
-                return new DependencyIssue("CRITICAL", "*_api 模块不能依赖 *-core: " + consumerArtifact + " -> " + depArtifact);
+                return new DependencyIssue("CRITICAL",
+                        "*_api 模块不能依赖 *-core: " + consumerArtifact + " -> " + depArtifact);
             }
             if (depArtifact.endsWith("-starter")) {
-                return new DependencyIssue("CRITICAL", "*_api 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
+                return new DependencyIssue("CRITICAL",
+                        "*_api 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
             }
             if (depArtifact.endsWith("-starter-remote")) {
-                return new DependencyIssue("CRITICAL", "*_api 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
+                return new DependencyIssue("CRITICAL",
+                        "*_api 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
             }
         }
 
-        // Core 模块规则
         if (consumer == ModuleType.CORE) {
             if (depArtifact.endsWith("-starter")) {
-                return new DependencyIssue("CRITICAL", "*_core 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
+                return new DependencyIssue("CRITICAL",
+                        "*_core 模块不能依赖 *-starter: " + consumerArtifact + " -> " + depArtifact);
             }
             if (depArtifact.endsWith("-starter-remote")) {
-                return new DependencyIssue("CRITICAL", "*_core 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
-            }
-        }
-
-        // BFF 模块规则
-        if (consumer == ModuleType.BFF) {
-            if (depArtifact.endsWith("-api")) {
-                return new DependencyIssue("MAJOR", "BFF 模块不能直接依赖 *-api，请使用 *-starter: " + consumerArtifact + " -> " + depArtifact);
-            }
-            if (depArtifact.endsWith("-core")) {
-                return new DependencyIssue("MAJOR", "BFF 模块不能直接依赖 *-core，请使用 *-starter: " + consumerArtifact + " -> " + depArtifact);
+                return new DependencyIssue("CRITICAL",
+                        "*_core 模块不能依赖 *-starter-remote: " + consumerArtifact + " -> " + depArtifact);
             }
         }
 
         return null;
     }
 
-    private String extractArtifactId(String content) {
-        String projectContent = content.replaceFirst("(?s)<parent>.*?</parent>", "");
-        int start = projectContent.indexOf("<artifactId>");
-        if (start == -1) return null;
-        start += "<artifactId>".length();
-        int end = projectContent.indexOf("</artifactId>", start);
-        if (end == -1) return null;
-        return projectContent.substring(start, end).trim();
-    }
-
-    private String extractGroupId(String content) {
-        int start = content.indexOf("<groupId>");
-        if (start == -1) return null;
-        start += "<groupId>".length();
-        int end = content.indexOf("</groupId>", start);
-        if (end == -1) return null;
-        return content.substring(start, end).trim();
-    }
-
-    private List<String> extractDependencies(String content) {
-        List<String> deps = new ArrayList<>();
-        int depStart = content.indexOf("<dependencies>");
-        if (depStart == -1) return deps;
-        int depEnd = content.indexOf("</dependencies>", depStart);
-        if (depEnd == -1) return deps;
-
-        String depsSection = content.substring(depStart, depEnd);
-        int marker = 0;
-        while ((marker = depsSection.indexOf("<dependency>", marker)) != -1) {
-            int end = depsSection.indexOf("</dependency>", marker);
-            if (end == -1) break;
-            deps.add(depsSection.substring(marker, end + "</dependency>".length()));
-            marker = end + "</dependency>".length();
-        }
-        return deps;
-    }
-
-    private String extractArtifactIdFromDep(String dep) {
-        int start = dep.indexOf("<artifactId>");
-        if (start == -1) return "";
-        start += "<artifactId>".length();
-        int end = dep.indexOf("</artifactId>", start);
-        if (end == -1) return "";
-        return dep.substring(start, end).trim();
-    }
-
-    private String extractGroupIdFromDep(String dep) {
-        int start = dep.indexOf("<groupId>");
-        if (start == -1) return "";
-        start += "<groupId>".length();
-        int end = dep.indexOf("</groupId>", start);
-        if (end == -1) return "";
-        return dep.substring(start, end).trim();
-    }
-
-    private static class DependencyIssue {
-        String severity;
-        String description;
-        String file;
-
-        DependencyIssue(String severity, String description) {
-            this.severity = severity;
-            this.description = description;
-        }
-    }
-
     /**
-     * 检查模块信息声明。
-     *
-     * 规则:
-     * 1. 本地 *-starter 必须提供 META-INF/mango/module.properties
-     * 2. module.properties 必须声明 module-name
-     * 3. module-name 必须使用稳定模块名，不允许空值或非法字符
+     * Rules:
+     * 1. Local *-starter modules must provide META-INF/mango/module.properties.
+     * 2. module.properties must declare module-name.
+     * 3. module-name must be stable and kebab-case.
      */
     private void checkModuleInfo() {
         getLog().info("Checking module info declarations...");
-
         Path rootPath = resolveBasePath();
         if (rootPath == null) {
             return;
         }
 
         List<ModuleInfoIssue> issues = new ArrayList<>();
-
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
@@ -655,32 +345,13 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (ModuleInfoIssue issue : issues) {
                 result.addIssue("MODULE_INFO", issue.severity, issue.file, 0,
-                        issue.description, "module-rules.md");
+                        issue.description, DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " module info violation(s)");
         } else {
             getLog().info("All module info checks passed");
         }
-    }
-
-    private Path resolveBasePath() {
-        String effectiveBaseDir = baseDir;
-        if (effectiveBaseDir == null || effectiveBaseDir.isEmpty()) {
-            if (session != null && session.getExecutionRootDirectory() != null) {
-                effectiveBaseDir = session.getExecutionRootDirectory();
-            } else {
-                getLog().error("Cannot determine base directory. Please set -DbaseDir=<path>");
-                return null;
-            }
-        }
-
-        Path rootPath = Paths.get(effectiveBaseDir);
-        if (!Files.exists(rootPath)) {
-            getLog().error("Base directory does not exist: " + effectiveBaseDir);
-            return null;
-        }
-        return rootPath;
     }
 
     private void analyzeModuleInfo(Path pomFile, List<ModuleInfoIssue> issues) {
@@ -694,8 +365,7 @@ public class CheckMojo extends AbstractMojo {
                 return;
             }
 
-            Path moduleInfoFile = pomFile.getParent()
-                    .resolve("src/main/resources/META-INF/mango/module.properties");
+            Path moduleInfoFile = pomFile.getParent().resolve("src/main/resources/META-INF/mango/module.properties");
             if (!Files.exists(moduleInfoFile)) {
                 issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
                         artifactId + " 缺少 META-INF/mango/module.properties"));
@@ -723,28 +393,13 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private static class ModuleInfoIssue {
-        String severity;
-        String file;
-        String description;
-
-        ModuleInfoIssue(String severity, String file, String description) {
-            this.severity = severity;
-            this.file = file;
-            this.description = description;
-        }
-    }
-
     /**
-     * 检查远程适配器。
-     *
-     * 规则:
-     * 1. starter-remote 的 @FeignClient name 必须使用 Mango 模块名
-     * 2. 禁止使用 auth-service、permission-service 等真实服务发现名
+     * Rules:
+     * 1. Feign client names in starter-remote must use Mango module names.
+     * 2. Do not use service discovery implementation names directly.
      */
     private void checkRemoteAdapter() {
         getLog().info("Checking remote adapter declarations...");
-
         Path rootPath = resolveBasePath();
         if (rootPath == null) {
             return;
@@ -770,7 +425,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (RemoteAdapterIssue issue : issues) {
                 result.addIssue("REMOTE_ADAPTER", issue.severity, issue.file, 0,
-                        issue.description, "module-rules.md");
+                        issue.description, DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " remote adapter violation(s)");
@@ -800,34 +455,18 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private static class RemoteAdapterIssue {
-        String severity;
-        String file;
-        String description;
-
-        RemoteAdapterIssue(String severity, String file, String description) {
-            this.severity = severity;
-            this.file = file;
-            this.description = description;
-        }
-    }
-
     /**
-     * 检查 API 契约。
-     *
-     * 规则:
-     * 1. *-api 源码禁止声明 @FeignClient
+     * Rules:
+     * 1. *-api source must not declare @FeignClient.
      */
     private void checkApiContract() {
         getLog().info("Checking API contracts...");
-
         Path rootPath = resolveBasePath();
         if (rootPath == null) {
             return;
         }
 
         List<ApiContractIssue> issues = new ArrayList<>();
-
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
@@ -845,7 +484,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (ApiContractIssue issue : issues) {
                 result.addIssue("API_CONTRACT", issue.severity, issue.file, 0,
-                        issue.description, "api-rules.md");
+                        issue.description, DOC_API_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " API contract violation(s)");
@@ -871,35 +510,19 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private static class ApiContractIssue {
-        String severity;
-        String file;
-        String description;
-
-        ApiContractIssue(String severity, String file, String description) {
-            this.severity = severity;
-            this.file = file;
-            this.description = description;
-        }
-    }
-
     /**
-     * 检查 KV key 规范。
-     *
-     * 规则:
-     * 1. 注解 key 不得写完整基础设施前缀 mango:infra:kv，由 KV capability 自动补齐。
-     * 2. 动态 key 必须使用 SpEL 模板 user:#{#userId} 或直接 SpEL #userId。
+     * Rules:
+     * 1. KV annotation key must not hardcode mango:infra:kv prefix.
+     * 2. Dynamic key must use SpEL template syntax such as user:#{#userId}.
      */
     private void checkKvKey() {
         getLog().info("Checking KV key declarations...");
-
         Path rootPath = resolveBasePath();
         if (rootPath == null) {
             return;
         }
 
         List<KvKeyIssue> issues = new ArrayList<>();
-
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
@@ -917,7 +540,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (KvKeyIssue issue : issues) {
                 result.addIssue("KV_KEY", issue.severity, issue.file, issue.line,
-                        issue.description, "naming-rules.md");
+                        issue.description, DOC_NAMING_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " KV key violation(s)");
@@ -959,55 +582,20 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private int lineNumber(String content, int offset) {
-        int line = 1;
-        for (int i = 0; i < offset && i < content.length(); i++) {
-            if (content.charAt(i) == '\n') {
-                line++;
-            }
-        }
-        return line;
-    }
-
-    private boolean usesInlinePlaceholder(String key, String token) {
-        if (!key.contains(token) || key.startsWith(token)) {
-            return false;
-        }
-        return !key.contains("#{" + token);
-    }
-
-    private static class KvKeyIssue {
-        String severity;
-        String file;
-        int line;
-        String description;
-
-        KvKeyIssue(String severity, String file, int line, String description) {
-            this.severity = severity;
-            this.file = file;
-            this.line = line;
-            this.description = description;
-        }
-    }
-
     /**
-     * 检查测试命名和测试物料是否一致。
-     *
-     * 自动覆盖的高风险错配:
-     * 1. Redis*Test 中使用 MemoryKvStore/JdbcKvStore 作为核心被测物料。
-     * 2. Jdbc*Test 中使用 MemoryKvStore/RedisKvStore 作为核心被测物料。
-     * 3. Memory*Test 中使用 RedisKvStore/JdbcKvStore 作为核心被测物料。
+     * Rules:
+     * 1. Redis*Test must not use MemoryKvStore or JdbcKvStore as its core store fixture.
+     * 2. Jdbc*Test must not use MemoryKvStore or RedisKvStore as its core store fixture.
+     * 3. Memory*Test must not use RedisKvStore or JdbcKvStore as its core store fixture.
      */
     private void checkTestFixture() {
         getLog().info("Checking test fixture consistency...");
-
         Path rootPath = resolveBasePath();
         if (rootPath == null) {
             return;
         }
 
         List<TestFixtureIssue> issues = new ArrayList<>();
-
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
@@ -1025,7 +613,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (TestFixtureIssue issue : issues) {
                 result.addIssue("TEST_FIXTURE", issue.severity, issue.file, issue.line,
-                        issue.description, "test-rules.md");
+                        issue.description, DOC_TEST_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " test fixture violation(s)");
@@ -1048,16 +636,13 @@ public class CheckMojo extends AbstractMojo {
                 return;
             }
 
-            List<String> mismatches = new ArrayList<>();
             for (String candidate : List.of("MemoryKvStore", "RedisKvStore", "JdbcKvStore")) {
                 if (!candidate.startsWith(expected) && content.contains(candidate)) {
-                    mismatches.add(candidate);
+                    issues.add(new TestFixtureIssue("CRITICAL", file.toString(),
+                            lineNumber(content, content.indexOf(candidate)),
+                            fileName + " 表示测试 " + expected + " 实现，但测试物料出现 " + candidate
+                                    + "；实现类型测试必须使用同名实现，通用能力测试应按能力命名并参数化注入"));
                 }
-            }
-            for (String mismatch : mismatches) {
-                issues.add(new TestFixtureIssue("CRITICAL", file.toString(), lineNumber(content, content.indexOf(mismatch)),
-                        fileName + " 表示测试 " + expected + " 实现，但测试物料出现 " + mismatch
-                                + "；实现类型测试必须使用同名实现，通用能力测试应按能力命名并参数化注入"));
             }
         } catch (IOException e) {
             issues.add(new TestFixtureIssue("MAJOR", file.toString(), 0,
@@ -1078,50 +663,104 @@ public class CheckMojo extends AbstractMojo {
         return null;
     }
 
-    private static class TestFixtureIssue {
-        String severity;
-        String file;
-        int line;
-        String description;
-
-        TestFixtureIssue(String severity, String file, int line, String description) {
-            this.severity = severity;
-            this.file = file;
-            this.line = line;
-            this.description = description;
-        }
-    }
-
-    private enum ModuleType {
-        ROOT, OTHER, API, CORE, STARTER, STARTER_REMOTE, BFF
-    }
-
-    private List<LengthIssue> findLongClasses() {
-        List<LengthIssue> issues = new ArrayList<>();
-
-        try {
-            Files.walkFileTree(Paths.get(baseDir), new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (file.toString().endsWith(".java")) {
-                        checkFileClassLength(file, issues);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            getLog().error("Error walking file tree", e);
+    private Path resolveBasePath() {
+        String effectiveBaseDir = baseDir;
+        if (effectiveBaseDir == null || effectiveBaseDir.isEmpty()) {
+            if (session != null && session.getExecutionRootDirectory() != null) {
+                effectiveBaseDir = session.getExecutionRootDirectory();
+            } else {
+                getLog().error("Cannot determine base directory. Please set -DbaseDir=<path>");
+                return null;
+            }
         }
 
-        return issues;
+        Path rootPath = Paths.get(effectiveBaseDir);
+        if (!Files.exists(rootPath)) {
+            getLog().error("Base directory does not exist: " + effectiveBaseDir);
+            return null;
+        }
+        return rootPath;
     }
 
-    private void checkFileClassLength(Path file, List<LengthIssue> issues) throws IOException {
-        String content = Files.readString(file);
-        int lines = content.split("\n").length;
-        if (lines > maxClassLength) {
-            issues.add(new LengthIssue(file.toString(), 1, lines, "Class"));
+    private String extractArtifactId(String content) {
+        String projectContent = content.replaceFirst("(?s)<parent>.*?</parent>", "");
+        int start = projectContent.indexOf("<artifactId>");
+        if (start == -1) {
+            return null;
         }
+        start += "<artifactId>".length();
+        int end = projectContent.indexOf("</artifactId>", start);
+        if (end == -1) {
+            return null;
+        }
+        return projectContent.substring(start, end).trim();
+    }
+
+    private List<String> extractDependencies(String content) {
+        List<String> dependencies = new ArrayList<>();
+        int depStart = content.indexOf("<dependencies>");
+        if (depStart == -1) {
+            return dependencies;
+        }
+        int depEnd = content.indexOf("</dependencies>", depStart);
+        if (depEnd == -1) {
+            return dependencies;
+        }
+
+        String depsSection = content.substring(depStart, depEnd);
+        int marker = 0;
+        while ((marker = depsSection.indexOf("<dependency>", marker)) != -1) {
+            int end = depsSection.indexOf("</dependency>", marker);
+            if (end == -1) {
+                break;
+            }
+            dependencies.add(depsSection.substring(marker, end + "</dependency>".length()));
+            marker = end + "</dependency>".length();
+        }
+        return dependencies;
+    }
+
+    private String extractArtifactIdFromDep(String dependencyBlock) {
+        int start = dependencyBlock.indexOf("<artifactId>");
+        if (start == -1) {
+            return "";
+        }
+        start += "<artifactId>".length();
+        int end = dependencyBlock.indexOf("</artifactId>", start);
+        if (end == -1) {
+            return "";
+        }
+        return dependencyBlock.substring(start, end).trim();
+    }
+
+    private String extractGroupIdFromDep(String dependencyBlock) {
+        int start = dependencyBlock.indexOf("<groupId>");
+        if (start == -1) {
+            return "";
+        }
+        start += "<groupId>".length();
+        int end = dependencyBlock.indexOf("</groupId>", start);
+        if (end == -1) {
+            return "";
+        }
+        return dependencyBlock.substring(start, end).trim();
+    }
+
+    private int lineNumber(String content, int offset) {
+        int line = 1;
+        for (int i = 0; i < offset && i < content.length(); i++) {
+            if (content.charAt(i) == '\n') {
+                line++;
+            }
+        }
+        return line;
+    }
+
+    private boolean usesInlinePlaceholder(String key, String token) {
+        if (!key.contains(token) || key.startsWith(token)) {
+            return false;
+        }
+        return !key.contains("#{" + token);
     }
 
     private void outputText() {
@@ -1130,7 +769,7 @@ public class CheckMojo extends AbstractMojo {
         getLog().info("Issues: " + result.issues.size());
 
         for (Issue issue : result.issues) {
-            getLog().warn("  [" + issue.severity + "] " + issue.description);
+            getLog().warn("  [" + issue.severity + "][" + issue.source + "] " + issue.description);
             if (issue.file != null) {
                 getLog().warn("    at: " + issue.file + ":" + issue.line);
             }
@@ -1161,7 +800,6 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    // Inner classes for data structures
     public static class Issue {
         public String type;
         public String severity;
@@ -1169,15 +807,18 @@ public class CheckMojo extends AbstractMojo {
         public int line;
         public String description;
         public String rule;
+        public String source;
 
-        Issue() {}
+        Issue() {
+        }
     }
 
     public static class CheckResult {
         public boolean passed = true;
         public List<Issue> issues = new ArrayList<>();
 
-        void addIssue(String type, String severity, String file, int line, String description, String rule) {
+        void addIssue(String type, String severity, String file, int line, String description,
+                      String rule, String source) {
             Issue issue = new Issue();
             issue.type = type;
             issue.severity = severity;
@@ -1185,18 +826,19 @@ public class CheckMojo extends AbstractMojo {
             issue.line = line;
             issue.description = description;
             issue.rule = rule;
+            issue.source = source;
             issues.add(issue);
             passed = false;
         }
     }
 
     private static class NamingIssue {
-        String severity;
-        String file;
-        int line;
-        String description;
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
 
-        NamingIssue(String severity, String file, int line, String description) {
+        private NamingIssue(String severity, String file, int line, String description) {
             this.severity = severity;
             this.file = file;
             this.line = line;
@@ -1204,27 +846,88 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private static class DuplicateIssue {
-        String signature;
-        String file;
+    private static class DependencyIssue {
+        private final String severity;
+        private final String description;
+        private String file;
 
-        DuplicateIssue(String signature, String file) {
-            this.signature = signature;
-            this.file = file;
+        private DependencyIssue(String severity, String description) {
+            this.severity = severity;
+            this.description = description;
         }
     }
 
-    private static class LengthIssue {
-        String file;
-        int line;
-        int length;
-        String context;
+    private static class ModuleInfoIssue {
+        private final String severity;
+        private final String file;
+        private final String description;
 
-        LengthIssue(String file, int line, int length, String context) {
+        private ModuleInfoIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.description = description;
+        }
+    }
+
+    private static class RemoteAdapterIssue {
+        private final String severity;
+        private final String file;
+        private final String description;
+
+        private RemoteAdapterIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.description = description;
+        }
+    }
+
+    private static class ApiContractIssue {
+        private final String severity;
+        private final String file;
+        private final String description;
+
+        private ApiContractIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.description = description;
+        }
+    }
+
+    private static class KvKeyIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private KvKeyIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
             this.file = file;
             this.line = line;
-            this.length = length;
-            this.context = context;
+            this.description = description;
         }
+    }
+
+    private static class TestFixtureIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private TestFixtureIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
+    private enum ModuleType {
+        ROOT,
+        OTHER,
+        APP,
+        API,
+        CORE,
+        STARTER,
+        STARTER_REMOTE,
     }
 }

@@ -49,7 +49,7 @@
 
 ## 3. `mango-maven-plugin` 新增检查项
 
-`mango:check` 只承载 Mango 项目特有规则。通用 Java 代码质量规则由 P3C/PMD/Checkstyle 执行。
+`mango:check` 是项目统一入口，但插件自身只承载 Mango 项目特有规则。通用 Java 代码质量规则由 P3C/PMD/Checkstyle/SpotBugs 执行，`mango:check` 负责统一规则分流、结果聚合和项目约束检查。
 
 | Rule Group | Command | Scope |
 |---|---|---|
@@ -57,7 +57,7 @@
 | API contract | `mvn mango:check -Drule=api-contract` | API 签名、包结构、`@FeignClient`、DTO/Entity 暴露 |
 | Validation | `mvn mango:check -Drule=validation` | Bean Validation、`@Validated`、路径参数校验 |
 | Require | `mvn mango:check -Drule=require` | 业务入口前置条件、散写 `if/throw` 候选 |
-| Module boundary | `mvn mango:check -Drule=module-boundary` | 模块依赖、目录职责、跨域依赖 |
+| Module boundary | `mvn mango:check -Drule=module-boundary` | 模块依赖、目录职责、跨域依赖；按 `common/infra/platform/app` 一级分层，再按 `api/core/starter/starter-remote` 二级职责检查 |
 | Module info | `mvn mango:check -Drule=module-info` | 本地 starter 模块信息资源文件 |
 | Remote adapter | `mvn mango:check -Drule=remote-adapter` | 服务名硬编码、Feign 直接使用、能力解析 |
 | Security | `mvn mango:check -Drule=security` | 敏感信息、日志敏感字段、SQL 拼接候选 |
@@ -70,6 +70,18 @@
 |---|---|---|
 | P3C / PMD | `mvn pmd:check` | 命名、异常、集合、并发、OOP、ORM、控制语句、契约型注释等通用 Java 规则 |
 | Checkstyle | `mvn checkstyle:check` | 格式、复杂度、长度、命名等通用 Java 规则；不检查形式化 Javadoc |
+| SpotBugs | `mvn spotbugs:check` | 字节码级 bug 风险、安全类缺陷和高概率误用 |
+
+## 4.1 报告来源
+
+统一报告必须带来源字段，避免把 Mango 自定义规则和通用静态分析结果混在一起：
+
+| Source | Meaning |
+|---|---|
+| `mango-check` | Mango 项目特有规则 |
+| `pmd` | PMD / P3C 通用规则 |
+| `checkstyle` | Checkstyle 通用规则 |
+| `spotbugs` | SpotBugs 通用规则 |
 
 ## 5. 执行模式
 

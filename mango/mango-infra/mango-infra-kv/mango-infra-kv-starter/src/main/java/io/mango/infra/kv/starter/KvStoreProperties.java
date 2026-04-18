@@ -29,6 +29,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "mango.kv")
 public class KvStoreProperties {
 
+    private static final int DEFAULT_REDIS_PORT = 6379;
+    private static final int DEFAULT_REDIS_TIMEOUT_MILLIS = 3000;
+    private static final int DEFAULT_REDIS_POOL_SIZE = 8;
+    private static final int DEFAULT_JDBC_DRUID_INITIAL_SIZE = 5;
+    private static final int DEFAULT_JDBC_DRUID_MAX_ACTIVE = 20;
+    private static final long DEFAULT_JDBC_DRUID_MAX_WAIT_MILLIS = 60000L;
+    private static final long DEFAULT_JDBC_DRUID_MIN_EVICTABLE_IDLE_MILLIS = 300000L;
+    private static final int DEFAULT_HIKARI_MAX_POOL_SIZE = 10;
+    private static final long DEFAULT_HIKARI_CONNECTION_TIMEOUT_MILLIS = 30000L;
+    private static final long DEFAULT_HIKARI_IDLE_TIMEOUT_MILLIS = 600000L;
+    private static final long DEFAULT_HIKARI_MAX_LIFETIME_MILLIS = 1800000L;
+
     /**
      * Legacy store type alias. Prefer store.type.
      */
@@ -100,16 +112,16 @@ public class KvStoreProperties {
     @Data
     public static class Redis {
         private String host = "localhost";
-        private int port = 6379;
+        private int port = DEFAULT_REDIS_PORT;
         private String password;
         private int database = 0;
-        private int timeout = 3000;
+        private int timeout = DEFAULT_REDIS_TIMEOUT_MILLIS;
         private Pool pool = new Pool();
 
         @Data
         public static class Pool {
-            private int maxActive = 8;
-            private int maxIdle = 8;
+            private int maxActive = DEFAULT_REDIS_POOL_SIZE;
+            private int maxIdle = DEFAULT_REDIS_POOL_SIZE;
             private int minIdle = 0;
             private int maxWait = -1;
         }
@@ -151,12 +163,12 @@ public class KvStoreProperties {
 
         @Data
         public static class Druid {
-            private int initialSize = 5;
-            private int maxActive = 20;
-            private int minIdle = 5;
-            private long maxWait = 60000;
-            private long timeBetweenEvictionRunsMillis = 60000;
-            private long minEvictableIdleTimeMillis = 300000;
+            private int initialSize = DEFAULT_JDBC_DRUID_INITIAL_SIZE;
+            private int maxActive = DEFAULT_JDBC_DRUID_MAX_ACTIVE;
+            private int minIdle = DEFAULT_JDBC_DRUID_INITIAL_SIZE;
+            private long maxWait = DEFAULT_JDBC_DRUID_MAX_WAIT_MILLIS;
+            private long timeBetweenEvictionRunsMillis = DEFAULT_JDBC_DRUID_MAX_WAIT_MILLIS;
+            private long minEvictableIdleTimeMillis = DEFAULT_JDBC_DRUID_MIN_EVICTABLE_IDLE_MILLIS;
             private String validationQuery = "SELECT 1";
             private boolean testWhileIdle = true;
             private boolean testOnBorrow = false;
@@ -165,11 +177,11 @@ public class KvStoreProperties {
 
         @Data
         public static class Hikari {
-            private int maxPoolSize = 10;
-            private int minIdle = 5;
-            private long connectionTimeout = 30000;
-            private long idleTimeout = 600000;
-            private long maxLifetime = 1800000;
+            private int maxPoolSize = DEFAULT_HIKARI_MAX_POOL_SIZE;
+            private int minIdle = DEFAULT_JDBC_DRUID_INITIAL_SIZE;
+            private long connectionTimeout = DEFAULT_HIKARI_CONNECTION_TIMEOUT_MILLIS;
+            private long idleTimeout = DEFAULT_HIKARI_IDLE_TIMEOUT_MILLIS;
+            private long maxLifetime = DEFAULT_HIKARI_MAX_LIFETIME_MILLIS;
         }
     }
 
