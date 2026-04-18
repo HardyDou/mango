@@ -204,7 +204,32 @@ public class CheckMojo extends AbstractMojo {
     }
 
     private boolean isMethodDeclaration(String line) {
-        return line.startsWith("public ") || line.startsWith("private ") || line.startsWith("protected ");
+        String trimmed = line.trim();
+        if (trimmed.isEmpty() || trimmed.startsWith("//") || trimmed.startsWith("*")) {
+            return false;
+        }
+        if (!trimmed.contains("(") || !trimmed.contains(")")) {
+            return false;
+        }
+        if (trimmed.endsWith(";")) {
+            return false;
+        }
+
+        String declaration = trimmed.replaceFirst("^(public|private|protected)\\s+", "");
+        while (declaration.matches("^(static|final|synchronized|abstract|native|strictfp|default)\\b.*")) {
+            declaration = declaration.replaceFirst("^(static|final|synchronized|abstract|native|strictfp|default)\\s+", "");
+        }
+
+        if (declaration.matches("^(class|interface|enum|record|@interface)\\b.*")) {
+            return false;
+        }
+        if (declaration.matches("^(if|for|while|switch|catch|return|throw|new|do)\\b.*")) {
+            return false;
+        }
+
+        int equalsIndex = declaration.indexOf('=');
+        int parenIndex = declaration.indexOf('(');
+        return equalsIndex < 0 || equalsIndex > parenIndex;
     }
 
     private String extractSignature(String line) {
@@ -267,24 +292,48 @@ public class CheckMojo extends AbstractMojo {
 
         int braceCount = 0;
         int methodStart = -1;
+        int methodDepth = -1;
+        int pendingMethodStart = -1;
         String currentMethod = "";
+        String pendingMethod = "";
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
+            String trimmed = line.trim();
+            int depthBeforeLine = braceCount;
+
+            if (methodStart < 0 && pendingMethodStart < 0
+                    && depthBeforeLine >= 1 && isMethodDeclaration(trimmed)) {
+                if (trimmed.contains("{")) {
+                    methodStart = i;
+                    methodDepth = depthBeforeLine + 1;
+                    currentMethod = extractSignature(trimmed);
+                } else {
+                    pendingMethodStart = i;
+                    pendingMethod = extractSignature(trimmed);
+                }
+            } else if (methodStart < 0 && pendingMethodStart >= 0 && trimmed.startsWith("{")) {
+                methodStart = pendingMethodStart;
+                methodDepth = depthBeforeLine + 1;
+                currentMethod = pendingMethod;
+                pendingMethodStart = -1;
+                pendingMethod = "";
+            } else if (pendingMethodStart >= 0 && trimmed.endsWith(";")) {
+                pendingMethodStart = -1;
+                pendingMethod = "";
+            }
+
             braceCount += line.length() - line.replace("{", "").length();
             braceCount -= line.length() - line.replace("}", "").length();
 
-            if (isMethodDeclaration(line) && braceCount == 1) {
-                methodStart = i;
-                currentMethod = extractSignature(line);
-            }
-
-            if (braceCount == 0 && methodStart >= 0) {
-                int length = i - methodStart;
+            if (methodStart >= 0 && braceCount < methodDepth) {
+                int length = i - methodStart + 1;
                 if (length > maxMethodLength) {
                     issues.add(new LengthIssue(file.toString(), methodStart + 1, length, currentMethod));
                 }
                 methodStart = -1;
+                methodDepth = -1;
+                currentMethod = "";
             }
         }
     }

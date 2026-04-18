@@ -63,6 +63,36 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkMethodLength_withLongClassAndShortMethods_passes() throws Exception {
+        // given - public class declarations must not be counted as methods
+        Path javaFile = tempDir.resolve("Response.java");
+        StringBuilder source = new StringBuilder();
+        source.append("public class Response {\n");
+        for (int i = 0; i < 70; i++) {
+            source.append("    private String field").append(i).append(";\n");
+        }
+        source.append("    public static Response ok() {\n");
+        source.append("        return new Response();\n");
+        source.append("    }\n");
+        source.append("    public boolean success()\n");
+        source.append("    {\n");
+        source.append("        return true;\n");
+        source.append("    }\n");
+        source.append("}\n");
+        Files.writeString(javaFile, source.toString());
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "method-length");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+        setField(mojo, "maxMethodLength", 50);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkClassLength_withShortClass_passes() throws Exception {
         // given
         Path javaFile = tempDir.resolve("ShortClass.java");
