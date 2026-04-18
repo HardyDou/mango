@@ -1049,7 +1049,10 @@ public class CheckMojo extends AbstractMojo {
     private void saveReport() {
         try {
             File report = new File(reportFile);
-            report.getParentFile().mkdirs();
+            File parent = report.getParentFile();
+            if (parent != null) {
+                parent.mkdirs();
+            }
             String json = objectMapper.writeValueAsString(result);
             Files.writeString(report.toPath(), json);
             getLog().info("Report saved to: " + reportFile);
@@ -1059,20 +1062,20 @@ public class CheckMojo extends AbstractMojo {
     }
 
     // Inner classes for data structures
-    private static class Issue {
-        String type;
-        String severity;
-        String file;
-        int line;
-        String description;
-        String rule;
+    public static class Issue {
+        public String type;
+        public String severity;
+        public String file;
+        public int line;
+        public String description;
+        public String rule;
 
         Issue() {}
     }
 
-    private static class CheckResult {
-        boolean passed = true;
-        List<Issue> issues = new ArrayList<>();
+    public static class CheckResult {
+        public boolean passed = true;
+        public List<Issue> issues = new ArrayList<>();
 
         void addIssue(String type, String severity, String file, int line, String description, String rule) {
             Issue issue = new Issue();

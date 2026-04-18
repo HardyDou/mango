@@ -481,6 +481,36 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkTestFixture_withReportFile_writesJsonReport() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("mango-infra-test/src/test/java/io/mango/infra/kv/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("RedisKvStoreTest.java"), """
+                package io.mango.infra.kv.core;
+
+                import io.mango.infra.kv.core.redis.RedisKvStore;
+
+                class RedisKvStoreTest {
+                    private RedisKvStore kvStore;
+                }
+                """);
+        Path reportFile = tempDir.resolve("target/check-report.json");
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "test-fixture");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "reportFile", reportFile.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+        String report = Files.readString(reportFile);
+        assertTrue(report.contains("\"passed\" : true"));
+        assertTrue(report.contains("\"issues\" : [ ]"));
+    }
+
+    @Test
     void extractSignature_withValidMethod_returnsSignature() throws Exception {
         // given
         Path javaFile = tempDir.resolve("Test.java");
