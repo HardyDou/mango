@@ -49,7 +49,12 @@
 
 ## 3. `mango-maven-plugin` 新增检查项
 
-`mango:check` 是项目统一入口，但插件自身只承载 Mango 项目特有规则。通用 Java 代码质量规则由 P3C/PMD/Checkstyle/SpotBugs 执行，`mango:check` 负责统一规则分流、结果聚合和项目约束检查。
+`mango:check` 是项目统一验收入口。对内部分两层：
+
+- `mango-check`：只承载 Mango 项目特有规则
+- `static`：聚合 P3C/PMD、Checkstyle、SpotBugs
+
+因此 `mango:check` 负责统一规则分流、结果聚合、项目约束检查和最终失败语义。
 
 | Rule Group | Command | Scope |
 |---|---|---|
@@ -71,6 +76,17 @@
 | P3C / PMD | `mvn pmd:check` | 命名、异常、集合、并发、OOP、ORM、控制语句、契约型注释等通用 Java 规则 |
 | Checkstyle | `mvn checkstyle:check` | 格式、复杂度、长度、命名等通用 Java 规则；不检查形式化 Javadoc |
 | SpotBugs | `mvn spotbugs:check` | 字节码级 bug 风险、安全类缺陷和高概率误用 |
+
+对团队日常验收，统一入口优先使用：
+
+```bash
+mvn mango:check -Drule=all
+```
+
+其中：
+
+- `mvn mango:check -Drule=static` = 只聚合 PMD / Checkstyle / SpotBugs
+- `mvn mango:check -Drule=all` = `static` + Mango 项目特有规则
 
 ## 4.1 报告来源
 

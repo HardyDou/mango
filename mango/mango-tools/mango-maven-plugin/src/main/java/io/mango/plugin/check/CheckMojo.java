@@ -7,9 +7,13 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +26,7 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Mango project-specific check Mojo.
@@ -30,18 +35,25 @@ import java.util.regex.Pattern;
  * such as method length, class length, duplicate code, complexity, and common
  * language best practices are delegated to PMD/P3C, Checkstyle, and SpotBugs.</p>
  */
-@Mojo(name = "check", defaultPhase = LifecyclePhase.VERIFY)
+@Mojo(name = "check", defaultPhase = LifecyclePhase.VERIFY, aggregator = true)
 public class CheckMojo extends AbstractMojo {
 
     private static final String SOURCE_MANGO_CHECK = "mango-check";
+    private static final String SOURCE_PMD = "pmd";
+    private static final String SOURCE_CHECKSTYLE = "checkstyle";
+    private static final String SOURCE_SPOTBUGS = "spotbugs";
     private static final String DOC_AUTO_CHECK_MAPPING = "auto-check-mapping.md";
     private static final String DOC_NAMING_RULES = "naming-rules.md";
     private static final String DOC_MODULE_RULES = "module-rules.md";
     private static final String DOC_API_RULES = "api-rules.md";
     private static final String DOC_TEST_RULES = "test-rules.md";
+    private static final String DOC_STATIC_ANALYSIS = "auto-check-mapping.md";
+    private static final String CHECKSTYLE_REPORT = "checkstyle-result.xml";
+    private static final String PMD_REPORT = "pmd.xml";
+    private static final String SPOTBUGS_REPORT = "spotbugsXml.xml";
 
     /**
-     * Check rule: all, naming, dependency, module-boundary, module-info, remote-adapter,
+     * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
      * api-contract, kv-key, test-fixture.
      */
     @Parameter(property = "rule", defaultValue = "all")
@@ -71,6 +83,20 @@ public class CheckMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", readonly = true)
     private org.apache.maven.execution.MavenSession session;
 
+    /**
+     * Retained for backward-compatible tests and configuration migration.
+     * Generic method-length checks are delegated to PMD/P3C/Checkstyle.
+     */
+    @Parameter(property = "maxMethodLength", defaultValue = "50")
+    private int maxMethodLength;
+
+    /**
+     * Retained for backward-compatible tests and configuration migration.
+     * Generic class-length checks are delegated to PMD/P3C/Checkstyle.
+     */
+    @Parameter(property = "maxClassLength", defaultValue = "500")
+    private int maxClassLength;
+
     private final ObjectMapper objectMapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -91,6 +117,7 @@ public class CheckMojo extends AbstractMojo {
 
         switch (rule.toLowerCase(Locale.ROOT)) {
             case "duplicate", "method-length", "class-length", "complexity" -> unsupportedGenericRule(rule);
+            case "static" -> runStaticAnalysis();
             case "naming" -> checkNaming();
             case "dependency", "module-boundary" -> checkDependency();
             case "module-info" -> checkModuleInfo();
@@ -99,6 +126,7 @@ public class CheckMojo extends AbstractMojo {
             case "kv-key" -> checkKvKey();
             case "test-fixture" -> checkTestFixture();
             case "all" -> {
+                runStaticAnalysis();
                 checkNaming();
                 checkDependency();
                 checkModuleInfo();
@@ -129,11 +157,358 @@ public class CheckMojo extends AbstractMojo {
 
     private void unsupportedGenericRule(String selectedRule) {
         String description = "mango:check only runs Mango-specific rules. Generic rule '" + selectedRule
-                + "' is handled by PMD/P3C/Checkstyle; use the static-analysis mapping in "
+                + "' is handled by aggregated static analysis inside mango:check; use rule=static or the mapping in "
                 + DOC_AUTO_CHECK_MAPPING + ".";
         getLog().warn(description);
         result.addIssue("UNSUPPORTED_RULE", "MAJOR", null, 0, description,
-                DOC_AUTO_CHECK_MAPPING, SOURCE_MANGO_CHECK);
+                "UNSUPPORTED_RULE", DOC_AUTO_CHECK_MAPPING, SOURCE_MANGO_CHECK);
+    }
+
+    private void runStaticAnalysis() throws MojoExecutionException {
+        getLog().info("Running aggregated static analysis...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+        if (!Files.exists(rootPath.resolve("pom.xml"))) {
+            getLog().warn("Skip aggregated static analysis because baseDir has no pom.xml: " + rootPath);
+            return;
+        }
+
+        cleanStaticReports(rootPath);
+        invokeMavenGoals(rootPath, List.of("pmd:check", "checkstyle:check", "spotbugs:spotbugs"));
+        collectPmdIssues(rootPath);
+        collectCheckstyleIssues(rootPath);
+        collectSpotbugsIssues(rootPath);
+    }
+
+    private void cleanStaticReports(Path rootPath) throws MojoExecutionException {
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    String fileName = file.getFileName().toString();
+                    if (CHECKSTYLE_REPORT.equals(fileName) || PMD_REPORT.equals(fileName) || SPOTBUGS_REPORT.equals(fileName)) {
+                        Files.deleteIfExists(file);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to clean static-analysis reports", e);
+        }
+    }
+
+    private void invokeMavenGoals(Path rootPath, List<String> goals) throws MojoExecutionException {
+        File mavenExecutable = findMavenExecutable();
+        if (mavenExecutable == null) {
+            getLog().warn("Skip aggregated static analysis because Maven executable was not found");
+            return;
+        }
+
+        List<String> reactorProjects = discoverReactorProjects(rootPath);
+        for (String goal : goals) {
+            invokeSingleGoal(mavenExecutable, rootPath, goal, reactorProjects);
+        }
+    }
+
+    private void invokeSingleGoal(File mavenExecutable, Path rootPath, String goal,
+                                  List<String> reactorProjects) throws MojoExecutionException {
+        List<String> command = new ArrayList<>();
+        command.add(mavenExecutable.getAbsolutePath());
+        command.add("-q");
+        command.add("-f");
+        command.add(rootPath.resolve("pom.xml").toString());
+        command.add("-DskipTests");
+        if (!reactorProjects.isEmpty()) {
+            command.add("-pl");
+            command.add(String.join(",", reactorProjects));
+            command.add("-am");
+        }
+        command.add(goal);
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.directory(rootPath.toFile());
+        processBuilder.redirectErrorStream(true);
+
+        try {
+            Process process = processBuilder.start();
+            String output = readProcessOutput(process.getInputStream());
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new MojoExecutionException("Static-analysis delegation failed with exit code "
+                        + exitCode + System.lineSeparator() + output);
+            }
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to start delegated static-analysis goals", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MojoExecutionException("Delegated static-analysis goals were interrupted", e);
+        }
+    }
+
+    private String readProcessOutput(InputStream inputStream) throws IOException {
+        return new String(inputStream.readAllBytes());
+    }
+
+    private List<String> discoverReactorProjects(Path rootPath) throws MojoExecutionException {
+        List<String> modules = new ArrayList<>();
+        collectReactorProjects(rootPath, rootPath, modules);
+        return modules;
+    }
+
+    private void collectReactorProjects(Path rootPath, Path currentDir, List<String> modules)
+            throws MojoExecutionException {
+        Path pomFile = currentDir.resolve("pom.xml");
+        if (!Files.exists(pomFile)) {
+            return;
+        }
+        for (String childModule : readPomModules(pomFile)) {
+            Path moduleDir = currentDir.resolve(childModule).normalize();
+            if (!Files.exists(moduleDir.resolve("pom.xml"))) {
+                continue;
+            }
+            String relativePath = rootPath.relativize(moduleDir).toString();
+            if (!relativePath.isBlank()) {
+                modules.add(relativePath);
+            }
+            // Recursively collect nested modules
+            collectReactorProjects(rootPath, moduleDir, modules);
+        }
+    }
+
+    private List<String> readPomModules(Path pomFile) throws MojoExecutionException {
+        List<String> modules = new ArrayList<>();
+        Document document = loadXml(pomFile);
+        NodeList moduleNodes = document.getElementsByTagName("module");
+        for (int i = 0; i < moduleNodes.getLength(); i++) {
+            String module = moduleNodes.item(i).getTextContent();
+            if (module != null && !module.isBlank()) {
+                modules.add(module.trim());
+            }
+        }
+        return modules;
+    }
+
+    private File findMavenExecutable() {
+        String path = System.getenv("PATH");
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        // PATH separator is always ":" on both Unix and Windows
+        // (File.pathSeparator is ";", which is the classpath separator on Windows)
+        for (String dir : path.split(":")) {
+            if (dir == null || dir.isBlank()) {
+                continue;
+            }
+            File dirFile = new File(dir);
+            if (!dirFile.isDirectory()) {
+                continue;
+            }
+            // On Windows, check mvn.cmd first, then fall back to mvn (Git Bash/MSYS2)
+            for (String candidate : new String[]{"mvn.cmd", "mvn"}) {
+                File executable = new File(dirFile, candidate);
+                if (executable.isFile() && executable.canExecute()) {
+                    return executable;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void collectPmdIssues(Path rootPath) throws MojoExecutionException {
+        for (Path report : findReports(rootPath, PMD_REPORT)) {
+            parsePmdReport(report);
+        }
+    }
+
+    private void collectCheckstyleIssues(Path rootPath) throws MojoExecutionException {
+        for (Path report : findReports(rootPath, CHECKSTYLE_REPORT)) {
+            parseCheckstyleReport(report);
+        }
+    }
+
+    private void collectSpotbugsIssues(Path rootPath) throws MojoExecutionException {
+        for (Path report : findReports(rootPath, SPOTBUGS_REPORT)) {
+            parseSpotbugsReport(report);
+        }
+    }
+
+    private List<Path> findReports(Path rootPath, String fileName) throws MojoExecutionException {
+        List<Path> reports = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (fileName.equals(file.getFileName().toString())) {
+                        reports.add(file);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to scan report files: " + fileName, e);
+        }
+        return reports;
+    }
+
+    private void parsePmdReport(Path report) throws MojoExecutionException {
+        Document document = loadXml(report);
+        NodeList violations = document.getElementsByTagName("violation");
+        for (int i = 0; i < violations.getLength(); i++) {
+            Element violation = (Element) violations.item(i);
+            String filename = extractPmdFilename(violation);
+            int line = parseInteger(violation.getAttribute("beginline"));
+            String ruleName = violation.getAttribute("rule");
+            String description = normalizeWhitespace(violation.getTextContent());
+            result.addIssue(ruleName, mapPmdSeverity(violation.getAttribute("priority")), filename, line,
+                    description, ruleName, DOC_STATIC_ANALYSIS, SOURCE_PMD);
+        }
+    }
+
+    private String extractPmdFilename(Element violation) {
+        Element file = (Element) violation.getParentNode();
+        if (file != null && "file".equals(file.getTagName())) {
+            String name = file.getAttribute("name");
+            if (name != null && !name.isBlank()) {
+                return name;
+            }
+        }
+        // Fallback: try to get filename from violation element's attributes
+        String filename = violation.getAttribute("filename");
+        if (filename != null && !filename.isBlank()) {
+            return filename;
+        }
+        return null;
+    }
+
+    private void parseCheckstyleReport(Path report) throws MojoExecutionException {
+        Document document = loadXml(report);
+        NodeList files = document.getElementsByTagName("file");
+        for (int i = 0; i < files.getLength(); i++) {
+            Element file = (Element) files.item(i);
+            String filename = file.getAttribute("name");
+            NodeList errors = file.getElementsByTagName("error");
+            for (int j = 0; j < errors.getLength(); j++) {
+                Element error = (Element) errors.item(j);
+                String ruleName = extractCheckstyleRule(error.getAttribute("source"));
+                result.addIssue(ruleName,
+                        mapCheckstyleSeverity(error.getAttribute("severity")),
+                        filename,
+                        parseInteger(error.getAttribute("line")),
+                        error.getAttribute("message"),
+                        ruleName,
+                        DOC_STATIC_ANALYSIS,
+                        SOURCE_CHECKSTYLE);
+            }
+        }
+    }
+
+    private void parseSpotbugsReport(Path report) throws MojoExecutionException {
+        Document document = loadXml(report);
+        NodeList bugInstances = document.getElementsByTagName("BugInstance");
+        for (int i = 0; i < bugInstances.getLength(); i++) {
+            Element bugInstance = (Element) bugInstances.item(i);
+            Element sourceLine = firstChildElement(bugInstance, "SourceLine");
+            String filename = sourceLine == null ? null : sourceLine.getAttribute("sourcepath");
+            int line = sourceLine == null ? 0 : parseInteger(sourceLine.getAttribute("start"));
+            String type = bugInstance.getAttribute("type");
+            String description = bugInstance.getAttribute("message");
+            if (description == null || description.isBlank()) {
+                description = normalizeWhitespace(textOfFirstChild(bugInstance, "LongMessage"));
+            }
+            result.addIssue(type,
+                    mapSpotbugsSeverity(bugInstance.getAttribute("priority"), bugInstance.getAttribute("rank")),
+                    filename,
+                    line,
+                    description,
+                    type,
+                    DOC_STATIC_ANALYSIS,
+                    SOURCE_SPOTBUGS);
+        }
+    }
+
+    private Document loadXml(Path report) throws MojoExecutionException {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(false);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            return factory.newDocumentBuilder().parse(report.toFile());
+        } catch (Exception e) {
+            throw new MojoExecutionException("Failed to parse XML report: " + report, e);
+        }
+    }
+
+    private Element firstChildElement(Element parent, String tagName) {
+        NodeList nodes = parent.getElementsByTagName(tagName);
+        if (nodes.getLength() == 0) {
+            return null;
+        }
+        return (Element) nodes.item(0);
+    }
+
+    private String textOfFirstChild(Element parent, String tagName) {
+        Element child = firstChildElement(parent, tagName);
+        return child == null ? "" : child.getTextContent();
+    }
+
+    private int parseInteger(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private String mapPmdSeverity(String priority) {
+        int level = parseInteger(priority);
+        if (level <= 1) {
+            return "CRITICAL";
+        }
+        if (level == 2) {
+            return "MAJOR";
+        }
+        return "MINOR";
+    }
+
+    private String mapCheckstyleSeverity(String severity) {
+        if ("error".equalsIgnoreCase(severity)) {
+            return "MAJOR";
+        }
+        return "MINOR";
+    }
+
+    private String mapSpotbugsSeverity(String priority, String rank) {
+        int priorityValue = parseInteger(priority);
+        int rankValue = parseInteger(rank);
+        if (priorityValue == 1 || (rankValue > 0 && rankValue <= 4)) {
+            return "CRITICAL";
+        }
+        if (priorityValue == 2 || (rankValue > 0 && rankValue <= 9)) {
+            return "MAJOR";
+        }
+        return "MINOR";
+    }
+
+    private String extractCheckstyleRule(String source) {
+        if (source == null || source.isBlank()) {
+            return "CHECKSTYLE";
+        }
+        int index = source.lastIndexOf('.');
+        if (index >= 0 && index < source.length() - 1) {
+            return source.substring(index + 1);
+        }
+        return source;
+    }
+
+    private String normalizeWhitespace(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replaceAll("\\s+", " ").trim();
     }
 
     private void checkNaming() {
@@ -161,7 +536,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (NamingIssue issue : issues) {
                 result.addIssue("NAMING", issue.severity, issue.file, issue.line,
-                        issue.description, DOC_NAMING_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "NAMING", DOC_NAMING_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " naming violation(s)");
@@ -223,7 +598,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (DependencyIssue issue : issues) {
                 result.addIssue("DEPENDENCY", issue.severity, issue.file, 0,
-                        issue.description, DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "DEPENDENCY", DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " dependency violation(s)");
@@ -345,7 +720,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (ModuleInfoIssue issue : issues) {
                 result.addIssue("MODULE_INFO", issue.severity, issue.file, 0,
-                        issue.description, DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "MODULE_INFO", DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " module info violation(s)");
@@ -425,7 +800,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (RemoteAdapterIssue issue : issues) {
                 result.addIssue("REMOTE_ADAPTER", issue.severity, issue.file, 0,
-                        issue.description, DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "REMOTE_ADAPTER", DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " remote adapter violation(s)");
@@ -484,7 +859,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (ApiContractIssue issue : issues) {
                 result.addIssue("API_CONTRACT", issue.severity, issue.file, 0,
-                        issue.description, DOC_API_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "API_CONTRACT", DOC_API_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " API contract violation(s)");
@@ -540,7 +915,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (KvKeyIssue issue : issues) {
                 result.addIssue("KV_KEY", issue.severity, issue.file, issue.line,
-                        issue.description, DOC_NAMING_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "KV_KEY", DOC_NAMING_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " KV key violation(s)");
@@ -613,7 +988,7 @@ public class CheckMojo extends AbstractMojo {
         if (!issues.isEmpty()) {
             for (TestFixtureIssue issue : issues) {
                 result.addIssue("TEST_FIXTURE", issue.severity, issue.file, issue.line,
-                        issue.description, DOC_TEST_RULES, SOURCE_MANGO_CHECK);
+                        issue.description, "TEST_FIXTURE", DOC_TEST_RULES, SOURCE_MANGO_CHECK);
                 getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
             }
             getLog().warn("Found " + issues.size() + " test fixture violation(s)");
@@ -659,6 +1034,20 @@ public class CheckMojo extends AbstractMojo {
         }
         if (fileName.startsWith("Memory")) {
             return "Memory";
+        }
+        return null;
+    }
+
+    private String extractSignature(String line) {
+        int parenStart = line.indexOf('(');
+        int parenEnd = line.lastIndexOf(')');
+        if (parenStart > 0 && parenEnd > parenStart) {
+            int braceStart = line.indexOf('{');
+            String signature = line.substring(0, parenEnd + 1).trim();
+            if (braceStart > 0) {
+                signature = line.substring(0, braceStart).trim();
+            }
+            return signature.replaceAll("\\s+", " ");
         }
         return null;
     }
@@ -807,6 +1196,7 @@ public class CheckMojo extends AbstractMojo {
         public int line;
         public String description;
         public String rule;
+        public String reference;
         public String source;
 
         Issue() {
@@ -818,7 +1208,7 @@ public class CheckMojo extends AbstractMojo {
         public List<Issue> issues = new ArrayList<>();
 
         void addIssue(String type, String severity, String file, int line, String description,
-                      String rule, String source) {
+                      String rule, String reference, String source) {
             Issue issue = new Issue();
             issue.type = type;
             issue.severity = severity;
@@ -826,6 +1216,7 @@ public class CheckMojo extends AbstractMojo {
             issue.line = line;
             issue.description = description;
             issue.rule = rule;
+            issue.reference = reference;
             issue.source = source;
             issues.add(issue);
             passed = false;
