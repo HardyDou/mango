@@ -1,8 +1,8 @@
 package io.mango.infra.realtime.core.sse;
 
-import io.mango.infra.realtime.api.RealtimeMessage;
-import io.mango.infra.realtime.api.RealtimeProtocols;
-import io.mango.infra.realtime.api.RealtimeSession;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeProtocols;
+import io.mango.infra.realtime.core.session.RealtimeSession;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public final class SseRealtimeSession implements RealtimeSession {
     }
 
     @Override
-    public void send(RealtimeMessage envelope) {
+    public void send(RealtimeOutboundMessage envelope) {
         if (!isOpen()) {
             return;
         }

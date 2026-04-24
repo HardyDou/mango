@@ -39,6 +39,7 @@
 ## 6. 质量要求
 
 - 提交前统一执行 `mvn mango:check -Drule=all`。
+- 涉及测试设计、测试归属、有效测试判断，遵循 `mango-pmo/rules/backend/08-test.md`。
 - `mango:check` 对内聚合 `mango-check`、`pmd`、`checkstyle`、`spotbugs`，是项目质量验收的唯一入口。
 - 通用代码质量规则由 P3C/PMD/Checkstyle 负责，例如方法长度、类长度、复杂度、异常吞掉、空 catch、硬编码等。
 - `mango:check` 是项目统一检查入口，但插件实现只负责 Mango 项目特有规则，例如模块命名、模块边界、`api/core/starter` 职责、KV key、测试物料一致性、`module.properties`、远程适配。

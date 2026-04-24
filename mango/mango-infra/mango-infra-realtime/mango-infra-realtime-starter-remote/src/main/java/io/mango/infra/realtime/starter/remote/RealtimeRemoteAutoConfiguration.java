@@ -1,10 +1,8 @@
 package io.mango.infra.realtime.starter.remote;
 
-import io.mango.infra.realtime.api.RealtimeApi;
-import io.mango.infra.realtime.api.RealtimePublisher;
-import io.mango.infra.realtime.core.inbound.InboundUnknownTypePolicy;
-import io.mango.infra.realtime.core.inbound.LocalRealtimeInboundDispatcher;
-import io.mango.infra.realtime.core.inbound.RealtimeInboundDispatcher;
+import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
+import io.mango.infra.realtime.support.inbound.RealtimeInboundService;
+import io.mango.infra.realtime.support.inbound.RealtimeInboundUnknownTypePolicy;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -26,16 +24,10 @@ import org.springframework.core.env.Environment;
 public class RealtimeRemoteAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean(RealtimePublisher.class)
-    public RealtimePublisher remoteRealtimePublisher(RealtimeApi realtimeApi) {
-        return new RemoteRealtimePublisher(realtimeApi);
-    }
-
-    @Bean
     @ConditionalOnMissingBean
-    public RealtimeInboundDispatcher realtimeInboundDispatcher(ListableBeanFactory beanFactory,
-                                                               RealtimeRemoteProperties properties) {
-        return new LocalRealtimeInboundDispatcher(
+    public IRealtimeInboundService realtimeInboundService(ListableBeanFactory beanFactory,
+                                                          RealtimeRemoteProperties properties) {
+        return new RealtimeInboundService(
                 beanFactory,
                 properties.getInbound().isFailFast(),
                 unknownTypePolicy(properties.getInbound().getUnknownTypePolicy()));
@@ -44,21 +36,23 @@ public class RealtimeRemoteAutoConfiguration {
     @Bean
     @ConditionalOnExpression("'${mango.infra.realtime.inbound.enabled:false}' == 'true' "
             + "&& '${mango.infra.realtime.inbound.remote.endpoint-enabled:true}' == 'true'")
-    public RealtimeInboundRemoteController realtimeInboundRemoteController(RealtimeInboundDispatcher dispatcher) {
-        return new RealtimeInboundRemoteController(dispatcher);
+    public RealtimeInboundRemoteController realtimeInboundRemoteController(
+            IRealtimeInboundService realtimeInboundService) {
+        return new RealtimeInboundRemoteController(realtimeInboundService);
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "mango.infra.realtime.inbound", name = "enabled", havingValue = "true")
-    public RealtimeSubscriberAutoRegistrar realtimeSubscriberAutoRegistrar(
-            RealtimeSubscriberFeignClient subscriberApi,
-            RealtimeInboundDispatcher dispatcher,
+    public RealtimeInboundReceiverAutoRegistrar realtimeInboundReceiverAutoRegistrar(
+            RealtimeInboundReceiverFeignClient realtimeInboundReceiverApi,
+            IRealtimeInboundService realtimeInboundService,
             RealtimeRemoteProperties properties,
             Environment environment) {
-        return new RealtimeSubscriberAutoRegistrar(subscriberApi, dispatcher, properties, environment);
+        return new RealtimeInboundReceiverAutoRegistrar(
+                realtimeInboundReceiverApi, realtimeInboundService, properties, environment);
     }
 
-    private InboundUnknownTypePolicy unknownTypePolicy(String value) {
-        return InboundUnknownTypePolicy.valueOf(value.trim().toUpperCase());
+    private RealtimeInboundUnknownTypePolicy unknownTypePolicy(String value) {
+        return RealtimeInboundUnknownTypePolicy.valueOf(value.trim().toUpperCase());
     }
 }

@@ -1,6 +1,7 @@
 package io.mango.infra.kv.core.capability;
 
 import io.mango.infra.kv.api.IIdGenerator;
+import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import io.mango.infra.kv.core.support.KvStoreIdGenerator;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

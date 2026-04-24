@@ -24,11 +24,10 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Infra Feign -->
+        <!-- OpenFeign -->
         <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-feign-starter</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
     </dependencies>
 

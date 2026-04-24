@@ -33,10 +33,13 @@
 
 - `api` 只放 `XxxApi`、`command`、`query`、`vo`、`enums`。
 - Controller 只做协议适配。
+- Controller 必须实现对应 `XxxApi`，内部只能依赖 `IXxxService` 或等效服务接口。
+- Controller 禁止持有 `XxxApi` 字段进行自调用。
 - Controller 不直接操作 `Mapper`。
 - Controller 不直接返回持久化对象。
 - `XxxApi` 只定义能力契约。
 - `XxxApi` 禁止声明 `@FeignClient`。
+- `XxxService` 禁止直接实现 `XxxApi`；服务层应实现 `IXxxService`。
 
 ## 5. DTO 规则
 

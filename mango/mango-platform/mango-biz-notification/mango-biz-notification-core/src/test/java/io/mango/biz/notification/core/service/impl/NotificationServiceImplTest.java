@@ -3,7 +3,7 @@ package io.mango.biz.notification.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
-import io.mango.infra.realtime.api.RealtimePublisher;
+import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.biz.notification.api.NotificationApi;
 import io.mango.biz.notification.api.enums.NotificationType;
 import io.mango.biz.notification.api.po.SysNotificationPo;
@@ -39,13 +39,13 @@ class NotificationServiceImplTest {
     private SysNotificationMapper messageMapper;
 
     @Mock
-    private RealtimePublisher messagePublisher;
+    private RealtimeApi realtimeApi;
 
     private NotificationServiceImpl messageService;
 
     @BeforeEach
     void setUp() {
-        messageService = new NotificationServiceImpl(messageMapper, messagePublisher, new ObjectMapper());
+        messageService = new NotificationServiceImpl(messageMapper, realtimeApi, new ObjectMapper());
     }
 
     @Test
@@ -63,7 +63,7 @@ class NotificationServiceImplTest {
 
         assertTrue(result.isSuccess());
         verify(messageMapper).insert(any(SysNotification.class));
-        verify(messagePublisher).publishToUser(eq(1L), eq("message"), anyString());
+        verify(realtimeApi).publishToUser(eq(1L), eq("message"), anyString());
     }
 
     @Test
@@ -80,7 +80,7 @@ class NotificationServiceImplTest {
 
         assertTrue(result.isSuccess());
         verify(messageMapper).insert(any(SysNotification.class));
-        verify(messagePublisher).broadcast(eq("message"), anyString());
+        verify(realtimeApi).broadcast(eq("message"), anyString());
     }
 
     @Test

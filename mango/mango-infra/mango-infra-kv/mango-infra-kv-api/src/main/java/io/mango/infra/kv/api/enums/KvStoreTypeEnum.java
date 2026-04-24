@@ -9,7 +9,7 @@ public enum KvStoreTypeEnum {
     AUTO,
     /** Force RedisKvStore and require RedissonClient. */
     REDIS,
-    /** Force JdbcKvStore and require JdbcTemplate plus RedissonClient. */
+    /** Force JdbcKvStore and require JdbcTemplate. */
     JDBC,
     /** Legacy alias of JDBC for backward compatibility. */
     DB,

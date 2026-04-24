@@ -12,6 +12,8 @@
 | BE-API-017 | PMD | Controller | 直接注入或调用 `Mapper` |
 | BE-API-020 | PMD | `*-api` 源码 | 出现 `@FeignClient` |
 | BE-API-022 | PMD | `*-api` 源码 | 出现服务发现名硬编码 |
+| BE-API-023 | `mango-maven-plugin` | `*-api` 源码 | 出现本地实现协作类型命名，如 `*Service`、`*Manager`、`*Registry`、`*Session`、`*Dispatcher` |
+| BE-API-024 | `mango-maven-plugin` | `*-api` 源码 | 带 HTTP 契约语义的接口/类名不是 `XxxApi` |
 | BE-NAME-006 | PMD | 实体类 | 持久化实体不是 `XxxEntity` |
 | BE-NAME-007 | PMD | 创建入参 | 创建入参不是 `CreateXxxCommand` |
 | BE-NAME-008 | PMD | 更新入参 | 更新入参不是 `UpdateXxxCommand` |
@@ -20,15 +22,18 @@
 | BE-NAME-011 | PMD | 返回对象 | 返回对象不是 `XxxVO` |
 | BE-NAME-015 | PMD | 类名、包名、API 签名 | 出现 `PO`、`DO` |
 | BE-NAME-016 | PMD | 仓内业务 API | 入参或返回使用 `DTO` |
-| BE-NAME-017 | `mango-maven-plugin` | KV 注解 key | 手写 `mango:infra:kv` 前缀，或使用 `user:#userId` / `user:@bean` 非标准写法 |
+| BE-NAME-017 | `mango-maven-plugin` | KV 注解 key | 手写 `mango:kv` 前缀，或使用 `user:#userId` / `user:@bean` 非标准写法 |
 | BE-TEST-005 | `mango-maven-plugin` | `src/test/java/**/*Test.java` | `Redis*Test`、`Jdbc*Test`、`Memory*Test` 使用不同实现类型的 KV 测试物料 |
+| BE-TEST-006 | 单元测试 | `starter-remote` 监听器发现 | 未覆盖 Spring AOP 代理 bean 的 `@RealtimeListener` 扫描、注册和分发场景 |
 | BE-MOD-001 | `mango-maven-plugin` | `*-api` 目录 | 出现非契约包或实现类 |
 | BE-MOD-006 | `mango-maven-plugin` | `*-core/pom.xml` | 依赖非 API 的跨域模块 |
-| BE-MOD-007 | `mango-maven-plugin` | `*-starter-remote/pom.xml` | 依赖非本域 API 模块 |
+| BE-MOD-007 | `mango-maven-plugin` | `*-starter-remote/pom.xml` | 在 `io.mango` 依赖中出现非本域 API / support 模块 |
 | BE-MOD-009 | PMD | `*-api` 源码 | 出现 `@FeignClient` |
 | BE-MOD-010 | `mango-maven-plugin` | `*-core` 目录 | 出现 Controller |
-| BE-MOD-012 | PMD | `starter-remote` 源码 | 服务名常量或 `@FeignClient(name = "...")` 硬编码 |
-| BE-MOD-015 | `mango-maven-plugin` | `*-starter` 目录 | 缺少 `META-INF/mango/module.properties` 或 `module-name` 非法 |
+| BE-MOD-012 | `mango-maven-plugin` | `starter-remote` 源码 | `@FeignClient(name/path)` 未对齐目标模块 `module-name/module-path` |
+| BE-MOD-015 | `mango-maven-plugin` | `*-starter` 目录 | 缺少 `META-INF/mango/module.properties`，或 `module-name/module-path` 非法 |
+| BE-MOD-016 | `mango-maven-plugin` | 全仓 `module.properties` | 非 `starter` 模块声明 `module.properties`，或 `module-path` 与其他模块冲突 |
+| BE-MOD-017 | `mango-maven-plugin` | `starter` / `starter-remote` Controller | 本地 Controller 未使用 `/{module-path}`，或反向 Controller 未使用 `/_{module-path}` |
 | BE-SEC-001 | PMD | Java / YAML / properties | 出现疑似明文密钥、口令、token |
 | BE-SEC-006 | PMD | 日志语句 | 日志输出 token、password、secret、credential |
 
@@ -59,12 +64,12 @@
 | Rule Group | Command | Scope |
 |---|---|---|
 | Naming | `mvn mango:check -Drule=naming` | P3C/Checkstyle 覆盖不到的 Mango 模块命名，例如 Maven `artifactId` kebab-case |
-| API contract | `mvn mango:check -Drule=api-contract` | API 签名、包结构、`@FeignClient`、DTO/Entity 暴露 |
+| API contract | `mvn mango:check -Drule=api-contract` | API 签名、包结构、`@FeignClient`、本地协作类型误入 api、HTTP 契约命名 |
 | Validation | `mvn mango:check -Drule=validation` | Bean Validation、`@Validated`、路径参数校验 |
 | Require | `mvn mango:check -Drule=require` | 业务入口前置条件、散写 `if/throw` 候选 |
-| Module boundary | `mvn mango:check -Drule=module-boundary` | 模块依赖、目录职责、跨域依赖；按 `common/infra/platform/app` 一级分层，再按 `api/core/starter/starter-remote` 二级职责检查 |
-| Module info | `mvn mango:check -Drule=module-info` | 本地 starter 模块信息资源文件 |
-| Remote adapter | `mvn mango:check -Drule=remote-adapter` | 服务名硬编码、Feign 直接使用、能力解析 |
+| Module boundary | `mvn mango:check -Drule=module-boundary` | 模块依赖、目录职责、跨域依赖；按 `common/infra/platform/app` 一级分层，再按 `api/support/core/starter/starter-remote` 二级职责检查 |
+| Module info | `mvn mango:check -Drule=module-info` | 只允许本地 starter 声明模块信息；校验 `module-name/module-path`、`module-path` 唯一性和 Controller 路径；`context-path` 由运行时自动采集 |
+| Remote adapter | `mvn mango:check -Drule=remote-adapter` | 校验 `starter-remote` 的 `@FeignClient(name/path)` 是否对齐目标模块信息 |
 | Security | `mvn mango:check -Drule=security` | 敏感信息、日志敏感字段、SQL 拼接候选 |
 | KV key | `mvn mango:check -Drule=kv-key` | KV 注解 key 前缀和 SpEL 写法 |
 | Test fixture | `mvn mango:check -Drule=test-fixture` | 测试类名和核心测试物料一致性 |
@@ -116,3 +121,7 @@ mvn mango:check -Drule=all
 | 一个表只服务一个领域 | 依赖领域模型判断 |
 | 测试覆盖范围完整 | 依赖需求影响面判断 |
 | 只改本次需求相关代码 | 依赖任务上下文判断 |
+
+补充要求：
+
+- `starter-remote` 这类依赖运行时扫描的模块，涉及监听器发现逻辑时，必须至少覆盖一个 Spring AOP 代理 bean 场景，例如 `@Transactional`、`@Async` 或等效代理。

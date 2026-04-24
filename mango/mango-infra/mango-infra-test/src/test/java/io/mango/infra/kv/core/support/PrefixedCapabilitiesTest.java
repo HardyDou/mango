@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PrefixedCapabilitiesTest {
 
-    private final KvKeyNormalizer normalizer = new KvKeyNormalizer(true, "mango:infra:kv", "prod", false, null);
+    private final KvKeyNormalizer normalizer = new KvKeyNormalizer(true, "mango:kv", "prod", false, null);
 
     @Test
     void cache_addsCacheNamespace() {
@@ -21,7 +21,7 @@ class PrefixedCapabilitiesTest {
 
         cache.set("user:1", "value", 60);
 
-        assertThat(delegate.lastKey).isEqualTo("mango:infra:kv:prod:cache:user:1");
+        assertThat(delegate.lastKey).isEqualTo("mango:kv:prod:cache:user:1");
     }
 
     @Test
@@ -31,7 +31,7 @@ class PrefixedCapabilitiesTest {
 
         locker.tryLock("order:1", 60);
 
-        assertThat(delegate.lastKey).isEqualTo("mango:infra:kv:prod:lock:order:1");
+        assertThat(delegate.lastKey).isEqualTo("mango:kv:prod:lock:order:1");
     }
 
     @Test
@@ -41,7 +41,7 @@ class PrefixedCapabilitiesTest {
 
         counter.increment("sms:18800000000", 1, 60);
 
-        assertThat(delegate.lastKey).isEqualTo("mango:infra:kv:prod:counter:sms:18800000000");
+        assertThat(delegate.lastKey).isEqualTo("mango:kv:prod:counter:sms:18800000000");
     }
 
     @Test
@@ -51,7 +51,7 @@ class PrefixedCapabilitiesTest {
 
         rateLimiter.tryAcquire("login:ip:127.0.0.1", 1);
 
-        assertThat(delegate.lastKey).isEqualTo("mango:infra:kv:prod:rate-limit:login:ip:127.0.0.1");
+        assertThat(delegate.lastKey).isEqualTo("mango:kv:prod:rate-limit:login:ip:127.0.0.1");
     }
 
     @Test
@@ -61,7 +61,7 @@ class PrefixedCapabilitiesTest {
 
         idempotent.checkAndMark("payment:req-abc", 60);
 
-        assertThat(delegate.lastKey).isEqualTo("mango:infra:kv:prod:idempotent:payment:req-abc");
+        assertThat(delegate.lastKey).isEqualTo("mango:kv:prod:idempotent:payment:req-abc");
     }
 
     @Test
@@ -71,7 +71,7 @@ class PrefixedCapabilitiesTest {
 
         tokenStore.store("access:sha256", "value", 60);
 
-        assertThat(delegate.lastKey).isEqualTo("mango:infra:kv:prod:token:access:sha256");
+        assertThat(delegate.lastKey).isEqualTo("mango:kv:prod:token:access:sha256");
     }
 
     private abstract static class Recording {

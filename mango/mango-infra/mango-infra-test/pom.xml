@@ -110,6 +110,11 @@
             <artifactId>mango-infra-realtime-starter-remote</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Test containers -->
         <dependency>

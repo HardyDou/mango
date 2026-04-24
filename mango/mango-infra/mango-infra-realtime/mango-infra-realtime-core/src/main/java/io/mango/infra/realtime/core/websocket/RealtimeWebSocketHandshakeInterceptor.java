@@ -1,6 +1,6 @@
 package io.mango.infra.realtime.core.websocket;
 
-import io.mango.infra.realtime.api.RealtimeHeaders;
+import io.mango.infra.realtime.api.dto.RealtimeHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -25,17 +25,10 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
             return false;
         }
 
-        String authorization = servletRequest.getServletRequest().getHeader(RealtimeHeaders.AUTHORIZATION);
-        String token = firstText(authorization, servletRequest.getServletRequest().getParameter("token"));
         String tenantId = firstText(
                 servletRequest.getServletRequest().getHeader(RealtimeHeaders.TENANT_ID),
                 servletRequest.getServletRequest().getParameter("tenantId"));
         String userId = servletRequest.getServletRequest().getParameter("userId");
-
-        if (token == null || token.isBlank()) {
-            log.warn("WebSocket handshake rejected: missing Authorization header or token parameter");
-            return false;
-        }
 
         attributes.put(TENANT_ID_ATTR, tenantId == null || tenantId.isBlank() ? "default" : tenantId);
         attributes.put(AUTHORIZED_ATTR, true);

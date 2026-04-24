@@ -19,14 +19,15 @@ class ModuleAutoConfigurationTest {
                         "spring.application.name=mango-admin-app",
                         "server.servlet.context-path=/admin",
                         "mango.module.module-service.modules.mango-rbac.service-name=mango-admin-app",
-                        "mango.module.module-service.modules.mango-rbac.context-path=/admin")
+                        "mango.module.module-service.modules.mango-rbac.context-path=/admin",
+                        "mango.module.module-service.modules.mango-rbac.module-path=/rbac")
                 .run(context -> {
                     ModuleInfoRegistry registry = context.getBean(ModuleInfoRegistry.class);
                     assertThat(registry.resolve("mango-rbac"))
                             .isPresent()
                             .get()
-                            .extracting("serviceName", "contextPath")
-                            .containsExactly("mango-admin-app", "/admin");
+                            .extracting("serviceName", "contextPath", "modulePath")
+                            .containsExactly("mango-admin-app", "/admin", "/rbac");
                 });
     }
 }

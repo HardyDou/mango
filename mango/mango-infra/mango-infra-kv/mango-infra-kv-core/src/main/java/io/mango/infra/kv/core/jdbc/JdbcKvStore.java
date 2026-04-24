@@ -1,12 +1,16 @@
 package io.mango.infra.kv.core.jdbc;
 
+import cn.hutool.core.lang.Snowflake;
+import cn.hutool.core.util.IdUtil;
+import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RAtomicLong;
-import org.redisson.api.RedissonClient;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.regex.Pattern;
 
 /**
@@ -14,66 +18,61 @@ import java.util.regex.Pattern;
  * Avoids ON DUPLICATE KEY UPDATE for better cross-database compatibility.
  */
 @Slf4j
-public class JdbcKvStore implements IKvStore {
+public class JdbcKvStore implements IKvStore, IKvSortedSet {
 
     public static final String DEFAULT_TABLE_NAME = "infra_kv_entry";
 
-    private static final String DEFAULT_ID_KEY = "kv:db:id";
+    private static final String SORTED_SET_MEMBER_SEPARATOR = ":member:";
+    private static final String SQL_ACTIVE_WHERE = " WHERE kv_key = ? AND expire_time > ?";
+    private static final String SQL_ACTIVE_PREFIX_WHERE = " WHERE kv_key LIKE ? AND expire_time > ?";
+    private static final String SQL_DECIMAL_SCORE = "CAST(kv_value AS DECIMAL(30, 10))";
+    private static final String SQL_SIGNED_VALUE = "CAST(kv_value AS SIGNED)";
+
     private static final Pattern TABLE_NAME_PATTERN = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+    private static final Snowflake ID_GENERATOR = IdUtil.getSnowflake();
 
     private final JdbcTemplate jdbcTemplate;
-    private final RedissonClient redissonClient;
     private final String tableName;
-    private final String idKey;
 
-    public JdbcKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient) {
-        this(jdbcTemplate, redissonClient, DEFAULT_TABLE_NAME);
+    public JdbcKvStore(JdbcTemplate jdbcTemplate) {
+        this(jdbcTemplate, DEFAULT_TABLE_NAME);
     }
 
-    public JdbcKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient, String tableName) {
-        this(jdbcTemplate, redissonClient, tableName, DEFAULT_ID_KEY);
-    }
-
-    public JdbcKvStore(JdbcTemplate jdbcTemplate, RedissonClient redissonClient, String tableName, String idKey) {
+    public JdbcKvStore(JdbcTemplate jdbcTemplate, String tableName) {
         this.jdbcTemplate = jdbcTemplate;
-        this.redissonClient = redissonClient;
         this.tableName = normalizeTableName(tableName);
-        this.idKey = normalizeIdKey(idKey);
     }
 
     @Override
+    @Transactional
     public boolean setIfAbsent(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
             return putNonPositiveTtl(key);
         }
-        // 先检查是否存在且未过期 — 过期记录视为不存在，需要删除后重新插入
-        var existing = jdbcTemplate.query(
-            "SELECT kv_value FROM " + tableName + " WHERE kv_key = ? AND expire_time > ?",
-            (rs, rowNum) -> rs.getString("kv_value"),
-            key, LocalDateTime.now());
-        if (!existing.isEmpty()) {
+        LocalDateTime currentTime = now();
+        if (findActiveValue(key, currentTime).isPresent()) {
             return false;
         }
-        // key 不存在或已过期 → 删除旧记录（如有）后 INSERT
-        jdbcTemplate.update("DELETE FROM " + tableName + " WHERE kv_key = ?", key);
-        jdbcTemplate.update(
-            "INSERT INTO " + tableName + " (id, kv_key, kv_value, expire_time) VALUES (?, ?, ?, ?)",
-            nextId(), key, value, LocalDateTime.now().plusSeconds(expireSeconds));
-        return true;
+        try {
+            replaceValue(key, value, currentTime.plusSeconds(expireSeconds));
+            return true;
+        } catch (DuplicateKeyException e) {
+            log.debug("JdbcKvStore setIfAbsent conflict, key={}", key, e);
+            return false;
+        }
     }
 
     @Override
+    @Transactional
     public void set(String key, String value, long expireSeconds) {
         validateKey(key);
         if (expireSeconds <= 0) {
             putNonPositiveTtl(key);
             return;
         }
-        jdbcTemplate.update("DELETE FROM " + tableName + " WHERE kv_key = ?", key);
-        jdbcTemplate.update(
-            "INSERT INTO " + tableName + " (id, kv_key, kv_value, expire_time) VALUES (?, ?, ?, ?)",
-            nextId(), key, value, LocalDateTime.now().plusSeconds(expireSeconds));
+        LocalDateTime currentTime = now();
+        replaceValue(key, value, currentTime.plusSeconds(expireSeconds));
     }
 
     @Override
@@ -84,37 +83,24 @@ public class JdbcKvStore implements IKvStore {
     @Override
     public String get(String key) {
         validateKey(key);
-        var results = jdbcTemplate.query(
-            "SELECT kv_value FROM " + tableName + " WHERE kv_key = ? AND expire_time > ?",
-            (rs, rowNum) -> rs.getString("kv_value"),
-            key, LocalDateTime.now());
-        return results.isEmpty() ? null : results.get(0);
+        LocalDateTime currentTime = now();
+        return findActiveValue(key, currentTime).orElse(null);
     }
 
     @Override
+    @Transactional
     public long incrementBy(String key, long delta, long windowSeconds) {
         validateKey(key);
         if (windowSeconds <= 0) {
             throw new IllegalArgumentException("windowSeconds must be positive, was: " + windowSeconds);
         }
-        LocalDateTime expireTime = LocalDateTime.now().plusSeconds(windowSeconds);
-        // 先尝试 UPDATE（原子操作），失败才 INSERT，兼容 H2/MySQL 类型转换差异
-        int updated = jdbcTemplate.update(
-            "UPDATE " + tableName + " SET kv_value = CAST(kv_value AS SIGNED) + ?, expire_time = ?"
-                + " WHERE kv_key = ? AND expire_time > ?",
-            delta, expireTime, key, LocalDateTime.now());
+        LocalDateTime currentTime = now();
+        LocalDateTime expireTime = currentTime.plusSeconds(windowSeconds);
+        int updated = incrementExistingValue(key, delta, expireTime, currentTime);
         if (updated == 0) {
-            // 不存在或已过期 → INSERT
-            jdbcTemplate.update("DELETE FROM " + tableName + " WHERE kv_key = ?", key);
-            jdbcTemplate.update(
-                "INSERT INTO " + tableName + " (id, kv_key, kv_value, expire_time) VALUES (?, ?, ?, ?)",
-                nextId(), key, String.valueOf(delta), expireTime);
+            replaceValue(key, String.valueOf(delta), expireTime);
         }
-        var results = jdbcTemplate.query(
-            "SELECT kv_value FROM " + tableName + " WHERE kv_key = ? AND expire_time > ? ORDER BY create_time DESC LIMIT 1",
-            (rs, rowNum) -> rs.getString("kv_value"),
-            key, LocalDateTime.now());
-        return results.isEmpty() ? 0 : Long.parseLong(results.get(0));
+        return findLatestActiveValue(key, currentTime).map(Long::parseLong).orElse(0L);
     }
 
     @Override
@@ -125,17 +111,64 @@ public class JdbcKvStore implements IKvStore {
     @Override
     public void delete(String key) {
         validateKey(key);
-        jdbcTemplate.update("DELETE FROM " + tableName + " WHERE kv_key = ?", key);
+        deleteByKey(key);
     }
 
     @Override
     public boolean exists(String key) {
         validateKey(key);
-        var results = jdbcTemplate.query(
-            "SELECT COUNT(*) FROM " + tableName + " WHERE kv_key = ? AND expire_time > ?",
-            (rs, rowNum) -> rs.getInt(1),
-            key, LocalDateTime.now());
-        return !results.isEmpty() && results.get(0) > 0;
+        LocalDateTime currentTime = now();
+        return countActiveByKey(key, currentTime) > 0;
+    }
+
+    @Override
+    public void add(String key, String member, double score, long ttlSeconds) {
+        validateKey(key);
+        validateKey(member);
+        set(sortedSetMemberKey(key, member), String.valueOf(score), ttlSeconds);
+    }
+
+    @Override
+    public void remove(String key, String member) {
+        validateKey(key);
+        validateKey(member);
+        delete(sortedSetMemberKey(key, member));
+    }
+
+    @Override
+    public Collection<String> rangeByScore(String key, double minScore, double maxScore, int limit) {
+        validateKey(key);
+        String keyPrefix = sortedSetMemberPrefix(key);
+        LocalDateTime currentTime = now();
+        return findSortedSetMembersByScore(keyPrefix, minScore, maxScore, limit, currentTime);
+    }
+
+    @Override
+    public long removeByScore(String key, double minScore, double maxScore) {
+        validateKey(key);
+        String keyPrefix = sortedSetMemberPrefix(key);
+        LocalDateTime currentTime = now();
+        return deleteSortedSetMembersByScore(keyPrefix, minScore, maxScore, currentTime);
+    }
+
+    @Override
+    public long size(String key) {
+        validateKey(key);
+        String keyPrefix = sortedSetMemberPrefix(key);
+        LocalDateTime currentTime = now();
+        return countActiveByPrefix(keyPrefix, currentTime);
+    }
+
+    private String sortedSetMemberKey(String key, String member) {
+        return sortedSetMemberPrefix(key) + member;
+    }
+
+    private String sortedSetMemberPrefix(String key) {
+        return key + SORTED_SET_MEMBER_SEPARATOR;
+    }
+
+    private String sortedSetMemberFromKey(String keyPrefix, String key) {
+        return key.substring(keyPrefix.length());
     }
 
     private void validateKey(String key) {
@@ -144,21 +177,123 @@ public class JdbcKvStore implements IKvStore {
         }
     }
 
-    private long nextId() {
-        RAtomicLong atomicLong = redissonClient.getAtomicLong(idKey);
-        long id = atomicLong.incrementAndGet();
-        if (id == Long.MAX_VALUE) {
-            atomicLong.set(1);
-            return 1;
-        }
-        return id;
+    private java.util.Optional<String> findActiveValue(String key, LocalDateTime currentTime) {
+        return jdbcTemplate.query(
+                sqlSelectActiveValue(),
+                (rs, rowNum) -> rs.getString("kv_value"),
+                key, currentTime)
+            .stream()
+            .findFirst();
     }
 
-    private String normalizeIdKey(String configuredIdKey) {
-        if (configuredIdKey == null || configuredIdKey.trim().isEmpty()) {
-            throw new IllegalArgumentException("idKey cannot be null or blank");
-        }
-        return configuredIdKey.trim();
+    private java.util.Optional<String> findLatestActiveValue(String key, LocalDateTime currentTime) {
+        return jdbcTemplate.query(
+                sqlSelectLatestActiveValue(),
+                (rs, rowNum) -> rs.getString("kv_value"),
+                key, currentTime)
+            .stream()
+            .findFirst();
+    }
+
+    private void replaceValue(String key, String value, LocalDateTime expireTime) {
+        deleteByKey(key);
+        insertValue(key, value, expireTime);
+    }
+
+    private void insertValue(String key, String value, LocalDateTime expireTime) {
+        jdbcTemplate.update(sqlInsertValue(), nextId(), key, value, expireTime);
+    }
+
+    private int incrementExistingValue(String key, long delta, LocalDateTime expireTime, LocalDateTime currentTime) {
+        return jdbcTemplate.update(sqlIncrementActiveValue(), delta, expireTime, key, currentTime);
+    }
+
+    private void deleteByKey(String key) {
+        jdbcTemplate.update(sqlDeleteByKey(), key);
+    }
+
+    private long countActiveByKey(String key, LocalDateTime currentTime) {
+        return jdbcTemplate.queryForObject(sqlCountActiveByKey(), Long.class, key, currentTime);
+    }
+
+    private long countActiveByPrefix(String keyPrefix, LocalDateTime currentTime) {
+        return jdbcTemplate.queryForObject(sqlCountActiveByPrefix(), Long.class, likePrefix(keyPrefix), currentTime);
+    }
+
+    private Collection<String> findSortedSetMembersByScore(String keyPrefix,
+                                                           double minScore,
+                                                           double maxScore,
+                                                           int limit,
+                                                           LocalDateTime currentTime) {
+        return jdbcTemplate.query(
+            sqlSelectSortedSetMembersByScore(limit),
+            (rs, rowNum) -> sortedSetMemberFromKey(keyPrefix, rs.getString("kv_key")),
+            likePrefix(keyPrefix), currentTime, minScore, maxScore);
+    }
+
+    private long deleteSortedSetMembersByScore(String keyPrefix,
+                                               double minScore,
+                                               double maxScore,
+                                               LocalDateTime currentTime) {
+        return jdbcTemplate.update(
+            sqlDeleteSortedSetMembersByScore(),
+            likePrefix(keyPrefix), currentTime, minScore, maxScore);
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.now();
+    }
+
+    private String likePrefix(String keyPrefix) {
+        return keyPrefix + "%";
+    }
+
+    private String sqlSelectActiveValue() {
+        return "SELECT kv_value FROM " + tableName + SQL_ACTIVE_WHERE;
+    }
+
+    private String sqlSelectLatestActiveValue() {
+        return sqlSelectActiveValue() + " ORDER BY create_time DESC LIMIT 1";
+    }
+
+    private String sqlInsertValue() {
+        return "INSERT INTO " + tableName + " (id, kv_key, kv_value, expire_time) VALUES (?, ?, ?, ?)";
+    }
+
+    private String sqlDeleteByKey() {
+        return "DELETE FROM " + tableName + " WHERE kv_key = ?";
+    }
+
+    private String sqlIncrementActiveValue() {
+        return "UPDATE " + tableName + " SET kv_value = " + SQL_SIGNED_VALUE + " + ?, expire_time = ?"
+            + SQL_ACTIVE_WHERE;
+    }
+
+    private String sqlCountActiveByKey() {
+        return "SELECT COUNT(*) FROM " + tableName + SQL_ACTIVE_WHERE;
+    }
+
+    private String sqlCountActiveByPrefix() {
+        return "SELECT COUNT(*) FROM " + tableName + SQL_ACTIVE_PREFIX_WHERE;
+    }
+
+    private String sqlSelectSortedSetMembersByScore(int limit) {
+        String limitSql = limit > 0 ? " LIMIT " + limit : "";
+        return "SELECT kv_key FROM " + tableName
+            + SQL_ACTIVE_PREFIX_WHERE
+            + " AND " + SQL_DECIMAL_SCORE + " BETWEEN ? AND ?"
+            + " ORDER BY " + SQL_DECIMAL_SCORE + " ASC, kv_key ASC"
+            + limitSql;
+    }
+
+    private String sqlDeleteSortedSetMembersByScore() {
+        return "DELETE FROM " + tableName
+            + SQL_ACTIVE_PREFIX_WHERE
+            + " AND " + SQL_DECIMAL_SCORE + " BETWEEN ? AND ?";
+    }
+
+    private long nextId() {
+        return ID_GENERATOR.nextId();
     }
 
     private String normalizeTableName(String configuredTableName) {

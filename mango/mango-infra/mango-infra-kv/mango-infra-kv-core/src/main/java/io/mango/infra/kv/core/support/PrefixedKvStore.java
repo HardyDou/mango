@@ -1,13 +1,16 @@
 package io.mango.infra.kv.core.support;
 
+import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Collection;
 
 /**
  * IKvStore decorator that applies one KV capability namespace.
  */
 @RequiredArgsConstructor
-public class PrefixedKvStore implements IKvStore {
+public class PrefixedKvStore implements IKvStore, IKvSortedSet {
 
     private final IKvStore delegate;
     private final KvKeyNormalizer keyNormalizer;
@@ -51,6 +54,44 @@ public class PrefixedKvStore implements IKvStore {
     @Override
     public boolean exists(String key) {
         return delegate.exists(normalize(key));
+    }
+
+    @Override
+    public void add(String key, String member, double score, long ttlSeconds) {
+        if (delegate instanceof IKvSortedSet sortedSet) {
+            sortedSet.add(normalize(key), member, score, ttlSeconds);
+        }
+    }
+
+    @Override
+    public void remove(String key, String member) {
+        if (delegate instanceof IKvSortedSet sortedSet) {
+            sortedSet.remove(normalize(key), member);
+        }
+    }
+
+    @Override
+    public Collection<String> rangeByScore(String key, double minScore, double maxScore, int limit) {
+        if (delegate instanceof IKvSortedSet sortedSet) {
+            return sortedSet.rangeByScore(normalize(key), minScore, maxScore, limit);
+        }
+        return java.util.List.of();
+    }
+
+    @Override
+    public long removeByScore(String key, double minScore, double maxScore) {
+        if (delegate instanceof IKvSortedSet sortedSet) {
+            return sortedSet.removeByScore(normalize(key), minScore, maxScore);
+        }
+        return 0;
+    }
+
+    @Override
+    public long size(String key) {
+        if (delegate instanceof IKvSortedSet sortedSet) {
+            return sortedSet.size(normalize(key));
+        }
+        return 0;
     }
 
     private String normalize(String key) {

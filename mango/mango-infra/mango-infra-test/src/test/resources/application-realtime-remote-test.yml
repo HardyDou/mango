@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: remote-inbound-test
+  main:
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude:
+      - io.mango.infra.redis.starter.RedisAutoConfiguration
+      - io.mango.infra.kv.starter.KvStoreAutoConfiguration
+      - io.mango.infra.db.starter.DbAutoConfiguration
+      - io.mango.infra.db.starter.MangoFlywayAutoConfiguration
+      - io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration
+
+mango:
+  infra:
+    realtime:
+      inbound:
+        enabled: true
+        remote:
+          context-path: /

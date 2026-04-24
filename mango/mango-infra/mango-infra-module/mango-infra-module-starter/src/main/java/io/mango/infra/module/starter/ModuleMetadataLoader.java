@@ -26,8 +26,12 @@ public class ModuleMetadataLoader {
                 URL resource = resources.nextElement();
                 Properties properties = loadProperties(resource);
                 String moduleName = properties.getProperty("module-name");
+                String modulePath = properties.getProperty("module-path");
                 if (moduleName != null && !moduleName.isBlank()) {
-                    modules.add(new ModuleMetadata(moduleName.trim(), resource.toString()));
+                    modules.add(new ModuleMetadata(
+                            moduleName.trim(),
+                            modulePath == null ? "" : modulePath.trim(),
+                            resource.toString()));
                 }
             }
         } catch (IOException e) {
@@ -42,6 +46,6 @@ public class ModuleMetadataLoader {
         }
     }
 
-    public record ModuleMetadata(String moduleName, String source) {
+    public record ModuleMetadata(String moduleName, String modulePath, String source) {
     }
 }

@@ -1,14 +1,18 @@
 package io.mango.infra.kv.core.redis;
 
+import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.client.codec.StringCodec;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBucket;
+import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * RedisKvStore implementation using Redisson.
@@ -22,7 +26,19 @@ import java.time.Duration;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisKvStore implements IKvStore {
+public class RedisKvStore implements IKvStore, IKvSortedSet {
+
+    private static final String SORTED_SET_ADD_SCRIPT = """
+            redis.call('zadd', KEYS[1], ARGV[1], ARGV[2])
+            redis.call('expire', KEYS[1], ARGV[3])
+            return 1
+            """;
+    private static final String SORTED_SET_RANGE_SCRIPT = """
+            if ARGV[3] == '0' then
+              return redis.call('zrangebyscore', KEYS[1], ARGV[1], ARGV[2])
+            end
+            return redis.call('zrangebyscore', KEYS[1], ARGV[1], ARGV[2], 'LIMIT', 0, ARGV[3])
+            """;
 
     private final RedissonClient redissonClient;
 
@@ -90,6 +106,88 @@ public class RedisKvStore implements IKvStore {
     public boolean exists(String key) {
         validateKey(key);
         return redissonClient.getKeys().countExists(key) > 0;
+    }
+
+    @Override
+    public void add(String key, String member, double score, long ttlSeconds) {
+        validateKey(key);
+        validateKey(member);
+        if (ttlSeconds <= 0) {
+            remove(key, member);
+            return;
+        }
+        script().eval(
+                RScript.Mode.READ_WRITE,
+                SORTED_SET_ADD_SCRIPT,
+                RScript.ReturnType.INTEGER,
+                List.of(key),
+                scoreValue(score),
+                member,
+                String.valueOf(ttlSeconds));
+    }
+
+    @Override
+    public void remove(String key, String member) {
+        validateKey(key);
+        validateKey(member);
+        script().eval(
+                RScript.Mode.READ_WRITE,
+                "return redis.call('zrem', KEYS[1], ARGV[1])",
+                RScript.ReturnType.INTEGER,
+                List.of(key),
+                member);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<String> rangeByScore(String key, double minScore, double maxScore, int limit) {
+        validateKey(key);
+        return (Collection<String>) script().eval(
+                RScript.Mode.READ_ONLY,
+                SORTED_SET_RANGE_SCRIPT,
+                RScript.ReturnType.MULTI,
+                List.of(key),
+                scoreValue(minScore),
+                scoreValue(maxScore),
+                String.valueOf(Math.max(limit, 0)));
+    }
+
+    @Override
+    public long removeByScore(String key, double minScore, double maxScore) {
+        validateKey(key);
+        Number result = script().eval(
+                RScript.Mode.READ_WRITE,
+                "return redis.call('zremrangebyscore', KEYS[1], ARGV[1], ARGV[2])",
+                RScript.ReturnType.INTEGER,
+                List.of(key),
+                scoreValue(minScore),
+                scoreValue(maxScore));
+        return result.longValue();
+    }
+
+    @Override
+    public long size(String key) {
+        validateKey(key);
+        Number result = script().eval(
+                RScript.Mode.READ_ONLY,
+                "return redis.call('zcard', KEYS[1])",
+                RScript.ReturnType.INTEGER,
+                List.of(key));
+        return result.longValue();
+    }
+
+    private RScript script() {
+        return redissonClient.getScript(StringCodec.INSTANCE);
+    }
+
+    private String scoreValue(double score) {
+        if (score == Double.NEGATIVE_INFINITY) {
+            return "-inf";
+        }
+        if (score == Double.POSITIVE_INFINITY) {
+            return "+inf";
+        }
+        return Double.toString(score);
     }
 
     private void validateKey(String key) {

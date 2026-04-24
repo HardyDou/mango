@@ -1,7 +1,8 @@
 package io.mango.infra.realtime.starter.remote;
 
-import io.mango.infra.realtime.api.RealtimeInboundMessage;
-import io.mango.infra.realtime.core.inbound.RealtimeInboundDispatcher;
+import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
+import io.mango.infra.realtime.api.RealtimeInboundApi;
+import io.mango.infra.realtime.support.inbound.IRealtimeInboundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,12 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class RealtimeInboundRemoteController {
+public class RealtimeInboundRemoteController implements RealtimeInboundApi {
 
-    private final RealtimeInboundDispatcher dispatcher;
+    private final IRealtimeInboundService realtimeInboundService;
 
-    @PostMapping("${mango.infra.realtime.inbound.remote.endpoint:/internal/realtime/inbound}")
-    public void receive(@RequestBody RealtimeInboundMessage message) {
-        dispatcher.dispatch(message);
+    @Override
+    @PostMapping("${mango.infra.realtime.inbound.remote.endpoint:/_realtime/messages/inbound}")
+    public void dispatch(@RequestBody RealtimeInboundMessage message) {
+        realtimeInboundService.dispatch(message);
     }
+
 }

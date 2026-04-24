@@ -38,12 +38,14 @@ public class ModuleAutoConfiguration {
                 metadata.moduleName(),
                 defaultServiceName,
                 defaultContextPath,
+                metadata.modulePath(),
                 metadata.source())));
 
         properties.getModules().forEach((moduleName, moduleService) -> registry.register(new ModuleInfo(
                 moduleName,
                 defaultIfBlank(moduleService.getServiceName(), defaultServiceName),
                 defaultIfBlank(moduleService.getContextPath(), defaultContextPath),
+                defaultIfBlank(moduleService.getModulePath(), deriveModulePath(moduleName)),
                 "config")));
 
         return registry;
@@ -65,5 +67,15 @@ public class ModuleAutoConfiguration {
 
     private String defaultIfBlank(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private String deriveModulePath(String moduleName) {
+        String normalized = moduleName == null ? "" : moduleName.trim();
+        if (normalized.startsWith("mango-infra-")) {
+            normalized = normalized.substring("mango-infra-".length());
+        } else if (normalized.startsWith("mango-")) {
+            normalized = normalized.substring("mango-".length());
+        }
+        return "/" + normalized;
     }
 }

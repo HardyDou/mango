@@ -8,7 +8,7 @@
 | BE-API-022 | API 契约禁止硬编码服务发现名 | 自动 |
 | BE-MOD-003 | `starter` 负责实现 `XxxApi`、自动装配、模块元数据声明 | 半自动 |
 | BE-MOD-004 | `starter-remote` 负责远程调用适配和模块信息解析 | 半自动 |
-| BE-MOD-007 | `starter-remote` 业务依赖只允许本域 `api`，技术依赖允许 `mango-infra-feign-starter` | 自动 |
+| BE-MOD-007 | `starter-remote` 在 `io.mango` 依赖中只允许本域 `api`，技术依赖直接使用外部框架依赖 | 自动 |
 | BE-MOD-009 | `api` 不放 `@FeignClient` | 自动 |
 | BE-MOD-012 | 远程目标服务不得写死在业务代码中 | 自动 |
 | BE-MOD-013 | 远程目标必须通过模块信息解析 | 半自动 |

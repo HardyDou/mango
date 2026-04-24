@@ -229,6 +229,7 @@ public record ModuleInfo(
 | `mango-user` 残留验证 | 已分类 | 当前有效源码/POM 无 `mango-rbac` 或根 POM 旧依赖；剩余命中为工具生成器示例/测试与 gateway 默认服务名 |
 | `mango-rbac` 删除 `mango-user-api` 后编译 | 通过 | `mvn -q -pl mango-platform/mango-rbac -am -DskipTests compile` |
 | gateway 旧服务名 | 后续处理 | `GatewayProperties.userService = "mango-user-starter"` 登记为 Phase 5 输入 |
+| `mango-gateway-starter-remote` 依赖越界 | 后续处理 | 仍依赖 `mango-gateway-core`、`mango-infra-security-starter`；按 `starter-remote` 边界规则登记到 Phase 5 处理 |
 
 执行规则：
 

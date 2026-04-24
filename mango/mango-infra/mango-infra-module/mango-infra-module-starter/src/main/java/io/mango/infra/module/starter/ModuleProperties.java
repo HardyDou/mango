@@ -37,6 +37,8 @@ public class ModuleProperties {
 
         private String contextPath;
 
+        private String modulePath;
+
         public String getServiceName() {
             return serviceName;
         }
@@ -51,6 +53,14 @@ public class ModuleProperties {
 
         public void setContextPath(String contextPath) {
             this.contextPath = contextPath;
+        }
+
+        public String getModulePath() {
+            return modulePath;
+        }
+
+        public void setModulePath(String modulePath) {
+            this.modulePath = modulePath;
         }
     }
 }

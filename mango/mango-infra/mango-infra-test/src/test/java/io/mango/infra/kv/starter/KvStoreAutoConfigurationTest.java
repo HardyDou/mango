@@ -28,7 +28,7 @@ class KvStoreAutoConfigurationTest {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)  // placeholder bean
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=redis")
+                .withPropertyValues("mango.kv.store.type=redis")
                 .run(context -> {
                     assertThat(context).hasBean("redisKvStore");
                 });
@@ -38,36 +38,34 @@ class KvStoreAutoConfigurationTest {
     void typeRedis_withoutRedissonBean_doesNotInject() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=redis")
+                .withPropertyValues("mango.kv.store.type=redis")
                 .run(context -> {
                     assertThat(context).doesNotHaveBean("redisKvStore");
                     assertThat(context).doesNotHaveBean(IKvStore.class);
                 });
     }
 
-    // ==================== Explicit Type: db ====================
+    // ==================== Explicit Type: jdbc ====================
 
     @Test
-    void typeDb_withDataSourceAndRedissonBean_injectsJdbcKvStore() {
+    void typeJdbc_withJdbcTemplate_injectsJdbcKvStore() {
         new ApplicationContextRunner()
                 .withBean(DataSource.class, () -> null)  // placeholder bean
-                .withBean(RedissonClient.class, () -> null)
                 .withBean(JdbcTemplate.class, () -> null)
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=db")
+                .withPropertyValues("mango.kv.store.type=jdbc")
                 .run(context -> {
-                    assertThat(context).hasBean("dbKvStore");
+                    assertThat(context).hasBean("jdbcKvStore");
                 });
     }
 
     @Test
-    void typeDb_withoutDataSource_doesNotInject() {
+    void typeJdbc_withoutDataSource_doesNotInject() {
         new ApplicationContextRunner()
-                .withBean(RedissonClient.class, () -> null)
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=db")
+                .withPropertyValues("mango.kv.store.type=jdbc")
                 .run(context -> {
-                    assertThat(context).doesNotHaveBean("dbKvStore");
+                    assertThat(context).doesNotHaveBean("jdbcKvStore");
                     assertThat(context).doesNotHaveBean(IKvStore.class);
                 });
     }
@@ -78,7 +76,7 @@ class KvStoreAutoConfigurationTest {
     void typeMemory_injectsMemoryKvStore() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=memory")
+                .withPropertyValues("mango.kv.store.type=memory")
                 .run(context -> {
                     assertThat(context).hasBean("memoryKvStore");
                 });
@@ -89,7 +87,7 @@ class KvStoreAutoConfigurationTest {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class, KvCapabilityAutoConfiguration.class))
                 .withPropertyValues(
-                        "mango.kv.type=memory",
+                        "mango.kv.store.type=memory",
                         "mango.kv.capability.enabled=true",
                         "mango.kv.capability.cache=true",
                         "mango.kv.capability.serializer=true")
@@ -105,7 +103,7 @@ class KvStoreAutoConfigurationTest {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=auto")
+                .withPropertyValues("mango.kv.store.type=auto")
                 .run(context -> {
                     assertThat(context).hasBean("autoRedisKvStore");
                     assertThat(context.getBean(IKvStore.class)).isInstanceOf(RedisKvStore.class);
@@ -114,14 +112,12 @@ class KvStoreAutoConfigurationTest {
 
     @Test
     void typeAuto_withDataSourceOnly_noRedis_injectsMemoryKvStore() {
-        // When no RedissonClient, even with DataSource, auto-detect falls through to MemoryKvStore
-        // because JdbcKvStore requires RedissonClient for ID generation
+        // auto 模式只在存在 RedissonClient 时选择 Redis；不会因为存在 JdbcTemplate 自动切换到 JDBC
         new ApplicationContextRunner()
                 .withBean(DataSource.class, () -> null)
                 .withBean(JdbcTemplate.class, () -> null)
-                // No RedissonClient bean
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=auto")
+                .withPropertyValues("mango.kv.store.type=auto")
                 .run(context -> {
                     assertThat(context).hasBean("autoMemoryKvStore");
                     assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
@@ -133,7 +129,7 @@ class KvStoreAutoConfigurationTest {
         new ApplicationContextRunner()
                 // No RedissonClient, no DataSource
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=auto")
+                .withPropertyValues("mango.kv.store.type=auto")
                 .run(context -> {
                     assertThat(context).hasBean("autoMemoryKvStore");
                     assertThat(context.getBean(IKvStore.class)).isInstanceOf(MemoryKvStore.class);
@@ -147,7 +143,7 @@ class KvStoreAutoConfigurationTest {
         new ApplicationContextRunner()
                 .withBean(RedissonClient.class, () -> null)
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                // No mango.kv.type property at all
+                // No mango.kv.store.type property at all
                 .run(context -> {
                     assertThat(context).hasBean("autoRedisKvStore");
                     assertThat(context.getBean(IKvStore.class)).isInstanceOf(RedisKvStore.class);
@@ -173,7 +169,7 @@ class KvStoreAutoConfigurationTest {
                 .withBean(RedissonClient.class, () -> null)
                 .withBean(IKvStore.class, () -> new MemoryKvStore())  // pre-existing bean factory
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=redis")
+                .withPropertyValues("mango.kv.store.type=redis")
                 .run(context -> {
                     // Should NOT create a new redisKvStore bean
                     assertThat(context).doesNotHaveBean("redisKvStore");
@@ -182,27 +178,27 @@ class KvStoreAutoConfigurationTest {
                 });
     }
 
-    // ==================== DalStoreProperties test ====================
+    // ==================== KvStoreProperties test ====================
 
     @Test
-    void dalStoreProperties_defaultType_isAuto() {
+    void kvStoreProperties_defaultType_isNullAndAutoSelectionIsDefaultedInConditions() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
                 .run(context -> {
                     // @EnableConfigurationProperties creates a bean with property path name
                     KvStoreProperties props = context.getBean("mango.kv-io.mango.infra.kv.starter.KvStoreProperties", KvStoreProperties.class);
-                    assertThat(props.getType()).isEqualTo("auto");
+                    assertThat(props.getStore().getType()).isNull();
                 });
     }
 
     @Test
-    void dalStoreProperties_customType_loadsCorrectly() {
+    void kvStoreProperties_customStoreType_loadsCorrectly() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(KvStoreAutoConfiguration.class))
-                .withPropertyValues("mango.kv.type=memory")
+                .withPropertyValues("mango.kv.store.type=memory")
                 .run(context -> {
                     KvStoreProperties props = context.getBean("mango.kv-io.mango.infra.kv.starter.KvStoreProperties", KvStoreProperties.class);
-                    assertThat(props.getType()).isEqualTo("memory");
+                    assertThat(props.getStore().getType()).isEqualTo("memory");
                 });
     }
 }

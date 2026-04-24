@@ -6,5 +6,7 @@ public enum RealtimeInboundMode {
 
     LOCAL,
 
-    REMOTE
+    REMOTE,
+
+    LOCAL_REMOTE
 }

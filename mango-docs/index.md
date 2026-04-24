@@ -34,10 +34,12 @@
 | [sprint-15](./plans/2026-04-17-sprint-15-capability-registry-remote-adapter.md) | 进行中 | 能力自动注册与 Remote Adapter 重构 |
 | [backend-refactor-2026-04-17](./plans/2026-04-17-backend-module-by-module-refactor-plan.md) | 建议执行 | 当前代码基线的后端模块级重构顺序与执行模板 |
 | [backend-refactor-phase-0-delivery](./plans/2026-04-17-phase-0-fact-source-delivery-record.md) | 已完成 | Phase 0 事实源校准交付记录 |
-| [backend-refactor-phase-1-common-ownership](./plans/2026-04-17-phase-1-common-class-ownership.md) | 进行中 | Phase 1 `mango-common` 类归属表 |
+| [backend-refactor-phase-1-common-ownership](./plans/2026-04-17-phase-1-common-class-ownership.md) | 已完成 | Phase 1 `mango-common` 类归属表 |
 | [backend-refactor-phase-1-delivery](./plans/2026-04-17-phase-1-common-delivery-record.md) | 已完成 | Phase 1 `mango-common` 收敛交付记录 |
 | [backend-refactor-phase-2-kv-rules](./plans/2026-04-17-phase-2-kv-configuration-rules.md) | 已完成 | Phase 2 `mango-infra-kv` 配置与装配规则 |
 | [backend-refactor-phase-2-delivery](./plans/2026-04-17-phase-2-kv-delivery-record.md) | 已完成 | Phase 2 `mango-infra-kv` 收敛交付记录 |
+| [backend-refactor-phase-3-realtime-design](./plans/2026-04-18-infra-realtime-design.md) | 已完成 | Phase 3 `mango-infra-realtime` 当前设计说明 |
+| [backend-refactor-phase-3-delivery](./plans/2026-04-18-phase-3-messaging-delivery-record.md) | 已完成 | Phase 3 `mango-infra-realtime` 收敛交付记录 |
 
 ## 后端待执行顺序
 

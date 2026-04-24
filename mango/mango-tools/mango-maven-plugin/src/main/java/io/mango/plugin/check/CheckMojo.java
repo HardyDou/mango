@@ -21,8 +21,10 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +53,21 @@ public class CheckMojo extends AbstractMojo {
     private static final String CHECKSTYLE_REPORT = "checkstyle-result.xml";
     private static final String PMD_REPORT = "pmd.xml";
     private static final String SPOTBUGS_REPORT = "spotbugsXml.xml";
+    private static final Pattern MODULE_NAME_PATTERN = Pattern.compile("[a-z0-9]+(-[a-z0-9]+)*");
+    private static final Pattern FEIGN_CLIENT_PATTERN = Pattern.compile("@FeignClient\\s*\\((.*?)\\)", Pattern.DOTALL);
+    private static final Pattern REQUEST_MAPPING_PATTERN = Pattern.compile(
+            "@(?:RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\((.*?)\\)",
+            Pattern.DOTALL);
+    private static final Pattern TYPE_DECLARATION_PATTERN = Pattern.compile(
+            "\\b(?:public\\s+)?(?:sealed\\s+)?(?:abstract\\s+)?(?:class|interface|record|enum)\\s+([A-Za-z0-9_]+)");
+    private static final Pattern API_FIELD_PATTERN = Pattern.compile(
+            "\\bprivate\\s+(?:final\\s+)?(?:[A-Za-z0-9_$.]+\\.)?([A-Za-z0-9_]+Api)\\s+[A-Za-z0-9_]+\\s*;");
+    private static final Pattern SERVICE_IMPLEMENTS_API_PATTERN = Pattern.compile(
+            "\\bclass\\s+([A-Za-z0-9_]+Service)\\b[^\\{;]*\\bimplements\\b[^\\{;]*\\b[A-Za-z0-9_]+Api\\b",
+            Pattern.DOTALL);
+    private static final Pattern FEIGN_EXTENDS_API_PATTERN = Pattern.compile(
+            "\\binterface\\s+([A-Za-z0-9_]+FeignClient)\\b[^\\{;]*\\bextends\\b[^\\{;]*\\b[A-Za-z0-9_]+Api\\b",
+            Pattern.DOTALL);
 
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
@@ -511,6 +528,200 @@ public class CheckMojo extends AbstractMojo {
         return text.replaceAll("\\s+", " ").trim();
     }
 
+    private Map<String, ModuleDescriptor> loadModuleDescriptors(Path rootPath, List<ModuleInfoIssue> issues) {
+        Map<String, ModuleDescriptor> descriptors = new LinkedHashMap<>();
+        Map<String, String> modulePathOwners = new LinkedHashMap<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if (!file.toString().endsWith("/pom.xml")) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    String content = Files.readString(file);
+                    String artifactId = extractArtifactId(content);
+                    if (artifactId == null) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    Path moduleInfoFile = file.getParent().resolve("src/main/resources/META-INF/mango/module.properties");
+                    ModuleType moduleType = classifyModule(artifactId);
+                    if (moduleType != ModuleType.STARTER) {
+                        if (Files.exists(moduleInfoFile)) {
+                            issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
+                                    artifactId + " 不允许声明 module.properties；只有本地 starter 可以声明模块信息"));
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if ("mango-infra-module-starter".equals(artifactId)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if (!Files.exists(moduleInfoFile)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    Properties properties = new Properties();
+                    try (InputStream inputStream = Files.newInputStream(moduleInfoFile)) {
+                        properties.load(inputStream);
+                    }
+
+                    String moduleName = properties.getProperty("module-name", "").trim();
+                    String modulePath = normalizeModulePath(properties.getProperty("module-path", "").trim());
+                    if (moduleName.isEmpty()) {
+                        issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
+                                artifactId + " 的 module-name 不能为空"));
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if (!MODULE_NAME_PATTERN.matcher(moduleName).matches()) {
+                        issues.add(new ModuleInfoIssue("MAJOR", moduleInfoFile.toString(),
+                                artifactId + " 的 module-name 只能使用小写字母、数字和中划线: " + moduleName));
+                    }
+                    if (modulePath.isEmpty()) {
+                        issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
+                                artifactId + " 的 module-path 不能为空"));
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    String owner = modulePathOwners.putIfAbsent(modulePath, artifactId);
+                    if (owner != null && !owner.equals(artifactId)) {
+                        issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
+                                "module-path 冲突: " + artifactId + " 与 " + owner + " 都声明为 " + modulePath));
+                    }
+                    descriptors.put(artifactId, new ModuleDescriptor(artifactId, moduleName, modulePath,
+                            moduleInfoFile.toString()));
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            issues.add(new ModuleInfoIssue("MAJOR", rootPath.toString(), "模块信息扫描失败: " + e.getMessage()));
+        }
+        return descriptors;
+    }
+
+    private String normalizeModulePath(String modulePath) {
+        if (modulePath == null || modulePath.isBlank()) {
+            return "";
+        }
+        String normalized = modulePath.trim();
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        normalized = normalized.replaceAll("/+$", "");
+        if ("/".equals(normalized) || normalized.startsWith("/_")) {
+            return "";
+        }
+        return normalized;
+    }
+
+    private String reverseModulePath(String modulePath) {
+        return "/_" + modulePath.substring(1);
+    }
+
+    private List<Path> starterJavaFiles(Path moduleDir) throws IOException {
+        List<Path> files = new ArrayList<>();
+        Path sourceRoot = moduleDir.resolve("src/main/java");
+        if (!Files.exists(sourceRoot)) {
+            return files;
+        }
+        Files.walkFileTree(sourceRoot, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if (file.toString().endsWith(".java")) {
+                    files.add(file);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return files;
+    }
+
+    private Path siblingRemoteModule(Path starterDir, String artifactId) {
+        String remoteArtifactId = artifactId + "-remote";
+        Path remoteDir = starterDir.getParent().resolve(remoteArtifactId);
+        if (Files.exists(remoteDir.resolve("pom.xml"))) {
+            return remoteDir;
+        }
+        return null;
+    }
+
+    private String extractControllerRootPath(Path javaFile) throws IOException {
+        String content = Files.readString(javaFile);
+        if (!isControllerSource(content)) {
+            return "";
+        }
+        Matcher matcher = REQUEST_MAPPING_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String mapping = normalizeMappingPath(extractMappingValue(matcher.group(1)));
+            if (!mapping.isEmpty()) {
+                return mapping;
+            }
+        }
+        return "";
+    }
+
+    private String extractMappingValue(String annotationBody) {
+        String value = extractAnnotationAttribute(annotationBody, "value");
+        if (!value.isEmpty()) {
+            return value;
+        }
+        return extractAnnotationAttribute(annotationBody, "path");
+    }
+
+    private String extractAnnotationAttribute(String annotationBody, String attributeName) {
+        if (annotationBody == null || annotationBody.isBlank()) {
+            return "";
+        }
+        Matcher namedMatcher = Pattern.compile(attributeName + "\\s*=\\s*\"([^\"]+)\"").matcher(annotationBody);
+        if (namedMatcher.find()) {
+            return namedMatcher.group(1).trim();
+        }
+        if ("value".equals(attributeName)) {
+            Matcher valueMatcher = Pattern.compile("^\\s*\"([^\"]+)\"").matcher(annotationBody.trim());
+            if (valueMatcher.find()) {
+                return valueMatcher.group(1).trim();
+            }
+        }
+        return "";
+    }
+
+    private String normalizeMappingPath(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        String normalized = resolvePlaceholderDefault(path.trim());
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        return normalized.replaceAll("/+$", "");
+    }
+
+    private String resolvePlaceholderDefault(String path) {
+        if (!path.startsWith("${") || !path.endsWith("}")) {
+            return path;
+        }
+        int separator = path.indexOf(':');
+        if (separator < 0 || separator >= path.length() - 1) {
+            return path;
+        }
+        return path.substring(separator + 1, path.length() - 1).trim();
+    }
+
+    private String artifactIdFromPath(Path file) {
+        String artifactId = "";
+        for (Path part : file) {
+            String name = part.toString();
+            if (name.startsWith("mango-")) {
+                artifactId = name;
+            }
+        }
+        return artifactId;
+    }
+
+    private boolean isControllerSource(String content) {
+        return content.contains("@RestController") || content.contains("@Controller");
+    }
+
     private void checkNaming() {
         getLog().info("Checking Mango-specific naming conventions...");
         Path rootPath = resolveBasePath();
@@ -569,9 +780,10 @@ public class CheckMojo extends AbstractMojo {
      * Rules:
      * 1. Mango modules are evaluated in two dimensions: first-level layer
      *    (common / infra / platform / app), then second-level role
-     *    (api / core / starter / starter-remote).
+     *    (api / support / core / starter / starter-remote).
      * 2. *-api cannot depend on *-core, *-starter, *-starter-remote.
      * 3. *-core cannot depend on *-starter, *-starter-remote.
+     * 4. *-starter-remote can only depend on its own *-api and *-support inside io.mango modules.
      */
     private void checkDependency() {
         getLog().info("Checking module dependencies...");
@@ -641,6 +853,9 @@ public class CheckMojo extends AbstractMojo {
         if (artifactId.endsWith("-api")) {
             return ModuleType.API;
         }
+        if (artifactId.endsWith("-support")) {
+            return ModuleType.SUPPORT;
+        }
         if (artifactId.endsWith("-core")) {
             return ModuleType.CORE;
         }
@@ -686,14 +901,41 @@ public class CheckMojo extends AbstractMojo {
             }
         }
 
+        if (consumer == ModuleType.STARTER_REMOTE) {
+            String expectedApi = expectedRemoteApi(consumerArtifact);
+            String expectedSupport = expectedRemoteSupport(consumerArtifact);
+            if (!depArtifact.equals(expectedApi) && !depArtifact.equals(expectedSupport)) {
+                return new DependencyIssue("CRITICAL",
+                        "*-starter-remote 模块只能依赖本模块 api/support: " + consumerArtifact
+                                + " -> " + depArtifact + "，期望依赖 " + expectedApi + " 或 " + expectedSupport);
+            }
+        }
+
         return null;
+    }
+
+    private String expectedRemoteApi(String consumerArtifact) {
+        if (consumerArtifact.endsWith("-starter-remote")) {
+            return consumerArtifact.substring(0, consumerArtifact.length() - "-starter-remote".length()) + "-api";
+        }
+        return consumerArtifact;
+    }
+
+    private String expectedRemoteSupport(String consumerArtifact) {
+        if (consumerArtifact.endsWith("-starter-remote")) {
+            return consumerArtifact.substring(0, consumerArtifact.length() - "-starter-remote".length()) + "-support";
+        }
+        return consumerArtifact;
     }
 
     /**
      * Rules:
      * 1. Local *-starter modules must provide META-INF/mango/module.properties.
-     * 2. module.properties must declare module-name.
+     * 2. module.properties must declare module-name, module-path.
      * 3. module-name must be stable and kebab-case.
+     * 4. module-path must be unique across starter modules.
+     * 5. starter controller root path must start with module-path or /_{module-path}.
+     * 6. starter-remote reverse controller root path must start with /_{module-path}.
      */
     private void checkModuleInfo() {
         getLog().info("Checking module info declarations...");
@@ -703,12 +945,13 @@ public class CheckMojo extends AbstractMojo {
         }
 
         List<ModuleInfoIssue> issues = new ArrayList<>();
+        Map<String, ModuleDescriptor> descriptors = loadModuleDescriptors(rootPath, issues);
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (file.toString().endsWith("/pom.xml")) {
-                        analyzeModuleInfo(file, issues);
+                        analyzeModuleInfo(file, descriptors, issues);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -729,7 +972,7 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
-    private void analyzeModuleInfo(Path pomFile, List<ModuleInfoIssue> issues) {
+    private void analyzeModuleInfo(Path pomFile, Map<String, ModuleDescriptor> descriptors, List<ModuleInfoIssue> issues) {
         try {
             String content = Files.readString(pomFile);
             String artifactId = extractArtifactId(content);
@@ -747,20 +990,38 @@ public class CheckMojo extends AbstractMojo {
                 return;
             }
 
-            Properties properties = new Properties();
-            try (var inputStream = Files.newInputStream(moduleInfoFile)) {
-                properties.load(inputStream);
-            }
-
-            String moduleName = properties.getProperty("module-name", "").trim();
-            if (moduleName.isEmpty()) {
-                issues.add(new ModuleInfoIssue("CRITICAL", moduleInfoFile.toString(),
-                        artifactId + " 的 module-name 不能为空"));
+            ModuleDescriptor descriptor = descriptors.get(artifactId);
+            if (descriptor == null) {
                 return;
             }
-            if (!moduleName.matches("[a-z0-9]+(-[a-z0-9]+)*")) {
-                issues.add(new ModuleInfoIssue("MAJOR", moduleInfoFile.toString(),
-                        artifactId + " 的 module-name 只能使用小写字母、数字和中划线: " + moduleName));
+
+            for (Path javaFile : starterJavaFiles(pomFile.getParent())) {
+                String rootPath = extractControllerRootPath(javaFile);
+                if (rootPath.isEmpty()) {
+                    continue;
+                }
+                if (!isModuleControllerPath(rootPath, descriptor.modulePath)) {
+                    issues.add(new ModuleInfoIssue("CRITICAL", javaFile.toString(),
+                            artifactId + " 的 Controller 根路径必须以 module-path " + descriptor.modulePath
+                                    + " 或反向 module-path " + reverseModulePath(descriptor.modulePath)
+                                    + " 开头，当前为 " + rootPath));
+                }
+            }
+
+            Path remoteModuleDir = siblingRemoteModule(pomFile.getParent(), artifactId);
+            if (remoteModuleDir != null) {
+                String reversePath = reverseModulePath(descriptor.modulePath);
+                for (Path javaFile : starterJavaFiles(remoteModuleDir)) {
+                    String rootPath = extractControllerRootPath(javaFile);
+                    if (rootPath.isEmpty()) {
+                        continue;
+                    }
+                    if (!rootPath.startsWith(reversePath)) {
+                        issues.add(new ModuleInfoIssue("CRITICAL", javaFile.toString(),
+                                remoteModuleDir.getFileName() + " 的反向 Controller 根路径必须以 " + reversePath
+                                        + " 开头，当前为 " + rootPath));
+                    }
+                }
             }
         } catch (Exception e) {
             issues.add(new ModuleInfoIssue("MAJOR", pomFile.toString(),
@@ -768,10 +1029,14 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private boolean isModuleControllerPath(String rootPath, String modulePath) {
+        return rootPath.startsWith(modulePath) || rootPath.startsWith(reverseModulePath(modulePath));
+    }
+
     /**
      * Rules:
-     * 1. Feign client names in starter-remote must use Mango module names.
-     * 2. Do not use service discovery implementation names directly.
+     * 1. starter-remote Feign client name must use the target module-name.
+     * 2. starter-remote Feign client path must start with the target module-path.
      */
     private void checkRemoteAdapter() {
         getLog().info("Checking remote adapter declarations...");
@@ -781,14 +1046,14 @@ public class CheckMojo extends AbstractMojo {
         }
 
         List<RemoteAdapterIssue> issues = new ArrayList<>();
-        Pattern feignClientNamePattern = Pattern.compile("@FeignClient\\s*\\([^)]*name\\s*=\\s*\"([^\"]+)\"");
+        Map<String, ModuleDescriptor> descriptors = loadModuleDescriptors(rootPath, new ArrayList<>());
 
         try {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isStarterRemoteJavaFile(file)) {
-                        analyzeRemoteAdapter(file, feignClientNamePattern, issues);
+                        analyzeRemoteAdapter(file, descriptors, issues);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -814,14 +1079,31 @@ public class CheckMojo extends AbstractMojo {
         return normalized.contains("-starter-remote/src/main/java/") && normalized.endsWith(".java");
     }
 
-    private void analyzeRemoteAdapter(Path file, Pattern feignClientNamePattern, List<RemoteAdapterIssue> issues) {
+    private void analyzeRemoteAdapter(Path file, Map<String, ModuleDescriptor> descriptors, List<RemoteAdapterIssue> issues) {
         try {
-            Matcher matcher = feignClientNamePattern.matcher(Files.readString(file));
+            String content = Files.readString(file);
+            Matcher matcher = FEIGN_CLIENT_PATTERN.matcher(content);
+            String artifactId = artifactIdFromPath(file);
+            String expectedArtifactId = artifactId.endsWith("-starter-remote")
+                    ? artifactId.substring(0, artifactId.length() - "-starter-remote".length()) + "-starter"
+                    : artifactId;
+            ModuleDescriptor descriptor = descriptors.get(expectedArtifactId);
             while (matcher.find()) {
-                String feignName = matcher.group(1).trim();
-                if (!feignName.matches("mango-[a-z0-9]+(-[a-z0-9]+)*")) {
+                String annotationBody = matcher.group(1);
+                String feignName = extractAnnotationAttribute(annotationBody, "name");
+                String feignPath = normalizeMappingPath(extractAnnotationAttribute(annotationBody, "path"));
+                if (descriptor == null) {
                     issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
-                            "@FeignClient name 必须使用 Mango 模块名: " + feignName));
+                            artifactId + " 缺少目标 starter 的 module.properties，无法校验 @FeignClient"));
+                    continue;
+                }
+                if (!descriptor.moduleName.equals(feignName)) {
+                    issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                            "@FeignClient name 必须使用目标模块 module-name " + descriptor.moduleName + "，当前为 " + feignName));
+                }
+                if (!feignPath.startsWith(descriptor.modulePath)) {
+                    issues.add(new RemoteAdapterIssue("CRITICAL", file.toString(),
+                            "@FeignClient path 必须以目标模块 module-path " + descriptor.modulePath + " 开头，当前为 " + feignPath));
                 }
             }
         } catch (IOException e) {
@@ -833,6 +1115,11 @@ public class CheckMojo extends AbstractMojo {
     /**
      * Rules:
      * 1. *-api source must not declare @FeignClient.
+     * 2. *-api must not contain local implementation-collaboration types such as *Service/*Manager.
+     * 3. HTTP-facing contract types in *-api must use XxxApi naming.
+     * 4. Controllers must not hold XxxApi fields.
+     * 5. Services must not directly implement XxxApi.
+     * 6. Feign clients must implement XxxApi.
      */
     private void checkApiContract() {
         getLog().info("Checking API contracts...");
@@ -848,6 +1135,9 @@ public class CheckMojo extends AbstractMojo {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     if (isApiJavaFile(file)) {
                         analyzeApiContract(file, issues);
+                    }
+                    if (isMainJavaFile(file)) {
+                        analyzeApiLayerContract(file, issues);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -875,9 +1165,23 @@ public class CheckMojo extends AbstractMojo {
 
     private void analyzeApiContract(Path file, List<ApiContractIssue> issues) {
         try {
-            if (Files.readString(file).contains("@FeignClient")) {
+            String content = Files.readString(file);
+            if (content.contains("@FeignClient")) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "*-api 禁止声明 @FeignClient"));
+            }
+            String typeName = declaredTypeName(content, file);
+            if (isLocalCollaborationType(typeName)) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "*-api 只允许放跨模块契约，禁止出现本地协作类型: " + typeName));
+            }
+            if (typeName.endsWith("Api") && containsLocalImplementationWord(typeName)) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "XxxApi 名称只表达跨模块能力，禁止包含 Registry/Dispatcher/Manager/Session 等内部实现词: " + typeName));
+            }
+            if (declaresHttpContract(content) && !typeName.endsWith("Api")) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "Controller/远程契约接口在 *-api 中必须命名为 XxxApi: " + typeName));
             }
         } catch (IOException e) {
             issues.add(new ApiContractIssue("MAJOR", file.toString(),
@@ -885,9 +1189,70 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private void analyzeApiLayerContract(Path file, List<ApiContractIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            if (content.contains("@RestController")) {
+                Matcher apiFieldMatcher = API_FIELD_PATTERN.matcher(content);
+                while (apiFieldMatcher.find()) {
+                    issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                            "Controller 禁止持有 XxxApi 字段，应实现 XxxApi 并依赖 IXxxService: "
+                                    + apiFieldMatcher.group(1)));
+                }
+            }
+            Matcher serviceMatcher = SERVICE_IMPLEMENTS_API_PATTERN.matcher(content);
+            if (serviceMatcher.find()) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "XxxService 禁止直接实现 XxxApi，应实现 IXxxService: " + serviceMatcher.group(1)));
+            }
+            if (content.contains("@FeignClient") && !FEIGN_EXTENDS_API_PATTERN.matcher(content).find()) {
+                issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                        "XxxFeignClient 必须继承本域 XxxApi"));
+            }
+        } catch (IOException e) {
+            issues.add(new ApiContractIssue("MAJOR", file.toString(),
+                    "API 分层检查失败: " + e.getMessage()));
+        }
+    }
+
+    private String declaredTypeName(String content, Path file) {
+        Matcher matcher = TYPE_DECLARATION_PATTERN.matcher(content);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        String fileName = file.getFileName().toString();
+        int index = fileName.lastIndexOf('.');
+        return index > 0 ? fileName.substring(0, index) : fileName;
+    }
+
+    private boolean isLocalCollaborationType(String typeName) {
+        return typeName.endsWith("Service")
+                || typeName.endsWith("Manager")
+                || typeName.endsWith("Registry")
+                || typeName.endsWith("Session")
+                || typeName.endsWith("Dispatcher");
+    }
+
+    private boolean containsLocalImplementationWord(String typeName) {
+        return typeName.contains("Service")
+                || typeName.contains("Manager")
+                || typeName.contains("Registry")
+                || typeName.contains("Session")
+                || typeName.contains("Dispatcher");
+    }
+
+    private boolean declaresHttpContract(String content) {
+        return content.contains("@RequestMapping")
+                || content.contains("@GetMapping")
+                || content.contains("@PostMapping")
+                || content.contains("@PutMapping")
+                || content.contains("@DeleteMapping")
+                || content.contains("@PatchMapping");
+    }
+
     /**
      * Rules:
-     * 1. KV annotation key must not hardcode mango:infra:kv prefix.
+     * 1. KV annotation key must not hardcode mango:kv prefix.
      * 2. Dynamic key must use SpEL template syntax such as user:#{#userId}.
      */
     private void checkKvKey() {
@@ -938,9 +1303,9 @@ public class CheckMojo extends AbstractMojo {
             while (matcher.find()) {
                 String key = matcher.group(2).trim();
                 int line = lineNumber(content, matcher.start(2));
-                if (key.startsWith("mango:infra:kv:")) {
+                if (key.startsWith("mango:kv:")) {
                     issues.add(new KvKeyIssue("CRITICAL", file.toString(), line,
-                            "KV 注解 key 不得手写 mango:infra:kv 前缀，应由 capability 自动补齐"));
+                            "KV 注解 key 不得手写 mango:kv 前缀，应由 capability 自动补齐"));
                 }
                 if (usesInlinePlaceholder(key, "#")) {
                     issues.add(new KvKeyIssue("CRITICAL", file.toString(), line,
@@ -1260,6 +1625,20 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private static class ModuleDescriptor {
+        private final String artifactId;
+        private final String moduleName;
+        private final String modulePath;
+        private final String file;
+
+        private ModuleDescriptor(String artifactId, String moduleName, String modulePath, String file) {
+            this.artifactId = artifactId;
+            this.moduleName = moduleName;
+            this.modulePath = modulePath;
+            this.file = file;
+        }
+    }
+
     private static class RemoteAdapterIssue {
         private final String severity;
         private final String file;
@@ -1317,6 +1696,7 @@ public class CheckMojo extends AbstractMojo {
         OTHER,
         APP,
         API,
+        SUPPORT,
         CORE,
         STARTER,
         STARTER_REMOTE,

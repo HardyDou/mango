@@ -35,10 +35,10 @@ Core 结论：
 
 - memory/redis/jdbc 三类实现都保留。
 - `mango-infra-kv-core` 按实现方案分包：`memory`、`redis`、`jdbc`、`support`，注解切面保留在 `aspect`。
-- `DalAspect` 旧命名已改为 `KvCapabilityAspect`，避免继续混用 `dal`。
+- 注解切面命名已统一为 `KvCapabilityAspect`。
 - `KvCapabilityAspect` 的动态 key 解析统一使用 SpEL 模板或直接 SpEL 表达式，支持 Spring Bean 解析，并通过 `mango-common` 的 `RequestContextContributor` 协议消费外部请求上下文变量；不扩展 `user:#userId` 这类非标准内联占位写法。
 - Web 请求 header/cookie/request 变量不再由 `kv-core` 直接提供，而是由 `mango-infra-web` 作为 contributor 增强。
-- Flyway 迁移路径中的 `db/migration/dal` 属历史路径，本 Phase 只记录，不移动迁移文件，避免影响已有迁移发现规则。
+- Flyway 迁移脚本使用 `db/migration/kv` 路径。
 
 ## P2-T3 Starter 盘点
 
@@ -46,9 +46,9 @@ Core 结论：
 
 | 类 | 当前职责 | 问题 |
 |----|----------|------|
-| `KvStoreAutoConfiguration` | 创建 `IKvStore` | 注释和日志仍写 `DAL` / `mango.dal`；jdbc 条件不够明确；store 选择文档与实际代码不一致 |
+| `KvStoreAutoConfiguration` | 创建 `IKvStore` | jdbc 条件不够明确；store 选择文档与实际代码不一致 |
 | `KvCapabilityAutoConfiguration` | 创建 capability beans | 默认强启所有 memory capability，且没有随 store 选择 redis/jdbc 实现 |
-| `KvStoreProperties` | `mango.kv` 配置属性 | 注释仍写 `mango.dal`；没有独立 capability 默认装配开关 |
+| `KvStoreProperties` | `mango.kv` 配置属性 | 没有独立 capability 默认装配开关 |
 
 ## 统一配置前缀
 
@@ -77,14 +77,13 @@ mango:
       converter: false
 ```
 
-兼容口径：
+发布前配置口径：
 
-- 代码继续保留 `mango.kv.type` 作为向后兼容入口，但文档和日志统一使用 `mango.kv.store.type`。
-- `db` 作为 `jdbc` 的兼容别名保留；文档使用 `jdbc`。
-- `mango.kv.provider.db.*` 作为 `mango.kv.provider.jdbc.*` 的兼容入口保留；文档和新增配置使用 `provider.jdbc`。
+- store 选择只使用 `mango.kv.store.type`。
+- store 类型只使用 `auto` / `memory` / `redis` / `jdbc`。
+- JDBC provider 只使用 `mango.kv.provider.jdbc.*`。
 - JDBC 默认表名统一为 `infra_kv_entry`；采用 `infra_` 前缀表达基础设施技术表归属。
-- Flyway 通过 `V2` 将历史 `sys_kv_record` 前向迁移为 `infra_kv_entry`。
-- 不再新增或推荐 `mango.dal.*`。
+- Flyway 只保留当前 `db/migration/kv/V1__init_kv_record.sql` 初始化脚本。
 
 ## Store 选择规则
 
@@ -94,13 +93,13 @@ mango:
 |------|------|------|
 | `mango.kv.store.type=memory` | 无额外依赖 | `MemoryKvStore` |
 | `mango.kv.store.type=redis` | 存在 `RedissonClient` | `RedisKvStore` |
-| `mango.kv.store.type=jdbc` 或兼容 `db` | 存在 `JdbcTemplate` 与 `RedissonClient` | `JdbcKvStore` |
+| `mango.kv.store.type=jdbc` | 存在 `JdbcTemplate` | `JdbcKvStore` |
 | `mango.kv.store.type=auto` 或未配置 | 存在 `RedissonClient` | `RedisKvStore` |
 | `mango.kv.store.type=auto` 或未配置 | 不存在 `RedissonClient` | `MemoryKvStore` |
 
 说明：
 
-- `jdbc` 当前仍需要 `RedissonClient` 生成递增 ID，Phase 2 不改变该实现。
+- `jdbc` 只依赖 `JdbcTemplate`，数据库记录 ID 使用本地雪花算法生成。
 - `JdbcKvStore` 读取 `mango.kv.provider.jdbc.table-name`，默认表名为 `infra_kv_entry`，并对表名执行白名单校验，避免动态 SQL 注入风险。
 - `auto` 不自动选择 jdbc，避免应用只因存在 DataSource 就把 KV store 切到数据库。
 - 所有 store bean 都必须有 `@ConditionalOnMissingBean(IKvStore.class)`，允许应用覆盖。

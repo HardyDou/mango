@@ -1,9 +1,9 @@
 package io.mango.infra.realtime.core.sse;
 
-import io.mango.infra.realtime.api.RealtimeMessage;
-import io.mango.infra.realtime.api.RealtimeProtocols;
-import io.mango.infra.realtime.api.RealtimeSubscriptionManager;
-import io.mango.infra.realtime.core.dispatcher.ProtocolRealtimeSender;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeProtocols;
+import io.mango.infra.realtime.core.session.RealtimeSubscriptionManager;
+import io.mango.infra.realtime.core.outbound.RealtimeProtocolSender;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
-public class SseProtocolAdapter implements ProtocolRealtimeSender {
+public class SseProtocolAdapter implements RealtimeProtocolSender {
 
     public static final long DEFAULT_TIMEOUT_MILLIS = 5 * 60 * 1000L;
 
@@ -59,21 +59,21 @@ public class SseProtocolAdapter implements ProtocolRealtimeSender {
     }
 
     @Override
-    public void sendToUser(Long userId, RealtimeMessage envelope) {
+    public void sendToUser(Long userId, RealtimeOutboundMessage envelope) {
         subscriptionManager.findByUser(userId).stream()
                 .filter(session -> protocol().equals(session.protocol()))
                 .forEach(session -> session.send(envelope));
     }
 
     @Override
-    public void sendToTenant(String tenantId, RealtimeMessage envelope) {
+    public void sendToTenant(String tenantId, RealtimeOutboundMessage envelope) {
         subscriptionManager.findByTenant(tenantId).stream()
                 .filter(session -> protocol().equals(session.protocol()))
                 .forEach(session -> session.send(envelope));
     }
 
     @Override
-    public void broadcast(RealtimeMessage envelope) {
+    public void broadcast(RealtimeOutboundMessage envelope) {
         subscriptionManager.findAll().stream()
                 .filter(session -> protocol().equals(session.protocol()))
                 .forEach(session -> session.send(envelope));

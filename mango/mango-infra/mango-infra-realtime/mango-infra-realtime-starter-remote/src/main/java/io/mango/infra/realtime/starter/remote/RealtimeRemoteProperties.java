@@ -35,7 +35,7 @@ public class RealtimeRemoteProperties {
 
         private boolean registerEnabled = true;
 
-        private String endpoint = "/internal/realtime/inbound";
+        private String endpoint = "/_realtime/messages/inbound";
 
         private String serviceName;
 
@@ -43,7 +43,7 @@ public class RealtimeRemoteProperties {
 
         public String getEndpoint() {
             if (endpoint == null || endpoint.isBlank()) {
-                return "/internal/realtime/inbound";
+                return "/_realtime/messages/inbound";
             }
             return endpoint;
         }

@@ -69,6 +69,14 @@ final class RealtimeConditions {
         }
     }
 
+    static class OutboundEndpointEnabled extends SpringBootCondition {
+
+        @Override
+        public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            return outcome(isOutboundEndpointEnabled(context.getEnvironment()), "realtime outbound endpoint enabled");
+        }
+    }
+
     static class NegotiateEnabled extends SpringBootCondition {
 
         @Override
@@ -125,6 +133,11 @@ final class RealtimeConditions {
     private static boolean isRemoteEndpointEnabled(Environment environment) {
         return isPublishEnabled(environment)
                 && environment.getProperty(PREFIX + ".remote.endpoint-enabled", Boolean.class, true);
+    }
+
+    private static boolean isOutboundEndpointEnabled(Environment environment) {
+        return isPublishEnabled(environment)
+                && environment.getProperty(PREFIX + ".outbound.endpoint-enabled", Boolean.class, true);
     }
 
     private static boolean isNegotiateEnabled(Environment environment) {

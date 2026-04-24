@@ -18,7 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *       memory:
  *         cleanupIntervalMinutes: 1
  *     key:
- *       prefix: mango:infra:kv
+ *       prefix: mango:kv
  *       env: default
  *       appEnabled: false
  *     capability:
@@ -42,11 +42,6 @@ public class KvStoreProperties {
     private static final long DEFAULT_HIKARI_MAX_LIFETIME_MILLIS = 1800000L;
 
     /**
-     * Legacy store type alias. Prefer store.type.
-     */
-    private String type = "auto";
-
-    /**
      * Store selection configuration.
      */
     private Store store = new Store();
@@ -66,27 +61,10 @@ public class KvStoreProperties {
      */
     private Key key = new Key();
 
-    /**
-     * Return configured store type with legacy mango.kv.type fallback.
-     *
-     * @return normalized store type.
-     */
-    public String effectiveStoreType() {
-        String configured = store.getType();
-        if (configured == null || configured.isBlank()) {
-            configured = type;
-        }
-        if (configured == null || configured.isBlank()) {
-            return "auto";
-        }
-        return configured.trim().toLowerCase();
-    }
-
     @Data
     public static class Store {
         /**
          * KV store type: auto / redis / jdbc / memory.
-         * db is accepted as a legacy alias of jdbc.
          */
         private String type;
     }
@@ -97,11 +75,6 @@ public class KvStoreProperties {
         private Redis redis = new Redis();
 
         private Jdbc jdbc = new Jdbc();
-
-        /**
-         * Legacy provider alias. Prefer jdbc.
-         */
-        private Db db = new Db();
 
         private Memory memory = new Memory();
     }
@@ -186,13 +159,6 @@ public class KvStoreProperties {
     }
 
     /**
-     * Legacy alias for provider.jdbc.
-     */
-    @Deprecated
-    public static class Db extends Jdbc {
-    }
-
-    /**
      * MemoryKvStore configuration.
      */
     @Data
@@ -217,7 +183,7 @@ public class KvStoreProperties {
          * Stable namespace root. Final format:
          * {prefix}:{env}[:{app}]:{capability}:{biz-key}
          */
-        private String prefix = "mango:infra:kv";
+        private String prefix = "mango:kv";
 
         /**
          * Runtime environment segment. Keep dev/test/prod data isolated.

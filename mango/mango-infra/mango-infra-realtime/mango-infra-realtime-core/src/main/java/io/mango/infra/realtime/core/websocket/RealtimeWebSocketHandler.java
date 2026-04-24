@@ -2,13 +2,14 @@ package io.mango.infra.realtime.core.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.infra.realtime.api.RealtimeInboundMessage;
-import io.mango.infra.realtime.api.RealtimeMessage;
-import io.mango.infra.realtime.api.RealtimeProtocols;
-import io.mango.infra.realtime.api.RealtimeSubscriptionManager;
-import io.mango.infra.realtime.core.dispatcher.ProtocolRealtimeSender;
-import io.mango.infra.realtime.core.inbound.NoopRealtimeInboundTransport;
-import io.mango.infra.realtime.core.inbound.RealtimeInboundTransport;
+import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeProtocols;
+import io.mango.infra.realtime.core.session.RealtimeSubscriptionManager;
+import io.mango.infra.realtime.core.outbound.RealtimeProtocolSender;
+import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
+import io.mango.infra.realtime.core.inbound.forward.IRealtimeInboundForwardService;
+import io.mango.infra.realtime.core.inbound.forward.RealtimeInboundForwardServices;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -16,24 +17,28 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Slf4j
-public class RealtimeWebSocketHandler extends TextWebSocketHandler implements ProtocolRealtimeSender {
+public class RealtimeWebSocketHandler extends TextWebSocketHandler implements RealtimeProtocolSender {
 
     private final RealtimeSubscriptionManager subscriptionManager;
     private final ObjectMapper objectMapper;
-    private final RealtimeInboundTransport inboundTransport;
+    private final IRealtimeInboundForwardService inboundForwardService;
+    private final ProtocolRealtimeInboundForwarder inboundForwarder;
     private final int maxPayloadBytes;
 
     public RealtimeWebSocketHandler(RealtimeSubscriptionManager subscriptionManager, ObjectMapper objectMapper) {
-        this(subscriptionManager, objectMapper, new NoopRealtimeInboundTransport(), 64 * 1024);
+        this(subscriptionManager, objectMapper, RealtimeInboundForwardServices.noop(), 64 * 1024);
     }
 
     public RealtimeWebSocketHandler(RealtimeSubscriptionManager subscriptionManager,
                                     ObjectMapper objectMapper,
-                                    RealtimeInboundTransport inboundTransport,
+                                    IRealtimeInboundForwardService inboundForwardService,
                                     int maxPayloadBytes) {
         this.subscriptionManager = subscriptionManager;
         this.objectMapper = objectMapper;
-        this.inboundTransport = inboundTransport == null ? new NoopRealtimeInboundTransport() : inboundTransport;
+        this.inboundForwardService = inboundForwardService == null
+                ? RealtimeInboundForwardServices.noop()
+                : inboundForwardService;
+        this.inboundForwarder = new ProtocolRealtimeInboundForwarder(this.inboundForwardService);
         this.maxPayloadBytes = maxPayloadBytes <= 0 ? 64 * 1024 : maxPayloadBytes;
     }
 
@@ -43,7 +48,7 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Pr
         subscriptionManager.subscribe(messageSession);
         log.info("WebSocket session established for tenant: {}, total connections: {}",
                 messageSession.tenantId(), subscriptionManager.countByTenant(messageSession.tenantId()));
-        messageSession.send(RealtimeMessage.of("connected", "WebSocket connected"));
+        messageSession.send(RealtimeOutboundMessage.of("connected", "WebSocket connected"));
     }
 
     @Override
@@ -51,30 +56,29 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Pr
         WebSocketRealtimeSession realtimeSession = new WebSocketRealtimeSession(session, objectMapper);
         try {
             if (message.getPayloadLength() > maxPayloadBytes) {
-                realtimeSession.send(RealtimeMessage.of("error", "Realtime inbound message too large"));
+                realtimeSession.send(RealtimeOutboundMessage.of("error", "Realtime inbound message too large"));
                 return;
             }
             WebSocketInboundMessage data = objectMapper.readValue(message.getPayload(), WebSocketInboundMessage.class);
             String type = data.type();
             if ("ping".equals(type)) {
-                realtimeSession.send(RealtimeMessage.of("pong", null));
+                realtimeSession.send(RealtimeOutboundMessage.of("pong", null));
                 return;
             }
-            inboundTransport.forward(new RealtimeInboundMessage(
+            inboundForwarder.forward(
                     data.id(),
                     data.type(),
                     data.content(),
                     realtimeSession.tenantId(),
                     realtimeSession.userId(),
                     realtimeSession.id(),
-                    data.headers(),
-                    null));
+                    data.headers());
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse WebSocket message: {}", e.getOriginalMessage());
-            realtimeSession.send(RealtimeMessage.of("error", "Invalid message format"));
+            realtimeSession.send(RealtimeOutboundMessage.of("error", "Invalid message format"));
         } catch (Exception e) {
             log.warn("Failed to process WebSocket message: {}", e.getMessage());
-            realtimeSession.send(RealtimeMessage.of("error", "Invalid message format"));
+            realtimeSession.send(RealtimeOutboundMessage.of("error", "Invalid message format"));
         }
     }
 
@@ -96,21 +100,21 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler implements Pr
     }
 
     @Override
-    public void sendToUser(Long userId, RealtimeMessage envelope) {
+    public void sendToUser(Long userId, RealtimeOutboundMessage envelope) {
         subscriptionManager.findByUser(userId).stream()
                 .filter(session -> protocol().equals(session.protocol()))
                 .forEach(session -> session.send(envelope));
     }
 
     @Override
-    public void sendToTenant(String tenantId, RealtimeMessage envelope) {
+    public void sendToTenant(String tenantId, RealtimeOutboundMessage envelope) {
         subscriptionManager.findByTenant(tenantId).stream()
                 .filter(session -> protocol().equals(session.protocol()))
                 .forEach(session -> session.send(envelope));
     }
 
     @Override
-    public void broadcast(RealtimeMessage envelope) {
+    public void broadcast(RealtimeOutboundMessage envelope) {
         subscriptionManager.findAll().stream()
                 .filter(session -> protocol().equals(session.protocol()))
                 .forEach(session -> session.send(envelope));

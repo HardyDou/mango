@@ -1207,6 +1207,7 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 | `GatewayProperties` | `userUrl`、`userService = "mango-user-starter"` | 旧 user 服务事实已不存在 | 改为 RBAC/Auth/identity 决策后的路径策略来源，不再默认 user starter |
 | `GatewayRemoteConfig` | route id `user-service`、`routes.getUserService()` | 旧 user service 命名 | 改为当前有效服务名或移入 Phase 6 adapter 待办 |
 | `mango-gateway` 文档/配置 | `permission-starter`、`mango-permission` 如存在 | 旧 permission 命名 | 改为 `mango-rbac` |
+| `mango-gateway-starter-remote/pom.xml` | 依赖 `mango-gateway-core`、`mango-infra-security-starter` | `starter-remote` 只能依赖本模块 `api`，当前跨到了 `core` 和其他 Mango starter | Phase 5 清理为只依赖 `mango-gateway-api` 与外部技术依赖 |
 
 默认 service name 指 gateway 在 local/remote 路由配置中内置的服务名，不是 Maven artifactId，也不是 Feign client name；但如果三者命名互相引用，必须在交付记录中一起说明。
 
@@ -1223,6 +1224,7 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 - 网关只依赖稳定路径策略接口，不直接感知 RBAC 存储模型
 - 保留 local / remote 两种模式的配置入口
 - 输出 Phase 6/8 需要补齐的 adapter 清单
+- 清理 `mango-gateway-starter-remote` 对 `mango-gateway-core`、`mango-infra-security-starter` 的错误依赖，收敛到 `mango-gateway-api` + 外部技术依赖
 - 明确 gateway 负责外部请求的认证结果治理、外部伪造 header 清洗、内部可信 header 注入；下游服务不得直接信任来自公网的身份/租户 header
 - 冻结 gateway 注入给下游的可信 header 命名和语义，例如用户 ID、租户 ID、请求 ID、trace ID、认证类型；具体 header 名称以 P5-T2 设计结论为准
 - 明确 WebSocket Upgrade、SSE、HTTP Polling 等长连接/长请求路径的 gateway 路由、超时、限流、CORS/Origin 策略归属；realtime 只消费 Phase 4 冻结的上下文契约

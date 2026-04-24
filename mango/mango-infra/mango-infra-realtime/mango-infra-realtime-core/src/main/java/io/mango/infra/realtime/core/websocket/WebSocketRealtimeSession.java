@@ -1,9 +1,9 @@
 package io.mango.infra.realtime.core.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.infra.realtime.api.RealtimeMessage;
-import io.mango.infra.realtime.api.RealtimeProtocols;
-import io.mango.infra.realtime.api.RealtimeSession;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeProtocols;
+import io.mango.infra.realtime.core.session.RealtimeSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -55,7 +55,7 @@ public class WebSocketRealtimeSession implements RealtimeSession {
     }
 
     @Override
-    public void send(RealtimeMessage envelope) {
+    public void send(RealtimeOutboundMessage envelope) {
         try {
             String payload = objectMapper.writeValueAsString(toPayload(envelope));
             synchronized (session) {
@@ -68,7 +68,7 @@ public class WebSocketRealtimeSession implements RealtimeSession {
         }
     }
 
-    private Map<String, Object> toPayload(RealtimeMessage envelope) {
+    private Map<String, Object> toPayload(RealtimeOutboundMessage envelope) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("id", envelope.id());
         payload.put("type", envelope.type());

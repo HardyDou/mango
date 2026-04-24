@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
-import io.mango.infra.realtime.api.RealtimePublisher;
+import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.biz.notification.api.NotificationApi;
 import io.mango.biz.notification.api.po.SysNotificationPo;
 import io.mango.biz.notification.api.vo.SysNotificationVO;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class NotificationServiceImpl implements NotificationApi {
 
     private final SysNotificationMapper messageMapper;
-    private final RealtimePublisher messagePublisher;
+    private final RealtimeApi realtimeApi;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -38,7 +38,7 @@ public class NotificationServiceImpl implements NotificationApi {
         messageMapper.insert(entity);
 
         String json = toJson(entity);
-        messagePublisher.publishToUser(po.getUserId(), "message", json);
+        realtimeApi.publishToUser(po.getUserId(), "message", json);
 
         return R.ok(entity.getId());
     }
@@ -54,7 +54,7 @@ public class NotificationServiceImpl implements NotificationApi {
         messageMapper.insert(entity);
 
         String json = toJson(entity);
-        messagePublisher.broadcast("message", json);
+        realtimeApi.broadcast("message", json);
 
         return R.ok(entity.getId());
     }

@@ -24,6 +24,36 @@ class CheckMojoTest {
         field.set(target, value);
     }
 
+    private void createStarterModule(String artifactId, String moduleName,
+                                     String modulePath, String controllerPath) throws Exception {
+        Path starterDir = tempDir.resolve(artifactId);
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.createDirectories(starterDir.resolve("src/main/java/io/mango/demo/starter"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>%s</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """.formatted(artifactId));
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=%s
+                module-path=%s
+                """.formatted(moduleName, modulePath));
+        Files.writeString(starterDir.resolve("src/main/java/io/mango/demo/starter/DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping("%s")
+                public class DemoController {
+                }
+                """.formatted(controllerPath));
+    }
+
     @Test
     void checkNaming_ruleProvided_executesSuccessfully() throws Exception {
         // given
@@ -195,10 +225,72 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkDependency_withStarterRemoteDependingOnCore_reportsIssue() throws Exception {
+        // given
+        Path projectDir = tempDir.resolve("mango-demo-starter-remote");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-starter-remote</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-core</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withStarterRemoteDependingOnSupport_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-starter-remote");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-starter-remote</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-api</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-support</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkModuleInfo_withStarterModuleProperties_passes() throws Exception {
         // given
         Path starterDir = tempDir.resolve("mango-rbac-starter");
         Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.createDirectories(starterDir.resolve("src/main/java/io/mango/rbac/starter"));
         Files.writeString(starterDir.resolve("pom.xml"), """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <project>
@@ -212,8 +304,22 @@ class CheckMojoTest {
                     <version>1.0.0</version>
                 </project>
                 """);
+        Files.writeString(starterDir.resolve("src/main/java/io/mango/rbac/starter/RbacController.java"), """
+                package io.mango.rbac.starter;
+
+                import org.springframework.web.bind.annotation.RequestMapping;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                @RequestMapping("/rbac/user")
+                public class RbacController {
+                }
+                """);
         Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"),
-                "module-name=mango-rbac\n");
+                """
+                module-name=mango-rbac
+                module-path=/rbac
+                """);
 
         // when
         CheckMojo mojo = new CheckMojo();
@@ -252,6 +358,20 @@ class CheckMojoTest {
     @Test
     void checkRemoteAdapter_withModuleName_passes() throws Exception {
         // given
+        Path starterDir = tempDir.resolve("mango-rbac-starter");
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-rbac-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-rbac
+                module-path=/rbac
+                """);
         Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
@@ -259,7 +379,7 @@ class CheckMojoTest {
 
                 import org.springframework.cloud.openfeign.FeignClient;
 
-                @FeignClient(name = "mango-rbac", path = "/user")
+                @FeignClient(name = "mango-rbac", path = "/rbac/user")
                 public interface SysUserFeignClient {
                 }
                 """);
@@ -277,6 +397,20 @@ class CheckMojoTest {
     @Test
     void checkRemoteAdapter_withServiceName_reportsIssue() throws Exception {
         // given
+        Path starterDir = tempDir.resolve("mango-rbac-starter");
+        Files.createDirectories(starterDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(starterDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-rbac-starter</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(starterDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-rbac
+                module-path=/rbac
+                """);
         Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
         Files.createDirectories(sourceDir);
         Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
@@ -284,7 +418,7 @@ class CheckMojoTest {
 
                 import org.springframework.cloud.openfeign.FeignClient;
 
-                @FeignClient(name = "permission-service", path = "/user")
+                @FeignClient(name = "permission-service", path = "/rbac/user")
                 public interface SysUserFeignClient {
                 }
                 """);
@@ -296,6 +430,67 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleInfo_withDuplicateModulePath_reportsIssue() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/shared", "/shared/user");
+        createStarterModule("mango-auth-starter", "mango-auth", "/shared", "/shared/login");
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkModuleInfo_withNonStarterModuleProperties_reportsIssue() throws Exception {
+        Path coreDir = tempDir.resolve("mango-rbac-core");
+        Files.createDirectories(coreDir.resolve("src/main/resources/META-INF/mango"));
+        Files.writeString(coreDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-rbac-core</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        Files.writeString(coreDir.resolve("src/main/resources/META-INF/mango/module.properties"), """
+                module-name=mango-rbac
+                module-path=/rbac
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "module-info");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkRemoteAdapter_withWrongPath_reportsIssue() throws Exception {
+        createStarterModule("mango-rbac-starter", "mango-rbac", "/rbac", "/rbac/user");
+        Path sourceDir = tempDir.resolve("mango-rbac-starter-remote/src/main/java/io/mango/rbac/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("SysUserFeignClient.java"), """
+                package io.mango.rbac.starter.remote;
+
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-rbac", path = "/internal/rbac/user")
+                public interface SysUserFeignClient {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "remote-adapter");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
         assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
     }
 
@@ -343,6 +538,153 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withLocalCollaborationType_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-realtime-api/src/main/java/io/mango/realtime/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("RealtimePollingService.java"), """
+                package io.mango.realtime.api;
+
+                public interface RealtimePollingService {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withSessionType_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-realtime-api/src/main/java/io/mango/realtime/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("RealtimeSession.java"), """
+                package io.mango.realtime.api;
+
+                public interface RealtimeSession {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withHttpContractNotEndingApi_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("AuthContract.java"), """
+                package io.mango.demo.api;
+
+                import org.springframework.web.bind.annotation.PostMapping;
+
+                public interface AuthContract {
+                    @PostMapping("/login")
+                    void login();
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withRegistryApiName_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoRegistryApi.java"), """
+                package io.mango.demo.api;
+
+                public interface DemoRegistryApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withControllerHoldingApi_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import io.mango.demo.api.DemoApi;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                public class DemoController {
+                    private final DemoApi demoApi;
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withServiceImplementingApi_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoService.java"), """
+                package io.mango.demo.core;
+
+                import io.mango.demo.api.DemoApi;
+
+                public class DemoService implements DemoApi {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkApiContract_withFeignClientNotExtendingApi_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter-remote/src/main/java/io/mango/demo/starter/remote");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoFeignClient.java"), """
+                package io.mango.demo.starter.remote;
+
+                import org.springframework.cloud.openfeign.FeignClient;
+
+                @FeignClient(name = "mango-demo", path = "/demo")
+                public interface DemoFeignClient {
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
         assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
     }
 
@@ -434,7 +776,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkKvKey_withInfraPrefix_reportsIssue() throws Exception {
+    void checkKvKey_withKvPrefix_reportsIssue() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
         Files.createDirectories(sourceDir);
@@ -444,7 +786,7 @@ class CheckMojoTest {
                 import io.mango.infra.kv.api.annotation.Locker;
 
                 public class DemoService {
-                    @Locker(key = "mango:infra:kv:prod:lock:order:1")
+                    @Locker(key = "mango:kv:prod:lock:order:1")
                     public void lock() {
                     }
                 }

@@ -1,9 +1,13 @@
 package io.mango.infra.kv.core.memory;
 
+import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import jakarta.annotation.PreDestroy;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -15,13 +19,14 @@ import java.util.concurrent.TimeUnit;
  * Implements AutoCloseable for use with try-with-resources.
  * Spring automatically calls close() via @PreDestroy when the bean is destroyed.
  */
-public class MemoryKvStore implements IKvStore, AutoCloseable {
+public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
 
     private static final int BUCKET_COUNT = 32;
     private static final int POSITIVE_HASH_MASK = Integer.MAX_VALUE;
     private static final int TERMINATION_TIMEOUT_SECONDS = 5;
 
     private final ConcurrentHashMap<String, KvEntry>[] buckets;
+    private final ConcurrentHashMap<String, SortedSetEntry> sortedSets = new ConcurrentHashMap<>();
     @SuppressWarnings({"checkstyle:abbreviationaswordinname", "PMD.ThreadPoolCreationRule"})
     private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "kv-memory-cleaner");
@@ -75,6 +80,7 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
         for (ConcurrentHashMap<String, KvEntry> b : buckets) {
             b.entrySet().removeIf(e -> e.getValue().expired());
         }
+        sortedSets.entrySet().removeIf(e -> e.getValue().expired());
     }
 
     @Override
@@ -168,6 +174,84 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
         return entry != null && !entry.expired();
     }
 
+    @Override
+    public void add(String key, String member, double score, long ttlSeconds) {
+        validateKey(key);
+        validateKey(member);
+        if (ttlSeconds <= 0) {
+            remove(key, member);
+            return;
+        }
+        Instant expireTime = Instant.now().plusSeconds(ttlSeconds);
+        sortedSets.compute(key, (k, existing) -> {
+            SortedSetEntry entry = existing == null || existing.expired() ? new SortedSetEntry(expireTime) : existing;
+            entry.expireTime(expireTime);
+            entry.members().put(member, score);
+            return entry;
+        });
+    }
+
+    @Override
+    public void remove(String key, String member) {
+        validateKey(key);
+        validateKey(member);
+        SortedSetEntry entry = sortedSets.get(key);
+        if (entry == null || entry.expired()) {
+            sortedSets.remove(key);
+            return;
+        }
+        entry.members().remove(member);
+        if (entry.members().isEmpty()) {
+            sortedSets.remove(key, entry);
+        }
+    }
+
+    @Override
+    public Collection<String> rangeByScore(String key, double minScore, double maxScore, int limit) {
+        validateKey(key);
+        SortedSetEntry entry = sortedSets.get(key);
+        if (entry == null || entry.expired()) {
+            sortedSets.remove(key);
+            return List.of();
+        }
+        var stream = entry.members().entrySet().stream()
+                .filter(e -> e.getValue() >= minScore && e.getValue() <= maxScore)
+                .sorted(Comparator.comparingDouble((java.util.Map.Entry<String, Double> e) -> e.getValue())
+                        .thenComparing(java.util.Map.Entry::getKey))
+                .map(java.util.Map.Entry::getKey);
+        if (limit > 0) {
+            stream = stream.limit(limit);
+        }
+        return stream.toList();
+    }
+
+    @Override
+    public long removeByScore(String key, double minScore, double maxScore) {
+        validateKey(key);
+        SortedSetEntry entry = sortedSets.get(key);
+        if (entry == null || entry.expired()) {
+            sortedSets.remove(key);
+            return 0;
+        }
+        long before = entry.members().size();
+        entry.members().entrySet().removeIf(e -> e.getValue() >= minScore && e.getValue() <= maxScore);
+        if (entry.members().isEmpty()) {
+            sortedSets.remove(key, entry);
+        }
+        return before - entry.members().size();
+    }
+
+    @Override
+    public long size(String key) {
+        validateKey(key);
+        SortedSetEntry entry = sortedSets.get(key);
+        if (entry == null || entry.expired()) {
+            sortedSets.remove(key);
+            return 0;
+        }
+        return entry.members().size();
+    }
+
     @PreDestroy
     @Override
     public void close() {
@@ -199,6 +283,27 @@ public class MemoryKvStore implements IKvStore, AutoCloseable {
 
         String value() {
             return value;
+        }
+
+        boolean expired() {
+            return expireTime.isBefore(Instant.now());
+        }
+    }
+
+    private static final class SortedSetEntry {
+        private final ConcurrentHashMap<String, Double> members = new ConcurrentHashMap<>();
+        private volatile Instant expireTime;
+
+        SortedSetEntry(Instant expireTime) {
+            this.expireTime = expireTime;
+        }
+
+        ConcurrentHashMap<String, Double> members() {
+            return members;
+        }
+
+        void expireTime(Instant expireTime) {
+            this.expireTime = expireTime;
         }
 
         boolean expired() {

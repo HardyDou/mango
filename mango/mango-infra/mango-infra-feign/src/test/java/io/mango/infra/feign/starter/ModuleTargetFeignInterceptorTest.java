@@ -14,7 +14,7 @@ class ModuleTargetFeignInterceptorTest {
     @Test
     void apply_whenModuleInfoExists_rewritesTargetAndPath() {
         ModuleTargetFeignInterceptor interceptor = new ModuleTargetFeignInterceptor(moduleName ->
-                Optional.of(new ModuleInfo(moduleName, "mango-admin-app", "/admin", "test")));
+                Optional.of(new ModuleInfo(moduleName, "mango-admin-app", "/admin", "/rbac", "test")));
         RequestTemplate template = new RequestTemplate()
                 .feignTarget(new Target.HardCodedTarget<>(Object.class, "mango-rbac", "http://mango-rbac"))
                 .uri("/public-path/check");

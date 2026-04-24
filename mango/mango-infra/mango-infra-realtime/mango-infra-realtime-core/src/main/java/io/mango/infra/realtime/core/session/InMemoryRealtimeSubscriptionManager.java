@@ -1,10 +1,12 @@
 package io.mango.infra.realtime.core.session;
 
-import io.mango.infra.realtime.api.RealtimeSession;
-import io.mango.infra.realtime.api.RealtimeSubscriptionManager;
+import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
+import io.mango.infra.realtime.core.presence.RealtimeNode;
+import io.mango.infra.realtime.core.presence.RealtimePresence;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +17,13 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
 
     private final ConcurrentHashMap<String, RealtimeSession> sessions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<String>> tenantSessionIds = new ConcurrentHashMap<>();
+    private final IRealtimePresenceService presenceService;
+    private final RealtimeNode localNode;
+
+    public InMemoryRealtimeSubscriptionManager(IRealtimePresenceService presenceService, RealtimeNode localNode) {
+        this.presenceService = Objects.requireNonNull(presenceService, "presenceService must not be null");
+        this.localNode = Objects.requireNonNull(localNode, "localNode must not be null");
+    }
 
     @Override
     public void subscribe(RealtimeSession session) {
@@ -25,12 +34,19 @@ public class InMemoryRealtimeSubscriptionManager implements RealtimeSubscription
         removeTenantIndex(previous);
         tenantSessionIds.computeIfAbsent(normalizeTenantId(session.tenantId()), key -> ConcurrentHashMap.newKeySet())
                 .add(session.id());
+        presenceService.online(RealtimePresence.of(
+                session.id(),
+                session.tenantId(),
+                session.userId(),
+                session.protocol(),
+                localNode));
     }
 
     @Override
     public void unsubscribe(String sessionId) {
         if (sessionId != null) {
             removeTenantIndex(sessions.remove(sessionId));
+            presenceService.offline(sessionId);
         }
     }
 

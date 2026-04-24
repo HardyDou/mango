@@ -45,6 +45,21 @@ public class MangoRealtimeProperties {
     private Remote remote = new Remote();
 
     /**
+     * Current realtime node route identity.
+     */
+    private Node node = new Node();
+
+    /**
+     * Cross-node outbound message forwarding settings.
+     */
+    private Outbound outbound = new Outbound();
+
+    /**
+     * Online presence route settings.
+     */
+    private Presence presence = new Presence();
+
+    /**
      * Client-to-server inbound message settings.
      */
     private Inbound inbound = new Inbound();
@@ -89,12 +104,31 @@ public class MangoRealtimeProperties {
         /**
          * SSE subscription endpoint.
          */
-        private String endpoint = "/realtime/subscribe";
+        private String endpoint = "/realtime/transports/sse";
 
         /**
          * SSE connection timeout in milliseconds.
          */
         private long timeoutMillis = 5 * 60 * 1000L;
+
+        /**
+         * HTTP inbound endpoint used by SSE clients to send messages upstream.
+         */
+        private String inboundEndpoint = "/realtime/messages/inbound/sse";
+
+        public String getEndpoint() {
+            if (endpoint == null || endpoint.isBlank()) {
+                return "/realtime/transports/sse";
+            }
+            return endpoint;
+        }
+
+        public String getInboundEndpoint() {
+            if (inboundEndpoint == null || inboundEndpoint.isBlank()) {
+                return "/realtime/messages/inbound/sse";
+            }
+            return inboundEndpoint;
+        }
     }
 
     @Data
@@ -108,7 +142,7 @@ public class MangoRealtimeProperties {
         /**
          * WebSocket endpoint.
          */
-        private String endpoint = "/realtime/ws";
+        private String endpoint = "/realtime/transports/websocket";
 
         /**
          * Allowed origins for the WebSocket endpoint.
@@ -124,7 +158,7 @@ public class MangoRealtimeProperties {
 
         public String getEndpoint() {
             if (endpoint == null || endpoint.isBlank()) {
-                return "/realtime/ws";
+                return "/realtime/transports/websocket";
             }
             return endpoint;
         }
@@ -149,7 +183,7 @@ public class MangoRealtimeProperties {
         /**
          * HTTP polling endpoint.
          */
-        private String endpoint = "/realtime/poll";
+        private String endpoint = "/realtime/transports/polling";
 
         /**
          * Default max messages returned when caller passes maxSize <= 0.
@@ -171,9 +205,14 @@ public class MangoRealtimeProperties {
          */
         private long maxTimeoutMillis = 25 * 1000L;
 
+        /**
+         * HTTP inbound endpoint used by polling clients to send messages upstream.
+         */
+        private String inboundEndpoint = "/realtime/messages/inbound/polling";
+
         public String getEndpoint() {
             if (endpoint == null || endpoint.isBlank()) {
-                return "/realtime/poll";
+                return "/realtime/transports/polling";
             }
             return endpoint;
         }
@@ -199,6 +238,13 @@ public class MangoRealtimeProperties {
         public long getMaxTimeoutMillis() {
             return maxTimeoutMillis < 0 ? 0L : maxTimeoutMillis;
         }
+
+        public String getInboundEndpoint() {
+            if (inboundEndpoint == null || inboundEndpoint.isBlank()) {
+                return "/realtime/messages/inbound/polling";
+            }
+            return inboundEndpoint;
+        }
     }
 
     @Data
@@ -212,11 +258,11 @@ public class MangoRealtimeProperties {
         /**
          * Transport negotiation endpoint.
          */
-        private String endpoint = "/realtime/negotiate";
+        private String endpoint = "/realtime/transports/negotiate";
 
         public String getEndpoint() {
             if (endpoint == null || endpoint.isBlank()) {
-                return "/realtime/negotiate";
+                return "/realtime/transports/negotiate";
             }
             return endpoint;
         }
@@ -226,9 +272,74 @@ public class MangoRealtimeProperties {
     public static class Remote {
 
         /**
-         * Enables the internal /internal/realtime/publish endpoint for remote starter calls.
+         * Enables the forward /realtime/messages/publish endpoint for remote starter calls.
          */
         private boolean endpointEnabled = true;
+    }
+
+    @Data
+    public static class Node {
+
+        /**
+         * Stable instance id used to distinguish nodes of the same service.
+         */
+        private String instanceId;
+
+        /**
+         * Routable service name for reverse calls. Defaults to spring.application.name.
+         */
+        private String serviceName;
+
+        /**
+         * Runtime servlet context path. Defaults to server.servlet.context-path or /.
+         */
+        private String contextPath;
+    }
+
+    @Data
+    public static class Outbound {
+
+        /**
+         * Enables the reverse outbound endpoint for cross-node server-to-client dispatch.
+         */
+        private boolean endpointEnabled = true;
+
+        /**
+         * Reverse endpoint receiving server-to-client messages from peer realtime nodes.
+         */
+        private String endpoint = "/_realtime/messages/outbound";
+
+        public String getEndpoint() {
+            if (endpoint == null || endpoint.isBlank()) {
+                return "/_realtime/messages/outbound";
+            }
+            return endpoint;
+        }
+    }
+
+    @Data
+    public static class Presence {
+
+        /**
+         * KV key prefix for multi-instance online presence routes.
+         */
+        private String prefix = "mango:infra:realtime:presence";
+
+        /**
+         * Presence TTL in seconds. Nodes refresh local sessions periodically before expiry.
+         */
+        private long ttlSeconds = 120L;
+
+        public String getPrefix() {
+            if (prefix == null || prefix.isBlank()) {
+                return "mango:infra:realtime:presence";
+            }
+            return prefix;
+        }
+
+        public long getTtlSeconds() {
+            return ttlSeconds <= 0 ? 120L : ttlSeconds;
+        }
     }
 
     @Data
@@ -242,7 +353,7 @@ public class MangoRealtimeProperties {
         /**
          * Inbound dispatch mode.
          */
-        private RealtimeInboundMode mode = RealtimeInboundMode.NONE;
+        private RealtimeInboundMode mode = RealtimeInboundMode.LOCAL_REMOTE;
 
         /**
          * Maximum accepted WebSocket text payload size in bytes.
@@ -280,18 +391,18 @@ public class MangoRealtimeProperties {
     public static class InboundRemote {
 
         /**
-         * Enables the internal remote inbound endpoint.
+         * Enables the reverse remote inbound endpoint.
          */
         private boolean endpointEnabled = true;
 
         /**
-         * Internal endpoint receiving inbound messages from the realtime service.
+         * Reverse endpoint receiving inbound messages from the realtime service.
          */
-        private String endpoint = "/internal/realtime/inbound";
+        private String endpoint = "/_realtime/messages/inbound";
 
         public String getEndpoint() {
             if (endpoint == null || endpoint.isBlank()) {
-                return "/internal/realtime/inbound";
+                return "/_realtime/messages/inbound";
             }
             return endpoint;
         }

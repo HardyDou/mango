@@ -18,6 +18,7 @@
 
     <modules>
         <module>mango-infra-realtime-api</module>
+        <module>mango-infra-realtime-support</module>
         <module>mango-infra-realtime-core</module>
         <module>mango-infra-realtime-starter</module>
         <module>mango-infra-realtime-starter-remote</module>

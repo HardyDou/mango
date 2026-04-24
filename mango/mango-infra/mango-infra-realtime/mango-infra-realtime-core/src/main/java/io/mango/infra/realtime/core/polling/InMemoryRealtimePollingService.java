@@ -1,7 +1,6 @@
 package io.mango.infra.realtime.core.polling;
 
-import io.mango.infra.realtime.api.RealtimeMessage;
-import io.mango.infra.realtime.api.RealtimePollingService;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
 
     private static final int FALLBACK_DEFAULT_MAX_SIZE = 20;
 
-    private final ConcurrentHashMap<String, Queue<RealtimeMessage>> queues = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Queue<RealtimeOutboundMessage>> queues = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<String>> tenantSubscribers = new ConcurrentHashMap<>();
     private final Set<String> subscribers = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, Queue<PollingWaiter>> waiters = new ConcurrentHashMap<>();
@@ -44,7 +43,7 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
     }
 
     @Override
-    public void append(String subscriberId, RealtimeMessage envelope) {
+    public void append(String subscriberId, RealtimeOutboundMessage envelope) {
         if (subscriberId == null || subscriberId.isBlank() || envelope == null) {
             return;
         }
@@ -53,15 +52,15 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
     }
 
     @Override
-    public List<RealtimeMessage> poll(String subscriberId, int maxSize) {
-        Queue<RealtimeMessage> queue = queues.get(subscriberId);
+    public List<RealtimeOutboundMessage> poll(String subscriberId, int maxSize) {
+        Queue<RealtimeOutboundMessage> queue = queues.get(subscriberId);
         if (queue == null || queue.isEmpty()) {
             return List.of();
         }
         int limit = maxSize <= 0 ? defaultMaxSize : maxSize;
-        List<RealtimeMessage> messages = new ArrayList<>(limit);
+        List<RealtimeOutboundMessage> messages = new ArrayList<>(limit);
         for (int i = 0; i < limit; i++) {
-            RealtimeMessage envelope = queue.poll();
+            RealtimeOutboundMessage envelope = queue.poll();
             if (envelope == null) {
                 break;
             }
@@ -73,13 +72,13 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         return messages;
     }
 
-    public DeferredResult<List<RealtimeMessage>> pollAsync(String subscriberId,
-                                                           String tenantId,
-                                                           int maxSize,
-                                                           long timeoutMillis) {
+    public DeferredResult<List<RealtimeOutboundMessage>> pollAsync(String subscriberId,
+                                                                   String tenantId,
+                                                                   int maxSize,
+                                                                   long timeoutMillis) {
         register(subscriberId, tenantId);
-        List<RealtimeMessage> messages = poll(subscriberId, maxSize);
-        DeferredResult<List<RealtimeMessage>> result = new DeferredResult<>(Math.max(timeoutMillis, 0L), List.of());
+        List<RealtimeOutboundMessage> messages = poll(subscriberId, maxSize);
+        DeferredResult<List<RealtimeOutboundMessage>> result = new DeferredResult<>(Math.max(timeoutMillis, 0L), List.of());
         if (!messages.isEmpty() || timeoutMillis <= 0) {
             result.setResult(messages);
             return result;
@@ -94,21 +93,21 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         return result;
     }
 
-    public void publishToUser(Long userId, RealtimeMessage envelope) {
+    public void publishToUser(Long userId, RealtimeOutboundMessage envelope) {
         if (userId == null) {
             return;
         }
         append(userSubscriberId(userId), envelope);
     }
 
-    public void publishToTenant(String tenantId, RealtimeMessage envelope) {
+    public void publishToTenant(String tenantId, RealtimeOutboundMessage envelope) {
         if (tenantId == null || tenantId.isBlank()) {
             return;
         }
         publishToSubscribers(tenantSubscribers.getOrDefault(tenantId, Set.of()), envelope);
     }
 
-    public void broadcast(RealtimeMessage envelope) {
+    public void broadcast(RealtimeOutboundMessage envelope) {
         publishToSubscribers(subscribers, envelope);
     }
 
@@ -116,7 +115,7 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         return "user:" + userId;
     }
 
-    private void publishToSubscribers(Collection<String> subscriberIds, RealtimeMessage envelope) {
+    private void publishToSubscribers(Collection<String> subscriberIds, RealtimeOutboundMessage envelope) {
         if (envelope == null) {
             return;
         }
@@ -130,7 +129,7 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         }
         PollingWaiter waiter;
         while ((waiter = subscriberWaiters.poll()) != null) {
-            List<RealtimeMessage> messages = poll(subscriberId, waiter.maxSize());
+            List<RealtimeOutboundMessage> messages = poll(subscriberId, waiter.maxSize());
             if (messages.isEmpty()) {
                 return;
             }
@@ -141,7 +140,7 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         }
     }
 
-    private void removeWaiter(String subscriberId, DeferredResult<List<RealtimeMessage>> waiter) {
+    private void removeWaiter(String subscriberId, DeferredResult<List<RealtimeOutboundMessage>> waiter) {
         Queue<PollingWaiter> subscriberWaiters = waiters.get(subscriberId);
         if (subscriberWaiters == null) {
             return;
@@ -152,6 +151,6 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         }
     }
 
-    private record PollingWaiter(DeferredResult<List<RealtimeMessage>> result, int maxSize) {
+    private record PollingWaiter(DeferredResult<List<RealtimeOutboundMessage>> result, int maxSize) {
     }
 }
