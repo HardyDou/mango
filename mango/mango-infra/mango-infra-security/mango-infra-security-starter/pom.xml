@@ -10,7 +10,7 @@
     </parent>
     <artifactId>mango-infra-security-starter</artifactId>
     <name>Mango Infra Security Starter</name>
-    <description>Security Starter - ITokenService auto-configuration</description>
+    <description>Security Starter - Spring Security method security and context auto-configuration</description>
     <dependencies>
         <!-- Security API -->
         <dependency>
@@ -24,30 +24,20 @@
             <artifactId>mango-infra-security-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Spring AOP (includes aspectjweaver for @Aspect annotations) -->
+        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-        </dependency>
-        <!-- Spring Web (for HttpServletRequest) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <!-- Spring Boot AutoConfigure -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
-        <!-- mango-common (for @Perm annotation) -->
         <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-common</artifactId>
-            <version>${project.version}</version>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- Lombok -->
         <dependency>
@@ -64,6 +54,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

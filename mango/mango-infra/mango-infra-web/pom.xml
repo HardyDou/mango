@@ -10,62 +10,14 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>mango-infra-web-starter</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>mango-infra-web</artifactId>
+    <packaging>pom</packaging>
 
-    <name>Mango Infra Web Starter</name>
-    <description>Mango Infra Web Starter - Spring Web integration</description>
+    <name>Mango Infra Web</name>
+    <description>Mango Infra Web - HTTP API contracts and Spring Web starter</description>
 
-    <dependencies>
-        <!-- Mango Common -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-common</artifactId>
-        </dependency>
-
-        <!-- Mango KV API (for IKvStore) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-kv-api</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- Actuator -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <!-- Validation -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-        <!-- AOP -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Test -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
+    <modules>
+        <module>mango-infra-web-api</module>
+        <module>mango-infra-web-starter</module>
+    </modules>
 </project>

@@ -1,13 +1,14 @@
 # Mango Auth
 
-> 认证授权模块 - 用户登录、Token管理
+> 认证模块，负责登录、发放 token，并把认证结果接入 Spring Security。
 
 ## 模块职责
 
 | 职责 | 说明 |
 |------|------|
 | 用户认证 | 用户名密码登录、Token发放 |
-| Token管理 | Token生成、验证、刷新、失效 |
+| Token管理 | Token生成、刷新、失效 |
+| 认证接入 | JWT 解析后构建 `Authentication`，写入 `SecurityContextHolder` |
 
 ## 子模块
 
@@ -15,7 +16,7 @@
 mango-auth/
 ├── mango-auth-api/          # API 定义（LoginRequest/Response, AuthApi）
 ├── mango-auth-core/         # 核心业务（IAuthService, AuthServiceImpl）
-├── mango-auth-starter/       # 本地调用启动器（含认证控制器）
+├── mango-auth-starter/      # 本地调用启动器（认证控制器 + JWT 过滤链）
 └── mango-auth-starter-remote/ # 远程调用启动器（Feign Client）
 ```
 
@@ -24,15 +25,13 @@ mango-auth/
 ```
 mango-auth-starter
 ├── mango-auth-core (认证业务逻辑)
-├── mango-gateway-core (JwtUtil, GatewayConstant - 共享工具)
+├── mango-infra-security-starter (Spring Security + ITokenService)
+├── mango-identity-api (认证用户事实)
+├── mango-authorization-starter (授权能力接入)
 └── spring-boot-starter-web
-
-mango-gateway-core
-├── mango-gateway-api
-└── jjwt (JWT库)
 ```
 
-**说明**: auth-starter 依赖 gateway-core 是因为认证功能需要使用 gateway 中定义的 JWT 工具类和常量，这是跨域共享基础设施的特例。
+`mango-auth` 不保存账号资料，也不计算授权。账号资料由 `mango-identity` 提供，角色/权限由 `mango-authorization` 提供。`mango-auth` 不再维护独立的 servlet request attribute 认证链，当前基线统一走 Spring Security。
 
 ## 核心类
 
@@ -99,16 +98,16 @@ public interface IAuthService {
 ### Token验证流程（请求拦截）
 
 ```
-┌────────┐     ┌─────────┐     ┌──────────┐
-│ Client │────▶│  Auth   │────▶│ 业务处理  │
-│        │     │ Filter  │     │          │
-└────────┘     └─────────┘     └──────────┘
-   │              │                 │
-   │ 1.带Token   │ 2.验证Token     │
-   │   请求       │                 │
-   │              │                 │
-   │◀────────────│◀────────────────│
-   │ 3.通过/401  │                 │
+┌────────┐     ┌─────────────────────┐     ┌────────────────────────┐
+│ Client │────▶│ AuthTokenAuthFilter │────▶│ Spring Security Context │
+│        │     │                     │     │ + Controller / Service  │
+└────────┘     └─────────────────────┘     └────────────────────────┘
+   │                  │                                │
+   │ 1.带Token请求    │ 2.验证 access token            │
+   │                  │ 3.构建 Authentication          │
+   │                  │ 4.写入 SecurityContextHolder   │
+   │◀─────────────────│◀───────────────────────────────│
+   │ 5.通过 / 401     │                                │
 ```
 
 ## 单体模式 vs 微服务模式
@@ -152,30 +151,32 @@ public interface IAuthService {
 
 ## AuthSecurityConfig
 
-认证安全配置，提供 JWT 认证过滤器：
+认证安全配置，提供 Spring Security `SecurityFilterChain` 和 JWT 认证过滤器：
 
 ```java
 @Configuration
 public class AuthSecurityConfig {
-    // JWT工具类Bean
     @Bean
-    public JwtUtil jwtUtil(...) { ... }
-
-    // 认证过滤器注册
-    @Bean
-    public FilterRegistrationBean<AuthFilterBean> authFilterRegistration(JwtUtil jwtUtil) {
-        // 拦截所有请求，验证Token
+    public SecurityFilterChain authSecurityFilterChain(HttpSecurity http, ...) {
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(AuthConstant.WHITE_LIST).permitAll()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(new AuthTokenAuthenticationFilter(tokenService),
+                UsernamePasswordAuthenticationFilter.class);
     }
 }
 ```
 
-### AuthFilter 逻辑
+### AuthTokenAuthenticationFilter 逻辑
 
 1. 检查请求路径是否在白名单
 2. 获取 `Authorization` 请求头
 3. 提取并验证 `Bearer Token`
-4. 验证失败返回 401
-5. 验证成功将 `userId`/`username` 设置到请求属性
+4. 验证成功后构建 `SecurityPrincipal`
+5. 将 `Authentication` 写入 `SecurityContextHolder`
+6. 未认证请求由 Spring Security 返回 401
 
 ## 使用方式
 
@@ -214,6 +215,23 @@ curl -X GET http://localhost:8080/permission/menu \
 curl -X POST http://localhost:8080/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{"refreshToken":"eyJhbGciOiJIUzI1NiIs..."}'
+```
+
+## 测试基线
+
+- 集成测试：
+  - `AuthSecurityIntegrationTest`，覆盖 `Bearer token -> Spring Security context -> @Perm` 的服务内集成链路，验证 `200 / 401 / 403`。
+- E2E 测试：
+  - `AuthSecurityE2ETest`，覆盖 `/auth/login -> accessToken -> 受保护接口` 的完整 HTTP 链路。
+- 测试上下文已排除 Flyway、数据源、MyBatis、Authorization 自动配置等无关装配，避免把认证链路测试污染成数据库集成测试。
+
+## 验证命令
+
+```bash
+cd mango
+mvn -q -DskipTests compile -pl mango-platform/mango-auth -am
+mvn -q test -pl mango-platform/mango-auth/mango-auth-starter -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=AuthSecurityConfigTest
+mvn -q test -pl mango-platform/mango-auth/mango-auth-starter -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=AuthSecurityIntegrationTest,AuthSecurityE2ETest
 ```
 
 ## 常见问题

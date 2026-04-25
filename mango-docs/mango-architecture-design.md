@@ -1057,7 +1057,9 @@ export default defineConfig({
 | `mango-common` | `mango-common` | 全局异常、工具类、常量 | ✅ |
 | **平台能力** | | | |
 | `mango-auth` | `mango-auth-api/core/starter/remote` | 认证（登录/登出/Token） | ✅ |
-| `mango-rbac` | `mango-rbac-api/core/starter/remote` | 授权侧用户事实、角色、菜单、权限、公共路径 | ✅ |
+| `mango-identity` | `mango-identity-api/core/starter/remote` | 账号、身份资料、认证用户事实 | ✅ |
+| `mango-authorization` | `mango-authorization-api/core/starter/remote` | 角色、菜单、权限、公共路径 | ✅ |
+| `mango-security` | `mango-security-starter/remote` | 安全聚合入口，组合认证、身份、授权与基础安全能力 | ✅ |
 | `mango-org` | `mango-org-api/core/starter/remote` | 组织架构 | ✅ |
 | `mango-i18n` | `mango-i18n-api/core/starter/remote` | 国际化 | ✅ |
 | `mango-area` | `mango-area-api/core/starter/remote` | 行政区划 | ✅ |
@@ -1161,8 +1163,11 @@ mango-infra-{name}/
 
 | 接口 | 包路径 | 用途 | 实现者 |
 |------|--------|------|--------|
-| `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-rbac-starter` 或认证桥接 adapter |
+| `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-authorization-starter` 或认证桥接 adapter |
 | `ITokenService` | `io.mango.infra.security.api` | Token 生成/校验 | `mango-auth-starter` |
+| `IAuthUserProvider` | `io.mango.identity.api` | 认证用户事实查询 | `mango-identity-starter` 或 `mango-identity-starter-remote` |
+
+业务应用优先依赖 `mango-security-starter`；微服务远程组合优先依赖 `mango-security-starter-remote`。只有明确需要裁剪能力时，才直接选择 `mango-auth-*`、`mango-identity-*`、`mango-authorization-*` 的单项 starter。
 
 ### 9.3 Sprint-07 DIP 重构（已完成）
 
@@ -1170,10 +1175,10 @@ mango-infra-{name}/
 
 | 接口 | 定义位置 | 调用者 | 实现者 | 说明 |
 |------|---------|--------|--------|------|
-| `IPermissionChecker` | `mango-auth-api` | `AuthServiceImpl` | `RbacPermissionChecker`（rbac-starter） | 权限校验能力 |
-| `IUserContextProvider` | `mango-auth-api` | `AuthServiceImpl` | `RbacUserContextProvider`（rbac-starter） | 当前用户上下文 |
+| `IAuthorizationProvider` | `mango-authorization-api` | `AuthServiceImpl` | `mango-authorization-starter` | 授权快照能力 |
+| `IAuthUserProvider` | `mango-identity-api` | `AuthServiceImpl` | `mango-identity-starter` / remote | 认证用户事实 |
 
-> **DIP 核心原则**：Auth 只关心"有没有权限"这个能力，不知道"菜单是什么"。
+> **DIP 核心原则**：Auth 只关心授权快照，不感知菜单、角色和权限的内部存储模型。
 
 ---
 

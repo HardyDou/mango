@@ -11,7 +11,7 @@
     <artifactId>mango-infra-security</artifactId>
     <packaging>pom</packaging>
     <name>Mango Infra Security</name>
-    <description>Security infrastructure - @Perm aspect and IPermissionService</description>
+    <description>Security infrastructure - token, permission, and security context contracts</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

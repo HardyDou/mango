@@ -21,7 +21,8 @@
     <!--
         注释规范采用契约优先策略：
         - 保留接口/抽象方法 Javadoc、枚举常量注释、注释掉代码检查。
-        - 裁剪 @author、形式化 Javadoc、行尾注释等不服务 Mango 项目质量的告警。
+        - 裁剪 P3C 固定 @author 检查；Mango 规范要求新增 Java 类型使用当前系统用户作为作者。
+        - 裁剪形式化 Javadoc、行尾注释等不服务 Mango 项目质量的告警。
     -->
     <rule ref="rulesets/java/ali-comment.xml">
         <exclude name="CommentsMustBeJavadocFormatRule"/>

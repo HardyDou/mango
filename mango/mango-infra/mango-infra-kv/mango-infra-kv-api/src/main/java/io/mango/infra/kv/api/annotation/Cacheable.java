@@ -14,7 +14,7 @@ public @interface Cacheable {
     /**
      * Cache key expression.
      * Prefer SpEL template syntax for dynamic values.
-     * Example: "user:#{#userId}:#{#headers['X-Tenant']}"
+     * Example: "user:#{#userId}:#{#req.headers['X-Tenant']}"
      */
     String key();
 

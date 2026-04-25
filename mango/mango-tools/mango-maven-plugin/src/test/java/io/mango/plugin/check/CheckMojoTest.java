@@ -286,6 +286,130 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkDependency_withSecurityAggregateRemoteStarter_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-security-starter-remote");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-security-starter-remote</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-infra-security-starter</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-auth-starter-remote</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-identity-starter-remote</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-authorization-starter-remote</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkWebBoundary_withApiDependingOnWebApi_passes() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-api");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-api</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-infra-web-api</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "web-boundary");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkWebBoundary_withApiDependingOnWebStarter_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-api");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-api</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-infra-web-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "web-boundary");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkWebBoundary_withDuplicateSpringWebStarter_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-starter");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-starter</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-infra-web-starter</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-starter-web</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "web-boundary");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void checkModuleInfo_withStarterModuleProperties_passes() throws Exception {
         // given
         Path starterDir = tempDir.resolve("mango-rbac-starter");

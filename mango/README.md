@@ -29,6 +29,12 @@ Java Spring Cloud Alibaba 微服务开发底座。
 | 09 | `09-ui.md` | UI 组件 |
 | 10 | `10-dev-flow.md` | 开发流程 |
 
+### 注释与文档
+
+- 新增和修改的代码注释、JavaDoc、README、设计文档、交付记录默认使用中文。
+- 新增 Java 类型如需 `@author`，作者值使用当前系统用户；Mango 代码生成器自动提取系统用户。
+- 不再手写固定作者名；历史代码可在触达时逐步清理。
+
 ## 常用命令
 
 ```bash
@@ -69,11 +75,13 @@ mango/
 │   ├── mango-ai/               # AI 能力
 │   ├── mango-area/             # 区域
 │   ├── mango-auth/             # 认证
+│   ├── mango-identity/         # 账号、身份资料与认证用户事实
+│   ├── mango-security/         # 安全聚合入口
 │   ├── mango-captcha/          # 验证码
 │   ├── mango-i18n/             # 国际化
 │   ├── mango-biz-notification/          # 消息
 │   ├── mango-org/              # 组织
-│   ├── mango-rbac/             # RBAC、授权侧用户事实、菜单与公共路径
+│   ├── mango-authorization/    # 授权、角色、权限、菜单与公共路径
 │   └── mango-system/           # 系统配置、字典、租户、日志、路由
 ├── mango-parent/               # 父 POM
 └── mango-tools/               # Maven 插件 & 代码规则

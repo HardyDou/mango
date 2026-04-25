@@ -40,6 +40,7 @@
 | [backend-refactor-phase-2-delivery](./plans/2026-04-17-phase-2-kv-delivery-record.md) | 已完成 | Phase 2 `mango-infra-kv` 收敛交付记录 |
 | [backend-refactor-phase-3-realtime-design](./plans/2026-04-18-infra-realtime-design.md) | 已完成 | Phase 3 `mango-infra-realtime` 当前设计说明 |
 | [backend-refactor-phase-3-delivery](./plans/2026-04-18-phase-3-messaging-delivery-record.md) | 已完成 | Phase 3 `mango-infra-realtime` 收敛交付记录 |
+| [backend-refactor-phase-4-delivery](./plans/2026-04-24-phase-4-web-security-context-delivery-record.md) | 已完成，待人工验收 | Phase 4 `mango-infra-web` / `mango-infra-security` 上下文契约收敛交付记录 |
 
 ## 后端待执行顺序
 

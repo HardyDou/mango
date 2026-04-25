@@ -3,11 +3,7 @@ package io.mango.infra.security.api;
 import java.util.List;
 
 /**
- * Permission service interface for @Perm aspect.
- * <p>
- * This interface allows the @Perm aspect to be decoupled from the actual
- * permission implementation, enabling different permission services to be
- * used in different contexts.
+ * Permission lookup interface used by Spring Security backed {@link Perm} authorization.
  *
  * @author Mango
  */

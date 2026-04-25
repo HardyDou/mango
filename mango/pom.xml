@@ -17,6 +17,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-boot.version>3.3.11</spring-boot.version>
+        <spring-cloud.version>2023.0.6</spring-cloud.version>
     </properties>
 
     <modules>
@@ -35,7 +37,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.2.3</version>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -56,7 +58,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
-                <version>2023.0.0</version>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -76,12 +78,22 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-rbac-api</artifactId>
+                <artifactId>mango-authorization-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-rbac-core</artifactId>
+                <artifactId>mango-authorization-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-identity-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-identity-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -96,12 +108,22 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-rbac-starter</artifactId>
+                <artifactId>mango-authorization-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-rbac-starter-remote</artifactId>
+                <artifactId>mango-authorization-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-identity-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-identity-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -117,6 +139,16 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-auth-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-security-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-security-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -271,6 +303,11 @@
             </dependency>
 
             <!-- Infra Starters -->
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-web-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-infra-web-starter</artifactId>

@@ -1,6 +1,5 @@
 package io.mango.infra.kv.starter;
 
-import io.mango.common.spi.request.RequestContextContributor;
 import io.mango.infra.kv.api.ICache;
 import io.mango.infra.kv.api.IConverter;
 import io.mango.infra.kv.api.ICounter;
@@ -11,6 +10,7 @@ import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.kv.api.IRateLimiter;
 import io.mango.infra.kv.api.ISerializer;
 import io.mango.infra.kv.api.ITokenStore;
+import io.mango.infra.kv.api.expression.KvContextContributor;
 import io.mango.infra.kv.core.aspect.KvCapabilityAspect;
 import io.mango.infra.kv.core.capability.KvStoreCache;
 import io.mango.infra.kv.core.capability.KvStoreCounter;
@@ -60,9 +60,9 @@ public class KvCapabilityAutoConfiguration {
                                                  ObjectProvider<IIdempotent> idempotentProvider,
                                                  ObjectProvider<ISerializer> serializerProvider,
                                                  BeanFactory beanFactory,
-                                                 List<RequestContextContributor> contextContributors) {
+                                                 List<KvContextContributor> kvContextContributors) {
         return new KvCapabilityAspect(cacheProvider, lockerProvider, rateLimiterProvider, idempotentProvider,
-                serializerProvider, beanFactory, contextContributors);
+                serializerProvider, beanFactory, kvContextContributors);
     }
 
     @Bean

@@ -32,6 +32,8 @@
 ## 4. 分层规则
 
 - `api` 只放 `XxxApi`、`command`、`query`、`vo`、`enums`。
+- `api` 如需声明内部访问边界，允许依赖 `mango-infra-web-api` 并在 `XxxApi` 类或方法上使用 `@Inner`。
+- `api` 禁止依赖 `mango-infra-web-starter`。
 - Controller 只做协议适配。
 - Controller 必须实现对应 `XxxApi`，内部只能依赖 `IXxxService` 或等效服务接口。
 - Controller 禁止持有 `XxxApi` 字段进行自调用。

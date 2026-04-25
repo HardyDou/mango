@@ -1,11 +1,11 @@
 package io.mango.infra.kv.core.aspect;
 
-import io.mango.common.spi.request.RequestContextContributor;
 import io.mango.infra.kv.api.*;
 import io.mango.infra.kv.api.annotation.Cacheable;
 import io.mango.infra.kv.api.annotation.Idempotent;
 import io.mango.infra.kv.api.annotation.Locker;
 import io.mango.infra.kv.api.annotation.RateLimit;
+import io.mango.infra.kv.api.expression.KvContextContributor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * AOP aspect for KV annotations.
  * Handles @Cacheable, @RateLimit, @Idempotent, @Locker.
- * Runtime request variables can be extended by RequestContextContributor.
+ * Runtime variables can be extended by KvContextContributor.
  */
 @Aspect
 @Component
@@ -57,7 +57,7 @@ public class KvCapabilityAspect {
     private final ObjectProvider<IIdempotent> idempotentProvider;
     private final ObjectProvider<ISerializer> serializerProvider;
     private final BeanFactory beanFactory;
-    private final List<RequestContextContributor> contextContributors;
+    private final List<KvContextContributor> kvContextContributors;
 
     public KvCapabilityAspect(ObjectProvider<ICache> cacheProvider,
                               ObjectProvider<ILocker> lockerProvider,
@@ -65,14 +65,14 @@ public class KvCapabilityAspect {
                               ObjectProvider<IIdempotent> idempotentProvider,
                               ObjectProvider<ISerializer> serializerProvider,
                               BeanFactory beanFactory,
-                              List<RequestContextContributor> contextContributors) {
+                              List<KvContextContributor> kvContextContributors) {
         this.cacheProvider = cacheProvider;
         this.lockerProvider = lockerProvider;
         this.rateLimiterProvider = rateLimiterProvider;
         this.idempotentProvider = idempotentProvider;
         this.serializerProvider = serializerProvider;
         this.beanFactory = beanFactory;
-        this.contextContributors = contextContributors;
+        this.kvContextContributors = kvContextContributors;
     }
 
     // ==================== @Cacheable ====================
@@ -192,7 +192,7 @@ public class KvCapabilityAspect {
             }
         }
         context.setVariable("args", args);
-        contextContributors.forEach(contributor -> contributor.contribute(context::setVariable));
+        kvContextContributors.forEach(contributor -> contributor.contribute(context::setVariable));
 
         // SpEL template: #{#paramName} - cache compiled expression
         if (keyExpression.contains(TEMPLATE_EXPRESSION_MARKER)) {

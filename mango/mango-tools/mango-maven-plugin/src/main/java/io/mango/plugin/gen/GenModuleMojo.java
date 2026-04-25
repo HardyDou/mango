@@ -29,7 +29,7 @@ import java.nio.file.Paths;
  * │       └── controller/
  * └── mango-user-starter-remote/
  *
- * @author Mango
+ * @author hardy
  */
 @Mojo(name = "gen-module", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class GenModuleMojo extends AbstractMojo {
@@ -68,7 +68,8 @@ public class GenModuleMojo extends AbstractMojo {
 
         // 生成模块 README
         Path readmeDir = moduleDir.resolve("mango-" + name.toLowerCase() + "-api");
-        Files.writeString(readmeDir.resolve("README.md"), "# " + name + " API Module\n\n接口定义层，仅定义接口和枚举。\n");
+        Files.writeString(readmeDir.resolve("README.md"),
+                "# " + name + " API Module\n\n接口定义层，仅定义接口和枚举。\n\n作者：" + currentAuthor() + "\n");
     }
 
     private void createCoreModule(Path moduleDir, String name) throws IOException {
@@ -119,5 +120,16 @@ public class GenModuleMojo extends AbstractMojo {
     private String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;
         return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    private String currentAuthor() {
+        String userName = System.getProperty("user.name");
+        if (userName == null || userName.isBlank()) {
+            userName = System.getenv("USER");
+        }
+        if (userName == null || userName.isBlank()) {
+            userName = System.getenv("USERNAME");
+        }
+        return userName == null || userName.isBlank() ? "unknown" : userName.trim();
     }
 }

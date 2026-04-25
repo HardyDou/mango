@@ -15,6 +15,8 @@ Java 后端脚手架，AI Agent 高效率编码指南。
 | 禁止条件分支 | 统一 SPI 注入，不用 if |
 | TTL 配置化 | 缓存超时禁止硬编码 |
 | DDL Flyway | 数据库变更必须 migration 文件 |
+| 中文注释 | 新增和修改的代码注释、JavaDoc、README 与交付文档默认使用中文 |
+| 作者标识 | 新增 Java 类型如需 `@author`，必须使用当前系统用户；代码生成器自动从系统用户提取 |
 
 ---
 
@@ -47,7 +49,9 @@ mango/
 │   └── ...
 ├── mango-platform/          # 平台能力
 │   ├── mango-auth/          # 认证（api/core/starter/starter-remote）
-│   ├── mango-rbac/          # 权限（api/core/starter/starter-remote）
+│   ├── mango-identity/      # 身份（api/core/starter/starter-remote）
+│   ├── mango-authorization/ # 授权（api/core/starter/starter-remote）
+│   ├── mango-security/      # 安全聚合入口（starter/starter-remote）
 │   ├── mango-system/        # 系统（api/core/starter）
 │   ├── mango-org/           # 组织（api/core/starter/starter-remote）
 │   ├── mango-area/          # 地区（api/core/starter/starter-remote）

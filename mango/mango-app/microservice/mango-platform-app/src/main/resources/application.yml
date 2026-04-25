@@ -1,0 +1,58 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: mango-platform-app
+  datasource:
+    url: jdbc:h2:mem:mango_platform;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+
+mango:
+  gateway:
+    auth-enabled: true
+  security:
+    jwt:
+      secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
+  crypto:
+    sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
+    sm4-iv:
+  flyway:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  packages-to-scan: io.mango
+
+logging:
+  level:
+    io.mango: INFO

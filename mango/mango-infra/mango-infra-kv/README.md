@@ -196,28 +196,38 @@ mango:
 | 写法 | 示例 | 说明 |
 |------|------|------|
 | 静态字符串 | `user:static:key` | 不含 `#` 或 `@`，直接返回，无任何解析开销 |
-| SpEL 模板 | `user:#{#userId}:#{#headers['X-Tenant']}` | 推荐写法，支持方法参数、请求上下文变量和容器 bean |
+| SpEL 模板 | `user:#{#query.userId}:#{#req.headers['X-Tenant']}` | 推荐写法，支持方法参数、命名空间变量和容器 bean |
 | 直接 SpEL | `#userId`、`@tenantKey.prefix()` | 整个 key 为一个表达式时使用 |
 
 **语法要求：**
 - 新增 key 建议统一使用 `#{...}` 模板，例如 `user:#{#userId}:#{@tenantKey.prefix()}`。
-- 请求 header/cookie 访问建议使用模板表达式，例如 `#{#headers['X-Tenant']}`、`#{#cookies['SESSION']}`。
+- 方法参数直接用参数名访问，不额外加 namespace；对象参数可访问属性，例如 `#{#query.userId}`、`#{#command.tenantId}`。
+- 如编译产物缺少参数名，可用 `#args[index]` 兜底，例如 `#{#args[0].userId}`。
+- Web header/cookie 访问建议使用命名空间模板表达式，例如 `#{#req.headers['X-Tenant']}`、`#{#req.cookies['SESSION']}`。
 - 不支持 `user:#userId` 这类内联占位写法；必须写成 `user:#{#userId}`。
 - 编译后的 `SpelExpression` 被缓存，同一 key 表达式只解析一次
 
 可用上下文变量：
 
-- 方法入参：如 `#userId`（模板中写为 `#{#userId}`）。
+- 方法入参：如 `#userId`、`#query.userId`（模板中写为 `#{#userId}`、`#{#query.userId}`）。
 - `#args`：方法入参数组。
-- `#headers`：由 Web contributor 提供；非 Web 场景默认不存在。
-- `#cookies`：由 Web contributor 提供；非 Web 场景默认不存在。
-- `#request`：由 Web contributor 提供；仅 Web 场景存在。
+- `#req`：由 Web contributor 提供；非 Web 场景默认不存在。
+- `#req.clientIp`：客户端 IP。
+- `#req.headers`：原始请求 headers。
+- `#req.cookies`：原始请求 cookies。
+- `#req.request`：原始请求对象，仅 Web 场景存在。
+- `#user`：预留给认证/安全模块提供，Web contributor 不负责维护。
+- `#tenant`：预留给租户模块提供，Web contributor 不负责维护。
+- `#dept`：预留给组织/部门模块提供，Web contributor 不负责维护。
 
-请求上下文扩展规则：
+KV 表达式上下文扩展规则：
 
-- `mango-infra-kv-core` 只消费 `mango-common` 中的 `RequestContextContributor` 协议，不直接依赖 Web/Servlet。
-- `mango-infra-web` 当前提供 servlet request/header/cookie 变量增强。
-- 后续 Security、Trace、RPC 等模块如需扩展表达式变量，应各自提供 contributor，不得把运行时技术依赖压进 `kv-core`。
+- `mango-infra-kv-api` 定义 `KvContext`、`KvContextContributor`。
+- `mango-infra-kv-core` 只消费 KV API 的表达式上下文协议，不直接依赖 Web/Servlet。
+- `mango-infra-web` 当前只提供 `req` 命名空间变量，值为 `RequestContextSnapshot`，保留原始 request/header/cookie 与常用 request 字段。
+- 用户、租户、部门上下文由对应模块提供，不在 Web contributor 中维护。
+- `requestId`、`traceId` 属于观测链路字段，不默认进入 KV key 表达式变量。
+- 后续 Security、Trace、RPC 等模块如需扩展 KV 表达式变量，应各自提供 contributor，不得把运行时技术依赖压进 `kv-core`。
 
 ## 参数校验口径
 

@@ -18,12 +18,14 @@
 
     <modules>
         <module>mango-ai</module>
+        <module>mango-authorization</module>
         <module>mango-auth</module>
+        <module>mango-identity</module>
+        <module>mango-security</module>
         <module>mango-captcha</module>
         <module>mango-i18n</module>
         <module>mango-biz-notification</module>
         <module>mango-org</module>
-        <module>mango-rbac</module>
         <module>mango-system</module>
         <module>mango-area</module>
     </modules>

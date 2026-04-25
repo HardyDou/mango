@@ -49,10 +49,17 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Permission Starter (provides RbacPermissionChecker for IPermissionChecker) -->
+        <!-- Mango Infra Context (TtlExecutorDecorator for async login context propagation) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-rbac-starter</artifactId>
+            <artifactId>mango-infra-context-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango Authorization Starter -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -68,6 +75,18 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

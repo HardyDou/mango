@@ -26,7 +26,7 @@
 5. 底层稳定后，再进入 `mango-platform`
 6. 最后处理 `mango-app`
 
-在这个顺序里，`mango-rbac` 仍然是平台层最先要动的重模块，但它不应越过 `common` / `infra` 提前开刀。
+在这个顺序里，`mango-authorization` 仍然是平台层最先要动的重模块，但它不应越过 `common` / `infra` 提前开刀。
 
 ---
 
@@ -91,7 +91,7 @@ app -> starter/starter-remote -> core -> api -> common/infra
 - `mango-i18n`
 - `mango-biz-notification`
 - `mango-org`
-- `mango-rbac`
+- `mango-authorization`
 - `mango-system`
 
 说明：
@@ -112,7 +112,7 @@ app -> starter/starter-remote -> core -> api -> common/infra
 
 1. `mango-common`
 2. `mango-infra-kv`
-3. `mango-rbac`
+3. `mango-authorization`
 4. `mango-system`
 5. `mango-auth`
 6. `mango-admin-app`
@@ -121,7 +121,7 @@ app -> starter/starter-remote -> core -> api -> common/infra
 
 - `mango-common` 决定底层公共契约是否稳定
 - `mango-infra-kv` 决定大量横切能力的注入与默认行为
-- `mango-rbac` / `mango-system` / `mango-auth` 构成平台主链路
+- `mango-authorization` / `mango-system` / `mango-auth` 构成平台主链路
 - `mango-admin-app` 是最终装配出口
 
 其余模块大多还处于薄能力模块状态，适合在主链路收敛后再逐个标准化。
@@ -171,13 +171,13 @@ app -> starter/starter-remote -> core -> api -> common/infra
 
 | 幽灵模块/旧命名 | 当前状态 | Phase 0 处理要求 |
 |-----------------|----------|------------------|
-| `mango-user-api` | 已从根 POM dependencyManagement 与 `mango-rbac-api` 依赖中清理 | 搜索确认源码/POM 不再引用 |
+| `mango-user-api` | 已从根 POM dependencyManagement 与 `mango-authorization-api` 依赖中清理 | 搜索确认源码/POM 不再引用 |
 | `mango-user-core` | 已从根 POM dependencyManagement 清理 | 搜索确认源码/POM 不再引用 |
 | `mango-user-starter` | 已从根 POM dependencyManagement 与 `mango-admin-app` 依赖中清理 | 搜索确认 app 不再装配 |
 | `mango-user-starter-remote` | 已从根 POM dependencyManagement 清理 | 搜索确认无远程 starter 残留 |
 | `io.mango.user.starter.UserAutoConfiguration` | 已从 `mango-admin-app` 启动类清理 | 搜索确认无 import |
 | `io.mango.user.core.mapper` | 已从 `mango-admin-app` mapper scan 清理 | 搜索确认无 mapper scan |
-| `mango-permission` | 属于旧叙述命名，不是当前有效模块 | 当前有效文档必须改为 `mango-rbac` 或明确历史背景 |
+| `mango-permission` | 属于旧叙述命名，不是当前有效模块 | 当前有效文档必须改为 `mango-authorization` 或明确历史背景 |
 
 #### `mango-admin-app` 当前依赖清单
 
@@ -191,7 +191,7 @@ Phase 0 开始前必须以此表为交接基线。
 | Mango | `mango-area-starter` | 合法，平台区域能力装配 |
 | Mango | `mango-ai-starter` | 合法，平台 AI 能力装配 |
 | Mango | `mango-i18n-starter` | 合法，平台国际化能力装配 |
-| Mango | `mango-rbac-starter` | 合法，当前 RBAC 本地装配 |
+| Mango | `mango-authorization-starter` | 合法，当前 RBAC 本地装配 |
 | Mango | `mango-captcha-starter` | 合法，验证码能力装配 |
 | Mango | `mango-gateway-starter` | 合法，网关/认证过滤装配 |
 | Mango | `mango-infra-kv-starter` | 合法，KV 能力装配 |
@@ -221,27 +221,27 @@ Phase 0 开始前必须以此表为交接基线。
 - 有些模块过细，增加了维护和装配复杂度
 - 有些自动配置边界仍偏宽
 
-### 3.4 `mango-rbac` 实际上承担了“用户 + 权限 + 菜单 + 公共路径”
+### 3.4 `mango-authorization` 实际上承担了“用户 + 权限 + 菜单 + 公共路径”
 
-`mango-rbac` 当前不只是 RBAC：
+`mango-authorization` 曾混合身份事实：
 
 - 用户实体与用户角色关系在这里
 - 角色、菜单、按钮权限在这里
 - 匿名路径 / 登录必需路径也在这里
 - `AuthServiceImpl` 通过它获取认证用户事实
 
-这使得 `mango-rbac` 成为身份域和授权域的混合体。
+本轮已新增 `mango-identity` 承接账号与认证用户事实，authorization 只保留授权事实。
 
 跨 Phase 风险：
 
-- `mango-auth-core` 当前依赖 `mango-rbac-api`。
-- `AuthServiceImpl` 已通过 `IAuthUserProvider` 做了一层认证用户 provider 抽象，但源码仍存在 `io.mango.rbac.api.*` import 与 POM 依赖。
-- Phase 6 重构 `mango-rbac` 时，如果改变认证用户接口，会影响 Phase 8 才正式收口的 `mango-auth`。
+- `mango-auth-core` 当前依赖 `mango-identity-api` 与 `mango-authorization-api`。
+- `AuthServiceImpl` 已通过 `IAuthUserProvider` 做了一层认证用户 provider 抽象，但认证用户 provider 已迁入 `mango-identity-api`，授权快照仍来自 `mango-authorization-api`。
+- Phase 6 重构 `mango-authorization` 时，如果改变认证用户接口，会影响 Phase 8 才正式收口的 `mango-auth`。
 
 处理规则：
 
 - Phase 6 允许对 `auth` 做被动适配，但只允许适配认证用户 provider、权限 checker、POM 依赖，不允许顺手重构登录流程。
-- Phase 6 必须冻结 `rbac -> auth` 的桥接契约：`IAuthUserProvider`、`IPermissionChecker` 或等价接口。
+- Phase 6 冻结 identity -> auth 的 `IAuthUserProvider`，以及 authorization -> auth 的 `IAuthorizationProvider`。
 - Phase 8 再处理 auth 内部职责收敛，例如防重放、幂等、验证码拦截迁出。
 - 如果 Phase 6 发现必须大改 auth 登录语义，必须停止并拆出 ADR，不允许把 Phase 8 的工作提前混入 Phase 6。
 
@@ -422,7 +422,7 @@ Phase 0 开始前必须以此表为交接基线。
 
 禁止进入 `common`：
 
-- `SysUser`、角色、权限、菜单、组织、消息、租户等业务模型
+- `IdentityUser`、角色、权限、菜单、组织、消息、租户等业务模型
 - mapper、repository、service、controller、starter 自动配置
 - Web、DB、Redis、Security、Feign、SSE、WebSocket 等技术实现
 - 为单个模块临时复用而上移的 DTO/VO/PO
@@ -663,7 +663,7 @@ warning 处理策略：
 
 | 决策项 | 默认结论 | 影响范围 |
 |--------|----------|----------|
-| `SysUser` / 用户实体归属 | 本轮暂留 `mango-rbac`，定义为“授权侧用户事实”；不进入 `mango-common`；是否独立 `mango-identity` 进入后续 ADR | `common`、`rbac`、`auth`、`admin-app` |
+| 身份实体归属 | 已抽离到 `mango-identity`；不进入 `mango-common`；authorization 只保存主体授权绑定 | `common`、`rbac`、`auth`、`admin-app` |
 | `mango-common` 准入边界 | 只放稳定跨模块公共契约，不放业务实体、不放技术实现 | 全仓 |
 | `infra` 能力域边界 | 保留 web/security/kv/context/gateway/log/doc/feign；合并 sse+websocket 为 messaging；删除空壳 observability | infra |
 | `platform` 合并策略 | 本轮不以合并/拆分为目标，只做领域边界收敛 | platform |
@@ -676,8 +676,8 @@ warning 处理策略：
 
 ### 禁止做
 
-- 禁止在 Phase 1 中把 `SysUser` 移入 `mango-common`
-- 禁止未通过 ADR 直接新增 `mango-identity`
+- 禁止在 Phase 1 中把身份实体移入 `mango-common`
+- `mango-identity` 已作为身份域建立，后续禁止绕过 identity 复制账号模型
 - 禁止以“以后可能复用”为理由扩大 `common`
 
 ### 验收
@@ -706,7 +706,7 @@ Phase 0 是 Phase 1 的前置准备，不是独立目标。它的完成标准必
 - 已完成：根 `pom.xml` 中 `mango-user-*` 依赖管理清理
 - 已完成：`mango-admin-app/pom.xml` 中 `mango-user-starter` 依赖清理
 - 已完成：`mango-admin-app` 启动装配代码中的 `UserAutoConfiguration` 和 `io.mango.user.core.mapper` 清理
-- 已完成：`mango-rbac-api` 中无效 `mango-user-api` 依赖清理
+- 已完成：`mango-authorization-api` 中无效 `mango-user-api` 依赖清理
 - 待完成：当前有效 README 与架构文档中残留的 `mango-user` / `mango-permission` 叙述清理
 - 不要求清理：历史 Sprint 计划中的旧命名，但必须按历史文档处理，不作为当前模块事实源
 
@@ -799,7 +799,7 @@ Phase 0 完成后，必须留下以下证据，才能进入 Phase 1：
 - 保留结果模型、异常、错误码、分页、基础注解等稳定契约
 - 将技术实现类、业务语义类、历史兼容类迁出或删除
 - 在 `mango-common/README.md` 写入准入规则
-- 明确 `SysUser`、权限模型、组织模型、业务消息模型禁止进入 `common`
+- 明确身份实体、权限模型、组织模型、业务消息模型禁止进入 `common`
 
 ### 当前 `common` 现状盘点基线
 
@@ -1121,7 +1121,7 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 业务 DTO/VO 指满足任一条件的类：
 
 - 包名属于 `io.mango.*.rbac`、`io.mango.*.auth`、`io.mango.*.system`、`io.mango.*.org`、`io.mango.*.message` 等平台域。
-- 类名表达业务事实，例如 `SysUser`、`Role`、`Menu`、`Tenant`、`Message`、`Org`。
+- 类名表达业务事实，例如 `IdentityUser`、`Role`、`Menu`、`Tenant`、`Message`、`Org`。
 - 字段和方法围绕平台业务规则，而不是 HTTP、安全、序列化、请求上下文等技术契约。
 
 技术契约 VO 可以留在 infra，但必须满足：
@@ -1157,11 +1157,11 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 
 ### 禁止做
 
-- 禁止 `infra` 依赖 `rbac-api`、`auth-core`、`system-core` 等平台模块
+- 禁止 `infra` 依赖 `authorization-api`、`auth-core`、`system-core` 等平台模块
 - 禁止在 `infra-web` 中硬编码平台业务路径
 - 禁止在 `infra-security` 中实现 RBAC 业务规则
 - 禁止在 `mango-infra-realtime`、`mango-infra-web` 或其它 infra 协议模块中各自解析 JWT、实现登录认证或执行业务权限规则
-- 禁止把 `SysUser`、`Role`、`Tenant` 等平台业务模型作为统一上下文契约类型
+- 禁止把 `IdentityUser`、`Role`、`Tenant` 等平台业务模型作为统一上下文契约类型
 
 ### 验收命令
 
@@ -1169,7 +1169,7 @@ rg -n "mango-infra-sse|mango-infra-websocket|io\\.mango\\.infra\\.sse|io\\.mango
 cd mango
 mvn -q -DskipTests compile
 rg -n "mango-platform|io\\.mango\\.rbac|io\\.mango\\.auth|io\\.mango\\.system" mango/mango-infra/mango-infra-web mango/mango-infra/mango-infra-security
-rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-infra-web mango/mango-infra/mango-infra-security
+rg -n "IdentityUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-infra-web mango/mango-infra/mango-infra-security
 ```
 
 ### 产出
@@ -1178,6 +1178,10 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 - 被动适配清单
 - 统一请求上下文 / 安全上下文契约说明
 - realtime 等下游模块的被动适配点清单
+
+### 交付记录
+
+- [Phase 4 Web/Security Context Delivery Record](./2026-04-24-phase-4-web-security-context-delivery-record.md)
 
 ---
 
@@ -1206,7 +1210,7 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 |------|----------|------|----------|
 | `GatewayProperties` | `userUrl`、`userService = "mango-user-starter"` | 旧 user 服务事实已不存在 | 改为 RBAC/Auth/identity 决策后的路径策略来源，不再默认 user starter |
 | `GatewayRemoteConfig` | route id `user-service`、`routes.getUserService()` | 旧 user service 命名 | 改为当前有效服务名或移入 Phase 6 adapter 待办 |
-| `mango-gateway` 文档/配置 | `permission-starter`、`mango-permission` 如存在 | 旧 permission 命名 | 改为 `mango-rbac` |
+| `mango-gateway` 文档/配置 | `permission-starter`、`mango-permission` 如存在 | 旧 permission 命名 | 改为 `mango-authorization` |
 | `mango-gateway-starter-remote/pom.xml` | 依赖 `mango-gateway-core`、`mango-infra-security-starter` | `starter-remote` 只能依赖本模块 `api`，当前跨到了 `core` 和其他 Mango starter | Phase 5 清理为只依赖 `mango-gateway-api` 与外部技术依赖 |
 
 默认 service name 指 gateway 在 local/remote 路由配置中内置的服务名，不是 Maven artifactId，也不是 Feign client name；但如果三者命名互相引用，必须在交付记录中一起说明。
@@ -1243,7 +1247,7 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 ### 禁止做
 
 - 禁止网关直接查询 RBAC 数据库表
-- 禁止网关依赖 `rbac-core`
+- 禁止网关依赖 `authorization-core`
 - 禁止在网关里写业务权限规则
 - 禁止下游服务把公网传入的身份/租户 header 当作可信来源；必须由 gateway 清洗后重新注入或由统一 security/web 上下文提供
 - 禁止在 gateway 中实现 RBAC 角色菜单、组织租户等业务规则；gateway 只消费稳定接口的策略结果
@@ -1265,73 +1269,73 @@ rg -n "mango-user|user-starter|permission-starter|mango-permission" mango/mango-
 
 ---
 
-## Phase 6：`mango-rbac`
+## Phase 6：`mango-authorization`
 
 ### 目标
 
-把 `mango-rbac` 从“用户权限大杂烩”收敛成“授权与访问控制中心”。
+把 `mango-authorization` 从“身份与权限混合”收敛成“授权与访问控制中心”。
 
 ### 本阶段重点
 
-- 明确 `SysUser` 是否继续留在 `rbac`
+- 确认账号身份事实已从 authorization 抽离到 `mango-identity`
 - 统一角色、菜单、按钮权限的事实源
 - 收口 `public path` 与权限校验接口
 - 消除用户事实与权限事实的混合暴露
-- 减少 `auth` 与 `admin-app` 对 `rbac` 内部模型的直接感知
+- 减少 `auth` 与 `admin-app` 对 authorization 内部模型的直接感知
 
 “直接感知内部模型”的判定：
 
-- 依赖 `mango-rbac-core`：违规。
-- import `io.mango.rbac.core.entity`、`mapper`、`service.impl`：违规。
-- 在 auth/admin-app 中注入 RBAC core service、mapper、entity：违规。
-- 通过 `mango-rbac-api` 的稳定接口、VO、provider/checker 获取权限或用户授权事实：允许。
-- 通过 Phase 6 冻结的 `IAuthUserProvider`、`IPermissionChecker` 或等价桥接接口访问：允许。
+- 依赖 `mango-authorization-core`：违规。
+- import `io.mango.authorization.core.entity`、`mapper`、`service.impl`：违规。
+- 在 auth/admin-app 中注入 authorization core service、mapper、entity：违规。
+- 通过 `mango-authorization-api` 的稳定接口、VO、provider/checker 获取权限或用户授权事实：允许。
+- 通过 Phase 6 冻结的 `IAuthUserProvider`、`IAuthorizationProvider` 或等价桥接接口访问：允许。
 
 ### 完成标志
 
 - 权限相关接口边界稳定
 - 用户、角色、菜单、公共路径的职责关系可文档化说明
-- `auth` 不再依赖 `rbac` 的实现细节
+- `auth` 不再依赖 authorization 的实现细节
 
 ### 必须做
 
-- 明确 `SysUser` 在本轮是否继续留在 RBAC；如果保留，文档写明它是“授权侧用户事实”
-- 收口权限查询接口，避免 auth/admin-app 直接感知 RBAC 内部实体
+- 确认账号身份事实由 `mango-identity` 维护，authorization 不再保存账号资料
+- 收口权限查询接口，避免 auth/admin-app 直接感知 authorization 内部实体
 - 整理 public path / login required path 的 provider 接口
-- 保留角色、菜单、按钮权限、访问策略为 RBAC 核心职责
-- 冻结 `rbac -> auth` 的认证用户/权限桥接契约，Phase 8 不再改变语义
+- 保留角色、菜单、按钮权限、访问策略为 authorization 核心职责
+- 冻结 `authorization -> auth` 的认证用户/权限桥接契约，Phase 8 不再改变语义
 
 ### Task 拆分
 
 | Task | 内容 | 是否可并行 | 写入范围 |
 |------|------|------------|----------|
-| P6-T1 | 盘点 RBAC API/core/starter 暴露面 | 可并行 | 只读 |
-| P6-T2 | 盘点 auth/gateway/admin-app 对 RBAC 的依赖 | 可并行 | 只读 |
-| P6-T3 | 确认 RBAC 职责边界和 `SysUser` 处理口径 | 不并行 | 文档 |
-| P6-T4 | 收口 RBAC API | 不并行 | `mango-rbac-api` |
-| P6-T5 | 调整 RBAC core/starter 实现 | 不并行 | `mango-rbac-core/starter` |
-| P6-T6 | 冻结 auth/gateway 使用的 provider/checker/path 策略契约 | 不并行 | `rbac-api`、必要 auth/gateway adapter |
+| P6-T1 | 盘点 authorization API/core/starter 暴露面 | 可并行 | 只读 |
+| P6-T2 | 盘点 auth/gateway/admin-app 对 authorization 的依赖 | 可并行 | 只读 |
+| P6-T3 | 确认 identity 与 authorization 职责边界 | 不并行 | 文档 |
+| P6-T4 | 收口 authorization API | 不并行 | `mango-authorization-api` |
+| P6-T5 | 调整 authorization core/starter 实现 | 不并行 | `mango-authorization-core/starter` |
+| P6-T6 | 冻结 auth/gateway 使用的 provider/checker/path 策略契约 | 不并行 | `authorization-api`、必要 auth/gateway adapter |
 | P6-T7 | 被动适配 auth/gateway/admin-app | 不并行 | 受影响模块 |
 | P6-T8 | 编译验证和依赖搜索 | 不并行 | 交付记录 |
 
 ### 禁止做
 
-- 禁止将组织域并入 RBAC
-- 禁止把认证逻辑写入 RBAC
-- 禁止 auth 依赖 `rbac-core`
+- 禁止将组织域并入 authorization
+- 禁止把认证逻辑写入 authorization
+- 禁止 auth 依赖 `authorization-core`
 
 ### 验收命令
 
 ```bash
 cd mango
 mvn -q -DskipTests compile
-rg -n "rbac-core" mango/mango-platform/mango-auth mango/mango-app
+rg -n "authorization-core" mango/mango-platform/mango-auth mango/mango-app
 ```
 
 ### 产出
 
-- RBAC 职责边界说明
-- RBAC 对 auth/gateway/app 的接口清单
+- authorization 职责边界说明
+- authorization 对 auth/gateway/app 的接口清单
 
 ---
 
@@ -1460,7 +1464,7 @@ mvn -q -DskipTests compile
 
 ### 禁止做
 
-- 禁止 auth 直接依赖 `rbac-core`
+- 禁止 auth 直接依赖 `authorization-core`
 - 禁止 auth 承载 RBAC 权限计算
 - 禁止把验证码实现并入 auth
 
@@ -1469,7 +1473,7 @@ mvn -q -DskipTests compile
 ```bash
 cd mango
 mvn -q -DskipTests compile
-rg -n "rbac-core|captcha-core" mango/mango-platform/mango-auth
+rg -n "authorization-core|captcha-core" mango/mango-platform/mango-auth
 ```
 
 ### 产出
@@ -1500,7 +1504,7 @@ Phase 9 与 Sprint 15 的关系：
 
 当前状态：
 
-- `mango-admin-app` 当前 POM 使用本地 starter，例如 `mango-rbac-starter`、`mango-auth-starter`、`mango-org-starter`。
+- `mango-admin-app` 当前 POM 使用本地 starter，例如 `mango-authorization-starter`、`mango-auth-starter`、`mango-org-starter`。
 - 仓库中已存在部分 `starter-remote` 模块：`gateway`、`area`、`auth`、`i18n`、`org`、`rbac`。
 - 并非所有平台模块都已经具备 remote starter。
 
@@ -1726,7 +1730,7 @@ mvn -q -DskipTests compile
 | 模块 | 定位 | 保留理由 | 借鉴 |
 |------|------|----------|------|
 | `mango-auth` | 认证域 | 登录、登出、token 生命周期应保持纯粹，不继续承载安全杂项 | Spring Security / Spring Authorization Server / Keycloak |
-| `mango-rbac` | 授权与访问控制域 | 角色、权限、菜单、访问策略是独立授权域，不应和组织域或认证域混合 | Casbin / Keycloak Authorization |
+| `mango-authorization` | 授权与访问控制域 | 角色、权限、菜单、访问策略是独立授权域，不应和组织域或认证域混合 | Casbin / Keycloak Authorization |
 | `mango-system` | 系统通用能力集合 | 本轮先做内部子域化，不急物理拆分 | DDD Bounded Context / 中后台系统实践 |
 | `mango-org` | 组织域 | 组织、部门、岗位是企业组织事实，不应并入 RBAC | IAM / HR domain |
 | `mango-captcha` | 验证码与人机校验 | 验证码不只服务登录，不应并入 auth | reCAPTCHA 类能力 |
@@ -1901,7 +1905,7 @@ mvn -q -DskipTests compile
 
 必须先确认：
 
-- `SysUser` 本轮暂留 `mango-rbac`
+- 身份事实已抽离到 `mango-identity`
 - `mango-common` 不接收业务实体
 - `mango-infra-realtime` 是本轮必做项
 - 空壳 `observability` 不保留

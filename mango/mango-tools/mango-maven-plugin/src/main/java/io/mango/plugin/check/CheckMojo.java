@@ -142,6 +142,7 @@ public class CheckMojo extends AbstractMojo {
             case "api-contract" -> checkApiContract();
             case "kv-key" -> checkKvKey();
             case "test-fixture" -> checkTestFixture();
+            case "web-boundary" -> checkWebBoundary();
             case "all" -> {
                 runStaticAnalysis();
                 checkNaming();
@@ -151,6 +152,7 @@ public class CheckMojo extends AbstractMojo {
                 checkApiContract();
                 checkKvKey();
                 checkTestFixture();
+                checkWebBoundary();
             }
             default -> getLog().warn("Unknown rule: " + rule);
         }
@@ -902,6 +904,9 @@ public class CheckMojo extends AbstractMojo {
         }
 
         if (consumer == ModuleType.STARTER_REMOTE) {
+            if (isSecurityAggregateRemoteDependency(consumerArtifact, depArtifact)) {
+                return null;
+            }
             String expectedApi = expectedRemoteApi(consumerArtifact);
             String expectedSupport = expectedRemoteSupport(consumerArtifact);
             if (!depArtifact.equals(expectedApi) && !depArtifact.equals(expectedSupport)) {
@@ -912,6 +917,14 @@ public class CheckMojo extends AbstractMojo {
         }
 
         return null;
+    }
+
+    private boolean isSecurityAggregateRemoteDependency(String consumerArtifact, String depArtifact) {
+        return "mango-security-starter-remote".equals(consumerArtifact)
+                && ("mango-infra-security-starter".equals(depArtifact)
+                || "mango-auth-starter-remote".equals(depArtifact)
+                || "mango-identity-starter-remote".equals(depArtifact)
+                || "mango-authorization-starter-remote".equals(depArtifact));
     }
 
     private String expectedRemoteApi(String consumerArtifact) {
@@ -926,6 +939,120 @@ public class CheckMojo extends AbstractMojo {
             return consumerArtifact.substring(0, consumerArtifact.length() - "-starter-remote".length()) + "-support";
         }
         return consumerArtifact;
+    }
+
+    /**
+     * Rules:
+     * 1. *-api can depend on mango-infra-web-api, but not mango-infra-web-starter.
+     * 2. Modules that depend on mango-infra-web-starter must not also declare spring-boot-starter-web.
+     * 3. Refactored common/infra modules must not depend directly on spring-boot-starter-web.
+     */
+    private void checkWebBoundary() {
+        getLog().info("Checking web boundary declarations...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<WebBoundaryIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (file.toString().endsWith("/pom.xml")) {
+                        analyzeWebBoundaryPom(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (WebBoundaryIssue issue : issues) {
+                result.addIssue("WEB_BOUNDARY", issue.severity, issue.file, 0,
+                        issue.description, "WEB_BOUNDARY", DOC_MODULE_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " web boundary violation(s)");
+        } else {
+            getLog().info("All web boundary checks passed");
+        }
+    }
+
+    private void analyzeWebBoundaryPom(Path pomFile, List<WebBoundaryIssue> issues) {
+        try {
+            String content = Files.readString(pomFile);
+            String artifactId = extractArtifactId(content);
+            if (artifactId == null) {
+                return;
+            }
+            List<String> dependencies = extractDependencies(content);
+            boolean dependsWebApi = hasDependency(dependencies, "io.mango", "mango-infra-web-api");
+            boolean dependsWebStarter = hasDependency(dependencies, "io.mango", "mango-infra-web-starter");
+            boolean dependsSpringWebStarter = hasDependency(dependencies,
+                    "org.springframework.boot", "spring-boot-starter-web");
+
+            if (artifactId.endsWith("-api") && dependsWebStarter) {
+                issues.add(new WebBoundaryIssue("CRITICAL", pomFile.toString(),
+                        "*-api 如需 Web 边界注解只能依赖 mango-infra-web-api，禁止依赖 mango-infra-web-starter"));
+            }
+            if (dependsWebStarter && dependsSpringWebStarter) {
+                issues.add(new WebBoundaryIssue("MAJOR", pomFile.toString(),
+                        artifactId + " 已依赖 mango-infra-web-starter，不应重复声明 spring-boot-starter-web"));
+            }
+            if (isRefactoredWebScope(pomFile, artifactId)
+                    && dependsSpringWebStarter
+                    && !"mango-infra-web-starter".equals(artifactId)) {
+                issues.add(new WebBoundaryIssue("MAJOR", pomFile.toString(),
+                        artifactId + " 属于已重构 Web 边界范围，不应直接依赖 spring-boot-starter-web"));
+            }
+            if (artifactId.endsWith("-api") && sourceUsesInner(pomFile) && !dependsWebApi) {
+                issues.add(new WebBoundaryIssue("CRITICAL", pomFile.toString(),
+                        artifactId + " 使用 @Inner 时必须显式依赖 mango-infra-web-api"));
+            }
+        } catch (IOException e) {
+            issues.add(new WebBoundaryIssue("MAJOR", pomFile.toString(),
+                    "Web 边界检查失败: " + e.getMessage()));
+        }
+    }
+
+    private boolean hasDependency(List<String> dependencyBlocks, String groupId, String artifactId) {
+        for (String dependencyBlock : dependencyBlocks) {
+            if (artifactId.equals(extractArtifactIdFromDep(dependencyBlock))
+                    && groupId.equals(extractGroupIdFromDep(dependencyBlock))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isRefactoredWebScope(Path pomFile, String artifactId) {
+        String normalized = pomFile.toString().replace('\\', '/');
+        return artifactId.startsWith("mango-infra-kv")
+                || artifactId.startsWith("mango-infra-realtime")
+                || artifactId.startsWith("mango-infra-web")
+                || normalized.contains("/mango-common/");
+    }
+
+    private boolean sourceUsesInner(Path pomFile) throws IOException {
+        Path sourceRoot = pomFile.getParent().resolve("src/main/java");
+        if (!Files.exists(sourceRoot)) {
+            return false;
+        }
+        final boolean[] found = {false};
+        Files.walkFileTree(sourceRoot, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (file.toString().endsWith(".java") && Files.readString(file).contains("@Inner")) {
+                    found[0] = true;
+                    return FileVisitResult.TERMINATE;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return found[0];
     }
 
     /**
@@ -1609,6 +1736,18 @@ public class CheckMojo extends AbstractMojo {
 
         private DependencyIssue(String severity, String description) {
             this.severity = severity;
+            this.description = description;
+        }
+    }
+
+    private static class WebBoundaryIssue {
+        private final String severity;
+        private final String file;
+        private final String description;
+
+        private WebBoundaryIssue(String severity, String file, String description) {
+            this.severity = severity;
+            this.file = file;
             this.description = description;
         }
     }

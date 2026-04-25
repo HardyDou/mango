@@ -24,6 +24,18 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-identity-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- MyBatis-Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -66,31 +78,17 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Mango Permission API (for SysUserApi) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-rbac-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Mango KV Store API (for AntiService) -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-kv-starter</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <artifactId>mango-infra-kv-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Mango Captcha API (for CaptchaInterceptor) -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-captcha-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Mango Infra Context Starter (TtlExecutorDecorator for context propagation) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-context-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 

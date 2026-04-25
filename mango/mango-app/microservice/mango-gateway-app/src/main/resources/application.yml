@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mango-gateway-app
+  cloud:
+    discovery:
+      enabled: false
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+    gateway:
+      routes:
+        - id: mango-platform-app
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**,/identity/**,/authorization/**,/org/**,/area/**,/i18n/**,/system/**,/captcha/**,/ai/**
+        - id: mango-business-app
+          uri: http://localhost:8082
+          predicates:
+            - Path=/biz/**,/business/**
+
+mango:
+  gateway:
+    auth-enabled: true
+    jwt-secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
+    token-expire-seconds: 7200
+    routes:
+      use-discovery: false
+  security:
+    jwt:
+      secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    io.mango: INFO

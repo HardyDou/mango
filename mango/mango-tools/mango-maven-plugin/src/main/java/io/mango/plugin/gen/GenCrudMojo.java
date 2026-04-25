@@ -17,7 +17,7 @@ import java.nio.file.Paths;
  *
  * mvn mango:gen-crud -Dmodule=user -Dentity=User -Dtable=sys_user
  *
- * @author Mango
+ * @author hardy
  */
 @Mojo(name = "gen-crud", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class GenCrudMojo extends AbstractMojo {
@@ -108,6 +108,7 @@ public class GenCrudMojo extends AbstractMojo {
         String entityName = toPascalCase(entity);
         String camelEntity = toCamelCase(entity);
         String resourcePath = camelEntity.toLowerCase();
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".starter.controller;\n\n" +
@@ -121,6 +122,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".core.service.I" + entityName + "Service;\n" +
             "import lombok.RequiredArgsConstructor;\n" +
             "import org.springframework.web.bind.annotation.*;\n\n" +
+            javaDoc(entityName + " 管理接口。", author) +
             "@RestController\n" +
             "@RequestMapping(\"/" + resourcePath + "\")\n" +
             "@RequiredArgsConstructor\n" +
@@ -161,6 +163,7 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateApi(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".api;\n\n" +
@@ -172,6 +175,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
             "import org.springframework.web.bind.annotation.PathVariable;\n" +
             "import org.springframework.web.bind.annotation.RequestBody;\n\n" +
+            javaDoc(entityName + " 跨模块接口契约。", author) +
             "public interface " + entityName + "Api {\n\n" +
             "    R<PageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query);\n\n" +
             "    R<" + entityName + "VO> get(@PathVariable Long id);\n\n" +
@@ -185,6 +189,7 @@ public class GenCrudMojo extends AbstractMojo {
     private void generateService(Path serviceDir, Path serviceImplDir) throws IOException {
         String entityName = toPascalCase(entity);
         String camelEntity = toCamelCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".core.service;\n\n" +
@@ -193,6 +198,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
             "import io.mango." + module + ".api.vo." + entityName + "VO;\n\n" +
+            javaDoc(entityName + " 业务服务。", author) +
             "public interface I" + entityName + "Service {\n\n" +
             "    " + entityName + "VO getById(Long id);\n\n" +
             "    PageResult<" + entityName + "VO> page(" + entityName + "PageQuery query);\n\n" +
@@ -218,6 +224,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".core.service.I" + entityName + "Service;\n" +
             "import lombok.RequiredArgsConstructor;\n" +
             "import org.springframework.stereotype.Service;\n\n" +
+            javaDoc(entityName + " 业务服务实现。", author) +
             "@Service\n" +
             "@RequiredArgsConstructor\n" +
             "public class " + entityName + "ServiceImpl implements I" + entityName + "Service {\n\n" +
@@ -278,12 +285,14 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateMapper(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".core.mapper;\n\n" +
             "import com.baomidou.mybatisplus.core.mapper.BaseMapper;\n" +
             "import io.mango." + module + ".core.entity." + entityName + "Entity;\n" +
             "import org.apache.ibatis.annotations.Mapper;\n\n" +
+            javaDoc(entityName + " 数据访问接口。", author) +
             "@Mapper\n" +
             "public interface " + entityName + "Mapper extends BaseMapper<" + entityName + "Entity> {\n" +
             "}\n";
@@ -292,6 +301,7 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateEntity(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".core.entity;\n\n" +
@@ -299,6 +309,7 @@ public class GenCrudMojo extends AbstractMojo {
             "import com.baomidou.mybatisplus.annotation.TableId;\n" +
             "import com.baomidou.mybatisplus.annotation.TableName;\n" +
             "import lombok.Data;\n\n" +
+            javaDoc(entityName + " 持久化实体。", author) +
             "@Data\n" +
             "@TableName(\"" + table + "\")\n" +
             "public class " + entityName + "Entity {\n\n" +
@@ -310,12 +321,14 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generatePageQuery(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".api.query;\n\n" +
             "import io.mango.common.po.PageQuery;\n" +
             "import lombok.Data;\n" +
             "import lombok.EqualsAndHashCode;\n\n" +
+            javaDoc(entityName + " 分页查询参数。", author) +
             "@Data\n" +
             "@EqualsAndHashCode(callSuper = true)\n" +
             "public class " + entityName + "PageQuery extends PageQuery {\n" +
@@ -325,10 +338,12 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateCreateCommand(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".api.command;\n\n" +
             "import lombok.Data;\n\n" +
+            javaDoc("创建 " + entityName + " 的命令。", author) +
             "@Data\n" +
             "public class Create" + entityName + "Command {\n" +
             "}\n";
@@ -337,10 +352,12 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateUpdateCommand(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".api.command;\n\n" +
             "import lombok.Data;\n\n" +
+            javaDoc("更新 " + entityName + " 的命令。", author) +
             "@Data\n" +
             "public class Update" + entityName + "Command {\n\n" +
             "    private Long id;\n\n" +
@@ -350,10 +367,12 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateVO(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".api.vo;\n\n" +
             "import lombok.Data;\n\n" +
+            javaDoc(entityName + " 视图对象。", author) +
             "@Data\n" +
             "public class " + entityName + "VO {\n\n" +
             "    private Long id;\n\n" +
@@ -363,12 +382,14 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateBizCode(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".api.enums;\n\n" +
             "import io.mango.common.result.BizCode;\n" +
             "import lombok.AllArgsConstructor;\n" +
             "import lombok.Getter;\n\n" +
+            javaDoc(entityName + " 业务返回码。", author) +
             "@Getter\n" +
             "@AllArgsConstructor\n" +
             "public enum " + entityName + "Code implements BizCode {\n\n" +
@@ -384,11 +405,13 @@ public class GenCrudMojo extends AbstractMojo {
     private void generateFeignClient(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
         String resourcePath = toCamelCase(entity).toLowerCase();
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".starter.remote;\n\n" +
             "import io.mango." + module + ".api." + entityName + "Api;\n" +
             "import org.springframework.cloud.openfeign.FeignClient;\n\n" +
+            javaDoc(entityName + " 远程调用客户端。", author) +
             "@FeignClient(name = \"" + module + "-service\", path = \"/" + resourcePath + "\")\n" +
             "public interface " + entityName + "FeignClient extends " + entityName + "Api {\n" +
             "}\n";
@@ -397,11 +420,13 @@ public class GenCrudMojo extends AbstractMojo {
 
     private void generateRemoteAutoConfiguration(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
+        String author = currentAuthor();
 
         String content =
             "package io.mango." + module + ".starter.remote;\n\n" +
             "import org.springframework.cloud.openfeign.EnableFeignClients;\n" +
             "import org.springframework.context.annotation.Configuration;\n\n" +
+            javaDoc(entityName + " 远程调用自动配置。", author) +
             "@Configuration\n" +
             "@EnableFeignClients(basePackageClasses = " + entityName + "FeignClient.class)\n" +
             "public class " + entityName + "RemoteAutoConfiguration {\n" +
@@ -424,5 +449,24 @@ public class GenCrudMojo extends AbstractMojo {
     private String toCamelCase(String input) {
         if (input == null || input.isEmpty()) return input;
         return toPascalCase(input).substring(0, 1).toLowerCase() + toPascalCase(input).substring(1);
+    }
+
+    private String javaDoc(String description, String author) {
+        return "/**\n"
+                + " * " + description + "\n"
+                + " *\n"
+                + " * @author " + author + "\n"
+                + " */\n";
+    }
+
+    private String currentAuthor() {
+        String userName = System.getProperty("user.name");
+        if (userName == null || userName.isBlank()) {
+            userName = System.getenv("USER");
+        }
+        if (userName == null || userName.isBlank()) {
+            userName = System.getenv("USERNAME");
+        }
+        return userName == null || userName.isBlank() ? "unknown" : userName.trim();
     }
 }

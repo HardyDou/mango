@@ -33,6 +33,7 @@
 - `starter` 依赖本域 `api` 和本域 `core`。
 - `starter-remote` 在 `io.mango` 依赖中只允许本域 `api` 和本域 `support`。
 - `starter-remote` 的 Feign、Spring、Web 等技术依赖使用外部框架坐标，不通过其他 Mango starter 透传。
+- 安全入口类聚合模块例外：`mango-security-starter-remote` 只允许聚合 `mango-infra-security-starter`、`mango-auth-starter-remote`、`mango-identity-starter-remote`、`mango-authorization-starter-remote`，不得新增业务实现。
 - `api` 不依赖业务实现。
 
 ## 5. 边界规则
@@ -86,7 +87,6 @@
 - 正向调用路径统一使用 `/{module-path}/...`。
 - 反向调用路径统一使用 `/_{module-path}/...`。
 - `_` 只表示调用方向反转，不表示 internal / external。
-- 禁止新增 `/internal/...` 作为模块规范路径。
 
 ## 8. Controller Path 规则
 
@@ -94,6 +94,19 @@
 - 本地 `starter` 如需接收其它同类节点的反向调用，Controller 根路径允许以 `/_{module-path}` 开头。
 - `starter-remote` 中如果暴露反向接收 Controller，根路径必须以 `/_{module-path}` 开头。
 - path 只表达模块归属和调用方向，不表达内外部语义。
+
+## 8.1 Web 边界规则
+
+- `mango-infra-web-api` 只放 Web 边界轻量契约，例如 `@Inner`、请求上下文 provider 接口。
+- `mango-infra-web-starter` 只放 Spring Web 自动配置、Filter、扫描器、Servlet 实现和异常处理。
+- `*-api` 如需声明内部接口，只允许依赖 `mango-infra-web-api` 并使用 `@Inner`；禁止依赖 `mango-infra-web-starter`。
+- 暴露 HTTP Controller 的本地 `starter` 应依赖 `mango-infra-web-starter`，由它统一承接 Spring Web 基础设施。
+- 依赖 `mango-infra-web-starter` 的模块禁止重复声明 `spring-boot-starter-web`。
+- 已完成 Web 边界收敛的 `common`、`infra-kv`、`infra-realtime`、`infra-web` 不得直接依赖 `spring-boot-starter-web`。
+- Spring Boot 原生 Web 配置继续使用 `server.*`、`spring.mvc.*`、`spring.web.*`、`spring.servlet.multipart.*`、`spring.jackson.*` 等前缀。
+- Mango 只新增项目横切配置，例如 `mango.web.cors.*`、`mango.web.inner.*`、`mango.web.mdc.*`、`mango.web.request-context.*`，禁止重新包装 Spring Boot 已有通用配置。
+- `@Inner` 只表示内部访问保护，不表示登录、权限、租户或业务可见性。
+- 内部路径由 `@Inner` 扫描、模块 provider、数据库 provider 等来源聚合，禁止只靠 URL 前缀判定内外路径。
 
 ## 9. 命名规则
 
@@ -113,7 +126,6 @@
 - 在 `starter-remote` 中硬编码服务发现名
 - 在 `starter-remote` 声明模块信息
 - 在非 `starter` 模块声明 `module.properties`
-- 使用 `/internal/...` 充当模块标准 path
 - 让管理后台承载模块信息采集核心逻辑
 
 ## 11. 相关规范
