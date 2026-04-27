@@ -22,8 +22,18 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- Spring Boot -->
-        <spring-boot.version>3.3.11</spring-boot.version>
-        <spring-cloud.version>2023.0.6</spring-cloud.version>
+        <spring-boot.version>3.5.14</spring-boot.version>
+        <spring-cloud.version>2025.0.1</spring-cloud.version>
+        <assertj.version>3.27.7</assertj.version>
+        <netty.version>4.1.132.Final</netty.version>
+        <tomcat.version>10.1.54</tomcat.version>
+        <jackson-bom.version>2.21.2</jackson-bom.version>
+        <jjwt.version>0.13.0</jjwt.version>
+        <bouncycastle.version>1.84</bouncycastle.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
+        <commons-fileupload.version>1.6.0</commons-fileupload.version>
+        <plexus-utils.version>4.0.3</plexus-utils.version>
 
         <!-- MyBatis-Plus -->
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
@@ -32,7 +42,7 @@
         <lombok.version>1.18.30</lombok.version>
 
         <!-- Maven Plugin Versions -->
-        <maven.version>3.9.6</maven.version>
+        <maven.version>3.9.15</maven.version>
         <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
 
@@ -89,6 +99,53 @@
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- Security-sensitive libraries -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-fileupload</groupId>
+                <artifactId>commons-fileupload</artifactId>
+                <version>${commons-fileupload.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-utils</artifactId>
+                <version>${plexus-utils.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

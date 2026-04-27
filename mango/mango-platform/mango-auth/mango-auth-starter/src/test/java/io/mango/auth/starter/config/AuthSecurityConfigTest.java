@@ -69,7 +69,7 @@ class AuthSecurityConfigTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @Import({SecurityAutoConfiguration.class, AuthSecurityConfig.class, TestController.class})
+    @Import({AuthSecurityConfig.class, SecurityAutoConfiguration.class, TestController.class})
     static class TestApp {
     }
 

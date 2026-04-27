@@ -17,9 +17,8 @@
     <description>AI-Friendly Java Scaffold Maven Plugin - gen-module, gen-crud, check, evaluate</description>
 
     <properties>
-        <maven.version>3.9.6</maven.version>
+        <maven.version>3.9.15</maven.version>
         <picocli.version>4.7.5</picocli.version>
-        <velocity.version>1.7</velocity.version>
     </properties>
 
     <dependencies>
@@ -51,18 +50,10 @@
             <version>${maven.version}</version>
         </dependency>
 
-        <!-- Velocity for code generation -->
-        <dependency>
-            <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity</artifactId>
-            <version>${velocity.version}</version>
-        </dependency>
-
         <!-- Jackson for JSON serialization -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.16.1</version>
         </dependency>
 
         <!-- MyBatis-Plus (for code generation templates) -->

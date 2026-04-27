@@ -16,7 +16,6 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <bouncycastle.version>1.78</bouncycastle.version>
     </properties>
 
     <dependencies>
@@ -30,12 +29,10 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>${bouncycastle.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>${bouncycastle.version}</version>
         </dependency>
 
         <!-- Test -->

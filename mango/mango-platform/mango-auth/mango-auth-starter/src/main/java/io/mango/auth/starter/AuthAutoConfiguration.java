@@ -3,19 +3,24 @@ package io.mango.auth.starter;
 import io.mango.auth.core.anti.filter.AntiReplayInterceptor;
 import io.mango.auth.core.interceptor.CaptchaInterceptor;
 import io.mango.auth.core.interceptor.WebMvcConfig;
+import io.mango.auth.starter.config.AuthSecurityConfig;
+import io.mango.infra.security.starter.SecurityAutoConfiguration;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Auth service auto configuration
+ * 认证服务自动配置。
  *
- * @author Mango
+ * @author hardy
  */
-@Configuration
+@AutoConfiguration
+@AutoConfigureBefore(SecurityAutoConfiguration.class)
 @MapperScan("io.mango.auth.core.mapper")
 @ComponentScan({
         "io.mango.auth.core.service",
@@ -26,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         "io.mango.auth.core.init",
         "io.mango.auth.starter.controller"
 })
+@Import(AuthSecurityConfig.class)
 public class AuthAutoConfiguration {
 
     @Bean

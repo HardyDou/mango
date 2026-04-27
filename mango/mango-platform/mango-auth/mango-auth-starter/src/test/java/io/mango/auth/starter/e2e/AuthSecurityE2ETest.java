@@ -120,8 +120,8 @@ class AuthSecurityE2ETest {
             "io.mango.infra.kv.starter.KvStoreAutoConfiguration"
     })
     @Import({
-            SecurityAutoConfiguration.class,
             AuthSecurityConfig.class,
+            SecurityAutoConfiguration.class,
             AuthController.class,
             AuthServiceImpl.class,
             SecuredController.class

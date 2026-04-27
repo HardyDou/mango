@@ -105,8 +105,8 @@ class AuthSecurityIntegrationTest {
             "io.mango.infra.kv.starter.KvStoreAutoConfiguration"
     })
     @Import({
-            SecurityAutoConfiguration.class,
             AuthSecurityConfig.class,
+            SecurityAutoConfiguration.class,
             SecuredController.class
     })
     static class TestApp {
