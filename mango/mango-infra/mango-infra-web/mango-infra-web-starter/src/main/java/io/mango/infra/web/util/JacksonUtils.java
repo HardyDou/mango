@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
- * Jackson utility class for JSON serialization.
- * Moved from mango-common to mango-infra-web.
+ * Jackson JSON 序列化工具类。
+ * 从 mango-common 迁移到 mango-infra-web。
  *
  * @author Mango
  */

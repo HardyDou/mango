@@ -17,7 +17,7 @@
     <description>Mango Auth Module - Business implementation</description>
 
     <dependencies>
-        <!-- Mango Auth API -->
+        <!-- Mango 认证 API 契约 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-auth-api</artifactId>
@@ -36,26 +36,20 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- MyBatis-Plus -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-        </dependency>
-
-        <!-- Mango Common -->
+        <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango Infra Security API (ITokenService) -->
+        <!-- Mango 基础安全 API，用于 ITokenProvider -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Security Crypto (for BCrypt password encoding) -->
+        <!-- Spring Security Crypto，用于 BCrypt 密码编码 -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
@@ -70,23 +64,22 @@
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
-        <!-- Spring Boot Web (for WebMvcConfigurer) -->
+        <!-- Spring Context，用于服务和配置注解 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
         </dependency>
 
-        <!-- Mango KV Store API (for AntiService) -->
+        <!-- Lombok @Slf4j 使用的日志 API -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Mango KV 存储 API，用于安全防护服务 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Mango Captcha API (for CaptchaInterceptor) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-captcha-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -97,7 +90,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Test -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mango Web extension properties.
+ * Mango Web 扩展配置项。
  */
 @ConfigurationProperties(prefix = "mango.web")
 public class MangoWebProperties {

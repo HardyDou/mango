@@ -17,7 +17,7 @@
     <description>Mango Authorization Module - Business implementation</description>
 
     <dependencies>
-        <!-- Mango Authorization API -->
+        <!-- Mango 授权 API 契约 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-authorization-api</artifactId>
@@ -30,13 +30,13 @@
             <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
 
-        <!-- Mango Common -->
+        <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango Infra Context Core -->
+        <!-- Mango 基础上下文核心 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-context-core</artifactId>
@@ -50,7 +50,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Test -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

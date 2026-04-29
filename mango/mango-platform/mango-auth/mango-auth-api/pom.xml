@@ -14,38 +14,26 @@
     <packaging>jar</packaging>
 
     <name>Mango Auth API</name>
-    <description>Mango Auth Module - API interfaces and DTOs</description>
+    <description>Mango Auth Module - API contracts</description>
 
     <dependencies>
-        <!-- Mango Common -->
+        <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Infra Security API (Perm annotation) -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- MyBatis-Plus Annotations -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-annotation</artifactId>
-        </dependency>
-
-        <!-- Validation -->
+        <!-- 参数校验注解 -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
+        <!-- Spring 校验标记，用于 API 方法级校验 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
         </dependency>
 
         <!-- Lombok -->

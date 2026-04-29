@@ -17,34 +17,34 @@
     <description>Authorization service starter for local usage</description>
 
     <dependencies>
-        <!-- Mango Authorization Core -->
+        <!-- Mango 授权核心实现 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-authorization-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Common -->
+        <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango Infra Security API (IPermissionService) -->
+        <!-- Mango 基础安全 API，用于 IPermissionProvider -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Infra Security Starter (ITokenService impl via auto-config) -->
+        <!-- Mango 基础安全 Starter，提供自动配置的 ITokenProvider 实现 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Infra Web Starter (IInternalPathProvider) -->
+        <!-- Mango 基础 Web Starter，用于 IInternalPathProvider -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
@@ -64,7 +64,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Test -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

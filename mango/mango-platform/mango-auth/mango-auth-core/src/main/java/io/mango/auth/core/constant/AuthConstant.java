@@ -1,31 +1,31 @@
 package io.mango.auth.core.constant;
 
 /**
- * Authentication constants
+ * 认证常量。
  *
  * @author Mango
  */
 public class AuthConstant {
 
     /**
-     * Token header name
+     * 令牌请求头名称。
      */
     public static final String TOKEN_HEADER = "Authorization";
 
     /**
-     * White list for authentication - paths that don't require authentication
+     * 认证白名单，不需要认证的路径。
      */
     public static final String[] WHITE_LIST = {
-            // Auth endpoints
+            // 认证接口
             "/auth/login",
             "/auth/refresh",
             "/auth/captcha",
-            // Captcha
+            // 验证码
             "/captcha/**",
             "/kaptcha/**",
-            // Health check
+            // 健康检查
             "/actuator/health",
-            // API docs
+            // API 文档
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-resources/**"

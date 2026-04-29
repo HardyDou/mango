@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.LinkedHashSet;
 
 /**
- * Authorization authority contributor for user subjects.
+ * 用户主体授权贡献者。
  */
 @Component
 @RequiredArgsConstructor
@@ -25,8 +25,10 @@ public class RolePermissionAuthorityContributor implements AuthorityContributor 
 
     @Override
     public AuthorizationSnapshot contribute(AuthorizationQuery query) {
-        LinkedHashSet<String> roleCodes = new LinkedHashSet<>(subjectAuthorityService.listSubjectRoles(query.subjectId()));
-        LinkedHashSet<String> permissionCodes = new LinkedHashSet<>(subjectAuthorityService.listSubjectPermissions(query.subjectId()));
+        LinkedHashSet<String> roleCodes = new LinkedHashSet<>(
+                subjectAuthorityService.listSubjectRoles(query.subjectId(), query.systemCode()));
+        LinkedHashSet<String> permissionCodes = new LinkedHashSet<>(
+                subjectAuthorityService.listSubjectPermissions(query.subjectId(), query.systemCode()));
         LinkedHashSet<String> authorities = new LinkedHashSet<>(roleCodes);
         authorities.addAll(permissionCodes);
         return AuthorizationSnapshot.of(roleCodes, permissionCodes, authorities);

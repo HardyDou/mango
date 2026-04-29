@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <name>Mango Infra Web</name>
-    <description>Mango Infra Web - HTTP API contracts and Spring Web starter</description>
+    <description>Mango Infra Web - HTTP API 契约与 Spring Web 启动器</description>
 
     <modules>
         <module>mango-infra-web-api</module>

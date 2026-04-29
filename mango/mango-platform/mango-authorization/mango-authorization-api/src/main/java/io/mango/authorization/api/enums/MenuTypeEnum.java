@@ -4,15 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * Menu type enumeration
- *
- * @author Mango
+ * 菜单类型枚举。
  */
 @Getter
 @AllArgsConstructor
 public enum MenuTypeEnum {
 
-    DIRECTORY(1, "目录"),
+    CATALOG(1, "目录"),
     MENU(2, "菜单"),
     BUTTON(3, "按钮");
 
@@ -20,7 +18,7 @@ public enum MenuTypeEnum {
     private final String description;
 
     /**
-     * Get enum by code
+     * 根据编码获取枚举。
      */
     public static MenuTypeEnum getByCode(Integer code) {
         if (code == null) {

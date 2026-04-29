@@ -37,5 +37,10 @@
             <artifactId>mango-authorization-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-resource-sync-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

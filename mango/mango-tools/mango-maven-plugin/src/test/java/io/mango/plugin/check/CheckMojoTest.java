@@ -273,6 +273,10 @@ class CheckMojoTest {
                             <groupId>io.mango</groupId>
                             <artifactId>mango-demo-support</artifactId>
                         </dependency>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-infra-feign-starter</artifactId>
+                        </dependency>
                     </dependencies>
                 </project>
                 """);
@@ -283,6 +287,37 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withStarterRemoteDependingOnSpringCloudOpenFeign_reportsIssue() throws Exception {
+        Path projectDir = tempDir.resolve("mango-demo-starter-remote");
+        Files.createDirectories(projectDir);
+        Files.writeString(projectDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango</groupId>
+                    <artifactId>mango-demo-starter-remote</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango</groupId>
+                            <artifactId>mango-demo-api</artifactId>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.springframework.cloud</groupId>
+                            <artifactId>spring-cloud-starter-openfeign</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test

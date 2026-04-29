@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Internal path provider backed by @Inner request mappings.
+ * 基于 @Inner 请求映射的内部路径提供器。
  */
 public class InnerMappingInternalPathProvider implements IInternalPathProvider {
 

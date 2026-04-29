@@ -1,7 +1,7 @@
 package io.mango.auth.starter.config;
 
 import io.mango.infra.security.api.ISecurityContextProvider;
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.api.ITokenProvider;
 import io.mango.infra.security.starter.SecurityAutoConfiguration;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AuthSecurityConfigTest.TestController.class)
 @ContextConfiguration(classes = AuthSecurityConfigTest.TestApp.class)
-@TestPropertySource(properties = "mango.gateway.auth-enabled=true")
+@TestPropertySource(properties = "mango.authorization.access.auth-enabled=true")
 @DisplayName("Auth security config tests")
 class AuthSecurityConfigTest {
 
@@ -34,7 +34,7 @@ class AuthSecurityConfigTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private ITokenService tokenService;
+    private ITokenProvider tokenService;
 
     @Test
     @DisplayName("missing bearer token should return 401")
@@ -49,7 +49,7 @@ class AuthSecurityConfigTest {
     @DisplayName("valid bearer token should populate spring security context")
     void validBearerTokenShouldPopulateSpringSecurityContext() throws Exception {
         Mockito.when(tokenService.validateToken("ok-token")).thenReturn(true);
-        Mockito.when(tokenService.getTokenType("ok-token")).thenReturn(ITokenService.TOKEN_TYPE_ACCESS);
+        Mockito.when(tokenService.getTokenType("ok-token")).thenReturn(ITokenProvider.TOKEN_TYPE_ACCESS);
         Mockito.when(tokenService.getUserId("ok-token")).thenReturn(99L);
         Mockito.when(tokenService.getUsername("ok-token")).thenReturn("hardy");
 
@@ -65,6 +65,20 @@ class AuthSecurityConfigTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("public"));
         Mockito.verify(tokenService, Mockito.never()).validateToken(anyString());
+    }
+
+    @Test
+    @DisplayName("valid bearer token should include tenant claim")
+    void validBearerTokenShouldIncludeTenantClaim() throws Exception {
+        Mockito.when(tokenService.validateToken("tenant-token")).thenReturn(true);
+        Mockito.when(tokenService.getTokenType("tenant-token")).thenReturn(ITokenProvider.TOKEN_TYPE_ACCESS);
+        Mockito.when(tokenService.getUserId("tenant-token")).thenReturn(100L);
+        Mockito.when(tokenService.getUsername("tenant-token")).thenReturn("tenant-user");
+        Mockito.when(tokenService.getClaim("tenant-token", "tenantId")).thenReturn("tenant-a");
+
+        mockMvc.perform(get("/secure/tenant").header("Authorization", "Bearer tenant-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("tenant-a"));
     }
 
     @SpringBootConfiguration
@@ -86,6 +100,11 @@ class AuthSecurityConfigTest {
         String me() {
             var context = securityContextProvider.currentContext();
             return context.userId() + ":" + context.principalName();
+        }
+
+        @GetMapping("/secure/tenant")
+        String tenant() {
+            return securityContextProvider.currentContext().tenantId();
         }
 
         @GetMapping("/auth/login")

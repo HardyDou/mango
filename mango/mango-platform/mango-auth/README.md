@@ -10,14 +10,16 @@
 | Token管理 | Token生成、刷新、失效 |
 | 认证接入 | JWT 解析后构建 `Authentication`，写入 `SecurityContextHolder` |
 
+`mango-auth` 不负责接口资源扫描、权限码注册或权限数据库写入。这些能力归属 `mango-authorization`，由 `mango-authorization-resource-sync-starter` 在每个 App 内扫描 Spring MVC 接口并注册接口资源；接口访问策略统一使用 `@ApiAccess` 声明。运行时如存在 `apiResourceAuthorizationManager`，`mango-auth-starter` 会把 `anyRequest` 委托给该 URL 级授权管理器，否则保持默认的已登录校验。
+
 ## 子模块
 
 ```
 mango-auth/
-├── mango-auth-api/          # API 定义（LoginRequest/Response, AuthApi）
-├── mango-auth-core/         # 核心业务（IAuthService, AuthServiceImpl）
-├── mango-auth-starter/      # 本地调用启动器（认证控制器 + JWT 过滤链）
-└── mango-auth-starter-remote/ # 远程调用启动器（Feign Client）
+├── mango-auth-api/           # API 契约（Command、VO、AuthApi）
+├── mango-auth-core/          # 认证业务（IAuthService、AuthServiceImpl、token 注销）
+├── mango-auth-starter/       # 本地启动器（Controller、JWT 过滤链、Web 拦截器）
+└── mango-auth-starter-remote/ # 远程启动器（Feign Client）
 ```
 
 ## 依赖关系
@@ -25,10 +27,11 @@ mango-auth/
 ```
 mango-auth-starter
 ├── mango-auth-core (认证业务逻辑)
-├── mango-infra-security-starter (Spring Security + ITokenService)
+├── mango-infra-web-starter (Spring Web + request context)
+├── mango-infra-security-starter (Spring Security + ITokenProvider)
 ├── mango-identity-api (认证用户事实)
 ├── mango-authorization-starter (授权能力接入)
-└── spring-boot-starter-web
+└── mango-captcha-api / mango-infra-kv-api
 ```
 
 `mango-auth` 不保存账号资料，也不计算授权。账号资料由 `mango-identity` 提供，角色/权限由 `mango-authorization` 提供。`mango-auth` 不再维护独立的 servlet request attribute 认证链，当前基线统一走 Spring Security。
@@ -40,10 +43,10 @@ mango-auth-starter
 认证服务接口：
 ```java
 public interface AuthApi {
-    LoginResponse login(LoginRequest request);
-    void logout(String token);
-    LoginResponse refreshToken(String refreshToken);
-    boolean validateToken(String token);
+    R<LoginVO> login(LoginCommand command);
+    R<Void> logout(LogoutCommand command);
+    R<LoginVO> refreshToken(RefreshTokenCommand command);
+    R<Boolean> validateToken(ValidateTokenCommand command);
 }
 ```
 
@@ -52,22 +55,25 @@ public interface AuthApi {
 认证业务接口：
 ```java
 public interface IAuthService {
-    LoginResponse login(String username, String password);
+    LoginVO login(LoginCommand command);
     void logout(String token);
-    LoginResponse refreshToken(String refreshToken);
+    LoginVO refreshToken(String refreshToken);
     boolean validateToken(String token);
 }
 ```
 
-### LoginRequest / LoginResponse
+### Command / LoginVO
 
 登录请求和响应：
 ```java
 // 请求
 - username: 用户名
-- password: 密码（可选，用于密码模式）
-- captchaToken: 验证码Token（可选，用于验证码模式）
-- loginType: 登录类型
+- password: 密码
+- realm: 登录域，可选；未传时默认按 INTERNAL 查询
+- actorType: 操作者类型，可选；优先使用请求值，其次使用 identity 用户资料
+- partyType / partyId: 归属主体，可选；用于客户、机构、公司等业务主体隔离
+- appCode: 应用入口编码，可选；用于登录后加载当前应用角色和权限
+- captchaCode / captchaKey: 验证码字段，可选
 
 // 响应
 - accessToken: 访问令牌
@@ -76,7 +82,11 @@ public interface IAuthService {
 - tokenType: Bearer
 - userId: 用户ID
 - username: 用户名
+- realm / actorType / partyType / partyId / appCode: 本次登录身份上下文
+- roles / permissions: 当前 appCode 下的授权快照
 ```
+
+认证接口统一使用 `LoginCommand`、`RefreshTokenCommand`、`LogoutCommand`、`ValidateTokenCommand` 和 `LoginVO`，不保留兼容别名类型。
 
 ## 认证流程
 
@@ -123,7 +133,7 @@ public interface IAuthService {
 │  │  - AuthSecurityConfig                           │  │
 │  └──────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │ MangoGatewayStarter                              │  │
+│  │ MangoAuthorizationWebStarter                    │  │
 │  │  - AuthFilter (JWT验证)                          │  │
 │  └──────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────┘
@@ -136,7 +146,7 @@ public interface IAuthService {
 │                    API Gateway                          │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │ AuthFilter (JWT验证)                             │   │
-│  │  - 验证通过后，传递 X-User-Id, X-Tenant-Id 头   │   │
+│  │  - 验证通过后，透传 X-Mango-* 上下文头           │   │
 │  └─────────────────────────────────────────────────┘   │
 └─────────────────────┬───────────────────────────────────┘
                       │ HTTP (X-User-Id Header)
@@ -173,10 +183,17 @@ public class AuthSecurityConfig {
 
 1. 检查请求路径是否在白名单
 2. 获取 `Authorization` 请求头
-3. 提取并验证 `Bearer Token`
-4. 验证成功后构建 `SecurityPrincipal`
+3. 提取并验证 `Bearer Token`，并检查 token 是否已注销
+4. 验证成功后构建 `SecurityPrincipal`，从 request context 透传 `tenantId`
 5. 将 `Authentication` 写入 `SecurityContextHolder`
 6. 未认证请求由 Spring Security 返回 401
+
+## Token 注销与登录保护
+
+- `TokenRevocationService` 使用 `mango-infra-kv-api` 保存注销 token 的 SHA-256 摘要，`logout` 和 `refreshToken` 会写入注销记录。
+- `validateToken` 与 JWT 过滤链都会拒绝已注销 token。
+- `LoginAttemptTracker` 优先使用 `IKvStore` 做分布式登录失败计数，没有 KV 实现时降级为本地内存计数。
+- 防重放和验证码 Web 拦截器位于 `mango-auth-starter`，`mango-auth-core` 不再持有 MVC / Servlet 边界代码。
 
 ## 使用方式
 
@@ -186,7 +203,7 @@ public class AuthSecurityConfig {
 # 用户名密码登录
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"admin123","realm":"INTERNAL","appCode":"internal-admin"}'
 
 # 响应
 {
@@ -197,7 +214,10 @@ curl -X POST http://localhost:8080/auth/login \
     "expiresIn": 7200,
     "tokenType": "Bearer",
     "userId": 1,
-    "username": "admin"
+    "username": "admin",
+    "realm": "INTERNAL",
+    "actorType": "INTERNAL_USER",
+    "appCode": "internal-admin"
   }
 }
 ```
@@ -220,7 +240,7 @@ curl -X POST http://localhost:8080/auth/refresh \
 ## 测试基线
 
 - 集成测试：
-  - `AuthSecurityIntegrationTest`，覆盖 `Bearer token -> Spring Security context -> @Perm` 的服务内集成链路，验证 `200 / 401 / 403`。
+  - `AuthSecurityIntegrationTest`，覆盖 `Bearer token -> Spring Security context -> URL 级访问策略` 的服务内集成链路，验证 `200 / 401 / 403`。
 - E2E 测试：
   - `AuthSecurityE2ETest`，覆盖 `/auth/login -> accessToken -> 受保护接口` 的完整 HTTP 链路。
 - 测试上下文已排除 Flyway、数据源、MyBatis、Authorization 自动配置等无关装配，避免把认证链路测试污染成数据库集成测试。

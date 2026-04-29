@@ -6,7 +6,7 @@
 
 - **OpenFeign 自动配置** - 超时、重试、日志、请求拦截器
 - **FeignProperties** - `mango.feign.*` 配置属性
-- **FeignRequestInterceptor** - 租户ID/TraceID 传递（TODO: 待 TenantContextHolder 实现后集成）
+- **FeignRequestInterceptor** - 透传 MangoContext 与 Authorization token
 - **Retryer** - 可配置重试机制
 
 ## 依赖
@@ -68,5 +68,5 @@ public interface UserFeignClient {
 
 - OpenFeign 是服务间 RPC 的主要方式，注解驱动，类型安全
 - 重试机制基于 Retryer.Default，支持指数退避
-- 请求拦截器用于传递租户上下文（Tenant-ID/TRACE-ID）
+- 请求拦截器用于传递 MangoContext 请求头（`X-Mango-*`）与 `Authorization`
 - 日志级别默认 BASIC，生产环境按需调整为 FULL

@@ -1,29 +1,21 @@
 package io.mango.identity.api;
 
+import io.mango.common.result.R;
 import io.mango.identity.api.vo.IdentityUserInfo;
 
 /**
- * Identity user remote API
- * Exposed via Controller (local) or Feign Client (remote)
- *
- * @author Mango
+ * 身份用户资料 HTTP 契约。
  */
 public interface IdentityUserApi {
 
     /**
-     * Get current user info with permissions
-     *
-     * @param username username
-     * @return user info with permissions
+     * 按用户名查询身份资料。
      */
-    IdentityUserInfo getUserInfo(String username);
+    R<IdentityUserInfo> getUserInfo(String username);
 
     /**
-     * Get user info by user ID
-     *
-     * @param userId user ID
-     * @return user info with permissions
+     * 按用户 ID 查询身份资料。
      */
-    IdentityUserInfo getUserInfoById(Long userId);
+    R<IdentityUserInfo> getUserInfoById(Long userId);
 
 }

@@ -17,17 +17,18 @@
     <description>Auth service starter for remote (Feign) usage</description>
 
     <dependencies>
-        <!-- Mango Auth API -->
+        <!-- Mango 认证 API 契约 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-auth-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- OpenFeign -->
+        <!-- Mango 基础 Feign Starter -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-feign-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

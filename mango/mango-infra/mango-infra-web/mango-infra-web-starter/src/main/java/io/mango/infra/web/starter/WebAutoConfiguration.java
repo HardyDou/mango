@@ -5,6 +5,7 @@ import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
 import io.mango.infra.web.api.IRequestContextProvider;
 import io.mango.infra.web.filter.InternalCallFilter;
+import io.mango.infra.web.filter.MangoContextWebFilter;
 import io.mango.infra.web.filter.WebMdcFilter;
 import io.mango.infra.web.support.AggregatingInternalPathProvider;
 import io.mango.infra.web.support.InnerMappingInternalPathProvider;
@@ -30,7 +31,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
- * Mango Infra Web Auto Configuration.
+ * Mango Infra Web 自动配置。
  */
 @AutoConfiguration
 @EnableScheduling
@@ -94,10 +95,22 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
 
     @Bean
     @ConditionalOnBean(IRequestContextProvider.class)
+    @ConditionalOnProperty(prefix = "mango.web.context", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FilterRegistrationBean<MangoContextWebFilter> mangoContextWebFilter(IRequestContextProvider requestContextProvider) {
+        FilterRegistrationBean<MangoContextWebFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new MangoContextWebFilter(requestContextProvider));
+        registration.addUrlPatterns("/*");
+        registration.setName("mangoContextWebFilter");
+        registration.setOrder(Integer.MIN_VALUE + 5);
+        return registration;
+    }
+
+    @Bean
+    @ConditionalOnBean(IRequestContextProvider.class)
     @ConditionalOnProperty(prefix = "mango.web.mdc", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FilterRegistrationBean<WebMdcFilter> webMdcFilter(IRequestContextProvider requestContextProvider) {
+    public FilterRegistrationBean<WebMdcFilter> webMdcFilter() {
         FilterRegistrationBean<WebMdcFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new WebMdcFilter(requestContextProvider));
+        registration.setFilter(new WebMdcFilter());
         registration.addUrlPatterns("/*");
         registration.setName("mangoWebMdcFilter");
         registration.setOrder(Integer.MIN_VALUE + 10);
@@ -120,6 +133,6 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Keep Spring Boot's default static resource handling.
+        // 保留 Spring Boot 默认静态资源处理逻辑。
     }
 }

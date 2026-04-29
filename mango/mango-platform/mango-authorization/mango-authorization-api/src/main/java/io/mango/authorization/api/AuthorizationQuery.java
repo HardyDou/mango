@@ -1,9 +1,16 @@
 package io.mango.authorization.api;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
- * Unified authorization query.
+ * 统一授权查询。
  */
-public record AuthorizationQuery(Long subjectId, String subjectType, String tenantId, String systemCode) {
+@Schema(description = "统一授权查询")
+public record AuthorizationQuery(
+        @Schema(description = "主体ID") Long subjectId,
+        @Schema(description = "主体类型，如 user") String subjectType,
+        @Schema(description = "租户ID") String tenantId,
+        @Schema(description = "系统编码") String systemCode) {
 
     public static final String SUBJECT_TYPE_USER = "user";
 

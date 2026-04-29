@@ -3,10 +3,10 @@ package io.mango.infra.security.api;
 import java.lang.annotation.*;
 
 /**
- * Permission annotation for method-level access control.
+ * 方法级权限控制注解。
  * <p>
- * Format: {model}:{module}:{action}
- * Example: system:user:add, system:user:edit
+ * 格式：{model}:{module}:{action}
+ * 示例：system:user:add、system:user:edit
  *
  * @author Mango
  */
@@ -16,12 +16,12 @@ import java.lang.annotation.*;
 public @interface Perm {
 
     /**
-     * Permission code
+     * 权限码。
      */
     String value();
 
     /**
-     * Permission description
+     * 权限描述。
      */
     String desc() default "";
 }

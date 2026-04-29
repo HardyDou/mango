@@ -10,15 +10,15 @@
     </parent>
     <artifactId>mango-infra-security-core</artifactId>
     <name>Mango Infra Security Core</name>
-    <description>Security Core - JWT token and default technical permission implementations</description>
+    <description>安全核心 - JWT token 和默认技术权限实现</description>
     <dependencies>
-        <!-- Security API -->
+        <!-- 安全 API -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- KV API (for IKvStore - refresh token jti blacklist) -->
+        <!-- KV API，用于 IKvStore 和 refresh token jti 黑名单 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
@@ -31,7 +31,7 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- JJWT (version from root pom dependencyManagement) -->
+        <!-- JJWT，版本由根 POM 的 dependencyManagement 管理 -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -46,12 +46,12 @@
             <artifactId>jjwt-jackson</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Spring Context (for @Value, @PostConstruct) -->
+        <!-- Spring Context，用于 @Value 和 @PostConstruct -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
         </dependency>
-        <!-- Jakarta Annotations -->
+        <!-- Jakarta 注解 -->
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
@@ -61,7 +61,7 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <!-- Test dependencies -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Aggregates internal paths from multiple providers.
+ * 聚合多个提供器暴露的内部路径。
  */
 public class AggregatingInternalPathProvider implements IInternalPathProvider {
 

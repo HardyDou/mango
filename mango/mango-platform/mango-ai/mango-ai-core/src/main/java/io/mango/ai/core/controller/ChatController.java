@@ -2,6 +2,8 @@ package io.mango.ai.core.controller;
 
 import io.mango.ai.api.dto.ChatRequest;
 import io.mango.ai.core.service.ChatService;
+import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.core.MangoContextHolder;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * Chat controller for AI conversation
- * <p>
- * Supports SSE streaming responses with tenant isolation.
+ * AI 对话控制器。
  *
  * @author Mango
  */
@@ -25,37 +25,28 @@ public class ChatController {
     private final ChatService chatService;
 
     /**
-     * Chat endpoint with SSE streaming
-     * <p>
-     * Headers:
-     * - Authorization: Bearer {token} - authentication token
-     * - TENANT-ID: {tenantId} - tenant identifier for isolation
+     * SSE 流式对话接口。
      *
-     * Request body:
-     * - message: the chat message (required, max 2000 chars)
-     * - sessionId: optional session identifier for conversation context
-     * - enableThinking: optional, default true
-     *
-     * @param chatRequest chat request
-     * @param authorization authorization header
-     * @param tenantId tenant identifier
-     * @return SSE emitter stream
+     * @param chatRequest 对话请求
+     * @param authorization 认证请求头
+     * @param tenantId 租户 ID
+     * @return SSE 推送流
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
             @Valid @RequestBody ChatRequest chatRequest,
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestHeader(value = "TENANT-ID", required = false) String tenantId) {
+            @RequestHeader(value = MangoContextHeaders.TENANT_ID, required = false) String tenantId) {
 
-        // Validate authorization
+        // 校验认证请求头。
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             log.warn("Chat request rejected: missing or invalid Authorization header");
             return createErrorEmitter("Missing or invalid Authorization header");
         }
 
-        // Security check: TENANT-ID must match token's tenant ID
-        // In production, extract tenant ID from JWT token and compare
-        // For now, use provided tenant ID or default
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = MangoContextHolder.tenantId();
+        }
         if (tenantId == null || tenantId.isBlank()) {
             tenantId = "default";
         }
@@ -66,7 +57,7 @@ public class ChatController {
     }
 
     /**
-     * Create error emitter
+     * 创建错误事件流。
      */
     private SseEmitter createErrorEmitter(String errorMessage) {
         SseEmitter emitter = new SseEmitter(0L);

@@ -56,7 +56,7 @@ mango/
 │   └── mango-admin-app/         # 管理后台装配应用
 ├── mango-common/               # 公共代码
 ├── mango-infra/                # 基础设施
-│   ├── mango-gateway/           # 网关
+│   ├── mango-authorization-access/           # 网关
 │   ├── mango-infra-context/     # 上下文
 │   ├── mango-infra-crypto/      # 国密算法
 │   ├── mango-infra-db/          # 数据库基础能力

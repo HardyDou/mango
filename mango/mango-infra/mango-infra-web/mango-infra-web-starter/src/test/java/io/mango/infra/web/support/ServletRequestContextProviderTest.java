@@ -1,5 +1,6 @@
 package io.mango.infra.web.support;
 
+import io.mango.infra.context.core.MangoContextHeaders;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -19,7 +20,7 @@ class ServletRequestContextProviderTest {
     @Test
     void currentContextShouldResolveStandardRequestFields() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/demo");
-        request.addHeader("X-Request-Id", "request-1");
+        request.addHeader(MangoContextHeaders.REQUEST_ID, "request-1");
         request.addHeader("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00");
         request.addHeader("X-Forwarded-For", "10.0.0.1, 10.0.0.2");
         request.addHeader("X-Demo", "demo");

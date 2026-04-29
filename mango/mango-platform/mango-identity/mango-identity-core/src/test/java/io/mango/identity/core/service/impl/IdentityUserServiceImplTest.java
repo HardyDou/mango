@@ -11,11 +11,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@DisplayName("IdentityUserServiceImpl Tests")
+@DisplayName("身份用户服务测试")
 class IdentityUserServiceImplTest {
 
     @Test
-    @DisplayName("getUserInfo should map identity user profile only")
+    @DisplayName("查询身份资料时只返回用户资料字段")
     void getUserInfoShouldMapIdentityProfileOnly() {
         IdentityUserMapper mapper = mock(IdentityUserMapper.class);
         IdentityUser user = new IdentityUser();
@@ -35,7 +35,7 @@ class IdentityUserServiceImplTest {
     }
 
     @Test
-    @DisplayName("getUserInfo should return null when account not found")
+    @DisplayName("账号不存在时返回空")
     void getUserInfoShouldReturnNullWhenNotFound() {
         IdentityUserMapper mapper = mock(IdentityUserMapper.class);
         when(mapper.selectOne(any())).thenReturn(null);

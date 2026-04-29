@@ -1,7 +1,7 @@
 package io.mango.infra.security.core.impl;
 
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.api.ITokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class JjwtTokenServiceImplBlacklistTest {
 
-    private ITokenService tokenService;
+    private ITokenProvider tokenService;
     private IKvStore kvStore;
 
     @BeforeEach
@@ -37,7 +37,7 @@ class JjwtTokenServiceImplBlacklistTest {
         when(kvStore.setIfAbsent(anyString(), eq("1"), anyLong())).thenReturn(true);
 
         String refreshToken = tokenService.generateRefreshToken(1L, "admin");
-        ITokenService.TokenPair firstRefresh = tokenService.refresh(refreshToken);
+        ITokenProvider.TokenPair firstRefresh = tokenService.refresh(refreshToken);
         assertNotNull(firstRefresh, "First refresh should succeed");
 
         // Simulate blacklist check: jti key already exists (replay attack)
@@ -46,7 +46,7 @@ class JjwtTokenServiceImplBlacklistTest {
         when(kvStore.setIfAbsent(anyString(), eq("1"), anyLong())).thenReturn(false);
 
         // Second refresh with SAME token: should be rejected as replay
-        ITokenService.TokenPair secondRefresh = tokenService.refresh(refreshToken);
+        ITokenProvider.TokenPair secondRefresh = tokenService.refresh(refreshToken);
         assertNull(secondRefresh, "Replay refresh token should be rejected");
     }
 
@@ -62,7 +62,7 @@ class JjwtTokenServiceImplBlacklistTest {
 
         String refreshToken = implNoKv.generateRefreshToken(1L, "admin");
         // Should succeed even without KV store (no blacklist check)
-        ITokenService.TokenPair pair = implNoKv.refresh(refreshToken);
+        ITokenProvider.TokenPair pair = implNoKv.refresh(refreshToken);
         assertNotNull(pair, "Refresh should succeed without IKvStore");
     }
 

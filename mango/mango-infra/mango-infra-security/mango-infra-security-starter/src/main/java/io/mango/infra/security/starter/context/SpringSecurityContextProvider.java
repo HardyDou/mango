@@ -8,7 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Spring Security backed security context provider.
+ * 基于 Spring Security 的安全上下文提供器。
  */
 public class SpringSecurityContextProvider implements ISecurityContextProvider {
 
@@ -27,7 +27,12 @@ public class SpringSecurityContextProvider implements ISecurityContextProvider {
                     securityPrincipal.userId(),
                     securityPrincipal.tenantId(),
                     true,
-                    securityPrincipal.principalName());
+                    securityPrincipal.principalName(),
+                    securityPrincipal.realm(),
+                    securityPrincipal.actorType(),
+                    securityPrincipal.partyType(),
+                    securityPrincipal.partyId(),
+                    securityPrincipal.appCode());
         }
 
         String principalName = authentication.getName();

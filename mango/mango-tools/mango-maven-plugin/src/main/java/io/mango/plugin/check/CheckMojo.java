@@ -785,7 +785,8 @@ public class CheckMojo extends AbstractMojo {
      *    (api / support / core / starter / starter-remote).
      * 2. *-api cannot depend on *-core, *-starter, *-starter-remote.
      * 3. *-core cannot depend on *-starter, *-starter-remote.
-     * 4. *-starter-remote can only depend on its own *-api and *-support inside io.mango modules.
+     * 4. *-starter-remote can only depend on its own *-api, *-support and mango-infra-feign-starter inside io.mango modules.
+     * 5. *-starter-remote must not directly depend on spring-cloud-starter-openfeign.
      */
     private void checkDependency() {
         getLog().info("Checking module dependencies...");
@@ -836,6 +837,16 @@ public class CheckMojo extends AbstractMojo {
                     continue;
                 }
                 String depGroupId = extractGroupIdFromDep(dependencyBlock);
+                if (moduleType == ModuleType.STARTER_REMOTE
+                        && "org.springframework.cloud".equals(depGroupId)
+                        && "spring-cloud-starter-openfeign".equals(depArtifactId)) {
+                    DependencyIssue issue = new DependencyIssue("CRITICAL",
+                            "*-starter-remote 模块禁止直接依赖 spring-cloud-starter-openfeign，请依赖 mango-infra-feign-starter: "
+                                    + artifactId + " -> " + depArtifactId);
+                    issue.file = pomFile.toString();
+                    issues.add(issue);
+                    continue;
+                }
                 if (!"io.mango".equals(depGroupId)) {
                     continue;
                 }
@@ -907,12 +918,16 @@ public class CheckMojo extends AbstractMojo {
             if (isSecurityAggregateRemoteDependency(consumerArtifact, depArtifact)) {
                 return null;
             }
+            if (isRemoteInfrastructureDependency(depArtifact)) {
+                return null;
+            }
             String expectedApi = expectedRemoteApi(consumerArtifact);
             String expectedSupport = expectedRemoteSupport(consumerArtifact);
             if (!depArtifact.equals(expectedApi) && !depArtifact.equals(expectedSupport)) {
                 return new DependencyIssue("CRITICAL",
-                        "*-starter-remote 模块只能依赖本模块 api/support: " + consumerArtifact
-                                + " -> " + depArtifact + "，期望依赖 " + expectedApi + " 或 " + expectedSupport);
+                        "*-starter-remote 模块只能依赖本模块 api/support 或 mango-infra-feign-starter: " + consumerArtifact
+                                + " -> " + depArtifact + "，期望依赖 " + expectedApi + "、" + expectedSupport
+                                + " 或 mango-infra-feign-starter");
             }
         }
 
@@ -925,6 +940,10 @@ public class CheckMojo extends AbstractMojo {
                 || "mango-auth-starter-remote".equals(depArtifact)
                 || "mango-identity-starter-remote".equals(depArtifact)
                 || "mango-authorization-starter-remote".equals(depArtifact));
+    }
+
+    private boolean isRemoteInfrastructureDependency(String depArtifact) {
+        return "mango-infra-feign-starter".equals(depArtifact);
     }
 
     private String expectedRemoteApi(String consumerArtifact) {

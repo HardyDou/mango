@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Default authorization service backed by registered authority contributors.
+ * 基于已注册权限贡献器的默认授权服务。
  */
 @Component
 @RequiredArgsConstructor

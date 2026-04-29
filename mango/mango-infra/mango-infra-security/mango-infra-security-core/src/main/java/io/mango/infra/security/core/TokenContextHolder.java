@@ -1,10 +1,9 @@
 package io.mango.infra.security.core;
 
 /**
- * Token context holder using ThreadLocal for thread-safe JWT token propagation.
+ * 使用 ThreadLocal 保存 token 上下文，用于当前线程内的 JWT token 传播。
  * <p>
- * Stores the validated JWT token so it can be forwarded through Feign calls
- * to downstream services.
+ * 保存当前请求携带的 Authorization token，便于通过 Feign 调用继续传递给下游服务。
  *
  * @author Mango
  */

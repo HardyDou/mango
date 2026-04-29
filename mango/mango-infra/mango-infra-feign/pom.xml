@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Mango Infra Feign Starter</name>
-    <description>Mango Infra Feign Starter - OpenFeign RPC infrastructure</description>
+    <description>Mango Infra Feign Starter - OpenFeign RPC 基础设施</description>
 
     <dependencies>
         <!-- Spring Web -->
@@ -29,7 +29,7 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
-        <!-- HTTP Client -->
+        <!-- HTTP 客户端 -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
@@ -41,21 +41,21 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango Infra Context Core (TTL TenantContextHolder & TraceContextHolder) -->
+        <!-- Mango 运行时上下文核心 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-context-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Infra Security Core (TokenContextHolder) -->
+        <!-- Mango 安全上下文核心 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Module Info -->
+        <!-- Mango 模块信息 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-module-api</artifactId>
@@ -68,7 +68,7 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <!-- Test -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

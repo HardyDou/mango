@@ -1,29 +1,29 @@
 package io.mango.auth.api.spi;
 
 /**
- * SPI interface for captcha configuration.
- * Implement this to customize captcha requirements per path.
+ * 验证码配置 SPI。
+ * 业务方可以实现该接口，按路径自定义验证码要求。
  */
 public interface CaptchaConfigService {
 
     /**
-     * Check if captcha is required for a given path.
-     * @param path request path
-     * @return true=captcha required, false=captcha not required (fail-open)
+     * 判断指定路径是否需要验证码。
+     * @param path 请求路径
+     * @return true 表示需要验证码，false 表示不需要验证码
      */
     boolean isCaptchaRequired(String path);
 
     /**
-     * Get captcha type required for path.
-     * @param path request path
-     * @return captcha type key or null for default
+     * 获取指定路径需要的验证码类型。
+     * @param path 请求路径
+     * @return 验证码类型，返回 null 时使用默认类型
      */
     String getCaptchaType(String path);
 
     /**
-     * Get captcha ttl in seconds.
-     * @param path request path
-     * @return ttl in seconds
+     * 获取验证码有效期。
+     * @param path 请求路径
+     * @return 有效期，单位秒
      */
     long getCaptchaTtl(String path);
 }

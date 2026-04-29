@@ -53,6 +53,8 @@ public class GenPermissionMojo extends AbstractMojo {
     private String generateMenuSQL() {
         String moduleName = module.toLowerCase();
         String permPrefix = model + ":" + moduleName;
+        long baseId = 900_000_000_000L + ((long) (moduleName.hashCode() & 0x7fffffff) * 10L);
+        long rootMenuId = baseId + 1;
 
         return """
 -- ----------------------------
@@ -61,14 +63,15 @@ public class GenPermissionMojo extends AbstractMojo {
 -- ----------------------------
 
 -- 1. 菜单
-INSERT INTO sys_menu (name, permission, path, component, type, sort) VALUES
-('%s管理', '', '/%s', 'Layout', 0, 10),
-('%s列表', '%s:list', '/%s/list', '%s/%s/index', 1, 1),
-('%s新增', '%s:add', '/%s/add', '%s/%s/add', 1, 2),
-('%s编辑', '%s:edit', '/%s/edit', '%s/%s/edit', 1, 3),
-('%s删除', '%s:delete', '/%s/delete', NULL, 1, 4),
-('%s导出', '%s:export', '/%s/export', NULL, 1, 5),
-('%s导入', '%s:import', '/%s/import', NULL, 1, 6);
+INSERT INTO authorization_menu
+(menu_id, parent_id, menu_type, menu_name, menu_code, path, component, sort, status, visible) VALUES
+(%d, 0, 2, '%s管理', '%s', '/%s', 'Layout', 10, 1, 1),
+(%d, %d, 3, '%s列表', '%s:list', '/%s/list', '%s/%s/index', 1, 1, 1),
+(%d, %d, 3, '%s新增', '%s:add', '/%s/add', '%s/%s/add', 2, 1, 1),
+(%d, %d, 3, '%s编辑', '%s:edit', '/%s/edit', '%s/%s/edit', 3, 1, 1),
+(%d, %d, 3, '%s删除', '%s:delete', '/%s/delete', NULL, 4, 1, 1),
+(%d, %d, 3, '%s导出', '%s:export', '/%s/export', NULL, 5, 1, 1),
+(%d, %d, 3, '%s导入', '%s:import', '/%s/import', NULL, 6, 1, 1);
 
 -- 2. 权限码
 -- %s:add    - 新增
@@ -80,29 +83,43 @@ INSERT INTO sys_menu (name, permission, path, component, type, sort) VALUES
 -- %s:detail  - 详情查看
 """.formatted(
                 moduleName,
+                rootMenuId,
                 moduleName,
+                permPrefix,
                 moduleName,
+                baseId + 2,
+                rootMenuId,
                 moduleName,
                 permPrefix,
                 moduleName,
                 moduleName, moduleName,
+                baseId + 3,
+                rootMenuId,
                 moduleName,
                 permPrefix,
                 moduleName,
                 moduleName, moduleName,
+                baseId + 4,
+                rootMenuId,
                 moduleName,
                 permPrefix,
                 moduleName,
                 moduleName, moduleName,
+                baseId + 5,
+                rootMenuId,
                 moduleName,
                 permPrefix,
                 moduleName,
-                permPrefix,
+                baseId + 6,
+                rootMenuId,
                 moduleName,
                 permPrefix,
                 moduleName,
+                baseId + 7,
+                rootMenuId,
+                moduleName,
                 permPrefix,
-                permPrefix,
+                moduleName,
                 permPrefix,
                 permPrefix,
                 permPrefix,

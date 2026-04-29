@@ -1,5 +1,6 @@
 package io.mango.auth.core.service.impl;
 
+import io.mango.infra.kv.api.IKvStore;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -10,8 +11,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tracks failed login attempts to prevent brute force attacks.
- * Uses in-memory storage with automatic expiration.
+ * 登录失败次数追踪器，用于防止暴力破解。
+ * 默认使用内存存储并自动清理过期数据。
  *
  * @author Mango
  */
@@ -21,34 +22,52 @@ public class LoginAttemptTracker {
     private static final int MAX_ATTEMPTS = 5;
     private static final long LOCKOUT_DURATION_MINUTES = 15;
     private static final long WINDOW_MINUTES = 10;
+    private static final String KEY_PREFIX = "auth:login:attempt:";
 
     private final Map<String, LoginAttempt> attempts = new ConcurrentHashMap<>();
     private final ScheduledExecutorService cleanupScheduler;
+    private final IKvStore kvStore;
 
     public LoginAttemptTracker(ScheduledExecutorService cleanupScheduler) {
+        this(null, cleanupScheduler);
+    }
+
+    public LoginAttemptTracker(IKvStore kvStore, ScheduledExecutorService cleanupScheduler) {
+        this.kvStore = kvStore;
         this.cleanupScheduler = cleanupScheduler;
-        // Cleanup expired entries every minute
+        // 每分钟清理一次过期记录。
         cleanupScheduler.scheduleAtFixedRate(this::cleanupExpiredAttempts, 1, 1, TimeUnit.MINUTES);
     }
 
     /**
-     * Record a failed login attempt
+     * 记录一次登录失败。
      *
-     * @param key IP address or username
+     * @param key IP 地址或用户名
      */
     public void recordFailedAttempt(String key) {
+        if (kvStore != null) {
+            String storeKey = kvKey(key);
+            long count = parseCount(kvStore.get(storeKey)) + 1;
+            kvStore.set(storeKey, String.valueOf(count), WINDOW_MINUTES * 60L);
+            log.debug("Failed login attempt recorded for {}: {} attempts", key, count);
+            return;
+        }
         LoginAttempt attempt = attempts.computeIfAbsent(key, k -> new LoginAttempt());
         attempt.recordFailure();
         log.debug("Failed login attempt recorded for {}: {} attempts", key, attempt.count);
     }
 
     /**
-     * Check if the key is locked out
+     * 判断指定 key 是否已被锁定。
      *
-     * @param key IP address or username
-     * @return true if locked out
+     * @param key IP 地址或用户名
+     * @return 是否已锁定
      */
     public boolean isLockedOut(String key) {
+        if (kvStore != null) {
+            String value = kvStore.get(kvKey(key));
+            return value != null && Long.parseLong(value) >= MAX_ATTEMPTS;
+        }
         LoginAttempt attempt = attempts.get(key);
         if (attempt == null) {
             return false;
@@ -61,22 +80,29 @@ public class LoginAttemptTracker {
     }
 
     /**
-     * Clear attempts on successful login
+     * 登录成功后清理失败次数。
      *
-     * @param key IP address or username
+     * @param key IP 地址或用户名
      */
     public void clearAttempts(String key) {
+        if (kvStore != null) {
+            kvStore.delete(kvKey(key));
+            return;
+        }
         attempts.remove(key);
         log.debug("Login attempts cleared for {}", key);
     }
 
     /**
-     * Get remaining lockout time in minutes
+     * 获取剩余锁定时间。
      *
-     * @param key IP address or username
-     * @return remaining minutes, or 0 if not locked out
+     * @param key IP 地址或用户名
+     * @return 剩余分钟数，未锁定时返回 0
      */
     public long getRemainingLockoutMinutes(String key) {
+        if (kvStore != null) {
+            return isLockedOut(key) ? LOCKOUT_DURATION_MINUTES : 0;
+        }
         LoginAttempt attempt = attempts.get(key);
         if (attempt == null) {
             return 0;
@@ -98,8 +124,23 @@ public class LoginAttemptTracker {
         cleanupScheduler.shutdown();
     }
 
+    private String kvKey(String key) {
+        return KEY_PREFIX + key;
+    }
+
+    private long parseCount(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /**
-     * Internal class to track login attempts
+     * 登录失败记录。
      */
     private static class LoginAttempt {
         private int count = 0;
@@ -107,7 +148,7 @@ public class LoginAttemptTracker {
 
         synchronized void recordFailure() {
             Instant now = Instant.now();
-            // Reset window if expired
+            // 窗口过期后重新计数。
             if (now.isAfter(windowStart.plusSeconds(WINDOW_MINUTES * 60L))) {
                 windowStart = now;
                 count = 1;
@@ -118,7 +159,7 @@ public class LoginAttemptTracker {
 
         synchronized boolean isLockedOut(long lockoutMinutes, long windowMinutes) {
             Instant now = Instant.now();
-            // Reset if window expired
+            // 窗口过期时视为未锁定。
             if (now.isAfter(windowStart.plusSeconds(windowMinutes * 60L))) {
                 return false;
             }
@@ -129,7 +170,7 @@ public class LoginAttemptTracker {
             if (!isLockedOut(lockoutMinutes, windowMinutes)) {
                 return 0;
             }
-            // Calculate when the window will expire
+            // 计算当前窗口剩余时间。
             Instant windowEnd = windowStart.plusSeconds(windowMinutes * 60L);
             Instant now = Instant.now();
             long remainingSeconds = java.time.Duration.between(now, windowEnd).getSeconds();

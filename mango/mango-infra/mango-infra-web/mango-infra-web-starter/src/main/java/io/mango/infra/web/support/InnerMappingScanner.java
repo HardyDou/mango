@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Discovers Spring MVC handler paths marked with @Inner.
+ * 发现标记了 @Inner 的 Spring MVC Handler 路径。
  */
 public class InnerMappingScanner {
 
@@ -71,7 +71,7 @@ public class InnerMappingScanner {
                     return true;
                 }
             } catch (NoSuchMethodException ignored) {
-                // Not every controller method must be declared on an interface.
+                // 并非每个 Controller 方法都必须声明在接口上。
             }
         }
         return false;

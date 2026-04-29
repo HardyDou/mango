@@ -9,74 +9,60 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * Identity user entity
- *
- * @author Mango
+ * 身份用户实体。
  */
 @Data
-@TableName("sys_user")
+@TableName("identity_user")
 public class IdentityUser implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * User ID
-     */
+    /** 用户 ID。 */
     @TableId(type = IdType.ASSIGN_ID)
     private Long userId;
 
-    /**
-     * Username (unique)
-     */
+    /** 用户名，唯一。 */
     private String username;
 
-    /**
-     * Password (encrypted)
-     */
+    /** 密码哈希。 */
     private String password;
 
-    /**
-     * Nickname
-     */
+    /** 昵称。 */
     private String nickname;
 
-    /**
-     * Email
-     */
+    /** 登录域。 */
+    private String realm;
+
+    /** 操作者类型。 */
+    private String actorType;
+
+    /** 归属主体类型。 */
+    private String partyType;
+
+    /** 归属主体 ID。 */
+    private Long partyId;
+
+    /** 邮箱。 */
     private String email;
 
-    /**
-     * Phone number
-     */
+    /** 手机号。 */
     private String phone;
 
-    /**
-     * Avatar URL
-     */
+    /** 头像地址。 */
     private String avatar;
 
-    /**
-     * Status (0: disabled, 1: enabled)
-     */
+    /** 状态：0-禁用，1-启用。 */
     private Integer status;
 
-    /**
-     * Create time
-     */
+    /** 创建时间。 */
     private LocalDateTime createTime;
 
-    /**
-     * Update time
-     */
+    /** 更新时间。 */
     private LocalDateTime updateTime;
 
-    /**
-     * Last login time
-     */
+    /** 最近登录时间。 */
     private LocalDateTime lastLoginTime;
 
-    /**
-     * Remark
-     */
+    /** 备注。 */
     private String remark;
 }

@@ -1,7 +1,7 @@
 -- Public path configuration table for dynamic access control
 -- Supports: anonymous access, login-required, permission-required
 
-CREATE TABLE IF NOT EXISTS sys_public_path (
+CREATE TABLE IF NOT EXISTS authorization_public_path (
     id          BIGINT NOT NULL COMMENT '主键ID',
     path        VARCHAR(255) NOT NULL COMMENT '路径（支持通配符如 /public/**）',
     path_type   TINYINT     NOT NULL DEFAULT 1 COMMENT '类型：1=匿名访问，2=登录即可，3=需要权限',
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS sys_public_path (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公共访问路径配置';
 
 -- Insert default public paths
-INSERT INTO sys_public_path (path, path_type, description, priority, status) VALUES
--- Anonymous access
+INSERT INTO authorization_public_path (path, path_type, description, priority, status) VALUES
+-- 匿名访问路径
 ('/auth/login', 1, '用户登录', 100, 1),
 ('/auth/captcha', 1, '获取验证码', 100, 1),
 ('/captcha/**', 1, '验证码图片', 100, 1),

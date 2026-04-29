@@ -1,14 +1,20 @@
 package io.mango.authorization.api;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Unified authorization snapshot.
+ * 统一授权快照。
  */
-public record AuthorizationSnapshot(Set<String> roleCodes, Set<String> permissionCodes, Set<String> authorities) {
+@Schema(description = "统一授权快照")
+public record AuthorizationSnapshot(
+        @Schema(description = "角色编码集合") Set<String> roleCodes,
+        @Schema(description = "权限码集合") Set<String> permissionCodes,
+        @Schema(description = "授权标识集合") Set<String> authorities) {
 
     public AuthorizationSnapshot {
         roleCodes = immutable(roleCodes);

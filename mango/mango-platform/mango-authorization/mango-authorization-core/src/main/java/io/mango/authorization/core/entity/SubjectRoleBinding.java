@@ -9,35 +9,40 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * Subject-Role relationship entity
- *
- * @author Mango
+ * 主体角色关系实体。
  */
 @Data
-@TableName("sys_user_role")
+@TableName("authorization_subject_role")
 public class SubjectRoleBinding implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * ID
-     */
+    /** 主键 ID。 */
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    /**
-     * Tenant ID
-     */
+    /** 租户 ID。 */
     private Long tenantId;
 
-    /**
-     * Subject ID
-     */
-    @TableField("user_id")
+    /** 主体 ID。 */
+    @TableField("subject_id")
     private Long subjectId;
 
-    /**
-     * Role ID
-     */
+    /** 应用编码。 */
+    private String appCode;
+
+    /** 登录域。 */
+    private String realm;
+
+    /** 操作者类型。 */
+    private String actorType;
+
+    /** 归属主体类型。 */
+    private String partyType;
+
+    /** 归属主体 ID。 */
+    private Long partyId;
+
+    /** 角色 ID。 */
     private Long roleId;
 }

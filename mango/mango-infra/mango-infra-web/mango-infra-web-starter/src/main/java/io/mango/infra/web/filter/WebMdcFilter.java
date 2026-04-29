@@ -1,6 +1,7 @@
 package io.mango.infra.web.filter;
 
-import io.mango.infra.web.api.IRequestContextProvider;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.core.MangoContextSnapshot;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,7 +12,7 @@ import org.slf4j.MDC;
 import java.io.IOException;
 
 /**
- * Adds Mango request context values to MDC during HTTP request handling.
+ * 在 HTTP 请求处理期间将 Mango 请求上下文写入 MDC。
  */
 public class WebMdcFilter implements Filter {
 
@@ -19,17 +20,11 @@ public class WebMdcFilter implements Filter {
     public static final String TRACE_ID_KEY = "traceId";
     public static final String CLIENT_IP_KEY = "clientIp";
 
-    private final IRequestContextProvider requestContextProvider;
-
-    public WebMdcFilter(IRequestContextProvider requestContextProvider) {
-        this.requestContextProvider = requestContextProvider;
-    }
-
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         try {
-            var context = requestContextProvider.currentContext();
+            MangoContextSnapshot context = MangoContextHolder.get();
             putIfPresent(REQUEST_ID_KEY, context.requestId());
             putIfPresent(TRACE_ID_KEY, context.traceId());
             putIfPresent(CLIENT_IP_KEY, context.clientIp());

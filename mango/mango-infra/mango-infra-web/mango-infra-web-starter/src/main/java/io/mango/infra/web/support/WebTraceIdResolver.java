@@ -1,17 +1,17 @@
 package io.mango.infra.web.support;
 
+import io.mango.infra.context.core.MangoContextHeaders;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
 
 /**
- * Resolves trace id from APM context and HTTP headers.
+ * 从 APM 上下文和 HTTP Header 中解析 traceId。
  */
 public class WebTraceIdResolver {
 
     public static final String TRACE_ID_KEY = "traceId";
-    private static final String HEADER_TRACE_ID = "X-Trace-Id";
-    private static final String HEADER_TRACE_ID_LEGACY = "TRACE-ID";
-    private static final String HEADER_REQUEST_ID = "X-Request-Id";
+    private static final String HEADER_TRACE_ID = MangoContextHeaders.TRACE_ID;
+    private static final String HEADER_REQUEST_ID = MangoContextHeaders.REQUEST_ID;
     private static final String HEADER_TRACEPARENT = "traceparent";
 
     public String resolveTraceId(HttpServletRequest request) {
@@ -26,7 +26,6 @@ public class WebTraceIdResolver {
         }
         return firstText(
                 request.getHeader(HEADER_TRACE_ID),
-                request.getHeader(HEADER_TRACE_ID_LEGACY),
                 request.getHeader(HEADER_REQUEST_ID));
     }
 

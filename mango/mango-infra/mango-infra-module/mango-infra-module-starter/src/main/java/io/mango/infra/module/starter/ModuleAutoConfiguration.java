@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
 /**
- * Auto-configuration for Mango module information.
+ * Mango 模块信息自动配置。
  */
 @AutoConfiguration
 @EnableConfigurationProperties(ModuleProperties.class)
@@ -38,7 +38,7 @@ public class ModuleAutoConfiguration {
                 metadata.moduleName(),
                 defaultServiceName,
                 defaultContextPath,
-                metadata.modulePath(),
+                defaultIfBlank(metadata.modulePath(), deriveModulePath(metadata.moduleName())),
                 metadata.source())));
 
         properties.getModules().forEach((moduleName, moduleService) -> registry.register(new ModuleInfo(

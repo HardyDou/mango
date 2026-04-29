@@ -22,13 +22,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
- * Internal call filter - blocks direct access to internal APIs
+ * 内部调用过滤器，拦截对内部 API 的直接访问。
  *
  * <p>流量架构：
  * <ul>
- *   <li>外部请求 → 必须过Gateway</li>
- *   <li>微服务间调用 → Feign携带 X-Internal-Call + 签名Header</li>
- *   <li>直接访问微服务 → 本Filter拦截并拒绝</li>
+ *   <li>外部请求 → 必须经过 Gateway</li>
+ *   <li>微服务间调用 → Feign 携带 X-Internal-Call 和签名 Header</li>
+ *   <li>直接访问微服务 → 本过滤器拦截并拒绝</li>
  * </ul>
  *
  * <p>安全机制：
@@ -50,22 +50,22 @@ public class InternalCallFilter implements Filter {
     private final MangoWebProperties properties;
 
     /**
-     * Internal paths loaded from database
+     * 从内部路径提供器加载的内部路径集合。
      */
     private final Set<String> internalPaths = new CopyOnWriteArraySet<>();
 
     /**
-     * Flag indicating if paths have been loaded successfully
+     * 标记内部路径是否已成功加载。
      */
     private volatile boolean pathsLoaded = false;
 
     /**
-     * Timestamp of last successful load
+     * 最近一次成功加载内部路径的时间戳。
      */
     private volatile long lastKnownPathsLoadTime = 0;
 
     /**
-     * Load internal paths on application ready (fail-secure)
+     * 应用就绪后加载内部路径，启动加载失败时进入安全拒绝模式。
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
@@ -81,7 +81,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Refresh internal paths every 5 minutes (graceful degradation)
+     * 定时刷新内部路径；刷新失败时保留上一次可用结果。
      */
     @Scheduled(fixedRateString = "${mango.web.inner.path-refresh-interval-seconds:300}000")
     public void refreshInternalPaths() {
@@ -92,12 +92,12 @@ public class InternalCallFilter implements Filter {
             log.info("Internal paths refreshed: count={}", internalPaths.size());
         } catch (Exception e) {
             log.warn("Failed to refresh internal paths, keeping last known paths", e);
-            // Keep last known paths, pathsLoaded stays true
+            // 保留上一次已知路径，pathsLoaded 仍保持 true。
         }
     }
 
     /**
-     * Load internal paths from provider
+     * 从提供器加载内部路径。
      */
     private void loadInternalPaths() {
         List<String> paths = internalPathProvider.getInternalPaths();
@@ -120,49 +120,49 @@ public class InternalCallFilter implements Filter {
 
         String path = request.getRequestURI();
 
-        // Skip if not an internal path
+        // 非内部路径直接放行。
         if (!isInternalPath(path)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Fail-secure: if paths not loaded at startup, reject all
+        // 安全拒绝：启动时路径未加载成功，则拒绝内部路径请求。
         if (!pathsLoaded) {
             sendForbidden(response, "Internal paths not loaded");
             return;
         }
 
-        // Check for X-Internal-Call header
+        // 检查 X-Internal-Call Header。
         String internalCall = request.getHeader("X-Internal-Call");
         if (!"true".equals(internalCall)) {
             sendForbidden(response, "Missing X-Internal-Call header");
             return;
         }
 
-        // Verify signature
+        // 准备校验签名。
         String sharedSecret = sharedSecret();
         if (!StringUtils.hasText(sharedSecret)) {
-            // If no secret configured, skip signature verification (dev mode)
+            // 未配置密钥时跳过签名校验，通常只用于开发环境。
             log.warn("No internal call secret configured, skipping signature verification");
             chain.doFilter(request, response);
             return;
         }
 
-        // Verify timestamp
+        // 校验时间戳。
         String timestampStr = request.getHeader("X-Internal-Timestamp");
         if (!verifyTimestamp(timestampStr)) {
             sendForbidden(response, "Invalid or expired timestamp");
             return;
         }
 
-        // Verify nonce (anti-replay)
+        // 校验 nonce，防止重放。
         String nonce = request.getHeader("X-Internal-Nonce");
         if (!verifyNonce(nonce)) {
             sendForbidden(response, "Nonce already used");
             return;
         }
 
-        // Verify signature
+        // 校验签名。
         String signature = request.getHeader("X-Internal-Signature");
         String secretVersion = request.getHeader("X-Internal-Secret-Version");
         if (!verifySignature(request, timestampStr, nonce, secretVersion, signature)) {
@@ -170,7 +170,7 @@ public class InternalCallFilter implements Filter {
             return;
         }
 
-        // Nonce passed verification, add to blacklist
+        // nonce 通过校验后写入黑名单。
         if (StringUtils.hasText(nonce)) {
             try {
                 kvStore.setIfAbsent("nonce:" + nonce, "1", nonceTtlSeconds());
@@ -183,7 +183,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Check if path is internal
+     * 判断路径是否为内部路径。
      */
     private boolean isInternalPath(String path) {
         for (String pattern : internalPaths) {
@@ -195,7 +195,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Path matching with wildcard support
+     * 支持通配符的路径匹配。
      */
     private boolean matchPath(String pattern, String path) {
         if (pattern.equals(path)) {
@@ -214,7 +214,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Verify timestamp is within tolerance (past only, no future timestamps)
+     * 校验时间戳是否在容忍范围内；只接受过去时间，不接受未来时间。
      */
     private boolean verifyTimestamp(String timestampStr) {
         if (!StringUtils.hasText(timestampStr)) {
@@ -224,7 +224,7 @@ public class InternalCallFilter implements Filter {
             long timestamp = Long.parseLong(timestampStr);
             long now = System.currentTimeMillis();
             long diff = now - timestamp;
-            // Only accept past timestamps within tolerance (reject future timestamps)
+            // 只接受容忍范围内的过去时间戳，拒绝未来时间戳。
             return diff >= 0 && diff <= timestampToleranceSeconds() * 1000;
         } catch (NumberFormatException e) {
             return false;
@@ -232,7 +232,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Verify nonce not in blacklist
+     * 校验 nonce 不在黑名单中。
      */
     private boolean verifyNonce(String nonce) {
         if (!StringUtils.hasText(nonce)) {
@@ -242,12 +242,12 @@ public class InternalCallFilter implements Filter {
             return !kvStore.exists("nonce:" + nonce);
         } catch (Exception e) {
             log.error("Failed to check nonce blacklist, rejecting request for security", e);
-            return false; // Fail closed - reject if KV store unavailable
+            return false; // 失败关闭：KV 不可用时拒绝请求。
         }
     }
 
     /**
-     * Verify HMAC signature
+     * 校验 HMAC 签名。
      */
     private boolean verifySignature(HttpServletRequest request, String timestamp, String nonce,
                                    String secretVersion, String signature) {
@@ -257,10 +257,10 @@ public class InternalCallFilter implements Filter {
         try {
             String method = request.getMethod();
             String path = request.getRequestURI();
-            // Sort query params alphabetically to match interceptor's buildQueryString()
+            // 按参数名排序查询参数，对齐拦截器中的 buildQueryString()。
             String queryString = buildSortedQueryString(request.getQueryString());
 
-            // Build payload: timestamp:nonce:method:path:query
+            // 构造签名载荷：timestamp:nonce:method:path:query。
             String payload = timestamp + ":" + nonce + ":" + method + ":" + path + ":" + queryString;
             String expectedSignature = hmacSha256(payload, sharedSecret());
 
@@ -272,14 +272,14 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Build sorted query string from raw query string.
-     * Matches Feign interceptor's buildQueryString() for consistent signature calculation.
+     * 基于原始 query string 构造排序后的查询字符串。
+     * 该逻辑需要与 Feign 拦截器的 buildQueryString() 保持一致，确保签名计算稳定。
      */
     private String buildSortedQueryString(String queryString) {
         if (queryString == null || queryString.isEmpty()) {
             return "";
         }
-        // Parse query string into key-value pairs, sort by key, rebuild
+        // 将 query string 拆成键值对，按 key 排序后重新拼装。
         return java.util.Arrays.stream(queryString.split("&"))
                 .map(param -> {
                     int idx = param.indexOf('=');
@@ -293,7 +293,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Calculate HMAC-SHA256
+     * 计算 HMAC-SHA256。
      */
     private String hmacSha256(String data, String secret) throws Exception {
         javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
@@ -307,7 +307,7 @@ public class InternalCallFilter implements Filter {
     }
 
     /**
-     * Send 403 Forbidden response
+     * 返回 403 Forbidden 响应。
      */
     private void sendForbidden(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);

@@ -7,7 +7,7 @@
 ```text
 mango-infra-web/
 ├── mango-infra-web-api       # @Inner、IInternalPathProvider、IRequestContextProvider、RequestContextSnapshot
-└── mango-infra-web-starter   # Filter、扫描器、Servlet provider、MDC、异常处理、CORS 配置
+└── mango-infra-web-starter   # 过滤器、扫描器、Servlet 提供器、MDC、异常处理、CORS 配置
 ```
 
 ## 职责边界
@@ -90,12 +90,14 @@ mango:
 
 | 字段 | 来源 |
 |------|------|
-| `requestId` | `X-Request-Id`，缺省使用 Servlet request id |
-| `traceId` | SkyWalking TraceContext、W3C `traceparent`、`X-Trace-Id`、`TRACE-ID`、`X-Request-Id` |
+| `requestId` | `X-Mango-Request-Id`，缺省使用 Servlet request id |
+| `traceId` | SkyWalking TraceContext、W3C `traceparent`、`X-Mango-Trace-Id`、`X-Mango-Request-Id` |
 | `clientIp` | `X-Forwarded-For` 首个 IP，其次 `X-Real-IP`，最后 `remoteAddr` |
 | `headers` | 当前 HTTP headers |
 | `cookies` | 当前 HTTP cookies |
 | `request` | 当前 Servlet request，历史兼容变量 |
+
+`MangoContextWebFilter` 会把 HTTP 请求事实初始化到 `MangoContextHolder`，后续认证过滤器补齐主体字段，Feign 再统一透传 `X-Mango-*` 请求头。
 
 ## @Inner 内部接口
 

@@ -6,15 +6,15 @@
 
 | 职责 | 说明 |
 |------|------|
-| 账号资料 | `IdentityUser`、用户名、昵称、邮箱、手机号、头像、状态 |
-| 认证用户事实 | `IAuthUserProvider` 为 `mango-auth` 提供密码哈希、状态等认证所需字段 |
+| 账号资料 | `IdentityUser`、用户名、昵称、邮箱、手机号、头像、状态，以及 `realm`、`actorType`、`partyType`、`partyId` 身份上下文 |
+| 认证用户事实 | `AuthUserProvider` 为 `mango-auth` 提供密码哈希、状态、登录域和归属主体等认证所需字段 |
 | 身份 API | `IdentityUserApi` 提供身份资料查询 |
 | 本地/远程装配 | `mango-identity-starter` 本地实现，`mango-identity-starter-remote` Feign 远程实现 |
 
 ## 边界
 
 - identity 不计算角色、权限、菜单。
-- identity 不依赖 authorization。
+- identity 当前仅为 `@ApiAccess(INTERNAL)` 声明依赖 `mango-authorization-api`，不计算授权事实。
 - auth 依赖 `mango-identity-api` 获取认证用户事实。
 - authorization 只保存主体到角色的授权绑定，不保存账号资料。
 
@@ -32,7 +32,9 @@ mango-identity/
 
 本地开发和测试使用 H2 内存数据库即可，不要求外部 MySQL。
 
-当前 `IdentityUser` 仍映射既有 `sys_user` 表；表名物理迁移属于后续数据库 Phase，避免本轮扩大到未验证的数据迁移。
+账号表由 `mango-identity-core` 提供初始化脚本，物理表名为 `identity_user`。
+
+用户名唯一性按 `realm + username` 约束，支持不同登录域下存在同名账号。
 
 ## 使用
 

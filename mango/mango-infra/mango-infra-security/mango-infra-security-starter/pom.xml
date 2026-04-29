@@ -10,18 +10,23 @@
     </parent>
     <artifactId>mango-infra-security-starter</artifactId>
     <name>Mango Infra Security Starter</name>
-    <description>Security Starter - Spring Security method security and context auto-configuration</description>
+    <description>安全 Starter - Spring Security 上下文与 Web 安全自动配置</description>
     <dependencies>
-        <!-- Security API -->
+        <!-- 安全 API -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Security Core -->
+        <!-- 安全核心 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Spring Security -->
@@ -29,7 +34,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- Spring Boot AutoConfigure -->
+        <!-- Spring Boot 自动配置 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
@@ -45,7 +50,7 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- Test dependencies -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

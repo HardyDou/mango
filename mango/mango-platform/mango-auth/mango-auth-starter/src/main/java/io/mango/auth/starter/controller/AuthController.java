@@ -1,12 +1,17 @@
 package io.mango.auth.starter.controller;
 
 import io.mango.auth.api.AuthApi;
-import io.mango.auth.api.vo.LoginRequest;
-import io.mango.auth.api.vo.LoginResponse;
+import io.mango.auth.api.command.LoginCommand;
+import io.mango.auth.api.command.LogoutCommand;
+import io.mango.auth.api.command.RefreshTokenCommand;
+import io.mango.auth.api.command.ValidateTokenCommand;
+import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.common.result.R;
+import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
+import io.mango.infra.kv.api.IKvStore;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.Cookie;
@@ -15,12 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.concurrent.Executors;
@@ -28,8 +32,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Authentication controller - HTTP endpoints for auth operations.
- * Delegates to {@link AuthApi} implementation.
+ * 认证控制器，提供认证 HTTP 端点。
+ * 具体认证逻辑委托给 {@link IAuthService}。
  *
  * @author Mango
  */
@@ -40,13 +44,17 @@ public class AuthController implements AuthApi {
 
     private final IAuthService authService;
     private final TtlExecutorDecorator ttlExecutorDecorator;
+    private final ObjectProvider<IKvStore> kvStoreProvider;
     private LoginAttemptTracker loginAttemptTracker;
     private ScheduledExecutorService executorForTracker;
 
     @Autowired
-    public AuthController(IAuthService authService, TtlExecutorDecorator ttlExecutorDecorator) {
+    public AuthController(IAuthService authService,
+                          TtlExecutorDecorator ttlExecutorDecorator,
+                          ObjectProvider<IKvStore> kvStoreProvider) {
         this.authService = authService;
         this.ttlExecutorDecorator = ttlExecutorDecorator;
+        this.kvStoreProvider = kvStoreProvider;
     }
 
     @PostConstruct
@@ -58,7 +66,7 @@ public class AuthController implements AuthApi {
                 return t;
             })
         );
-        this.loginAttemptTracker = new LoginAttemptTracker(executorForTracker);
+        this.loginAttemptTracker = new LoginAttemptTracker(kvStoreProvider.getIfAvailable(), executorForTracker);
     }
 
     @PreDestroy
@@ -80,54 +88,33 @@ public class AuthController implements AuthApi {
     }
 
     /**
-     * User login
+     * 用户登录。
      */
-    public LoginResponse login(LoginRequest loginRequest) {
-        LoginResponse response = authService.login(loginRequest.getUsername(),loginRequest.getPassword());
-        if (response == null) {
-            throw new SecurityException("Invalid username or password");
-        }
-        return response;
+    @Override
+    public R<LoginVO> login(LoginCommand loginCommand) {
+        return doLogin(loginCommand, "unknown");
     }
 
-    /**
-     * Refresh token
-     */
-    public LoginResponse refreshToken(String refreshToken) {
-        LoginResponse response = authService.refreshToken(refreshToken);
-        if (response == null) {
-            throw new SecurityException("Invalid or expired refresh token");
-        }
-        return response;
-    }
-
-    /**
-     * User logout
-     */
-    public void logout(String token) {
-        authService.logout(token);
-    }
-
-    /**
-     * Validate token
-     */
-    public boolean validateToken(String token) {
-        return authService.validateToken(token);
-    }
-
-    /**
-     * User login (HTTP endpoint)
-     */
     @PostMapping("/login")
-    public R<LoginResponse> loginEndpoint(
-            @Valid @RequestBody LoginRequest loginRequest,
+    public R<LoginVO> loginEndpoint(
+            @Valid @RequestBody LoginCommand loginCommand,
             HttpServletRequest request,
             HttpServletResponse response) {
-        // Get client IP for rate limiting
-        String clientIp = getClientIp(request);
-        String loginKey = loginRequest.getUsername() + ":" + clientIp;
+        String clientIp = resolveClientIp(request);
+        R<LoginVO> result = doLogin(loginCommand, clientIp);
+        if (result.isSuccess() && result.getData() != null) {
+            Cookie cookie = new Cookie("MANGO_TOKEN", result.getData().getAccessToken());
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setAttribute("SameSite", "Lax");
+            response.addCookie(cookie);
+        }
+        return result;
+    }
 
-        // Check if locked out
+    private R<LoginVO> doLogin(LoginCommand loginCommand, String clientIp) {
+        String loginKey = loginCommand.getUsername() + ":" + clientIp;
+
         if (loginAttemptTracker.isLockedOut(loginKey)) {
             long remainingMinutes = loginAttemptTracker.getRemainingLockoutMinutes(loginKey);
             log.warn("Login attempt blocked for {} - locked out for {} more minutes", loginKey, remainingMinutes);
@@ -135,44 +122,51 @@ public class AuthController implements AuthApi {
         }
 
         try {
-            LoginResponse loginResponse = login(loginRequest);
-            // Clear failed attempts on success
+            LoginVO loginResponse = authService.login(loginCommand);
+            if (loginResponse == null) {
+                throw new SecurityException("Invalid username or password");
+            }
             loginAttemptTracker.clearAttempts(loginKey);
-            // Set httpOnly Cookie for token
-            Cookie cookie = new Cookie("MANGO_TOKEN", loginResponse.getAccessToken());
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setAttribute("SameSite", "Lax");
-            response.addCookie(cookie);
             return R.ok(loginResponse);
         } catch (SecurityException e) {
-            // Record failed attempt
             loginAttemptTracker.recordFailedAttempt(loginKey);
             return R.fail(401, e.getMessage());
         }
     }
 
-    /**
-     * Refresh token (HTTP endpoint)
-     */
-    @PostMapping("/refresh")
-    public R<LoginResponse> refreshEndpoint(@RequestParam String refreshToken) {
+    @Override
+    public R<LoginVO> refreshToken(RefreshTokenCommand command) {
         try {
-            return R.ok(refreshToken(refreshToken));
+            LoginVO response = authService.refreshToken(command.getRefreshToken());
+            if (response == null) {
+                throw new SecurityException("Invalid or expired refresh token");
+            }
+            return R.ok(response);
         } catch (SecurityException e) {
             return R.fail(401, e.getMessage());
         }
     }
 
+    @PostMapping("/refresh")
+    public R<LoginVO> refreshEndpoint(@Valid @RequestBody RefreshTokenCommand command) {
+        return refreshToken(command);
+    }
+
     /**
      * Logout (HTTP endpoint)
      */
+    @Override
+    public R<Void> logout(LogoutCommand command) {
+        authService.logout(command.getToken());
+        return R.ok();
+    }
+
     @PostMapping("/logout")
-    public R<Void> logoutEndpoint(
-            @RequestHeader(value = "Authorization", required = false) String token,
-            HttpServletResponse response) {
-        logout(token);
-        // Clear httpOnly Cookie
+    public R<Void> logoutEndpoint(@Valid @RequestBody(required = false) LogoutCommand command,
+                                  @RequestHeader(value = "Authorization", required = false) String token,
+                                  HttpServletResponse response) {
+        String resolvedToken = command != null && command.getToken() != null ? command.getToken() : token;
+        authService.logout(resolvedToken);
         Cookie cookie = new Cookie("MANGO_TOKEN", "");
         cookie.setMaxAge(0);
         cookie.setPath("/");
@@ -183,23 +177,20 @@ public class AuthController implements AuthApi {
     /**
      * Validate token (HTTP endpoint)
      */
-    @GetMapping("/validate")
-    public R<Boolean> validateEndpoint(@RequestHeader(value = "Authorization", required = false) String token) {
-        return R.ok(validateToken(token));
+    @Override
+    public R<Boolean> validateToken(ValidateTokenCommand command) {
+        return R.ok(authService.validateToken(command.getToken()));
     }
 
-    /**
-     * Get client IP address, considering proxy headers
-     */
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            // Take the first IP if multiple (client, proxy1, proxy2)
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
+    @PostMapping("/validate")
+    public R<Boolean> validateEndpoint(@Valid @RequestBody ValidateTokenCommand command) {
+        return validateToken(command);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String clientIp = MangoContextHolder.clientIp();
+        if (clientIp != null) {
+            return clientIp;
         }
         return request.getRemoteAddr();
     }

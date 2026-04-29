@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * JSON access denied handler for API services.
+ * API 服务使用的 JSON 权限不足处理器。
  */
 public class JsonAccessDeniedHandler implements AccessDeniedHandler {
 

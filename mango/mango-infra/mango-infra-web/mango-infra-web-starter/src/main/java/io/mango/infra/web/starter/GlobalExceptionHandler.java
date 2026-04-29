@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ==================== BizException ====================
+    // ==================== 业务异常 ====================
 
     @ExceptionHandler(BizException.class)
     @ResponseStatus(HttpStatus.OK)
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
         return R.fail(e.getCode(), e.getMessage());
     }
 
-    // ==================== Validation ====================
+    // ==================== 参数校验 ====================
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
         return R.fail(405, "不支持的请求方法: " + e.getMethod());
     }
 
-    // ==================== Database ====================
+    // ==================== 数据库异常 ====================
 
     @ExceptionHandler(SQLException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
         return R.fail(500, "数据库操作异常");
     }
 
-    // ==================== Others ====================
+    // ==================== 其它异常 ====================
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

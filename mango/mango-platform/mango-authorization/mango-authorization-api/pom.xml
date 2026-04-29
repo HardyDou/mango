@@ -14,24 +14,17 @@
     <packaging>jar</packaging>
 
     <name>Mango Authorization API</name>
-    <description>Mango Authorization Module - API interfaces and DTOs</description>
+    <description>Mango Authorization Module - API contracts</description>
 
     <dependencies>
-        <!-- Mango Common -->
+        <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Web (for annotations) -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Swagger Annotations -->
+        <!-- Swagger 注解 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
@@ -45,20 +38,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Mango Org API -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-org-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- MyBatis-Plus Annotations -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-annotation</artifactId>
-        </dependency>
-
-        <!-- Validation -->
+        <!-- 参数校验注解 -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>

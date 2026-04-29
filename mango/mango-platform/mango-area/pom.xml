@@ -21,6 +21,7 @@
         <module>mango-area-api</module>
         <module>mango-area-core</module>
         <module>mango-area-starter</module>
+        <module>mango-area-starter-remote</module>
     </modules>
 
 </project>

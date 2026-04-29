@@ -34,8 +34,6 @@
         <module>mango-infra-doc</module>
         <!-- Client messaging (SSE/WebSocket protocol adapters) -->
         <module>mango-infra-realtime</module>
-        <!-- Gateway -->
-        <module>mango-gateway</module>
         <!-- KV (Key-Value Storage - Memory/Redis/JDBC abstraction) -->
         <module>mango-infra-kv</module>
         <!-- ORM (Object-Relational Mapping - MySQL/PostgreSQL via Repository pattern) -->

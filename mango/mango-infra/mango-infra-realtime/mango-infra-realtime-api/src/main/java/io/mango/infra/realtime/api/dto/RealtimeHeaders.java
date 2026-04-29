@@ -1,13 +1,13 @@
 package io.mango.infra.realtime.api.dto;
 
 /**
- * Header names used by realtime protocol endpoints.
+ * 实时协议端点请求头名称。
  */
 public final class RealtimeHeaders {
 
     public static final String AUTHORIZATION = "Authorization";
 
-    public static final String TENANT_ID = "TENANT-ID";
+    public static final String TENANT_ID = "X-Mango-Tenant-Id";
 
     private RealtimeHeaders() {
     }

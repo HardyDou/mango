@@ -1,38 +1,29 @@
 package io.mango.infra.security.starter;
 
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.security.api.ITokenProvider;
+import io.mango.infra.security.core.impl.JjwtTokenServiceImpl;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 
 /**
- * Token auto-configuration.
+ * Token 能力自动配置。
  * <p>
- * Provides {@link ITokenService} implementation using JJWT.
- * JjwtTokenServiceImpl is a @Component — this auto-configuration's
- * @ComponentScan picks it up from io.mango.infra.security.core.impl.
+ * 提供基于 JJWT 的 {@link ITokenProvider} 实现。
  *
  * @author Mango
  */
 @AutoConfiguration
-@ComponentScan(
-        basePackages = "io.mango.infra.security.core.impl",
-        excludeFilters = @ComponentScan.Filter(
-                type = FilterType.ASSIGNABLE_TYPE,
-                classes = {} // no exclusions, just controls which package
-        )
-)
 public class TokenAutoConfiguration {
 
     /**
-     * Fallback: create ITokenService if component scanning missed it.
+     * 缺少自定义 ITokenProvider 时注册默认 JJWT 实现。
      */
     @Bean
-    @ConditionalOnMissingBean(ITokenService.class)
-    public ITokenService tokenServiceFallback() {
-        throw new IllegalStateException(
-                "No ITokenService bean found. Ensure mango-infra-security-starter is on classpath.");
+    @ConditionalOnMissingBean(ITokenProvider.class)
+    public ITokenProvider tokenProvider(ObjectProvider<IKvStore> kvStoreProvider) {
+        return new JjwtTokenServiceImpl(kvStoreProvider.getIfAvailable());
     }
 }

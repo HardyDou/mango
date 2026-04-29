@@ -14,5 +14,5 @@
     <packaging>jar</packaging>
 
     <name>Mango Infra Web API</name>
-    <description>Mango Infra Web API - HTTP boundary annotations and request context contracts</description>
+    <description>Mango Infra Web API - HTTP 边界注解与请求上下文契约</description>
 </project>

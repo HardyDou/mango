@@ -1,11 +1,10 @@
 package io.mango.auth.starter;
 
-import io.mango.auth.core.anti.filter.AntiReplayInterceptor;
-import io.mango.auth.core.interceptor.CaptchaInterceptor;
-import io.mango.auth.core.interceptor.WebMvcConfig;
 import io.mango.auth.starter.config.AuthSecurityConfig;
+import io.mango.auth.starter.web.anti.AntiReplayInterceptor;
+import io.mango.auth.starter.web.interceptor.CaptchaInterceptor;
+import io.mango.auth.starter.web.interceptor.WebMvcConfig;
 import io.mango.infra.security.starter.SecurityAutoConfiguration;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.context.annotation.Bean;
@@ -21,15 +20,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @AutoConfiguration
 @AutoConfigureBefore(SecurityAutoConfiguration.class)
-@MapperScan("io.mango.auth.core.mapper")
 @ComponentScan({
         "io.mango.auth.core.service",
         "io.mango.auth.core.service.impl",
+        "io.mango.auth.core.config",
         "io.mango.auth.core.anti",
-        "io.mango.auth.core.anti.filter",
-        "io.mango.auth.core.interceptor",
         "io.mango.auth.core.init",
-        "io.mango.auth.starter.controller"
+        "io.mango.auth.starter.controller",
+        "io.mango.auth.starter.web"
 })
 @Import(AuthSecurityConfig.class)
 public class AuthAutoConfiguration {

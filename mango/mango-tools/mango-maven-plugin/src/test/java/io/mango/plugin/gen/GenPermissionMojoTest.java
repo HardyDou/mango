@@ -38,7 +38,7 @@ class GenPermissionMojoTest {
         assertTrue(Files.exists(sqlFile), "menu_user.sql should be created");
 
         String content = Files.readString(sqlFile);
-        assertTrue(content.contains("INSERT INTO sys_menu"), "SQL should contain INSERT INTO sys_menu");
+        assertTrue(content.contains("INSERT INTO authorization_menu"), "SQL should contain INSERT INTO authorization_menu");
         assertTrue(content.contains("user管理"), "SQL should contain menu name");
         assertTrue(content.contains("user:list"), "SQL should contain list permission");
         assertTrue(content.contains("user:add"), "SQL should contain add permission");

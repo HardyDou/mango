@@ -1070,7 +1070,7 @@ export default defineConfig({
 | **基础设施** | | | |
 | `mango-infra-kv` | `api/core/starter` | KV 存储抽象（ICache/ILocker/ITokenStore/IIdempotent） | ✅ |
 | `mango-infra-crypto` | `api/core/starter` | 国密算法（SM2/SM3/SM4） | ✅ |
-| `mango-infra-security` | `api/core/starter` | 权限注解、IPermissionService、AOP 切面 | ✅ |
+| `mango-infra-security` | `api/core/starter` | 权限注解、IPermissionProvider、AOP 切面 | ✅ |
 | `mango-infra-redis` | `api/core/starter` | Redis 封装 | ✅ |
 | `mango-infra-db` | `api/core/starter` | 数据库封装 | ✅ |
 | `mango-infra-feign` | `api/core/starter` | 远程调用 | ✅ |
@@ -1163,8 +1163,8 @@ mango-infra-{name}/
 
 | 接口 | 包路径 | 用途 | 实现者 |
 |------|--------|------|--------|
-| `IPermissionService` | `io.mango.infra.security.api` | 权限校验服务 | `mango-authorization-starter` 或认证桥接 adapter |
-| `ITokenService` | `io.mango.infra.security.api` | Token 生成/校验 | `mango-auth-starter` |
+| `IPermissionProvider` | `io.mango.infra.security.api` | 权限校验服务 | `mango-authorization-starter` 或认证桥接 adapter |
+| `ITokenProvider` | `io.mango.infra.security.api` | Token 生成/校验 | `mango-auth-starter` |
 | `IAuthUserProvider` | `io.mango.identity.api` | 认证用户事实查询 | `mango-identity-starter` 或 `mango-identity-starter-remote` |
 
 业务应用优先依赖 `mango-security-starter`；微服务远程组合优先依赖 `mango-security-starter-remote`。只有明确需要裁剪能力时，才直接选择 `mango-auth-*`、`mango-identity-*`、`mango-authorization-*` 的单项 starter。

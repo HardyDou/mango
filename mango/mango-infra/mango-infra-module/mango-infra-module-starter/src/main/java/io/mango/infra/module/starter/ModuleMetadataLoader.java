@@ -11,7 +11,7 @@ import java.util.Properties;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 /**
- * Loads Mango module metadata from classpath resources.
+ * 从 classpath 加载 Mango 模块元数据。
  */
 public class ModuleMetadataLoader {
 

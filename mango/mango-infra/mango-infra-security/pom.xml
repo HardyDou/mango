@@ -11,7 +11,7 @@
     <artifactId>mango-infra-security</artifactId>
     <packaging>pom</packaging>
     <name>Mango Infra Security</name>
-    <description>Security infrastructure - token, permission, and security context contracts</description>
+    <description>安全基础设施 - token、权限和安全上下文契约</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

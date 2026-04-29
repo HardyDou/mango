@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Mango Infra Web Starter</name>
-    <description>Mango Infra Web Starter - HTTP request context and Spring Web integration</description>
+    <description>Mango Infra Web Starter - HTTP 请求上下文与 Spring Web 集成</description>
 
     <dependencies>
         <dependency>
@@ -29,6 +29,11 @@
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-context-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

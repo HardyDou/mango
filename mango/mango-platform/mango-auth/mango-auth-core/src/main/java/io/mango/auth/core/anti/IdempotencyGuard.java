@@ -6,15 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Idempotency guard using IKvStore.
- * Ensures duplicate POST/PUT/DELETE requests return cached results.
+ * 基于 IKvStore 的幂等保护器。
+ * 确保重复的 POST/PUT/DELETE 请求返回缓存结果。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class IdempotencyGuard {
 
-    private static final long IDEM_TTL_SECONDS = 86400; // 24 hours
+    private static final long IDEM_TTL_SECONDS = 86400; // 24 小时
     private static final String KEY_PREFIX = "idem:";
     private static final String PROCESSING = "PROCESSING";
 
@@ -22,9 +22,9 @@ public class IdempotencyGuard {
 
 
     /**
-     * Try to acquire idempotency key for a request.
-     * @param key the idempotency key (e.g., X-Idempotency-Key header value)
-     * @return true=first request (proceed), false=duplicate (return cached)
+     * 尝试占用请求幂等键。
+     * @param key 幂等键，例如 X-Idempotency-Key 请求头
+     * @return true 表示首次请求，false 表示重复请求
      */
     public boolean tryAcquire(String key) {
         if (key == null || key.isBlank()) {
@@ -39,9 +39,9 @@ public class IdempotencyGuard {
     }
 
     /**
-     * Save response for an idempotency key.
-     * @param key the idempotency key
-     * @param response the response body to cache
+     * 保存幂等键对应的响应。
+     * @param key 幂等键
+     * @param response 待缓存响应体
      */
     public void saveResponse(String key, String response) {
         if (key == null || key.isBlank()) {
@@ -51,9 +51,9 @@ public class IdempotencyGuard {
     }
 
     /**
-     * Get cached response for an idempotency key.
-     * @param key the idempotency key
-     * @return cached response or null if not found
+     * 获取幂等键对应的缓存响应。
+     * @param key 幂等键
+     * @return 缓存响应，未命中时返回 null
      */
     public String getResponse(String key) {
         if (key == null || key.isBlank()) {

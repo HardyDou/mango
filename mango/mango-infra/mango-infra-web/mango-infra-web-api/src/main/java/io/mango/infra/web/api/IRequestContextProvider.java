@@ -1,14 +1,14 @@
 package io.mango.infra.web.api;
 
 /**
- * Provides the current HTTP request context as an infrastructure contract.
+ * 以基础设施契约形式提供当前 HTTP 请求上下文。
  */
 public interface IRequestContextProvider {
 
     /**
-     * Return the current HTTP request context.
+     * 返回当前 HTTP 请求上下文。
      *
-     * @return request context, or {@link RequestContextSnapshot#empty()} outside an HTTP request
+     * @return 请求上下文；非 HTTP 请求场景返回 {@link RequestContextSnapshot#empty()}
      */
     RequestContextSnapshot currentContext();
 }

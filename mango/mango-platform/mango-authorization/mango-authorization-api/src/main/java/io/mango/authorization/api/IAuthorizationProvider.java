@@ -1,7 +1,7 @@
 package io.mango.authorization.api;
 
 /**
- * Authorization provider used by local and remote security integrations.
+ * 本地与远程安全集成都使用的授权提供者。
  */
 public interface IAuthorizationProvider {
 

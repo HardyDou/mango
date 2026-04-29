@@ -3,11 +3,19 @@ package io.mango.authorization.core.service;
 import java.util.List;
 
 /**
- * Internal authority lookup for authorization subjects.
+ * 授权主体权限查询服务。
  */
 public interface ISubjectAuthorityService {
 
-    List<String> listSubjectRoles(Long subjectId);
+    default List<String> listSubjectRoles(Long subjectId) {
+        return listSubjectRoles(subjectId, null);
+    }
 
-    List<String> listSubjectPermissions(Long subjectId);
+    List<String> listSubjectRoles(Long subjectId, String appCode);
+
+    default List<String> listSubjectPermissions(Long subjectId) {
+        return listSubjectPermissions(subjectId, null);
+    }
+
+    List<String> listSubjectPermissions(Long subjectId, String appCode);
 }

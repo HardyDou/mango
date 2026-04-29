@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * In-memory module info registry.
+ * 内存模块信息注册表。
  */
 public class MemoryModuleInfoRegistry implements ModuleInfoRegistry, ModuleInfoResolver {
 

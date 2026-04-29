@@ -16,15 +16,15 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Request signature validator.
- * Supports SM2/RSA/MD5 algorithms.
+ * 请求签名校验器。
+ * 支持 SM2、RSA、MD5 算法。
  */
 @Slf4j
 @Component
 public class SignatureValidator {
 
     static {
-        // Register BouncyCastle provider for SM2 support
+        // 注册 BouncyCastle Provider 以支持 SM2。
         if (java.security.Security.getProvider("BC") == null) {
             java.security.Security.addProvider(new BouncyCastleProvider());
         }
@@ -37,14 +37,14 @@ public class SignatureValidator {
     );
 
     /**
-     * Validate signature.
-     * @param algorithm signature algorithm (SM2/RSA/MD5)
-     * @param appKey application key
-     * @param secret for SM2/RSA: base64-encoded public key; for MD5: secret key
-     * @param timestamp request timestamp
-     * @param body request body
-     * @param sign provided signature
-     * @return true=valid, false=invalid
+     * 校验签名。
+     * @param algorithm 签名算法，支持 SM2/RSA/MD5
+     * @param appKey 应用标识
+     * @param secret SM2/RSA 使用 Base64 公钥，MD5 使用密钥
+     * @param timestamp 请求时间戳
+     * @param body 请求体
+     * @param sign 请求携带的签名
+     * @return true 表示签名有效，false 表示签名无效
      */
     public boolean validate(String algorithm, String appKey, String secret,
                            String timestamp, String body, String sign) {
@@ -76,8 +76,8 @@ public class SignatureValidator {
     }
 
     /**
-     * Build the data string to be signed.
-     * Format: appKey + secret + timestamp + body (sorted alphabetically)
+     * 构造待签名字符串。
+     * 格式：appKey、secret、timestamp、body 按字典序拼接。
      */
     public String buildSignatureData(String appKey, String secret, String timestamp, String body) {
         TreeMap<String, String> params = new TreeMap<>();
@@ -96,7 +96,7 @@ public class SignatureValidator {
     }
 
     /**
-     * Compute signature for data string (only for MD5).
+     * 计算待签名字符串的签名，仅支持 MD5。
      */
     public String computeSignature(String algorithm, String data) {
         String algo = ALGORITHM_MAP.getOrDefault(algorithm.toUpperCase(), "MD5");
@@ -112,19 +112,18 @@ public class SignatureValidator {
     }
 
     /**
-     * Validate SM2 signature using BouncyCastle.
-     * @param publicKeyBase64 base64-encoded SM2 public key
-     * @param data data that was signed
-     * @param signHex hex-encoded signature
-     * @return true if valid
+     * 使用 BouncyCastle 校验 SM2 签名。
+     * @param publicKeyBase64 Base64 编码的 SM2 公钥
+     * @param data 已签名数据
+     * @param signHex Hex 编码签名
+     * @return 签名是否有效
      */
     private boolean validateSM2(String publicKeyBase64, String data, String signHex) {
         try {
             byte[] pubKeyBytes = Base64.getDecoder().decode(publicKeyBase64);
             byte[] signBytes = hexToBytes(signHex);
 
-            // Use BouncyCastle SM2Signer for verification
-            // SM2Signer handles SM3 hashing internally
+            // 使用 BouncyCastle SM2Signer 校验，SM3 哈希由 SM2Signer 内部处理。
             org.bouncycastle.crypto.signers.SM2Signer signer = new org.bouncycastle.crypto.signers.SM2Signer();
             org.bouncycastle.crypto.params.KeyParameter keyParam = new org.bouncycastle.crypto.params.KeyParameter(pubKeyBytes);
             signer.init(false, keyParam);
@@ -138,11 +137,11 @@ public class SignatureValidator {
     }
 
     /**
-     * Validate RSA signature using Java Signature API.
-     * @param publicKeyBase64 base64-encoded RSA public key (X.509 encoded)
-     * @param data data that was signed
-     * @param signBase64 base64-encoded signature
-     * @return true if valid
+     * 使用 Java Signature API 校验 RSA 签名。
+     * @param publicKeyBase64 Base64 编码的 RSA 公钥，X.509 格式
+     * @param data 已签名数据
+     * @param signBase64 Base64 编码签名
+     * @return 签名是否有效
      */
     private boolean validateRSA(String publicKeyBase64, String data, String signBase64) {
         try {

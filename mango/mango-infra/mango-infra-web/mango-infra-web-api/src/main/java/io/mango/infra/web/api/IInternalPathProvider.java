@@ -3,13 +3,13 @@ package io.mango.infra.web.api;
 import java.util.List;
 
 /**
- * Internal path provider abstraction.
+ * 内部路径提供器抽象。
  * <p>
- * Infra-web depends on this interface to get internal path patterns,
- * without coupling to business platform (e.g., mango-authorization).
+ * infra-web 通过该接口获取内部路径匹配规则，
+ * 避免直接耦合业务平台模块，例如 mango-authorization。
  * </p>
  * <p>
- * Implementations should be provided by business modules (e.g., mango-authorization).
+ * 具体实现由业务模块提供，例如 mango-authorization。
  * </p>
  *
  * @author Mango
@@ -17,9 +17,9 @@ import java.util.List;
 public interface IInternalPathProvider {
 
     /**
-     * Get all internal path patterns
+     * 获取所有内部路径匹配规则。
      *
-     * @return list of internal path patterns (e.g., "/admin/**", "/internal/*")
+     * @return 内部路径匹配规则列表，例如 "/admin/**"、"/internal/*"
      */
     List<String> getInternalPaths();
 }

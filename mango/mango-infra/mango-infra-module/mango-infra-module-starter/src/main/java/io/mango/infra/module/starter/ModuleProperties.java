@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configuration for Mango module information.
+ * Mango 模块信息配置。
  */
 @ConfigurationProperties(prefix = "mango.module.module-service")
 public class ModuleProperties {

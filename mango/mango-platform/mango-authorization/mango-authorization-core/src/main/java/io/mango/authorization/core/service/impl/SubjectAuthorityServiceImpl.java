@@ -1,13 +1,13 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.mango.authorization.core.entity.SysMenu;
-import io.mango.authorization.core.entity.SysRole;
-import io.mango.authorization.core.entity.SysRoleMenu;
+import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.Role;
+import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
-import io.mango.authorization.core.mapper.SysMenuMapper;
-import io.mango.authorization.core.mapper.SysRoleMapper;
-import io.mango.authorization.core.mapper.SysRoleMenuMapper;
+import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.authorization.core.mapper.RoleMapper;
+import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import lombok.RequiredArgsConstructor;
@@ -18,56 +18,58 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Role and permission lookup backed by authorization bindings.
+ * 基于授权关系表查询主体角色和权限。
  */
 @Service
 @RequiredArgsConstructor
 public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
 
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
-    private final SysRoleMapper sysRoleMapper;
-    private final SysRoleMenuMapper sysRoleMenuMapper;
-    private final SysMenuMapper sysMenuMapper;
+    private final RoleMapper roleMapper;
+    private final RoleMenuMapper roleMenuMapper;
+    private final MenuMapper menuMapper;
 
     @Override
-    public List<String> listSubjectRoles(Long subjectId) {
+    public List<String> listSubjectRoles(Long subjectId, String appCode) {
         List<Long> roleIds = listSubjectRoleIds(subjectId);
         if (roleIds.isEmpty()) {
             return new ArrayList<>();
         }
-        LambdaQueryWrapper<SysRole> roleWrapper = new LambdaQueryWrapper<>();
-        roleWrapper.in(SysRole::getRoleId, roleIds)
-                .eq(SysRole::getStatus, 1);
-        return sysRoleMapper.selectList(roleWrapper)
+        LambdaQueryWrapper<Role> roleWrapper = new LambdaQueryWrapper<>();
+        roleWrapper.in(Role::getRoleId, roleIds)
+                .eq(appCode != null && !appCode.isBlank(), Role::getAppCode, appCode)
+                .eq(Role::getStatus, 1);
+        return roleMapper.selectList(roleWrapper)
                 .stream()
-                .map(SysRole::getRoleCode)
+                .map(Role::getRoleCode)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<String> listSubjectPermissions(Long subjectId) {
+    public List<String> listSubjectPermissions(Long subjectId, String appCode) {
         List<Long> roleIds = listSubjectRoleIds(subjectId);
         if (roleIds.isEmpty()) {
             return new ArrayList<>();
         }
 
-        LambdaQueryWrapper<SysRoleMenu> roleMenuWrapper = new LambdaQueryWrapper<>();
-        roleMenuWrapper.in(SysRoleMenu::getRoleId, roleIds);
-        List<Long> menuIds = sysRoleMenuMapper.selectList(roleMenuWrapper)
+        LambdaQueryWrapper<RoleMenu> roleMenuWrapper = new LambdaQueryWrapper<>();
+        roleMenuWrapper.in(RoleMenu::getRoleId, roleIds);
+        List<Long> menuIds = roleMenuMapper.selectList(roleMenuWrapper)
                 .stream()
-                .map(SysRoleMenu::getMenuId)
+                .map(RoleMenu::getMenuId)
                 .collect(Collectors.toList());
         if (menuIds.isEmpty()) {
             return new ArrayList<>();
         }
 
-        LambdaQueryWrapper<SysMenu> menuWrapper = new LambdaQueryWrapper<>();
-        menuWrapper.in(SysMenu::getMenuId, menuIds)
-                .eq(SysMenu::getMenuType, 3)
-                .eq(SysMenu::getStatus, 1);
-        return sysMenuMapper.selectList(menuWrapper)
+        LambdaQueryWrapper<Menu> menuWrapper = new LambdaQueryWrapper<>();
+        menuWrapper.in(Menu::getMenuId, menuIds)
+                .eq(appCode != null && !appCode.isBlank(), Menu::getAppCode, appCode)
+                .eq(Menu::getMenuType, 3)
+                .eq(Menu::getStatus, 1);
+        return menuMapper.selectList(menuWrapper)
                 .stream()
-                .map(SysMenu::getMenuCode)
+                .map(Menu::getMenuCode)
                 .filter(code -> code != null && !code.isBlank())
                 .collect(Collectors.toList());
     }

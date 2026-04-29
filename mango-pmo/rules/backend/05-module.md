@@ -31,8 +31,8 @@
 - `core` 只依赖本域 `api` 和其他域 `api`。
 - `core` 可依赖本域 `support`。
 - `starter` 依赖本域 `api` 和本域 `core`。
-- `starter-remote` 在 `io.mango` 依赖中只允许本域 `api` 和本域 `support`。
-- `starter-remote` 的 Feign、Spring、Web 等技术依赖使用外部框架坐标，不通过其他 Mango starter 透传。
+- `starter-remote` 在 `io.mango` 依赖中只允许本域 `api`、本域 `support` 和 `mango-infra-feign-starter`。
+- `starter-remote` 的 Feign 能力必须通过 `mango-infra-feign-starter` 引入，禁止直接依赖 `spring-cloud-starter-openfeign`；其它 Spring、Web 等技术依赖按需使用外部框架坐标。
 - 安全入口类聚合模块例外：`mango-security-starter-remote` 只允许聚合 `mango-infra-security-starter`、`mango-auth-starter-remote`、`mango-identity-starter-remote`、`mango-authorization-starter-remote`，不得新增业务实现。
 - `api` 不依赖业务实现。
 

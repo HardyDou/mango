@@ -1,6 +1,6 @@
 package io.mango.infra.security.core.impl;
 
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.api.ITokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class JjwtTokenServiceImplTest {
 
-    private ITokenService tokenService;
+    private ITokenProvider tokenService;
 
     @BeforeEach
     void setUp() {
@@ -59,6 +59,24 @@ class JjwtTokenServiceImplTest {
     }
 
     @Test
+    void init_withoutSecret_throwsException() {
+        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
+        setField(impl, "newSecret", "");
+        setField(impl, "legacySecret", "");
+
+        assertThrows(IllegalStateException.class, impl::init);
+    }
+
+    @Test
+    void init_withShortSecret_throwsException() {
+        JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
+        setField(impl, "newSecret", "short-secret");
+        setField(impl, "legacySecret", "");
+
+        assertThrows(IllegalStateException.class, impl::init);
+    }
+
+    @Test
     void getUserId_validToken_returnsUserId() {
         String token = tokenService.generateAccessToken(42L, "testuser", Map.of());
         assertEquals(42L, tokenService.getUserId(token));
@@ -85,7 +103,7 @@ class JjwtTokenServiceImplTest {
     @Test
     void refresh_validRefreshToken_returnsNewTokenPair() {
         String refreshToken = tokenService.generateRefreshToken(99L, "refreshuser");
-        ITokenService.TokenPair pair = tokenService.refresh(refreshToken);
+        ITokenProvider.TokenPair pair = tokenService.refresh(refreshToken);
 
         assertNotNull(pair);
         assertNotNull(pair.accessToken());

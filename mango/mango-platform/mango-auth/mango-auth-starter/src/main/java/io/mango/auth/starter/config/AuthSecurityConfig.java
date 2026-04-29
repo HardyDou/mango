@@ -1,7 +1,9 @@
 package io.mango.auth.starter.config;
 
 import io.mango.auth.core.constant.AuthConstant;
-import io.mango.infra.security.api.ITokenService;
+import io.mango.auth.core.service.TokenRevocationService;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.security.api.ITokenProvider;
 import io.mango.infra.security.api.SecurityPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,11 +12,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,22 +37,28 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * Auth security configuration.
+ * 认证安全配置。
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class AuthSecurityConfig {
 
-    private final ITokenService tokenService;
+    private final ITokenProvider tokenService;
+    private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
 
     @Bean
-    @ConditionalOnProperty(name = "mango.gateway.auth-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "mango.authorization.access.auth-enabled", havingValue = "true", matchIfMissing = true)
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authSecurityFilterChain(
             HttpSecurity http,
             AuthenticationEntryPoint authenticationEntryPoint,
-            AccessDeniedHandler accessDeniedHandler) throws Exception {
+            AccessDeniedHandler accessDeniedHandler,
+            @Qualifier("apiResourceAuthorizationManager")
+            ObjectProvider<AuthorizationManager<RequestAuthorizationContext>> apiResourceAuthorizationManagerProvider)
+            throws Exception {
+        AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager =
+                apiResourceAuthorizationManagerProvider.getIfAvailable();
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -60,19 +72,28 @@ public class AuthSecurityConfig {
                     for (String path : AuthConstant.WHITE_LIST) {
                         authorize.requestMatchers(path).permitAll();
                     }
-                    authorize.anyRequest().authenticated();
+                    if (apiResourceAuthorizationManager == null) {
+                        authorize.anyRequest().authenticated();
+                    } else {
+                        authorize.anyRequest().access(apiResourceAuthorizationManager);
+                    }
                 })
-                .addFilterBefore(new AuthTokenAuthenticationFilter(tokenService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new AuthTokenAuthenticationFilter(
+                        tokenService,
+                        tokenRevocationServiceProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
     @Slf4j
     static class AuthTokenAuthenticationFilter extends OncePerRequestFilter {
 
-        private final ITokenService tokenService;
+        private final ITokenProvider tokenService;
+        private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
 
-        AuthTokenAuthenticationFilter(ITokenService tokenService) {
+        AuthTokenAuthenticationFilter(ITokenProvider tokenService,
+                                      ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider) {
             this.tokenService = tokenService;
+            this.tokenRevocationServiceProvider = tokenRevocationServiceProvider;
         }
 
         @Override
@@ -84,13 +105,28 @@ public class AuthSecurityConfig {
             }
 
             String authHeader = request.getHeader(AuthConstant.TOKEN_HEADER);
-            if (authHeader != null && authHeader.startsWith(ITokenService.BEARER_PREFIX)) {
-                String token = authHeader.substring(ITokenService.BEARER_PREFIX.length());
+            if (authHeader != null && authHeader.startsWith(ITokenProvider.BEARER_PREFIX)) {
+                String token = authHeader.substring(ITokenProvider.BEARER_PREFIX.length());
                 if (tokenService.validateToken(token)
-                        && ITokenService.TOKEN_TYPE_ACCESS.equals(tokenService.getTokenType(token))) {
+                        && !isRevoked(token)
+                        && ITokenProvider.TOKEN_TYPE_ACCESS.equals(tokenService.getTokenType(token))) {
                     Long userId = tokenService.getUserId(token);
                     String username = tokenService.getUsername(token);
-                    SecurityPrincipal principal = new SecurityPrincipal(userId, null, username);
+                    String realm = tokenService.getClaim(token, "realm");
+                    String actorType = tokenService.getClaim(token, "actorType");
+                    String partyType = tokenService.getClaim(token, "partyType");
+                    Long partyId = resolveLongClaim(token, "partyId");
+                    String appCode = tokenService.getClaim(token, "appCode");
+                    String tenantId = firstText(tokenService.getClaim(token, "tenantId"), MangoContextHolder.tenantId());
+                    SecurityPrincipal principal = new SecurityPrincipal(
+                            userId,
+                            tenantId,
+                            username,
+                            realm,
+                            actorType,
+                            partyType,
+                            partyId,
+                            appCode);
                     UsernamePasswordAuthenticationToken authentication =
                             UsernamePasswordAuthenticationToken.authenticated(
                                     principal,
@@ -99,6 +135,15 @@ public class AuthSecurityConfig {
                     SecurityContext context = SecurityContextHolder.createEmptyContext();
                     context.setAuthentication(authentication);
                     SecurityContextHolder.setContext(context);
+                    MangoContextHolder.update(current -> current.withSecurity(
+                            userId,
+                            tenantId,
+                            username,
+                            realm,
+                            actorType,
+                            partyType,
+                            partyId,
+                            appCode));
                 }
             }
 
@@ -118,6 +163,30 @@ public class AuthSecurityConfig {
                         }
                         return path.equals(pattern);
                     });
+        }
+
+        private Long resolveLongClaim(String token, String claimName) {
+            String value = tokenService.getClaim(token, claimName);
+            if (value == null || value.isBlank()) {
+                return null;
+            }
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        private boolean isRevoked(String token) {
+            TokenRevocationService tokenRevocationService = tokenRevocationServiceProvider.getIfAvailable();
+            return tokenRevocationService != null && tokenRevocationService.isRevoked(token);
+        }
+
+        private String firstText(String first, String second) {
+            if (first != null && !first.isBlank()) {
+                return first.trim();
+            }
+            return second != null && !second.isBlank() ? second.trim() : null;
         }
     }
 }

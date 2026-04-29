@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 
 /**
- * Default captcha configuration service.
- * Fail-open: if path not configured, captcha is not required.
+ * 默认验证码配置服务。
+ * fail-open 策略：路径未配置时不要求验证码。
  */
 @Slf4j
 @Component

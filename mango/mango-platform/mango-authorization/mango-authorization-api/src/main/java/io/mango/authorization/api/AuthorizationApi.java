@@ -1,9 +1,11 @@
 package io.mango.authorization.api;
 
+import io.mango.common.result.R;
+
 /**
- * Authorization HTTP contract.
+ * 授权查询远程契约。
  */
 public interface AuthorizationApi {
 
-    AuthorizationSnapshot loadUserAuthorization(Long subjectId, String tenantId, String systemCode);
+    R<AuthorizationSnapshot> loadUserAuthorization(Long subjectId, String tenantId, String systemCode);
 }

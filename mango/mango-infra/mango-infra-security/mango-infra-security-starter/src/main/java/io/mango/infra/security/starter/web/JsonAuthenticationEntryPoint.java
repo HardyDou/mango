@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * JSON authentication entry point for API services.
+ * API 服务使用的 JSON 未认证入口。
  */
 public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

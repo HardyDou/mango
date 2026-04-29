@@ -1,6 +1,7 @@
 package io.mango.biz.notification.core.controller;
 
-import io.mango.infra.security.api.Perm;
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.biz.notification.api.NotificationApi;
 import io.mango.biz.notification.api.po.SysNotificationPo;
@@ -19,25 +20,25 @@ public class NotificationController {
     private final NotificationApi messageApi;
 
     @PostMapping("/send")
-    @Perm("message:send")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:send")
     public R<Long> send(@RequestBody @Valid SysNotificationPo po) {
         return messageApi.send(po);
     }
 
     @PostMapping("/broadcast")
-    @Perm("message:broadcast")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:broadcast")
     public R<Long> broadcast(@RequestBody @Valid SysNotificationPo po) {
         return messageApi.broadcast(po);
     }
 
     @GetMapping("/user/{userId}")
-    @Perm("message:query")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:query")
     public R<List<SysNotificationVO>> listByUser(@PathVariable Long userId) {
         return messageApi.listByUser(userId);
     }
 
     @PutMapping("/read/{id}")
-    @Perm("message:edit")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:edit")
     public R<Boolean> markRead(@PathVariable Long id) {
         return messageApi.markRead(id);
     }

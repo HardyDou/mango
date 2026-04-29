@@ -3,7 +3,7 @@ package io.mango.infra.module.api;
 import java.util.Optional;
 
 /**
- * Resolves real service information by Mango module name.
+ * 按 Mango 模块名解析真实部署服务信息。
  */
 @FunctionalInterface
 public interface ModuleInfoResolver {

@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an HTTP API or handler as internal-only.
+ * 标记 HTTP API 或处理器仅允许内部调用。
  */
 @Documented
 @Target({ElementType.TYPE, ElementType.METHOD})

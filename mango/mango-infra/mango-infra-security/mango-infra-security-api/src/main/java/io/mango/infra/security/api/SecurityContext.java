@@ -1,25 +1,39 @@
 package io.mango.infra.security.api;
 
 /**
- * Immutable security context snapshot.
+ * 不可变安全上下文快照。
  *
- * @param userId authenticated subject ID
- * @param tenantId current tenant identifier
- * @param authenticated whether the current request is authenticated
- * @param principalName authenticated principal name
+ * @param userId 当前认证主体 ID
+ * @param tenantId 当前租户标识
+ * @param authenticated 当前请求是否已认证
+ * @param principalName 当前认证主体名称
+ * @param realm 登录域
+ * @param actorType 操作者类型
+ * @param partyType 归属主体类型
+ * @param partyId 归属主体 ID
+ * @param appCode 当前应用编码
  */
 public record SecurityContext(
         Long userId,
         String tenantId,
         boolean authenticated,
-        String principalName) {
+        String principalName,
+        String realm,
+        String actorType,
+        String partyType,
+        Long partyId,
+        String appCode) {
+
+    public SecurityContext(Long userId, String tenantId, boolean authenticated, String principalName) {
+        this(userId, tenantId, authenticated, principalName, null, null, null, null, null);
+    }
 
     /**
-     * Anonymous context for unauthenticated or non-request execution paths.
+     * 未认证或非请求执行路径使用的匿名上下文。
      *
-     * @return anonymous context
+     * @return 匿名上下文
      */
     public static SecurityContext anonymous() {
-        return new SecurityContext(null, null, false, null);
+        return new SecurityContext(null, null, false, null, null, null, null, null, null);
     }
 }

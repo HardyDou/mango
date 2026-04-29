@@ -1,52 +1,49 @@
--- Mango App Test Data
+-- 芒果应用测试数据
 
--- Insert test users (passwords are BCrypt encrypted)
+-- 插入测试用户，密码使用 BCrypt 加密
 -- admin=admin123, testuser=test123, disabled=123456
-INSERT INTO sys_user (username, password, nickname, email, phone, status) VALUES
-('admin', '$2a$10$Hxg9OlCM4Y9kj31WEea/tuiYXtJABkOIlXf/u/b95OQrq8Uj7qbZK', 'Administrator', 'admin@mango.io', '13800000001', 1),
-('testuser', '$2a$10$W7isC9On/7p1Zk4NFsEJDeQZOyWfXy7U3jx7Sze9UD8wsIMvMvIja', 'Test User', 'test@mango.io', '13800000002', 1),
-('disabled', '$2a$10$O5tck9vWzxKWRvzVffrxYeo/vcrC2AEmi6j6uvqXoFBZ9wBCz8AQ6', 'Disabled User', 'disabled@mango.io', '13800000003', 0);
+INSERT INTO identity_user (username, password, nickname, realm, actor_type, party_type, party_id, email, phone, status) VALUES
+('admin', '$2a$10$Hxg9OlCM4Y9kj31WEea/tuiYXtJABkOIlXf/u/b95OQrq8Uj7qbZK', 'Administrator', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 'admin@mango.io', '13800000001', 1),
+('testuser', '$2a$10$W7isC9On/7p1Zk4NFsEJDeQZOyWfXy7U3jx7Sze9UD8wsIMvMvIja', 'Test User', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 'test@mango.io', '13800000002', 1),
+('disabled', '$2a$10$O5tck9vWzxKWRvzVffrxYeo/vcrC2AEmi6j6uvqXoFBZ9wBCz8AQ6', 'Disabled User', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 'disabled@mango.io', '13800000003', 0);
 
--- Insert roles
-INSERT INTO sys_role (role_code, role_name, description, status) VALUES
-('admin', 'Administrator', 'System administrator with full permissions', 1),
-('developer', 'Developer', 'Developer role', 1),
-('user', '普通用户', 'Regular user role', 1),
-('disabled_role', '已禁用角色', 'Disabled role for testing', 0);
+-- 插入角色
+INSERT INTO authorization_app (app_id, app_code, app_name, realm, actor_type, icon, sort, status) VALUES
+(1, 'internal-admin', '内部管理后台', 'INTERNAL', 'INTERNAL_USER', 'setting', 1, 1);
 
--- Insert menu groups
-INSERT INTO rbac_menu_group (group_id, group_name, group_code, icon, sort, status) VALUES
-(1, '系统管理', 'system', 'setting', 1, 1),
-(2, '工作台', 'workbench', 'desktop', 2, 1),
-(3, '运维管理', 'ops', 'cloud', 3, 1);
+INSERT INTO authorization_role (role_id, app_code, realm, actor_type, role_code, role_name, role_type, status, sort, remark) VALUES
+(1001, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'admin', 'Administrator', 1, 1, 1, 'System administrator with full permissions'),
+(1002, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'developer', 'Developer', 2, 1, 2, 'Developer role'),
+(1003, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'user', '普通用户', 2, 1, 3, 'Regular user role'),
+(1004, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'disabled_role', '已禁用角色', 2, 0, 4, 'Disabled role for testing');
 
--- Insert menus (buttons and pages with permissions)
-INSERT INTO sys_menu (group_id, parent_id, menu_type, menu_name, menu_code, path, sort, status) VALUES
-(1, 0, 1, '系统管理', NULL, '/system', 0, 1),
-(1, 1, 2, '用户管理', NULL, '/system/user', 1, 1),
-(1, 2, 3, '查看用户', 'system:user:view', NULL, 1, 1),
-(1, 2, 3, '新增用户', 'system:user:add', NULL, 2, 1),
-(1, 2, 3, '编辑用户', 'system:user:edit', NULL, 3, 1),
-(1, 2, 3, '删除用户', 'system:user:del', NULL, 4, 1),
-(1, 1, 2, '角色管理', NULL, '/system/role', 2, 1),
-(1, 7, 3, '查看角色', 'system:role:view', NULL, 1, 1),
-(1, 7, 3, '新增角色', 'system:role:add', NULL, 2, 1),
-(1, 7, 3, '编辑角色', 'system:role:edit', NULL, 3, 1),
-(1, 7, 3, '删除角色', 'system:role:del', NULL, 4, 1);
+-- 插入菜单，包含页面和按钮权限
+INSERT INTO authorization_menu (menu_id, app_code, parent_id, menu_type, menu_name, menu_code, path, sort, status) VALUES
+(1001, 'internal-admin', 0, 1, '系统管理', NULL, '/system', 0, 1),
+(1002, 'internal-admin', 1001, 2, '用户管理', NULL, '/system/user', 1, 1),
+(1003, 'internal-admin', 1002, 3, '查看用户', 'system:user:view', NULL, 1, 1),
+(1004, 'internal-admin', 1002, 3, '新增用户', 'system:user:add', NULL, 2, 1),
+(1005, 'internal-admin', 1002, 3, '编辑用户', 'system:user:edit', NULL, 3, 1),
+(1006, 'internal-admin', 1002, 3, '删除用户', 'system:user:del', NULL, 4, 1),
+(1007, 'internal-admin', 1001, 2, '角色管理', NULL, '/system/role', 2, 1),
+(1008, 'internal-admin', 1007, 3, '查看角色', 'system:role:view', NULL, 1, 1),
+(1009, 'internal-admin', 1007, 3, '新增角色', 'system:role:add', NULL, 2, 1),
+(1010, 'internal-admin', 1007, 3, '编辑角色', 'system:role:edit', NULL, 3, 1),
+(1011, 'internal-admin', 1007, 3, '删除角色', 'system:role:del', NULL, 4, 1);
 
--- User-Role mappings
-INSERT INTO sys_user_role (user_id, role_id) VALUES
-(1, 1),
-(1, 2),
-(2, 3);
+-- 用户角色关系
+INSERT INTO authorization_subject_role (id, subject_id, app_code, realm, actor_type, party_type, party_id, role_id) VALUES
+(1001, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 1001),
+(1002, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 1002),
+(1003, 2, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 1003);
 
--- Role-Menu mappings (admin gets all menus, developer gets some, user gets few)
-INSERT INTO sys_role_menu (role_id, menu_id) VALUES
-(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11),
-(2, 3), (2, 4),
-(3, 3);
+-- 角色菜单关系：管理员拥有全部菜单，开发者和普通用户只拥有部分菜单
+INSERT INTO authorization_role_menu (id, role_id, menu_id) VALUES
+(1001, 1001, 1001), (1002, 1001, 1002), (1003, 1001, 1003), (1004, 1001, 1004), (1005, 1001, 1005), (1006, 1001, 1006), (1007, 1001, 1007), (1008, 1001, 1008), (1009, 1001, 1009), (1010, 1001, 1010), (1011, 1001, 1011),
+(1012, 1002, 1003), (1013, 1002, 1004),
+(1014, 1003, 1003);
 
--- I18n Translations (using original schema)
+-- 国际化翻译数据
 INSERT INTO sys_i18n (name, zh_cn, en, description) VALUES
 ('common.save', '保存', 'Save', 'Save button'),
 ('common.cancel', '取消', 'Cancel', 'Cancel button'),
@@ -57,18 +54,18 @@ INSERT INTO sys_i18n (name, zh_cn, en, description) VALUES
 ('menu.system', '系统管理', 'System', 'System management menu'),
 ('menu.user', '用户管理', 'User Management', 'User management menu');
 
--- Organization Data (芒果 Organization Tree)
--- Level 1: 芒果集团 (Root)
+-- 组织数据：芒果组织树
+-- 一级：芒果集团
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (1, 0, '芒果集团', 'MANGO_GROUP', 1, 0, '1', 1);
 
--- Level 2: 子公司 (Subsidiaries)
+-- 二级：子公司
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (2, 1, '芒果科技', 'MANGO_TECH', 2, 1, '1', 1),
 (3, 1, '芒果金融', 'MANGO_FINANCE', 2, 2, '1', 1),
 (4, 1, '芒果地产', 'MANGO_REAL_ESTATE', 2, 3, '1', 1);
 
--- Level 3: 部门 (Departments under 芒果科技)
+-- 三级：芒果科技下属部门
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (5, 2, '技术研发部', 'TECH_RD', 3, 1, '1', 1),
 (6, 2, '产品设计部', 'TECH_PRODUCT', 3, 2, '1', 1),
@@ -76,33 +73,33 @@ INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status
 (8, 2, '人力资源部', 'TECH_HR', 3, 4, '1', 1),
 (9, 2, '财务部', 'TECH_FINANCE', 3, 5, '1', 1);
 
--- Level 3: 部门 (Departments under 芒果金融)
+-- 三级：芒果金融下属部门
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (10, 3, '风险管理部', 'FIN_RISK', 3, 1, '1', 1),
 (11, 3, '信贷管理部', 'FIN_CREDIT', 3, 2, '1', 1),
 (12, 3, '财务部', 'FIN_ACCOUNTING', 3, 3, '1', 1);
 
--- Level 3: 部门 (Departments under 芒果地产)
+-- 三级：芒果地产下属部门
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (13, 4, '项目管理部', 'RE_PROJECT', 3, 1, '1', 1),
 (14, 4, '成本合约部', 'RE_CONTRACT', 3, 2, '1', 1),
 (15, 4, '财务部', 'RE_FINANCE', 3, 3, '1', 1);
 
--- Level 4: 小组 (Teams under 技术研发部)
+-- 四级：技术研发部下属小组
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (16, 5, '后端开发组', 'TECH_BACKEND', 4, 1, '1', 1),
 (17, 5, '前端开发组', 'TECH_FRONTEND', 4, 2, '1', 1),
 (18, 5, '测试组', 'TECH_QA', 4, 3, '1', 1),
 (19, 5, '运维组', 'TECH_OPS', 4, 4, '1', 1);
 
--- Level 4: 小组 (Teams under 产品设计部)
+-- 四级：产品设计部下属小组
 INSERT INTO sys_org (id, pid, org_name, org_code, org_type, org_sort, org_status, tenant_id) VALUES
 (20, 6, '产品策划组', 'PRD_PLANNING', 4, 1, '1', 1),
 (21, 6, 'UI设计组', 'PRD_UI', 4, 2, '1', 1),
 (22, 6, '交互设计组', 'PRD_UX', 4, 3, '1', 1);
 
--- Administrative Area Data - 34个省级行政区
--- 省级 (Province Level - area_type = 1)
+-- 行政区划数据：34 个省级行政区
+-- 省级：area_type = 1
 INSERT INTO sys_area (id, pid, name, adcode, area_type, area_sort, area_status, hot, tenant_id) VALUES
 (1, 0, '北京市', 110000, '1', 1, '1', '1', 1),
 (2, 0, '天津市', 120000, '1', 2, '1', '1', 1),
@@ -139,7 +136,7 @@ INSERT INTO sys_area (id, pid, name, adcode, area_type, area_sort, area_status, 
 (33, 0, '香港特别行政区', 810000, '1', 33, '1', '1', 1),
 (34, 0, '澳门特别行政区', 820000, '1', 34, '1', '1', 1);
 
--- 市级数据 (City Level - area_type = 2)
+-- 市级数据：area_type = 2
 INSERT INTO sys_area (id, pid, name, adcode, area_type, area_sort, area_status, hot, tenant_id) VALUES
 -- 北京
 (101, 1, '北京市', 110100, '2', 1, '1', '1', 1),
@@ -241,7 +238,7 @@ INSERT INTO sys_area (id, pid, name, adcode, area_type, area_sort, area_status, 
 -- 澳门
 (802, 34, '澳门半岛', 820100, '2', 1, '1', '1', 1);
 
--- 区县级数据 (District Level - area_type = 3)
+-- 区县级数据：area_type = 3
 INSERT INTO sys_area (id, pid, name, adcode, area_type, area_sort, area_status, hot, tenant_id) VALUES
 -- 北京区县
 (1001, 101, '东城区', 110101, '3', 1, '1', '1', 1),

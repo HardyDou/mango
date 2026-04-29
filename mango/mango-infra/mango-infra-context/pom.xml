@@ -11,7 +11,7 @@
     <artifactId>mango-infra-context</artifactId>
     <packaging>pom</packaging>
     <name>Mango Infra Context</name>
-    <description>Context propagation infrastructure - TTL ThreadLocal holders and executor decorators</description>
+    <description>Mango 运行时上下文与上下文传播基础设施</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

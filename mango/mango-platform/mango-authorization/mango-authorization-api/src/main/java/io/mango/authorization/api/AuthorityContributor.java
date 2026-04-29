@@ -1,7 +1,7 @@
 package io.mango.authorization.api;
 
 /**
- * Contributes authorities for an authorization query.
+ * 根据授权查询贡献权限快照。
  */
 public interface AuthorityContributor {
 

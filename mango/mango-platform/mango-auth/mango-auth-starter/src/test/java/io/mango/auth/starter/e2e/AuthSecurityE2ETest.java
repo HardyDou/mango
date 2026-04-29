@@ -6,18 +6,19 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.core.service.impl.AuthServiceImpl;
+import io.mango.auth.core.service.TokenRevocationService;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
 import io.mango.common.result.R;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.security.api.IPermissionService;
+import io.mango.infra.security.api.IPermissionProvider;
 import io.mango.infra.security.api.ISecurityContextProvider;
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.api.ITokenProvider;
 import io.mango.infra.security.api.Perm;
 import io.mango.infra.security.core.impl.JjwtTokenServiceImpl;
 import io.mango.infra.security.starter.SecurityAutoConfiguration;
-import io.mango.identity.api.IAuthUserProvider;
+import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.vo.AuthUserInfo;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +49,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = AuthSecurityE2ETest.TestApp.class,
         properties = {
-                "mango.gateway.auth-enabled=true",
+                "mango.authorization.access.auth-enabled=true",
+                "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
                 "spring.flyway.enabled=false",
                 "spring.autoconfigure.exclude="
                         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
@@ -113,6 +115,35 @@ class AuthSecurityE2ETest {
                 .andExpect(jsonPath("$.code").value(401));
     }
 
+    @Test
+    @DisplayName("logout should revoke current access token")
+    void logoutShouldRevokeCurrentAccessToken() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin",
+                                  "password": "admin123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String accessToken = body.path("data").path("accessToken").asText();
+
+        mockMvc.perform(post("/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"" + accessToken + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        mockMvc.perform(get("/e2e/secured")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isUnauthorized());
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration(excludeName = {
             "io.mango.auth.starter.AuthAutoConfiguration",
@@ -124,6 +155,7 @@ class AuthSecurityE2ETest {
             SecurityAutoConfiguration.class,
             AuthController.class,
             AuthServiceImpl.class,
+            TokenRevocationService.class,
             SecuredController.class
     })
     static class TestApp {
@@ -144,19 +176,13 @@ class AuthSecurityE2ETest {
         }
 
         @Bean
-        ITokenService tokenService() {
-            JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
-            setField(impl, "newSecret", "mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits");
-            setField(impl, "legacySecret", "");
-            setField(impl, "accessTokenValiditySeconds", 7200L);
-            setField(impl, "refreshTokenValiditySeconds", 604800L);
-            impl.init();
-            return impl;
+        ITokenProvider tokenService(IKvStore kvStore) {
+            return new JjwtTokenServiceImpl(kvStore);
         }
 
         @Bean
-        IAuthUserProvider authUserProvider(PasswordEncoder passwordEncoder) {
-            return new IAuthUserProvider() {
+        AuthUserProvider authUserProvider(PasswordEncoder passwordEncoder) {
+            return new AuthUserProvider() {
                 @Override
                 public AuthUserInfo getByUsernameForAuth(String username) {
                     if (!"admin".equals(username)) {
@@ -195,19 +221,10 @@ class AuthSecurityE2ETest {
         }
 
         @Bean
-        IPermissionService permissionService(IAuthorizationProvider authorizationProvider) {
+        IPermissionProvider permissionService(IAuthorizationProvider authorizationProvider) {
             return userId -> authorizationProvider.load(AuthorizationQuery.user(userId)).permissionCodes().stream().toList();
         }
 
-        private static void setField(Object target, String fieldName, Object value) {
-            try {
-                var field = target.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(target, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     static class InMemoryTestKvStore implements IKvStore {

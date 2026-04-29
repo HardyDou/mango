@@ -1,6 +1,6 @@
 package io.mango.infra.security.core.impl;
 
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.api.ITokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("JWT token performance baseline tests")
 class JjwtTokenServicePerformanceBaselineTest {
 
-    private ITokenService tokenService;
+    private ITokenProvider tokenService;
 
     @BeforeEach
     void setUp() {
@@ -38,7 +38,7 @@ class JjwtTokenServicePerformanceBaselineTest {
                 assertTrue(tokenService.validateToken(token));
                 assertTrue(tokenService.getUserId(token) > 0);
                 assertTrue(tokenService.getUsername(token).startsWith("perf"));
-                assertTrue(tokenService.getTokenType(token).equals(ITokenService.TOKEN_TYPE_ACCESS));
+                assertTrue(tokenService.getTokenType(token).equals(ITokenProvider.TOKEN_TYPE_ACCESS));
             }
             long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000;
             assertTrue(elapsedMillis < 4_000, "JWT baseline exceeded: " + elapsedMillis + "ms");

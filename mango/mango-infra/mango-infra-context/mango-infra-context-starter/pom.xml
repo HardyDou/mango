@@ -10,21 +10,26 @@
     </parent>
     <artifactId>mango-infra-context-starter</artifactId>
     <name>Mango Infra Context Starter</name>
-    <description>Context Starter - TtlExecutorDecorator and auto-configuration</description>
+    <description>Mango 运行时上下文与上下文传播 Spring 集成</description>
 
     <dependencies>
-        <!-- Context Core -->
+        <!-- 上下文核心 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-context-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Spring Boot Autoconfigure -->
+        <!-- Spring Boot 自动配置 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
-        <!-- Spring Boot Configuration Processor -->
+        <!-- Spring 异步执行器 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <!-- Spring Boot 配置处理器 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>

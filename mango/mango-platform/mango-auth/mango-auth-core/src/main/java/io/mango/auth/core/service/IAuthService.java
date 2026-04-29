@@ -1,10 +1,14 @@
 package io.mango.auth.core.service;
 
-import io.mango.auth.api.vo.LoginResponse;
+import io.mango.auth.api.command.LoginCommand;
+import io.mango.auth.api.vo.LoginVO;
 
 public interface IAuthService {
-    LoginResponse login(String username, String password);
+    LoginVO login(LoginCommand command);
+
     void logout(String token);
-    LoginResponse refreshToken(String refreshToken);
+
+    LoginVO refreshToken(String refreshToken);
+
     boolean validateToken(String token);
 }

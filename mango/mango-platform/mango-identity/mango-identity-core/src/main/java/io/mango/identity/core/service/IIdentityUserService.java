@@ -4,41 +4,32 @@ import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.api.vo.IdentityUserInfo;
 
 /**
- * Identity user service interface
- *
- * @author Mango
+ * 身份用户服务接口。
  */
 public interface IIdentityUserService {
 
     /**
-     * Get identity user profile by username.
-     *
-     * @param username username
-     * @return identity user profile
+     * 按用户名查询身份资料。
      */
     IdentityUserInfo getUserInfo(String username);
 
     /**
-     * Get identity user profile by user ID.
-     *
-     * @param userId user ID
-     * @return identity user profile
+     * 按用户 ID 查询身份资料。
      */
     IdentityUserInfo getUserInfoById(Long userId);
 
     /**
-     * Get user by username
-     *
-     * @param username username
-     * @return user entity
+     * 按用户名查询用户实体。
      */
     IdentityUser getByUsername(String username);
 
     /**
-     * Get user by user ID
-     *
-     * @param userId user ID
-     * @return user entity
+     * 按登录域和用户名查询用户实体。
+     */
+    IdentityUser getByUsername(String username, String realm);
+
+    /**
+     * 按用户 ID 查询用户实体。
      */
     IdentityUser getById(Long userId);
 

@@ -21,7 +21,11 @@
         <module>mango-authorization-api</module>
         <module>mango-authorization-core</module>
         <module>mango-authorization-starter</module>
+        <module>mango-authorization-resource-sync-starter</module>
         <module>mango-authorization-starter-remote</module>
+        <module>mango-authorization-access-core</module>
+        <module>mango-authorization-web-starter</module>
+        <module>mango-authorization-gateway-starter</module>
     </modules>
 
 </project>

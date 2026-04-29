@@ -17,53 +17,68 @@
     <description>Auth service starter for local usage</description>
 
     <dependencies>
-        <!-- Mango Auth Core -->
+        <!-- Mango 认证核心实现 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-auth-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Boot Web -->
+        <!-- Mango 基础 Web Starter，提供 Spring Web 与请求上下文 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-web-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Common -->
+        <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Spring Security Crypto (for BCryptPasswordEncoder bean) -->
+        <!-- Spring Security Crypto，用于 BCryptPasswordEncoder Bean -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-        <!-- Mango Infra Security (ITokenService implementation via auto-config) -->
+        <!-- Mango 基础安全，自动配置 ITokenProvider 实现 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-security-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Infra Context (TtlExecutorDecorator for async login context propagation) -->
+        <!-- Mango 基础上下文，用于异步登录上下文传递 -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-context-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango Authorization Starter -->
+        <!-- Mango KV 存储 API，用于分布式登录失败追踪 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-kv-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango 验证码 API，用于 CaptchaInterceptor -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-captcha-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango 授权 Starter -->
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-authorization-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Servlet API for Filter -->
+        <!-- Servlet API，用于 Filter -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -77,7 +92,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Tests -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

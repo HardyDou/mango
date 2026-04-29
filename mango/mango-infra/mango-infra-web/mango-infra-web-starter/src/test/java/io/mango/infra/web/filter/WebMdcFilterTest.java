@@ -1,14 +1,13 @@
 package io.mango.infra.web.filter;
 
-import io.mango.infra.web.api.IRequestContextProvider;
-import io.mango.infra.web.api.RequestContextSnapshot;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.core.MangoContextSnapshot;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,13 +18,13 @@ class WebMdcFilterTest {
     @AfterEach
     void tearDown() {
         MDC.clear();
+        MangoContextHolder.clear();
     }
 
     @Test
     void filterShouldPutRequestContextIntoMdcAndClearAfterRequest() throws Exception {
-        IRequestContextProvider provider = () -> new RequestContextSnapshot(
-                "request-1", "trace-1", "127.0.0.1", null, Map.of(), Map.of());
-        WebMdcFilter filter = new WebMdcFilter(provider);
+        MangoContextHolder.set(MangoContextSnapshot.request("request-1", "trace-1", null, null, "127.0.0.1"));
+        WebMdcFilter filter = new WebMdcFilter();
         AtomicReference<String> traceId = new AtomicReference<>();
 
         filter.doFilter(new MockHttpServletRequest(), new MockHttpServletResponse(),

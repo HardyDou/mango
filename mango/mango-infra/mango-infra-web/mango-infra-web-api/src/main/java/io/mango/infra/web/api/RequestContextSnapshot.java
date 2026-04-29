@@ -3,14 +3,14 @@ package io.mango.infra.web.api;
 import java.util.Map;
 
 /**
- * Immutable HTTP request context snapshot.
+ * 不可变 HTTP 请求上下文快照。
  *
- * @param requestId request identifier from trusted request metadata
- * @param traceId distributed trace identifier from trusted request metadata
- * @param clientIp resolved client IP address
- * @param request underlying HTTP request object, if available
- * @param headers request headers
- * @param cookies request cookies
+ * @param requestId 来自可信请求元数据的请求标识
+ * @param traceId 来自可信请求元数据的分布式链路标识
+ * @param clientIp 解析后的客户端 IP 地址
+ * @param request 底层 HTTP 请求对象；不可用时为空
+ * @param headers 请求 Header
+ * @param cookies 请求 Cookie
  */
 public record RequestContextSnapshot(
         String requestId,
@@ -21,9 +21,9 @@ public record RequestContextSnapshot(
         Map<String, String> cookies) {
 
     /**
-     * Create an empty context for non-HTTP execution paths.
+     * 为非 HTTP 执行路径创建空上下文。
      *
-     * @return empty context
+     * @return 空上下文
      */
     public static RequestContextSnapshot empty() {
         return new RequestContextSnapshot(null, null, null, null, Map.of(), Map.of());

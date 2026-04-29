@@ -5,9 +5,7 @@ import io.mango.identity.core.entity.IdentityUser;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * Identity user mapper
- *
- * @author Mango
+ * 身份用户 Mapper。
  */
 @Mapper
 public interface IdentityUserMapper extends BaseMapper<IdentityUser> {

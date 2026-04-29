@@ -6,23 +6,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Replay attack guard using IKvStore.
- * Each request nonce is stored with 10-minute TTL.
+ * 基于 IKvStore 的重放攻击保护器。
+ * 每个请求 nonce 保存 10 分钟。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ReplayGuard {
 
-    private static final long NONCE_TTL_SECONDS = 600; // 10 minutes
+    private static final long NONCE_TTL_SECONDS = 600; // 10 分钟
     private static final String KEY_PREFIX = "replay:";
 
     private final IKvStore kvStore;
 
     /**
-     * Atomically try to acquire a nonce.
-     * @param nonce the unique request nonce
-     * @return true=new request (allow), false=duplicate request (reject)
+     * 原子占用 nonce。
+     * @param nonce 请求唯一 nonce
+     * @return true 表示新请求，false 表示重复请求
      */
     public boolean tryAcquire(String nonce) {
         if (nonce == null || nonce.isBlank()) {
@@ -37,9 +37,9 @@ public class ReplayGuard {
     }
 
     /**
-     * Check if a nonce has been used.
-     * @param nonce the unique request nonce
-     * @return true=already used, false=fresh
+     * 检查 nonce 是否已使用。
+     * @param nonce 请求唯一 nonce
+     * @return true 表示已使用，false 表示未使用
      */
     public boolean isUsed(String nonce) {
         if (nonce == null || nonce.isBlank()) {

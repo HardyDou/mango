@@ -26,7 +26,8 @@
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-api</artifactId>
+            <artifactId>mango-authorization-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
@@ -37,6 +38,10 @@
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-realtime-api</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

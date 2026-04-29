@@ -36,7 +36,10 @@ mango-infra-security-starter
 mango-auth-starter
 mango-identity-starter
 mango-authorization-starter
+mango-authorization-resource-sync-starter
 ```
+
+本地聚合会启用接口资源扫描，把当前应用内的 Spring MVC 接口注册到 `authorization_api_resource`，并提供 URL 级授权策略给 `mango-auth-starter`。
 
 ## 微服务调用方使用
 
@@ -57,7 +60,9 @@ mango-authorization-starter-remote
 ```
 
 远程聚合 starter 负责把 `mango-authorization-starter-remote` 提供的 `IAuthorizationProvider`
-适配成 `mango-infra-security` 所需的 `IPermissionService`，业务调用方不需要单独装配权限适配器。
+适配成 `mango-infra-security` 所需的 `IPermissionProvider`，业务调用方不需要单独装配权限适配器。
+
+微服务业务 App 仍需要直接依赖 `mango-authorization-resource-sync-starter`，用于扫描本服务接口并通过远程 authorization 服务注册资源。远程聚合 starter 不内置该 starter，避免在纯调用方场景产生错误扫描。
 
 ## 约束
 

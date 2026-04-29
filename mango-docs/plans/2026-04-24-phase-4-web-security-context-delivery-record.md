@@ -3,7 +3,7 @@
 ## 范围
 
 - 主模块：`mango-infra-web`、`mango-infra-security`
-- 被动适配：`mango-auth-starter` 写入 `authenticated=true`
+- 被动适配：`mango-auth-starter` 写入 Spring Security `SecurityContextHolder`
 - 未进入范围：`mango-gateway`、`mango-rbac`、`mango-system`、`mango-admin-app` 的主动重构
 
 ## P4-T1 / P4-T2 盘点结果
@@ -11,7 +11,7 @@
 | 模块 | 平台依赖 | 业务感知点 | 判定 |
 |------|----------|------------|------|
 | `mango-infra-web` | 未发现 `mango-platform` 包或 POM 依赖 | `IInternalPathProvider` 只消费路径接口；`RequestContextContributor` 暴露 header/cookie/request | 保留，补统一 HTTP 请求上下文 provider |
-| `mango-infra-security` | 未发现 `mango-platform` 包或 POM 依赖 | `PermAspect` 旧实现直接读取 request attribute `userId`；README 含 RBAC 示例 | 切面改为消费 `ISecurityContextProvider`；README 收敛为技术契约 |
+| `mango-infra-security` | 未发现 `mango-platform` 包或 POM 依赖 | 历史 `PermAspect` 直接读取 request attribute `userId`；README 含 RBAC 示例 | 改为 Spring Security Method Security + `ISecurityContextProvider`；README 收敛为技术契约 |
 
 ## P4-T3 契约冻结
 
@@ -39,26 +39,26 @@
 
 | 字段 | 来源 |
 |------|------|
-| `userId` | 认证适配器写入的 request attribute `userId` |
-| `tenantId` | 租户适配器写入的 request attribute `tenantId` |
-| `authenticated` | request attribute `authenticated`，或 `userId != null` |
-| `principalName` | request attribute `username` |
+| `userId` | Spring Security `Authentication.principal` 中的 `SecurityPrincipal.userId` |
+| `tenantId` | Spring Security `Authentication.principal` 中的 `SecurityPrincipal.tenantId` |
+| `authenticated` | `Authentication.isAuthenticated()`，并排除匿名认证 |
+| `principalName` | `SecurityPrincipal.principalName`，或 `Authentication.getName()` |
 
 新增接口：
 
 - `io.mango.infra.security.api.ISecurityContextProvider`
 - `io.mango.infra.security.api.SecurityContext`
 
-默认实现 `ServletSecurityContextProvider` 只读取 request attribute，不解析 token、不访问平台业务存储、不承载业务模型。
+默认实现 `SpringSecurityContextProvider` 只读取 Spring Security `SecurityContextHolder`，不解析 token、不访问平台业务存储、不承载业务模型。
 
 ## 完成项
 
 - [x] 完成 `mango-infra-web` / `mango-infra-security` 平台依赖与业务命名盘点。
 - [x] 新增 `IRequestContextProvider`、`RequestContextSnapshot`，并由 `WebAutoConfiguration` 自动装配。
 - [x] `WebRequestContextContributor` 改为通过 provider 贡献 `request`、`headers`、`cookies`、`requestId`、`traceId`、`clientIp`。
-- [x] 新增 `ISecurityContextProvider`、`SecurityContext`，并由 `SecurityAutoConfiguration` 自动装配默认 Servlet provider。
-- [x] `PermAspect` 改为消费 `ISecurityContextProvider`，不再自行读取 Servlet request。
-- [x] `mango-auth-starter` 被动写入 `authenticated=true`，用于统一安全上下文认证状态。
+- [x] 新增 `ISecurityContextProvider`、`SecurityContext`，并由 `SecurityAutoConfiguration` 自动装配默认 Spring Security provider。
+- [x] `@Perm` 改为 Spring Security Method Security，不再自行读取 Servlet request。
+- [x] `mango-auth-starter` 被动写入 `SecurityPrincipal` 到 Spring Security `SecurityContextHolder`，用于统一安全上下文认证状态。
 - [x] 更新 `mango-infra-web/README.md`、`mango-infra-security/README.md`、相关 POM description 和文档索引。
 
 ## 不做项
@@ -72,7 +72,7 @@
 
 | 模块 | 适配点 | 原因 |
 |------|--------|------|
-| `mango-auth-starter` | 认证成功后写入 request attribute `authenticated=true` | 让 `ISecurityContextProvider` 可统一读取认证状态 |
+| `mango-auth-starter` | 认证成功后写入 Spring Security `SecurityContextHolder` | 让 `ISecurityContextProvider` 可统一读取认证状态 |
 
 ## 下游后续适配点
 
@@ -195,4 +195,4 @@ rg -n "SysUser|Role|Menu|Tenant|Org|Message|.*DTO|.*VO" mango/mango-infra/mango-
 
 - Phase 5 需要修复 `mango-gateway-core` POM 依赖，恢复全量编译。
 - Phase 5 需要明确可信 header 注入与外部伪造 header 清洗规则，避免下游直接信任公网身份/租户 header。
-- Phase 6/8 只允许补齐 RBAC/Auth 对 `IPermissionService`、`ISecurityContextProvider` 的 adapter，不应推翻本阶段已冻结的上下文字段语义。
+- Phase 6/8 只允许补齐 RBAC/Auth 对 `IPermissionProvider`、`ISecurityContextProvider` 的 adapter，不应推翻本阶段已冻结的上下文字段语义。

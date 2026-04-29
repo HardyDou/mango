@@ -10,5 +10,5 @@
     </parent>
     <artifactId>mango-infra-security-api</artifactId>
     <name>Mango Infra Security API</name>
-    <description>Security API - token, permission, and current security context interfaces</description>
+    <description>安全 API - token、权限和当前安全上下文接口</description>
 </project>

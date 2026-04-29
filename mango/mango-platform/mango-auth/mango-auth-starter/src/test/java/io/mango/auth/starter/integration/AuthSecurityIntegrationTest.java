@@ -2,9 +2,9 @@ package io.mango.auth.starter.integration;
 
 import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.security.api.IPermissionService;
+import io.mango.infra.security.api.IPermissionProvider;
 import io.mango.infra.security.api.ISecurityContextProvider;
-import io.mango.infra.security.api.ITokenService;
+import io.mango.infra.security.api.ITokenProvider;
 import io.mango.infra.security.api.Perm;
 import io.mango.infra.security.starter.SecurityAutoConfiguration;
 import io.mango.infra.security.core.impl.JjwtTokenServiceImpl;
@@ -35,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = AuthSecurityIntegrationTest.TestApp.class,
         properties = {
-                "mango.gateway.auth-enabled=true",
+                "mango.authorization.access.auth-enabled=true",
+                "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
                 "spring.flyway.enabled=false",
                 "spring.autoconfigure.exclude="
                         + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
@@ -56,7 +57,7 @@ class AuthSecurityIntegrationTest {
     private MockMvc mockMvc;
 
     @Resource
-    private ITokenService tokenService;
+    private ITokenProvider tokenService;
 
     @Resource
     private TestPermissionService permissionService;
@@ -122,24 +123,8 @@ class AuthSecurityIntegrationTest {
         }
 
         @Bean
-        ITokenService tokenService() {
-            JjwtTokenServiceImpl impl = new JjwtTokenServiceImpl(null);
-            setField(impl, "newSecret", "mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits");
-            setField(impl, "legacySecret", "");
-            setField(impl, "accessTokenValiditySeconds", 7200L);
-            setField(impl, "refreshTokenValiditySeconds", 604800L);
-            impl.init();
-            return impl;
-        }
-
-        private static void setField(Object target, String fieldName, Object value) {
-            try {
-                var field = target.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(target, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        ITokenProvider tokenService(IKvStore kvStore) {
+            return new JjwtTokenServiceImpl(kvStore);
         }
     }
 
@@ -160,7 +145,7 @@ class AuthSecurityIntegrationTest {
         }
     }
 
-    static class TestPermissionService implements IPermissionService {
+    static class TestPermissionService implements IPermissionProvider {
 
         private final Map<Long, List<String>> permissions = new ConcurrentHashMap<>();
 

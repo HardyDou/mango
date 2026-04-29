@@ -9,7 +9,7 @@ Java 后端脚手架，AI Agent 高效率编码指南。
 | 原则 | 说明 |
 |------|------|
 | SPI + Starter | SPI 机制 + Starter 模式，模块可插拔切换 |
-| 模块拆分 | 模块划分为 api/core/starter/starter-remote，通过 -app 依赖 starter（内存）或 starter-remote（RPC）切换部署形态 |
+| 模块拆分 | 业务能力通常划分为 api/core/starter/starter-remote；边界入口等运行时基础设施按实际形态拆分为 web-starter、gateway-starter 等，不滥用 remote 命名 |
 | DAL 层抽象 | Redis/DB 必须通过 ICache/ILocker 接口 |
 
 | 禁止条件分支 | 统一 SPI 注入，不用 if |
@@ -45,7 +45,7 @@ mango/
 │   ├── mango-infra-redis/   # Redis 封装
 │   ├── mango-infra-security/# 安全（security-api/security-core/security-starter）
 │   ├── mango-infra-web/     # Web 封装
-│   ├── mango-gateway/       # 网关（api/core/starter/starter-remote）
+│   ├── mango-authorization-access/       # 边界入口（core/web-starter/gateway-starter）
 │   └── ...
 ├── mango-platform/          # 平台能力
 │   ├── mango-auth/          # 认证（api/core/starter/starter-remote）
