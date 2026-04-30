@@ -30,10 +30,15 @@
             <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Spring JDBC -->
+        <!-- Spring 基础注解与配置注入 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <!-- 日志门面 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <!-- Test -->
         <dependency>

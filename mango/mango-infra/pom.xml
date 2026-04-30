@@ -24,8 +24,8 @@
     <modules>
         <!-- Web 层基础设施 -->
         <module>mango-infra-web</module>
-        <!-- Database & MyBatis -->
-        <module>mango-infra-db</module>
+        <!-- 关系型持久化基础设施 -->
+        <module>mango-infra-persistence</module>
         <!-- Redis -->
         <module>mango-infra-redis</module>
         <!-- Feign RPC (OpenFeign) -->
@@ -36,8 +36,6 @@
         <module>mango-infra-realtime</module>
         <!-- KV (Key-Value Storage - Memory/Redis/JDBC abstraction) -->
         <module>mango-infra-kv</module>
-        <!-- ORM (Object-Relational Mapping - MySQL/PostgreSQL via Repository pattern) -->
-        <module>mango-infra-orm</module>
         <!-- Security (Permission aspect - @Perm) -->
         <module>mango-infra-security</module>
         <!-- Crypto (SM2/SM3/SM4 encryption, signing, hashing) -->

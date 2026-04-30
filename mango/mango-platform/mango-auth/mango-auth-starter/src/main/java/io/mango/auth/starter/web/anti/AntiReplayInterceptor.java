@@ -1,5 +1,6 @@
 package io.mango.auth.starter.web.anti;
 
+import io.mango.auth.core.anti.AppSecretProvider;
 import io.mango.auth.core.anti.IdempotencyGuard;
 import io.mango.auth.core.anti.ReplayGuard;
 import io.mango.auth.core.anti.SignatureValidator;
@@ -9,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -41,12 +41,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
     private final ReplayGuard replayGuard;
     private final IdempotencyGuard idempotencyGuard;
     private final SignatureValidator signatureValidator;
-
-    @Value("${mango.auth.app-secret.default:#{null}}")
-    private String defaultSecret;
-
-    @Value("${mango.auth.app-secret.allow-fallback:false}")
-    private boolean allowFallback;
+    private final AppSecretProvider appSecretProvider;
 
     /**
      * 本地密钥缓存：appKey -> secret。
@@ -55,8 +50,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
 
     @PostConstruct
     public void init() {
-        log.info("AntiReplayInterceptor initialized: allowFallback={}, hasDefaultSecret={}",
-            allowFallback, defaultSecret != null);
+        log.info("AntiReplayInterceptor initialized");
     }
 
     @Override
@@ -117,7 +111,6 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
         String appKey = request.getHeader(HEADER_APP_KEY);
         String sign = request.getHeader(HEADER_SIGN);
         if (signAlgo != null && appKey != null && sign != null) {
-            // 生产环境按 appKey 从数据库或缓存读取密钥。
             String secret = getSecretByAppKey(appKey);
             CachedBodyHttpServletRequest cachedRequest = new CachedBodyHttpServletRequest(request);
             String body = cachedRequest.getBody();
@@ -143,14 +136,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
     }
 
     private String loadSecret(String appKey) {
-        // TODO: 生产环境通过 AppSecretService 从数据库或配置中心读取。
-        // 当前仅在显式允许且已配置时使用默认密钥兜底。
-        if (allowFallback && defaultSecret != null) {
-            log.warn("Using default secret as fallback for appKey={}. This should NOT happen in production!", appKey);
-            return defaultSecret;
-        }
-        log.warn("Unknown appKey={} rejected in production mode (allowFallback=false)", appKey);
-        return null;
+        return appSecretProvider.findSecret(appKey);
     }
 
     /**

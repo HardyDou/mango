@@ -19,12 +19,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <!-- Mango Web 基础设施 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-web-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <!-- OpenAPI/Swagger -->
         <dependency>
@@ -44,10 +51,11 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- H2 for testing -->
+        <!-- 测试持久化能力 -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

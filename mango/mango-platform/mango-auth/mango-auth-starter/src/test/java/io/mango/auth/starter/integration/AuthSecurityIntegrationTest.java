@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(
         classes = AuthSecurityIntegrationTest.TestApp.class,
         properties = {
-                "mango.authorization.access.auth-enabled=true",
+                "mango.access.auth-enabled=true",
                 "mango.security.jwt.secret=mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits",
                 "spring.flyway.enabled=false",
                 "spring.autoconfigure.exclude="
@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                         + "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,"
                         + "org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration,"
-                        + "io.mango.infra.db.starter.MangoFlywayAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
                         + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
                         + "io.mango.authorization.starter.config.AuthorizationSecurityAdapterAutoConfiguration,"
                         + "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure"

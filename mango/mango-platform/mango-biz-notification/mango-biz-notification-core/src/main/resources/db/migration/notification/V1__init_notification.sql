@@ -9,6 +9,11 @@ CREATE TABLE IF NOT EXISTS `sys_notification` (
     `read_time`   DATETIME DEFAULT NULL COMMENT '阅读时间',
     `create_by`   VARCHAR(64) DEFAULT NULL COMMENT '创建人',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人 ID',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
     KEY `idx_user_id` (`user_id`),
     KEY `idx_read_status` (`read_status`),
     KEY `idx_create_time` (`create_time`)

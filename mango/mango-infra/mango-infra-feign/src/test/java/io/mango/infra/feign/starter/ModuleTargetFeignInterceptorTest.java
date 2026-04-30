@@ -16,11 +16,12 @@ class ModuleTargetFeignInterceptorTest {
         ModuleTargetFeignInterceptor interceptor = new ModuleTargetFeignInterceptor(moduleName ->
                 Optional.of(new ModuleInfo(moduleName, "mango-admin-app", "/admin", "/rbac", "test")));
         RequestTemplate template = new RequestTemplate()
-                .feignTarget(new Target.HardCodedTarget<>(Object.class, "mango-rbac", "http://mango-rbac"))
-                .uri("/public-path/check");
+                .feignTarget(new Target.HardCodedTarget<>(
+                        Object.class, "mango-authorization", "http://mango-authorization"))
+                .uri("/api-resources/access-decision");
 
         interceptor.apply(template);
 
-        assertThat(template.url()).isEqualTo("http://mango-admin-app/admin/public-path/check");
+        assertThat(template.url()).isEqualTo("http://mango-admin-app/admin/api-resources/access-decision");
     }
 }

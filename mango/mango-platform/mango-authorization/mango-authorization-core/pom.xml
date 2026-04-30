@@ -24,10 +24,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- MyBatis-Plus -->
+        <!-- 关系型持久化能力 -->
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 通用能力 -->
@@ -36,10 +37,10 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango 基础上下文核心 -->
+        <!-- Mango 基础上下文能力 -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-context-core</artifactId>
+            <artifactId>mango-infra-context-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 

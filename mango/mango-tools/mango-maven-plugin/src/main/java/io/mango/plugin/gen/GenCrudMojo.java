@@ -70,6 +70,11 @@ public class GenCrudMojo extends AbstractMojo {
             Files.createDirectories(mapperDir);
             generateMapper(mapperDir);
 
+            Path migrationDir = Paths.get(baseDir,
+                    "mango-" + module + "/mango-" + module + "-core/src/main/resources/db/migration/" + module);
+            Files.createDirectories(migrationDir);
+            generateMigration(migrationDir);
+
             Path serviceDir = Paths.get(baseDir,
                     "mango-" + module + "/mango-" + module + "-core/src/main/java/io/mango/" + module + "/core/service");
             Files.createDirectories(serviceDir);
@@ -172,16 +177,14 @@ public class GenCrudMojo extends AbstractMojo {
             "import io.mango." + module + ".api.command.Create" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.command.Update" + entityName + "Command;\n" +
             "import io.mango." + module + ".api.query." + entityName + "PageQuery;\n" +
-            "import io.mango." + module + ".api.vo." + entityName + "VO;\n" +
-            "import org.springframework.web.bind.annotation.PathVariable;\n" +
-            "import org.springframework.web.bind.annotation.RequestBody;\n\n" +
+            "import io.mango." + module + ".api.vo." + entityName + "VO;\n\n" +
             javaDoc(entityName + " 跨模块接口契约。", author) +
             "public interface " + entityName + "Api {\n\n" +
             "    R<PageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query);\n\n" +
-            "    R<" + entityName + "VO> get(@PathVariable Long id);\n\n" +
-            "    R<Void> save(@RequestBody Create" + entityName + "Command command);\n\n" +
-            "    R<Void> update(@PathVariable Long id, @RequestBody Update" + entityName + "Command command);\n\n" +
-            "    R<Void> delete(@PathVariable Long id);\n" +
+            "    R<" + entityName + "VO> get(Long id);\n\n" +
+            "    R<Void> save(Create" + entityName + "Command command);\n\n" +
+            "    R<Void> update(Long id, Update" + entityName + "Command command);\n\n" +
+            "    R<Void> delete(Long id);\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Api.java"), content);
     }
@@ -305,18 +308,33 @@ public class GenCrudMojo extends AbstractMojo {
 
         String content =
             "package io.mango." + module + ".core.entity;\n\n" +
-            "import com.baomidou.mybatisplus.annotation.IdType;\n" +
-            "import com.baomidou.mybatisplus.annotation.TableId;\n" +
             "import com.baomidou.mybatisplus.annotation.TableName;\n" +
-            "import lombok.Data;\n\n" +
+            "import io.mango.infra.persistence.api.entity.TenantEntity;\n" +
+            "import lombok.Getter;\n" +
+            "import lombok.Setter;\n\n" +
             javaDoc(entityName + " 持久化实体。", author) +
-            "@Data\n" +
+            "@Getter\n" +
+            "@Setter\n" +
             "@TableName(\"" + table + "\")\n" +
-            "public class " + entityName + "Entity {\n\n" +
-            "    @TableId(type = IdType.AUTO)\n" +
-            "    private Long id;\n\n" +
+            "public class " + entityName + "Entity extends TenantEntity<Long> {\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Entity.java"), content);
+    }
+
+    private void generateMigration(Path dir) throws IOException {
+        String tableName = table == null || table.isBlank() ? toSnakeCase(entity) : table.trim();
+        String content =
+                "CREATE TABLE IF NOT EXISTS `" + tableName + "` (\n"
+                        + "  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',\n"
+                        + "  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',\n"
+                        + "  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n"
+                        + "  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',\n"
+                        + "  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\n"
+                        + "  `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',\n"
+                        + "  PRIMARY KEY (`id`),\n"
+                        + "  KEY `idx_" + tableName + "_tenant_id` (`tenant_id`)\n"
+                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='" + toPascalCase(entity) + "';\n";
+        Files.writeString(dir.resolve("V1__init_" + tableName + ".sql"), content);
     }
 
     private void generatePageQuery(Path dir) throws IOException {
@@ -449,6 +467,22 @@ public class GenCrudMojo extends AbstractMojo {
     private String toCamelCase(String input) {
         if (input == null || input.isEmpty()) return input;
         return toPascalCase(input).substring(0, 1).toLowerCase() + toPascalCase(input).substring(1);
+    }
+
+    private String toSnakeCase(String input) {
+        if (input == null || input.isBlank()) {
+            return input;
+        }
+        String normalized = input.trim().replace('-', '_');
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < normalized.length(); i++) {
+            char c = normalized.charAt(i);
+            if (Character.isUpperCase(c) && i > 0 && builder.charAt(builder.length() - 1) != '_') {
+                builder.append('_');
+            }
+            builder.append(Character.toLowerCase(c));
+        }
+        return builder.toString();
     }
 
     private String javaDoc(String description, String author) {

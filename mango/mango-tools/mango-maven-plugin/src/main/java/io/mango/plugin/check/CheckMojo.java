@@ -21,11 +21,13 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -49,6 +51,7 @@ public class CheckMojo extends AbstractMojo {
     private static final String DOC_MODULE_RULES = "module-rules.md";
     private static final String DOC_API_RULES = "api-rules.md";
     private static final String DOC_TEST_RULES = "test-rules.md";
+    private static final String DOC_PERSISTENCE_RULES = "persistence-rules.md";
     private static final String DOC_STATIC_ANALYSIS = "auto-check-mapping.md";
     private static final String CHECKSTYLE_REPORT = "checkstyle-result.xml";
     private static final String PMD_REPORT = "pmd.xml";
@@ -68,10 +71,17 @@ public class CheckMojo extends AbstractMojo {
     private static final Pattern FEIGN_EXTENDS_API_PATTERN = Pattern.compile(
             "\\binterface\\s+([A-Za-z0-9_]+FeignClient)\\b[^\\{;]*\\bextends\\b[^\\{;]*\\b[A-Za-z0-9_]+Api\\b",
             Pattern.DOTALL);
+    private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile(
+            "(?is)create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?(?:`?([a-zA-Z0-9_]+)`?\\.)?`?([a-zA-Z0-9_]+)`?\\s*\\(");
+    private static final List<String> REQUIRED_PERSISTENCE_COLUMNS = List.of(
+            "created_by", "created_at", "updated_by", "updated_at", "tenant_id");
+    private static final Set<String> DEFAULT_PERSISTENCE_EXCLUDED_TABLES = Set.of(
+            "flyway_schema_history", "databasechangelog", "databasechangeloglock",
+            "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log");
 
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, kv-key, test-fixture.
+     * api-contract, kv-key, test-fixture, persistence-schema.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -141,6 +151,7 @@ public class CheckMojo extends AbstractMojo {
             case "remote-adapter" -> checkRemoteAdapter();
             case "api-contract" -> checkApiContract();
             case "kv-key" -> checkKvKey();
+            case "persistence-schema" -> checkPersistenceSchema();
             case "test-fixture" -> checkTestFixture();
             case "web-boundary" -> checkWebBoundary();
             case "all" -> {
@@ -151,6 +162,7 @@ public class CheckMojo extends AbstractMojo {
                 checkRemoteAdapter();
                 checkApiContract();
                 checkKvKey();
+                checkPersistenceSchema();
                 checkTestFixture();
                 checkWebBoundary();
             }
@@ -1470,6 +1482,115 @@ public class CheckMojo extends AbstractMojo {
 
     /**
      * Rules:
+     * 1. Migration CREATE TABLE statements must include audit and tenant columns.
+     * 2. Tables managed by external infrastructure can opt out with an explicit mango-check comment.
+     */
+    private void checkPersistenceSchema() {
+        getLog().info("Checking persistence schema declarations...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<PersistenceSchemaIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMigrationSqlFile(file)) {
+                        analyzePersistenceSchema(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (PersistenceSchemaIssue issue : issues) {
+                result.addIssue("PERSISTENCE_SCHEMA", issue.severity, issue.file, issue.line,
+                        issue.description, "PERSISTENCE_SCHEMA", DOC_PERSISTENCE_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description + " at " + issue.file);
+            }
+            getLog().warn("Found " + issues.size() + " persistence schema violation(s)");
+        } else {
+            getLog().info("All persistence schema checks passed");
+        }
+    }
+
+    private boolean isMigrationSqlFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("/src/main/resources/db/migration/") && normalized.endsWith(".sql");
+    }
+
+    private void analyzePersistenceSchema(Path file, List<PersistenceSchemaIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            Matcher matcher = CREATE_TABLE_PATTERN.matcher(content);
+            while (matcher.find()) {
+                String tableName = normalizeSqlName(matcher.group(2));
+                int statementEnd = findStatementEnd(content, matcher.end());
+                String statement = content.substring(matcher.start(), statementEnd);
+                int line = lineNumber(content, matcher.start());
+                if (shouldSkipPersistenceTable(tableName) || isPersistenceSchemaDisabled(content, matcher.start())) {
+                    continue;
+                }
+                Set<String> columns = extractSqlColumns(statement);
+                for (String requiredColumn : REQUIRED_PERSISTENCE_COLUMNS) {
+                    if (!columns.contains(requiredColumn)) {
+                        issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+                                "表 " + tableName + " 缺少标准持久化字段 " + requiredColumn));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new PersistenceSchemaIssue("MAJOR", file.toString(), 0,
+                    "持久化表结构检查失败: " + e.getMessage()));
+        }
+    }
+
+    private int findStatementEnd(String content, int offset) {
+        int index = content.indexOf(';', offset);
+        return index >= 0 ? index + 1 : content.length();
+    }
+
+    private boolean shouldSkipPersistenceTable(String tableName) {
+        return DEFAULT_PERSISTENCE_EXCLUDED_TABLES.contains(tableName);
+    }
+
+    private boolean isPersistenceSchemaDisabled(String content, int offset) {
+        int start = Math.max(0, offset - 300);
+        String prefix = content.substring(start, offset).toLowerCase(Locale.ROOT);
+        return prefix.contains("mango-check: disable persistence-audit-fields");
+    }
+
+    private Set<String> extractSqlColumns(String statement) {
+        Set<String> columns = new HashSet<>();
+        Matcher matcher = Pattern.compile("(?im)^\\s*`?([a-zA-Z][a-zA-Z0-9_]*)`?\\s+").matcher(statement);
+        while (matcher.find()) {
+            String column = normalizeSqlName(matcher.group(1));
+            if (!isSqlConstraintKeyword(column)) {
+                columns.add(column);
+            }
+        }
+        return columns;
+    }
+
+    private boolean isSqlConstraintKeyword(String value) {
+        return Set.of("create", "primary", "key", "unique", "constraint", "index",
+                "foreign", "fulltext", "spatial", "check").contains(value);
+    }
+
+    private String normalizeSqlName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("`", "").trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Rules:
      * 1. Redis*Test must not use MemoryKvStore or JdbcKvStore as its core store fixture.
      * 2. Jdbc*Test must not use MemoryKvStore or RedisKvStore as its core store fixture.
      * 3. Memory*Test must not use RedisKvStore or JdbcKvStore as its core store fixture.
@@ -1828,6 +1949,20 @@ public class CheckMojo extends AbstractMojo {
         private final String description;
 
         private KvKeyIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
+    private static class PersistenceSchemaIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private PersistenceSchemaIssue(String severity, String file, int line, String description) {
             this.severity = severity;
             this.file = file;
             this.line = line;

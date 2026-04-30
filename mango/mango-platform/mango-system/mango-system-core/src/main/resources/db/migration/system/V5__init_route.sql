@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS `sys_route_conf` (
     `update_by`   VARCHAR(64) DEFAULT NULL COMMENT '修改人',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `created_by` BIGINT DEFAULT NULL COMMENT '创建人 ID',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
     KEY `idx_route_type` (`route_type`),
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='动态路由配置表';

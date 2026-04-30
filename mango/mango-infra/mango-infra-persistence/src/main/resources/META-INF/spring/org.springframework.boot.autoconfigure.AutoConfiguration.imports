@@ -1,0 +1,5 @@
+io.mango.infra.persistence.starter.PersistenceAutoConfiguration
+io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration
+io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration
+io.mango.infra.persistence.starter.PersistenceAuditAutoConfiguration
+io.mango.infra.persistence.starter.SchemaValidationAutoConfiguration

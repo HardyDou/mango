@@ -38,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                 "spring.autoconfigure.exclude="
                         + "io.mango.infra.redis.starter.RedisAutoConfiguration,"
                         + "io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
-                        + "io.mango.infra.db.starter.DbAutoConfiguration,"
-                        + "io.mango.infra.db.starter.MangoFlywayAutoConfiguration",
+                        + "io.mango.infra.persistence.starter.PersistenceAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration",
                 "mango.infra.realtime.inbound.enabled=true"
         })
 class MangoRealtimeProtocolIntegrationTest {

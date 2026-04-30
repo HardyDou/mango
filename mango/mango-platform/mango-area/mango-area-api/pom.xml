@@ -23,10 +23,10 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- MyBatis-Plus -->
+        <!-- MyBatis-Plus 注解 -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <artifactId>mybatis-plus-annotation</artifactId>
         </dependency>
 
         <!-- Lombok -->

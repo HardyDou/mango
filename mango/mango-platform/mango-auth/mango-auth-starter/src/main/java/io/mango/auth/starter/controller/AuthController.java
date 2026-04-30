@@ -8,6 +8,8 @@ import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
@@ -96,6 +98,7 @@ public class AuthController implements AuthApi {
     }
 
     @PostMapping("/login")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "用户登录")
     public R<LoginVO> loginEndpoint(
             @Valid @RequestBody LoginCommand loginCommand,
             HttpServletRequest request,
@@ -148,12 +151,13 @@ public class AuthController implements AuthApi {
     }
 
     @PostMapping("/refresh")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "刷新访问令牌")
     public R<LoginVO> refreshEndpoint(@Valid @RequestBody RefreshTokenCommand command) {
         return refreshToken(command);
     }
 
     /**
-     * Logout (HTTP endpoint)
+     * 用户退出登录。
      */
     @Override
     public R<Void> logout(LogoutCommand command) {
@@ -162,6 +166,7 @@ public class AuthController implements AuthApi {
     }
 
     @PostMapping("/logout")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "用户退出登录")
     public R<Void> logoutEndpoint(@Valid @RequestBody(required = false) LogoutCommand command,
                                   @RequestHeader(value = "Authorization", required = false) String token,
                                   HttpServletResponse response) {
@@ -175,7 +180,7 @@ public class AuthController implements AuthApi {
     }
 
     /**
-     * Validate token (HTTP endpoint)
+     * 校验令牌。
      */
     @Override
     public R<Boolean> validateToken(ValidateTokenCommand command) {
@@ -183,6 +188,7 @@ public class AuthController implements AuthApi {
     }
 
     @PostMapping("/validate")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "校验令牌")
     public R<Boolean> validateEndpoint(@Valid @RequestBody ValidateTokenCommand command) {
         return validateToken(command);
     }

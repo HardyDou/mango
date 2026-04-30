@@ -19,14 +19,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AuthSecurityConfigTest.TestController.class)
 @ContextConfiguration(classes = AuthSecurityConfigTest.TestApp.class)
-@TestPropertySource(properties = "mango.authorization.access.auth-enabled=true")
+@TestPropertySource(properties = "mango.access.auth-enabled=true")
 @DisplayName("Auth security config tests")
 class AuthSecurityConfigTest {
 
@@ -56,15 +55,6 @@ class AuthSecurityConfigTest {
         mockMvc.perform(get("/secure/me").header("Authorization", "Bearer ok-token"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("99:hardy"));
-    }
-
-    @Test
-    @DisplayName("whitelist path should bypass authentication")
-    void whitelistPathShouldBypassAuthentication() throws Exception {
-        mockMvc.perform(get("/auth/login"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("public"));
-        Mockito.verify(tokenService, Mockito.never()).validateToken(anyString());
     }
 
     @Test

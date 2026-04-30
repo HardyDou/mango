@@ -1,3 +1,4 @@
+-- mango-check: disable persistence-audit-fields reason=登录日志是追加型事实记录，使用 login_time 表示发生时间
 CREATE TABLE IF NOT EXISTS `sys_login_log` (
     `id`          BIGINT(20) NOT NULL COMMENT '主键' PRIMARY KEY,
     `user_id`     BIGINT DEFAULT NULL COMMENT '用户ID',
@@ -14,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `sys_login_log` (
     KEY `idx_login_time` (`login_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';
 
+-- mango-check: disable persistence-audit-fields reason=操作日志是追加型事实记录，使用 operate_time 表示发生时间
 CREATE TABLE IF NOT EXISTS `sys_operation_log` (
     `id`          BIGINT(20) NOT NULL COMMENT '主键' PRIMARY KEY,
     `user_id`     BIGINT DEFAULT NULL COMMENT '用户ID',

@@ -22,6 +22,13 @@ class IdentityUserServiceImplTest {
         user.setUserId(1L);
         user.setUsername("admin");
         user.setNickname("Administrator");
+        user.setRealm("INTERNAL");
+        user.setActorType("INTERNAL_USER");
+        user.setPartyType("COMPANY");
+        user.setPartyId(9001L);
+        user.setEmail("admin@example.com");
+        user.setPhone("13800138000");
+        user.setAvatar("https://example.com/avatar.png");
         user.setStatus(1);
         when(mapper.selectOne(any())).thenReturn(user);
 
@@ -31,6 +38,13 @@ class IdentityUserServiceImplTest {
         assertEquals(1L, profile.getUserId());
         assertEquals("admin", profile.getUsername());
         assertEquals("Administrator", profile.getNickname());
+        assertEquals("INTERNAL", profile.getRealm());
+        assertEquals("INTERNAL_USER", profile.getActorType());
+        assertEquals("COMPANY", profile.getPartyType());
+        assertEquals(9001L, profile.getPartyId());
+        assertEquals("admin@example.com", profile.getEmail());
+        assertEquals("13800138000", profile.getPhone());
+        assertEquals("https://example.com/avatar.png", profile.getAvatar());
         assertEquals(1, profile.getStatus());
     }
 

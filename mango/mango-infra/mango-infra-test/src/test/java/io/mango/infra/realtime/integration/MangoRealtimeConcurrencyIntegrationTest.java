@@ -36,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
                 "spring.autoconfigure.exclude="
                         + "io.mango.infra.redis.starter.RedisAutoConfiguration,"
                         + "io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
-                        + "io.mango.infra.db.starter.DbAutoConfiguration,"
-                        + "io.mango.infra.db.starter.MangoFlywayAutoConfiguration"
+                        + "io.mango.infra.persistence.starter.PersistenceAutoConfiguration,"
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration"
         })
 class MangoRealtimeConcurrencyIntegrationTest {
 

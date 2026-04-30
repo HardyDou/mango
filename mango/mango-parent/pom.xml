@@ -36,7 +36,7 @@
         <plexus-utils.version>4.0.3</plexus-utils.version>
 
         <!-- MyBatis-Plus -->
-        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
 
         <!-- Lombok -->
         <lombok.version>1.18.30</lombok.version>
@@ -77,7 +77,7 @@
             <!-- MyBatis-Plus -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <dependency>

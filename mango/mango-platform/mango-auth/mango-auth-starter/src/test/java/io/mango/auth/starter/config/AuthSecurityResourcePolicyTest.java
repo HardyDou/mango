@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AuthSecurityResourcePolicyTest.TestController.class)
 @ContextConfiguration(classes = AuthSecurityResourcePolicyTest.TestApp.class)
-@TestPropertySource(properties = "mango.authorization.access.auth-enabled=true")
+@TestPropertySource(properties = "mango.access.auth-enabled=true")
 @DisplayName("Auth security resource policy tests")
 class AuthSecurityResourcePolicyTest {
 

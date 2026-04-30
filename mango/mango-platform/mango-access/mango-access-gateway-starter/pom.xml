@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango-access</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mango-access-gateway-starter</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Mango Access Gateway Starter</name>
+    <description>Mango Access Gateway Starter - Spring Cloud Gateway 边界入口自动配置</description>
+
+    <dependencies>
+        <!-- 边界入口核心能力 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-access-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango 运行时上下文能力 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-context-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring Cloud Gateway -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud Nacos 服务发现 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            <version>2025.1.0.0</version>
+        </dependency>
+
+        <!-- Spring Cloud Nacos 配置中心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+            <version>2025.1.0.0</version>
+        </dependency>
+
+        <!-- Mango 远程安全聚合能力，提供 Token 与权限适配 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-security-starter-remote</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+</project>

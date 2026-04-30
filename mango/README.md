@@ -46,6 +46,9 @@ mvn mango:gen-module -Dname=xxx
 
 # 生成 CRUD
 mvn mango:gen-crud -Dmodule=xxx -Dentity=User -Dtable=usr_user
+
+# 检查迁移脚本是否包含审计字段和租户字段
+mvn mango:check -Drule=persistence-schema
 ```
 
 ## 模块结构
@@ -59,13 +62,12 @@ mango/
 │   ├── mango-authorization-access/           # 网关
 │   ├── mango-infra-context/     # 上下文
 │   ├── mango-infra-crypto/      # 国密算法
-│   ├── mango-infra-db/          # 数据库基础能力
+│   ├── mango-infra-persistence/          # 关系型持久化基础设施
 │   ├── mango-infra-doc/         # OpenAPI 文档
 │   ├── mango-infra-feign/       # OpenFeign
 │   ├── mango-infra-kv/          # KV 存储抽象
 │   ├── mango-infra-log/         # 日志配置
 │   ├── mango-infra-module/      # 模块元数据与部署映射
-│   ├── mango-infra-orm/         # Repository/ORM 抽象
 │   ├── mango-infra-redis/       # Redis 封装
 │   ├── mango-infra-security/    # 权限安全
 │   ├── mango-infra-realtime/   # 客户端消息通信，含 SSE/WebSocket adapter

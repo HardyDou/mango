@@ -1,3 +1,4 @@
+-- mango-check: disable persistence-audit-fields reason=基础设施运行态 KV 存储，不属于业务主数据
 CREATE TABLE IF NOT EXISTS `infra_kv_entry` (
     `id`          BIGINT(20) NOT NULL COMMENT '主键' PRIMARY KEY,
     `kv_key`      VARCHAR(200) NOT NULL COMMENT 'KV key',

@@ -30,10 +30,11 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- MyBatis-Plus -->
+        <!-- 关系型持久化能力 -->
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Lombok -->

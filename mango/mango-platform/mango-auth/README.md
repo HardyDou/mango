@@ -170,8 +170,7 @@ public class AuthSecurityConfig {
     public SecurityFilterChain authSecurityFilterChain(HttpSecurity http, ...) {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(AuthConstant.WHITE_LIST).permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().access(apiResourceAuthorizationManager)
             )
             .addFilterBefore(new AuthTokenAuthenticationFilter(tokenService),
                 UsernamePasswordAuthenticationFilter.class);
@@ -181,11 +180,11 @@ public class AuthSecurityConfig {
 
 ### AuthTokenAuthenticationFilter 逻辑
 
-1. 检查请求路径是否在白名单
-2. 获取 `Authorization` 请求头
-3. 提取并验证 `Bearer Token`，并检查 token 是否已注销
-4. 验证成功后构建 `SecurityPrincipal`，从 request context 透传 `tenantId`
-5. 将 `Authentication` 写入 `SecurityContextHolder`
+1. 获取 `Authorization` 请求头
+2. 提取并验证 `Bearer Token`，并检查 token 是否已注销
+3. 验证成功后构建 `SecurityPrincipal`，从 request context 透传 `tenantId`
+4. 将 `Authentication` 写入 `SecurityContextHolder`
+5. 请求访问模式由 `@ApiAccess` 同步后的 API 资源策略决定
 6. 未认证请求由 Spring Security 返回 401
 
 ## Token 注销与登录保护
@@ -194,6 +193,16 @@ public class AuthSecurityConfig {
 - `validateToken` 与 JWT 过滤链都会拒绝已注销 token。
 - `LoginAttemptTracker` 优先使用 `IKvStore` 做分布式登录失败计数，没有 KV 实现时降级为本地内存计数。
 - 防重放和验证码 Web 拦截器位于 `mango-auth-starter`，`mango-auth-core` 不再持有 MVC / Servlet 边界代码。
+- 请求签名密钥通过 `AppSecretProvider` 获取，默认实现读取 `mango.auth.anti-replay.app-secrets` 配置；未知 `appKey` 默认拒绝，只能显式开启 `allow-fallback` 后使用默认密钥兜底。
+
+```yaml
+mango:
+  auth:
+    anti-replay:
+      app-secrets:
+        demo-app: demo-secret
+      allow-fallback: false
+```
 
 ## 使用方式
 

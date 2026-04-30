@@ -68,4 +68,5 @@ mango/
 ```bash
 mvn spring-boot:run    # 启动
 mvn mango:check        # 全部规范检查
+mvn mango:check -Drule=persistence-schema    # 检查业务表标准字段
 ```

@@ -18,6 +18,7 @@
 
     <modules>
         <module>mango-ai</module>
+        <module>mango-access</module>
         <module>mango-authorization</module>
         <module>mango-auth</module>
         <module>mango-identity</module>

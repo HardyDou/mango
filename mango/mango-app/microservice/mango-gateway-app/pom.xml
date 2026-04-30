@@ -24,11 +24,7 @@
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-authorization-gateway-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-authorization-starter-remote</artifactId>
+            <artifactId>mango-access-gateway-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>

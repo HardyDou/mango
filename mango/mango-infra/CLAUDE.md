@@ -22,7 +22,7 @@
 |------|------|---------|
 | `mango-infra-all` | 聚合所有基础设施，一键引入 | ✅ |
 | `mango-infra-web` | Web 层（CORS、异常处理、响应封装） | ⭐⭐ 部分 |
-| `mango-infra-db` | 数据库 & MyBatis-Plus & Druid | ⭐ 依赖引入 |
+| `mango-infra-persistence` | 关系型持久化、迁移、事务、MyBatis-Plus | ⭐ 依赖引入 |
 | `mango-infra-redis` | Redis & Redisson | ⭐⭐⭐ 完善 |
 | `mango-infra-lock` | 分布式锁 | ⭐ 框架 |
 | `mango-infra-mq` | 消息队列 (Kafka) | ⭐ 框架 |

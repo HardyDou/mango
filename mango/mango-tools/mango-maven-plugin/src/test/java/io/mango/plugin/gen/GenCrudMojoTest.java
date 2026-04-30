@@ -52,6 +52,7 @@ class GenCrudMojoTest {
         assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/java/io/mango/user/core/service/impl/UserServiceImpl.java")));
         assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java")));
         assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/api/enums/UserCode.java")));
+        assertTrue(Files.exists(tempDir.resolve("mango-user/mango-user-core/src/main/resources/db/migration/user/V1__init_sys_user.sql")));
     }
 
     @Test
@@ -115,6 +116,33 @@ class GenCrudMojoTest {
         String content = Files.readString(poFile);
         assertTrue(content.contains("@TableName(\"sys_user\")"), "PO should contain @TableName annotation");
         assertTrue(content.contains("class UserEntity"), "Entity should have correct class name");
+        assertTrue(content.contains("extends TenantEntity<Long>"), "Entity should inherit standard tenant entity");
+        assertFalse(content.contains("@Data"), "Entity should not use @Data");
+    }
+
+    @Test
+    void generateMigration_containsStandardPersistenceColumns() throws Exception {
+        // given
+        createModuleStructure();
+
+        GenCrudMojo mojo = new GenCrudMojo();
+        setField(mojo, "module", "user");
+        setField(mojo, "entity", "User");
+        setField(mojo, "table", "sys_user");
+        setField(mojo, "baseDir", tempDir.toString());
+
+        // when
+        mojo.execute();
+
+        // then
+        Path migrationFile = tempDir.resolve("mango-user/mango-user-core/src/main/resources/db/migration/user/V1__init_sys_user.sql");
+        String content = Files.readString(migrationFile);
+        assertTrue(content.contains("CREATE TABLE IF NOT EXISTS `sys_user`"));
+        assertTrue(content.contains("`created_by` bigint"));
+        assertTrue(content.contains("`created_at` datetime"));
+        assertTrue(content.contains("`updated_by` bigint"));
+        assertTrue(content.contains("`updated_at` datetime"));
+        assertTrue(content.contains("`tenant_id` varchar(64)"));
     }
 
     @Test
@@ -158,6 +186,28 @@ class GenCrudMojoTest {
         String content = Files.readString(bizCodeFile);
         assertTrue(content.contains("SUCCESS(200"), "BizCode should contain SUCCESS code");
         assertTrue(content.contains("NOT_FOUND(404"), "BizCode should contain NOT_FOUND code");
+    }
+
+    @Test
+    void generateApi_doesNotContainWebAnnotations() throws Exception {
+        // given
+        createModuleStructure();
+
+        GenCrudMojo mojo = new GenCrudMojo();
+        setField(mojo, "module", "user");
+        setField(mojo, "entity", "User");
+        setField(mojo, "table", "sys_user");
+        setField(mojo, "baseDir", tempDir.toString());
+
+        // when
+        mojo.execute();
+
+        // then
+        Path apiFile = tempDir.resolve("mango-user/mango-user-api/src/main/java/io/mango/user/api/UserApi.java");
+        String content = Files.readString(apiFile);
+        assertFalse(content.contains("org.springframework.web.bind.annotation"));
+        assertFalse(content.contains("@PathVariable"));
+        assertFalse(content.contains("@RequestBody"));
     }
 
     /**

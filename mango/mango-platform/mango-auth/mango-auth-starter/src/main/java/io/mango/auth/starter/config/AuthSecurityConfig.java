@@ -34,7 +34,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * 认证安全配置。
@@ -48,7 +47,7 @@ public class AuthSecurityConfig {
     private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
 
     @Bean
-    @ConditionalOnProperty(name = "mango.authorization.access.auth-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "mango.access.auth-enabled", havingValue = "true", matchIfMissing = true)
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authSecurityFilterChain(
             HttpSecurity http,
@@ -69,9 +68,6 @@ public class AuthSecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(authorize -> {
-                    for (String path : AuthConstant.WHITE_LIST) {
-                        authorize.requestMatchers(path).permitAll();
-                    }
                     if (apiResourceAuthorizationManager == null) {
                         authorize.anyRequest().authenticated();
                     } else {
@@ -99,11 +95,6 @@ public class AuthSecurityConfig {
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
-            if (isWhiteList(request.getRequestURI())) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
             String authHeader = request.getHeader(AuthConstant.TOKEN_HEADER);
             if (authHeader != null && authHeader.startsWith(ITokenProvider.BEARER_PREFIX)) {
                 String token = authHeader.substring(ITokenProvider.BEARER_PREFIX.length());
@@ -152,17 +143,6 @@ public class AuthSecurityConfig {
             } finally {
                 SecurityContextHolder.clearContext();
             }
-        }
-
-        private boolean isWhiteList(String path) {
-            return Arrays.stream(AuthConstant.WHITE_LIST)
-                    .anyMatch(pattern -> {
-                        if (pattern.endsWith("/**")) {
-                            String prefix = pattern.substring(0, pattern.length() - 3);
-                            return path.startsWith(prefix);
-                        }
-                        return path.equals(pattern);
-                    });
         }
 
         private Long resolveLongClaim(String token, String claimName) {

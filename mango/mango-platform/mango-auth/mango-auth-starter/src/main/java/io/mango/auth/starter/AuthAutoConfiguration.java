@@ -1,12 +1,17 @@
 package io.mango.auth.starter;
 
+import io.mango.auth.core.anti.AppSecretProvider;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.web.anti.AntiReplayInterceptor;
+import io.mango.auth.starter.web.anti.AntiReplayProperties;
+import io.mango.auth.starter.web.anti.ConfiguredAppSecretProvider;
 import io.mango.auth.starter.web.interceptor.CaptchaInterceptor;
 import io.mango.auth.starter.web.interceptor.WebMvcConfig;
 import io.mango.infra.security.starter.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
@@ -20,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @AutoConfiguration
 @AutoConfigureBefore(SecurityAutoConfiguration.class)
+@EnableConfigurationProperties(AntiReplayProperties.class)
 @ComponentScan({
         "io.mango.auth.core.service",
         "io.mango.auth.core.service.impl",
@@ -35,6 +41,12 @@ public class AuthAutoConfiguration {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AppSecretProvider appSecretProvider(AntiReplayProperties properties) {
+        return new ConfiguredAppSecretProvider(properties);
     }
 
     @Bean

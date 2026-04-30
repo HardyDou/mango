@@ -962,6 +962,74 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPersistenceSchema_withRequiredColumns_passes() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withMissingRequiredColumns_reportsIssue() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL,
+                    `name` varchar(64) NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withDisabledTable_passes() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_external.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                -- mango-check: disable persistence-audit-fields reason=外部系统同步表
+                CREATE TABLE external_event (
+                    `id` bigint NOT NULL,
+                    `payload` text,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkTestFixture_withMatchingRedisFixture_passes() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("mango-infra-test/src/test/java/io/mango/infra/kv/core");

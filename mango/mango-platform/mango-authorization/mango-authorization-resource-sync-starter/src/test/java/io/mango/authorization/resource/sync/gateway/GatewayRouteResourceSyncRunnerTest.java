@@ -14,6 +14,7 @@ import reactor.core.publisher.Flux;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class GatewayRouteResourceSyncRunnerTest {
 
     @Test
-    @DisplayName("scanRoutes should register gateway path predicates")
-    void scanRoutes_shouldRegisterGatewayPathPredicates() {
+    @DisplayName("scanRoutes should register every gateway path predicate as login exposure by default")
+    void scanRoutes_shouldRegisterEveryGatewayPathPredicateAsLoginExposureByDefault() {
         RouteDefinition route = new RouteDefinition();
         route.setId("platform");
         route.setUri(URI.create("http://localhost:8081"));
@@ -44,6 +45,32 @@ class GatewayRouteResourceSyncRunnerTest {
         assertNull(auth.getPermissionCode());
         assertEquals("SpringCloudGateway", auth.getHandlerClass());
         assertEquals("platform", auth.getHandlerMethod());
+
+        ApiResourceRegisterCommand system = resources.get(1);
+        assertEquals("/system/**", system.getPathPattern());
+        assertEquals("GATEWAY:/system/**", system.getResourceCode());
+        assertEquals(ApiResourceAccessMode.LOGIN, system.getAccessMode());
+    }
+
+    @Test
+    @DisplayName("scanRoutes should allow route metadata to override access mode")
+    void scanRoutes_shouldAllowRouteMetadataToOverrideAccessMode() {
+        RouteDefinition route = new RouteDefinition();
+        route.setId("captcha");
+        route.setUri(URI.create("http://localhost:8082"));
+        route.setPredicates(List.of(new PredicateDefinition("Path=/captcha/**")));
+        route.setMetadata(Map.of("apiAccessMode", "PUBLIC"));
+
+        GatewayRouteResourceSyncRunner runner = new GatewayRouteResourceSyncRunner(
+                () -> Flux.just(route),
+                new TestApi());
+
+        List<ApiResourceRegisterCommand> resources = runner.scanRoutes();
+
+        assertEquals(1, resources.size());
+        assertEquals("/captcha/**", resources.get(0).getPathPattern());
+        assertEquals(ApiResourceAccessMode.PUBLIC, resources.get(0).getAccessMode());
+        assertNull(resources.get(0).getPermissionCode());
     }
 
     private static class TestApi implements ApiResourceApi {

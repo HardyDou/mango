@@ -29,7 +29,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @AutoConfiguration(afterName = {
     "io.mango.infra.redis.starter.RedisAutoConfiguration",
-    "io.mango.infra.db.starter.DbAutoConfiguration",
+    "io.mango.infra.persistence.starter.PersistenceAutoConfiguration",
     "org.redisson.spring.starter.RedissonAutoConfiguration",
     "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
     "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration"
