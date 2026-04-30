@@ -1,51 +1,43 @@
 package io.mango.infra.crypto.impl;
 
 /**
- * Symmetric encryption/decryption service interface.
+ * 对称加解密服务接口。
  */
 public interface ICryptoService {
 
     /**
-     * Encrypt plaintext.
+     * 加密明文。
      *
-     * @param plaintext plaintext data
-     * @return ciphertext (Base64 encoded)
+     * @param plaintext 明文
+     * @return Base64 编码的密文
      */
     String encrypt(String plaintext);
 
     /**
-     * Encrypt plaintext with custom IV.
+     * 使用指定 IV 加密明文。
      *
-     * @param plaintext plaintext data
-     * @param iv        IV (Base64 encoded)
-     * @return ciphertext (Base64 encoded)
+     * @param plaintext 明文
+     * @param iv        Base64 编码的 IV
+     * @return Base64 编码的密文
      */
     String encrypt(String plaintext, String iv);
 
     /**
-     * Decrypt ciphertext.
+     * 解密密文。
      *
-     * @param ciphertext ciphertext (Base64 encoded)
-     * @return plaintext
+     * @param ciphertext Base64 编码的密文
+     * @return 明文
      */
     String decrypt(String ciphertext);
 
     /**
-     * Decrypt ciphertext.
+     * 解密密文。
+     * <p>
+     * 当前 SM4/CBC 实现会从密文前缀读取 16 字节 IV；{@code iv} 参数仅为接口兼容保留。
      *
-     * <p>IV handling: this method always extracts the IV from the ciphertext prefix
-     * (first 16 bytes in CBC mode). The {@code iv} parameter is accepted for
-     * API compatibility but is ignored — ciphertext must have IV prepended during
-     * encryption ({@link #encrypt(String)} or {@link #encrypt(String, String)}).
-     *
-     * <p>If you need to decrypt ciphertext without an embedded IV, use a separate
-     * service configuration that stores the IV externally, or provide the raw
-     * ciphertext bytes directly to the underlying cipher.
-     *
-     * @param ciphertext ciphertext (Base64 encoded); in CBC mode must be
-     *                  Base64(IV(16 bytes) || encryptedPayload)
-     * @param iv        ignored — kept for API compatibility only
-     * @return plaintext
+     * @param ciphertext Base64 编码的密文；CBC 模式下格式为 Base64(IV(16 bytes) || encryptedPayload)
+     * @param iv         为兼容保留，当前 SM4/CBC 实现不使用该参数
+     * @return 明文
      */
     String decrypt(String ciphertext, String iv);
 }

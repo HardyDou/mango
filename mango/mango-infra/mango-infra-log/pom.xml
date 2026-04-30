@@ -14,19 +14,13 @@
     <packaging>jar</packaging>
 
     <name>Mango Infra Log Starter</name>
-    <description>Mango Infra Log Starter - Logback configuration with traceId and SkyWalking support</description>
+    <description>Mango Infra Log Starter - Logback configuration and audit log annotations</description>
 
     <dependencies>
         <!-- Spring Boot Logging -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Web (for Filter) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- Spring Boot Test -->
@@ -56,22 +50,6 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- ==================== 可选: SkyWalking APM（引入则自动生效） ==================== -->
-        <!--
-        <dependency>
-            <groupId>org.apache.skywalking</groupId>
-            <artifactId>apm-toolkit-logback-1.x</artifactId>
-            <version>8.16.0</version>
-        </dependency>
-        -->
-
-        <!-- ==================== 可选: Micrometer Tracing ==================== -->
-        <!--
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-otel</artifactId>
-        </dependency>
-        -->
     </dependencies>
 
 </project>

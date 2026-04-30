@@ -44,7 +44,6 @@ class LogPropertiesTest {
             assertThat(properties.getOperation().getTotalSizeCap()).isEqualTo("10GB");
 
             assertThat(properties.getJson().isEnabled()).isFalse();
-            assertThat(properties.getTrace().isEnabled()).isTrue();
         });
     }
 
@@ -63,9 +62,7 @@ class LogPropertiesTest {
                         "mango.log.operation.enabled=false",
                         "mango.log.operation.maxHistory=30",
                         "mango.log.operation.totalSizeCap=5GB",
-                        "mango.log.json.enabled=true",
-                        "mango.log.trace.enabled=true",
-                        "mango.log.trace.headerName=X-Custom-Trace"
+                        "mango.log.json.enabled=true"
                 )
                 .run(context -> {
                     LogProperties properties = context.getBean(LogProperties.class);
@@ -85,8 +82,6 @@ class LogPropertiesTest {
                     assertThat(properties.getOperation().getTotalSizeCap()).isEqualTo("5GB");
 
                     assertThat(properties.getJson().isEnabled()).isTrue();
-                    assertThat(properties.getTrace().isEnabled()).isTrue();
-                    assertThat(properties.getTrace().getHeaderName()).isEqualTo("X-Custom-Trace");
                 });
     }
 }

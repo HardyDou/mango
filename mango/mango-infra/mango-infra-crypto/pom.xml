@@ -11,7 +11,7 @@
     <artifactId>mango-infra-crypto</artifactId>
     <packaging>jar</packaging>
     <name>Mango Crypto</name>
-    <description>Cryptographic services - SM2/SM3/SM4 encryption, signing, and hashing</description>
+    <description>Mango 基础密码能力集合，提供有限的 SM2/SM3/SM4、AES、RSA、HMAC 实现</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -19,13 +19,13 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Starter (needed for @ConfigurationProperties) -->
+        <!-- Spring Boot Starter，用于配置属性和自动配置 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
-        <!-- BouncyCastle GM crypto -->
+        <!-- BouncyCastle 国密算法支持 -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
@@ -35,7 +35,7 @@
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
-        <!-- Test -->
+        <!-- 测试依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

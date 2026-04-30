@@ -5,11 +5,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import java.security.Security;
 
 /**
- * Initializes BouncyCastle provider once globally.
+ * BouncyCastle Provider 全局初始化器。
  */
 public final class BouncyCastleLoader {
 
-    /** BouncyCastle provider name used in KeyFactory etc. */
+    /** BouncyCastle Provider 名称。 */
     static final String PROVIDER_NAME = "BC";
 
     static {
@@ -21,8 +21,7 @@ public final class BouncyCastleLoader {
     private BouncyCastleLoader() {
     }
 
-    /** Ensures the provider is registered. Call from each service static block. */
+    /** 确保 Provider 已注册。 */
     public static void ensure() {
-        // Already registered in static initializer above
     }
 }

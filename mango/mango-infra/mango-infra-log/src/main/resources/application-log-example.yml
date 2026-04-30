@@ -45,13 +45,6 @@ mango:
       # 是否启用 JSON 格式（生产默认 true，dev 默认 false）
       enabled: false
 
-    # ---------- TraceId 配置 ----------
-    trace:
-      # 是否启用 traceId 注入（默认 true，自动从 SkyWalking/Micrometer 获取）
-      enabled: true
-      # 自定义 traceId header（默认不启用，仅当 APM 未生效时使用）
-      # headerName: X-Trace-Id
-
 # ==================== 兼容标准 logging 配置 ====================
 # 也支持标准 Spring Boot logging 配置，会与 mango.log 合并
 logging:

@@ -1,16 +1,14 @@
 package io.mango.infra.crypto.impl.digest;
 
 import io.mango.infra.crypto.impl.IDigester;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * SHA-256 digest implementation using pure JDK.
+ * 基于 JDK 的 SHA-256 摘要实现。
  */
-@Component
 public class Sha256Digester implements IDigester {
 
     @Override
@@ -24,7 +22,7 @@ public class Sha256Digester implements IDigester {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             return md.digest(data);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available", e);
+            throw new RuntimeException("当前运行环境不支持 SHA-256", e);
         }
     }
 

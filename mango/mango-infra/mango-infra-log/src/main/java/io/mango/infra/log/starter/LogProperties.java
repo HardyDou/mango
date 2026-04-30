@@ -24,9 +24,6 @@ public class LogProperties {
     /** JSON 输出配置 */
     private Json json = new Json();
 
-    /** TraceId 配置 */
-    private Trace trace = new Trace();
-
     @Data
     public static class Level {
         /** 全局日志级别 */
@@ -65,13 +62,5 @@ public class LogProperties {
     public static class Json {
         /** 是否启用 JSON 格式 */
         private boolean enabled = false;
-    }
-
-    @Data
-    public static class Trace {
-        /** 是否启用 traceId 注入 */
-        private boolean enabled = true;
-        /** 自定义 traceId header（默认不启用） */
-        private String headerName;
     }
 }

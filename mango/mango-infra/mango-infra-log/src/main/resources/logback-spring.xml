@@ -27,27 +27,22 @@
     <!-- JSON 输出 -->
     <property name="JSON_OUTPUT_ENABLED" value="${mango.log.json.enabled:-false}"/>
 
-    <!-- ==================== 转换器 ==================== -->
-    <!-- SkyWalking TraceId 转换器（非必须，存在时自动生效） -->
-    <converter class="io.mango.infra.log.layout.SkyWalkingTraceIdConverter"/>
-
     <!-- ==================== 控制台 Appender ==================== -->
     <!-- 标准格式 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <!--
-                %sw_traceId{DEFAULT} - SkyWalking traceId（可选，自动兼容）
-                %X{traceId} - MDC 中的 traceId（Micrometer/SkyWalking 会自动注入）
-                %X{X-Correlation-ID} - 关联 ID
+                traceId/requestId/clientIp 由 mango-infra-web 的 WebMdcFilter 写入 MDC。
+                非 Web 场景如需这些字段，应在入口侧初始化 MangoContext/MDC。
             -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%sw_traceId{'-'}] %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [traceId=%X{traceId:-}] %msg%n</pattern>
         </encoder>
     </appender>
 
     <!-- 彩色格式（dev/local） -->
     <appender name="COLOR_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){thread} %clr(%-5level) %clr(%logger{36}){cyan} - [%sw_traceId{'-'}] %msg%n</pattern>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){thread} %clr(%-5level) %clr(%logger{36}){cyan} - [traceId=%X{traceId:-}] %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -62,10 +57,9 @@
         </rollingPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${APP_NAME}"}</customFields>
-            <!-- SkyWalking traceId 字段映射 -->
-            <fieldNames>
-                <trace>traceId</trace>
-            </fieldNames>
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
         </encoder>
     </appender>
 
@@ -83,6 +77,9 @@
         </rollingPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${APP_NAME}"}</customFields>
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
         </encoder>
     </appender>
 
@@ -97,6 +94,9 @@
         </rollingPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${APP_NAME}","type":"operation"}</customFields>
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
         </encoder>
     </appender>
 
@@ -110,7 +110,7 @@
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%sw_traceId{'-'}] %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [traceId=%X{traceId:-}] %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -125,6 +125,9 @@
         </rollingPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app":"${APP_NAME}","env":"${SPRING_PROFILES_ACTIVE:-default}"}</customFields>
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>clientIp</includeMdcKeyName>
         </encoder>
     </appender>
 

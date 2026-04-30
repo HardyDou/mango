@@ -2,7 +2,6 @@ package io.mango.infra.crypto.impl.aes;
 
 import io.mango.infra.crypto.impl.ICryptoService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -11,11 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * AES/GCM encryption implementation.
- * IV is prepended to ciphertext (first 12 bytes).
- * TAG is 128 bits.
+ * AES/GCM 加解密基础实现。
+ * <p>
+ * 当前实现会把 12 字节 IV 前置到密文中，认证标签长度为 128 位。
  */
-@Component
 public class AesCipher implements ICryptoService {
 
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
@@ -51,6 +49,9 @@ public class AesCipher implements ICryptoService {
 
     @Override
     public String encrypt(String plaintext, String iv) {
+        if (plaintext == null) {
+            throw new IllegalArgumentException("plaintext 不能为空");
+        }
         try {
             byte[] ivBytes;
             if (iv != null && !iv.isEmpty()) {
@@ -69,14 +70,13 @@ public class AesCipher implements ICryptoService {
 
             byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
-            // Prepend IV to ciphertext
             byte[] combined = new byte[ivBytes.length + ciphertext.length];
             System.arraycopy(ivBytes, 0, combined, 0, ivBytes.length);
             System.arraycopy(ciphertext, 0, combined, ivBytes.length, ciphertext.length);
 
             return encodeToString(combined);
         } catch (Exception e) {
-            throw new RuntimeException("AES encryption failed", e);
+            throw new RuntimeException("AES 加密失败", e);
         }
     }
 
@@ -87,14 +87,15 @@ public class AesCipher implements ICryptoService {
 
     @Override
     public String decrypt(String ciphertext, String iv) {
+        if (ciphertext == null) {
+            throw new IllegalArgumentException("ciphertext 不能为空");
+        }
         try {
             byte[] combined = decode(ciphertext);
 
-            // Extract IV from first 12 bytes
             byte[] ivBytes = new byte[IV_LENGTH];
             System.arraycopy(combined, 0, ivBytes, 0, IV_LENGTH);
 
-            // Extract actual ciphertext
             byte[] encrypted = new byte[combined.length - IV_LENGTH];
             System.arraycopy(combined, IV_LENGTH, encrypted, 0, encrypted.length);
 
@@ -107,7 +108,7 @@ public class AesCipher implements ICryptoService {
             byte[] plaintext = cipher.doFinal(encrypted);
             return new String(plaintext, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("AES decryption failed", e);
+            throw new RuntimeException("AES 解密失败", e);
         }
     }
 }

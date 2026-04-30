@@ -6,33 +6,34 @@ import org.bouncycastle.util.encoders.Hex;
 import java.nio.charset.StandardCharsets;
 
 /**
- * SM3 hash service implementation.
- * Produces 256-bit (32-byte) hash output.
+ * SM3 哈希基础实现。
+ * <p>
+ * 输出 256 位，也就是 32 字节摘要。
  */
 public class Sm3CryptoService {
 
     /**
-     * Hash data using SM3.
+     * 使用 SM3 计算字符串哈希。
      *
-     * @param data data to hash
-     * @return hex-encoded hash (64 characters)
+     * @param data 原始数据
+     * @return 64 字符十六进制摘要
      */
     public String hash(String data) {
         if (data == null) {
-            throw new IllegalArgumentException("data cannot be null");
+            throw new IllegalArgumentException("data 不能为空");
         }
         return hash(data.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
-     * Hash data using SM3.
+     * 使用 SM3 计算字节数组哈希。
      *
-     * @param data data to hash
-     * @return hex-encoded hash (64 characters)
+     * @param data 原始数据
+     * @return 64 字符十六进制摘要
      */
     public String hash(byte[] data) {
         if (data == null) {
-            throw new IllegalArgumentException("data cannot be null");
+            throw new IllegalArgumentException("data 不能为空");
         }
         SM3Digest digest = new SM3Digest();
         digest.update(data, 0, data.length);

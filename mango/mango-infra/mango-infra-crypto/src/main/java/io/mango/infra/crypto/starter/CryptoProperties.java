@@ -3,25 +3,25 @@ package io.mango.infra.crypto.starter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Crypto configuration properties.
- * Configuration prefix: mango.crypto
+ * 基础密码能力配置。
+ * <p>
+ * 配置前缀：mango.crypto。当前自动配置只覆盖 SM2/SM3/SM4 的基础能力。
  */
 @ConfigurationProperties(prefix = "mango.crypto")
 public class CryptoProperties {
 
     /**
-     * Whether to enable crypto module.
-     * Default: true
+     * 是否启用 crypto 自动配置，默认启用。
      */
     private boolean enabled = true;
 
     /**
-     * SM4 configuration.
+     * SM4 配置。
      */
     private Sm4Config sm4 = new Sm4Config();
 
     /**
-     * SM2 configuration.
+     * SM2 配置。
      */
     private Sm2Config sm2 = new Sm2Config();
 
@@ -50,24 +50,22 @@ public class CryptoProperties {
     }
 
     /**
-     * SM4 symmetric encryption configuration.
+     * SM4 对称加密配置。
      */
     public static class Sm4Config {
         /**
-         * Secret key for SM4 (Base64 encoded).
-         * 128-bit key = 16 bytes = 24 Base64 chars.
+         * SM4 密钥，支持 Base64 或十六进制编码。
+         * 128 位密钥为 16 字节。
          */
         private String secretKey;
 
         /**
-         * Cipher mode: CBC or ECB.
-         * Default: CBC
+         * 加密模式：CBC 或 ECB，默认 CBC。
          */
         private String mode = "CBC";
 
         /**
-         * Padding mode: PKCS5Padding, PKCS7Padding, ZeroPadding, NoPadding.
-         * Default: PKCS5Padding
+         * 填充模式：PKCS5Padding、PKCS7Padding、ZeroPadding、NoPadding，默认 PKCS5Padding。
          */
         private String padding = "PKCS5Padding";
 
@@ -97,24 +95,21 @@ public class CryptoProperties {
     }
 
     /**
-     * SM2 asymmetric encryption configuration.
+     * SM2 签名配置。
      */
     public static class Sm2Config {
         /**
-         * SM2 private key (Base64 encoded, PKCS#8 format).
-         * Used for signing.
+         * SM2 私钥，Base64 编码的 PKCS#8 格式，用于签名。
          */
         private String privateKey;
 
         /**
-         * SM2 public key (Base64 encoded).
-         * Used for signature verification.
+         * SM2 公钥，Base64 编码，用于验签。
          */
         private String publicKey;
 
         /**
-         * User ID for SM2 signature (default Chinese GM user ID).
-         * Default: 1234567812345678
+         * SM2 签名用户 ID，默认国密示例值 1234567812345678。
          */
         private String userId = "1234567812345678";
 

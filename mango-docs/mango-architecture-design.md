@@ -1069,7 +1069,7 @@ export default defineConfig({
 | `mango-ai` | `mango-ai-api/core/starter` | AI 能力集成 | ✅ |
 | **基础设施** | | | |
 | `mango-infra-kv` | `api/core/starter` | KV 存储抽象（ICache/ILocker/ITokenStore/IIdempotent） | ✅ |
-| `mango-infra-crypto` | `api/core/starter` | 国密算法（SM2/SM3/SM4） | ✅ |
+| `mango-infra-crypto` | 单模块 | 基础密码能力集合，默认只装配有限 SM2/SM3/SM4 能力 | ⚠️ 基础 |
 | `mango-infra-security` | `api/core/starter` | 权限注解、IPermissionProvider、AOP 切面 | ✅ |
 | `mango-infra-redis` | `api/core/starter` | Redis 封装 | ✅ |
 | `mango-infra-db` | `api/core/starter` | 数据库封装 | ✅ |

@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * Base64 utility class for encoding and decoding.
+ * Base64 编解码工具。
  *
  * @author Mango
  */
@@ -14,28 +14,28 @@ public final class Base64Utils {
     }
 
     /**
-     * Encode bytes to Base64 string
+     * 将字节数组编码为 Base64 字符串。
      */
     public static String encode(byte[] data) {
         return Base64.getEncoder().encodeToString(data);
     }
 
     /**
-     * Encode string to Base64 string
+     * 将字符串编码为 Base64 字符串。
      */
     public static String encode(String data) {
         return encode(data.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
-     * Decode Base64 string to bytes
+     * 将 Base64 字符串解码为字节数组。
      */
     public static byte[] decode(String data) {
         return Base64.getDecoder().decode(data);
     }
 
     /**
-     * Decode Base64 string to string
+     * 将 Base64 字符串解码为字符串。
      */
     public static String decodeToString(String data) {
         return new String(decode(data), StandardCharsets.UTF_8);

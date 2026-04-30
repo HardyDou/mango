@@ -12,8 +12,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Crypto auto-configuration.
- * Enables SM2/SM3/SM4 cryptographic services based on configuration.
+ * 基础密码能力自动配置。
+ * <p>
+ * 默认只装配当前已验证的 SM4 加解密、SM3 哈希和 SM2 签名能力。
+ * AES、RSA、HMAC 等基础实现保留为显式使用的工具类，不默认声明为生产级完整能力。
  */
 @Configuration
 @ConditionalOnProperty(prefix = "mango.crypto", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -21,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
 public class CryptoAutoConfiguration {
 
     /**
-     * SM4 symmetric encryption/decryption service.
+     * SM4 对称加解密服务。
      */
     @Bean
     @ConditionalOnMissingBean(ICryptoService.class)
@@ -30,7 +32,7 @@ public class CryptoAutoConfiguration {
     }
 
     /**
-     * SM3 hash service.
+     * SM3 哈希服务。
      */
     @Bean
     @ConditionalOnMissingBean(Sm3CryptoService.class)
@@ -39,7 +41,7 @@ public class CryptoAutoConfiguration {
     }
 
     /**
-     * SM2 signature service.
+     * SM2 签名验签服务。
      */
     @Bean
     @ConditionalOnMissingBean(ISignService.class)

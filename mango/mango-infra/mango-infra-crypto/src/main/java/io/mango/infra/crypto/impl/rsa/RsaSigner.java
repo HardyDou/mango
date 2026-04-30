@@ -2,7 +2,6 @@ package io.mango.infra.crypto.impl.rsa;
 
 import io.mango.infra.crypto.impl.ISignService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -14,9 +13,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 /**
- * RSA signing implementation using SHA256withRSA.
+ * RSA 签名验签基础实现，使用 SHA256withRSA。
  */
-@Component
 public class RsaSigner implements ISignService {
 
     private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
@@ -57,7 +55,7 @@ public class RsaSigner implements ISignService {
             signature.update(data.getBytes(StandardCharsets.UTF_8));
             return encodeToString(signature.sign());
         } catch (Exception e) {
-            throw new RuntimeException("RSA sign failed", e);
+            throw new RuntimeException("RSA 签名失败", e);
         }
     }
 
@@ -69,7 +67,7 @@ public class RsaSigner implements ISignService {
             signature.update(data.getBytes(StandardCharsets.UTF_8));
             return signature.verify(decode(signatureBase64));
         } catch (Exception e) {
-            throw new RuntimeException("RSA verify failed", e);
+            throw new RuntimeException("RSA 验签失败", e);
         }
     }
 }

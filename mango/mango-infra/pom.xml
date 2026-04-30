@@ -38,13 +38,13 @@
         <module>mango-infra-kv</module>
         <!-- Security (Permission aspect - @Perm) -->
         <module>mango-infra-security</module>
-        <!-- Crypto (SM2/SM3/SM4 encryption, signing, hashing) -->
+        <!-- Crypto (limited basic crypto implementations, SM auto-configuration) -->
         <module>mango-infra-crypto</module>
         <!-- Context (TTL ThreadLocal holders - tenant/trace, TtlExecutorDecorator) -->
         <module>mango-infra-context</module>
         <!-- Module metadata and deployment mapping -->
         <module>mango-infra-module</module>
-        <!-- Log (Logback configuration with traceId, multi-env support) -->
+        <!-- Log (Logback configuration, multi-env support, audit annotations) -->
         <module>mango-infra-log</module>
         <!-- Test (Unified test module for all infrastructure components) -->
         <module>mango-infra-test</module>

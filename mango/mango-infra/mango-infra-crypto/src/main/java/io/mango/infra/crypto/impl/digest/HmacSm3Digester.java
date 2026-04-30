@@ -1,65 +1,50 @@
 package io.mango.infra.crypto.impl.digest;
 
-import io.mango.infra.crypto.impl.IDigester;
+import io.mango.infra.crypto.impl.IKeyedDigester;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * HMAC-SM3 digest implementation using BouncyCastle.
+ * HMAC-SM3 摘要实现。
+ * <p>
+ * HMAC 必须显式传入密钥，因此不实现无密钥摘要接口。
  */
-@Component
-public class HmacSm3Digester implements IDigester {
+public class HmacSm3Digester implements IKeyedDigester {
 
-    private static final String MAC_ALGORITHM = "SM3withHMAC";
+    private static final String MAC_ALGORITHM = "HMACSM3";
 
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
 
     @Override
-    public String digest(String data) {
-        throw new UnsupportedOperationException("HMAC-SM3 requires a key, use digest(data, key) instead");
-    }
-
-    @Override
-    public byte[] digest(byte[] data) {
-        throw new UnsupportedOperationException("HMAC-SM3 requires a key, use digest(data, key) instead");
-    }
-
-    /**
-     * Digest data with HMAC-SM3.
-     *
-     * @param data data to digest
-     * @param key  secret key
-     * @return raw digest bytes
-     */
     public byte[] digest(byte[] data, byte[] key) {
+        if (data == null) {
+            throw new IllegalArgumentException("data 不能为空");
+        }
+        if (key == null || key.length == 0) {
+            throw new IllegalArgumentException("key 不能为空");
+        }
         try {
             Mac mac = Mac.getInstance(MAC_ALGORITHM, BouncyCastleProvider.PROVIDER_NAME);
-            SecretKeySpec keySpec = new SecretKeySpec(key, "SM3withHMAC");
+            SecretKeySpec keySpec = new SecretKeySpec(key, MAC_ALGORITHM);
             mac.init(keySpec);
             return mac.doFinal(data);
         } catch (Exception e) {
-            throw new RuntimeException("HMAC-SM3 failed", e);
+            throw new RuntimeException("HMAC-SM3 计算失败", e);
         }
     }
 
-    /**
-     * Digest data with HMAC-SM3, returns hex string.
-     *
-     * @param data data to digest
-     * @param key  secret key
-     * @return hex-encoded digest
-     */
+    @Override
     public String digest(String data, byte[] key) {
+        if (data == null) {
+            throw new IllegalArgumentException("data 不能为空");
+        }
         return bytesToHex(digest(data.getBytes(StandardCharsets.UTF_8), key));
     }
 

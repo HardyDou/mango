@@ -20,8 +20,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * SM2 signature service implementation.
- * Uses SM2 algorithm with user ID for signature.
+ * SM2 签名验签基础实现。
+ * <p>
+ * 使用 SM2 算法和用户 ID 参与签名。
  */
 public class Sm2SignService implements ISignService {
 
@@ -42,20 +43,20 @@ public class Sm2SignService implements ISignService {
     public Sm2SignService(CryptoProperties properties) {
         this.config = properties.getSm2();
         if (config.getUserId() == null || config.getUserId().isEmpty()) {
-            throw new IllegalStateException("SM2 userId cannot be null or empty");
+            throw new IllegalStateException("SM2 userId 不能为空");
         }
         if (config.getPrivateKey() == null || config.getPrivateKey().isEmpty()) {
-            throw new IllegalStateException("SM2 privateKey cannot be null or empty");
+            throw new IllegalStateException("SM2 privateKey 不能为空");
         }
         if (config.getPublicKey() == null || config.getPublicKey().isEmpty()) {
-            throw new IllegalStateException("SM2 publicKey cannot be null or empty");
+            throw new IllegalStateException("SM2 publicKey 不能为空");
         }
     }
 
     @Override
     public String sign(String data) {
         if (data == null) {
-            throw new IllegalArgumentException("data cannot be null");
+            throw new IllegalArgumentException("data 不能为空");
         }
         try {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodeKey(config.getPrivateKey()));
@@ -76,17 +77,17 @@ public class Sm2SignService implements ISignService {
             byte[] signature = signer.generateSignature();
             return Base64.toBase64String(signature);
         } catch (Exception e) {
-            throw new RuntimeException("SM2 signing failed", e);
+            throw new RuntimeException("SM2 签名失败", e);
         }
     }
 
     @Override
     public boolean verify(String data, String signature) {
         if (data == null) {
-            throw new IllegalArgumentException("data cannot be null");
+            throw new IllegalArgumentException("data 不能为空");
         }
         if (signature == null) {
-            throw new IllegalArgumentException("signature cannot be null");
+            throw new IllegalArgumentException("signature 不能为空");
         }
         try {
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodeKey(config.getPublicKey()));
@@ -110,23 +111,22 @@ public class Sm2SignService implements ISignService {
 
             return verifier.verifySignature(Base64.decode(signature));
         } catch (Exception e) {
-            throw new RuntimeException("SM2 signature verification failed", e);
+            throw new RuntimeException("SM2 验签失败", e);
         }
     }
 
     byte[] decodeKey(String key) {
         if (key == null || key.isEmpty()) {
-            throw new IllegalArgumentException("Key cannot be null or empty");
+            throw new IllegalArgumentException("key 不能为空");
         }
         try {
             return Base64.decode(key);
         } catch (Exception e) {
-            // Not Base64, try Hex
-            try {
+                try {
                 return Hex.decode(key);
             } catch (Exception hexEx) {
                 throw new IllegalArgumentException(
-                        "Key is neither valid Base64 nor Hex: " +
+                        "key 既不是有效 Base64，也不是有效十六进制：" +
                         (key.length() <= 64 ? key : key.substring(0, 64) + "..."), hexEx);
             }
         }

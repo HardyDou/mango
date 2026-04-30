@@ -1,23 +1,25 @@
 package io.mango.infra.crypto.impl;
 
 /**
- * Digest service interface for hash operations.
+ * 无密钥摘要接口。
+ * <p>
+ * 只适用于 SHA-256、SM3 这类普通哈希算法；HMAC 应使用 {@link IKeyedDigester}。
  */
 public interface IDigester {
 
     /**
-     * Digest string data and return hex-encoded result.
+     * 计算字符串摘要。
      *
-     * @param data data to digest
-     * @return hex-encoded digest
+     * @param data 原始数据
+     * @return 十六进制摘要
      */
     String digest(String data);
 
     /**
-     * Digest byte array data.
+     * 计算字节数组摘要。
      *
-     * @param data data to digest
-     * @return raw digest bytes
+     * @param data 原始数据
+     * @return 原始摘要字节
      */
     byte[] digest(byte[] data);
 }

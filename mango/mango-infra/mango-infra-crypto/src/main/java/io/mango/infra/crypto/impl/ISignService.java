@@ -1,23 +1,23 @@
 package io.mango.infra.crypto.impl;
 
 /**
- * Signature service interface for signing and verification.
+ * 签名验签服务接口。
  */
 public interface ISignService {
 
     /**
-     * Sign data.
+     * 对数据签名。
      *
-     * @param data data to sign
-     * @return signature (Base64 encoded)
+     * @param data 待签名数据
+     * @return Base64 编码的签名
      */
     String sign(String data);
 
     /**
-     * Verify signature.
+     * 验证签名。
      *
-     * @param data      original data
-     * @param signature signature to verify (Base64 encoded)
+     * @param data      原始数据
+     * @param signature Base64 编码的签名
      * @return true if signature is valid
      */
     boolean verify(String data, String signature);
