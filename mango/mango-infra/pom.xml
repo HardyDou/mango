@@ -36,8 +36,6 @@
         <module>mango-infra-realtime</module>
         <!-- KV (Key-Value Storage - Memory/Redis/JDBC abstraction) -->
         <module>mango-infra-kv</module>
-        <!-- Security (Permission aspect - @Perm) -->
-        <module>mango-infra-security</module>
         <!-- Crypto (limited basic crypto implementations, SM auto-configuration) -->
         <module>mango-infra-crypto</module>
         <!-- Context (TTL ThreadLocal holders - tenant/trace, TtlExecutorDecorator) -->

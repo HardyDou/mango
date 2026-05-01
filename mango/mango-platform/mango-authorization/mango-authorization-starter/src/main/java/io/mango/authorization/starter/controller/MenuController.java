@@ -1,8 +1,8 @@
 package io.mango.authorization.starter.controller;
 
 import io.mango.common.result.R;
-import io.mango.infra.security.api.ITokenProvider;
-import io.mango.infra.security.core.TokenContextHolder;
+import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.security.TokenContextHolder;
 import io.mango.authorization.api.MenuApi;
 import io.mango.authorization.api.command.MenuCommand;
 import io.mango.authorization.api.query.MenuTreeQuery;

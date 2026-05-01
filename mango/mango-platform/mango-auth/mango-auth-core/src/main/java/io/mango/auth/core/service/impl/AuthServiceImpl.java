@@ -8,7 +8,7 @@ import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.TokenRevocationService;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.vo.AuthUserInfo;
-import io.mango.infra.security.api.ITokenProvider;
+import io.mango.authorization.api.security.ITokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;

@@ -24,11 +24,6 @@
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.mango</groupId>
             <artifactId>mango-infra-module-api</artifactId>
             <version>${project.version}</version>
         </dependency>

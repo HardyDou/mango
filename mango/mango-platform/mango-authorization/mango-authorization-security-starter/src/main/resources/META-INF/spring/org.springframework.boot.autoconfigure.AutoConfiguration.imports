@@ -1,0 +1,2 @@
+io.mango.authorization.security.starter.SecurityAutoConfiguration
+io.mango.authorization.security.starter.TokenAutoConfiguration

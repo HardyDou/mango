@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * 声明 HTTP API 资源访问策略。
  */
 @Documented
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApiAccess {
 

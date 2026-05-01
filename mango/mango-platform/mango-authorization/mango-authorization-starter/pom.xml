@@ -30,17 +30,17 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango 基础安全 API，用于 IPermissionProvider -->
+        <!-- Mango 授权与安全 API -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-api</artifactId>
+            <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 基础安全 Starter，提供自动配置的 ITokenProvider 实现 -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-starter</artifactId>
+            <artifactId>mango-authorization-security-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -48,12 +48,6 @@
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 

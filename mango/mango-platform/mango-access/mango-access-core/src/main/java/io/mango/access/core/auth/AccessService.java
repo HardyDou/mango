@@ -5,8 +5,8 @@ import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.common.result.R;
-import io.mango.infra.security.api.IPermissionProvider;
-import io.mango.infra.security.api.ITokenProvider;
+import io.mango.authorization.api.security.IPermissionProvider;
+import io.mango.authorization.api.security.ITokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

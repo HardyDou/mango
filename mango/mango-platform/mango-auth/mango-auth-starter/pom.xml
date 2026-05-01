@@ -46,7 +46,7 @@
         <!-- Mango 基础安全，自动配置 ITokenProvider 实现 -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-starter</artifactId>
+            <artifactId>mango-authorization-security-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -12,12 +12,12 @@ import io.mango.auth.starter.controller.AuthController;
 import io.mango.common.result.R;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.security.api.IPermissionProvider;
-import io.mango.infra.security.api.ISecurityContextProvider;
-import io.mango.infra.security.api.ITokenProvider;
-import io.mango.infra.security.api.Perm;
-import io.mango.infra.security.core.impl.JjwtTokenServiceImpl;
-import io.mango.infra.security.starter.SecurityAutoConfiguration;
+import io.mango.authorization.api.security.IPermissionProvider;
+import io.mango.authorization.api.security.ISecurityContextProvider;
+import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.security.core.impl.JjwtTokenServiceImpl;
+import io.mango.authorization.security.starter.SecurityAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.vo.AuthUserInfo;
 import jakarta.annotation.Resource;
@@ -30,6 +30,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -220,6 +224,22 @@ class AuthSecurityE2ETest {
                     : AuthorizationSnapshot.empty();
         }
 
+        @Bean("apiResourceAuthorizationManager")
+        AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
+                IPermissionProvider permissionProvider) {
+            return (authenticationSupplier, context) -> {
+                var authentication = authenticationSupplier.get();
+                boolean authenticated = authentication != null
+                        && authentication.isAuthenticated()
+                        && !(authentication instanceof AnonymousAuthenticationToken);
+                if (!authenticated) {
+                    return new AuthorizationDecision(false);
+                }
+                Long userId = ((SecurityPrincipal) authentication.getPrincipal()).userId();
+                return new AuthorizationDecision(permissionProvider.listUserPermissions(userId).contains("e2e:read"));
+            };
+        }
+
         @Bean
         IPermissionProvider permissionService(IAuthorizationProvider authorizationProvider) {
             return userId -> authorizationProvider.load(AuthorizationQuery.user(userId)).permissionCodes().stream().toList();
@@ -262,7 +282,6 @@ class AuthSecurityE2ETest {
         }
 
         @GetMapping("/e2e/secured")
-        @Perm("e2e:read")
         public R<String> secured() {
             var context = securityContextProvider.currentContext();
             return R.ok(context.userId() + ":" + context.principalName());

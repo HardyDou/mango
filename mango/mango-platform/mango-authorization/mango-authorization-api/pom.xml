@@ -24,6 +24,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Annotation alias support for composed API access annotations -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
+
         <!-- Swagger 注解 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

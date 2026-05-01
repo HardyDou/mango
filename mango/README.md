@@ -59,7 +59,6 @@ mango/
 │   └── mango-admin-app/         # 管理后台装配应用
 ├── mango-common/               # 公共代码
 ├── mango-infra/                # 基础设施
-│   ├── mango-authorization-access/           # 网关
 │   ├── mango-infra-context/     # 上下文
 │   ├── mango-infra-crypto/      # 国密算法
 │   ├── mango-infra-persistence/          # 关系型持久化基础设施
@@ -69,21 +68,21 @@ mango/
 │   ├── mango-infra-log/         # 日志配置
 │   ├── mango-infra-module/      # 模块元数据与部署映射
 │   ├── mango-infra-redis/       # Redis 封装
-│   ├── mango-infra-security/    # 权限安全
 │   ├── mango-infra-realtime/   # 客户端消息通信，含 SSE/WebSocket adapter
 │   ├── mango-infra-test/        # 基础设施测试支撑
 │   └── mango-infra-web/         # Web 封装
 ├── mango-platform/             # 平台能力
 │   ├── mango-ai/               # AI 能力
 │   ├── mango-area/             # 区域
+│   ├── mango-access/           # 边界入口
 │   ├── mango-auth/             # 认证
+│   ├── mango-authorization/    # 授权与安全基础适配
 │   ├── mango-identity/         # 账号、身份资料与认证用户事实
 │   ├── mango-security/         # 安全聚合入口
 │   ├── mango-captcha/          # 验证码
 │   ├── mango-i18n/             # 国际化
 │   ├── mango-biz-notification/          # 消息
 │   ├── mango-org/              # 组织
-│   ├── mango-authorization/    # 授权、角色、权限、菜单与公共路径
 │   └── mango-system/           # 系统配置、字典、租户、日志、路由
 ├── mango-parent/               # 父 POM
 └── mango-tools/               # Maven 插件 & 代码规则

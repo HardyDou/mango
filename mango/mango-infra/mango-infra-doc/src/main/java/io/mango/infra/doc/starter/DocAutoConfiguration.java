@@ -6,16 +6,19 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 /**
- * API Documentation Auto Configuration
- * Provides OpenAPI/Swagger UI integration
+ * API 文档自动配置。
+ * <p>
+ * 该模块只提供 OpenAPI/Swagger 开发体验，不参与核心运行时链路。
  *
  * @author Mango
  */
 @AutoConfiguration
+@ConditionalOnProperty(prefix = "mango.doc", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(DocProperties.class)
 public class DocAutoConfiguration {
 
@@ -34,10 +37,19 @@ public class DocAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "mango.doc.module-grouping", name = "include-default-group", havingValue = "true", matchIfMissing = true)
     public GroupedOpenApi publicApi(DocProperties properties) {
-        return GroupedOpenApi.builder()
+        GroupedOpenApi.Builder builder = GroupedOpenApi.builder()
                 .group(properties.getGroup())
-                .pathsToMatch(properties.getPathsToMatch())
-                .build();
+                .pathsToMatch(properties.getPathsToMatch());
+        if (properties.getModuleGrouping().isIncludeScopeTags()) {
+            builder.addOperationCustomizer(new MangoApiScopeOperationCustomizer());
+        }
+        return builder.build();
+    }
+
+    @Bean
+    public static ModuleGroupedOpenApiRegistrar moduleGroupedOpenApiRegistrar() {
+        return new ModuleGroupedOpenApiRegistrar();
     }
 }

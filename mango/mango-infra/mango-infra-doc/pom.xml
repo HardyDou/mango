@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Mango Infra Doc Starter</name>
-    <description>Mango Infra Doc Starter - OpenAPI/Swagger Documentation</description>
+    <description>Mango Infra Doc Starter - optional OpenAPI/Swagger developer experience</description>
 
     <dependencies>
         <!-- SpringDoc OpenAPI for Spring Boot 3.x -->
@@ -43,10 +43,24 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
+        <!-- @ApiAccess marker for API access classification -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

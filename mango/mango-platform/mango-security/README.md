@@ -6,7 +6,7 @@
 
 | 模块 | 职责 |
 |------|------|
-| `mango-infra-security` | Spring Security 集成、`@Perm`、安全上下文、token 抽象 |
+| `mango-authorization-security-starter` | Spring Security 集成、安全上下文、token 抽象 |
 | `mango-auth` | 登录、登出、刷新 token、认证流程 |
 | `mango-identity` | 账号、身份资料、认证用户事实 |
 | `mango-authorization` | 角色、权限、菜单、主体授权绑定 |
@@ -32,7 +32,7 @@ mango-security/
 等价于聚合：
 
 ```text
-mango-infra-security-starter
+mango-authorization-security-starter
 mango-auth-starter
 mango-identity-starter
 mango-authorization-starter
@@ -53,14 +53,14 @@ mango-authorization-resource-sync-starter
 等价于聚合：
 
 ```text
-mango-infra-security-starter
+mango-authorization-security-starter
 mango-auth-starter-remote
 mango-identity-starter-remote
 mango-authorization-starter-remote
 ```
 
 远程聚合 starter 负责把 `mango-authorization-starter-remote` 提供的 `IAuthorizationProvider`
-适配成 `mango-infra-security` 所需的 `IPermissionProvider`，业务调用方不需要单独装配权限适配器。
+适配成 authorization security 契约所需的 `IPermissionProvider`，业务调用方不需要单独装配权限适配器。
 
 微服务业务 App 仍需要直接依赖 `mango-authorization-resource-sync-starter`，用于扫描本服务接口并通过远程 authorization 服务注册资源。远程聚合 starter 不内置该 starter，避免在纯调用方场景产生错误扫描。
 

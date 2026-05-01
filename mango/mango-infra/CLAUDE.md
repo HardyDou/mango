@@ -32,7 +32,6 @@
 | `mango-infra-idgen` | ID 生成器 (雪花算法) | ⭐ 框架 |
 | `mango-infra-config` | 配置中心 (Nacos) | ⭐⭐⭐ 完善 |
 | `mango-infra-job` | 任务调度 (XXL-Job) | ⭐⭐ 依赖引入 |
-| `mango-infra-security` | 安全 (JWT) | ⭐ 框架 |
 | `mango-infra-log` | 日志格式 / 审计注解 | ⭐ 框架 |
 | `mango-infra-observability` | 可观测性 (Micrometer) | ⭐⭐ 部分 |
 | `mango-infra-doc` | API 文档 (OpenAPI) | ⭐⭐ 部分 |

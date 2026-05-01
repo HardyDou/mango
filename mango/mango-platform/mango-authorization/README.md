@@ -12,7 +12,8 @@
 | 权限码 | 权限码 `{model}:{module}:{action}` |
 | 接口资源 | 扫描各 App 的 Spring MVC 接口，注册 HTTP 方法、路径、访问模式和可选权限码 |
 | 授权快照 | 通过 `IAuthorizationProvider` 汇总角色、权限与 Spring Security authorities |
-| 安全适配 | 本地 starter 为 `mango-infra-security` 提供 `IPermissionProvider` adapter；远程聚合由 `mango-security-starter-remote` 适配 |
+| 安全基础 | 提供安全上下文、token 抽象和 Spring Security 自动配置 |
+| 安全适配 | 本地 starter 为 `mango-authorization-security-starter` 提供 `IPermissionProvider` adapter；远程聚合由 `mango-security-starter-remote` 适配 |
 | 主体角色绑定 | 保存 subject 到 role 的授权关系，并记录 `appCode`、`realm`、`actorType`、`partyType`、`partyId` 上下文，不保存账号资料 |
 
 ## 子模块
@@ -21,6 +22,7 @@
 mango-authorization/
 ├── mango-authorization-api/            # API 定义（接口、查询对象、VO、授权快照）
 ├── mango-authorization-core/           # 核心业务（Service、Mapper）
+├── mango-authorization-security-starter/ # Spring Security 集成、安全上下文、token 抽象
 ├── mango-authorization-resource-sync-starter/ # 当前 App 接口资源扫描、注册与运行时 URL 策略适配
 ├── mango-authorization-starter/        # 本地调用启动器
 └── mango-authorization-starter-remote/ # 远程调用启动器（Feign）
@@ -40,18 +42,19 @@ mango-authorization/
 
 API 模块只保留 Java 契约模型，不暴露 Entity、Mapper、MyBatis 注解、Spring Web 注解或数据库表结构；HTTP 路由必须下沉到 `starter` Controller 或 `starter-remote` FeignClient。
 
-`mango-auth` 登录成功后调用 `IAuthorizationProvider` 获取角色与权限，不再维护 auth 内部权限检查器。账号资料与认证用户事实已抽离到 `mango-identity`。`mango-infra-security` 仍只认识基础安全契约，authorization 本地 starter 负责把本地授权快照适配成 `IPermissionProvider`；远程调用方通过 `mango-security-starter-remote` 完成同样适配。
+`mango-auth` 登录成功后调用 `IAuthorizationProvider` 获取角色与权限，不再维护 auth 内部权限检查器。账号资料与认证用户事实已抽离到 `mango-identity`。`mango-authorization-security-starter` 只认识基础安全契约，authorization 本地 starter 负责把本地授权快照适配成 `IPermissionProvider`；远程调用方通过 `mango-security-starter-remote` 完成同样适配。
 
 ## 接口资源同步
 
 `mango-authorization-resource-sync-starter` 在 App 启动时扫描当前 Spring MVC 映射，并调用 `ApiResourceApi` 注册到 `authorization_api_resource`。资源表只保存稳定模块名、HTTP 方法、路径、访问模式和权限码，不保存运行时 `serviceName` 或 `contextPath`。运行时服务定位由 `mango-infra-module` 与 `mango-infra-feign` 负责。同时它会提供 `apiResourceAuthorizationManager`，供 `mango-auth-starter` 的 Spring Security filter chain 按数据库策略控制访问。
 
-- 接口访问策略统一使用 `@ApiAccess` 声明，资源同步不再解析 `@Perm` 或 `@Inner`。
+- 接口访问策略统一使用 `@ApiAccess` 声明，也可使用 `@PublicApi`、`@LoginApi`、`@InternalApi`、`@PermissionAccess` 这几个组合注解；资源同步不再解析 `@Perm` 或 `@Inner`。
 - `moduleName` 优先通过 `mango-infra-module` 的 `module.properties` 按路径反查，保证同一模块部署在不同服务时入库模块名不漂移。
 - 未标注 `@ApiAccess` 的接口默认生成资源码：`HTTP_METHOD:/path/pattern`。
 - 未标注 `@ApiAccess` 的接口默认访问模式为 `LOGIN`，可通过 `mango.authorization.resource-sync.default-access-mode` 调整。
-- `@ApiAccess(mode = PERMISSION, permission = "xxx")` 会将 `xxx` 作为 `permissionCode` 和显式资源码；`PERMISSION` 未填写 `permission` 时启动同步直接失败。
+- `@ApiAccess(mode = PERMISSION, permission = "xxx")` 或 `@PermissionAccess("xxx")` 会将 `xxx` 作为 `permissionCode` 和显式资源码；`PERMISSION` 未填写 `permission` 时启动同步直接失败。
 - `@ApiAccess(mode = PUBLIC / LOGIN / INTERNAL)` 不写权限码，资源码为 `HTTP_METHOD:/path/pattern`。
+- `@PublicApi`、`@LoginApi`、`@InternalApi` 分别等同于 `@ApiAccess(mode = PUBLIC / LOGIN / INTERNAL)`。
 - `mango.authorization.resource-sync.mode=read` 时只扫描并输出日志，不写入注册接口。
 - 本地聚合由 `mango-security-starter` 间接引入；远程业务 App 直接依赖 `mango-authorization-resource-sync-starter`，通过 `mango-authorization-starter-remote` 的 Feign 注册到平台 authorization 服务。
 - 外部入口统一走 `mango-access` 时，`mango-authorization-resource-sync-starter` 会在网关应用内同步 Spring Cloud Gateway 的 Path 路由，作为网关暴露面清单；默认 `accessMode=LOGIN`，`resourceCode=GATEWAY:/path/pattern`。
@@ -162,12 +165,12 @@ authorization-core
 
 authorization-starter
 ├── authorization-core
-├── mango-infra-security-api
+├── mango-authorization-api
 └── mango-infra-web-starter
 
 authorization-resource-sync-starter
 ├── authorization-api
-├── mango-infra-security-api
+├── mango-authorization-api
 └── spring-webmvc
 
 authorization-starter-remote

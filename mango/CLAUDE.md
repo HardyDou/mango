@@ -43,14 +43,13 @@ mango/
 ├── mango-infra/             # 基础设施
 │   ├── mango-infra-kv/      # KV 存储（kv-api/kv-core/kv-starter）
 │   ├── mango-infra-redis/   # Redis 封装
-│   ├── mango-infra-security/# 安全（security-api/security-core/security-starter）
 │   ├── mango-infra-web/     # Web 封装
-│   ├── mango-authorization-access/       # 边界入口（core/web-starter/gateway-starter）
 │   └── ...
 ├── mango-platform/          # 平台能力
+│   ├── mango-access/        # 边界入口（core/web-starter/gateway-starter）
 │   ├── mango-auth/          # 认证（api/core/starter/starter-remote）
 │   ├── mango-identity/      # 身份（api/core/starter/starter-remote）
-│   ├── mango-authorization/ # 授权（api/core/starter/starter-remote）
+│   ├── mango-authorization/ # 授权与安全基础适配（api/core/security-starter/starter/starter-remote）
 │   ├── mango-security/      # 安全聚合入口（starter/starter-remote）
 │   ├── mango-system/        # 系统（api/core/starter）
 │   ├── mango-org/           # 组织（api/core/starter/starter-remote）

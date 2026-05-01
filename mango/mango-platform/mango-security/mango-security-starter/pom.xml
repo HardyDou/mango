@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-starter</artifactId>
+            <artifactId>mango-authorization-security-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

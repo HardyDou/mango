@@ -42,13 +42,6 @@
             <artifactId>mango-common</artifactId>
         </dependency>
 
-        <!-- Mango 基础安全 API，用于 ITokenProvider -->
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Spring Security Crypto，用于 BCrypt 密码编码 -->
         <dependency>
             <groupId>org.springframework.security</groupId>

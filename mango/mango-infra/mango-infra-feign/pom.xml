@@ -48,10 +48,10 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Mango 安全上下文能力 -->
+        <!-- Mango token propagation contract -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-infra-security-starter</artifactId>
+            <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 

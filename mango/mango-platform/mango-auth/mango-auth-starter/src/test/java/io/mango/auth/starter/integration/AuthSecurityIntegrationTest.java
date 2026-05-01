@@ -2,12 +2,12 @@ package io.mango.auth.starter.integration;
 
 import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.security.api.IPermissionProvider;
-import io.mango.infra.security.api.ISecurityContextProvider;
-import io.mango.infra.security.api.ITokenProvider;
-import io.mango.infra.security.api.Perm;
-import io.mango.infra.security.starter.SecurityAutoConfiguration;
-import io.mango.infra.security.core.impl.JjwtTokenServiceImpl;
+import io.mango.authorization.api.security.IPermissionProvider;
+import io.mango.authorization.api.security.ISecurityContextProvider;
+import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.security.starter.SecurityAutoConfiguration;
+import io.mango.authorization.security.core.impl.JjwtTokenServiceImpl;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +19,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -126,6 +131,22 @@ class AuthSecurityIntegrationTest {
         ITokenProvider tokenService(IKvStore kvStore) {
             return new JjwtTokenServiceImpl(kvStore);
         }
+
+        @Bean("apiResourceAuthorizationManager")
+        AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
+                TestPermissionService permissionService) {
+            return (authenticationSupplier, context) -> {
+                Authentication authentication = authenticationSupplier.get();
+                boolean authenticated = authentication != null
+                        && authentication.isAuthenticated()
+                        && !(authentication instanceof AnonymousAuthenticationToken);
+                if (!authenticated) {
+                    return new AuthorizationDecision(false);
+                }
+                Long userId = ((SecurityPrincipal) authentication.getPrincipal()).userId();
+                return new AuthorizationDecision(permissionService.listUserPermissions(userId).contains("demo:read"));
+            };
+        }
     }
 
     @RestController
@@ -138,7 +159,6 @@ class AuthSecurityIntegrationTest {
         }
 
         @GetMapping("/integration/secured")
-        @Perm("demo:read")
         public R<String> secured() {
             var context = securityContextProvider.currentContext();
             return R.ok(context.userId() + ":" + context.principalName());

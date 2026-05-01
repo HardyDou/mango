@@ -1,7 +1,7 @@
 package io.mango.authorization.resource.sync;
 
 import io.mango.authorization.api.ApiResourceApi;
-import io.mango.infra.security.api.IPermissionProvider;
+import io.mango.authorization.api.security.IPermissionProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;

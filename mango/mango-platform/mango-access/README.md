@@ -12,7 +12,7 @@
 | 上下文注入 | 校验通过后向下游注入 `X-Mango-*` 运行时上下文头 |
 | 暴露面同步 | 边界入口应用可通过 `mango-authorization-resource-sync-starter` 同步 Spring Cloud Gateway route Path 到 authorization |
 
-认证业务、权限模型、资源存储由 `mango-auth`、`mango-authorization`、`mango-infra-security` 承担。边界入口不维护公共路径白名单表。
+认证业务、权限模型、资源存储由 `mango-auth`、`mango-authorization` 承担。边界入口不维护公共路径白名单表。
 
 ## 子模块
 
@@ -49,7 +49,7 @@ mango-access/
 | `X-Mango-Party-Id` | token `partyId` claim |
 | `X-Mango-App-Code` | token `appCode` claim |
 
-下游服务由 `mango-infra-web` 初始化 `MangoContext`，由 `mango-auth-starter` / `mango-infra-security` 写入 Spring Security 上下文。
+下游服务由 `mango-infra-web` 初始化 `MangoContext`，由 `mango-auth-starter` / `mango-authorization-security-starter` 写入 Spring Security 上下文。
 
 ## 单体模式
 

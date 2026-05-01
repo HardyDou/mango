@@ -1,13 +1,16 @@
 # mango-infra-doc
 
-> API 文档基础设施 - OpenAPI/Swagger UI
+> 可选开发体验模块 - OpenAPI/Swagger UI
 
 ## 已实现
 
 - **SpringDoc OpenAPI 3 集成** - Spring Boot 3.x 兼容
 - **Swagger UI** - 在线 API 文档界面
 - **`@ConfigurationProperties` 模式** - `mango.doc.*` 前缀
-- **分组 API** - 支持多组 API 文档
+- **模块分组 API** - 基于 `META-INF/mango/module.properties` 按模块生成 API 文档分组
+- **接口范围标记** - 基于 `@ApiAccess(mode = INTERNAL)` 或 `@InternalApi` 标记对内接口，其余接口标记为对外接口
+
+`mango-infra-doc` 只面向开发和联调体验，不属于核心运行时能力。
 
 ## 依赖
 
@@ -28,6 +31,9 @@
 | `mango.doc.version` | `1.0.0` | API 版本 |
 | `mango.doc.group` | `public-api` | API 分组名 |
 | `mango.doc.pathsToMatch` | `/api/**` | 包含的路径 |
+| `mango.doc.moduleGrouping.enabled` | `true` | 是否按模块元数据生成分组 |
+| `mango.doc.moduleGrouping.includeDefaultGroup` | `true` | 是否保留默认全局分组 |
+| `mango.doc.moduleGrouping.includeScopeTags` | `true` | 是否标记对内/对外接口 |
 | `mango.doc.contact.name` | `Mango Team` | 联系人 |
 | `mango.doc.contact.email` | `mango@example.com` | 联系邮箱 |
 
@@ -44,6 +50,10 @@ mango:
     pathsToMatch:
       - /api/users/**
       - /api/roles/**
+    moduleGrouping:
+      enabled: true
+      includeDefaultGroup: true
+      includeScopeTags: true
     contact:
       name: Mango Team
       email: api@mango.com
@@ -57,6 +67,24 @@ GET /v3/api-docs              # OpenAPI 3 JSON
 GET /v3/api-docs.yaml          # OpenAPI 3 YAML
 GET /v3/api-docs/user-api     # 分组 API 文档
 ```
+
+### 按模块查看接口
+
+模块分组依赖各 starter 包中的 `META-INF/mango/module.properties`：
+
+```properties
+module-name=mango-auth
+module-path=/auth
+```
+
+引入 `mango-infra-doc-starter` 后，Swagger UI 的分组下拉框会出现 `mango-auth` 这类模块名。选择模块后，会展示该模块路径下的所有接口，例如 `/auth/**`。
+
+接口范围标记规则：
+
+- 标注了 `@ApiAccess(mode = ApiResourceAccessMode.INTERNAL)` 或 `@InternalApi` 的 Controller、方法或接口方法会标记为 `对内接口`。
+- 未标注 `@ApiAccess(INTERNAL)` 的接口会标记为 `对外接口`。
+- `@PublicApi`、`@LoginApi`、`@PermissionAccess` 会被识别为对外接口。
+- OpenAPI 操作会同时带上 `x-mango-api-scope`，值为 `internal` 或 `external`。
 
 ### 添加 API 注解
 
@@ -89,5 +117,6 @@ public class UserController {
 
 - 使用 SpringDoc 而非 springfox，SpringFox 已停止维护且不兼容 Spring Boot 3.x
 - SpringDoc 2.3.0 完整支持 OpenAPI 3.0 规范
-- 默认只暴露 `public` 分组，避免内部 API 泄露
+- 默认保留全局分组，同时按 Mango 模块元数据生成模块分组
+- 对内/对外接口在同一模块分组内展示，避免切换模块后看不到内部接口
 - Swagger UI 默认启用，可通过配置禁用

@@ -2,6 +2,10 @@ package io.mango.authorization.resource.sync;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.annotation.InternalApi;
+import io.mango.authorization.api.annotation.LoginApi;
+import io.mango.authorization.api.annotation.PermissionAccess;
+import io.mango.authorization.api.annotation.PublicApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
@@ -51,11 +55,22 @@ class ApiResourceSyncRunnerTest {
         assertEquals(ApiResourceAccessMode.LOGIN, query.getAccessMode());
         assertNull(query.getPermissionCode());
 
+        ApiResourceRegisterCommand explicitLogin = find(resources, "GET", "/resource-sync/login");
+        assertEquals("GET:/resource-sync/login", explicitLogin.getResourceCode());
+        assertEquals(ApiResourceAccessMode.LOGIN, explicitLogin.getAccessMode());
+        assertEquals("Login resource", explicitLogin.getDescription());
+
         ApiResourceRegisterCommand create = find(resources, "POST", "/resource-sync/create");
         assertEquals("resource-sync:create", create.getResourceCode());
         assertEquals("resource-sync:create", create.getPermissionCode());
         assertEquals(ApiResourceAccessMode.PERMISSION, create.getAccessMode());
         assertEquals("Create resource", create.getDescription());
+
+        ApiResourceRegisterCommand update = find(resources, "POST", "/resource-sync/update");
+        assertEquals("resource-sync:update", update.getResourceCode());
+        assertEquals("resource-sync:update", update.getPermissionCode());
+        assertEquals(ApiResourceAccessMode.PERMISSION, update.getAccessMode());
+        assertEquals("Update resource", update.getDescription());
 
         ApiResourceRegisterCommand publicResource = find(resources, "GET", "/resource-sync/public");
         assertEquals("GET:/resource-sync/public", publicResource.getResourceCode());
@@ -121,6 +136,12 @@ class ApiResourceSyncRunnerTest {
             return "ok";
         }
 
+        @LoginApi(desc = "Login resource")
+        @GetMapping("/resource-sync/login")
+        String login() {
+            return "ok";
+        }
+
         @ApiAccess(
                 mode = ApiResourceAccessMode.PERMISSION,
                 permission = "resource-sync:create",
@@ -130,7 +151,13 @@ class ApiResourceSyncRunnerTest {
             return "ok";
         }
 
-        @ApiAccess(mode = ApiResourceAccessMode.PUBLIC)
+        @PermissionAccess(value = "resource-sync:update", desc = "Update resource")
+        @PostMapping("/resource-sync/update")
+        String update() {
+            return "ok";
+        }
+
+        @PublicApi
         @GetMapping("/resource-sync/public")
         String publicResource() {
             return "ok";
@@ -141,7 +168,7 @@ class ApiResourceSyncRunnerTest {
             return "ok";
         }
 
-        @ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
+        @InternalApi
         @GetMapping("/resource-sync/internal")
         String internal() {
             return "ok";

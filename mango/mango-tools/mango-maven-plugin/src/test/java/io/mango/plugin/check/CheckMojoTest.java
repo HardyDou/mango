@@ -333,7 +333,7 @@ class CheckMojoTest {
                     <dependencies>
                         <dependency>
                             <groupId>io.mango</groupId>
-                            <artifactId>mango-infra-security-starter</artifactId>
+                            <artifactId>mango-authorization-security-starter</artifactId>
                         </dependency>
                         <dependency>
                             <groupId>io.mango</groupId>
