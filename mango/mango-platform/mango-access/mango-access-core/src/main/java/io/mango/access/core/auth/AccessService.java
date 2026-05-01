@@ -7,6 +7,7 @@ import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.common.result.R;
 import io.mango.authorization.api.security.IPermissionProvider;
 import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.security.SecurityPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,7 +54,7 @@ public class AccessService {
         }
         AccessPrincipal principal = resolvePrincipal(token);
         if (accessMode == ApiResourceAccessMode.PERMISSION
-                && !hasPermission(principal.userId(), decision.permissionCode())) {
+                && !hasPermission(principal, decision.permissionCode())) {
             return AccessResult.forbidden("权限不足");
         }
         return AccessResult.allowAuthenticated(principal);
@@ -96,11 +97,21 @@ public class AccessService {
         }
     }
 
-    private boolean hasPermission(Long userId, String permissionCode) {
-        if (userId == null || permissionCode == null || permissionCode.isBlank()) {
+    private boolean hasPermission(AccessPrincipal principal, String permissionCode) {
+        if (principal == null || principal.userId() == null || permissionCode == null || permissionCode.isBlank()) {
             return false;
         }
-        return permissionProvider.listUserPermissions(userId).stream()
+        SecurityPrincipal securityPrincipal = new SecurityPrincipal(
+                principal.userId(),
+                principal.tenantId(),
+                principal.username(),
+                principal.realm(),
+                principal.actorType(),
+                principal.partyType(),
+                principal.partyId(),
+                principal.appCode()
+        );
+        return permissionProvider.listUserPermissions(securityPrincipal).stream()
                 .anyMatch(granted -> permissionMatches(granted, permissionCode));
     }
 

@@ -68,21 +68,21 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
         if (!isAuthenticated(authentication) || !StringUtils.hasText(permissionCode)) {
             return false;
         }
-        Long userId = resolveUserId(authentication);
-        if (userId == null) {
+        SecurityPrincipal principal = resolvePrincipal(authentication);
+        if (principal == null || principal.userId() == null) {
             return false;
         }
-        List<String> permissions = permissionService.listUserPermissions(userId);
+        List<String> permissions = permissionService.listUserPermissions(principal);
         return permissions.stream().anyMatch(permission -> permissionMatches(permission, permissionCode));
     }
 
-    private Long resolveUserId(Authentication authentication) {
+    private SecurityPrincipal resolvePrincipal(Authentication authentication) {
         Object principal = authentication.getPrincipal();
         if (principal instanceof SecurityPrincipal securityPrincipal) {
-            return securityPrincipal.userId();
+            return securityPrincipal;
         }
         if (principal instanceof Number number) {
-            return number.longValue();
+            return new SecurityPrincipal(number.longValue(), null, null);
         }
         return null;
     }

@@ -1,5 +1,7 @@
 package io.mango.authorization.core.service;
 
+import io.mango.authorization.api.AuthorizationQuery;
+
 import java.util.List;
 
 /**
@@ -11,11 +13,27 @@ public interface ISubjectAuthorityService {
         return listSubjectRoles(subjectId, null);
     }
 
-    List<String> listSubjectRoles(Long subjectId, String appCode);
+    default List<String> listSubjectRoles(Long subjectId, String appCode) {
+        return listSubjectRoles(new AuthorizationQuery(
+                subjectId,
+                AuthorizationQuery.SUBJECT_TYPE_USER,
+                null,
+                appCode));
+    }
+
+    List<String> listSubjectRoles(AuthorizationQuery query);
 
     default List<String> listSubjectPermissions(Long subjectId) {
         return listSubjectPermissions(subjectId, null);
     }
 
-    List<String> listSubjectPermissions(Long subjectId, String appCode);
+    default List<String> listSubjectPermissions(Long subjectId, String appCode) {
+        return listSubjectPermissions(new AuthorizationQuery(
+                subjectId,
+                AuthorizationQuery.SUBJECT_TYPE_USER,
+                null,
+                appCode));
+    }
+
+    List<String> listSubjectPermissions(AuthorizationQuery query);
 }

@@ -12,7 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -73,22 +76,29 @@ public class MenuServiceImpl implements IMenuService {
         if (menus == null || menus.isEmpty()) {
             return new ArrayList<>();
         }
-        // 从根节点开始组装。
-        return buildMenuTreeRecursive(menus, 0L);
+        Map<Long, List<Menu>> childrenByParentId = menus.stream()
+                .collect(Collectors.groupingBy(menu -> menu.getParentId() == null ? 0L : menu.getParentId()));
+        Set<Long> menuIds = menus.stream()
+                .map(Menu::getMenuId)
+                .collect(Collectors.toCollection(HashSet::new));
+        return menus.stream()
+                .filter(menu -> menu.getParentId() == null
+                        || menu.getParentId() == 0
+                        || !menuIds.contains(menu.getParentId()))
+                .map(menu -> buildMenuNode(menu, childrenByParentId))
+                .collect(Collectors.toList());
     }
 
-    private List<MenuVO> buildMenuTreeRecursive(List<Menu> allMenus, Long parentId) {
-        return allMenus.stream()
-                .filter(m -> parentId.equals(m.getParentId()))
-                .map(m -> {
-                    MenuVO vo = convertToMenuVO(m);
-                    List<MenuVO> children = buildMenuTreeRecursive(allMenus, m.getMenuId());
-                    if (!children.isEmpty()) {
-                        vo.setChildren(children);
-                    }
-                    return vo;
-                })
+    private MenuVO buildMenuNode(Menu menu, Map<Long, List<Menu>> childrenByParentId) {
+        MenuVO vo = convertToMenuVO(menu);
+        List<MenuVO> children = childrenByParentId.getOrDefault(menu.getMenuId(), List.of())
+                .stream()
+                .map(child -> buildMenuNode(child, childrenByParentId))
                 .collect(Collectors.toList());
+        if (!children.isEmpty()) {
+            vo.setChildren(children);
+        }
+        return vo;
     }
 
     private MenuVO convertToMenuVO(Menu menu) {
@@ -135,13 +145,8 @@ public class MenuServiceImpl implements IMenuService {
             log.warn("Add menu failed: menuCode is required");
             return false;
         }
-        try {
-            int rows = menuMapper.insert(menu);
-            return rows > 0;
-        } catch (Exception e) {
-            log.error("Add menu failed: {}", e.getMessage());
-            return false;
-        }
+        int rows = menuMapper.insert(menu);
+        return rows > 0;
     }
 
     @Override
@@ -151,39 +156,34 @@ public class MenuServiceImpl implements IMenuService {
             log.warn("Update menu failed: invalid parameters");
             return false;
         }
-        try {
-            Menu existing = menuMapper.selectById(menuId);
-            if (existing == null) {
-                log.warn("Update menu failed: menu not found, menuId={}", menuId);
-                return false;
-            }
-            // 只更新非空字段。
-            LambdaUpdateWrapper<Menu> wrapper = new LambdaUpdateWrapper<>();
-            wrapper.eq(Menu::getMenuId, menuId);
-            if (menu.getAppCode() != null) wrapper.set(Menu::getAppCode, menu.getAppCode());
-            if (menu.getParentId() != null) wrapper.set(Menu::getParentId, menu.getParentId());
-            if (menu.getMenuType() != null) wrapper.set(Menu::getMenuType, menu.getMenuType());
-            if (menu.getMenuName() != null) wrapper.set(Menu::getMenuName, menu.getMenuName());
-            if (menu.getMenuCode() != null) wrapper.set(Menu::getMenuCode, menu.getMenuCode());
-            if (menu.getPath() != null) wrapper.set(Menu::getPath, menu.getPath());
-            if (menu.getIcon() != null) wrapper.set(Menu::getIcon, menu.getIcon());
-            if (menu.getSort() != null) wrapper.set(Menu::getSort, menu.getSort());
-            if (menu.getStatus() != null) wrapper.set(Menu::getStatus, menu.getStatus());
-            if (menu.getVisible() != null) wrapper.set(Menu::getVisible, menu.getVisible());
-            if (menu.getComponent() != null) wrapper.set(Menu::getComponent, menu.getComponent());
-            if (menu.getKeepAlive() != null) wrapper.set(Menu::getKeepAlive, menu.getKeepAlive());
-            if (menu.getEmbedded() != null) wrapper.set(Menu::getEmbedded, menu.getEmbedded());
-            if (menu.getRedirect() != null) wrapper.set(Menu::getRedirect, menu.getRedirect());
-            if (menu.getPermissions() != null) wrapper.set(Menu::getPermissions, menu.getPermissions());
-            if (menu.getRemark() != null) wrapper.set(Menu::getRemark, menu.getRemark());
-            // createBy、createTime、delFlag 不在普通更新中修改。
-
-            int rows = menuMapper.update(null, wrapper);
-            return rows > 0;
-        } catch (Exception e) {
-            log.error("Update menu failed: {}", e.getMessage());
+        Menu existing = menuMapper.selectById(menuId);
+        if (existing == null) {
+            log.warn("Update menu failed: menu not found, menuId={}", menuId);
             return false;
         }
+        // 只更新非空字段。
+        LambdaUpdateWrapper<Menu> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(Menu::getMenuId, menuId);
+        if (menu.getAppCode() != null) wrapper.set(Menu::getAppCode, menu.getAppCode());
+        if (menu.getParentId() != null) wrapper.set(Menu::getParentId, menu.getParentId());
+        if (menu.getMenuType() != null) wrapper.set(Menu::getMenuType, menu.getMenuType());
+        if (menu.getMenuName() != null) wrapper.set(Menu::getMenuName, menu.getMenuName());
+        if (menu.getMenuCode() != null) wrapper.set(Menu::getMenuCode, menu.getMenuCode());
+        if (menu.getPath() != null) wrapper.set(Menu::getPath, menu.getPath());
+        if (menu.getIcon() != null) wrapper.set(Menu::getIcon, menu.getIcon());
+        if (menu.getSort() != null) wrapper.set(Menu::getSort, menu.getSort());
+        if (menu.getStatus() != null) wrapper.set(Menu::getStatus, menu.getStatus());
+        if (menu.getVisible() != null) wrapper.set(Menu::getVisible, menu.getVisible());
+        if (menu.getComponent() != null) wrapper.set(Menu::getComponent, menu.getComponent());
+        if (menu.getKeepAlive() != null) wrapper.set(Menu::getKeepAlive, menu.getKeepAlive());
+        if (menu.getEmbedded() != null) wrapper.set(Menu::getEmbedded, menu.getEmbedded());
+        if (menu.getRedirect() != null) wrapper.set(Menu::getRedirect, menu.getRedirect());
+        if (menu.getPermissions() != null) wrapper.set(Menu::getPermissions, menu.getPermissions());
+        if (menu.getRemark() != null) wrapper.set(Menu::getRemark, menu.getRemark());
+        // createBy、createTime、delFlag 不在普通更新中修改。
+
+        int rows = menuMapper.update(null, wrapper);
+        return rows > 0;
     }
 
     @Override
@@ -193,18 +193,13 @@ public class MenuServiceImpl implements IMenuService {
             log.warn("Delete menu failed: menuId is null");
             return false;
         }
-        try {
-            // 存在子菜单时禁止直接删除父菜单。
-            List<Menu> children = listByParentId(menuId);
-            if (!children.isEmpty()) {
-                log.warn("Delete menu failed: menu has children, menuId={}", menuId);
-                return false;
-            }
-            int rows = menuMapper.deleteById(menuId);
-            return rows > 0;
-        } catch (Exception e) {
-            log.error("Delete menu failed: {}", e.getMessage());
+        // 存在子菜单时禁止直接删除父菜单。
+        List<Menu> children = listByParentId(menuId);
+        if (!children.isEmpty()) {
+            log.warn("Delete menu failed: menu has children, menuId={}", menuId);
             return false;
         }
+        int rows = menuMapper.deleteById(menuId);
+        return rows > 0;
     }
 }

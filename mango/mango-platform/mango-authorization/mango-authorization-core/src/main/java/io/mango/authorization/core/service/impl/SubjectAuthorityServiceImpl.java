@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.entity.Role;
 import io.mango.authorization.core.entity.RoleMenu;
@@ -12,6 +13,7 @@ import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,14 +32,14 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
     private final MenuMapper menuMapper;
 
     @Override
-    public List<String> listSubjectRoles(Long subjectId, String appCode) {
-        List<Long> roleIds = listSubjectRoleIds(subjectId);
+    public List<String> listSubjectRoles(AuthorizationQuery query) {
+        List<Long> roleIds = listSubjectRoleIds(query);
         if (roleIds.isEmpty()) {
             return new ArrayList<>();
         }
         LambdaQueryWrapper<Role> roleWrapper = new LambdaQueryWrapper<>();
         roleWrapper.in(Role::getRoleId, roleIds)
-                .eq(appCode != null && !appCode.isBlank(), Role::getAppCode, appCode)
+                .eq(StringUtils.hasText(query.systemCode()), Role::getAppCode, query.systemCode())
                 .eq(Role::getStatus, 1);
         return roleMapper.selectList(roleWrapper)
                 .stream()
@@ -46,8 +48,8 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
     }
 
     @Override
-    public List<String> listSubjectPermissions(Long subjectId, String appCode) {
-        List<Long> roleIds = listSubjectRoleIds(subjectId);
+    public List<String> listSubjectPermissions(AuthorizationQuery query) {
+        List<Long> roleIds = listSubjectRoleIds(query);
         if (roleIds.isEmpty()) {
             return new ArrayList<>();
         }
@@ -64,7 +66,7 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
 
         LambdaQueryWrapper<Menu> menuWrapper = new LambdaQueryWrapper<>();
         menuWrapper.in(Menu::getMenuId, menuIds)
-                .eq(appCode != null && !appCode.isBlank(), Menu::getAppCode, appCode)
+                .eq(StringUtils.hasText(query.systemCode()), Menu::getAppCode, query.systemCode())
                 .eq(Menu::getMenuType, 3)
                 .eq(Menu::getStatus, 1);
         return menuMapper.selectList(menuWrapper)
@@ -74,12 +76,33 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
                 .collect(Collectors.toList());
     }
 
-    private List<Long> listSubjectRoleIds(Long subjectId) {
+    private List<Long> listSubjectRoleIds(AuthorizationQuery query) {
+        Long tenantId = parseTenantId(query.tenantId());
+        if (StringUtils.hasText(query.tenantId()) && tenantId == null) {
+            return new ArrayList<>();
+        }
         LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SubjectRoleBinding::getSubjectId, subjectId);
+        wrapper.eq(SubjectRoleBinding::getSubjectId, query.subjectId())
+                .eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId)
+                .eq(StringUtils.hasText(query.systemCode()), SubjectRoleBinding::getAppCode, query.systemCode())
+                .eq(StringUtils.hasText(query.realm()), SubjectRoleBinding::getRealm, query.realm())
+                .eq(StringUtils.hasText(query.actorType()), SubjectRoleBinding::getActorType, query.actorType())
+                .eq(StringUtils.hasText(query.partyType()), SubjectRoleBinding::getPartyType, query.partyType())
+                .eq(query.partyId() != null, SubjectRoleBinding::getPartyId, query.partyId());
         return subjectRoleBindingMapper.selectList(wrapper)
                 .stream()
                 .map(SubjectRoleBinding::getRoleId)
                 .collect(Collectors.toList());
+    }
+
+    private Long parseTenantId(String tenantId) {
+        if (!StringUtils.hasText(tenantId)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(tenantId);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -26,7 +26,13 @@ public class AuthorizationRemoteAutoConfiguration {
                 return AuthorizationSnapshot.empty();
             }
             R<AuthorizationSnapshot> response = authorizationFeignClient.loadUserAuthorization(
-                    query.subjectId(), query.tenantId(), query.systemCode());
+                    query.subjectId(),
+                    query.tenantId(),
+                    query.systemCode(),
+                    query.realm(),
+                    query.actorType(),
+                    query.partyType(),
+                    query.partyId());
             return response != null && response.isSuccess() && response.getData() != null
                     ? response.getData()
                     : AuthorizationSnapshot.empty();

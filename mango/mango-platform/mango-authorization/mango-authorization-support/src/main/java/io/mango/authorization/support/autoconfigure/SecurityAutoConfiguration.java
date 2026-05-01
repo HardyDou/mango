@@ -49,7 +49,7 @@ public class SecurityAutoConfiguration {
     @Bean
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     @ConditionalOnMissingBean(SecurityFilterChain.class)
-    @ConditionalOnProperty(prefix = "mango.security.default-permit-all-filter-chain", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "mango.security.debug-permit-all-filter-chain", name = "enabled", havingValue = "true")
     @Order(Ordered.LOWEST_PRECEDENCE)
     public SecurityFilterChain defaultSecurityFilterChain(
             HttpSecurity http,

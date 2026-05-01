@@ -7,5 +7,12 @@ import io.mango.common.result.R;
  */
 public interface AuthorizationApi {
 
-    R<AuthorizationSnapshot> loadUserAuthorization(Long subjectId, String tenantId, String systemCode);
+    R<AuthorizationSnapshot> loadUserAuthorization(
+            Long subjectId,
+            String tenantId,
+            String systemCode,
+            String realm,
+            String actorType,
+            String partyType,
+            Long partyId);
 }

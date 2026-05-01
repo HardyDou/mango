@@ -26,9 +26,9 @@ public class RolePermissionAuthorityContributor implements AuthorityContributor 
     @Override
     public AuthorizationSnapshot contribute(AuthorizationQuery query) {
         LinkedHashSet<String> roleCodes = new LinkedHashSet<>(
-                subjectAuthorityService.listSubjectRoles(query.subjectId(), query.systemCode()));
+                subjectAuthorityService.listSubjectRoles(query));
         LinkedHashSet<String> permissionCodes = new LinkedHashSet<>(
-                subjectAuthorityService.listSubjectPermissions(query.subjectId(), query.systemCode()));
+                subjectAuthorityService.listSubjectPermissions(query));
         LinkedHashSet<String> authorities = new LinkedHashSet<>(roleCodes);
         authorities.addAll(permissionCodes);
         return AuthorizationSnapshot.of(roleCodes, permissionCodes, authorities);

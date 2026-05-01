@@ -215,7 +215,7 @@ public class JjwtTokenServiceImpl implements ITokenProvider {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            log.warn("JWT parse failed: {}", e.getMessage());
+            log.debug("JWT parse failed: {}", e.getMessage());
             return null;
         }
     }

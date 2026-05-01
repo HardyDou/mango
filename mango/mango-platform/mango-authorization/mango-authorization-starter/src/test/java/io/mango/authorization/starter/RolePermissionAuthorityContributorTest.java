@@ -12,8 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.any;
 
 @DisplayName("RolePermissionAuthorityContributor Tests")
 class RolePermissionAuthorityContributorTest {
@@ -32,8 +31,8 @@ class RolePermissionAuthorityContributorTest {
     @DisplayName("contribute should merge roles and permissions into authorities")
     void contributeShouldMergeRolesAndPermissions() {
         ISubjectAuthorityService subjectAuthorityService = mock(ISubjectAuthorityService.class);
-        when(subjectAuthorityService.listSubjectRoles(eq(1L), isNull())).thenReturn(List.of("ROLE_ADMIN"));
-        when(subjectAuthorityService.listSubjectPermissions(eq(1L), isNull())).thenReturn(List.of("system:user:view"));
+        when(subjectAuthorityService.listSubjectRoles(any(AuthorizationQuery.class))).thenReturn(List.of("ROLE_ADMIN"));
+        when(subjectAuthorityService.listSubjectPermissions(any(AuthorizationQuery.class))).thenReturn(List.of("system:user:view"));
 
         RolePermissionAuthorityContributor contributor = new RolePermissionAuthorityContributor(subjectAuthorityService);
         var snapshot = contributor.contribute(AuthorizationQuery.user(1L));

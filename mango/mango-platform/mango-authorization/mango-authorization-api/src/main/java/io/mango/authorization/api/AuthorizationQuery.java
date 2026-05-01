@@ -1,18 +1,24 @@
 package io.mango.authorization.api;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 统一授权查询。
  */
-@Schema(description = "统一授权查询")
 public record AuthorizationQuery(
-        @Schema(description = "主体ID") Long subjectId,
-        @Schema(description = "主体类型，如 user") String subjectType,
-        @Schema(description = "租户ID") String tenantId,
-        @Schema(description = "系统编码") String systemCode) {
+        Long subjectId,
+        String subjectType,
+        String tenantId,
+        String systemCode,
+        String realm,
+        String actorType,
+        String partyType,
+        Long partyId) {
 
     public static final String SUBJECT_TYPE_USER = "user";
+
+    public AuthorizationQuery(Long subjectId, String subjectType, String tenantId, String systemCode) {
+        this(subjectId, subjectType, tenantId, systemCode, null, null, null, null);
+    }
 
     public AuthorizationQuery {
         if (subjectId == null) {
@@ -24,6 +30,9 @@ public record AuthorizationQuery(
         subjectType = subjectType.trim();
         tenantId = tenantId == null || tenantId.isBlank() ? null : tenantId.trim();
         systemCode = systemCode == null || systemCode.isBlank() ? null : systemCode.trim();
+        realm = realm == null || realm.isBlank() ? null : realm.trim();
+        actorType = actorType == null || actorType.isBlank() ? null : actorType.trim();
+        partyType = partyType == null || partyType.isBlank() ? null : partyType.trim();
     }
 
     public static AuthorizationQuery user(Long userId) {
@@ -31,10 +40,22 @@ public record AuthorizationQuery(
     }
 
     public AuthorizationQuery withTenantId(String newTenantId) {
-        return new AuthorizationQuery(subjectId, subjectType, newTenantId, systemCode);
+        return new AuthorizationQuery(subjectId, subjectType, newTenantId, systemCode, realm, actorType, partyType, partyId);
     }
 
     public AuthorizationQuery withSystemCode(String newSystemCode) {
-        return new AuthorizationQuery(subjectId, subjectType, tenantId, newSystemCode);
+        return new AuthorizationQuery(subjectId, subjectType, tenantId, newSystemCode, realm, actorType, partyType, partyId);
+    }
+
+    public AuthorizationQuery withRealm(String newRealm) {
+        return new AuthorizationQuery(subjectId, subjectType, tenantId, systemCode, newRealm, actorType, partyType, partyId);
+    }
+
+    public AuthorizationQuery withActorType(String newActorType) {
+        return new AuthorizationQuery(subjectId, subjectType, tenantId, systemCode, realm, newActorType, partyType, partyId);
+    }
+
+    public AuthorizationQuery withParty(String newPartyType, Long newPartyId) {
+        return new AuthorizationQuery(subjectId, subjectType, tenantId, systemCode, realm, actorType, newPartyType, newPartyId);
     }
 }

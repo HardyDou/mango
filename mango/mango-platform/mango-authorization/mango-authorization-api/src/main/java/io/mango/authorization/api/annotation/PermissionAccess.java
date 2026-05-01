@@ -25,12 +25,6 @@ public @interface PermissionAccess {
     String value() default "";
 
     /**
-     * 权限码。
-     */
-    @AliasFor(annotation = ApiAccess.class, attribute = "permission")
-    String permission() default "";
-
-    /**
      * 资源描述。
      */
     @AliasFor(annotation = ApiAccess.class, attribute = "desc")

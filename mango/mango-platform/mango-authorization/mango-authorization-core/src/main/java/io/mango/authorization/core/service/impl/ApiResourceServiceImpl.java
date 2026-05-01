@@ -14,9 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * API 资源服务实现。
@@ -29,6 +35,9 @@ public class ApiResourceServiceImpl
         extends ServiceImpl<ApiResourceMapper, ApiResource>
         implements IApiResourceService {
 
+    private final Map<String, ApiResourceAccessDecisionVO> decisionCache = new ConcurrentHashMap<>();
+    private volatile List<ApiResource> activeResourceCache;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResourceRegisterResultVO registerApiResources(List<ApiResourceRegisterCommand> resources) {
@@ -36,28 +45,43 @@ public class ApiResourceServiceImpl
             return ApiResourceRegisterResultVO.empty();
         }
 
-        int created = 0;
-        int updated = 0;
-        for (ApiResourceRegisterCommand resource : resources) {
-            if (!isValid(resource)) {
-                log.warn("Skip invalid API resource: {}", resource);
-                continue;
-            }
-            ApiResource existing = getOne(new LambdaQueryWrapper<ApiResource>()
-                    .eq(ApiResource::getModuleName, resource.getModuleName())
-                    .eq(ApiResource::getHttpMethod, resource.getHttpMethod())
-                    .eq(ApiResource::getPathPattern, resource.getPathPattern())
-                    .last("LIMIT 1"));
-            if (existing == null) {
-                save(toEntity(resource));
-                created++;
-                continue;
-            }
-            merge(existing, resource);
-            updateById(existing);
-            updated++;
+        List<ApiResourceRegisterCommand> validResources = resources.stream()
+                .filter(resource -> {
+                    boolean valid = isValid(resource);
+                    if (!valid) {
+                        log.warn("Skip invalid API resource: {}", resource);
+                    }
+                    return valid;
+                })
+                .toList();
+        if (validResources.isEmpty()) {
+            return new ApiResourceRegisterResultVO(0, 0, 0);
         }
-        return new ApiResourceRegisterResultVO(resources.size(), created, updated);
+        validResources = deduplicate(validResources);
+
+        Map<String, ApiResource> existingIndex = loadExistingIndex(validResources);
+        List<ApiResource> creates = new ArrayList<>();
+        List<ApiResource> updates = new ArrayList<>();
+        for (ApiResourceRegisterCommand resource : validResources) {
+            ApiResource existing = existingIndex.get(resourceKey(
+                    resource.getModuleName(),
+                    resource.getHttpMethod(),
+                    resource.getPathPattern()));
+            if (existing == null) {
+                creates.add(toEntity(resource));
+            } else {
+                merge(existing, resource);
+                updates.add(existing);
+            }
+        }
+        if (!creates.isEmpty()) {
+            saveBatch(creates);
+        }
+        if (!updates.isEmpty()) {
+            updateBatchById(updates);
+        }
+        clearRuntimeCache();
+        return new ApiResourceRegisterResultVO(validResources.size(), creates.size(), updates.size());
     }
 
     @Override
@@ -65,18 +89,74 @@ public class ApiResourceServiceImpl
         if (!StringUtils.hasText(httpMethod) || !StringUtils.hasText(path)) {
             return ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN);
         }
-        List<ApiResource> resources = list(new LambdaQueryWrapper<ApiResource>()
-                .eq(ApiResource::getStatus, 1)
-                .and(wrapper -> wrapper
-                        .eq(ApiResource::getHttpMethod, httpMethod)
-                        .or()
-                        .eq(ApiResource::getHttpMethod, "ALL")));
-        return resources.stream()
+        String method = httpMethod.toUpperCase();
+        String cacheKey = method + "\n" + path;
+        return decisionCache.computeIfAbsent(cacheKey, ignored -> activeResources().stream()
+                .filter(resource -> methodMatches(resource.getHttpMethod(), method))
                 .sorted(Comparator.comparingInt((ApiResource resource) -> resource.getPathPattern().length()).reversed())
                 .filter(resource -> pathMatches(resource.getPathPattern(), path))
                 .findFirst()
                 .map(this::toDecision)
-                .orElseGet(() -> ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN));
+                .orElseGet(() -> ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN)));
+    }
+
+    private Map<String, ApiResource> loadExistingIndex(List<ApiResourceRegisterCommand> resources) {
+        List<String> moduleNames = resources.stream()
+                .map(ApiResourceRegisterCommand::getModuleName)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (moduleNames.isEmpty()) {
+            return Map.of();
+        }
+        List<ApiResource> existingResources = list(new LambdaQueryWrapper<ApiResource>()
+                .in(ApiResource::getModuleName, moduleNames));
+        Map<String, ApiResource> index = new HashMap<>(existingResources.size());
+        existingResources.forEach(resource -> index.put(resourceKey(
+                resource.getModuleName(),
+                resource.getHttpMethod(),
+                resource.getPathPattern()), resource));
+        return index;
+    }
+
+    private List<ApiResourceRegisterCommand> deduplicate(List<ApiResourceRegisterCommand> resources) {
+        Map<String, ApiResourceRegisterCommand> index = new LinkedHashMap<>();
+        resources.forEach(resource -> index.put(resourceKey(
+                resource.getModuleName(),
+                resource.getHttpMethod(),
+                resource.getPathPattern()), resource));
+        return new ArrayList<>(index.values());
+    }
+
+    private List<ApiResource> activeResources() {
+        List<ApiResource> cached = activeResourceCache;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (this) {
+            if (activeResourceCache == null) {
+                activeResourceCache = list(new LambdaQueryWrapper<ApiResource>()
+                        .eq(ApiResource::getStatus, 1))
+                        .stream()
+                        .filter(resource -> StringUtils.hasText(resource.getPathPattern()))
+                        .collect(Collectors.toList());
+            }
+            return activeResourceCache;
+        }
+    }
+
+    private void clearRuntimeCache() {
+        activeResourceCache = null;
+        decisionCache.clear();
+    }
+
+    private boolean methodMatches(String registeredMethod, String requestMethod) {
+        return "ALL".equalsIgnoreCase(registeredMethod)
+                || requestMethod.equalsIgnoreCase(registeredMethod);
+    }
+
+    private String resourceKey(String moduleName, String httpMethod, String pathPattern) {
+        return moduleName + "\n" + httpMethod + "\n" + pathPattern;
     }
 
     private boolean isValid(ApiResourceRegisterCommand resource) {

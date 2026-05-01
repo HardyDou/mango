@@ -39,7 +39,7 @@ class DefaultPermissionServiceImplTest {
     @Test
     @DisplayName("listUserPermissions with null userId should return empty list")
     void listUserPermissions_nullUserId_returnsEmptyList() {
-        List<String> result = service.listUserPermissions(null);
+        List<String> result = service.listUserPermissions((Long) null);
         assertTrue(result.isEmpty());
     }
 

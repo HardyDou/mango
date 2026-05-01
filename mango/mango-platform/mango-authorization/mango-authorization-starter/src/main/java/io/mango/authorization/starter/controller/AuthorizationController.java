@@ -27,10 +27,17 @@ public class AuthorizationController implements AuthorizationApi {
     public R<AuthorizationSnapshot> loadUserAuthorization(
             @PathVariable Long subjectId,
             @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String systemCode) {
+            @RequestParam(required = false) String systemCode,
+            @RequestParam(required = false) String realm,
+            @RequestParam(required = false) String actorType,
+            @RequestParam(required = false) String partyType,
+            @RequestParam(required = false) Long partyId) {
         AuthorizationQuery query = AuthorizationQuery.user(subjectId)
                 .withTenantId(tenantId)
-                .withSystemCode(systemCode);
+                .withSystemCode(systemCode)
+                .withRealm(realm)
+                .withActorType(actorType)
+                .withParty(partyType, partyId);
         return R.ok(authorizationProvider.load(query));
     }
 }

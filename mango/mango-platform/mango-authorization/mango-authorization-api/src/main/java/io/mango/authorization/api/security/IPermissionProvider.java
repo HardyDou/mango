@@ -14,4 +14,14 @@ public interface IPermissionProvider {
      * @return 权限码列表
      */
     List<String> listUserPermissions(Long userId);
+
+    /**
+     * 查询指定认证主体在当前上下文中拥有的权限码。
+     *
+     * @param principal 认证主体
+     * @return 权限码列表
+     */
+    default List<String> listUserPermissions(SecurityPrincipal principal) {
+        return principal == null ? List.of() : listUserPermissions(principal.userId());
+    }
 }
