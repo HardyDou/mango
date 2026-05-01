@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "spring.autoconfigure.exclude="
-                        + "io.mango.infra.redis.starter.RedisAutoConfiguration,"
+                        + "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration,"
                         + "io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
                         + "io.mango.infra.persistence.starter.PersistenceAutoConfiguration,"
                         + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration",

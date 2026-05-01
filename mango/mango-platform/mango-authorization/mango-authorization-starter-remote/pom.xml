@@ -24,6 +24,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango 授权安全自动配置，提供 token 与远程权限适配 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-security-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 基础 Feign Starter -->
         <dependency>
             <groupId>io.mango</groupId>

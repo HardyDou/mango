@@ -36,7 +36,15 @@
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-security-starter-remote</artifactId>
+            <artifactId>mango-auth-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-identity-starter-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-starter-remote</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>

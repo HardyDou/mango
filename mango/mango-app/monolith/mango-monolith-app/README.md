@@ -6,8 +6,8 @@
 
 | 范围 | 依赖 |
 |------|------|
-| 安全、认证、身份、授权 | `mango-security-starter` |
-| 组织、区域、国际化、系统、验证码、AI | 本地平台 starter |
+| 安全、认证、身份、授权 | `mango-auth-starter`、`mango-identity-starter`、`mango-authorization-starter` |
+| 组织、系统、验证码、消息 | 本地平台 starter |
 | KV、实时通信、模块元数据 | infra starter |
 | 业务能力 | 后续业务 starter 添加到这里 |
 

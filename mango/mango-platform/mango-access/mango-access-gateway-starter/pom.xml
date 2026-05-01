@@ -52,10 +52,10 @@
             <version>2025.1.0.0</version>
         </dependency>
 
-        <!-- Mango 远程安全聚合能力，提供 Token 与权限适配 -->
+        <!-- Mango 远程授权与安全能力，提供 Token 与权限适配 -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-security-starter-remote</artifactId>
+            <artifactId>mango-authorization-starter-remote</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Lombok -->

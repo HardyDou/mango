@@ -947,11 +947,8 @@ public class CheckMojo extends AbstractMojo {
     }
 
     private boolean isSecurityAggregateRemoteDependency(String consumerArtifact, String depArtifact) {
-        return "mango-security-starter-remote".equals(consumerArtifact)
-                && ("mango-authorization-security-starter".equals(depArtifact)
-                || "mango-auth-starter-remote".equals(depArtifact)
-                || "mango-identity-starter-remote".equals(depArtifact)
-                || "mango-authorization-starter-remote".equals(depArtifact));
+        return "mango-authorization-starter-remote".equals(consumerArtifact)
+                && "mango-authorization-security-starter".equals(depArtifact);
     }
 
     private boolean isRemoteInfrastructureDependency(String depArtifact) {

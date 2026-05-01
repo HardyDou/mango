@@ -1,8 +1,6 @@
 package io.mango.authorization.security.starter;
 
 import io.mango.authorization.api.security.ISecurityContextProvider;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.security.core.impl.DefaultPermissionServiceImpl;
 import io.mango.authorization.security.starter.context.SpringSecurityContextProvider;
 import io.mango.authorization.security.starter.web.JsonAccessDeniedHandler;
 import io.mango.authorization.security.starter.web.JsonAuthenticationEntryPoint;
@@ -32,12 +30,6 @@ public class SecurityAutoConfiguration {
     @ConditionalOnMissingBean(ISecurityContextProvider.class)
     public ISecurityContextProvider securityContextProvider() {
         return new SpringSecurityContextProvider();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(IPermissionProvider.class)
-    public IPermissionProvider defaultPermissionService() {
-        return new DefaultPermissionServiceImpl();
     }
 
     @Bean

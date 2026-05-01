@@ -23,7 +23,7 @@
 | `mango-infra-all` | 聚合所有基础设施，一键引入 | ✅ |
 | `mango-infra-web` | Web 层（CORS、异常处理、响应封装） | ⭐⭐ 部分 |
 | `mango-infra-persistence` | 关系型持久化、迁移、事务、MyBatis-Plus | ⭐ 依赖引入 |
-| `mango-infra-redis` | Redis & Redisson | ⭐⭐⭐ 完善 |
+| `mango-infra-kv` | Redis & Redisson | ⭐⭐⭐ 完善 |
 | `mango-infra-lock` | 分布式锁 | ⭐ 框架 |
 | `mango-infra-mq` | 消息队列 (Kafka) | ⭐ 框架 |
 | `mango-infra-search` | 搜索引擎 (Elasticsearch) | ⭐ 框架 |
@@ -86,7 +86,7 @@ mango:
 
 ```
 # META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-io.mango.infra.redis.starter.RedisAutoConfiguration
+io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration
 ```
 
 ### @ConditionalOnProperty 控制
@@ -126,10 +126,10 @@ public class RedisProperties {
 
 | 层次 | 包路径 | 示例 |
 |------|--------|------|
-| 核心接口/类 | `io.mango.infra.[module]` | `io.mango.infra.redis` |
-| 配置 & 属性 | `io.mango.infra.[module].starter` | `io.mango.infra.redis.starter` |
+| 核心接口/类 | `io.mango.infra.[module]` | `io.mango.infra.kv` |
+| 配置 & 属性 | `io.mango.infra.[module].starter` | `io.mango.infra.kv.starter` |
 
-> 注意：`RedisProperties` 放在 `io.mango.infra.redis.starter` 包内，不单独拆分 `prop` 包。拆分会增加包层级复杂度，AI Agent 理解成本高。
+> 注意：Redis 连接配置已收敛到 `mango-infra-kv` 的 `io.mango.infra.kv.starter.redis` 包内，不再保留独立 `mango-infra-redis` 模块。
 
 ## 设计决策
 

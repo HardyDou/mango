@@ -42,7 +42,6 @@ mango/
 ├── mango-common/           # 公共代码（注解/工具类）
 ├── mango-infra/             # 基础设施
 │   ├── mango-infra-kv/      # KV 存储（kv-api/kv-core/kv-starter）
-│   ├── mango-infra-redis/   # Redis 封装
 │   ├── mango-infra-web/     # Web 封装
 │   └── ...
 ├── mango-platform/          # 平台能力
@@ -50,11 +49,10 @@ mango/
 │   ├── mango-auth/          # 认证（api/core/starter/starter-remote）
 │   ├── mango-identity/      # 身份（api/core/starter/starter-remote）
 │   ├── mango-authorization/ # 授权与安全基础适配（api/core/security-starter/starter/starter-remote）
-│   ├── mango-security/      # 安全聚合入口（starter/starter-remote）
-│   ├── mango-system/        # 系统（api/core/starter）
+│   ├── mango-system/        # 系统（配置/字典/租户/区域/国际化）
 │   ├── mango-org/           # 组织（api/core/starter/starter-remote）
-│   ├── mango-area/          # 地区（api/core/starter/starter-remote）
 │   └── ...
+├── mango-extension/         # 可选扩展（如 mango-ai）
 ├── mango-app/               # 部署单元
 ├── mango-parent/            # 父 POM
 └── mango-tools/             # 工具

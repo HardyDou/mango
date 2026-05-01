@@ -151,7 +151,7 @@ class AuthSecurityE2ETest {
     @SpringBootConfiguration
     @EnableAutoConfiguration(excludeName = {
             "io.mango.auth.starter.AuthAutoConfiguration",
-            "io.mango.infra.redis.starter.RedisAutoConfiguration",
+            "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration",
             "io.mango.infra.kv.starter.KvStoreAutoConfiguration"
     })
     @Import({
@@ -228,6 +228,9 @@ class AuthSecurityE2ETest {
         AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
                 IPermissionProvider permissionProvider) {
             return (authenticationSupplier, context) -> {
+                if ("/auth/login".equals(context.getRequest().getRequestURI())) {
+                    return new AuthorizationDecision(true);
+                }
                 var authentication = authenticationSupplier.get();
                 boolean authenticated = authentication != null
                         && authentication.isAuthenticated()

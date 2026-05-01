@@ -8,15 +8,11 @@
 
 | 能力 | 说明 |
 |------|------|
-| `mango-ai` | AI 能力接入 |
 | `mango-auth` | 认证（登录/登出/Token） |
 | `mango-identity` | 身份（账号/资料/认证用户事实） |
 | `mango-authorization` | 授权（角色/菜单/权限码） |
-| `mango-security` | 安全聚合入口（authorization-security + auth + identity + authorization） |
 | `mango-org` | 组织架构（部门/岗位） |
-| `mango-system` | 系统配置/字典/参数 |
-| `mango-i18n` | 国际化 |
-| `mango-area` | 区域数据 |
+| `mango-system` | 系统配置/字典/参数/区域/国际化 |
 | `mango-captcha` | 验证码 |
 | `mango-biz-notification` | 消息中心 |
 
@@ -29,7 +25,7 @@
 
 ## 子模块结构
 
-每个业务能力包含 4 个子模块：
+标准业务能力通常包含 3 到 4 个子模块：
 
 ```
 mango-xxx/

@@ -37,23 +37,23 @@
 
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-security-starter</artifactId>
+            <artifactId>mango-auth-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-identity-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-resource-sync-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-org-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-area-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-ai-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-i18n-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>

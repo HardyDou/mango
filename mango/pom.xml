@@ -36,6 +36,7 @@
         <module>mango-common</module>
         <module>mango-infra</module>
         <module>mango-platform</module>
+        <module>mango-extension</module>
         <module>mango-parent</module>
         <module>mango-tools</module>
     </modules>
@@ -61,6 +62,11 @@
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-annotation</artifactId>
+                <version>3.5.16</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser</artifactId>
                 <version>3.5.16</version>
             </dependency>
 
@@ -97,16 +103,6 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-identity-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-i18n-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-i18n-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -151,27 +147,12 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-i18n-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
                 <artifactId>mango-auth-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-auth-starter-remote</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-security-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-security-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -236,37 +217,12 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-i18n-starter-remote</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
                 <artifactId>mango-org-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-org-starter-remote</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-area-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-area-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-area-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-area-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -323,11 +279,6 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-infra-persistence-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-infra-redis-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

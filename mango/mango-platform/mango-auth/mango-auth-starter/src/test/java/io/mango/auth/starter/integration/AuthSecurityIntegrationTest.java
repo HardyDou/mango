@@ -107,7 +107,7 @@ class AuthSecurityIntegrationTest {
     @SpringBootConfiguration
     @EnableAutoConfiguration(excludeName = {
             "io.mango.auth.starter.AuthAutoConfiguration",
-            "io.mango.infra.redis.starter.RedisAutoConfiguration",
+            "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration",
             "io.mango.infra.kv.starter.KvStoreAutoConfiguration"
     })
     @Import({

@@ -148,7 +148,7 @@ class RoleServiceImplTest {
         Boolean result = roleService.update(po);
 
         assertFalse(result);
-        verify(roleMapper, never()).updateById(any());
+        verify(roleMapper, never()).updateById(any(Role.class));
     }
 
     @Test
@@ -160,7 +160,7 @@ class RoleServiceImplTest {
         Boolean result = roleService.update(po);
 
         assertFalse(result);
-        verify(roleMapper, never()).updateById(any());
+        verify(roleMapper, never()).updateById(any(Role.class));
     }
 
     @Test

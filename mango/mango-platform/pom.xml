@@ -17,18 +17,14 @@
     <description>Mango Platform Module - Enterprise common capabilities (user/role/dept/auth/organization/i18n/area/messages/etc.)</description>
 
     <modules>
-        <module>mango-ai</module>
         <module>mango-access</module>
         <module>mango-authorization</module>
         <module>mango-auth</module>
         <module>mango-identity</module>
-        <module>mango-security</module>
         <module>mango-captcha</module>
-        <module>mango-i18n</module>
         <module>mango-biz-notification</module>
         <module>mango-org</module>
         <module>mango-system</module>
-        <module>mango-area</module>
     </modules>
 
 </project>

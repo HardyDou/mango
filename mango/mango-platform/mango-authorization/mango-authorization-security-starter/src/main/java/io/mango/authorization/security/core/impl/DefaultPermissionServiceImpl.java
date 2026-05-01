@@ -11,9 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 基于内存存储的默认权限服务实现。
  * <p>
- * 仅在容器中不存在其他 IPermissionProvider Bean 时使用，
- * 例如未引入 mango-authorization-starter 的轻量场景。
- * 生产环境应由授权模块提供正式实现。
+ * 主要用于测试或显式注册的轻量场景。
+ * 生产环境应由 authorization 本地或远程 adapter 提供正式实现。
  *
  * @author Mango
  */

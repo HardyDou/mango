@@ -24,11 +24,10 @@
             <artifactId>mango-infra-kv-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Infra Redis (for RedissonClient bean) -->
+        <!-- Redisson client bean for Redis-backed KV store -->
         <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-infra-redis-starter</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
         </dependency>
         <!-- Infra DB (for DataSource/JdbcTemplate beans) -->
         <dependency>

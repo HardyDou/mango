@@ -1,2 +1,3 @@
+io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration
 io.mango.infra.kv.starter.KvStoreAutoConfiguration
 io.mango.infra.kv.starter.KvCapabilityAutoConfiguration
