@@ -321,7 +321,7 @@ class CheckMojoTest {
     }
 
     @Test
-    void checkDependency_withAuthorizationRemoteSecurityAdapter_passes() throws Exception {
+    void checkDependency_withAuthorizationRemoteSupport_passes() throws Exception {
         Path projectDir = tempDir.resolve("mango-authorization-starter-remote");
         Files.createDirectories(projectDir);
         Files.writeString(projectDir.resolve("pom.xml"), """
@@ -337,7 +337,7 @@ class CheckMojoTest {
                         </dependency>
                         <dependency>
                             <groupId>io.mango</groupId>
-                            <artifactId>mango-authorization-security-starter</artifactId>
+                            <artifactId>mango-authorization-support</artifactId>
                         </dependency>
                     </dependencies>
                 </project>

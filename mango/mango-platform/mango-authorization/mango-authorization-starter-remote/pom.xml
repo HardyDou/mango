@@ -27,7 +27,7 @@
         <!-- Mango 授权安全自动配置，提供 token 与远程权限适配 -->
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-authorization-security-starter</artifactId>
+            <artifactId>mango-authorization-support</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -22,7 +22,7 @@
 mango-authorization/
 ├── mango-authorization-api/            # API 定义（接口、查询对象、VO、授权快照）
 ├── mango-authorization-core/           # 核心业务（Service、Mapper）
-├── mango-authorization-security-starter/ # Spring Security 集成、安全上下文、token 抽象
+├── mango-authorization-support/ # Spring Security 集成、安全上下文、token 抽象
 ├── mango-authorization-resource-sync-starter/ # 当前 App 接口资源扫描、注册与运行时 URL 策略适配
 ├── mango-authorization-starter/        # 本地调用启动器
 └── mango-authorization-starter-remote/ # 远程调用启动器（Feign）

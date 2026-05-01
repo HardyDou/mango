@@ -1,4 +1,4 @@
-package io.mango.authorization.security.starter.web;
+package io.mango.authorization.support.autoconfigure.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

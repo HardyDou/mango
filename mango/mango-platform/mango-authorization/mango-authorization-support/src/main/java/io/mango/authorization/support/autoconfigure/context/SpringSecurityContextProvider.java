@@ -1,4 +1,4 @@
-package io.mango.authorization.security.starter.context;
+package io.mango.authorization.support.autoconfigure.context;
 
 import io.mango.authorization.api.security.ISecurityContextProvider;
 import io.mango.authorization.api.security.SecurityContext;

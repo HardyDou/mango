@@ -3,7 +3,7 @@ package io.mango.authorization.starter.config;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.security.starter.SecurityAutoConfiguration;
+import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;

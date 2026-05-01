@@ -1,4 +1,4 @@
-package io.mango.authorization.security.starter;
+package io.mango.authorization.support.autoconfigure;
 
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.authorization.api.security.ITokenProvider;

@@ -49,7 +49,7 @@ mango-access/
 | `X-Mango-Party-Id` | token `partyId` claim |
 | `X-Mango-App-Code` | token `appCode` claim |
 
-下游服务由 `mango-infra-web` 初始化 `MangoContext`，由 `mango-auth-starter` / `mango-authorization-security-starter` 写入 Spring Security 上下文。
+下游服务由 `mango-infra-web` 初始化 `MangoContext`，由 `mango-auth-starter` / `mango-authorization-support` 写入 Spring Security 上下文。
 
 ## 单体模式
 

@@ -10,11 +10,11 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>mango-authorization-security-starter</artifactId>
+    <artifactId>mango-authorization-support</artifactId>
     <packaging>jar</packaging>
 
-    <name>Mango Authorization Security Starter</name>
-    <description>Security context, token provider, and Spring Security adapters for authorization</description>
+    <name>Mango Authorization Support</name>
+    <description>Shared token, security context, and Spring Security support for authorization</description>
 
     <dependencies>
         <dependency>

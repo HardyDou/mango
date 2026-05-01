@@ -28,7 +28,7 @@ mango-auth/
 mango-auth-starter
 ├── mango-auth-core (认证业务逻辑)
 ├── mango-infra-web-starter (Spring Web + request context)
-├── mango-authorization-security-starter (Spring Security + ITokenProvider)
+├── mango-authorization-support (Spring Security + ITokenProvider)
 ├── mango-identity-api (认证用户事实)
 ├── mango-authorization-starter (授权能力接入)
 └── mango-captcha-api / mango-infra-kv-api

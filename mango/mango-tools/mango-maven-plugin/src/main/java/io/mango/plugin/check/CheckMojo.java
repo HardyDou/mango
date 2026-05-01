@@ -927,7 +927,7 @@ public class CheckMojo extends AbstractMojo {
         }
 
         if (consumer == ModuleType.STARTER_REMOTE) {
-            if (isSecurityAggregateRemoteDependency(consumerArtifact, depArtifact)) {
+            if (isAuthorizationRemoteSupportDependency(consumerArtifact, depArtifact)) {
                 return null;
             }
             if (isRemoteInfrastructureDependency(depArtifact)) {
@@ -946,9 +946,9 @@ public class CheckMojo extends AbstractMojo {
         return null;
     }
 
-    private boolean isSecurityAggregateRemoteDependency(String consumerArtifact, String depArtifact) {
+    private boolean isAuthorizationRemoteSupportDependency(String consumerArtifact, String depArtifact) {
         return "mango-authorization-starter-remote".equals(consumerArtifact)
-                && "mango-authorization-security-starter".equals(depArtifact);
+                && "mango-authorization-support".equals(depArtifact);
     }
 
     private boolean isRemoteInfrastructureDependency(String depArtifact) {

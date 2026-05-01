@@ -1,9 +1,9 @@
-package io.mango.authorization.security.starter.remote;
+package io.mango.authorization.support.autoconfigure.remote;
 
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.security.starter.SecurityAutoConfiguration;
+import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 /**
- * Remote security aggregate adapters.
+ * Remote authorization support adapters.
  */
 @AutoConfiguration
 @AutoConfigureBefore(SecurityAutoConfiguration.class)

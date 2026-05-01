@@ -1,9 +1,9 @@
-package io.mango.authorization.security.starter;
+package io.mango.authorization.support.autoconfigure;
 
 import io.mango.authorization.api.security.ISecurityContextProvider;
-import io.mango.authorization.security.starter.context.SpringSecurityContextProvider;
-import io.mango.authorization.security.starter.web.JsonAccessDeniedHandler;
-import io.mango.authorization.security.starter.web.JsonAuthenticationEntryPoint;
+import io.mango.authorization.support.autoconfigure.context.SpringSecurityContextProvider;
+import io.mango.authorization.support.autoconfigure.web.JsonAccessDeniedHandler;
+import io.mango.authorization.support.autoconfigure.web.JsonAuthenticationEntryPoint;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

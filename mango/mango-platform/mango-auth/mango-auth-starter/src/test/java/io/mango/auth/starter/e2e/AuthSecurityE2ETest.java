@@ -17,7 +17,7 @@ import io.mango.authorization.api.security.ISecurityContextProvider;
 import io.mango.authorization.api.security.ITokenProvider;
 import io.mango.authorization.api.security.SecurityPrincipal;
 import io.mango.authorization.security.core.impl.JjwtTokenServiceImpl;
-import io.mango.authorization.security.starter.SecurityAutoConfiguration;
+import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.vo.AuthUserInfo;
 import jakarta.annotation.Resource;
