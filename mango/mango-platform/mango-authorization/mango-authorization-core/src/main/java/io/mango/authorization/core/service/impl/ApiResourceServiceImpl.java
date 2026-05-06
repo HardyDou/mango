@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,9 @@ public class ApiResourceServiceImpl
         implements IApiResourceService {
 
     private final Map<String, ApiResourceAccessDecisionVO> decisionCache = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<String> decisionCacheKeys = new ConcurrentLinkedQueue<>();
     private volatile List<ApiResource> activeResourceCache;
+    private static final int MAX_DECISION_CACHE_SIZE = 10_000;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -91,13 +94,24 @@ public class ApiResourceServiceImpl
         }
         String method = httpMethod.toUpperCase();
         String cacheKey = method + "\n" + path;
-        return decisionCache.computeIfAbsent(cacheKey, ignored -> activeResources().stream()
+        ApiResourceAccessDecisionVO cached = decisionCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+        ApiResourceAccessDecisionVO decision = activeResources().stream()
                 .filter(resource -> methodMatches(resource.getHttpMethod(), method))
                 .sorted(Comparator.comparingInt((ApiResource resource) -> resource.getPathPattern().length()).reversed())
                 .filter(resource -> pathMatches(resource.getPathPattern(), path))
                 .findFirst()
                 .map(this::toDecision)
-                .orElseGet(() -> ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN)));
+                .orElseGet(() -> ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN));
+        cacheDecision(cacheKey, decision);
+        return decision;
+    }
+
+    @Override
+    public void refreshRuntimeCache() {
+        clearRuntimeCache();
     }
 
     private Map<String, ApiResource> loadExistingIndex(List<ApiResourceRegisterCommand> resources) {
@@ -148,6 +162,22 @@ public class ApiResourceServiceImpl
     private void clearRuntimeCache() {
         activeResourceCache = null;
         decisionCache.clear();
+        decisionCacheKeys.clear();
+    }
+
+    private void cacheDecision(String cacheKey, ApiResourceAccessDecisionVO decision) {
+        ApiResourceAccessDecisionVO existing = decisionCache.putIfAbsent(cacheKey, decision);
+        if (existing != null) {
+            return;
+        }
+        decisionCacheKeys.add(cacheKey);
+        while (decisionCache.size() > MAX_DECISION_CACHE_SIZE) {
+            String eldest = decisionCacheKeys.poll();
+            if (eldest == null) {
+                return;
+            }
+            decisionCache.remove(eldest);
+        }
     }
 
     private boolean methodMatches(String registeredMethod, String requestMethod) {

@@ -25,8 +25,8 @@ public class PostController implements PostApi {
     }
 
     @Override
-    @GetMapping("/{id}")
-    public R<PostVO> get(@PathVariable Long id) {
+    @GetMapping("/detail")
+    public R<PostVO> get(@RequestParam Long id) {
         return R.ok(postService.getById(id));
     }
 
@@ -38,16 +38,15 @@ public class PostController implements PostApi {
     }
 
     @Override
-    @PutMapping("/{id}")
-    public R<Void> update(@PathVariable Long id, @RequestBody UpdatePostCommand command) {
-        command.setId(id);
+    @PutMapping
+    public R<Void> update(@RequestBody UpdatePostCommand command) {
         postService.update(command);
         return R.ok();
     }
 
     @Override
-    @DeleteMapping("/{id}")
-    public R<Void> delete(@PathVariable Long id) {
+    @DeleteMapping
+    public R<Void> delete(@RequestParam Long id) {
         postService.delete(id);
         return R.ok();
     }

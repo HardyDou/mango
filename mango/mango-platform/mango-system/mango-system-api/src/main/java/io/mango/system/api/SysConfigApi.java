@@ -1,6 +1,7 @@
 package io.mango.system.api;
 
 import io.mango.common.result.R;
+import io.mango.system.api.command.UpdateConfigValueCommand;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.api.po.SysConfigPo;
 
@@ -18,7 +19,7 @@ public interface SysConfigApi {
 
     R<Boolean> delete(Long id);
 
-    R<Boolean> updateValue(Long id, String value);
+    R<Boolean> updateValue(UpdateConfigValueCommand command);
 
     R<String> getValue(String configKey);
 }

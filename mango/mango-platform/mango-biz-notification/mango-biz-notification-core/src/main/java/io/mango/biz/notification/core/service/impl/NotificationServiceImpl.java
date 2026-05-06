@@ -4,12 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
-import io.mango.infra.realtime.api.RealtimeApi;
-import io.mango.biz.notification.api.NotificationApi;
 import io.mango.biz.notification.api.po.SysNotificationPo;
 import io.mango.biz.notification.api.vo.SysNotificationVO;
 import io.mango.biz.notification.core.entity.SysNotification;
 import io.mango.biz.notification.core.mapper.SysNotificationMapper;
+import io.mango.biz.notification.core.service.INotificationService;
+import io.mango.infra.realtime.api.RealtimeApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationServiceImpl implements NotificationApi {
+public class NotificationServiceImpl implements INotificationService {
 
     private final SysNotificationMapper messageMapper;
     private final RealtimeApi realtimeApi;

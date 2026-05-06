@@ -13,11 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -42,10 +42,10 @@ public class AppController implements AppApi {
     }
 
     @Override
-    @GetMapping("/{appId}")
+    @GetMapping("/detail")
     @Operation(summary = "获取应用入口详情")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:query")
-    public R<AppVO> get(@Parameter(description = "应用ID") @PathVariable Long appId) {
+    public R<AppVO> get(@Parameter(description = "应用ID") @RequestParam Long appId) {
         AppVO app = appService.get(appId);
         return app == null ? R.fail(404, "应用入口不存在") : R.ok(app);
     }
@@ -68,10 +68,10 @@ public class AppController implements AppApi {
     }
 
     @Override
-    @DeleteMapping("/{appId}")
+    @DeleteMapping
     @Operation(summary = "删除应用入口")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:delete")
-    public R<Boolean> delete(@Parameter(description = "应用ID") @PathVariable Long appId) {
+    public R<Boolean> delete(@Parameter(description = "应用ID") @RequestParam Long appId) {
         Boolean success = appService.delete(appId);
         return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(404, "应用入口不存在");
     }

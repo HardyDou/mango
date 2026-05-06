@@ -3,6 +3,7 @@ package io.mango.access.core.auth;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.common.result.R;
 import io.mango.authorization.api.security.IPermissionProvider;
@@ -62,7 +63,10 @@ public class AccessService {
 
     private ApiResourceAccessDecisionVO resolveDecision(String httpMethod, String path) {
         try {
-            R<ApiResourceAccessDecisionVO> response = apiResourceApi.resolveAccessDecision(httpMethod, path);
+            ApiResourceAccessDecisionQuery query = new ApiResourceAccessDecisionQuery();
+            query.setHttpMethod(httpMethod);
+            query.setPath(path);
+            R<ApiResourceAccessDecisionVO> response = apiResourceApi.resolveAccessDecision(query);
             if (response != null && response.isSuccess() && response.getData() != null) {
                 return response.getData();
             }

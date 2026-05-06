@@ -2,14 +2,15 @@ package io.mango.authorization.starter.remote;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
+import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -28,7 +29,9 @@ public interface ApiResourceFeignClient extends ApiResourceApi {
 
     @Override
     @GetMapping("/api-resources/access-decision")
-    R<ApiResourceAccessDecisionVO> resolveAccessDecision(
-            @RequestParam String httpMethod,
-            @RequestParam String path);
+    R<ApiResourceAccessDecisionVO> resolveAccessDecision(@SpringQueryMap ApiResourceAccessDecisionQuery query);
+
+    @Override
+    @PostMapping("/api-resources/cache/refresh")
+    R<Void> refreshApiResourceCache();
 }

@@ -1,4 +1,4 @@
-package io.mango.authorization.resource.sync;
+package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.security.IPermissionProvider;
@@ -12,7 +12,7 @@ import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 /**
- * API 资源同步自动配置。
+ * API 资源运行时访问控制自动配置。
  *
  * @author hardy
  */
@@ -21,7 +21,7 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
         "io.mango.authorization.starter.AuthorizationAutoConfiguration",
         "io.mango.authorization.starter.remote.AuthorizationRemoteAutoConfiguration"
 })
-public class ApiResourceSyncAutoConfiguration {
+public class ApiResourceAccessAutoConfiguration {
 
     @Bean("apiResourceAuthorizationManager")
     @ConditionalOnBean({ApiResourceApi.class, IPermissionProvider.class})

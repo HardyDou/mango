@@ -38,10 +38,10 @@ public class RoleController implements RoleApi {
     }
 
     @Override
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @Operation(summary = "获取角色详情")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
-    public R<RoleVO> get(@Parameter(description = "角色ID") @PathVariable Long id) {
+    public R<RoleVO> get(@Parameter(description = "角色ID") @RequestParam Long id) {
         RoleVO role = roleService.get(id);
         if (role == null) {
             return R.fail(404, "角色不存在");
@@ -68,54 +68,48 @@ public class RoleController implements RoleApi {
     }
 
     @Override
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     @Operation(summary = "删除角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:delete")
-    public R<Boolean> delete(@Parameter(description = "角色ID") @PathVariable Long id) {
+    public R<Boolean> delete(@Parameter(description = "角色ID") @RequestParam Long id) {
         Boolean success = roleService.delete(id);
         return success ? R.ok(true) : R.fail(404, "角色不存在");
     }
 
     @Override
-    @GetMapping("/subjects/{subjectId}")
+    @GetMapping("/subjects")
     @Operation(summary = "获取主体的角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
     public R<List<RoleVO>> getSubjectRoles(
-            @Parameter(description = "主体ID") @PathVariable Long subjectId) {
+            @Parameter(description = "主体ID") @RequestParam Long subjectId) {
         List<RoleVO> roles = roleService.getSubjectRoles(subjectId);
         return R.ok(roles);
     }
 
     @Override
-    @PostMapping("/subjects/{subjectId}")
+    @PostMapping("/subjects")
     @Operation(summary = "分配角色给主体")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
-    public R<Boolean> assignRoles(
-            @Parameter(description = "主体ID") @PathVariable Long subjectId,
-            @RequestBody AssignSubjectRolesCommand command) {
-        command.setSubjectId(subjectId);
+    public R<Boolean> assignRoles(@RequestBody AssignSubjectRolesCommand command) {
         roleService.assignRoles(command);
         return R.ok(true);
     }
 
     @Override
-    @GetMapping("/{roleId}/menus")
+    @GetMapping("/menus")
     @Operation(summary = "获取角色的菜单ID列表")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
     public R<List<Long>> getRoleMenuIds(
-            @Parameter(description = "角色ID") @PathVariable Long roleId) {
+            @Parameter(description = "角色ID") @RequestParam Long roleId) {
         List<Long> menuIds = roleService.getRoleMenuIds(roleId);
         return R.ok(menuIds);
     }
 
     @Override
-    @PostMapping("/{roleId}/menus")
+    @PostMapping("/menus")
     @Operation(summary = "给角色分配菜单")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
-    public R<Boolean> assignMenus(
-            @Parameter(description = "角色ID") @PathVariable Long roleId,
-            @RequestBody AssignRoleMenusCommand command) {
-        command.setRoleId(roleId);
+    public R<Boolean> assignMenus(@RequestBody AssignRoleMenusCommand command) {
         roleService.assignMenus(command.getRoleId(), command.getMenuIds());
         return R.ok(true);
     }

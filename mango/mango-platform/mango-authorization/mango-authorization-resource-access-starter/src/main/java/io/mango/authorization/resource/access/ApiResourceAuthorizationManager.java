@@ -1,13 +1,13 @@
-package io.mango.authorization.resource.sync;
+package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
 import io.mango.authorization.api.security.IPermissionProvider;
 import io.mango.authorization.api.security.SecurityPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -23,7 +23,6 @@ import java.util.function.Supplier;
  *
  * @author hardy
  */
-@Slf4j
 public class ApiResourceAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
     private final ApiResourceApi apiResourceApi;
@@ -39,9 +38,10 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
             Supplier<Authentication> authenticationSupplier,
             RequestAuthorizationContext context) {
         HttpServletRequest request = context.getRequest();
-        R<ApiResourceAccessDecisionVO> response = apiResourceApi.resolveAccessDecision(
-                request.getMethod(),
-                request.getRequestURI());
+        ApiResourceAccessDecisionQuery query = new ApiResourceAccessDecisionQuery();
+        query.setHttpMethod(request.getMethod());
+        query.setPath(request.getRequestURI());
+        R<ApiResourceAccessDecisionVO> response = apiResourceApi.resolveAccessDecision(query);
         ApiResourceAccessDecisionVO decision = response != null && response.isSuccess() && response.getData() != null
                 ? response.getData()
                 : ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN);

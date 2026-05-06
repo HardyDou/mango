@@ -30,9 +30,9 @@ public class SysRouteController {
         return routeService.tree();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:query")
-    public R<SysRoutePo> get(@PathVariable Long id) {
+    public R<SysRoutePo> get(@RequestParam Long id) {
         return routeService.get(id);
     }
 
@@ -48,9 +48,9 @@ public class SysRouteController {
         return routeService.update(po);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:delete")
-    public R<Boolean> delete(@PathVariable Long id) {
+    public R<Boolean> delete(@RequestParam Long id) {
         return routeService.delete(id);
     }
 

@@ -94,11 +94,11 @@ module-path=/auth
 @Api(tags = "用户管理")
 public class UserController {
 
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @Operation(summary = "获取用户", description = "根据 ID 获取用户详情")
     @ApiResponse(responseCode = "200", description = "成功")
     @ApiResponse(responseCode = "404", description = "用户不存在")
-    public User getUser(@PathVariable Long id) {
+    public User getUser(@RequestParam Long id) {
         return userService.getUser(id);
     }
 }

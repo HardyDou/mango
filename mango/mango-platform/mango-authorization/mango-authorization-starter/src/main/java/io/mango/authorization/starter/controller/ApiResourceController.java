@@ -1,6 +1,7 @@
 package io.mango.authorization.starter.controller;
 
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -41,9 +41,15 @@ public class ApiResourceController implements ApiResourceApi {
     @GetMapping("/api-resources/access-decision")
     @Operation(summary = "解析 API 访问决策", description = "根据 HTTP 方法和请求路径解析访问模式与权限码")
     @Override
-    public R<ApiResourceAccessDecisionVO> resolveAccessDecision(
-            @Parameter(description = "HTTP 方法，如 GET、POST") @RequestParam String httpMethod,
-            @Parameter(description = "请求路径") @RequestParam String path) {
-        return R.ok(apiResourceService.resolveAccessDecision(httpMethod, path));
+    public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
+        return R.ok(apiResourceService.resolveAccessDecision(query.getHttpMethod(), query.getPath()));
+    }
+
+    @PostMapping("/api-resources/cache/refresh")
+    @Operation(summary = "刷新 API 资源缓存", description = "清理运行时 API 资源访问决策缓存")
+    @Override
+    public R<Void> refreshApiResourceCache() {
+        apiResourceService.refreshRuntimeCache();
+        return R.ok();
     }
 }

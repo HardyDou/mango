@@ -23,6 +23,7 @@
         <module>mango-authorization-support</module>
         <module>mango-authorization-starter</module>
         <module>mango-authorization-resource-sync-starter</module>
+        <module>mango-authorization-resource-access-starter</module>
         <module>mango-authorization-starter-remote</module>
     </modules>
 

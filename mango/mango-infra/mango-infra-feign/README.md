@@ -39,11 +39,11 @@ mango:
 @FeignClient(name = "user-service", path = "/user")
 public interface UserFeignClient {
 
-    @GetMapping("/{id}")
-    R<User> getById(@PathVariable Long id);
+    @GetMapping("/detail")
+    R<User> getById(@RequestParam Long id);
 
-    @GetMapping("/by-username/{username}")
-    R<User> getByUsername(@PathVariable String username);
+    @GetMapping("/by-username")
+    R<User> getByUsername(@RequestParam String username);
 }
 ```
 

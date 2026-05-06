@@ -2,10 +2,10 @@ package io.mango.captcha.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
-import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
+import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.common.result.R;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,7 +31,7 @@ import java.util.Map;
 @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "验证码公共接口")
 public class CaptchaController {
 
-    private final CaptchaApi captchaApi;
+    private final ICaptchaService captchaService;
 
     /**
      * 获取支持的验证码类型
@@ -40,8 +40,8 @@ public class CaptchaController {
     @Operation(summary = "获取验证码类型", description = "获取当前支持的验证码类型列表和存储策略")
     public R<Map<String, Object>> getTypes() {
         Map<String, Object> result = new HashMap<>();
-        result.put("types", captchaApi.getSupportedTypes());
-        result.put("currentStorage", captchaApi.getCurrentStorage());
+        result.put("types", captchaService.getSupportedTypes());
+        result.put("currentStorage", captchaService.getCurrentStorage());
         return R.ok(result);
     }
 
@@ -51,7 +51,7 @@ public class CaptchaController {
     @GetMapping("/arithmetic")
     @Operation(summary = "生成算术验证码", description = "生成算术表达式验证码，答案在extra字段返回")
     public R<CaptchaResponse> generateArithmetic() {
-        CaptchaResponse response = captchaApi.generate(CaptchaType.ARITHMETIC, null);
+        CaptchaResponse response = captchaService.generate(CaptchaType.ARITHMETIC, null);
         return R.ok(response);
     }
 
@@ -61,7 +61,7 @@ public class CaptchaController {
     @GetMapping("/block-puzzle")
     @Operation(summary = "生成滑块验证码", description = "生成滑块拼图验证码")
     public R<CaptchaResponse> generateBlockPuzzle() {
-        CaptchaResponse response = captchaApi.generate(CaptchaType.BLOCK_PUZZLE, null);
+        CaptchaResponse response = captchaService.generate(CaptchaType.BLOCK_PUZZLE, null);
         return R.ok(response);
     }
 
@@ -71,7 +71,7 @@ public class CaptchaController {
     @PostMapping("/verify")
     @Operation(summary = "校验验证码", description = "校验验证码是否正确")
     public R<Boolean> verify(@Valid @RequestBody CaptchaVerifyRequest request) {
-        boolean result = captchaApi.verify(request);
+        boolean result = captchaService.verify(request);
         if (!result) {
             return R.fail(400, "验证码校验失败");
         }

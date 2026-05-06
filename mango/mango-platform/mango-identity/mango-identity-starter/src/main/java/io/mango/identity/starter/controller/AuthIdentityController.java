@@ -5,11 +5,12 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.identity.api.AuthIdentityApi;
 import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.query.AuthUsernameQuery;
 import io.mango.identity.api.vo.AuthUserInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -24,22 +25,14 @@ public class AuthIdentityController implements AuthIdentityApi {
     private final AuthUserProvider authUserProvider;
 
     @Override
-    @GetMapping("/auth/username/{username}")
-    public R<AuthUserInfo> getByUsernameForAuth(@PathVariable("username") String username) {
-        return R.ok(authUserProvider.getByUsernameForAuth(username));
+    @GetMapping("/auth/username")
+    public R<AuthUserInfo> getByUsernameForAuth(AuthUsernameQuery query) {
+        return R.ok(authUserProvider.getByUsernameForAuth(query.getUsername(), query.getRealm()));
     }
 
     @Override
-    @GetMapping("/auth/realm/{realm}/username/{username}")
-    public R<AuthUserInfo> getByUsernameForAuth(
-            @PathVariable("realm") String realm,
-            @PathVariable("username") String username) {
-        return R.ok(authUserProvider.getByUsernameForAuth(username, realm));
-    }
-
-    @Override
-    @GetMapping("/auth/id/{userId}")
-    public R<AuthUserInfo> getByIdForAuth(@PathVariable("userId") Long userId) {
+    @GetMapping("/auth/id")
+    public R<AuthUserInfo> getByIdForAuth(@RequestParam("userId") Long userId) {
         return R.ok(authUserProvider.getByIdForAuth(userId));
     }
 }

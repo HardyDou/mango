@@ -2,7 +2,6 @@ package io.mango.captcha.core.service.impl;
 
 import cn.hutool.core.lang.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -11,6 +10,7 @@ import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.service.ArithmeticCaptchaService;
 import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
+import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CaptchaServiceImpl implements CaptchaApi {
+public class CaptchaServiceImpl implements ICaptchaService {
 
     private static final String KEY_PREFIX = "captcha:";
 

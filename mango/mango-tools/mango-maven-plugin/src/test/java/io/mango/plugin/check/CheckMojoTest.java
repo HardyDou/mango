@@ -840,6 +840,84 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkApiContract_withMultipleMethodParameters_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-api/src/main/java/io/mango/demo/api");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoApi.java"), """
+                package io.mango.demo.api;
+
+                import io.mango.common.result.R;
+
+                public interface DemoApi {
+                    R<Boolean> updateValue(Long id, String value);
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "api-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPathParam_withPathVariable_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.PathVariable;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                public class DemoController {
+                    @GetMapping("/demo/{id}")
+                    String detail(@PathVariable Long id) {
+                        return "ok";
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "path-param");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPathParam_withRequestParam_passes() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import org.springframework.web.bind.annotation.GetMapping;
+                import org.springframework.web.bind.annotation.RequestParam;
+                import org.springframework.web.bind.annotation.RestController;
+
+                @RestController
+                public class DemoController {
+                    @GetMapping("/demo/detail")
+                    String detail(@RequestParam Long id) {
+                        return "ok";
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "path-param");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
     void checkKvKey_withSpelTemplate_passes() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");

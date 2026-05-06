@@ -24,9 +24,9 @@ public class SysTenantController {
         return tenantService.list();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:query")
-    public R<SysTenantPo> get(@PathVariable Long id) {
+    public R<SysTenantPo> get(@RequestParam Long id) {
         return tenantService.get(id);
     }
 
@@ -42,15 +42,15 @@ public class SysTenantController {
         return tenantService.update(po);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:delete")
-    public R<Boolean> delete(@PathVariable Long id) {
+    public R<Boolean> delete(@RequestParam Long id) {
         return tenantService.delete(id);
     }
 
-    @PutMapping("/status/{id}")
+    @PutMapping("/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:edit")
-    public R<Boolean> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public R<Boolean> updateStatus(@RequestParam Long id, @RequestParam Integer status) {
         return tenantService.updateStatus(id, status);
     }
 }

@@ -4,12 +4,11 @@ import io.mango.authorization.api.AuthorizationApi;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
+import io.mango.authorization.api.query.LoadUserAuthorizationQuery;
 import io.mango.common.result.R;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -23,21 +22,14 @@ public class AuthorizationController implements AuthorizationApi {
     private final IAuthorizationProvider authorizationProvider;
 
     @Override
-    @GetMapping("/subjects/user/{subjectId}")
-    public R<AuthorizationSnapshot> loadUserAuthorization(
-            @PathVariable Long subjectId,
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String systemCode,
-            @RequestParam(required = false) String realm,
-            @RequestParam(required = false) String actorType,
-            @RequestParam(required = false) String partyType,
-            @RequestParam(required = false) Long partyId) {
-        AuthorizationQuery query = AuthorizationQuery.user(subjectId)
-                .withTenantId(tenantId)
-                .withSystemCode(systemCode)
-                .withRealm(realm)
-                .withActorType(actorType)
-                .withParty(partyType, partyId);
-        return R.ok(authorizationProvider.load(query));
+    @GetMapping("/subjects/user")
+    public R<AuthorizationSnapshot> loadUserAuthorization(LoadUserAuthorizationQuery query) {
+        AuthorizationQuery authorizationQuery = AuthorizationQuery.user(query.getSubjectId())
+                .withTenantId(query.getTenantId())
+                .withSystemCode(query.getSystemCode())
+                .withRealm(query.getRealm())
+                .withActorType(query.getActorType())
+                .withParty(query.getPartyType(), query.getPartyId());
+        return R.ok(authorizationProvider.load(authorizationQuery));
     }
 }

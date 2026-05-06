@@ -2,6 +2,7 @@ package io.mango.identity.starter.remote;
 
 import io.mango.common.result.R;
 import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.query.AuthUsernameQuery;
 import io.mango.identity.api.vo.AuthUserInfo;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,15 +32,17 @@ public class IdentityRemoteAutoConfiguration {
 
         @Override
         public AuthUserInfo getByUsernameForAuth(String username) {
-            return unwrap(authIdentityFeignClient.getByUsernameForAuth(username));
+            AuthUsernameQuery query = new AuthUsernameQuery();
+            query.setUsername(username);
+            return unwrap(authIdentityFeignClient.getByUsernameForAuth(query));
         }
 
         @Override
         public AuthUserInfo getByUsernameForAuth(String username, String realm) {
-            if (realm == null || realm.isBlank()) {
-                return getByUsernameForAuth(username);
-            }
-            return unwrap(authIdentityFeignClient.getByUsernameForAuth(realm, username));
+            AuthUsernameQuery query = new AuthUsernameQuery();
+            query.setUsername(username);
+            query.setRealm(realm);
+            return unwrap(authIdentityFeignClient.getByUsernameForAuth(query));
         }
 
         @Override

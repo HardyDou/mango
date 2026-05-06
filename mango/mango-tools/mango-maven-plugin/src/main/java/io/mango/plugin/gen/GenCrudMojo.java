@@ -139,8 +139,8 @@ public class GenCrudMojo extends AbstractMojo {
             "        return R.ok(" + camelEntity + "Service.page(query));\n" +
             "    }\n\n" +
             "    @Override\n" +
-            "    @GetMapping(\"/{id}\")\n" +
-            "    public R<" + entityName + "VO> get(@PathVariable Long id) {\n" +
+            "    @GetMapping(\"/detail\")\n" +
+            "    public R<" + entityName + "VO> get(@RequestParam Long id) {\n" +
             "        return R.ok(" + camelEntity + "Service.getById(id));\n" +
             "    }\n\n" +
             "    @Override\n" +
@@ -150,15 +150,14 @@ public class GenCrudMojo extends AbstractMojo {
             "        return R.ok();\n" +
             "    }\n\n" +
             "    @Override\n" +
-            "    @PutMapping(\"/{id}\")\n" +
-            "    public R<Void> update(@PathVariable Long id, @RequestBody Update" + entityName + "Command command) {\n" +
-            "        command.setId(id);\n" +
+            "    @PutMapping\n" +
+            "    public R<Void> update(@RequestBody Update" + entityName + "Command command) {\n" +
             "        " + camelEntity + "Service.update(command);\n" +
             "        return R.ok();\n" +
             "    }\n\n" +
             "    @Override\n" +
-            "    @DeleteMapping(\"/{id}\")\n" +
-            "    public R<Void> delete(@PathVariable Long id) {\n" +
+            "    @DeleteMapping\n" +
+            "    public R<Void> delete(@RequestParam Long id) {\n" +
             "        " + camelEntity + "Service.delete(id);\n" +
             "        return R.ok();\n" +
             "    }\n" +

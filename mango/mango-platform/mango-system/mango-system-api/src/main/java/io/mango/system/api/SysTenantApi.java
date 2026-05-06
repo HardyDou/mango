@@ -1,6 +1,7 @@
 package io.mango.system.api;
 
 import io.mango.common.result.R;
+import io.mango.system.api.command.UpdateTenantStatusCommand;
 import io.mango.system.api.po.SysTenantPo;
 
 import java.util.List;
@@ -17,5 +18,5 @@ public interface SysTenantApi {
 
     R<Boolean> delete(Long id);
 
-    R<Boolean> updateStatus(Long id, Integer status);
+    R<Boolean> updateStatus(UpdateTenantStatusCommand command);
 }

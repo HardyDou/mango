@@ -63,11 +63,10 @@ public interface RoleApi {
     /**
      * 给主体分配角色。
      *
-     * @param subjectId 主体 ID
      * @param command 分配命令
      * @return 是否成功
      */
-    R<Boolean> assignRoles(Long subjectId, AssignSubjectRolesCommand command);
+    R<Boolean> assignRoles(AssignSubjectRolesCommand command);
 
     /**
      * 查询角色菜单 ID。
@@ -80,9 +79,8 @@ public interface RoleApi {
     /**
      * 给角色分配菜单。
      *
-     * @param roleId 角色 ID
      * @param command 分配命令
      * @return 是否成功
      */
-    R<Boolean> assignMenus(Long roleId, AssignRoleMenusCommand command);
+    R<Boolean> assignMenus(AssignRoleMenusCommand command);
 }

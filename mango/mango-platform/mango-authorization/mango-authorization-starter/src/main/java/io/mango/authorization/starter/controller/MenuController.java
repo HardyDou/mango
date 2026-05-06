@@ -76,10 +76,10 @@ public class MenuController implements MenuApi {
     }
 
     @Override
-    @GetMapping("/{menuId}")
+    @GetMapping("/detail")
     @Operation(summary = "获取菜单详情")
     public R<MenuVO> getById(
-            @Parameter(description = "菜单ID") @PathVariable Long menuId) {
+            @Parameter(description = "菜单ID") @RequestParam Long menuId) {
         io.mango.authorization.core.entity.Menu menu = menuService.getById(menuId);
         if (menu == null) {
             return R.fail(404, "菜单不存在");
@@ -102,21 +102,19 @@ public class MenuController implements MenuApi {
     }
 
     @Override
-    @PutMapping("/{menuId}")
+    @PutMapping
     @Operation(summary = "更新菜单")
-    public R<Void> update(
-            @Parameter(description = "菜单ID") @PathVariable Long menuId,
-            @RequestBody MenuCommand command) {
+    public R<Void> update(@RequestBody MenuCommand command) {
         io.mango.authorization.core.entity.Menu menu = convertToEntity(command);
-        boolean success = menuService.updateMenu(menuId, menu);
+        boolean success = menuService.updateMenu(command.getMenuId(), menu);
         return success ? R.ok() : R.fail("更新失败");
     }
 
     @Override
-    @DeleteMapping("/{menuId}")
+    @DeleteMapping
     @Operation(summary = "删除菜单")
     public R<Void> delete(
-            @Parameter(description = "菜单ID") @PathVariable Long menuId) {
+            @Parameter(description = "菜单ID") @RequestParam Long menuId) {
         boolean success = menuService.deleteMenu(menuId);
         return success ? R.ok() : R.fail("删除失败");
     }

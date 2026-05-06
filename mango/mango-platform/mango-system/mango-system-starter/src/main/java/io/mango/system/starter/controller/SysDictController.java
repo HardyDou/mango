@@ -28,9 +28,9 @@ public class SysDictController {
         return dictService.listTypes();
     }
 
-    @GetMapping("/type/{id}")
+    @GetMapping("/type/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:query")
-    public R<DictTypeVO> getType(@PathVariable Long id) {
+    public R<DictTypeVO> getType(@RequestParam Long id) {
         return dictService.getType(id);
     }
 
@@ -46,9 +46,9 @@ public class SysDictController {
         return dictService.updateType(po);
     }
 
-    @DeleteMapping("/type/{id}")
+    @DeleteMapping("/type")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:delete")
-    public R<Boolean> deleteType(@PathVariable Long id) {
+    public R<Boolean> deleteType(@RequestParam Long id) {
         return dictService.deleteType(id);
     }
 
@@ -58,9 +58,9 @@ public class SysDictController {
         return dictService.listData(typeId);
     }
 
-    @GetMapping("/data/{id}")
+    @GetMapping("/data/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:query")
-    public R<DictDataVO> getData(@PathVariable Long id) {
+    public R<DictDataVO> getData(@RequestParam Long id) {
         return dictService.getData(id);
     }
 
@@ -76,9 +76,9 @@ public class SysDictController {
         return dictService.updateData(po);
     }
 
-    @DeleteMapping("/data/{id}")
+    @DeleteMapping("/data")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:delete")
-    public R<Boolean> deleteData(@PathVariable Long id) {
+    public R<Boolean> deleteData(@RequestParam Long id) {
         return dictService.deleteData(id);
     }
 

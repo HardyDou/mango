@@ -3,6 +3,7 @@ package io.mango.authorization.starter.remote;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
+import io.mango.authorization.api.query.LoadUserAuthorizationQuery;
 import io.mango.common.result.R;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -25,14 +26,15 @@ public class AuthorizationRemoteAutoConfiguration {
             if (!AuthorizationQuery.SUBJECT_TYPE_USER.equals(query.subjectType())) {
                 return AuthorizationSnapshot.empty();
             }
-            R<AuthorizationSnapshot> response = authorizationFeignClient.loadUserAuthorization(
-                    query.subjectId(),
-                    query.tenantId(),
-                    query.systemCode(),
-                    query.realm(),
-                    query.actorType(),
-                    query.partyType(),
-                    query.partyId());
+            LoadUserAuthorizationQuery remoteQuery = new LoadUserAuthorizationQuery();
+            remoteQuery.setSubjectId(query.subjectId());
+            remoteQuery.setTenantId(query.tenantId());
+            remoteQuery.setSystemCode(query.systemCode());
+            remoteQuery.setRealm(query.realm());
+            remoteQuery.setActorType(query.actorType());
+            remoteQuery.setPartyType(query.partyType());
+            remoteQuery.setPartyId(query.partyId());
+            R<AuthorizationSnapshot> response = authorizationFeignClient.loadUserAuthorization(remoteQuery);
             return response != null && response.isSuccess() && response.getData() != null
                     ? response.getData()
                     : AuthorizationSnapshot.empty();

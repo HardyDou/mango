@@ -2,11 +2,11 @@ package io.mango.authorization.starter.remote;
 
 import io.mango.authorization.api.AuthorizationApi;
 import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.query.LoadUserAuthorizationQuery;
 import io.mango.common.result.R;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 授权远程客户端。
@@ -15,13 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface AuthorizationFeignClient extends AuthorizationApi {
 
     @Override
-    @GetMapping("/subjects/user/{subjectId}")
-    R<AuthorizationSnapshot> loadUserAuthorization(
-            @PathVariable Long subjectId,
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String systemCode,
-            @RequestParam(required = false) String realm,
-            @RequestParam(required = false) String actorType,
-            @RequestParam(required = false) String partyType,
-            @RequestParam(required = false) Long partyId);
+    @GetMapping("/subjects/user")
+    R<AuthorizationSnapshot> loadUserAuthorization(@SpringQueryMap LoadUserAuthorizationQuery query);
 }

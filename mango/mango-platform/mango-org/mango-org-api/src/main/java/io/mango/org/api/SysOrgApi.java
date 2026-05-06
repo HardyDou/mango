@@ -1,6 +1,8 @@
 package io.mango.org.api;
 
+import io.mango.common.result.R;
 import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.query.SysOrgTreeQuery;
 
 import java.util.List;
 
@@ -18,7 +20,7 @@ public interface SysOrgApi {
      * @param type organization type filter (null for all)
      * @return tree structure
      */
-    List<SysOrg> tree(Long parentId, Integer type);
+    R<List<SysOrg>> tree(SysOrgTreeQuery query);
 
     /**
      * Get children by parent ID
@@ -26,7 +28,7 @@ public interface SysOrgApi {
      * @param parentId parent organization ID
      * @return children list
      */
-    List<SysOrg> children(Long parentId);
+    R<List<SysOrg>> children(Long parentId);
 
     /**
      * Get organization by ID
@@ -34,5 +36,5 @@ public interface SysOrgApi {
      * @param id organization ID
      * @return organization
      */
-    SysOrg getById(Long id);
+    R<SysOrg> getById(Long id);
 }

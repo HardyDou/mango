@@ -5,7 +5,7 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 身份用户资料 Feign 客户端。
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface IdentityUserFeignClient extends IdentityUserApi {
 
     @Override
-    @GetMapping("/user/info/username/{username}")
-    R<IdentityUserInfo> getUserInfo(@PathVariable("username") String username);
+    @GetMapping("/user/info/username")
+    R<IdentityUserInfo> getUserInfo(@RequestParam("username") String username);
 
     @Override
-    @GetMapping("/user/info/id/{userId}")
-    R<IdentityUserInfo> getUserInfoById(@PathVariable("userId") Long userId);
+    @GetMapping("/user/info/id")
+    R<IdentityUserInfo> getUserInfoById(@RequestParam("userId") Long userId);
 }

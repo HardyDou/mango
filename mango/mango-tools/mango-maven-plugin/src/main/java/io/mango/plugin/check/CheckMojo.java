@@ -53,6 +53,7 @@ public class CheckMojo extends AbstractMojo {
     private static final String DOC_TEST_RULES = "test-rules.md";
     private static final String DOC_PERSISTENCE_RULES = "persistence-rules.md";
     private static final String DOC_STATIC_ANALYSIS = "auto-check-mapping.md";
+    private static final String PATH_VARIABLE_ANNOTATION = "@Path" + "Variable";
     private static final String CHECKSTYLE_REPORT = "checkstyle-result.xml";
     private static final String PMD_REPORT = "pmd.xml";
     private static final String SPOTBUGS_REPORT = "spotbugsXml.xml";
@@ -60,6 +61,9 @@ public class CheckMojo extends AbstractMojo {
     private static final Pattern FEIGN_CLIENT_PATTERN = Pattern.compile("@FeignClient\\s*\\((.*?)\\)", Pattern.DOTALL);
     private static final Pattern REQUEST_MAPPING_PATTERN = Pattern.compile(
             "@(?:RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\((.*?)\\)",
+            Pattern.DOTALL);
+    private static final Pattern API_METHOD_PATTERN = Pattern.compile(
+            "\\bR\\s*<[^;]+?>\\s+([A-Za-z0-9_]+)\\s*\\(([^;{}]*)\\)\\s*;",
             Pattern.DOTALL);
     private static final Pattern TYPE_DECLARATION_PATTERN = Pattern.compile(
             "\\b(?:public\\s+)?(?:sealed\\s+)?(?:abstract\\s+)?(?:class|interface|record|enum)\\s+([A-Za-z0-9_]+)");
@@ -81,7 +85,7 @@ public class CheckMojo extends AbstractMojo {
 
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, kv-key, test-fixture, persistence-schema.
+     * api-contract, path-param, kv-key, test-fixture, persistence-schema.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -150,6 +154,7 @@ public class CheckMojo extends AbstractMojo {
             case "module-info" -> checkModuleInfo();
             case "remote-adapter" -> checkRemoteAdapter();
             case "api-contract" -> checkApiContract();
+            case "path-param" -> checkPathParam();
             case "kv-key" -> checkKvKey();
             case "persistence-schema" -> checkPersistenceSchema();
             case "test-fixture" -> checkTestFixture();
@@ -161,6 +166,7 @@ public class CheckMojo extends AbstractMojo {
                 checkModuleInfo();
                 checkRemoteAdapter();
                 checkApiContract();
+                checkPathParam();
                 checkKvKey();
                 checkPersistenceSchema();
                 checkTestFixture();
@@ -1321,12 +1327,13 @@ public class CheckMojo extends AbstractMojo {
     private void analyzeApiContract(Path file, List<ApiContractIssue> issues) {
         try {
             String content = Files.readString(file);
-            if (content.contains("@FeignClient")) {
+            String code = stripStringLiterals(content);
+            if (code.contains("@FeignClient")) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "*-api 禁止声明 @FeignClient"));
             }
-            String typeName = declaredTypeName(content, file);
-            if (isLocalCollaborationType(typeName)) {
+            String typeName = declaredTypeName(code, file);
+            if (isLocalCollaborationType(typeName) && !isApiSpiJavaFile(file) && !isAllowedInfrastructureApi(typeName)) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "*-api 只允许放跨模块契约，禁止出现本地协作类型: " + typeName));
             }
@@ -1334,9 +1341,18 @@ public class CheckMojo extends AbstractMojo {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "XxxApi 名称只表达跨模块能力，禁止包含 Registry/Dispatcher/Manager/Session 等内部实现词: " + typeName));
             }
-            if (declaresHttpContract(content) && !typeName.endsWith("Api")) {
+            if (declaresHttpContract(code) && !typeName.endsWith("Api")) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "Controller/远程契约接口在 *-api 中必须命名为 XxxApi: " + typeName));
+            }
+            Matcher apiMethodMatcher = API_METHOD_PATTERN.matcher(code);
+            while (apiMethodMatcher.find()) {
+                int parameterCount = countTopLevelParameters(apiMethodMatcher.group(2));
+                if (parameterCount > 1) {
+                    issues.add(new ApiContractIssue("CRITICAL", file.toString(),
+                            "XxxApi 方法超过 1 个入参时必须收敛为 Query/Command 对象: "
+                                    + apiMethodMatcher.group(1) + " 入参数=" + parameterCount));
+                }
             }
         } catch (IOException e) {
             issues.add(new ApiContractIssue("MAJOR", file.toString(),
@@ -1344,23 +1360,51 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    private int countTopLevelParameters(String parameters) {
+        if (parameters == null || parameters.isBlank()) {
+            return 0;
+        }
+        int count = 1;
+        int angleDepth = 0;
+        int parenDepth = 0;
+        for (int i = 0; i < parameters.length(); i++) {
+            char current = parameters.charAt(i);
+            if (current == '<') {
+                angleDepth++;
+            } else if (current == '>' && angleDepth > 0) {
+                angleDepth--;
+            } else if (current == '(') {
+                parenDepth++;
+            } else if (current == ')' && parenDepth > 0) {
+                parenDepth--;
+            } else if (current == ',' && angleDepth == 0 && parenDepth == 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private void analyzeApiLayerContract(Path file, List<ApiContractIssue> issues) {
+        if (isMangoToolingFile(file)) {
+            return;
+        }
         try {
             String content = Files.readString(file);
-            if (content.contains("@RestController")) {
-                Matcher apiFieldMatcher = API_FIELD_PATTERN.matcher(content);
+            String code = stripStringLiterals(content);
+            if (code.contains("@RestController")) {
+                Matcher apiFieldMatcher = API_FIELD_PATTERN.matcher(code);
                 while (apiFieldMatcher.find()) {
                     issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                             "Controller 禁止持有 XxxApi 字段，应实现 XxxApi 并依赖 IXxxService: "
                                     + apiFieldMatcher.group(1)));
                 }
             }
-            Matcher serviceMatcher = SERVICE_IMPLEMENTS_API_PATTERN.matcher(content);
+            Matcher serviceMatcher = SERVICE_IMPLEMENTS_API_PATTERN.matcher(code);
             if (serviceMatcher.find()) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "XxxService 禁止直接实现 XxxApi，应实现 IXxxService: " + serviceMatcher.group(1)));
             }
-            if (content.contains("@FeignClient") && !FEIGN_EXTENDS_API_PATTERN.matcher(content).find()) {
+            if (code.contains("@FeignClient") && !FEIGN_EXTENDS_API_PATTERN.matcher(code).find()) {
                 issues.add(new ApiContractIssue("CRITICAL", file.toString(),
                         "XxxFeignClient 必须继承本域 XxxApi"));
             }
@@ -1386,6 +1430,77 @@ public class CheckMojo extends AbstractMojo {
                 || typeName.endsWith("Registry")
                 || typeName.endsWith("Session")
                 || typeName.endsWith("Dispatcher");
+    }
+
+    private boolean isApiSpiJavaFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("-api/src/main/java/") && normalized.contains("/api/spi/");
+    }
+
+    private boolean isMangoToolingFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.contains("/mango-tools/mango-maven-plugin/src/main/java/");
+    }
+
+    private boolean isAllowedInfrastructureApi(String typeName) {
+        return "ModuleInfoRegistry".equals(typeName);
+    }
+
+    private String stripStringLiterals(String content) {
+        StringBuilder result = new StringBuilder(content.length());
+        boolean inString = false;
+        boolean inTextBlock = false;
+        boolean escaped = false;
+        for (int i = 0; i < content.length(); i++) {
+            char current = content.charAt(i);
+            if (inTextBlock) {
+                if (i + 2 < content.length()
+                        && content.charAt(i) == '"'
+                        && content.charAt(i + 1) == '"'
+                        && content.charAt(i + 2) == '"') {
+                    result.append("   ");
+                    i += 2;
+                    inTextBlock = false;
+                } else {
+                    result.append(current == '\n' ? '\n' : ' ');
+                }
+                continue;
+            }
+            if (inString) {
+                if (current == '\n') {
+                    result.append('\n');
+                    inString = false;
+                    escaped = false;
+                    continue;
+                }
+                result.append(' ');
+                if (current == '"' && !escaped) {
+                    inString = false;
+                }
+                escaped = current == '\\' && !escaped;
+                if (current != '\\') {
+                    escaped = false;
+                }
+                continue;
+            }
+            if (i + 2 < content.length()
+                    && content.charAt(i) == '"'
+                    && content.charAt(i + 1) == '"'
+                    && content.charAt(i + 2) == '"') {
+                result.append("   ");
+                i += 2;
+                inTextBlock = true;
+                continue;
+            }
+            if (current == '"') {
+                result.append(' ');
+                inString = true;
+                escaped = false;
+                continue;
+            }
+            result.append(current);
+        }
+        return result.toString();
     }
 
     private boolean containsLocalImplementationWord(String typeName) {
@@ -1447,6 +1562,78 @@ public class CheckMojo extends AbstractMojo {
     private boolean isMainJavaFile(Path file) {
         String normalized = file.toString().replace('\\', '/');
         return normalized.contains("/src/main/java/") && normalized.endsWith(".java");
+    }
+
+    /**
+     * 禁止 HTTP API 使用 /{id} 这类路径变量。统一使用 query 参数或 command/query 对象。
+     */
+    private void checkPathParam() {
+        getLog().info("Checking path parameter usage...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<PathParamIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file)) {
+                        analyzePathParam(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (PathParamIssue issue : issues) {
+                result.addIssue("PATH_PARAM", issue.severity, issue.file, issue.line,
+                        issue.description, "PATH_PARAM", DOC_API_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description
+                        + " at " + issue.file + ":" + issue.line);
+            }
+            getLog().warn("Found " + issues.size() + " path parameter violation(s)");
+        } else {
+            getLog().info("All path parameter checks passed");
+        }
+    }
+
+    private void analyzePathParam(Path file, List<PathParamIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            int pathVariableIndex = content.indexOf(PATH_VARIABLE_ANNOTATION);
+            if (pathVariableIndex >= 0) {
+                issues.add(new PathParamIssue("CRITICAL", file.toString(),
+                        lineNumber(content, pathVariableIndex),
+                        "HTTP API 禁止使用 " + PATH_VARIABLE_ANNOTATION
+                                + "，请改为 @RequestParam 或 Query/Command 对象"));
+            }
+            Matcher matcher = REQUEST_MAPPING_PATTERN.matcher(content);
+            while (matcher.find()) {
+                String mapping = extractMappingValue(matcher.group(1));
+                if (usesPathTemplateVariable(mapping)) {
+                    issues.add(new PathParamIssue("CRITICAL", file.toString(),
+                            lineNumber(content, matcher.start()),
+                            "HTTP API 禁止使用路径模板变量 " + mapping + "，请改为 query 参数"));
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new PathParamIssue("MAJOR", file.toString(), 0,
+                    "路径参数检查失败: " + e.getMessage()));
+        }
+    }
+
+    private boolean usesPathTemplateVariable(String mapping) {
+        if (mapping == null || mapping.isBlank()) {
+            return false;
+        }
+        String resolved = resolvePlaceholderDefault(mapping.trim());
+        Matcher matcher = Pattern.compile("\\{([^}:]+)}").matcher(resolved);
+        return matcher.find();
     }
 
     private void analyzeKvKey(Path file, List<KvKeyIssue> issues) {
@@ -1935,6 +2122,20 @@ public class CheckMojo extends AbstractMojo {
         private ApiContractIssue(String severity, String file, String description) {
             this.severity = severity;
             this.file = file;
+            this.description = description;
+        }
+    }
+
+    private static class PathParamIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private PathParamIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
             this.description = description;
         }
     }

@@ -1,10 +1,11 @@
-package io.mango.authorization.resource.sync;
+package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
 import io.mango.authorization.api.security.IPermissionProvider;
 import io.mango.authorization.api.security.SecurityPrincipal;
@@ -79,8 +80,13 @@ class ApiResourceAuthorizationManagerTest {
         }
 
         @Override
-        public R<ApiResourceAccessDecisionVO> resolveAccessDecision(String httpMethod, String path) {
+        public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
             return R.ok(new ApiResourceAccessDecisionVO(true, accessMode, permissionCode));
+        }
+
+        @Override
+        public R<Void> refreshApiResourceCache() {
+            return R.ok();
         }
     }
 }

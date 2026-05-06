@@ -8,6 +8,7 @@ import io.mango.authorization.api.annotation.PermissionAccess;
 import io.mango.authorization.api.annotation.PublicApi;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
@@ -123,8 +124,13 @@ class ApiResourceSyncRunnerTest {
         }
 
         @Override
-        public R<ApiResourceAccessDecisionVO> resolveAccessDecision(String httpMethod, String path) {
+        public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
             return R.ok(ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN));
+        }
+
+        @Override
+        public R<Void> refreshApiResourceCache() {
+            return R.ok();
         }
     }
 

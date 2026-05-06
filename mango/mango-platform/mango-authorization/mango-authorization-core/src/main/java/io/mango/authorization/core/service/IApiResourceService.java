@@ -29,4 +29,9 @@ public interface IApiResourceService {
      * @return 访问决策
      */
     ApiResourceAccessDecisionVO resolveAccessDecision(String httpMethod, String path);
+
+    /**
+     * 清理运行时资源缓存。
+     */
+    void refreshRuntimeCache();
 }

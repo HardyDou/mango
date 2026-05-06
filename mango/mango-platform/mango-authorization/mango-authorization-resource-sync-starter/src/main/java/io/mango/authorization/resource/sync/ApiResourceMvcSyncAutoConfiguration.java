@@ -4,7 +4,6 @@ import io.mango.authorization.api.ApiResourceApi;
 import io.mango.infra.module.api.ModuleInfoRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,7 +16,6 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @author hardy
  */
 @AutoConfiguration
-@AutoConfigureAfter(ApiResourceSyncAutoConfiguration.class)
 @ConditionalOnProperty(name = "mango.authorization.resource-sync.enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnClass(name = "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping")
 public class ApiResourceMvcSyncAutoConfiguration {

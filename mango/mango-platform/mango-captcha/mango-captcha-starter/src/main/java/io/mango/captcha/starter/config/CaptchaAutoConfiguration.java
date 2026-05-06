@@ -6,6 +6,7 @@ import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.service.ArithmeticCaptchaService;
 import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
+import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.captcha.core.service.impl.ArithmeticCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.CaptchaServiceImpl;
@@ -52,12 +53,12 @@ public class CaptchaAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(CaptchaApi.class)
-    public CaptchaApi captchaApi(IKvStore kvStore,
-                                  ArithmeticCaptchaService arithmeticCaptchaService,
-                                  BlockPuzzleCaptchaService blockPuzzleCaptchaService,
-                                  List<SmsProvider> smsProviders,
-                                  List<EmailProvider> emailProviders,
-                                  ObjectMapper objectMapper) {
+    public ICaptchaService captchaApi(IKvStore kvStore,
+                                      ArithmeticCaptchaService arithmeticCaptchaService,
+                                      BlockPuzzleCaptchaService blockPuzzleCaptchaService,
+                                      List<SmsProvider> smsProviders,
+                                      List<EmailProvider> emailProviders,
+                                      ObjectMapper objectMapper) {
         return new CaptchaServiceImpl(
                 kvStore,
                 arithmeticCaptchaService,

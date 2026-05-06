@@ -1,3 +1,2 @@
-io.mango.authorization.resource.sync.ApiResourceSyncAutoConfiguration
 io.mango.authorization.resource.sync.ApiResourceMvcSyncAutoConfiguration
 io.mango.authorization.resource.sync.gateway.GatewayRouteResourceSyncAutoConfiguration

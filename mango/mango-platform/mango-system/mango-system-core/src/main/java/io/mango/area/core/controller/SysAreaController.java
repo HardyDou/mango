@@ -40,8 +40,8 @@ public class SysAreaController {
     /**
      * Get area by ID
      */
-    @GetMapping("/{id}")
-    public R<SysArea> getById(@PathVariable Long id) {
+    @GetMapping("/detail")
+    public R<SysArea> getById(@RequestParam Long id) {
         SysArea area = areaService.getById(id);
         if (area == null) {
             return R.fail(404, "Area not found");
@@ -52,8 +52,8 @@ public class SysAreaController {
     /**
      * Get area by adcode
      */
-    @GetMapping("/adcode/{adcode}")
-    public R<SysArea> getByAdcode(@PathVariable Long adcode) {
+    @GetMapping("/adcode")
+    public R<SysArea> getByAdcode(@RequestParam Long adcode) {
         SysArea area = areaService.getByAdcode(adcode);
         if (area == null) {
             return R.fail(404, "Area not found");
@@ -64,8 +64,8 @@ public class SysAreaController {
     /**
      * Get children by parent ID
      */
-    @GetMapping("/children/{parentId}")
-    public R<List<SysArea>> listByPid(@PathVariable("parentId") Long parentId) {
+    @GetMapping("/children")
+    public R<List<SysArea>> listByPid(@RequestParam("parentId") Long parentId) {
         return R.ok(areaService.listByPid(parentId));
     }
 
@@ -91,9 +91,8 @@ public class SysAreaController {
     /**
      * Update area
      */
-    @PutMapping("/{id}")
-    public R<Void> update(@PathVariable Long id, @RequestBody SysArea area) {
-        area.setId(id);
+    @PutMapping
+    public R<Void> update(@RequestBody SysArea area) {
         try {
             if (areaService.update(area)) {
                 return R.ok();
@@ -107,8 +106,8 @@ public class SysAreaController {
     /**
      * Delete area
      */
-    @DeleteMapping("/{id}")
-    public R<Void> delete(@PathVariable Long id) {
+    @DeleteMapping
+    public R<Void> delete(@RequestParam Long id) {
         try {
             if (areaService.delete(id)) {
                 return R.ok();

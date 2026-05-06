@@ -53,7 +53,9 @@ mango:
 ### 生成验证码
 
 ```
-GET /captcha/{type}
+GET /captcha/types
+GET /captcha/arithmetic
+GET /captcha/block-puzzle
 ```
 
 | 类型 | URL |

@@ -44,7 +44,7 @@ public interface MenuApi {
     R<Void> add(MenuCommand command);
 
     /** 更新菜单。 */
-    R<Void> update(Long menuId, MenuCommand command);
+    R<Void> update(MenuCommand command);
 
     /** 删除菜单。 */
     R<Void> delete(Long menuId);

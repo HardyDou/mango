@@ -25,9 +25,9 @@ public class SysLogController {
         return logService.listLoginLogs();
     }
 
-    @GetMapping("/login/{id}")
+    @GetMapping("/login/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:log:login:query")
-    public R<SysLoginLogPo> getLoginLog(@PathVariable Long id) {
+    public R<SysLoginLogPo> getLoginLog(@RequestParam Long id) {
         return logService.getLoginLog(id);
     }
 
@@ -49,9 +49,9 @@ public class SysLogController {
         return logService.listOperationLogs();
     }
 
-    @GetMapping("/operation/{id}")
+    @GetMapping("/operation/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:log:operation:query")
-    public R<SysOperationLogPo> getOperationLog(@PathVariable Long id) {
+    public R<SysOperationLogPo> getOperationLog(@RequestParam Long id) {
         return logService.getOperationLog(id);
     }
 

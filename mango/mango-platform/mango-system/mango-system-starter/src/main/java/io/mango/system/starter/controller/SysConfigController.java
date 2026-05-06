@@ -25,9 +25,9 @@ public class SysConfigController {
         return configService.list(type);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:query")
-    public R<SysConfigPo> get(@PathVariable Long id) {
+    public R<SysConfigPo> get(@RequestParam Long id) {
         return configService.get(id);
     }
 
@@ -43,21 +43,21 @@ public class SysConfigController {
         return configService.update(po);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:delete")
-    public R<Boolean> delete(@PathVariable Long id) {
+    public R<Boolean> delete(@RequestParam Long id) {
         return configService.delete(id);
     }
 
-    @PutMapping("/value/{id}")
+    @PutMapping("/value")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:edit")
-    public R<Boolean> updateValue(@PathVariable Long id, @RequestParam String value) {
+    public R<Boolean> updateValue(@RequestParam Long id, @RequestParam String value) {
         return configService.updateValue(id, value);
     }
 
-    @GetMapping("/type/{type}")
+    @GetMapping("/type")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
-    public R<List<SysConfigPo>> listByType(@PathVariable ConfigTypeEnum type) {
+    public R<List<SysConfigPo>> listByType(@RequestParam ConfigTypeEnum type) {
         return configService.list(type);
     }
 }
