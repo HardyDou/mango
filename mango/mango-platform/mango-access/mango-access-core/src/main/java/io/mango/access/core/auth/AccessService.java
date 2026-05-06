@@ -2,13 +2,13 @@ package io.mango.access.core.auth;
 
 import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.common.result.R;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.ITokenProvider;
-import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.api.ITokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ public class AccessService {
     private final AccessProperties properties;
     private final ITokenProvider tokenService;
     private final ApiResourceApi apiResourceApi;
-    private final IPermissionProvider permissionProvider;
+    private final IAuthorizationProvider authorizationProvider;
 
     public AccessResult check(String httpMethod, String path, String authHeader) {
         if (!properties.isAuthEnabled()) {
@@ -54,8 +54,14 @@ public class AccessService {
             return AccessResult.unauthorized("Token 类型非法，访问入口只接受 access token");
         }
         AccessPrincipal principal = resolvePrincipal(token);
+        String requiredPermission = resolveRequiredPermission(decision.permissionCode());
+        if (properties.isRequirePermissionCode()
+                && accessMode == ApiResourceAccessMode.PERMISSION
+                && requiredPermission == null) {
+            return AccessResult.forbidden("接口未声明权限码");
+        }
         if (accessMode == ApiResourceAccessMode.PERMISSION
-                && !hasPermission(principal, decision.permissionCode())) {
+                && !hasPermission(principal, requiredPermission)) {
             return AccessResult.forbidden("权限不足");
         }
         return AccessResult.allowAuthenticated(principal);
@@ -101,21 +107,24 @@ public class AccessService {
         }
     }
 
+    private String resolveRequiredPermission(String resourcePermissionCode) {
+        if (resourcePermissionCode != null && !resourcePermissionCode.isBlank()) {
+            return resourcePermissionCode.trim();
+        }
+        return null;
+    }
+
     private boolean hasPermission(AccessPrincipal principal, String permissionCode) {
         if (principal == null || principal.userId() == null || permissionCode == null || permissionCode.isBlank()) {
             return false;
         }
-        SecurityPrincipal securityPrincipal = new SecurityPrincipal(
-                principal.userId(),
-                principal.tenantId(),
-                principal.username(),
-                principal.realm(),
-                principal.actorType(),
-                principal.partyType(),
-                principal.partyId(),
-                principal.appCode()
-        );
-        return permissionProvider.listUserPermissions(securityPrincipal).stream()
+        AuthorizationQuery query = AuthorizationQuery.user(principal.userId())
+                .withTenantId(principal.tenantId())
+                .withSystemCode(principal.appCode())
+                .withRealm(principal.realm())
+                .withActorType(principal.actorType())
+                .withParty(principal.partyType(), principal.partyId());
+        return authorizationProvider.load(query).permissionCodes().stream()
                 .anyMatch(granted -> permissionMatches(granted, permissionCode));
     }
 

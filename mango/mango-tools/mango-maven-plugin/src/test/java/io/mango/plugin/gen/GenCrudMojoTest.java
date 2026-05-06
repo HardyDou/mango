@@ -116,7 +116,7 @@ class GenCrudMojoTest {
         String content = Files.readString(poFile);
         assertTrue(content.contains("@TableName(\"sys_user\")"), "PO should contain @TableName annotation");
         assertTrue(content.contains("class UserEntity"), "Entity should have correct class name");
-        assertTrue(content.contains("extends TenantEntity<Long>"), "Entity should inherit standard tenant entity");
+        assertTrue(content.contains("extends TenantEntity"), "Entity should inherit standard tenant entity");
         assertFalse(content.contains("@Data"), "Entity should not use @Data");
     }
 
@@ -138,6 +138,8 @@ class GenCrudMojoTest {
         Path migrationFile = tempDir.resolve("mango-user/mango-user-core/src/main/resources/db/migration/user/V1__init_sys_user.sql");
         String content = Files.readString(migrationFile);
         assertTrue(content.contains("CREATE TABLE IF NOT EXISTS `sys_user`"));
+        assertTrue(content.contains("`id` bigint NOT NULL COMMENT '主键'"));
+        assertFalse(content.toLowerCase().contains("auto_increment"));
         assertTrue(content.contains("`created_by` bigint"));
         assertTrue(content.contains("`created_at` datetime"));
         assertTrue(content.contains("`updated_by` bigint"));

@@ -12,8 +12,9 @@
 | 权限码 | 权限码 `{model}:{module}:{action}` |
 | 接口资源 | 扫描各 App 的 Spring MVC 接口，注册 HTTP 方法、路径、访问模式和可选权限码 |
 | 授权快照 | 通过 `IAuthorizationProvider` 汇总角色、权限与 Spring Security authorities |
+| 授权缓存 | 基于 `mango-infra-kv` 缓存用户授权快照，微服务网关可通过 Redis 只读鉴权 |
 | 安全基础 | 提供安全上下文、token 抽象和 Spring Security 自动配置 |
-| 安全适配 | 本地/远程 starter 在 authorization 内完成 `IPermissionProvider` adapter 装配，不再依赖独立 `mango-security` 聚合模块 |
+| 访问鉴权 | access/resource-access 直接通过 `IAuthorizationProvider` 读取授权快照，不再保留独立权限 Provider 适配层 |
 | 主体角色绑定 | 保存 subject 到 role 的授权关系，并记录 `appCode`、`realm`、`actorType`、`partyType`、`partyId` 上下文，不保存账号资料 |
 
 ## 子模块
@@ -43,7 +44,7 @@ mango-authorization/
 
 API 模块只保留 Java 契约模型，不暴露 Entity、Mapper、MyBatis 注解、Spring Web 注解或数据库表结构；HTTP 路由必须下沉到 `starter` Controller 或 `starter-remote` FeignClient。
 
-`mango-auth` 登录成功后调用 `IAuthorizationProvider` 获取角色与权限，不再维护 auth 内部权限检查器。账号资料与认证用户事实已抽离到 `mango-identity`。authorization 本地 starter 负责把本地授权快照适配成 `IPermissionProvider`；远程调用方通过 `mango-authorization-starter-remote` 完成同样适配。
+`mango-auth` 登录成功后调用 `IAuthorizationProvider` 获取角色与权限，不再维护 auth 内部权限检查器。账号资料与认证用户事实已抽离到 `mango-identity`。access 和 resource-access 在运行时直接读取 `AuthorizationSnapshot.permissionCodes()` 做权限判断。
 
 ## 接口资源同步
 
@@ -192,3 +193,9 @@ mango-access
 ├── mango-access-web-starter
 └── mango-access-gateway-starter
 ```
+
+## 运行时权限判断
+
+运行时权限判断只使用资源表中的 `permissionCode`，不信任请求 query 参数。`mango:check -Drule=permission-param` 会检查 `PERMISSION` 接口必须声明明确权限码。
+
+当前不内置授权快照缓存，避免角色、菜单、主体授权变更后因缓存失效不完整导致撤权延迟。后续如需减少远程授权查询，应使用服务端签发的可信授权凭证或带精确失效事件的缓存方案，不能信任客户端自行传入的权限码。

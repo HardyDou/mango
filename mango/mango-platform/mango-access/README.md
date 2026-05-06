@@ -9,6 +9,7 @@
 | 外部入口 | 微服务拓扑下统一承接外部 HTTP 请求 |
 | Token 初筛 | 校验 `Authorization` 中的 access token，拒绝无效 token 和 refresh token |
 | API 访问策略 | 通过 `ApiResourceApi` 读取已同步的 `@ApiAccess` 资源策略，支持 PUBLIC / LOGIN / PERMISSION / INTERNAL |
+| 权限鉴权 | PERMISSION 接口使用服务端已注册资源中的 `permissionCode` 鉴权 |
 | 上下文注入 | 校验通过后向下游注入 `X-Mango-*` 运行时上下文头 |
 | 暴露面同步 | 边界入口应用可通过 `mango-authorization-resource-sync-starter` 同步 Spring Cloud Gateway route Path 到 authorization |
 
@@ -33,6 +34,18 @@ mango-access/
 | INTERNAL | 直接返回 403，不允许外部访问 |
 
 访问策略来自 `mango-authorization` 的 `ApiResourceApi`。业务接口通过 `@ApiAccess` 声明策略，并由 `mango-authorization-resource-sync-starter` 同步到 `authorization_api_resource`。
+
+PERMISSION 接口必须在服务端注解中声明权限码，例如：
+
+```java
+@PermissionAccess("system:user:list")
+@GetMapping("/system/users/list")
+public R<Page<UserVO>> list(UserPageQuery query) {
+    ...
+}
+```
+
+边界入口只信任 `mango-authorization` 已同步资源中的 `permissionCode`。客户端 query 参数中的 `permissionCode` 不参与最终鉴权，避免人为组装或借用其它权限码绕过接口真实访问策略。
 
 ## 上下文头
 
@@ -83,6 +96,7 @@ mango-access/
 mango:
   access:
     auth-enabled: true
+    require-permission-code: false
   security:
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}

@@ -1,7 +1,7 @@
 package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
-import io.mango.authorization.api.security.IPermissionProvider;
+import io.mango.authorization.api.IAuthorizationProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -24,12 +24,12 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 public class ApiResourceAccessAutoConfiguration {
 
     @Bean("apiResourceAuthorizationManager")
-    @ConditionalOnBean({ApiResourceApi.class, IPermissionProvider.class})
+    @ConditionalOnBean({ApiResourceApi.class, IAuthorizationProvider.class})
     @ConditionalOnMissingBean(name = "apiResourceAuthorizationManager")
     @ConditionalOnProperty(name = "mango.authorization.resource-access.enabled", havingValue = "true", matchIfMissing = true)
     public AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
             ApiResourceApi apiResourceApi,
-            IPermissionProvider permissionService) {
-        return new ApiResourceAuthorizationManager(apiResourceApi, permissionService);
+            IAuthorizationProvider authorizationProvider) {
+        return new ApiResourceAuthorizationManager(apiResourceApi, authorizationProvider);
     }
 }

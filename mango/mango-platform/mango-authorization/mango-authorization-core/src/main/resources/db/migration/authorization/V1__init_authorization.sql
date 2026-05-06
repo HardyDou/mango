@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `authorization_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限定义表';
 
 CREATE TABLE IF NOT EXISTS `authorization_role` (
-    `role_id` BIGINT NOT NULL COMMENT '角色ID' PRIMARY KEY,
+    `id` BIGINT NOT NULL COMMENT '主键' PRIMARY KEY,
     `tenant_id` BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
     `app_code` VARCHAR(64) NOT NULL DEFAULT 'internal-admin' COMMENT '应用编码',
     `realm` VARCHAR(32) NOT NULL DEFAULT 'INTERNAL' COMMENT '登录域',
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `authorization_subject_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='主体直授权限表';
 
 CREATE TABLE IF NOT EXISTS `authorization_app` (
-    `app_id` BIGINT NOT NULL COMMENT '应用ID' PRIMARY KEY,
+    `id` BIGINT NOT NULL COMMENT '主键' PRIMARY KEY,
     `app_code` VARCHAR(64) NOT NULL COMMENT '应用编码',
     `app_name` VARCHAR(100) NOT NULL COMMENT '应用名称',
     `realm` VARCHAR(32) NOT NULL COMMENT '登录域',
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS `authorization_app` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='授权应用入口表';
 
 CREATE TABLE IF NOT EXISTS `authorization_menu` (
-    `menu_id` BIGINT NOT NULL COMMENT '菜单ID' PRIMARY KEY,
+    `id` BIGINT NOT NULL COMMENT '主键' PRIMARY KEY,
     `tenant_id` BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
     `app_code` VARCHAR(64) NOT NULL DEFAULT 'internal-admin' COMMENT '应用编码',
     `parent_id` BIGINT NOT NULL DEFAULT 0 COMMENT '父菜单ID',
@@ -198,15 +198,15 @@ CREATE TABLE IF NOT EXISTS `authorization_role_menu` (
     KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色菜单关联表';
 
-INSERT INTO `authorization_app` (`app_id`, `app_code`, `app_name`, `realm`, `actor_type`, `icon`, `sort`, `status`) VALUES
+INSERT INTO `authorization_app` (`id`, `app_code`, `app_name`, `realm`, `actor_type`, `icon`, `sort`, `status`) VALUES
 (1, 'internal-admin', '内部管理后台', 'INTERNAL', 'INTERNAL_USER', 'Setting', 1, 1)
 ON DUPLICATE KEY UPDATE `app_name` = VALUES(`app_name`);
 
-INSERT INTO `authorization_role` (`role_id`, `tenant_id`, `app_code`, `realm`, `actor_type`, `role_code`, `role_name`, `role_type`, `status`, `sort`)
+INSERT INTO `authorization_role` (`id`, `tenant_id`, `app_code`, `realm`, `actor_type`, `role_code`, `role_name`, `role_type`, `status`, `sort`)
 VALUES (1, 1, 'internal-admin', 'INTERNAL', 'INTERNAL_USER', 'ROLE_ADMIN', '超级管理员', 1, 1, 0)
 ON DUPLICATE KEY UPDATE `role_name` = VALUES(`role_name`);
 
-INSERT INTO `authorization_menu` (`menu_id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `component`, `icon`, `sort`, `status`, `visible`, `keep_alive`, `embedded`) VALUES
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `component`, `icon`, `sort`, `status`, `visible`, `keep_alive`, `embedded`) VALUES
 (1, 1, 'internal-admin', 0, 1, '系统管理', 'system', '/system', NULL, 'Setting', 1, 1, 1, 0, 0),
 (2, 1, 'internal-admin', 1, 2, '用户管理', 'system:user', '/system/user', '@/views/system/user/index.vue', 'User', 1, 1, 1, 0, 0),
 (3, 1, 'internal-admin', 1, 2, '角色管理', 'system:role', '/system/role', '@/views/system/role/index.vue', 'Role', 2, 1, 1, 0, 0),

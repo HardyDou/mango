@@ -1,11 +1,11 @@
 package io.mango.access.starter.web.config;
 
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.access.core.auth.AccessService;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.access.starter.web.filter.AuthFilter;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.ITokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -30,8 +30,8 @@ public class AccessWebAutoConfiguration {
     public AccessService accessService(
             ITokenProvider tokenService,
             ApiResourceApi apiResourceApi,
-            IPermissionProvider permissionProvider) {
-        return new AccessService(properties, tokenService, apiResourceApi, permissionProvider);
+            IAuthorizationProvider authorizationProvider) {
+        return new AccessService(properties, tokenService, apiResourceApi, authorizationProvider);
     }
 
     @Bean

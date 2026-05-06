@@ -27,6 +27,13 @@ class PageQueryTest {
         PageQuery query = new PageQuery();
         query.setSize(1000);
 
-        assertThat(query.getSize()).isEqualTo(100);
+        assertThat(query.getSize()).isEqualTo(500);
+    }
+
+    @Test
+    void pageQuery_shouldBeQuery() {
+        PageQuery query = new PageQuery();
+
+        assertThat(query).isInstanceOf(Query.class);
     }
 }

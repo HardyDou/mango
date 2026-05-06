@@ -21,7 +21,7 @@ public class Menu implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 菜单 ID。 */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long menuId;
 
     /** 租户 ID。 */

@@ -1,13 +1,15 @@
 package io.mango.auth.starter.integration;
 
+import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.common.result.R;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.ISecurityContextProvider;
-import io.mango.authorization.api.security.ITokenProvider;
-import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.api.ISecurityContextProvider;
+import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.api.SecurityPrincipal;
 import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
-import io.mango.authorization.security.core.impl.JjwtTokenServiceImpl;
+import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +53,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                         + "org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration,"
                         + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
                         + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
-                        + "io.mango.authorization.starter.config.AuthorizationSecurityAdapterAutoConfiguration,"
                         + "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure"
         })
 @AutoConfigureMockMvc
@@ -65,17 +66,17 @@ class AuthSecurityIntegrationTest {
     private ITokenProvider tokenService;
 
     @Resource
-    private TestPermissionService permissionService;
+    private TestAuthorizationProvider authorizationProvider;
 
     @BeforeEach
     void setUp() {
-        permissionService.clear();
+        authorizationProvider.clear();
     }
 
     @Test
     @DisplayName("valid token with permission should reach secured endpoint and expose security context")
     void validTokenWithPermissionShouldReachSecuredEndpoint() throws Exception {
-        permissionService.grant(100L, "demo:read");
+        authorizationProvider.grant(100L, "demo:read");
         String token = tokenService.generateAccessToken(100L, "alice", Map.of());
 
         mockMvc.perform(get("/integration/secured")
@@ -118,8 +119,8 @@ class AuthSecurityIntegrationTest {
     static class TestApp {
 
         @Bean
-        TestPermissionService permissionService() {
-            return new TestPermissionService();
+        TestAuthorizationProvider authorizationProvider() {
+            return new TestAuthorizationProvider();
         }
 
         @Bean
@@ -134,7 +135,7 @@ class AuthSecurityIntegrationTest {
 
         @Bean("apiResourceAuthorizationManager")
         AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
-                TestPermissionService permissionService) {
+                IAuthorizationProvider authorizationProvider) {
             return (authenticationSupplier, context) -> {
                 Authentication authentication = authenticationSupplier.get();
                 boolean authenticated = authentication != null
@@ -144,7 +145,8 @@ class AuthSecurityIntegrationTest {
                     return new AuthorizationDecision(false);
                 }
                 Long userId = ((SecurityPrincipal) authentication.getPrincipal()).userId();
-                return new AuthorizationDecision(permissionService.listUserPermissions(userId).contains("demo:read"));
+                return new AuthorizationDecision(
+                        authorizationProvider.load(AuthorizationQuery.user(userId)).permissionCodes().contains("demo:read"));
             };
         }
     }
@@ -165,13 +167,13 @@ class AuthSecurityIntegrationTest {
         }
     }
 
-    static class TestPermissionService implements IPermissionProvider {
+    static class TestAuthorizationProvider implements IAuthorizationProvider {
 
         private final Map<Long, List<String>> permissions = new ConcurrentHashMap<>();
 
         @Override
-        public List<String> listUserPermissions(Long userId) {
-            return permissions.getOrDefault(userId, List.of());
+        public AuthorizationSnapshot load(AuthorizationQuery query) {
+            return AuthorizationSnapshot.of(List.of(), permissions.getOrDefault(query.subjectId(), List.of()), List.of());
         }
 
         void grant(Long userId, String permission) {

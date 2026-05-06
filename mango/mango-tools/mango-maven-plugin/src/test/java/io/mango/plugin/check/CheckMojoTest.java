@@ -918,6 +918,57 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPermissionParam_withPermissionAccessValue_passes() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import io.mango.authorization.api.annotation.PermissionAccess;
+
+                public class DemoController {
+                    @PermissionAccess("demo:view")
+                    String detail() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "permission-param");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkPermissionParam_withPermissionModeMissingPermission_reportsIssue() throws Exception {
+        Path sourceDir = tempDir.resolve("mango-demo-starter/src/main/java/io/mango/demo/starter");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoController.java"), """
+                package io.mango.demo.starter;
+
+                import io.mango.authorization.api.annotation.ApiAccess;
+                import io.mango.authorization.api.enums.ApiResourceAccessMode;
+
+                public class DemoController {
+                    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION)
+                    String detail() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "permission-param");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void checkKvKey_withSpelTemplate_passes() throws Exception {
         // given
         Path sourceDir = tempDir.resolve("mango-demo-core/src/main/java/io/mango/demo/core");
@@ -1065,6 +1116,56 @@ class CheckMojoTest {
                 CREATE TABLE demo_user (
                     `id` bigint NOT NULL,
                     `name` varchar(64) NOT NULL,
+                    PRIMARY KEY (`id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withoutStandardId_reportsIssue() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `user_id` bigint NOT NULL,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    PRIMARY KEY (`user_id`)
+                );
+                """);
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-schema");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkPersistenceSchema_withAutoIncrementId_reportsIssue() throws Exception {
+        // given
+        Path migrationFile = tempDir.resolve("mango-demo-core/src/main/resources/db/migration/demo/V1__init_demo.sql");
+        Files.createDirectories(migrationFile.getParent());
+        Files.writeString(migrationFile, """
+                CREATE TABLE demo_user (
+                    `id` bigint NOT NULL AUTO_INCREMENT,
+                    `created_by` bigint DEFAULT NULL,
+                    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_by` bigint DEFAULT NULL,
+                    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
                     PRIMARY KEY (`id`)
                 );
                 """);

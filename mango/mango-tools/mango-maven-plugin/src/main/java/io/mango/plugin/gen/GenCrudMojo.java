@@ -315,7 +315,7 @@ public class GenCrudMojo extends AbstractMojo {
             "@Getter\n" +
             "@Setter\n" +
             "@TableName(\"" + table + "\")\n" +
-            "public class " + entityName + "Entity extends TenantEntity<Long> {\n" +
+            "public class " + entityName + "Entity extends TenantEntity {\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Entity.java"), content);
     }
@@ -324,7 +324,7 @@ public class GenCrudMojo extends AbstractMojo {
         String tableName = table == null || table.isBlank() ? toSnakeCase(entity) : table.trim();
         String content =
                 "CREATE TABLE IF NOT EXISTS `" + tableName + "` (\n"
-                        + "  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',\n"
+                        + "  `id` bigint NOT NULL COMMENT '主键',\n"
                         + "  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',\n"
                         + "  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n"
                         + "  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',\n"

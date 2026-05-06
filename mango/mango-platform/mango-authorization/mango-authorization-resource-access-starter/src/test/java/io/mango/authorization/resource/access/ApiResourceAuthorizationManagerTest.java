@@ -1,14 +1,15 @@
 package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.api.SecurityPrincipal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -51,13 +52,24 @@ class ApiResourceAuthorizationManagerTest {
         assertTrue(granted.check(this::authentication, context("GET", "/demo")).isGranted());
     }
 
+    @Test
+    @DisplayName("permission resource should ignore request permissionCode parameter")
+    void permissionResourceShouldIgnorePermissionCodeParameter() {
+        ApiResourceAuthorizationManager manager = manager(ApiResourceAccessMode.PERMISSION, "demo:write", List.of("demo:read"));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/demo");
+        request.setParameter("permissionCode", "demo:read");
+
+        assertFalse(manager.check(this::authentication, new RequestAuthorizationContext(request)).isGranted());
+    }
+
     private ApiResourceAuthorizationManager manager(
             ApiResourceAccessMode accessMode,
             String permissionCode,
             List<String> permissions) {
         ApiResourceApi api = new TestApi(accessMode, permissionCode);
-        IPermissionProvider permissionService = userId -> permissions;
-        return new ApiResourceAuthorizationManager(api, permissionService);
+        IAuthorizationProvider authorizationProvider =
+                query -> AuthorizationSnapshot.of(List.of(), permissions, permissions);
+        return new ApiResourceAuthorizationManager(api, authorizationProvider);
     }
 
     private RequestAuthorizationContext context(String method, String path) {

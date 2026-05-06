@@ -1,12 +1,13 @@
 package io.mango.authorization.resource.access;
 
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.common.result.R;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.api.SecurityPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
@@ -15,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -26,11 +26,11 @@ import java.util.function.Supplier;
 public class ApiResourceAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
     private final ApiResourceApi apiResourceApi;
-    private final IPermissionProvider permissionService;
+    private final IAuthorizationProvider authorizationProvider;
 
-    public ApiResourceAuthorizationManager(ApiResourceApi apiResourceApi, IPermissionProvider permissionService) {
+    public ApiResourceAuthorizationManager(ApiResourceApi apiResourceApi, IAuthorizationProvider authorizationProvider) {
         this.apiResourceApi = apiResourceApi;
-        this.permissionService = permissionService;
+        this.authorizationProvider = authorizationProvider;
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
         boolean granted = switch (accessMode) {
             case PUBLIC -> true;
             case LOGIN -> isAuthenticated(authentication);
-            case PERMISSION -> hasPermission(authentication, decision.permissionCode());
+            case PERMISSION -> hasPermission(authentication, resolveRequiredPermission(decision.permissionCode()));
             case INTERNAL -> false;
         };
         return new AuthorizationDecision(granted);
@@ -72,8 +72,14 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
         if (principal == null || principal.userId() == null) {
             return false;
         }
-        List<String> permissions = permissionService.listUserPermissions(principal);
-        return permissions.stream().anyMatch(permission -> permissionMatches(permission, permissionCode));
+        AuthorizationQuery query = AuthorizationQuery.user(principal.userId())
+                .withTenantId(principal.tenantId())
+                .withSystemCode(principal.appCode())
+                .withRealm(principal.realm())
+                .withActorType(principal.actorType())
+                .withParty(principal.partyType(), principal.partyId());
+        return authorizationProvider.load(query).permissionCodes().stream()
+                .anyMatch(permission -> permissionMatches(permission, permissionCode));
     }
 
     private SecurityPrincipal resolvePrincipal(Authentication authentication) {
@@ -83,6 +89,13 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
         }
         if (principal instanceof Number number) {
             return new SecurityPrincipal(number.longValue(), null, null);
+        }
+        return null;
+    }
+
+    private String resolveRequiredPermission(String resourcePermissionCode) {
+        if (StringUtils.hasText(resourcePermissionCode)) {
+            return resourcePermissionCode.trim();
         }
         return null;
     }

@@ -3,6 +3,9 @@ package io.mango.access.starter.web.filter;
 import io.mango.access.core.auth.AccessService;
 import io.mango.access.core.config.AccessProperties;
 import io.mango.authorization.api.ApiResourceApi;
+import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.AuthorizationSnapshot;
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.command.ApiResourceRegisterCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
@@ -10,8 +13,7 @@ import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.ITokenProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,7 @@ class AuthFilterTest {
 
     private final TestApiResourceApi apiResourceApi = new TestApiResourceApi();
     private final TestTokenProvider tokenProvider = new TestTokenProvider();
-    private final TestPermissionProvider permissionProvider = new TestPermissionProvider();
+    private final TestAuthorizationProvider authorizationProvider = new TestAuthorizationProvider();
 
     @AfterEach
     void tearDown() {
@@ -90,7 +92,7 @@ class AuthFilterTest {
     void doFilter_shouldRejectPermissionWhenPermissionMissing() throws Exception {
         apiResourceApi.accessMode = ApiResourceAccessMode.PERMISSION;
         apiResourceApi.permissionCode = "system:user:create";
-        permissionProvider.permissions = List.of("system:user:view");
+        authorizationProvider.permissions = List.of("system:user:view");
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/users");
         request.addHeader("Authorization", "Bearer valid-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -101,9 +103,26 @@ class AuthFilterTest {
         assertEquals("{\"code\":403,\"message\":\"权限不足\"}", response.getContentAsString());
     }
 
+    @Test
+    @DisplayName("PERMISSION 资源不应使用请求 permissionCode 覆盖注册权限")
+    void doFilter_shouldIgnoreRequestPermissionCode() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.PERMISSION;
+        apiResourceApi.permissionCode = "system:user:create";
+        authorizationProvider.permissions = List.of("system:user:view");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/users");
+        request.setParameter("permissionCode", "system:user:view");
+        request.addHeader("Authorization", "Bearer valid-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        newFilter().doFilter(request, response, new MockFilterChain());
+
+        assertEquals(403, response.getStatus());
+        assertEquals(1, apiResourceApi.resolveCount);
+    }
+
     private AuthFilter newFilter() {
         AccessProperties properties = new AccessProperties();
-        AccessService accessService = new AccessService(properties, tokenProvider, apiResourceApi, permissionProvider);
+        AccessService accessService = new AccessService(properties, tokenProvider, apiResourceApi, authorizationProvider);
         return new AuthFilter(accessService);
     }
 
@@ -111,6 +130,7 @@ class AuthFilterTest {
 
         private ApiResourceAccessMode accessMode = ApiResourceAccessMode.LOGIN;
         private String permissionCode;
+        private int resolveCount;
 
         @Override
         public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
@@ -119,6 +139,7 @@ class AuthFilterTest {
 
         @Override
         public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
+            resolveCount++;
             return R.ok(new ApiResourceAccessDecisionVO(true, accessMode, permissionCode));
         }
 
@@ -180,13 +201,13 @@ class AuthFilterTest {
         }
     }
 
-    private static class TestPermissionProvider implements IPermissionProvider {
+    private static class TestAuthorizationProvider implements IAuthorizationProvider {
 
         private List<String> permissions = List.of("*:*");
 
         @Override
-        public List<String> listUserPermissions(Long userId) {
-            return permissions;
+        public AuthorizationSnapshot load(AuthorizationQuery query) {
+            return AuthorizationSnapshot.of(List.of(), permissions, permissions);
         }
     }
 }

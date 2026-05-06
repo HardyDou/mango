@@ -18,7 +18,7 @@ public class IdentityUser implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 用户 ID。 */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long userId;
 
     /** 用户名，唯一。 */

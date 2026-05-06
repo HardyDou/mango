@@ -17,4 +17,9 @@ public class AccessProperties {
      */
     private boolean authEnabled = true;
 
+    /**
+     * 开启后，非 PUBLIC/INTERNAL 接口必须携带 permissionCode 参数。
+     */
+    private boolean requirePermissionCode = false;
+
 }

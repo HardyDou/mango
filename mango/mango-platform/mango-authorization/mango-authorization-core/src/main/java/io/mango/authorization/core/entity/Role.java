@@ -18,7 +18,7 @@ public class Role implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 角色 ID。 */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long roleId;
 
     /** 租户 ID。 */

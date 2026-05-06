@@ -49,6 +49,12 @@ mvn mango:gen-crud -Dmodule=xxx -Dentity=User -Dtable=usr_user
 
 # 检查迁移脚本是否包含审计字段和租户字段
 mvn mango:check -Drule=persistence-schema
+
+# 禁止 HTTP 路径参数
+mvn mango:check -Drule=path-param
+
+# 检查 PERMISSION 接口必须声明权限码
+mvn mango:check -Drule=permission-param
 ```
 
 ## 模块结构

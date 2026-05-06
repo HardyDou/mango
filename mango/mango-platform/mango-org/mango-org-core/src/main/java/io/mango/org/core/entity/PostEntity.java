@@ -9,7 +9,7 @@ import lombok.Data;
 @TableName("org_post")
 public class PostEntity {
 
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
 }

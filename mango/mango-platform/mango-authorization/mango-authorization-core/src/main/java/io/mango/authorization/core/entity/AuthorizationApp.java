@@ -18,7 +18,7 @@ public class AuthorizationApp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 应用 ID。 */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long appId;
 
     /** 应用编码。 */

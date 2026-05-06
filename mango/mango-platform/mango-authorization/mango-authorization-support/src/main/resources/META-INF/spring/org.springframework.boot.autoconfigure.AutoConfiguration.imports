@@ -1,3 +1,2 @@
 io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration
 io.mango.authorization.support.autoconfigure.TokenAutoConfiguration
-io.mango.authorization.support.autoconfigure.remote.AuthorizationSecurityRemoteAutoConfiguration

@@ -1,12 +1,12 @@
 package io.mango.authorization.core.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.mango.authorization.api.command.AppCommand;
 import io.mango.authorization.api.vo.AppVO;
 import io.mango.authorization.core.entity.AuthorizationApp;
 import io.mango.authorization.core.mapper.AuthorizationAppMapper;
 import io.mango.authorization.core.service.IAuthorizationAppService;
-import lombok.RequiredArgsConstructor;
+import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,33 +17,27 @@ import java.util.List;
  * 授权应用入口服务实现。
  */
 @Service
-@RequiredArgsConstructor
-public class AuthorizationAppServiceImpl implements IAuthorizationAppService {
-
-    private final AuthorizationAppMapper appMapper;
+public class AuthorizationAppServiceImpl
+        extends MangoCrudServiceImpl<AuthorizationAppMapper, AuthorizationApp>
+        implements IAuthorizationAppService {
 
     @Override
-    public List<AppVO> list() {
-        LambdaQueryWrapper<AuthorizationApp> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AuthorizationApp::getStatus, 1)
-                .orderByAsc(AuthorizationApp::getSort);
-        return appMapper.selectList(wrapper).stream().map(this::toVO).toList();
+    public List<AppVO> listByQuery(Object query) {
+        QueryWrapper<AuthorizationApp> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", 1)
+                .orderByAsc("sort");
+        return super.list(wrapper).stream().map(app -> (AppVO) toVO(app)).toList();
     }
 
     @Override
     public AppVO get(Long appId) {
-        AuthorizationApp app = appMapper.selectById(appId);
-        return app == null ? null : toVO(app);
+        return (AppVO) detailById(appId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long create(AppCommand command) {
-        AuthorizationApp app = toEntity(command);
-        app.setCreateTime(LocalDateTime.now());
-        app.setUpdateTime(LocalDateTime.now());
-        appMapper.insert(app);
-        return app.getAppId();
+        return (Long) super.createByCommand(command);
     }
 
     @Override
@@ -52,43 +46,34 @@ public class AuthorizationAppServiceImpl implements IAuthorizationAppService {
         if (command == null || command.getAppId() == null) {
             return false;
         }
-        AuthorizationApp existing = appMapper.selectById(command.getAppId());
-        if (existing == null) {
-            return false;
-        }
-        existing.setAppCode(command.getAppCode());
-        existing.setAppName(command.getAppName());
-        existing.setRealm(command.getRealm());
-        existing.setActorType(command.getActorType());
-        existing.setIcon(command.getIcon());
-        existing.setSort(command.getSort());
-        existing.setStatus(command.getStatus());
-        existing.setRemark(command.getRemark());
-        existing.setUpdateTime(LocalDateTime.now());
-        return appMapper.updateById(existing) > 0;
+        return super.updateByCommand(command);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean delete(Long appId) {
-        return appId != null && appMapper.deleteById(appId) > 0;
+        return appId != null && super.deleteById(appId);
     }
 
-    private AuthorizationApp toEntity(AppCommand command) {
-        AuthorizationApp app = new AuthorizationApp();
-        app.setAppId(command.getAppId());
-        app.setAppCode(command.getAppCode());
-        app.setAppName(command.getAppName());
-        app.setRealm(command.getRealm());
-        app.setActorType(command.getActorType());
-        app.setIcon(command.getIcon());
-        app.setSort(command.getSort() == null ? 0 : command.getSort());
-        app.setStatus(command.getStatus() == null ? 1 : command.getStatus());
-        app.setRemark(command.getRemark());
+    @Override
+    protected Class<AuthorizationApp> entityType() {
+        return AuthorizationApp.class;
+    }
+
+    @Override
+    protected AuthorizationApp toEntity(Object source) {
+        AuthorizationApp app = super.toEntity(source);
+        if (app.getSort() == null) {
+            app.setSort(0);
+        }
+        if (app.getStatus() == null) {
+            app.setStatus(1);
+        }
         return app;
     }
 
-    private AppVO toVO(AuthorizationApp app) {
+    @Override
+    protected Object toVO(AuthorizationApp app) {
         AppVO vo = new AppVO();
         vo.setAppId(app.getAppId());
         vo.setAppCode(app.getAppCode());
@@ -102,5 +87,17 @@ public class AuthorizationAppServiceImpl implements IAuthorizationAppService {
         vo.setCreateTime(app.getCreateTime());
         vo.setUpdateTime(app.getUpdateTime());
         return vo;
+    }
+
+    @Override
+    protected void beforeCreate(Object command, AuthorizationApp entity) {
+        LocalDateTime now = LocalDateTime.now();
+        entity.setCreateTime(now);
+        entity.setUpdateTime(now);
+    }
+
+    @Override
+    protected void beforeUpdate(Object command, AuthorizationApp entity) {
+        entity.setUpdateTime(LocalDateTime.now());
     }
 }

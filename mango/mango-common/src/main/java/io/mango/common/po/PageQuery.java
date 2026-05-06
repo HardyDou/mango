@@ -2,20 +2,18 @@ package io.mango.common.po;
 
 import lombok.Data;
 
-import java.io.Serializable;
-
 /**
  * 分页请求参数。
  *
  * @author Mango
  */
 @Data
-public class PageQuery implements Serializable {
+public class PageQuery extends Query {
 
     private static final long serialVersionUID = 1L;
     private static final long DEFAULT_PAGE = 1L;
     private static final long DEFAULT_SIZE = 10L;
-    private static final long MAX_SIZE = 100L;
+    private static final long MAX_SIZE = 500L;
 
     /** 当前页，从 1 开始。 */
     private long page = DEFAULT_PAGE;
@@ -35,7 +33,7 @@ public class PageQuery implements Serializable {
     /**
      * 返回规范化后的分页大小。
      *
-     * @return 最小为 1、最大为 100 的分页大小。
+     * @return 最小为 1、最大为 500 的分页大小。
      */
     public long getSize() {
         if (size <= 0) {

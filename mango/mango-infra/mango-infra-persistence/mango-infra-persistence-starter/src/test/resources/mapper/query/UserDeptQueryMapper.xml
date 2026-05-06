@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.infra.persistence.starter.query.MultiTableQueryServiceIntegrationTest$UserDeptQueryMapper">
+
+    <resultMap id="UserDeptVOMap"
+               type="io.mango.infra.persistence.starter.query.MultiTableQueryServiceIntegrationTest$UserDeptVO">
+        <id column="user_id" property="userId"/>
+        <result column="username" property="username"/>
+        <result column="status" property="status"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="dept_id" property="deptId"/>
+        <result column="dept_name" property="deptName"/>
+    </resultMap>
+
+    <sql id="UserDeptColumns">
+        u.id AS user_id,
+        u.username AS username,
+        u.status AS status,
+        u.tenant_id AS tenant_id,
+        d.id AS dept_id,
+        d.name AS dept_name
+    </sql>
+
+    <sql id="TenantScopedUserDeptJoin">
+        FROM demo_user u
+        JOIN demo_dept d ON d.id = u.dept_id AND d.tenant_id = u.tenant_id
+        WHERE u.tenant_id = #{tenantId}
+    </sql>
+
+    <sql id="UserDeptConditions">
+        <if test="query.usernamePrefix != null and query.usernamePrefix != ''">
+            AND u.username LIKE CONCAT(#{query.usernamePrefix}, '%')
+        </if>
+        <if test="query.deptName != null and query.deptName != ''">
+            AND d.name = #{query.deptName}
+        </if>
+    </sql>
+
+    <select id="pageUserWithDept" resultMap="UserDeptVOMap">
+        SELECT
+        <include refid="UserDeptColumns"/>
+        <include refid="TenantScopedUserDeptJoin"/>
+        <include refid="UserDeptConditions"/>
+        ORDER BY u.username ASC
+    </select>
+</mapper>

@@ -85,7 +85,7 @@ public class CheckMojo extends AbstractMojo {
 
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, path-param, kv-key, test-fixture, persistence-schema.
+     * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -155,6 +155,7 @@ public class CheckMojo extends AbstractMojo {
             case "remote-adapter" -> checkRemoteAdapter();
             case "api-contract" -> checkApiContract();
             case "path-param" -> checkPathParam();
+            case "permission-param" -> checkPermissionParam();
             case "kv-key" -> checkKvKey();
             case "persistence-schema" -> checkPersistenceSchema();
             case "test-fixture" -> checkTestFixture();
@@ -167,6 +168,7 @@ public class CheckMojo extends AbstractMojo {
                 checkRemoteAdapter();
                 checkApiContract();
                 checkPathParam();
+                checkPermissionParam();
                 checkKvKey();
                 checkPersistenceSchema();
                 checkTestFixture();
@@ -1636,6 +1638,76 @@ public class CheckMojo extends AbstractMojo {
         return matcher.find();
     }
 
+    /**
+     * PERMISSION 接口必须声明明确 permission code，运行时只信任服务端同步的资源权限码。
+     */
+    private void checkPermissionParam() {
+        getLog().info("Checking permission access declarations...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<PathParamIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file) && !isMangoToolingFile(file) && !isPermissionAccessAnnotation(file)) {
+                        analyzePermissionParam(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (PathParamIssue issue : issues) {
+                result.addIssue("PERMISSION_PARAM", issue.severity, issue.file, issue.line,
+                        issue.description, "PERMISSION_PARAM", DOC_API_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description
+                        + " at " + issue.file + ":" + issue.line);
+            }
+            getLog().warn("Found " + issues.size() + " permission declaration violation(s)");
+        } else {
+            getLog().info("All permission access declaration checks passed");
+        }
+    }
+
+    private boolean isPermissionAccessAnnotation(Path file) {
+        return file.toString().replace('\\', '/').endsWith("/api/annotation/PermissionAccess.java");
+    }
+
+    private void analyzePermissionParam(Path file, List<PathParamIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            Matcher apiAccessMatcher = Pattern.compile("@ApiAccess\\s*\\((.*?)\\)", Pattern.DOTALL).matcher(content);
+            while (apiAccessMatcher.find()) {
+                String body = apiAccessMatcher.group(1);
+                if (body.contains("ApiResourceAccessMode.PERMISSION")
+                        && !Pattern.compile("\\bpermission\\s*=\\s*\"[^\"]+\"").matcher(body).find()) {
+                    issues.add(new PathParamIssue("CRITICAL", file.toString(),
+                            lineNumber(content, apiAccessMatcher.start()),
+                            "@ApiAccess PERMISSION 必须声明 permission，运行时只信任服务端同步的资源权限码"));
+                }
+            }
+            Matcher permissionAccessMatcher = Pattern.compile("@PermissionAccess(?:\\s*\\((.*?)\\))?", Pattern.DOTALL).matcher(content);
+            while (permissionAccessMatcher.find()) {
+                String body = permissionAccessMatcher.group(1);
+                if (body == null || !Pattern.compile("\"[^\"]+\"").matcher(body).find()) {
+                    issues.add(new PathParamIssue("CRITICAL", file.toString(),
+                            lineNumber(content, permissionAccessMatcher.start()),
+                            "@PermissionAccess 必须声明非空权限码"));
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new PathParamIssue("MAJOR", file.toString(), 0,
+                    "权限参数检查失败: " + e.getMessage()));
+        }
+    }
+
     private void analyzeKvKey(Path file, List<KvKeyIssue> issues) {
         try {
             String content = Files.readString(file);
@@ -1721,6 +1793,8 @@ public class CheckMojo extends AbstractMojo {
                     continue;
                 }
                 Set<String> columns = extractSqlColumns(statement);
+                Map<String, String> columnDefinitions = extractSqlColumnDefinitions(statement);
+                validateStandardIdColumn(tableName, columnDefinitions, statement, file, line, issues);
                 for (String requiredColumn : REQUIRED_PERSISTENCE_COLUMNS) {
                     if (!columns.contains(requiredColumn)) {
                         issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
@@ -1749,6 +1823,36 @@ public class CheckMojo extends AbstractMojo {
         return prefix.contains("mango-check: disable persistence-audit-fields");
     }
 
+    private void validateStandardIdColumn(String tableName, Map<String, String> columnDefinitions, String statement,
+                                          Path file, int line, List<PersistenceSchemaIssue> issues) {
+        String idDefinition = columnDefinitions.get("id");
+        if (idDefinition == null) {
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+                    "表 " + tableName + " 必须使用标准主键字段 id"));
+            return;
+        }
+        String normalizedDefinition = idDefinition.toLowerCase(Locale.ROOT);
+        if (!normalizedDefinition.matches("(?s).*\\bbigint(?:\\s*\\(\\s*20\\s*\\))?\\b.*")) {
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+                    "表 " + tableName + " 标准主键 id 必须为 BIGINT"));
+        }
+        if (normalizedDefinition.contains("auto_increment")) {
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+                    "表 " + tableName + " 标准主键 id 必须使用雪花算法，不允许 AUTO_INCREMENT"));
+        }
+        if (!hasIdPrimaryKey(statement, normalizedDefinition)) {
+            issues.add(new PersistenceSchemaIssue("CRITICAL", file.toString(), line,
+                    "表 " + tableName + " 必须以 id 作为主键"));
+        }
+    }
+
+    private boolean hasIdPrimaryKey(String statement, String idDefinition) {
+        if (idDefinition.contains("primary key")) {
+            return true;
+        }
+        return Pattern.compile("(?is)primary\\s+key\\s*\\(\\s*`?id`?\\s*\\)").matcher(statement).find();
+    }
+
     private Set<String> extractSqlColumns(String statement) {
         Set<String> columns = new HashSet<>();
         Matcher matcher = Pattern.compile("(?im)^\\s*`?([a-zA-Z][a-zA-Z0-9_]*)`?\\s+").matcher(statement);
@@ -1756,6 +1860,18 @@ public class CheckMojo extends AbstractMojo {
             String column = normalizeSqlName(matcher.group(1));
             if (!isSqlConstraintKeyword(column)) {
                 columns.add(column);
+            }
+        }
+        return columns;
+    }
+
+    private Map<String, String> extractSqlColumnDefinitions(String statement) {
+        Map<String, String> columns = new LinkedHashMap<>();
+        Matcher matcher = Pattern.compile("(?im)^\\s*`?([a-zA-Z][a-zA-Z0-9_]*)`?\\s+([^,\\n]+)").matcher(statement);
+        while (matcher.find()) {
+            String column = normalizeSqlName(matcher.group(1));
+            if (!isSqlConstraintKeyword(column)) {
+                columns.put(column, matcher.group(0));
             }
         }
         return columns;

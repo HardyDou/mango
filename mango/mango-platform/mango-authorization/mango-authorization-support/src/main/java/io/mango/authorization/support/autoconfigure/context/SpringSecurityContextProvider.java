@@ -1,8 +1,8 @@
 package io.mango.authorization.support.autoconfigure.context;
 
-import io.mango.authorization.api.security.ISecurityContextProvider;
-import io.mango.authorization.api.security.SecurityContext;
-import io.mango.authorization.api.security.SecurityPrincipal;
+import io.mango.authorization.api.ISecurityContextProvider;
+import io.mango.authorization.api.SecurityContext;
+import io.mango.authorization.api.SecurityPrincipal;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

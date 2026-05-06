@@ -1,7 +1,7 @@
 package io.mango.auth.starter.config;
 
-import io.mango.authorization.api.security.ISecurityContextProvider;
-import io.mango.authorization.api.security.ITokenProvider;
+import io.mango.authorization.api.ISecurityContextProvider;
+import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;

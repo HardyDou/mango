@@ -38,7 +38,7 @@ public class AppController implements AppApi {
     @Operation(summary = "获取应用入口列表")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:list")
     public R<List<AppVO>> list() {
-        return R.ok(appService.list());
+        return R.ok(appService.listByQuery(null));
     }
 
     @Override

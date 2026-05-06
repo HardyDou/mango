@@ -1,8 +1,8 @@
 package io.mango.authorization.support.autoconfigure;
 
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.authorization.api.security.ITokenProvider;
-import io.mango.authorization.security.core.impl.JjwtTokenServiceImpl;
+import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

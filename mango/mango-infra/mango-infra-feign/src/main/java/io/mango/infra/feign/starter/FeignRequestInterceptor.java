@@ -5,7 +5,7 @@ import feign.RequestTemplate;
 import io.mango.infra.context.core.MangoContextHeaders;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
-import io.mango.authorization.api.security.TokenContextHolder;
+import io.mango.authorization.api.TokenContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

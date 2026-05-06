@@ -21,7 +21,8 @@ public class AuthorizationRemoteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(IAuthorizationProvider.class)
-    public IAuthorizationProvider authorizationProvider(AuthorizationFeignClient authorizationFeignClient) {
+    public IAuthorizationProvider authorizationProvider(
+            AuthorizationFeignClient authorizationFeignClient) {
         return query -> {
             if (!AuthorizationQuery.SUBJECT_TYPE_USER.equals(query.subjectType())) {
                 return AuthorizationSnapshot.empty();

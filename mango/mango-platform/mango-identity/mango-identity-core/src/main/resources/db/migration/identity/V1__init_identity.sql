@@ -3,7 +3,7 @@
 -- ================================================
 
 CREATE TABLE IF NOT EXISTS `identity_user` (
-    `user_id` BIGINT NOT NULL COMMENT '用户ID' PRIMARY KEY,
+    `id` BIGINT NOT NULL COMMENT '主键' PRIMARY KEY,
     `username` VARCHAR(100) NOT NULL COMMENT '用户名',
     `password` VARCHAR(200) NOT NULL COMMENT '密码哈希',
     `nickname` VARCHAR(100) DEFAULT NULL COMMENT '昵称',

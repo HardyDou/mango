@@ -1,6 +1,6 @@
 package io.mango.authorization.support.autoconfigure;
 
-import io.mango.authorization.api.security.ISecurityContextProvider;
+import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.support.autoconfigure.context.SpringSecurityContextProvider;
 import io.mango.authorization.support.autoconfigure.web.JsonAccessDeniedHandler;
 import io.mango.authorization.support.autoconfigure.web.JsonAuthenticationEntryPoint;

@@ -9,6 +9,7 @@
 - **`@ConfigurationProperties` 模式** - `mango.doc.*` 前缀
 - **模块分组 API** - 基于 `META-INF/mango/module.properties` 按模块生成 API 文档分组
 - **接口范围标记** - 基于 `@ApiAccess(mode = INTERNAL)` 或 `@InternalApi` 标记对内接口，其余接口标记为对外接口
+- **单体/微服务兼容** - 单体应用直接暴露本应用文档；微服务可由网关聚合各服务 `/v3/api-docs/{group}` 后在 Swagger UI 下拉切换模块
 
 `mango-infra-doc` 只面向开发和联调体验，不属于核心运行时能力。
 
@@ -85,6 +86,17 @@ module-path=/auth
 - 未标注 `@ApiAccess(INTERNAL)` 的接口会标记为 `对外接口`。
 - `@PublicApi`、`@LoginApi`、`@PermissionAccess` 会被识别为对外接口。
 - OpenAPI 操作会同时带上 `x-mango-api-scope`，值为 `internal` 或 `external`。
+
+### 微服务网关访问
+
+微服务模式建议由 Gateway 暴露统一 Swagger 入口：
+
+- 网关依赖 `mango-infra-doc-starter` 和服务发现能力。
+- 各业务服务仍各自生成 `/v3/api-docs/{module}`。
+- 网关聚合这些 OpenAPI 地址，在 Swagger UI 分组下拉中展示模块名。
+- Try it out 请求统一走网关域名，鉴权请求携带 `Authorization` 和 `permissionCode` query 参数。
+
+单体模式不需要聚合，直接访问当前应用的 `/swagger-ui.html` 和 `/v3/api-docs/{module}` 即可。
 
 ### 添加 API 注解
 

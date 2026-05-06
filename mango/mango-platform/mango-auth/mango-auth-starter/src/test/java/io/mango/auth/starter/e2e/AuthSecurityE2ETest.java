@@ -12,11 +12,10 @@ import io.mango.auth.starter.controller.AuthController;
 import io.mango.common.result.R;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.authorization.api.security.IPermissionProvider;
-import io.mango.authorization.api.security.ISecurityContextProvider;
-import io.mango.authorization.api.security.ITokenProvider;
-import io.mango.authorization.api.security.SecurityPrincipal;
-import io.mango.authorization.security.core.impl.JjwtTokenServiceImpl;
+import io.mango.authorization.api.ISecurityContextProvider;
+import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.api.SecurityPrincipal;
+import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.vo.AuthUserInfo;
@@ -64,7 +63,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                         + "org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration,"
                         + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
                         + "io.mango.authorization.starter.AuthorizationAutoConfiguration,"
-                        + "io.mango.authorization.starter.config.AuthorizationSecurityAdapterAutoConfiguration,"
                         + "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure"
         })
 @AutoConfigureMockMvc
@@ -226,7 +224,7 @@ class AuthSecurityE2ETest {
 
         @Bean("apiResourceAuthorizationManager")
         AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
-                IPermissionProvider permissionProvider) {
+                IAuthorizationProvider authorizationProvider) {
             return (authenticationSupplier, context) -> {
                 if ("/auth/login".equals(context.getRequest().getRequestURI())) {
                     return new AuthorizationDecision(true);
@@ -239,13 +237,9 @@ class AuthSecurityE2ETest {
                     return new AuthorizationDecision(false);
                 }
                 Long userId = ((SecurityPrincipal) authentication.getPrincipal()).userId();
-                return new AuthorizationDecision(permissionProvider.listUserPermissions(userId).contains("e2e:read"));
+                return new AuthorizationDecision(
+                        authorizationProvider.load(AuthorizationQuery.user(userId)).permissionCodes().contains("e2e:read"));
             };
-        }
-
-        @Bean
-        IPermissionProvider permissionService(IAuthorizationProvider authorizationProvider) {
-            return userId -> authorizationProvider.load(AuthorizationQuery.user(userId)).permissionCodes().stream().toList();
         }
 
     }

@@ -22,7 +22,7 @@ public class SysI18n implements Serializable {
     /**
      * Primary key
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
