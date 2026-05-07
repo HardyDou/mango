@@ -73,10 +73,9 @@ public class ModuleGroupedOpenApiRegistrar implements ImportBeanDefinitionRegist
         GroupedOpenApi.Builder builder = GroupedOpenApi.builder()
                 .group(module.moduleName())
                 .displayName(module.moduleName() + " (" + String.join(", ", paths) + ")")
-                .pathsToMatch(pathsToMatch(paths));
-        if (properties.getModuleGrouping().isIncludeScopeTags()) {
-            builder.addOperationCustomizer(new MangoApiScopeOperationCustomizer());
-        }
+                .pathsToMatch(pathsToMatch(paths))
+                .addOperationCustomizer(new MangoApiScopeOperationCustomizer(
+                        properties.getModuleGrouping().isIncludeScopeTags()));
         return builder.build();
     }
 

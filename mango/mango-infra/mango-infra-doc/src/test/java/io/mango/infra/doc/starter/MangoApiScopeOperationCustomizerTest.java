@@ -42,6 +42,19 @@ class MangoApiScopeOperationCustomizerTest {
         assertFalse(permissionOperation.getTags() != null && permissionOperation.getTags().contains("对外接口"));
     }
 
+    @Test
+    void shouldAttachBearerAuthToNonPublicApis() throws NoSuchMethodException {
+        Operation publicOperation = customizer.customize(new Operation(), handlerMethod("publicApi"));
+        Operation permissionOperation = customizer.customize(new Operation(), handlerMethod("permission"));
+        Operation loginOperation = customizer.customize(new Operation(), handlerMethod("login"));
+
+        assertTrue(publicOperation.getSecurity() == null || publicOperation.getSecurity().isEmpty());
+        assertTrue(permissionOperation.getSecurity().stream()
+                .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME)));
+        assertTrue(loginOperation.getSecurity().stream()
+                .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME)));
+    }
+
     private HandlerMethod handlerMethod(String methodName) throws NoSuchMethodException {
         Method method = TestController.class.getDeclaredMethod(methodName);
         return new HandlerMethod(new TestController(), method);
@@ -59,6 +72,9 @@ class MangoApiScopeOperationCustomizerTest {
 
         @PermissionAccess("doc:test")
         void permission() {
+        }
+
+        void login() {
         }
     }
 }

@@ -29,8 +29,6 @@ import org.springframework.context.annotation.Import;
 @Import(ModuleGroupedOpenApiRegistrar.class)
 public class DocAutoConfiguration {
 
-    private static final String BEARER_AUTH_SCHEME = "BearerAuth";
-
     @Bean
     public OpenAPI mangoOpenAPI(DocProperties properties) {
         return new OpenAPI()
@@ -44,12 +42,12 @@ public class DocAutoConfiguration {
                         .license(new License()
                                 .name(properties.getLicense())))
                 .components(new Components()
-                        .addSecuritySchemes(BEARER_AUTH_SCHEME, new SecurityScheme()
+                        .addSecuritySchemes(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME, new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .description("输入登录接口返回的 accessToken，调试时会作为 Authorization: Bearer <token> 发送")))
-                .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH_SCHEME));
+                .addSecurityItem(new SecurityRequirement().addList(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME));
     }
 
     @Bean
@@ -57,10 +55,9 @@ public class DocAutoConfiguration {
     public GroupedOpenApi publicApi(DocProperties properties) {
         GroupedOpenApi.Builder builder = GroupedOpenApi.builder()
                 .group(properties.getGroup())
-                .pathsToMatch(properties.getPathsToMatch());
-        if (properties.getModuleGrouping().isIncludeScopeTags()) {
-            builder.addOperationCustomizer(new MangoApiScopeOperationCustomizer());
-        }
+                .pathsToMatch(properties.getPathsToMatch())
+                .addOperationCustomizer(new MangoApiScopeOperationCustomizer(
+                        properties.getModuleGrouping().isIncludeScopeTags()));
         return builder.build();
     }
 
