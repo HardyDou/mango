@@ -8,6 +8,7 @@
             <el-button
               type="primary"
               @click="handleExport"
+              disabled
             >
               导出
             </el-button>
@@ -285,7 +286,7 @@ function handleDetail(row: SysOperationLog) {
 }
 
 function handleExport() {
-  window.open(`/api/log/operation/export?startTime=${query.startTime}&endTime=${query.endTime}`, '_blank');
+  ElMessage.info('后端暂未提供操作日志导出接口');
 }
 
 function handleClean() {

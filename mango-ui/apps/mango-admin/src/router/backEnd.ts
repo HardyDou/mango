@@ -39,6 +39,13 @@ export async function initBackEndControlRoutes(): Promise<void> {
 
     // 存储路由列表
     storesRoutesList.setRoutesList(accessRoutes);
+    const activeTopRoute = accessRoutes.find(route =>
+      router.currentRoute.value.path === route.path
+      || router.currentRoute.value.path.startsWith(`${route.path}/`)
+    ) || accessRoutes[0];
+    if (activeTopRoute?.path) {
+      storesRoutesList.setActiveTopRoutePath(activeTopRoute.path);
+    }
 
     // 动态添加路由
     // 首先添加布局路由（如果不存在）

@@ -4,3 +4,4 @@ export { default as UserView } from './views/user/index.vue';
 export { default as PermissionView } from './views/permission/index.vue';
 export * from './api/menu';
 export * from './api/org';
+export * from './api/role';

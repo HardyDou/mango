@@ -27,6 +27,24 @@
       <!-- 其他布局：显示面包屑 -->
       <BreadcrumbIndex v-else />
     </div>
+    <div class="layout-top-systems">
+      <button
+        v-for="item in topMenus"
+        :key="item.path"
+        type="button"
+        class="layout-top-system-item"
+        :class="{ active: item.path === activeTopRoutePath }"
+        @click="onTopMenuClick(item)"
+      >
+        <el-icon
+          v-if="item.meta?.icon && iconMap[item.meta.icon]"
+          :size="16"
+        >
+          <component :is="iconMap[item.meta.icon]" />
+        </el-icon>
+        <span>{{ item.meta?.title || item.name }}</span>
+      </button>
+    </div>
     <div class="layout-navbars-container-right">
       <el-icon :size="20">
         <Search />
@@ -41,8 +59,12 @@
 </template>
 
 <script setup lang="ts" name="layoutNavBars">
-import { defineAsyncComponent } from 'vue';
+import { computed, defineAsyncComponent, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
+import { useRoutesList } from '@/stores/routesList';
+import { iconMap } from '@/config/iconConfig';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -50,7 +72,29 @@ const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
 const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 
+const route = useRoute();
+const router = useRouter();
 const layoutStore = useLayoutStore();
+const storesRoutesList = useRoutesList();
+const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
+
+const topMenus = computed(() => routesList.value.filter(item => !item.meta?.isHide));
+
+const findTopByPath = (path: string) => {
+  return topMenus.value.find(item => path === item.path || path.startsWith(`${item.path}/`))
+    || topMenus.value[0];
+};
+
+const resolveFirstRoute = (item: any): string => {
+  if (item.redirect && typeof item.redirect === 'string') {
+    return item.redirect;
+  }
+  const firstChild = item.children?.[0];
+  if (firstChild) {
+    return resolveFirstRoute(firstChild);
+  }
+  return item.path;
+};
 
 const toggleCollapse = () => {
   layoutStore.toggleCollapse();
@@ -59,6 +103,25 @@ const toggleCollapse = () => {
 const onToggleMobileMenu = () => {
   layoutStore.toggleMobileMenu();
 };
+
+const onTopMenuClick = (item: any) => {
+  storesRoutesList.setActiveTopRoutePath(item.path);
+  const targetPath = resolveFirstRoute(item);
+  if (targetPath && targetPath !== route.path) {
+    router.push(targetPath);
+  }
+};
+
+watch(
+  () => [route.path, topMenus.value],
+  () => {
+    const matchedTop = findTopByPath(route.path);
+    if (matchedTop && matchedTop.path !== activeTopRoutePath.value) {
+      storesRoutesList.setActiveTopRoutePath(matchedTop.path);
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="scss">
@@ -77,6 +140,44 @@ const onToggleMobileMenu = () => {
     align-items: center;
     height: 40px;
     gap: 12px;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+
+  .layout-top-systems {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 2px;
+    margin-left: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .layout-top-system-item {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--mango-color-top-bar);
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 34px;
+
+    &:hover,
+    &.active {
+      background: rgba(255, 255, 255, 0.16);
+    }
   }
 
   .layout-navbars-container-right {
@@ -86,6 +187,7 @@ const onToggleMobileMenu = () => {
     gap: 12px;
     padding-right: 8px;
     margin-left: auto;
+    flex-shrink: 0;
   }
 
   .hamburger {
@@ -148,6 +250,15 @@ const onToggleMobileMenu = () => {
 
 // 移动端：显示汉堡按钮 + 隐藏经典布局的折叠按钮
 @media screen and (max-width: 1000px) {
+  .layout-top-systems {
+    max-width: calc(100vw - 210px);
+    margin-left: 4px;
+  }
+
+  .layout-top-system-item {
+    padding: 0 10px;
+  }
+
   .hamburger:not(.hamburger-mobile) {
     display: none !important;
   }

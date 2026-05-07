@@ -9,6 +9,7 @@ import type { Component } from 'vue';
 const elementPlusIconNames = [
   'HomeFilled',
   'User',
+  'UserFilled',
   'Lock',
   'Search',
   'Setting',
@@ -24,7 +25,9 @@ const elementPlusIconNames = [
   'Grid',
   'Coin',
   'List',
+  'Collection',
   'Tickets',
+  'DocumentChecked',
   'Tools',
   'Clock',
   'Management',

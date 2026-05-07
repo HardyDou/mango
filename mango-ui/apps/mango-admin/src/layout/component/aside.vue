@@ -53,19 +53,41 @@ const layoutAsideScrollbarRef = ref();
 const storesRoutesList = useRoutesList();
 const layoutStore = useLayoutStore();
 const storesTagsViewRoutes = useTagsViewRoutes();
-const { routesList, isColumnsMenuHover, isColumnsNavHover } = storeToRefs(storesRoutesList);
+const { routesList, activeTopRoutePath, isColumnsMenuHover, isColumnsNavHover } = storeToRefs(storesRoutesList);
 const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
 const menuList = ref<any[]>([]);
 const columnsChildren = ref<any[]>([]);
 const clientWidth = ref(document.body.clientWidth);
 
+const findRouteTop = (items: any[], path: string): any | undefined => {
+  for (const item of items) {
+    if (path === item.path || path.startsWith(`${item.path}/`)) {
+      return item;
+    }
+  }
+  return items[0];
+};
+
+const getSideMenus = (items: any[], topPath?: string): any[] => {
+  if (!items || items.length === 0) {
+    return [];
+  }
+  const activeTop = topPath
+    ? items.find(item => item.path === topPath)
+    : findRouteTop(items, route.path);
+  if (!activeTop) {
+    return items;
+  }
+  return activeTop.children && activeTop.children.length > 0 ? activeTop.children : [activeTop];
+};
+
 watch(
-  () => routesList.value,
-  (newVal) => {
+  () => [routesList.value, activeTopRoutePath.value, route.path],
+  () => {
     // columns 布局时，菜单由 mitt setSendColumnsChildren 事件管理，不直接使用 routesList
     if (layoutStore.layout !== 'columns') {
-      menuList.value = newVal;
+      menuList.value = getSideMenus(routesList.value, activeTopRoutePath.value);
     }
   },
   { immediate: true }
@@ -75,6 +97,10 @@ watch(
 watch(
   () => route.path,
   () => {
+    const matchedTop = findRouteTop(routesList.value, route.path);
+    if (matchedTop && matchedTop.path !== activeTopRoutePath.value) {
+      storesRoutesList.setActiveTopRoutePath(matchedTop.path);
+    }
     layoutStore.closeMobileMenu();
   }
 );

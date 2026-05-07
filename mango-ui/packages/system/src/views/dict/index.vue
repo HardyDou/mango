@@ -373,6 +373,9 @@ async function loadTypeList() {
   try {
     const data = await dictTypeApi.list({ keyword: typeKeyword.value });
     typeList.value = data.list;
+    if (!currentType.value && typeList.value.length > 0) {
+      handleSelectType(typeList.value[0]);
+    }
   } catch (error) {
     console.error('加载字典类型失败:', error);
   }
@@ -445,6 +448,7 @@ const dataFormRef = ref<FormInstance>();
 const dataForm = reactive<DictData>({
   id: undefined,
   typeId: 0,
+  dictType: '',
   label: '',
   value: '',
   sort: 0,
@@ -504,6 +508,7 @@ function handleAddData() {
   if (!currentType.value) return;
   dataForm.id = undefined;
   dataForm.typeId = currentType.value.id!;
+  dataForm.dictType = currentType.value.code;
   dataForm.label = '';
   dataForm.value = '';
   dataForm.sort = 0;
@@ -518,6 +523,7 @@ function handleAddData() {
 function handleEditData(row: DictData) {
   dataForm.id = row.id;
   dataForm.typeId = row.typeId;
+  dataForm.dictType = row.dictType || currentType.value?.code || '';
   dataForm.label = row.label;
   dataForm.value = row.value;
   dataForm.sort = row.sort || 0;
