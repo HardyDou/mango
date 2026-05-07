@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 /**
  * Area controller for administrative divisions
  *
@@ -23,22 +24,12 @@ public class SysAreaController {
 
     private final ISysAreaService areaService;
 
-    /**
-     * Get area tree with lazy loading
-     * Returns root + first level children on first call
-     *
-     * @param type     area level filter (1-4), null for all levels
-     * @param parentId  parent ID for lazy loading (default 0 for root)
-     * @return tree structure
-     */
     @GetMapping("/tree")
-    @Operation(summary = "获取行政区划树", description = "登录接口。按父级行政区划ID懒加载行政区划列表")
-    public R<List<SysArea>> tree(
-            @Parameter(description = "父级行政区划ID，根节点为 0")
-            @RequestParam(value = "parentId", required = false, defaultValue = "0") Long parentId) {
-        // 返回平铺列表，不包含children，支持懒加载
-        List<SysArea> areas = areaService.listByPid(parentId);
-        return R.ok(areas);
+    @Operation(summary = "获取行政区划树", description = "登录接口。按最大行政区划层级返回树，默认只返回省级")
+    public R<List<Map<String, Object>>> tree(
+            @Parameter(description = "最大行政区划层级：1-省，2-市，3-区县，4-街道；默认 1")
+            @RequestParam(value = "type", required = false) Integer type) {
+        return R.ok(areaService.tree(type));
     }
 
     /**

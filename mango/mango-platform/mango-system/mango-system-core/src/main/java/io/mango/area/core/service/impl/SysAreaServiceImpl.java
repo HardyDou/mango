@@ -8,13 +8,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Area service implementation with lazy loading tree support
+ * Area service implementation.
  *
  * @author Mango
  */
@@ -24,71 +26,64 @@ public class SysAreaServiceImpl implements ISysAreaService {
 
     private final SysAreaMapper areaMapper;
 
-    /**
-     * Maximum tree depth levels
-     * 1=省, 2=市, 3=区/县, 4=街道
-     */
-    private static final int MAX_LEVEL = 4;
+    private static final int DEFAULT_TREE_LEVEL = 1;
+    private static final int MAX_TREE_LEVEL = 4;
 
     @Override
     public List<Map<String, Object>> tree(Integer type) {
-        // Default to root (parentId=0) with max level
-        return treeByParentId(0L, type, MAX_LEVEL);
-    }
-
-    /**
-     * Get tree by parent ID with lazy loading
-     *
-     * @param parentId parent ID (0 for root)
-     * @param type     area type filter (1-4), null for all
-     * @param maxLevel maximum depth to load
-     * @return tree structure
-     */
-    private List<Map<String, Object>> treeByParentId(Long parentId, Integer type, int maxLevel) {
-        if (maxLevel <= 0) {
-            return new ArrayList<>();
-        }
-
+        int maxLevel = normalizeTreeLevel(type);
         LambdaQueryWrapper<SysArea> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysArea::getPid, parentId)
-                .eq(SysArea::getAreaStatus, "1")
+        wrapper.eq(SysArea::getAreaStatus, "1")
+                .le(SysArea::getAreaType, String.valueOf(maxLevel))
                 .orderByAsc(SysArea::getAreaSort)
                 .orderByAsc(SysArea::getId);
 
-        if (type != null) {
-            wrapper.le(SysArea::getAreaType, type.toString());
+        List<SysArea> areas = areaMapper.selectList(wrapper);
+        Map<Long, List<SysArea>> childrenByParentId = areas.stream()
+                .sorted(Comparator.comparing(SysArea::getAreaSort, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(SysArea::getId, Comparator.nullsLast(Long::compareTo)))
+                .collect(Collectors.groupingBy(area -> area.getPid() == null ? 0L : area.getPid()));
+
+        return childrenByParentId.getOrDefault(0L, new ArrayList<>())
+                .stream()
+                .map(area -> buildTreeNode(area, childrenByParentId))
+                .collect(Collectors.toList());
+    }
+
+    private int normalizeTreeLevel(Integer type) {
+        if (type == null) {
+            return DEFAULT_TREE_LEVEL;
         }
+        return Math.max(DEFAULT_TREE_LEVEL, Math.min(type, MAX_TREE_LEVEL));
+    }
 
-        List<SysArea> children = areaMapper.selectList(wrapper);
+    private Map<String, Object> buildTreeNode(SysArea area, Map<Long, List<SysArea>> childrenByParentId) {
+        List<Map<String, Object>> children = childrenByParentId.getOrDefault(area.getId(), new ArrayList<>())
+                .stream()
+                .map(child -> buildTreeNode(child, childrenByParentId))
+                .collect(Collectors.toList());
+        Map<String, Object> node = new HashMap<>();
+        node.put("id", area.getId());
+        node.put("pid", area.getPid());
+        node.put("parentId", area.getPid());
+        node.put("adcode", area.getAdcode());
+        node.put("name", area.getName());
+        node.put("level", parseAreaType(area.getAreaType()));
+        node.put("hot", area.getHot());
+        node.put("children", children);
+        node.put("leaf", children.isEmpty());
+        return node;
+    }
 
-        return children.stream().map(area -> {
-            Map<String, Object> node = new HashMap<>();
-            node.put("id", area.getId());
-            node.put("pid", area.getPid());
-            node.put("adcode", area.getAdcode());
-            node.put("name", area.getName());
-            node.put("level", area.getAreaType());
-            node.put("hot", "1".equals(area.getHot()));
-
-            // Lazy load children if within max level
-            if (maxLevel > 1) {
-                int childLevel = maxLevel - 1;
-                // Only load children if we haven't exceeded the type filter
-                if (type == null || Integer.parseInt(area.getAreaType()) < type) {
-                    List<Map<String, Object>> childNodes = treeByParentId(area.getId(), type, childLevel);
-                    node.put("children", childNodes);
-                    node.put("leaf", childNodes.isEmpty());
-                } else {
-                    node.put("children", new ArrayList<>());
-                    node.put("leaf", true);
-                }
-            } else {
-                node.put("children", new ArrayList<>());
-                node.put("leaf", true);
-            }
-
-            return node;
-        }).collect(Collectors.toList());
+    private Integer parseAreaType(String areaType) {
+        if (Objects.isNull(areaType) || areaType.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(areaType);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override

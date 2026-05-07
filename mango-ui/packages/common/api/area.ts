@@ -16,7 +16,11 @@ export function getAreaTree(params?: AreaTreeParams): Promise<AreaNode[]> {
   if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {
     return Promise.resolve(getMockAreaTree());
   }
-  return get('/system/area/tree', { params }).then((res: any) => {
+  const url = params?.parentId && params.parentId > 0 ? '/system/area/children' : '/system/area/tree';
+  const requestParams = params?.parentId && params.parentId > 0
+    ? { parentId: params.parentId }
+    : { type: params?.type };
+  return get(url, { params: requestParams }).then((res: any) => {
     if (res && Array.isArray(res)) {
       return transformAreaTree(res);
     }
@@ -29,7 +33,7 @@ function transformAreaTree(data: any[]): AreaNode[] {
     id: item.id,
     name: item.name,
     parentId: item.pid !== undefined ? item.pid : (item.parentId || 0),
-    level: item.level,
+    level: item.level !== undefined ? Number(item.level) : Number(item.areaType),
     hot: item.hot,
     children: item.children?.length ? transformAreaTree(item.children) : undefined,
   }));
