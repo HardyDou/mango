@@ -35,7 +35,7 @@ public class AppController implements AppApi {
 
     @Override
     @GetMapping
-    @Operation(summary = "获取应用入口列表")
+    @Operation(summary = "获取应用入口列表", description = "权限接口。查询授权应用入口列表")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:list")
     public R<List<AppVO>> list() {
         return R.ok(appService.listByQuery(null));
@@ -43,7 +43,7 @@ public class AppController implements AppApi {
 
     @Override
     @GetMapping("/detail")
-    @Operation(summary = "获取应用入口详情")
+    @Operation(summary = "获取应用入口详情", description = "权限接口。按应用ID查询授权应用入口详情")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:query")
     public R<AppVO> get(@Parameter(description = "应用ID") @RequestParam Long appId) {
         AppVO app = appService.get(appId);
@@ -52,7 +52,7 @@ public class AppController implements AppApi {
 
     @Override
     @PostMapping
-    @Operation(summary = "创建应用入口")
+    @Operation(summary = "创建应用入口", description = "权限接口。创建授权应用入口")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:add")
     public R<Long> create(@RequestBody AppCommand command) {
         return R.ok(appService.create(command));
@@ -60,7 +60,7 @@ public class AppController implements AppApi {
 
     @Override
     @PutMapping
-    @Operation(summary = "更新应用入口")
+    @Operation(summary = "更新应用入口", description = "权限接口。更新授权应用入口")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:edit")
     public R<Boolean> update(@RequestBody AppCommand command) {
         Boolean success = appService.update(command);
@@ -69,7 +69,7 @@ public class AppController implements AppApi {
 
     @Override
     @DeleteMapping
-    @Operation(summary = "删除应用入口")
+    @Operation(summary = "删除应用入口", description = "权限接口。按应用ID删除授权应用入口")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:delete")
     public R<Boolean> delete(@Parameter(description = "应用ID") @RequestParam Long appId) {
         Boolean success = appService.delete(appId);

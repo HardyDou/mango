@@ -28,6 +28,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
@@ -121,6 +123,7 @@ public class AuthController implements AuthApi {
 
     @PostMapping("/login")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "用户登录")
+    @Operation(summary = "用户登录", description = "公开接口。使用用户名、密码、登录域和验证码信息登录，成功后返回访问令牌、刷新令牌和用户授权信息")
     public R<LoginVO> loginEndpoint(
             @Valid @RequestBody LoginCommand loginCommand,
             HttpServletRequest request,
@@ -174,6 +177,7 @@ public class AuthController implements AuthApi {
 
     @PostMapping("/refresh")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "刷新访问令牌")
+    @Operation(summary = "刷新访问令牌", description = "公开接口。使用刷新令牌换取新的访问令牌")
     public R<LoginVO> refreshEndpoint(@Valid @RequestBody RefreshTokenCommand command) {
         return refreshToken(command);
     }
@@ -189,7 +193,9 @@ public class AuthController implements AuthApi {
 
     @PostMapping("/logout")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "用户退出登录")
+    @Operation(summary = "用户退出登录", description = "登录接口。退出当前登录状态并清理浏览器令牌 Cookie；令牌可通过请求体或 Authorization 请求头传入")
     public R<Void> logoutEndpoint(@Valid @RequestBody(required = false) LogoutCommand command,
+                                  @Parameter(description = "访问令牌，格式为 Bearer <accessToken>")
                                   @RequestHeader(value = "Authorization", required = false) String token,
                                   HttpServletResponse response) {
         String resolvedToken = command != null && command.getToken() != null ? command.getToken() : token;
@@ -211,13 +217,17 @@ public class AuthController implements AuthApi {
 
     @PostMapping("/validate")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "校验令牌")
+    @Operation(summary = "校验访问令牌", description = "登录接口。校验访问令牌是否仍然有效")
     public R<Boolean> validateEndpoint(@Valid @RequestBody ValidateTokenCommand command) {
         return validateToken(command);
     }
 
     @GetMapping("/info")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取当前登录用户信息")
-    public R<LoginVO> info(@RequestHeader(value = "Authorization", required = false) String token) {
+    @Operation(summary = "获取当前用户信息", description = "登录接口。根据 Authorization 请求头中的访问令牌返回当前用户资料、角色和权限")
+    public R<LoginVO> info(
+            @Parameter(description = "访问令牌，格式为 Bearer <accessToken>")
+            @RequestHeader(value = "Authorization", required = false) String token) {
         String resolvedToken = stripBearer(token);
         Long userId = tokenProvider.getUserId(resolvedToken);
         if (userId == null) {
@@ -245,6 +255,7 @@ public class AuthController implements AuthApi {
 
     @PostMapping("/captcha/send")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "发送短信或邮件验证码")
+    @Operation(summary = "发送登录验证码", description = "公开接口。发送短信或邮件验证码，用于登录、注册、找回密码等业务场景")
     public R<String> sendCaptcha(@Valid @RequestBody CaptchaSendRequest request) {
         CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
         if (captchaApi == null) {

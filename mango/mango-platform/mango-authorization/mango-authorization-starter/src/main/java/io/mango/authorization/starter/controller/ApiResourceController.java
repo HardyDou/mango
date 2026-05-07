@@ -8,9 +8,9 @@ import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.authorization.core.service.IApiResourceService;
 import io.mango.common.result.R;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +36,7 @@ public class ApiResourceController implements ApiResourceApi {
     @Operation(summary = "注册 API 资源", description = "注册服务启动时扫描到的 API 资源定义")
     @Override
     public R<ApiResourceRegisterResultVO> registerApiResources(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "API 资源注册命令列表")
             @RequestBody List<ApiResourceRegisterCommand> resources) {
         return R.ok(apiResourceService.registerApiResources(resources));
     }
@@ -43,7 +44,7 @@ public class ApiResourceController implements ApiResourceApi {
     @GetMapping("/api-resources/access-decision")
     @Operation(summary = "解析 API 访问决策", description = "根据 HTTP 方法和请求路径解析访问模式与权限码")
     @Override
-    public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
+    public R<ApiResourceAccessDecisionVO> resolveAccessDecision(@ParameterObject ApiResourceAccessDecisionQuery query) {
         return R.ok(apiResourceService.resolveAccessDecision(query.getHttpMethod(), query.getPath()));
     }
 

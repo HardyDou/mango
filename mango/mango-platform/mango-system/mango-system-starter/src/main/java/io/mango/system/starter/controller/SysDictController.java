@@ -9,6 +9,8 @@ import io.mango.system.api.vo.DictTypeVO;
 import io.mango.system.api.vo.DictDataVO;
 import io.mango.system.api.vo.DictOptionVO;
 import io.mango.system.core.service.IDictService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,67 +28,90 @@ public class SysDictController {
 
     @GetMapping("/type/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:list")
+    @Operation(summary = "获取字典类型列表", description = "权限接口。查询全部字典类型")
     public R<List<DictTypeVO>> listTypes() {
         return dictService.listTypes();
     }
 
     @GetMapping("/type/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:query")
-    public R<DictTypeVO> getType(@RequestParam Long id) {
+    @Operation(summary = "获取字典类型详情", description = "权限接口。按字典类型ID查询详情")
+    public R<DictTypeVO> getType(
+            @Parameter(description = "字典类型ID")
+            @RequestParam Long id) {
         return dictService.getType(id);
     }
 
     @PostMapping("/type")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:add")
+    @Operation(summary = "新增字典类型", description = "权限接口。创建字典类型")
     public R<Long> createType(@RequestBody @Valid DictTypePo po) {
         return dictService.createType(po);
     }
 
     @PutMapping("/type")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:edit")
+    @Operation(summary = "修改字典类型", description = "权限接口。更新字典类型")
     public R<Boolean> updateType(@RequestBody @Valid DictTypePo po) {
         return dictService.updateType(po);
     }
 
     @DeleteMapping("/type")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:delete")
-    public R<Boolean> deleteType(@RequestParam Long id) {
+    @Operation(summary = "删除字典类型", description = "权限接口。按字典类型ID删除字典类型")
+    public R<Boolean> deleteType(
+            @Parameter(description = "字典类型ID")
+            @RequestParam Long id) {
         return dictService.deleteType(id);
     }
 
     @GetMapping("/data/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:list")
-    public R<List<DictDataVO>> listData(@RequestParam(required = false) Long typeId) {
+    @Operation(summary = "获取字典数据列表", description = "权限接口。按字典类型ID查询字典数据列表")
+    public R<List<DictDataVO>> listData(
+            @Parameter(description = "字典类型ID")
+            @RequestParam(required = false) Long typeId) {
         return dictService.listData(typeId);
     }
 
     @GetMapping("/data/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:query")
-    public R<DictDataVO> getData(@RequestParam Long id) {
+    @Operation(summary = "获取字典数据详情", description = "权限接口。按字典数据ID查询详情")
+    public R<DictDataVO> getData(
+            @Parameter(description = "字典数据ID")
+            @RequestParam Long id) {
         return dictService.getData(id);
     }
 
     @PostMapping("/data")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:add")
+    @Operation(summary = "新增字典数据", description = "权限接口。创建字典数据")
     public R<Long> createData(@RequestBody @Valid DictDataPo po) {
         return dictService.createData(po);
     }
 
     @PutMapping("/data")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:edit")
+    @Operation(summary = "修改字典数据", description = "权限接口。更新字典数据")
     public R<Boolean> updateData(@RequestBody @Valid DictDataPo po) {
         return dictService.updateData(po);
     }
 
     @DeleteMapping("/data")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:delete")
-    public R<Boolean> deleteData(@RequestParam Long id) {
+    @Operation(summary = "删除字典数据", description = "权限接口。按字典数据ID删除字典数据")
+    public R<Boolean> deleteData(
+            @Parameter(description = "字典数据ID")
+            @RequestParam Long id) {
         return dictService.deleteData(id);
     }
 
     @GetMapping("/data/options")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:data:list")
-    public R<List<DictOptionVO>> getOptions(@RequestParam String typeCode) {
+    @Operation(summary = "获取字典选项", description = "权限接口。按字典类型编码查询可选项")
+    public R<List<DictOptionVO>> getOptions(
+            @Parameter(description = "字典类型编码")
+            @RequestParam String typeCode) {
         return dictService.getOptions(typeCode);
     }
 }

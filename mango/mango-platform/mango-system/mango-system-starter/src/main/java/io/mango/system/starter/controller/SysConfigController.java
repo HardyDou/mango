@@ -6,6 +6,8 @@ import io.mango.common.result.R;
 import io.mango.system.api.po.SysConfigPo;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.core.service.ISysConfigService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,48 +25,68 @@ public class SysConfigController {
 
     @GetMapping("/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
-    public R<List<SysConfigPo>> list(@RequestParam(required = false) ConfigTypeEnum type) {
+    @Operation(summary = "获取系统配置列表", description = "权限接口。按配置类型查询系统配置列表")
+    public R<List<SysConfigPo>> list(
+            @Parameter(description = "配置类型")
+            @RequestParam(required = false) ConfigTypeEnum type) {
         return configService.list(type);
     }
 
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:query")
-    public R<SysConfigPo> get(@RequestParam Long id) {
+    @Operation(summary = "获取系统配置详情", description = "权限接口。按配置ID查询系统配置详情")
+    public R<SysConfigPo> get(
+            @Parameter(description = "配置ID")
+            @RequestParam Long id) {
         return configService.get(id);
     }
 
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:add")
+    @Operation(summary = "新增系统配置", description = "权限接口。创建系统配置")
     public R<Long> create(@RequestBody @Valid SysConfigPo po) {
         return configService.create(po);
     }
 
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:edit")
+    @Operation(summary = "修改系统配置", description = "权限接口。更新系统配置")
     public R<Boolean> update(@RequestBody @Valid SysConfigPo po) {
         return configService.update(po);
     }
 
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:delete")
-    public R<Boolean> delete(@RequestParam Long id) {
+    @Operation(summary = "删除系统配置", description = "权限接口。按配置ID删除系统配置")
+    public R<Boolean> delete(
+            @Parameter(description = "配置ID")
+            @RequestParam Long id) {
         return configService.delete(id);
     }
 
     @PutMapping("/value")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:edit")
-    public R<Boolean> updateValue(@RequestParam Long id, @RequestParam String value) {
+    @Operation(summary = "修改系统配置值", description = "权限接口。按配置ID快速修改配置值")
+    public R<Boolean> updateValue(
+            @Parameter(description = "配置ID")
+            @RequestParam Long id,
+            @Parameter(description = "配置值")
+            @RequestParam String value) {
         return configService.updateValue(id, value);
     }
 
     @GetMapping("/type")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
-    public R<List<SysConfigPo>> listByType(@RequestParam ConfigTypeEnum type) {
+    @Operation(summary = "按类型获取系统配置", description = "权限接口。按配置类型查询系统配置列表")
+    public R<List<SysConfigPo>> listByType(
+            @Parameter(description = "配置类型")
+            @RequestParam ConfigTypeEnum type) {
         return configService.list(type);
     }
 
     @GetMapping("/groups")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
+    @Operation(summary = "获取系统配置分组", description = "权限接口。查询当前系统支持的配置类型分组")
     public R<List<String>> groups() {
         return configService.listTypes();
     }

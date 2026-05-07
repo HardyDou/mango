@@ -30,7 +30,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @GetMapping
-    @Operation(summary = "获取角色列表")
+    @Operation(summary = "获取角色列表", description = "权限接口。查询当前授权应用的角色列表")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:list")
     public R<List<RoleVO>> list() {
         List<RoleVO> roles = roleService.list();
@@ -39,7 +39,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @GetMapping("/detail")
-    @Operation(summary = "获取角色详情")
+    @Operation(summary = "获取角色详情", description = "权限接口。按角色ID查询角色详情")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
     public R<RoleVO> get(@Parameter(description = "角色ID") @RequestParam Long id) {
         RoleVO role = roleService.get(id);
@@ -51,7 +51,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @PostMapping
-    @Operation(summary = "创建角色")
+    @Operation(summary = "创建角色", description = "权限接口。创建授权角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:add")
     public R<Long> create(@RequestBody RoleCommand command) {
         Long roleId = roleService.create(command);
@@ -60,7 +60,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @PutMapping
-    @Operation(summary = "更新角色")
+    @Operation(summary = "更新角色", description = "权限接口。更新授权角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:edit")
     public R<Boolean> update(@RequestBody RoleCommand command) {
         Boolean success = roleService.update(command);
@@ -69,7 +69,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @DeleteMapping
-    @Operation(summary = "删除角色")
+    @Operation(summary = "删除角色", description = "权限接口。按角色ID删除授权角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:delete")
     public R<Boolean> delete(@Parameter(description = "角色ID") @RequestParam Long id) {
         Boolean success = roleService.delete(id);
@@ -78,7 +78,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @GetMapping("/subjects")
-    @Operation(summary = "获取主体的角色")
+    @Operation(summary = "获取主体的角色", description = "权限接口。按主体ID查询已分配角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
     public R<List<RoleVO>> getSubjectRoles(
             @Parameter(description = "主体ID") @RequestParam Long subjectId) {
@@ -88,7 +88,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @PostMapping("/subjects")
-    @Operation(summary = "分配角色给主体")
+    @Operation(summary = "分配角色给主体", description = "权限接口。给用户等主体分配角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
     public R<Boolean> assignRoles(@RequestBody AssignSubjectRolesCommand command) {
         roleService.assignRoles(command);
@@ -97,7 +97,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @GetMapping("/menus")
-    @Operation(summary = "获取角色的菜单ID列表")
+    @Operation(summary = "获取角色的菜单ID列表", description = "权限接口。按角色ID查询已分配菜单ID列表")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
     public R<List<Long>> getRoleMenuIds(
             @Parameter(description = "角色ID") @RequestParam Long roleId) {
@@ -107,7 +107,7 @@ public class RoleController implements RoleApi {
 
     @Override
     @PostMapping("/menus")
-    @Operation(summary = "给角色分配菜单")
+    @Operation(summary = "给角色分配菜单", description = "权限接口。给角色分配菜单权限")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
     public R<Boolean> assignMenus(@RequestBody AssignRoleMenusCommand command) {
         roleService.assignMenus(command.getRoleId(), command.getMenuIds());

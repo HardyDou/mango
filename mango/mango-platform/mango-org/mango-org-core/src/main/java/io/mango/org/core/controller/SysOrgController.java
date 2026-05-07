@@ -5,9 +5,12 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.core.service.ISysOrgService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,7 +42,8 @@ public class SysOrgController implements SysOrgApi {
      * @return tree structure
      */
     @GetMapping("/tree")
-    public R<List<SysOrg>> tree(SysOrgTreeQuery query) {
+    @Operation(summary = "获取组织树", description = "登录接口。按父级组织和组织类型懒加载组织树")
+    public R<List<SysOrg>> tree(@ParameterObject SysOrgTreeQuery query) {
         Long parentId = query.getParentId() == null ? 0L : query.getParentId();
         Integer type = query.getType();
         log.info("Org tree request: parentId={}, type={}", parentId, type);
@@ -55,7 +59,10 @@ public class SysOrgController implements SysOrgApi {
      */
     @GetMapping("/children")
     @Override
-    public R<List<SysOrg>> children(@RequestParam Long parentId) {
+    @Operation(summary = "获取下级组织", description = "登录接口。按父级组织ID查询直属下级组织列表")
+    public R<List<SysOrg>> children(
+            @Parameter(description = "父级组织ID")
+            @RequestParam Long parentId) {
         log.info("Org children request: parentId={}", parentId);
         List<SysOrg> children = orgService.children(parentId);
         return R.ok(children);
@@ -69,7 +76,10 @@ public class SysOrgController implements SysOrgApi {
      */
     @GetMapping("/detail")
     @Override
-    public R<SysOrg> getById(@RequestParam Long id) {
+    @Operation(summary = "获取组织详情", description = "登录接口。按组织ID查询组织详情")
+    public R<SysOrg> getById(
+            @Parameter(description = "组织ID")
+            @RequestParam Long id) {
         SysOrg org = orgService.getById(id);
         return R.ok(org);
     }

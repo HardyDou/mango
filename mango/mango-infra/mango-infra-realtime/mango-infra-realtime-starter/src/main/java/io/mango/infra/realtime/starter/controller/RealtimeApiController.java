@@ -3,6 +3,7 @@ package io.mango.infra.realtime.starter.controller;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.outbound.IRealtimePublishService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ public class RealtimeApiController implements RealtimeApi {
 
     @Override
     @PostMapping("/publish")
+    @Operation(summary = "发布实时消息", description = "内部接口。发布实时下行消息到实时通道")
     public void publish(@RequestBody RealtimeOutboundMessage message) {
         realtimePublishService.publish(message);
     }

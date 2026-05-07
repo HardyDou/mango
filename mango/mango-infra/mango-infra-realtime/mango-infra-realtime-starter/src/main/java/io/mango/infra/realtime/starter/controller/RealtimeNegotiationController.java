@@ -2,6 +2,8 @@ package io.mango.infra.realtime.starter.controller;
 
 import io.mango.infra.realtime.core.negotiate.RealtimeNegotiationResponse;
 import io.mango.infra.realtime.core.negotiate.RealtimeTransportCapability;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +25,10 @@ public class RealtimeNegotiationController {
     private final List<RealtimeTransportCapability> transports;
 
     @GetMapping("${mango.infra.realtime.negotiate.endpoint:/realtime/transports/negotiate}")
-    public RealtimeNegotiationResponse negotiate(@RequestParam(value = "prefer", required = false) String prefer) {
+    @Operation(summary = "协商实时传输协议", description = "登录接口。根据客户端偏好协商实时消息传输协议")
+    public RealtimeNegotiationResponse negotiate(
+            @Parameter(description = "客户端偏好的传输协议，多个值用英文逗号分隔，例如 websocket,sse,polling")
+            @RequestParam(value = "prefer", required = false) String prefer) {
         List<String> preference = parsePreference(prefer);
         return new RealtimeNegotiationResponse(recommendedTransport(preference), transports);
     }

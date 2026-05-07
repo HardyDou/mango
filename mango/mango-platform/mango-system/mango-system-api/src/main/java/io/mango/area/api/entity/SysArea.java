@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,6 +16,7 @@ import java.io.Serializable;
  */
 @Data
 @TableName("sys_area")
+@Schema(description = "行政区划")
 public class SysArea implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -22,22 +24,26 @@ public class SysArea implements Serializable {
     /**
      * 主键ID
      */
+    @Schema(description = "行政区划ID")
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
      * 父级ID (0为根节点)
      */
+    @Schema(description = "父级行政区划ID，根节点为 0")
     private Long pid;
 
     /**
      * 地区名称
      */
+    @Schema(description = "地区名称")
     private String name;
 
     /**
      * 地区字母(用于拼音排序)
      */
+    @Schema(description = "地区首字母")
     private String letter;
 
     /**
@@ -45,41 +51,49 @@ public class SysArea implements Serializable {
      * 格式示例: 110000, 110100, 110101
      * 行政区划采用高德adcode标准，自有区划采用自定义编码
      */
+    @Schema(description = "行政区划编码")
     private Long adcode;
 
     /**
      * 经纬度 (高德坐标系)
      */
+    @Schema(description = "经纬度，高德坐标系")
     private String location;
 
     /**
      * 排序值
      */
+    @Schema(description = "排序值")
     private Integer areaSort;
 
     /**
      * 状态 (0-未生效, 1-生效)
      */
+    @Schema(description = "状态：0-未生效，1-生效")
     private String areaStatus;
 
     /**
      * 地区类型 (0-国家, 1-省/直辖市, 2-城市, 3-区县, 4-街道)
      * 支持自定义区划: 5-自定义区域
      */
+    @Schema(description = "地区类型：0-国家，1-省/直辖市，2-城市，3-区县，4-街道，5-自定义区域")
     private String areaType;
 
     /**
      * 是否热门 (0-否, 1-是)
      */
+    @Schema(description = "是否热门：0-否，1-是")
     private String hot;
 
     /**
      * 城市编码
      */
+    @Schema(description = "城市编码")
     private String cityCode;
 
     /**
      * 租户ID
      */
+    @Schema(description = "租户ID")
     private Long tenantId;
 }

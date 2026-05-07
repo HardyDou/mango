@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,19 +35,21 @@ public class MenuController implements MenuApi {
 
     @GetMapping
     @Operation(summary = "获取当前用户菜单", description = "获取当前用户的菜单树")
-    public R<List<MenuVO>> getUserMenus(
-            @Parameter(description = "应用编码") @RequestParam(required = false) String appCode,
-            @Parameter(description = "菜单类型") @RequestParam(required = false) Integer type,
-            @Parameter(description = "父菜单ID") @RequestParam(defaultValue = "0") Long parentId) {
+    public R<List<MenuVO>> getUserMenus(@ParameterObject MenuTreeQuery query) {
         Long userId = getCurrentUserId();
+        String appCode = query.getAppCode();
+        Integer type = query.getType();
+        Long parentId = query.getParentId() == null ? 0L : query.getParentId();
         List<MenuVO> menus = menuService.getUserMenus(appCode, type, parentId, userId);
         return R.ok(menus);
     }
 
     @Override
-    public R<List<MenuVO>> getUserMenus(MenuTreeQuery query) {
-        Long parentId = query.getParentId() == null ? 0L : query.getParentId();
-        return getUserMenus(query.getAppCode(), query.getType(), parentId);
+    @GetMapping("/tree")
+    @Operation(summary = "获取菜单树", description = "获取所有菜单的树形结构")
+    public R<List<MenuVO>> getTreeMenus(@ParameterObject MenuTreeQuery query) {
+        List<MenuVO> menus = menuService.getTreeMenus(query.getAppCode(), query.getParentId(), query.getMenuName());
+        return R.ok(menus);
     }
 
     /**
@@ -60,24 +63,9 @@ public class MenuController implements MenuApi {
         return tokenService.getUserId(token);
     }
 
-    @GetMapping("/tree")
-    @Operation(summary = "获取菜单树", description = "获取所有菜单的树形结构")
-    public R<List<MenuVO>> getTreeMenus(
-            @Parameter(description = "应用编码") @RequestParam(name = "appCode", required = false) String appCode,
-            @Parameter(description = "父菜单ID") @RequestParam(name = "parentId", required = false) Long parentId,
-            @Parameter(description = "菜单名称") @RequestParam(name = "menuName", required = false) String menuName) {
-        List<MenuVO> menus = menuService.getTreeMenus(appCode, parentId, menuName);
-        return R.ok(menus);
-    }
-
-    @Override
-    public R<List<MenuVO>> getTreeMenus(MenuTreeQuery query) {
-        return getTreeMenus(query.getAppCode(), query.getParentId(), query.getMenuName());
-    }
-
     @Override
     @GetMapping("/detail")
-    @Operation(summary = "获取菜单详情")
+    @Operation(summary = "获取菜单详情", description = "权限接口。按菜单ID查询菜单详情")
     public R<MenuVO> getById(
             @Parameter(description = "菜单ID") @RequestParam Long menuId) {
         io.mango.authorization.core.entity.Menu menu = menuService.getById(menuId);
@@ -94,7 +82,7 @@ public class MenuController implements MenuApi {
 
     @Override
     @PostMapping
-    @Operation(summary = "新增菜单")
+    @Operation(summary = "新增菜单", description = "权限接口。创建授权菜单")
     public R<Void> add(@RequestBody MenuCommand command) {
         io.mango.authorization.core.entity.Menu menu = convertToEntity(command);
         boolean success = menuService.addMenu(menu);
@@ -103,7 +91,7 @@ public class MenuController implements MenuApi {
 
     @Override
     @PutMapping
-    @Operation(summary = "更新菜单")
+    @Operation(summary = "更新菜单", description = "权限接口。更新授权菜单")
     public R<Void> update(@RequestBody MenuCommand command) {
         io.mango.authorization.core.entity.Menu menu = convertToEntity(command);
         boolean success = menuService.updateMenu(command.getMenuId(), menu);
@@ -112,7 +100,7 @@ public class MenuController implements MenuApi {
 
     @Override
     @DeleteMapping
-    @Operation(summary = "删除菜单")
+    @Operation(summary = "删除菜单", description = "权限接口。按菜单ID删除授权菜单")
     public R<Void> delete(
             @Parameter(description = "菜单ID") @RequestParam Long menuId) {
         boolean success = menuService.deleteMenu(menuId);

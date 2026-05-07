@@ -1,5 +1,6 @@
 package io.mango.common.po;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -8,6 +9,7 @@ import lombok.Data;
  * @author Mango
  */
 @Data
+@Schema(description = "分页请求参数")
 public class PageQuery extends Query {
 
     private static final long serialVersionUID = 1L;
@@ -16,9 +18,11 @@ public class PageQuery extends Query {
     private static final long MAX_SIZE = 500L;
 
     /** 当前页，从 1 开始。 */
+    @Schema(description = "当前页，从 1 开始")
     private long page = DEFAULT_PAGE;
 
     /** 每页大小。 */
+    @Schema(description = "每页大小，最大 500")
     private long size = DEFAULT_SIZE;
 
     /**

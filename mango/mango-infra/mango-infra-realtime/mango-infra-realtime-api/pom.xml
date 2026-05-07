@@ -16,4 +16,16 @@
     <name>Mango Infra Realtime API</name>
     <description>Realtime infrastructure API for server-client transports, sessions and subscriptions</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
 </project>

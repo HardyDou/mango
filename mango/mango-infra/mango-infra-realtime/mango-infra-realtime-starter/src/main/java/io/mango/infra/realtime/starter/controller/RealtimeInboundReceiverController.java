@@ -3,6 +3,7 @@ package io.mango.infra.realtime.starter.controller;
 import io.mango.infra.realtime.api.RealtimeInboundReceiverApi;
 import io.mango.infra.realtime.api.dto.RealtimeInboundReceiverRegistration;
 import io.mango.infra.realtime.core.inbound.receiver.IRealtimeInboundReceiverService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,12 +24,14 @@ public class RealtimeInboundReceiverController implements RealtimeInboundReceive
 
     @Override
     @PostMapping("/register")
+    @Operation(summary = "注册实时接收器", description = "内部接口。注册可接收客户端上行实时消息的服务")
     public void register(@RequestBody RealtimeInboundReceiverRegistration registration) {
         realtimeInboundReceiverService.register(registration);
     }
 
     @Override
     @PostMapping("/unregister")
+    @Operation(summary = "注销实时接收器", description = "内部接口。注销实时上行消息接收服务")
     public void unregister(@RequestBody RealtimeInboundReceiverRegistration registration) {
         realtimeInboundReceiverService.unregister(registration);
     }

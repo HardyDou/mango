@@ -3,11 +3,15 @@ package io.mango.infra.realtime.starter.controller;
 import io.mango.infra.realtime.api.dto.RealtimeHeaders;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimePollingQuery;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
 import io.mango.infra.realtime.core.polling.InMemoryRealtimePollingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,14 +36,15 @@ public class PollingRealtimeController {
     private final ProtocolRealtimeInboundForwarder inboundForwarder;
 
     @GetMapping("${mango.infra.realtime.polling.endpoint:/realtime/transports/polling}")
+    @Operation(summary = "轮询实时消息", description = "登录接口。按用户轮询实时消息，支持长轮询超时和最大消息数")
     public DeferredResult<List<RealtimeOutboundMessage>> poll(
+            @Parameter(description = "租户ID请求头")
             @RequestHeader(value = RealtimeHeaders.TENANT_ID, required = false) String tenantId,
-            @RequestParam("userId") Long userId,
-            @RequestParam(value = "maxSize", required = false) Integer requestedMaxSize,
-            @RequestParam(value = "timeoutMillis", required = false) Long requestedTimeoutMillis) {
+            @ParameterObject RealtimePollingQuery query) {
+        Long userId = query.getUserId();
         String subscriberId = InMemoryRealtimePollingService.userSubscriberId(userId);
-        int effectiveMaxSize = normalizeMaxSize(requestedMaxSize);
-        long effectiveTimeoutMillis = normalizeTimeoutMillis(requestedTimeoutMillis);
+        int effectiveMaxSize = normalizeMaxSize(query.getMaxSize());
+        long effectiveTimeoutMillis = normalizeTimeoutMillis(query.getTimeoutMillis());
         return pollingService.pollAsync(subscriberId, normalizeTenantId(tenantId), effectiveMaxSize, effectiveTimeoutMillis);
     }
 
@@ -60,18 +65,18 @@ public class PollingRealtimeController {
     }
 
     @PostMapping("${mango.infra.realtime.polling.inbound-endpoint:/realtime/messages/inbound/polling}")
+    @Operation(summary = "发送轮询上行消息", description = "登录接口。通过轮询通道提交客户端上行消息")
     public RealtimeOutboundMessage inbound(
+            @Parameter(description = "租户ID请求头")
             @RequestHeader(value = RealtimeHeaders.TENANT_ID, required = false) String tenantId,
-            @RequestParam("userId") Long userId,
-            @RequestParam(value = "sessionId", required = false) String sessionId,
             @RequestBody RealtimeInboundMessage message) {
         return inboundForwarder.forward(
                 message.id(),
                 message.type(),
                 message.content(),
                 tenantId != null ? tenantId : message.tenantId(),
-                userId != null ? userId : message.userId(),
-                sessionId != null ? sessionId : message.sessionId(),
+                message.userId(),
+                message.sessionId(),
                 message.headers());
     }
 }
