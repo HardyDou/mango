@@ -1,5 +1,8 @@
 package io.mango.ai.core.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RestController
 @RequestMapping("/ai")
+@Tag(name = "AI 推送", description = "AI 模块 SSE 连接与消息推送接口")
 public class SseController {
 
     private static final long SSE_TIMEOUT = 0L; // No timeout
@@ -49,7 +53,8 @@ public class SseController {
      * @return SSE emitter for the connected client
      */
     @GetMapping("/sse")
-    public SseEmitter connect(HttpServletRequest request) {
+    @Operation(summary = "建立 AI SSE 连接", description = "受保护接口。建立 AI 模块服务端事件推送连接")
+    public SseEmitter connect(@Parameter(hidden = true) HttpServletRequest request) {
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
 
         emitters.add(emitter);

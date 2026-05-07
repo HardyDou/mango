@@ -4,6 +4,9 @@ import io.mango.ai.api.dto.ChatRequest;
 import io.mango.ai.core.service.ChatService;
 import io.mango.infra.context.core.MangoContextHeaders;
 import io.mango.infra.context.core.MangoContextHolder;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RestController
 @RequestMapping("/ai")
 @RequiredArgsConstructor
+@Tag(name = "AI 对话", description = "AI 对话与流式响应接口")
 public class ChatController {
 
     private final ChatService chatService;
@@ -33,9 +37,13 @@ public class ChatController {
      * @return SSE 推送流
      */
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "发起 AI 流式对话", description = "受保护接口。提交对话内容并通过 SSE 返回流式响应")
     public SseEmitter chat(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "AI 对话请求")
             @Valid @RequestBody ChatRequest chatRequest,
+            @Parameter(description = "访问令牌，格式为 Bearer <accessToken>")
             @RequestHeader(value = "Authorization", required = false) String authorization,
+            @Parameter(description = "租户ID请求头")
             @RequestHeader(value = MangoContextHeaders.TENANT_ID, required = false) String tenantId) {
 
         // 校验认证请求头。

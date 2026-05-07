@@ -56,15 +56,15 @@
           >
             <el-option
               label="目录"
-              :value="0"
-            />
-            <el-option
-              label="菜单"
               :value="1"
             />
             <el-option
-              label="按钮"
+              label="菜单"
               :value="2"
+            />
+            <el-option
+              label="按钮"
+              :value="3"
             />
           </el-select>
         </el-form-item>
@@ -127,13 +127,13 @@
         >
           <template #default="{ row }">
             <el-tag
-              v-if="row.menuType === 0"
+              v-if="row.menuType === 1"
               size="small"
             >
               目录
             </el-tag>
             <el-tag
-              v-else-if="row.menuType === 1"
+              v-else-if="row.menuType === 2"
               type="success"
               size="small"
             >
@@ -311,13 +311,13 @@
           prop="menuType"
         >
           <el-radio-group v-model="form.menuType">
-            <el-radio :label="0">
+            <el-radio :label="1">
               目录
             </el-radio>
-            <el-radio :label="1">
+            <el-radio :label="2">
               菜单
             </el-radio>
-            <el-radio :label="2">
+            <el-radio :label="3">
               按钮
             </el-radio>
           </el-radio-group>
@@ -481,9 +481,7 @@ interface MenuGroup {
  * 菜单分组列表
  */
 const menuGroups = ref<MenuGroup[]>([
-  { code: 'public', name: '公共' },
-  { code: 'system', name: '管理系统' },
-  { code: 'portal', name: '门户' },
+  { code: 'internal-admin', name: '管理系统' },
 ]);
 
 const groupDialogVisible = ref(false);
@@ -515,7 +513,7 @@ function handleSubmitGroup() {
   ElMessage.success('分组创建成功');
 }
 
-const activeGroup = ref('public');
+const activeGroup = ref('internal-admin');
 
 const loading = ref(false);
 const tableData = ref<SysMenuVO[]>([]);
@@ -523,7 +521,7 @@ const query = reactive({
   keyword: '',
   menuType: undefined as number | undefined,
   status: undefined as number | undefined,
-  groupCode: 'public',
+  groupCode: 'internal-admin',
 });
 
 const dialogVisible = ref(false);
@@ -531,7 +529,7 @@ const formRef = ref<FormInstance>();
 const form = reactive<SysMenuVO & { groupCode?: string }>({
   menuId: undefined,
   parentId: 0,
-  menuType: 1,
+  menuType: 2,
   menuName: '',
   menuCode: '',
   path: '',
@@ -541,7 +539,7 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
   status: 1,
   visible: 1,
   permissions: '',
-  groupCode: 'public',
+  groupCode: 'internal-admin',
 });
 
 const rules: FormRules = {
@@ -581,8 +579,12 @@ function buildTree(list: SysMenuVO[]): SysMenuVO[] {
 async function loadData() {
   loading.value = true;
   try {
-    const data = await menuApi.getTreeMenus();
-    // 根据分组过滤菜单（这里假设后端支持 groupCode 参数）
+    const data = await menuApi.getMenuTree({
+      appCode: query.groupCode,
+      menuName: query.keyword || undefined,
+      type: query.menuType,
+      status: query.status,
+    });
     tableData.value = data || [];
   } catch (error) {
     console.error('加载数据失败:', error);
@@ -610,7 +612,7 @@ function handleReset() {
 function handleAdd() {
   form.menuId = undefined;
   form.parentId = 0;
-  form.menuType = 1;
+  form.menuType = 2;
   form.menuName = '';
   form.menuCode = '';
   form.path = '';
@@ -627,7 +629,7 @@ function handleAdd() {
 function handleAddChild(row: SysMenuVO) {
   form.menuId = undefined;
   form.parentId = row.menuId;
-  form.menuType = row.menuType === 2 ? 2 : 2;
+  form.menuType = row.menuType === 1 ? 2 : 3;
   form.menuName = '';
   form.menuCode = '';
   form.path = '';
@@ -664,6 +666,15 @@ async function handleSubmit() {
   if (!formRef.value) return;
   try {
     await formRef.value.validate();
+    const payload = {
+      ...form,
+      appCode: form.groupCode || activeGroup.value,
+    };
+    if (form.menuId) {
+      await menuApi.updateMenu(payload);
+    } else {
+      await menuApi.createMenu(payload);
+    }
     ElMessage.success(form.menuId ? '修改成功' : '新增成功');
     dialogVisible.value = false;
     loadData();
@@ -679,6 +690,7 @@ function handleDelete(row: SysMenuVO) {
     type: 'warning',
   }).then(async () => {
     try {
+      await menuApi.deleteMenu(row.menuId);
       ElMessage.success('删除成功');
       loadData();
     } catch (error) {

@@ -4,9 +4,8 @@
  * 支持前端模式（纯静态）和后端模式（API + 前端配置合并）
  */
 import type { RouteRecordRaw } from 'vue-router';
-import { mockMenus } from '@/mocks/data';
 import menuJson from './menu.json';
-import type { SysMenuVO } from '@/api/admin/menu';
+import { menuApi, type SysMenuVO } from '@/api/admin/menu';
 import { componentsMap } from './componentsMap';
 
 /**
@@ -39,11 +38,11 @@ export interface MenuConfigItem {
 }
 
 /**
- * 过滤菜单，移除按钮类型（menuType === 2），用于左侧导航
+ * 过滤菜单，移除按钮类型（menuType === 3），用于左侧导航
  */
 function filterMenuForNav(menus: SysMenuVO[]): SysMenuVO[] {
   return menus
-    .filter(menu => menu.menuType !== 2) // 移除按钮类型
+    .filter(menu => menu.menuType !== 3)
     .map(menu => ({
       ...menu,
       children: menu.children ? filterMenuForNav(menu.children) : [],
@@ -191,14 +190,13 @@ export class MenuLoader {
 
   /**
    * 从后端加载菜单配置
-   * @description 直接使用 mock 数据，与前端配置合并
+   * @description 直接调用用户菜单接口，与前端配置合并
    * 合并策略：前端配置（组件库、示例页面）在前，后端配置（系统管理）在后
    */
   async loadFromBackend(): Promise<MenuItem[]> {
     try {
-      // 直接使用 mock 数据（避免 HTTP 请求和 MSW 拦截问题）
-      // 过滤掉按钮类型，只保留目录和菜单类型
-      const backendMenus = filterMenuForNav(mockMenus as SysMenuVO[]);
+      const response = await menuApi.getUserMenus({ fmt: 'tree' });
+      const backendMenus = filterMenuForNav(response.menus || []);
       if (backendMenus && backendMenus.length > 0) {
         // 将后端菜单转换为配置格式
         const backendConfig = this.backendToConfig(backendMenus);

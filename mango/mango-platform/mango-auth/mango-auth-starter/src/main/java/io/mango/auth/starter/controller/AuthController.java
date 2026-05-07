@@ -1,6 +1,5 @@
 package io.mango.auth.starter.controller;
 
-import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
@@ -54,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "认证授权", description = "认证登录、令牌刷新、退出登录接口")
-public class AuthController implements AuthApi {
+public class AuthController {
 
     private final IAuthService authService;
     private final TtlExecutorDecorator ttlExecutorDecorator;
@@ -113,14 +112,6 @@ public class AuthController implements AuthApi {
         }
     }
 
-    /**
-     * 用户登录。
-     */
-    @Override
-    public R<LoginVO> login(LoginCommand loginCommand) {
-        return doLogin(loginCommand, "unknown");
-    }
-
     @PostMapping("/login")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "用户登录")
     @Operation(summary = "用户登录", description = "公开接口。使用用户名、密码、登录域和验证码信息登录，成功后返回访问令牌、刷新令牌和用户授权信息")
@@ -162,8 +153,7 @@ public class AuthController implements AuthApi {
         }
     }
 
-    @Override
-    public R<LoginVO> refreshToken(RefreshTokenCommand command) {
+    private R<LoginVO> refreshToken(RefreshTokenCommand command) {
         try {
             LoginVO response = authService.refreshToken(command.getRefreshToken());
             if (response == null) {
@@ -182,15 +172,6 @@ public class AuthController implements AuthApi {
         return refreshToken(command);
     }
 
-    /**
-     * 用户退出登录。
-     */
-    @Override
-    public R<Void> logout(LogoutCommand command) {
-        authService.logout(command.getToken());
-        return R.ok();
-    }
-
     @PostMapping("/logout")
     @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "用户退出登录")
     @Operation(summary = "用户退出登录", description = "登录接口。退出当前登录状态并清理浏览器令牌 Cookie；令牌可通过请求体或 Authorization 请求头传入")
@@ -207,11 +188,7 @@ public class AuthController implements AuthApi {
         return R.ok();
     }
 
-    /**
-     * 校验令牌。
-     */
-    @Override
-    public R<Boolean> validateToken(ValidateTokenCommand command) {
+    private R<Boolean> validateToken(ValidateTokenCommand command) {
         return R.ok(authService.validateToken(command.getToken()));
     }
 

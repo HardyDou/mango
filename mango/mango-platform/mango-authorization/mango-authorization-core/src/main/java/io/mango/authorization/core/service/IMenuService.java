@@ -11,14 +11,14 @@ import java.util.List;
 public interface IMenuService {
 
     /**
-     * 查询当前用户菜单树。
+     * 查询菜单资源列表或树。
      */
-    List<MenuVO> getUserMenus(String appCode, Integer type, Long parentId, Long userId);
+    List<MenuVO> listMenus(String appCode, Integer type, Long parentId, String menuName, Integer status, boolean tree);
 
     /**
-     * 查询管理端菜单树。
+     * 查询当前用户菜单列表或树。
      */
-    List<MenuVO> getTreeMenus(String appCode, Long parentId, String menuName);
+    List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, Long userId, boolean tree);
 
     /**
      * 按 ID 查询菜单。

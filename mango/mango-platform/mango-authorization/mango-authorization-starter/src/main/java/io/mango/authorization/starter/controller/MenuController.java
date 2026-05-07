@@ -33,22 +33,31 @@ public class MenuController implements MenuApi {
     private final ISubjectAuthorityService subjectAuthorityService;
     private final ITokenProvider tokenService;
 
+    @Override
     @GetMapping
-    @Operation(summary = "获取当前用户菜单", description = "获取当前用户的菜单树")
-    public R<List<MenuVO>> getUserMenus(@ParameterObject MenuTreeQuery query) {
-        Long userId = getCurrentUserId();
-        String appCode = query.getAppCode();
-        Integer type = query.getType();
-        Long parentId = query.getParentId() == null ? 0L : query.getParentId();
-        List<MenuVO> menus = menuService.getUserMenus(appCode, type, parentId, userId);
+    @Operation(summary = "查询菜单资源", description = "菜单管理接口。查询菜单资源列表；fmt=tree 时返回树形结构")
+    public R<List<MenuVO>> getMenus(@ParameterObject MenuTreeQuery query) {
+        List<MenuVO> menus = menuService.listMenus(
+                query.getAppCode(),
+                query.getType(),
+                query.getParentId(),
+                query.getMenuName(),
+                query.getStatus(),
+                isTreeFormat(query.getFmt()));
         return R.ok(menus);
     }
 
     @Override
-    @GetMapping("/tree")
-    @Operation(summary = "获取菜单树", description = "获取所有菜单的树形结构")
-    public R<List<MenuVO>> getTreeMenus(@ParameterObject MenuTreeQuery query) {
-        List<MenuVO> menus = menuService.getTreeMenus(query.getAppCode(), query.getParentId(), query.getMenuName());
+    @GetMapping("/user")
+    @Operation(summary = "查询当前用户菜单", description = "按系统查询当前登录用户有权限访问的菜单；fmt=tree 时返回树形结构")
+    public R<List<MenuVO>> getUserMenus(@ParameterObject MenuTreeQuery query) {
+        Long userId = getCurrentUserId();
+        List<MenuVO> menus = menuService.listUserMenus(
+                query.getAppCode(),
+                query.getType(),
+                query.getParentId(),
+                userId,
+                isTreeFormat(query.getFmt()));
         return R.ok(menus);
     }
 
@@ -60,7 +69,21 @@ public class MenuController implements MenuApi {
         if (token == null) {
             return null;
         }
-        return tokenService.getUserId(token);
+        return tokenService.getUserId(stripBearer(token));
+    }
+
+    private String stripBearer(String token) {
+        if (token == null) {
+            return null;
+        }
+        if (token.startsWith(ITokenProvider.BEARER_PREFIX)) {
+            return token.substring(ITokenProvider.BEARER_PREFIX.length());
+        }
+        return token;
+    }
+
+    private boolean isTreeFormat(String fmt) {
+        return "tree".equalsIgnoreCase(fmt);
     }
 
     @Override

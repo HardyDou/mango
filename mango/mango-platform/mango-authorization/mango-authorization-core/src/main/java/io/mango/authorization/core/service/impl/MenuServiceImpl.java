@@ -2,17 +2,27 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.RoleMenu;
+import io.mango.authorization.core.entity.SubjectRoleBinding;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.authorization.core.mapper.RoleMenuMapper;
+import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.authorization.core.service.IMenuService;
+import io.mango.authorization.core.service.ISubjectAuthorityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,32 +37,49 @@ import java.util.stream.Collectors;
 public class MenuServiceImpl implements IMenuService {
 
     private final MenuMapper menuMapper;
+    private final SubjectRoleBindingMapper subjectRoleBindingMapper;
+    private final RoleMenuMapper roleMenuMapper;
+    private final ISubjectAuthorityService subjectAuthorityService;
 
     @Override
-    public List<MenuVO> getUserMenus(String appCode, Integer type, Long parentId, Long userId) {
+    public List<MenuVO> listMenus(String appCode, Integer type, Long parentId, String menuName, Integer status, boolean tree) {
         LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(appCode != null && !appCode.isBlank(), Menu::getAppCode, appCode)
-                .eq(parentId != null && parentId > 0, Menu::getParentId, parentId)
-                .eq(parentId == null || parentId == 0, Menu::getParentId, 0)
+                .eq(parentId != null, Menu::getParentId, parentId)
                 .eq(type != null, Menu::getMenuType, type)
-                .eq(Menu::getStatus, 1)
-                .eq(Menu::getVisible, 1)
+                .eq(status != null, Menu::getStatus, status)
+                .like(StringUtils.hasText(menuName), Menu::getMenuName, menuName)
                 .orderByAsc(Menu::getSort);
-
         List<Menu> menus = menuMapper.selectList(wrapper);
-        return buildMenuTree(menus);
+        return toMenuResult(menus, tree);
     }
 
     @Override
-    public List<MenuVO> getTreeMenus(String appCode, Long parentId, String menuName) {
-        LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(appCode != null && !appCode.isBlank(), Menu::getAppCode, appCode)
-                .eq(parentId != null && parentId > 0, Menu::getParentId, parentId)
-                .like(menuName != null && !menuName.isEmpty(), Menu::getMenuName, menuName)
-                .orderByAsc(Menu::getSort);
+    public List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, Long userId, boolean tree) {
+        if (userId == null) {
+            return new ArrayList<>();
+        }
 
-        List<Menu> menus = menuMapper.selectList(wrapper);
-        return buildMenuTree(menus);
+        List<Menu> visibleMenus = listVisibleMenus(appCode);
+        if (visibleMenus.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Menu> scopedMenus;
+        if (hasAllMenuAccess(userId, appCode)) {
+            scopedMenus = visibleMenus;
+        } else {
+            Set<Long> authorizedMenuIds = resolveAuthorizedMenuIds(userId, appCode, visibleMenus);
+            if (authorizedMenuIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+            scopedMenus = visibleMenus.stream()
+                    .filter(menu -> authorizedMenuIds.contains(menu.getMenuId()))
+                    .collect(Collectors.toList());
+        }
+
+        List<Menu> filteredMenus = applyUserMenuFilter(scopedMenus, type, parentId, tree);
+        return toMenuResult(filteredMenus, tree);
     }
 
     @Override
@@ -127,6 +154,126 @@ public class MenuServiceImpl implements IMenuService {
         vo.setMeta(meta);
 
         return vo;
+    }
+
+    private List<MenuVO> toMenuResult(List<Menu> menus, boolean tree) {
+        if (menus == null || menus.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (tree) {
+            return buildMenuTree(menus);
+        }
+        return menus.stream()
+                .map(this::convertToMenuVO)
+                .collect(Collectors.toList());
+    }
+
+    private List<Menu> listVisibleMenus(String appCode) {
+        LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StringUtils.hasText(appCode), Menu::getAppCode, appCode)
+                .eq(Menu::getStatus, 1)
+                .eq(Menu::getVisible, 1)
+                .orderByAsc(Menu::getSort);
+        return menuMapper.selectList(wrapper);
+    }
+
+    private boolean hasAllMenuAccess(Long userId, String appCode) {
+        return subjectAuthorityService.listSubjectPermissions(new AuthorizationQuery(
+                        userId, AuthorizationQuery.SUBJECT_TYPE_USER, null, appCode))
+                .stream()
+                .anyMatch("*:*"::equals);
+    }
+
+    private Set<Long> resolveAuthorizedMenuIds(Long userId, String appCode, List<Menu> visibleMenus) {
+        List<Long> roleIds = listSubjectRoleIds(userId, appCode);
+        if (roleIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        LambdaQueryWrapper<RoleMenu> roleMenuWrapper = new LambdaQueryWrapper<>();
+        roleMenuWrapper.in(RoleMenu::getRoleId, roleIds);
+        Set<Long> directlyAssignedMenuIds = roleMenuMapper.selectList(roleMenuWrapper)
+                .stream()
+                .map(RoleMenu::getMenuId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (directlyAssignedMenuIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Map<Long, Menu> menuById = visibleMenus.stream()
+                .collect(Collectors.toMap(Menu::getMenuId, menu -> menu));
+        Set<Long> authorizedIds = new LinkedHashSet<>();
+        for (Long menuId : directlyAssignedMenuIds) {
+            collectMenuWithAncestors(menuId, menuById, authorizedIds);
+        }
+        return authorizedIds;
+    }
+
+    private List<Long> listSubjectRoleIds(Long userId, String appCode) {
+        LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SubjectRoleBinding::getSubjectId, userId)
+                .eq(StringUtils.hasText(appCode), SubjectRoleBinding::getAppCode, appCode);
+        return subjectRoleBindingMapper.selectList(wrapper)
+                .stream()
+                .map(SubjectRoleBinding::getRoleId)
+                .collect(Collectors.toList());
+    }
+
+    private void collectMenuWithAncestors(Long menuId, Map<Long, Menu> menuById, Set<Long> collector) {
+        Long currentId = menuId;
+        while (currentId != null && currentId > 0 && collector.add(currentId)) {
+            Menu menu = menuById.get(currentId);
+            if (menu == null) {
+                break;
+            }
+            currentId = menu.getParentId();
+        }
+    }
+
+    private List<Menu> applyUserMenuFilter(List<Menu> menus, Integer type, Long parentId, boolean tree) {
+        StreamContext context = new StreamContext(menus);
+        List<Menu> filtered = context.sortedMenus.stream()
+                .filter(menu -> type == null || type.equals(menu.getMenuType()))
+                .collect(Collectors.toList());
+
+        if (parentId == null || parentId == 0) {
+            return filtered;
+        }
+
+        if (!tree) {
+            return filtered.stream()
+                    .filter(menu -> parentId.equals(menu.getParentId()))
+                    .collect(Collectors.toList());
+        }
+
+        Set<Long> subtreeIds = new LinkedHashSet<>();
+        collectDescendantIds(parentId, context.childrenByParentId, subtreeIds);
+        return filtered.stream()
+                .filter(menu -> subtreeIds.contains(menu.getMenuId()))
+                .collect(Collectors.toList());
+    }
+
+    private void collectDescendantIds(Long parentId, Map<Long, List<Menu>> childrenByParentId, Set<Long> collector) {
+        List<Menu> children = childrenByParentId.getOrDefault(parentId, List.of());
+        for (Menu child : children) {
+            if (collector.add(child.getMenuId())) {
+                collectDescendantIds(child.getMenuId(), childrenByParentId, collector);
+            }
+        }
+    }
+
+    private static final class StreamContext {
+        private final List<Menu> sortedMenus;
+        private final Map<Long, List<Menu>> childrenByParentId;
+
+        private StreamContext(List<Menu> menus) {
+            this.sortedMenus = menus.stream()
+                    .sorted(Comparator.comparing(Menu::getSort, Comparator.nullsLast(Integer::compareTo))
+                            .thenComparing(Menu::getMenuId, Comparator.nullsLast(Long::compareTo)))
+                    .collect(Collectors.toList());
+            this.childrenByParentId = this.sortedMenus.stream()
+                    .collect(Collectors.groupingBy(menu -> menu.getParentId() == null ? 0L : menu.getParentId()));
+        }
     }
 
     @Override

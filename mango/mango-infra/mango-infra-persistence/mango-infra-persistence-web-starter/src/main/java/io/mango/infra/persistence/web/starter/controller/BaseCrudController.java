@@ -17,9 +17,12 @@ import io.mango.infra.persistence.web.starter.excel.ExportableService;
 import io.mango.infra.persistence.web.starter.excel.ImportError;
 import io.mango.infra.persistence.web.starter.excel.ImportResult;
 import io.mango.infra.persistence.web.starter.excel.ImportableService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,39 +65,54 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
     }
 
     @PostMapping("/create")
+    @Operation(summary = "新增记录", description = "标准 CRUD 接口。提交创建命令并新增记录")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "创建命令对象，字段以具体资源定义为准")
     public R<Object> create(@RequestBody C command) {
         return R.ok(service.createByCommand(command));
     }
 
     @PostMapping("/update")
+    @Operation(summary = "修改记录", description = "标准 CRUD 接口。提交更新命令并修改记录")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "更新命令对象，字段以具体资源定义为准")
     public R<Boolean> update(@RequestBody U command) {
         return R.ok(service.updateByCommand(command));
     }
 
     @PostMapping("/delete")
+    @Operation(summary = "删除记录", description = "标准 CRUD 接口。按主键删除单条记录")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "删除命令对象")
     public R<Boolean> delete(@RequestBody DeleteCommand command) {
         return R.ok(service.deleteById(command.getId()));
     }
 
     @PostMapping("/batch-delete")
+    @Operation(summary = "批量删除记录", description = "标准 CRUD 接口。按主键列表批量删除记录")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "批量删除命令对象")
     public R<Boolean> batchDelete(@RequestBody BatchDeleteCommand command) {
         return R.ok(service.batchDeleteByIds(command.getIds()));
     }
 
     @GetMapping("/detail")
-    public R<Object> detail(@RequestParam("id") Long id) {
+    @Operation(summary = "获取记录详情", description = "标准 CRUD 接口。按主键查询记录详情")
+    public R<Object> detail(
+            @Parameter(description = "记录主键ID")
+            @RequestParam("id") Long id) {
         return R.ok(service.detailById(id));
     }
 
     @GetMapping("/page")
-    public R<PersistencePageResult<?>> page(@ModelAttribute Q query) {
+    @Operation(summary = "分页查询记录", description = "标准 CRUD 接口。按查询条件分页查询记录")
+    public R<PersistencePageResult<?>> page(@ParameterObject @ModelAttribute Q query) {
         return R.ok(service.pageByQuery(query));
     }
 
     @PostMapping("/export")
     @ExcelExport
+    @Operation(summary = "导出记录", description = "标准 CRUD 接口。按查询条件导出记录")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "导出查询条件，字段以具体资源查询对象定义为准")
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public void export(@RequestBody Map<String, Object> body, HttpServletResponse response) {
+    public void export(@RequestBody Map<String, Object> body,
+                       @Parameter(hidden = true) HttpServletResponse response) {
         if (!(service instanceof ExportableService exportableService)) {
             throw new IllegalStateException("当前资源未启用导出能力");
         }
@@ -109,8 +127,9 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
 
     @PostMapping("/import")
     @ExcelImport
+    @Operation(summary = "导入记录", description = "标准 CRUD 接口。上传 Excel 文件并导入记录")
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public R<ImportResult> importData(MultipartHttpServletRequest request) {
+    public R<ImportResult> importData(@Parameter(hidden = true) MultipartHttpServletRequest request) {
         if (!(service instanceof ImportableService importableService)) {
             throw new IllegalStateException("当前资源未启用导入能力");
         }
@@ -149,7 +168,8 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
 
     @GetMapping("/import-template")
     @ExcelImport
-    public void importTemplate(HttpServletResponse response) {
+    @Operation(summary = "下载导入模板", description = "标准 CRUD 接口。下载当前资源的 Excel 导入模板")
+    public void importTemplate(@Parameter(hidden = true) HttpServletResponse response) {
         if (!(service instanceof ImportableService<?> importableService)) {
             throw new IllegalStateException("当前资源未启用导入能力");
         }

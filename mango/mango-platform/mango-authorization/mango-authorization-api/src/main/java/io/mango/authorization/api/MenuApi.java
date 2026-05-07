@@ -14,20 +14,20 @@ import java.util.Set;
 public interface MenuApi {
 
     /**
-     * 获取当前用户菜单树。
+     * 查询菜单资源。
      *
      * @param query 菜单查询条件
-     * @return 菜单树
+     * @return 菜单列表或树
      */
-    R<List<MenuVO>> getUserMenus(MenuTreeQuery query);
+    R<List<MenuVO>> getMenus(MenuTreeQuery query);
 
     /**
-     * 获取全部菜单树。
+     * 查询当前用户菜单。
      *
      * @param query 菜单查询条件
-     * @return 菜单树
+     * @return 菜单列表或树
      */
-    R<List<MenuVO>> getTreeMenus(MenuTreeQuery query);
+    R<List<MenuVO>> getUserMenus(MenuTreeQuery query);
 
     /** 获取菜单详情。 */
     R<MenuVO> getById(Long menuId);

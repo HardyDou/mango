@@ -1,13 +1,15 @@
-import { get } from '@mango/common';
+import { get, post, put, del } from '@mango/common';
 
 /**
  * 菜单类型枚举
  */
 export enum MenuTypeEnum {
-  DIRECTORY = 0,
-  MENU = 1,
-  BUTTON = 2,
+  DIRECTORY = 1,
+  MENU = 2,
+  BUTTON = 3,
 }
+
+export type MenuFormat = 'list' | 'tree';
 
 /**
  * 验证码配置
@@ -62,27 +64,72 @@ export interface MenuResponse {
   currentStorage?: string;
 }
 
+export interface MenuQuery {
+  appCode?: string;
+  fmt?: MenuFormat;
+  type?: number;
+  parentId?: number;
+  menuName?: string;
+  status?: number;
+}
+
+export interface MenuDetailQuery {
+  menuId: number;
+}
+
 /**
  * 菜单API
  * 菜单归属授权域，对接后端 /authorization/menus。
  */
 export const menuApi = {
   /**
-   * 获取当前用户的菜单
-   * @param type 菜单类型 null=全部, 0=目录, 1=菜单, 2=按钮
-   * @param parentId 父菜单ID，0=根节点
+   * 查询当前用户菜单
    */
-  getUserMenus: (type?: number, parentId = 0) =>
-    get<SysMenuVO[]>('/authorization/menus', { params: { type, parentId } }).then((menus) => ({
+  getUserMenus: (params: MenuQuery = {}) =>
+    get<SysMenuVO[]>('/authorization/menus/user', {
+      params: { fmt: 'tree', ...params },
+    }).then((menus) => ({
       menus,
       currentStorage: 'backend',
     })),
 
   /**
-   * 获取所有菜单（管理员用）
-   * @param parentId 父菜单ID
-   * @param menuName 菜单名称（模糊搜索）
+   * 查询菜单资源列表
    */
-  getTreeMenus: (parentId?: number, menuName?: string) =>
-    get<SysMenuVO[]>('/authorization/menus/tree', { params: { parentId, menuName } }),
+  getMenus: (params: MenuQuery = {}) =>
+    get<SysMenuVO[]>('/authorization/menus', {
+      params: { fmt: 'list', ...params },
+    }),
+
+  /**
+   * 查询菜单资源树
+   */
+  getMenuTree: (params: MenuQuery = {}) =>
+    get<SysMenuVO[]>('/authorization/menus', {
+      params: { fmt: 'tree', ...params },
+    }),
+
+  /**
+   * 查询菜单详情
+   */
+  getMenuDetail: (menuId: number) =>
+    get<SysMenuVO>('/authorization/menus/detail', { params: { menuId } }),
+
+  /**
+   * 新增菜单
+   */
+  createMenu: (data: Partial<SysMenuVO>) =>
+    post('/authorization/menus', data),
+
+  /**
+   * 修改菜单
+   */
+  updateMenu: (data: Partial<SysMenuVO>) =>
+    put('/authorization/menus', data),
+
+  /**
+   * 删除菜单
+   */
+  deleteMenu: (menuId: number) =>
+    del('/authorization/menus', { params: { menuId } }),
 };

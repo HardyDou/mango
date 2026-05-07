@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.authorization.core.mapper.RoleMenuMapper;
+import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.authorization.core.service.IMenuService;
+import io.mango.authorization.core.service.ISubjectAuthorityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,12 +34,22 @@ class MenuServiceImplTest {
 
     @Mock
     private MenuMapper menuMapper;
+    @Mock
+    private SubjectRoleBindingMapper subjectRoleBindingMapper;
+    @Mock
+    private RoleMenuMapper roleMenuMapper;
+    @Mock
+    private ISubjectAuthorityService subjectAuthorityService;
 
     private MenuServiceImpl menuService;
 
     @BeforeEach
     void setUp() {
-        menuService = new MenuServiceImpl(menuMapper);
+        menuService = new MenuServiceImpl(
+                menuMapper,
+                subjectRoleBindingMapper,
+                roleMenuMapper,
+                subjectAuthorityService);
     }
 
     @Test
