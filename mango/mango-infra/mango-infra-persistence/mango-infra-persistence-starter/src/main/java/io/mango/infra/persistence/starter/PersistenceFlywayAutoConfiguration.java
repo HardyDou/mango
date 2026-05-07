@@ -11,12 +11,18 @@ import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.annotation.Order;
+import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Mango Flyway 自动配置。
@@ -33,7 +39,6 @@ import java.util.Map;
  *       modules:
  *         user:
  *           enabled: true                 # 模块开关，默认开启
- *           baseline-on-migrate: false    # 是否从已有库基线启动，默认关闭
  * </pre>
  * <p>
  * 使用本配置时，应由 Mango 管理 Flyway 迁移。
@@ -47,55 +52,99 @@ import java.util.Map;
 public class PersistenceFlywayAutoConfiguration {
 
     private static final String MIGRATION_LOCATION_PREFIX = "classpath:db/migration/";
+    private static final String MIGRATION_SCAN_PATTERN = "classpath*:db/migration/*/V*.sql";
+    private static final String NOOP_LOCATION = "classpath:db/migration/_noop";
+    private static final String HISTORY_TABLE_PREFIX = "flyway_schema_history_";
 
     @Bean
     @DependsOn("dataSource")
     @ConditionalOnMissingBean(Flyway.class)
     public Flyway flyway(@Autowired DataSource dataSource,
                          @Autowired PersistenceFlywayProperties properties) {
-        if (!properties.isEnabled()) {
-            return Flyway.configure()
-                    .dataSource(dataSource)
-                    .validateOnMigrate(false)
-                    .baselineOnMigrate(false)
-                    .load();
-        }
-
-        List<String> enabledLocations = new ArrayList<>();
-        boolean baselineOnMigrate = false;
-
-        for (Map.Entry<String, PersistenceFlywayProperties.ModuleConfig> entry : properties.getModules().entrySet()) {
-            PersistenceFlywayProperties.ModuleConfig config = entry.getValue();
-            if (config == null || config.isEnabled()) {
-                enabledLocations.add(MIGRATION_LOCATION_PREFIX + entry.getKey());
-                if (config != null && config.isBaselineOnMigrate()) {
-                    baselineOnMigrate = true;
-                }
-            }
-        }
-
-        if (enabledLocations.isEmpty()) {
-            enabledLocations.add(MIGRATION_LOCATION_PREFIX);
-        }
-
+        // Mango runs module migrations explicitly in the ApplicationRunner below.
+        // This bean prevents Spring Boot's default Flyway flow from merging all
+        // module locations into one history table, where duplicate V1 scripts clash.
         return Flyway.configure()
                 .dataSource(dataSource)
-                .locations(enabledLocations.toArray(new String[0]))
-                .baselineOnMigrate(baselineOnMigrate)
-                .validateOnMigrate(true)
-                .outOfOrder(false)
+                .locations(NOOP_LOCATION)
+                .validateOnMigrate(false)
                 .load();
     }
 
     @Bean
     @Order(0)
     @ConditionalOnMissingBean(name = "persistenceFlywayMigrationInitializer")
-    public ApplicationRunner persistenceFlywayMigrationInitializer(@Autowired Flyway flyway,
+    public ApplicationRunner persistenceFlywayMigrationInitializer(@Autowired DataSource dataSource,
                                                                    @Autowired PersistenceFlywayProperties properties) {
         if (!properties.isEnabled()) {
             return (args) -> {
             };
         }
-        return (args) -> flyway.migrate();
+        return (args) -> {
+            for (ModuleMigration module : resolveModuleMigrations(properties)) {
+                Flyway.configure()
+                        .dataSource(dataSource)
+                        .locations(module.location())
+                        .table(HISTORY_TABLE_PREFIX + sanitizeModuleName(module.name()))
+                        .baselineOnMigrate(true)
+                        .baselineVersion("0")
+                        .validateOnMigrate(true)
+                        .outOfOrder(false)
+                        .load()
+                        .migrate();
+            }
+        };
+    }
+
+    private List<ModuleMigration> resolveModuleMigrations(PersistenceFlywayProperties properties) throws Exception {
+        if (!properties.getModules().isEmpty()) {
+            List<ModuleMigration> migrations = new ArrayList<>();
+            properties.getModules().entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> {
+                        PersistenceFlywayProperties.ModuleConfig config = entry.getValue();
+                        if (config == null || config.isEnabled()) {
+                            migrations.add(new ModuleMigration(
+                                    entry.getKey(),
+                                    MIGRATION_LOCATION_PREFIX + entry.getKey()));
+                        }
+                    });
+            return migrations;
+        }
+
+        Set<String> modules = discoverMigrationModules();
+        List<ModuleMigration> migrations = new ArrayList<>();
+        for (String module : modules) {
+            migrations.add(new ModuleMigration(module, MIGRATION_LOCATION_PREFIX + module));
+        }
+        return migrations;
+    }
+
+    private Set<String> discoverMigrationModules() throws Exception {
+        Resource[] resources = new PathMatchingResourcePatternResolver().getResources(MIGRATION_SCAN_PATTERN);
+        Set<String> modules = new LinkedHashSet<>();
+        for (Resource resource : resources) {
+            String url = resource.getURL().toString();
+            int prefixIndex = url.indexOf("/db/migration/");
+            if (prefixIndex < 0) {
+                continue;
+            }
+            String tail = url.substring(prefixIndex + "/db/migration/".length());
+            int slashIndex = tail.indexOf('/');
+            if (slashIndex > 0) {
+                modules.add(tail.substring(0, slashIndex));
+            }
+        }
+        return modules.stream()
+                .filter(StringUtils::hasText)
+                .sorted(Comparator.naturalOrder())
+                .collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
+    }
+
+    private String sanitizeModuleName(String moduleName) {
+        return moduleName.replaceAll("[^A-Za-z0-9_]", "_");
+    }
+
+    private record ModuleMigration(String name, String location) {
     }
 }

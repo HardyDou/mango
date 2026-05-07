@@ -48,11 +48,10 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
         ApiResourceAccessMode accessMode = decision.accessMode() == null
                 ? ApiResourceAccessMode.LOGIN
                 : decision.accessMode();
-        Authentication authentication = authenticationSupplier.get();
         boolean granted = switch (accessMode) {
             case PUBLIC -> true;
-            case LOGIN -> isAuthenticated(authentication);
-            case PERMISSION -> hasPermission(authentication, resolveRequiredPermission(decision.permissionCode()));
+            case LOGIN -> isAuthenticated(authenticationSupplier.get());
+            case PERMISSION -> hasPermission(authenticationSupplier.get(), resolveRequiredPermission(decision.permissionCode()));
             case INTERNAL -> false;
         };
         return new AuthorizationDecision(granted);

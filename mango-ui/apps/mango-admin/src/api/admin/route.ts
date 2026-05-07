@@ -42,24 +42,50 @@ export interface PageResult<T> {
 
 export const routeApi = {
   list: (params?: RouteQuery) => {
-    return get<PageResult<SysRoute>>('/route/list', { params });
+    return get<any[]>('/system/route/list', { params }).then((list) => toPageResult(list.map(fromBackend), params));
   },
   tree: () => {
-    return get<SysRoute[]>('/route/tree');
+    return get<any[]>('/system/route/tree').then((list) => list.map(fromBackend));
   },
   detail: (id: number) => {
-    return get<SysRoute>(`/route/${id}`);
+    return get<any>('/system/route/detail', { params: { id } }).then(fromBackend);
   },
   create: (data: SysRoute) => {
-    return post<SysRoute>('/route', data);
+    return post<number>('/system/route', toBackend(data));
   },
   update: (data: SysRoute) => {
-    return put<SysRoute>('/route', data);
+    return put<boolean>('/system/route', toBackend(data));
   },
   delete: (id: number) => {
-    return del<void>(`/route/${id}`);
+    return del<boolean>('/system/route', { params: { id } });
   },
   sort: (data: { id: number; sort: number }[]) => {
-    return put<void>('/route/sort', data);
+    return put<boolean>('/system/route/sort', data.map((item) => item.id));
   },
 };
+
+function fromBackend(item: any): SysRoute {
+  return {
+    ...item,
+    parentId: item.parentId ?? 0,
+    description: item.description ?? item.routeDesc,
+  };
+}
+
+function toBackend(item: SysRoute) {
+  return {
+    ...item,
+    routeDesc: item.description,
+  };
+}
+
+function toPageResult<T>(list: T[] = [], params?: RouteQuery): PageResult<T> {
+  const pageNum = params?.pageNum || 1;
+  const pageSize = params?.pageSize || list.length || 10;
+  return {
+    list,
+    total: list.length,
+    pageNum,
+    pageSize,
+  };
+}

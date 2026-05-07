@@ -6,6 +6,7 @@ import io.mango.infra.module.api.ModuleInfoResolver;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,10 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MemoryModuleInfoRegistry implements ModuleInfoRegistry, ModuleInfoResolver {
 
     private final Map<String, ModuleInfo> modules = new ConcurrentHashMap<>();
+    private final Map<String, ModuleInfo> modulePaths = new ConcurrentHashMap<>();
 
     @Override
     public void register(ModuleInfo moduleInfo) {
-        modules.put(moduleInfo.moduleName(), moduleInfo);
+        modules.putIfAbsent(moduleInfo.moduleName(), moduleInfo);
+        modulePaths.put(moduleInfo.moduleName() + "\n" + moduleInfo.modulePath(), moduleInfo);
     }
 
     @Override
@@ -32,7 +35,10 @@ public class MemoryModuleInfoRegistry implements ModuleInfoRegistry, ModuleInfoR
 
     @Override
     public Collection<ModuleInfo> list() {
-        return modules.values().stream()
+        List<ModuleInfo> additionalPaths = modulePaths.values().stream()
+                .filter(moduleInfo -> !moduleInfo.equals(modules.get(moduleInfo.moduleName())))
+                .toList();
+        return java.util.stream.Stream.concat(modules.values().stream(), additionalPaths.stream())
                 .sorted(Comparator.comparing(ModuleInfo::moduleName))
                 .toList();
     }

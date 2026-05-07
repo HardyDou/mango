@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.system.api.po.SysConfigPo;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.core.service.ISysConfigService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/system/config")
 @RequiredArgsConstructor
+@Tag(name = "系统配置", description = "系统配置列表、详情、新增、修改与删除接口")
 public class SysConfigController {
 
     private final ISysConfigService configService;
@@ -59,5 +61,11 @@ public class SysConfigController {
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
     public R<List<SysConfigPo>> listByType(@RequestParam ConfigTypeEnum type) {
         return configService.list(type);
+    }
+
+    @GetMapping("/groups")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:list")
+    public R<List<String>> groups() {
+        return configService.listTypes();
     }
 }

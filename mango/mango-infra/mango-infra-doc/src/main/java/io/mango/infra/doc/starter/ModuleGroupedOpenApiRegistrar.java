@@ -3,13 +3,13 @@ package io.mango.infra.doc.starter;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.EnvironmentAware;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * 根据 Mango 模块元数据动态注册 OpenAPI 分组。
  */
-public class ModuleGroupedOpenApiRegistrar implements BeanDefinitionRegistryPostProcessor, EnvironmentAware {
+public class ModuleGroupedOpenApiRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
     private static final String MODULE_PROPERTIES_LOCATION = "META-INF/mango/module.properties";
     private static final String BEAN_NAME_PREFIX = "mangoDocGroupedOpenApi_";
@@ -37,7 +37,8 @@ public class ModuleGroupedOpenApiRegistrar implements BeanDefinitionRegistryPost
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry)
+            throws BeansException {
         DocProperties properties = bindProperties();
         if (!properties.isEnabled() || !properties.getModuleGrouping().isEnabled()) {
             return;
@@ -61,10 +62,6 @@ public class ModuleGroupedOpenApiRegistrar implements BeanDefinitionRegistryPost
         }
     }
 
-    @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-    }
-
     private BeanDefinition groupedOpenApiBeanDefinition(DocProperties properties, ModuleMetadata module) {
         RootBeanDefinition beanDefinition = new RootBeanDefinition(GroupedOpenApi.class);
         beanDefinition.setInstanceSupplier(() -> buildGroupedOpenApi(properties, module));
@@ -72,11 +69,11 @@ public class ModuleGroupedOpenApiRegistrar implements BeanDefinitionRegistryPost
     }
 
     private GroupedOpenApi buildGroupedOpenApi(DocProperties properties, ModuleMetadata module) {
-        String modulePath = normalizePath(module.modulePath());
+        String[] paths = normalizePaths(module.modulePath());
         GroupedOpenApi.Builder builder = GroupedOpenApi.builder()
                 .group(module.moduleName())
-                .displayName(module.moduleName() + " (" + modulePath + ")")
-                .pathsToMatch(modulePath, modulePath + "/**");
+                .displayName(module.moduleName() + " (" + String.join(", ", paths) + ")")
+                .pathsToMatch(pathsToMatch(paths));
         if (properties.getModuleGrouping().isIncludeScopeTags()) {
             builder.addOperationCustomizer(new MangoApiScopeOperationCustomizer());
         }
@@ -118,12 +115,26 @@ public class ModuleGroupedOpenApiRegistrar implements BeanDefinitionRegistryPost
         }
     }
 
-    private String normalizePath(String path) {
+    private String[] normalizePaths(String path) {
         String value = trim(path);
         if (!hasText(value)) {
-            return "";
+            return new String[0];
         }
-        return value.startsWith("/") ? value : "/" + value;
+        return List.of(value.split(",")).stream()
+                .map(String::trim)
+                .filter(this::hasText)
+                .map(item -> item.startsWith("/") ? item : "/" + item)
+                .distinct()
+                .toArray(String[]::new);
+    }
+
+    private String[] pathsToMatch(String[] modulePaths) {
+        List<String> paths = new ArrayList<>();
+        for (String modulePath : modulePaths) {
+            paths.add(modulePath);
+            paths.add(modulePath + "/**");
+        }
+        return paths.toArray(String[]::new);
     }
 
     private String sanitize(String value) {

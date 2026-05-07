@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS `sys_config` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_config_key` (`config_key`),
-    KEY `idx_type` (`type`)
+    KEY `idx_sys_config_key` (`config_key`),
+    KEY `idx_sys_config_type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
 INSERT INTO `sys_config` (`id`, `config_key`, `config_value`, `config_name`, `type`, `sort`, `status`) VALUES

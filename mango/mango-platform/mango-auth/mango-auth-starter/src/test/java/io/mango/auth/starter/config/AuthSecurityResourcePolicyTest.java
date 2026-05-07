@@ -29,7 +29,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AuthSecurityResourcePolicyTest.TestController.class)
 @ContextConfiguration(classes = AuthSecurityResourcePolicyTest.TestApp.class)
-@TestPropertySource(properties = "mango.access.auth-enabled=true")
+@TestPropertySource(properties = {
+        "mango.access.auth-enabled=true",
+        "mango.auth.security.permit-paths=/policy/config-public,/policy/config-public/**"
+})
 @DisplayName("Auth security resource policy tests")
 class AuthSecurityResourcePolicyTest {
 
@@ -63,6 +66,22 @@ class AuthSecurityResourcePolicyTest {
                 .andExpect(content().string("login"));
     }
 
+    @Test
+    @DisplayName("configured permit path should bypass resource policy manager")
+    void configuredPermitPathShouldBypassResourcePolicyManager() throws Exception {
+        mockMvc.perform(get("/policy/config-public/doc"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("config-public"));
+    }
+
+    @Test
+    @DisplayName("configured ant permit path should match nested document endpoint")
+    void configuredAntPermitPathShouldMatchNestedDocumentEndpoint() throws Exception {
+        mockMvc.perform(get("/policy/config-public/v3/api-docs/mango-auth"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("config-public-doc"));
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @Import({AuthSecurityConfig.class, SecurityAutoConfiguration.class, TestController.class})
@@ -94,6 +113,16 @@ class AuthSecurityResourcePolicyTest {
         @GetMapping("/policy/login")
         String loginEndpoint() {
             return "login";
+        }
+
+        @GetMapping("/policy/config-public/doc")
+        String configPublicEndpoint() {
+            return "config-public";
+        }
+
+        @GetMapping("/policy/config-public/v3/api-docs/mango-auth")
+        String configPublicDocEndpoint() {
+            return "config-public-doc";
         }
     }
 }

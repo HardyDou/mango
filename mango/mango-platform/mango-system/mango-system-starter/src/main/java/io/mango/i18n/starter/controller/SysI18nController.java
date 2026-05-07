@@ -1,9 +1,11 @@
 package io.mango.i18n.starter.controller;
 
 import io.mango.common.result.R;
+import io.mango.authorization.api.annotation.PublicApi;
 import io.mango.i18n.api.SysI18nApi;
 import io.mango.i18n.api.entity.SysI18n;
 import io.mango.i18n.core.service.ISysI18nService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,8 +21,9 @@ import java.util.Map;
  * @author Mango
  */
 @RestController
-@RequestMapping("/i18n")
+@RequestMapping("/system/i18n")
 @RequiredArgsConstructor
+@Tag(name = "国际化", description = "国际化语言包与语言列表接口")
 public class SysI18nController implements SysI18nApi {
 
     private final ISysI18nService sysI18nService;
@@ -50,6 +53,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/public")
+    @PublicApi(desc = "获取公开国际化语言包")
     public R<Map<String, List<Map<String, String>>>> publicInfo() {
         return R.ok(listMap());
     }
@@ -59,6 +63,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/public/lang")
+    @PublicApi(desc = "按语言获取公开国际化语言包")
     public R<List<Map<String, String>>> publicInfoByLang(@RequestParam(value = "lang") String lang) {
         return R.ok(listByLang(lang));
     }
@@ -68,6 +73,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/languages")
+    @PublicApi(desc = "获取公开支持语言列表")
     public R<List<String>> languages() {
         return R.ok(getSupportedLanguages());
     }
@@ -77,6 +83,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping("/public/name")
+    @PublicApi(desc = "按键名获取公开国际化条目")
     public R<SysI18n> getByNameEndpoint(@RequestParam(value = "name") String name) {
         SysI18n result = getByName(name);
         if (result == null) {
@@ -91,6 +98,7 @@ public class SysI18nController implements SysI18nApi {
      * No authentication required
      */
     @GetMapping
+    @PublicApi(desc = "按语言获取前端国际化语言包")
     public R<Map<String, List<Map<String, String>>>> i18n(@RequestParam(value = "lang") String lang) {
         // 返回 {lang: [...]} 格式，匹配前端 fetchI18n(false) 的 res.data[lang] 访问方式
         Map<String, List<Map<String, String>>> result = Map.of(lang, sysI18nService.listByLang(lang));

@@ -10,6 +10,7 @@ import io.mango.system.core.service.ISysConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,13 @@ public class SysConfigServiceImpl implements ISysConfigService {
             return R.fail("配置不存在");
         }
         return R.ok(entity.getConfigValue());
+    }
+
+    @Override
+    public R<List<String>> listTypes() {
+        return R.ok(Arrays.stream(ConfigTypeEnum.values())
+                .map(ConfigTypeEnum::name)
+                .toList());
     }
 
     private SysConfigPo convertToPo(SysConfig entity) {

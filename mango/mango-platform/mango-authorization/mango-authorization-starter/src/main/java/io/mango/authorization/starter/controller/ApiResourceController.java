@@ -9,6 +9,7 @@ import io.mango.authorization.core.service.IApiResourceService;
 import io.mango.common.result.R;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/authorization")
 @RequiredArgsConstructor
+@Tag(name = "接口资源", description = "接口资源注册与访问决策接口")
 public class ApiResourceController implements ApiResourceApi {
 
     private final IApiResourceService apiResourceService;

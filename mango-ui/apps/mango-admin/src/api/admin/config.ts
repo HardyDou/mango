@@ -9,7 +9,10 @@ export interface SysConfig {
   configKey: string;
   configValue: string;
   configGroup: string;
+  configName?: string;
+  type?: string;
   description?: string;
+  remark?: string;
   status?: number;
   createTime?: string;
   updateTime?: string;
@@ -31,24 +34,69 @@ export interface PageResult<T> {
 
 export const configApi = {
   list: (params?: SysConfigQuery) => {
-    return get<PageResult<SysConfig>>('/system/config/list', { params });
+    return get<any[]>('/system/config/list', { params: toBackendQuery(params) })
+      .then((list) => toPageResult(list.map(fromBackend), params));
   },
   detail: (id: number) => {
-    return get<SysConfig>(`/system/config/${id}`);
+    return get<any>('/system/config/detail', { params: { id } }).then(fromBackend);
   },
   create: (data: SysConfig) => {
-    return post<SysConfig>('/system/config', data);
+    return post<number>('/system/config', toBackend(data));
   },
   update: (data: SysConfig) => {
-    return put<SysConfig>('/system/config', data);
+    return put<boolean>('/system/config', toBackend(data));
   },
   delete: (id: number) => {
-    return del<void>(`/system/config/${id}`);
+    return del<boolean>('/system/config', { params: { id } });
   },
   group: (group: string) => {
-    return get<SysConfig[]>(`/system/config/group/${group}`);
+    return get<any[]>('/system/config/type', { params: { type: toBackendType(group) } })
+      .then((list) => list.map(fromBackend));
   },
   groups: () => {
     return get<string[]>('/system/config/groups');
   },
 };
+
+function toBackendQuery(params?: SysConfigQuery) {
+  return {
+    type: params?.configGroup ? toBackendType(params.configGroup) : undefined,
+  };
+}
+
+function toBackendType(group?: string): string {
+  const value = (group || 'system').toUpperCase();
+  if (value === 'UPLOAD' || value === 'EMAIL' || value === 'SMS') {
+    return 'BUSINESS';
+  }
+  return value;
+}
+
+function fromBackend(item: any): SysConfig {
+  const group = (item.type || 'SYSTEM').toLowerCase();
+  return {
+    ...item,
+    configGroup: group,
+    description: item.description ?? item.remark,
+  };
+}
+
+function toBackend(item: SysConfig) {
+  return {
+    ...item,
+    configName: item.configName || item.configKey,
+    type: item.type || toBackendType(item.configGroup),
+    remark: item.remark || item.description,
+  };
+}
+
+function toPageResult<T>(list: T[] = [], params?: SysConfigQuery): PageResult<T> {
+  const pageNum = params?.pageNum || 1;
+  const pageSize = params?.pageSize || list.length || 10;
+  return {
+    list,
+    total: list.length,
+    pageNum,
+    pageSize,
+  };
+}

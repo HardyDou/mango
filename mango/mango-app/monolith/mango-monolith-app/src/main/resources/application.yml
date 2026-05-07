@@ -4,21 +4,22 @@ server:
 spring:
   application:
     name: mango-monolith-app
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
 
-  # H2 Embedded Database
   datasource:
-    url: jdbc:h2:mem:mangodb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
+    url: jdbc:mysql://127.0.0.1:3306/mango?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
     password:
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
 
-  # H2 Console (for debugging)
   h2:
     console:
-      enabled: true
+      enabled: false
       path: /h2-console
 
   # SQL init disabled - schema created by MyBatis-Plus
@@ -42,11 +43,66 @@ mango:
   security:
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}
+  auth:
+    security:
+      permit-paths:
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /doc.html
+        - /webjars/**
+        - /favicon.ico
+        - /v3/api-docs
+        - /v3/api-docs/**
   crypto:
     sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
     sm4-iv:
-  flyway:
-    enabled: false
+  kv:
+    store:
+      type: memory
+  captcha:
+    required-paths: []
+  authorization:
+    resource-sync:
+      resources:
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /swagger-ui.html
+          access-mode: PUBLIC
+          description: Swagger UI entry
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /swagger-ui/**
+          access-mode: PUBLIC
+          description: Swagger UI assets
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /doc.html
+          access-mode: PUBLIC
+          description: Knife4j document entry
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /webjars/**
+          access-mode: PUBLIC
+          description: Knife4j and Swagger static assets
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /favicon.ico
+          access-mode: PUBLIC
+          description: Document favicon
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /v3/api-docs
+          access-mode: PUBLIC
+          description: OpenAPI document
+        - module-name: mango-infra-doc
+          http-method: GET
+          path-pattern: /v3/api-docs/**
+          access-mode: PUBLIC
+          description: OpenAPI grouped documents
+  doc:
+    module-grouping:
+      include-default-group: false
+      include-scope-tags: false
 
 # Actuator
 management:
@@ -69,6 +125,24 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+    disable-swagger-default-url: true
+    urls:
+      - name: mango-auth
+        url: /v3/api-docs/mango-auth
+      - name: mango-authorization
+        url: /v3/api-docs/mango-authorization
+      - name: mango-captcha
+        url: /v3/api-docs/mango-captcha
+      - name: mango-identity
+        url: /v3/api-docs/mango-identity
+      - name: mango-org
+        url: /v3/api-docs/mango-org
+      - name: mango-system
+        url: /v3/api-docs/mango-system
+      - name: mango-biz-notification
+        url: /v3/api-docs/mango-biz-notification
+      - name: mango-infra-realtime
+        url: /v3/api-docs/mango-infra-realtime
   api-docs:
     enabled: true
     path: /v3/api-docs

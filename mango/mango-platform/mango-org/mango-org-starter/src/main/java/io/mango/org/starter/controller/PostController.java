@@ -8,12 +8,14 @@ import io.mango.org.api.command.UpdatePostCommand;
 import io.mango.org.api.query.PostPageQuery;
 import io.mango.org.api.vo.PostVO;
 import io.mango.org.core.service.IPostService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/post")
 @RequiredArgsConstructor
+@Tag(name = "岗位管理", description = "岗位分页、详情、新增、修改与删除接口")
 public class PostController implements PostApi {
 
     private final IPostService postService;

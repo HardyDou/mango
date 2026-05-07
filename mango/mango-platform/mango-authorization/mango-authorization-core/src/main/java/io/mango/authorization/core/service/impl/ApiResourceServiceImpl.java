@@ -12,6 +12,7 @@ import io.mango.authorization.core.service.IApiResourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
@@ -39,6 +41,7 @@ public class ApiResourceServiceImpl
     private final Map<String, ApiResourceAccessDecisionVO> decisionCache = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<String> decisionCacheKeys = new ConcurrentLinkedQueue<>();
     private volatile List<ApiResource> activeResourceCache;
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
     private static final int MAX_DECISION_CACHE_SIZE = 10_000;
 
     @Override
@@ -62,6 +65,12 @@ public class ApiResourceServiceImpl
         }
         validResources = deduplicate(validResources);
 
+        Set<String> currentResourceKeys = validResources.stream()
+                .map(resource -> resourceKey(
+                        resource.getModuleName(),
+                        resource.getHttpMethod(),
+                        resource.getPathPattern()))
+                .collect(Collectors.toSet());
         Map<String, ApiResource> existingIndex = loadExistingIndex(validResources);
         List<ApiResource> creates = new ArrayList<>();
         List<ApiResource> updates = new ArrayList<>();
@@ -77,11 +86,17 @@ public class ApiResourceServiceImpl
                 updates.add(existing);
             }
         }
+        List<ApiResource> staleResources = loadStaleAutoScannedResources(validResources, currentResourceKeys);
+        staleResources.forEach(resource -> resource.setStatus(0));
+        updates.addAll(staleResources);
         if (!creates.isEmpty()) {
             saveBatch(creates);
         }
         if (!updates.isEmpty()) {
             updateBatchById(updates);
+        }
+        if (!staleResources.isEmpty()) {
+            log.info("API resource stale entries disabled: count={}", staleResources.size());
         }
         clearRuntimeCache();
         return new ApiResourceRegisterResultVO(validResources.size(), creates.size(), updates.size());
@@ -131,6 +146,29 @@ public class ApiResourceServiceImpl
                 resource.getHttpMethod(),
                 resource.getPathPattern()), resource));
         return index;
+    }
+
+    private List<ApiResource> loadStaleAutoScannedResources(
+            List<ApiResourceRegisterCommand> resources,
+            Set<String> currentResourceKeys) {
+        List<String> handlerClasses = resources.stream()
+                .map(ApiResourceRegisterCommand::getHandlerClass)
+                .filter(StringUtils::hasText)
+                .filter(handlerClass -> !"configuration".equals(handlerClass))
+                .distinct()
+                .toList();
+        if (handlerClasses.isEmpty()) {
+            return List.of();
+        }
+        return list(new LambdaQueryWrapper<ApiResource>()
+                .in(ApiResource::getHandlerClass, handlerClasses)
+                .eq(ApiResource::getStatus, 1))
+                .stream()
+                .filter(resource -> !currentResourceKeys.contains(resourceKey(
+                        resource.getModuleName(),
+                        resource.getHttpMethod(),
+                        resource.getPathPattern())))
+                .collect(Collectors.toList());
     }
 
     private List<ApiResourceRegisterCommand> deduplicate(List<ApiResourceRegisterCommand> resources) {
@@ -254,33 +292,6 @@ public class ApiResourceServiceImpl
         if (pattern.equals(path)) {
             return true;
         }
-        return path.matches(toPathRegex(pattern));
-    }
-
-    private String toPathRegex(String pattern) {
-        StringBuilder regex = new StringBuilder("^");
-        for (int index = 0; index < pattern.length(); index++) {
-            char current = pattern.charAt(index);
-            if (current == '{') {
-                int end = pattern.indexOf('}', index);
-                if (end > index) {
-                    regex.append("[^/]+");
-                    index = end;
-                    continue;
-                }
-            }
-            if (current == '*') {
-                if (index + 1 < pattern.length() && pattern.charAt(index + 1) == '*') {
-                    regex.append(".*");
-                    index++;
-                } else {
-                    regex.append("[^/]*");
-                }
-                continue;
-            }
-            regex.append(Pattern.quote(String.valueOf(current)));
-        }
-        regex.append("$");
-        return regex.toString();
+        return PATH_MATCHER.match(pattern, path);
     }
 }

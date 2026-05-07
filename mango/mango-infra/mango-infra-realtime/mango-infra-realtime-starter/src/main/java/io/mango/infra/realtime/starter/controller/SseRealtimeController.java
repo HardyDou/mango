@@ -5,6 +5,7 @@ import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
 import io.mango.infra.realtime.core.sse.SseProtocolAdapter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -19,6 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "实时 SSE", description = "实时消息 SSE 连接与上行接口")
 public class SseRealtimeController {
 
     private final SseProtocolAdapter sseProtocolAdapter;

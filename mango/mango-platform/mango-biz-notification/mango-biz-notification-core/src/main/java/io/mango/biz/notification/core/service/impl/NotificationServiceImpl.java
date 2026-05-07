@@ -1,6 +1,7 @@
 package io.mango.biz.notification.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
@@ -9,12 +10,14 @@ import io.mango.biz.notification.api.vo.SysNotificationVO;
 import io.mango.biz.notification.core.entity.SysNotification;
 import io.mango.biz.notification.core.mapper.SysNotificationMapper;
 import io.mango.biz.notification.core.service.INotificationService;
+import io.mango.common.vo.PageResult;
 import io.mango.infra.realtime.api.RealtimeApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +44,15 @@ public class NotificationServiceImpl implements INotificationService {
         realtimeApi.publishToUser(po.getUserId(), "message", json);
 
         return R.ok(entity.getId());
+    }
+
+    @Override
+    public Map<String, Object> sendForFrontend(SysNotificationPo po) {
+        Long id = send(po).getData();
+        return Map.of(
+                "messageId", id,
+                "successCount", id == null ? 0 : 1,
+                "failCount", id == null ? 1 : 0);
     }
 
     @Override
@@ -78,6 +90,56 @@ public class NotificationServiceImpl implements INotificationService {
             messageMapper.updateById(message);
         }
         return R.ok(true);
+    }
+
+    @Override
+    public PageResult<SysNotificationVO> pageByUser(Long userId, int page, int size, Boolean unreadOnly) {
+        LambdaQueryWrapper<SysNotification> wrapper = new LambdaQueryWrapper<>();
+        if (userId != null) {
+            wrapper.and(query -> query.eq(SysNotification::getUserId, userId).or().isNull(SysNotification::getUserId));
+        }
+        if (Boolean.TRUE.equals(unreadOnly)) {
+            wrapper.eq(SysNotification::getReadStatus, 0);
+        }
+        wrapper.orderByDesc(SysNotification::getCreateTime);
+        Page<SysNotification> result = messageMapper.selectPage(new Page<>(page, size), wrapper);
+        return PageResult.of(
+                result.getRecords().stream().map(this::convertToVO).toList(),
+                result.getTotal(),
+                result.getCurrent(),
+                result.getSize());
+    }
+
+    @Override
+    public SysNotificationVO get(Long id) {
+        return convertToVO(messageMapper.selectById(id));
+    }
+
+    @Override
+    public long unreadCount(Long userId) {
+        LambdaQueryWrapper<SysNotification> wrapper = new LambdaQueryWrapper<>();
+        if (userId != null) {
+            wrapper.and(query -> query.eq(SysNotification::getUserId, userId).or().isNull(SysNotification::getUserId));
+        }
+        wrapper.eq(SysNotification::getReadStatus, 0);
+        return messageMapper.selectCount(wrapper);
+    }
+
+    @Override
+    public boolean markReadBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return true;
+        }
+        SysNotification entity = new SysNotification();
+        entity.setReadStatus(1);
+        entity.setReadTime(java.time.LocalDateTime.now());
+        return messageMapper.update(entity,
+                new LambdaQueryWrapper<SysNotification>().in(SysNotification::getId, ids)) >= 0;
+    }
+
+    @Override
+    public boolean delete(Long id) {
+        return messageMapper.deleteById(id) > 0;
     }
 
     private SysNotificationVO convertToVO(SysNotification entity) {

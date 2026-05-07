@@ -31,21 +31,59 @@ export interface PageResult<T> {
 
 export const paramApi = {
   list: (params?: SysParamQuery) => {
-    return get<PageResult<SysParam>>('/system/param/list', { params });
+    return get<any[]>('/system/config/list', { params: { type: 'BUSINESS' } })
+      .then((list) => toPageResult(list.map(fromConfig), params));
   },
   detail: (id: number) => {
-    return get<SysParam>(`/system/param/${id}`);
+    return get<any>('/system/config/detail', { params: { id } }).then(fromConfig);
   },
   create: (data: SysParam) => {
-    return post<SysParam>('/system/param', data);
+    return post<number>('/system/config', toConfig(data));
   },
   update: (data: SysParam) => {
-    return put<SysParam>('/system/param', data);
+    return put<boolean>('/system/config', toConfig(data));
   },
   delete: (id: number) => {
-    return del<void>(`/system/param/${id}`);
+    return del<boolean>('/system/config', { params: { id } });
   },
   updateValue: (id: number, paramValue: string) => {
-    return put<void>(`/system/param/value/${id}`, { paramValue });
+    return put<boolean>('/system/config/value', undefined, { params: { id, value: paramValue } });
   },
 };
+
+function fromConfig(item: any): SysParam {
+  return {
+    id: item.id,
+    paramKey: item.configKey,
+    paramValue: item.configValue,
+    paramType: item.type === 'SYSTEM' ? 1 : 2,
+    description: item.remark || item.configName,
+    status: item.status,
+    createTime: item.createTime,
+    updateTime: item.updateTime,
+  };
+}
+
+function toConfig(item: SysParam) {
+  return {
+    id: item.id,
+    configKey: item.paramKey,
+    configValue: item.paramValue,
+    configName: item.paramKey,
+    type: item.paramType === 1 ? 'SYSTEM' : 'BUSINESS',
+    remark: item.description,
+    status: item.status,
+    sort: 0,
+  };
+}
+
+function toPageResult<T>(list: T[] = [], params?: SysParamQuery): PageResult<T> {
+  const pageNum = params?.pageNum || 1;
+  const pageSize = params?.pageSize || list.length || 10;
+  return {
+    list,
+    total: list.length,
+    pageNum,
+    pageSize,
+  };
+}

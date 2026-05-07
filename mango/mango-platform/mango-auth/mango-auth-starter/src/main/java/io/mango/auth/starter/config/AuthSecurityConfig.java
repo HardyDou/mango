@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -31,6 +32,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -41,10 +44,12 @@ import java.io.IOException;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+@EnableConfigurationProperties(AuthSecurityProperties.class)
 public class AuthSecurityConfig {
 
     private final ITokenProvider tokenService;
     private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
+    private final AuthSecurityProperties properties;
 
     @Bean
     @ConditionalOnProperty(name = "mango.access.auth-enabled", havingValue = "true", matchIfMissing = true)
@@ -68,6 +73,10 @@ public class AuthSecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(authorize -> {
+                    RequestMatcher[] permitPathMatchers = permitPathMatchers();
+                    if (permitPathMatchers.length > 0) {
+                        authorize.requestMatchers(permitPathMatchers).permitAll();
+                    }
                     if (apiResourceAuthorizationManager == null) {
                         authorize.anyRequest().authenticated();
                     } else {
@@ -78,6 +87,17 @@ public class AuthSecurityConfig {
                         tokenService,
                         tokenRevocationServiceProvider), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    private RequestMatcher[] permitPathMatchers() {
+        if (properties == null || properties.getPermitPaths() == null) {
+            return new RequestMatcher[0];
+        }
+        return properties.getPermitPaths().stream()
+                .filter(path -> path != null && !path.isBlank())
+                .map(String::trim)
+                .map(AntPathRequestMatcher::new)
+                .toArray(RequestMatcher[]::new);
     }
 
     @Slf4j

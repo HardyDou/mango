@@ -7,6 +7,7 @@ import io.mango.identity.api.AuthIdentityApi;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.query.AuthUsernameQuery;
 import io.mango.identity.api.vo.AuthUserInfo;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/identity")
 @RequiredArgsConstructor
+@Tag(name = "身份认证-内部", description = "认证链路内部身份查询接口")
 public class AuthIdentityController implements AuthIdentityApi {
 
     private final AuthUserProvider authUserProvider;

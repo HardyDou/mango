@@ -9,6 +9,7 @@ import io.mango.system.api.vo.DictTypeVO;
 import io.mango.system.api.vo.DictDataVO;
 import io.mango.system.api.vo.DictOptionVO;
 import io.mango.system.core.service.IDictService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/system/dict")
 @RequiredArgsConstructor
+@Tag(name = "系统字典", description = "字典类型与字典数据管理接口")
 public class SysDictController {
 
     private final IDictService dictService;

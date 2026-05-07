@@ -4,10 +4,12 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 
@@ -37,12 +39,11 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
-    void disabled_module_shouldNotBeInFlywayLocations() {
+    void flywayBean_shouldUseNoopLocationBecauseRunnerMigratesModules() {
         contextRunner
                 .withPropertyValues(
                         "mango.persistence.flyway.enabled=true",
-                        "mango.persistence.flyway.modules.user.enabled=true",
-                        "mango.persistence.flyway.modules.i18n.enabled=false"
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
@@ -52,61 +53,56 @@ class PersistenceFlywayAutoConfigurationTest {
                             .map(Location::getPath)
                             .collect(Collectors.toList());
 
-                    assertThat(locations).contains("db/migration/user");
-                    assertThat(locations).doesNotContain("db/migration/i18n");
+                    assertThat(locations).containsExactly("db/migration/_noop");
                 });
     }
 
     @Test
-    void whenNoModulesSpecified_shouldUseDefaultLocation() {
+    void disabledModule_shouldNotRunMigration() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=false"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
+                    runner.run(null);
+
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isFalse();
+                });
+    }
+
+    @Test
+    void whenNoModulesSpecified_shouldDiscoverClasspathMigrationModules() {
         contextRunner
                 .withPropertyValues("mango.persistence.flyway.enabled=true")
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    Flyway flyway = ctx.getBean(Flyway.class);
-                    ClassicConfiguration config = (ClassicConfiguration) flyway.getConfiguration();
-                    List<String> locations = Arrays.stream(config.getLocations())
-                            .map(Location::getPath)
-                            .collect(Collectors.toList());
+                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
+                    runner.run(null);
 
-                    assertThat(locations).contains("db/migration");
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
     }
 
     @Test
-    void multipleModulesEnabled_shouldIncludeAllLocations() {
+    void baselineOnMigrate_shouldBeAcceptedByModuleRunner() {
         contextRunner
                 .withPropertyValues(
                         "mango.persistence.flyway.enabled=true",
-                        "mango.persistence.flyway.modules.user.enabled=true",
-                        "mango.persistence.flyway.modules.area.enabled=true"
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.baseline-on-migrate=true"
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    Flyway flyway = ctx.getBean(Flyway.class);
-                    ClassicConfiguration config = (ClassicConfiguration) flyway.getConfiguration();
-                    List<String> locations = Arrays.stream(config.getLocations())
-                            .map(Location::getPath)
-                            .collect(Collectors.toList());
+                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
+                    runner.run(null);
 
-                    assertThat(locations).contains("db/migration/user");
-                    assertThat(locations).contains("db/migration/area");
-                });
-    }
-
-    @Test
-    void baselineOnMigrate_shouldBeConfigurable() {
-        contextRunner
-                .withPropertyValues(
-                        "mango.persistence.flyway.enabled=true",
-                        "mango.persistence.flyway.modules.user.enabled=true",
-                        "mango.persistence.flyway.modules.user.baseline-on-migrate=true"
-                )
-                .withUserConfiguration(H2DataSourceConfig.class)
-                .run(ctx -> {
-                    Flyway flyway = ctx.getBean(Flyway.class);
-                    ClassicConfiguration config = (ClassicConfiguration) flyway.getConfiguration();
-                    assertThat(config.isBaselineOnMigrate()).isTrue();
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
     }
 
@@ -147,7 +143,7 @@ class PersistenceFlywayAutoConfigurationTest {
         @Bean
         DataSource dataSource() throws Exception {
             org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
-            ds.setURL("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1");
+            ds.setURL("jdbc:h2:mem:" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
             ds.setUser("sa");
             ds.setPassword("");
             return ds;
@@ -163,5 +159,13 @@ class PersistenceFlywayAutoConfigurationTest {
                     .locations("classpath:custom/migration")
                     .load();
         }
+    }
+
+    private static boolean tableExists(JdbcTemplate jdbcTemplate, String tableName) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public' AND TABLE_NAME = ?",
+                Integer.class,
+                tableName);
+        return count != null && count > 0;
     }
 }

@@ -5,6 +5,7 @@ import io.mango.org.api.SysOrgApi;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 import io.mango.org.core.service.ISysOrgService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/org")
 @RequiredArgsConstructor
+@Tag(name = "组织架构", description = "组织树、组织详情与下级组织查询接口")
 public class SysOrgController implements SysOrgApi {
 
     private final ISysOrgService orgService;

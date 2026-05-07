@@ -44,6 +44,8 @@ class PersistenceAuditAutoConfigurationTest {
             assertThat(entity.getTenantId()).isEqualTo("2002");
             assertThat(entity.getCreatedAt()).isNotNull();
             assertThat(entity.getUpdatedAt()).isNotNull();
+            assertThat(entity.getCreateTime()).isNotNull();
+            assertThat(entity.getUpdateTime()).isNotNull();
         });
     }
 
@@ -73,8 +75,10 @@ class PersistenceAuditAutoConfigurationTest {
     static class TestEntity {
         private Long createdBy;
         private LocalDateTime createdAt;
+        private LocalDateTime createTime;
         private Long updatedBy;
         private LocalDateTime updatedAt;
+        private LocalDateTime updateTime;
         private String tenantId;
 
         public Long getCreatedBy() {
@@ -93,6 +97,14 @@ class PersistenceAuditAutoConfigurationTest {
             this.createdAt = createdAt;
         }
 
+        public LocalDateTime getCreateTime() {
+            return createTime;
+        }
+
+        public void setCreateTime(LocalDateTime createTime) {
+            this.createTime = createTime;
+        }
+
         public Long getUpdatedBy() {
             return updatedBy;
         }
@@ -107,6 +119,14 @@ class PersistenceAuditAutoConfigurationTest {
 
         public void setUpdatedAt(LocalDateTime updatedAt) {
             this.updatedAt = updatedAt;
+        }
+
+        public LocalDateTime getUpdateTime() {
+            return updateTime;
+        }
+
+        public void setUpdateTime(LocalDateTime updateTime) {
+            this.updateTime = updateTime;
         }
 
         public String getTenantId() {

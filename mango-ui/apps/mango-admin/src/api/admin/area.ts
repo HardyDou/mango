@@ -1,7 +1,7 @@
 /**
  * Area Tree API - 行政区划树
  *
- * Backend API: GET /area/tree?type=&parentId=
+ * Backend API: GET /system/area/tree?type=&parentId=
  * Response: {code, msg, data: [{adcode, name, level, hot, children[]}]}
  */
 
@@ -30,7 +30,7 @@ export function getAreaTree(params?: AreaTreeParams): Promise<AreaNode[]> {
   if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {
     return Promise.resolve(getMockAreaTree(params));
   }
-  return get('/area/tree', { params }).then((res: any) => {
+  return get('/system/area/tree', { params }).then((res: any) => {
     // 转换API响应格式
     if (res && Array.isArray(res)) {
       return transformAreaTree(res);

@@ -72,7 +72,7 @@ export interface MessageSendResponse {
  * @param data 消息内容
  */
 export function sendMessage(data: Message) {
-  return post<MessageSendResponse>('/message/send', data);
+  return post<MessageSendResponse>('/message/send', toBackend(data));
 }
 
 /**
@@ -80,7 +80,7 @@ export function sendMessage(data: Message) {
  * @param data 消息内容
  */
 export function broadcastMessage(data: Message) {
-  return post<MessageSendResponse>('/message/broadcast', data);
+  return post<MessageSendResponse>('/message/broadcast', toBackend(data));
 }
 
 // ==================== 消息查询 API ====================
@@ -90,7 +90,7 @@ export function broadcastMessage(data: Message) {
  * @param params 查询参数
  */
 export function getMessageList(params?: MessageQuery) {
-  return get<PageResult<Message>>('/message/list', { params });
+  return get<any>('/message/list', { params }).then(fromBackendPage);
 }
 
 /**
@@ -98,7 +98,7 @@ export function getMessageList(params?: MessageQuery) {
  * @param id 消息ID
  */
 export function getMessageDetail(id: number) {
-  return get<Message>(`/message/${id}`);
+  return get<any>(`/message/${id}`).then(fromBackend);
 }
 
 /**
@@ -149,3 +149,81 @@ export const messageApi = {
   markAllAsRead,
   delete: deleteMessage,
 };
+
+function toBackend(data: Message) {
+  return {
+    notificationType: toNotificationType(data.type),
+    title: data.title,
+    content: data.content,
+    userId: data.targetUserId,
+    userIds: data.targetUserIds,
+    priority: toPriority(data.priority),
+  };
+}
+
+function toNotificationType(type?: MessageType) {
+  if (type === 'alert') {
+    return 'ALERT';
+  }
+  if (type === 'notification') {
+    return 'BUSINESS';
+  }
+  return 'SYSTEM';
+}
+
+function toPriority(priority?: MessagePriority) {
+  if (priority === 'high') {
+    return 2;
+  }
+  if (priority === 'urgent') {
+    return 3;
+  }
+  if (priority === 'low') {
+    return 0;
+  }
+  return 1;
+}
+
+function fromBackend(item: any): Message {
+  return {
+    id: item.id,
+    title: item.title,
+    content: item.content,
+    type: fromNotificationType(item.notificationType),
+    priority: fromPriority(item.priority),
+    targetUserId: item.userId,
+    createTime: item.createTime,
+  };
+}
+
+function fromBackendPage(page: any): PageResult<Message> {
+  return {
+    list: (page?.list || []).map(fromBackend),
+    total: page?.total || 0,
+    pageNum: page?.pageNum || page?.page || 1,
+    pageSize: page?.pageSize || page?.size || 10,
+  };
+}
+
+function fromNotificationType(type?: string): MessageType {
+  if (type === 'ALERT') {
+    return 'alert';
+  }
+  if (type === 'BUSINESS') {
+    return 'notification';
+  }
+  return 'system';
+}
+
+function fromPriority(priority?: number): MessagePriority {
+  if (priority === 0) {
+    return 'low';
+  }
+  if (priority === 2) {
+    return 'high';
+  }
+  if (priority === 3) {
+    return 'urgent';
+  }
+  return 'normal';
+}

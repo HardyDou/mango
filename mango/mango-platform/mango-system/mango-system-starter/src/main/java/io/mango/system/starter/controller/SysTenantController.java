@@ -5,6 +5,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.system.api.po.SysTenantPo;
 import io.mango.system.core.service.ISysTenantService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/system/tenant")
 @RequiredArgsConstructor
+@Tag(name = "租户管理", description = "租户列表、详情、新增、修改、删除与状态管理接口")
 public class SysTenantController {
 
     private final ISysTenantService tenantService;

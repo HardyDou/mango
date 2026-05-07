@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.core.service.IIdentityUserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/identity")
 @RequiredArgsConstructor
+@Tag(name = "身份用户", description = "身份用户资料查询接口")
 public class IdentityUserController implements IdentityUserApi {
 
     private final IIdentityUserService identityUserService;

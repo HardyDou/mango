@@ -3,6 +3,7 @@ package io.mango.area.core.controller;
 import io.mango.area.api.entity.SysArea;
 import io.mango.area.core.service.ISysAreaService;
 import io.mango.common.result.R;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +16,9 @@ import java.util.Map;
  * @author Mango
  */
 @RestController
-@RequestMapping("/area")
+@RequestMapping("/system/area")
 @RequiredArgsConstructor
+@Tag(name = "行政区划", description = "行政区划树、详情、子级与启用区划接口")
 public class SysAreaController {
 
     private final ISysAreaService areaService;

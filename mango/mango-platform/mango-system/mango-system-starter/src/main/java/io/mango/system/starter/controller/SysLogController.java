@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.system.api.po.SysLoginLogPo;
 import io.mango.system.api.po.SysOperationLogPo;
 import io.mango.system.core.service.ISysLogService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/system/log")
 @RequiredArgsConstructor
+@Tag(name = "系统日志", description = "登录日志与操作日志查询、统计、清理接口")
 public class SysLogController {
 
     private final ISysLogService logService;

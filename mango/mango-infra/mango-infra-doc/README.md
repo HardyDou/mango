@@ -8,7 +8,7 @@
 - **Swagger UI** - 在线 API 文档界面
 - **`@ConfigurationProperties` 模式** - `mango.doc.*` 前缀
 - **模块分组 API** - 基于 `META-INF/mango/module.properties` 按模块生成 API 文档分组
-- **接口范围标记** - 基于 `@ApiAccess(mode = INTERNAL)` 或 `@InternalApi` 标记对内接口，其余接口标记为对外接口
+- **接口范围标记** - 基于 `@ApiAccess(mode = INTERNAL)` 或 `@InternalApi` 标记对内接口
 - **单体/微服务兼容** - 单体应用直接暴露本应用文档；微服务可由网关聚合各服务 `/v3/api-docs/{group}` 后在 Swagger UI 下拉切换模块
 
 `mango-infra-doc` 只面向开发和联调体验，不属于核心运行时能力。
@@ -34,7 +34,7 @@
 | `mango.doc.pathsToMatch` | `/api/**` | 包含的路径 |
 | `mango.doc.moduleGrouping.enabled` | `true` | 是否按模块元数据生成分组 |
 | `mango.doc.moduleGrouping.includeDefaultGroup` | `true` | 是否保留默认全局分组 |
-| `mango.doc.moduleGrouping.includeScopeTags` | `true` | 是否标记对内/对外接口 |
+| `mango.doc.moduleGrouping.includeScopeTags` | `true` | 是否为对内接口追加提示 tag |
 | `mango.doc.contact.name` | `Mango Team` | 联系人 |
 | `mango.doc.contact.email` | `mango@example.com` | 联系邮箱 |
 
@@ -83,8 +83,8 @@ module-path=/auth
 接口范围标记规则：
 
 - 标注了 `@ApiAccess(mode = ApiResourceAccessMode.INTERNAL)` 或 `@InternalApi` 的 Controller、方法或接口方法会标记为 `对内接口`。
-- 未标注 `@ApiAccess(INTERNAL)` 的接口会标记为 `对外接口`。
-- `@PublicApi`、`@LoginApi`、`@PermissionAccess` 会被识别为对外接口。
+- 未标注 `@ApiAccess(INTERNAL)` 的接口不追加访问范围 tag，是否允许外部访问以接口注解和资源访问策略为准。
+- `@PublicApi`、`@LoginApi`、`@PermissionAccess` 会参与资源访问策略同步，不作为 Swagger 分组 tag。
 - OpenAPI 操作会同时带上 `x-mango-api-scope`，值为 `internal` 或 `external`。
 
 ### 微服务网关访问

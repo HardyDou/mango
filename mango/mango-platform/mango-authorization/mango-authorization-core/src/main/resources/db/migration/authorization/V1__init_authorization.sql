@@ -22,12 +22,12 @@ CREATE TABLE IF NOT EXISTS `authorization_api_resource` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    UNIQUE KEY `uk_module_method_path` (`module_name`, `http_method`, `path_pattern`),
-    KEY `idx_module_name` (`module_name`),
-    KEY `idx_resource_code` (`resource_code`),
-    KEY `idx_permission_code` (`permission_code`),
-    KEY `idx_access_mode` (`access_mode`),
-    KEY `idx_status` (`status`)
+    UNIQUE KEY `uk_authorization_api_resource_method_path` (`module_name`, `http_method`, `path_pattern`),
+    KEY `idx_authorization_api_resource_module` (`module_name`),
+    KEY `idx_authorization_api_resource_code` (`resource_code`),
+    KEY `idx_authorization_api_resource_permission` (`permission_code`),
+    KEY `idx_authorization_api_resource_access` (`access_mode`),
+    KEY `idx_authorization_api_resource_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='接口资源表';
 
 CREATE TABLE IF NOT EXISTS `authorization_permission` (
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS `authorization_permission` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_module` (`module`),
-    KEY `idx_perm_type` (`perm_type`)
+    KEY `idx_authorization_permission_module` (`module`),
+    KEY `idx_authorization_permission_type` (`perm_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限定义表';
 
 CREATE TABLE IF NOT EXISTS `authorization_role` (
@@ -68,10 +68,10 @@ CREATE TABLE IF NOT EXISTS `authorization_role` (
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    UNIQUE KEY `uk_app_role_code` (`app_code`, `role_code`),
-    KEY `idx_tenant_id` (`tenant_id`),
-    KEY `idx_app_code` (`app_code`),
-    KEY `idx_realm_actor` (`realm`, `actor_type`)
+    UNIQUE KEY `uk_authorization_role_app_role_code` (`app_code`, `role_code`),
+    KEY `idx_authorization_role_tenant_id` (`tenant_id`),
+    KEY `idx_authorization_role_app_code` (`app_code`),
+    KEY `idx_authorization_role_realm_actor` (`realm`, `actor_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
 CREATE TABLE IF NOT EXISTS `authorization_subject_role` (
@@ -89,10 +89,10 @@ CREATE TABLE IF NOT EXISTS `authorization_subject_role` (
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    UNIQUE KEY `uk_subject_role` (`subject_id`, `role_id`, `tenant_id`, `app_code`, `party_type`, `party_id`),
-    KEY `idx_role_id` (`role_id`),
-    KEY `idx_subject_context` (`subject_id`, `app_code`, `realm`, `party_type`, `party_id`),
-    KEY `idx_tenant_id` (`tenant_id`)
+    UNIQUE KEY `uk_authorization_subject_role_subject_role` (`subject_id`, `role_id`, `tenant_id`, `app_code`, `party_type`, `party_id`),
+    KEY `idx_authorization_subject_role_role_id` (`role_id`),
+    KEY `idx_authorization_subject_role_context` (`subject_id`, `app_code`, `realm`, `party_type`, `party_id`),
+    KEY `idx_authorization_subject_role_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='主体角色关联表';
 
 CREATE TABLE IF NOT EXISTS `authorization_role_permission` (
@@ -105,9 +105,9 @@ CREATE TABLE IF NOT EXISTS `authorization_role_permission` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    UNIQUE KEY `uk_role_perm` (`role_id`, `perm_id`),
-    KEY `idx_role_id` (`role_id`),
-    KEY `idx_perm_id` (`perm_id`)
+    UNIQUE KEY `uk_authorization_role_permission_role_perm` (`role_id`, `perm_id`),
+    KEY `idx_authorization_role_permission_role_id` (`role_id`),
+    KEY `idx_authorization_role_permission_perm_id` (`perm_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
 
 CREATE TABLE IF NOT EXISTS `authorization_subject_permission` (
@@ -120,10 +120,10 @@ CREATE TABLE IF NOT EXISTS `authorization_subject_permission` (
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    UNIQUE KEY `uk_subject_perm` (`subject_id`, `perm_id`, `tenant_id`),
-    KEY `idx_subject_id` (`subject_id`),
-    KEY `idx_perm_id` (`perm_id`),
-    KEY `idx_tenant_id` (`tenant_id`)
+    UNIQUE KEY `uk_authorization_subject_permission_subject_perm` (`subject_id`, `perm_id`, `tenant_id`),
+    KEY `idx_authorization_subject_permission_subject_id` (`subject_id`),
+    KEY `idx_authorization_subject_permission_perm_id` (`perm_id`),
+    KEY `idx_authorization_subject_permission_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='主体直授权限表';
 
 CREATE TABLE IF NOT EXISTS `authorization_app` (
@@ -176,11 +176,11 @@ CREATE TABLE IF NOT EXISTS `authorization_menu` (
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    KEY `idx_parent_id` (`parent_id`),
-    KEY `idx_app_parent` (`app_code`, `parent_id`),
-    KEY `idx_menu_type` (`menu_type`),
-    KEY `idx_status` (`status`),
-    KEY `idx_del_flag` (`del_flag`)
+    KEY `idx_authorization_menu_parent_id` (`parent_id`),
+    KEY `idx_authorization_menu_app_parent` (`app_code`, `parent_id`),
+    KEY `idx_authorization_menu_type` (`menu_type`),
+    KEY `idx_authorization_menu_status` (`status`),
+    KEY `idx_authorization_menu_del_flag` (`del_flag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单表';
 
 CREATE TABLE IF NOT EXISTS `authorization_role_menu` (
@@ -193,9 +193,9 @@ CREATE TABLE IF NOT EXISTS `authorization_role_menu` (
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    KEY `idx_role_id` (`role_id`),
-    KEY `idx_menu_id` (`menu_id`),
-    KEY `idx_tenant_id` (`tenant_id`)
+    KEY `idx_authorization_role_menu_role_id` (`role_id`),
+    KEY `idx_authorization_role_menu_menu_id` (`menu_id`),
+    KEY `idx_authorization_role_menu_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色菜单关联表';
 
 INSERT INTO `authorization_app` (`id`, `app_code`, `app_name`, `realm`, `actor_type`, `icon`, `sort`, `status`) VALUES

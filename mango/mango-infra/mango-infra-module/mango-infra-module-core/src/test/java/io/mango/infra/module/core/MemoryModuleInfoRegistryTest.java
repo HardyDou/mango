@@ -44,4 +44,17 @@ class MemoryModuleInfoRegistryTest {
         assertEquals("mango-authorization", moduleInfo.get().moduleName());
         assertEquals("/platform/authorization", moduleInfo.get().runtimeBasePath());
     }
+
+    @Test
+    void resolveByRequestPath_whenSameModuleHasMultiplePaths_returnsModuleInfo() {
+        MemoryModuleInfoRegistry registry = new MemoryModuleInfoRegistry();
+        registry.register(new ModuleInfo("mango-report", "mango-platform-app", "/", "/report", "test"));
+        registry.register(new ModuleInfo("mango-report", "mango-platform-app", "/", "/statistics", "test"));
+
+        var moduleInfo = registry.resolveByRequestPath("/statistics/dashboard");
+
+        assertTrue(moduleInfo.isPresent());
+        assertEquals("mango-report", moduleInfo.get().moduleName());
+        assertEquals("/statistics", moduleInfo.get().modulePath());
+    }
 }

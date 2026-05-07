@@ -52,6 +52,32 @@ class ModuleAutoConfigurationTest {
                 });
     }
 
+    @Test
+    void moduleInfoRegistry_withCommaSeparatedModulePaths_registersEachPath() {
+        contextRunner
+                .withPropertyValues(
+                        "spring.application.name=mango-platform-app")
+                .withBean(ModuleMetadataLoader.class, () -> new TestModuleMetadataLoader(
+                        new ModuleMetadataLoader.ModuleMetadata(
+                                "mango-report",
+                                "/report,/statistics",
+                                "test")))
+                .run(context -> {
+                    ModuleInfoRegistry registry = context.getBean(ModuleInfoRegistry.class);
+
+                    assertThat(registry.resolveByRequestPath("/statistics/dashboard"))
+                            .isPresent()
+                            .get()
+                            .extracting("moduleName", "modulePath")
+                            .containsExactly("mango-report", "/statistics");
+                    assertThat(registry.resolveByRequestPath("/report/export"))
+                            .isPresent()
+                            .get()
+                            .extracting("moduleName", "modulePath")
+                            .containsExactly("mango-report", "/report");
+                });
+    }
+
     private static class TestModuleMetadataLoader extends ModuleMetadataLoader {
 
         private final ModuleMetadata moduleMetadata;

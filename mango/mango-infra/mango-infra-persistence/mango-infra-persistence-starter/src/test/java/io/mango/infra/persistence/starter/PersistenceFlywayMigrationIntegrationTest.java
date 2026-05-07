@@ -40,16 +40,45 @@ class PersistenceFlywayMigrationIntegrationTest {
                 });
     }
 
+    @Test
+    void duplicateVersionsAcrossModules_shouldUseSeparateHistoryTables() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.another-test.enabled=true"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
+                    runner.run(null);
+
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "another_flyway_user")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_schema_history_persistence_test")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_schema_history_another_test")).isTrue();
+                });
+    }
+
     @Configuration
     static class H2DataSourceConfig {
 
         @Bean
         DataSource dataSource() {
             org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
-            ds.setURL("jdbc:h2:mem:persistence_flyway_migration;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
+            ds.setURL("jdbc:h2:mem:" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
             ds.setUser("sa");
             ds.setPassword("");
             return ds;
         }
+    }
+
+    private static boolean tableExists(JdbcTemplate jdbcTemplate, String tableName) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public' AND TABLE_NAME = ?",
+                Integer.class,
+                tableName);
+        return count != null && count > 0;
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.web.method.HandlerMethod;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MangoApiScopeOperationCustomizerTest {
@@ -34,11 +35,11 @@ class MangoApiScopeOperationCustomizerTest {
         assertEquals(
                 MangoApiScopeOperationCustomizer.EXTERNAL_SCOPE,
                 publicOperation.getExtensions().get(MangoApiScopeOperationCustomizer.SCOPE_EXTENSION));
-        assertTrue(publicOperation.getTags().contains("对外接口"));
+        assertFalse(publicOperation.getTags() != null && publicOperation.getTags().contains("对外接口"));
         assertEquals(
                 MangoApiScopeOperationCustomizer.EXTERNAL_SCOPE,
                 permissionOperation.getExtensions().get(MangoApiScopeOperationCustomizer.SCOPE_EXTENSION));
-        assertTrue(permissionOperation.getTags().contains("对外接口"));
+        assertFalse(permissionOperation.getTags() != null && permissionOperation.getTags().contains("对外接口"));
     }
 
     private HandlerMethod handlerMethod(String methodName) throws NoSuchMethodException {

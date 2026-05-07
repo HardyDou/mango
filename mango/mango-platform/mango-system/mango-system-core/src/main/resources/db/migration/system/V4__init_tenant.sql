@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `sys_tenant` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_tenant_code` (`tenant_code`)
+    KEY `idx_sys_tenant_code` (`tenant_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户表';
 
 INSERT INTO `sys_tenant` (`id`, `tenant_name`, `tenant_code`, `status`) VALUES

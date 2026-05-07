@@ -41,6 +41,7 @@ public class ApiResourceSyncRunner implements ApplicationRunner {
     private final RequestMappingHandlerMapping handlerMapping;
     private final ApiResourceApi apiResourceApi;
     private final ObjectProvider<ModuleInfoRegistry> moduleInfoRegistryProvider;
+    private final ApiResourceSyncProperties properties;
 
     @Value("${mango.authorization.resource-sync.module-name:}")
     private String moduleName;
@@ -60,16 +61,25 @@ public class ApiResourceSyncRunner implements ApplicationRunner {
     public ApiResourceSyncRunner(
             RequestMappingHandlerMapping handlerMapping,
             ApiResourceApi apiResourceApi) {
-        this(handlerMapping, apiResourceApi, new EmptyModuleInfoRegistryProvider());
+        this(handlerMapping, apiResourceApi, new EmptyModuleInfoRegistryProvider(), new ApiResourceSyncProperties());
     }
 
     public ApiResourceSyncRunner(
             RequestMappingHandlerMapping handlerMapping,
             ApiResourceApi apiResourceApi,
             ObjectProvider<ModuleInfoRegistry> moduleInfoRegistryProvider) {
+        this(handlerMapping, apiResourceApi, moduleInfoRegistryProvider, new ApiResourceSyncProperties());
+    }
+
+    public ApiResourceSyncRunner(
+            RequestMappingHandlerMapping handlerMapping,
+            ApiResourceApi apiResourceApi,
+            ObjectProvider<ModuleInfoRegistry> moduleInfoRegistryProvider,
+            ApiResourceSyncProperties properties) {
         this.handlerMapping = handlerMapping;
         this.apiResourceApi = apiResourceApi;
         this.moduleInfoRegistryProvider = moduleInfoRegistryProvider;
+        this.properties = properties == null ? new ApiResourceSyncProperties() : properties;
     }
 
     @Override
@@ -110,10 +120,54 @@ public class ApiResourceSyncRunner implements ApplicationRunner {
                 }
             }
         }
+        resources.addAll(configuredResources());
         resources.sort(Comparator
                 .comparing(ApiResourceRegisterCommand::getPathPattern)
                 .thenComparing(ApiResourceRegisterCommand::getHttpMethod));
         return resources;
+    }
+
+    private List<ApiResourceRegisterCommand> configuredResources() {
+        if (properties.getResources() == null || properties.getResources().isEmpty()) {
+            return List.of();
+        }
+        return properties.getResources().stream()
+                .filter(resource -> StringUtils.hasText(resource.getPathPattern()))
+                .map(this::toConfiguredDefinition)
+                .toList();
+    }
+
+    private ApiResourceRegisterCommand toConfiguredDefinition(ApiResourceSyncProperties.Resource resource) {
+        String httpMethod = StringUtils.hasText(resource.getHttpMethod())
+                ? resource.getHttpMethod().trim().toUpperCase()
+                : "ALL";
+        ApiResourceAccessMode accessMode = resource.getAccessMode() == null
+                ? defaultAccessMode
+                : resource.getAccessMode();
+        if (accessMode == ApiResourceAccessMode.PERMISSION && !StringUtils.hasText(resource.getPermissionCode())) {
+            throw new IllegalStateException("Configured API resource PERMISSION requires permission: "
+                    + httpMethod + " " + resource.getPathPattern());
+        }
+
+        ApiResourceRegisterCommand definition = new ApiResourceRegisterCommand();
+        definition.setModuleName(StringUtils.hasText(resource.getModuleName())
+                ? resource.getModuleName()
+                : fallbackModuleName());
+        definition.setHttpMethod(httpMethod);
+        definition.setPathPattern(resource.getPathPattern());
+        definition.setAccessMode(accessMode);
+        definition.setPermissionCode(resource.getPermissionCode());
+        definition.setResourceCode(StringUtils.hasText(resource.getResourceCode())
+                ? resource.getResourceCode()
+                : (StringUtils.hasText(resource.getPermissionCode())
+                        ? resource.getPermissionCode()
+                        : httpMethod + ":" + resource.getPathPattern()));
+        definition.setHandlerClass("configuration");
+        definition.setHandlerMethod("mango.authorization.resource-sync.resources");
+        definition.setDescription(StringUtils.hasText(resource.getDescription())
+                ? resource.getDescription()
+                : "Configured API resource");
+        return definition;
     }
 
     private boolean shouldInclude(HandlerMethod handler) {
@@ -195,7 +249,7 @@ public class ApiResourceSyncRunner implements ApplicationRunner {
     }
 
     private ApiAccess findApiAccess(Class<?> handlerType, Method handlerMethod) {
-        Class<?> targetType = AopUtils.getTargetClass(handlerType);
+        Class<?> targetType = handlerType;
         Method targetMethod = targetMethod(targetType, handlerMethod);
         ApiAccess methodAccess = findMethodApiAccess(targetType, targetMethod);
         if (methodAccess != null) {

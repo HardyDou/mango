@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS `sys_login_log` (
     `status`      TINYINT DEFAULT NULL COMMENT '登录状态',
     `msg`         VARCHAR(500) DEFAULT NULL COMMENT '提示消息',
     `login_time`  DATETIME DEFAULT NULL COMMENT '登录时间',
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_login_time` (`login_time`)
+    KEY `idx_sys_login_log_user_id` (`user_id`),
+    KEY `idx_sys_login_log_login_time` (`login_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';
 
 -- mango-check: disable persistence-audit-fields reason=操作日志是追加型事实记录，使用 operate_time 表示发生时间
@@ -31,6 +31,6 @@ CREATE TABLE IF NOT EXISTS `sys_operation_log` (
     `duration`    BIGINT DEFAULT NULL COMMENT '执行时间(ms)',
     `ip`          VARCHAR(128) DEFAULT NULL COMMENT '操作IP',
     `operate_time` DATETIME DEFAULT NULL COMMENT '操作时间',
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_operate_time` (`operate_time`)
+    KEY `idx_sys_operation_log_user_id` (`user_id`),
+    KEY `idx_sys_operation_log_operate_time` (`operate_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';

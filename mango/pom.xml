@@ -29,6 +29,9 @@
         <commons-compress.version>1.28.0</commons-compress.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <plexus-utils.version>4.0.3</plexus-utils.version>
+        <springdoc-openapi.version>2.8.9</springdoc-openapi.version>
+        <knife4j.version>4.5.0</knife4j.version>
+        <swagger-annotations.version>2.2.30</swagger-annotations.version>
     </properties>
 
     <modules>
@@ -420,14 +423,29 @@
                 <version>${plexus-utils.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger-annotations.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>7.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents.client5</groupId>
-                <artifactId>httpclient5</artifactId>
-                <version>5.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

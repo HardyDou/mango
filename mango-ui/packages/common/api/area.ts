@@ -16,7 +16,7 @@ export function getAreaTree(params?: AreaTreeParams): Promise<AreaNode[]> {
   if (import.meta.env.DEV && import.meta.env.VITE_USE_MOCK === 'true') {
     return Promise.resolve(getMockAreaTree());
   }
-  return get('/area/tree', { params }).then((res: any) => {
+  return get('/system/area/tree', { params }).then((res: any) => {
     if (res && Array.isArray(res)) {
       return transformAreaTree(res);
     }

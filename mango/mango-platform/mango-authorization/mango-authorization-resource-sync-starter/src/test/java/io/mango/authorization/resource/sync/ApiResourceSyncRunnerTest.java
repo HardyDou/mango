@@ -38,6 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
         "mango.authorization.resource-sync.include-packages=io.mango.authorization.resource.sync",
         "mango.authorization.resource-sync.exclude-paths=/error",
         "mango.authorization.resource-sync.default-access-mode=LOGIN",
+        "mango.authorization.resource-sync.resources[0].module-name=mango-doc",
+        "mango.authorization.resource-sync.resources[0].http-method=GET",
+        "mango.authorization.resource-sync.resources[0].path-pattern=/swagger-ui/**",
+        "mango.authorization.resource-sync.resources[0].access-mode=PUBLIC",
+        "mango.authorization.resource-sync.resources[0].description=Swagger UI",
         "spring.autoconfigure.exclude="
                 + "org.springframework.cloud.gateway.config.GatewayAutoConfiguration,"
                 + "org.springframework.cloud.gateway.config.GatewayClassPathWarningAutoConfiguration"
@@ -78,6 +83,18 @@ class ApiResourceSyncRunnerTest {
         assertEquals(ApiResourceAccessMode.PUBLIC, publicResource.getAccessMode());
         assertNull(publicResource.getPermissionCode());
 
+        ApiResourceRegisterCommand typeLevelPublicResource = find(resources, "GET", "/resource-sync/type-public");
+        assertEquals("GET:/resource-sync/type-public", typeLevelPublicResource.getResourceCode());
+        assertEquals(ApiResourceAccessMode.PUBLIC, typeLevelPublicResource.getAccessMode());
+        assertNull(typeLevelPublicResource.getPermissionCode());
+
+        ApiResourceRegisterCommand configuredPublicResource = find(resources, "GET", "/swagger-ui/**");
+        assertEquals("mango-doc", configuredPublicResource.getModuleName());
+        assertEquals("GET:/swagger-ui/**", configuredPublicResource.getResourceCode());
+        assertEquals(ApiResourceAccessMode.PUBLIC, configuredPublicResource.getAccessMode());
+        assertEquals("Swagger UI", configuredPublicResource.getDescription());
+        assertNull(configuredPublicResource.getPermissionCode());
+
         ApiResourceRegisterCommand inner = find(resources, "GET", "/resource-sync/inner");
         assertEquals("GET:/resource-sync/inner", inner.getResourceCode());
         assertEquals(ApiResourceAccessMode.LOGIN, inner.getAccessMode());
@@ -110,6 +127,11 @@ class ApiResourceSyncRunnerTest {
         @Bean
         TestController testController() {
             return new TestController();
+        }
+
+        @Bean
+        TypeLevelPublicController typeLevelPublicController() {
+            return new TypeLevelPublicController();
         }
     }
 
@@ -177,6 +199,16 @@ class ApiResourceSyncRunnerTest {
         @InternalApi
         @GetMapping("/resource-sync/internal")
         String internal() {
+            return "ok";
+        }
+    }
+
+    @PublicApi
+    @RestController
+    static class TypeLevelPublicController {
+
+        @GetMapping("/resource-sync/type-public")
+        String publicByType() {
             return "ok";
         }
     }

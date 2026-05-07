@@ -1,6 +1,7 @@
 package io.mango.auth.starter;
 
 import io.mango.auth.core.anti.AppSecretProvider;
+import io.mango.auth.starter.config.AuthSecurityProperties;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.web.anti.AntiReplayInterceptor;
 import io.mango.auth.starter.web.anti.AntiReplayProperties;
@@ -25,7 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @AutoConfiguration
 @AutoConfigureBefore(SecurityAutoConfiguration.class)
-@EnableConfigurationProperties(AntiReplayProperties.class)
+@EnableConfigurationProperties({AntiReplayProperties.class, AuthSecurityProperties.class})
 @ComponentScan({
         "io.mango.auth.core.service",
         "io.mango.auth.core.service.impl",

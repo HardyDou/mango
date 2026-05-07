@@ -44,11 +44,11 @@ export function generateBlockPuzzle() {
 }
 
 export function sendSms(mobile: string) {
-  return post<string>('/auth/captcha/send', { type: CaptchaType.SMS, target: mobile });
+  return post<string>('/auth/captcha/send', { type: CaptchaType.SMS, target: mobile, businessType: 'LOGIN' });
 }
 
 export function sendEmail(email: string) {
-  return post<string>('/auth/captcha/send', { type: CaptchaType.EMAIL, target: email });
+  return post<string>('/auth/captcha/send', { type: CaptchaType.EMAIL, target: email, businessType: 'LOGIN' });
 }
 
 export function verifyCaptcha(request: CaptchaVerifyRequest) {

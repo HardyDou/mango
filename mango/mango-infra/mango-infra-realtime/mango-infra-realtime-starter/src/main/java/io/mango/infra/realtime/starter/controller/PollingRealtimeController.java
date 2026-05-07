@@ -5,6 +5,7 @@ import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
 import io.mango.infra.realtime.core.polling.InMemoryRealtimePollingService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "实时轮询", description = "实时消息轮询传输接口")
 public class PollingRealtimeController {
 
     private final InMemoryRealtimePollingService pollingService;

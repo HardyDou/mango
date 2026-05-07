@@ -37,6 +37,12 @@
             <version>7.4</version>
         </dependency>
 
+        <!-- Required by Logback conditional configuration (<if> blocks). -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

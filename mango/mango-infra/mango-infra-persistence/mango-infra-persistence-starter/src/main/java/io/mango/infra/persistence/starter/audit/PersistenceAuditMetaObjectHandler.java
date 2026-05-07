@@ -16,8 +16,10 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
 
     private static final String CREATED_BY = "createdBy";
     private static final String CREATED_AT = "createdAt";
+    private static final String CREATE_TIME = "createTime";
     private static final String UPDATED_BY = "updatedBy";
     private static final String UPDATED_AT = "updatedAt";
+    private static final String UPDATE_TIME = "updateTime";
     private static final String TENANT_ID = "tenantId";
 
     private final PersistenceContextProvider contextProvider;
@@ -32,8 +34,10 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
         Object now = nowFor(metaObject, CREATED_AT);
         setIfEmpty(metaObject, CREATED_BY, context.userId());
         setIfEmpty(metaObject, CREATED_AT, now);
+        setIfEmpty(metaObject, CREATE_TIME, nowFor(metaObject, CREATE_TIME));
         setIfEmpty(metaObject, UPDATED_BY, context.userId());
         setIfEmpty(metaObject, UPDATED_AT, nowFor(metaObject, UPDATED_AT));
+        setIfEmpty(metaObject, UPDATE_TIME, nowFor(metaObject, UPDATE_TIME));
         setTenantIfEmpty(metaObject, context.tenantId());
     }
 
@@ -42,6 +46,7 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
         PersistenceContext context = currentContext();
         setIfPresent(metaObject, UPDATED_BY, context.userId());
         setIfPresent(metaObject, UPDATED_AT, nowFor(metaObject, UPDATED_AT));
+        setIfPresent(metaObject, UPDATE_TIME, nowFor(metaObject, UPDATE_TIME));
     }
 
     private PersistenceContext currentContext() {

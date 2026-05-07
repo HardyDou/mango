@@ -2,6 +2,7 @@ package io.mango.infra.realtime.starter.controller;
 
 import io.mango.infra.realtime.core.negotiate.RealtimeNegotiationResponse;
 import io.mango.infra.realtime.core.negotiate.RealtimeTransportCapability;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +15,7 @@ import java.util.Locale;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "实时传输协商", description = "实时通信传输能力协商接口")
 public class RealtimeNegotiationController {
 
     private static final List<String> DEFAULT_PREFERENCE = List.of("websocket", "sse", "polling");

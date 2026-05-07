@@ -11,6 +11,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Mango 模块信息自动配置。
  */
@@ -34,19 +37,25 @@ public class ModuleAutoConfiguration {
         String defaultServiceName = environment.getProperty("spring.application.name", "application");
         String defaultContextPath = resolveContextPath(environment);
 
-        metadataLoader.load().forEach(metadata -> registry.register(new ModuleInfo(
-                metadata.moduleName(),
-                defaultServiceName,
-                defaultContextPath,
-                defaultIfBlank(metadata.modulePath(), deriveModulePath(metadata.moduleName())),
-                metadata.source())));
+        metadataLoader.load().forEach(metadata -> resolveModulePaths(
+                metadata.modulePath(),
+                deriveModulePath(metadata.moduleName()))
+                .forEach(modulePath -> registry.register(new ModuleInfo(
+                        metadata.moduleName(),
+                        defaultServiceName,
+                        defaultContextPath,
+                        modulePath,
+                        metadata.source()))));
 
-        properties.getModules().forEach((moduleName, moduleService) -> registry.register(new ModuleInfo(
-                moduleName,
-                defaultIfBlank(moduleService.getServiceName(), defaultServiceName),
-                defaultIfBlank(moduleService.getContextPath(), defaultContextPath),
-                defaultIfBlank(moduleService.getModulePath(), deriveModulePath(moduleName)),
-                "config")));
+        properties.getModules().forEach((moduleName, moduleService) -> resolveModulePaths(
+                moduleService.getModulePath(),
+                deriveModulePath(moduleName))
+                .forEach(modulePath -> registry.register(new ModuleInfo(
+                        moduleName,
+                        defaultIfBlank(moduleService.getServiceName(), defaultServiceName),
+                        defaultIfBlank(moduleService.getContextPath(), defaultContextPath),
+                        modulePath,
+                        "config"))));
 
         return registry;
     }
@@ -67,6 +76,14 @@ public class ModuleAutoConfiguration {
 
     private String defaultIfBlank(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private List<String> resolveModulePaths(String value, String defaultValue) {
+        String source = defaultIfBlank(value, defaultValue);
+        return Arrays.stream(source.split(","))
+                .map(String::trim)
+                .filter(path -> !path.isBlank())
+                .toList();
     }
 
     private String deriveModulePath(String moduleName) {

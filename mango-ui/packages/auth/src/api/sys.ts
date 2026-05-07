@@ -1,4 +1,5 @@
 import { get, post } from '@mango/common';
+import { generateArithmetic } from '@mango/common';
 
 /**
  * 登录
@@ -26,7 +27,7 @@ export function logout() {
  * 获取验证码
  */
 export function getCaptcha() {
-  return get('/admin/sys/captcha');
+  return generateArithmetic();
 }
 
 /**
@@ -40,5 +41,5 @@ export function updatePassword(data: { oldPassword: string; newPassword: string 
  * 获取系统配置
  */
 export function getSystemConfig() {
-  return get('/admin/sys/config');
+  return get('/system/config/type', { params: { type: 'SYSTEM' } });
 }

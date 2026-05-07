@@ -15,6 +15,6 @@ CREATE TABLE IF NOT EXISTS `sys_route_conf` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_route_type` (`route_type`),
-    KEY `idx_status` (`status`)
+    KEY `idx_sys_route_conf_type` (`route_type`),
+    KEY `idx_sys_route_conf_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='动态路由配置表';

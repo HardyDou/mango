@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS `sys_org` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Create time',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update time',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_org_code` (`org_code`),
-  KEY `idx_pid` (`pid`),
-  KEY `idx_org_type` (`org_type`),
-  KEY `idx_tenant_id` (`tenant_id`)
+  UNIQUE KEY `uk_sys_org_code` (`org_code`),
+  KEY `idx_sys_org_pid` (`pid`),
+  KEY `idx_sys_org_type` (`org_type`),
+  KEY `idx_sys_org_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Organization table';
 
 -- ============================================

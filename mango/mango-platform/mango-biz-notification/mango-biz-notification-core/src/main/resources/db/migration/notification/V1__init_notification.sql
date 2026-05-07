@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `sys_notification` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_read_status` (`read_status`),
-    KEY `idx_create_time` (`create_time`)
+    KEY `idx_notification_user_id` (`user_id`),
+    KEY `idx_notification_read_status` (`read_status`),
+    KEY `idx_notification_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知表';

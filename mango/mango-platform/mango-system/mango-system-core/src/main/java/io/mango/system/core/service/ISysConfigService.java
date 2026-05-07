@@ -21,4 +21,6 @@ public interface ISysConfigService {
     R<Boolean> updateValue(Long id, String value);
 
     R<String> getValue(String configKey);
+
+    R<List<String>> listTypes();
 }

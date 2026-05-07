@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `sys_dict_type` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_dict_type` (`dict_type`)
+    KEY `idx_sys_dict_type_type` (`dict_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典类型表';
 
 CREATE TABLE IF NOT EXISTS `sys_dict_data` (
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS `sys_dict_data` (
     `updated_by` BIGINT DEFAULT NULL COMMENT '更新人 ID',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `tenant_id` VARCHAR(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
-    KEY `idx_dict_type` (`dict_type`),
-    KEY `idx_dict_value` (`dict_value`)
+    KEY `idx_sys_dict_data_type` (`dict_type`),
+    KEY `idx_sys_dict_data_value` (`dict_value`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典数据表';
 
 INSERT INTO `sys_dict_type` (`id`, `dict_type`, `dict_name`, `status`) VALUES

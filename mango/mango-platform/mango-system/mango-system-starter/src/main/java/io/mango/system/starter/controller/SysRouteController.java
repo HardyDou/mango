@@ -5,6 +5,7 @@ import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.system.api.po.SysRoutePo;
 import io.mango.system.core.service.ISysRouteService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/system/route")
 @RequiredArgsConstructor
+@Tag(name = "系统路由", description = "系统路由列表、树、详情、新增、修改与排序接口")
 public class SysRouteController {
 
     private final ISysRouteService routeService;

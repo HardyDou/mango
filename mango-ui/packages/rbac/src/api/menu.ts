@@ -64,7 +64,7 @@ export interface MenuResponse {
 
 /**
  * 菜单API
- * Issue B Fix: 路径更新为 /auth/menu/*（根据 Plan 011 auth 域收敛）
+ * 菜单归属授权域，对接后端 /authorization/menus。
  */
 export const menuApi = {
   /**
@@ -73,7 +73,10 @@ export const menuApi = {
    * @param parentId 父菜单ID，0=根节点
    */
   getUserMenus: (type?: number, parentId = 0) =>
-    get<MenuResponse>('/auth/menu/list', { params: { type, parentId } }),
+    get<SysMenuVO[]>('/authorization/menus', { params: { type, parentId } }).then((menus) => ({
+      menus,
+      currentStorage: 'backend',
+    })),
 
   /**
    * 获取所有菜单（管理员用）
@@ -81,5 +84,5 @@ export const menuApi = {
    * @param menuName 菜单名称（模糊搜索）
    */
   getTreeMenus: (parentId?: number, menuName?: string) =>
-    get<SysMenuVO[]>('/auth/menu/tree', { params: { parentId, menuName } }),
+    get<SysMenuVO[]>('/authorization/menus/tree', { params: { parentId, menuName } }),
 };

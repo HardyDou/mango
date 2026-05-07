@@ -8,9 +8,16 @@ import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
+import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.api.IAuthorizationProvider;
+import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.captcha.api.CaptchaApi;
+import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.common.result.R;
+import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
 import io.mango.infra.kv.api.IKvStore;
@@ -21,8 +28,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -42,21 +51,34 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "认证授权", description = "认证登录、令牌刷新、退出登录接口")
 public class AuthController implements AuthApi {
 
     private final IAuthService authService;
     private final TtlExecutorDecorator ttlExecutorDecorator;
     private final ObjectProvider<IKvStore> kvStoreProvider;
+    private final ITokenProvider tokenProvider;
+    private final IdentityUserApi identityUserApi;
+    private final IAuthorizationProvider authorizationProvider;
+    private final ObjectProvider<CaptchaApi> captchaApiProvider;
     private LoginAttemptTracker loginAttemptTracker;
     private ScheduledExecutorService executorForTracker;
 
     @Autowired
     public AuthController(IAuthService authService,
                           TtlExecutorDecorator ttlExecutorDecorator,
-                          ObjectProvider<IKvStore> kvStoreProvider) {
+                          ObjectProvider<IKvStore> kvStoreProvider,
+                          ITokenProvider tokenProvider,
+                          IdentityUserApi identityUserApi,
+                          IAuthorizationProvider authorizationProvider,
+                          ObjectProvider<CaptchaApi> captchaApiProvider) {
         this.authService = authService;
         this.ttlExecutorDecorator = ttlExecutorDecorator;
         this.kvStoreProvider = kvStoreProvider;
+        this.tokenProvider = tokenProvider;
+        this.identityUserApi = identityUserApi;
+        this.authorizationProvider = authorizationProvider;
+        this.captchaApiProvider = captchaApiProvider;
     }
 
     @PostConstruct
@@ -193,11 +215,56 @@ public class AuthController implements AuthApi {
         return validateToken(command);
     }
 
+    @GetMapping("/info")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取当前登录用户信息")
+    public R<LoginVO> info(@RequestHeader(value = "Authorization", required = false) String token) {
+        String resolvedToken = stripBearer(token);
+        Long userId = tokenProvider.getUserId(resolvedToken);
+        if (userId == null) {
+            return R.fail(401, "未登录");
+        }
+        IdentityUserInfo userInfo = identityUserApi.getUserInfoById(userId).getData();
+        if (userInfo == null) {
+            return R.fail(404, "用户不存在");
+        }
+        LoginVO vo = new LoginVO();
+        vo.setUserId(userInfo.getUserId());
+        vo.setUsername(userInfo.getUsername());
+        vo.setNickname(userInfo.getNickname());
+        vo.setRealm(userInfo.getRealm());
+        vo.setActorType(userInfo.getActorType());
+        vo.setPartyType(userInfo.getPartyType());
+        vo.setPartyId(userInfo.getPartyId());
+        String appCode = tokenProvider.getClaim(resolvedToken, "appCode");
+        vo.setAppCode(appCode);
+        var snapshot = authorizationProvider.load(AuthorizationQuery.user(userId).withSystemCode(appCode));
+        vo.setRoles(snapshot.roleCodes().stream().toList());
+        vo.setPermissions(snapshot.permissionCodes().stream().toList());
+        return R.ok(vo);
+    }
+
+    @PostMapping("/captcha/send")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "发送短信或邮件验证码")
+    public R<String> sendCaptcha(@Valid @RequestBody CaptchaSendRequest request) {
+        CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
+        if (captchaApi == null) {
+            return R.fail(503, "验证码服务不可用");
+        }
+        return R.ok(captchaApi.send(request));
+    }
+
     private String resolveClientIp(HttpServletRequest request) {
         String clientIp = MangoContextHolder.clientIp();
         if (clientIp != null) {
             return clientIp;
         }
         return request.getRemoteAddr();
+    }
+
+    private String stripBearer(String token) {
+        if (token == null) {
+            return null;
+        }
+        return token.startsWith("Bearer ") ? token.substring(7) : token;
     }
 }

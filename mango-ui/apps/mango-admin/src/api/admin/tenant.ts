@@ -33,21 +33,32 @@ export interface PageResult<T> {
 
 export const tenantApi = {
   list: (params?: TenantQuery) => {
-    return get<PageResult<SysTenant>>('/tenant/list', { params });
+    return get<SysTenant[]>('/system/tenant/list', { params }).then((list) => toPageResult(list, params));
   },
   detail: (id: number) => {
-    return get<SysTenant>(`/tenant/${id}`);
+    return get<SysTenant>('/system/tenant/detail', { params: { id } });
   },
   create: (data: SysTenant) => {
-    return post<SysTenant>('/tenant', data);
+    return post<number>('/system/tenant', data);
   },
   update: (data: SysTenant) => {
-    return put<SysTenant>('/tenant', data);
+    return put<boolean>('/system/tenant', data);
   },
   delete: (id: number) => {
-    return del<void>(`/tenant/${id}`);
+    return del<boolean>('/system/tenant', { params: { id } });
   },
   updateStatus: (id: number, params: { status: number }) => {
-    return put<void>(`/tenant/status/${id}`, params);
+    return put<boolean>('/system/tenant/status', undefined, { params: { id, status: params.status } });
   },
 };
+
+function toPageResult<T>(list: T[] = [], params?: TenantQuery): PageResult<T> {
+  const pageNum = params?.pageNum || 1;
+  const pageSize = params?.pageSize || list.length || 10;
+  return {
+    list,
+    total: list.length,
+    pageNum,
+    pageSize,
+  };
+}

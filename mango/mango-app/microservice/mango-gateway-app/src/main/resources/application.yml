@@ -17,7 +17,7 @@ spring:
         - id: mango-platform-app
           uri: http://localhost:8081
           predicates:
-            - Path=/auth/**,/identity/**,/authorization/**,/org/**,/area/**,/i18n/**,/system/**,/captcha/**,/ai/**
+            - Path=/auth/**,/identity/**,/authorization/**,/org/**,/system/**,/captcha/**,/ai/**
         - id: mango-business-app
           uri: http://localhost:8082
           predicates:
