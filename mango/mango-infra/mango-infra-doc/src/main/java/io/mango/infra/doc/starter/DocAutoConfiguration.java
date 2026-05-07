@@ -42,12 +42,12 @@ public class DocAutoConfiguration {
                         .license(new License()
                                 .name(properties.getLicense())))
                 .components(new Components()
-                        .addSecuritySchemes(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME, new SecurityScheme()
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")
-                                .description("输入登录接口返回的 accessToken，调试时会作为 Authorization: Bearer <token> 发送")))
-                .addSecurityItem(new SecurityRequirement().addList(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME));
+                        .addSecuritySchemes(MangoApiScopeOperationCustomizer.AUTHORIZATION_HEADER_SCHEME, new SecurityScheme()
+                                .type(SecurityScheme.Type.APIKEY)
+                                .in(SecurityScheme.In.HEADER)
+                                .name("Authorization")
+                                .description("输入 Bearer <accessToken>，调试时会作为 Authorization 请求头发送")))
+                .addSecurityItem(new SecurityRequirement().addList(MangoApiScopeOperationCustomizer.AUTHORIZATION_HEADER_SCHEME));
     }
 
     @Bean

@@ -50,9 +50,9 @@ class MangoApiScopeOperationCustomizerTest {
 
         assertTrue(publicOperation.getSecurity() == null || publicOperation.getSecurity().isEmpty());
         assertTrue(permissionOperation.getSecurity().stream()
-                .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME)));
+                .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.AUTHORIZATION_HEADER_SCHEME)));
         assertTrue(loginOperation.getSecurity().stream()
-                .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.BEARER_AUTH_SCHEME)));
+                .anyMatch(requirement -> requirement.containsKey(MangoApiScopeOperationCustomizer.AUTHORIZATION_HEADER_SCHEME)));
     }
 
     private HandlerMethod handlerMethod(String methodName) throws NoSuchMethodException {

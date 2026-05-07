@@ -19,7 +19,7 @@ public class MangoApiScopeOperationCustomizer implements OperationCustomizer {
     public static final String INTERNAL_SCOPE = "internal";
     public static final String EXTERNAL_SCOPE = "external";
     public static final String SCOPE_EXTENSION = "x-mango-api-scope";
-    public static final String BEARER_AUTH_SCHEME = "BearerAuth";
+    public static final String AUTHORIZATION_HEADER_SCHEME = "Authorization";
     private static final String INTERNAL_TAG = "对内接口";
     private final boolean includeScopeTags;
 
@@ -43,7 +43,7 @@ public class MangoApiScopeOperationCustomizer implements OperationCustomizer {
             }
         }
         if (requiresBearerAuth(apiAccess)) {
-            operation.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH_SCHEME));
+            operation.addSecurityItem(new SecurityRequirement().addList(AUTHORIZATION_HEADER_SCHEME));
         } else {
             operation.setSecurity(List.of());
         }
