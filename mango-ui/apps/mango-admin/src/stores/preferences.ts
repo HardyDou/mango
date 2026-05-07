@@ -30,7 +30,7 @@ export const usePreferencesStore = defineStore('preferences', {
     wartermarkText: 'Mango',
     tagsStyle: 'tags-style-five',
     animation: 'slide-right',
-    isRequestRoutes: false,
+    isRequestRoutes: true,
     language: 'zh-cn',
     size: 'default',
     globalI18n: 'zh-cn',

@@ -8,13 +8,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * Organization service implementation
  * <p>
- * Uses lazy loading for tree structure to handle large datasets.
+ * Builds a complete organization tree. Organization data is small enough to
+ * load as a tree for selector and management pages.
  *
  * @author Mango
  */
@@ -28,13 +31,23 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Override
     public List<SysOrg> tree(Long parentId, Integer type) {
         LambdaQueryWrapper<SysOrg> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(parentId != null, SysOrg::getPid, parentId)
-               .eq(type != null, SysOrg::getOrgType, type)
-               .eq(SysOrg::getOrgStatus, "1")
+        wrapper.eq(SysOrg::getOrgStatus, "1")
                .orderByAsc(SysOrg::getOrgSort)
                .orderByAsc(SysOrg::getId);
 
-        return orgMapper.selectList(wrapper);
+        List<SysOrg> orgs = orgMapper.selectList(wrapper);
+        if (orgs == null || orgs.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, List<SysOrg>> childrenByParentId = orgs.stream()
+                .collect(Collectors.groupingBy(org -> org.getPid() == null ? 0L : org.getPid()));
+
+        Long rootParentId = parentId == null ? 0L : parentId;
+        return childrenByParentId.getOrDefault(rootParentId, List.of()).stream()
+                .filter(org -> type == null || type.equals(org.getOrgType()))
+                .map(org -> buildTreeNode(org, childrenByParentId))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -46,6 +59,13 @@ public class SysOrgServiceImpl implements ISysOrgService {
                .orderByAsc(SysOrg::getId);
 
         return orgMapper.selectList(wrapper);
+    }
+
+    private SysOrg buildTreeNode(SysOrg org, Map<Long, List<SysOrg>> childrenByParentId) {
+        org.setChildren(childrenByParentId.getOrDefault(org.getId(), List.of()).stream()
+                .map(child -> buildTreeNode(child, childrenByParentId))
+                .collect(Collectors.toCollection(ArrayList::new)));
+        return org;
     }
 
     @Override

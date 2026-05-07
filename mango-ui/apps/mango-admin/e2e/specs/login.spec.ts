@@ -23,7 +23,7 @@ test.describe('登录页面 E2E 测试', () => {
     await expect(page.locator('text=请输入用户名')).toBeVisible();
   });
 
-  test('使用 Mock Token 登录成功', async ({ page }) => {
+  test('使用真实后端登录成功', async ({ page }) => {
     // 填写表单
     await page.fill('input[placeholder="用户名"]', 'admin');
     await page.fill('input[placeholder="密码"]', 'admin123');
@@ -34,8 +34,8 @@ test.describe('登录页面 E2E 测试', () => {
     // 应该跳转到首页
     await page.waitForURL('**/#/home', { timeout: 5000 });
 
-    // 检查首页元素 - 首页应该有"首页"菜单
-    await expect(page.locator('text=首页').first()).toBeVisible();
+    // 检查登录后布局与后端菜单
+    await expect(page.getByText('系统管理').first()).toBeVisible();
   });
 
   test('登录页面响应式布局', async ({ page }) => {

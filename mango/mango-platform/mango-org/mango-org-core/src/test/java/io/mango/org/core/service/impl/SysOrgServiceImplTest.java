@@ -39,15 +39,21 @@ class SysOrgServiceImplTest {
     }
 
     @Test
-    @DisplayName("tree should return organizations for given parentId and type")
-    void tree_withParentIdAndType_returnsOrganizations() {
-        SysOrg org1 = createSysOrg(1L, "Org 1", 1L, 1);
-        SysOrg org2 = createSysOrg(2L, "Org 2", 1L, 2);
-        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(org1, org2));
+    @DisplayName("tree should return complete tree for given parentId")
+    void tree_withParentId_returnsCompleteTree() {
+        SysOrg root = createSysOrg(1L, "Root Org", 0L, 1);
+        SysOrg child = createSysOrg(2L, "Child Org", 1L, 2);
+        SysOrg grandchild = createSysOrg(3L, "Grandchild Org", 2L, 3);
+        when(orgMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(root, child, grandchild));
 
-        List<SysOrg> result = sysOrgService.tree(1L, 1);
+        List<SysOrg> result = sysOrgService.tree(0L, null);
 
-        assertEquals(2, result.size());
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).getId());
+        assertEquals(1, result.get(0).getChildren().size());
+        assertEquals(2L, result.get(0).getChildren().get(0).getId());
+        assertEquals(1, result.get(0).getChildren().get(0).getChildren().size());
+        assertEquals(3L, result.get(0).getChildren().get(0).getChildren().get(0).getId());
     }
 
     @Test

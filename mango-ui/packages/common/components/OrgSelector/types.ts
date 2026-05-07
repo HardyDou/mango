@@ -12,7 +12,9 @@ export interface OrgNode {
 
 export interface OrgSelectorProps {
   /** v-model binding - selected organization IDs */
-  modelValue?: number[];
+  modelValue?: number | number[];
+  /** Whether multiple selection is enabled */
+  multiple?: boolean;
   /** Placeholder text */
   placeholder?: string;
   /** Dialog title */
@@ -28,8 +30,8 @@ export interface OrgSelectorProps {
 }
 
 export interface OrgSelectorEmits {
-  (e: 'update:modelValue', value: number[]): void;
-  (e: 'change', value: number[]): void;
+  (e: 'update:modelValue', value: number | number[] | undefined): void;
+  (e: 'change', value: number | number[] | undefined): void;
 }
 
 export interface OrgSelectorExpose {

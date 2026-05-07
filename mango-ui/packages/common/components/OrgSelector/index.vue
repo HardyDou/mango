@@ -71,9 +71,9 @@
           :node-key="'id'"
           :default-expand-all="true"
           :expand-on-click-node="false"
-          :check-strictly="false"
+          :check-strictly="true"
           :show-checkbox="true"
-          :default-checked-keys="modelValue"
+          :default-checked-keys="currentSelectedIds"
           @check="handleTreeCheck"
         />
       </div>
@@ -106,6 +106,7 @@ const props = withDefaults(
   defineProps<OrgSelectorProps>(),
   {
     modelValue: () => [],
+    multiple: false,
     placeholder: 'orgSelector.placeholder',
     title: 'orgSelector.title',
     showTagNames: true,
@@ -128,6 +129,13 @@ const allNodes = ref<Map<number, OrgNode>>(new Map());
 
 const treeRef = ref<InstanceType<typeof ElTree>>();
 
+const currentSelectedIds = computed(() => {
+  if (Array.isArray(props.modelValue)) {
+    return props.modelValue;
+  }
+  return props.modelValue === undefined ? [] : [props.modelValue];
+});
+
 const placeholderText = computed(() => {
   const key = props.placeholder;
   return key.includes('.') ? t(key) : key;
@@ -139,13 +147,13 @@ const dialogTitle = computed(() => {
 });
 
 const displayValue = computed(() => {
-  if (props.modelValue.length === 0) return '';
-  return `${props.modelValue.length} ${t('orgSelector.placeholder')}`;
+  if (currentSelectedIds.value.length === 0) return '';
+  return `${currentSelectedIds.value.length} ${t('orgSelector.placeholder')}`;
 });
 
 const selectedNames = computed(() => {
-  if (!props.showTagNames || props.modelValue.length === 0) return [];
-  return props.modelValue
+  if (!props.showTagNames || currentSelectedIds.value.length === 0) return [];
+  return currentSelectedIds.value
     .map((id) => allNodes.value.get(id)?.name)
     .filter(Boolean) as string[];
 });
@@ -190,7 +198,7 @@ async function loadOrgTree() {
 
 function openDialog() {
   if (props.disabled) return;
-  tempSelectedIds.value = [...props.modelValue];
+  tempSelectedIds.value = [...currentSelectedIds.value];
   dialogVisible.value = true;
   loadOrgTree();
 }
@@ -208,13 +216,19 @@ function confirmSelection() {
     finalValue = finalValue.slice(0, props.max);
   }
 
-  emit('update:modelValue', finalValue);
-  emit('change', finalValue);
+  const emittedValue = props.multiple ? finalValue : finalValue[0];
+  emit('update:modelValue', emittedValue);
+  emit('change', emittedValue);
   closeDialog();
 }
 
 function handleTreeCheck(_node: OrgNode, checked: { checkedKeys: number[]; halfCheckedKeys: number[] }) {
   let checkedKeys = checked.checkedKeys;
+
+  if (!props.multiple && checkedKeys.length > 1) {
+    checkedKeys = [checkedKeys[checkedKeys.length - 1]];
+    treeRef.value?.setCheckedKeys(checkedKeys);
+  }
 
   if (props.max > 0 && checkedKeys.length > props.max) {
     // Exceeded max selection - revert
@@ -226,22 +240,24 @@ function handleTreeCheck(_node: OrgNode, checked: { checkedKeys: number[]; halfC
 }
 
 function handleClear() {
-  emit('update:modelValue', []);
-  emit('change', []);
+  const clearedValue = props.multiple ? [] : undefined;
+  emit('update:modelValue', clearedValue);
+  emit('change', clearedValue);
 }
 
 function handleRemoveTag(name: string) {
   const id = [...allNodes.value.entries()]
     .find(([, node]) => node.name === name)?.[0];
   if (id !== undefined) {
-    const newValue = props.modelValue.filter((v) => v !== id);
-    emit('update:modelValue', newValue);
-    emit('change', newValue);
+    const newValue = currentSelectedIds.value.filter((v) => v !== id);
+    const emittedValue = props.multiple ? newValue : undefined;
+    emit('update:modelValue', emittedValue);
+    emit('change', emittedValue);
   }
 }
 
 function getValue(): number[] {
-  return props.modelValue;
+  return currentSelectedIds.value;
 }
 
 function clear() {
@@ -252,9 +268,9 @@ function clear() {
 watch(
   () => props.modelValue,
   (newVal) => {
-    if (Array.isArray(newVal) && newVal.length === 0) {
-      tempSelectedIds.value = [];
-    }
+    tempSelectedIds.value = Array.isArray(newVal)
+      ? [...newVal]
+      : newVal === undefined ? [] : [newVal];
   }
 );
 

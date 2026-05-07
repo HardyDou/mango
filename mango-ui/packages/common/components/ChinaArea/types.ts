@@ -15,6 +15,8 @@ export interface AreaNode {
   hot?: string;
   /** 子节点 */
   children?: AreaNode[];
+  /** 是否叶子节点 */
+  leaf?: boolean;
 }
 
 export interface ChinaAreaProps {
@@ -22,6 +24,10 @@ export interface ChinaAreaProps {
   modelValue?: number[];
   /** Placeholder text */
   placeholder?: string;
+  /** Linkage level: 3=province/city/district, 4=province/city/district/street */
+  level?: number;
+  /** Whether to show the full selected path */
+  showAllLevels?: boolean;
   /** Whether to show hot cities first */
   showHot?: boolean;
   /** Disabled state */

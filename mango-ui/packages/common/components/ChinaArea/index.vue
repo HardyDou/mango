@@ -9,6 +9,7 @@
       :clearable="clearable"
       :filterable="filterable"
       :collapse-tags="collapseTags"
+      :show-all-levels="showAllLevels"
       :separator="separator"
       :loading="loading"
       :no-match-text="t('chinaArea.noMatch')"
@@ -30,6 +31,8 @@ const props = withDefaults(
   {
     modelValue: () => [],
     placeholder: 'chinaArea.placeholder',
+    level: 3,
+    showAllLevels: true,
     showHot: true,
     disabled: false,
     clearable: true,
@@ -44,6 +47,7 @@ const emit = defineEmits<ChinaAreaEmits>();
 const { t } = useI18n();
 
 const areaOptions = ref<AreaNode[]>([]);
+const selectedValue = ref<number[]>([...(props.modelValue || [])]);
 const loading = ref(false);
 
 // 缓存已加载的节点，避免重复请求
@@ -52,6 +56,23 @@ const loadedNodesCache = new Map<number, AreaNode[]>();
 // 请求配置
 const REQUEST_TIMEOUT = 10000; // 10秒超时
 const MAX_RETRIES = 2;
+
+const placeholderText = computed(() => {
+  return props.placeholder?.startsWith('chinaArea.')
+    ? t(props.placeholder)
+    : props.placeholder;
+});
+
+function markLeaf(nodes: AreaNode[], fallbackLevel: number): AreaNode[] {
+  return nodes.map((item) => {
+    const level = item.level || fallbackLevel;
+    return {
+      ...item,
+      leaf: level >= props.level,
+      children: item.children?.length ? markLeaf(item.children, level + 1) : item.children,
+    };
+  });
+}
 
 /**
  * 带超时和重试的请求
@@ -92,6 +113,11 @@ async function lazyLoad(
 ) {
   const parentId = node.level === 0 ? 0 : node.value;
 
+  if (node.level >= props.level) {
+    resolve([]);
+    return;
+  }
+
   // 检查缓存
   if (loadedNodesCache.has(parentId)) {
     resolve(loadedNodesCache.get(parentId)!);
@@ -106,7 +132,7 @@ async function lazyLoad(
       getAreaTree({ type: node.level + 1, parentId })
     );
 
-    const result = data || [];
+    const result = markLeaf(data || [], node.level + 1);
 
     // 缓存结果
     loadedNodesCache.set(parentId, result);
@@ -126,6 +152,7 @@ const cascaderProps = computed(() => ({
   value: 'id',
   label: 'name',
   children: 'children',
+  leaf: (_data: AreaNode, node: { level: number }) => node.level >= props.level,
   expandTrigger: 'hover' as const,
   checkStrictly: false,
   emitPath: true,
@@ -134,6 +161,7 @@ const cascaderProps = computed(() => ({
 }));
 
 function handleChange(value: number[]) {
+  emit('update:modelValue', value || []);
   emit('change', value || []);
 }
 
@@ -158,9 +186,7 @@ function clearNodeCache(parentId: number) {
 watch(
   () => props.modelValue,
   (newVal) => {
-    if (Array.isArray(newVal) && newVal.length === 0) {
-      selectedValue.value = [];
-    }
+    selectedValue.value = Array.isArray(newVal) ? [...newVal] : [];
   }
 );
 

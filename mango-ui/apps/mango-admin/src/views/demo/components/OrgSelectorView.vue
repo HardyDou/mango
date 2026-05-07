@@ -27,6 +27,7 @@
         <el-form-item label="多选模式">
           <OrgSelector
             v-model="multiValue"
+            :multiple="true"
             placeholder="请选择组织"
             clearable
           />
@@ -35,6 +36,7 @@
         <el-form-item label="禁用状态">
           <OrgSelector
             v-model="disabledValue"
+            :multiple="true"
             :disabled="true"
             placeholder="禁用状态"
           />
