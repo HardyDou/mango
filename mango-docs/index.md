@@ -12,6 +12,7 @@
 |------|------|
 | [mango-architecture-design.md](./mango-architecture-design.md) | 顶层设计 |
 | [mango-backend-architecture-boundary-refactor-master-plan.md](./mango-backend-architecture-boundary-refactor-master-plan.md) | 后端边界收敛总计划 |
+| [tenant-model-research-guarantee-business.md](./tenant-model-research-guarantee-business.md) | 保函业务系统租户模型调研与 Mango 差距分析 |
 
 ## Sprint 计划
 

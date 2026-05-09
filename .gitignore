@@ -88,6 +88,9 @@ temp/
 **/db.mv.db
 **/db.trace.db
 **/*.h2.db
+**/config/ip-location/*.xdb
+!**/config/ip-location/README.md
+.playwright-cli/
 
 # ============ Large SQL Data (China Area Division) ============
 **/mango-area/sql/*.sql

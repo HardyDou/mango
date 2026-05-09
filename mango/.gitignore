@@ -38,3 +38,7 @@ Thumbs.db
 *.zip
 *.tar.gz
 *.rar
+
+# Runtime data files
+config/ip-location/*.xdb
+!config/ip-location/README.md
