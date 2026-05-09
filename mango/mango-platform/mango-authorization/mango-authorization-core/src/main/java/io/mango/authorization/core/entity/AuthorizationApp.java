@@ -27,12 +27,6 @@ public class AuthorizationApp implements Serializable {
     /** 应用名称。 */
     private String appName;
 
-    /** 登录域。 */
-    private String realm;
-
-    /** 默认操作者类型。 */
-    private String actorType;
-
     /** 应用图标。 */
     private String icon;
 

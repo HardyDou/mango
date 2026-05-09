@@ -8,6 +8,7 @@ import io.mango.system.core.mapper.SysRouteMapper;
 import io.mango.system.core.service.ISysRouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +21,34 @@ public class SysRouteServiceImpl implements ISysRouteService {
 
     @Override
     public R<List<SysRoutePo>> list() {
+        return list(new SysRoutePo());
+    }
+
+    @Override
+    public R<List<SysRoutePo>> list(SysRoutePo query) {
         LambdaQueryWrapper<SysRoute> wrapper = new LambdaQueryWrapper<>();
+        if (query != null) {
+            String routeName = StringUtils.hasText(query.getRouteName()) ? query.getRouteName().trim() : null;
+            String routePath = StringUtils.hasText(query.getRoutePath()) ? query.getRoutePath().trim() : null;
+            if (routeName != null && routeName.equals(routePath)) {
+                wrapper.and(item -> item.like(SysRoute::getRouteName, routeName)
+                        .or()
+                        .like(SysRoute::getRoutePath, routePath));
+            } else {
+                if (routeName != null) {
+                    wrapper.like(SysRoute::getRouteName, routeName);
+                }
+                if (routePath != null) {
+                    wrapper.like(SysRoute::getRoutePath, routePath);
+                }
+            }
+            if (query.getRouteType() != null) {
+                wrapper.eq(SysRoute::getRouteType, query.getRouteType());
+            }
+            if (query.getStatus() != null) {
+                wrapper.eq(SysRoute::getStatus, query.getStatus());
+            }
+        }
         wrapper.orderByAsc(SysRoute::getSort);
         List<SysRoute> list = sysRouteMapper.selectList(wrapper);
         List<SysRoutePo> poList = list.stream().map(this::convertToPo).collect(Collectors.toList());
@@ -77,6 +105,15 @@ public class SysRouteServiceImpl implements ISysRouteService {
 
     @Override
     public R<Boolean> updateSort(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return R.fail("路由ID列表不能为空");
+        }
+        for (int i = 0; i < ids.size(); i++) {
+            SysRoute entity = new SysRoute();
+            entity.setId(ids.get(i));
+            entity.setSort(i + 1);
+            sysRouteMapper.updateById(entity);
+        }
         return R.ok(true);
     }
 

@@ -12,6 +12,8 @@ public class SysTenant {
     private Long id;
     private String tenantName;
     private String tenantCode;
+    private String institutionType;
+    private String capabilityCodes;
     private Integer status;
     private String contact;
     private String mobile;

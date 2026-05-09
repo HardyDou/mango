@@ -20,7 +20,7 @@ public class RolePermissionAuthorityContributor implements AuthorityContributor 
 
     @Override
     public boolean supports(AuthorizationQuery query) {
-        return AuthorizationQuery.SUBJECT_TYPE_USER.equals(query.subjectType());
+        return AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER.equals(query.subjectType());
     }
 
     @Override

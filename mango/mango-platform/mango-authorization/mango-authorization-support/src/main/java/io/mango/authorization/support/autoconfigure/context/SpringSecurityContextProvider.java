@@ -25,6 +25,7 @@ public class SpringSecurityContextProvider implements ISecurityContextProvider {
         if (principal instanceof SecurityPrincipal securityPrincipal) {
             return new SecurityContext(
                     securityPrincipal.userId(),
+                    securityPrincipal.memberId(),
                     securityPrincipal.tenantId(),
                     true,
                     securityPrincipal.principalName(),

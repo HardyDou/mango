@@ -47,7 +47,7 @@ public class DictServiceImpl implements IDictService {
         DictType entity = new DictType();
         entity.setDictType(po.getDictType());
         entity.setDictName(po.getDictName());
-        entity.setStatus(po.getStatus());
+        entity.setStatus(po.getStatus() == null ? 1 : po.getStatus());
         entity.setRemark(po.getRemark());
         dictTypeMapper.insert(entity);
         return R.ok(entity.getId());
@@ -69,6 +69,15 @@ public class DictServiceImpl implements IDictService {
 
     @Override
     public R<Boolean> deleteType(Long id) {
+        DictType dictType = dictTypeMapper.selectById(id);
+        if (dictType == null) {
+            return R.fail("字典类型不存在");
+        }
+        LambdaQueryWrapper<DictData> dataWrapper = new LambdaQueryWrapper<>();
+        dataWrapper.eq(DictData::getDictType, dictType.getDictType());
+        if (dictDataMapper.selectCount(dataWrapper) > 0) {
+            return R.fail("请先删除该类型下的字典数据");
+        }
         return R.ok(dictTypeMapper.deleteById(id) > 0);
     }
 
@@ -102,8 +111,8 @@ public class DictServiceImpl implements IDictService {
         entity.setDictType(po.getDictType());
         entity.setDictLabel(po.getDictLabel());
         entity.setDictValue(po.getDictValue());
-        entity.setSort(po.getSort());
-        entity.setStatus(po.getStatus());
+        entity.setSort(po.getSort() == null ? 0 : po.getSort());
+        entity.setStatus(po.getStatus() == null ? 1 : po.getStatus());
         dictDataMapper.insert(entity);
         return R.ok(entity.getId());
     }

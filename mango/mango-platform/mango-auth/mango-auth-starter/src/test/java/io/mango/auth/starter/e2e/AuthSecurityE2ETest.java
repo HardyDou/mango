@@ -2,6 +2,8 @@ package io.mango.auth.starter.e2e;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.auth.api.spi.LoginTenantProvider;
+import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
@@ -18,7 +20,9 @@ import io.mango.authorization.api.SecurityPrincipal;
 import io.mango.authorization.support.token.JjwtTokenServiceImpl;
 import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.AuthUserInfo;
+import io.mango.identity.api.vo.IdentityUserInfo;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -83,7 +87,8 @@ class AuthSecurityE2ETest {
                         .content("""
                                 {
                                   "username": "admin",
-                                  "password": "admin123"
+                                  "password": "admin123",
+                                  "tenantId": "1"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -109,7 +114,8 @@ class AuthSecurityE2ETest {
                         .content("""
                                 {
                                   "username": "admin",
-                                  "password": "wrong-password"
+                                  "password": "wrong-password",
+                                  "tenantId": "1"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -125,7 +131,8 @@ class AuthSecurityE2ETest {
                         .content("""
                                 {
                                   "username": "admin",
-                                  "password": "admin123"
+                                  "password": "admin123",
+                                  "tenantId": "1"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -220,6 +227,53 @@ class AuthSecurityE2ETest {
             return query -> Long.valueOf(1L).equals(query.subjectId())
                     ? AuthorizationSnapshot.of(List.of("ROLE_ADMIN"), List.of("e2e:read"), List.of("ROLE_ADMIN", "e2e:read"))
                     : AuthorizationSnapshot.empty();
+        }
+
+        @Bean
+        IdentityUserApi identityUserApi() {
+            return new IdentityUserApi() {
+                @Override
+                public R<IdentityUserInfo> getUserInfo(String username) {
+                    return R.ok("admin".equals(username) ? identityUser() : null);
+                }
+
+                @Override
+                public R<IdentityUserInfo> getUserInfoById(Long userId) {
+                    return R.ok(Long.valueOf(1L).equals(userId) ? identityUser() : null);
+                }
+
+                private IdentityUserInfo identityUser() {
+                    IdentityUserInfo user = new IdentityUserInfo();
+                    user.setUserId(1L);
+                    user.setUsername("admin");
+                    user.setNickname("Administrator");
+                    user.setStatus(1);
+                    return user;
+                }
+            };
+        }
+
+        @Bean
+        LoginTenantProvider loginTenantProvider() {
+            return new LoginTenantProvider() {
+                @Override
+                public LoginTenantVO getEnabledById(String tenantId) {
+                    return "1".equals(tenantId) ? tenant() : null;
+                }
+
+                @Override
+                public LoginTenantVO getEnabledByCode(String tenantCode) {
+                    return "default".equals(tenantCode) ? tenant() : null;
+                }
+
+                private LoginTenantVO tenant() {
+                    LoginTenantVO tenant = new LoginTenantVO();
+                    tenant.setTenantId("1");
+                    tenant.setTenantCode("default");
+                    tenant.setTenantName("芒果集团");
+                    return tenant;
+                }
+            };
         }
 
         @Bean("apiResourceAuthorizationManager")

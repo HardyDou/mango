@@ -62,6 +62,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     private ServerHttpRequest writePrincipalHeaders(ServerHttpRequest request, AccessPrincipal principal) {
         ServerHttpRequest.Builder builder = request.mutate();
         put(builder, MangoContextHeaders.USER_ID, principal.userId());
+        put(builder, MangoContextHeaders.MEMBER_ID, principal.memberId());
         put(builder, MangoContextHeaders.PRINCIPAL_NAME, principal.username());
         put(builder, MangoContextHeaders.TENANT_ID, principal.tenantId());
         put(builder, MangoContextHeaders.REALM, principal.realm());

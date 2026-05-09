@@ -13,6 +13,7 @@ import io.mango.org.core.entity.PostEntity;
 import io.mango.org.core.mapper.PostMapper;
 import io.mango.org.core.service.IPostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,7 +31,12 @@ public class PostServiceImpl implements IPostService {
 
     @Override
     public PageResult<PostVO> page(PostPageQuery query) {
-        LambdaQueryWrapper<PostEntity> wrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<PostEntity> wrapper = new LambdaQueryWrapper<PostEntity>()
+                .like(StringUtils.hasText(query.getPostName()), PostEntity::getPostName, query.getPostName())
+                .like(StringUtils.hasText(query.getPostCode()), PostEntity::getPostCode, query.getPostCode())
+                .eq(StringUtils.hasText(query.getPostStatus()), PostEntity::getPostStatus, query.getPostStatus())
+                .orderByAsc(PostEntity::getPostSort)
+                .orderByDesc(PostEntity::getCreateTime);
         IPage<PostEntity> page = postMapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
         return PageResult.of(page.getRecords().stream().map(this::toVO).toList(),
@@ -59,6 +65,14 @@ public class PostServiceImpl implements IPostService {
         }
         PostVO vo = new PostVO();
         vo.setId(entity.getId());
+        vo.setPostName(entity.getPostName());
+        vo.setPostCode(entity.getPostCode());
+        vo.setPostSort(entity.getPostSort());
+        vo.setPostStatus(entity.getPostStatus());
+        vo.setRemark(entity.getRemark());
+        vo.setTenantId(entity.getTenantId());
+        vo.setCreateTime(entity.getCreateTime());
+        vo.setUpdateTime(entity.getUpdateTime());
         return vo;
     }
 
@@ -67,6 +81,11 @@ public class PostServiceImpl implements IPostService {
             return null;
         }
         PostEntity entity = new PostEntity();
+        entity.setPostName(command.getPostName());
+        entity.setPostCode(command.getPostCode());
+        entity.setPostSort(command.getPostSort() == null ? 0 : command.getPostSort());
+        entity.setPostStatus(StringUtils.hasText(command.getPostStatus()) ? command.getPostStatus() : "1");
+        entity.setRemark(command.getRemark());
         return entity;
     }
 
@@ -76,6 +95,11 @@ public class PostServiceImpl implements IPostService {
         }
         PostEntity entity = new PostEntity();
         entity.setId(command.getId());
+        entity.setPostName(command.getPostName());
+        entity.setPostCode(command.getPostCode());
+        entity.setPostSort(command.getPostSort() == null ? 0 : command.getPostSort());
+        entity.setPostStatus(StringUtils.hasText(command.getPostStatus()) ? command.getPostStatus() : "1");
+        entity.setRemark(command.getRemark());
         return entity;
     }
 }

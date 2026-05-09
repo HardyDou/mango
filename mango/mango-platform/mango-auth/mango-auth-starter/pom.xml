@@ -57,6 +57,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango IP 归属地解析 API，用于登录审计日志 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-ip-location-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 验证码 API，用于 CaptchaInterceptor -->
         <dependency>
             <groupId>io.mango</groupId>
@@ -68,6 +75,13 @@
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-authorization-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Mango 系统 API，用于可选记录登录审计日志 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-system-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -131,6 +131,21 @@ class SchemaValidationRunnerTest {
                 .hasMessageContaining("必须以 id 作为主键");
     }
 
+    @Test
+    void run_withExcludedTablePrefix_skipsTable() throws Exception {
+        DataSource dataSource = dataSource("excluded_table_prefix");
+        execute(dataSource, """
+                CREATE TABLE flyway_schema_history_org (
+                    installed_rank INT PRIMARY KEY,
+                    version VARCHAR(50)
+                )
+                """);
+
+        SchemaValidationRunner runner = new SchemaValidationRunner(dataSource, newProperties(true));
+
+        assertThatNoException().isThrownBy(runner::run);
+    }
+
     private PersistenceProperties.SchemaValidation newProperties(boolean failFast) {
         PersistenceProperties.SchemaValidation properties = new PersistenceProperties.SchemaValidation();
         properties.setFailFast(failFast);

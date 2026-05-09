@@ -27,6 +27,9 @@ public class LoginVO {
     @Schema(description = "用户ID")
     private Long userId;
 
+    @Schema(description = "当前机构成员ID")
+    private Long memberId;
+
     @Schema(description = "用户名")
     private String username;
 
@@ -44,6 +47,15 @@ public class LoginVO {
 
     @Schema(description = "归属主体ID")
     private Long partyId;
+
+    @Schema(description = "当前机构ID。底层对应 tenantId")
+    private String tenantId;
+
+    @Schema(description = "当前机构编码")
+    private String tenantCode;
+
+    @Schema(description = "当前机构名称")
+    private String tenantName;
 
     @Schema(description = "应用编码")
     private String appCode;

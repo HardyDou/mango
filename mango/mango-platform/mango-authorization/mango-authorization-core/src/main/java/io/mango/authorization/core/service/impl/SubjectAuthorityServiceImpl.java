@@ -83,6 +83,7 @@ public class SubjectAuthorityServiceImpl implements ISubjectAuthorityService {
         }
         LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SubjectRoleBinding::getSubjectId, query.subjectId())
+                .eq(SubjectRoleBinding::getSubjectType, query.subjectType())
                 .eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId)
                 .eq(StringUtils.hasText(query.systemCode()), SubjectRoleBinding::getAppCode, query.systemCode())
                 .eq(StringUtils.hasText(query.realm()), SubjectRoleBinding::getRealm, query.realm())

@@ -13,7 +13,11 @@ import java.time.LocalDateTime;
 @Schema(description = "操作日志")
 public class SysOperationLogPo {
     @TableId(type = IdType.ASSIGN_ID)
+    @Schema(description = "操作日志ID")
     private Long id;
+
+    @Schema(description = "租户ID")
+    private Long tenantId;
 
     @Schema(description = "用户ID")
     private Long userId;
@@ -29,6 +33,9 @@ public class SysOperationLogPo {
 
     @Schema(description = "请求方法")
     private String method;
+
+    @Schema(description = "处理器方法")
+    private String handlerMethod;
 
     @Schema(description = "请求路径")
     private String url;
@@ -50,6 +57,9 @@ public class SysOperationLogPo {
 
     @Schema(description = "操作IP")
     private String ip;
+
+    @Schema(description = "IP归属地")
+    private String location;
 
     @Schema(description = "操作时间")
     private LocalDateTime operateTime;

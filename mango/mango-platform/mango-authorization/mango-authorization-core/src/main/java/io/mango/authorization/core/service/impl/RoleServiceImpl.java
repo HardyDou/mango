@@ -1,25 +1,37 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
+import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
+import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.entity.Role;
 import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
+import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
+import io.mango.authorization.core.service.IMenuService;
 import io.mango.authorization.core.service.IRoleService;
+import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.infra.context.core.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +45,9 @@ public class RoleServiceImpl implements IRoleService {
     private final RoleMapper roleMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
     private final RoleMenuMapper roleMenuMapper;
+    private final MenuMapper menuMapper;
+    private final IMenuService menuService;
+    private final ISubjectAuthorityService subjectAuthorityService;
 
     @Override
     public List<RoleVO> list() {
@@ -52,7 +67,9 @@ public class RoleServiceImpl implements IRoleService {
     @Override
     public List<RoleVO> getSubjectRoles(Long subjectId) {
         LambdaQueryWrapper<SubjectRoleBinding> urWrapper = new LambdaQueryWrapper<>();
-        urWrapper.eq(SubjectRoleBinding::getSubjectId, subjectId);
+        urWrapper.eq(SubjectRoleBinding::getSubjectId, subjectId)
+                .eq(SubjectRoleBinding::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
+                .eq(getTenantIdLong() != null, SubjectRoleBinding::getTenantId, getTenantIdLong());
         List<SubjectRoleBinding> userRoles = subjectRoleBindingMapper.selectList(urWrapper);
         if (userRoles.isEmpty()) {
             return new ArrayList<>();
@@ -68,6 +85,11 @@ public class RoleServiceImpl implements IRoleService {
 
     @Override
     public List<Long> getRoleMenuIds(Long roleId) {
+        Role role = roleMapper.selectById(roleId);
+        if (!isCurrentTenantRole(role)) {
+            log.warn("Tenant isolation violation: attempt to query menus of role {} by tenant {}", roleId, getTenantIdLong());
+            return new ArrayList<>();
+        }
         LambdaQueryWrapper<RoleMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(RoleMenu::getRoleId, roleId);
         List<RoleMenu> roleMenus = roleMenuMapper.selectList(wrapper);
@@ -75,10 +97,15 @@ public class RoleServiceImpl implements IRoleService {
     }
 
     @Override
+    public List<MenuVO> listAssignableMenus(String appCode) {
+        List<Menu> menus = listAssignableMenuEntities(appCode);
+        return menuService.buildMenuTree(menus);
+    }
+
+    @Override
     @Transactional
     public Long create(RoleCommand po) {
         Role role = toEntity(po);
-        role.setTenantId(getTenantIdLong());
         role.setCreateTime(LocalDateTime.now());
         role.setUpdateTime(LocalDateTime.now());
         roleMapper.insert(role);
@@ -144,9 +171,14 @@ public class RoleServiceImpl implements IRoleService {
     public Boolean assignRoles(AssignSubjectRolesCommand command) {
         Long subjectId = command.getSubjectId();
         List<Long> roleIds = command.getRoleIds();
+        if (roleIds != null && !roleIds.isEmpty() && !areCurrentTenantRoles(roleIds)) {
+            log.warn("Tenant isolation violation: attempt to assign roles {} by tenant {}", roleIds, getTenantIdLong());
+            return false;
+        }
         // 删除同一主体在同一上下文下的旧角色。
         LambdaQueryWrapper<SubjectRoleBinding> delWrapper = new LambdaQueryWrapper<>();
         delWrapper.eq(SubjectRoleBinding::getSubjectId, subjectId)
+                .eq(SubjectRoleBinding::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
                 .eq(hasText(command.getAppCode()), SubjectRoleBinding::getAppCode, command.getAppCode())
                 .eq(hasText(command.getRealm()), SubjectRoleBinding::getRealm, command.getRealm())
                 .eq(hasText(command.getActorType()), SubjectRoleBinding::getActorType, command.getActorType())
@@ -155,11 +187,10 @@ public class RoleServiceImpl implements IRoleService {
         subjectRoleBindingMapper.delete(delWrapper);
         // 写入新的角色关系。
         if (roleIds != null && !roleIds.isEmpty()) {
-            Long tenantId = getTenantIdLong();
             for (Long roleId : roleIds) {
                 SubjectRoleBinding ur = new SubjectRoleBinding();
-                ur.setTenantId(tenantId);
                 ur.setSubjectId(subjectId);
+                ur.setSubjectType(AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER);
                 ur.setAppCode(command.getAppCode());
                 ur.setRealm(command.getRealm());
                 ur.setActorType(command.getActorType());
@@ -177,29 +208,143 @@ public class RoleServiceImpl implements IRoleService {
     public Boolean assignMenus(Long roleId, List<Long> menuIds) {
         // 校验角色归属当前租户。
         Long currentTenantId = getTenantIdLong();
-        if (currentTenantId != null) {
-            Role role = roleMapper.selectById(roleId);
-            if (role == null || !currentTenantId.equals(role.getTenantId())) {
-                log.warn("Tenant isolation violation: attempt to assign menus to role {} by tenant {}", roleId, currentTenantId);
+        Role role = roleMapper.selectById(roleId);
+        if (!isCurrentTenantRole(role)) {
+            log.warn("Tenant isolation violation: attempt to assign menus to role {} by tenant {}", roleId, currentTenantId);
+            return false;
+        }
+
+        Set<Long> requestedMenuIds = menuIds == null
+                ? Collections.emptySet()
+                : new LinkedHashSet<>(menuIds);
+        if (!requestedMenuIds.isEmpty()) {
+            Set<Long> assignableMenuIds = listAssignableMenuEntities(role.getAppCode()).stream()
+                    .map(Menu::getMenuId)
+                    .collect(Collectors.toCollection(HashSet::new));
+            if (!assignableMenuIds.containsAll(requestedMenuIds)) {
+                log.warn("Permission escalation denied: roleId={}, tenantId={}, requestedMenuIds={}",
+                        roleId, currentTenantId, requestedMenuIds);
                 return false;
             }
         }
+
         // 删除角色旧菜单关系。
         LambdaQueryWrapper<RoleMenu> delWrapper = new LambdaQueryWrapper<>();
         delWrapper.eq(RoleMenu::getRoleId, roleId);
         roleMenuMapper.delete(delWrapper);
         // 写入新的菜单关系。
-        if (menuIds != null && !menuIds.isEmpty()) {
-            Long tenantId = getTenantIdLong();
-            for (Long menuId : menuIds) {
+        if (!requestedMenuIds.isEmpty()) {
+            for (Long menuId : requestedMenuIds) {
                 RoleMenu rm = new RoleMenu();
-                rm.setTenantId(tenantId);
                 rm.setRoleId(roleId);
                 rm.setMenuId(menuId);
                 roleMenuMapper.insert(rm);
             }
         }
         return true;
+    }
+
+    private boolean isCurrentTenantRole(Role role) {
+        if (role == null) {
+            return false;
+        }
+        Long currentTenantId = getTenantIdLong();
+        return currentTenantId == null || currentTenantId.equals(role.getTenantId());
+    }
+
+    private boolean areCurrentTenantRoles(List<Long> roleIds) {
+        Long currentTenantId = getTenantIdLong();
+        LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Role::getRoleId, roleIds)
+                .eq(currentTenantId != null, Role::getTenantId, currentTenantId);
+        long matchedCount = roleMapper.selectList(wrapper)
+                .stream()
+                .map(Role::getRoleId)
+                .collect(Collectors.toSet())
+                .size();
+        return matchedCount == new HashSet<>(roleIds).size();
+    }
+
+    private List<Menu> listAssignableMenuEntities(String appCode) {
+        String effectiveAppCode = StringUtils.hasText(appCode) ? appCode : MangoContextHolder.appCode();
+        LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StringUtils.hasText(effectiveAppCode), Menu::getAppCode, effectiveAppCode)
+                .eq(Menu::getStatus, 1)
+                .orderByAsc(Menu::getSort);
+        List<Menu> allMenus = menuMapper.selectList(wrapper);
+        if (allMenus.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        AuthorizationQuery query = currentAuthorizationQuery(effectiveAppCode);
+        Set<String> permissions = subjectAuthorityService.listSubjectPermissions(query)
+                .stream()
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (permissions.contains("*:*")) {
+            return allMenus;
+        }
+
+        Set<Long> assignedMenuIds = listCurrentSubjectRoleMenuIds(effectiveAppCode);
+        if (assignedMenuIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<Long, Menu> menuById = allMenus.stream()
+                .collect(Collectors.toMap(Menu::getMenuId, menu -> menu));
+        Set<Long> assignableIds = new LinkedHashSet<>();
+        for (Long menuId : assignedMenuIds) {
+            collectMenuWithAncestors(menuId, menuById, assignableIds);
+        }
+        return allMenus.stream()
+                .filter(menu -> assignableIds.contains(menu.getMenuId()))
+                .collect(Collectors.toList());
+    }
+
+    private AuthorizationQuery currentAuthorizationQuery(String appCode) {
+        return AuthorizationQuery.member(MangoContextHolder.memberId())
+                .withTenantId(MangoContextHolder.tenantId())
+                .withSystemCode(appCode)
+                .withRealm(MangoContextHolder.get().realm())
+                .withActorType(MangoContextHolder.get().actorType())
+                .withParty(MangoContextHolder.get().partyType(), MangoContextHolder.get().partyId());
+    }
+
+    private Set<Long> listCurrentSubjectRoleMenuIds(String appCode) {
+        LambdaQueryWrapper<SubjectRoleBinding> subjectRoleWrapper = new LambdaQueryWrapper<>();
+        subjectRoleWrapper.eq(SubjectRoleBinding::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
+                .eq(SubjectRoleBinding::getSubjectId, MangoContextHolder.memberId())
+                .eq(StringUtils.hasText(MangoContextHolder.tenantId()), SubjectRoleBinding::getTenantId, getTenantIdLong())
+                .eq(StringUtils.hasText(appCode), SubjectRoleBinding::getAppCode, appCode)
+                .eq(StringUtils.hasText(MangoContextHolder.get().realm()), SubjectRoleBinding::getRealm, MangoContextHolder.get().realm())
+                .eq(StringUtils.hasText(MangoContextHolder.get().actorType()), SubjectRoleBinding::getActorType, MangoContextHolder.get().actorType())
+                .eq(StringUtils.hasText(MangoContextHolder.get().partyType()), SubjectRoleBinding::getPartyType, MangoContextHolder.get().partyType())
+                .eq(MangoContextHolder.get().partyId() != null, SubjectRoleBinding::getPartyId, MangoContextHolder.get().partyId());
+        List<Long> roleIds = subjectRoleBindingMapper.selectList(subjectRoleWrapper)
+                .stream()
+                .map(SubjectRoleBinding::getRoleId)
+                .collect(Collectors.toList());
+        if (roleIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        LambdaQueryWrapper<RoleMenu> roleMenuWrapper = new LambdaQueryWrapper<>();
+        roleMenuWrapper.in(RoleMenu::getRoleId, roleIds);
+        return roleMenuMapper.selectList(roleMenuWrapper)
+                .stream()
+                .map(RoleMenu::getMenuId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private void collectMenuWithAncestors(Long menuId, Map<Long, Menu> menuById, Set<Long> collector) {
+        Long currentId = menuId;
+        while (currentId != null && currentId > 0 && collector.add(currentId)) {
+            Menu menu = menuById.get(currentId);
+            if (menu == null) {
+                break;
+            }
+            currentId = menu.getParentId();
+        }
     }
 
     private RoleVO toVO(Role role) {

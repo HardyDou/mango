@@ -50,6 +50,23 @@ class PersistenceAuditAutoConfigurationTest {
     }
 
     @Test
+    void auditHandler_shouldOverrideTenantIdFromContext() {
+        MangoContextHolder.set(MangoContextSnapshot.empty()
+                .withSecurity(1001L, "2002", "admin", "platform", "employee", "org", 3003L, "admin-app"));
+
+        contextRunner.run(ctx -> {
+            MetaObjectHandler handler = ctx.getBean(MetaObjectHandler.class);
+            TestEntity entity = new TestEntity();
+            entity.setTenantId("9999");
+            MetaObject metaObject = SystemMetaObject.forObject(entity);
+
+            handler.insertFill(metaObject);
+
+            assertThat(entity.getTenantId()).isEqualTo("2002");
+        });
+    }
+
+    @Test
     void customContextProvider_shouldBeUsed() {
         contextRunner
                 .withUserConfiguration(CustomContextProviderConfig.class)

@@ -3,6 +3,7 @@ package io.mango.system.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
+import io.mango.infra.log.annotation.Log;
 import io.mango.system.api.command.UpdateRouteSortCommand;
 import io.mango.system.api.po.SysRoutePo;
 import io.mango.system.core.service.ISysRouteService;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,8 +28,8 @@ public class SysRouteController {
     @GetMapping("/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:list")
     @Operation(summary = "获取系统路由列表", description = "权限接口。查询全部系统路由列表")
-    public R<List<SysRoutePo>> list() {
-        return routeService.list();
+    public R<List<SysRoutePo>> list(@ParameterObject SysRoutePo query) {
+        return routeService.list(query);
     }
 
     @GetMapping("/tree")
@@ -49,6 +51,7 @@ public class SysRouteController {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:add")
     @Operation(summary = "新增系统路由", description = "权限接口。创建系统路由")
+    @Log("新增系统路由")
     public R<Long> create(@RequestBody @Valid SysRoutePo po) {
         return routeService.create(po);
     }
@@ -56,6 +59,7 @@ public class SysRouteController {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:edit")
     @Operation(summary = "修改系统路由", description = "权限接口。更新系统路由")
+    @Log("修改系统路由")
     public R<Boolean> update(@RequestBody @Valid SysRoutePo po) {
         return routeService.update(po);
     }
@@ -63,6 +67,7 @@ public class SysRouteController {
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:delete")
     @Operation(summary = "删除系统路由", description = "权限接口。按路由ID删除系统路由")
+    @Log("删除系统路由")
     public R<Boolean> delete(
             @Parameter(description = "路由ID")
             @RequestParam Long id) {
@@ -72,6 +77,7 @@ public class SysRouteController {
     @PutMapping("/sort")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:route:edit")
     @Operation(summary = "调整系统路由排序", description = "权限接口。按路由ID顺序批量调整系统路由排序")
+    @Log("调整系统路由排序")
     public R<Boolean> updateSort(@RequestBody @Valid UpdateRouteSortCommand command) {
         return routeService.updateSort(command.getIds());
     }

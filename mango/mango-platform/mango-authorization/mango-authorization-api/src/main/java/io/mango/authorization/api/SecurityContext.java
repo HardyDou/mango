@@ -4,7 +4,8 @@ package io.mango.authorization.api;
  * 不可变安全上下文快照。
  *
  * @param userId 当前认证主体 ID
- * @param tenantId 当前租户标识
+ * @param memberId 当前机构成员 ID
+ * @param tenantId 当前机构标识
  * @param authenticated 当前请求是否已认证
  * @param principalName 当前认证主体名称
  * @param realm 登录域
@@ -15,6 +16,7 @@ package io.mango.authorization.api;
  */
 public record SecurityContext(
         Long userId,
+        Long memberId,
         String tenantId,
         boolean authenticated,
         String principalName,
@@ -25,7 +27,7 @@ public record SecurityContext(
         String appCode) {
 
     public SecurityContext(Long userId, String tenantId, boolean authenticated, String principalName) {
-        this(userId, tenantId, authenticated, principalName, null, null, null, null, null);
+        this(userId, null, tenantId, authenticated, principalName, null, null, null, null, null);
     }
 
     /**
@@ -34,6 +36,6 @@ public record SecurityContext(
      * @return 匿名上下文
      */
     public static SecurityContext anonymous() {
-        return new SecurityContext(null, null, false, null, null, null, null, null, null);
+        return new SecurityContext(null, null, null, false, null, null, null, null, null, null);
     }
 }

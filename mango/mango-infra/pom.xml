@@ -41,6 +41,8 @@
         <module>mango-infra-context</module>
         <!-- Module metadata and deployment mapping -->
         <module>mango-infra-module</module>
+        <!-- IP location resolving (ip2region/noop abstraction) -->
+        <module>mango-infra-ip-location</module>
         <!-- Log (Logback configuration, multi-env support, audit annotations) -->
         <module>mango-infra-log</module>
         <!-- Test (Unified test module for all infrastructure components) -->

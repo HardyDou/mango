@@ -13,7 +13,11 @@ import java.time.LocalDateTime;
 @Schema(description = "登录日志")
 public class SysLoginLogPo {
     @TableId(type = IdType.ASSIGN_ID)
+    @Schema(description = "登录日志ID")
     private Long id;
+
+    @Schema(description = "租户ID")
+    private Long tenantId;
 
     @Schema(description = "用户ID")
     private Long userId;

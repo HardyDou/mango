@@ -138,11 +138,22 @@ public class SchemaValidationRunner {
             return true;
         }
         for (String excludedTable : properties.getExcludedTables()) {
-            if (normalizedTable.equals(normalize(excludedTable))) {
+            String normalizedExcludedTable = normalize(excludedTable);
+            if (matchesExcludedTable(normalizedTable, normalizedExcludedTable)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean matchesExcludedTable(String tableName, String excludedTable) {
+        if (excludedTable == null) {
+            return false;
+        }
+        if (tableName.equals(excludedTable)) {
+            return true;
+        }
+        return excludedTable.endsWith("*") && tableName.startsWith(excludedTable.substring(0, excludedTable.length() - 1));
     }
 
     private String normalize(String value) {

@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.authorization.api.command.AssignRoleMenusCommand;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
+import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 
 import java.util.List;
@@ -75,6 +76,14 @@ public interface RoleApi {
      * @return 菜单 ID 列表
      */
     R<List<Long>> getRoleMenuIds(Long roleId);
+
+    /**
+     * 查询当前用户可分配给角色的菜单权限树。
+     *
+     * @param appCode 应用编码
+     * @return 可授权菜单树
+     */
+    R<List<MenuVO>> listAssignableMenus(String appCode);
 
     /**
      * 给角色分配菜单。

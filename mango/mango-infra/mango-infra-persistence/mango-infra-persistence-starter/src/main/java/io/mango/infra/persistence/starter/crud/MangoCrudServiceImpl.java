@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.persistence.api.crud.IgnoreTenant;
 import io.mango.infra.persistence.api.crud.MangoCrudService;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
 import org.springframework.beans.BeanUtils;
@@ -32,7 +30,6 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
     @Override
     public Object createByCommand(Object command) {
         E entity = toEntity(command);
-        fillTenantIfPresent(entity);
         beforeCreate(command, entity);
         save(entity);
         afterCreate(command, entity);
@@ -89,20 +86,8 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
 
     protected QueryWrapper<E> buildQueryWrapper(Object query) {
         QueryWrapper<E> wrapper = queryWrapperBuilder.build(query);
-        applyTenantScope(wrapper);
         applyDataScope(wrapper, query);
         return wrapper;
-    }
-
-    protected void applyTenantScope(QueryWrapper<E> wrapper) {
-        if (entityType().isAnnotationPresent(IgnoreTenant.class)) {
-            return;
-        }
-        String tenantId = MangoContextHolder.tenantId();
-        if (tenantId == null || tenantId.isBlank() || !hasField(entityType(), "tenantId")) {
-            return;
-        }
-        wrapper.eq("tenant_id", tenantId);
     }
 
     protected void applyDataScope(QueryWrapper<E> wrapper, Object query) {
@@ -180,27 +165,6 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
         return ReflectionUtils.getField(field, source);
     }
 
-    private void fillTenantIfPresent(E entity) {
-        String tenantId = MangoContextHolder.tenantId();
-        if (tenantId == null || tenantId.isBlank()) {
-            return;
-        }
-        Field field = ReflectionUtils.findField(entity.getClass(), "tenantId");
-        if (field == null) {
-            return;
-        }
-        ReflectionUtils.makeAccessible(field);
-        Object current = ReflectionUtils.getField(field, entity);
-        if (current != null) {
-            return;
-        }
-        if (Long.class.equals(field.getType()) || long.class.equals(field.getType())) {
-            ReflectionUtils.setField(field, entity, Long.valueOf(tenantId));
-        } else if (String.class.equals(field.getType())) {
-            ReflectionUtils.setField(field, entity, tenantId);
-        }
-    }
-
     private Object readId(E entity) {
         Field idField = findIdField(entity.getClass());
         if (idField == null) {
@@ -246,10 +210,6 @@ public abstract class MangoCrudServiceImpl<M extends BaseMapper<E>, E>
             }
         });
         return result[0];
-    }
-
-    private boolean hasField(Class<?> type, String fieldName) {
-        return ReflectionUtils.findField(type, fieldName) != null;
     }
 
     private Serializable asSerializable(Object id) {

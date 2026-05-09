@@ -12,6 +12,7 @@ public record MangoContextSnapshot(
         String traceId,
         String tenantId,
         Long userId,
+        Long memberId,
         String principalName,
         String realm,
         String actorType,
@@ -22,7 +23,7 @@ public record MangoContextSnapshot(
 ) {
 
     public static MangoContextSnapshot empty() {
-        return new MangoContextSnapshot(null, null, null, null, null, null, null, null, null, null, null);
+        return new MangoContextSnapshot(null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public static MangoContextSnapshot request(String requestId,
@@ -50,6 +51,7 @@ public record MangoContextSnapshot(
                 && traceId == null
                 && tenantId == null
                 && userId == null
+                && memberId == null
                 && principalName == null
                 && realm == null
                 && actorType == null
@@ -69,6 +71,7 @@ public record MangoContextSnapshot(
                 firstText(traceId, this.traceId),
                 firstText(tenantId, this.tenantId),
                 userId,
+                memberId,
                 principalName,
                 realm,
                 actorType,
@@ -80,6 +83,7 @@ public record MangoContextSnapshot(
     }
 
     public MangoContextSnapshot withSecurity(Long userId,
+                                             Long memberId,
                                              String tenantId,
                                              String principalName,
                                              String realm,
@@ -92,12 +96,41 @@ public record MangoContextSnapshot(
                 traceId,
                 firstText(tenantId, this.tenantId),
                 userId != null ? userId : this.userId,
+                memberId != null ? memberId : this.memberId,
                 firstText(principalName, this.principalName),
                 firstText(realm, this.realm),
                 firstText(actorType, this.actorType),
                 firstText(partyType, this.partyType),
                 partyId != null ? partyId : this.partyId,
                 firstText(appCode, this.appCode),
+                clientIp
+        );
+    }
+
+    public MangoContextSnapshot withSecurity(Long userId,
+                                             String tenantId,
+                                             String principalName,
+                                             String realm,
+                                             String actorType,
+                                             String partyType,
+                                             Long partyId,
+                                             String appCode) {
+        return withSecurity(userId, null, tenantId, principalName, realm, actorType, partyType, partyId, appCode);
+    }
+
+    public MangoContextSnapshot withTenantId(String tenantId) {
+        return new MangoContextSnapshot(
+                requestId,
+                traceId,
+                firstText(tenantId, this.tenantId),
+                userId,
+                memberId,
+                principalName,
+                realm,
+                actorType,
+                partyType,
+                partyId,
+                appCode,
                 clientIp
         );
     }

@@ -28,8 +28,22 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-system-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -58,6 +58,10 @@ public final class MangoContextHolder {
         return get().userId();
     }
 
+    public static Long memberId() {
+        return get().memberId();
+    }
+
     public static String principalName() {
         return get().principalName();
     }

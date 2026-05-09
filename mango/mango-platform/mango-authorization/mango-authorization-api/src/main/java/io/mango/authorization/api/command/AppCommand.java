@@ -1,14 +1,18 @@
 package io.mango.authorization.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 授权应用入口创建或修改命令。
@@ -31,14 +35,10 @@ public class AppCommand implements Serializable {
     @Size(max = 100, message = "应用名称最多100个字符")
     private String appName;
 
-    @Schema(description = "登录域")
-    @NotBlank(message = "登录域不能为空")
-    @Size(max = 32, message = "登录域最多32个字符")
-    private String realm;
-
-    @Schema(description = "操作者类型")
-    @Size(max = 32, message = "操作者类型最多32个字符")
-    private String actorType;
+    @Schema(description = "应用允许的登录上下文列表")
+    @Valid
+    @NotEmpty(message = "应用至少需要一个登录上下文")
+    private List<AppLoginContextCommand> loginContexts = new ArrayList<>();
 
     @Schema(description = "应用图标")
     @Size(max = 64, message = "图标最多64个字符")

@@ -1,5 +1,6 @@
 package io.mango.infra.web.starter;
 
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.mango.infra.kv.api.expression.KvContextContributor;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
@@ -16,24 +17,30 @@ import io.mango.infra.web.support.WebTraceIdResolver;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.util.List;
+
 /**
  * Mango Infra Web 自动配置。
  */
-@AutoConfiguration
+@AutoConfiguration(before = JacksonAutoConfiguration.class)
 @EnableScheduling
 @EnableConfigurationProperties(MangoWebProperties.class)
 public class WebAutoConfiguration implements WebMvcConfigurer {
@@ -48,6 +55,30 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @ConditionalOnMissingBean
     public WebTraceIdResolver webTraceIdResolver() {
         return new WebTraceIdResolver();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public GlobalExceptionHandler globalExceptionHandler() {
+        return new GlobalExceptionHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "mangoLongToStringJacksonCustomizer")
+    public Jackson2ObjectMapperBuilderCustomizer mangoLongToStringJacksonCustomizer() {
+        return builder -> builder
+                .serializerByType(Long.class, ToStringSerializer.instance)
+                .serializerByType(Long.TYPE, ToStringSerializer.instance);
+    }
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.stream()
+                .filter(MappingJackson2HttpMessageConverter.class::isInstance)
+                .map(MappingJackson2HttpMessageConverter.class::cast)
+                .forEach(converter -> converter.getObjectMapper()
+                        .registerModule(new com.fasterxml.jackson.databind.module.SimpleModule()
+                                .addSerializer(Long.class, ToStringSerializer.instance)));
     }
 
     @Bean

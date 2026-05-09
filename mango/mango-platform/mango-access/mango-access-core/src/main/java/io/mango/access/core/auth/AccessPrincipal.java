@@ -7,6 +7,7 @@ package io.mango.access.core.auth;
  */
 public record AccessPrincipal(
         Long userId,
+        Long memberId,
         String username,
         String tenantId,
         String realm,

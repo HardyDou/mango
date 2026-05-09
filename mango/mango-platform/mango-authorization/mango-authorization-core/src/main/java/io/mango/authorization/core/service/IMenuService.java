@@ -1,5 +1,6 @@
 package io.mango.authorization.core.service;
 
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.api.vo.MenuVO;
 
@@ -18,7 +19,7 @@ public interface IMenuService {
     /**
      * 查询当前用户菜单列表或树。
      */
-    List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, Long userId, boolean tree);
+    List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, AuthorizationQuery query, boolean tree);
 
     /**
      * 按 ID 查询菜单。

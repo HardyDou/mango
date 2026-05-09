@@ -16,7 +16,7 @@ public class AssignSubjectRolesCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "主体ID，通常为用户ID")
+    @Schema(description = "主体ID，当前为机构成员ID")
     @NotNull(message = "主体ID不能为空")
     private Long subjectId;
     @Schema(description = "应用编码")

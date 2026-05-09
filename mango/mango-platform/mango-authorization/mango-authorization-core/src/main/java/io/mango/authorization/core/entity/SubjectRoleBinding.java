@@ -28,6 +28,9 @@ public class SubjectRoleBinding implements Serializable {
     @TableField("subject_id")
     private Long subjectId;
 
+    /** 主体类型。 */
+    private String subjectType;
+
     /** 应用编码。 */
     private String appCode;
 

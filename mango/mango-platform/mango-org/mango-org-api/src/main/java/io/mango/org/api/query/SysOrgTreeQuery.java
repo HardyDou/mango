@@ -19,4 +19,7 @@ public class SysOrgTreeQuery implements Serializable {
 
     @Schema(description = "组织类型：1-集团，2-公司，3-部门，4-小组")
     private Integer type;
+
+    @Schema(description = "是否包含禁用组织，默认 false")
+    private Boolean includeDisabled;
 }

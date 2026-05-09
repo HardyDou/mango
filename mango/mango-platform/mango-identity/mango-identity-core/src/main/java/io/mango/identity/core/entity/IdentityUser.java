@@ -65,4 +65,7 @@ public class IdentityUser implements Serializable {
 
     /** 备注。 */
     private String remark;
+
+    /** 租户标识。 */
+    private String tenantId;
 }

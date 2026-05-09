@@ -1,9 +1,11 @@
 package io.mango.auth.starter.controller;
 
 import io.mango.auth.api.command.LoginCommand;
+import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
+import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
@@ -19,7 +21,11 @@ import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.starter.TtlExecutorDecorator;
+import io.mango.infra.iplocation.api.IpLocationResolver;
 import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.iplocation.api.IpLocation;
+import io.mango.system.api.SysLoginLogApi;
+import io.mango.system.api.po.SysLoginLogPo;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.Cookie;
@@ -39,6 +45,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +70,8 @@ public class AuthController {
     private final IdentityUserApi identityUserApi;
     private final IAuthorizationProvider authorizationProvider;
     private final ObjectProvider<CaptchaApi> captchaApiProvider;
+    private final ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider;
+    private final ObjectProvider<IpLocationResolver> ipLocationResolverProvider;
     private LoginAttemptTracker loginAttemptTracker;
     private ScheduledExecutorService executorForTracker;
 
@@ -72,7 +82,9 @@ public class AuthController {
                           ITokenProvider tokenProvider,
                           IdentityUserApi identityUserApi,
                           IAuthorizationProvider authorizationProvider,
-                          ObjectProvider<CaptchaApi> captchaApiProvider) {
+                          ObjectProvider<CaptchaApi> captchaApiProvider,
+                          ObjectProvider<SysLoginLogApi> sysLoginLogApiProvider,
+                          ObjectProvider<IpLocationResolver> ipLocationResolverProvider) {
         this.authService = authService;
         this.ttlExecutorDecorator = ttlExecutorDecorator;
         this.kvStoreProvider = kvStoreProvider;
@@ -80,6 +92,8 @@ public class AuthController {
         this.identityUserApi = identityUserApi;
         this.authorizationProvider = authorizationProvider;
         this.captchaApiProvider = captchaApiProvider;
+        this.sysLoginLogApiProvider = sysLoginLogApiProvider;
+        this.ipLocationResolverProvider = ipLocationResolverProvider;
     }
 
     @PostConstruct
@@ -128,7 +142,15 @@ public class AuthController {
             cookie.setAttribute("SameSite", "Lax");
             response.addCookie(cookie);
         }
+        recordLoginLog(loginCommand, request, result, clientIp);
         return result;
+    }
+
+    @PostMapping("/login-institutions")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询账号可登录机构")
+    @Operation(summary = "查询账号可登录机构", description = "公开接口。校验用户名、密码和登录域后，返回当前账号可进入的启用机构列表，用于登录页机构选择")
+    public R<List<LoginTenantVO>> loginInstitutions(@Valid @RequestBody LoginTenantOptionsCommand command) {
+        return R.ok(authService.listLoginTenants(command));
     }
 
     private R<LoginVO> doLogin(LoginCommand loginCommand, String clientIp) {
@@ -216,6 +238,7 @@ public class AuthController {
         }
         LoginVO vo = new LoginVO();
         vo.setUserId(userInfo.getUserId());
+        vo.setMemberId(parseLong(tokenProvider.getClaim(resolvedToken, "memberId")));
         vo.setUsername(userInfo.getUsername());
         vo.setNickname(userInfo.getNickname());
         vo.setRealm(userInfo.getRealm());
@@ -223,8 +246,22 @@ public class AuthController {
         vo.setPartyType(userInfo.getPartyType());
         vo.setPartyId(userInfo.getPartyId());
         String appCode = tokenProvider.getClaim(resolvedToken, "appCode");
+        String tenantId = tokenProvider.getClaim(resolvedToken, "tenantId");
+        String tenantCode = tokenProvider.getClaim(resolvedToken, "tenantCode");
+        vo.setTenantId(tenantId);
+        vo.setTenantCode(tenantCode);
+        vo.setTenantName(tokenProvider.getClaim(resolvedToken, "tenantName"));
         vo.setAppCode(appCode);
-        var snapshot = authorizationProvider.load(AuthorizationQuery.user(userId).withSystemCode(appCode));
+        Long memberId = vo.getMemberId();
+        if (memberId == null) {
+            return R.fail(401, "令牌缺少租户成员身份");
+        }
+        var snapshot = authorizationProvider.load(AuthorizationQuery.member(memberId)
+                .withTenantId(tenantId)
+                .withSystemCode(appCode)
+                .withRealm(vo.getRealm())
+                .withActorType(vo.getActorType())
+                .withParty(vo.getPartyType(), vo.getPartyId()));
         vo.setRoles(snapshot.roleCodes().stream().toList());
         vo.setPermissions(snapshot.permissionCodes().stream().toList());
         return R.ok(vo);
@@ -246,7 +283,46 @@ public class AuthController {
         if (clientIp != null) {
             return clientIp;
         }
-        return request.getRemoteAddr();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.contains(",") ? forwardedFor.substring(0, forwardedFor.indexOf(',')).trim() : forwardedFor.trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        return realIp != null && !realIp.isBlank() ? realIp.trim() : request.getRemoteAddr();
+    }
+
+    private void recordLoginLog(LoginCommand command, HttpServletRequest request, R<LoginVO> result, String clientIp) {
+        SysLoginLogApi logApi = sysLoginLogApiProvider.getIfAvailable();
+        if (logApi == null) {
+            return;
+        }
+        try {
+            LoginVO login = result.getData();
+            SysLoginLogPo log = new SysLoginLogPo();
+            log.setTenantId(parseLong(login != null ? login.getTenantId() : command.getTenantId()));
+            log.setUserId(login != null ? login.getUserId() : null);
+            log.setUsername(command.getUsername());
+            log.setLoginType(firstText(command.getRealm(), login != null ? login.getRealm() : null, "PASSWORD"));
+            log.setIp(clientIp);
+            log.setLocation(resolveLocation(clientIp));
+            log.setBrowser(truncate(firstText(request.getHeader("User-Agent"), "未知"), 100));
+            log.setOs("未知");
+            log.setStatus(result.isSuccess() ? 1 : 0);
+            log.setMsg(result.getMsg());
+            log.setLoginTime(LocalDateTime.now());
+            logApi.record(log);
+        } catch (Exception e) {
+            log.warn("Failed to record login log for {}", command.getUsername(), e);
+        }
+    }
+
+    private String resolveLocation(String clientIp) {
+        IpLocationResolver resolver = ipLocationResolverProvider.getIfAvailable();
+        if (resolver == null) {
+            return "未知";
+        }
+        IpLocation location = resolver.resolve(clientIp);
+        return location == null ? "未知" : location.displayText();
     }
 
     private String stripBearer(String token) {
@@ -254,5 +330,35 @@ public class AuthController {
             return null;
         }
         return token.startsWith("Bearer ") ? token.substring(7) : token;
+    }
+
+    private Long parseLong(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private String firstText(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 }

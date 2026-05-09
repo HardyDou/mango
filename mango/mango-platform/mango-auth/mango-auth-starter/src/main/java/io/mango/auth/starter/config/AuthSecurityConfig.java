@@ -127,10 +127,12 @@ public class AuthSecurityConfig {
                     String actorType = tokenService.getClaim(token, "actorType");
                     String partyType = tokenService.getClaim(token, "partyType");
                     Long partyId = resolveLongClaim(token, "partyId");
+                    Long memberId = resolveLongClaim(token, "memberId");
                     String appCode = tokenService.getClaim(token, "appCode");
                     String tenantId = firstText(tokenService.getClaim(token, "tenantId"), MangoContextHolder.tenantId());
                     SecurityPrincipal principal = new SecurityPrincipal(
                             userId,
+                            memberId,
                             tenantId,
                             username,
                             realm,
@@ -148,6 +150,7 @@ public class AuthSecurityConfig {
                     SecurityContextHolder.setContext(context);
                     MangoContextHolder.update(current -> current.withSecurity(
                             userId,
+                            memberId,
                             tenantId,
                             username,
                             realm,

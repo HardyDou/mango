@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.system.api.po.SysConfigPo;
 import io.mango.system.api.enums.ConfigTypeEnum;
 import io.mango.system.core.service.ISysConfigService;
+import io.mango.infra.log.annotation.Log;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,6 +45,7 @@ public class SysConfigController {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:add")
     @Operation(summary = "新增系统配置", description = "权限接口。创建系统配置")
+    @Log("新增系统配置")
     public R<Long> create(@RequestBody @Valid SysConfigPo po) {
         return configService.create(po);
     }
@@ -51,6 +53,7 @@ public class SysConfigController {
     @PutMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:edit")
     @Operation(summary = "修改系统配置", description = "权限接口。更新系统配置")
+    @Log("修改系统配置")
     public R<Boolean> update(@RequestBody @Valid SysConfigPo po) {
         return configService.update(po);
     }
@@ -58,6 +61,7 @@ public class SysConfigController {
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:delete")
     @Operation(summary = "删除系统配置", description = "权限接口。按配置ID删除系统配置")
+    @Log("删除系统配置")
     public R<Boolean> delete(
             @Parameter(description = "配置ID")
             @RequestParam Long id) {
@@ -67,6 +71,7 @@ public class SysConfigController {
     @PutMapping("/value")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:config:edit")
     @Operation(summary = "修改系统配置值", description = "权限接口。按配置ID快速修改配置值")
+    @Log("修改系统配置值")
     public R<Boolean> updateValue(
             @Parameter(description = "配置ID")
             @RequestParam Long id,

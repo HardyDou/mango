@@ -21,6 +21,7 @@ public class SysOrg implements Serializable {
     /**
      * Primary key
      */
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**

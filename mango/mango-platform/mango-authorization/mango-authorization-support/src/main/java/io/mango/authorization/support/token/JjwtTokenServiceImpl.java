@@ -192,6 +192,10 @@ public class JjwtTokenServiceImpl implements ITokenProvider {
         putIfPresent(retainedClaims, "actorType", claims.get("actorType"));
         putIfPresent(retainedClaims, "partyType", claims.get("partyType"));
         putIfPresent(retainedClaims, "partyId", claims.get("partyId"));
+        putIfPresent(retainedClaims, "memberId", claims.get("memberId"));
+        putIfPresent(retainedClaims, "tenantId", claims.get("tenantId"));
+        putIfPresent(retainedClaims, "tenantCode", claims.get("tenantCode"));
+        putIfPresent(retainedClaims, "tenantName", claims.get("tenantName"));
         putIfPresent(retainedClaims, "appCode", claims.get("appCode"));
         return retainedClaims;
     }

@@ -68,10 +68,10 @@ public class ApiResourceAuthorizationManager implements AuthorizationManager<Req
             return false;
         }
         SecurityPrincipal principal = resolvePrincipal(authentication);
-        if (principal == null || principal.userId() == null) {
+        if (principal == null || principal.memberId() == null) {
             return false;
         }
-        AuthorizationQuery query = AuthorizationQuery.user(principal.userId())
+        AuthorizationQuery query = AuthorizationQuery.member(principal.memberId())
                 .withTenantId(principal.tenantId())
                 .withSystemCode(principal.appCode())
                 .withRealm(principal.realm())

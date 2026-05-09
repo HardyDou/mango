@@ -4,6 +4,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 授权应用入口 VO。
@@ -15,8 +17,7 @@ public class AppVO implements Serializable {
     private Long appId;
     private String appCode;
     private String appName;
-    private String realm;
-    private String actorType;
+    private List<AppLoginContextVO> loginContexts = new ArrayList<>();
     private String icon;
     private Integer sort;
     private Integer status;

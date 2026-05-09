@@ -1,5 +1,6 @@
 package io.mango.system.core.service;
 
+import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.common.result.R;
 import io.mango.system.api.po.SysTenantPo;
 
@@ -18,4 +19,6 @@ public interface ISysTenantService {
     R<Boolean> delete(Long id);
 
     R<Boolean> updateStatus(Long id, Integer status);
+
+    R<List<LoginTenantVO>> listLoginOptions();
 }

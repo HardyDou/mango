@@ -46,6 +46,7 @@ mango:
   auth:
     security:
       permit-paths:
+        - /error
         - /swagger-ui.html
         - /swagger-ui/**
         - /doc.html
@@ -59,6 +60,18 @@ mango:
   kv:
     store:
       type: memory
+  ip-location:
+    enabled: true
+    provider: ip2region
+    fail-fast: false
+    cache:
+      enabled: true
+      maximum-size: 10000
+      ttl: 24h
+    ip2region:
+      xdb-location: file:./config/ip-location/ip2region_v4.xdb
+      vector-index-enabled: true
+      content-cache-enabled: false
   captcha:
     required-paths: []
   authorization:
@@ -141,6 +154,8 @@ springdoc:
         url: /v3/api-docs/mango-system
       - name: mango-biz-notification
         url: /v3/api-docs/mango-biz-notification
+      - name: mango-guarantee
+        url: /v3/api-docs/mango-guarantee
       - name: mango-infra-realtime
         url: /v3/api-docs/mango-infra-realtime
   api-docs:

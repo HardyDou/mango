@@ -24,7 +24,7 @@ public class AuthorizationRemoteAutoConfiguration {
     public IAuthorizationProvider authorizationProvider(
             AuthorizationFeignClient authorizationFeignClient) {
         return query -> {
-            if (!AuthorizationQuery.SUBJECT_TYPE_USER.equals(query.subjectType())) {
+            if (!AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER.equals(query.subjectType())) {
                 return AuthorizationSnapshot.empty();
             }
             LoadUserAuthorizationQuery remoteQuery = new LoadUserAuthorizationQuery();

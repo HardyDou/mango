@@ -61,10 +61,12 @@ public class AuthFilter implements Filter {
 
     private void writePrincipal(HttpServletRequest request, AccessPrincipal principal) {
         request.setAttribute("userId", principal.userId());
+        request.setAttribute("memberId", principal.memberId());
         request.setAttribute("username", principal.username());
         request.setAttribute("tenantId", principal.tenantId());
         MangoContextHolder.update(current -> current.withSecurity(
                 principal.userId(),
+                principal.memberId(),
                 principal.tenantId(),
                 principal.username(),
                 principal.realm(),

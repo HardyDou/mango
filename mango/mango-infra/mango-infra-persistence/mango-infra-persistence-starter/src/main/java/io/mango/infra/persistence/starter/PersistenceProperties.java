@@ -47,6 +47,11 @@ public class PersistenceProperties {
          * 分页插件配置。
          */
         private final Pagination pagination = new Pagination();
+
+        /**
+         * 租户行级隔离配置。
+         */
+        private final Tenant tenant = new Tenant();
     }
 
     @Data
@@ -70,6 +75,37 @@ public class PersistenceProperties {
          * 数据库类型；为空时由 MyBatis-Plus 自动判断。
          */
         private String dbType;
+    }
+
+    @Data
+    public static class Tenant {
+        /**
+         * 是否启用 MyBatis-Plus 租户行级拦截器。
+         */
+        private boolean enabled = true;
+
+        /**
+         * 租户字段名。
+         */
+        private String column = "tenant_id";
+
+        /**
+         * 非 Web/任务场景可显式配置的默认租户。
+         * <p>
+         * Web 请求必须由认证上下文或调用方显式提供租户，默认不回退到平台机构。
+         */
+        private String defaultTenantId;
+
+        /**
+         * 不参与租户自动过滤的表，支持以 * 结尾的前缀匹配。
+         */
+        private List<String> excludedTables = new ArrayList<>(
+                List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
+                        "kv_record", "infra_kv_entry",
+                        "sys_tenant", "sys_config", "sys_route_conf", "sys_dict_type", "sys_dict_data", "sys_area",
+                        "authorization_api_resource", "authorization_permission",
+                        "authorization_menu", "authorization_app", "authorization_app_login_context",
+                        "identity_user", "tenant_member", "tenant_member_org"));
     }
 
     @Data
@@ -99,10 +135,10 @@ public class PersistenceProperties {
                 List.of("created_by", "created_at", "updated_by", "updated_at", "tenant_id"));
 
         /**
-         * 不参与校验的表名。
+         * 不参与校验的表名，支持以 * 结尾的前缀匹配。
          */
         private List<String> excludedTables = new ArrayList<>(
-                List.of("flyway_schema_history", "databasechangelog", "databasechangeloglock",
+                List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
                         "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log"));
     }
 }

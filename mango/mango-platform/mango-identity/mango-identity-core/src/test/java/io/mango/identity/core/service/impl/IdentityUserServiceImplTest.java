@@ -2,8 +2,11 @@ package io.mango.identity.core.service.impl;
 
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.core.mapper.IdentityUserMapper;
+import io.mango.identity.core.mapper.TenantMemberMapper;
+import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -32,7 +35,11 @@ class IdentityUserServiceImplTest {
         user.setStatus(1);
         when(mapper.selectOne(any())).thenReturn(user);
 
-        IdentityUserServiceImpl service = new IdentityUserServiceImpl(mapper);
+        IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+                mapper,
+                mock(TenantMemberMapper.class),
+                mock(SubjectRoleBindingMapper.class),
+                mock(PasswordEncoder.class));
         var profile = service.getUserInfo("admin");
 
         assertEquals(1L, profile.getUserId());
@@ -54,7 +61,11 @@ class IdentityUserServiceImplTest {
         IdentityUserMapper mapper = mock(IdentityUserMapper.class);
         when(mapper.selectOne(any())).thenReturn(null);
 
-        IdentityUserServiceImpl service = new IdentityUserServiceImpl(mapper);
+        IdentityUserServiceImpl service = new IdentityUserServiceImpl(
+                mapper,
+                mock(TenantMemberMapper.class),
+                mock(SubjectRoleBindingMapper.class),
+                mock(PasswordEncoder.class));
 
         assertNull(service.getUserInfo("missing"));
     }

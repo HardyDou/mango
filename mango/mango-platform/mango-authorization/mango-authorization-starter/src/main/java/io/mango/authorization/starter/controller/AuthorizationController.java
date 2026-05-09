@@ -27,9 +27,9 @@ public class AuthorizationController implements AuthorizationApi {
 
     @Override
     @GetMapping("/subjects/user")
-    @Operation(summary = "查询用户授权快照", description = "内部接口。根据用户主体、登录域、操作者类型和归属主体查询角色与权限快照")
+    @Operation(summary = "查询成员授权快照", description = "内部接口。根据机构成员主体、登录域、操作者类型和归属主体查询角色与权限快照")
     public R<AuthorizationSnapshot> loadUserAuthorization(@ParameterObject LoadUserAuthorizationQuery query) {
-        AuthorizationQuery authorizationQuery = AuthorizationQuery.user(query.getSubjectId())
+        AuthorizationQuery authorizationQuery = AuthorizationQuery.member(query.getSubjectId())
                 .withTenantId(query.getTenantId())
                 .withSystemCode(query.getSystemCode())
                 .withRealm(query.getRealm())

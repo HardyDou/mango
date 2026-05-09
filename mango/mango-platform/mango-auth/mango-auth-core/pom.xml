@@ -76,6 +76,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango 基础上下文能力，用于登录期按租户加载授权快照 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-context-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

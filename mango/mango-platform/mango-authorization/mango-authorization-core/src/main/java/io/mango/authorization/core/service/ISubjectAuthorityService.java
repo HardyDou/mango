@@ -16,7 +16,7 @@ public interface ISubjectAuthorityService {
     default List<String> listSubjectRoles(Long subjectId, String appCode) {
         return listSubjectRoles(new AuthorizationQuery(
                 subjectId,
-                AuthorizationQuery.SUBJECT_TYPE_USER,
+                AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER,
                 null,
                 appCode));
     }
@@ -30,7 +30,7 @@ public interface ISubjectAuthorityService {
     default List<String> listSubjectPermissions(Long subjectId, String appCode) {
         return listSubjectPermissions(new AuthorizationQuery(
                 subjectId,
-                AuthorizationQuery.SUBJECT_TYPE_USER,
+                AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER,
                 null,
                 appCode));
     }

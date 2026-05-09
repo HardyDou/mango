@@ -32,6 +32,7 @@
         <springdoc-openapi.version>2.8.9</springdoc-openapi.version>
         <knife4j.version>4.5.0</knife4j.version>
         <swagger-annotations.version>2.2.30</swagger-annotations.version>
+        <ip2region.version>2.7.0</ip2region.version>
     </properties>
 
     <modules>
@@ -180,6 +181,21 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
+                <artifactId>mango-infra-ip-location-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-ip-location-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-ip-location-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
                 <artifactId>mango-infra-module-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -221,6 +237,21 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-biz-notification-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-guarantee-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-guarantee-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-guarantee-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -446,6 +477,11 @@
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>7.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lionsoul</groupId>
+                <artifactId>ip2region</artifactId>
+                <version>${ip2region.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

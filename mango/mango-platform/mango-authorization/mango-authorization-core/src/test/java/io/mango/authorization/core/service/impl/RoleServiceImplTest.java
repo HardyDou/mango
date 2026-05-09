@@ -1,16 +1,21 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
 import io.mango.authorization.api.vo.RoleVO;
 import io.mango.authorization.core.entity.Role;
 import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
+import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
+import io.mango.authorization.core.service.IMenuService;
 import io.mango.authorization.core.service.IRoleService;
+import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
 import org.junit.jupiter.api.AfterEach;
@@ -48,11 +53,26 @@ class RoleServiceImplTest {
     @Mock
     private RoleMenuMapper roleMenuMapper;
 
+    @Mock
+    private MenuMapper menuMapper;
+
+    @Mock
+    private IMenuService menuService;
+
+    @Mock
+    private ISubjectAuthorityService subjectAuthorityService;
+
     private RoleServiceImpl roleService;
 
     @BeforeEach
     void setUp() {
-        roleService = new RoleServiceImpl(roleMapper, subjectRoleBindingMapper, roleMenuMapper);
+        roleService = new RoleServiceImpl(
+                roleMapper,
+                subjectRoleBindingMapper,
+                roleMenuMapper,
+                menuMapper,
+                menuService,
+                subjectAuthorityService);
         setTenantId("1");
     }
 
@@ -121,13 +141,13 @@ class RoleServiceImplTest {
     }
 
     @Test
-    @DisplayName("create should set tenantId from context")
-    void create_setsTenantIdFromContext() {
+    @DisplayName("create should not set tenantId manually")
+    void create_doesNotSetTenantIdManually() {
         setTenantId("123");
         RoleCommand po = createRoleCommand(null, "admin", "Admin", 1);
         when(roleMapper.insert(any(Role.class))).thenAnswer(invocation -> {
             Role role = invocation.getArgument(0);
-            assertEquals(123L, role.getTenantId());
+            assertNull(role.getTenantId());
             return 1;
         });
 
@@ -240,6 +260,7 @@ class RoleServiceImplTest {
         RoleMenu rm = new RoleMenu();
         rm.setRoleId(1L);
         rm.setMenuId(10L);
+        when(roleMapper.selectById(1L)).thenReturn(createRole(1L, "admin", "Admin", 1));
         when(roleMenuMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(rm));
 
         List<Long> result = roleService.getRoleMenuIds(1L);
@@ -251,6 +272,7 @@ class RoleServiceImplTest {
     @Test
     @DisplayName("getRoleMenuIds should return empty list when no menus")
     void getRoleMenuIds_noMenus_returnsEmptyList() {
+        when(roleMapper.selectById(1L)).thenReturn(createRole(1L, "admin", "Admin", 1));
         when(roleMenuMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
         List<Long> result = roleService.getRoleMenuIds(1L);
@@ -285,6 +307,9 @@ class RoleServiceImplTest {
     @Test
     @DisplayName("assignRoles should insert new role assignments")
     void assignRoles_withRoleIds_insertsAssignments() {
+        when(roleMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(
+                createRole(1L, "admin", "Admin", 1),
+                createRole(2L, "operator", "Operator", 1)));
         when(subjectRoleBindingMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
         when(subjectRoleBindingMapper.insert(any(SubjectRoleBinding.class))).thenReturn(1);
 
@@ -327,6 +352,10 @@ class RoleServiceImplTest {
     void assignMenus_withMenuIds_insertsAssignments() {
         // 租户隔离：角色属于当前租户。
         when(roleMapper.selectById(1L)).thenReturn(createRole(1L, "admin", "Admin", 1));
+        when(menuMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(
+                createMenu(10L, 0L, "system:org:list"),
+                createMenu(20L, 0L, "system:post:list")));
+        when(subjectAuthorityService.listSubjectPermissions(any(AuthorizationQuery.class))).thenReturn(List.of("*:*"));
         when(roleMenuMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
         when(roleMenuMapper.insert(any(RoleMenu.class))).thenReturn(1);
 
@@ -354,6 +383,19 @@ class RoleServiceImplTest {
         role.setCreateTime(LocalDateTime.now());
         role.setUpdateTime(LocalDateTime.now());
         return role;
+    }
+
+    private Menu createMenu(Long menuId, Long parentId, String menuCode) {
+        Menu menu = new Menu();
+        menu.setMenuId(menuId);
+        menu.setParentId(parentId);
+        menu.setAppCode("internal-admin");
+        menu.setMenuCode(menuCode);
+        menu.setMenuName(menuCode);
+        menu.setMenuType(2);
+        menu.setStatus(1);
+        menu.setSort(1);
+        return menu;
     }
 
     private RoleCommand createRoleCommand(Long roleId, String roleCode, String roleName, Integer status) {

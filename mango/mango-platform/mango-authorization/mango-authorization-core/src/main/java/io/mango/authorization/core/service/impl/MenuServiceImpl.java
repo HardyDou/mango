@@ -55,21 +55,23 @@ public class MenuServiceImpl implements IMenuService {
     }
 
     @Override
-    public List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, Long userId, boolean tree) {
-        if (userId == null) {
+    public List<MenuVO> listUserMenus(String appCode, Integer type, Long parentId, AuthorizationQuery query, boolean tree) {
+        if (query == null || query.subjectId() == null) {
             return new ArrayList<>();
         }
 
-        List<Menu> visibleMenus = listVisibleMenus(appCode);
+        String effectiveAppCode = StringUtils.hasText(appCode) ? appCode : query.systemCode();
+        AuthorizationQuery scopedQuery = query.withSystemCode(effectiveAppCode);
+        List<Menu> visibleMenus = listVisibleMenus(effectiveAppCode);
         if (visibleMenus.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Menu> scopedMenus;
-        if (hasAllMenuAccess(userId, appCode)) {
+        if (hasAllMenuAccess(scopedQuery)) {
             scopedMenus = visibleMenus;
         } else {
-            Set<Long> authorizedMenuIds = resolveAuthorizedMenuIds(userId, appCode, visibleMenus);
+            Set<Long> authorizedMenuIds = resolveAuthorizedMenuIds(scopedQuery, visibleMenus);
             if (authorizedMenuIds.isEmpty()) {
                 return new ArrayList<>();
             }
@@ -177,15 +179,14 @@ public class MenuServiceImpl implements IMenuService {
         return menuMapper.selectList(wrapper);
     }
 
-    private boolean hasAllMenuAccess(Long userId, String appCode) {
-        return subjectAuthorityService.listSubjectPermissions(new AuthorizationQuery(
-                        userId, AuthorizationQuery.SUBJECT_TYPE_USER, null, appCode))
+    private boolean hasAllMenuAccess(AuthorizationQuery query) {
+        return subjectAuthorityService.listSubjectPermissions(query)
                 .stream()
                 .anyMatch("*:*"::equals);
     }
 
-    private Set<Long> resolveAuthorizedMenuIds(Long userId, String appCode, List<Menu> visibleMenus) {
-        List<Long> roleIds = listSubjectRoleIds(userId, appCode);
+    private Set<Long> resolveAuthorizedMenuIds(AuthorizationQuery query, List<Menu> visibleMenus) {
+        List<Long> roleIds = listSubjectRoleIds(query);
         if (roleIds.isEmpty()) {
             return Collections.emptySet();
         }
@@ -209,14 +210,32 @@ public class MenuServiceImpl implements IMenuService {
         return authorizedIds;
     }
 
-    private List<Long> listSubjectRoleIds(Long userId, String appCode) {
+    private List<Long> listSubjectRoleIds(AuthorizationQuery query) {
+        Long tenantId = parseTenantId(query.tenantId());
         LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SubjectRoleBinding::getSubjectId, userId)
-                .eq(StringUtils.hasText(appCode), SubjectRoleBinding::getAppCode, appCode);
+        wrapper.eq(SubjectRoleBinding::getSubjectId, query.subjectId())
+                .eq(SubjectRoleBinding::getSubjectType, query.subjectType())
+                .eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId)
+                .eq(StringUtils.hasText(query.systemCode()), SubjectRoleBinding::getAppCode, query.systemCode())
+                .eq(StringUtils.hasText(query.realm()), SubjectRoleBinding::getRealm, query.realm())
+                .eq(StringUtils.hasText(query.actorType()), SubjectRoleBinding::getActorType, query.actorType())
+                .eq(StringUtils.hasText(query.partyType()), SubjectRoleBinding::getPartyType, query.partyType())
+                .eq(query.partyId() != null, SubjectRoleBinding::getPartyId, query.partyId());
         return subjectRoleBindingMapper.selectList(wrapper)
                 .stream()
                 .map(SubjectRoleBinding::getRoleId)
                 .collect(Collectors.toList());
+    }
+
+    private Long parseTenantId(String tenantId) {
+        if (!StringUtils.hasText(tenantId)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(tenantId);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void collectMenuWithAncestors(Long menuId, Map<Long, Menu> menuById, Set<Long> collector) {
@@ -292,8 +311,42 @@ public class MenuServiceImpl implements IMenuService {
             log.warn("Add menu failed: menuCode is required");
             return false;
         }
+        fillCreateDefaults(menu);
         int rows = menuMapper.insert(menu);
         return rows > 0;
+    }
+
+    private void fillCreateDefaults(Menu menu) {
+        if (!StringUtils.hasText(menu.getAppCode())) {
+            menu.setAppCode("internal-admin");
+        }
+        if (menu.getTenantId() == null) {
+            menu.setTenantId(1L);
+        }
+        if (menu.getParentId() == null) {
+            menu.setParentId(0L);
+        }
+        if (menu.getMenuType() == null) {
+            menu.setMenuType(2);
+        }
+        if (menu.getSort() == null) {
+            menu.setSort(0);
+        }
+        if (menu.getStatus() == null) {
+            menu.setStatus(1);
+        }
+        if (menu.getVisible() == null) {
+            menu.setVisible(1);
+        }
+        if (menu.getKeepAlive() == null) {
+            menu.setKeepAlive(0);
+        }
+        if (menu.getEmbedded() == null) {
+            menu.setEmbedded(0);
+        }
+        if (menu.getDelFlag() == null) {
+            menu.setDelFlag(0);
+        }
     }
 
     @Override

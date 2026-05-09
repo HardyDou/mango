@@ -7,6 +7,7 @@ import io.mango.authorization.api.RoleApi;
 import io.mango.authorization.api.command.AssignRoleMenusCommand;
 import io.mango.authorization.api.command.AssignSubjectRolesCommand;
 import io.mango.authorization.api.command.RoleCommand;
+import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.api.vo.RoleVO;
 import io.mango.authorization.core.service.IRoleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -78,21 +79,21 @@ public class RoleController implements RoleApi {
 
     @Override
     @GetMapping("/subjects")
-    @Operation(summary = "获取主体的角色", description = "权限接口。按主体ID查询已分配角色")
+    @Operation(summary = "获取成员的角色", description = "权限接口。按机构成员ID查询已分配角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:query")
     public R<List<RoleVO>> getSubjectRoles(
-            @Parameter(description = "主体ID") @RequestParam Long subjectId) {
+            @Parameter(description = "机构成员ID") @RequestParam Long subjectId) {
         List<RoleVO> roles = roleService.getSubjectRoles(subjectId);
         return R.ok(roles);
     }
 
     @Override
     @PostMapping("/subjects")
-    @Operation(summary = "分配角色给主体", description = "权限接口。给用户等主体分配角色")
+    @Operation(summary = "分配角色给成员", description = "权限接口。给机构成员分配角色")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
     public R<Boolean> assignRoles(@RequestBody AssignSubjectRolesCommand command) {
-        roleService.assignRoles(command);
-        return R.ok(true);
+        Boolean success = roleService.assignRoles(command);
+        return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(403, "无权分配该角色");
     }
 
     @Override
@@ -106,11 +107,21 @@ public class RoleController implements RoleApi {
     }
 
     @Override
+    @GetMapping("/assignable-menus")
+    @Operation(summary = "获取可授权菜单树", description = "权限接口。查询当前机构成员可分配给角色的菜单权限范围")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
+    public R<List<MenuVO>> listAssignableMenus(
+            @Parameter(description = "应用编码")
+            @RequestParam(required = false) String appCode) {
+        return R.ok(roleService.listAssignableMenus(appCode));
+    }
+
+    @Override
     @PostMapping("/menus")
     @Operation(summary = "给角色分配菜单", description = "权限接口。给角色分配菜单权限")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:role:assign")
     public R<Boolean> assignMenus(@RequestBody AssignRoleMenusCommand command) {
-        roleService.assignMenus(command.getRoleId(), command.getMenuIds());
-        return R.ok(true);
+        Boolean success = roleService.assignMenus(command.getRoleId(), command.getMenuIds());
+        return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(403, "无权分配该菜单权限");
     }
 }

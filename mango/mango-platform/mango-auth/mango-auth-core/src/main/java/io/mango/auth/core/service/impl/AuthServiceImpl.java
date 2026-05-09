@@ -1,21 +1,30 @@
 package io.mango.auth.core.service.impl;
 
+import io.mango.auth.api.AuthCode;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.api.command.LoginCommand;
+import io.mango.auth.api.command.LoginTenantOptionsCommand;
+import io.mango.auth.api.spi.LoginTenantProvider;
+import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
+import io.mango.common.result.Require;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.TokenRevocationService;
 import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.vo.AuthUserInfo;
 import io.mango.authorization.api.ITokenProvider;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.core.MangoContextSnapshot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.Nullable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,10 +39,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements IAuthService {
 
+    private static final String DEFAULT_APP_CODE = "internal-admin";
+
     private final AuthUserProvider authUserProvider;
     private final IAuthorizationProvider authorizationProvider;
     private final ITokenProvider tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final ObjectProvider<LoginTenantProvider> loginTenantProvider;
     private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
 
     @Value("${mango.security.jwt.access-token-validity:7200}")
@@ -74,32 +86,47 @@ public class AuthServiceImpl implements IAuthService {
         LoginVO response = buildLoginVO(user, identityContext, accessToken, refreshToken);
 
         // 6. 加载角色和权限。
-        loadUserRolesAndPermissions(user.getUserId(), identityContext.appCode(), response);
+        loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
 
         log.info("User logged in successfully: {}", username);
         return response;
     }
 
     @Override
+    public List<LoginTenantVO> listLoginTenants(LoginTenantOptionsCommand command) {
+        AuthUserInfo user = authUserProvider.getByUsernameForAuth(command.getUsername(), command.getRealm());
+        Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        Require.isTrue(passwordEncoder.matches(command.getPassword(), user.getPassword()),
+                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
+        Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
+
+        LoginTenantProvider provider = loginTenantProvider.getIfAvailable();
+        Require.notNull(provider, AuthCode.INSTITUTION_PROVIDER_UNAVAILABLE);
+        List<LoginTenantVO> tenants = provider.listEnabledByUser(user.getUserId());
+        Require.notEmpty(tenants, AuthCode.LOGIN_INSTITUTION_EMPTY);
+        return tenants;
+    }
+
+    @Override
     public LoginVO refreshToken(String refreshToken) {
-        // 移除可能存在的 Bearer 前缀。
-        if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
-            refreshToken = refreshToken.substring(7);
+        String oldRefreshToken = refreshToken;
+        if (oldRefreshToken != null && oldRefreshToken.startsWith("Bearer ")) {
+            oldRefreshToken = oldRefreshToken.substring(7);
         }
-        if (isRevoked(refreshToken)) {
+        if (isRevoked(oldRefreshToken)) {
             log.warn("Refresh token has been revoked");
             return null;
         }
 
         // 1. 校验并刷新令牌。
-        ITokenProvider.TokenPair tokenPair = tokenService.refresh(refreshToken);
+        ITokenProvider.TokenPair tokenPair = tokenService.refresh(oldRefreshToken);
         if (tokenPair == null) {
             log.warn("Refresh token is invalid or expired");
             return null;
         }
 
         // 2. 从旧刷新令牌中读取用户 ID，此时旧令牌仍处于有效状态。
-        Long userId = tokenService.getUserId(refreshToken);
+        Long userId = tokenService.getUserId(oldRefreshToken);
         if (userId == null) {
             return null;
         }
@@ -111,13 +138,13 @@ public class AuthServiceImpl implements IAuthService {
             return null;
         }
 
-        IdentityContext identityContext = resolveIdentityContext(user, refreshToken);
+        IdentityContext identityContext = resolveIdentityContext(user, oldRefreshToken);
         // 4. 构造响应。
         LoginVO response = buildLoginVO(user, identityContext, tokenPair.accessToken(), tokenPair.refreshToken());
 
         // 5. 加载角色和权限。
-        loadUserRolesAndPermissions(user.getUserId(), identityContext.appCode(), response);
-        revoke(refreshToken, refreshTokenValiditySeconds);
+        loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
+        revoke(oldRefreshToken, refreshTokenValiditySeconds);
 
         return response;
     }
@@ -162,10 +189,31 @@ public class AuthServiceImpl implements IAuthService {
      * 加载用户角色和权限到登录响应。
      * 登录和刷新令牌流程复用该逻辑。
      */
-    private void loadUserRolesAndPermissions(Long userId, String appCode, LoginVO response) {
-        var snapshot = authorizationProvider.load(AuthorizationQuery.user(userId).withSystemCode(appCode));
-        response.setRoles(snapshot.roleCodes().stream().toList());
-        response.setPermissions(snapshot.permissionCodes().stream().toList());
+    private void loadUserRolesAndPermissions(Long userId, IdentityContext identityContext, LoginVO response) {
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.update(current -> current.withSecurity(
+                    userId,
+                    identityContext.memberId(),
+                    identityContext.tenantId(),
+                    response.getUsername(),
+                    identityContext.realm(),
+                    identityContext.actorType(),
+                    identityContext.partyType(),
+                    identityContext.partyId(),
+                    identityContext.appCode()));
+            var query = AuthorizationQuery.member(identityContext.memberId())
+                    .withTenantId(identityContext.tenantId())
+                    .withSystemCode(identityContext.appCode())
+                    .withRealm(identityContext.realm())
+                    .withActorType(identityContext.actorType())
+                    .withParty(identityContext.partyType(), identityContext.partyId());
+            var snapshot = authorizationProvider.load(query);
+            response.setRoles(snapshot.roleCodes().stream().toList());
+            response.setPermissions(snapshot.permissionCodes().stream().toList());
+        } finally {
+            MangoContextHolder.set(previous);
+        }
     }
 
     private LoginVO buildLoginVO(AuthUserInfo user, IdentityContext identityContext,
@@ -176,33 +224,81 @@ public class AuthServiceImpl implements IAuthService {
         response.setExpiresIn(accessTokenValiditySeconds);
         response.setTokenType("Bearer");
         response.setUserId(user.getUserId());
+        response.setMemberId(identityContext.memberId());
         response.setUsername(user.getUsername());
         response.setNickname(user.getNickname());
         response.setRealm(identityContext.realm());
         response.setActorType(identityContext.actorType());
         response.setPartyType(identityContext.partyType());
         response.setPartyId(identityContext.partyId());
+        response.setTenantId(identityContext.tenantId());
+        response.setTenantCode(identityContext.tenantCode());
+        response.setTenantName(identityContext.tenantName());
         response.setAppCode(identityContext.appCode());
         return response;
     }
 
     private IdentityContext resolveIdentityContext(AuthUserInfo user, LoginCommand command) {
+        LoginTenantVO tenant = resolveTenant(user.getUserId(), command.getTenantId(), command.getTenantCode());
+        String partyType = firstText(command.getPartyType(), user.getPartyType());
+        Long partyId = resolvePartyId(command.getPartyId(), user.getPartyId(), partyType, tenant.getTenantId());
         return new IdentityContext(
                 firstText(command.getRealm(), user.getRealm()),
                 firstText(command.getActorType(), user.getActorType()),
-                firstText(command.getPartyType(), user.getPartyType()),
-                command.getPartyId() != null ? command.getPartyId() : user.getPartyId(),
-                normalize(command.getAppCode()));
+                partyType,
+                partyId,
+                tenant.getMemberId(),
+                tenant.getTenantId(),
+                tenant.getTenantCode(),
+                tenant.getTenantName(),
+                firstText(command.getAppCode(), DEFAULT_APP_CODE));
     }
 
     private IdentityContext resolveIdentityContext(AuthUserInfo user, String refreshToken) {
         Long partyId = resolveLong(tokenService.getClaim(refreshToken, "partyId"), user.getPartyId());
+        Long memberId = resolveLong(tokenService.getClaim(refreshToken, "memberId"), null);
+        String tenantId = normalize(tokenService.getClaim(refreshToken, "tenantId"));
+        Require.notBlank(tenantId, AuthCode.REFRESH_TOKEN_INSTITUTION_CONTEXT_MISSING);
+        LoginTenantVO tenant = resolveTenant(user.getUserId(), tenantId, tokenService.getClaim(refreshToken, "tenantCode"));
+        Require.isTrue(memberId == null || memberId.equals(tenant.getMemberId()),
+                AuthCode.REFRESH_TOKEN_MEMBER_CONTEXT_MISMATCH);
         return new IdentityContext(
                 firstText(tokenService.getClaim(refreshToken, "realm"), user.getRealm()),
                 firstText(tokenService.getClaim(refreshToken, "actorType"), user.getActorType()),
                 firstText(tokenService.getClaim(refreshToken, "partyType"), user.getPartyType()),
                 partyId,
-                normalize(tokenService.getClaim(refreshToken, "appCode")));
+                tenant.getMemberId(),
+                tenant.getTenantId(),
+                tenant.getTenantCode(),
+                tenant.getTenantName(),
+                firstText(tokenService.getClaim(refreshToken, "appCode"), DEFAULT_APP_CODE));
+    }
+
+    private LoginTenantVO resolveTenant(Long userId, @Nullable String tenantId, @Nullable String tenantCode) {
+        String resolvedTenantId = normalize(tenantId);
+        String resolvedTenantCode = normalize(tenantCode);
+        Require.isFalse(resolvedTenantId == null && resolvedTenantCode == null, AuthCode.INSTITUTION_REQUIRED);
+        LoginTenantProvider provider = loginTenantProvider.getIfAvailable();
+        Require.notNull(provider, AuthCode.INSTITUTION_PROVIDER_UNAVAILABLE);
+        LoginTenantVO tenant = resolvedTenantId != null
+                ? provider.getEnabledByUserAndTenantId(userId, resolvedTenantId)
+                : provider.getEnabledByUserAndTenantCode(userId, resolvedTenantCode);
+        Require.notNull(tenant, AuthCode.INSTITUTION_ACCESS_DENIED);
+        Require.notNull(tenant.getMemberId(), AuthCode.INSTITUTION_MEMBER_REQUIRED);
+        return tenant;
+    }
+
+    private Long resolvePartyId(Long commandPartyId, Long userPartyId, String partyType, String tenantId) {
+        if (commandPartyId != null) {
+            return commandPartyId;
+        }
+        if ("INTERNAL_ORG".equals(partyType)) {
+            Long parsedTenantId = resolveLong(tenantId, null);
+            if (parsedTenantId != null) {
+                return parsedTenantId;
+            }
+        }
+        return userPartyId;
     }
 
     private String firstText(String preferred, String fallback) {
@@ -225,7 +321,15 @@ public class AuthServiceImpl implements IAuthService {
         }
     }
 
-    private record IdentityContext(String realm, String actorType, String partyType, Long partyId, String appCode) {
+    private record IdentityContext(String realm,
+                                   String actorType,
+                                   String partyType,
+                                   Long partyId,
+                                   Long memberId,
+                                   String tenantId,
+                                   String tenantCode,
+                                   String tenantName,
+                                   String appCode) {
         Map<String, Object> toClaims(String username) {
             java.util.LinkedHashMap<String, Object> claims = new java.util.LinkedHashMap<>();
             claims.put("username", username);
@@ -233,6 +337,10 @@ public class AuthServiceImpl implements IAuthService {
             putIfPresent(claims, "actorType", actorType);
             putIfPresent(claims, "partyType", partyType);
             putIfPresent(claims, "partyId", partyId);
+            putIfPresent(claims, "memberId", memberId);
+            putIfPresent(claims, "tenantId", tenantId);
+            putIfPresent(claims, "tenantCode", tenantCode);
+            putIfPresent(claims, "tenantName", tenantName);
             putIfPresent(claims, "appCode", appCode);
             return claims;
         }

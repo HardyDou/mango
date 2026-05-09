@@ -37,6 +37,18 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- API 访问权限声明注解 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-authorization-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-system-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- OpenAPI 注解仅用于 controller 文档展示 -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

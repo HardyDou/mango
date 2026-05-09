@@ -9,6 +9,8 @@ public interface ISysRouteService {
 
     R<List<SysRoutePo>> list();
 
+    R<List<SysRoutePo>> list(SysRoutePo query);
+
     R<List<SysRoutePo>> tree();
 
     R<SysRoutePo> get(Long id);

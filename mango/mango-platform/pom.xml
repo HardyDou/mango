@@ -23,6 +23,7 @@
         <module>mango-identity</module>
         <module>mango-captcha</module>
         <module>mango-biz-notification</module>
+        <module>mango-guarantee</module>
         <module>mango-org</module>
         <module>mango-system</module>
     </modules>

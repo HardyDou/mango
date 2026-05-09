@@ -22,6 +22,14 @@ public class LoginCommand {
     @Size(max = 200, message = "密码最多200个字符")
     private String password;
 
+    @Schema(description = "机构ID。登录时必须显式选择机构，tenantId 与 tenantCode 至少传一个")
+    @Size(max = 64, message = "机构ID最多64个字符")
+    private String tenantId;
+
+    @Schema(description = "机构编码。登录时必须显式选择机构，tenantId 与 tenantCode 至少传一个")
+    @Size(max = 50, message = "机构编码最多50个字符")
+    private String tenantCode;
+
     @Schema(description = "登录域，例如 INTERNAL、CUSTOMER")
     @Size(max = 32, message = "登录域最多32个字符")
     private String realm;

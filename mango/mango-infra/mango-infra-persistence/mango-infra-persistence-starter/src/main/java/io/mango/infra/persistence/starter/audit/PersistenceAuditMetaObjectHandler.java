@@ -38,7 +38,7 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
         setIfEmpty(metaObject, UPDATED_BY, context.userId());
         setIfEmpty(metaObject, UPDATED_AT, nowFor(metaObject, UPDATED_AT));
         setIfEmpty(metaObject, UPDATE_TIME, nowFor(metaObject, UPDATE_TIME));
-        setTenantIfEmpty(metaObject, context.tenantId());
+        setTenant(metaObject, context.tenantId());
     }
 
     @Override
@@ -56,21 +56,21 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
         return contextProvider.currentContext();
     }
 
-    private void setTenantIfEmpty(MetaObject metaObject, String tenantId) {
+    private void setTenant(MetaObject metaObject, String tenantId) {
         if (tenantId == null || tenantId.isBlank() || !metaObject.hasSetter(TENANT_ID)) {
             return;
         }
         Class<?> setterType = metaObject.getSetterType(TENANT_ID);
         if (Long.class.equals(setterType) || long.class.equals(setterType)) {
             try {
-                setIfEmpty(metaObject, TENANT_ID, Long.valueOf(tenantId));
+                metaObject.setValue(TENANT_ID, Long.valueOf(tenantId));
             } catch (NumberFormatException ignored) {
                 return;
             }
             return;
         }
         if (String.class.equals(setterType)) {
-            setIfEmpty(metaObject, TENANT_ID, tenantId);
+            metaObject.setValue(TENANT_ID, tenantId);
         }
     }
 

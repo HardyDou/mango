@@ -1,12 +1,15 @@
 package io.mango.authorization.starter.controller;
 
-import io.mango.common.result.R;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.ITokenProvider;
-import io.mango.authorization.api.TokenContextHolder;
 import io.mango.authorization.api.MenuApi;
+import io.mango.authorization.api.TokenContextHolder;
+import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.command.MenuCommand;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.query.MenuTreeQuery;
 import io.mango.authorization.api.vo.MenuVO;
+import io.mango.common.result.R;
 import io.mango.authorization.core.service.IMenuService;
 import io.mango.authorization.core.service.ISubjectAuthorityService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +39,7 @@ public class MenuController implements MenuApi {
     @Override
     @GetMapping
     @Operation(summary = "查询菜单资源", description = "菜单管理接口。查询菜单资源列表；fmt=tree 时返回树形结构")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:menu:list")
     public R<List<MenuVO>> getMenus(@ParameterObject MenuTreeQuery query) {
         List<MenuVO> menus = menuService.listMenus(
                 query.getAppCode(),
@@ -50,26 +54,52 @@ public class MenuController implements MenuApi {
     @Override
     @GetMapping("/user")
     @Operation(summary = "查询当前用户菜单", description = "按系统查询当前登录用户有权限访问的菜单；fmt=tree 时返回树形结构")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "查询当前用户菜单")
     public R<List<MenuVO>> getUserMenus(@ParameterObject MenuTreeQuery query) {
-        Long userId = getCurrentUserId();
+        AuthorizationQuery authorizationQuery = getCurrentAuthorizationQuery(query.getAppCode());
         List<MenuVO> menus = menuService.listUserMenus(
                 query.getAppCode(),
                 query.getType(),
                 query.getParentId(),
-                userId,
+                authorizationQuery,
                 isTreeFormat(query.getFmt()));
         return R.ok(menus);
     }
 
-    /**
-     * 从 token 上下文读取当前用户 ID。
-     */
-    private Long getCurrentUserId() {
-        String token = TokenContextHolder.getToken();
+    private AuthorizationQuery getCurrentAuthorizationQuery(String appCode) {
+        String rawToken = TokenContextHolder.getToken();
+        String token = stripBearer(rawToken);
         if (token == null) {
             return null;
         }
-        return tokenService.getUserId(stripBearer(token));
+        Long memberId = parseLong(tokenService.getClaim(token, "memberId"));
+        if (memberId == null) {
+            return null;
+        }
+        return AuthorizationQuery.member(memberId)
+                .withTenantId(tokenService.getClaim(token, "tenantId"))
+                .withSystemCode(resolveAppCode(appCode, token))
+                .withRealm(tokenService.getClaim(token, "realm"))
+                .withActorType(tokenService.getClaim(token, "actorType"))
+                .withParty(tokenService.getClaim(token, "partyType"), parseLong(tokenService.getClaim(token, "partyId")));
+    }
+
+    private String resolveAppCode(String appCode, String token) {
+        if (appCode != null && !appCode.isBlank()) {
+            return appCode;
+        }
+        return tokenService.getClaim(token, "appCode");
+    }
+
+    private Long parseLong(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private String stripBearer(String token) {
@@ -89,6 +119,7 @@ public class MenuController implements MenuApi {
     @Override
     @GetMapping("/detail")
     @Operation(summary = "获取菜单详情", description = "权限接口。按菜单ID查询菜单详情")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:menu:query")
     public R<MenuVO> getById(
             @Parameter(description = "菜单ID") @RequestParam Long menuId) {
         io.mango.authorization.core.entity.Menu menu = menuService.getById(menuId);
@@ -106,6 +137,7 @@ public class MenuController implements MenuApi {
     @Override
     @PostMapping
     @Operation(summary = "新增菜单", description = "权限接口。创建授权菜单")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:menu:add")
     public R<Void> add(@RequestBody MenuCommand command) {
         io.mango.authorization.core.entity.Menu menu = convertToEntity(command);
         boolean success = menuService.addMenu(menu);
@@ -115,6 +147,7 @@ public class MenuController implements MenuApi {
     @Override
     @PutMapping
     @Operation(summary = "更新菜单", description = "权限接口。更新授权菜单")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:menu:edit")
     public R<Void> update(@RequestBody MenuCommand command) {
         io.mango.authorization.core.entity.Menu menu = convertToEntity(command);
         boolean success = menuService.updateMenu(command.getMenuId(), menu);
@@ -124,6 +157,7 @@ public class MenuController implements MenuApi {
     @Override
     @DeleteMapping
     @Operation(summary = "删除菜单", description = "权限接口。按菜单ID删除授权菜单")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:menu:delete")
     public R<Void> delete(
             @Parameter(description = "菜单ID") @RequestParam Long menuId) {
         boolean success = menuService.deleteMenu(menuId);

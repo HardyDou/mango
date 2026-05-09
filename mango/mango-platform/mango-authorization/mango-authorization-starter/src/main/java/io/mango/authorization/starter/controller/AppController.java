@@ -10,6 +10,7 @@ import io.mango.common.result.R;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,7 +55,7 @@ public class AppController implements AppApi {
     @PostMapping
     @Operation(summary = "创建应用入口", description = "权限接口。创建授权应用入口")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:add")
-    public R<Long> create(@RequestBody AppCommand command) {
+    public R<Long> create(@Valid @RequestBody AppCommand command) {
         return R.ok(appService.create(command));
     }
 
@@ -62,7 +63,7 @@ public class AppController implements AppApi {
     @PutMapping
     @Operation(summary = "更新应用入口", description = "权限接口。更新授权应用入口")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "authorization:app:edit")
-    public R<Boolean> update(@RequestBody AppCommand command) {
+    public R<Boolean> update(@Valid @RequestBody AppCommand command) {
         Boolean success = appService.update(command);
         return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(404, "应用入口不存在");
     }

@@ -86,6 +86,7 @@ public class AccessService {
     private AccessPrincipal resolvePrincipal(String token) {
         return new AccessPrincipal(
                 tokenService.getUserId(token),
+                parseLong(tokenService.getClaim(token, "memberId")),
                 tokenService.getUsername(token),
                 tokenService.getClaim(token, "tenantId"),
                 tokenService.getClaim(token, "realm"),
@@ -115,10 +116,10 @@ public class AccessService {
     }
 
     private boolean hasPermission(AccessPrincipal principal, String permissionCode) {
-        if (principal == null || principal.userId() == null || permissionCode == null || permissionCode.isBlank()) {
+        if (principal == null || principal.memberId() == null || permissionCode == null || permissionCode.isBlank()) {
             return false;
         }
-        AuthorizationQuery query = AuthorizationQuery.user(principal.userId())
+        AuthorizationQuery query = AuthorizationQuery.member(principal.memberId())
                 .withTenantId(principal.tenantId())
                 .withSystemCode(principal.appCode())
                 .withRealm(principal.realm())
