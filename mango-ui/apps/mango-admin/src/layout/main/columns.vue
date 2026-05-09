@@ -8,6 +8,7 @@
         class="layout-backtop"
       >
         <LayoutHeader />
+        <LayoutWorkspaceNav :tags-view="isTagsview" />
         <LayoutMain ref="layoutMainRef" />
       </el-scrollbar>
     </el-container>
@@ -25,6 +26,7 @@ const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'))
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
 const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
 const ColumnsAside = defineAsyncComponent(() => import('../component/columnsAside.vue'));
+const LayoutWorkspaceNav = defineAsyncComponent(() => import('../navBars/workspaceNav/index.vue'));
 
 const layoutScrollbarRef = ref();
 const layoutMainRef = ref();

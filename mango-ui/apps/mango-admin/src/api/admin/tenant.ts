@@ -1,5 +1,6 @@
 /**
- * Tenant API - 租户管理
+ * Tenant API - 机构管理。
+ * 后端路径和字段暂保留 tenant 命名，前端展示统一使用“机构”。
  */
 
 import { get, post, put, del } from '@mango/common';

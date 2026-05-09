@@ -9,13 +9,27 @@
       >
         <el-icon><User /></el-icon>
       </el-avatar>
-      <span class="username">{{ userInfos.userInfos?.username || 'Admin' }}</span>
+      <span class="username">{{ currentUser.username || 'Admin' }}</span>
+      <span
+        v-if="institutionLabel"
+        class="institution-context"
+        :title="institutionLabel"
+      >
+        {{ institutionLabel }}
+      </span>
       <el-icon class="arrow-icon">
         <ArrowDown />
       </el-icon>
     </div>
     <template #dropdown>
       <el-dropdown-menu>
+        <el-dropdown-item
+          v-if="institutionLabel"
+          disabled
+          class="institution-dropdown-item"
+        >
+          {{ institutionLabel }}
+        </el-dropdown-item>
         <el-dropdown-item command="profile">
           <el-icon><User /></el-icon>
           个人中心
@@ -38,6 +52,7 @@
 
 <script setup lang="ts" name="breadcrumbUser">
 import { User, Lock, SwitchButton, ArrowDown } from '@element-plus/icons-vue';
+import { computed } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { Session } from '@mango/common';
@@ -45,7 +60,12 @@ import { useUserInfo } from '@/stores/userInfo';
 
 const router = useRouter();
 const storesUserInfo = useUserInfo();
-const { userInfos } = storesUserInfo;
+const currentUser = computed(() => storesUserInfo.userInfos);
+
+const institutionLabel = computed(() => {
+  const info = currentUser.value;
+  return info.tenantName || info.tenantCode || (info.tenantId ? `机构 ${info.tenantId}` : '');
+});
 
 const handleCommand = (command: string) => {
   switch (command) {
@@ -61,7 +81,7 @@ const handleCommand = (command: string) => {
         cancelButtonText: '取消',
         type: 'warning',
       }).then(() => {
-        Session.clearSession();
+        storesUserInfo.clearUserInfo();
         router.push('/login');
       }).catch(() => {
         // User canceled, do nothing
@@ -90,6 +110,19 @@ const handleCommand = (command: string) => {
     font-size: 13px;
   }
 
+  .institution-context {
+    max-width: 96px;
+    margin-left: 8px;
+    padding-left: 8px;
+    overflow: hidden;
+    color: var(--mango-color-top-bar);
+    font-size: 12px;
+    opacity: 0.75;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-left: 1px solid currentColor;
+  }
+
   .arrow-icon {
     margin-left: 4px;
     font-size: 12px;
@@ -107,6 +140,17 @@ const handleCommand = (command: string) => {
       color: var(--mango-color-primary);
       background: var(--mango-color-menu-hover);
     }
+  }
+
+  .institution-dropdown-item {
+    max-width: 180px;
+    overflow: hidden;
+    color: var(--mango-text-color-primary);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 1;
+    cursor: default;
   }
 }
 </style>

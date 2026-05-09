@@ -4,8 +4,33 @@ import { generateArithmetic } from './captcha';
 /**
  * 登录
  */
-export function login(data: { username: string; password: string; captchaCode?: string; captchaKey?: string }) {
+export function login(data: {
+  username: string;
+  password: string;
+  tenantId?: string | number;
+  tenantCode?: string;
+  realm?: string;
+  actorType?: string;
+  partyType?: string;
+  partyId?: string | number;
+  appCode?: string;
+  captchaCode?: string;
+  captchaKey?: string;
+}) {
   return post('/auth/login', data);
+}
+
+export interface LoginTenantOption {
+  tenantId: string;
+  tenantCode: string;
+  tenantName: string;
+}
+
+/**
+ * 获取登录机构选项
+ */
+export function getLoginTenantOptions() {
+  return get<LoginTenantOption[]>('/system/tenant/login-options', { ignoreToken: true });
 }
 
 /**

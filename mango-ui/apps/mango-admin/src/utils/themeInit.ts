@@ -133,7 +133,7 @@ export function initThemeBeforeRender(): void {
 
     // 恢复 preferencesStore
     const prefKeys = [
-      'isDrawer', 'isLockScreen', 'lockScreenTime', 'isGrayscale', 'isInvert',
+      'isLockScreen', 'lockScreenTime', 'isGrayscale', 'isInvert',
       'isWartermark', 'wartermarkText', 'tagsStyle', 'animation',
       'isRequestRoutes', 'language', 'size', 'globalI18n', 'globalComponentSize',
       'globalTitle', 'footerAuthor',
@@ -143,6 +143,7 @@ export function initThemeBeforeRender(): void {
         (preferencesStore.$state as Record<string, unknown>)[key] = data[key];
       }
     });
+    preferencesStore.isDrawer = false;
 
     // 应用 CSS 变量
     applyDarkMode(data);

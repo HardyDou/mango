@@ -120,7 +120,7 @@ import { User, Document, TrendCharts, Setting, DataLine } from '@element-plus/ic
 
 <style scoped lang="scss">
 .home-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .stat-card {

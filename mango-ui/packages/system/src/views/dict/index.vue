@@ -43,12 +43,27 @@
                 <span class="type-code">{{ item.code }}</span>
               </div>
               <div class="type-actions">
-                <el-tag
-                  :type="item.status === 1 ? 'success' : 'danger'"
+                <DictTag
+                  dict-code="sys_normal_disable"
+                  :value="item.status"
                   size="small"
+                />
+                <el-button
+                  link
+                  type="primary"
+                  size="small"
+                  @click.stop="handleEditType(item)"
                 >
-                  {{ item.status === 1 ? '启用' : '禁用' }}
-                </el-tag>
+                  编辑
+                </el-button>
+                <el-button
+                  link
+                  type="danger"
+                  size="small"
+                  @click.stop="handleDeleteType(item)"
+                >
+                  删除
+                </el-button>
               </div>
             </div>
             <el-empty
@@ -126,12 +141,11 @@
               width="80"
             >
               <template #default="{ row }">
-                <el-tag
-                  :type="row.status === 1 ? 'success' : 'danger'"
+                <DictTag
+                  dict-code="sys_normal_disable"
+                  :value="row.status"
                   size="small"
-                >
-                  {{ row.status === 1 ? '启用' : '禁用' }}
-                </el-tag>
+                />
               </template>
             </el-table-column>
             <el-table-column
@@ -232,11 +246,12 @@
           prop="status"
         >
           <el-radio-group v-model="typeForm.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -305,11 +320,12 @@
           prop="status"
         >
           <el-radio-group v-model="dataForm.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -343,8 +359,10 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import { Pagination } from '@mango/common';
+import { DictTag, Pagination, useDict } from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
+
+const { options: statusOptions } = useDict('sys_normal_disable');
 
 // ==================== 类型列表 ====================
 const typeKeyword = ref('');
@@ -430,6 +448,37 @@ async function handleTypeSubmit() {
   } catch (error) {
     console.error('提交失败:', error);
   }
+}
+
+function handleEditType(row: DictType) {
+  typeForm.id = row.id;
+  typeForm.name = row.name;
+  typeForm.code = row.code;
+  typeForm.description = row.description || '';
+  typeForm.sort = row.sort || 0;
+  typeForm.status = row.status ?? 1;
+  typeDialogVisible.value = true;
+}
+
+function handleDeleteType(row: DictType) {
+  ElMessageBox.confirm(`确认删除字典类型「${row.name}」?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(async () => {
+    try {
+      await dictTypeApi.delete(row.id!);
+      ElMessage.success('删除成功');
+      if (currentType.value?.id === row.id) {
+        currentType.value = null;
+        dataList.value = [];
+        dataTotal.value = 0;
+      }
+      await loadTypeList();
+    } catch (error) {
+      console.error('删除失败:', error);
+    }
+  }).catch(() => {});
 }
 
 // ==================== 字典数据列表 ====================
@@ -581,7 +630,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .dict-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .type-card,

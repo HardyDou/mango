@@ -22,8 +22,11 @@ test.describe('布局系统 E2E 测试', () => {
   });
 
   test('经典布局 (classic)', async ({ page }) => {
-    // 检查标签导航是否隐藏（经典布局）
-    await expect(page.locator('.tags-view-container')).not.toBeVisible();
+    await expect(page.locator('.tags-view-container')).toBeVisible();
+    const homeTag = page.locator('.tags-view-item.active', { hasText: '首页' });
+    await expect(homeTag).toBeVisible();
+    await expect(homeTag.locator('.close-icon')).toHaveCount(0);
+    await expect(page.locator('.layout-main-breadcrumb')).toBeVisible();
   });
 
   test('横向布局 (transverse)', async ({ page }) => {
@@ -82,7 +85,7 @@ test.describe('布局系统 E2E 测试', () => {
     if (await tagsView.count() > 0) {
       await expect(tagsView).toBeVisible();
     } else {
-      // 经典布局默认不显示标签导航
+      // 标签导航关闭时允许隐藏
       await expect(tagsView).not.toBeVisible();
     }
   });

@@ -24,10 +24,11 @@
           </el-icon>
         </div>
       </template>
-      <!-- 其他布局：显示面包屑 -->
-      <BreadcrumbIndex v-else />
     </div>
-    <div class="layout-top-systems">
+    <div
+      v-if="layoutStore.layout !== 'columns'"
+      class="layout-top-systems"
+    >
       <button
         v-for="item in topMenus"
         :key="item.path"
@@ -67,7 +68,6 @@ import { useRoutesList } from '@/stores/routesList';
 import { iconMap } from '@/config/iconConfig';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
-const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
 const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
@@ -150,6 +150,8 @@ watch(
     height: 100%;
     gap: 2px;
     margin-left: 12px;
+    flex: 1;
+    min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;

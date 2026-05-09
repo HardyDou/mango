@@ -5,24 +5,15 @@
 import { get, post, put, del } from '@mango/common';
 
 export interface SysRoute {
-  id?: number;
-  parentId?: number;
+  id?: number | string;
   routeName: string;
   routePath: string;
   routeType: number;
-  component?: string;
-  redirect?: string;
-  icon?: string;
-  isCache?: number;
-  isAffix?: number;
-  isVisible?: number;
   sort?: number;
   status?: number;
-  permission?: string;
   description?: string;
   createTime?: string;
   updateTime?: string;
-  children?: SysRoute[];
 }
 
 export interface RouteQuery {
@@ -42,7 +33,8 @@ export interface PageResult<T> {
 
 export const routeApi = {
   list: (params?: RouteQuery) => {
-    return get<any[]>('/system/route/list', { params }).then((list) => toPageResult(list.map(fromBackend), params));
+    return get<any[]>('/system/route/list', { params: toBackendQuery(params) })
+      .then((list) => toPageResult(list.map(fromBackend), params));
   },
   tree: () => {
     return get<any[]>('/system/route/tree').then((list) => list.map(fromBackend));
@@ -59,10 +51,19 @@ export const routeApi = {
   delete: (id: number) => {
     return del<boolean>('/system/route', { params: { id } });
   },
-  sort: (data: { id: number; sort: number }[]) => {
-    return put<boolean>('/system/route/sort', data.map((item) => item.id));
+  sort: (data: { id: number | string; sort: number }[]) => {
+    return put<boolean>('/system/route/sort', { ids: data.map((item) => item.id) });
   },
 };
+
+function toBackendQuery(params?: RouteQuery) {
+  return {
+    routeName: params?.keyword || undefined,
+    routePath: params?.keyword || undefined,
+    routeType: params?.routeType,
+    status: params?.status,
+  };
+}
 
 function fromBackend(item: any): SysRoute {
   return {
@@ -74,8 +75,13 @@ function fromBackend(item: any): SysRoute {
 
 function toBackend(item: SysRoute) {
   return {
-    ...item,
+    id: item.id,
+    routeName: item.routeName,
+    routePath: item.routePath,
+    routeType: item.routeType,
     routeDesc: item.description,
+    sort: item.sort,
+    status: item.status,
   };
 }
 

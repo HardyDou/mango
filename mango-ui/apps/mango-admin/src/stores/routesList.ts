@@ -26,5 +26,11 @@ export const useRoutesList = defineStore('routesList', {
     setColumnsNavHover(bool: boolean) {
       this.isColumnsNavHover = bool;
     },
+    resetRoutesList() {
+      this.routesList = [];
+      this.activeTopRoutePath = '';
+      this.isColumnsMenuHover = false;
+      this.isColumnsNavHover = false;
+    },
   },
 });

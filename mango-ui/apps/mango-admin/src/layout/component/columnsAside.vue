@@ -12,24 +12,11 @@
           @mouseenter="onColumnsAsideMenuMouseenter(v, k)"
         >
           <div :class="layoutStore.columnsAsideLayout">
-            <el-icon class="menu-icon">
-              <HomeFilled v-if="v.meta?.icon === 'HomeFilled'" />
-              <User v-else-if="v.meta?.icon === 'User'" />
-              <Lock v-else-if="v.meta?.icon === 'Lock'" />
-              <Search v-else-if="v.meta?.icon === 'Search'" />
-              <Setting v-else-if="v.meta?.icon === 'Setting'" />
-              <Fold v-else-if="v.meta?.icon === 'Fold'" />
-              <Expand v-else-if="v.meta?.icon === 'Expand'" />
-              <Close v-else-if="v.meta?.icon === 'Close'" />
-              <Box v-else-if="v.meta?.icon === 'Box'" />
-              <Document v-else-if="v.meta?.icon === 'Document'" />
-              <Edit v-else-if="v.meta?.icon === 'Edit'" />
-              <Upload v-else-if="v.meta?.icon === 'Upload'" />
-              <DataLine v-else-if="v.meta?.icon === 'DataLine'" />
-              <Key v-else-if="v.meta?.icon === 'Key'" />
-              <Grid v-else-if="v.meta?.icon === 'Grid'" />
-              <Coin v-else-if="v.meta?.icon === 'Coin'" />
-              <List v-else-if="v.meta?.icon === 'List'" />
+            <el-icon
+              v-if="v.meta?.icon && iconMap[v.meta.icon]"
+              class="menu-icon"
+            >
+              <component :is="iconMap[v.meta.icon]" />
             </el-icon>
             <div class="columns-vertical-title font12">
               {{ getTitle(v) }}
@@ -52,25 +39,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { mittBus } from '@mango/common';
-import {
-  HomeFilled,
-  User,
-  Lock,
-  Search,
-  Setting,
-  Close,
-  Fold,
-  Expand,
-  Box,
-  Document,
-  Edit,
-  Upload,
-  DataLine,
-  Key,
-  Grid,
-  Coin,
-  List,
-} from '@element-plus/icons-vue';
+import { iconMap } from '@/config/iconConfig';
 
 interface MenuItem {
   path: string;
@@ -125,6 +94,7 @@ const setColumnsAsideMove = (k: number) => {
 
 const onColumnsAsideMenuClick = (v: MenuItem, k: number) => {
   setColumnsAsideMove(k);
+  storesRoutesList.setActiveTopRoutePath(v.path);
   if (v.children && v.children.length > 0) {
     storesRoutesList.setColumnsMenuHover(true);
     mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));
@@ -137,6 +107,7 @@ const onColumnsAsideMenuMouseenter = (v: MenuItem, k: number) => {
   liOldPath.value = v.path;
   liOldIndex.value = k;
   liHoverIndex.value = k;
+  storesRoutesList.setActiveTopRoutePath(v.path);
   if (v.children && v.children.length > 0) {
     storesRoutesList.setColumnsMenuHover(true);
     mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));

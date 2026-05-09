@@ -29,16 +29,39 @@
           prop="realm"
           label="登录域"
           width="120"
-        />
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="auth_realm"
+              :value="row.realm"
+              size="small"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="actorType"
+          label="操作者类型"
+          width="140"
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="auth_actor_type"
+              :value="row.actorType"
+              size="small"
+            />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="roleType"
           label="类型"
           width="100"
         >
           <template #default="{ row }">
-            <el-tag size="small">
-              {{ row.roleType === 1 ? '系统角色' : '业务角色' }}
-            </el-tag>
+            <DictTag
+              dict-code="authorization_role_type"
+              :value="row.roleType"
+              size="small"
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -50,9 +73,10 @@
           label="状态"
         >
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -61,9 +85,17 @@
         />
         <el-table-column
           label="操作"
-          width="180"
+          width="260"
         >
           <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="handleAssignMenus(row)"
+            >
+              分配权限
+            </el-button>
             <el-button
               link
               type="primary"
@@ -98,13 +130,36 @@
         label-width="100px"
       >
         <el-form-item label="应用编码" prop="appCode">
-          <el-input v-model="form.appCode" />
+          <el-select
+            v-model="form.appCode"
+            filterable
+            class="form-select"
+            placeholder="请选择应用"
+            @change="handleAppChange"
+          >
+            <el-option
+              v-for="app in appOptions"
+              :key="app.appCode"
+              :label="`${app.appName}（${app.appCode}）`"
+              :value="app.appCode"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="登录域" prop="realm">
-          <el-input v-model="form.realm" />
-        </el-form-item>
-        <el-form-item label="操作者类型" prop="actorType">
-          <el-input v-model="form.actorType" />
+        <el-form-item label="登录上下文" prop="realm">
+          <el-select
+            v-model="selectedContextKey"
+            filterable
+            class="form-select"
+            placeholder="请选择登录上下文"
+            @change="handleContextChange"
+          >
+            <el-option
+              v-for="context in currentAppContexts"
+              :key="contextKey(context)"
+              :label="contextLabel(context)"
+              :value="contextKey(context)"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" />
@@ -117,21 +172,23 @@
         </el-form-item>
         <el-form-item label="角色类型" prop="roleType">
           <el-radio-group v-model="form.roleType">
-            <el-radio :label="1">
-              系统角色
-            </el-radio>
-            <el-radio :label="2">
-              业务角色
+            <el-radio
+              v-for="item in roleTypeOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -163,19 +220,72 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="assignDialogVisible"
+      title="分配角色权限"
+      width="640px"
+    >
+      <div class="assign-header">
+        <span>{{ currentRole?.roleName }}</span>
+        <el-tag
+          v-if="currentRole?.roleCode"
+          effect="plain"
+        >
+          {{ currentRole.roleCode }}
+        </el-tag>
+      </div>
+      <el-tree
+        ref="menuTreeRef"
+        v-loading="assignLoading"
+        :data="assignableMenus"
+        node-key="menuId"
+        show-checkbox
+        default-expand-all
+        :props="{ label: 'menuName', children: 'children' }"
+      />
+      <template #footer>
+        <el-button @click="assignDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="assignSubmitLoading"
+          @click="handleAssignSubmit"
+        >
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts" name="SystemRole">
-import { onMounted, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
+import { DictTag, Session, useDict } from '@mango/common';
+import { appApi, type AppLoginContext, type AuthorizationApp } from '../../api/app';
 import { roleApi, type RoleVO } from '../../api/role';
+import type { SysMenuVO } from '../../api/menu';
+
+const { options: roleTypeOptions } = useDict('authorization_role_type');
+const { options: statusOptions } = useDict('sys_normal_disable');
+const { getLabel: getRealmLabel } = useDict('auth_realm');
+const { getLabel: getActorTypeLabel } = useDict('auth_actor_type');
 
 const loading = ref(false);
 const submitLoading = ref(false);
 const dialogVisible = ref(false);
 const tableData = ref<RoleVO[]>([]);
+const appOptions = ref<AuthorizationApp[]>([]);
+const selectedContextKey = ref('');
 const formRef = ref<FormInstance>();
+const assignDialogVisible = ref(false);
+const assignLoading = ref(false);
+const assignSubmitLoading = ref(false);
+const currentRole = ref<RoleVO>();
+const assignableMenus = ref<SysMenuVO[]>([]);
+const menuTreeRef = ref<TreeInstance>();
 
 const form = reactive<RoleVO>({
   roleId: undefined,
@@ -199,10 +309,20 @@ const rules: FormRules = {
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
 
+const currentAppContexts = computed(() => {
+  const app = appOptions.value.find((item) => item.appCode === form.appCode);
+  return app?.loginContexts?.filter((item) => item.status === 1) || [];
+});
+
 async function loadData() {
   loading.value = true;
   try {
-    tableData.value = await roleApi.list();
+    const [roles, apps] = await Promise.all([
+      roleApi.list(),
+      loadAppOptions(),
+    ]);
+    tableData.value = roles;
+    appOptions.value = apps;
   } catch (error) {
     console.error('加载角色失败:', error);
   } finally {
@@ -223,7 +343,33 @@ function resetForm() {
     sort: 0,
     remark: '',
   });
+  selectDefaultContext();
   formRef.value?.clearValidate();
+}
+
+async function loadAppOptions() {
+  try {
+    const apps = await appApi.list();
+    if (apps.length > 0) {
+      return apps;
+    }
+  } catch (error) {
+    console.warn('应用列表不可访问，使用当前登录应用上下文:', error);
+  }
+  const userInfo = Session.get('userInfo') || {};
+  return [{
+    appCode: userInfo.appCode || 'internal-admin',
+    appName: '当前应用',
+    status: 1,
+    loginContexts: [{
+      appCode: userInfo.appCode || 'internal-admin',
+      realm: userInfo.realm || 'INTERNAL',
+      actorType: userInfo.actorType || 'INTERNAL_USER',
+      defaultFlag: 1,
+      status: 1,
+      sort: 0,
+    }],
+  }];
 }
 
 const handleAdd = () => {
@@ -244,9 +390,47 @@ const handleEdit = (row: RoleVO) => {
     sort: row.sort ?? 0,
     remark: row.remark || '',
   });
+  selectedContextKey.value = contextKey({
+    realm: form.realm,
+    actorType: form.actorType || '',
+    defaultFlag: 0,
+    status: 1,
+  });
   formRef.value?.clearValidate();
   dialogVisible.value = true;
 };
+
+const handleAppChange = () => {
+  selectDefaultContext();
+};
+
+const handleContextChange = (value: string | number | boolean | undefined) => {
+  const key = String(value || '');
+  const context = currentAppContexts.value.find((item) => contextKey(item) === key);
+  if (!context) return;
+  form.realm = context.realm;
+  form.actorType = context.actorType;
+};
+
+function selectDefaultContext() {
+  const contexts = currentAppContexts.value;
+  const context = contexts.find((item) => item.defaultFlag === 1) || contexts[0];
+  if (!context) {
+    selectedContextKey.value = '';
+    return;
+  }
+  selectedContextKey.value = contextKey(context);
+  form.realm = context.realm;
+  form.actorType = context.actorType;
+}
+
+function contextKey(context: Pick<AppLoginContext, 'realm' | 'actorType'>) {
+  return `${context.realm}:${context.actorType}`;
+}
+
+function contextLabel(context: Pick<AppLoginContext, 'realm' | 'actorType'>) {
+  return `${getRealmLabel(context.realm)} / ${getActorTypeLabel(context.actorType)}`;
+}
 
 const handleSubmit = async () => {
   if (!formRef.value) return;
@@ -286,6 +470,43 @@ const handleDelete = (row: RoleVO) => {
   }).catch(() => {});
 };
 
+async function handleAssignMenus(row: RoleVO) {
+  if (!row.roleId) return;
+  currentRole.value = row;
+  assignDialogVisible.value = true;
+  assignLoading.value = true;
+  try {
+    const [menus, checkedMenuIds] = await Promise.all([
+      roleApi.getAssignableMenus(row.appCode),
+      roleApi.getMenuIds(row.roleId),
+    ]);
+    assignableMenus.value = menus;
+    await nextTick();
+    menuTreeRef.value?.setCheckedKeys(checkedMenuIds, false);
+  } catch (error) {
+    console.error('加载角色权限失败:', error);
+  } finally {
+    assignLoading.value = false;
+  }
+}
+
+async function handleAssignSubmit() {
+  if (!currentRole.value?.roleId || !menuTreeRef.value) return;
+  assignSubmitLoading.value = true;
+  try {
+    const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as number[];
+    const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys() as number[];
+    const menuIds = Array.from(new Set([...checkedKeys, ...halfCheckedKeys].map(Number)));
+    await roleApi.assignMenus(currentRole.value.roleId, menuIds);
+    ElMessage.success('分配成功');
+    assignDialogVisible.value = false;
+  } catch (error) {
+    console.error('分配角色权限失败:', error);
+  } finally {
+    assignSubmitLoading.value = false;
+  }
+}
+
 onMounted(() => {
   loadData();
 });
@@ -293,12 +514,23 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .role-container {
-  padding: 20px;
+  padding: 0;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.form-select {
+  width: 100%;
+}
+
+.assign-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 </style>

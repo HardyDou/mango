@@ -32,20 +32,29 @@ const breadcrumbs = computed(() => {
 .layout-breadcrumb {
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  height: 40px;
+  min-height: 28px;
+  overflow: hidden;
   background: transparent;
-  color: var(--mango-color-top-bar);
+  color: var(--el-text-color-regular);
+
+  :deep(.el-breadcrumb) {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    white-space: nowrap;
+  }
 
   :deep(.el-breadcrumb__item) {
+    flex-shrink: 0;
+
     .el-breadcrumb__inner {
-      color: var(--mango-color-top-bar);
+      color: var(--el-text-color-regular);
       &.is-link:hover {
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--mango-color-primary);
       }
     }
     .el-breadcrumb__separator {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--el-text-color-placeholder);
     }
   }
 }

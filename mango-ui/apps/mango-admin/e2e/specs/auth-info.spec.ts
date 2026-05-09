@@ -2,10 +2,16 @@ import { expect, test } from '@playwright/test';
 
 test.describe('当前用户信息 E2E', () => {
   test('登录后可通过真实后端获取当前用户信息', async ({ page, request }) => {
-    const loginResponse = await request.post('/api/auth/login', {
+    const loginResponse = await request.post('http://localhost:5555/auth/login', {
       data: {
         username: 'admin',
         password: 'admin123',
+        tenantId: '1',
+        tenantCode: 'default',
+        realm: 'INTERNAL',
+        actorType: 'INTERNAL_USER',
+        partyType: 'INTERNAL_ORG',
+        appCode: 'internal-admin',
       },
     });
     expect(loginResponse.ok()).toBeTruthy();
@@ -14,7 +20,7 @@ test.describe('当前用户信息 E2E', () => {
     const accessToken = loginBody?.data?.accessToken;
     expect(accessToken).toBeTruthy();
 
-    const infoResponse = await request.get('/api/auth/info', {
+    const infoResponse = await request.get('http://localhost:5555/auth/info', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -23,7 +29,7 @@ test.describe('当前用户信息 E2E', () => {
 
     const infoBody = await infoResponse.json();
     expect(infoBody?.data).toMatchObject({
-      userId: 1,
+      userId: '1',
       username: 'admin',
       nickname: 'Administrator',
     });
@@ -41,9 +47,15 @@ test.describe('当前用户信息 E2E', () => {
       return raw ? JSON.parse(raw) : null;
     });
     expect(sessionUserInfo).toMatchObject({
-      userId: 1,
+      userId: '1',
       username: 'admin',
       nickname: 'Administrator',
     });
+
+    await page.locator('.layout-breadcrumb-user').click();
+    await expect(page.locator('.institution-dropdown-item')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/当前租户：/)).toHaveCount(0);
+    await expect(page.getByText(/当前机构：/)).toHaveCount(0);
+    await expect(page.getByText(/当前上下文：/)).toHaveCount(0);
   });
 });

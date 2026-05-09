@@ -31,16 +31,10 @@
             clearable
           >
             <el-option
-              label="菜单"
-              :value="1"
-            />
-            <el-option
-              label="按钮"
-              :value="2"
-            />
-            <el-option
-              label="API"
-              :value="3"
+              v-for="item in routeTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
             />
           </el-select>
         </el-form-item>
@@ -51,12 +45,10 @@
             clearable
           >
             <el-option
-              label="启用"
-              :value="1"
-            />
-            <el-option
-              label="禁用"
-              :value="0"
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
             />
           </el-select>
         </el-form-item>
@@ -73,12 +65,9 @@
         </el-form-item>
       </el-form>
 
-      <!-- 路由树表格 -->
       <el-table
         v-loading="loading"
-        :data="routeTree"
-        row-key="id"
-        default-expand-all
+        :data="tableData"
         stripe
       >
         <el-table-column
@@ -91,43 +80,19 @@
           label="路由路径"
         />
         <el-table-column
-          prop="component"
-          label="组件路径"
-          show-overflow-tooltip
-        />
-        <el-table-column
           prop="routeType"
           label="类型"
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              v-if="row.routeType === 1"
+            <DictTag
+              dict-code="system_route_type"
+              :value="row.routeType"
+              :type="getRouteTypeTagType(row.routeType)"
               size="small"
-            >
-              菜单
-            </el-tag>
-            <el-tag
-              v-else-if="row.routeType === 2"
-              type="warning"
-              size="small"
-            >
-              按钮
-            </el-tag>
-            <el-tag
-              v-else
-              type="info"
-              size="small"
-            >
-              API
-            </el-tag>
+            />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="icon"
-          label="图标"
-          width="100"
-        />
         <el-table-column
           prop="sort"
           label="排序"
@@ -139,32 +104,24 @@
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="row.status === 1 ? 'success' : 'danger'"
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
               size="small"
-            >
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            />
           </template>
         </el-table-column>
         <el-table-column
-          prop="permission"
-          label="权限标识"
+          prop="description"
+          label="描述"
+          show-overflow-tooltip
         />
         <el-table-column
           label="操作"
-          width="200"
+          width="150"
           fixed="right"
         >
           <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              size="small"
-              @click="handleAddChild(row)"
-            >
-              新增子级
-            </el-button>
             <el-button
               link
               type="primary"
@@ -198,16 +155,6 @@
         :rules="rules"
         label-width="100px"
       >
-        <el-form-item label="父级路由">
-          <el-tree-select
-            v-model="form.parentId"
-            :data="routeTreeSelect"
-            :props="{ label: 'routeName', value: 'id', children: 'children' }"
-            placeholder="请选择父级(不选则为顶级)"
-            clearable
-            check-strictly
-          />
-        </el-form-item>
         <el-form-item
           label="路由名称"
           prop="routeName"
@@ -231,37 +178,14 @@
           prop="routeType"
         >
           <el-radio-group v-model="form.routeType">
-            <el-radio :label="1">
-              菜单
-            </el-radio>
-            <el-radio :label="2">
-              按钮
-            </el-radio>
-            <el-radio :label="3">
-              API
+            <el-radio
+              v-for="item in routeTypeOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
-        </el-form-item>
-        <el-form-item
-          label="组件路径"
-          prop="component"
-        >
-          <el-input
-            v-model="form.component"
-            placeholder="前端组件路径，如：/views/system/user/index.vue"
-          />
-        </el-form-item>
-        <el-form-item label="图标">
-          <el-input
-            v-model="form.icon"
-            placeholder="Element Plus 图标名"
-          />
-        </el-form-item>
-        <el-form-item label="权限标识">
-          <el-input
-            v-model="form.permission"
-            placeholder="如：system:user:list"
-          />
         </el-form-item>
         <el-form-item
           label="排序"
@@ -278,11 +202,12 @@
           prop="status"
         >
           <el-radio-group v-model="form.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -310,9 +235,19 @@
 </template>
 
 <script setup lang="ts" name="SystemRoute">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { DictTag, useDict } from '@mango/common';
 import { routeApi, type SysRoute } from '../../api/route';
+
+const { options: routeTypeOptions } = useDict('system_route_type');
+const { options: statusOptions } = useDict('sys_normal_disable');
+
+function getRouteTypeTagType(type?: number) {
+  if (type === 2) return 'success';
+  if (type === 3) return 'warning';
+  return '';
+}
 
 const loading = ref(false);
 const tableData = ref<SysRoute[]>([]);
@@ -328,14 +263,9 @@ const dialogVisible = ref(false);
 const formRef = ref<FormInstance>();
 const form = reactive<SysRoute>({
   id: undefined,
-  parentId: 0,
   routeName: '',
   routePath: '',
   routeType: 1,
-  component: '',
-  redirect: '',
-  icon: '',
-  permission: '',
   sort: 0,
   status: 1,
   description: '',
@@ -346,34 +276,6 @@ const rules: FormRules = {
   routePath: [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
   routeType: [{ required: true, message: '请选择路由类型', trigger: 'change' }],
 };
-
-const routeTree = computed(() => {
-  return buildTree(tableData.value);
-});
-
-const routeTreeSelect = computed(() => {
-  return [{ id: 0, routeName: '顶级', children: buildTree(tableData.value) }];
-});
-
-function buildTree(list: SysRoute[]): SysRoute[] {
-  const map: Record<number, SysRoute> = {};
-  const result: SysRoute[] = [];
-
-  list.forEach((item) => {
-    map[item.id!] = { ...item, children: [] };
-  });
-
-  list.forEach((item) => {
-    const node = map[item.id!];
-    if (item.parentId === 0 || !map[item.parentId!]) {
-      result.push(node);
-    } else {
-      map[item.parentId!].children!.push(node);
-    }
-  });
-
-  return result;
-}
 
 async function loadData() {
   loading.value = true;
@@ -402,30 +304,9 @@ function handleReset() {
 
 function handleAdd() {
   form.id = undefined;
-  form.parentId = 0;
   form.routeName = '';
   form.routePath = '';
   form.routeType = 1;
-  form.component = '';
-  form.redirect = '';
-  form.icon = '';
-  form.permission = '';
-  form.sort = 0;
-  form.status = 1;
-  form.description = '';
-  dialogVisible.value = true;
-}
-
-function handleAddChild(row: SysRoute) {
-  form.id = undefined;
-  form.parentId = row.id!;
-  form.routeName = '';
-  form.routePath = '';
-  form.routeType = row.routeType === 3 ? 3 : 2; // 如果父级是API，子级也是API；否则默认按钮
-  form.component = '';
-  form.redirect = '';
-  form.icon = '';
-  form.permission = '';
   form.sort = 0;
   form.status = 1;
   form.description = '';
@@ -478,7 +359,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .route-container {
-  padding: 20px;
+  padding: 0;
 }
 .card-header {
   display: flex;

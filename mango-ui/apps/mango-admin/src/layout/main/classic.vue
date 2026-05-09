@@ -4,7 +4,7 @@
     <el-container class="layout-mian-height-50">
       <LayoutAside />
       <div class="flex-center layout-backtop">
-        <LayoutTagsView v-if="isTagsView" />
+        <LayoutWorkspaceNav :tags-view="isTagsview" />
         <LayoutMain ref="layoutMainRef" />
       </div>
     </el-container>
@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts" name="layoutClassic">
-import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import { defineAsyncComponent, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
@@ -21,20 +21,12 @@ import { useScrollbar } from '@/composables/useScrollbar';
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
 const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
-const LayoutTagsView = defineAsyncComponent(() => import('../navBars/tagsView/tagsView.vue'));
+const LayoutWorkspaceNav = defineAsyncComponent(() => import('../navBars/workspaceNav/index.vue'));
 
 const route = useRoute();
 const layoutMainRef = ref();
 const layoutStore = useLayoutStore();
 const { layout, isCollapse, isTagsview } = storeToRefs(layoutStore);
-
-const isTagsView = computed(() => {
-  // 经典模式首页没有 tagview
-  if (layout.value === 'classic' && route.path === '/home') {
-    return false;
-  }
-  return isTagsview.value;
-});
 
 const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef);
 

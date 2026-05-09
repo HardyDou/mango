@@ -83,9 +83,13 @@ function fromBackend(item: any): SysConfig {
 
 function toBackend(item: SysConfig) {
   return {
-    ...item,
+    id: item.id,
+    configKey: item.configKey,
+    configValue: item.configValue,
     configName: item.configName || item.configKey,
     type: item.type || toBackendType(item.configGroup),
+    status: item.status,
+    sort: 0,
     remark: item.remark || item.description,
   };
 }

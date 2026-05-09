@@ -31,7 +31,7 @@ export interface PageResult<T> {
 
 export const paramApi = {
   list: (params?: SysParamQuery) => {
-    return get<any[]>('/system/config/list', { params: { type: 'BUSINESS' } })
+    return get<any[]>('/system/config/list', { params: toBackendQuery(params) })
       .then((list) => toPageResult(list.map(fromConfig), params));
   },
   detail: (id: number) => {
@@ -50,6 +50,16 @@ export const paramApi = {
     return put<boolean>('/system/config/value', undefined, { params: { id, value: paramValue } });
   },
 };
+
+function toBackendQuery(params?: SysParamQuery) {
+  return {
+    type: params?.paramType ? toBackendType(params.paramType) : undefined,
+  };
+}
+
+function toBackendType(paramType: number) {
+  return paramType === 1 ? 'SYSTEM' : 'BUSINESS';
+}
 
 function fromConfig(item: any): SysParam {
   return {
@@ -70,7 +80,7 @@ function toConfig(item: SysParam) {
     configKey: item.paramKey,
     configValue: item.paramValue,
     configName: item.paramKey,
-    type: item.paramType === 1 ? 'SYSTEM' : 'BUSINESS',
+    type: toBackendType(item.paramType),
     remark: item.description,
     status: item.status,
     sort: 0,

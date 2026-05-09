@@ -40,6 +40,20 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="状态">
+          <el-select
+            v-model="query.status"
+            placeholder="请选择"
+            clearable
+          >
+            <el-option
+              v-for="item in operationStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="时间范围">
           <el-date-picker
             v-model="dateRange"
@@ -109,12 +123,11 @@
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="row.status === 1 ? 'success' : 'danger'"
+            <DictTag
+              dict-code="sys_operation_status"
+              :value="row.status"
               size="small"
-            >
-              {{ row.status === 1 ? '正常' : '异常' }}
-            </el-tag>
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -167,6 +180,9 @@
         <el-descriptions-item label="请求方法">
           {{ currentRow?.requestMethod }}
         </el-descriptions-item>
+        <el-descriptions-item label="处理器方法">
+          {{ currentRow?.handlerMethod || '-' }}
+        </el-descriptions-item>
         <el-descriptions-item
           label="请求URL"
           :span="2"
@@ -183,12 +199,11 @@
           {{ currentRow?.costTime }}ms
         </el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag
-            :type="currentRow?.status === 1 ? 'success' : 'danger'"
+          <DictTag
+            dict-code="sys_operation_status"
+            :value="currentRow?.status"
             size="small"
-          >
-            {{ currentRow?.status === 1 ? '正常' : '异常' }}
-          </el-tag>
+          />
         </el-descriptions-item>
         <el-descriptions-item
           label="操作时间"
@@ -229,8 +244,10 @@
 <script setup lang="ts" name="SystemOperationLog">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { DictTag, Pagination, useDict } from '@mango/common';
 import { operationLogApi, type SysOperationLog } from '../../api/log';
+
+const { options: operationStatusOptions } = useDict('sys_operation_status');
 
 const loading = ref(false);
 const tableData = ref<SysOperationLog[]>([]);
@@ -244,6 +261,7 @@ const query = reactive({
   pageSize: 10,
   keyword: '',
   username: '',
+  status: undefined as number | undefined,
   startTime: '',
   endTime: '',
 });
@@ -273,6 +291,7 @@ function handleSearch() {
 function handleReset() {
   query.keyword = '';
   query.username = '';
+  query.status = undefined;
   dateRange.value = [];
   query.startTime = '';
   query.endTime = '';
@@ -322,7 +341,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .operation-log-container {
-  padding: 20px;
+  padding: 0;
 }
 .card-header {
   display: flex;
@@ -338,7 +357,7 @@ onMounted(() => {
 pre {
   margin: 0;
   font-size: 12px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   padding: 8px;
   border-radius: 4px;
 }

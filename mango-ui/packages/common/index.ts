@@ -18,10 +18,13 @@ export * from './api/upload';
 export * from './api/captcha';
 export * from './api/org';
 export * from './api/area';
+export * from './api/dict';
+export * from './hooks/useDict';
 
 export { default as Pagination } from './components/Pagination/index.vue';
 export { default as IconSelector } from './components/IconSelector/index.vue';
 export { default as DictTag } from './components/DictTag/index.vue';
+export { default as DictSelect } from './components/DictSelect/index.vue';
 export { default as RightToolbar } from './components/RightToolbar/index.vue';
 export { default as FormCreate } from './components/FormCreate/index.vue';
 export type {

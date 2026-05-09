@@ -55,16 +55,10 @@
             clearable
           >
             <el-option
-              label="目录"
-              :value="1"
-            />
-            <el-option
-              label="菜单"
-              :value="2"
-            />
-            <el-option
-              label="按钮"
-              :value="3"
+              v-for="item in menuTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
             />
           </el-select>
         </el-form-item>
@@ -75,12 +69,10 @@
             clearable
           >
             <el-option
-              label="启用"
-              :value="1"
-            />
-            <el-option
-              label="禁用"
-              :value="0"
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
             />
           </el-select>
         </el-form-item>
@@ -126,26 +118,12 @@
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              v-if="row.menuType === 1"
+            <DictTag
+              dict-code="authorization_menu_type"
+              :value="row.menuType"
+              :type="getMenuTypeTagType(row.menuType)"
               size="small"
-            >
-              目录
-            </el-tag>
-            <el-tag
-              v-else-if="row.menuType === 2"
-              type="success"
-              size="small"
-            >
-              菜单
-            </el-tag>
-            <el-tag
-              v-else
-              type="warning"
-              size="small"
-            >
-              按钮
-            </el-tag>
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -174,12 +152,11 @@
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="row.status === 1 ? 'success' : 'danger'"
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
               size="small"
-            >
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -311,14 +288,12 @@
           prop="menuType"
         >
           <el-radio-group v-model="form.menuType">
-            <el-radio :label="1">
-              目录
-            </el-radio>
-            <el-radio :label="2">
-              菜单
-            </el-radio>
-            <el-radio :label="3">
-              按钮
+            <el-radio
+              v-for="item in menuTypeOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -329,6 +304,15 @@
           <el-input
             v-model="form.menuName"
             placeholder="请输入菜单名称"
+          />
+        </el-form-item>
+        <el-form-item
+          label="菜单编码"
+          prop="menuCode"
+        >
+          <el-input
+            v-model="form.menuCode"
+            placeholder="请输入唯一菜单编码，如：system:user"
           />
         </el-form-item>
         <el-form-item
@@ -401,11 +385,12 @@
           prop="status"
         >
           <el-radio-group v-model="form.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -428,8 +413,18 @@
 <script setup lang="ts" name="SystemMenu">
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { DictTag, useDict } from '@mango/common';
 import { Plus } from '@element-plus/icons-vue';
 import { menuApi, type SysMenuVO } from '../../api/menu';
+
+const { options: menuTypeOptions } = useDict('authorization_menu_type');
+const { options: statusOptions } = useDict('sys_normal_disable');
+
+function getMenuTypeTagType(type?: number) {
+  if (type === 2) return 'success';
+  if (type === 3) return 'warning';
+  return '';
+}
 
 // ==================== 权限标识 Tag 相关 ====================
 const permissionInputRef = ref<HTMLInputElement>();
@@ -544,6 +539,7 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
 
 const rules: FormRules = {
   menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
+  menuCode: [{ required: true, message: '请输入菜单编码', trigger: 'blur' }],
   path: [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
   menuType: [{ required: true, message: '请选择菜单类型', trigger: 'change' }],
 };
@@ -556,20 +552,28 @@ const menuTreeSelect = computed(() => {
   return [{ menuId: 0, menuName: '顶级', children: buildTree(tableData.value) }];
 });
 
+function normalizeMenuId(id: string | number | undefined | null) {
+  if (id === undefined || id === null || id === '') {
+    return '0';
+  }
+  return String(id);
+}
+
 function buildTree(list: SysMenuVO[]): SysMenuVO[] {
-  const map: Record<number, SysMenuVO> = {};
+  const map: Record<string, SysMenuVO> = {};
   const result: SysMenuVO[] = [];
 
   list.forEach((item) => {
-    map[item.menuId] = { ...item, children: [] };
+    map[normalizeMenuId(item.menuId)] = { ...item, children: [] };
   });
 
   list.forEach((item) => {
-    const node = map[item.menuId];
-    if (item.parentId === 0 || !map[item.parentId]) {
+    const node = map[normalizeMenuId(item.menuId)];
+    const parentId = normalizeMenuId(item.parentId);
+    if (parentId === '0' || !map[parentId]) {
       result.push(node);
     } else {
-      map[item.parentId].children!.push(node);
+      map[parentId].children!.push(node);
     }
   });
 
@@ -579,7 +583,7 @@ function buildTree(list: SysMenuVO[]): SysMenuVO[] {
 async function loadData() {
   loading.value = true;
   try {
-    const data = await menuApi.getMenuTree({
+    const data = await menuApi.getMenus({
       appCode: query.groupCode,
       menuName: query.keyword || undefined,
       type: query.menuType,
@@ -706,7 +710,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .menu-container {
-  padding: 20px;
+  padding: 0;
 }
 .card-header {
   display: flex;

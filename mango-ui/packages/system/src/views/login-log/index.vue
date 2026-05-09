@@ -62,12 +62,10 @@
             clearable
           >
             <el-option
-              label="成功"
-              :value="1"
-            />
-            <el-option
-              label="失败"
-              :value="0"
+              v-for="item in loginStatusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
             />
           </el-select>
         </el-form-item>
@@ -124,12 +122,11 @@
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="row.status === 1 ? 'success' : 'danger'"
+            <DictTag
+              dict-code="sys_login_status"
+              :value="row.status"
               size="small"
-            >
-              {{ row.status === 1 ? '成功' : '失败' }}
-            </el-tag>
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -157,8 +154,10 @@
 <script setup lang="ts" name="SystemLoginLog">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { DictTag, Pagination, useDict } from '@mango/common';
 import { loginLogApi, type SysLoginLog, type LoginStatistics } from '../../api/log';
+
+const { options: loginStatusOptions } = useDict('sys_login_status');
 
 const loading = ref(false);
 const tableData = ref<SysLoginLog[]>([]);
@@ -252,7 +251,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .login-log-container {
-  padding: 20px;
+  padding: 0;
 }
 .card-header {
   display: flex;
@@ -262,7 +261,7 @@ onMounted(() => {
 .stat-cards {
   margin-bottom: 20px;
   padding: 16px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   border-radius: 4px;
 }
 .search-form {

@@ -6,7 +6,7 @@
     </div>
     <el-container class="layout-main-container">
       <div class="flex-center layout-backtop">
-        <LayoutTagsView v-if="isTagsview" />
+        <LayoutWorkspaceNav :tags-view="isTagsview" />
         <LayoutMain ref="layoutMainRef" />
       </div>
     </el-container>
@@ -23,7 +23,7 @@ import { useScrollbar } from '@/composables/useScrollbar';
 
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
 const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
-const LayoutTagsView = defineAsyncComponent(() => import('../navBars/tagsView/tagsView.vue'));
+const LayoutWorkspaceNav = defineAsyncComponent(() => import('../navBars/workspaceNav/index.vue'));
 const NavMenuHorizontal = defineAsyncComponent(() => import('../navMenu/horizontal.vue'));
 
 const route = useRoute();
@@ -31,14 +31,17 @@ const layoutMainRef = ref();
 const layoutStore = useLayoutStore();
 const { isCollapse, isFixedHeader, isTagsview, layout } = storeToRefs(layoutStore);
 const storesRoutesList = useRoutesList();
-const { routesList } = storeToRefs(storesRoutesList);
+const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 
 const menuList = ref<any[]>([]);
 
 watch(
-  () => routesList.value,
-  (newVal) => {
-    menuList.value = newVal;
+  () => [routesList.value, activeTopRoutePath.value, route.path],
+  () => {
+    const activeTop = activeTopRoutePath.value
+      ? routesList.value.find(item => item.path === activeTopRoutePath.value)
+      : routesList.value.find(item => route.path === item.path || route.path.startsWith(`${item.path}/`));
+    menuList.value = activeTop?.children?.length ? activeTop.children : [];
   },
   { immediate: true }
 );

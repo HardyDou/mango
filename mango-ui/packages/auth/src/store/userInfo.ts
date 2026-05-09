@@ -12,7 +12,13 @@ export const useUserInfo = defineStore('userInfo', {
       permissions: [],
       authBtnList: [],
       tenantId: '',
+      tenantCode: '',
       tenantName: '',
+      realm: '',
+      actorType: '',
+      partyType: '',
+      partyId: '',
+      appCode: '',
     },
   }),
   actions: {
@@ -40,9 +46,15 @@ export const useUserInfo = defineStore('userInfo', {
         permissions: [],
         authBtnList: [],
         tenantId: '',
+        tenantCode: '',
         tenantName: '',
+        realm: '',
+        actorType: '',
+        partyType: '',
+        partyId: '',
+        appCode: '',
       };
-      Session.clear();
+      Session.clearSession();
     },
   },
 });
@@ -57,6 +69,12 @@ export interface UserInfosState {
     permissions: string[];
     authBtnList: string[];
     tenantId: string;
+    tenantCode: string;
     tenantName: string;
+    realm: string;
+    actorType: string;
+    partyType: string;
+    partyId: string | number;
+    appCode: string;
   };
 }

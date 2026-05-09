@@ -1,8 +1,10 @@
 <template>
   <el-main
     class="layout-main"
-    :style="layoutStore.isFixedHeader ? `height: calc(100% - ${setMainHeight})` : `minHeight: calc(100% - ${setMainHeight})`"
   >
+    <div class="layout-main-breadcrumb">
+      <BreadcrumbIndex />
+    </div>
     <el-scrollbar
       ref="layoutMainScrollbarRef"
       class="layout-main-scroll layout-backtop-header-fixed"
@@ -17,18 +19,11 @@
 
 <script setup lang="ts" name="layoutMain">
 import { computed, defineAsyncComponent, ref } from 'vue';
-import { useLayoutStore } from '@/stores/layout';
 
 const LayoutParentView = defineAsyncComponent(() => import('../routerView/parent.vue'));
+const BreadcrumbIndex = defineAsyncComponent(() => import('../navBars/breadcrumb/breadcrumb.vue'));
 
 const layoutMainScrollbarRef = ref();
-const layoutStore = useLayoutStore();
-
-const setMainHeight = computed(() => {
-  return layoutStore.isFixedHeader
-    ? `calc(100% - ${layoutStore.isTagsview ? '92px' : '56px'})`
-    : `calc(100% - ${layoutStore.isTagsview ? '92px' : '56px'})`;
-});
 
 const setBacktopClass = computed(() => {
   const wrapRef = layoutMainScrollbarRef.value?.wrapRef;
@@ -42,16 +37,37 @@ const setBacktopClass = computed(() => {
 
 <style scoped lang="scss">
 .layout-main {
+  --layout-content-space: 12px;
+}
+
+.layout-main {
   padding: 0 !important;
   overflow: hidden;
   width: 100%;
-  height: 100%;
+  min-height: 0;
+  flex: 1;
   background-color: var(--mango-bg-main);
+  display: flex;
+  flex-direction: column;
 }
 
 .layout-main-scroll {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+}
+
+.layout-main-breadcrumb {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--layout-content-space);
+  background: var(--mango-bg-main);
+}
+
+:deep(.router-view-parent.is-root) {
+  padding: 6px var(--layout-content-space) var(--layout-content-space);
 }
 
 .layout-backtop-header-fixed {

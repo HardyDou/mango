@@ -2,7 +2,7 @@
  * System Log API - 系统日志
  */
 
-import { get, post, put, del } from '@mango/common';
+import { get, del } from '@mango/common';
 
 // ==================== 登录日志 ====================
 
@@ -46,15 +46,13 @@ export interface PageResult<T> {
 }
 
 export const loginLogApi = {
-  list: (params?: LoginLogQuery) => {
-    return get<any[]>('/system/log/login/list', { params })
-      .then((list) => toPageResult(filterLoginLogs(list.map(fromBackendLoginLog), params), params));
-  },
+  list: (params?: LoginLogQuery) => get<any>('/system/log/login/list', { params: toBackendPageParams(params) })
+    .then((data) => fromBackendPageResult(data, fromBackendLoginLog, params)),
   detail: (id: number) => {
     return get<any>('/system/log/login/detail', { params: { id } }).then(fromBackendLoginLog);
   },
-  clean: (_days?: number) => {
-    return del<boolean>('/system/log/login/clean');
+  clean: (retentionDays?: number) => {
+    return del<boolean>('/system/log/login/clean', { params: { retentionDays } });
   },
   statistics: (params?: { startTime?: string; endTime?: string }) => {
     return get<any>('/system/log/login/statistics', { params }).then((data) => ({
@@ -76,6 +74,7 @@ export interface SysOperationLog {
   module?: string;
   operation: string;
   requestMethod: string;
+  handlerMethod?: string;
   requestUrl: string;
   requestParams?: string;
   requestBody?: string;
@@ -99,21 +98,20 @@ export interface OperationLogQuery {
 }
 
 export const operationLogApi = {
-  list: (params?: OperationLogQuery) => {
-    return get<any[]>('/system/log/operation/list', { params })
-      .then((list) => toPageResult(filterOperationLogs(list.map(fromBackendOperationLog), params), params));
-  },
+  list: (params?: OperationLogQuery) => get<any>('/system/log/operation/list', { params: toBackendPageParams(params) })
+    .then((data) => fromBackendPageResult(data, fromBackendOperationLog, params)),
   detail: (id: number) => {
     return get<any>('/system/log/operation/detail', { params: { id } }).then(fromBackendOperationLog);
   },
-  clean: (_days?: number) => {
-    return del<boolean>('/system/log/operation/clean');
+  clean: (retentionDays?: number) => {
+    return del<boolean>('/system/log/operation/clean', { params: { retentionDays } });
   },
 };
 
 function fromBackendLoginLog(item: any): SysLoginLog {
   return {
     ...item,
+    loginTime: normalizeDateTime(item.loginTime),
     userAgent: item.userAgent ?? [item.browser, item.os].filter(Boolean).join(' / '),
   };
 }
@@ -121,7 +119,9 @@ function fromBackendLoginLog(item: any): SysLoginLog {
 function fromBackendOperationLog(item: any): SysOperationLog {
   return {
     ...item,
+    operateTime: normalizeDateTime(item.operateTime),
     requestMethod: item.requestMethod ?? item.method,
+    handlerMethod: item.handlerMethod,
     requestUrl: item.requestUrl ?? item.url,
     requestParams: item.requestParams ?? item.params,
     responseResult: item.responseResult ?? item.result,
@@ -129,24 +129,44 @@ function fromBackendOperationLog(item: any): SysOperationLog {
   };
 }
 
-function filterLoginLogs(list: SysLoginLog[], params?: LoginLogQuery): SysLoginLog[] {
-  return list.filter((item) => {
-    const keyword = params?.keyword?.trim().toLowerCase();
-    const matchesKeyword = !keyword || [item.username, item.ip].filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(keyword));
-    const matchesStatus = params?.status === undefined || item.status === params.status;
-    return matchesKeyword && matchesStatus;
-  });
+function normalizeDateTime(value: any): string {
+  if (!value) return '';
+  if (Array.isArray(value)) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = value;
+    return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
+  }
+  return String(value).replace('T', ' ');
 }
 
-function filterOperationLogs(list: SysOperationLog[], params?: OperationLogQuery): SysOperationLog[] {
-  return list.filter((item) => {
-    const keyword = params?.keyword?.trim().toLowerCase();
-    const matchesKeyword = !keyword || [item.username, item.operation, item.requestUrl].filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(keyword));
-    const matchesUsername = !params?.username || item.username?.includes(params.username);
-    return matchesKeyword && matchesUsername;
-  });
+function pad(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function toBackendPageParams(params?: Record<string, any>) {
+  if (!params) return params;
+  const { pageNum, pageSize, ...rest } = params;
+  return {
+    ...rest,
+    page: pageNum,
+    size: pageSize,
+  };
+}
+
+function fromBackendPageResult<T>(
+  data: any,
+  mapper: (item: any) => T,
+  params?: { pageNum?: number; pageSize?: number },
+): PageResult<T> {
+  if (Array.isArray(data)) {
+    return toPageResult(data.map(mapper), params);
+  }
+  const list = Array.isArray(data?.list) ? data.list.map(mapper) : [];
+  return {
+    list,
+    total: Number(data?.total ?? list.length),
+    pageNum: Number(data?.page ?? params?.pageNum ?? 1),
+    pageSize: Number(data?.size ?? params?.pageSize ?? list.length ?? 10),
+  };
 }
 
 function toPageResult<T>(list: T[] = [], params?: { pageNum?: number; pageSize?: number }): PageResult<T> {

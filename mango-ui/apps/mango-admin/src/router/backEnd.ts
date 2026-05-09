@@ -98,12 +98,6 @@ export async function initBackEndControlRoutes(): Promise<void> {
 
     if (import.meta.env.DEV) console.log('[backEnd] Final routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.map(c => c.path) })));
 
-    // 设置用户信息
-    storesUserInfo.setUserInfos({
-      ...storesUserInfo.userInfos,
-      permissions: [],
-    });
-
     // 更新主题配置中的路由权限模式
     preferencesStore.isRequestRoutes = true;
   } catch (error) {

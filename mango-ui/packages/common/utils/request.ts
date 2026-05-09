@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { Session } from './storage';
 
 // 环境变量（当前未使用，预留）
@@ -17,7 +17,8 @@ export interface RequestConfig extends AxiosRequestConfig {
 export interface ResponseResult<T = any> {
   code: number;
   data: T;
-  message: string;
+  message?: string;
+  msg?: string;
   success: boolean;
 }
 
@@ -60,6 +61,20 @@ async function redirectToLogin(): Promise<void> {
   }
 }
 
+async function handleUnauthorized(message?: string): Promise<void> {
+  if (isRedirecting) {
+    return;
+  }
+  isRedirecting = true;
+  Session.clearSession();
+  ElMessage.warning(message || '登录已过期，请重新登录');
+  try {
+    await redirectToLogin();
+  } finally {
+    isRedirecting = false;
+  }
+}
+
 /**
  * 显示 Loading
  */
@@ -97,9 +112,12 @@ function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
  */
 function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
   const userInfo = Session.get('userInfo');
-  const tenantId = userInfo?.tenantId || 'master';
-  config.headers = config.headers || {};
-  config.headers['TENANT-ID'] = tenantId;
+  const tenantId = userInfo?.tenantId;
+  if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
+    config.headers = config.headers || {};
+    config.headers['X-Mango-Tenant-Id'] = String(tenantId);
+    config.headers['TENANT-ID'] = String(tenantId);
+  }
   return config;
 }
 
@@ -134,7 +152,8 @@ service.interceptors.response.use(
   (response: AxiosResponse<ResponseResult>) => {
     hideLoading();
 
-    const { code, message, data, success } = response.data;
+    const { code, data, success } = response.data;
+    const message = response.data.message || response.data.msg;
 
     // 成功
     if (success || code === 200) {
@@ -143,20 +162,7 @@ service.interceptors.response.use(
 
     // token 过期
     if (code === 401) {
-      if (isRedirecting) {
-        return Promise.reject(new Error(message || '登录已过期'));
-      }
-      isRedirecting = true;
-      ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }).then(async () => {
-        Session.clearSession();
-        await redirectToLogin();
-      }).finally(() => {
-        isRedirecting = false;
-      });
+      void handleUnauthorized(message || '登录已过期，请重新登录');
       return Promise.reject(new Error(message || '登录已过期'));
     }
 
@@ -169,9 +175,12 @@ service.interceptors.response.use(
 
     // 处理 HTTP 错误
     const status = error.response?.status;
-    const message = errorCodeMessage[status] || error.message || '网络错误';
+    const responseData = error.response?.data;
+    const message = responseData?.message || responseData?.msg || responseData?.error || errorCodeMessage[status] || error.message || '网络错误';
 
-    if (status === 403) {
+    if (status === 401) {
+      void handleUnauthorized('登录已过期，请重新登录');
+    } else if (status === 403) {
       ElMessage.error('没有权限访问该资源');
     } else if (status === 500) {
       ElMessage.error('服务器错误');

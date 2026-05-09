@@ -737,6 +737,7 @@ const setLocalThemeConfig = () => {
     ...themeStore.$state,
     ...layoutStore.$state,
     ...preferencesStore.$state,
+    isDrawer: false,
   };
   localStorage.setItem('themeConfig', JSON.stringify(combined));
 };

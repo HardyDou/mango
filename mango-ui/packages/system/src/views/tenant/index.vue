@@ -3,12 +3,12 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>租户管理</span>
+          <span>机构管理</span>
           <el-button
             type="primary"
             @click="handleAdd"
           >
-            新增租户
+            新增机构
           </el-button>
         </div>
       </template>
@@ -20,7 +20,7 @@
         <el-form-item label="关键词">
           <el-input
             v-model="query.keyword"
-            placeholder="搜索租户名称/编码"
+            placeholder="搜索机构名称/编码"
             clearable
           />
         </el-form-item>
@@ -31,12 +31,10 @@
             clearable
           >
             <el-option
-              label="启用"
-              :value="1"
-            />
-            <el-option
-              label="禁用"
-              :value="0"
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
             />
           </el-select>
         </el-form-item>
@@ -60,12 +58,48 @@
       >
         <el-table-column
           prop="tenantName"
-          label="租户名称"
+          label="机构名称"
         />
         <el-table-column
           prop="tenantCode"
-          label="租户编码"
+          label="机构编码"
         />
+        <el-table-column
+          prop="institutionType"
+          label="机构类型"
+          width="120"
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="institution_type"
+              :value="row.institutionType"
+              size="small"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="capabilityCodes"
+          label="开通能力"
+          min-width="220"
+        >
+          <template #default="{ row }">
+            <template v-if="row.capabilityCodeList?.length">
+              <DictTag
+                v-for="code in row.capabilityCodeList"
+                :key="code"
+                dict-code="institution_capability"
+                :value="code"
+                size="small"
+              />
+            </template>
+            <span
+              v-else
+              class="empty-text"
+            >
+              未开通
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="contactName"
           label="联系人"
@@ -79,26 +113,16 @@
           label="联系邮箱"
         />
         <el-table-column
-          prop="expireTime"
-          label="过期时间"
-          width="180"
-        >
-          <template #default="{ row }">
-            {{ row.expireTime || '永不过期' }}
-          </template>
-        </el-table-column>
-        <el-table-column
           prop="status"
           label="状态"
           width="80"
         >
           <template #default="{ row }">
-            <el-tag
-              :type="row.status === 1 ? 'success' : 'danger'"
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
               size="small"
-            >
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -150,7 +174,7 @@
 
     <el-dialog
       v-model="dialogVisible"
-      :title="form.id ? '编辑租户' : '新增租户'"
+      :title="form.id ? '编辑机构' : '新增机构'"
       width="600px"
     >
       <el-form
@@ -160,22 +184,44 @@
         label-width="100px"
       >
         <el-form-item
-          label="租户名称"
+          label="机构名称"
           prop="tenantName"
         >
           <el-input
             v-model="form.tenantName"
-            placeholder="请输入租户名称"
+            placeholder="请输入机构名称"
           />
         </el-form-item>
         <el-form-item
-          label="租户编码"
+          label="机构编码"
           prop="tenantCode"
         >
           <el-input
             v-model="form.tenantCode"
-            placeholder="请输入租户编码"
+            placeholder="请输入机构编码"
             :disabled="!!form.id"
+          />
+        </el-form-item>
+        <el-form-item
+          label="机构类型"
+          prop="institutionType"
+        >
+          <DictSelect
+            v-model="form.institutionType"
+            dict-type="institution_type"
+            placeholder="请选择机构类型"
+          />
+        </el-form-item>
+        <el-form-item
+          label="开通能力"
+          prop="capabilityCodeList"
+        >
+          <DictSelect
+            v-model="form.capabilityCodeList"
+            dict-type="institution_capability"
+            placeholder="请选择开通能力"
+            multiple
+            filterable
           />
         </el-form-item>
         <el-form-item
@@ -206,26 +252,16 @@
           />
         </el-form-item>
         <el-form-item
-          label="过期时间"
-          prop="expireTime"
-        >
-          <el-date-picker
-            v-model="form.expireTime"
-            type="datetime"
-            placeholder="不设置则永不过期"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-        <el-form-item
           label="状态"
           prop="status"
         >
           <el-radio-group v-model="form.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -248,8 +284,10 @@
 <script setup lang="ts" name="SystemTenant">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { DictSelect, DictTag, Pagination, useDict } from '@mango/common';
 import { tenantApi, type SysTenant } from '../../api/tenant';
+
+const { options: statusOptions } = useDict('sys_normal_disable');
 
 const loading = ref(false);
 const tableData = ref<SysTenant[]>([]);
@@ -267,16 +305,18 @@ const form = reactive<SysTenant>({
   id: undefined,
   tenantName: '',
   tenantCode: '',
+  institutionType: 'ENTERPRISE',
+  capabilityCodeList: ['SYSTEM_ADMIN', 'AUTH_ADMIN', 'ORG_ADMIN', 'WORKFLOW'],
   contactName: '',
   contactPhone: '',
   contactEmail: '',
-  expireTime: '',
   status: 1,
 });
 
 const rules: FormRules = {
-  tenantName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
-  tenantCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
+  tenantName: [{ required: true, message: '请输入机构名称', trigger: 'blur' }],
+  tenantCode: [{ required: true, message: '请输入机构编码', trigger: 'blur' }],
+  institutionType: [{ required: true, message: '请选择机构类型', trigger: 'change' }],
 };
 
 async function loadData() {
@@ -308,16 +348,21 @@ function handleAdd() {
   form.id = undefined;
   form.tenantName = '';
   form.tenantCode = '';
+  form.institutionType = 'ENTERPRISE';
+  form.capabilityCodeList = ['SYSTEM_ADMIN', 'AUTH_ADMIN', 'ORG_ADMIN', 'WORKFLOW'];
   form.contactName = '';
   form.contactPhone = '';
   form.contactEmail = '';
-  form.expireTime = '';
   form.status = 1;
   dialogVisible.value = true;
 }
 
 function handleEdit(row: SysTenant) {
-  Object.assign(form, row);
+  Object.assign(form, {
+    ...row,
+    capabilityCodeList: row.capabilityCodeList
+      ?? (row.capabilityCodes ? row.capabilityCodes.split(',').filter(Boolean) : []),
+  });
   dialogVisible.value = true;
 }
 
@@ -352,7 +397,7 @@ async function handleToggleStatus(row: SysTenant) {
 }
 
 function handleDelete(row: SysTenant) {
-  ElMessageBox.confirm('确认删除该租户?', '提示', {
+  ElMessageBox.confirm('确认删除该机构?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
@@ -374,7 +419,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .tenant-container {
-  padding: 20px;
+  padding: 0;
 }
 .card-header {
   display: flex;
@@ -386,5 +431,8 @@ onMounted(() => {
   :deep(.el-form-item) {
     margin-bottom: 0;
   }
+}
+.empty-text {
+  color: var(--el-text-color-placeholder);
 }
 </style>

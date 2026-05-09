@@ -52,6 +52,12 @@ export interface UserInfosState {
     permissions: string[];
     authBtnList: string[];
     tenantId: string;
+    tenantCode?: string;
     tenantName: string;
+    realm: string;
+    actorType: string;
+    partyType: string;
+    partyId: string | number;
+    appCode: string;
   };
 }

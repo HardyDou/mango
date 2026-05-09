@@ -1,7 +1,7 @@
 /**
  * Dictionary Management API - 字典管理
  *
- * Backend API prefix: /dict
+ * Backend API prefix: /system/dict
  * Response: {code, msg, data, success}
  */
 

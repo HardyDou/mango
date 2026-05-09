@@ -223,6 +223,16 @@ export class MenuLoader {
   }
 
   /**
+   * 重置后端菜单缓存。
+   * 登录用户、租户或应用上下文变化时必须重新加载后端菜单，避免沿用上一身份的导航权限。
+   */
+  resetBackendCache(): void {
+    this.backendMenuItems = [];
+    this.mergedMenuItems = [];
+    this.backendMode = false;
+  }
+
+  /**
    * 获取前端菜单配置（不含后端）
    */
   getFrontendMenuItems(): MenuItem[] {

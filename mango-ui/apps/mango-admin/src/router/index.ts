@@ -7,6 +7,7 @@ import { usePreferencesStore } from '@/stores/preferences';
 import { useRoutesList } from '@/stores/routesList';
 import { staticRoutes } from './route';
 import { initBackEndControlRoutes } from './backEnd';
+import { menuLoader } from '@/config/menuLoader';
 
 const router = createRouter({
   // 使用 hash 模式
@@ -21,6 +22,7 @@ const isRoutesInitialized = ref(false);
 let initPromise: Promise<void> | null = null;
 // 标记当前导航是否已经等待过路由初始化
 let isNavigatingAfterInit = false;
+let initializedContextKey = '';
 
 /**
  * 路由守卫：初始化路由
@@ -68,6 +70,30 @@ async function doInitRoutes(): Promise<void> {
   }
 }
 
+function routeContextKey(userInfo: any): string {
+  return [
+    userInfo?.userId ?? '',
+    userInfo?.tenantId ?? '',
+    userInfo?.appCode ?? '',
+    userInfo?.realm ?? '',
+    userInfo?.actorType ?? '',
+    userInfo?.partyType ?? '',
+    userInfo?.partyId ?? '',
+  ].join('|');
+}
+
+function resetRoutesForContextChange(nextContextKey: string): void {
+  if (!initializedContextKey || initializedContextKey === nextContextKey) {
+    return;
+  }
+  isRoutesInitialized.value = false;
+  initPromise = null;
+  isNavigatingAfterInit = false;
+  initializedContextKey = '';
+  menuLoader.resetBackendCache();
+  useRoutesList().resetRoutesList();
+}
+
 /**
  * 全局前置守卫
  */
@@ -97,11 +123,14 @@ router.beforeEach(async (to, from, next) => {
     const userInfo = Session.get('userInfo');
     if (userInfo) {
       storesUserInfo.setUserInfos(userInfo);
+      const currentContextKey = routeContextKey(storesUserInfo.userInfos);
+      resetRoutesForContextChange(currentContextKey);
 
       // 确保路由已初始化（使用 promise lock 防止竞态条件）
       if (!isRoutesInitialized.value && !isNavigatingAfterInit) {
         isNavigatingAfterInit = true;
         await initRoutes();
+        initializedContextKey = currentContextKey;
         isNavigatingAfterInit = false;
         // 重新触发当前导航，让路由有机会匹配新加载的动态路由
         next(to.fullPath);

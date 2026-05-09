@@ -19,11 +19,10 @@ function paginate<T>(list: T[], pageNum: number, pageSize: number) {
 
 // ==================== 租户 Mock ====================
 let mockTenants: SysTenant[] = [
-  { id: 1, tenantName: '默认租户', tenantCode: 'default', contactName: '张三', contactPhone: '13800138000', contactEmail: 'zhangsan@example.com', expireTime: '2025-12-31', status: 1, createTime: '2024-01-01 10:00:00' },
-  { id: 2, tenantName: '测试租户', tenantCode: 'test', contactName: '李四', contactPhone: '13800138001', contactEmail: 'lisi@example.com', expireTime: '2024-06-30', status: 1, createTime: '2024-01-15 10:00:00' },
-  { id: 3, tenantName: '正式租户A', tenantCode: 'tenant_a', contactName: '王五', contactPhone: '13800138002', contactEmail: 'wangwu@example.com', expireTime: '2025-06-30', status: 1, createTime: '2024-02-01 10:00:00' },
-  { id: 4, tenantName: '演示租户', tenantCode: 'demo', contactName: '赵六', contactPhone: '13800138003', contactEmail: 'zhaoliu@example.com', expireTime: '2024-03-01', status: 0, createTime: '2024-02-15 10:00:00' },
-  { id: 5, tenantName: '内部租户', tenantCode: 'internal', contactName: '钱七', contactPhone: '13800138004', contactEmail: 'qianqi@example.com', expireTime: '2025-12-31', status: 1, createTime: '2024-03-01 10:00:00' },
+  { id: 1, tenantName: '芒果集团', tenantCode: 'default', contactName: '平台管理员', contactPhone: '13800000000', contactEmail: 'admin@mango.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-01 10:00:00' },
+  { id: 2, tenantName: 'A公司', tenantCode: 'company_a', contactName: 'A公司管理员', contactPhone: '13800000001', contactEmail: 'admin@company-a.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-02 10:00:00' },
+  { id: 3, tenantName: 'B公司', tenantCode: 'company_b', contactName: 'B公司管理员', contactPhone: '13800000002', contactEmail: 'admin@company-b.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-03 10:00:00' },
+  { id: 4, tenantName: 'C公司', tenantCode: 'company_c', contactName: 'C公司管理员', contactPhone: '13800000003', contactEmail: 'admin@company-c.com', expireTime: '2026-12-31', status: 1, createTime: '2026-01-04 10:00:00' },
 ];
 let tenantIdCounter = Math.max(...mockTenants.map(t => t.id || 0)) + 1;
 

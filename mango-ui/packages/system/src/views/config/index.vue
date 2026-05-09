@@ -7,7 +7,10 @@
         </div>
       </template>
 
-      <el-tabs v-model="activeTab">
+      <el-tabs
+        v-model="activeTab"
+        @tab-change="handleTabChange"
+      >
         <!-- 系统参数 Tab -->
         <el-tab-pane label="系统参数" name="param">
           <div class="tab-toolbar">
@@ -31,21 +34,19 @@
               />
             </el-form-item>
             <el-form-item label="类型">
-              <el-select
-                v-model="paramQuery.paramType"
-                placeholder="请选择"
-                clearable
-              >
-                <el-option
-                  label="系统参数"
-                  :value="1"
-                />
-                <el-option
-                  label="应用参数"
-                  :value="2"
-                />
-              </el-select>
-            </el-form-item>
+          <el-select
+            v-model="paramQuery.paramType"
+            placeholder="请选择"
+            clearable
+          >
+            <el-option
+              v-for="item in paramTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="Number(item.value)"
+            />
+          </el-select>
+        </el-form-item>
             <el-form-item>
               <el-button
                 type="primary"
@@ -76,17 +77,17 @@
             <el-table-column
               prop="paramType"
               label="类型"
-              width="100"
-            >
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.paramType === 1 ? 'primary' : 'success'"
-                  size="small"
-                >
-                  {{ row.paramType === 1 ? '系统参数' : '应用参数' }}
-                </el-tag>
-              </template>
-            </el-table-column>
+          width="100"
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="system_param_type"
+              :value="row.paramType"
+              :type="row.paramType === 1 ? 'primary' : 'success'"
+              size="small"
+            />
+          </template>
+        </el-table-column>
             <el-table-column
               prop="description"
               label="描述"
@@ -96,16 +97,15 @@
               prop="status"
               label="状态"
               width="80"
-            >
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.status === 1 ? 'success' : 'danger'"
-                  size="small"
-                >
-                  {{ row.status === 1 ? '启用' : '禁用' }}
-                </el-tag>
-              </template>
-            </el-table-column>
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
+              size="small"
+            />
+          </template>
+        </el-table-column>
             <el-table-column
               prop="createTime"
               label="创建时间"
@@ -161,33 +161,19 @@
               />
             </el-form-item>
             <el-form-item label="分组">
-              <el-select
-                v-model="configQuery.configGroup"
-                placeholder="请选择"
-                clearable
-              >
-                <el-option
-                  label="系统"
-                  value="system"
-                />
-                <el-option
-                  label="安全"
-                  value="security"
-                />
-                <el-option
-                  label="上传"
-                  value="upload"
-                />
-                <el-option
-                  label="邮件"
-                  value="email"
-                />
-                <el-option
-                  label="短信"
-                  value="sms"
-                />
-              </el-select>
-            </el-form-item>
+          <el-select
+            v-model="configQuery.configGroup"
+            placeholder="请选择"
+            clearable
+          >
+            <el-option
+              v-for="item in configTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
             <el-form-item>
               <el-button
                 type="primary"
@@ -218,14 +204,16 @@
             <el-table-column
               prop="configGroup"
               label="分组"
-              width="100"
-            >
-              <template #default="{ row }">
-                <el-tag size="small">
-                  {{ row.configGroup }}
-                </el-tag>
-              </template>
-            </el-table-column>
+          width="100"
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="system_config_type"
+              :value="row.configGroup"
+              size="small"
+            />
+          </template>
+        </el-table-column>
             <el-table-column
               prop="description"
               label="描述"
@@ -235,16 +223,15 @@
               prop="status"
               label="状态"
               width="80"
-            >
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.status === 1 ? 'success' : 'danger'"
-                  size="small"
-                >
-                  {{ row.status === 1 ? '启用' : '禁用' }}
-                </el-tag>
-              </template>
-            </el-table-column>
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
+              size="small"
+            />
+          </template>
+        </el-table-column>
             <el-table-column
               prop="createTime"
               label="创建时间"
@@ -316,11 +303,12 @@
           prop="paramType"
         >
           <el-radio-group v-model="paramForm.paramType">
-            <el-radio :label="1">
-              系统参数
-            </el-radio>
-            <el-radio :label="2">
-              应用参数
+            <el-radio
+              v-for="item in paramTypeOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -339,11 +327,12 @@
           prop="status"
         >
           <el-radio-group v-model="paramForm.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -402,24 +391,10 @@
             placeholder="请选择"
           >
             <el-option
-              label="系统"
-              value="system"
-            />
-            <el-option
-              label="安全"
-              value="security"
-            />
-            <el-option
-              label="上传"
-              value="upload"
-            />
-            <el-option
-              label="邮件"
-              value="email"
-            />
-            <el-option
-              label="短信"
-              value="sms"
+              v-for="item in configTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
             />
           </el-select>
         </el-form-item>
@@ -438,11 +413,12 @@
           prop="status"
         >
           <el-radio-group v-model="configForm.status">
-            <el-radio :label="1">
-              启用
-            </el-radio>
-            <el-radio :label="0">
-              禁用
+            <el-radio
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="Number(item.value)"
+            >
+              {{ item.label }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
@@ -465,8 +441,13 @@
 <script setup lang="ts" name="SystemConfig">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { DictTag, useDict } from '@mango/common';
 import { paramApi, type SysParam } from '../../api/param';
 import { configApi, type SysConfig } from '../../api/config';
+
+const { options: statusOptions } = useDict('sys_normal_disable');
+const { options: paramTypeOptions } = useDict('system_param_type');
+const { options: configTypeOptions } = useDict('system_config_type');
 
 const activeTab = ref('param');
 
@@ -534,6 +515,11 @@ async function handleSubmitParam() {
   if (!paramFormRef.value) return;
   try {
     await paramFormRef.value.validate();
+    if (paramForm.id) {
+      await paramApi.update(paramForm);
+    } else {
+      await paramApi.create(paramForm);
+    }
     ElMessage.success(paramForm.id ? '修改成功' : '新增成功');
     paramDialogVisible.value = false;
     loadParamData();
@@ -548,6 +534,8 @@ function handleDeleteParam(row: SysParam) {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(async () => {
+    if (!row.id) return;
+    await paramApi.delete(row.id);
     ElMessage.success('删除成功');
     loadParamData();
   }).catch(() => {});
@@ -570,6 +558,7 @@ const configForm = reactive<SysConfig>({
   description: '',
   status: 1,
 });
+const configLoaded = ref(false);
 const configRules: FormRules = {
   configKey: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
   configValue: [{ required: true, message: '请输入配置值', trigger: 'blur' }],
@@ -581,6 +570,7 @@ async function loadConfigData() {
   try {
     const data = await configApi.list(configQuery);
     configTableData.value = data.list || [];
+    configLoaded.value = true;
   } catch (error) {
     console.error('加载配置数据失败:', error);
   } finally {
@@ -617,6 +607,11 @@ async function handleSubmitConfig() {
   if (!configFormRef.value) return;
   try {
     await configFormRef.value.validate();
+    if (configForm.id) {
+      await configApi.update(configForm);
+    } else {
+      await configApi.create(configForm);
+    }
     ElMessage.success(configForm.id ? '修改成功' : '新增成功');
     configDialogVisible.value = false;
     loadConfigData();
@@ -631,9 +626,17 @@ function handleDeleteConfig(row: SysConfig) {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(async () => {
+    if (!row.id) return;
+    await configApi.delete(row.id);
     ElMessage.success('删除成功');
     loadConfigData();
   }).catch(() => {});
+}
+
+function handleTabChange(name: string | number) {
+  if (name === 'config' && !configLoaded.value) {
+    loadConfigData();
+  }
 }
 
 onMounted(() => {
@@ -643,7 +646,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .config-container {
-  padding: 20px;
+  padding: 0;
 }
 .card-header {
   display: flex;

@@ -37,8 +37,8 @@ export interface MenuMeta {
  * 菜单VO
  */
 export interface SysMenuVO {
-  menuId: number;
-  parentId: number;
+  menuId: string | number;
+  parentId: string | number;
   menuType: MenuTypeEnum;
   menuName: string;
   menuCode: string;
@@ -74,7 +74,49 @@ export interface MenuQuery {
 }
 
 export interface MenuDetailQuery {
-  menuId: number;
+  menuId: string | number;
+}
+
+type MenuPayload = Pick<
+  SysMenuVO,
+  | 'menuId'
+  | 'parentId'
+  | 'menuType'
+  | 'menuName'
+  | 'menuCode'
+  | 'path'
+  | 'icon'
+  | 'sort'
+  | 'status'
+  | 'visible'
+  | 'keepAlive'
+  | 'embedded'
+  | 'redirect'
+  | 'permissions'
+  | 'component'
+> & {
+  appCode?: string;
+};
+
+function toBackendPayload(data: Partial<SysMenuVO> & { appCode?: string }): Partial<MenuPayload> {
+  return {
+    menuId: data.menuId,
+    appCode: data.appCode,
+    parentId: data.parentId ?? 0,
+    menuType: data.menuType,
+    menuName: data.menuName,
+    menuCode: data.menuCode,
+    path: data.path,
+    icon: data.icon,
+    sort: data.sort ?? 0,
+    status: data.status ?? 1,
+    visible: data.visible ?? 1,
+    keepAlive: data.keepAlive ?? 0,
+    embedded: data.embedded ?? 0,
+    redirect: data.redirect,
+    permissions: data.permissions,
+    component: data.component,
+  };
 }
 
 /**
@@ -112,24 +154,24 @@ export const menuApi = {
   /**
    * 查询菜单详情
    */
-  getMenuDetail: (menuId: number) =>
+  getMenuDetail: (menuId: string | number) =>
     get<SysMenuVO>('/authorization/menus/detail', { params: { menuId } }),
 
   /**
    * 新增菜单
    */
   createMenu: (data: Partial<SysMenuVO>) =>
-    post('/authorization/menus', data),
+    post('/authorization/menus', toBackendPayload(data)),
 
   /**
    * 修改菜单
    */
   updateMenu: (data: Partial<SysMenuVO>) =>
-    put('/authorization/menus', data),
+    put('/authorization/menus', toBackendPayload(data)),
 
   /**
    * 删除菜单
    */
-  deleteMenu: (menuId: number) =>
+  deleteMenu: (menuId: string | number) =>
     del('/authorization/menus', { params: { menuId } }),
 };
