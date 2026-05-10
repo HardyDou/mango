@@ -16,7 +16,7 @@ public class UpdateTenantStatusCommand implements Serializable {
     @NotNull(message = "机构ID不能为空")
     private Long id;
 
-    @Schema(description = "机构状态：0-禁用，1-启用")
+    @Schema(description = "机构生命周期状态。字典 institution_status：0-禁用，1-启用，2-冻结，9-归档")
     @NotNull(message = "机构状态不能为空")
     private Integer status;
 }

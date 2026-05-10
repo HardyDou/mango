@@ -252,13 +252,34 @@ public final class Require {
         failWhen(value < min || value > max, DEFAULT_BIZ_CODE, message);
     }
 
+    // ==================== Failure ====================
+
+    /**
+     * 直接抛出业务异常。
+     *
+     * @param bizCode 失败错误码。
+     */
+    public static <T> T fail(BizCode bizCode) {
+        return fail(bizCode.getCode(), bizCode.getMessage());
+    }
+
+    /**
+     * 直接抛出业务异常。
+     *
+     * @param code 失败错误码。
+     * @param message 失败消息。
+     */
+    public static <T> T fail(int code, String message) {
+        throw new BizException(code, message);
+    }
+
     private static void failWhen(boolean invalid, BizCode bizCode, String message) {
         failWhen(invalid, bizCode.getCode(), message);
     }
 
     private static void failWhen(boolean invalid, int code, String message) {
         if (invalid) {
-            throw new BizException(code, message);
+            fail(code, message);
         }
     }
 }

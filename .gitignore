@@ -92,6 +92,9 @@ temp/
 !**/config/ip-location/README.md
 .playwright-cli/
 
+# ============ Runtime Upload Data ============
+**/data/files/
+
 # ============ Large SQL Data (China Area Division) ============
 **/mango-area/sql/*.sql
 !**/mango-area/sql/README.md

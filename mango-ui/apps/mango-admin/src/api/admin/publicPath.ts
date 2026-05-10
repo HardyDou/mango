@@ -42,12 +42,12 @@ export function addPublicPath(data: Partial<PublicPath>) {
  * Update a public path
  */
 export function updatePublicPath(id: number, data: Partial<PublicPath>) {
-  return request.put(`/bff/permission/public-path/${id}`, data);
+  return request.put('/bff/permission/public-path', data, { params: { id } });
 }
 
 /**
  * Delete a public path
  */
 export function deletePublicPath(id: number) {
-  return request.delete(`/bff/permission/public-path/${id}`);
+  return request.delete('/bff/permission/public-path', { params: { id } });
 }

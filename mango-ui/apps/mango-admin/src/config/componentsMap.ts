@@ -22,6 +22,9 @@ export const componentsMap: Record<string, any> = {
   'system/route/index': () => import('@mango/system').then(m => m.RouteView),
   'system/public-path/index': () => import('@mango/system').then(m => m.PublicPathView),
   'system/area/index': () => import('@mango/system').then(m => m.AreaView),
+  'system/file/index': () => import('@mango/system').then(m => m.FileView),
+  'system/file-storage/index': () => import('@mango/system').then(m => m.FileStorageView),
+  'system/workflow-definition/index': () => import('@mango/system').then(m => m.WorkflowDefinitionView),
   'views/system/dict/index': () => import('@mango/system').then(m => m.DictView),
   'views/system/operation-log/index': () => import('@mango/system').then(m => m.OperationLogView),
   'views/system/login-log/index': () => import('@mango/system').then(m => m.LoginLogView),
@@ -30,4 +33,7 @@ export const componentsMap: Record<string, any> = {
   'views/system/route/index': () => import('@mango/system').then(m => m.RouteView),
   'views/system/public-path/index': () => import('@mango/system').then(m => m.PublicPathView),
   'views/system/area/index': () => import('@mango/system').then(m => m.AreaView),
+  'views/system/file/index': () => import('@mango/system').then(m => m.FileView),
+  'views/system/file-storage/index': () => import('@mango/system').then(m => m.FileStorageView),
+  'views/system/workflow-definition/index': () => import('@mango/system').then(m => m.WorkflowDefinitionView),
 };

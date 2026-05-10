@@ -15,6 +15,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -37,7 +38,8 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         AccessResult result = accessService.check(
                 request.getMethod().name(),
                 path,
-                request.getHeaders().getFirst(AccessConstants.TOKEN_HEADER));
+                request.getHeaders().getFirst(AccessConstants.TOKEN_HEADER),
+                resolveRemoteAddress(request));
 
         if (result.status() == AccessResult.Status.FORBIDDEN) {
             return forbidden(exchange, result.message());
@@ -71,6 +73,13 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         put(builder, MangoContextHeaders.PARTY_ID, principal.partyId());
         put(builder, MangoContextHeaders.APP_CODE, principal.appCode());
         return builder.build();
+    }
+
+    private String resolveRemoteAddress(ServerHttpRequest request) {
+        InetSocketAddress remoteAddress = request.getRemoteAddress();
+        return remoteAddress == null || remoteAddress.getAddress() == null
+                ? null
+                : remoteAddress.getAddress().getHostAddress();
     }
 
     private void put(ServerHttpRequest.Builder builder, String name, Object value) {

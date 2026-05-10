@@ -68,12 +68,12 @@ public class NotificationController {
                 query.getUnreadOnly()));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:query")
     @Operation(summary = "获取消息通知详情", description = "权限接口。按消息ID查询消息通知详情")
     public R<SysNotificationVO> get(
             @Parameter(description = "消息ID")
-            @PathVariable Long id) {
+            @RequestParam Long id) {
         SysNotificationVO message = notificationService.get(id);
         return message == null ? R.fail(404, "消息不存在") : R.ok(message);
     }
@@ -94,15 +94,6 @@ public class NotificationController {
         return notificationService.markRead(id);
     }
 
-    @PostMapping("/{id}/read")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:edit")
-    @Operation(summary = "标记路径消息已读", description = "权限接口。按路径中的消息ID标记消息为已读")
-    public R<Boolean> markReadByPath(
-            @Parameter(description = "消息ID")
-            @PathVariable Long id) {
-        return notificationService.markRead(id);
-    }
-
     @PostMapping("/read/batch")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:edit")
     @Operation(summary = "批量标记消息已读", description = "权限接口。按消息ID集合批量标记消息为已读")
@@ -110,12 +101,12 @@ public class NotificationController {
         return R.ok(notificationService.markReadBatch(command.getIds()));
     }
 
-    @PostMapping("/{id}/delete")
+    @PostMapping("/delete")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:delete")
     @Operation(summary = "删除消息通知", description = "权限接口。按消息ID删除消息通知")
     public R<Boolean> delete(
             @Parameter(description = "消息ID")
-            @PathVariable Long id) {
+            @RequestParam Long id) {
         return R.ok(notificationService.delete(id));
     }
 

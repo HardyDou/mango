@@ -71,7 +71,7 @@ export const dictTypeApi = {
    * 获取字典类型详情
    */
   detail: (id: number) => {
-    return get<DictType>(`/system/dict/type/${id}`);
+    return get<DictType>('/system/dict/type/detail', { params: { id } });
   },
 
   /**
@@ -92,7 +92,7 @@ export const dictTypeApi = {
    * 删除字典类型
    */
   delete: (id: number) => {
-    return del<void>(`/system/dict/type/${id}`);
+    return del<void>('/system/dict/type', { params: { id } });
   },
 };
 
@@ -110,7 +110,7 @@ export const dictDataApi = {
    * 获取字典数据详情
    */
   detail: (id: number) => {
-    return get<DictData>(`/system/dict/data/${id}`);
+    return get<DictData>('/system/dict/data/detail', { params: { id } });
   },
 
   /**
@@ -131,7 +131,7 @@ export const dictDataApi = {
    * 删除字典数据
    */
   delete: (id: number) => {
-    return del<void>(`/system/dict/data/${id}`);
+    return del<void>('/system/dict/data', { params: { id } });
   },
 
   /**

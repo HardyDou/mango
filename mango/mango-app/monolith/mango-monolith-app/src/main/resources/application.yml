@@ -54,12 +54,57 @@ mango:
         - /favicon.ico
         - /v3/api-docs
         - /v3/api-docs/**
+  access:
+    ip-whitelist:
+      enabled: true
+      rules:
+        - path-pattern: /actuator/health
+          methods:
+            - GET
+          cidrs:
+            - 127.0.0.1/32
+            - ::1/128
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+        - path-pattern: /actuator/info
+          methods:
+            - GET
+          cidrs:
+            - 127.0.0.1/32
+            - ::1/128
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
   crypto:
     sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
     sm4-iv:
   kv:
     store:
       type: memory
+  persistence:
+    flyway:
+      modules:
+        system:
+          enabled: true
+        authorization:
+          enabled: true
+        identity:
+          enabled: true
+        org:
+          enabled: true
+        captcha:
+          enabled: true
+        file:
+          enabled: true
+        workflow:
+          enabled: true
+        kv:
+          enabled: true
+        notification:
+          enabled: true
+        guarantee:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region
@@ -74,6 +119,14 @@ mango:
       content-cache-enabled: false
   captcha:
     required-paths: []
+  file:
+    enabled: true
+    storage-type: LOCAL
+    default-bucket: local
+    local:
+      root-path: ./data/files
+  workflow:
+    enabled: true
   authorization:
     resource-sync:
       resources:
@@ -117,6 +170,15 @@ mango:
       include-default-group: false
       include-scope-tags: false
 
+flowable:
+  database-schema-update: false
+  async-executor-activate: false
+  db-identity-used: false
+  idm:
+    enabled: false
+  eventregistry:
+    enabled: false
+
 # Actuator
 management:
   endpoints:
@@ -154,6 +216,8 @@ springdoc:
         url: /v3/api-docs/mango-system
       - name: mango-biz-notification
         url: /v3/api-docs/mango-biz-notification
+      - name: mango-file
+        url: /v3/api-docs/mango-file
       - name: mango-guarantee
         url: /v3/api-docs/mango-guarantee
       - name: mango-infra-realtime

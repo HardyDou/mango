@@ -349,6 +349,10 @@ const formData = ref<Record<string, any>>({});
 // 表单验证规则
 const formRules = reactive<FormRules>({});
 
+function isSameValue(left: any, right: any) {
+  return JSON.stringify(left ?? {}) === JSON.stringify(right ?? {});
+}
+
 // 计算标签宽度
 const computedLabelWidth = computed(() => {
   if (!props.config.labelWidth) {
@@ -429,18 +433,34 @@ function getFieldRules(field: FormField): any[] {
 watch(
   () => props.modelValue,
   (newVal) => {
-    if (newVal) {
-      formData.value = { ...formData.value, ...newVal };
+    if (!newVal) {
+      return;
+    }
+    const nextValue = { ...formData.value, ...newVal };
+    if (!isSameValue(formData.value, nextValue)) {
+      formData.value = nextValue;
     }
   },
   { deep: true, immediate: true }
+);
+
+// 表单配置变化时重建默认数据和验证规则，支撑动态表单设计器实时预览。
+watch(
+  () => props.config,
+  () => {
+    initFormData();
+    initFormRules();
+  },
+  { deep: true }
 );
 
 // 监听表单数据变化，同步到外部
 watch(
   formData,
   (newVal) => {
-    emit('update:modelValue', newVal);
+    if (!isSameValue(props.modelValue, newVal)) {
+      emit('update:modelValue', { ...newVal });
+    }
   },
   { deep: true }
 );

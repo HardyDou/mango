@@ -29,7 +29,7 @@ public class SysTenantPo {
     @Size(max = 500, message = "机构能力编码最多500个字符")
     private String capabilityCodes;
 
-    @Schema(description = "状态：0-禁用，1-启用")
+    @Schema(description = "机构生命周期状态。字典 institution_status：0-禁用，1-启用，2-冻结，9-归档")
     @NotNull(message = "status不能为空")
     private Integer status;
 

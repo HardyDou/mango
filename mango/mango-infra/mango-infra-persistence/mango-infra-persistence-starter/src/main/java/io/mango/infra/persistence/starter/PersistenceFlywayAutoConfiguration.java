@@ -1,19 +1,18 @@
 package io.mango.infra.persistence.starter;
 
 import org.flywaydb.core.Flyway;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -72,43 +70,43 @@ public class PersistenceFlywayAutoConfiguration {
     }
 
     @Bean
-    @Order(0)
     @ConditionalOnMissingBean(name = "persistenceFlywayMigrationInitializer")
-    public ApplicationRunner persistenceFlywayMigrationInitializer(@Autowired DataSource dataSource,
-                                                                   @Autowired PersistenceFlywayProperties properties) {
-        if (!properties.isEnabled()) {
-            return (args) -> {
-            };
-        }
-        return (args) -> {
-            for (ModuleMigration module : resolveModuleMigrations(properties)) {
-                Flyway.configure()
-                        .dataSource(dataSource)
-                        .locations(module.location())
-                        .table(HISTORY_TABLE_PREFIX + sanitizeModuleName(module.name()))
-                        .baselineOnMigrate(true)
-                        .baselineVersion("0")
-                        .validateOnMigrate(true)
-                        .outOfOrder(false)
-                        .load()
-                        .migrate();
+    public FlywayMigrationInitializer persistenceFlywayMigrationInitializer(@Autowired Flyway flyway,
+                                                                           @Autowired DataSource dataSource,
+                                                                           @Autowired PersistenceFlywayProperties properties) {
+        return new FlywayMigrationInitializer(flyway, ignored -> {
+            if (!properties.isEnabled()) {
+                return;
             }
-        };
+            try {
+                for (ModuleMigration module : resolveModuleMigrations(properties)) {
+                    Flyway.configure()
+                            .dataSource(dataSource)
+                            .locations(module.location())
+                            .table(HISTORY_TABLE_PREFIX + sanitizeModuleName(module.name()))
+                            .baselineOnMigrate(true)
+                            .baselineVersion("0")
+                            .validateOnMigrate(true)
+                            .outOfOrder(false)
+                            .load()
+                            .migrate();
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("Mango Flyway module migration failed", e);
+            }
+        });
     }
 
     private List<ModuleMigration> resolveModuleMigrations(PersistenceFlywayProperties properties) throws Exception {
         if (!properties.getModules().isEmpty()) {
             List<ModuleMigration> migrations = new ArrayList<>();
-            properties.getModules().entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> {
-                        PersistenceFlywayProperties.ModuleConfig config = entry.getValue();
-                        if (config == null || config.isEnabled()) {
-                            migrations.add(new ModuleMigration(
-                                    entry.getKey(),
-                                    MIGRATION_LOCATION_PREFIX + entry.getKey()));
-                        }
-                    });
+            properties.getModules().forEach((module, config) -> {
+                if (config == null || config.isEnabled()) {
+                    migrations.add(new ModuleMigration(
+                            module,
+                            MIGRATION_LOCATION_PREFIX + module));
+                }
+            });
             return migrations;
         }
 

@@ -33,6 +33,7 @@
         <knife4j.version>4.5.0</knife4j.version>
         <swagger-annotations.version>2.2.30</swagger-annotations.version>
         <ip2region.version>2.7.0</ip2region.version>
+        <flowable.version>7.0.0</flowable.version>
     </properties>
 
     <modules>
@@ -241,6 +242,36 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
+                <artifactId>mango-file-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-workflow-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-workflow-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-workflow-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
                 <artifactId>mango-guarantee-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -393,6 +424,16 @@
                 <version>8.5.7</version>
             </dependency>
             <dependency>
+                <groupId>com.qcloud</groupId>
+                <artifactId>cos_api</artifactId>
+                <version>5.6.269</version>
+            </dependency>
+            <dependency>
+                <groupId>com.qiniu</groupId>
+                <artifactId>qiniu-java-sdk</artifactId>
+                <version>7.19.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.xuxueli</groupId>
                 <artifactId>xxl-job-core</artifactId>
                 <version>2.4.0</version>
@@ -482,6 +523,11 @@
                 <groupId>org.lionsoul</groupId>
                 <artifactId>ip2region</artifactId>
                 <version>${ip2region.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flowable</groupId>
+                <artifactId>flowable-spring-boot-starter-process</artifactId>
+                <version>${flowable.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -2,6 +2,8 @@ package io.mango.auth.starter.config;
 
 import io.mango.auth.core.constant.AuthConstant;
 import io.mango.auth.core.service.TokenRevocationService;
+import io.mango.access.core.auth.IpWhitelistMatcher;
+import io.mango.access.core.config.AccessProperties;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.SecurityPrincipal;
@@ -44,12 +46,14 @@ import java.io.IOException;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(AuthSecurityProperties.class)
+@EnableConfigurationProperties({AuthSecurityProperties.class, AccessProperties.class})
 public class AuthSecurityConfig {
 
     private final ITokenProvider tokenService;
     private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
     private final AuthSecurityProperties properties;
+    private final AccessProperties accessProperties;
+    private final IpWhitelistMatcher ipWhitelistMatcher = new IpWhitelistMatcher();
 
     @Bean
     @ConditionalOnProperty(name = "mango.access.auth-enabled", havingValue = "true", matchIfMissing = true)
@@ -77,6 +81,7 @@ public class AuthSecurityConfig {
                     if (permitPathMatchers.length > 0) {
                         authorize.requestMatchers(permitPathMatchers).permitAll();
                     }
+                    authorize.requestMatchers(this::matchesIpWhitelist).permitAll();
                     if (apiResourceAuthorizationManager == null) {
                         authorize.anyRequest().authenticated();
                     } else {
@@ -98,6 +103,14 @@ public class AuthSecurityConfig {
                 .map(String::trim)
                 .map(AntPathRequestMatcher::new)
                 .toArray(RequestMatcher[]::new);
+    }
+
+    private boolean matchesIpWhitelist(HttpServletRequest request) {
+        return ipWhitelistMatcher.matches(
+                accessProperties == null ? null : accessProperties.getIpWhitelist(),
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getRemoteAddr());
     }
 
     @Slf4j

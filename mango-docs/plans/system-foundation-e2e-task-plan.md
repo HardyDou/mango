@@ -32,6 +32,107 @@
 | T16 | IP 地理位置库基础能力 | 已完成 | 新增独立 IP 归属地解析基础模块；登录日志、操作日志消费统一解析能力；解析失败不影响主流程 | 登录日志、操作日志展示 IP 归属地；页面刷新和详情展示一致 |
 | T17 | 日期范围查询参数契约修复 | 待处理 | 所有列表查询的 `startTime/endTime` 参数支持前端日期选择器常见输入；后端不再因 `2026-05-07` 绑定到 `LocalDateTime` 失败 | Swagger/Knife4j 和前端页面用日期范围查询不再出现参数转换错误；日志、用户、机构等使用日期筛选的页面 E2E 覆盖 |
 | T18 | 组织架构页面布局一致性修复 | 待处理 | 无后端改造 | `/system/org` 主内容区域与面包屑左侧间距需和角色、成员、岗位等系统页面一致；经典主题下截图/E2E 验证通过 |
+| T19 | 文件能力基础模块 | 待处理 | 参考 `/Users/hardy/Work/baohan/baohan/mango-api/mango-file` 增加文件上传、下载、预览元数据、存储适配、文件记录和权限边界；详细规划见 [文件能力基础模块计划](./file-capability-module-plan.md) | 后端文件 API 集成测试；文件管理页面 E2E；通用 FileUpload/ImageUpload/ExcelUpload 组件真实接口联调；权限访问 E2E |
+| T20 | Require 与模块业务码规范化检查 | 待处理 | 扫描后端代码，优先使用 `Require` + 模块 `XxxCode` 表达业务校验；清理直接 `new BizException(code, message)` 的可替代写法 | 后端构建通过；关键接口异常响应码和中文提示保持正确 |
+| T21 | IP 白名单访问策略与监控入口局域网化 | 待处理 | `mango-access` 增加按路径、HTTP 方法、CIDR 匹配的 IP 白名单访问策略；`/actuator/health` 等监控探活接口不放入 PUBLIC，而是仅允许本机/局域网/可信网段访问 | 后端直连验证白名单内访问 200、白名单外访问 403；前端/文档中的监控类入口改为局域网可访问地址配置并完成访问验证 |
+
+## 待办任务：T21 IP 白名单访问策略与监控入口局域网化
+
+### 问题现象
+
+`/actuator/health` 当前经 `mango-access` 认证过滤器返回 401。健康检查、监控探活、内部诊断类接口不适合直接配置为 PUBLIC，但也不应该要求普通用户登录。
+
+### 处理原则
+
+- 不把 `/actuator/**` 简单加入公开路径。
+- 在 `mango-access` 增加独立的 `IP_ALLOWLIST` 访问策略，支持按路径、HTTP 方法、CIDR 配置。
+- 白名单命中后只允许白名单 IP 放行；白名单不命中继续走现有 `PUBLIC/LOGIN/PERMISSION/INTERNAL` 逻辑。
+- 反向代理场景必须明确可信代理与真实客户端 IP 解析顺序，避免任意客户端伪造 `X-Forwarded-For`。
+- 监控、健康检查、内部诊断类链接使用配置化局域网地址，不写死 `localhost`，便于前端或部署文档直接访问。
+
+### 建议配置
+
+```yaml
+mango:
+  access:
+    ip-allowlist-rules:
+      - name: actuator-health
+        paths:
+          - /actuator/health
+          - /actuator/health/**
+        methods:
+          - GET
+        cidrs:
+          - 127.0.0.1/32
+          - ::1/128
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+    client-ip:
+      trust-forward-headers: true
+      trusted-proxies:
+        - 127.0.0.1/32
+        - 10.0.0.0/8
+      header-order:
+        - X-Forwarded-For
+        - X-Real-IP
+```
+
+### 验收标准
+
+- 后端单测：
+  - CIDR 匹配覆盖 IPv4、IPv6、本机、局域网、白名单外地址。
+  - `X-Forwarded-For` 只在可信代理来源下生效。
+- 后端直连：
+  - 白名单内访问 `GET /actuator/health` 返回 200。
+  - 白名单外访问 `GET /actuator/health` 返回 403。
+  - 未配置白名单的业务接口仍保持原有认证和权限行为。
+- 前端/文档：
+  - 监控类入口不再写死 `localhost`。
+  - 局域网地址通过环境变量或系统配置注入。
+  - E2E 或人工验证局域网访问地址可打开。
+
+## 待办任务：T20 Require 与模块业务码规范化检查
+
+### 问题现象
+
+当前部分代码直接 `new BizException(code, message)`，没有优先使用 `Require` 和模块业务码，导致校验表达不统一，错误码复用不稳定。
+
+### 处理原则
+
+- 业务前置校验优先使用 `Require.notNull/isTrue/isFalse/notBlank/notEmpty`。
+- 失败场景优先传入模块 `XxxCode`，例如 `FileCode.FILE_NOT_FOUND`。
+- 只有无法表达为断言、需要包装底层异常或保留异常上下文时，才直接抛 `BizException`。
+- 每个模块维护自己的业务码，不把模块错误塞进通用 `CommonCode`。
+
+### 验收标准
+
+- 后端扫描直接 `new BizException`，逐个判断是否可替换为 `Require`。
+- 可替换项完成替换，不可替换项保留并说明原因。
+- `mvn -pl mango-app/monolith/mango-monolith-app -am -DskipTests package` 通过。
+
+## 待办任务：T19 文件能力基础模块
+
+详细模块规划见：
+
+- [文件能力基础模块计划](./file-capability-module-plan.md)
+
+### 任务来源
+
+参考 `/Users/hardy/Work/baohan/baohan/mango-api/mango-file`，为 mango 增加文件能力。
+
+### 处理原则
+
+- 作为基础设施/系统能力独立规划，不混入机构模型或保函业务。
+- 后续业务模块只引用文件能力接口，不直接关心本地磁盘、对象存储等具体实现。
+- 存储适配、文件记录、访问权限、预览元数据、Swagger 文档一次性规划清楚。
+
+### 验收标准
+
+- 后端文件上传、下载、详情、删除/归档接口可用。
+- 前端文件管理页面上传、查询、预览元数据、下载、归档 E2E 通过。
+- 前端通用上传 API 和上传组件接入真实 `/file/files` 接口并联调通过。
+- 未授权访问、跨机构访问、公开文件访问边界有 E2E 覆盖。
 
 ## 待办任务：T18 组织架构页面布局一致性修复
 

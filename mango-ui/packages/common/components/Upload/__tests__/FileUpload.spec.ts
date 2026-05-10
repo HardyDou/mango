@@ -105,8 +105,8 @@ describe('FileUpload 组件单元测试', () => {
 
   describe('API endpoint 验证', () => {
     it('应该使用正确的上传 endpoint', () => {
-      const expectedEndpoint = '/api/admin/upload/file';
-      expect(expectedEndpoint).toMatch(/^\/api\/admin\/upload\/file$/);
+      const expectedEndpoint = '/api/file/files';
+      expect(expectedEndpoint).toMatch(/^\/api\/file\/files$/);
     });
   });
 });

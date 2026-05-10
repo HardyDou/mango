@@ -117,9 +117,9 @@ describe('ImageUpload 组件单元测试', () => {
 
   describe('API endpoint 验证', () => {
     it('应该使用正确的上传 endpoint', () => {
-      const expectedEndpoint = '/api/admin/upload/image';
+      const expectedEndpoint = '/api/file/files';
       // This tests the API module exports the correct endpoint
-      expect(expectedEndpoint).toMatch(/^\/api\/admin\/upload\/image$/);
+      expect(expectedEndpoint).toMatch(/^\/api\/file\/files$/);
     });
   });
 });

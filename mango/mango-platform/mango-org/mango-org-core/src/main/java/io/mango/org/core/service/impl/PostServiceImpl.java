@@ -7,6 +7,7 @@ import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.org.api.command.CreatePostCommand;
 import io.mango.org.api.command.UpdatePostCommand;
+import io.mango.org.api.enums.PostCode;
 import io.mango.org.api.query.PostPageQuery;
 import io.mango.org.api.vo.PostVO;
 import io.mango.org.core.entity.PostEntity;
@@ -25,7 +26,7 @@ public class PostServiceImpl implements IPostService {
     @Override
     public PostVO getById(Long id) {
         PostEntity entity = postMapper.selectById(id);
-        Require.notNull(entity, 404, "记录不存在");
+        Require.notNull(entity, PostCode.POST_NOT_FOUND);
         return toVO(entity);
     }
 
@@ -50,7 +51,7 @@ public class PostServiceImpl implements IPostService {
 
     @Override
     public void update(UpdatePostCommand command) {
-        Require.notNull(command.getId(), 400, "ID 不能为空");
+        Require.notNull(command.getId(), PostCode.POST_ID_REQUIRED);
         postMapper.updateById(toEntity(command));
     }
 

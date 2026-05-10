@@ -1,6 +1,7 @@
 package io.mango.org.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.common.exception.BizException;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.core.mapper.SysOrgMapper;
 import io.mango.org.core.service.ISysOrgService;
@@ -101,13 +102,11 @@ class SysOrgServiceImplTest {
     }
 
     @Test
-    @DisplayName("getById should return null when organization not found")
-    void getById_nonExistingOrg_returnsNull() {
+    @DisplayName("getById should throw BizException when organization not found")
+    void getById_nonExistingOrg_throwsBizException() {
         when(orgMapper.selectById(999L)).thenReturn(null);
 
-        SysOrg result = sysOrgService.getById(999L);
-
-        assertNull(result);
+        assertThrows(BizException.class, () -> sysOrgService.getById(999L));
     }
 
     @Test

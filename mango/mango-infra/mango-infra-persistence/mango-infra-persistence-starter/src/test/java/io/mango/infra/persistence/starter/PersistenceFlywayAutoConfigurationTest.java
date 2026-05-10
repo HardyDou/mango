@@ -4,7 +4,7 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -34,12 +34,12 @@ class PersistenceFlywayAutoConfigurationTest {
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
-                    assertThat(ctx).hasSingleBean(org.springframework.boot.ApplicationRunner.class);
+                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
                 });
     }
 
     @Test
-    void flywayBean_shouldUseNoopLocationBecauseRunnerMigratesModules() {
+    void flywayBean_shouldUseNoopLocationBecauseInitializerMigratesModules() {
         contextRunner
                 .withPropertyValues(
                         "mango.persistence.flyway.enabled=true",
@@ -66,9 +66,6 @@ class PersistenceFlywayAutoConfigurationTest {
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
-                    runner.run(null);
-
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isFalse();
                 });
@@ -80,16 +77,13 @@ class PersistenceFlywayAutoConfigurationTest {
                 .withPropertyValues("mango.persistence.flyway.enabled=true")
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
-                    runner.run(null);
-
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
     }
 
     @Test
-    void baselineOnMigrate_shouldBeAcceptedByModuleRunner() {
+    void baselineOnMigrate_shouldBeAcceptedByModuleInitializer() {
         contextRunner
                 .withPropertyValues(
                         "mango.persistence.flyway.enabled=true",
@@ -98,21 +92,18 @@ class PersistenceFlywayAutoConfigurationTest {
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
-                    runner.run(null);
-
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                 });
     }
 
     @Test
-    void applicationRunner_shouldBeCreated() {
+    void flywayMigrationInitializer_shouldBeCreated() {
         contextRunner
                 .withPropertyValues("mango.persistence.flyway.enabled=true")
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(org.springframework.boot.ApplicationRunner.class);
+                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
                 });
     }
 
@@ -134,7 +125,7 @@ class PersistenceFlywayAutoConfigurationTest {
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
-                    assertThat(ctx).hasSingleBean(org.springframework.boot.ApplicationRunner.class);
+                    assertThat(ctx).hasSingleBean(FlywayMigrationInitializer.class);
                 });
     }
 

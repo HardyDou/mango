@@ -5,7 +5,7 @@
  * Response: {code, msg, data, success}
  */
 
-import { get, post } from '@mango/common';
+import { get, post, put } from '@mango/common';
 
 // ==================== 类型定义 ====================
 
@@ -98,7 +98,7 @@ export function getMessageList(params?: MessageQuery) {
  * @param id 消息ID
  */
 export function getMessageDetail(id: number) {
-  return get<any>(`/message/${id}`).then(fromBackend);
+  return get<any>('/message/detail', { params: { id } }).then(fromBackend);
 }
 
 /**
@@ -113,7 +113,7 @@ export function getUnreadCount() {
  * @param id 消息ID
  */
 export function markAsRead(id: number) {
-  return post<void>(`/message/${id}/read`);
+  return put<void>('/message/read', undefined, { params: { id } });
 }
 
 /**
@@ -129,7 +129,7 @@ export function markAllAsRead(ids: number[]) {
  * @param id 消息ID
  */
 export function deleteMessage(id: number) {
-  return post<void>(`/message/${id}/delete`);
+  return post<void>('/message/delete', undefined, { params: { id } });
 }
 
 // ==================== 导出便捷方法 ====================

@@ -1,0 +1,24 @@
+package io.mango.workflow.api.query;
+
+import io.mango.common.po.PageQuery;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * 流程定义分页查询。
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+@Schema(description = "流程定义分页查询")
+public class WorkflowDefinitionPageQuery extends PageQuery {
+
+    @Schema(description = "关键字，支持按流程名称或流程编码模糊查询")
+    private String keyword;
+
+    @Schema(description = "流程分组ID")
+    private Long groupId;
+
+    @Schema(description = "流程状态：DRAFT-草稿，PUBLISHED-已发布，DISABLED-停用")
+    private String status;
+}

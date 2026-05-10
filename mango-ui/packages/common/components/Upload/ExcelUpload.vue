@@ -9,6 +9,7 @@
       :multiple="false"
       :disabled="disabled"
       :auto-upload="autoUpload"
+      :http-request="fileApiRequest"
       :before-upload="handleBeforeUpload"
       :on-success="handleSuccess"
       :on-error="handleError"
@@ -75,8 +76,16 @@
 import { ref, computed, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import type { UploadProps, UploadUserFile } from 'element-plus';
+import type { UploadProps, UploadRequestOptions } from 'element-plus';
 import * as XLSX from 'xlsx';
+import { uploadExcel } from '../../api/upload';
+import {
+  mergeUploadResult,
+  type MangoUploadFileMeta,
+  type MangoUploadUserFile,
+} from './types';
+
+const DEFAULT_ACTION = '/api/file/files';
 
 const props = withDefaults(
   defineProps<{
@@ -87,14 +96,16 @@ const props = withDefaults(
     autoUpload?: boolean;
     templateUrl?: string;
     previewLimit?: number;
+    useFileApi?: boolean;
   }>(),
   {
     modelValue: () => [],
-    action: '/api/admin/upload/excel',
+    action: DEFAULT_ACTION,
     headers: () => ({}),
     disabled: false,
     autoUpload: true,
     previewLimit: 10,
+    useFileApi: true,
   }
 );
 
@@ -102,12 +113,29 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: any[]): void;
   (e: 'change', value: any[]): void;
   (e: 'success', data: any[]): void;
+  (e: 'upload-success', file: MangoUploadFileMeta): void;
 }>();
 
 const uploadRef = ref();
 const accept = '.xls,.xlsx';
-const internalFileList = ref<UploadUserFile[]>([]);
+const internalFileList = ref<MangoUploadUserFile[]>([]);
 const parsedData = ref<any[]>([]);
+
+const handleFileApiRequest = (options: UploadRequestOptions) => {
+  return uploadExcel(options.file as File)
+    .then((result) => {
+      options.onSuccess?.(result);
+      return result;
+    })
+    .catch((error) => {
+      options.onError?.(error);
+      throw error;
+    });
+};
+
+const fileApiRequest = computed(() => (
+  props.useFileApi && props.action === DEFAULT_ACTION ? handleFileApiRequest : undefined
+));
 
 const previewHeaders = computed(() => {
   if (parsedData.value.length > 0) {
@@ -139,12 +167,27 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (file) => {
 };
 
 // Handle success
-const handleSuccess: UploadProps['onSuccess'] = (response, file) => {
-  if (response.data) {
-    parsedData.value = response.data;
-    updateModelValue();
-    emit('success', response.data);
+const handleSuccess: UploadProps['onSuccess'] = (response, file, files) => {
+  const uploadedFile = mergeUploadResult(file as MangoUploadUserFile, response);
+  internalFileList.value = files.map((item) => (
+    item.uid === file.uid ? uploadedFile : item as MangoUploadUserFile
+  ));
+  const serverData = Array.isArray(response?.data) ? response.data : [];
+  if (serverData.length > 0) {
+    parsedData.value = serverData;
   }
+  updateModelValue();
+  emit('success', parsedData.value);
+  emit('upload-success', {
+    id: uploadedFile.id,
+    uid: uploadedFile.uid,
+    name: uploadedFile.fileName || uploadedFile.name,
+    url: uploadedFile.url || '',
+    fileName: uploadedFile.fileName || uploadedFile.name,
+    fileSize: Number(uploadedFile.fileSize ?? uploadedFile.size ?? 0),
+    contentType: uploadedFile.contentType,
+    objectName: uploadedFile.objectName,
+  });
 };
 
 // Handle error

@@ -18,6 +18,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 认证过滤器（单体模式）。
@@ -43,7 +44,8 @@ public class AuthFilter implements Filter {
         AccessResult result = accessService.check(
                 request.getMethod(),
                 path,
-                request.getHeader(AccessConstants.TOKEN_HEADER));
+                request.getHeader(AccessConstants.TOKEN_HEADER),
+                request.getRemoteAddr());
 
         if (result.status() == AccessResult.Status.FORBIDDEN) {
             forbidden(response, result.message());
@@ -81,13 +83,15 @@ public class AuthFilter implements Filter {
      */
     private void unauthorized(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("{\"code\":401,\"message\":\"" + message + "\"}");
     }
 
     private void forbidden(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.setContentType("application/json");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("{\"code\":403,\"message\":\"" + message + "\"}");
     }
 }

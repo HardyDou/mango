@@ -46,7 +46,7 @@ export const loginLogApi = {
     return get<PageResult<SysLoginLog>>('/system/log/login/list', { params });
   },
   detail: (id: number) => {
-    return get<SysLoginLog>(`/system/log/login/${id}`);
+    return get<SysLoginLog>('/system/log/login/detail', { params: { id } });
   },
   clean: (days: number) => {
     return del<void>('/system/log/login/clean', { params: { days } });
@@ -90,7 +90,7 @@ export const operationLogApi = {
     return get<PageResult<SysOperationLog>>('/system/log/operation/list', { params });
   },
   detail: (id: number) => {
-    return get<SysOperationLog>(`/system/log/operation/${id}`);
+    return get<SysOperationLog>('/system/log/operation/detail', { params: { id } });
   },
   clean: (days: number) => {
     return del<void>('/system/log/operation/clean', { params: { days } });

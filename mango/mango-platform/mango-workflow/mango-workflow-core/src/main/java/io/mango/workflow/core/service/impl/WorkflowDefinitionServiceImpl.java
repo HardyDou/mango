@@ -1,0 +1,405 @@
+package io.mango.workflow.core.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.mango.common.result.R;
+import io.mango.common.result.Require;
+import io.mango.common.vo.PageResult;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
+import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
+import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
+import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
+import io.mango.workflow.api.query.WorkflowDefinitionVersionQuery;
+import io.mango.workflow.api.vo.WorkflowDefinitionVO;
+import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
+import io.mango.workflow.api.vo.WorkflowDeployVO;
+import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
+import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
+import io.mango.workflow.core.entity.WorkflowDefinition;
+import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
+import io.mango.workflow.core.entity.WorkflowGroup;
+import io.mango.workflow.core.entity.WorkflowNodeDefinition;
+import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
+import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
+import io.mango.workflow.core.mapper.WorkflowGroupMapper;
+import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
+import io.mango.workflow.core.service.IWorkflowDefinitionService;
+import lombok.RequiredArgsConstructor;
+import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.engine.RepositoryService;
+import org.flowable.engine.repository.Deployment;
+import org.flowable.engine.repository.ProcessDefinition;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * 流程定义服务实现。
+ */
+@Service
+@RequiredArgsConstructor
+public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService {
+
+    private final WorkflowDefinitionMapper mapper;
+    private final WorkflowDefinitionVersionMapper versionMapper;
+    private final WorkflowGroupMapper groupMapper;
+    private final WorkflowNodeDefinitionMapper nodeDefinitionMapper;
+    private final RepositoryService repositoryService;
+    private final WorkflowDesignerBpmnConverter bpmnConverter;
+
+    @Override
+    public R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query) {
+        WorkflowDefinitionPageQuery resolved = query == null ? new WorkflowDefinitionPageQuery() : query;
+        IPage<WorkflowDefinition> page = mapper.selectPage(
+                new Page<>(resolved.getPage(), resolved.getSize()),
+                wrapper(resolved));
+        Map<Long, String> groupNames = groupNames(page.getRecords());
+        List<WorkflowDefinitionVO> records = page.getRecords().stream()
+                .map(item -> toVO(item, groupNames.get(item.getGroupId())))
+                .toList();
+        return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
+    }
+
+    @Override
+    public R<WorkflowDefinitionVO> get(Long id) {
+        WorkflowDefinition entity = selectRequired(id);
+        WorkflowGroup group = groupMapper.selectById(entity.getGroupId());
+        return R.ok(toVO(entity, group == null ? null : group.getGroupName()));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Long> create(SaveWorkflowDefinitionCommand command) {
+        Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
+        validate(command, false);
+        WorkflowDefinition entity = new WorkflowDefinition();
+        copy(command, entity);
+        LocalDateTime now = LocalDateTime.now();
+        entity.setTenantId(resolveTenantId());
+        entity.setCreatedBy(MangoContextHolder.userId());
+        entity.setUpdatedBy(MangoContextHolder.userId());
+        entity.setCreatedTime(now);
+        entity.setCreatedAt(now);
+        entity.setUpdatedTime(now);
+        entity.setUpdatedAt(now);
+        mapper.insert(entity);
+        return R.ok(entity.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> update(SaveWorkflowDefinitionCommand command) {
+        Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
+        Require.notNull(command.getId(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
+        validate(command, true);
+        WorkflowDefinition entity = selectRequired(command.getId());
+        copy(command, entity);
+        entity.setUpdatedBy(MangoContextHolder.userId());
+        entity.setUpdatedTime(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
+        return R.ok(mapper.updateById(entity) > 0);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> delete(Long id) {
+        WorkflowDefinition entity = selectRequired(id);
+        Require.isFalse(WorkflowDefinitionStatus.PUBLISHED.name().equals(entity.getStatus()),
+                WorkflowCode.DEFINITION_STATUS_INVALID.getCode(), "已发布流程定义请先停用再删除");
+        return R.ok(mapper.deleteById(id) > 0);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> updateStatus(UpdateWorkflowDefinitionStatusCommand command) {
+        Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
+        Require.notNull(command.getId(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
+        WorkflowDefinitionStatus status = parseStatus(command.getStatus());
+        WorkflowDefinition entity = selectRequired(command.getId());
+        entity.setStatus(status.name());
+        entity.setUpdatedBy(MangoContextHolder.userId());
+        entity.setUpdatedTime(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
+        return R.ok(mapper.updateById(entity) > 0);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowDeployVO> deploy(Long id) {
+        WorkflowDefinition entity = selectRequired(id);
+        Require.notBlank(entity.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
+        WorkflowDefinitionVersion version = null;
+        try {
+            BpmnModel bpmnModel = bpmnConverter.toModel(entity.getDesignerJson(), entity.getDefinitionKey(), entity.getDefinitionName());
+            String bpmnXml = bpmnConverter.toXml(entity.getDesignerJson(), entity.getDefinitionKey(), entity.getDefinitionName());
+            int nextVersionNo = nextVersionNo(entity.getId());
+            LocalDateTime now = LocalDateTime.now();
+
+            version = new WorkflowDefinitionVersion();
+            version.setTenantId(resolveTenantId());
+            version.setDefinitionId(entity.getId());
+            version.setVersionNo(nextVersionNo);
+            version.setDesignerJson(entity.getDesignerJson());
+            version.setFormJson(entity.getFormJson());
+            version.setBpmnXml(bpmnXml);
+            version.setPublishStatus("PUBLISHING");
+            version.setCreatedBy(MangoContextHolder.userId());
+            version.setPublishTime(now);
+            version.setCreatedTime(now);
+            version.setCreatedAt(now);
+            version.setUpdatedBy(MangoContextHolder.userId());
+            version.setUpdatedTime(now);
+            version.setUpdatedAt(now);
+            versionMapper.insert(version);
+
+            Deployment deployment = repositoryService.createDeployment()
+                    .name(entity.getDefinitionName())
+                    .key(entity.getDefinitionKey())
+                    .tenantId(String.valueOf(resolveTenantId()))
+                    .addBpmnModel(entity.getDefinitionKey() + ".bpmn20.xml", bpmnModel)
+                    .deploy();
+            ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                    .deploymentId(deployment.getId())
+                    .processDefinitionKey(entity.getDefinitionKey())
+                    .latestVersion()
+                    .singleResult();
+            Require.notNull(processDefinition, WorkflowCode.DEPLOY_FAILED.getCode(), "Flowable 未生成流程定义");
+            entity.setDeploymentId(deployment.getId());
+            entity.setProcessDefinitionId(processDefinition.getId());
+            entity.setProcessDefinitionVersion(processDefinition.getVersion());
+            entity.setPublishedVersionNo(nextVersionNo);
+            entity.setBpmnXml(bpmnXml);
+            entity.setStatus(WorkflowDefinitionStatus.PUBLISHED.name());
+            entity.setLastDeployTime(now);
+            entity.setUpdatedBy(MangoContextHolder.userId());
+            entity.setUpdatedTime(now);
+            entity.setUpdatedAt(now);
+            mapper.updateById(entity);
+
+            version.setDeploymentId(deployment.getId());
+            version.setProcessDefinitionId(processDefinition.getId());
+            version.setProcessDefinitionVersion(processDefinition.getVersion());
+            version.setPublishStatus("SUCCESS");
+            version.setPublishMessage("发布成功");
+            version.setUpdatedTime(now);
+            version.setUpdatedAt(now);
+            versionMapper.updateById(version);
+
+            WorkflowDeployVO vo = new WorkflowDeployVO();
+            vo.setDeploymentId(deployment.getId());
+            vo.setProcessDefinitionId(processDefinition.getId());
+            vo.setProcessDefinitionVersion(processDefinition.getVersion());
+            vo.setVersionNo(nextVersionNo);
+            return R.ok(vo);
+        } catch (Exception e) {
+            if (version != null && version.getId() != null) {
+                version.setPublishStatus("FAILED");
+                version.setPublishMessage(trimMessage(e.getMessage()));
+                version.setUpdatedTime(LocalDateTime.now());
+                version.setUpdatedAt(LocalDateTime.now());
+                versionMapper.updateById(version);
+            }
+            return Require.fail(WorkflowCode.DEPLOY_FAILED.getCode(), "流程发布失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query) {
+        Require.notNull(query, WorkflowCode.DEFINITION_INVALID);
+        Require.notNull(query.getDefinitionId(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
+        selectRequired(query.getDefinitionId());
+        List<WorkflowDefinitionVersionVO> versions = versionMapper.selectList(
+                        new LambdaQueryWrapper<WorkflowDefinitionVersion>()
+                                .eq(WorkflowDefinitionVersion::getDefinitionId, query.getDefinitionId())
+                                .orderByDesc(WorkflowDefinitionVersion::getVersionNo))
+                .stream()
+                .map(this::toVersionVO)
+                .toList();
+        return R.ok(versions);
+    }
+
+    @Override
+    public R<WorkflowDefinitionVersionVO> versionDetail(Long id) {
+        Require.notNull(id, WorkflowCode.DEFINITION_INVALID.getCode(), "发布版本ID不能为空");
+        WorkflowDefinitionVersion version = versionMapper.selectById(id);
+        Require.notNull(version, WorkflowCode.VERSION_NOT_FOUND);
+        return R.ok(toVersionVO(version));
+    }
+
+    @Override
+    public R<List<WorkflowNodeCatalogVO>> nodeCatalog() {
+        List<WorkflowNodeCatalogVO> nodes = nodeDefinitionMapper.selectList(new LambdaQueryWrapper<WorkflowNodeDefinition>()
+                        .eq(WorkflowNodeDefinition::getStatus, 1)
+                        .orderByAsc(WorkflowNodeDefinition::getCategoryCode)
+                        .orderByAsc(WorkflowNodeDefinition::getSort)
+                        .orderByAsc(WorkflowNodeDefinition::getId))
+                .stream()
+                .map(this::toNodeCatalogVO)
+                .toList();
+        return R.ok(nodes);
+    }
+
+    private LambdaQueryWrapper<WorkflowDefinition> wrapper(WorkflowDefinitionPageQuery query) {
+        String keyword = trimToNull(query.getKeyword());
+        return new LambdaQueryWrapper<WorkflowDefinition>()
+                .and(StringUtils.hasText(keyword), nested -> nested
+                        .like(WorkflowDefinition::getDefinitionName, keyword)
+                        .or()
+                        .like(WorkflowDefinition::getDefinitionKey, keyword))
+                .eq(query.getGroupId() != null, WorkflowDefinition::getGroupId, query.getGroupId())
+                .eq(StringUtils.hasText(query.getStatus()), WorkflowDefinition::getStatus, query.getStatus())
+                .orderByDesc(WorkflowDefinition::getUpdatedTime);
+    }
+
+    private WorkflowDefinition selectRequired(Long id) {
+        Require.notNull(id, WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
+        WorkflowDefinition entity = mapper.selectById(id);
+        Require.notNull(entity, WorkflowCode.DEFINITION_NOT_FOUND);
+        return entity;
+    }
+
+    private void validate(SaveWorkflowDefinitionCommand command, boolean update) {
+        Require.notNull(groupMapper.selectById(command.getGroupId()), WorkflowCode.GROUP_NOT_FOUND);
+        Require.notBlank(command.getDefinitionName(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程名称不能为空");
+        Require.notBlank(command.getDefinitionKey(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程编码不能为空");
+        Require.notBlank(command.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
+        Long count = mapper.selectCount(new LambdaQueryWrapper<WorkflowDefinition>()
+                .eq(WorkflowDefinition::getDefinitionKey, command.getDefinitionKey().trim())
+                .ne(update && command.getId() != null, WorkflowDefinition::getId, command.getId()));
+        Require.isTrue(count == null || count == 0, WorkflowCode.DEFINITION_KEY_DUPLICATED);
+        if (StringUtils.hasText(command.getStatus())) {
+            parseStatus(command.getStatus());
+        }
+    }
+
+    private void copy(SaveWorkflowDefinitionCommand command, WorkflowDefinition entity) {
+        entity.setGroupId(command.getGroupId());
+        entity.setDefinitionName(command.getDefinitionName().trim());
+        entity.setDefinitionKey(command.getDefinitionKey().trim());
+        entity.setDesignerJson(command.getDesignerJson());
+        entity.setBpmnXml(trimToNull(command.getBpmnXml()));
+        entity.setFormCode(trimToNull(command.getFormCode()));
+        entity.setFormJson(trimToNull(command.getFormJson()));
+        entity.setStatus(StringUtils.hasText(command.getStatus())
+                ? parseStatus(command.getStatus()).name()
+                : WorkflowDefinitionStatus.DRAFT.name());
+        entity.setRemark(trimToNull(command.getRemark()));
+    }
+
+    private WorkflowDefinitionStatus parseStatus(String value) {
+        try {
+            return WorkflowDefinitionStatus.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (Exception e) {
+            return Require.fail(WorkflowCode.DEFINITION_STATUS_INVALID);
+        }
+    }
+
+    private Map<Long, String> groupNames(List<WorkflowDefinition> definitions) {
+        Map<Long, String> result = new HashMap<>();
+        List<Long> groupIds = definitions.stream()
+                .map(WorkflowDefinition::getGroupId)
+                .filter(item -> item != null && !result.containsKey(item))
+                .distinct()
+                .toList();
+        if (groupIds.isEmpty()) {
+            return result;
+        }
+        groupMapper.selectBatchIds(groupIds).forEach(item -> result.put(item.getId(), item.getGroupName()));
+        return result;
+    }
+
+    private WorkflowDefinitionVO toVO(WorkflowDefinition entity, String groupName) {
+        WorkflowDefinitionVO vo = new WorkflowDefinitionVO();
+        vo.setId(entity.getId());
+        vo.setGroupId(entity.getGroupId());
+        vo.setGroupName(groupName);
+        vo.setDefinitionName(entity.getDefinitionName());
+        vo.setDefinitionKey(entity.getDefinitionKey());
+        vo.setDeploymentId(entity.getDeploymentId());
+        vo.setProcessDefinitionId(entity.getProcessDefinitionId());
+        vo.setProcessDefinitionVersion(entity.getProcessDefinitionVersion());
+        vo.setPublishedVersionNo(entity.getPublishedVersionNo());
+        vo.setDesignerJson(entity.getDesignerJson());
+        vo.setBpmnXml(entity.getBpmnXml());
+        vo.setFormCode(entity.getFormCode());
+        vo.setFormJson(entity.getFormJson());
+        vo.setStatus(entity.getStatus());
+        vo.setLastDeployTime(entity.getLastDeployTime());
+        vo.setRemark(entity.getRemark());
+        vo.setCreatedTime(entity.getCreatedTime());
+        vo.setUpdatedTime(entity.getUpdatedTime());
+        return vo;
+    }
+
+    private Long resolveTenantId() {
+        String tenantId = MangoContextHolder.tenantId();
+        if (!StringUtils.hasText(tenantId)) {
+            return 1L;
+        }
+        return Long.parseLong(tenantId);
+    }
+
+    private String trimToNull(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private int nextVersionNo(Long definitionId) {
+        WorkflowDefinitionVersion latest = versionMapper.selectOne(
+                new LambdaQueryWrapper<WorkflowDefinitionVersion>()
+                        .eq(WorkflowDefinitionVersion::getDefinitionId, definitionId)
+                        .orderByDesc(WorkflowDefinitionVersion::getVersionNo)
+                        .last("LIMIT 1"));
+        return latest == null || latest.getVersionNo() == null ? 1 : latest.getVersionNo() + 1;
+    }
+
+    private WorkflowDefinitionVersionVO toVersionVO(WorkflowDefinitionVersion entity) {
+        WorkflowDefinitionVersionVO vo = new WorkflowDefinitionVersionVO();
+        vo.setId(entity.getId());
+        vo.setDefinitionId(entity.getDefinitionId());
+        vo.setVersionNo(entity.getVersionNo());
+        vo.setDesignerJson(entity.getDesignerJson());
+        vo.setFormJson(entity.getFormJson());
+        vo.setBpmnXml(entity.getBpmnXml());
+        vo.setDeploymentId(entity.getDeploymentId());
+        vo.setProcessDefinitionId(entity.getProcessDefinitionId());
+        vo.setProcessDefinitionVersion(entity.getProcessDefinitionVersion());
+        vo.setPublishStatus(entity.getPublishStatus());
+        vo.setPublishMessage(entity.getPublishMessage());
+        vo.setPublishTime(entity.getPublishTime());
+        return vo;
+    }
+
+    private WorkflowNodeCatalogVO toNodeCatalogVO(WorkflowNodeDefinition entity) {
+        return WorkflowNodeCatalogVO.of(
+                entity.getNodeDefinitionCode(),
+                entity.getNodeType(),
+                entity.getNodeName(),
+                entity.getCategoryCode(),
+                entity.getCategoryName(),
+                entity.getCategoryName(),
+                entity.getDescription(),
+                entity.getBpmnType(),
+                entity.getExecutionType(),
+                entity.getColor(),
+                entity.getIcon(),
+                entity.getPropertySchema(),
+                entity.getDefaultProperties(),
+                entity.getSort());
+    }
+
+    private String trimMessage(String message) {
+        if (!StringUtils.hasText(message)) {
+            return "发布失败";
+        }
+        return message.length() > 500 ? message.substring(0, 500) : message;
+    }
+}

@@ -12,6 +12,8 @@ export interface RequestConfig extends AxiosRequestConfig {
   ignoreToken?: boolean;
   /** 请求重试次数 */
   retry?: number;
+  /** 是否返回原始响应，适用于文件下载等非业务包裹响应 */
+  rawResponse?: boolean;
 }
 
 export interface ResponseResult<T = any> {
@@ -108,7 +110,7 @@ function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
 }
 
 /**
- * 处理租户 ID
+ * 处理机构隔离 ID
  */
 function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
   const userInfo = Session.get('userInfo');
@@ -134,7 +136,7 @@ service.interceptors.request.use(
       handleToken(config);
     }
 
-    // 添加租户 ID
+    // 添加机构隔离 ID
     handleTenantId(config);
 
     return config;
@@ -151,6 +153,11 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse<ResponseResult>) => {
     hideLoading();
+
+    const config = response.config as RequestConfig;
+    if (config.rawResponse) {
+      return response as any;
+    }
 
     const { code, data, success } = response.data;
     const message = response.data.message || response.data.msg;

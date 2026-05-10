@@ -22,6 +22,7 @@
           <ImageUpload
             v-model="imageUrl"
             :multiple="multiImage"
+            @success="handleImageSuccess"
           />
           <div class="upload-tip">
             <el-tag type="info">
@@ -40,7 +41,7 @@
           >
             <span>返回值：</span>
             <el-input
-              v-model="imageUrl"
+              :model-value="formatUploadValue(imageUrl)"
               readonly
               size="small"
             />
@@ -77,7 +78,7 @@
           >
             <span>返回值：</span>
             <el-input
-              v-model="fileUrl"
+              :model-value="formatUploadValue(fileUrl)"
               readonly
               size="small"
             />
@@ -94,6 +95,7 @@
           <ExcelUpload
             v-model="excelData"
             @change="handleExcelChange"
+            @upload-success="handleExcelUploadSuccess"
           />
           <div class="upload-tip">
             <el-tag type="info">
@@ -133,6 +135,17 @@
             >
               仅显示前3条，更多数据请查看控制台
             </p>
+          </div>
+          <div
+            v-if="excelFileToken"
+            class="upload-result"
+          >
+            <span>文件记录：</span>
+            <el-input
+              v-model="excelFileToken"
+              readonly
+              size="small"
+            />
           </div>
         </el-card>
       </el-col>
@@ -291,7 +304,7 @@ function handleExcelChange(data) {
 &lt;/template&gt;
 
 // props 说明:
-// action: 上传地址，默认 /api/admin/upload/image
+// action: 上传地址，默认 /api/file/files
 // headers: 请求头对象
 // limit: 最大上传数量，默认 5
 // multiple: 是否多选，默认 true
@@ -307,16 +320,29 @@ function handleExcelChange(data) {
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ImageUpload, FileUpload, ExcelUpload } from '@mango/common';
+import { ImageUpload, FileUpload, ExcelUpload, type MangoUploadFileMeta } from '@mango/common';
 
-const imageUrl = ref('');
+const imageUrl = ref<string | string[]>('');
 const multiImage = ref(true);
-const fileUrl = ref('');
+const fileUrl = ref<string | string[]>('');
 const excelData = ref<any[]>([]);
+const excelFileToken = ref('');
 
 function handleExcelChange(data: any[]) {
   excelData.value = data;
   console.log('Excel数据:', data);
+}
+
+function handleImageSuccess(file: MangoUploadFileMeta) {
+  console.log('图片上传成功:', file);
+}
+
+function handleExcelUploadSuccess(file: MangoUploadFileMeta) {
+  excelFileToken.value = file.url;
+}
+
+function formatUploadValue(value: string | string[]) {
+  return Array.isArray(value) ? value.join(', ') : value;
 }
 </script>
 

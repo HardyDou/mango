@@ -9,8 +9,9 @@ import io.mango.authorization.api.query.ApiResourceAccessDecisionQuery;
 import io.mango.authorization.api.vo.ApiResourceAccessDecisionVO;
 import io.mango.common.result.R;
 import io.mango.authorization.api.ITokenProvider;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * 边界入口访问决策服务。
@@ -18,17 +19,44 @@ import lombok.extern.slf4j.Slf4j;
  * @author Mango
  */
 @Slf4j
-@RequiredArgsConstructor
 public class AccessService {
 
     private final AccessProperties properties;
     private final ITokenProvider tokenService;
     private final ApiResourceApi apiResourceApi;
     private final IAuthorizationProvider authorizationProvider;
+    private final List<AccessContextValidator> contextValidators;
+    private final IpWhitelistMatcher ipWhitelistMatcher = new IpWhitelistMatcher();
+
+    public AccessService(AccessProperties properties,
+                         ITokenProvider tokenService,
+                         ApiResourceApi apiResourceApi,
+                         IAuthorizationProvider authorizationProvider) {
+        this(properties, tokenService, apiResourceApi, authorizationProvider, List.of());
+    }
+
+    public AccessService(AccessProperties properties,
+                         ITokenProvider tokenService,
+                         ApiResourceApi apiResourceApi,
+                         IAuthorizationProvider authorizationProvider,
+                         List<AccessContextValidator> contextValidators) {
+        this.properties = properties;
+        this.tokenService = tokenService;
+        this.apiResourceApi = apiResourceApi;
+        this.authorizationProvider = authorizationProvider;
+        this.contextValidators = contextValidators == null ? List.of() : List.copyOf(contextValidators);
+    }
 
     public AccessResult check(String httpMethod, String path, String authHeader) {
+        return check(httpMethod, path, authHeader, null);
+    }
+
+    public AccessResult check(String httpMethod, String path, String authHeader, String clientIp) {
         if (!properties.isAuthEnabled()) {
             return AccessResult.disabled();
+        }
+        if (ipWhitelistMatcher.matches(properties.getIpWhitelist(), httpMethod, path, clientIp)) {
+            return AccessResult.allowAnonymous();
         }
 
         ApiResourceAccessDecisionVO decision = resolveDecision(httpMethod, path);
@@ -54,6 +82,10 @@ public class AccessService {
             return AccessResult.unauthorized("Token 类型非法，访问入口只接受 access token");
         }
         AccessPrincipal principal = resolvePrincipal(token);
+        AccessResult contextResult = validateContext(principal);
+        if (contextResult != null) {
+            return contextResult;
+        }
         String requiredPermission = resolveRequiredPermission(decision.permissionCode());
         if (properties.isRequirePermissionCode()
                 && accessMode == ApiResourceAccessMode.PERMISSION
@@ -65,6 +97,24 @@ public class AccessService {
             return AccessResult.forbidden("权限不足");
         }
         return AccessResult.allowAuthenticated(principal);
+    }
+
+    private AccessResult validateContext(AccessPrincipal principal) {
+        for (AccessContextValidator validator : contextValidators) {
+            try {
+                AccessContextValidationResult result = validator.validate(principal);
+                if (result != null && !result.allowed()) {
+                    return AccessResult.unauthorized(result.message());
+                }
+            } catch (Exception e) {
+                log.warn("登录上下文校验失败，拒绝本次访问: userId={}, tenantId={}, reason={}",
+                        principal == null ? null : principal.userId(),
+                        principal == null ? null : principal.tenantId(),
+                        e.getMessage());
+                return AccessResult.unauthorized("登录上下文校验失败，请重新登录");
+            }
+        }
+        return null;
     }
 
     private ApiResourceAccessDecisionVO resolveDecision(String httpMethod, String path) {

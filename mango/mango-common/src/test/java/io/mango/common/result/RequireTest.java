@@ -35,4 +35,13 @@ public class RequireTest {
                 .extracting("code")
                 .isEqualTo(400);
     }
+
+    @Test
+    void testFail() {
+        assertThatThrownBy(() -> Require.fail(CommonCode.NOT_FOUND))
+                .isInstanceOf(BizException.class)
+                .hasMessage("资源不存在")
+                .extracting("code")
+                .isEqualTo(404);
+    }
 }

@@ -5,6 +5,7 @@ import io.mango.common.result.Require;
 import io.mango.org.api.command.CreateOrgCommand;
 import io.mango.org.api.command.UpdateOrgCommand;
 import io.mango.org.api.entity.SysOrg;
+import io.mango.org.api.enums.PostCode;
 import io.mango.org.core.service.ISysOrgService;
 import io.mango.org.core.mapper.SysOrgMapper;
 import lombok.RequiredArgsConstructor;
@@ -79,7 +80,7 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Override
     public SysOrg getById(Long id) {
         SysOrg org = orgMapper.selectById(id);
-        Require.notNull(org, 404, "组织不存在");
+        Require.notNull(org, PostCode.ORG_NOT_FOUND);
         return org;
     }
 
@@ -118,23 +119,23 @@ public class SysOrgServiceImpl implements ISysOrgService {
     @Override
     public void delete(Long id) {
         SysOrg org = getById(id);
-        Require.isFalse(isRoot(org), 400, "根组织不能删除");
+        Require.isFalse(isRoot(org), PostCode.ORG_ROOT_DELETE_FORBIDDEN);
         Long childCount = orgMapper.selectCount(new LambdaQueryWrapper<SysOrg>()
                 .eq(SysOrg::getPid, id));
-        Require.isTrue(childCount == null || childCount == 0, 400, "存在下级组织，不能删除");
+        Require.isTrue(childCount == null || childCount == 0, PostCode.ORG_HAS_CHILDREN);
         orgMapper.deleteById(id);
     }
 
     private void validateOrg(Long pid, Integer orgType, String orgCode, Long currentId) {
-        Require.notNull(pid, 400, "父级组织ID不能为空");
-        Require.notNull(orgType, 400, "组织类型不能为空");
-        Require.isTrue(orgType >= 1 && orgType <= 4, 400, "组织类型不正确");
-        Require.notBlank(orgCode, 400, "组织编码不能为空");
-        Require.isFalse(currentId == null && Long.valueOf(0L).equals(pid), 400, "根组织由租户初始化创建，不能手工新增");
+        Require.notNull(pid, PostCode.ORG_PARENT_REQUIRED);
+        Require.notNull(orgType, PostCode.ORG_TYPE_REQUIRED);
+        Require.isTrue(orgType >= 1 && orgType <= 4, PostCode.ORG_TYPE_INVALID);
+        Require.notBlank(orgCode, PostCode.ORG_CODE_REQUIRED);
+        Require.isFalse(currentId == null && Long.valueOf(0L).equals(pid), PostCode.ORG_ROOT_MANUAL_CREATE_FORBIDDEN);
 
         if (pid != 0L) {
             SysOrg parent = getById(pid);
-            Require.isFalse("0".equals(parent.getOrgStatus()), 400, "父级组织已禁用");
+            Require.isFalse("0".equals(parent.getOrgStatus()), PostCode.ORG_PARENT_DISABLED);
         }
 
         LambdaQueryWrapper<SysOrg> codeWrapper = new LambdaQueryWrapper<SysOrg>()
@@ -143,19 +144,19 @@ public class SysOrgServiceImpl implements ISysOrgService {
             codeWrapper.ne(SysOrg::getId, currentId);
         }
         Long count = orgMapper.selectCount(codeWrapper);
-        Require.isTrue(count == null || count == 0, 400, "组织编码已存在");
+        Require.isTrue(count == null || count == 0, PostCode.ORG_CODE_EXISTS);
     }
 
     private void validateMove(SysOrg existing, Long targetPid, String orgStatus) {
         if (isRoot(existing)) {
-            Require.isTrue(targetPid == 0L, 400, "根组织不能移动");
-            Require.isFalse("0".equals(orgStatus), 400, "根组织不能禁用");
+            Require.isTrue(targetPid == 0L, PostCode.ORG_ROOT_MOVE_FORBIDDEN);
+            Require.isFalse("0".equals(orgStatus), PostCode.ORG_ROOT_DISABLE_FORBIDDEN);
             return;
         }
-        Require.isFalse(existing.getId().equals(targetPid), 400, "上级组织不能选择自己");
+        Require.isFalse(existing.getId().equals(targetPid), PostCode.ORG_PARENT_SELF_FORBIDDEN);
         Long cursor = targetPid;
         while (cursor != null && cursor != 0L) {
-            Require.isFalse(existing.getId().equals(cursor), 400, "上级组织不能选择自己的下级");
+            Require.isFalse(existing.getId().equals(cursor), PostCode.ORG_PARENT_DESCENDANT_FORBIDDEN);
             SysOrg parent = orgMapper.selectById(cursor);
             if (parent == null) {
                 return;

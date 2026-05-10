@@ -68,6 +68,29 @@ class AuthFilterTest {
     }
 
     @Test
+    @DisplayName("IP 白名单资源命中来源地址时应匿名放行")
+    void doFilter_shouldPassAnonymousWhenIpWhitelistMatched() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+        AccessProperties properties = new AccessProperties();
+        properties.getIpWhitelist().setEnabled(true);
+        AccessProperties.Rule rule = new AccessProperties.Rule();
+        rule.setPathPattern("/actuator/health");
+        rule.setMethods(List.of("GET"));
+        rule.setCidrs(List.of("127.0.0.1/32"));
+        properties.getIpWhitelist().setRules(List.of(rule));
+        AccessService accessService = new AccessService(properties, tokenProvider, apiResourceApi, authorizationProvider);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/actuator/health");
+        request.setRemoteAddr("127.0.0.1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new AuthFilter(accessService).doFilter(request, response, new MockFilterChain());
+
+        assertEquals(200, response.getStatus());
+        assertEquals(0, apiResourceApi.resolveCount);
+        assertNull(MangoContextHolder.userId());
+    }
+
+    @Test
     @DisplayName("LOGIN 资源 Token 合法时应放行并写入请求与 MangoContext")
     void doFilter_shouldPassLoginAndWriteContextWhenTokenValid() throws Exception {
         apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;

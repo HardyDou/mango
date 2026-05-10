@@ -65,7 +65,7 @@ public class SysTenantController {
 
     @DeleteMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:delete")
-    @Operation(summary = "删除机构", description = "权限接口。按机构ID删除机构")
+    @Operation(summary = "删除机构", description = "权限接口。仅允许删除未初始化且无关联数据的机构；已使用机构请改为归档")
     @Log("删除机构")
     public R<Boolean> delete(
             @Parameter(description = "机构ID。底层对应 tenantId")
@@ -75,12 +75,12 @@ public class SysTenantController {
 
     @PutMapping("/status")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:tenant:edit")
-    @Operation(summary = "修改机构状态", description = "权限接口。按机构ID启用或停用机构")
+    @Operation(summary = "修改机构状态", description = "权限接口。按机构ID调整生命周期状态；非启用状态不允许登录与继续访问")
     @Log("修改机构状态")
     public R<Boolean> updateStatus(
             @Parameter(description = "机构ID。底层对应 tenantId")
             @RequestParam Long id,
-            @Parameter(description = "机构状态：0-禁用，1-启用")
+            @Parameter(description = "机构生命周期状态。字典 institution_status：0-禁用，1-启用，2-冻结，9-归档")
             @RequestParam Integer status) {
         return tenantService.updateStatus(id, status);
     }

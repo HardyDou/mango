@@ -9,6 +9,7 @@
       :multiple="multiple"
       :disabled="disabled"
       :auto-upload="autoUpload"
+      :http-request="fileApiRequest"
       :before-upload="handleBeforeUpload"
       :on-success="handleSuccess"
       :on-error="handleError"
@@ -37,14 +38,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import type { UploadProps, UploadUserFile } from 'element-plus';
+import type { UploadProps, UploadRequestOptions } from 'element-plus';
+import { uploadFile } from '../../api/upload';
+import {
+  mergeUploadResult,
+  normalizeUploadFiles,
+  type MangoUploadFileMeta,
+  type MangoUploadUserFile,
+} from './types';
+
+const DEFAULT_ACTION = '/api/file/files';
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: UploadUserFile[];
+    modelValue?: MangoUploadUserFile[];
     action?: string;
     headers?: Record<string, string>;
     accept?: string;
@@ -54,10 +64,11 @@ const props = withDefaults(
     autoUpload?: boolean;
     tip?: string;
     maxSize?: number; // MB
+    useFileApi?: boolean;
   }>(),
   {
     modelValue: () => [],
-    action: '/api/admin/upload/file',
+    action: DEFAULT_ACTION,
     headers: () => ({}),
     accept: '*',
     limit: 1,
@@ -65,18 +76,35 @@ const props = withDefaults(
     disabled: false,
     autoUpload: true,
     maxSize: 10,
+    useFileApi: true,
   }
 );
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: UploadUserFile[]): void;
-  (e: 'change', value: UploadUserFile[]): void;
-  (e: 'success', response: any, file: UploadUserFile): void;
-  (e: 'error', error: any, file: UploadUserFile): void;
+  (e: 'update:modelValue', value: MangoUploadUserFile[]): void;
+  (e: 'change', value: MangoUploadUserFile[]): void;
+  (e: 'success', response: MangoUploadFileMeta, file: MangoUploadUserFile): void;
+  (e: 'error', error: any, file: MangoUploadUserFile): void;
 }>();
 
 const uploadRef = ref();
-const internalFileList = ref<UploadUserFile[]>([...props.modelValue]);
+const internalFileList = ref<MangoUploadUserFile[]>([...props.modelValue]);
+
+const handleFileApiRequest = (options: UploadRequestOptions) => {
+  return uploadFile(options.file as File)
+    .then((result) => {
+      options.onSuccess?.(result);
+      return result;
+    })
+    .catch((error) => {
+      options.onError?.(error);
+      throw error;
+    });
+};
+
+const fileApiRequest = computed(() => (
+  props.useFileApi && props.action === DEFAULT_ACTION ? handleFileApiRequest : undefined
+));
 
 // Watch for external value changes
 watch(
@@ -97,8 +125,21 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (file) => {
 };
 
 // Handle success
-const handleSuccess: UploadProps['onSuccess'] = (response, file) => {
-  emit('success', response, file);
+const handleSuccess: UploadProps['onSuccess'] = (response, file, files) => {
+  const uploadedFile = mergeUploadResult(file as MangoUploadUserFile, response);
+  internalFileList.value = files.map((item) => (
+    item.uid === file.uid ? uploadedFile : item as MangoUploadUserFile
+  ));
+  emit('success', {
+    id: uploadedFile.id,
+    uid: uploadedFile.uid,
+    name: uploadedFile.fileName || uploadedFile.name,
+    url: uploadedFile.url || '',
+    fileName: uploadedFile.fileName || uploadedFile.name,
+    fileSize: Number(uploadedFile.fileSize ?? uploadedFile.size ?? 0),
+    contentType: uploadedFile.contentType,
+    objectName: uploadedFile.objectName,
+  }, uploadedFile);
   updateModelValue();
 };
 
@@ -115,14 +156,14 @@ const handleProgress: UploadProps['onProgress'] = (event, file) => {
 
 // Handle change
 const handleChange: UploadProps['onChange'] = (file, files) => {
-  internalFileList.value = files;
+  internalFileList.value = normalizeUploadFiles(files as MangoUploadUserFile[]);
   updateModelValue();
   emit('change', files);
 };
 
 // Handle remove
 const handleRemove: UploadProps['onRemove'] = (file, files) => {
-  internalFileList.value = files;
+  internalFileList.value = normalizeUploadFiles(files as MangoUploadUserFile[]);
   updateModelValue();
   emit('change', files);
 };

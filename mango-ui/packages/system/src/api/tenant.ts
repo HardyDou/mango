@@ -53,7 +53,7 @@ export interface PageResult<T> {
 export const tenantApi = {
   list: (params?: TenantQuery) => {
     return get<SysTenant[]>('/system/tenant/list', { params })
-      .then((list) => toPageResult(list.map(fromBackend), params));
+      .then((list) => toPageResult(filterList(list.map(fromBackend), params), params));
   },
   detail: (id: number) => {
     return get<SysTenant>('/system/tenant/detail', { params: { id } }).then(fromBackend);
@@ -102,10 +102,26 @@ function toBackend(item: SysTenant): SysTenantPayload {
 function toPageResult<T>(list: T[] = [], params?: TenantQuery): PageResult<T> {
   const pageNum = params?.pageNum || 1;
   const pageSize = params?.pageSize || list.length || 10;
+  const start = (pageNum - 1) * pageSize;
+  const pageList = list.slice(start, start + pageSize);
   return {
-    list,
+    list: pageList,
     total: list.length,
     pageNum,
     pageSize,
   };
+}
+
+function filterList(list: SysTenant[], params?: TenantQuery) {
+  const keyword = params?.keyword?.trim().toLowerCase();
+  return list.filter((item) => {
+    const keywordMatched = !keyword
+      || item.tenantName?.toLowerCase().includes(keyword)
+      || item.tenantCode?.toLowerCase().includes(keyword)
+      || item.contactName?.toLowerCase().includes(keyword)
+      || item.contactPhone?.toLowerCase().includes(keyword)
+      || item.contactEmail?.toLowerCase().includes(keyword);
+    const statusMatched = params?.status === undefined || item.status === params.status;
+    return keywordMatched && statusMatched;
+  });
 }

@@ -60,6 +60,10 @@
             <artifactId>mango-authorization-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-access-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
         </dependency>

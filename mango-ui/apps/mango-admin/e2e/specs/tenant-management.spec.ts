@@ -60,7 +60,7 @@ async function listTenants(request: APIRequestContext, token: string) {
 async function cleanupTenant(request: APIRequestContext, token: string, tenantCode: string) {
   const tenants = await listTenants(request, token);
   for (const tenant of tenants.filter((item: any) => item.tenantCode === tenantCode)) {
-    await request.put(`http://localhost:5555/system/tenant/status?id=${tenant.id}&status=0`, {
+    await request.put(`http://localhost:5555/system/tenant/status?id=${tenant.id}&status=9`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
@@ -104,6 +104,71 @@ async function expectNoAuthError(page: Page) {
 }
 
 test.describe('T7 机构管理页面真实接口闭环', () => {
+  test('机构禁用或归档后旧 token 不能继续访问', async ({ request }) => {
+    const unique = Date.now();
+    const tenantName = `E2E状态边界${unique}`;
+    const tenantCode = `e2e_status_${unique}`;
+    const platformToken = await loginToken(request, platformTenant);
+    let createdId: number | undefined;
+
+    try {
+      await cleanupTenant(request, platformToken, tenantCode);
+      const createResponse = await request.post('http://localhost:5555/system/tenant', {
+        headers: { Authorization: `Bearer ${platformToken}` },
+        data: {
+          tenantName,
+          tenantCode,
+          institutionType: 'ENTERPRISE',
+          capabilityCodes: 'SYSTEM_ADMIN,AUTH_ADMIN,ORG_ADMIN,WORKFLOW',
+          status: 1,
+          contact: 'E2E状态管理员',
+        },
+      });
+      expect(createResponse.status()).toBe(200);
+      const tenants = await listTenants(request, platformToken);
+      const created = tenants.find((item: any) => item.tenantCode === tenantCode);
+      expect(created).toBeTruthy();
+      createdId = created.id;
+
+      const institutionToken = await loginToken(request, {
+        tenantId: String(createdId),
+        tenantCode,
+        tenantName,
+      });
+      const beforeDisable = await request.get('http://localhost:5555/authorization/menus/user?appCode=internal-admin&fmt=tree', {
+        headers: { Authorization: `Bearer ${institutionToken}` },
+      });
+      expect(beforeDisable.status()).toBe(200);
+
+      const disableResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=0`, {
+        headers: { Authorization: `Bearer ${platformToken}` },
+      });
+      expect(disableResponse.status()).toBe(200);
+      await expectLoginOption(request, tenantName, false);
+      await expectLoginDenied(request, tenantCode);
+
+      const afterDisable = await request.get('http://localhost:5555/authorization/menus/user?appCode=internal-admin&fmt=tree', {
+        headers: { Authorization: `Bearer ${institutionToken}` },
+      });
+      expect(afterDisable.status()).toBe(401);
+      const afterDisableBody = await afterDisable.json();
+      expect(afterDisableBody.message || afterDisableBody.msg).toContain('当前机构已禁用');
+
+      const archiveResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=9`, {
+        headers: { Authorization: `Bearer ${platformToken}` },
+      });
+      expect(archiveResponse.status()).toBe(200);
+      await expectLoginOption(request, tenantName, false);
+      await expectLoginDenied(request, tenantCode);
+    } finally {
+      if (createdId) {
+        await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=9`, {
+          headers: { Authorization: `Bearer ${platformToken}` },
+        });
+      }
+    }
+  });
+
   test('机构类型与开通能力可持久化并在页面显示中文标签', async ({ page, request }) => {
     const unique = Date.now();
     const tenantName = `E2E担保机构${unique}`;
@@ -228,6 +293,8 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
         response.status() === 200
       );
       await editedRow.getByRole('button', { name: '禁用' }).click();
+      await expect(page.getByText(/确认将机构.*禁用/)).toBeVisible();
+      await page.getByRole('button', { name: '确定' }).click();
       await disableResponsePromise;
       await expect(page.getByText('禁用成功')).toBeVisible({ timeout: 10000 });
       await expectLoginOption(request, tenantName, false);
@@ -240,13 +307,15 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
         response.status() === 200
       );
       await disabledRow.getByRole('button', { name: '启用' }).click();
+      await expect(page.getByText(/确认启用机构/)).toBeVisible();
+      await page.getByRole('button', { name: '确定' }).click();
       await enableResponsePromise;
       await expect(page.getByText('启用成功')).toBeVisible({ timeout: 10000 });
       await expectLoginOption(request, tenantName, true);
 
       const enabledRow = page.locator('.el-table__row', { hasText: tenantName }).first();
       await enabledRow.getByRole('button', { name: '删除' }).click();
-      await expect(page.getByText('确认删除该机构?')).toBeVisible();
+      await expect(page.getByText(/仅允许删除未初始化、无关联数据的机构/)).toBeVisible();
       const deleteResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/system/tenant') &&
         response.request().method() === 'DELETE' &&
@@ -257,8 +326,9 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       const deleteBody = await deleteResponse.json();
       expect(deleteBody.success).toBeFalsy();
       expect(deleteBody.code).toBe(2409);
-      expect(deleteBody.msg || deleteBody.message).toContain('不能直接删除');
-      await expect(page.getByText(/不能直接删除|已有组织架构数据|已有成员数据|有关联角色/)).toBeVisible({ timeout: 10000 });
+      expect(deleteBody.msg || deleteBody.message).toMatch(/归档|不能直接删除|已有组织架构数据|已有成员数据|有关联角色/);
+      await expect(page.locator('.el-message__content').getByText(/不能直接删除|已有组织架构数据|已有成员数据|有关联角色/))
+        .toBeVisible({ timeout: 10000 });
       await expect(page.locator('.el-table__row', { hasText: tenantName })).toBeVisible();
       await expectLoginOption(request, tenantName, true);
       await expectNoAuthError(page);

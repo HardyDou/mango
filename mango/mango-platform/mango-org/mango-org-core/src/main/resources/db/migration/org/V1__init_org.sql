@@ -1,69 +1,79 @@
--- ============================================
--- Mango Organization Module Init Data
--- ============================================
 
--- Create sys_org table
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE IF NOT EXISTS `sys_org` (
   `id` bigint NOT NULL COMMENT 'Primary key',
-  `pid` bigint NOT NULL DEFAULT 0 COMMENT 'Parent org ID (0 for root)',
+  `pid` bigint NOT NULL DEFAULT '0' COMMENT 'Parent org ID (0 for root)',
   `org_name` varchar(100) NOT NULL COMMENT 'Organization name',
   `org_code` varchar(50) NOT NULL COMMENT 'Organization code (unique)',
   `org_type` int NOT NULL COMMENT 'Org type: 1-集团, 2-公司, 3-部门, 4-小组',
-  `org_sort` int NOT NULL DEFAULT 0 COMMENT 'Sort order',
+  `org_sort` int NOT NULL DEFAULT '0' COMMENT 'Sort order',
   `org_status` char(1) NOT NULL DEFAULT '1' COMMENT 'Status: 0-disabled, 1-enabled',
-  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT 'Tenant ID',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT 'Tenant ID',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Create time',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update time',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_sys_org_code` (`org_code`),
+  UNIQUE KEY `uk_sys_org_tenant_code` (`tenant_id`,`org_code`),
   KEY `idx_sys_org_pid` (`pid`),
   KEY `idx_sys_org_type` (`org_type`),
   KEY `idx_sys_org_tenant_id` (`tenant_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Organization table';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Organization table';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ============================================
--- Organization Data (芒果 Organization Tree)
--- ============================================
+LOCK TABLES `sys_org` WRITE;
+/*!40000 ALTER TABLE `sys_org` DISABLE KEYS */;
+INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES (1,0,'芒果集团','MANGO_GROUP',1,0,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(2,1,'A公司','MANGO_TECH',2,0,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(3,1,'B公司','MANGO_FINANCE',2,0,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(4,1,'C公司','MANGO_REAL_ESTATE',2,0,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(5,2,'技术研发部','TECH_RD',3,1,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(6,2,'产品设计部','TECH_PRODUCT',3,2,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(7,2,'市场营销部','TECH_MARKETING',3,3,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(8,2,'人力资源部','TECH_HR',3,4,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(9,2,'财务部','TECH_FINANCE',3,5,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(10,3,'风险管理部','FIN_RISK',3,1,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(11,3,'信贷管理部','FIN_CREDIT',3,2,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(12,3,'财务部','FIN_ACCOUNTING',3,3,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(13,4,'项目管理部','RE_PROJECT',3,1,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(14,4,'成本合约部','RE_CONTRACT',3,2,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(15,4,'财务部','RE_FINANCE',3,3,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(16,5,'后端开发组','TECH_BACKEND',4,1,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(17,5,'前端开发组','TECH_FRONTEND',4,2,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(18,5,'测试组','TECH_QA',4,3,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(19,5,'运维组','TECH_OPS',4,4,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(20,6,'产品策划组','PRD_PLANNING',4,1,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(21,6,'UI设计组','PRD_UI',4,2,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(22,6,'交互设计组','PRD_UX',4,3,'1',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(521674743970009382,0,'B公司','COMPANY_B_ROOT',2,0,'1',3,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(687573683748704095,0,'C公司','COMPANY_C_ROOT',2,0,'1',4,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(1042247245104011501,0,'A公司','COMPANY_A_ROOT',2,0,'1',2,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24');
+/*!40000 ALTER TABLE `sys_org` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE IF NOT EXISTS `org_post` (
+  `id` bigint NOT NULL COMMENT '岗位ID',
+  `post_name` varchar(100) NOT NULL COMMENT '岗位名称',
+  `post_code` varchar(50) NOT NULL COMMENT '岗位编码',
+  `post_sort` int NOT NULL DEFAULT '0' COMMENT '排序值',
+  `post_status` char(1) NOT NULL DEFAULT '1' COMMENT '状态：0-禁用，1-启用',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_org_post_tenant_code` (`tenant_id`,`post_code`),
+  KEY `idx_org_post_status` (`post_status`),
+  KEY `idx_org_post_tenant_id` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='岗位表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Root: 芒果集团 (Mango Group HQ)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(1, 0, '芒果集团', 'MANGO_GROUP', 1, 0, '1', 1);
+LOCK TABLES `org_post` WRITE;
+/*!40000 ALTER TABLE `org_post` DISABLE KEYS */;
+INSERT INTO `org_post` (`id`, `post_name`, `post_code`, `post_sort`, `post_status`, `remark`, `tenant_id`, `create_time`, `update_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES (1,'集团管理员','GROUP_ADMIN',1,'1','系统默认岗位',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(2,'部门负责人','DEPT_MANAGER',2,'1','部门管理岗位',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(3,'研发工程师','RD_ENGINEER',3,'1','研发岗位',1,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(58102205052069591,'机构管理员','COMPANY_B_EMPLOYEE',3,'1','机构默认员工岗位',3,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(426925352094110091,'机构管理员','COMPANY_A_ORG_MANAGER',2,'1','机构默认组织管理岗位',2,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(704865059741660003,'机构管理员','COMPANY_B_ORG_MANAGER',2,'1','机构默认组织管理岗位',3,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(820489616391658994,'机构管理员','COMPANY_C_INSTITUTION_ADMIN',1,'1','机构默认管理员岗位',4,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(844283706583665259,'机构管理员','COMPANY_B_INSTITUTION_ADMIN',1,'1','机构默认管理员岗位',3,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(979924019523477296,'机构管理员','COMPANY_A_EMPLOYEE',3,'1','机构默认员工岗位',2,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(1070034144744147334,'机构管理员','COMPANY_C_ORG_MANAGER',2,'1','机构默认组织管理岗位',4,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(1087967764374089535,'机构管理员','COMPANY_C_EMPLOYEE',3,'1','机构默认员工岗位',4,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24'),(1094625879621338179,'机构管理员','COMPANY_A_INSTITUTION_ADMIN',1,'1','机构默认管理员岗位',2,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24');
+/*!40000 ALTER TABLE `org_post` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
--- Level 2: 子公司 (Subsidiaries)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(2, 1, '芒果科技', 'MANGO_TECH', 2, 1, '1', 1),
-(3, 1, '芒果金融', 'MANGO_FINANCE', 2, 2, '1', 1),
-(4, 1, '芒果地产', 'MANGO_REAL_ESTATE', 2, 3, '1', 1);
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Level 3: 部门 (Departments under 芒果科技)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(5, 2, '技术研发部', 'TECH_RD', 3, 1, '1', 1),
-(6, 2, '产品设计部', 'TECH_PRODUCT', 3, 2, '1', 1),
-(7, 2, '市场营销部', 'TECH_MARKETING', 3, 3, '1', 1),
-(8, 2, '人力资源部', 'TECH_HR', 3, 4, '1', 1),
-(9, 2, '财务部', 'TECH_FINANCE', 3, 5, '1', 1);
-
--- Level 3: 部门 (Departments under 芒果金融)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(10, 3, '风险管理部', 'FIN_RISK', 3, 1, '1', 1),
-(11, 3, '信贷管理部', 'FIN_CREDIT', 3, 2, '1', 1),
-(12, 3, '财务部', 'FIN_ACCOUNTING', 3, 3, '1', 1);
-
--- Level 3: 部门 (Departments under 芒果地产)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(13, 4, '项目管理部', 'RE_PROJECT', 3, 1, '1', 1),
-(14, 4, '成本合约部', 'RE_CONTRACT', 3, 2, '1', 1),
-(15, 4, '财务部', 'RE_FINANCE', 3, 3, '1', 1);
-
--- Level 4: 小组 (Teams under 技术研发部)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(16, 5, '后端开发组', 'TECH_BACKEND', 4, 1, '1', 1),
-(17, 5, '前端开发组', 'TECH_FRONTEND', 4, 2, '1', 1),
-(18, 5, '测试组', 'TECH_QA', 4, 3, '1', 1),
-(19, 5, '运维组', 'TECH_OPS', 4, 4, '1', 1);
-
--- Level 4: 小组 (Teams under 产品设计部)
-INSERT INTO `sys_org` (`id`, `pid`, `org_name`, `org_code`, `org_type`, `org_sort`, `org_status`, `tenant_id`) VALUES
-(20, 6, '产品策划组', 'PRD_PLANNING', 4, 1, '1', 1),
-(21, 6, 'UI设计组', 'PRD_UI', 4, 2, '1', 1),
-(22, 6, '交互设计组', 'PRD_UX', 4, 3, '1', 1);

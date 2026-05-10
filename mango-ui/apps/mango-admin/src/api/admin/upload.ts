@@ -4,20 +4,32 @@
  * File upload related API endpoints.
  */
 
-import { post } from '@mango/common';
+import {
+  uploadExcel as uploadExcelByFileModule,
+  uploadFile as uploadFileByFileModule,
+  uploadImage as uploadImageByFileModule,
+  uploadMultiple as uploadMultipleByFileModule,
+} from '@mango/common';
 
 export interface UploadResult {
+  id?: number;
   url: string;
   fileName: string;
   fileSize: number;
+  contentType?: string;
+  objectName?: string;
 }
 
 /**
  * Excel upload result
  */
 export interface ExcelUploadResult {
+  id?: number;
+  url: string;
   fileName: string;
   fileSize: number;
+  contentType?: string;
+  objectName?: string;
   data: Record<string, unknown>[];
 }
 
@@ -27,14 +39,7 @@ export interface ExcelUploadResult {
  * @returns 上传结果
  */
 export function uploadFile(file: File): Promise<UploadResult> {
-  const formData = new FormData();
-  formData.append('file', file);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return post<UploadResult>('/admin/upload/file', formData as any, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  return uploadFileByFileModule(file);
 }
 
 /**
@@ -43,14 +48,7 @@ export function uploadFile(file: File): Promise<UploadResult> {
  * @returns 上传结果
  */
 export function uploadImage(file: File): Promise<UploadResult> {
-  const formData = new FormData();
-  formData.append('file', file);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return post<UploadResult>('/admin/upload/image', formData as any, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  return uploadImageByFileModule(file);
 }
 
 /**
@@ -59,14 +57,7 @@ export function uploadImage(file: File): Promise<UploadResult> {
  * @returns 上传结果（包含解析后的数据）
  */
 export function uploadExcel(file: File): Promise<ExcelUploadResult> {
-  const formData = new FormData();
-  formData.append('file', file);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return post<ExcelUploadResult>('/admin/upload/excel', formData as any, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  return uploadExcelByFileModule(file);
 }
 
 /**
@@ -75,14 +66,5 @@ export function uploadExcel(file: File): Promise<ExcelUploadResult> {
  * @returns 上传结果列表
  */
 export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
-  const formData = new FormData();
-  files.forEach((file) => {
-    formData.append('files', file);
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return post<UploadResult[]>('/admin/upload/multiple', formData as any, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  return uploadMultipleByFileModule(files);
 }

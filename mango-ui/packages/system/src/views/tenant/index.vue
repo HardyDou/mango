@@ -115,13 +115,14 @@
         <el-table-column
           prop="status"
           label="状态"
-          width="80"
+          width="90"
         >
           <template #default="{ row }">
             <DictTag
-              dict-code="sys_normal_disable"
+              dict-code="institution_status"
               :value="row.status"
               size="small"
+              :type="statusTagType(row.status)"
             />
           </template>
         </el-table-column>
@@ -132,7 +133,7 @@
         />
         <el-table-column
           label="操作"
-          width="200"
+          width="260"
           fixed="right"
         >
           <template #default="{ row }">
@@ -151,6 +152,24 @@
               @click="handleToggleStatus(row)"
             >
               {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button
+              v-if="row.status !== 2"
+              link
+              type="warning"
+              size="small"
+              @click="handleUpdateStatus(row, 2)"
+            >
+              冻结
+            </el-button>
+            <el-button
+              v-if="row.status !== 9"
+              link
+              type="info"
+              size="small"
+              @click="handleUpdateStatus(row, 9)"
+            >
+              归档
             </el-button>
             <el-button
               link
@@ -287,7 +306,14 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { DictSelect, DictTag, Pagination, useDict } from '@mango/common';
 import { tenantApi, type SysTenant } from '../../api/tenant';
 
-const { options: statusOptions } = useDict('sys_normal_disable');
+const { options: statusOptions } = useDict('institution_status');
+
+const statusActions: Record<number, string> = {
+  0: '禁用',
+  1: '启用',
+  2: '冻结',
+  9: '归档',
+};
 
 const loading = ref(false);
 const tableData = ref<SysTenant[]>([]);
@@ -386,18 +412,32 @@ async function handleSubmit() {
 
 async function handleToggleStatus(row: SysTenant) {
   const newStatus = row.status === 1 ? 0 : 1;
-  const action = newStatus === 1 ? '启用' : '禁用';
+  await handleUpdateStatus(row, newStatus);
+}
+
+async function handleUpdateStatus(row: SysTenant, status: number) {
+  const action = statusActions[status] || '修改状态';
+  const confirmMessage = status === 1
+    ? `确认启用机构“${row.tenantName}”？`
+    : `确认将机构“${row.tenantName}”${action}？非启用状态下，该机构成员不能登录或继续访问系统。`;
   try {
-    await tenantApi.updateStatus(row.id!, { status: newStatus });
+    await ElMessageBox.confirm(confirmMessage, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: status === 9 ? 'warning' : 'info',
+    });
+    await tenantApi.updateStatus(row.id!, { status });
     ElMessage.success(`${action}成功`);
     loadData();
   } catch (error) {
-    console.error(`${action}失败:`, error);
+    if (error !== 'cancel' && error !== 'close') {
+      console.error(`${action}失败:`, error);
+    }
   }
 }
 
 function handleDelete(row: SysTenant) {
-  ElMessageBox.confirm('确认删除该机构?', '提示', {
+  ElMessageBox.confirm('仅允许删除未初始化、无关联数据的机构；已使用机构请归档。确认继续删除?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
@@ -410,6 +450,13 @@ function handleDelete(row: SysTenant) {
       console.error('删除失败:', error);
     }
   }).catch(() => {});
+}
+
+function statusTagType(status?: number) {
+  if (status === 1) return 'success';
+  if (status === 2) return 'warning';
+  if (status === 9) return 'info';
+  return 'danger';
 }
 
 onMounted(() => {

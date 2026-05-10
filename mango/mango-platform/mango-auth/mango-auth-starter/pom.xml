@@ -78,6 +78,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango 边界访问配置，用于复用 IP 白名单规则 -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-access-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 系统 API，用于可选记录登录审计日志 -->
         <dependency>
             <groupId>io.mango</groupId>

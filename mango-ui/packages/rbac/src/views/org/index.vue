@@ -124,7 +124,7 @@
               <el-descriptions-item label="排序">
                 {{ currentOrg.orgSort ?? '-' }}
               </el-descriptions-item>
-              <el-descriptions-item label="租户ID">
+              <el-descriptions-item label="机构ID">
                 {{ currentOrg.tenantId ?? '-' }}
               </el-descriptions-item>
             </el-descriptions>

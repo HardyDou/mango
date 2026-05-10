@@ -2,7 +2,6 @@ package io.mango.infra.persistence.starter;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +18,7 @@ class PersistenceFlywayMigrationIntegrationTest {
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
 
     @Test
-    void applicationRunner_shouldRunRealFlywayMigrationAgainstDatabase() {
+    void flywayMigrationInitializer_shouldRunRealFlywayMigrationAgainstDatabase() {
         contextRunner
                 .withPropertyValues(
                         "mango.persistence.flyway.enabled=true",
@@ -28,9 +27,6 @@ class PersistenceFlywayMigrationIntegrationTest {
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(Flyway.class);
-
-                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
-                    runner.run(null);
 
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     Integer count = jdbcTemplate.queryForObject(
@@ -50,9 +46,6 @@ class PersistenceFlywayMigrationIntegrationTest {
                 )
                 .withUserConfiguration(H2DataSourceConfig.class)
                 .run(ctx -> {
-                    ApplicationRunner runner = ctx.getBean("persistenceFlywayMigrationInitializer", ApplicationRunner.class);
-                    runner.run(null);
-
                     JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
                     assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
                     assertThat(tableExists(jdbcTemplate, "another_flyway_user")).isTrue();

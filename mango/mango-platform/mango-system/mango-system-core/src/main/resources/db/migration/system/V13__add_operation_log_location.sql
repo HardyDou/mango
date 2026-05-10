@@ -1,2 +1,0 @@
-ALTER TABLE sys_operation_log
-    ADD COLUMN location VARCHAR(255) DEFAULT NULL COMMENT 'IP归属地' AFTER ip;

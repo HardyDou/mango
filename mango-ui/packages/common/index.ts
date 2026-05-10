@@ -80,4 +80,9 @@ export { default as ImageUpload } from './components/Upload/ImageUpload.vue';
 export { default as FileUpload } from './components/Upload/FileUpload.vue';
 export { default as ExcelUpload } from './components/Upload/ExcelUpload.vue';
 export { default as Upload } from './components/Upload/index.vue';
+export type {
+  MangoUploadFileMeta,
+  MangoUploadModelValue,
+  MangoUploadUserFile,
+} from './components/Upload/types';
 export { default as Websocket } from './components/Websocket/index.vue';

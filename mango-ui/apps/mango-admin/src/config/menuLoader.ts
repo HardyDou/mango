@@ -224,7 +224,7 @@ export class MenuLoader {
 
   /**
    * 重置后端菜单缓存。
-   * 登录用户、租户或应用上下文变化时必须重新加载后端菜单，避免沿用上一身份的导航权限。
+   * 登录用户、机构或应用上下文变化时必须重新加载后端菜单，避免沿用上一身份的导航权限。
    */
   resetBackendCache(): void {
     this.backendMenuItems = [];

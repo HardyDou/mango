@@ -8,6 +8,7 @@ import io.mango.common.result.R;
 import io.mango.identity.api.TenantMemberProvider;
 import io.mango.identity.api.vo.TenantMemberInfo;
 import io.mango.system.api.SystemCode;
+import io.mango.system.api.enums.InstitutionStatus;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionContext;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -28,8 +29,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvider {
-
-    private static final int STATUS_ENABLED = 1;
 
     private final SysTenantMapper sysTenantMapper;
     private final TenantMemberProvider tenantMemberProvider;
@@ -60,7 +59,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         entity.setTenantCode(po.getTenantCode());
         entity.setInstitutionType(firstText(po.getInstitutionType(), "ENTERPRISE"));
         entity.setCapabilityCodes(normalizeCodes(po.getCapabilityCodes()));
-        entity.setStatus(po.getStatus());
+        entity.setStatus(requireValidStatus(po.getStatus()));
         entity.setContact(po.getContact());
         entity.setMobile(po.getMobile());
         entity.setEmail(po.getEmail());
@@ -81,7 +80,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         entity.setTenantCode(po.getTenantCode());
         entity.setInstitutionType(firstText(po.getInstitutionType(), "ENTERPRISE"));
         entity.setCapabilityCodes(normalizeCodes(po.getCapabilityCodes()));
-        entity.setStatus(po.getStatus());
+        entity.setStatus(requireValidStatus(po.getStatus()));
         entity.setContact(po.getContact());
         entity.setMobile(po.getMobile());
         entity.setEmail(po.getEmail());
@@ -105,16 +104,18 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
 
     @Override
     public R<Boolean> updateStatus(Long id, Integer status) {
+        SysTenant tenant = sysTenantMapper.selectById(id);
+        Require.notNull(tenant, SystemCode.INSTITUTION_NOT_FOUND);
         SysTenant entity = new SysTenant();
         entity.setId(id);
-        entity.setStatus(status);
+        entity.setStatus(requireValidStatus(status));
         return R.ok(sysTenantMapper.updateById(entity) > 0);
     }
 
     @Override
     public R<List<LoginTenantVO>> listLoginOptions() {
         List<SysTenant> list = sysTenantMapper.selectList(new LambdaQueryWrapper<SysTenant>()
-                .eq(SysTenant::getStatus, STATUS_ENABLED)
+                .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())
                 .orderByAsc(SysTenant::getId));
         return R.ok(list.stream().map(this::convertToLoginTenantVO).collect(Collectors.toList()));
     }
@@ -132,7 +133,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         }
         SysTenant tenant = sysTenantMapper.selectOne(new LambdaQueryWrapper<SysTenant>()
                 .eq(SysTenant::getId, id)
-                .eq(SysTenant::getStatus, STATUS_ENABLED)
+                .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())
                 .last("LIMIT 1"));
         return tenant == null ? null : convertToLoginTenantVO(tenant);
     }
@@ -171,7 +172,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         }
         SysTenant tenant = sysTenantMapper.selectOne(new LambdaQueryWrapper<SysTenant>()
                 .eq(SysTenant::getTenantCode, tenantCode.trim())
-                .eq(SysTenant::getStatus, STATUS_ENABLED)
+                .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())
                 .last("LIMIT 1"));
         return tenant == null ? null : convertToLoginTenantVO(tenant);
     }
@@ -228,7 +229,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
     private LoginTenantVO convertMemberToLoginTenantVO(TenantMemberInfo member) {
         SysTenant tenant = sysTenantMapper.selectOne(new LambdaQueryWrapper<SysTenant>()
                 .eq(SysTenant::getId, member.getTenantId())
-                .eq(SysTenant::getStatus, STATUS_ENABLED)
+                .eq(SysTenant::getStatus, InstitutionStatus.ENABLED.value())
                 .last("LIMIT 1"));
         if (tenant == null) {
             return null;
@@ -264,5 +265,10 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
                 .filter(item -> !item.isEmpty())
                 .distinct()
                 .collect(Collectors.joining(","));
+    }
+
+    private Integer requireValidStatus(Integer status) {
+        Require.isTrue(InstitutionStatus.valid(status), SystemCode.INSTITUTION_STATUS_INVALID);
+        return status;
     }
 }

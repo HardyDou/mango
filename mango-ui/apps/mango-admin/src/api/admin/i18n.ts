@@ -15,7 +15,7 @@ export function getI18nPublic() {
  * @description 调用 /system/i18n?lang=xxx，用于运行时语言切换
  */
 export function getI18nBff(lang: string) {
-  return get(`/system/i18n?lang=${lang}`);
+  return get('/system/i18n', { params: { lang } });
 }
 
 /**
@@ -32,5 +32,5 @@ export function getSupportedLanguages() {
  * @description 调用 /system/i18n/public/lang?lang=xxx，由 i18n 模块直接返回
  */
 export function getI18n(lang: string) {
-  return get(`/system/i18n/public/lang?lang=${lang}`);
+  return get('/system/i18n/public/lang', { params: { lang } });
 }
