@@ -1,18 +1,6 @@
 <template>
   <div class="login-log-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>登录日志</span>
-          <el-button
-            type="danger"
-            @click="handleClean"
-          >
-            清理日志
-          </el-button>
-        </div>
-      </template>
-
       <!-- 统计卡片 -->
       <el-row
         :gutter="20"
@@ -91,6 +79,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="danger"
+            @click="handleClean"
+          >
+            清理日志
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"

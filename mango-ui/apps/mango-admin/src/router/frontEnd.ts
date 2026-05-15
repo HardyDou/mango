@@ -68,7 +68,7 @@ export function getTabBarRoutes(routes: RouteRecordRaw[]): RouteRecordRaw[] {
     }
     return {
       ...route,
-      component: () => import('@/layout/routerView/parent.vue'),
+      component: route.component || (() => import('@/layout/routerView/parent.vue')),
     };
   });
 }

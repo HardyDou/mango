@@ -6,7 +6,7 @@
           v-for="(v, k) in columnsAsideList"
           :key="k"
           :ref="(el) => { if (el) columnsAsideOffsetTopRefs[k] = el as HTMLElement }"
-          :class="{ 'layout-columns-active': liIndex === k, 'layout-columns-hover': liHoverIndex === k }"
+          :class="{ 'layout-columns-active': liIndex === k }"
           :title="v.meta?.title || v.name"
           @click="onColumnsAsideMenuClick(v, k)"
           @mouseenter="onColumnsAsideMenuMouseenter(v, k)"
@@ -55,12 +55,9 @@ const route = useRoute();
 const router = useRouter();
 const layoutStore = useLayoutStore();
 const storesRoutesList = useRoutesList();
-const { routesList, isColumnsMenuHover, isColumnsNavHover } = storeToRefs(storesRoutesList);
+const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 
 const liIndex = ref(0);
-const liHoverIndex = ref<number | null>(null);
-const liOldIndex = ref<number | null>(null);
-const liOldPath = ref<string | null>(null);
 const difference = computed(() => (layoutStore.columnsAsideStyle === 'columns-round' ? 3 : 0));
 
 const columnsAsideList = computed(() => {
@@ -96,32 +93,15 @@ const onColumnsAsideMenuClick = (v: MenuItem, k: number) => {
   setColumnsAsideMove(k);
   storesRoutesList.setActiveTopRoutePath(v.path);
   if (v.children && v.children.length > 0) {
-    storesRoutesList.setColumnsMenuHover(true);
     mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));
-  } else {
-    router.push(v.path);
+    return;
   }
+  router.push(v.path);
 };
 
-const onColumnsAsideMenuMouseenter = (v: MenuItem, k: number) => {
-  liOldPath.value = v.path;
-  liOldIndex.value = k;
-  liHoverIndex.value = k;
-  storesRoutesList.setActiveTopRoutePath(v.path);
-  if (v.children && v.children.length > 0) {
-    storesRoutesList.setColumnsMenuHover(true);
-    mittBus.emit('setSendColumnsChildren', setSendChildren(v.path));
-  }
-};
+const onColumnsAsideMenuMouseenter = (_v: MenuItem, _k: number) => {};
 
-const onColumnsAsideMenuMouseleave = async () => {
-  await storesRoutesList.setColumnsNavHover(false);
-  setTimeout(() => {
-    if (!isColumnsMenuHover.value && !isColumnsNavHover.value) {
-      mittBus.emit('restoreDefault');
-    }
-  }, 100);
-};
+const onColumnsAsideMenuMouseleave = async () => {};
 
 const setSendChildren = (path: string) => {
   const parentRoute = searchParent(routesList.value, path);
@@ -166,8 +146,7 @@ let cleanupRestore: (() => void) | undefined;
 onMounted(() => {
   setFilterRoutes();
   cleanupRestore = mittBus.on('restoreDefault', () => {
-    liOldIndex.value = null;
-    liOldPath.value = null;
+    setFilterRoutes();
   });
 });
 
@@ -176,7 +155,7 @@ onUnmounted(() => {
 });
 
 const setFilterRoutes = () => {
-  const resData = setSendChildren(route.path);
+  const resData = setSendChildren(activeTopRoutePath.value || route.path);
   if (Object.keys(resData).length <= 0) return false;
   setColumnsAsideMove(resData.item?.k || 0);
   mittBus.emit('setSendColumnsChildren', resData);
@@ -187,6 +166,14 @@ watch(
   () => {
     setColumnsMenuHighlight(route.path);
     mittBus.emit('setSendColumnsChildren', setSendChildren(route.path));
+  }
+);
+
+watch(
+  () => activeTopRoutePath.value,
+  (value) => {
+    if (!value) return;
+    mittBus.emit('setSendColumnsChildren', setSendChildren(value));
   }
 );
 
@@ -216,15 +203,6 @@ watch(
       color: #fff;
       transition: 0.3s ease-in-out;
     }
-
-    .layout-columns-hover {
-      color: #fff;
-
-      a {
-        color: #fff;
-      }
-    }
-
     li {
       color: #fff;
       width: 100%;
@@ -236,7 +214,7 @@ watch(
       z-index: 1;
 
       &:hover {
-        @extend .layout-columns-hover;
+        color: #fff;
       }
 
       .columns-vertical {

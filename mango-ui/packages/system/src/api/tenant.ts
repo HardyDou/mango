@@ -10,6 +10,7 @@ export interface SysTenant {
   tenantName: string;
   tenantCode: string;
   institutionType?: string;
+  packageId?: number;
   capabilityCodes?: string;
   capabilityCodeList?: string[];
   contactName?: string;
@@ -19,8 +20,8 @@ export interface SysTenant {
   mobile?: string;
   email?: string;
   status?: number;
-  createTime?: string;
-  updateTime?: string;
+  createTime?: string | number[];
+  updateTime?: string | number[];
 }
 
 interface SysTenantPayload {
@@ -28,6 +29,7 @@ interface SysTenantPayload {
   tenantName: string;
   tenantCode: string;
   institutionType?: string;
+  packageId?: number;
   capabilityCodes?: string;
   status?: number;
   contact?: string;
@@ -89,6 +91,7 @@ function toBackend(item: SysTenant): SysTenantPayload {
     tenantName: item.tenantName,
     tenantCode: item.tenantCode,
     institutionType: item.institutionType,
+    packageId: item.packageId,
     capabilityCodes: item.capabilityCodeList?.length
       ? item.capabilityCodeList.join(',')
       : item.capabilityCodes,

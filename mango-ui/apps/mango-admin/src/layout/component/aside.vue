@@ -53,7 +53,7 @@ const layoutAsideScrollbarRef = ref();
 const storesRoutesList = useRoutesList();
 const layoutStore = useLayoutStore();
 const storesTagsViewRoutes = useTagsViewRoutes();
-const { routesList, activeTopRoutePath, isColumnsMenuHover, isColumnsNavHover } = storeToRefs(storesRoutesList);
+const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
 const menuList = ref<any[]>([]);
@@ -85,7 +85,10 @@ const getSideMenus = (items: any[], topPath?: string): any[] => {
 watch(
   () => [routesList.value, activeTopRoutePath.value, route.path],
   () => {
-    // columns 布局时，菜单由 mitt setSendColumnsChildren 事件管理，不直接使用 routesList
+    if (layoutStore.layout === 'defaults') {
+      menuList.value = routesList.value.filter(item => !item.meta?.isHide);
+      return;
+    }
     if (layoutStore.layout !== 'columns') {
       menuList.value = getSideMenus(routesList.value, activeTopRoutePath.value);
     }
@@ -106,10 +109,6 @@ watch(
 );
 
 const setShowAside = computed(() => {
-  // 分栏布局时，鼠标悬停在分栏菜单上才显示侧边菜单
-  if (layoutStore.layout === 'columns') {
-    return isColumnsMenuHover.value;
-  }
   return true;
 });
 
@@ -119,17 +118,12 @@ const setCollapseStyle = computed(() => {
     return '';
   }
   if (layoutStore.layout === 'columns') {
-    // 分栏布局：收起时 1px 宽度（几乎隐藏），展开时 220px
-    return layoutStore.isCollapse ? 'layout-aside-pc-1' : 'layout-aside-pc-220';
+    return layoutStore.isColumnsAsideOpen ? 'layout-aside-pc-220' : 'layout-aside-pc-0';
   }
   return layoutStore.isCollapse ? 'layout-aside-pc-64' : 'layout-aside-pc-220';
 });
 
-const onAsideEnterLeave = (bool: boolean) => {
-  if (layoutStore.layout === 'columns') {
-    storesRoutesList.setColumnsMenuHover(bool);
-  }
-};
+const onAsideEnterLeave = (_bool: boolean) => {};
 
 const onCloseMobileMenu = () => {
   layoutStore.closeMobileMenu();
@@ -170,16 +164,6 @@ onUnmounted(() => {
   cleanupRestore?.();
   cleanupMobileResize?.();
 });
-
-// When in columns mode, watch for hover state to update menu
-watch(
-  isColumnsMenuHover,
-  (newVal) => {
-    if (!newVal) {
-      columnsChildren.value = [];
-    }
-  }
-);
 </script>
 
 <style scoped lang="scss">
@@ -227,6 +211,13 @@ watch(
     max-width: 1px !important;
   }
 
+  &.layout-aside-pc-0 {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    box-shadow: none;
+  }
+
   &.layout-aside-pc-220 {
     width: 220px !important;
     min-width: 220px !important;
@@ -248,10 +239,8 @@ watch(
 // Columns mode: when hovering on columnsAside, show full menu
 :deep(.layout-columns-warp) {
   .layout-aside {
-    width: var(--mango-aside-width) !important;
-    min-width: var(--mango-aside-width) !important;
-    max-width: var(--mango-aside-width) !important;
     box-shadow: none;
+    border-right: 1px solid var(--mango-border-color);
   }
 }
 </style>

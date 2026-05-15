@@ -6,41 +6,50 @@
         :lg="8"
       >
         <el-card class="org-panel">
-          <template #header>
-            <div class="card-header">
-              <span>组织架构</span>
-              <div class="header-actions">
-                <el-button @click="loadTree">
-                  刷新
-                </el-button>
-              </div>
-            </div>
-          </template>
-
-          <el-form class="filter-form">
-            <el-form-item label="组织类型">
-              <el-select
-                v-model="query.type"
-                placeholder="全部类型"
-                clearable
-                @change="loadTree"
+          <div class="panel-toolbar">
+            <div class="panel-toolbar-left">
+              <span class="panel-title">组织架构</span>
+              <el-form
+                v-if="showTypeFilter"
+                class="filter-form"
               >
-                <el-option
-                  v-for="item in orgTypeOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-form>
+                <el-form-item label="组织类型">
+                  <el-select
+                    v-model="query.type"
+                    placeholder="全部类型"
+                    clearable
+                    @change="loadTree"
+                  >
+                    <el-option
+                      v-for="item in orgTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-form>
+            </div>
+            <div class="header-actions">
+              <el-button @click="expandAll">
+                展开
+              </el-button>
+              <el-button @click="collapseAll">
+                折叠
+              </el-button>
+              <el-button @click="loadTree">
+                刷新
+              </el-button>
+            </div>
+          </div>
 
           <el-tree
+            :key="treeRenderKey"
             v-loading="treeLoading"
             class="org-tree"
             :data="treeData"
             node-key="id"
-            default-expand-all
+            :default-expand-all="expandTreeAll"
             highlight-current
             :props="{ label: 'orgName', children: 'children' }"
             :expand-on-click-node="false"
@@ -336,7 +345,7 @@
 </template>
 
 <script setup lang="ts" name="SystemOrg">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { orgApi, type SysOrg } from '../../api/org';
 
@@ -359,6 +368,8 @@ const treeData = ref<SysOrg[]>([]);
 const childrenData = ref<SysOrg[]>([]);
 const currentOrg = ref<SysOrg>();
 const formRef = ref<FormInstance>();
+const expandTreeAll = ref(true);
+const treeRenderKey = ref(0);
 
 const form = reactive<Partial<SysOrg>>({
   id: undefined,
@@ -379,6 +390,10 @@ const rules: FormRules = {
 };
 
 const flatOrgOptions = computed(() => flattenTree(treeData.value));
+const showTypeFilter = computed(() => {
+  const rootTypes = Array.from(new Set(treeData.value.map(item => Number(item.orgType)).filter(Boolean)));
+  return rootTypes.length > 1;
+});
 
 function orgTypeLabel(type?: number) {
   return orgTypeOptions.find(item => item.value === Number(type))?.label || '-';
@@ -402,6 +417,16 @@ async function loadTree() {
   } finally {
     treeLoading.value = false;
   }
+}
+
+function expandAll() {
+  expandTreeAll.value = true;
+  treeRenderKey.value += 1;
+}
+
+function collapseAll() {
+  expandTreeAll.value = false;
+  treeRenderKey.value += 1;
 }
 
 async function loadChildren(parentId: number) {
@@ -510,6 +535,12 @@ function findInTree(items: SysOrg[], id: number): SysOrg | undefined {
 }
 
 onMounted(loadTree);
+
+watch(showTypeFilter, (visible) => {
+  if (!visible && query.type !== undefined) {
+    query.type = undefined;
+  }
+});
 </script>
 
 <style scoped lang="scss">
@@ -530,6 +561,28 @@ onMounted(loadTree);
   gap: 12px;
 }
 
+.panel-toolbar,
+.panel-toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.panel-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.panel-toolbar-left {
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -537,7 +590,7 @@ onMounted(loadTree);
 }
 
 .filter-form {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .org-tree {

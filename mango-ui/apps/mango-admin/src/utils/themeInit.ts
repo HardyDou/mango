@@ -118,7 +118,7 @@ export function initThemeBeforeRender(): void {
 
     // 恢复 layoutStore
     const layoutKeys = [
-      'layout', 'isCollapse', 'isFixedHeader', 'isFixedHeaderChange',
+      'layout', 'isCollapse', 'isColumnsAsideOpen', 'isFixedHeader', 'isFixedHeaderChange',
       'isClassicSplitMenu', 'isMobileMenuOpen', 'isUniqueOpened',
       'isShowLogo', 'isShowLogoChange', 'isBreadcrumb', 'isBreadcrumbIcon',
       'isTagsview', 'isTagsviewIcon', 'isCacheTagsView', 'isSortableTagsView',

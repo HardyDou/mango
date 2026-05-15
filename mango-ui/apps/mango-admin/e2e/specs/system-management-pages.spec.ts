@@ -16,6 +16,7 @@ const pages = [
   { path: '/system/tenant', title: '机构管理', api: '/api/system/tenant/list', labels: ['芒果集团', '启用'] },
   { path: '/system/app', title: '应用管理', api: '/api/authorization/apps', labels: ['内部管理后台', 'internal-admin', '启用'] },
   { path: '/system/menu', title: '菜单管理', api: '/api/authorization/menus', labels: ['目录', '菜单'] },
+  { path: '/system/menu-package', title: '套餐管理', api: '/api/authorization/menu-packages', labels: ['套餐名称', '授权菜单数'] },
   { path: '/system/dict', title: '字典类型', api: '/api/system/dict/type/list', labels: ['用户性别', '启用'] },
   { path: '/system/config', title: '系统配置', api: '/api/system/config/list', labels: ['系统参数'] },
   { path: '/system/area', title: '行政区划', api: '/api/system/area/children', labels: ['当前层级', '北京市'] },

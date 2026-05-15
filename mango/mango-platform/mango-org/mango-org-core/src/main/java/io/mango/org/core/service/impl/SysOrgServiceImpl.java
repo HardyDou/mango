@@ -55,8 +55,8 @@ public class SysOrgServiceImpl implements ISysOrgService {
 
         Long rootParentId = parentId == null ? 0L : parentId;
         return childrenByParentId.getOrDefault(rootParentId, List.of()).stream()
-                .filter(org -> type == null || type.equals(org.getOrgType()))
-                .map(org -> buildTreeNode(org, childrenByParentId))
+                .map(org -> buildTreeNode(org, childrenByParentId, type))
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -70,10 +70,18 @@ public class SysOrgServiceImpl implements ISysOrgService {
         return orgMapper.selectList(wrapper);
     }
 
-    private SysOrg buildTreeNode(SysOrg org, Map<Long, List<SysOrg>> childrenByParentId) {
-        org.setChildren(childrenByParentId.getOrDefault(org.getId(), List.of()).stream()
-                .map(child -> buildTreeNode(child, childrenByParentId))
-                .collect(Collectors.toCollection(ArrayList::new)));
+    private SysOrg buildTreeNode(SysOrg org, Map<Long, List<SysOrg>> childrenByParentId, Integer type) {
+        List<SysOrg> matchedChildren = childrenByParentId.getOrDefault(org.getId(), List.of()).stream()
+                .map(child -> buildTreeNode(child, childrenByParentId, type))
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        boolean matchedCurrent = type == null || type.equals(org.getOrgType());
+        if (!matchedCurrent && matchedChildren.isEmpty()) {
+            return null;
+        }
+
+        org.setChildren(matchedChildren);
         return org;
     }
 

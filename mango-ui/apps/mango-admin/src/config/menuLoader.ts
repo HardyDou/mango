@@ -29,6 +29,7 @@ export interface MenuConfigItem {
     permissions?: string[];
     keepAlive?: boolean;
     embedded?: boolean;
+    isHide?: boolean;
     captcha?: CaptchaConfig;
     [key: string]: any;
   };
@@ -59,6 +60,7 @@ export interface MenuMeta {
   permissions?: string[];
   keepAlive?: boolean;
   embedded?: boolean;
+  isHide?: boolean;
   captcha?: CaptchaConfig;
 }
 
@@ -125,6 +127,7 @@ export class MenuLoader {
         permissions: item.meta?.permissions,
         keepAlive: item.meta?.keepAlive,
         embedded: item.meta?.embedded,
+        isHide: item.meta?.isHide,
         captcha: item.meta?.captcha,
       },
     };

@@ -1,18 +1,6 @@
 <template>
   <div class="post-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>岗位管理</span>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增岗位
-          </el-button>
-        </div>
-      </template>
-
       <el-form
         :inline="true"
         class="search-form"
@@ -32,18 +20,13 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <DictSelect
             v-model="query.postStatus"
-            placeholder="请选择"
-            clearable
-          >
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="String(item.value)"
-            />
-          </el-select>
+            dict-type="sys_normal_disable"
+            placeholder="状态"
+            show-any-option
+            any-option-label="不限"
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -57,6 +40,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增岗位
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"
@@ -224,7 +218,7 @@
 <script setup lang="ts" name="SystemPost">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, Pagination, useDict } from '@mango/common';
+import { DictSelect, DictTag, Pagination, useDict } from '@mango/common';
 import { postApi, type PostVO } from '../../api/post';
 
 const { options: statusOptions } = useDict('sys_normal_disable');

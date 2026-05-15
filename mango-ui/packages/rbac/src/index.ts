@@ -1,4 +1,5 @@
 export { default as MenuView } from './views/menu/index.vue';
+export { default as MenuPackageView } from './views/menu-package/index.vue';
 export { default as RoleView } from './views/role/index.vue';
 export { default as UserView } from './views/user/index.vue';
 export { default as OrgView } from './views/org/index.vue';
@@ -7,6 +8,7 @@ export { default as AppView } from './views/app/index.vue';
 export { default as PostView } from './views/post/index.vue';
 export * from './api/app';
 export * from './api/menu';
+export * from './api/menuPackage';
 export * from './api/org';
 export * from './api/post';
 export * from './api/role';

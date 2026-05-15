@@ -1,15 +1,6 @@
 <template>
   <div class="file-storage-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>文件存储配置</span>
-          <el-button type="primary" @click="handleAdd">
-            新增配置
-          </el-button>
-        </div>
-      </template>
-
       <el-form :inline="true" class="search-form">
         <el-form-item label="关键词">
           <el-input
@@ -64,6 +55,14 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button type="primary" @click="handleAdd">
+            新增配置
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"

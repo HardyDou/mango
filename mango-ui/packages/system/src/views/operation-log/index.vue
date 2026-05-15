@@ -1,27 +1,6 @@
 <template>
   <div class="operation-log-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>操作日志</span>
-          <div>
-            <el-button
-              type="primary"
-              @click="handleExport"
-              disabled
-            >
-              导出
-            </el-button>
-            <el-button
-              type="danger"
-              @click="handleClean"
-            >
-              清理
-            </el-button>
-          </div>
-        </div>
-      </template>
-
       <el-form
         :inline="true"
         class="search-form"
@@ -76,6 +55,24 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleExport"
+            disabled
+          >
+            导出
+          </el-button>
+          <el-button
+            type="danger"
+            @click="handleClean"
+          >
+            清理
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"

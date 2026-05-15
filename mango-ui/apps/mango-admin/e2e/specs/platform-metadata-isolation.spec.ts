@@ -123,31 +123,28 @@ test.describe('T3 平台元数据隔离复核', () => {
     }
   });
 
-  test('平台机构可见平台运营和基础数据入口，A 公司不可见维护入口', async ({ page }) => {
+  test('平台机构可见系统与协同办公入口，A 公司不可见平台维护入口', async ({ page }) => {
     await loginPage(page, platformTenant);
-    await expect(page.getByText('平台运营').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('基础数据').first()).toBeVisible();
-
-    await expandMenuGroup(page, '平台运营');
+    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('协同办公').first()).toBeVisible();
     await expect(page.getByText('应用管理').first()).toBeVisible();
-    await expect(page.getByText('机构管理').first()).toBeVisible();
-
-    await expandMenuGroup(page, '基础数据');
-    await expect(page.getByText('菜单管理').first()).toBeVisible();
     await expect(page.getByText('字典管理').first()).toBeVisible();
     await expect(page.getByText('行政区划').first()).toBeVisible();
+
+    await expandMenuGroup(page, '权限管理');
+    await expect(page.getByText('机构管理').first()).toBeVisible();
+    await expect(page.getByText('菜单管理').first()).toBeVisible();
+    await expect(page.getByText('套餐管理').first()).toBeVisible();
     await expectNoAuthError(page);
 
     await clearAuthState(page);
     await loginPage(page, companyATenant);
-    await expect(page.getByText('账号权限').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('组织人事').first()).toBeVisible();
-    await expect(page.getByText('审计日志').first()).toBeVisible();
-    await expect(page.getByText('平台运营')).toHaveCount(0);
-    await expect(page.getByText('基础数据')).toHaveCount(0);
+    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('日志管理').first()).toBeVisible();
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expect(page.getByText('菜单管理')).toHaveCount(0);
+    await expect(page.getByText('套餐管理')).toHaveCount(0);
     await expect(page.getByText('字典管理')).toHaveCount(0);
     await expect(page.getByText('行政区划')).toHaveCount(0);
     await expectNoAuthError(page);

@@ -1,17 +1,27 @@
 package io.mango.workflow.core.engine;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
 import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.enums.WorkflowApprovalMode;
+import io.mango.workflow.api.enums.WorkflowAssigneeType;
+import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
+import io.mango.workflow.api.enums.WorkflowFormPermission;
+import io.mango.workflow.api.enums.WorkflowRejectStrategy;
+import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
+import io.mango.workflow.core.model.WorkflowEventNotifyConfig;
 import io.mango.workflow.core.model.WorkflowDesignerNode;
 import lombok.RequiredArgsConstructor;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.EndEvent;
 import org.flowable.bpmn.model.ExclusiveGateway;
+import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.FieldExtension;
 import org.flowable.bpmn.model.FlowElement;
+import org.flowable.bpmn.model.MultiInstanceLoopCharacteristics;
 import org.flowable.bpmn.model.ParallelGateway;
 import org.flowable.bpmn.model.Process;
 import org.flowable.bpmn.model.SequenceFlow;
@@ -25,7 +35,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * 将 Mango 设计器 JSON 转换为 Flowable BPMN。
@@ -35,8 +48,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class WorkflowDesignerBpmnConverter {
 
     private static final String TARGET_NAMESPACE = "http://mango.io/workflow";
+    private static final String MANGO_EXTENSION_NAMESPACE = "http://mango.io/workflow/extensions";
+    private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
+    };
 
     private final ObjectMapper objectMapper;
+    private final WorkflowAssigneeResolver assigneeResolver;
 
     public BpmnModel toModel(String designerJson, String processKey, String processName) {
         WorkflowDesignerNode root = parse(designerJson);
@@ -45,6 +62,7 @@ public class WorkflowDesignerBpmnConverter {
 
         BpmnModel model = new BpmnModel();
         model.setTargetNamespace(TARGET_NAMESPACE);
+        model.addNamespace("mango", MANGO_EXTENSION_NAMESPACE);
 
         Process process = new Process();
         process.setId(processKey);
@@ -116,10 +134,54 @@ public class WorkflowDesignerBpmnConverter {
     }
 
     private void applyUserTaskProperties(UserTask task, WorkflowDesignerNode node) {
-        Map<String, Object> properties = node.getProperties();
-        if (properties == null || properties.isEmpty()) {
+        WorkflowApprovalNodeConfig config = approvalConfig(node);
+        Map<String, Object> properties = node.getProperties() == null ? Map.of() : node.getProperties();
+        WorkflowAssigneeResolver.ResolvedAssignees resolved = designTimeAssignees(config, node);
+        if (isRuntimeResolved(config)) {
+            applyRuntimeUserTaskProperties(task, config);
+        } else if (resolved.empty()) {
+            task.setAssignee("${mangoRuntimeAssignee_" + task.getId() + "}");
+        } else if (StringUtils.hasText(resolved.expression())) {
+            task.setAssignee(resolved.expression());
+        } else if (resolved.users() != null && resolved.users().size() == 1 && config.getApprovalMode() != WorkflowApprovalMode.SEQUENTIAL) {
+            task.setAssignee(resolved.users().get(0));
+        } else if (resolved.users() != null && resolved.users().size() > 1) {
+            applyMultiInstance(task, config, resolved.users());
+        } else if (resolved.groups() != null && !resolved.groups().isEmpty()) {
+            task.setCandidateGroups(resolved.groups());
+        } else {
+            applyLegacyUserTaskProperties(task, properties);
+        }
+        task.getExtensionElements().put("mangoApprovalConfig", List.of(extension("mangoApprovalConfig", resolveApprovalConfigJson(config))));
+    }
+
+    private WorkflowAssigneeResolver.ResolvedAssignees designTimeAssignees(WorkflowApprovalNodeConfig config, WorkflowDesignerNode node) {
+        return assigneeResolver.applyEmptyStrategy(config,
+                assigneeResolver.resolve(config, Map.of(), "${mangoInitiator}", node.getId()));
+    }
+
+    private boolean isRuntimeResolved(WorkflowApprovalNodeConfig config) {
+        return config != null && (config.getAssigneeType() == WorkflowAssigneeType.INITIATOR_SELECT
+                || config.getAssigneeType() == WorkflowAssigneeType.FORM_USER);
+    }
+
+    private void applyRuntimeUserTaskProperties(UserTask task, WorkflowApprovalNodeConfig config) {
+        if (shouldUseMultiInstance(config, List.of())) {
+            if (config.getAssigneeType() == WorkflowAssigneeType.FORM_USER) {
+                applyMultiInstance(task, config, "${mangoWorkflowAssigneeCollection.formUsers(execution, '" + safeExpressionText(config.getFormUserField()) + "')}");
+            } else {
+                applyMultiInstance(task, config, "${mangoWorkflowAssigneeCollection.selected(execution, '" + task.getId() + "')}");
+            }
             return;
         }
+        if (config.getAssigneeType() == WorkflowAssigneeType.FORM_USER) {
+            task.setAssignee("${mangoWorkflowAssigneeCollection.formUsers(execution, '" + safeExpressionText(config.getFormUserField()) + "')[0]}");
+        } else {
+            task.setAssignee("${mangoWorkflowAssigneeCollection.selected(execution, '" + task.getId() + "')[0]}");
+        }
+    }
+
+    private void applyLegacyUserTaskProperties(UserTask task, Map<String, Object> properties) {
         String assignee = propertyAsText(properties, "assignee");
         if (StringUtils.hasText(assignee)) {
             task.setAssignee(assignee);
@@ -132,6 +194,196 @@ public class WorkflowDesignerBpmnConverter {
         if (StringUtils.hasText(candidateGroups)) {
             task.setCandidateGroups(List.of(candidateGroups.split("\\s*,\\s*")));
         }
+        if (!StringUtils.hasText(assignee) && !StringUtils.hasText(candidateUsers) && !StringUtils.hasText(candidateGroups)) {
+            task.setAssignee("${mangoInitiator}");
+        }
+    }
+
+    private void applyMultiInstance(UserTask task, WorkflowApprovalNodeConfig config, List<String> users) {
+        applyMultiInstance(task, config, "${mangoWorkflowAssigneeCollection.list('" + String.join(",", users) + "')}");
+    }
+
+    private void applyMultiInstance(UserTask task, WorkflowApprovalNodeConfig config, String collectionExpression) {
+        String variableName = "mangoAssignee_" + task.getId();
+        task.setAssignee("${" + variableName + "}");
+        MultiInstanceLoopCharacteristics loop = new MultiInstanceLoopCharacteristics();
+        loop.setInputDataItem(collectionExpression.startsWith("${") ? collectionExpression : "${" + collectionExpression + "}");
+        loop.setElementVariable(variableName);
+        loop.setSequential(config.getApprovalMode() == WorkflowApprovalMode.SEQUENTIAL);
+        if (config.getApprovalMode() == WorkflowApprovalMode.OR_SIGN) {
+            loop.setCompletionCondition("${nrOfCompletedInstances >= 1}");
+        }
+        task.setLoopCharacteristics(loop);
+    }
+
+    private boolean shouldUseMultiInstance(WorkflowApprovalNodeConfig config, List<String> users) {
+        if (config == null) {
+            return users != null && users.size() > 1;
+        }
+        return config.getApprovalMode() == WorkflowApprovalMode.SEQUENTIAL
+                || config.getApprovalMode() == WorkflowApprovalMode.OR_SIGN
+                || (users != null && users.size() > 1)
+                || config.isInitiatorSelectMultiple();
+    }
+
+    private WorkflowApprovalNodeConfig approvalConfig(WorkflowDesignerNode node) {
+        Map<String, Object> properties = node.getProperties() == null ? Map.of() : node.getProperties();
+        Object structuredValue = properties.get("approvalConfig");
+        WorkflowApprovalNodeConfig config = readApprovalConfig(structuredValue);
+        if (structuredValue == null) {
+            applyLegacyApprovalProperties(config, properties);
+        } else {
+            config.setFormPermissions(formPermissions(properties.get("formPermissions"), config.getFormPermissions()));
+            config.setEventNotify(eventNotify(properties.get("eventNotify"), config.getEventNotify()));
+        }
+        return config;
+    }
+
+    private void applyLegacyApprovalProperties(WorkflowApprovalNodeConfig config, Map<String, Object> properties) {
+        config.setAssigneeType(WorkflowAssigneeType.fromCode(text(properties, "assigneeType"), config.getAssigneeType()));
+        config.setApprovalMode(WorkflowApprovalMode.fromCode(text(properties, "approvalMode"), config.getApprovalMode()));
+        config.setEmptyAssigneeStrategy(WorkflowEmptyAssigneeStrategy.fromCode(text(properties, "emptyAssigneeStrategy"), config.getEmptyAssigneeStrategy()));
+        config.setRejectStrategy(WorkflowRejectStrategy.fromCode(text(properties, "rejectStrategy"), config.getRejectStrategy()));
+        replaceIfPresent(properties, values -> config.setAssigneeIds(values), "assigneeIds", "assignee", "candidateUsers", "users");
+        replaceIfPresent(properties, values -> config.setRoleIds(values), "roleIds", "roles", "candidateGroups");
+        replaceIfPresent(properties, values -> config.setPostIds(values), "postIds", "posts");
+        replaceIfPresent(properties, values -> config.setOrgIds(values), "orgIds", "orgs");
+        replaceIfPresent(properties, values -> config.setEmptyAssigneeUserIds(values), "emptyAssigneeUserIds", "emptyAssigneeUsers");
+        if (StringUtils.hasText(text(properties, "formUserField"))) {
+            config.setFormUserField(text(properties, "formUserField"));
+        }
+        if (StringUtils.hasText(text(properties, "expression"))) {
+            config.setExpression(text(properties, "expression"));
+        }
+        if (StringUtils.hasText(text(properties, "initiatorSelectMultiple"))) {
+            config.setInitiatorSelectMultiple(Boolean.parseBoolean(text(properties, "initiatorSelectMultiple")));
+        }
+        config.setFormPermissions(formPermissions(properties.get("formPermissions"), config.getFormPermissions()));
+        config.setEventNotify(eventNotify(properties.get("eventNotify"), config.getEventNotify()));
+    }
+
+    private WorkflowApprovalNodeConfig readApprovalConfig(Object value) {
+        if (value instanceof WorkflowApprovalNodeConfig config) {
+            return config;
+        }
+        if (value instanceof String text && StringUtils.hasText(text)) {
+            try {
+                return objectMapper.readValue(text, WorkflowApprovalNodeConfig.class);
+            } catch (JsonProcessingException ignored) {
+                return new WorkflowApprovalNodeConfig();
+            }
+        }
+        if (value instanceof Map<?, ?> map && !map.isEmpty()) {
+            return objectMapper.convertValue(map, WorkflowApprovalNodeConfig.class);
+        }
+        return new WorkflowApprovalNodeConfig();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, WorkflowFormPermission> formPermissions(Object value, Map<String, WorkflowFormPermission> fallback) {
+        Map<String, WorkflowFormPermission> permissions = new LinkedHashMap<>();
+        if (fallback != null) {
+            permissions.putAll(fallback);
+        }
+        if (value instanceof Map<?, ?> map) {
+            map.forEach((key, permission) -> {
+                if (key != null) {
+                    permissions.put(String.valueOf(key), WorkflowFormPermission.fromCode(String.valueOf(permission), WorkflowFormPermission.READONLY));
+                }
+            });
+        }
+        return permissions;
+    }
+
+    private WorkflowEventNotifyConfig eventNotify(Object value, WorkflowEventNotifyConfig fallback) {
+        if (value instanceof WorkflowEventNotifyConfig config) {
+            return config;
+        }
+        if (value instanceof Map<?, ?> map && !map.isEmpty()) {
+            return objectMapper.convertValue(map, WorkflowEventNotifyConfig.class);
+        }
+        if (value instanceof String text && StringUtils.hasText(text)) {
+            try {
+                return objectMapper.readValue(text, WorkflowEventNotifyConfig.class);
+            } catch (JsonProcessingException ignored) {
+                return fallback == null ? new WorkflowEventNotifyConfig() : fallback;
+            }
+        }
+        return fallback == null ? new WorkflowEventNotifyConfig() : fallback;
+    }
+
+    private List<String> list(Map<String, Object> properties, String... keys) {
+        for (String key : keys) {
+            List<String> values = valueList(properties.get(key));
+            if (!values.isEmpty()) {
+                return values;
+            }
+        }
+        return List.of();
+    }
+
+    private void replaceIfPresent(Map<String, Object> properties, Consumer<List<String>> setter, String... keys) {
+        List<String> values = list(properties, keys);
+        if (!values.isEmpty()) {
+            setter.accept(values);
+        }
+    }
+
+    private List<String> valueList(Object value) {
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof Iterable<?> iterable) {
+            List<String> values = new ArrayList<>();
+            for (Object item : iterable) {
+                if (item != null && StringUtils.hasText(String.valueOf(item))) {
+                    values.add(String.valueOf(item).trim());
+                }
+            }
+            return values;
+        }
+        String text = String.valueOf(value).trim();
+        if (!StringUtils.hasText(text)) {
+            return List.of();
+        }
+        if (text.startsWith("[") && text.endsWith("]")) {
+            try {
+                return objectMapper.readValue(text, STRING_LIST_TYPE);
+            } catch (JsonProcessingException ignored) {
+                return List.of(text);
+            }
+        }
+        return List.of(text.split("\\s*,\\s*"));
+    }
+
+    private String text(Map<String, Object> properties, String key) {
+        Object value = properties.get(key);
+        return value == null ? null : String.valueOf(value).trim();
+    }
+
+    private ExtensionElement extension(String name, String value) {
+        ExtensionElement element = new ExtensionElement();
+        element.setName(name);
+        element.setNamespacePrefix("mango");
+        element.setNamespace(MANGO_EXTENSION_NAMESPACE);
+        element.setElementText(value == null ? "{}" : value);
+        return element;
+    }
+
+    private String resolveApprovalConfigJson(WorkflowApprovalNodeConfig config) {
+        return toJson(config == null ? new WorkflowApprovalNodeConfig() : config);
+    }
+
+    private String toJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value == null ? Map.of() : value);
+        } catch (JsonProcessingException e) {
+            return "{}";
+        }
+    }
+
+    private String safeExpressionText(String value) {
+        return value == null ? "" : value.replace("\\", "\\\\").replace("'", "\\'");
     }
 
     private String appendServiceTask(Process process, String sourceId, WorkflowDesignerNode node, AtomicInteger index) {

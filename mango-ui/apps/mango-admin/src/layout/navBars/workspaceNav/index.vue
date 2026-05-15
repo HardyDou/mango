@@ -31,7 +31,7 @@ const showTagsView = computed(() => props.tagsView ?? true);
   width: 100%;
   height: 40px;
   min-height: 40px;
-  padding: 0 8px;
+  padding: 0 12px;
   background: var(--mango-bg-color);
   border-bottom: 1px solid var(--mango-border-color);
   box-sizing: border-box;

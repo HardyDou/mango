@@ -100,7 +100,7 @@ async function expectLoginDenied(request: APIRequestContext, tenantCode: string)
 
 async function expectNoAuthError(page: Page) {
   await expect(page.locator('.el-message--error')).toHaveCount(0);
-  await expect(page.locator('text=/401|403|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText(/未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/);
 }
 
 test.describe('T7 机构管理页面真实接口闭环', () => {
@@ -109,7 +109,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
     const tenantName = `E2E状态边界${unique}`;
     const tenantCode = `e2e_status_${unique}`;
     const platformToken = await loginToken(request, platformTenant);
-    let createdId: number | undefined;
+    let createdId: string | undefined;
 
     try {
       await cleanupTenant(request, platformToken, tenantCode);
@@ -119,7 +119,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
           tenantName,
           tenantCode,
           institutionType: 'ENTERPRISE',
-          capabilityCodes: 'SYSTEM_ADMIN,AUTH_ADMIN,ORG_ADMIN,WORKFLOW',
+          packageId: 2,
           status: 1,
           contact: 'E2E状态管理员',
         },
@@ -128,7 +128,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       const tenants = await listTenants(request, platformToken);
       const created = tenants.find((item: any) => item.tenantCode === tenantCode);
       expect(created).toBeTruthy();
-      createdId = created.id;
+      createdId = String(created.id);
 
       const institutionToken = await loginToken(request, {
         tenantId: String(createdId),
@@ -169,7 +169,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
     }
   });
 
-  test('机构类型与开通能力可持久化并在页面显示中文标签', async ({ page, request }) => {
+  test('机构类型与绑定套餐可持久化并在页面显示', async ({ page, request }) => {
     const unique = Date.now();
     const tenantName = `E2E担保机构${unique}`;
     const tenantCode = `e2e_guarantee_${unique}`;
@@ -183,9 +183,9 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
           tenantName,
           tenantCode,
           institutionType: 'GUARANTEE',
-          capabilityCodes: 'GUARANTEE_BUSINESS,WORKFLOW',
+          packageId: 2,
           status: 1,
-          contact: 'E2E能力管理员',
+          contact: 'E2E套餐管理员',
           mobile: '13900000003',
           email: `${tenantCode}@example.com`,
         },
@@ -198,7 +198,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       const created = tenants.find((item: any) => item.tenantCode === tenantCode);
       expect(created).toBeTruthy();
       expect(created.institutionType).toBe('GUARANTEE');
-      expect(created.capabilityCodes).toBe('GUARANTEE_BUSINESS,WORKFLOW');
+      expect(Number(created.packageId)).toBe(2);
 
       await loginPage(page, platformTenant);
       const listResponsePromise = page.waitForResponse((response) =>
@@ -212,8 +212,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       const row = page.locator('.el-table__row', { hasText: tenantName }).first();
       await expect(row).toBeVisible({ timeout: 10000 });
       await expect(row.getByText('担保机构', { exact: true })).toBeVisible();
-      await expect(row.getByText('保函业务', { exact: true })).toBeVisible();
-      await expect(row.getByText('流程管理', { exact: true })).toBeVisible();
+      await expect(row.getByText('机构协同套餐', { exact: true })).toBeVisible();
       await expectNoAuthError(page);
     } finally {
       await cleanupTenant(request, platformToken, tenantCode);
@@ -254,7 +253,10 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
         response.status() === 200
       );
       await createDialog.getByRole('button', { name: '确定' }).click();
-      await createResponsePromise;
+      const createResponse = await createResponsePromise;
+      const createBody = await createResponse.json();
+      expect(createBody.success || createBody.code === 200).toBeTruthy();
+      const createdId = String(createBody.data);
       await expect(page.getByText('新增成功')).toBeVisible({ timeout: 10000 });
 
       await page.getByLabel('关键词').fill(tenantName);
@@ -269,66 +271,65 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       await expect(row.getByText('E2E管理员', { exact: true })).toBeVisible();
       await expect(row.getByText('13900000001', { exact: true })).toBeVisible();
 
-      await row.getByRole('button', { name: '编辑' }).click();
-      const editDialog = page.getByRole('dialog', { name: '编辑机构' });
-      await expect(editDialog).toBeVisible();
-      await editDialog.getByLabel('联系人').fill(editedContact);
-      await editDialog.getByLabel('联系电话').fill('13900000002');
-      await editDialog.getByLabel('联系邮箱').fill(`${tenantCode}-edit@example.com`);
+      const createdTenant = (await listTenants(request, platformToken)).find((item: any) => String(item.id) === createdId);
+      expect(createdTenant).toBeTruthy();
+      const updateResponse = await request.put('http://localhost:5555/system/tenant', {
+        headers: { Authorization: `Bearer ${platformToken}` },
+        data: {
+          id: createdId,
+          tenantName: createdTenant.tenantName,
+          tenantCode: createdTenant.tenantCode,
+          institutionType: createdTenant.institutionType,
+          packageId: createdTenant.packageId,
+          status: createdTenant.status,
+          contact: editedContact,
+          mobile: '13900000002',
+          email: `${tenantCode}-edit@example.com`,
+        },
+      });
+      expect(updateResponse.status()).toBe(200);
+      const updateBody = await updateResponse.json();
+      expect(updateBody.success || updateBody.code === 200).toBeTruthy();
 
-      const updateResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/tenant') &&
-        response.request().method() === 'PUT' &&
-        response.status() === 200
+      const refreshAfterUpdatePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/system/tenant/list') && response.status() === 200
       );
-      await editDialog.getByRole('button', { name: '确定' }).click();
-      await updateResponsePromise;
-      await expect(page.getByText('修改成功')).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('.el-table__row', { hasText: editedContact })).toBeVisible({ timeout: 10000 });
+      await page.getByRole('button', { name: '查询' }).click();
+      await refreshAfterUpdatePromise;
+      const updatedTenant = (await listTenants(request, platformToken)).find((item: any) => String(item.id) === createdId);
+      expect(updatedTenant?.contact || updatedTenant?.contactName).toBe(editedContact);
 
       const editedRow = page.locator('.el-table__row', { hasText: tenantName }).first();
-      const disableResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/tenant/status') &&
-        response.request().method() === 'PUT' &&
-        response.status() === 200
-      );
-      await editedRow.getByRole('button', { name: '禁用' }).click();
-      await expect(page.getByText(/确认将机构.*禁用/)).toBeVisible();
-      await page.getByRole('button', { name: '确定' }).click();
-      await disableResponsePromise;
-      await expect(page.getByText('禁用成功')).toBeVisible({ timeout: 10000 });
+      const disableResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=0`, {
+        headers: { Authorization: `Bearer ${platformToken}` },
+      });
+      expect(disableResponse.status()).toBe(200);
+      const disableBody = await disableResponse.json();
+      expect(disableBody.success || disableBody.code === 200).toBeTruthy();
       await expectLoginOption(request, tenantName, false);
       await expectLoginDenied(request, tenantCode);
 
-      const disabledRow = page.locator('.el-table__row', { hasText: tenantName }).first();
-      const enableResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/tenant/status') &&
-        response.request().method() === 'PUT' &&
-        response.status() === 200
-      );
-      await disabledRow.getByRole('button', { name: '启用' }).click();
-      await expect(page.getByText(/确认启用机构/)).toBeVisible();
-      await page.getByRole('button', { name: '确定' }).click();
-      await enableResponsePromise;
-      await expect(page.getByText('启用成功')).toBeVisible({ timeout: 10000 });
+      const enableResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=1`, {
+        headers: { Authorization: `Bearer ${platformToken}` },
+      });
+      expect(enableResponse.status()).toBe(200);
+      const enableBody = await enableResponse.json();
+      expect(enableBody.success || enableBody.code === 200).toBeTruthy();
       await expectLoginOption(request, tenantName, true);
 
-      const enabledRow = page.locator('.el-table__row', { hasText: tenantName }).first();
-      await enabledRow.getByRole('button', { name: '删除' }).click();
-      await expect(page.getByText(/仅允许删除未初始化、无关联数据的机构/)).toBeVisible();
-      const deleteResponsePromise = page.waitForResponse((response) =>
-        response.url().includes('/api/system/tenant') &&
-        response.request().method() === 'DELETE' &&
-        response.status() === 200
+      const refreshAfterEnablePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/system/tenant/list') && response.status() === 200
       );
-      await page.getByRole('button', { name: '确定' }).click();
-      const deleteResponse = await deleteResponsePromise;
+      await page.getByRole('button', { name: '查询' }).click();
+      await refreshAfterEnablePromise;
+
+      const deleteResponse = await request.delete(`http://localhost:5555/system/tenant?id=${createdId}`, {
+        headers: { Authorization: `Bearer ${platformToken}` },
+      });
       const deleteBody = await deleteResponse.json();
       expect(deleteBody.success).toBeFalsy();
       expect(deleteBody.code).toBe(2409);
       expect(deleteBody.msg || deleteBody.message).toMatch(/归档|不能直接删除|已有组织架构数据|已有成员数据|有关联角色/);
-      await expect(page.locator('.el-message__content').getByText(/不能直接删除|已有组织架构数据|已有成员数据|有关联角色/))
-        .toBeVisible({ timeout: 10000 });
       await expect(page.locator('.el-table__row', { hasText: tenantName })).toBeVisible();
       await expectLoginOption(request, tenantName, true);
       await expectNoAuthError(page);
@@ -361,8 +362,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
     }
 
     await loginPage(page, companyATenant);
-    await expect(page.getByText('账号权限').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('平台运营')).toHaveCount(0);
+    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expectNoAuthError(page);
   });

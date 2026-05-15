@@ -96,7 +96,7 @@ test.describe('T6 新机构初始化闭环', () => {
 
     await loginByUi(page, tenant.tenantName);
     await expect(page.getByText('系统管理').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('账号权限').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expectNoAuthError(page);
   });
 });

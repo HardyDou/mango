@@ -44,6 +44,15 @@ public enum WorkflowCode implements BizCode {
     /** 流程节点定义编码重复。 */
     NODE_DEFINITION_CODE_DUPLICATED(3632, "流程节点定义编码已存在"),
 
+    /** 流程实例不存在。 */
+    PROCESS_INSTANCE_NOT_FOUND(3640, "流程实例不存在"),
+
+    /** 流程任务不存在。 */
+    TASK_NOT_FOUND(3650, "流程任务不存在"),
+
+    /** 流程任务参数非法。 */
+    TASK_INVALID(3651, "流程任务参数非法"),
+
     /** 流程发布失败。 */
     DEPLOY_FAILED(3620, "流程发布失败");
 

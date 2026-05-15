@@ -12,9 +12,10 @@
         </el-icon>
       </div>
       <!-- 经典布局：显示 Logo + 折叠按钮 -->
-      <template v-if="layoutStore.layout === 'classic'">
+      <template v-if="layoutStore.layout === 'classic' || layoutStore.layout === 'transverse'">
         <Logo class="layout-logo-link" />
         <div
+          v-if="layoutStore.layout === 'classic'"
           class="hamburger"
           @click="toggleCollapse"
         >
@@ -24,9 +25,20 @@
           </el-icon>
         </div>
       </template>
+      <template v-else-if="layoutStore.layout === 'defaults' || layoutStore.layout === 'columns'">
+        <div
+          class="hamburger"
+          @click="toggleCollapse"
+        >
+          <el-icon :size="20">
+            <Fold v-if="!headerAsideExpanded" />
+            <Expand v-else />
+          </el-icon>
+        </div>
+      </template>
     </div>
     <div
-      v-if="layoutStore.layout !== 'columns'"
+      v-if="showTopSystems"
       class="layout-top-systems"
     >
       <button
@@ -45,6 +57,12 @@
         </el-icon>
         <span>{{ item.meta?.title || item.name }}</span>
       </button>
+    </div>
+    <div
+      v-else
+      class="layout-top-nav"
+    >
+      <BreadcrumbIndex />
     </div>
     <div class="layout-navbars-container-right">
       <el-icon :size="20">
@@ -69,6 +87,7 @@ import { iconMap } from '@/config/iconConfig';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
+const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
 const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 
@@ -79,6 +98,13 @@ const storesRoutesList = useRoutesList();
 const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 
 const topMenus = computed(() => routesList.value.filter(item => !item.meta?.isHide));
+const showTopSystems = computed(() => layoutStore.layout === 'classic' || layoutStore.layout === 'transverse');
+const headerAsideExpanded = computed(() => {
+  if (layoutStore.layout === 'columns') {
+    return layoutStore.isColumnsAsideOpen;
+  }
+  return !layoutStore.isCollapse;
+});
 
 const findTopByPath = (path: string) => {
   return topMenus.value.find(item => path === item.path || path.startsWith(`${item.path}/`))
@@ -97,6 +123,10 @@ const resolveFirstRoute = (item: any): string => {
 };
 
 const toggleCollapse = () => {
+  if (layoutStore.layout === 'columns') {
+    layoutStore.toggleColumnsAside();
+    return;
+  }
   layoutStore.toggleCollapse();
 };
 
@@ -158,6 +188,32 @@ watch(
 
     &::-webkit-scrollbar {
       display: none;
+    }
+  }
+
+  .layout-top-nav {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin-left: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+
+    :deep(.layout-breadcrumb) {
+      min-height: auto;
+      color: var(--mango-color-top-bar);
+
+      .el-breadcrumb__inner,
+      .el-breadcrumb__separator {
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .el-breadcrumb__inner.is-link:hover {
+        color: #ffffff;
+      }
     }
   }
 
@@ -254,6 +310,10 @@ watch(
 @media screen and (max-width: 1000px) {
   .layout-top-systems {
     max-width: calc(100vw - 210px);
+    margin-left: 4px;
+  }
+
+  .layout-top-nav {
     margin-left: 4px;
   }
 

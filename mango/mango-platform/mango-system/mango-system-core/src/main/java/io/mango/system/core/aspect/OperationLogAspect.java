@@ -1,5 +1,6 @@
 package io.mango.system.core.aspect;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
@@ -29,7 +30,7 @@ public class OperationLogAspect {
     private final ISysLogService logService;
     private final IpLocationResolver ipLocationResolver;
 
-    @Around("@annotation(io.mango.infra.log.annotation.Log)")
+    @Around("@annotation(io.mango.infra.log.annotation.Log) || @annotation(io.mango.authorization.api.annotation.ApiAccess)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
         long start = System.currentTimeMillis();
         Object result = null;
@@ -54,13 +55,15 @@ public class OperationLogAspect {
             HttpServletRequest request = attributes.getRequest();
             MethodSignature signature = (MethodSignature) point.getSignature();
             Log logAnnotation = signature.getMethod().getAnnotation(Log.class);
+            Operation operationAnnotation = signature.getMethod().getAnnotation(Operation.class);
+            String operationName = resolveOperationName(logAnnotation, operationAnnotation, signature);
 
             SysOperationLogPo opLog = new SysOperationLogPo();
             opLog.setTenantId(parseLong(MangoContextHolder.tenantId()));
             opLog.setUserId(MangoContextHolder.userId());
             opLog.setUsername(MangoContextHolder.principalName());
-            opLog.setModule(logAnnotation.value());
-            opLog.setOperation(logAnnotation.value());
+            opLog.setModule(resolveModuleName(logAnnotation, signature));
+            opLog.setOperation(operationName);
             opLog.setMethod(request.getMethod());
             opLog.setHandlerMethod(signature.getDeclaringTypeName() + "." + signature.getName());
             opLog.setUrl(request.getRequestURI());
@@ -112,6 +115,23 @@ public class OperationLogAspect {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private String resolveModuleName(Log logAnnotation, MethodSignature signature) {
+        if (logAnnotation != null && logAnnotation.value() != null && !logAnnotation.value().isBlank()) {
+            return logAnnotation.value();
+        }
+        return signature.getDeclaringType().getSimpleName();
+    }
+
+    private String resolveOperationName(Log logAnnotation, Operation operationAnnotation, MethodSignature signature) {
+        if (logAnnotation != null && logAnnotation.value() != null && !logAnnotation.value().isBlank()) {
+            return logAnnotation.value();
+        }
+        if (operationAnnotation != null && operationAnnotation.summary() != null && !operationAnnotation.summary().isBlank()) {
+            return operationAnnotation.summary();
+        }
+        return signature.getName();
     }
 
     private String truncate(String value) {

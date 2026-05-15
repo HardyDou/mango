@@ -48,7 +48,7 @@ async function expectNoAuthError(page: Page) {
 }
 
 test.describe('T2 角色授权闭环', () => {
-  test('A 公司可维护本租户角色，且不能授权平台运营能力', async ({ page, request }) => {
+  test('A 公司可维护本租户角色，且不能授权平台级菜单能力', async ({ page, request }) => {
     const unique = Date.now();
     const roleCode = `E2E_ROLE_${unique}`;
     const roleName = `E2E角色${unique}`;
@@ -58,7 +58,7 @@ test.describe('T2 角色授权闭环', () => {
     await cleanupRole(request, token, roleCode);
 
     await loginAsCompanyA(page);
-    await expect(page.getByText('平台运营')).toHaveCount(0);
+    await expect(page.getByText('协同办公')).toHaveCount(0);
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('菜单管理')).toHaveCount(0);
@@ -113,7 +113,7 @@ test.describe('T2 角色授权闭环', () => {
     await expect(assignDialog.getByText('岗位管理')).toBeVisible();
     await expect(assignDialog.getByText('机构管理')).toHaveCount(0);
     await expect(assignDialog.getByText('应用管理')).toHaveCount(0);
-    await expect(assignDialog.getByText('菜单管理')).toHaveCount(0);
+    await expect(assignDialog.getByText('套餐管理')).toHaveCount(0);
 
     const roleManageNode = assignDialog.locator('.el-tree-node', { hasText: '角色管理' }).first();
     await roleManageNode.locator('.el-checkbox').first().click();
@@ -135,7 +135,7 @@ test.describe('T2 角色授权闭环', () => {
 
     const invalidAssignResponse = await request.post('http://localhost:5555/authorization/roles/menus', {
       headers: { Authorization: `Bearer ${token}` },
-      data: { roleId: createdRole.roleId, menuIds: [12] },
+      data: { roleId: createdRole.roleId, menuIds: [14] },
     });
     const invalidAssignBody = await invalidAssignResponse.json();
     expect(invalidAssignBody.success).toBeFalsy();

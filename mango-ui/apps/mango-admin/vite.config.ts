@@ -105,7 +105,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       include: ['element-plus/es/locale/lang/zh-cn', 'element-plus/es/locale/lang/en'],
     },
     server: {
-      host: '0.0.0.0',
+      host: env.VITE_HOST || '127.0.0.1',
       port: (env.VITE_PORT as unknown as number) || 5173,
       open: env.VITE_OPEN === 'true',
       // SECURITY: Restrict allowed hosts in production

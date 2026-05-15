@@ -1,18 +1,6 @@
 <template>
   <div class="route-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>路由管理</span>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增路由
-          </el-button>
-        </div>
-      </template>
-
       <el-form
         :inline="true"
         class="search-form"
@@ -64,6 +52,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增路由
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"

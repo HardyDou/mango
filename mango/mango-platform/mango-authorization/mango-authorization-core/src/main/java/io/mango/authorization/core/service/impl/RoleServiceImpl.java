@@ -275,6 +275,17 @@ public class RoleServiceImpl implements IRoleService {
         if (allMenus.isEmpty()) {
             return new ArrayList<>();
         }
+        Set<Long> allMenuIds = allMenus.stream()
+                .map(Menu::getMenuId)
+                .collect(Collectors.toCollection(HashSet::new));
+        allMenus = allMenus.stream()
+                .filter(menu -> menu.getParentId() == null
+                        || menu.getParentId() == 0
+                        || allMenuIds.contains(menu.getParentId()))
+                .collect(Collectors.toList());
+        if (allMenus.isEmpty()) {
+            return new ArrayList<>();
+        }
 
         AuthorizationQuery query = currentAuthorizationQuery(effectiveAppCode);
         Set<String> permissions = subjectAuthorityService.listSubjectPermissions(query)

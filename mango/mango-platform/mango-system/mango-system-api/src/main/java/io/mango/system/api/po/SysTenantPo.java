@@ -25,7 +25,11 @@ public class SysTenantPo {
     @Size(max = 32, message = "机构类型最多32个字符")
     private String institutionType;
 
-    @Schema(description = "机构能力编码，多个用逗号分隔。字典 institution_capability")
+    @Schema(description = "绑定套餐ID。套餐决定机构默认菜单授权范围")
+    @NotNull(message = "packageId不能为空")
+    private Long packageId;
+
+    @Schema(description = "兼容字段：历史机构能力编码，后续由套餐模型替代")
     @Size(max = 500, message = "机构能力编码最多500个字符")
     private String capabilityCodes;
 

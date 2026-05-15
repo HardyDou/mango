@@ -27,3 +27,63 @@
   /* Fill */
   --el-fill-color-blank: var(--mango-bg-color);
 }
+
+.router-view-parent.is-root > * {
+  width: 100%;
+}
+
+.router-view-parent.is-root > * > .el-card {
+  border: 1px solid var(--mango-border-light);
+  border-radius: 10px;
+  box-shadow: var(--mango-shadow-light);
+}
+
+.router-view-parent.is-root > * > .el-card > .el-card__header {
+  display: none;
+}
+
+.router-view-parent.is-root > * > .el-card > .el-card__body {
+  padding: 16px;
+}
+
+.router-view-parent.is-root .search-form,
+.router-view-parent.is-root .filter-form,
+.router-view-parent.is-root .query-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 14px;
+  padding: 0 0 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--mango-border-light);
+}
+
+.router-view-parent.is-root .search-form .el-form-item,
+.router-view-parent.is-root .filter-form .el-form-item,
+.router-view-parent.is-root .query-form .el-form-item {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.router-view-parent.is-root .el-table {
+  --el-table-border-color: var(--mango-border-light);
+  --el-table-header-bg-color: #fbfcfe;
+  --el-table-row-hover-bg-color: #f7faff;
+}
+
+.router-view-parent.is-root .table-toolbar,
+.router-view-parent.is-root .action-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.router-view-parent.is-root .toolbar-left,
+.router-view-parent.is-root .toolbar-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}

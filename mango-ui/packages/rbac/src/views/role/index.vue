@@ -1,9 +1,8 @@
 <template>
   <div class="role-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>角色管理</span>
+      <div class="action-toolbar">
+        <div class="toolbar-left">
           <el-button
             type="primary"
             @click="handleAdd"
@@ -11,7 +10,7 @@
             新增角色
           </el-button>
         </div>
-      </template>
+      </div>
       <el-table
         v-loading="loading"
         :data="tableData"
@@ -82,7 +81,11 @@
         <el-table-column
           prop="createTime"
           label="创建时间"
-        />
+        >
+          <template #default="{ row }">
+            {{ formatDate(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column
           label="操作"
           width="260"
@@ -263,7 +266,7 @@
 <script setup lang="ts" name="SystemRole">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
-import { DictTag, Session, useDict } from '@mango/common';
+import { DictTag, Session, formatDate, useDict } from '@mango/common';
 import { appApi, type AppLoginContext, type AuthorizationApp } from '../../api/app';
 import { roleApi, type RoleVO } from '../../api/role';
 import type { SysMenuVO } from '../../api/menu';
@@ -480,7 +483,7 @@ async function handleAssignMenus(row: RoleVO) {
       roleApi.getAssignableMenus(row.appCode),
       roleApi.getMenuIds(row.roleId),
     ]);
-    assignableMenus.value = menus;
+    assignableMenus.value = pruneAssignableMenuTree(menus);
     await nextTick();
     menuTreeRef.value?.setCheckedKeys(checkedMenuIds, false);
   } catch (error) {
@@ -488,6 +491,15 @@ async function handleAssignMenus(row: RoleVO) {
   } finally {
     assignLoading.value = false;
   }
+}
+
+function pruneAssignableMenuTree(menus: SysMenuVO[] = []): SysMenuVO[] {
+  return menus
+    .filter((item) => item.menuType !== 3)
+    .map((item) => ({
+      ...item,
+      children: pruneAssignableMenuTree(item.children || []),
+    }));
 }
 
 async function handleAssignSubmit() {

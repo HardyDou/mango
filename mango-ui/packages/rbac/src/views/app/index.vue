@@ -1,9 +1,8 @@
 <template>
   <div class="app-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>应用管理</span>
+      <div class="action-toolbar">
+        <div class="toolbar-left">
           <el-button
             type="primary"
             @click="handleAdd"
@@ -11,7 +10,7 @@
             新增应用
           </el-button>
         </div>
-      </template>
+      </div>
 
       <el-table
         v-loading="loading"

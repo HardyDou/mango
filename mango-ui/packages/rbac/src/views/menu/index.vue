@@ -1,18 +1,6 @@
 <template>
   <div class="menu-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>菜单管理</span>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增菜单
-          </el-button>
-        </div>
-      </template>
-
       <!-- 菜单分组 Tab -->
       <div class="group-tabs">
         <div class="tabs-wrapper">
@@ -88,6 +76,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增菜单
+          </el-button>
+        </div>
+      </div>
 
       <!-- 菜单树表格 -->
       <el-table

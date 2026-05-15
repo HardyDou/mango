@@ -1,5 +1,15 @@
 [
   {
+    "path": "/workflow/task/detail",
+    "name": "WorkflowTaskDetail",
+    "meta": {
+      "title": "任务详情",
+      "icon": "DocumentChecked",
+      "isHide": true
+    },
+    "component": "@/views/workflow/task/detail/index.vue"
+  },
+  {
     "path": "/components",
     "name": "Components",
     "meta": {

@@ -221,7 +221,7 @@ test.describe('T12 系统配置页面真实接口闭环', () => {
     expect(createResponse.status()).toBe(403);
 
     await loginPage(page, companyATenant);
-    await expect(page.getByText('账号权限').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('基础数据')).toHaveCount(0);
     await expect(page.getByText('参数配置')).toHaveCount(0);
     await expectNoAuthError(page);

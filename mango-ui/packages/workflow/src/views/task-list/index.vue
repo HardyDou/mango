@@ -1,0 +1,167 @@
+<template>
+  <div class="workflow-task-page">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>{{ title }}</span>
+          <el-tag type="info">{{ description }}</el-tag>
+        </div>
+      </template>
+
+      <el-form :inline="true" class="search-form">
+        <el-form-item label="关键词">
+          <el-input v-model="query.keyword" placeholder="搜索流程/任务名称" clearable @keyup.enter="loadData" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="loadData">查询</el-button>
+          <el-button @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-table v-loading="loading" :data="tableData" stripe>
+        <el-table-column prop="taskName" label="任务名称" min-width="160" />
+        <el-table-column prop="businessKey" label="业务主键" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="processName" label="流程名称" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="processKey" label="流程编码" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="initiatorName" label="发起人" width="120" />
+        <el-table-column prop="assigneeName" label="办理人" width="120" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag>{{ row.status }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="startTime" label="发起时间" width="180" />
+        <el-table-column prop="endTime" label="完成时间" width="180" />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="taskMode === 'todo'" type="primary" link @click="openTask(row)">处理</el-button>
+            <el-button v-else type="primary" link @click="openTask(row)">查看</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-pagination
+        v-model:current-page="query.pageNum"
+        v-model:page-size="query.pageSize"
+        class="pagination"
+        :total="total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="loadData"
+        @current-change="loadData"
+      />
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { workflowApi, type WorkflowTask } from '../../api/workflow';
+
+const route = useRoute();
+const router = useRouter();
+const loading = ref(false);
+const tableData = ref<WorkflowTask[]>([]);
+const total = ref(0);
+const query = ref({
+  pageNum: 1,
+  pageSize: 10,
+  keyword: '',
+});
+
+const taskMode = computed(() => {
+  if (route.path.includes('/initiated')) return 'initiated';
+  if (route.path.includes('/done')) return 'done';
+  if (route.path.includes('/copied')) return 'copied';
+  return 'todo';
+});
+
+const title = computed(() => ({
+  todo: '我的待办',
+  initiated: '我的发起',
+  done: '我的已办',
+  copied: '抄送给我',
+}[taskMode.value]));
+
+const description = computed(() => ({
+  todo: '需要当前用户处理的流程任务',
+  initiated: '当前用户发起的流程实例',
+  done: '当前用户已经处理完成的流程任务',
+  copied: '流程抄送通知与待阅事项',
+}[taskMode.value]));
+
+async function loadData() {
+  loading.value = true;
+  try {
+    if (taskMode.value === 'initiated') {
+    const result = await workflowApi.initiatedProcesses(query.value);
+      tableData.value = result.list.map(item => ({
+        ...item,
+        id: item.processInstanceId,
+        taskName: '流程实例',
+        createTime: item.startTime,
+      }));
+      total.value = result.total;
+      return;
+    }
+    const apiMap = {
+      todo: workflowApi.todoTasks,
+      done: workflowApi.doneTasks,
+      copied: workflowApi.copiedTasks,
+    };
+    const result = await apiMap[taskMode.value as 'todo' | 'done' | 'copied'](query.value);
+    tableData.value = result.list;
+    total.value = result.total;
+  } finally {
+    loading.value = false;
+  }
+}
+
+function resetQuery() {
+  query.value.keyword = '';
+  query.value.pageNum = 1;
+  loadData();
+}
+
+function openTask(row: WorkflowTask) {
+  const queryParams: Record<string, string> = {
+    from: taskMode.value,
+  };
+  if (taskMode.value === 'todo' && row.id) {
+    queryParams.taskId = row.id;
+  } else if (row.processInstanceId) {
+    queryParams.processInstanceId = row.processInstanceId;
+    queryParams.mode = 'view';
+  }
+  router.push({
+    path: '/workflow/task/detail',
+    query: queryParams,
+  });
+}
+
+onMounted(loadData);
+</script>
+
+<style scoped>
+.workflow-task-page {
+  padding: 16px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.search-form {
+  margin-bottom: 16px;
+}
+
+.pagination {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+</style>

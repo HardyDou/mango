@@ -7,6 +7,7 @@ export type ColumnsAsideLayout = 'columns-vertical' | 'columns-horizontal';
 export interface LayoutState {
   layout: LayoutType;
   isCollapse: boolean;
+  isColumnsAsideOpen: boolean;
   isFixedHeader: boolean;
   isFixedHeaderChange: boolean;
   isClassicSplitMenu: boolean;
@@ -31,6 +32,7 @@ export const useLayoutStore = defineStore('layout', {
   state: (): LayoutState => ({
     layout: 'classic',
     isCollapse: false,
+    isColumnsAsideOpen: false,
     isFixedHeader: false,
     isFixedHeaderChange: false,
     isClassicSplitMenu: true,
@@ -56,6 +58,12 @@ export const useLayoutStore = defineStore('layout', {
     },
     toggleCollapse() {
       this.isCollapse = !this.isCollapse;
+    },
+    toggleColumnsAside() {
+      this.isColumnsAsideOpen = !this.isColumnsAsideOpen;
+    },
+    setColumnsAsideOpen(open: boolean) {
+      this.isColumnsAsideOpen = open;
     },
     toggleMobileMenu() {
       this.isMobileMenuOpen = !this.isMobileMenuOpen;

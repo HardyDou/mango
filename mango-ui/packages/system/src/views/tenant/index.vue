@@ -1,18 +1,6 @@
 <template>
   <div class="tenant-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>机构管理</span>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增机构
-          </el-button>
-        </div>
-      </template>
-
       <el-form
         :inline="true"
         class="search-form"
@@ -25,18 +13,14 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <DictSelect
             v-model="query.status"
-            placeholder="请选择"
-            clearable
-          >
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="Number(item.value)"
-            />
-          </el-select>
+            dict-type="institution_status"
+            placeholder="状态"
+            show-any-option
+            any-option-label="不限"
+            number-value
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -50,6 +34,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增机构
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"
@@ -78,26 +73,12 @@
           </template>
         </el-table-column>
         <el-table-column
-          prop="capabilityCodes"
-          label="开通能力"
-          min-width="220"
+          prop="packageId"
+          label="绑定套餐"
+          min-width="180"
         >
           <template #default="{ row }">
-            <template v-if="row.capabilityCodeList?.length">
-              <DictTag
-                v-for="code in row.capabilityCodeList"
-                :key="code"
-                dict-code="institution_capability"
-                :value="code"
-                size="small"
-              />
-            </template>
-            <span
-              v-else
-              class="empty-text"
-            >
-              未开通
-            </span>
+            <span>{{ packageNameMap.get(row.packageId || 0) || '未绑定套餐' }}</span>
           </template>
         </el-table-column>
         <el-table-column
@@ -130,7 +111,11 @@
           prop="createTime"
           label="创建时间"
           width="180"
-        />
+        >
+          <template #default="{ row }">
+            {{ formatDate(row.createTime) }}
+          </template>
+        </el-table-column>
         <el-table-column
           label="操作"
           width="260"
@@ -232,15 +217,32 @@
           />
         </el-form-item>
         <el-form-item
-          label="开通能力"
-          prop="capabilityCodeList"
+          label="机构套餐"
+          prop="packageId"
         >
-          <DictSelect
-            v-model="form.capabilityCodeList"
-            dict-type="institution_capability"
-            placeholder="请选择开通能力"
-            multiple
+          <el-select
+            v-model="form.packageId"
+            placeholder="请选择机构套餐"
             filterable
+            @change="handlePackageChange"
+          >
+            <el-option
+              v-for="item in packageOptions"
+              :key="item.packageId"
+              :label="item.packageName"
+              :value="item.packageId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="菜单预览">
+          <el-tree
+            ref="packageTreeRef"
+            class="package-tree"
+            node-key="menuId"
+            show-checkbox
+            default-expand-all
+            :data="packageMenuTree"
+            :props="treeProps"
           />
         </el-form-item>
         <el-form-item
@@ -301,10 +303,12 @@
 </template>
 
 <script setup lang="ts" name="SystemTenant">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictSelect, DictTag, Pagination, useDict } from '@mango/common';
+import { DictSelect, DictTag, Pagination, formatDate, useDict } from '@mango/common';
 import { tenantApi, type SysTenant } from '../../api/tenant';
+import { menuApi, type SysMenuVO } from '@mango/rbac';
+import { menuPackageApi, type MenuPackageVO } from '@mango/rbac';
 
 const { options: statusOptions } = useDict('institution_status');
 
@@ -318,6 +322,14 @@ const statusActions: Record<number, string> = {
 const loading = ref(false);
 const tableData = ref<SysTenant[]>([]);
 const total = ref(0);
+const packageOptions = ref<MenuPackageVO[]>([]);
+const packageMenuTree = ref<SysMenuVO[]>([]);
+const packageTreeRef = ref();
+const packageNameMap = computed(() => new Map(packageOptions.value.map(item => [item.packageId || 0, item.packageName])));
+const treeProps = {
+  label: 'menuName',
+  children: 'children',
+};
 const query = reactive({
   pageNum: 1,
   pageSize: 10,
@@ -332,7 +344,7 @@ const form = reactive<SysTenant>({
   tenantName: '',
   tenantCode: '',
   institutionType: 'ENTERPRISE',
-  capabilityCodeList: ['SYSTEM_ADMIN', 'AUTH_ADMIN', 'ORG_ADMIN', 'WORKFLOW'],
+  packageId: undefined,
   contactName: '',
   contactPhone: '',
   contactEmail: '',
@@ -343,7 +355,24 @@ const rules: FormRules = {
   tenantName: [{ required: true, message: '请输入机构名称', trigger: 'blur' }],
   tenantCode: [{ required: true, message: '请输入机构编码', trigger: 'blur' }],
   institutionType: [{ required: true, message: '请选择机构类型', trigger: 'change' }],
+  packageId: [{ required: true, message: '请选择机构套餐', trigger: 'change' }],
 };
+
+async function loadPackageOptions() {
+  packageOptions.value = await menuPackageApi.list({ appCode: 'internal-admin', status: 1 });
+}
+
+async function loadPackageMenuTree() {
+  packageMenuTree.value = await menuApi.getMenuTree({ appCode: 'internal-admin', fmt: 'tree' });
+}
+
+async function applyPackagePreview(packageId?: number) {
+  await nextTick();
+  packageTreeRef.value?.setCheckedKeys([], false);
+  if (!packageId) return;
+  const detail = await menuPackageApi.detail(packageId);
+  packageTreeRef.value?.setCheckedKeys(detail.menuIds || [], false);
+}
 
 async function loadData() {
   loading.value = true;
@@ -375,21 +404,25 @@ function handleAdd() {
   form.tenantName = '';
   form.tenantCode = '';
   form.institutionType = 'ENTERPRISE';
-  form.capabilityCodeList = ['SYSTEM_ADMIN', 'AUTH_ADMIN', 'ORG_ADMIN', 'WORKFLOW'];
+  form.packageId = packageOptions.value[0]?.packageId;
   form.contactName = '';
   form.contactPhone = '';
   form.contactEmail = '';
   form.status = 1;
   dialogVisible.value = true;
+  applyPackagePreview(form.packageId);
 }
 
-function handleEdit(row: SysTenant) {
+async function handleEdit(row: SysTenant) {
   Object.assign(form, {
     ...row,
-    capabilityCodeList: row.capabilityCodeList
-      ?? (row.capabilityCodes ? row.capabilityCodes.split(',').filter(Boolean) : []),
   });
   dialogVisible.value = true;
+  await applyPackagePreview(row.packageId);
+}
+
+async function handlePackageChange(packageId?: number) {
+  await applyPackagePreview(packageId);
 }
 
 async function handleSubmit() {
@@ -460,6 +493,8 @@ function statusTagType(status?: number) {
 }
 
 onMounted(() => {
+  loadPackageOptions();
+  loadPackageMenuTree();
   loadData();
 });
 </script>
@@ -481,5 +516,14 @@ onMounted(() => {
 }
 .empty-text {
   color: var(--el-text-color-placeholder);
+}
+
+.package-tree {
+  width: 100%;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 12px;
 }
 </style>

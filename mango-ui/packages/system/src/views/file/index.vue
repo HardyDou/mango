@@ -1,20 +1,6 @@
 <template>
   <div class="file-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>文件管理</span>
-          <el-upload
-            :show-file-list="false"
-            :http-request="handleUpload"
-          >
-            <el-button type="primary">
-              上传文件
-            </el-button>
-          </el-upload>
-        </div>
-      </template>
-
       <el-form
         :inline="true"
         class="search-form"
@@ -58,6 +44,19 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-upload
+            :show-file-list="false"
+            :http-request="handleUpload"
+          >
+            <el-button type="primary">
+              上传文件
+            </el-button>
+          </el-upload>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"

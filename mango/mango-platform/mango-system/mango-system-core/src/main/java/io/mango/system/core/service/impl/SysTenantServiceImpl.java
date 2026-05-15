@@ -10,6 +10,7 @@ import io.mango.identity.api.vo.TenantMemberInfo;
 import io.mango.system.api.SystemCode;
 import io.mango.system.api.enums.InstitutionStatus;
 import io.mango.system.api.tenant.TenantDependencyChecker;
+import io.mango.system.api.tenant.TenantPackageBindingHandler;
 import io.mango.system.api.tenant.TenantProvisionContext;
 import io.mango.system.api.tenant.TenantProvisioner;
 import io.mango.system.api.po.SysTenantPo;
@@ -34,6 +35,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
     private final TenantMemberProvider tenantMemberProvider;
     private final ObjectProvider<TenantProvisioner> tenantProvisioners;
     private final ObjectProvider<TenantDependencyChecker> tenantDependencyCheckers;
+    private final ObjectProvider<TenantPackageBindingHandler> tenantPackageBindingHandlers;
 
     @Override
     public R<List<SysTenantPo>> list() {
@@ -59,6 +61,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         entity.setTenantCode(po.getTenantCode());
         entity.setInstitutionType(firstText(po.getInstitutionType(), "ENTERPRISE"));
         entity.setCapabilityCodes(normalizeCodes(po.getCapabilityCodes()));
+        entity.setPackageId(po.getPackageId());
         entity.setStatus(requireValidStatus(po.getStatus()));
         entity.setContact(po.getContact());
         entity.setMobile(po.getMobile());
@@ -66,6 +69,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         entity.setRemark(po.getRemark());
         sysTenantMapper.insert(entity);
         provisionTenant(entity);
+        bindTenantPackage(entity.getId(), entity.getPackageId());
         return R.ok(entity.getId());
     }
 
@@ -80,12 +84,17 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         entity.setTenantCode(po.getTenantCode());
         entity.setInstitutionType(firstText(po.getInstitutionType(), "ENTERPRISE"));
         entity.setCapabilityCodes(normalizeCodes(po.getCapabilityCodes()));
+        entity.setPackageId(po.getPackageId());
         entity.setStatus(requireValidStatus(po.getStatus()));
         entity.setContact(po.getContact());
         entity.setMobile(po.getMobile());
         entity.setEmail(po.getEmail());
         entity.setRemark(po.getRemark());
-        return R.ok(sysTenantMapper.updateById(entity) > 0);
+        boolean updated = sysTenantMapper.updateById(entity) > 0;
+        if (updated) {
+            bindTenantPackage(entity.getId(), entity.getPackageId());
+        }
+        return R.ok(updated);
     }
 
     @Override
@@ -184,6 +193,7 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         po.setTenantCode(entity.getTenantCode());
         po.setInstitutionType(firstText(entity.getInstitutionType(), "ENTERPRISE"));
         po.setCapabilityCodes(entity.getCapabilityCodes());
+        po.setPackageId(entity.getPackageId());
         po.setStatus(entity.getStatus());
         po.setContact(entity.getContact());
         po.setMobile(entity.getMobile());
@@ -212,6 +222,11 @@ public class SysTenantServiceImpl implements ISysTenantService, LoginTenantProvi
         } finally {
             MangoContextHolder.set(original);
         }
+    }
+
+    private void bindTenantPackage(Long tenantId, Long packageId) {
+        tenantPackageBindingHandlers.orderedStream()
+                .forEach(handler -> handler.bindPackage(tenantId, packageId));
     }
 
     private LoginTenantVO attachMember(Long userId, LoginTenantVO tenant) {

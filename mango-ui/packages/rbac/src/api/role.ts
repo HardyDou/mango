@@ -13,8 +13,8 @@ export interface RoleVO {
   status: number;
   sort?: number;
   remark?: string;
-  createTime?: string;
-  updateTime?: string;
+  createTime?: string | number[];
+  updateTime?: string | number[];
   menuIds?: number[];
   permissionIds?: number[];
 }

@@ -39,11 +39,16 @@ async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
 
 async function loginPage(page: Page, tenant: LoginTenant) {
   await page.goto('/#/login');
-  await page.locator('.tenant-select').click();
-  await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  const accountTenantsResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  );
+  await page.locator('input[placeholder="密码"]').blur();
+  await accountTenantsResponsePromise;
+  await page.locator('.tenant-select').click();
+  await page.getByRole('option', { name: new RegExp(tenant.tenantName) }).click();
+  await page.locator('.login-btn').click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
@@ -97,7 +102,7 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
       await page.goto('/#/system/menu');
       await listResponsePromise;
       await expect(page.getByText('菜单管理').first()).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('平台运营').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('应用管理').first()).toBeVisible({ timeout: 10000 });
 
       await page.getByRole('button', { name: '新增菜单' }).click();
@@ -195,8 +200,7 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
     expect(createResponse.status()).toBe(403);
 
     await loginPage(page, companyATenant);
-    await expect(page.getByText('账号权限').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('平台运营')).toHaveCount(0);
+    await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('菜单管理')).toHaveCount(0);
     await expectNoAuthError(page);
   });

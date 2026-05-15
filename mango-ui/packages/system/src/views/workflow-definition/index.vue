@@ -111,6 +111,7 @@
                 <FcDesigner
                   ref="formDesignerRef"
                   :config="formDesignerConfig"
+                  :menu="formDesignerMenu"
                   class="workflow-form-designer"
                   height="calc(100vh - 350px)"
                   @save="syncWorkflowFormFromDesigner"
@@ -401,10 +402,6 @@
 
     <el-tabs v-else v-model="activeTab" class="workflow-tabs">
       <el-tab-pane label="流程定义" name="definitions">
-        <div class="workflow-definition-actions">
-          <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
-          <el-button :icon="Plus" @click="openGroupForm()">创建分组</el-button>
-        </div>
         <div class="page-toolbar">
           <el-form :inline="true" :model="definitionQuery" class="query-form">
             <el-form-item label="关键字">
@@ -425,6 +422,12 @@
               <el-button :icon="Refresh" @click="resetDefinitionQuery">重置</el-button>
             </el-form-item>
           </el-form>
+        </div>
+        <div class="workflow-definition-actions action-toolbar">
+          <div class="toolbar-left">
+            <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
+            <el-button :icon="Plus" @click="openGroupForm()">创建分组</el-button>
+          </div>
         </div>
 
         <el-table v-loading="definitionLoading" :data="definitions" border>
@@ -926,8 +929,220 @@ const formDesignerConfig: FcDesignerConfig = {
   showDevice: false,
   showLanguage: false,
   showInputData: false,
-  hiddenItem: ['upload'],
+  hiddenMenu: ['layout'],
 };
+
+type FormDesignerMenuItem = {
+  name: string;
+  label?: string;
+  icon?: string;
+};
+
+type FormDesignerMenu = {
+  name: string;
+  title: string;
+  hidden?: boolean;
+  list: FormDesignerMenuItem[];
+};
+
+type WorkflowBusinessComponent = FormDesignerMenuItem & {
+  menu: 'business';
+  input: boolean;
+  event?: string[];
+  validate?: string[];
+  rule: () => FcRule;
+  props: () => any[];
+};
+
+const formDesignerMenu: FormDesignerMenu[] = [
+  {
+    name: 'aide',
+    title: '辅助组件',
+    list: [
+      { name: 'elAlert', label: '提示', icon: 'icon-alert' },
+      { name: 'text', label: '文字', icon: 'icon-text' },
+      { name: 'html', label: 'HTML', icon: 'icon-html' },
+      { name: 'elDivider', label: '分割线', icon: 'icon-divider' },
+      { name: 'elButton', label: '按钮', icon: 'icon-button' },
+      { name: 'elTag', label: '标签', icon: 'icon-tag' },
+      { name: 'elImage', label: '图片展示', icon: 'icon-image' },
+    ],
+  },
+  {
+    name: 'subform',
+    title: '子表单组件',
+    list: [
+      { name: 'group', label: '对象容器', icon: 'icon-group' },
+      { name: 'subForm', label: '子表单', icon: 'icon-subform' },
+      { name: 'tableForm', label: '表格子表单', icon: 'icon-table' },
+    ],
+  },
+  {
+    name: 'main',
+    title: '基础组件',
+    list: [
+      { name: 'input', label: '输入框', icon: 'icon-input' },
+      { name: 'textarea', label: '多行输入框', icon: 'icon-textarea' },
+      { name: 'password', label: '密码输入框', icon: 'icon-password' },
+      { name: 'inputNumber', label: '计数器', icon: 'icon-number' },
+      { name: 'radio', label: '单选框', icon: 'icon-radio' },
+      { name: 'checkbox', label: '多选框', icon: 'icon-checkbox' },
+      { name: 'select', label: '选择器', icon: 'icon-select' },
+      { name: 'switch', label: '开关', icon: 'icon-switch' },
+      { name: 'rate', label: '评分', icon: 'icon-rate' },
+      { name: 'timePicker', label: '时间', icon: 'icon-time' },
+      { name: 'timeRange', label: '时间区间', icon: 'icon-time-range' },
+      { name: 'slider', label: '滑块', icon: 'icon-slider' },
+      { name: 'datePicker', label: '日期', icon: 'icon-date' },
+      { name: 'dateRange', label: '日期区间', icon: 'icon-date-range' },
+      { name: 'colorPicker', label: '颜色选择器', icon: 'icon-color' },
+      { name: 'cascader', label: '级联选择器', icon: 'icon-cascader' },
+      { name: 'upload', label: '上传', icon: 'icon-upload' },
+      { name: 'elTransfer', label: '穿梭框', icon: 'icon-transfer' },
+      { name: 'tree', label: '树形控件', icon: 'icon-tree' },
+      { name: 'elTreeSelect', label: '树形选择', icon: 'icon-tree-select' },
+      { name: 'fcEditor', label: '富文本', icon: 'icon-editor' },
+    ],
+  },
+  {
+    name: 'business',
+    title: '业务组件',
+    list: [],
+  },
+];
+
+function createWorkflowBusinessField(prefix: string) {
+  return `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createWorkflowBusinessComponent(
+  name: string,
+  label: string,
+  icon: string,
+  ruleFactory: () => FcRule,
+  validate: string[] = ['string'],
+): WorkflowBusinessComponent {
+  return {
+    name,
+    label,
+    icon,
+    menu: 'business',
+    input: true,
+    event: ['change', 'blur', 'focus', 'clear'],
+    validate,
+    rule: ruleFactory,
+    props: () => [],
+  };
+}
+
+const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
+  createWorkflowBusinessComponent('workflowUser', '人员', 'icon-user', () => ({
+    type: 'select',
+    field: createWorkflowBusinessField('userId'),
+    title: '人员',
+    props: {
+      placeholder: '请选择人员',
+      clearable: true,
+      filterable: true,
+    },
+    options: [],
+  })),
+  createWorkflowBusinessComponent('workflowOrg', '部门', 'icon-tree', () => ({
+    type: 'elTreeSelect',
+    field: createWorkflowBusinessField('orgId'),
+    title: '部门',
+    props: {
+      placeholder: '请选择部门',
+      clearable: true,
+      filterable: true,
+      nodeKey: 'value',
+      data: [],
+    },
+  }), ['string', 'number', 'array']),
+  createWorkflowBusinessComponent('workflowPost', '岗位', 'icon-tag', () => ({
+    type: 'select',
+    field: createWorkflowBusinessField('postId'),
+    title: '岗位',
+    props: {
+      placeholder: '请选择岗位',
+      clearable: true,
+      filterable: true,
+    },
+    options: [],
+  })),
+  createWorkflowBusinessComponent('workflowRole', '角色', 'icon-group', () => ({
+    type: 'select',
+    field: createWorkflowBusinessField('roleId'),
+    title: '角色',
+    props: {
+      placeholder: '请选择角色',
+      clearable: true,
+      filterable: true,
+    },
+    options: [],
+  })),
+  createWorkflowBusinessComponent('workflowUpload', '上传', 'icon-upload', () => ({
+    type: 'upload',
+    field: createWorkflowBusinessField('attachment'),
+    title: '上传',
+    props: {
+      action: '/api/file/files',
+      limit: 5,
+      multiple: true,
+    },
+  }), ['array']),
+  createWorkflowBusinessComponent('workflowImage', '图片', 'icon-image', () => ({
+    type: 'upload',
+    field: createWorkflowBusinessField('image'),
+    title: '图片',
+    props: {
+      action: '/api/file/files',
+      listType: 'picture-card',
+      accept: 'image/*',
+      limit: 6,
+    },
+  }), ['array']),
+  createWorkflowBusinessComponent('workflowArea', '地区', 'icon-cascader', () => ({
+    type: 'cascader',
+    field: createWorkflowBusinessField('areaCode'),
+    title: '地区',
+    props: {
+      placeholder: '请选择地区',
+      clearable: true,
+      filterable: true,
+      options: [],
+    },
+  }), ['string', 'number', 'array']),
+  createWorkflowBusinessComponent('workflowSignature', '签名', 'icon-edit', () => ({
+    type: 'input',
+    field: createWorkflowBusinessField('signature'),
+    title: '签名',
+    props: {
+      placeholder: '请完成签名',
+      readonly: true,
+    },
+  })),
+  createWorkflowBusinessComponent('workflowDict', '字典', 'icon-select', () => ({
+    type: 'select',
+    field: createWorkflowBusinessField('dictValue'),
+    title: '字典',
+    props: {
+      placeholder: '请选择字典值',
+      clearable: true,
+      filterable: true,
+    },
+    options: [],
+  })),
+  createWorkflowBusinessComponent('workflowSerialNo', '流水号', 'icon-number', () => ({
+    type: 'input',
+    field: createWorkflowBusinessField('serialNo'),
+    title: '流水号',
+    props: {
+      placeholder: '系统自动生成',
+      readonly: true,
+    },
+  })),
+];
 
 const defaultWorkflowFormRules = (): FcRule[] => [
   {
@@ -1108,6 +1323,16 @@ onMounted(async () => {
   await Promise.all([loadDefinitions(), loadGroupsPage(), loadNodeDefinitions()]);
 });
 
+async function registerWorkflowBusinessFormComponents() {
+  await nextTick();
+  const designer = formDesignerRef.value as any;
+  if (!designer) {
+    return;
+  }
+  designer.setMenuItem?.('business', []);
+  designer.addComponent?.(workflowBusinessFormComponents);
+}
+
 async function loadNodeCatalog() {
   nodeCatalog.value = await workflowApi.nodeCatalog();
 }
@@ -1187,6 +1412,7 @@ async function openDefinitionForm(row?: WorkflowDefinition) {
   definitionForm.formJson = stringifyWorkflowFormConfig();
   designerMode.value = true;
   await nextTick();
+  await registerWorkflowBusinessFormComponents();
   applyFormRulesToDesigner();
 }
 
@@ -1575,6 +1801,7 @@ async function handleWorkflowFormModeChange() {
   }
   workflowFormRules.value = customFieldsToFormCreateRules(customFormFields.value);
   await nextTick();
+  await registerWorkflowBusinessFormComponents();
   applyFormRulesToDesigner();
 }
 

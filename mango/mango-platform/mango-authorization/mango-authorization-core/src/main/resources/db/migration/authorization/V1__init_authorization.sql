@@ -316,9 +316,6 @@ INSERT INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, 
 /*!40000 ALTER TABLE `authorization_role_menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
--- 路由管理与菜单管理职责重复，动态路由统一由菜单管理维护，不再落默认后台入口。
-DELETE FROM `authorization_role_menu` WHERE `menu_id` IN (21, 21001, 21002, 21003, 21004);
-DELETE FROM `authorization_menu` WHERE `id` IN (21, 21001, 21002, 21003, 21004);
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

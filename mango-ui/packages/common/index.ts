@@ -56,6 +56,13 @@ export type {
   OrgSelectorInstance,
   OrgSelectorProps,
 } from './components/OrgSelector/types';
+export { default as UserSelector } from './components/UserSelector/index.vue';
+export type {
+  UserSelectorEmits,
+  UserSelectorExpose,
+  UserSelectorOption,
+  UserSelectorProps,
+} from './components/UserSelector/types';
 export { default as TreeSelect } from './components/TreeSelect/index.vue';
 export { default as CaptchaSelector } from './components/Captcha/index.vue';
 export { default as ArithmeticCaptcha } from './components/Captcha/ArithmeticCaptcha.vue';

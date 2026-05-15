@@ -5,13 +5,9 @@ export const useRoutesList = defineStore('routesList', {
   state: (): {
     routesList: RouteRecordRaw[];
     activeTopRoutePath: string;
-    isColumnsMenuHover: boolean;
-    isColumnsNavHover: boolean;
   } => ({
     routesList: [],
     activeTopRoutePath: '',
-    isColumnsMenuHover: false,
-    isColumnsNavHover: false,
   }),
   actions: {
     setRoutesList(data: RouteRecordRaw[]) {
@@ -20,17 +16,9 @@ export const useRoutesList = defineStore('routesList', {
     setActiveTopRoutePath(path: string) {
       this.activeTopRoutePath = path;
     },
-    setColumnsMenuHover(bool: boolean) {
-      this.isColumnsMenuHover = bool;
-    },
-    setColumnsNavHover(bool: boolean) {
-      this.isColumnsNavHover = bool;
-    },
     resetRoutesList() {
       this.routesList = [];
       this.activeTopRoutePath = '';
-      this.isColumnsMenuHover = false;
-      this.isColumnsNavHover = false;
     },
   },
 });

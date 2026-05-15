@@ -1,18 +1,6 @@
 <template>
   <div class="permission-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>权限管理</span>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增权限
-          </el-button>
-        </div>
-      </template>
-
       <!-- 搜索表单 -->
       <el-form
         :inline="true"
@@ -57,6 +45,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增权限
+          </el-button>
+        </div>
+      </div>
 
       <!-- 数据表格 -->
       <el-table

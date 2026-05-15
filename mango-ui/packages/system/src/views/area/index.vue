@@ -1,26 +1,6 @@
 <template>
   <div class="area-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <div>
-            <span>行政区划</span>
-            <span class="current-level">当前层级：{{ currentLevelLabel }}</span>
-          </div>
-          <div class="header-actions">
-            <el-button @click="loadRoot">
-              返回省级
-            </el-button>
-            <el-button
-              type="primary"
-              @click="handleAdd"
-            >
-              新增区划
-            </el-button>
-          </div>
-        </div>
-      </template>
-
       <el-breadcrumb
         class="area-breadcrumb"
         separator="/"
@@ -47,6 +27,23 @@
           </el-button>
         </el-breadcrumb-item>
       </el-breadcrumb>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <span class="current-level">当前层级：{{ currentLevelLabel }}</span>
+        </div>
+        <div class="toolbar-right">
+          <el-button @click="loadRoot">
+            返回省级
+          </el-button>
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增区划
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"

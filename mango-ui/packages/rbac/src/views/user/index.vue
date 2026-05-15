@@ -1,18 +1,6 @@
 <template>
   <div class="user-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>成员管理</span>
-          <el-button
-            type="primary"
-            @click="handleAdd"
-          >
-            新增成员
-          </el-button>
-        </div>
-      </template>
-
       <el-form
         :inline="true"
         class="search-form"
@@ -32,18 +20,14 @@
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select
+          <DictSelect
             v-model="query.status"
-            placeholder="请选择"
-            clearable
-          >
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="Number(item.value)"
-            />
-          </el-select>
+            dict-type="sys_normal_disable"
+            placeholder="状态"
+            show-any-option
+            any-option-label="不限"
+            number-value
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -57,6 +41,17 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <div class="action-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="primary"
+            @click="handleAdd"
+          >
+            新增成员
+          </el-button>
+        </div>
+      </div>
 
       <el-table
         v-loading="loading"
@@ -386,7 +381,7 @@
 <script setup lang="ts" name="SystemUser">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, Pagination, Session, useDict } from '@mango/common';
+import { DictSelect, DictTag, Pagination, Session, useDict } from '@mango/common';
 import { roleApi, type RoleVO } from '../../api/role';
 import { userApi, type IdentityUserVO } from '../../api/user';
 
