@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.ILocker;
 import lombok.RequiredArgsConstructor;
@@ -23,14 +24,10 @@ public class KvStoreLocker implements ILocker {
     }
 
     private void validateKey(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
     }
 
     private void validateTtl(long ttlSeconds) {
-        if (ttlSeconds <= 0) {
-            throw new IllegalArgumentException("ttlSeconds must be positive");
-        }
+        Require.positive(ttlSeconds, "ttlSeconds must be positive");
     }
 }

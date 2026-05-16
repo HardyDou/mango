@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ICache;
 import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,9 +55,9 @@ class CacheTest extends KvStoreCapabilityTestSupport {
         try (fixture) {
             ICache cache = new KvStoreCache(fixture.store());
 
-            assertThatThrownBy(() -> cache.set(null, "v", 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> cache.set("k", null, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> cache.set("k", "v", 0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> cache.set(null, "v", 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> cache.set("k", null, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> cache.set("k", "v", 0)).isInstanceOf(BizException.class);
         }
     }
 }

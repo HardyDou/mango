@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.IRateLimiter;
 import lombok.RequiredArgsConstructor;
@@ -19,21 +20,13 @@ public class KvStoreRateLimiter implements IRateLimiter {
 
     public boolean tryAcquire(String key, int permits, int limit, long windowSeconds) {
         validateKey(key);
-        if (permits <= 0) {
-            throw new IllegalArgumentException("permits must be positive");
-        }
-        if (limit <= 0) {
-            throw new IllegalArgumentException("limit must be positive");
-        }
-        if (windowSeconds <= 0) {
-            throw new IllegalArgumentException("windowSeconds must be positive");
-        }
+        Require.positive(permits, "permits must be positive");
+        Require.positive(limit, "limit must be positive");
+        Require.positive(windowSeconds, "windowSeconds must be positive");
         return kvStore.incrementBy(key, permits, windowSeconds) <= limit;
     }
 
     private void validateKey(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
     }
 }

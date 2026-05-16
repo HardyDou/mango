@@ -277,7 +277,7 @@ KV 表达式上下文扩展规则：
 
 - `kv-api` 不新增 `jakarta.validation` 注解，避免扩大 API 依赖。
 - 接口 Javadoc 定义 key、ttl、value 等参数契约。
-- core 实现使用 `IllegalArgumentException` 校验参数。
+- core 实现统一使用 `Require` 校验参数。
 - infra 层不使用 `Require`，避免把业务异常语义带入技术底座。
 
 ## 禁止事项

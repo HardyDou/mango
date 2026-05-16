@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.support;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,12 +23,8 @@ public class JsonConverter implements IConverter {
 
     @Override
     public <T> T convert(Object source, Class<T> classType) {
-        if (source == null) {
-            throw new IllegalArgumentException("source cannot be null");
-        }
-        if (classType == null) {
-            throw new IllegalArgumentException("classType cannot be null");
-        }
+        Require.notNull(source, "source cannot be null");
+        Require.notNull(classType, "classType cannot be null");
         String json;
         try {
             json = objectMapper.writeValueAsString(source);

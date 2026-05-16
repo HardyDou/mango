@@ -1,5 +1,6 @@
 package io.mango.infra.event.core.memory;
 
+import io.mango.common.result.Require;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.DomainEventHandler;
 import io.mango.infra.event.api.IDomainEventBus;
@@ -24,21 +25,16 @@ public class InMemoryDomainEventBus implements IDomainEventBus {
 
     @Override
     public void publish(DomainEvent event) {
-        if (event == null || isBlank(event.getEventType())) {
-            throw new IllegalArgumentException("event and eventType must not be blank");
-        }
+        Require.notNull(event, "event must not be null");
+        Require.notBlank(event.getEventType(), "eventType must not be blank");
         dispatch(event.getEventType(), event);
         dispatch(WILDCARD, event);
     }
 
     @Override
     public AutoCloseable subscribe(String eventType, DomainEventHandler handler) {
-        if (isBlank(eventType)) {
-            throw new IllegalArgumentException("eventType must not be blank");
-        }
-        if (handler == null) {
-            throw new IllegalArgumentException("handler must not be null");
-        }
+        Require.notBlank(eventType, "eventType must not be blank");
+        Require.notNull(handler, "handler must not be null");
         String key = eventType.trim();
         handlers.computeIfAbsent(key, ignored -> new CopyOnWriteArrayList<>()).add(handler);
         return () -> unsubscribe(key, handler);
@@ -69,7 +65,4 @@ public class InMemoryDomainEventBus implements IDomainEventBus {
         }
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
 }

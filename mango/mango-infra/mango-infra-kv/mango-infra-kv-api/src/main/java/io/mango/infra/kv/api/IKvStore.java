@@ -12,7 +12,6 @@ public interface IKvStore {
      * @param value value
      * @param expireSeconds expiration in seconds (must be positive)
      * @return true=new key added, false=key already exists
-     * @throws IllegalArgumentException if key is null or blank
      */
     default boolean setIfAbsent(String key, String value, long expireSeconds) {
         return put(key, value, expireSeconds);

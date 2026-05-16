@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,11 +49,11 @@ class RateLimiterTest extends KvStoreCapabilityTestSupport {
             KvStoreRateLimiter limiter = new KvStoreRateLimiter(fixture.store());
             String key = fixture.key("login:ip:invalid");
 
-            assertThatThrownBy(() -> limiter.tryAcquire(null, 1, 3, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> limiter.tryAcquire("  ", 1, 3, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> limiter.tryAcquire(key, 0, 3, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> limiter.tryAcquire(key, 1, 0, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> limiter.tryAcquire(key, 1, 3, 0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> limiter.tryAcquire(null, 1, 3, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> limiter.tryAcquire("  ", 1, 3, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> limiter.tryAcquire(key, 0, 3, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> limiter.tryAcquire(key, 1, 0, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> limiter.tryAcquire(key, 1, 3, 0)).isInstanceOf(BizException.class);
         }
     }
 }

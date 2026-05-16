@@ -2,6 +2,7 @@ package io.mango.infra.kv.core.support;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mango.common.exception.BizException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -53,8 +54,8 @@ class JsonSerializerTest {
     }
 
     @Test
-    void serialize_null_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(null));
+    void serialize_null_throwsBizException() {
+        assertThrows(BizException.class, () -> serializer.serialize(null));
     }
 
     // ==================== deserialize() tests ====================
@@ -97,18 +98,18 @@ class JsonSerializerTest {
     }
 
     @Test
-    void deserialize_nullContent_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> serializer.deserialize(null, String.class));
+    void deserialize_nullContent_throwsBizException() {
+        assertThrows(BizException.class, () -> serializer.deserialize(null, String.class));
     }
 
     @Test
-    void deserialize_blankContent_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> serializer.deserialize("  ", String.class));
+    void deserialize_blankContent_throwsBizException() {
+        assertThrows(BizException.class, () -> serializer.deserialize("  ", String.class));
     }
 
     @Test
-    void deserialize_nullClassType_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> serializer.deserialize("\"hello\"", null));
+    void deserialize_nullClassType_throwsBizException() {
+        assertThrows(BizException.class, () -> serializer.deserialize("\"hello\"", null));
     }
 
     @Test

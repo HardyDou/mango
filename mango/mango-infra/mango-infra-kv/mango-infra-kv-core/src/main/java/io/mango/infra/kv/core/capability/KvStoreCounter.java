@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.ICounter;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
@@ -27,14 +28,10 @@ public class KvStoreCounter implements ICounter {
     }
 
     private void validateKey(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
     }
 
     private void validateWindow(long windowSeconds) {
-        if (windowSeconds <= 0) {
-            throw new IllegalArgumentException("windowSeconds must be positive");
-        }
+        Require.positive(windowSeconds, "windowSeconds must be positive");
     }
 }

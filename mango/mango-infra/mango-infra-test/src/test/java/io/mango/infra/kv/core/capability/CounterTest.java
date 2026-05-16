@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ICounter;
 import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,9 +50,9 @@ class CounterTest extends KvStoreCapabilityTestSupport {
             ICounter counter = new KvStoreCounter(fixture.store());
             String key = fixture.key("sms:invalid");
 
-            assertThatThrownBy(() -> counter.increment(null, 1, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> counter.increment("  ", 1, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> counter.increment(key, 1, 0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> counter.increment(null, 1, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> counter.increment("  ", 1, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> counter.increment(key, 1, 0)).isInstanceOf(BizException.class);
         }
     }
 }

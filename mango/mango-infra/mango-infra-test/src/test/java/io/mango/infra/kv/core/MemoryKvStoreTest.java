@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.memory;
 
+import io.mango.common.exception.BizException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,13 +38,13 @@ class MemoryKvStoreTest {
     }
 
     @Test
-    void constructor_zeroBucketCount_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new MemoryKvStore(1, 0));
+    void constructor_zeroBucketCount_throwsBizException() {
+        assertThrows(BizException.class, () -> new MemoryKvStore(1, 0));
     }
 
     @Test
-    void constructor_negativeBucketCount_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> new MemoryKvStore(1, -1));
+    void constructor_negativeBucketCount_throwsBizException() {
+        assertThrows(BizException.class, () -> new MemoryKvStore(1, -1));
     }
 
     @Test

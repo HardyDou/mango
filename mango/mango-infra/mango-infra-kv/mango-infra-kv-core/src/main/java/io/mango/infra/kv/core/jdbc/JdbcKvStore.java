@@ -2,6 +2,7 @@ package io.mango.infra.kv.core.jdbc;
 
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.extern.slf4j.Slf4j;
@@ -91,9 +92,7 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     @Transactional
     public long incrementBy(String key, long delta, long windowSeconds) {
         validateKey(key);
-        if (windowSeconds <= 0) {
-            throw new IllegalArgumentException("windowSeconds must be positive, was: " + windowSeconds);
-        }
+        Require.positive(windowSeconds, "windowSeconds must be positive, was: " + windowSeconds);
         LocalDateTime currentTime = now();
         LocalDateTime expireTime = currentTime.plusSeconds(windowSeconds);
         int updated = incrementExistingValue(key, delta, expireTime, currentTime);
@@ -172,9 +171,7 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
     }
 
     private void validateKey(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
     }
 
     private java.util.Optional<String> findActiveValue(String key, LocalDateTime currentTime) {
@@ -301,9 +298,8 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         if (configuredTableName != null && !configuredTableName.isBlank()) {
             candidate = configuredTableName.trim();
         }
-        if (!TABLE_NAME_PATTERN.matcher(candidate).matches()) {
-            throw new IllegalArgumentException("tableName must match [A-Za-z_][A-Za-z0-9_]*");
-        }
+        Require.isTrue(TABLE_NAME_PATTERN.matcher(candidate).matches(),
+                "tableName must match [A-Za-z_][A-Za-z0-9_]*");
         return candidate;
     }
 }

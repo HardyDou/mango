@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ILocker;
 import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -62,11 +63,11 @@ class LockerTest extends KvStoreCapabilityTestSupport {
             String key = fixture.key("order:invalid");
 
             assertThatThrownBy(() -> locker.tryLock(null, 60))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(BizException.class);
             assertThatThrownBy(() -> locker.tryLock("  ", 60))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(BizException.class);
             assertThatThrownBy(() -> locker.tryLock(key, 0))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(BizException.class);
         }
     }
 }

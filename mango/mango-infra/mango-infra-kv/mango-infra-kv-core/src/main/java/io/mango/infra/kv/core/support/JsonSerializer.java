@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.support;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.ISerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,9 +23,7 @@ public class JsonSerializer implements ISerializer {
 
     @Override
     public String serialize(Object object) {
-        if (object == null) {
-            throw new IllegalArgumentException("object cannot be null");
-        }
+        Require.notNull(object, "object cannot be null");
         try {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
@@ -34,12 +33,8 @@ public class JsonSerializer implements ISerializer {
 
     @Override
     public <T> T deserialize(String content, Class<T> classType) {
-        if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("content cannot be null or blank");
-        }
-        if (classType == null) {
-            throw new IllegalArgumentException("classType cannot be null");
-        }
+        Require.notBlank(content, "content cannot be null or blank");
+        Require.notNull(classType, "classType cannot be null");
         try {
             return objectMapper.readValue(content, classType);
         } catch (JsonProcessingException e) {
