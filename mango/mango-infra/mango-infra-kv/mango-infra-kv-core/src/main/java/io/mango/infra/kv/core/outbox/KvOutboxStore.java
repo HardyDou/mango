@@ -2,6 +2,7 @@ package io.mango.infra.kv.core.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.kv.api.IOutboxStore;
@@ -156,20 +157,12 @@ public class KvOutboxStore implements IOutboxStore {
     }
 
     private void validateMessage(OutboxMessage message) {
-        if (message == null) {
-            throw new IllegalArgumentException("message cannot be null");
-        }
-        if (message.getMessageId() == null || message.getMessageId().trim().isEmpty()) {
-            throw new IllegalArgumentException("messageId cannot be blank");
-        }
-        if (message.getEventType() == null || message.getEventType().trim().isEmpty()) {
-            throw new IllegalArgumentException("eventType cannot be blank");
-        }
+        Require.notNull(message, "message cannot be null");
+        Require.notBlank(message.getMessageId(), "messageId cannot be blank");
+        Require.notBlank(message.getEventType(), "eventType cannot be blank");
     }
 
     private void validateWorker(String workerId) {
-        if (workerId == null || workerId.trim().isEmpty()) {
-            throw new IllegalArgumentException("workerId cannot be blank");
-        }
+        Require.notBlank(workerId, "workerId cannot be blank");
     }
 }

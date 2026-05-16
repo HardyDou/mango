@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * Outbox auto configuration.
  */
-@AutoConfiguration
+@AutoConfiguration(after = KvStoreAutoConfiguration.class)
 @EnableConfigurationProperties(KvStoreProperties.class)
 @ConditionalOnClass(IOutboxStore.class)
 @ConditionalOnExpression("${mango.kv.capability.enabled:false} && ${mango.kv.capability.outbox:false}")

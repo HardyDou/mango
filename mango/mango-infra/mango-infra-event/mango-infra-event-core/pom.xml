@@ -18,6 +18,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-kv-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>

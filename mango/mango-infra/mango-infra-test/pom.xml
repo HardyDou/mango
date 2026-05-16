@@ -84,6 +84,23 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Mango Infra Event (for testing domain event components) -->
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-event-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-event-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-event-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango Infra Realtime (for testing realtime components) -->
         <dependency>
             <groupId>io.mango</groupId>

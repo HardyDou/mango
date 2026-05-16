@@ -53,13 +53,37 @@ class ExpenseWorkflowSubscriber implements DomainEventSubscriber {
 
 ## 配置
 
+默认使用进程内同步事件总线：
+
 ```yaml
 mango:
   event:
     type: memory
 ```
 
-当前 `type` 仅保留扩展位。生产环境如需跨进程可靠通知，事件语义仍放在 `mango-infra-event`，消息可靠落盘、领取、确认和重试复用 `mango-infra-kv` 的 `IOutboxStore` / `IOutboxPublisher`。
+当前 `type` 仅保留扩展位。需要可靠投递时，开启 `mango.event.outbox.enabled`，并同时开启 KV capability 的 Outbox：
+
+```yaml
+mango:
+  kv:
+    type: redis # memory / redis / jdbc，生产多实例建议 redis 或 jdbc
+    capability:
+      enabled: true
+      outbox: true
+  event:
+    type: memory
+    outbox:
+      enabled: true
+      worker-id: workflow-event-worker
+      batch-size: 50
+      retry-delay-seconds: 60
+```
+
+开启后：
+
+- `IDomainEventPublisher` 写入 KV Outbox，不直接同步触发业务订阅者。
+- `IOutboxDispatcher.dispatchOnce()` 领取待投递事件，发布到 `IDomainEventBus`，成功 `ack`，失败 `nack` 并按 `retry-delay-seconds` 重试。
+- 如果只开启 `mango.event.outbox.enabled=true`，但没有开启 KV Outbox capability，应用启动应失败，避免生产环境静默退回进程内发布。
 
 ## 与 Outbox 的关系
 
@@ -67,3 +91,7 @@ mango:
 - `mango-infra-kv` 的 Outbox 定义可靠投递底座：`enqueue / claim / ack / nack`。
 - Workflow 等业务模块只发布领域事件，不直接依赖 Redis、DB 或 MQ。
 - 不引入 MQ 时，可用 memory / redis / jdbc store 承载 Outbox；生产多实例优先使用 redis 或 jdbc。
+
+## 业务接入建议
+
+业务模块只依赖 `IDomainEventPublisher` 发布事件，只实现 `DomainEventSubscriber` 订阅自己关心的事件。事件的 `businessType`、`businessKey`、`aggregateId` 用于幂等更新业务状态；业务详情、审批快照等大对象仍由业务库或工作流业务表维护，不塞进 Outbox。

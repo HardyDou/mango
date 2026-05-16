@@ -1,5 +1,7 @@
 package io.mango.infra.kv.core.support;
 
+import io.mango.common.result.Require;
+
 import java.util.regex.Pattern;
 
 /**
@@ -38,9 +40,7 @@ public class KvKeyNormalizer {
     }
 
     public String normalize(String capability, String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
         if (!enabled) {
             return key;
         }
@@ -64,9 +64,7 @@ public class KvKeyNormalizer {
     }
 
     private String normalizePrefix(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException("prefix cannot be null or blank");
-        }
+        Require.notBlank(value, "prefix cannot be null or blank");
         String normalized = trimSeparator(value.trim());
         for (String segment : normalized.split(SEPARATOR)) {
             normalizeSegment(segment, "prefix");
@@ -75,13 +73,9 @@ public class KvKeyNormalizer {
     }
 
     private String normalizeSegment(String value, String name) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException(name + " cannot be null or blank");
-        }
+        Require.notBlank(value, name + " cannot be null or blank");
         String normalized = value.trim();
-        if (!SEGMENT_PATTERN.matcher(normalized).matches()) {
-            throw new IllegalArgumentException(name + " contains invalid character: " + value);
-        }
+        Require.isTrue(SEGMENT_PATTERN.matcher(normalized).matches(), name + " contains invalid character: " + value);
         return normalized;
     }
 
