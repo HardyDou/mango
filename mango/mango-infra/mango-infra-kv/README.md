@@ -7,7 +7,7 @@
 | 概念 | 定义 | 示例 |
 |------|------|------|
 | `store` | 实际 KV 存储实现，只回答“底层用哪个存储” | `MemoryKvStore`、`RedisKvStore`、`JdbcKvStore` |
-| `capability bean` | 基于 `IKvStore` 组装出的通用使用场景能力，只回答“哪些能力启用” | `ICache`、`ILocker`、`IRateLimiter`、`IIdempotent` |
+| `capability bean` | 基于 `IKvStore` 组装出的通用使用场景能力，只回答“哪些能力启用” | `ICache`、`ILocker`、`IRateLimiter`、`IIdempotent`、`IOutboxStore` |
 
 `store` 选择和 `capability bean` 装配是两个独立职责。选择了 Redis store 不代表自动启用所有 cache/lock/rate-limit/idempotent bean。
 
@@ -36,7 +36,7 @@ mango-infra-kv/
 | 类型 | 清单 |
 |------|------|
 | Store | `IKvStore` |
-| Capability | `ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator` |
+| Capability | `ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator`、`IOutboxStore`、`IOutboxPublisher` |
 | 辅助 | `ISerializer`、`IConverter` |
 | 注解 | `@Cacheable`、`@RateLimit`、`@Idempotent`、`@Locker` |
 | 枚举 | `KvStoreTypeEnum` |
@@ -72,6 +72,7 @@ mango:
       id-generator: false
       serializer: false
       converter: false
+      outbox: false
 ```
 
 配置、日志和文档统一使用 `mango.kv.store.type` 与 `jdbc`。JDBC 当前默认表名为 `infra_kv_entry`。
@@ -118,8 +119,50 @@ mango:
 | `id-generator=true` | `IIdGenerator` | `KvStoreIdGenerator` |
 | `serializer=true` | `ISerializer` | `JsonSerializer` |
 | `converter=true` | `IConverter` | `JsonConverter` |
+| `outbox=true` | `IOutboxStore`、`IOutboxPublisher` | `KvOutboxStore`、`KvOutboxPublisher` |
 
 每个 capability bean 都有 `@ConditionalOnMissingBean`，允许业务、测试或应用装配层覆盖。
+
+### Outbox 可靠投递能力
+
+Outbox 是 KV 底座能力，不是 MQ，也不替代 `mango-infra-event` 的事件语义层。它只负责把“要投递的消息”可靠落到当前 KV store，并提供 `claim / ack / nack` 生命周期，让上层事件基础设施或业务 worker 做实际分发。
+
+启用方式：
+
+```yaml
+mango:
+  kv:
+    capability:
+      enabled: true
+      outbox: true
+```
+
+核心接口：
+
+| 接口 | 职责 |
+|------|------|
+| `IOutboxPublisher` | 业务或事件层写入待投递消息 |
+| `IOutboxStore` | 底层持久化与 `enqueue / claim / ack / nack` 生命周期 |
+| `IOutboxDispatcher` | 分发 worker 扩展点，由事件层或应用层实现 |
+
+消息字段建议：
+
+| 字段 | 用途 |
+|------|------|
+| `eventType` | 事件类型，例如 `workflow.process.completed` |
+| `businessType` | 业务类型，例如 `EXPENSE_REIMBURSEMENT` |
+| `businessKey` | 业务主键，例如报销单号 |
+| `aggregateId` | 本次申请、流程实例或聚合根 ID |
+| `payload` | 给订阅方处理所需的最小事件数据，不承载完整业务快照 |
+| `headers` | 租户、链路、操作者等上下文 |
+
+使用原则：
+
+- 业务数据仍由业务系统持有；Outbox 不保存完整申请快照或审批页面快照。
+- 工作流完成、驳回、撤回等状态变化可以写入 Outbox，再由 `mango-infra-event` 或业务 worker 订阅处理。
+- 消费方必须按 `eventType + businessType + businessKey + aggregateId` 做幂等处理。
+- `nack` 会把消息重新放回待处理索引，并通过 `nextAttemptAt` 控制下一次重试时间。
+- 当前实现复用 `IKvStore` 和 `IKvSortedSet`，因此 memory / redis / jdbc 三种 store 都可承载。生产多实例部署建议使用 redis 或 jdbc store。
 
 Capability 实现不再按 memory / redis / jdbc 分裂。具体存储差异必须封装在 `IKvStore`
 实现内：
@@ -180,6 +223,7 @@ mango:
 | `IIdempotent` | `idempotent` | `mango:kv:prod:idempotent:payment:req-abc` |
 | `ITokenStore` | `token` | `mango:kv:prod:token:access:sha256-xxx` |
 | `IIdGenerator` | `idgen` | `mango:kv:prod:idgen:global` |
+| `IOutboxStore` | `outbox` | `mango:kv:prod:outbox:message:uuid` |
 
 约束：
 

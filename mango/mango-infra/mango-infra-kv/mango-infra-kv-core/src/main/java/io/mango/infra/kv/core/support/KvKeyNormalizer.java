@@ -14,6 +14,7 @@ public class KvKeyNormalizer {
     public static final String IDEMPOTENT = "idempotent";
     public static final String TOKEN = "token";
     public static final String IDGEN = "idgen";
+    public static final String OUTBOX = "outbox";
 
     private static final String SEPARATOR = ":";
     private static final Pattern SEGMENT_PATTERN = Pattern.compile("[A-Za-z0-9._-]+");
