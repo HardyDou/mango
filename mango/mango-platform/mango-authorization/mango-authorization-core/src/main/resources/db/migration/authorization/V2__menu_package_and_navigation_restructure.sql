@@ -61,7 +61,7 @@ VALUES
 (260104,1,'internal-admin',2601,2,'抄送给我','workflow:task:copied','/workflow/task/copied','Message','@/views/workflow/task/copied/index.vue',4,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'抄送给当前用户的流程事项',0,NULL,NOW(),NULL,NOW()),
 (2601000,1,'internal-admin',2601,3,'查询协同任务','workflow:task:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'协同办公任务列表查询权限',0,NULL,NOW(),NULL,NOW()),
 (2602,1,'internal-admin',26,2,'发起流程','workflow:start-process','/workflow/start-process','Promotion','@/views/workflow/start-process/index.vue',2,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'选择已发布流程并发起',0,NULL,NOW(),NULL,NOW()),
-(2603,1,'internal-admin',26,2,'业务表单','workflow:business-form','/workflow/business-form','Document','@/views/workflow/business-form/index.vue',4,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程发起表单清单',0,NULL,NOW(),NULL,NOW())
+(2603,1,'internal-admin',26,2,'业务示例','workflow:business-form','/workflow/business-form','Document','@/views/workflow/business-form/index.vue',4,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'业务接入工作流示例',0,NULL,NOW(),NULL,NOW())
 ON DUPLICATE KEY UPDATE
 `parent_id` = VALUES(`parent_id`),
 `menu_type` = VALUES(`menu_type`),

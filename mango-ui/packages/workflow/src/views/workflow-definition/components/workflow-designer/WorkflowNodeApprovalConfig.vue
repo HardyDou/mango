@@ -179,7 +179,7 @@
           @change="value => $emit('update-empty-strategy', value)"
         >
           <el-radio label="AUTO_PASS">自动通过</el-radio>
-          <el-radio label="AUTO_REJECT">自动拒绝</el-radio>
+          <el-radio label="AUTO_REJECT">自动驳回</el-radio>
           <el-radio label="AUTO_END">自动结束</el-radio>
           <el-radio label="TO_ADMIN">转交给管理员</el-radio>
           <el-radio label="TO_USER">指定人员</el-radio>
@@ -205,7 +205,7 @@
     </div>
 
     <div class="approval-drawer-section">
-        <div class="approval-section-title">审批被拒绝</div>
+        <div class="approval-section-title">审批被驳回</div>
         <el-radio-group
           :model-value="config.rejectStrategy"
           class="approval-radio-column"

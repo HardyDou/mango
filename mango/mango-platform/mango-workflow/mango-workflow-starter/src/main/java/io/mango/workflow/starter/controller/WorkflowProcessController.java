@@ -52,4 +52,11 @@ public class WorkflowProcessController {
     public R<WorkflowProcessDetailVO> detail(@RequestParam String processInstanceId) {
         return workflowProcessService.detail(processInstanceId);
     }
+
+    @GetMapping("/history")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:process:detail")
+    @Operation(summary = "按业务主键查询流程历史")
+    public R<PageResult<WorkflowProcessInstanceVO>> history(@RequestParam String businessKey, @ParameterObject WorkflowTaskPageQuery query) {
+        return workflowProcessService.historyByBusinessKey(businessKey, query);
+    }
 }

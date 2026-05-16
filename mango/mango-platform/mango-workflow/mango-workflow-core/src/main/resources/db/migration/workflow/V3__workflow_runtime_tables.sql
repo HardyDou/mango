@@ -53,7 +53,7 @@ INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `m
 VALUES
 (2601001,1,'internal-admin',2601,3,'查询任务详情','workflow:task:detail',NULL,NULL,NULL,101,1,0,0,0,NULL,'workflow:task:detail',NULL,NULL,NOW(),NOW(),'查询工作流任务详情、表单与审批记录',0,NULL,NOW(),NULL,NOW()),
 (2601002,1,'internal-admin',2601,3,'审批通过','workflow:task:complete',NULL,NULL,NULL,102,1,0,0,0,NULL,'workflow:task:complete',NULL,NULL,NOW(),NOW(),'完成工作流待办任务',0,NULL,NOW(),NULL,NOW()),
-(2601003,1,'internal-admin',2601,3,'审批拒绝','workflow:task:reject',NULL,NULL,NULL,103,1,0,0,0,NULL,'workflow:task:reject',NULL,NULL,NOW(),NOW(),'拒绝并终止当前工作流实例',0,NULL,NOW(),NULL,NOW()),
+(2601003,1,'internal-admin',2601,3,'审批驳回','workflow:task:reject',NULL,NULL,NULL,103,1,0,0,0,NULL,'workflow:task:reject',NULL,NULL,NOW(),NOW(),'驳回并终止当前工作流实例',0,NULL,NOW(),NULL,NOW()),
 (2602001,1,'internal-admin',2602,3,'查询流程详情','workflow:process:detail',NULL,NULL,NULL,104,1,0,0,0,NULL,'workflow:process:detail',NULL,NULL,NOW(),NOW(),'查询工作流实例详情与审批轨迹',0,NULL,NOW(),NULL,NOW())
 ON DUPLICATE KEY UPDATE `permissions` = VALUES(`permissions`), `status` = VALUES(`status`), `visible` = VALUES(`visible`), `del_flag` = VALUES(`del_flag`);
 

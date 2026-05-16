@@ -150,6 +150,7 @@ export interface WorkflowNodeCatalog {
 export interface WorkflowTask {
   id: string;
   taskName: string;
+  taskDefinitionKey?: string;
   processInstanceId: string;
   businessKey?: string;
   processName: string;
@@ -170,6 +171,8 @@ export interface WorkflowProcessInstance {
   processKey: string;
   processDefinitionId?: string;
   initiatorName?: string;
+  currentTaskName?: string;
+  currentTaskDefinitionKey?: string;
   status: string;
   startTime?: string;
   endTime?: string;
@@ -268,6 +271,12 @@ export const workflowApi = {
     .then(normalizeProcessInstance),
   initiatedProcesses: (params?: WorkflowPageQuery) => get<any>('/workflow/processes/initiated', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
+  processHistoryByBusinessKey: (businessKey: string, params?: WorkflowPageQuery) => get<any>('/workflow/processes/history', {
+    params: {
+      ...toBackendPageParams(params),
+      businessKey,
+    },
+  }).then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
   processDetail: (processInstanceId: string) => get<WorkflowProcessDetail>('/workflow/processes/detail', { params: { processInstanceId } })
     .then(normalizeProcessDetail),
   users: (keyword = '') => get<any>('/identity/users/page', {
@@ -516,6 +525,7 @@ function normalizeTask(item: any): WorkflowTask {
   return {
     id: item?.id ? String(item.id) : '',
     taskName: item?.taskName || '-',
+    taskDefinitionKey: item?.taskDefinitionKey || item?.taskDefinitionCode || item?.activityId,
     processInstanceId: item?.processInstanceId ? String(item.processInstanceId) : '',
     businessKey: item?.businessKey,
     processName: item?.processName || '-',
@@ -538,6 +548,8 @@ function normalizeProcessInstance(item: any): WorkflowProcessInstance {
     processKey: item?.processKey || '-',
     processDefinitionId: item?.processDefinitionId,
     initiatorName: item?.initiatorName,
+    currentTaskName: item?.currentTaskName,
+    currentTaskDefinitionKey: item?.currentTaskDefinitionKey,
     status: item?.status || '-',
     startTime: normalizeDateTime(item?.startTime),
     endTime: normalizeDateTime(item?.endTime),

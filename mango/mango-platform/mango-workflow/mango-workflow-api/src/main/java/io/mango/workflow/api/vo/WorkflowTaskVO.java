@@ -18,6 +18,9 @@ public class WorkflowTaskVO {
     @Schema(description = "任务名称")
     private String taskName;
 
+    @Schema(description = "任务定义Key，对应流程设计器节点定义Key")
+    private String taskDefinitionKey;
+
     @Schema(description = "流程实例ID")
     private String processInstanceId;
 

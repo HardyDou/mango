@@ -797,9 +797,21 @@ const formDesignerMenu: FormDesignerMenu[] = [
     name: 'subform',
     title: '子表单组件',
     list: [
-      { name: 'group', label: '对象容器', icon: 'icon-group' },
-      { name: 'subForm', label: '子表单', icon: 'icon-subform' },
-      { name: 'tableForm', label: '表格子表单', icon: 'icon-table' },
+      { name: 'subForm', label: '分组', icon: 'icon-group' },
+      { name: 'group', label: '子表单', icon: 'icon-subform' },
+      { name: 'tableForm', label: '表格表单', icon: 'icon-table-form' },
+    ],
+  },
+  {
+    name: 'layout',
+    title: '布局组件',
+    list: [
+      { name: 'fcRow', label: '栅格布局', icon: 'icon-row' },
+      { name: 'elCard', label: '卡片', icon: 'icon-card' },
+      { name: 'elTabs', label: '标签页', icon: 'icon-tab' },
+      { name: 'elCollapse', label: '折叠面板', icon: 'icon-collapse' },
+      { name: 'fcTable', label: '表格布局', icon: 'icon-table' },
+      { name: 'space', label: '间距', icon: 'icon-space' },
     ],
   },
   {
@@ -915,6 +927,37 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
     },
     options: approvalRoleOptions.value.map(toFormCreateOption),
   })),
+  createWorkflowBusinessComponent('workflowDept', '组织架构', 'icon-tree', () => ({
+    type: 'elTreeSelect',
+    field: createWorkflowBusinessField('deptId'),
+    title: '组织架构',
+    props: {
+      placeholder: '请选择组织或部门',
+      clearable: true,
+      filterable: true,
+      nodeKey: 'value',
+      checkStrictly: true,
+      workflowDataType: 'systemDept',
+      data: approvalOrgTreeOptions.value,
+    },
+  }), ['string', 'number', 'array']),
+  createWorkflowBusinessComponent('workflowBusinessType', '业务类型', 'icon-select', () => ({
+    type: 'select',
+    field: 'businessType',
+    title: '业务类型',
+    props: {
+      placeholder: '请选择业务类型',
+      clearable: true,
+      filterable: true,
+      workflowDataType: 'businessType',
+    },
+    options: [
+      { label: '日常办公', value: 'DAILY_OFFICE' },
+      { label: '费用报销', value: 'EXPENSE_REIMBURSEMENT' },
+      { label: '合同用印', value: 'CONTRACT_SEAL_APPROVAL' },
+      { label: '特殊业务', value: 'SPECIAL_BUSINESS' },
+    ],
+  })),
   createWorkflowBusinessComponent('workflowUpload', '上传', 'icon-upload', () => ({
     type: 'upload',
     field: createWorkflowBusinessField('attachment'),
@@ -964,8 +1007,9 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       placeholder: '请选择字典值',
       clearable: true,
       filterable: true,
+      workflowDataType: 'systemDict',
     },
-    options: [],
+    options: workflowDictOptions.value.map(toFormCreateOption),
   })),
   createWorkflowBusinessComponent('workflowSerialNo', '流水号', 'icon-number', () => ({
     type: 'input',
@@ -1125,8 +1169,10 @@ const customFieldBaseTypeOptions = [
 const customFieldSystemTypeOptions = [
   { label: '人员', value: 'systemUser' },
   { label: '部门', value: 'systemOrg' },
+  { label: '组织架构', value: 'systemDept' },
   { label: '岗位', value: 'systemPost' },
   { label: '角色', value: 'systemRole' },
+  { label: '字典', value: 'systemDict' },
 ];
 
 const nodeDrawerTitle = computed(() => {
@@ -1151,17 +1197,20 @@ const approvalUserOptions = ref<ApprovalTargetOption[]>([]);
 const approvalRoleOptions = ref<ApprovalTargetOption[]>([]);
 const approvalPostOptions = ref<ApprovalTargetOption[]>([]);
 const approvalOrgTreeOptions = ref<ApprovalOrgTreeOption[]>([]);
+const workflowDictOptions = ref<ApprovalTargetOption[]>([]);
 const approvalTargetLoaded = reactive({
   users: false,
   roles: false,
   posts: false,
   orgs: false,
+  dicts: false,
 });
 const approvalTargetLoading = reactive({
   users: false,
   roles: false,
   posts: false,
   orgs: false,
+  dicts: false,
 });
 
 function validateDefinitionGroup(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
@@ -1218,6 +1267,7 @@ async function ensureWorkflowBusinessFormDataLoaded() {
     ensureApprovalRolesLoaded(),
     ensureApprovalPostsLoaded(),
     ensureApprovalOrgsLoaded(),
+    ensureWorkflowDictsLoaded(),
   ]);
 }
 
@@ -1746,7 +1796,7 @@ function normalizeCustomFieldType(type?: string) {
   if (type === 'number') return 'inputNumber';
   if (type === 'datetime') return 'datePicker';
   const normalized = String(type || '');
-  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker', 'systemUser', 'systemOrg', 'systemPost', 'systemRole'].includes(normalized)) {
+  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker', 'systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict'].includes(normalized)) {
     return normalized;
   }
   return 'input';
@@ -1775,7 +1825,7 @@ function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
       }
       if (isSystemCustomFieldType(field.type)) {
         const options = customFieldSystemOptions(field.type).map(item => ({ label: item.label, value: item.value }));
-        if (field.type === 'systemOrg') {
+        if (field.type === 'systemOrg' || field.type === 'systemDept') {
           rule.props = {
             ...rule.props,
             data: approvalOrgTreeOptions.value,
@@ -1811,7 +1861,7 @@ function formCreateRulesToCustomFields(rules: FcRule[]): CustomFormField[] {
 }
 
 function customFieldToFormCreateType(type: string) {
-  if (type === 'systemOrg') {
+  if (type === 'systemOrg' || type === 'systemDept') {
     return 'elTreeSelect';
   }
   if (isSystemCustomFieldType(type)) {
@@ -1825,7 +1875,7 @@ function isSelectLikeCustomFieldType(type: string) {
 }
 
 function isSystemCustomFieldType(type: string) {
-  return ['systemUser', 'systemOrg', 'systemPost', 'systemRole'].includes(String(type));
+  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict'].includes(String(type));
 }
 
 function customFieldSystemLoading(type: string) {
@@ -1835,29 +1885,33 @@ function customFieldSystemLoading(type: string) {
 
 function customFieldSystemOptions(type: string): ApprovalTargetOption[] {
   if (type === 'systemUser') return approvalUserOptions.value;
-  if (type === 'systemOrg') return flattenApprovalOrgTree(approvalOrgTreeOptions.value);
+  if (type === 'systemOrg' || type === 'systemDept') return flattenApprovalOrgTree(approvalOrgTreeOptions.value);
   if (type === 'systemPost') return approvalPostOptions.value;
   if (type === 'systemRole') return approvalRoleOptions.value;
+  if (type === 'systemDict') return workflowDictOptions.value;
   return [];
 }
 
 async function ensureCustomFieldSystemOptions(type: string) {
   if (type === 'systemUser') {
     await ensureApprovalUsersLoaded();
-  } else if (type === 'systemOrg') {
+  } else if (type === 'systemOrg' || type === 'systemDept') {
     await ensureApprovalOrgsLoaded();
   } else if (type === 'systemPost') {
     await ensureApprovalPostsLoaded();
   } else if (type === 'systemRole') {
     await ensureApprovalRolesLoaded();
+  } else if (type === 'systemDict') {
+    await ensureWorkflowDictsLoaded();
   }
 }
 
 function customFieldSystemLoadingKey(type: string): keyof typeof approvalTargetLoading | undefined {
   if (type === 'systemUser') return 'users';
-  if (type === 'systemOrg') return 'orgs';
+  if (type === 'systemOrg' || type === 'systemDept') return 'orgs';
   if (type === 'systemPost') return 'posts';
   if (type === 'systemRole') return 'roles';
+  if (type === 'systemDict') return 'dicts';
   return undefined;
 }
 
@@ -2353,6 +2407,29 @@ async function loadApprovalOrgs() {
     approvalTargetLoaded.orgs = true;
   } finally {
     approvalTargetLoading.orgs = false;
+  }
+}
+
+async function ensureWorkflowDictsLoaded() {
+  if (!approvalTargetLoaded.dicts) {
+    await loadWorkflowDicts();
+  }
+}
+
+async function loadWorkflowDicts() {
+  approvalTargetLoading.dicts = true;
+  try {
+    const data = await get<any[]>('/system/dict/type/list').catch(() => []);
+    workflowDictOptions.value = (Array.isArray(data) ? data : [])
+      .map(item => {
+        const code = item.dictType || item.typeCode || item.code || item.value || item.id;
+        const name = item.dictName || item.typeName || item.name || item.label || code;
+        return code === undefined ? undefined : { value: String(code), label: String(name) };
+      })
+      .filter(Boolean) as ApprovalTargetOption[];
+  } finally {
+    approvalTargetLoaded.dicts = true;
+    approvalTargetLoading.dicts = false;
   }
 }
 

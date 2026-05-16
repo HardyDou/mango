@@ -35,6 +35,8 @@
         <module>mango-infra-realtime</module>
         <!-- KV (Key-Value Storage - Memory/Redis/JDBC abstraction) -->
         <module>mango-infra-kv</module>
+        <!-- Event bus (publish/subscribe infrastructure) -->
+        <module>mango-infra-event</module>
         <!-- Crypto (limited basic crypto implementations, SM auto-configuration) -->
         <module>mango-infra-crypto</module>
         <!-- Context (TTL ThreadLocal holders - tenant/trace, TtlExecutorDecorator) -->

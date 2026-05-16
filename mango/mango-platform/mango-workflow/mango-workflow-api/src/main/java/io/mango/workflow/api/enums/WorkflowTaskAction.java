@@ -12,9 +12,9 @@ public enum WorkflowTaskAction {
 
     START("发起"),
     COMPLETE("通过"),
-    REJECT("拒绝"),
+    REJECT("驳回"),
     AUTO_COMPLETE("自动通过"),
-    AUTO_REJECT("自动拒绝"),
+    AUTO_REJECT("自动驳回"),
     AUTO_END("自动结束"),
     EVENT_NOTIFY("事件通知");
 

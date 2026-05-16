@@ -73,7 +73,7 @@ public class WorkflowTaskController {
 
     @PostMapping("/reject")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:reject")
-    @Operation(summary = "审批拒绝")
+    @Operation(summary = "审批驳回")
     public R<Boolean> reject(@Valid @RequestBody RejectWorkflowTaskCommand command) {
         return workflowTaskRuntimeService.reject(command);
     }
