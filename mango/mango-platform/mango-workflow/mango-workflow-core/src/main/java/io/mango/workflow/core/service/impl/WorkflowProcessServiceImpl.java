@@ -8,12 +8,14 @@ import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.workflow.api.WorkflowBusinessProcessApi;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.core.entity.WorkflowDefinition;
@@ -44,13 +46,15 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 流程实例服务实现。
  */
 @Service
 @RequiredArgsConstructor
-public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
+public class WorkflowProcessServiceImpl implements IWorkflowProcessService, WorkflowBusinessProcessApi {
 
     private static final String INITIATOR_VAR = "mangoInitiator";
     private static final String INITIATOR_NAME_VAR = "mangoInitiatorName";
@@ -158,6 +162,46 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
                 .map(this::fromHistoricInstance)
                 .toList();
         return R.ok(PageResult.of(records, total, resolved.getPage(), resolved.getSize()));
+    }
+
+    @Override
+    public List<WorkflowBusinessProcessVO> latestByBusinessKeys(Collection<String> businessKeys) {
+        if (businessKeys == null || businessKeys.isEmpty()) {
+            return List.of();
+        }
+        return businessKeys.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .map(this::latestByBusinessKey)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private WorkflowBusinessProcessVO latestByBusinessKey(String businessKey) {
+        HistoricProcessInstance instance = historyService.createHistoricProcessInstanceQuery()
+                .processInstanceBusinessKey(businessKey)
+                .orderByProcessInstanceStartTime()
+                .desc()
+                .listPage(0, 1)
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (instance == null) {
+            return null;
+        }
+        WorkflowProcessInstanceVO process = fromHistoricInstance(instance);
+        WorkflowBusinessProcessVO vo = new WorkflowBusinessProcessVO();
+        vo.setBusinessKey(process.getBusinessKey());
+        vo.setProcessInstanceId(process.getProcessInstanceId());
+        vo.setProcessName(process.getProcessName());
+        vo.setProcessKey(process.getProcessKey());
+        vo.setCurrentTaskName(process.getCurrentTaskName());
+        vo.setCurrentTaskDefinitionKey(process.getCurrentTaskDefinitionKey());
+        vo.setStatus(process.getStatus());
+        vo.setStartTime(process.getStartTime());
+        vo.setEndTime(process.getEndTime());
+        return vo;
     }
 
     private WorkflowProcessInstanceVO fromHistoricInstance(HistoricProcessInstance instance) {

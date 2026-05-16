@@ -53,6 +53,21 @@ public class GuaranteeCaseVO implements Serializable {
     @Schema(description = "状态：0-草稿，1-处理中，2-已完成，9-已取消")
     private Integer status;
 
+    @Schema(description = "最新流程实例ID")
+    private String processInstanceId;
+
+    @Schema(description = "最新流程名称")
+    private String processName;
+
+    @Schema(description = "最新流程状态")
+    private String processStatus;
+
+    @Schema(description = "当前执行节点名称")
+    private String currentTaskName;
+
+    @Schema(description = "当前执行节点定义键")
+    private String currentTaskDefinitionKey;
+
     @Schema(description = "备注")
     private String remark;
 
