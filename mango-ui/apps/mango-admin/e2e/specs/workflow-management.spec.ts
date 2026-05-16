@@ -493,8 +493,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByPlaceholder('如 guarantee_approve').fill(definitionKey);
       await page.getByRole('button', { name: '下一步' }).click();
 
-      await expect(page.getByRole('radio', { name: '动态表单' })).toBeChecked();
-      await expect(page.getByRole('radio', { name: '自定义表单' })).toBeVisible();
+      await expect(page.getByRole('radio', { name: '内置设计器' })).toBeChecked();
+      await expect(page.getByRole('radio', { name: '自定义页面' })).toBeVisible();
       await page.getByPlaceholder('如 guarantee_apply_form').fill(`form_${keyword}`);
       await expect(page.locator('.workflow-form-designer')).toBeVisible();
       await expect(page.locator('.workflow-form-designer')).toContainText('辅助组件');

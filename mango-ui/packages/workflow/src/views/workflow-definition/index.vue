@@ -93,46 +93,25 @@
         <section v-show="definitionStep === 1" class="builder-pane form-pane">
           <div class="form-design-shell">
             <div class="form-config-bar">
-              <div class="form-config-main">
-                <el-form class="form-code-form" label-position="top">
-                  <el-form-item label="表单编码">
-                    <el-input v-model="definitionForm.formCode" placeholder="如 guarantee_apply_form" />
-                  </el-form-item>
-                </el-form>
-                <div class="form-type-row">
-                  <div class="form-type-control">
-                    <span>表单类型</span>
+              <el-form class="form-config-form" :model="definitionForm" :rules="definitionRules" label-position="right" label-width="84px">
+                <el-form-item label="表单编码" prop="formCode">
+                  <el-input v-model="definitionForm.formCode" placeholder="如 guarantee_apply_form" />
+                </el-form-item>
+                <el-form-item label="表单类型" required>
+                  <div class="form-type-line">
                     <el-radio-group v-model="workflowFormMode" @change="setWorkflowFormMode">
-                      <el-radio-button label="DYNAMIC">动态表单</el-radio-button>
-                      <el-radio-button label="CUSTOM">自定义表单</el-radio-button>
+                      <el-radio label="DYNAMIC">内置设计器</el-radio>
+                      <el-radio label="CUSTOM">自定义页面</el-radio>
                     </el-radio-group>
                   </div>
-                  <div class="form-designer-summary">
-                    <strong>{{ workflowFormVariableOptions.length }}</strong>
-                    <span>个字段变量</span>
-                  </div>
-                </div>
-              </div>
+                </el-form-item>
+              </el-form>
             </div>
 
             <div class="form-step-layout">
               <div class="form-designer-main">
                 <template v-if="workflowFormMode === 'DYNAMIC'">
-                  <div class="dynamic-designer-wrap" :class="{ 'hide-left': !formDesignerLeftVisible, 'hide-right': !formDesignerRightVisible }">
-                    <div class="dynamic-designer-toolbar">
-                      <div class="dynamic-designer-title">
-                        <strong>动态表单设计器</strong>
-                        <span>字段会转换为流程变量，可用于条件、权限和节点属性。</span>
-                      </div>
-                      <div class="dynamic-designer-actions">
-                        <el-button :icon="formDesignerLeftVisible ? Fold : Expand" size="small" @click="formDesignerLeftVisible = !formDesignerLeftVisible">
-                          {{ formDesignerLeftVisible ? '隐藏组件面板' : '显示组件面板' }}
-                        </el-button>
-                        <el-button :icon="formDesignerRightVisible ? Fold : Expand" size="small" @click="formDesignerRightVisible = !formDesignerRightVisible">
-                          {{ formDesignerRightVisible ? '隐藏属性面板' : '显示属性面板' }}
-                        </el-button>
-                      </div>
-                    </div>
+                  <div class="dynamic-designer-wrap">
                     <FcDesigner
                       ref="formDesignerRef"
                       :config="formDesignerConfig"
@@ -140,7 +119,19 @@
                       class="workflow-form-designer"
                       height="calc(100vh - 392px)"
                       @save="syncWorkflowFormFromDesigner"
-                    />
+                    >
+                      <template #handle>
+                        <el-button
+                          class="designer-config-toggle"
+                          :icon="Setting"
+                          plain
+                          size="small"
+                          :type="formDesignerShowConfig ? 'primary' : 'default'"
+                          title="属性"
+                          @click="formDesignerShowConfig = !formDesignerShowConfig"
+                        />
+                      </template>
+                    </FcDesigner>
                   </div>
                 </template>
                 <div v-else class="custom-form-builder">
@@ -158,8 +149,8 @@
                   <div class="custom-field-section">
                     <div class="custom-form-toolbar">
                       <div>
-                        <div class="section-title">流程字段</div>
-                        <span>字段会转换为流程变量，可在条件分支、表单权限、节点属性中选择。</span>
+                        <div class="section-title">字段模型</div>
+                        <span>自定义页面只负责呈现和提交，流程判断与节点权限以字段模型为准。</span>
                       </div>
                       <el-button :icon="Plus" type="primary" @click="addCustomFormField">新增字段</el-button>
                     </div>
@@ -220,15 +211,12 @@
                           </template>
                         </div>
                       </div>
-                      <el-empty v-if="!customFormFields.length" description="暂无流程字段" :image-size="72" />
+                      <el-empty v-if="!customFormFields.length" description="暂无字段模型" :image-size="72" />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="pane-help">
-            动态表单适合直接拖拽设计页面；自定义表单适合已有业务表单页面，只在这里维护流程变量字段。
           </div>
         </section>
 
@@ -452,37 +440,52 @@
       </el-dialog>
     </div>
 
-    <el-tabs v-else v-model="activeTab" class="workflow-tabs">
-      <el-tab-pane label="流程定义" name="definitions">
-        <div class="page-toolbar">
-          <el-form :inline="true" :model="definitionQuery" class="query-form">
-            <el-form-item label="关键字">
-              <el-input v-model="definitionQuery.keyword" clearable placeholder="流程名称/编码" />
-            </el-form-item>
-            <el-form-item label="流程分组">
-              <el-select v-model="definitionQuery.groupId" clearable filterable placeholder="全部分组">
-                <el-option v-for="item in groups" :key="item.id" :label="item.groupName" :value="item.id!" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="definitionQuery.status" clearable placeholder="全部状态">
-                <el-option v-for="item in workflowStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button :icon="Search" type="primary" @click="loadDefinitions">查询</el-button>
-              <el-button :icon="Refresh" @click="resetDefinitionQuery">重置</el-button>
-            </el-form-item>
-          </el-form>
-        </div>
-        <div class="workflow-definition-actions action-toolbar">
-          <div class="toolbar-left">
-            <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
-            <el-button :icon="Plus" @click="openGroupForm()">创建分组</el-button>
-          </div>
+    <el-card v-else class="workflow-list-card">
+      <div class="workflow-section-switch">
+        <button
+          class="workflow-section-tab"
+          :class="{ active: activeTab === 'definitions' }"
+          type="button"
+          @click="activeTab = 'definitions'"
+        >
+          流程定义
+        </button>
+        <button
+          class="workflow-section-tab"
+          :class="{ active: activeTab === 'groups' }"
+          type="button"
+          @click="activeTab = 'groups'"
+        >
+          流程分组
+        </button>
+      </div>
+
+      <template v-if="activeTab === 'definitions'">
+        <el-form :inline="true" :model="definitionQuery" class="search-form">
+          <el-form-item label="关键字">
+            <el-input v-model="definitionQuery.keyword" clearable placeholder="流程名称/编码" />
+          </el-form-item>
+          <el-form-item label="流程分组">
+            <el-select v-model="definitionQuery.groupId" clearable filterable placeholder="全部分组">
+              <el-option v-for="item in groups" :key="item.id" :label="item.groupName" :value="item.id!" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="definitionQuery.status" clearable placeholder="全部状态">
+              <el-option v-for="item in workflowStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button :icon="Search" type="primary" @click="loadDefinitions">查询</el-button>
+            <el-button :icon="Refresh" @click="resetDefinitionQuery">重置</el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="action-toolbar">
+          <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
         </div>
 
-        <el-table v-loading="definitionLoading" :data="definitions" border>
+        <el-table v-loading="definitionLoading" :data="definitions" stripe>
           <el-table-column label="流程名称" min-width="180" prop="definitionName" />
           <el-table-column label="流程编码" min-width="180" prop="definitionKey" />
           <el-table-column label="分组" min-width="120" prop="groupName" />
@@ -495,15 +498,27 @@
           <el-table-column label="引擎版本" width="100" prop="processDefinitionVersion" />
           <el-table-column label="最后发布" width="170" prop="lastDeployTime" />
           <el-table-column label="更新时间" width="170" prop="updatedTime" />
-          <el-table-column fixed="right" label="操作" width="330">
+          <el-table-column fixed="right" label="操作" width="190">
             <template #default="{ row }">
-              <el-button link type="primary" @click="openDefinitionForm(row)">设计</el-button>
-              <el-button link type="success" @click="deployDefinition(row)">发布</el-button>
-              <el-button link type="primary" @click="openVersionDrawer(row)">版本</el-button>
-              <el-button link type="warning" @click="toggleDefinitionStatus(row)">
-                {{ row.status === 'DISABLED' ? '启用' : '停用' }}
-              </el-button>
-              <el-button link type="danger" @click="deleteDefinition(row)">删除</el-button>
+              <div class="table-actions">
+                <el-button link type="primary" @click="openDefinitionForm(row)">设计</el-button>
+                <el-button link type="success" @click="deployDefinition(row)">发布</el-button>
+                <el-dropdown trigger="click" @command="command => handleDefinitionRowCommand(command, row)">
+                  <el-button link type="primary">
+                    更多
+                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="version">版本</el-dropdown-item>
+                      <el-dropdown-item command="status">
+                        {{ row.status === 'DISABLED' ? '启用' : '停用' }}
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" class="danger-dropdown-item">删除</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -519,29 +534,30 @@
             @size-change="loadDefinitions"
           />
         </div>
-      </el-tab-pane>
+      </template>
 
-      <el-tab-pane label="流程分组" name="groups">
-        <div class="page-toolbar">
-          <el-form :inline="true" :model="groupQuery" class="query-form">
-            <el-form-item label="关键字">
-              <el-input v-model="groupQuery.keyword" clearable placeholder="分组名称/编码" />
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="groupQuery.status" clearable placeholder="全部状态">
-                <el-option label="启用" :value="1" />
-                <el-option label="停用" :value="0" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button :icon="Search" type="primary" @click="loadGroupsPage">查询</el-button>
-              <el-button :icon="Refresh" @click="resetGroupQuery">重置</el-button>
-            </el-form-item>
-          </el-form>
+      <template v-else>
+        <el-form :inline="true" :model="groupQuery" class="search-form">
+          <el-form-item label="关键字">
+            <el-input v-model="groupQuery.keyword" clearable placeholder="分组名称/编码" />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="groupQuery.status" clearable placeholder="全部状态">
+              <el-option label="启用" :value="1" />
+              <el-option label="停用" :value="0" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button :icon="Search" type="primary" @click="loadGroupsPage">查询</el-button>
+            <el-button :icon="Refresh" @click="resetGroupQuery">重置</el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="action-toolbar">
           <el-button :icon="Plus" type="primary" @click="openGroupForm()">新增分组</el-button>
         </div>
 
-        <el-table v-loading="groupLoading" :data="groupRows" border>
+        <el-table v-loading="groupLoading" :data="groupRows" stripe>
           <el-table-column label="分组名称" min-width="160" prop="groupName" />
           <el-table-column label="分组编码" min-width="160" prop="groupCode" />
           <el-table-column label="排序" width="90" prop="sort" />
@@ -570,9 +586,8 @@
             @size-change="loadGroupsPage"
           />
         </div>
-      </el-tab-pane>
-
-    </el-tabs>
+      </template>
+    </el-card>
 
     <el-drawer v-model="versionDrawer" title="发布版本" size="720px">
       <el-table v-loading="versionLoading" :data="versions" border>
@@ -619,7 +634,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Bell, Box, Cloudy, Connection, Expand, Fold, ForkSpoon, PictureFilled, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
+import { ArrowDown, Bell, Box, Cloudy, Connection, ForkSpoon, PictureFilled, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
 import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designer';
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
@@ -723,14 +738,18 @@ const workflowIconOptions = [
   { value: 'Connection', label: '外部连接', component: Connection },
 ];
 
-const formDesignerConfig: FcDesignerConfig = {
+const formDesignerShowConfig = ref(true);
+
+const formDesignerConfig = computed<FcDesignerConfig>(() => ({
   fieldReadonly: false,
-  showSaveBtn: true,
+  showSaveBtn: false,
+  showConfig: formDesignerShowConfig.value,
+  showJsonPreview: true,
   showDevice: false,
-  showLanguage: false,
+  showLanguage: true,
   showInputData: false,
-  hiddenMenu: ['layout'],
-};
+  hiddenMenu: [],
+}));
 
 type FormDesignerMenuItem = {
   name: string;
@@ -1025,8 +1044,6 @@ const workflowFormMode = ref<WorkflowFormMode>('DYNAMIC');
 const workflowFormRules = ref<FcRule[]>(defaultWorkflowFormRules());
 const customFormFields = ref<CustomFormField[]>([]);
 const customFormConfig = reactive<CustomFormConfig>({ submitPath: '', viewPath: '' });
-const formDesignerLeftVisible = ref(true);
-const formDesignerRightVisible = ref(true);
 const designerSteps = [
   { key: 'basic', title: '基础信息', description: '名称、编码、分组' },
   { key: 'form', title: '表单信息', description: '表单模式与变量' },
@@ -1164,6 +1181,7 @@ const definitionRules: FormRules = {
   groupId: [{ validator: validateDefinitionGroup, trigger: 'change' }],
   definitionName: [{ required: true, message: '请输入流程名称', trigger: 'blur' }],
   definitionKey: [{ required: true, message: '请输入流程编码', trigger: 'blur' }],
+  formCode: [{ required: true, message: '请输入表单编码', trigger: 'blur' }],
   designerJson: [{ required: true, message: '请设计流程节点', trigger: 'blur' }],
 };
 
@@ -1378,6 +1396,20 @@ async function deployDefinition(row: WorkflowDefinition) {
   await loadDefinitions();
 }
 
+function handleDefinitionRowCommand(command: string | number | object, row: WorkflowDefinition) {
+  if (command === 'version') {
+    openVersionDrawer(row);
+    return;
+  }
+  if (command === 'status') {
+    toggleDefinitionStatus(row);
+    return;
+  }
+  if (command === 'delete') {
+    deleteDefinition(row);
+  }
+}
+
 async function publishDefinition() {
   validateErrMsg.value = [];
   validateFlowStep.value = 0;
@@ -1547,10 +1579,13 @@ function parseWorkflowFormConfig(value?: string): { mode: WorkflowFormMode; rule
 }
 
 function stringifyWorkflowFormConfig() {
+  const fields = workflowFormMode.value === 'CUSTOM'
+    ? normalizeCustomFormFieldsValue(customFormFields.value)
+    : formCreateRulesToCustomFields(workflowFormRules.value);
   return JSON.stringify({
     mode: workflowFormMode.value,
     rules: workflowFormRules.value,
-    fields: workflowFormMode.value === 'CUSTOM' ? customFormFields.value : undefined,
+    fields,
     customConfig: workflowFormMode.value === 'CUSTOM' ? customFormConfig : undefined,
   }, null, 2);
 }
@@ -2798,31 +2833,35 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   padding: 0;
 }
 
-.workflow-tabs {
-  overflow: hidden;
-  border: 1px solid var(--mango-border-light);
+.workflow-list-card {
+  min-height: calc(100vh - 132px);
+}
+
+.workflow-section-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px;
+  margin-bottom: 16px;
+  border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+}
+
+.workflow-section-tab {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+}
+
+.workflow-section-tab.active {
   background: var(--el-bg-color);
-}
-
-.workflow-tabs :deep(.el-tabs__header) {
-  padding: 0 16px;
-  margin: 0;
-}
-
-.workflow-tabs :deep(.el-tabs__nav-wrap::after) {
-  left: -16px;
-  right: -16px;
-}
-
-.workflow-tabs :deep(.el-tabs__content) {
-  padding: 16px;
-}
-
-.workflow-definition-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
+  color: var(--el-color-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 .workflow-builder {
@@ -2929,6 +2968,10 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   gap: 14px;
 }
 
+.form-pane {
+  align-items: stretch;
+}
+
 .basic-pane {
   align-items: center;
 }
@@ -2958,16 +3001,33 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   background: rgba(255, 255, 255, 0.94);
 }
 
-.page-toolbar {
+.search-form {
+  margin-bottom: 16px;
+}
+
+.search-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.action-toolbar {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-start;
   margin-bottom: 12px;
 }
 
-.query-form {
-  flex: 1;
+.table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.table-actions :deep(.el-button) {
+  margin-left: 0;
+}
+
+.danger-dropdown-item {
+  color: var(--el-color-danger);
 }
 
 .pagination-row {
@@ -3164,7 +3224,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 }
 
 .form-design-shell {
-  width: min(1180px, 100%);
+  width: 100%;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--el-border-color-light);
@@ -3174,54 +3234,28 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 }
 
 .form-config-bar {
-  padding: 16px 18px 14px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--el-border-color-lighter);
   background: rgba(255, 255, 255, 0.82);
 }
 
-.form-config-main {
+.form-config-form {
   display: grid;
-  grid-template-columns: minmax(260px, 420px) minmax(0, 1fr);
-  align-items: end;
-  gap: 18px;
-}
-
-.form-code-form {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
   min-width: 0;
+  max-width: 560px;
 }
 
-.form-code-form :deep(.el-form-item) {
+.form-config-form :deep(.el-form-item) {
   margin-bottom: 0;
 }
 
-.form-type-row {
+.form-type-line {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-}
-
-.form-type-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.form-designer-summary {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
-}
-
-.form-designer-summary strong {
-  color: var(--el-color-primary);
-  font-size: 22px;
 }
 
 .dynamic-designer-wrap,
@@ -3229,38 +3263,8 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   padding: 16px 18px 18px;
 }
 
-.dynamic-designer-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-
-.dynamic-designer-title {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.dynamic-designer-title strong {
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-}
-
-.dynamic-designer-title span {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.dynamic-designer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 .workflow-form-designer {
+  height: clamp(560px, calc(100vh - 392px), 760px);
   min-height: 560px;
   overflow: hidden;
   border: 1px solid var(--el-border-color-light);
@@ -3268,17 +3272,62 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   background: var(--el-bg-color);
 }
 
-.dynamic-designer-wrap.hide-left :deep(._fc-l-menu),
-.dynamic-designer-wrap.hide-left :deep(._fc-l) {
-  display: none;
-}
-
-.dynamic-designer-wrap.hide-right :deep(._fc-r) {
-  display: none;
-}
-
 .dynamic-designer-wrap :deep(._fc-m) {
   min-width: 0;
+}
+
+.dynamic-designer-wrap :deep(._fc-l) {
+  width: 266px !important;
+}
+
+.dynamic-designer-wrap :deep(._fc-m-con) {
+  padding: clamp(16px, 2vw, 28px);
+}
+
+.dynamic-designer-wrap :deep(._fc-m-drag) {
+  width: 100%;
+  max-width: 980px;
+  min-height: 100%;
+  margin-inline: auto;
+  padding: 16px 18px 80px;
+  overflow: auto;
+}
+
+.dynamic-designer-wrap :deep(._fc-m-drag > form),
+.dynamic-designer-wrap :deep(._fc-m-drag > form > .el-row) {
+  min-height: 100%;
+  height: auto;
+}
+
+.dynamic-designer-wrap :deep(._fc-m-tools-r) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dynamic-designer-wrap :deep(._fc-m-tools-r .el-button) {
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+.dynamic-designer-wrap :deep(._fc-m-tools-r .el-button > span) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+  line-height: 1;
+}
+
+.dynamic-designer-wrap :deep(._fc-m-tools-r .el-button .fc-icon),
+.dynamic-designer-wrap :deep(._fc-m-tools-r .el-button .el-icon) {
+  margin: 0;
+  font-size: 16px;
+}
+
+.dynamic-designer-wrap :deep(.designer-config-toggle) {
+  order: 20;
 }
 
 .custom-form-builder {
@@ -3352,7 +3401,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 
 .custom-field-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) 128px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -3367,9 +3416,8 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 
 .custom-field-extra {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -3618,20 +3666,15 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 }
 
 @media (max-width: 1024px) {
-  .form-config-main,
   .custom-field-main {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .form-type-row,
-  .dynamic-designer-toolbar {
+  .form-type-line {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .custom-field-extra {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 1180px) {
