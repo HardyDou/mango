@@ -142,12 +142,24 @@ GET  /workflow/processes/history?businessKey=...
 
 ## 审批结束如何通知业务
 
-当前已提供 `mango-infra-event` 事件基础设施，内置进程内 memory 实现，并预留 Redis/DB 实现扩展位。投产环境如果需要跨进程可靠投递，应继续补齐持久化、确认和重试能力。事件总线至少应支持：
+Workflow 通过 `mango-infra-event` 发布标准领域事件。默认是进程内同步分发；投产需要可靠投递时，开启 `mango-infra-kv` 的 Outbox capability，让 `IDomainEventPublisher` 先写入 Outbox，再由 `IOutboxDispatcher` 投递到事件总线。
 
-- `publish` / `subscribe`。
-- 事件持久化或可靠投递。
-- 消费确认、重试、死信。
-- 按 `businessType`、`eventType`、`processInstanceId` 幂等消费。
+```yaml
+mango:
+  kv:
+    type: redis # memory / redis / jdbc，生产多实例建议 redis 或 jdbc
+    capability:
+      enabled: true
+      outbox: true
+  event:
+    outbox:
+      enabled: true
+      worker-id: workflow-event-worker
+      batch-size: 50
+      retry-delay-seconds: 60
+```
+
+业务消费方按 `businessType`、`eventType`、`processInstanceId`、`applyId` 幂等消费。Outbox 只负责可靠投递和重试；业务状态、申请快照、审批快照仍由业务模块自己落库。
 
 建议事件：
 
@@ -157,6 +169,7 @@ GET  /workflow/processes/history?businessKey=...
 | `workflow.task.completed` | 节点审批通过 | 写业务审批日志，必要时更新阶段状态。 |
 | `workflow.task.rejected` | 节点驳回并结束实例 | 标记本次申请已驳回，业务主表可重新编辑。 |
 | `workflow.process.completed` | 流程正常结束 | 将业务单据置为已通过、已生效、待付款等。 |
+| `workflow.process.rejected` | 流程被驳回并结束 | 将本次申请置为驳回，业务主表可进入重新编辑态。 |
 | `workflow.process.ended` | 流程被驳回、终止或自动结束 | 将业务申请记录置为结束态。 |
 
 当前 workflow 已在流程发起、审批通过、审批驳回、流程完成、流程结束时发布上述标准事件。审批节点的事件通知配置仍会记录一条 `EVENT_NOTIFY` 审批记录，用来保留节点通知意图；`EventPublishWorkflowNodeExecutor` 是服务节点执行器，基于 Spring `ApplicationEventPublisher` 发布节点执行事件，不等同于跨模块可靠业务回调。
@@ -205,10 +218,10 @@ mango-ui/packages/workflow/src/components/business/ExpenseApprovalDetail.vue
 - 任务审批记录和流程变量快照。
 - `WorkflowTaskVO.taskDefinitionKey` 后端返回，前端可精确匹配当前节点业务区块权限。
 - `mango-infra-event` 内存事件总线，以及 workflow 标准事件发布。
+- `mango-infra-kv` Outbox 可靠投递能力，可用 memory / redis / jdbc 承载，不引入 MQ。
 
 待补齐：
 
-- Redis/DB 事件总线实现、ack/retry/dead-letter 和可靠业务回调。
 - 转办、加签、委托、撤回、暂存等运行时动作。
 - 按 `businessKey` 查询历史流程实例和申请记录的业务侧标准接口。
 - 业务申请快照/审批快照的领域建模示例和后端落库示例。

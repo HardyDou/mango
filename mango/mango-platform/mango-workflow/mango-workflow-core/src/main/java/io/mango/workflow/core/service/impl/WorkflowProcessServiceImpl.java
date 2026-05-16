@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.infra.event.api.DomainEvent;
-import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
@@ -21,7 +19,7 @@ import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.entity.WorkflowFormInstance;
 import io.mango.workflow.core.entity.WorkflowTaskRecord;
-import io.mango.workflow.core.event.WorkflowDomainEvents;
+import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
@@ -34,7 +32,6 @@ import org.flowable.engine.TaskService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -70,7 +67,7 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
     private final HistoryService historyService;
     private final ObjectMapper objectMapper;
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;
-    private final ObjectProvider<IDomainEventPublisher> domainEventPublisherProvider;
+    private final WorkflowEventPublisher workflowEventPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -106,7 +103,7 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
                 variables);
         saveFormInstance(definition, instance, variables);
         saveStartRecord(instance.getProcessInstanceId(), variables);
-        publishProcessStarted(definition, instance, variables);
+        workflowEventPublisher.publishProcessStarted(definition, instance, variables);
         workflowTaskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
 
         WorkflowProcessInstanceVO vo = new WorkflowProcessInstanceVO();
@@ -248,25 +245,6 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
         taskRecordMapper.insert(record);
     }
 
-    private void publishProcessStarted(WorkflowDefinition definition, ProcessInstance instance, Map<String, Object> variables) {
-        IDomainEventPublisher publisher = domainEventPublisherProvider.getIfAvailable();
-        if (publisher == null) {
-            return;
-        }
-        publisher.publish(DomainEvent.builder()
-                .eventType(WorkflowDomainEvents.PROCESS_STARTED)
-                .businessType(stringVar(variables, "businessType"))
-                .businessKey(instance.getBusinessKey())
-                .aggregateId(stringVar(variables, "applyId"))
-                .payload("processInstanceId", instance.getProcessInstanceId())
-                .payload("processDefinitionId", instance.getProcessDefinitionId())
-                .payload("definitionId", definition.getId())
-                .payload("definitionKey", definition.getDefinitionKey())
-                .payload("definitionName", definition.getDefinitionName())
-                .payload("variables", variables)
-                .build());
-    }
-
     private String statusLabel(String status, boolean running) {
         return WorkflowInstanceStatus.labelOf(status,
                 running ? WorkflowInstanceStatus.RUNNING : WorkflowInstanceStatus.COMPLETED);
@@ -278,11 +256,6 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
         } catch (JsonProcessingException e) {
             return "{}";
         }
-    }
-
-    private String stringVar(Map<String, Object> variables, String key) {
-        Object value = variables == null ? null : variables.get(key);
-        return value == null ? null : String.valueOf(value);
     }
 
     private List<String> parseAdminUsers(String value) {

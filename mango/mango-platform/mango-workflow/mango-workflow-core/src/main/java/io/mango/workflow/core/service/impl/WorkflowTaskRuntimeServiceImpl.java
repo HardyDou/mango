@@ -9,8 +9,6 @@ import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.core.MangoContextHolder;
-import io.mango.infra.event.api.DomainEvent;
-import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
@@ -30,13 +28,12 @@ import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowFormInstance;
 import io.mango.workflow.core.entity.WorkflowTaskRecord;
-import io.mango.workflow.core.event.WorkflowDomainEvents;
+import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
@@ -83,7 +80,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     private final ObjectMapper objectMapper;
     private final WorkflowAssigneeResolver assigneeResolver;
     private final WorkflowCandidateGroupProvider candidateGroupProvider;
-    private final ObjectProvider<IDomainEventPublisher> domainEventPublisherProvider;
+    private final WorkflowEventPublisher workflowEventPublisher;
 
     @Override
     public R<PageResult<WorkflowTaskVO>> todo(WorkflowTaskPageQuery query) {
@@ -172,9 +169,10 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         boolean ended = isProcessEnded(task.getProcessInstanceId());
         updateFormInstance(task.getProcessInstanceId(), variables,
                 ended ? WorkflowInstanceStatus.COMPLETED : WorkflowInstanceStatus.RUNNING);
-        publishTaskEvent(WorkflowDomainEvents.TASK_COMPLETED, task, variables, command.getComment());
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskCompleted(task, formInstance, variables, command.getComment());
         if (ended) {
-            publishProcessEvent(WorkflowDomainEvents.PROCESS_COMPLETED, task.getProcessInstanceId(), variables);
+            workflowEventPublisher.publishProcessCompleted(task.getProcessInstanceId(), formInstance, variables);
         }
         triggerEventNotify(task, variables);
         advanceRuntimeTasks(task.getProcessInstanceId());
@@ -200,8 +198,11 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         runtimeService.deleteProcessInstance(task.getProcessInstanceId(),
                 StringUtils.hasText(command.getComment()) ? command.getComment().trim() : DEFAULT_REJECT_REASON);
         updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.REJECTED);
-        publishTaskEvent(WorkflowDomainEvents.TASK_REJECTED, task, variables, command.getComment());
-        publishProcessEvent(WorkflowDomainEvents.PROCESS_ENDED, task.getProcessInstanceId(), variables);
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        String reason = StringUtils.hasText(command.getComment()) ? command.getComment().trim() : DEFAULT_REJECT_REASON;
+        workflowEventPublisher.publishTaskRejected(task, formInstance, variables, command.getComment());
+        workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
+        workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
         return R.ok(Boolean.TRUE);
     }
 
@@ -520,54 +521,22 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             saveRecord(task, WorkflowTaskAction.AUTO_REJECT, "审批人为空，系统自动驳回", variables);
             runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "审批人为空，系统自动驳回");
             updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.REJECTED);
-            publishTaskEvent(WorkflowDomainEvents.TASK_REJECTED, task, variables, "审批人为空，系统自动驳回");
-            publishProcessEvent(WorkflowDomainEvents.PROCESS_ENDED, task.getProcessInstanceId(), variables);
+            WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+            String reason = "审批人为空，系统自动驳回";
+            workflowEventPublisher.publishTaskRejected(task, formInstance, variables, reason);
+            workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
+            workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
             return true;
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.AUTO_END) {
             saveRecord(task, WorkflowTaskAction.AUTO_END, "审批人为空，系统自动结束", variables);
             runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "审批人为空，系统自动结束");
             updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.ENDED);
-            publishProcessEvent(WorkflowDomainEvents.PROCESS_ENDED, task.getProcessInstanceId(), variables);
+            workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), findFormInstance(task.getProcessInstanceId()),
+                    variables, "审批人为空，系统自动结束");
             return true;
         }
         return false;
-    }
-
-    private void publishTaskEvent(String eventType, Task task, Map<String, Object> variables, String comment) {
-        IDomainEventPublisher publisher = domainEventPublisherProvider.getIfAvailable();
-        if (publisher == null) {
-            return;
-        }
-        publisher.publish(baseEvent(eventType, task.getProcessInstanceId(), variables)
-                .payload("taskId", task.getId())
-                .payload("taskName", task.getName())
-                .payload("taskDefinitionKey", task.getTaskDefinitionKey())
-                .payload("assignee", task.getAssignee())
-                .payload("comment", comment)
-                .payload("variables", variables)
-                .build());
-    }
-
-    private void publishProcessEvent(String eventType, String processInstanceId, Map<String, Object> variables) {
-        IDomainEventPublisher publisher = domainEventPublisherProvider.getIfAvailable();
-        if (publisher == null) {
-            return;
-        }
-        publisher.publish(baseEvent(eventType, processInstanceId, variables)
-                .payload("processInstanceId", processInstanceId)
-                .payload("variables", variables)
-                .build());
-    }
-
-    private DomainEvent.DomainEventBuilder baseEvent(String eventType, String processInstanceId, Map<String, Object> variables) {
-        WorkflowFormInstance formInstance = findFormInstance(processInstanceId);
-        return DomainEvent.builder()
-                .eventType(eventType)
-                .businessType(stringVar(variables, "businessType"))
-                .businessKey(formInstance == null ? stringVar(variables, "businessKey") : formInstance.getBusinessKey())
-                .aggregateId(stringVar(variables, "applyId"))
-                .payload("processInstanceId", processInstanceId);
     }
 
     private List<String> definitionAdminUsers(String processInstanceId) {
@@ -665,11 +634,6 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         } catch (JsonProcessingException e) {
             return "{}";
         }
-    }
-
-    private String stringVar(Map<String, Object> variables, String key) {
-        Object value = variables == null ? null : variables.get(key);
-        return value == null ? null : String.valueOf(value);
     }
 
     private String currentUser() {

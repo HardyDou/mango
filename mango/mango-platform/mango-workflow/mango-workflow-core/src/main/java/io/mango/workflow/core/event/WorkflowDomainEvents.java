@@ -9,6 +9,7 @@ public final class WorkflowDomainEvents {
     public static final String TASK_COMPLETED = "workflow.task.completed";
     public static final String TASK_REJECTED = "workflow.task.rejected";
     public static final String PROCESS_COMPLETED = "workflow.process.completed";
+    public static final String PROCESS_REJECTED = "workflow.process.rejected";
     public static final String PROCESS_ENDED = "workflow.process.ended";
 
     private WorkflowDomainEvents() {
