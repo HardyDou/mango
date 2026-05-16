@@ -157,6 +157,9 @@ mango:
       worker-id: workflow-event-worker
       batch-size: 50
       retry-delay-seconds: 60
+      dispatch-enabled: true
+      dispatch-interval-millis: 1000
+      dispatch-initial-delay-millis: 1000
 ```
 
 业务消费方按 `businessType`、`eventType`、`processInstanceId`、`applyId` 幂等消费。Outbox 只负责可靠投递和重试；业务状态、申请快照、审批快照仍由业务模块自己落库。

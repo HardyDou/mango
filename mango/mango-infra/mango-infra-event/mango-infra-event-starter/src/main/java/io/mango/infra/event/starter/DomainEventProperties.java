@@ -42,5 +42,20 @@ public class DomainEventProperties {
          * Retry delay after dispatch failure.
          */
         private long retryDelaySeconds = 60L;
+
+        /**
+         * Whether the starter runs an in-process dispatch scheduler.
+         */
+        private boolean dispatchEnabled = true;
+
+        /**
+         * Fixed delay between dispatch attempts.
+         */
+        private long dispatchIntervalMillis = 1000L;
+
+        /**
+         * Initial delay before the first dispatch attempt.
+         */
+        private long dispatchInitialDelayMillis = 1000L;
     }
 }

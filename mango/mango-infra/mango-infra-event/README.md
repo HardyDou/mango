@@ -77,12 +77,16 @@ mango:
       worker-id: workflow-event-worker
       batch-size: 50
       retry-delay-seconds: 60
+      dispatch-enabled: true
+      dispatch-interval-millis: 1000
+      dispatch-initial-delay-millis: 1000
 ```
 
 开启后：
 
 - `IDomainEventPublisher` 写入 KV Outbox，不直接同步触发业务订阅者。
 - `IOutboxDispatcher.dispatchOnce()` 领取待投递事件，发布到 `IDomainEventBus`，成功 `ack`，失败 `nack` 并按 `retry-delay-seconds` 重试。
+- 默认创建进程内调度器，按 `dispatch-interval-millis` 周期调用 `dispatchOnce()`；如果应用需要外部 worker 接管，可设置 `dispatch-enabled=false`。
 - 如果只开启 `mango.event.outbox.enabled=true`，但没有开启 KV Outbox capability，应用启动应失败，避免生产环境静默退回进程内发布。
 
 ## 与 Outbox 的关系

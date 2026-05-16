@@ -21,12 +21,13 @@
 | P0 | Outbox 自动装配 | 通过 `mango.kv.capability.outbox` 显式开启 | 已完成 |
 | P0 | Outbox 单测 | 覆盖 enqueue / claim / ack / nack / retry | 已完成 |
 | P1 | `infra-event` 接入 Outbox | 领域事件可选择通过 Outbox 持久化与分发 | 已完成 |
+| P1 | Outbox 自动调度 | 开启事件 Outbox 后默认周期分发，且可配置关闭 | 已完成 |
 | P1 | Workflow 接入 Outbox | 工作流完成、驳回等事件改为走 Outbox 可靠投递 | 已完成 |
 
 ## 已完成验证
 
 - P0 Outbox 底座：`mvn -pl :mango-infra-test -am -Dtest=OutboxAutoConfigurationTest -Dsurefire.failIfNoSpecifiedTests=false test`
-- P1 infra-event 接入 Outbox：`mvn -pl :mango-infra-test -am -Dtest=OutboxAutoConfigurationTest,DomainEventOutboxAutoConfigurationTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- P1 infra-event 接入 Outbox 与自动调度：`mvn -pl :mango-infra-test -am -Dtest=DomainEventOutboxAutoConfigurationTest,OutboxAutoConfigurationTest -Dsurefire.failIfNoSpecifiedTests=false test`
 - P1 Workflow 标准事件：`mvn -pl :mango-workflow-core -am -Dtest=WorkflowEventPublisherTest -Dsurefire.failIfNoSpecifiedTests=false test`
 
 ## 设计原则

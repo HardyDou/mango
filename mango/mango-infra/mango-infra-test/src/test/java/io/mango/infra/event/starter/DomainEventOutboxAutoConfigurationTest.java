@@ -45,6 +45,7 @@ class DomainEventOutboxAutoConfigurationTest {
                     assertThat(context).hasSingleBean(IDomainEventBus.class);
                     assertThat(context.getBean(IDomainEventPublisher.class)).isInstanceOf(OutboxDomainEventPublisher.class);
                     assertThat(context).hasSingleBean(IOutboxDispatcher.class);
+                    assertThat(context).hasSingleBean(OutboxDispatchScheduler.class);
 
                     ArrayList<DomainEvent> handled = new ArrayList<>();
                     IDomainEventBus eventBus = context.getBean(IDomainEventBus.class);
@@ -69,6 +70,19 @@ class DomainEventOutboxAutoConfigurationTest {
                     assertThat(handled.get(0).getBusinessKey()).isEqualTo("EXP-20260516-001");
                     assertThat(handled.get(0).getPayload()).containsEntry("amount", 1200);
                     assertThat(handled.get(0).getHeaders()).containsEntry("tenantId", "1");
+                });
+    }
+
+    @Test
+    void whenOutboxDispatchDisabled_shouldNotCreateScheduler() {
+        runner.withPropertyValues(
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.outbox=true",
+                        "mango.event.outbox.enabled=true",
+                        "mango.event.outbox.dispatch-enabled=false")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(IOutboxDispatcher.class);
+                    assertThat(context).doesNotHaveBean(OutboxDispatchScheduler.class);
                 });
     }
 }

@@ -12,11 +12,14 @@ import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.starter.OutboxAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.time.Clock;
 import java.util.List;
@@ -68,5 +71,33 @@ public class DomainEventAutoConfiguration {
                 outbox.getWorkerId(),
                 outbox.getBatchSize(),
                 outbox.getRetryDelaySeconds());
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "mango.event.outbox", name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(name = "domainEventOutboxTaskScheduler")
+    public TaskScheduler domainEventOutboxTaskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("mango-event-outbox-");
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setAwaitTerminationSeconds(10);
+        scheduler.initialize();
+        return scheduler;
+    }
+
+    @Bean
+    @ConditionalOnExpression("${mango.event.outbox.enabled:false} && ${mango.event.outbox.dispatch-enabled:true}")
+    @ConditionalOnMissingBean(OutboxDispatchScheduler.class)
+    public OutboxDispatchScheduler domainEventOutboxDispatchScheduler(
+            IOutboxDispatcher dispatcher,
+            TaskScheduler domainEventOutboxTaskScheduler,
+            DomainEventProperties properties) {
+        DomainEventProperties.Outbox outbox = properties.getOutbox();
+        return new OutboxDispatchScheduler(
+                dispatcher,
+                domainEventOutboxTaskScheduler,
+                outbox.getDispatchIntervalMillis(),
+                outbox.getDispatchInitialDelayMillis());
     }
 }
