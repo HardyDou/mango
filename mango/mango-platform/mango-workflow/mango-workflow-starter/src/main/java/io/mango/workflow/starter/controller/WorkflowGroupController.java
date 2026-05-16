@@ -64,7 +64,7 @@ public class WorkflowGroupController {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:add")
     @Operation(summary = "新增流程分组", description = "权限接口。创建流程分组")
-    public R<Long> create(
+    public R<String> create(
             @Parameter(description = "保存流程分组命令", required = true)
             @Valid @RequestBody SaveWorkflowGroupCommand command) {
         return workflowGroupService.create(command);

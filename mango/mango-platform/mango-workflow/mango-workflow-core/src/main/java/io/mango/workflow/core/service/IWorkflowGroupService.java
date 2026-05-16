@@ -19,7 +19,7 @@ public interface IWorkflowGroupService {
 
     R<WorkflowGroupVO> get(Long id);
 
-    R<Long> create(SaveWorkflowGroupCommand command);
+    R<String> create(SaveWorkflowGroupCommand command);
 
     R<Boolean> update(SaveWorkflowGroupCommand command);
 

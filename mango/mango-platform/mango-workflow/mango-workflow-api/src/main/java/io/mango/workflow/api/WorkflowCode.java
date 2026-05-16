@@ -35,15 +35,6 @@ public enum WorkflowCode implements BizCode {
     /** 流程发布版本不存在。 */
     VERSION_NOT_FOUND(3615, "流程发布版本不存在"),
 
-    /** 流程节点定义不存在。 */
-    NODE_DEFINITION_NOT_FOUND(3630, "流程节点定义不存在"),
-
-    /** 流程节点定义参数非法。 */
-    NODE_DEFINITION_INVALID(3631, "流程节点定义参数非法"),
-
-    /** 流程节点定义编码重复。 */
-    NODE_DEFINITION_CODE_DUPLICATED(3632, "流程节点定义编码已存在"),
-
     /** 流程实例不存在。 */
     PROCESS_INSTANCE_NOT_FOUND(3640, "流程实例不存在"),
 

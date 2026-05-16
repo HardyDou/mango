@@ -1,117 +1,144 @@
 <template>
   <div class="user-selector">
-    <el-input
-      :model-value="summaryText"
-      :placeholder="placeholder"
-      :disabled="disabled"
-      readonly
-      @click="openDialog"
-    >
-      <template #suffix>
-        <el-icon class="selector-arrow"><ArrowDown /></el-icon>
-      </template>
-    </el-input>
-
-    <div v-if="selectedList.length" class="selector-tags">
-      <el-tag
-        v-for="item in selectedList"
-        :key="item.value"
-        closable
-        size="small"
-        @close="removeSelected(item.value)"
+    <template v-if="mode === 'select'">
+      <el-select
+        :model-value="modelValueForSelect"
+        class="user-selector-input"
+        clearable
+        filterable
+        remote
+        reserve-keyword
+        :collapse-tags="multiple"
+        collapse-tags-tooltip
+        :disabled="disabled"
+        :loading="loading"
+        :multiple="multiple"
+        :placeholder="placeholder"
+        :remote-method="handleRemoteSearch"
+        @clear="clear"
+        @focus="ensureLoaded"
+        @visible-change="visible => visible && ensureLoaded()"
+        @change="handleSelectChange"
       >
-        {{ item.label }}
-      </el-tag>
-    </div>
-
-    <el-dialog
-      v-model="dialogVisible"
-      :title="title"
-      :width="width"
-      append-to-body
-      destroy-on-close
-    >
-      <div class="selector-dialog">
-        <div class="selector-panel">
-          <el-input
-            v-model="keyword"
-            clearable
-            placeholder="搜索用户名/姓名"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-
-          <div v-loading="loading" class="selector-list">
-            <button
-              v-for="item in filteredOptions"
-              :key="item.value"
-              type="button"
-              class="selector-item"
-              :class="{ active: tempSelectedSet.has(item.value) }"
-              @click="toggleOption(item.value)"
-            >
-              <div class="selector-item-check">
-                <el-checkbox
-                  :model-value="tempSelectedSet.has(item.value)"
-                  @click.stop
-                  @change="() => toggleOption(item.value)"
-                />
-              </div>
-              <el-avatar :size="34" :src="item.avatar">
-                {{ item.label.slice(0, 1) }}
-              </el-avatar>
-              <div class="selector-item-meta">
-                <div class="selector-item-title">{{ item.label }}</div>
-                <div v-if="item.meta" class="selector-item-subtitle">{{ item.meta }}</div>
-              </div>
-            </button>
-
-            <el-empty
-              v-if="!loading && !filteredOptions.length"
-              :image-size="64"
-              description="暂无匹配人员"
-            />
+        <el-option
+          v-for="item in filteredOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        >
+          <div class="select-option">
+            <span>{{ item.label }}</span>
+            <small>{{ item.meta || item.username || '用户' }}</small>
           </div>
-        </div>
+        </el-option>
+      </el-select>
+    </template>
 
-        <div class="selector-selected">
-          <div class="selected-header">
-            <span>已选 {{ tempSelected.length }}</span>
-            <el-button link type="danger" @click="clearTemp">清空</el-button>
-          </div>
-          <div class="selected-list">
-            <div
-              v-for="item in tempSelected"
-              :key="item.value"
-              class="selected-item"
-            >
-              <div class="selected-item-main">
-                <el-avatar :size="32" :src="item.avatar">
-                  {{ item.label.slice(0, 1) }}
-                </el-avatar>
-                <div>
-                  <div class="selected-item-title">{{ item.label }}</div>
-                  <div v-if="item.meta" class="selected-item-subtitle">{{ item.meta }}</div>
-                </div>
-              </div>
-              <el-button link @click="removeTemp(item.value)">移除</el-button>
-            </div>
-            <el-empty
-              v-if="!tempSelected.length"
-              :image-size="64"
-              description="未选择人员"
-            />
-          </div>
-        </div>
+    <template v-else>
+      <el-input
+        :model-value="summaryText"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        readonly
+        @click="open"
+      >
+        <template #suffix>
+          <el-icon class="selector-arrow"><ArrowDown /></el-icon>
+        </template>
+      </el-input>
+
+      <div v-if="selectedList.length" class="selector-tags">
+        <el-tag
+          v-for="item in selectedList"
+          :key="item.value"
+          closable
+          size="small"
+          @close="removeSelected(item.value)"
+        >
+          {{ item.label }}
+        </el-tag>
       </div>
 
-      <template #footer>
-        <el-button @click="close">取消</el-button>
-        <el-button type="primary" @click="confirmSelection">确认</el-button>
-      </template>
-    </el-dialog>
+      <el-dialog
+        v-model="dialogVisible"
+        :title="title"
+        :width="width"
+        append-to-body
+        destroy-on-close
+      >
+        <div class="selector-dialog">
+          <aside class="selector-org">
+            <div class="selector-column-title">组织架构</div>
+            <button
+              type="button"
+              class="org-all"
+              :class="{ active: selectedOrgId === undefined }"
+              @click="selectedOrgId = undefined"
+            >
+              全部人员
+            </button>
+            <div v-loading="orgLoading" class="org-tree-wrap">
+              <el-tree
+                :data="orgOptions"
+                :expand-on-click-node="false"
+                default-expand-all
+                node-key="id"
+                :props="{ label: 'name', children: 'children' }"
+                @node-click="handleOrgClick"
+              />
+            </div>
+          </aside>
+
+          <main class="selector-users">
+            <div class="selector-search">
+              <el-input v-model="keyword" clearable placeholder="搜索姓名、用户名">
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </div>
+            <div v-loading="loading" class="selector-list">
+              <button
+                v-for="item in filteredOptions"
+                :key="item.value"
+                type="button"
+                class="selector-item"
+                :class="{ active: tempSelectedSet.has(item.value) }"
+                @click="toggleTemp(item.value)"
+              >
+                <el-checkbox :model-value="tempSelectedSet.has(item.value)" @click.stop @change="() => toggleTemp(item.value)" />
+                <el-avatar :size="32" :src="item.avatar">{{ item.label.slice(0, 1) }}</el-avatar>
+                <span class="selector-item-meta">
+                  <strong>{{ item.label }}</strong>
+                  <small>{{ item.meta || item.username || '用户' }}</small>
+                </span>
+              </button>
+              <el-empty v-if="!loading && !filteredOptions.length" :image-size="64" description="暂无匹配人员" />
+            </div>
+          </main>
+
+          <aside class="selector-picked">
+            <div class="selected-header">
+              <span>已选 {{ tempSelected.length }}</span>
+              <el-button v-if="tempSelected.length" link type="danger" @click="clearTemp">清空</el-button>
+            </div>
+            <div class="selected-list">
+              <div v-for="item in tempSelected" :key="item.value" class="selected-item">
+                <el-avatar :size="30" :src="item.avatar">{{ item.label.slice(0, 1) }}</el-avatar>
+                <span>{{ item.label }}</span>
+                <el-button link type="danger" @click="removeTemp(item.value)">移除</el-button>
+              </div>
+              <el-empty v-if="!tempSelected.length" :image-size="64" description="未选择人员" />
+            </div>
+          </aside>
+        </div>
+
+        <template #footer>
+          <el-button @click="close">取消</el-button>
+          <el-button type="primary" @click="confirmSelection">确认</el-button>
+        </template>
+      </el-dialog>
+    </template>
   </div>
 </template>
 
@@ -119,7 +146,9 @@
 import { computed, ref } from 'vue';
 import { ArrowDown, Search } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+import { getOrgTree } from '../../api/org';
 import { get } from '../../utils/request';
+import type { OrgNode } from '../OrgSelector/types';
 import type { UserSelectorEmits, UserSelectorExpose, UserSelectorOption, UserSelectorProps } from './types';
 
 interface BackendPageResult<T> {
@@ -127,8 +156,13 @@ interface BackendPageResult<T> {
   list?: T[];
 }
 
+type UserOption = UserSelectorOption & {
+  orgId?: number;
+};
+
 const props = withDefaults(defineProps<UserSelectorProps>(), {
   modelValue: () => [],
+  mode: 'select',
   multiple: false,
   placeholder: '请选择人员',
   title: '选择人员',
@@ -141,9 +175,14 @@ const emit = defineEmits<UserSelectorEmits>();
 
 const dialogVisible = ref(false);
 const loading = ref(false);
+const orgLoading = ref(false);
 const keyword = ref('');
-const options = ref<UserSelectorOption[]>([]);
+const options = ref<UserOption[]>([]);
+const orgOptions = ref<OrgNode[]>([]);
+const selectedOrgId = ref<number | undefined>();
 const tempSelectedValues = ref<string[]>([]);
+
+const mode = computed(() => props.mode || 'select');
 
 const modelValues = computed<string[]>(() => {
   if (Array.isArray(props.modelValue)) {
@@ -155,7 +194,11 @@ const modelValues = computed<string[]>(() => {
   return [String(props.modelValue)];
 });
 
+const modelValueForSelect = computed(() => (props.multiple ? modelValues.value : modelValues.value[0]));
 const selectedList = computed(() => optionsByValues(modelValues.value));
+const tempSelectedSet = computed(() => new Set(tempSelectedValues.value));
+const tempSelected = computed(() => optionsByValues(tempSelectedValues.value));
+
 const summaryText = computed(() => {
   if (!selectedList.value.length) {
     return '';
@@ -168,15 +211,13 @@ const summaryText = computed(() => {
 
 const filteredOptions = computed(() => {
   const normalized = keyword.value.trim().toLowerCase();
-  if (!normalized) {
-    return options.value;
-  }
-  return options.value.filter(item =>
-    [item.label, item.username, item.meta].some(value => String(value || '').toLowerCase().includes(normalized)));
+  return options.value.filter(item => {
+    const matchOrg = mode.value === 'select' || selectedOrgId.value === undefined || item.orgId === selectedOrgId.value;
+    const matchKeyword = !normalized
+      || [item.label, item.username, item.meta].some(value => String(value || '').toLowerCase().includes(normalized));
+    return matchOrg && matchKeyword;
+  });
 });
-
-const tempSelectedSet = computed(() => new Set(tempSelectedValues.value));
-const tempSelected = computed(() => optionsByValues(tempSelectedValues.value));
 
 async function ensureLoaded() {
   if (options.value.length) {
@@ -185,41 +226,70 @@ async function ensureLoaded() {
   loading.value = true;
   try {
     const data = await get<BackendPageResult<any>>('/identity/users/page', {
-      params: {
-        page: 1,
-        size: 200,
-      },
+      params: { page: 1, size: 200 },
     });
     options.value = (data?.records || data?.list || [])
-      .map((item: any) => {
-        const id = item.userId ?? item.id ?? item.memberId;
-        const value = item.username ?? id;
-        const name = item.nickname || item.memberName || item.username || id;
-        if (value === undefined || name === undefined) {
-          return undefined;
-        }
-        return {
-          value: String(value),
-          label: String(name),
-          username: item.username ? String(item.username) : undefined,
-          avatar: item.avatar ? String(item.avatar) : undefined,
-          meta: item.username && item.username !== name ? String(item.username) : '用户',
-        } satisfies UserSelectorOption;
-      })
-      .filter(Boolean) as UserSelectorOption[];
+      .map(toUserOption)
+      .filter(Boolean) as UserOption[];
   } finally {
     loading.value = false;
   }
 }
 
-function openDialog() {
+async function ensureOrgLoaded() {
+  if (orgOptions.value.length) {
+    return;
+  }
+  orgLoading.value = true;
+  try {
+    orgOptions.value = await getOrgTree({ parentId: 0 });
+  } finally {
+    orgLoading.value = false;
+  }
+}
+
+function toUserOption(item: any): UserOption | undefined {
+  const id = item.userId ?? item.id ?? item.memberId;
+  const value = item.username ?? id;
+  const name = item.nickname || item.memberName || item.username || id;
+  if (value === undefined || name === undefined) {
+    return undefined;
+  }
+  const username = item.username && item.username !== name ? String(item.username) : undefined;
+  return {
+    value: String(value),
+    label: String(name),
+    username,
+    avatar: item.avatar ? String(item.avatar) : undefined,
+    meta: username ? `@${username}` : '用户',
+    orgId: item.primaryOrgId === undefined || item.primaryOrgId === null ? undefined : Number(item.primaryOrgId),
+  };
+}
+
+function handleRemoteSearch(value: string) {
+  keyword.value = value;
+  void ensureLoaded();
+}
+
+function handleSelectChange(value: string | string[]) {
+  const values = Array.isArray(value) ? value.map(String) : value ? [String(value)] : [];
+  if (props.multiple && props.max > 0 && values.length > props.max) {
+    ElMessage.warning(`最多选择 ${props.max} 人`);
+    emitValue(modelValues.value);
+    return;
+  }
+  emitValue(values);
+}
+
+async function open() {
   if (props.disabled) {
     return;
   }
-  void ensureLoaded();
   keyword.value = '';
+  selectedOrgId.value = undefined;
   tempSelectedValues.value = [...modelValues.value];
   dialogVisible.value = true;
+  await Promise.all([ensureLoaded(), ensureOrgLoaded()]);
 }
 
 function close() {
@@ -227,16 +297,18 @@ function close() {
 }
 
 function clear() {
-  const value = props.multiple ? [] : undefined;
-  emit('update:modelValue', value);
-  emit('change', value);
+  emitValue([]);
 }
 
 function clearTemp() {
   tempSelectedValues.value = [];
 }
 
-function toggleOption(value: string) {
+function handleOrgClick(node: OrgNode) {
+  selectedOrgId.value = node.id;
+}
+
+function toggleTemp(value: string) {
   const exists = tempSelectedSet.value.has(value);
   if (!props.multiple) {
     tempSelectedValues.value = exists ? [] : [value];
@@ -256,128 +328,179 @@ function removeTemp(value: string) {
 }
 
 function removeSelected(value: string) {
-  const values = modelValues.value.filter(item => item !== value);
+  emitValue(modelValues.value.filter(item => item !== value));
+}
+
+function confirmSelection() {
+  emitValue(tempSelectedValues.value);
+  close();
+}
+
+function emitValue(values: string[]) {
   const nextValue = props.multiple ? values : values[0];
   emit('update:modelValue', nextValue);
   emit('change', nextValue);
 }
 
-function confirmSelection() {
-  const nextValue = props.multiple ? [...tempSelectedValues.value] : tempSelectedValues.value[0];
-  emit('update:modelValue', nextValue);
-  emit('change', nextValue);
-  close();
-}
-
 function optionsByValues(values: string[]) {
-  const valueSet = new Set(values);
-  const matched = options.value.filter(item => valueSet.has(item.value));
+  const matched = options.value.filter(item => values.includes(item.value));
   const missing = values
     .filter(value => !matched.some(item => item.value === value))
-    .map(value => ({ value, label: value, meta: '用户' } satisfies UserSelectorOption));
+    .map(value => ({ value, label: value, meta: '用户' } satisfies UserOption));
   return [...matched, ...missing];
 }
 
 defineExpose<UserSelectorExpose>({
-  open: openDialog,
+  open: () => {
+    void open();
+  },
   close,
   clear,
 });
 </script>
 
 <style scoped>
+.user-selector,
+.user-selector-input {
+  width: 100%;
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.select-option small {
+  color: var(--el-text-color-secondary);
+}
+
 .selector-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin-top: 8px;
-}
-
-.selector-arrow {
-  color: var(--el-text-color-secondary);
 }
 
 .selector-dialog {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
-  gap: 20px;
+  grid-template-columns: 200px minmax(320px, 1fr) 220px;
+  gap: 12px;
+  min-height: 420px;
 }
 
-.selector-panel,
-.selector-selected {
+.selector-org,
+.selector-users,
+.selector-picked {
   min-width: 0;
-}
-
-.selector-list,
-.selected-list {
-  margin-top: 12px;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 12px;
-  max-height: 480px;
-  overflow: auto;
-  background: #fff;
+  border-radius: 8px;
+  background: var(--el-bg-color);
 }
 
-.selector-item,
-.selected-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  background: transparent;
-  text-align: left;
-}
-
-.selector-item:last-child,
-.selected-item:last-child {
-  border-bottom: 0;
-}
-
-.selector-item {
-  cursor: pointer;
-}
-
-.selector-item.active {
-  background: color-mix(in srgb, var(--el-color-primary) 8%, #fff);
-}
-
-.selector-item-check {
-  flex: 0 0 auto;
-}
-
-.selector-item-meta,
-.selected-item-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.selected-item {
-  justify-content: space-between;
-}
-
-.selector-item-title,
-.selected-item-title {
-  color: #111827;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.selector-item-subtitle,
-.selected-item-subtitle {
-  color: #6b7280;
-  font-size: 12px;
-}
-
+.selector-column-title,
 .selected-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #111827;
-  font-weight: 600;
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.selector-search {
+  padding: 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.org-all {
+  width: calc(100% - 16px);
+  margin: 8px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--el-text-color-regular);
+  text-align: left;
+  cursor: pointer;
+}
+
+.org-all.active,
+.org-all:hover {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.org-tree-wrap {
+  height: 364px;
+  overflow: auto;
+}
+
+.selector-list,
+.selected-list {
+  height: 364px;
+  overflow: auto;
+}
+
+.selector-users .selector-list {
+  height: 312px;
+}
+
+.selector-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.selector-item:hover,
+.selector-item.active {
+  background: var(--el-color-primary-light-9);
+}
+
+.selector-item-meta {
+  display: grid;
+  min-width: 0;
+}
+
+.selector-item-meta strong,
+.selected-item span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selector-item-meta small {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.el-tree-node__content) {
+  height: 30px;
 }
 </style>

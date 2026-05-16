@@ -1,27 +1,12 @@
 <template>
   <div class="config-container">
     <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>系统配置</span>
-        </div>
-      </template>
-
       <el-tabs
         v-model="activeTab"
         @tab-change="handleTabChange"
       >
         <!-- 系统参数 Tab -->
         <el-tab-pane label="系统参数" name="param">
-          <div class="tab-toolbar">
-            <el-button
-              type="primary"
-              @click="handleAddParam"
-            >
-              新增参数
-            </el-button>
-          </div>
-
           <el-form
             :inline="true"
             class="search-form"
@@ -34,19 +19,15 @@
               />
             </el-form-item>
             <el-form-item label="类型">
-          <el-select
-            v-model="paramQuery.paramType"
-            placeholder="请选择"
-            clearable
-          >
-            <el-option
-              v-for="item in paramTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="Number(item.value)"
-            />
-          </el-select>
-        </el-form-item>
+              <DictSelect
+                v-model="paramQuery.paramType"
+                dict-type="system_param_type"
+                placeholder="类型"
+                show-any-option
+                any-option-label="不限"
+                number-value
+              />
+            </el-form-item>
             <el-form-item>
               <el-button
                 type="primary"
@@ -59,6 +40,15 @@
               </el-button>
             </el-form-item>
           </el-form>
+
+          <div class="action-toolbar">
+            <el-button
+              type="primary"
+              @click="handleAddParam"
+            >
+              新增参数
+            </el-button>
+          </div>
 
           <el-table
             v-loading="paramLoading"
@@ -77,17 +67,17 @@
             <el-table-column
               prop="paramType"
               label="类型"
-          width="100"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="system_param_type"
-              :value="row.paramType"
-              :type="row.paramType === 1 ? 'primary' : 'success'"
-              size="small"
-            />
-          </template>
-        </el-table-column>
+              width="100"
+            >
+              <template #default="{ row }">
+                <DictTag
+                  dict-code="system_param_type"
+                  :value="row.paramType"
+                  :type="row.paramType === 1 ? 'primary' : 'success'"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
             <el-table-column
               prop="description"
               label="描述"
@@ -97,20 +87,24 @@
               prop="status"
               label="状态"
               width="80"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-              size="small"
-            />
-          </template>
-        </el-table-column>
+            >
+              <template #default="{ row }">
+                <DictTag
+                  dict-code="sys_normal_disable"
+                  :value="row.status"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
             <el-table-column
               prop="createTime"
               label="创建时间"
               width="180"
-            />
+            >
+              <template #default="{ row }">
+                {{ formatDate(row.createTime) }}
+              </template>
+            </el-table-column>
             <el-table-column
               label="操作"
               width="150"
@@ -140,15 +134,6 @@
 
         <!-- 系统配置 Tab -->
         <el-tab-pane label="系统配置" name="config">
-          <div class="tab-toolbar">
-            <el-button
-              type="primary"
-              @click="handleAddConfig"
-            >
-              新增配置
-            </el-button>
-          </div>
-
           <el-form
             :inline="true"
             class="search-form"
@@ -161,19 +146,14 @@
               />
             </el-form-item>
             <el-form-item label="分组">
-          <el-select
-            v-model="configQuery.configGroup"
-            placeholder="请选择"
-            clearable
-          >
-            <el-option
-              v-for="item in configTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
+              <DictSelect
+                v-model="configQuery.configGroup"
+                dict-type="system_config_type"
+                placeholder="分组"
+                show-any-option
+                any-option-label="不限"
+              />
+            </el-form-item>
             <el-form-item>
               <el-button
                 type="primary"
@@ -186,6 +166,15 @@
               </el-button>
             </el-form-item>
           </el-form>
+
+          <div class="action-toolbar">
+            <el-button
+              type="primary"
+              @click="handleAddConfig"
+            >
+              新增配置
+            </el-button>
+          </div>
 
           <el-table
             v-loading="configLoading"
@@ -204,16 +193,16 @@
             <el-table-column
               prop="configGroup"
               label="分组"
-          width="100"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="system_config_type"
-              :value="row.configGroup"
-              size="small"
-            />
-          </template>
-        </el-table-column>
+              width="100"
+            >
+              <template #default="{ row }">
+                <DictTag
+                  dict-code="system_config_type"
+                  :value="row.configGroup"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
             <el-table-column
               prop="description"
               label="描述"
@@ -223,20 +212,24 @@
               prop="status"
               label="状态"
               width="80"
-        >
-          <template #default="{ row }">
-            <DictTag
-              dict-code="sys_normal_disable"
-              :value="row.status"
-              size="small"
-            />
-          </template>
-        </el-table-column>
+            >
+              <template #default="{ row }">
+                <DictTag
+                  dict-code="sys_normal_disable"
+                  :value="row.status"
+                  size="small"
+                />
+              </template>
+            </el-table-column>
             <el-table-column
               prop="createTime"
               label="创建时间"
               width="180"
-            />
+            >
+              <template #default="{ row }">
+                {{ formatDate(row.createTime) }}
+              </template>
+            </el-table-column>
             <el-table-column
               label="操作"
               width="150"
@@ -441,7 +434,7 @@
 <script setup lang="ts" name="SystemConfig">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, useDict } from '@mango/common';
+import { DictSelect, DictTag, formatDate, useDict } from '@mango/common';
 import { paramApi, type SysParam } from '../../api/param';
 import { configApi, type SysConfig } from '../../api/config';
 
@@ -648,18 +641,18 @@ onMounted(() => {
 .config-container {
   padding: 0;
 }
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.tab-toolbar {
-  margin-bottom: 16px;
-}
+
 .search-form {
   margin-bottom: 16px;
+
   :deep(.el-form-item) {
     margin-bottom: 0;
   }
+}
+
+.action-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
 }
 </style>

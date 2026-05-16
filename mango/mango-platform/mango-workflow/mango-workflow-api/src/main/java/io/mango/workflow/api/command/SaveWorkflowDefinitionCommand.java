@@ -1,15 +1,19 @@
 package io.mango.workflow.api.command;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 保存流程定义命令。
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "保存流程定义命令")
 public class SaveWorkflowDefinitionCommand {
 
@@ -19,6 +23,13 @@ public class SaveWorkflowDefinitionCommand {
     @Schema(description = "流程分组ID")
     @NotNull(message = "流程分组ID不能为空")
     private Long groupId;
+
+    @Schema(description = "流程管理员用户名列表；审批人为空且策略为转交管理员时优先使用")
+    private List<String> adminUsers;
+
+    @Schema(description = "流程图标")
+    @Size(max = 512, message = "流程图标最多512个字符")
+    private String icon;
 
     @Schema(description = "流程名称")
     @NotBlank(message = "流程名称不能为空")

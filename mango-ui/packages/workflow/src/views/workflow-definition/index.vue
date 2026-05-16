@@ -29,12 +29,6 @@
 
       <div class="builder-content">
         <section v-show="definitionStep === 0" class="builder-pane basic-pane">
-          <div class="builder-pane-head">
-            <div>
-              <div class="pane-kicker">基础信息</div>
-              <h3>流程基础信息</h3>
-            </div>
-          </div>
           <el-form
             ref="definitionFormRef"
             :model="definitionForm"
@@ -42,146 +36,194 @@
             class="step-form builder-form"
             label-position="top"
           >
-            <el-form-item label="流程分组" prop="groupId">
-              <el-select v-model="definitionForm.groupId" placeholder="请选择流程分组">
+            <el-form-item class="basic-field full workflow-icon-item" label="流程图标">
+              <div class="workflow-icon-field">
+                <div class="workflow-icon-uploader" :class="{ empty: !workflowIconPreviewUrl(definitionForm.icon), filled: Boolean(workflowIconPreviewUrl(definitionForm.icon)) }">
+                  <ImageUpload v-model="definitionForm.icon" :limit="1" :multiple="false" class="workflow-icon-upload-control" />
+                  <div v-if="isWorkflowPresetIcon(definitionForm.icon)" class="workflow-icon-overlay workflow-icon-legacy-preview">
+                    <el-icon><component :is="workflowIconComponent(definitionForm.icon)" /></el-icon>
+                    <span>{{ workflowIconLabel(definitionForm.icon) }}</span>
+                  </div>
+                  <div v-else-if="!definitionForm.icon" class="workflow-icon-overlay workflow-icon-empty-state">
+                    <el-icon><PictureFilled /></el-icon>
+                    <span>图标</span>
+                  </div>
+                </div>
+              </div>
+            </el-form-item>
+            <el-form-item class="basic-field full" prop="definitionKey">
+              <template #label>
+                <span class="field-label-with-help">
+                  流程编码
+                  <el-tooltip content="流程编码对应 Flowable process id，发布后保持稳定，不建议修改。" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </span>
+              </template>
+              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 guarantee_approve" />
+            </el-form-item>
+            <el-form-item class="basic-field full" label="流程名称" prop="definitionName">
+              <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
+            </el-form-item>
+            <el-form-item class="basic-field full" label="流程分组" prop="groupId">
+              <el-select v-model="definitionForm.groupId" filterable placeholder="请选择流程分组">
                 <el-option v-for="item in groups" :key="item.id" :label="item.groupName" :value="item.id" />
               </el-select>
             </el-form-item>
-            <el-form-item label="流程名称" prop="definitionName">
-              <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
+            <el-form-item class="basic-field full" prop="adminUsers">
+              <template #label>
+                <span class="field-label-with-help">
+                  流程管理员
+                  <el-tooltip content="用于流程维护；审批人为空且策略为转交管理员时，优先转交给这里配置的人员。" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </span>
+              </template>
+              <UserSelector v-model="definitionForm.adminUsers" multiple placeholder="请选择流程管理员" title="选择流程管理员" />
             </el-form-item>
-            <el-form-item label="流程编码" prop="definitionKey">
-              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 guarantee_approve" />
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="definitionForm.status">
-                <el-option v-for="item in workflowStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="备注">
+            <el-form-item class="basic-field full" label="备注">
               <el-input v-model="definitionForm.remark" :rows="3" placeholder="说明流程适用场景、发起条件或维护边界" type="textarea" />
             </el-form-item>
           </el-form>
           <div class="pane-help">
-            流程编码用于发布到 Flowable 引擎，发布后应保持稳定；流程分组用于后台管理和业务入口归类。
+            先选择分组再定义流程；发布、停用等状态由列表操作和发布动作维护。
           </div>
         </section>
 
         <section v-show="definitionStep === 1" class="builder-pane form-pane">
-          <div class="form-mode-cards">
-            <button
-              class="form-mode-card"
-              :class="{ active: workflowFormMode === 'DYNAMIC' }"
-              type="button"
-              @click="setWorkflowFormMode('DYNAMIC')"
-            >
-              <span class="mode-radio" />
-              <span>
-                <strong>动态表单</strong>
-                <em>使用可视化表单设计器创建表单</em>
-              </span>
-            </button>
-            <button
-              class="form-mode-card"
-              :class="{ active: workflowFormMode === 'CUSTOM' }"
-              type="button"
-              @click="setWorkflowFormMode('CUSTOM')"
-            >
-              <span class="mode-radio" />
-              <span>
-                <strong>自定义表单</strong>
-                <em>使用自定义页面作为表单</em>
-              </span>
-            </button>
-          </div>
-          <div class="form-step-layout">
-            <div class="form-designer-main">
-              <div class="form-designer-toolbar">
+          <div class="form-design-shell">
+            <div class="form-config-bar">
+              <div class="form-config-main">
                 <el-form class="form-code-form" label-position="top">
                   <el-form-item label="表单编码">
                     <el-input v-model="definitionForm.formCode" placeholder="如 guarantee_apply_form" />
                   </el-form-item>
                 </el-form>
-                <div class="form-designer-summary">
-                  <strong>{{ workflowFormVariableOptions.length }}</strong>
-                  <span>个表单字段变量</span>
+                <div class="form-type-row">
+                  <div class="form-type-control">
+                    <span>表单类型</span>
+                    <el-radio-group v-model="workflowFormMode" @change="setWorkflowFormMode">
+                      <el-radio-button label="DYNAMIC">动态表单</el-radio-button>
+                      <el-radio-button label="CUSTOM">自定义表单</el-radio-button>
+                    </el-radio-group>
+                  </div>
+                  <div class="form-designer-summary">
+                    <strong>{{ workflowFormVariableOptions.length }}</strong>
+                    <span>个字段变量</span>
+                  </div>
                 </div>
               </div>
-              <template v-if="workflowFormMode === 'DYNAMIC'">
-                <FcDesigner
-                  ref="formDesignerRef"
-                  :config="formDesignerConfig"
-                  :menu="formDesignerMenu"
-                  class="workflow-form-designer"
-                  height="calc(100vh - 350px)"
-                  @save="syncWorkflowFormFromDesigner"
-              />
-              </template>
-              <div v-else class="custom-form-builder">
-                <div class="custom-route-section">
-                  <div class="section-title">自定义表单配置</div>
-                  <el-form label-position="top">
-                    <el-row :gutter="14">
-                      <el-col :span="12">
-                        <el-form-item label="表单提交路径">
-                          <el-input v-model="customFormConfig.submitPath" placeholder="例如：/flow/guarantee/create" @input="syncCustomWorkflowForm" />
-                        </el-form-item>
-                      </el-col>
-                      <el-col :span="12">
-                        <el-form-item label="表单查看路径">
-                          <el-input v-model="customFormConfig.viewPath" placeholder="例如：/flow/guarantee/detail" @input="syncCustomWorkflowForm" />
-                        </el-form-item>
-                      </el-col>
-                    </el-row>
-                  </el-form>
+            </div>
+
+            <div class="form-step-layout">
+              <div class="form-designer-main">
+                <template v-if="workflowFormMode === 'DYNAMIC'">
+                  <div class="dynamic-designer-wrap" :class="{ 'hide-left': !formDesignerLeftVisible, 'hide-right': !formDesignerRightVisible }">
+                    <div class="dynamic-designer-toolbar">
+                      <div class="dynamic-designer-title">
+                        <strong>动态表单设计器</strong>
+                        <span>字段会转换为流程变量，可用于条件、权限和节点属性。</span>
+                      </div>
+                      <div class="dynamic-designer-actions">
+                        <el-button :icon="formDesignerLeftVisible ? Fold : Expand" size="small" @click="formDesignerLeftVisible = !formDesignerLeftVisible">
+                          {{ formDesignerLeftVisible ? '隐藏组件面板' : '显示组件面板' }}
+                        </el-button>
+                        <el-button :icon="formDesignerRightVisible ? Fold : Expand" size="small" @click="formDesignerRightVisible = !formDesignerRightVisible">
+                          {{ formDesignerRightVisible ? '隐藏属性面板' : '显示属性面板' }}
+                        </el-button>
+                      </div>
+                    </div>
+                    <FcDesigner
+                      ref="formDesignerRef"
+                      :config="formDesignerConfig"
+                      :menu="formDesignerMenu"
+                      class="workflow-form-designer"
+                      height="calc(100vh - 392px)"
+                      @save="syncWorkflowFormFromDesigner"
+                    />
+                  </div>
+                </template>
+                <div v-else class="custom-form-builder">
+                  <div class="custom-route-section">
+                    <div class="section-title">自定义表单页面</div>
+                    <el-form class="custom-route-form" label-position="top">
+                      <el-form-item label="表单提交路径">
+                        <el-input v-model="customFormConfig.submitPath" placeholder="例如：/flow/guarantee/create" @input="syncCustomWorkflowForm" />
+                      </el-form-item>
+                      <el-form-item label="表单查看路径">
+                        <el-input v-model="customFormConfig.viewPath" placeholder="例如：/flow/guarantee/detail" @input="syncCustomWorkflowForm" />
+                      </el-form-item>
+                    </el-form>
+                  </div>
+                  <div class="custom-field-section">
+                    <div class="custom-form-toolbar">
+                      <div>
+                        <div class="section-title">流程字段</div>
+                        <span>字段会转换为流程变量，可在条件分支、表单权限、节点属性中选择。</span>
+                      </div>
+                      <el-button :icon="Plus" type="primary" @click="addCustomFormField">新增字段</el-button>
+                    </div>
+                    <div class="custom-field-list">
+                      <div v-for="(field, index) in customFormFields" :key="field.key || index" class="custom-field-card">
+                        <div class="custom-field-card-head">
+                          <span>字段 {{ index + 1 }}</span>
+                          <el-button link type="danger" @click="removeCustomFormField(index)">删除</el-button>
+                        </div>
+                        <div class="custom-field-main">
+                          <el-form-item label="字段标识">
+                            <el-input v-model="field.key" placeholder="如 amount" @blur="normalizeCustomFormFields" />
+                          </el-form-item>
+                          <el-form-item label="字段名称">
+                            <el-input v-model="field.label" placeholder="如 流程金额" @input="syncCustomWorkflowForm" />
+                          </el-form-item>
+                          <el-form-item label="字段类型">
+                            <el-select v-model="field.type" filterable @change="() => handleCustomFieldTypeChange(field)">
+                              <el-option-group label="基础字段">
+                                <el-option v-for="item in customFieldBaseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                              </el-option-group>
+                              <el-option-group label="系统数据">
+                                <el-option v-for="item in customFieldSystemTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                              </el-option-group>
+                            </el-select>
+                          </el-form-item>
+                          <el-form-item label="是否必填">
+                            <el-switch v-model="field.required" active-text="必填" inactive-text="选填" @change="syncCustomWorkflowForm" />
+                          </el-form-item>
+                        </div>
+                        <div class="custom-field-extra">
+                          <template v-if="field.type === 'select'">
+                            <label>选项配置</label>
+                            <el-input
+                              v-model="field.optionsText"
+                              placeholder="标准流程=STANDARD,特殊流程=SPECIAL"
+                              @input="syncCustomWorkflowForm"
+                            />
+                          </template>
+                          <template v-else-if="isSystemCustomFieldType(field.type)">
+                            <label>系统数据</label>
+                            <el-select
+                              :model-value="field.defaultValue"
+                              clearable
+                              filterable
+                              :loading="customFieldSystemLoading(field.type)"
+                              placeholder="可选默认值"
+                              @focus="ensureCustomFieldSystemOptions(field.type)"
+                              @visible-change="visible => visible && ensureCustomFieldSystemOptions(field.type)"
+                              @change="value => updateCustomFieldDefault(field, value)"
+                            >
+                              <el-option v-for="item in customFieldSystemOptions(field.type)" :key="item.value" :label="item.label" :value="item.value" />
+                            </el-select>
+                          </template>
+                          <template v-else>
+                            <label>字段说明</label>
+                            <el-input v-model="field.placeholder" placeholder="请输入字段提示文案" @input="syncCustomWorkflowForm" />
+                          </template>
+                        </div>
+                      </div>
+                      <el-empty v-if="!customFormFields.length" description="暂无流程字段" :image-size="72" />
+                    </div>
+                  </div>
                 </div>
-                <div class="custom-form-toolbar">
-                  <el-button :icon="Plus" type="primary" @click="addCustomFormField">新增字段</el-button>
-                  <span>字段会转换为流程变量，可在条件分支中选择。</span>
-                </div>
-                <el-table :data="customFormFields" border>
-                  <el-table-column label="字段标识" min-width="150">
-                    <template #default="{ row }">
-                      <el-input v-model="row.key" placeholder="如 amount" @blur="normalizeCustomFormFields" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="字段名称" min-width="150">
-                    <template #default="{ row }">
-                      <el-input v-model="row.label" placeholder="如 保函金额" @input="syncCustomWorkflowForm" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="字段类型" width="150">
-                    <template #default="{ row }">
-                      <el-select v-model="row.type" @change="syncCustomWorkflowForm">
-                        <el-option label="单行文本" value="input" />
-                        <el-option label="多行文本" value="textarea" />
-                        <el-option label="数字" value="inputNumber" />
-                        <el-option label="下拉选择" value="select" />
-                        <el-option label="日期" value="datePicker" />
-                      </el-select>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="必填" width="90" align="center">
-                    <template #default="{ row }">
-                      <el-switch v-model="row.required" @change="syncCustomWorkflowForm" />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="选项" min-width="180">
-                    <template #default="{ row }">
-                      <el-input
-                        v-model="row.optionsText"
-                        :disabled="row.type !== 'select'"
-                        placeholder="标准流程=STANDARD,特殊流程=SPECIAL"
-                        @input="syncCustomWorkflowForm"
-                      />
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="90" align="center">
-                    <template #default="{ $index }">
-                      <el-button link type="danger" @click="removeCustomFormField($index)">删除</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
               </div>
             </div>
           </div>
@@ -192,375 +234,184 @@
 
         <section v-show="definitionStep === 2" class="builder-pane process-pane">
           <div class="designer-workbench">
-            <div class="designer-head">
-              <div>
-                <div class="designer-title">流程设计器</div>
-              </div>
-            </div>
+            <div class="designer-body" :class="{ 'has-node-panel': nodePanelVisible && selectedNode }">
+              <WorkflowDesignerCanvas
+                :root="designerRoot"
+                :catalog="nodeCatalog"
+                :variable-groups="workflowVariableGroups"
+                @select="selectNode"
+                @changed="syncDesignerJson"
+                @blank="clearSelectedNode"
+              />
 
-            <div class="designer-body">
-              <div class="node-canvas">
-                <div class="node-canvas-scale" :style="{ transform: `scale(${canvasZoom})` }">
-                  <workflow-node
-                    :node="designerRoot"
-                    :catalog="nodeCatalog"
-                    root
-                    @select="selectNode"
-                    @changed="syncDesignerJson"
-                  />
-                  <div class="end-node">结束</div>
-                </div>
-                <div class="canvas-tools">
-                  <el-button circle size="small" @click="zoomOut">-</el-button>
-                  <span>{{ Math.round(canvasZoom * 100) }}%</span>
-                  <el-button circle size="small" @click="zoomIn">+</el-button>
-                </div>
-              </div>
-
-            </div>
-
-            <el-drawer
-              v-model="nodePanelVisible"
-              :append-to-body="true"
-              class="workflow-node-drawer"
-              :close-on-click-modal="true"
-              :destroy-on-close="false"
-              direction="rtl"
-              :show-close="selectedNode ? !isUserTaskNode(selectedNode) : true"
-              :size="selectedNode && isUserTaskNode(selectedNode) ? 550 : '520px'"
-              :title="nodeDrawerTitle"
-            >
-              <template v-if="selectedNode">
-                <template v-if="isUserTaskNode(selectedNode)">
-                  <el-tabs v-model="activeNodeConfigTab" class="approval-config-tabs" type="border-card">
-                    <el-tab-pane label="设置审批人" name="assignee">
-                      <div class="approval-drawer-section first">
-                        <el-radio-group
-                          :model-value="approvalConfig(selectedNode).assigneeType"
-                          class="approval-radio-grid assignee-grid"
-                          @change="value => updateApprovalAssigneeType(selectedNode!, value)"
-                        >
-                          <el-radio
-                            v-for="item in approvalAssigneeTypeOptions"
-                            :key="item.value"
-                            :label="item.value"
-                          >
-                            {{ item.label }}
-                          </el-radio>
-                        </el-radio-group>
-
-                        <div v-if="approvalConfig(selectedNode).assigneeType === 'SPECIFIED_USER'" class="approval-target-block">
-                          <el-select
-                            :model-value="approvalConfig(selectedNode).assigneeIds || []"
-                            class="approval-target-select"
-                            multiple
-                            filterable
-                            collapse-tags
-                            collapse-tags-tooltip
-                            :loading="approvalTargetLoading.users"
-                            :teleported="false"
-                            placeholder="搜索用户名/姓名选择成员"
-                            @focus="ensureApprovalUsersLoaded"
-                            @visible-change="visible => visible && ensureApprovalUsersLoaded"
-                            @change="value => updateApprovalListValue(selectedNode!, 'assigneeIds', value)"
-                          >
-                            <el-option
-                              v-for="item in approvalUserOptions"
-                              :key="item.value"
-                              :label="item.label"
-                              :value="item.value"
-                            />
-                          </el-select>
-                        </div>
-                        <div v-if="approvalConfig(selectedNode).assigneeType === 'SPECIFIED_ROLE'" class="approval-target-block">
-                          <el-select
-                            :model-value="approvalConfig(selectedNode).roleIds || []"
-                            class="approval-target-select"
-                            multiple
-                            filterable
-                            collapse-tags
-                            collapse-tags-tooltip
-                            :loading="approvalTargetLoading.roles"
-                            :teleported="false"
-                            placeholder="选择角色"
-                            @focus="ensureApprovalRolesLoaded"
-                            @visible-change="visible => visible && ensureApprovalRolesLoaded"
-                            @change="value => updateApprovalListValue(selectedNode!, 'roleIds', value)"
-                          >
-                            <el-option
-                              v-for="item in approvalRoleOptions"
-                              :key="item.value"
-                              :label="item.label"
-                              :value="item.value"
-                            />
-                          </el-select>
-                        </div>
-                        <div v-if="approvalConfig(selectedNode).assigneeType === 'ORG_LEADER'" class="approval-target-block">
-                          <el-tree-select
-                            :model-value="approvalConfig(selectedNode).orgIds || []"
-                            class="approval-target-select"
-                            :data="approvalOrgTreeOptions"
-                            :props="{ label: 'label', value: 'value', children: 'children' }"
-                            multiple
-                            filterable
-                            clearable
-                            check-strictly
-                            collapse-tags
-                            collapse-tags-tooltip
-                            :loading="approvalTargetLoading.orgs"
-                            :teleported="false"
-                            placeholder="选择部门"
-                            @focus="ensureApprovalOrgsLoaded"
-                            @visible-change="visible => visible && ensureApprovalOrgsLoaded"
-                            @change="value => updateApprovalListValue(selectedNode!, 'orgIds', value)"
-                          />
-                        </div>
-                        <div v-if="approvalConfig(selectedNode).assigneeType === 'FORM_USER'" class="approval-target-block">
-                          <el-select
-                            :model-value="approvalConfig(selectedNode).formUserField"
-                            class="approval-target-select"
-                            clearable
-                            filterable
-                            :teleported="false"
-                            placeholder="选择表单人员字段"
-                            @change="value => updateApprovalConfig(selectedNode!, { formUserField: value })"
-                          >
-                            <el-option v-for="field in workflowFormVariableOptions" :key="field.value" :label="`${field.label}（${field.value}）`" :value="field.value" />
-                          </el-select>
-                        </div>
-                        <div v-if="approvalConfig(selectedNode).assigneeType === 'EXPRESSION'" class="approval-target-block">
-                          <el-input :model-value="approvalConfig(selectedNode).expression" placeholder="${managerUserId}" @input="value => updateApprovalConfig(selectedNode!, { expression: value })" />
-                        </div>
+              <WorkflowNodePropertyPanel
+                v-if="selectedNode"
+                :visible="nodePanelVisible"
+                :node="selectedNode"
+                :title="nodeDrawerTitle"
+                :type-label="workflowNodeTypeLabel(selectedNode)"
+                :icon="nodeIcon(selectedNode)"
+                @close="clearSelectedNode"
+              >
+                <el-tabs v-model="nodePropertyActiveTab" class="node-property-tabs">
+                  <el-tab-pane label="基础信息" name="basic">
+                    <el-form class="drawer-form compact-node-form" label-position="top">
+                      <el-form-item label="节点名称">
+                        <el-input v-model="selectedNode.nodeName" class="node-name-input" placeholder="请输入节点名称" @input="syncDesignerJson" />
+                      </el-form-item>
+                      <el-form-item label="节点类型">
+                        <el-input :model-value="workflowNodeTypeLabel(selectedNode)" disabled />
+                      </el-form-item>
+                      <el-form-item label="节点说明">
+                        <el-input v-model="selectedNode.description" :rows="3" placeholder="说明该节点的处理规则或业务含义" type="textarea" @input="syncDesignerJson" />
+                      </el-form-item>
+                      <div class="node-meta-strip">
+                        <el-tag effect="plain" size="small">{{ workflowNodeTypeLabel(selectedNode) }}</el-tag>
+                        <el-tag v-if="selectedNode.nodeDefinitionCode" effect="plain" size="small" type="info">{{ selectedNode.nodeDefinitionCode }}</el-tag>
                       </div>
+                    </el-form>
+                  </el-tab-pane>
 
-                      <div v-if="approvalConfig(selectedNode).assigneeType === 'INITIATOR_SELECT'" class="approval-drawer-section">
-                        <div class="approval-section-title">选择方式</div>
-                        <el-radio-group
-                          :model-value="approvalConfig(selectedNode).initiatorSelectMultiple ? 'MULTI' : 'SINGLE'"
-                          class="approval-radio-row"
-                          @change="value => updateApprovalConfig(selectedNode!, { initiatorSelectMultiple: value === 'MULTI' })"
-                        >
-                          <el-radio label="SINGLE">单选</el-radio>
-                          <el-radio label="MULTI">多选</el-radio>
-                        </el-radio-group>
+                  <el-tab-pane label="表单权限" name="form">
+                    <div v-if="workflowFormVariableOptions.length" class="form-permission-panel">
+                      <div class="form-permission-head">
+                        <span>表单字段</span>
+                        <span>权限</span>
                       </div>
-
-                      <div v-if="showApprovalModeConfig(selectedNode)" class="approval-drawer-section">
-                        <div class="approval-section-title">多人审批时采用的审批方式</div>
-                        <el-radio-group
-                          :model-value="approvalConfig(selectedNode).approvalMode"
-                          class="approval-radio-column"
-                          @change="value => updateApprovalConfig(selectedNode!, { approvalMode: value })"
-                        >
-                          <el-radio label="COUNTERSIGN">会签(需要所有审批人同意)</el-radio>
-                          <el-radio label="OR_SIGN">或签(一名审批人同意即可)</el-radio>
-                          <el-radio label="SEQUENTIAL">依次审批(按顺序依次审批)</el-radio>
-                        </el-radio-group>
-                      </div>
-
-                      <div class="approval-drawer-section">
-                        <div class="approval-section-title">审批人为空时</div>
-                        <el-radio-group
-                          :model-value="approvalConfig(selectedNode).emptyAssigneeStrategy"
-                          class="approval-radio-grid empty-strategy-grid"
-                          @change="value => updateEmptyAssigneeStrategy(selectedNode!, value)"
-                        >
-                          <el-radio label="AUTO_PASS">自动通过</el-radio>
-                          <el-radio label="AUTO_REJECT">自动拒绝</el-radio>
-                          <el-radio label="AUTO_END">自动结束</el-radio>
-                          <el-radio label="TO_ADMIN">转交给管理员</el-radio>
-                          <el-radio label="TO_USER">指定人员</el-radio>
-                        </el-radio-group>
-                        <div v-if="approvalConfig(selectedNode).emptyAssigneeStrategy === 'TO_USER'" class="approval-target-block">
-                          <el-select
-                            :model-value="approvalConfig(selectedNode).emptyAssigneeUserIds || []"
-                            class="approval-target-select"
-                            multiple
-                            filterable
-                            collapse-tags
-                            collapse-tags-tooltip
-                            :loading="approvalTargetLoading.users"
-                            :teleported="false"
-                            placeholder="搜索用户名/姓名选择兜底成员"
-                            @focus="ensureApprovalUsersLoaded"
-                            @visible-change="visible => visible && ensureApprovalUsersLoaded"
-                            @change="value => updateApprovalListValue(selectedNode!, 'emptyAssigneeUserIds', value)"
-                          >
-                            <el-option
-                              v-for="item in approvalUserOptions"
-                              :key="item.value"
-                              :label="item.label"
-                              :value="item.value"
-                            />
-                          </el-select>
-                        </div>
-                      </div>
-
-                      <div class="approval-drawer-section">
-                        <div class="approval-section-title">审批被拒绝</div>
-                        <el-radio-group
-                          :model-value="approvalConfig(selectedNode).rejectStrategy"
-                          class="approval-radio-column"
-                          @change="value => updateApprovalConfig(selectedNode!, { rejectStrategy: value })"
-                        >
-                          <el-radio label="END_PROCESS">直接结束流程</el-radio>
-                          <el-radio label="BACK_TO_START">驳回到发起人</el-radio>
-                        </el-radio-group>
-                      </div>
-                    </el-tab-pane>
-
-                    <el-tab-pane label="表单权限" name="form">
-                      <div v-if="workflowFormVariableOptions.length" class="form-permission-list drawer-permission-list">
+                      <div class="form-permission-list drawer-permission-list">
                         <div v-for="field in workflowFormVariableOptions" :key="field.value" class="form-permission-row">
-                          <span>{{ field.label }}</span>
-                          <el-radio-group :model-value="approvalFieldPermission(selectedNode, field.value)" size="small" @change="value => updateApprovalFieldPermission(selectedNode!, field.value, value)">
+                          <span class="form-permission-field">
+                            <strong>{{ field.label }}</strong>
+                            <small>{{ field.value }}</small>
+                          </span>
+                          <el-radio-group :model-value="nodeFieldPermission(selectedNode, field.value)" size="small" @change="value => updateNodeFieldPermission(selectedNode!, field.value, value as WorkflowFormPermission)">
                             <el-radio-button label="HIDDEN">隐藏</el-radio-button>
                             <el-radio-button label="READONLY">只读</el-radio-button>
-                            <el-radio-button label="EDITABLE">可编辑</el-radio-button>
+                            <el-radio-button label="EDITABLE">编辑</el-radio-button>
                           </el-radio-group>
                         </div>
                       </div>
-                      <el-empty v-else description="先在表单设计中添加字段" :image-size="72" />
-                    </el-tab-pane>
-
-                    <el-tab-pane label="事件通知" name="event">
-                      <el-form class="drawer-form" label-position="top">
-                        <el-form-item label="启用通知">
-                          <el-switch :model-value="approvalConfig(selectedNode).eventNotify?.enabled" @change="value => updateApprovalEventNotify(selectedNode!, { enabled: Boolean(value) })" />
-                        </el-form-item>
-                        <el-form-item label="通知类型">
-                          <el-radio-group :model-value="approvalConfig(selectedNode).eventNotify?.type || 'HTTP'" @change="value => updateApprovalEventNotify(selectedNode!, { type: value })">
-                            <el-radio label="HTTP">HTTP 回调</el-radio>
-                            <el-radio label="EVENT">事件发布</el-radio>
-                          </el-radio-group>
-                        </el-form-item>
-                        <el-form-item v-if="(approvalConfig(selectedNode).eventNotify?.type || 'HTTP') === 'HTTP'" label="回调地址">
-                          <el-input :model-value="approvalConfig(selectedNode).eventNotify?.url" placeholder="https://example.com/workflow/callback" @input="value => updateApprovalEventNotify(selectedNode!, { url: value })" />
-                        </el-form-item>
-                        <el-form-item v-else label="事件名称">
-                          <el-input :model-value="approvalConfig(selectedNode).eventNotify?.eventName" placeholder="workflow.task.completed" @input="value => updateApprovalEventNotify(selectedNode!, { eventName: value })" />
-                        </el-form-item>
-                      </el-form>
-                    </el-tab-pane>
-                  </el-tabs>
-                </template>
-
-                <el-form v-else class="drawer-form" label-position="top">
-                  <el-form-item label="节点名称">
-                    <el-input v-model="selectedNode.nodeName" @input="syncDesignerJson" />
-                  </el-form-item>
-                  <el-form-item label="节点类型">
-                    <el-input :model-value="selectedNode.nodeType" disabled />
-                  </el-form-item>
-                  <template v-if="selectedNode.nodeType === 'EXCLUSIVE_BRANCH'">
-                    <el-form-item label="条件表达式">
-                      <el-input
-                        v-model="selectedNode.conditionExpression"
-                        placeholder="${amount > 100000 && tenantId == 1}"
-                        @input="syncDesignerJson"
-                        @change="value => parseConditionToBuilder(String(value || ''))"
-                      />
-                    </el-form-item>
-                    <div class="condition-config-title">
-                      <span>条件配置</span>
-                      <el-button link type="primary" @click="addConditionRow">添加条件</el-button>
                     </div>
-                    <div class="condition-builder drawer-condition-builder">
-                      <div v-for="(row, index) in conditionRows" :key="row.id" class="condition-row">
-                        <el-select
-                          v-if="index > 0"
-                          v-model="row.connector"
-                          class="condition-connector"
-                          placeholder="关系"
-                          @change="applyConditionBuilder"
-                        >
-                          <el-option label="并且 AND" value="AND" />
-                          <el-option label="或者 OR" value="OR" />
-                        </el-select>
-                        <span v-else class="condition-connector-placeholder">当</span>
-                        <el-select
-                          v-model="row.variable"
-                          class="condition-variable"
-                          clearable
-                          filterable
-                          placeholder="选择变量"
-                          @change="applyConditionBuilder"
-                        >
-                          <el-option-group
-                            v-for="group in workflowVariableGroups"
-                            :key="group.label"
-                            :label="group.label"
-                          >
-                            <el-option
-                              v-for="item in group.options"
-                              :key="item.value"
-                              :label="`${item.label}（${item.value}）`"
-                              :value="item.value"
-                            />
-                          </el-option-group>
-                        </el-select>
-                        <el-select v-model="row.operator" class="condition-operator" placeholder="运算符" @change="applyConditionBuilder">
-                          <el-option label="等于 ==" value="==" />
-                          <el-option label="不等于 !=" value="!=" />
-                          <el-option label="大于 >" value=">" />
-                          <el-option label="大于等于 >=" value=">=" />
-                          <el-option label="小于 <" value="<" />
-                          <el-option label="小于等于 <=" value="<=" />
-                        </el-select>
-                        <el-input v-model="row.value" class="condition-value" placeholder="比较值" @input="applyConditionBuilder" />
-                        <el-button link type="danger" :disabled="conditionRows.length === 1" @click="removeConditionRow(index)">删除</el-button>
+                    <el-empty v-else description="先在表单设计中添加字段" :image-size="72" />
+                  </el-tab-pane>
+
+                  <el-tab-pane label="节点属性" name="node">
+                    <el-form class="drawer-form compact-node-form" label-position="top">
+                      <template v-if="isRootNode(selectedNode)">
+                        <WorkflowNodeRootConfig
+                          :config="rootConfig(selectedNode)"
+                          :user-options="approvalUserOptions"
+                          :role-options="approvalRoleOptions"
+                          :post-options="approvalPostOptions"
+                          :org-tree-options="approvalOrgTreeOptions"
+                          :target-loading="approvalTargetLoading"
+                          @update="patch => updateRootConfig(selectedNode!, patch)"
+                          @ensure-users="ensureApprovalUsersLoaded"
+                          @ensure-roles="ensureApprovalRolesLoaded"
+                          @ensure-posts="ensureApprovalPostsLoaded"
+                          @ensure-orgs="ensureApprovalOrgsLoaded"
+                        />
+                      </template>
+                      <template v-else-if="isUserTaskNode(selectedNode)">
+                        <WorkflowNodeApprovalConfig
+                          :config="approvalConfig(selectedNode)"
+                          :assignee-type-options="approvalAssigneeTypeOptions"
+                          :user-options="approvalUserOptions"
+                          :role-options="approvalRoleOptions"
+                          :post-options="approvalPostOptions"
+                          :org-tree-options="approvalOrgTreeOptions"
+                          :target-loading="approvalTargetLoading"
+                          :form-variables="workflowFormVariableOptions"
+                          :show-mode-config="showApprovalModeConfig(selectedNode)"
+                          @update-assignee-type="value => updateApprovalAssigneeType(selectedNode!, value)"
+                          @update-config="patch => updateApprovalConfig(selectedNode!, patch)"
+                          @update-empty-strategy="value => updateEmptyAssigneeStrategy(selectedNode!, value)"
+                          @update-list="(key, value) => updateApprovalListValue(selectedNode!, key, value)"
+                          @ensure-users="ensureApprovalUsersLoaded"
+                          @ensure-roles="ensureApprovalRolesLoaded"
+                          @ensure-posts="ensureApprovalPostsLoaded"
+                          @ensure-orgs="ensureApprovalOrgsLoaded"
+                        />
+                      </template>
+
+                      <template v-else-if="selectedNode.nodeType === 'EXCLUSIVE_BRANCH'">
+                          <WorkflowNodeConditionConfig
+                            :node="selectedNode"
+                            :groups="conditionGroups"
+                            :variable-groups="workflowVariableGroups"
+                            :mode="conditionEditMode(selectedNode)"
+                            :user-options="approvalUserOptions"
+                            :role-options="approvalRoleOptions"
+                            :post-options="approvalPostOptions"
+                            :org-tree-options="approvalOrgTreeOptions"
+                            :target-loading="approvalTargetLoading"
+                            @sync="syncDesignerJson"
+                            @apply="applyConditionBuilder"
+                            @update-mode="mode => updateConditionEditMode(selectedNode!, mode)"
+                            @parse-expression="parseConditionToBuilder"
+                            @add-group="addConditionGroup"
+                            @add-row="addConditionRow"
+                            @remove-group="removeConditionGroup"
+                            @remove-row="removeConditionRow"
+                            @ensure-users="ensureApprovalUsersLoaded"
+                            @ensure-roles="ensureApprovalRolesLoaded"
+                            @ensure-posts="ensureApprovalPostsLoaded"
+                            @ensure-orgs="ensureApprovalOrgsLoaded"
+                          />
+                      </template>
+                      <template v-else-if="isCcNode(selectedNode)">
+                        <WorkflowNodeCcConfig
+                          :config="ccConfig(selectedNode)"
+                          :user-options="approvalUserOptions"
+                          :role-options="approvalRoleOptions"
+                          :post-options="approvalPostOptions"
+                          :org-tree-options="approvalOrgTreeOptions"
+                          :target-loading="approvalTargetLoading"
+                          @update="patch => updateCcConfig(selectedNode!, patch)"
+                          @ensure-users="ensureApprovalUsersLoaded"
+                          @ensure-roles="ensureApprovalRolesLoaded"
+                          @ensure-posts="ensureApprovalPostsLoaded"
+                          @ensure-orgs="ensureApprovalOrgsLoaded"
+                        />
+                      </template>
+                      <template v-else-if="isServiceTaskNode(selectedNode)">
+                          <WorkflowNodeServiceConfig :node="selectedNode" @update="(key, value) => updateNodeProperty(selectedNode!, key, value)" />
+                      </template>
+                      <el-empty v-else description="当前节点暂无专属参数" :image-size="72" />
+                    </el-form>
+                  </el-tab-pane>
+
+                  <el-tab-pane label="通知事件" name="notify">
+                    <WorkflowNodeEventNotifyConfig
+                      :config="nodeEventNotifyConfig(selectedNode)"
+                      @update="patch => updateNodeEventNotifyConfig(selectedNode!, patch)"
+                    />
+                  </el-tab-pane>
+
+                  <el-tab-pane label="扩展属性" name="advanced">
+                    <WorkflowNodeAdvancedConfig
+                      :model-value="advancedNodeProperties(selectedNode)"
+                      :reserved-keys="reservedNodePropertyKeys(selectedNode)"
+                      @update:model-value="value => updateAdvancedNodeProperties(selectedNode!, value)"
+                    />
+                  </el-tab-pane>
+
+                  <el-tab-pane label="可用字段" name="variables">
+                    <div v-if="nodePropertyActiveTab === 'variables'" class="variable-reference-panel">
+                      <div v-for="group in workflowVariableGroups" :key="group.label" class="variable-reference-group">
+                        <div class="variable-reference-source">{{ group.label }}</div>
+                        <div class="variable-reference-list">
+                          <div v-for="item in group.options" :key="item.value" class="variable-reference-item">
+                            <strong>{{ item.value }}</strong>
+                            <em>{{ item.label }}</em>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </template>
-                  <template v-else-if="isServiceTaskNode(selectedNode)">
-                    <el-form-item v-if="selectedNode.executionType === 'SPRING_BEAN'" label="Bean 名称">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'beanName')" placeholder="workflowAuditService" @input="value => updateNodeProperty(selectedNode!, 'beanName', value)" />
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'SPRING_BEAN'" label="方法名称">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'methodName')" placeholder="execute" @input="value => updateNodeProperty(selectedNode!, 'methodName', value)" />
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'HTTP_URL'" label="请求地址">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'url')" placeholder="https://example.com/callback" @input="value => updateNodeProperty(selectedNode!, 'url', value)" />
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'HTTP_URL'" label="请求方法">
-                      <el-select :model-value="nodePropertyValue(selectedNode, 'method', 'POST')" @change="value => updateNodeProperty(selectedNode!, 'method', value)">
-                        <el-option label="POST" value="POST" />
-                        <el-option label="GET" value="GET" />
-                        <el-option label="PUT" value="PUT" />
-                        <el-option label="DELETE" value="DELETE" />
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'HTTP_URL'" label="超时时间">
-                      <el-input-number :model-value="Number(nodePropertyValue(selectedNode, 'timeoutMillis', 5000))" :min="1000" :step="1000" @change="value => updateNodeProperty(selectedNode!, 'timeoutMillis', value || 5000)" />
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'REMOTE_SERVICE'" label="服务名称">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'serviceName')" placeholder="guarantee-service" @input="value => updateNodeProperty(selectedNode!, 'serviceName', value)" />
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'REMOTE_SERVICE'" label="操作编码">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'operation')" placeholder="submitBankMaterials" @input="value => updateNodeProperty(selectedNode!, 'operation', value)" />
-                    </el-form-item>
-                    <el-form-item v-if="selectedNode.executionType === 'EVENT_PUBLISH'" label="事件名称">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'eventName')" placeholder="workflow.cc" @input="value => updateNodeProperty(selectedNode!, 'eventName', value)" />
-                    </el-form-item>
-                    <el-form-item v-if="nodePropertyValue(selectedNode, 'businessStage')" label="业务阶段">
-                      <el-input :model-value="nodePropertyValue(selectedNode, 'businessStage')" disabled />
-                    </el-form-item>
-                  </template>
-                  <el-form-item v-if="hasAdvancedNodeProperties(selectedNode)" label="扩展属性 JSON">
-                    <el-input
-                      :model-value="formatNodeProperties(selectedNode)"
-                      :rows="5"
-                      type="textarea"
-                      @change="value => updateNodeProperties(selectedNode!, value)"
-                    />
-                  </el-form-item>
-                  <el-empty v-if="!hasNodeSpecificConfig(selectedNode)" description="当前节点暂无专属参数" :image-size="72" />
-                  <el-form-item label="节点说明">
-                    <el-input v-model="selectedNode.description" :rows="3" type="textarea" @input="syncDesignerJson" />
-                  </el-form-item>
-                </el-form>
-              </template>
-            </el-drawer>
+                  </el-tab-pane>
+                </el-tabs>
+              </WorkflowNodePropertyPanel>
+            </div>
           </div>
         </section>
       </div>
@@ -721,69 +572,6 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="节点定义" name="nodes">
-        <div class="page-toolbar">
-          <el-form :inline="true" :model="nodeQuery" class="query-form">
-            <el-form-item label="关键字">
-              <el-input v-model="nodeQuery.keyword" clearable placeholder="节点名称/编码/类型" />
-            </el-form-item>
-            <el-form-item label="分类">
-              <el-select v-model="nodeQuery.categoryCode" clearable placeholder="全部分类">
-                <el-option v-for="item in nodeCategoryOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="nodeQuery.status" clearable placeholder="全部状态">
-                <el-option label="启用" :value="1" />
-                <el-option label="停用" :value="0" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button :icon="Search" type="primary" @click="loadNodeDefinitions">查询</el-button>
-              <el-button :icon="Refresh" @click="resetNodeQuery">重置</el-button>
-            </el-form-item>
-          </el-form>
-          <el-button :icon="Plus" type="primary" @click="openNodeDialog()">新增节点</el-button>
-        </div>
-
-        <el-table v-loading="nodeLoading" :data="nodeRows" border>
-          <el-table-column label="节点名称" min-width="150" prop="nodeName" />
-          <el-table-column label="节点编码" min-width="190" prop="nodeDefinitionCode" />
-          <el-table-column label="分类" width="110" prop="categoryName" />
-          <el-table-column label="BPMN类型" width="130" prop="bpmnType" />
-          <el-table-column label="执行类型" width="150" prop="executionType" />
-          <el-table-column label="颜色" width="80">
-            <template #default="{ row }">
-              <span class="color-swatch" :style="{ background: row.color || '#64748b' }" />
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="90">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="说明" min-width="220" prop="description" show-overflow-tooltip />
-          <el-table-column fixed="right" label="操作" width="180">
-            <template #default="{ row }">
-              <el-button link type="primary" @click="openNodeDialog(row)">编辑</el-button>
-              <el-button link type="warning" @click="toggleNodeStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
-              <el-button link type="danger" @click="deleteNodeDefinition(row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="pagination-row">
-          <el-pagination
-            v-model:current-page="nodeQuery.pageNum"
-            v-model:page-size="nodeQuery.pageSize"
-            :page-sizes="[10, 20, 50]"
-            :total="nodeTotal"
-            layout="total, sizes, prev, pager, next, jumper"
-            @current-change="loadNodeDefinitions"
-            @size-change="loadNodeDefinitions"
-          />
-        </div>
-      </el-tab-pane>
     </el-tabs>
 
     <el-drawer v-model="versionDrawer" title="发布版本" size="720px">
@@ -825,102 +613,37 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="nodeDialog" :title="nodeForm.id ? '编辑节点定义' : '新增节点定义'" width="760px">
-      <el-form ref="nodeFormRef" :model="nodeForm" :rules="nodeRules" label-width="120px">
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="节点名称" prop="nodeName">
-              <el-input v-model="nodeForm.nodeName" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="节点编码" prop="nodeDefinitionCode">
-              <el-input v-model="nodeForm.nodeDefinitionCode" :disabled="Boolean(nodeForm.id)" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="节点类型" prop="nodeType">
-              <el-input v-model="nodeForm.nodeType" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="分类编码" prop="categoryCode">
-              <el-input v-model="nodeForm.categoryCode" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="分类名称" prop="categoryName">
-              <el-input v-model="nodeForm.categoryName" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="BPMN类型" prop="bpmnType">
-              <el-select v-model="nodeForm.bpmnType">
-                <el-option label="人工任务 userTask" value="userTask" />
-                <el-option label="服务任务 serviceTask" value="serviceTask" />
-                <el-option label="条件网关 exclusiveGateway" value="exclusiveGateway" />
-                <el-option label="并行网关 parallelGateway" value="parallelGateway" />
-                <el-option label="开始事件 startEvent" value="startEvent" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="执行类型" prop="executionType">
-              <el-select v-model="nodeForm.executionType">
-                <el-option label="无动作 NONE" value="NONE" />
-                <el-option label="人工任务 USER_TASK" value="USER_TASK" />
-                <el-option label="Spring Bean" value="SPRING_BEAN" />
-                <el-option label="HTTP URL" value="HTTP_URL" />
-                <el-option label="远程服务" value="REMOTE_SERVICE" />
-                <el-option label="事件发布" value="EVENT_PUBLISH" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="颜色">
-              <el-color-picker v-model="nodeForm.color" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="排序">
-              <el-input-number v-model="nodeForm.sort" :min="0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="状态">
-              <el-switch v-model="nodeEnabled" active-text="启用" inactive-text="停用" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="默认属性JSON">
-              <CodeEditor v-model="nodeForm.defaultProperties" language="json" height="160px" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="节点说明">
-              <el-input v-model="nodeForm.description" :rows="3" type="textarea" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <template #footer>
-        <el-button @click="nodeDialog = false">取消</el-button>
-        <el-button :loading="saving" type="primary" @click="saveNodeDefinition">保存</el-button>
-      </template>
-    </el-dialog>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, nextTick, onMounted, reactive, ref, type PropType } from 'vue';
-import { ElButton, ElIcon, ElMessage, ElMessageBox, ElPopover, type FormInstance, type FormRules } from 'element-plus';
-import { Bell, Box, Cloudy, Connection, ForkSpoon, Plus, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { Bell, Box, Cloudy, Connection, Expand, Fold, ForkSpoon, PictureFilled, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
 import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designer';
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
-import { CodeEditor, get } from '@mango/common';
+import { ImageUpload, UserSelector, get } from '@mango/common';
+import WorkflowDesignerCanvas from './components/workflow-designer/WorkflowDesignerCanvas.vue';
+import WorkflowNodeAdvancedConfig from './components/workflow-designer/WorkflowNodeAdvancedConfig.vue';
+import WorkflowNodeApprovalConfig from './components/workflow-designer/WorkflowNodeApprovalConfig.vue';
+import WorkflowNodeCcConfig from './components/workflow-designer/WorkflowNodeCcConfig.vue';
+import WorkflowNodeConditionConfig from './components/workflow-designer/WorkflowNodeConditionConfig.vue';
+import WorkflowNodeEventNotifyConfig from './components/workflow-designer/WorkflowNodeEventNotifyConfig.vue';
+import WorkflowNodePropertyPanel from './components/workflow-designer/WorkflowNodePropertyPanel.vue';
+import WorkflowNodeRootConfig from './components/workflow-designer/WorkflowNodeRootConfig.vue';
+import WorkflowNodeServiceConfig from './components/workflow-designer/WorkflowNodeServiceConfig.vue';
+import type {
+  ApprovalOrgTreeOption,
+  ApprovalTargetOption,
+  ConditionEditMode,
+  ConditionGroup,
+  ConditionRow,
+  WorkflowVariableDataType,
+  WorkflowVariableGroup,
+  WorkflowVariableOption,
+} from './components/workflow-designer/types';
 import {
   createNodeId,
   defaultApprovalConfig,
@@ -938,8 +661,8 @@ import {
   type WorkflowEventNotifyConfig,
   type WorkflowFormPermission,
   type WorkflowGroup,
+  type WorkflowId,
   type WorkflowNodeCatalog,
-  type WorkflowNodeDefinition,
   type WorkflowStatus,
 } from '../../api/workflow';
 
@@ -951,6 +674,8 @@ interface CustomFormField {
   type: string;
   required: boolean;
   optionsText?: string;
+  placeholder?: string;
+  defaultValue?: string;
 }
 
 interface CustomFormConfig {
@@ -958,171 +683,10 @@ interface CustomFormConfig {
   viewPath: string;
 }
 
-interface WorkflowVariableOption {
-  label: string;
-  value: string;
-}
-
-interface WorkflowVariableGroup {
-  label: string;
-  options: WorkflowVariableOption[];
-}
-
-interface ConditionRow {
-  id: string;
-  connector: 'AND' | 'OR';
-  variable: string;
-  operator: string;
-  value: string;
-}
-
-interface ApprovalTargetOption {
-  label: string;
-  value: string;
-}
-
-interface ApprovalOrgTreeOption extends ApprovalTargetOption {
-  children?: ApprovalOrgTreeOption[];
-}
-
 interface BackendPageResult<T> {
   records?: T[];
   list?: T[];
 }
-
-const WorkflowNode = defineComponent({
-  name: 'WorkflowNode',
-  props: {
-    node: { type: Object as PropType<WorkflowDesignerNode>, required: true },
-    catalog: { type: Array as PropType<WorkflowNodeCatalog[]>, required: true },
-    root: { type: Boolean, default: false },
-  },
-  emits: ['select', 'changed'],
-  setup(props, { emit }) {
-    const addPopoverVisible = ref(false);
-    const addNode = (item: WorkflowNodeCatalog) => {
-      const next: WorkflowDesignerNode = {
-        id: createNodeId(item.nodeType.toLowerCase()),
-        nodeDefinitionCode: item.nodeDefinitionCode,
-        nodeName: item.nodeName,
-        nodeType: item.nodeType,
-        bpmnType: item.bpmnType,
-        executionType: item.executionType,
-        description: item.description,
-        childNode: props.node.childNode || null,
-        conditionNodes: [],
-        properties: parseDefaultProperties(item.defaultProperties),
-      };
-      if (item.nodeType === 'EXCLUSIVE_GATEWAY' || item.nodeType === 'PARALLEL_GATEWAY') {
-        next.conditionNodes = [
-          branchNode('分支1', item.nodeType === 'EXCLUSIVE_GATEWAY' ? '${true}' : ''),
-          branchNode('分支2', ''),
-        ];
-      }
-      props.node.childNode = next;
-      addPopoverVisible.value = false;
-      emit('select', next);
-      emit('changed');
-    };
-
-    const removeChild = () => {
-      props.node.childNode = props.node.childNode?.childNode || null;
-      emit('changed');
-    };
-
-    const addBranch = () => {
-      props.node.conditionNodes ||= [];
-      props.node.conditionNodes.push(branchNode(`分支${props.node.conditionNodes.length + 1}`, ''));
-      emit('changed');
-    };
-
-    const removeBranch = (index: number) => {
-      props.node.conditionNodes?.splice(index, 1);
-      emit('changed');
-    };
-
-    const renderAdd = () => h(ElPopover, {
-      visible: addPopoverVisible.value,
-      'onUpdate:visible': (value: boolean) => { addPopoverVisible.value = value; },
-      trigger: 'click',
-      width: 560,
-      placement: 'right',
-      popperClass: 'workflow-node-picker-popper',
-    }, {
-      reference: () => h(ElButton, { class: 'add-node-button', icon: Plus, circle: true, type: 'primary' }),
-    default: () => h('div', { class: 'node-picker' }, groupedCatalog(props.catalog).map(group =>
-        h('section', { class: 'node-picker-group' }, [
-          h('div', { class: 'node-picker-title' }, group.name),
-          h('div', { class: 'node-picker-grid' }, group.items.map(item =>
-            h('button', { class: 'node-picker-item', type: 'button', onClick: () => addNode(item) }, [
-              h('span', { class: 'node-picker-icon', style: { '--node-color': item.color || '#2563eb' } }, [
-                h(ElIcon, null, () => h(nodeIcon(item))),
-              ]),
-              h('span', { class: 'node-picker-name' }, item.nodeName),
-              h('span', { class: 'node-picker-desc' }, nodePickerDescription(item)),
-            ]),
-          )),
-        ]),
-      ).concat(groupedCatalog(props.catalog).length === 0
-        ? [h('div', { class: 'node-picker-empty' }, '暂无可添加的通用节点，请先在节点定义中启用通用节点。')]
-        : [])),
-    });
-
-    const renderCard = (node: WorkflowDesignerNode) => {
-      const catalogItem = props.catalog.find(item => item.nodeDefinitionCode === node.nodeDefinitionCode || item.nodeType === node.nodeType);
-      const icon = nodeIcon(catalogItem || node);
-      const color = catalogItem?.color || (props.root ? '#64748b' : '#2563eb');
-      return h('div', {
-        class: ['workflow-node-card', props.root ? 'root' : '', node.nodeType === 'EXCLUSIVE_BRANCH' ? 'branch-node' : ''],
-        style: { '--node-color': color },
-        onClick: (event: Event) => {
-          event.stopPropagation();
-          emit('select', node);
-        },
-      }, [
-        h('div', { class: 'node-card-title' }, [
-          h(ElIcon, null, () => h(icon)),
-          h('span', null, node.nodeName),
-        ]),
-        h('div', { class: 'node-card-type' }, node.nodeType === 'EXCLUSIVE_BRANCH'
-          ? (node.conditionExpression ? `条件：${node.conditionExpression}` : '默认分支或未配置条件')
-          : `${node.nodeType}${node.executionType ? ` · ${node.executionType}` : ''}`),
-      ]);
-    };
-
-    return () => h('div', { class: 'workflow-node-wrap' }, [
-      renderCard(props.node),
-      props.node.nodeType === 'EXCLUSIVE_GATEWAY' || props.node.nodeType === 'PARALLEL_GATEWAY'
-        ? h('div', { class: 'branch-area' }, [
-            h(ElButton, { link: true, type: 'primary', onClick: addBranch }, () => '添加分支'),
-            h('div', { class: 'branch-list' }, (props.node.conditionNodes || []).map((branch, index) =>
-              h('div', { class: 'branch-column' }, [
-                h('div', { class: 'branch-card', onClick: () => emit('select', branch) }, [
-                  h('span', null, branch.nodeName),
-                  h('small', { class: branch.conditionExpression ? 'branch-condition' : 'branch-default' }, branch.conditionExpression || '默认'),
-                  h(ElButton, { link: true, type: 'danger', onClick: (event: Event) => { event.stopPropagation(); removeBranch(index); } }, () => '删除'),
-                ]),
-                h(WorkflowNode, {
-                  node: branch,
-                  catalog: props.catalog,
-                  onSelect: (node: WorkflowDesignerNode) => emit('select', node),
-                  onChanged: () => emit('changed'),
-                }),
-              ]),
-            )),
-          ])
-        : null,
-      !props.root ? h(ElButton, { class: 'remove-node', link: true, type: 'danger', onClick: removeChild }, () => '删除下级节点') : null,
-      renderAdd(),
-      props.node.childNode ? h(WorkflowNode, {
-        node: props.node.childNode,
-        catalog: props.catalog,
-        onSelect: (node: WorkflowDesignerNode) => emit('select', node),
-        onChanged: () => emit('changed'),
-      }) : null,
-    ]);
-  },
-});
 
 const NODE_ICON_MAP: Record<string, any> = {
   ROOT: User,
@@ -1138,16 +702,26 @@ const NODE_ICON_MAP: Record<string, any> = {
   EXCLUSIVE_BRANCH: Share,
 };
 
-const COMMON_DESIGNER_NODE_TYPES = new Set([
-  'APPROVAL',
-  'CC',
-  'EXCLUSIVE_GATEWAY',
-  'PARALLEL_GATEWAY',
-  'SERVICE_BEAN',
-  'SERVICE_HTTP',
-  'SERVICE_REMOTE',
-  'EVENT_PUBLISH',
-]);
+function workflowNodeTypeLabel(node: Partial<WorkflowDesignerNode>) {
+  if (node.nodeType === 'ROOT') return '发起节点';
+  if (node.nodeType === 'APPROVAL' || node.executionType === 'USER_TASK' || node.bpmnType === 'userTask') return '审批节点';
+  if (node.nodeType === 'CC') return '抄送节点';
+  if (node.nodeType === 'EXCLUSIVE_GATEWAY') return '条件分支';
+  if (node.nodeType === 'PARALLEL_GATEWAY') return '条件分支';
+  if (node.nodeType === 'EXCLUSIVE_BRANCH') return '分支条件';
+  if (node.nodeType === 'SERVICE' || node.bpmnType === 'serviceTask' || node.executionType) return '服务节点';
+  return '流程节点';
+}
+
+const workflowIconOptions = [
+  { value: 'User', label: '人员流程', component: User },
+  { value: 'Bell', label: '通知提醒', component: Bell },
+  { value: 'ForkSpoon', label: '条件审批', component: ForkSpoon },
+  { value: 'Share', label: '并行协作', component: Share },
+  { value: 'Box', label: '服务处理', component: Box },
+  { value: 'Cloudy', label: '接口流程', component: Cloudy },
+  { value: 'Connection', label: '外部连接', component: Connection },
+];
 
 const formDesignerConfig: FcDesignerConfig = {
   fieldReadonly: false,
@@ -1176,11 +750,17 @@ type WorkflowBusinessComponent = FormDesignerMenuItem & {
   input: boolean;
   event?: string[];
   validate?: string[];
+  languageKey: string[];
   rule: () => FcRule;
   props: () => any[];
 };
 
 const formDesignerMenu: FormDesignerMenu[] = [
+  {
+    name: 'business',
+    title: '业务组件',
+    list: [],
+  },
   {
     name: 'aide',
     title: '辅助组件',
@@ -1230,11 +810,6 @@ const formDesignerMenu: FormDesignerMenu[] = [
       { name: 'fcEditor', label: '富文本', icon: 'icon-editor' },
     ],
   },
-  {
-    name: 'business',
-    title: '业务组件',
-    list: [],
-  },
 ];
 
 function createWorkflowBusinessField(prefix: string) {
@@ -1256,9 +831,18 @@ function createWorkflowBusinessComponent(
     input: true,
     event: ['change', 'blur', 'focus', 'clear'],
     validate,
+    languageKey: [],
     rule: ruleFactory,
     props: () => [],
   };
+}
+
+function toFormCreateOption(item: ApprovalTargetOption) {
+  return { label: item.label, value: item.value };
+}
+
+function toWorkflowBusinessMenuItems(): FormDesignerMenuItem[] {
+  return workflowBusinessFormComponents.map(({ name, label, icon }) => ({ name, label, icon }));
 }
 
 const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
@@ -1270,8 +854,9 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       placeholder: '请选择人员',
       clearable: true,
       filterable: true,
+      workflowDataType: 'systemUser',
     },
-    options: [],
+    options: approvalUserOptions.value.map(toFormCreateOption),
   })),
   createWorkflowBusinessComponent('workflowOrg', '部门', 'icon-tree', () => ({
     type: 'elTreeSelect',
@@ -1282,7 +867,9 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       clearable: true,
       filterable: true,
       nodeKey: 'value',
-      data: [],
+      checkStrictly: true,
+      workflowDataType: 'systemOrg',
+      data: approvalOrgTreeOptions.value,
     },
   }), ['string', 'number', 'array']),
   createWorkflowBusinessComponent('workflowPost', '岗位', 'icon-tag', () => ({
@@ -1293,8 +880,9 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       placeholder: '请选择岗位',
       clearable: true,
       filterable: true,
+      workflowDataType: 'systemPost',
     },
-    options: [],
+    options: approvalPostOptions.value.map(toFormCreateOption),
   })),
   createWorkflowBusinessComponent('workflowRole', '角色', 'icon-group', () => ({
     type: 'select',
@@ -1304,8 +892,9 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       placeholder: '请选择角色',
       clearable: true,
       filterable: true,
+      workflowDataType: 'systemRole',
     },
-    options: [],
+    options: approvalRoleOptions.value.map(toFormCreateOption),
   })),
   createWorkflowBusinessComponent('workflowUpload', '上传', 'icon-upload', () => ({
     type: 'upload',
@@ -1401,24 +990,20 @@ const defaultWorkflowFormRules = (): FcRule[] => [
 const activeTab = ref('definitions');
 const definitionLoading = ref(false);
 const groupLoading = ref(false);
-const nodeLoading = ref(false);
 const saving = ref(false);
 const versionLoading = ref(false);
 
 const groups = ref<WorkflowGroup[]>([]);
 const groupRows = ref<WorkflowGroup[]>([]);
 const definitions = ref<WorkflowDefinition[]>([]);
-const nodeRows = ref<WorkflowNodeDefinition[]>([]);
 const nodeCatalog = ref<WorkflowNodeCatalog[]>([]);
 const versions = ref<WorkflowDefinitionVersion[]>([]);
 const currentVersionXml = ref('');
 const definitionTotal = ref(0);
 const groupTotal = ref(0);
-const nodeTotal = ref(0);
 
-const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', groupId: '' as number | '', status: '' });
+const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', groupId: '' as WorkflowId | '', status: '' });
 const groupQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '' as number | '' });
-const nodeQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', categoryCode: '', status: '' as number | '' });
 
 const designerMode = ref(false);
 const publishing = ref(false);
@@ -1426,23 +1011,22 @@ const validateDialogShow = ref(false);
 const validateFlowStep = ref(0);
 const validateErrMsg = ref<string[]>([]);
 const groupDialog = ref(false);
-const nodeDialog = ref(false);
 const versionDrawer = ref(false);
 const definitionFormRef = ref<FormInstance>();
 const groupFormRef = ref<FormInstance>();
-const nodeFormRef = ref<FormInstance>();
 const formDesignerRef = ref<InstanceType<typeof FcDesigner>>();
 const designerRoot = ref<WorkflowDesignerNode>(parseDesignerJson(defaultDesignerJson()));
 const selectedNode = ref<WorkflowDesignerNode>();
 const nodePanelVisible = ref(false);
-const activeNodeConfigTab = ref('assignee');
+const nodePropertyActiveTab = ref('node');
 const definitionStep = ref(0);
-const canvasZoom = ref(1);
-const conditionRows = ref<ConditionRow[]>([createConditionRow()]);
+const conditionGroups = ref<ConditionGroup[]>([createConditionGroup()]);
 const workflowFormMode = ref<WorkflowFormMode>('DYNAMIC');
 const workflowFormRules = ref<FcRule[]>(defaultWorkflowFormRules());
 const customFormFields = ref<CustomFormField[]>([]);
 const customFormConfig = reactive<CustomFormConfig>({ submitPath: '', viewPath: '' });
+const formDesignerLeftVisible = ref(true);
+const formDesignerRightVisible = ref(true);
 const designerSteps = [
   { key: 'basic', title: '基础信息', description: '名称、编码、分组' },
   { key: 'form', title: '表单信息', description: '表单模式与变量' },
@@ -1450,7 +1034,9 @@ const designerSteps = [
 ];
 
 const definitionForm = reactive<WorkflowDefinition>({
-  groupId: 0,
+  groupId: '',
+  adminUsers: [],
+  icon: '',
   definitionName: '',
   definitionKey: '',
   designerJson: defaultDesignerJson(),
@@ -1464,63 +1050,38 @@ const groupForm = reactive<WorkflowGroup>({
   status: 1,
 });
 
-const nodeForm = reactive<WorkflowNodeDefinition>({
-  nodeDefinitionCode: '',
-  nodeType: '',
-  nodeName: '',
-  categoryCode: 'BASIC',
-  categoryName: '基础节点',
-  groupName: '基础节点',
-  description: '',
-  bpmnType: 'userTask',
-  executionType: 'USER_TASK',
-  color: '#2563eb',
-  icon: 'Setting',
-  propertySchema: '',
-  defaultProperties: '{}',
-  sort: 0,
-  status: 1,
-});
-
 const groupEnabled = computed({
   get: () => groupForm.status === 1,
   set: value => { groupForm.status = value ? 1 : 0; },
 });
 
-const nodeEnabled = computed({
-  get: () => nodeForm.status === 1,
-  set: value => { nodeForm.status = value ? 1 : 0; },
-});
-
-const nodeCategoryOptions = computed(() => {
-  const map = new Map<string, string>();
-  for (const item of nodeCatalog.value) {
-    map.set(item.categoryCode, item.categoryName);
-  }
-  for (const item of nodeRows.value) {
-    map.set(item.categoryCode, item.categoryName);
-  }
-  return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
-});
+const workflowApplicantVariableOptions: WorkflowVariableOption[] = [
+  { label: '申请人ID', value: 'applicant.id', source: '申请人', dataType: 'USER' },
+  { label: '申请人姓名', value: 'applicant.name', source: '申请人', dataType: 'TEXT' },
+  { label: '申请人账号', value: 'applicant.username', source: '申请人', dataType: 'TEXT' },
+  { label: '申请人手机号', value: 'applicant.mobile', source: '申请人', dataType: 'TEXT' },
+  { label: '申请人部门ID', value: 'applicant.orgId', source: '申请人', dataType: 'ORG' },
+  { label: '申请人部门名称', value: 'applicant.orgName', source: '申请人', dataType: 'TEXT' },
+  { label: '申请人岗位ID', value: 'applicant.postId', source: '申请人', dataType: 'POST' },
+  { label: '申请人岗位名称', value: 'applicant.postName', source: '申请人', dataType: 'TEXT' },
+  { label: '申请人角色ID列表', value: 'applicant.roleIds', source: '申请人', dataType: 'ROLE' },
+  { label: '申请人角色编码列表', value: 'applicant.roleCodes', source: '申请人' },
+];
 
 const workflowSystemVariableOptions: WorkflowVariableOption[] = [
-  { label: '当前机构ID', value: 'tenantId' },
-  { label: '当前机构编码', value: 'tenantCode' },
-  { label: '申请人ID', value: 'applicant.id' },
-  { label: '申请人姓名', value: 'applicant.name' },
-  { label: '申请人手机号', value: 'applicant.mobile' },
-  { label: '申请人组织ID', value: 'applicant.orgId' },
-  { label: '申请人组织名称', value: 'applicant.orgName' },
-  { label: '申请人岗位ID', value: 'applicant.postId' },
-  { label: '申请人岗位名称', value: 'applicant.postName' },
-  { label: '流程发起人', value: 'initiator' },
-  { label: '流程启动时间', value: 'startTime' },
+  { label: '当前机构ID', value: 'tenantId', source: '系统内置', dataType: 'TEXT' },
+  { label: '当前机构编码', value: 'tenantCode', source: '系统内置', dataType: 'TEXT' },
+  { label: '流程定义编码', value: 'definitionKey', source: '系统内置', dataType: 'TEXT' },
+  { label: '流程发起人', value: 'initiator', source: '系统内置', dataType: 'USER' },
+  { label: '流程启动时间', value: 'startTime', source: '系统内置', dataType: 'DATE' },
+  { label: '业务主键', value: 'businessKey', source: '系统内置', dataType: 'TEXT' },
 ];
 
 const workflowFormVariableOptions = computed(() => collectWorkflowFormVariables(workflowFormRules.value));
 
 const workflowVariableGroups = computed<WorkflowVariableGroup[]>(() => [
   { label: '表单字段', options: workflowFormVariableOptions.value },
+  { label: '申请人基础信息', options: workflowApplicantVariableOptions },
   { label: '系统内置参数', options: workflowSystemVariableOptions },
 ].filter(group => group.options.length > 0));
 
@@ -1528,10 +1089,27 @@ const approvalAssigneeTypeOptions = [
   { label: '指定成员', value: 'SPECIFIED_USER' },
   { label: '部门主管', value: 'ORG_LEADER' },
   { label: '角色', value: 'SPECIFIED_ROLE' },
+  { label: '指定岗位', value: 'SPECIFIED_POST' },
+  { label: '指定组织', value: 'SPECIFIED_ORG' },
   { label: '发起人自选', value: 'INITIATOR_SELECT' },
   { label: '发起人自己', value: 'INITIATOR' },
   { label: '表单人员', value: 'FORM_USER' },
   { label: '流程表达式', value: 'EXPRESSION' },
+];
+
+const customFieldBaseTypeOptions = [
+  { label: '单行文本', value: 'input' },
+  { label: '多行文本', value: 'textarea' },
+  { label: '数字', value: 'inputNumber' },
+  { label: '下拉选项', value: 'select' },
+  { label: '日期', value: 'datePicker' },
+];
+
+const customFieldSystemTypeOptions = [
+  { label: '人员', value: 'systemUser' },
+  { label: '部门', value: 'systemOrg' },
+  { label: '岗位', value: 'systemPost' },
+  { label: '角色', value: 'systemRole' },
 ];
 
 const nodeDrawerTitle = computed(() => {
@@ -1539,13 +1117,18 @@ const nodeDrawerTitle = computed(() => {
     return '节点属性';
   }
   if (isUserTaskNode(selectedNode.value)) {
-    return '审批人设置';
+    return '节点配置';
   }
   if (selectedNode.value.nodeType === 'EXCLUSIVE_BRANCH') {
     return '条件设置';
   }
   return '节点属性';
 });
+
+function clearSelectedNode() {
+  selectedNode.value = undefined;
+  nodePanelVisible.value = false;
+}
 
 const approvalUserOptions = ref<ApprovalTargetOption[]>([]);
 const approvalRoleOptions = ref<ApprovalTargetOption[]>([]);
@@ -1564,8 +1147,21 @@ const approvalTargetLoading = reactive({
   orgs: false,
 });
 
+function validateDefinitionGroup(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
+  const groupId = String(value || '').trim();
+  if (!groupId) {
+    callback(new Error('请选择流程分组'));
+    return;
+  }
+  if (!groups.value.some(item => String(item.id) === groupId)) {
+    callback(new Error('流程分组不存在或已停用，请重新选择'));
+    return;
+  }
+  callback();
+}
+
 const definitionRules: FormRules = {
-  groupId: [{ required: true, message: '请选择流程分组', trigger: 'change' }],
+  groupId: [{ validator: validateDefinitionGroup, trigger: 'change' }],
   definitionName: [{ required: true, message: '请输入流程名称', trigger: 'blur' }],
   definitionKey: [{ required: true, message: '请输入流程编码', trigger: 'blur' }],
   designerJson: [{ required: true, message: '请设计流程节点', trigger: 'blur' }],
@@ -1576,19 +1172,9 @@ const groupRules: FormRules = {
   groupCode: [{ required: true, message: '请输入分组编码', trigger: 'blur' }],
 };
 
-const nodeRules: FormRules = {
-  nodeName: [{ required: true, message: '请输入节点名称', trigger: 'blur' }],
-  nodeDefinitionCode: [{ required: true, message: '请输入节点编码', trigger: 'blur' }],
-  nodeType: [{ required: true, message: '请输入节点类型', trigger: 'blur' }],
-  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
-  categoryName: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-  bpmnType: [{ required: true, message: '请选择BPMN类型', trigger: 'change' }],
-  executionType: [{ required: true, message: '请选择执行类型', trigger: 'change' }],
-};
-
 onMounted(async () => {
   await Promise.all([loadGroupOptions(), loadNodeCatalog()]);
-  await Promise.all([loadDefinitions(), loadGroupsPage(), loadNodeDefinitions()]);
+  await Promise.all([loadDefinitions(), loadGroupsPage()]);
 });
 
 async function registerWorkflowBusinessFormComponents() {
@@ -1597,8 +1183,24 @@ async function registerWorkflowBusinessFormComponents() {
   if (!designer) {
     return;
   }
-  designer.setMenuItem?.('business', []);
-  designer.addComponent?.(workflowBusinessFormComponents);
+  await ensureWorkflowBusinessFormDataLoaded();
+  if (designer.setupState?.dragRuleList) {
+    workflowBusinessFormComponents.forEach(component => {
+      designer.setupState.dragRuleList[component.name] = component;
+    });
+  } else {
+    designer.addComponent?.(workflowBusinessFormComponents.map(component => ({ ...component, menu: undefined })));
+  }
+  designer.setMenuItem?.('business', toWorkflowBusinessMenuItems());
+}
+
+async function ensureWorkflowBusinessFormDataLoaded() {
+  await Promise.all([
+    ensureApprovalUsersLoaded(),
+    ensureApprovalRolesLoaded(),
+    ensureApprovalPostsLoaded(),
+    ensureApprovalOrgsLoaded(),
+  ]);
 }
 
 async function loadNodeCatalog() {
@@ -1631,17 +1233,6 @@ async function loadGroupsPage() {
   }
 }
 
-async function loadNodeDefinitions() {
-  nodeLoading.value = true;
-  try {
-    const page = await workflowApi.nodeDefinitionsPage(nodeQuery as any);
-    nodeRows.value = page.list;
-    nodeTotal.value = page.total;
-  } finally {
-    nodeLoading.value = false;
-  }
-}
-
 function resetDefinitionQuery() {
   Object.assign(definitionQuery, { pageNum: 1, pageSize: 10, keyword: '', groupId: '', status: '' });
   loadDefinitions();
@@ -1652,16 +1243,13 @@ function resetGroupQuery() {
   loadGroupsPage();
 }
 
-function resetNodeQuery() {
-  Object.assign(nodeQuery, { pageNum: 1, pageSize: 10, keyword: '', categoryCode: '', status: '' });
-  loadNodeDefinitions();
-}
-
 async function openDefinitionForm(row?: WorkflowDefinition) {
   await Promise.all([loadGroupOptions(), loadNodeCatalog()]);
   Object.assign(definitionForm, row || {
     id: undefined,
-    groupId: groups.value[0]?.id || 0,
+    groupId: groups.value[0]?.id || '',
+    adminUsers: [],
+    icon: '',
     definitionName: '',
     definitionKey: '',
     formCode: '',
@@ -1673,9 +1261,9 @@ async function openDefinitionForm(row?: WorkflowDefinition) {
   });
   loadWorkflowFormConfig(definitionForm.formJson);
   designerRoot.value = parseDesignerJson(definitionForm.designerJson);
-  selectedNode.value = designerRoot.value;
+  selectedNode.value = undefined;
+  nodePanelVisible.value = false;
   definitionStep.value = 0;
-  canvasZoom.value = 1;
   syncDesignerJson();
   definitionForm.formJson = stringifyWorkflowFormConfig();
   designerMode.value = true;
@@ -1692,7 +1280,7 @@ async function closeDesigner() {
 
 function selectNode(node: WorkflowDesignerNode) {
   selectedNode.value = node;
-  activeNodeConfigTab.value = isUserTaskNode(node) ? 'assignee' : 'basic';
+  nodePropertyActiveTab.value = hasNodeSpecificConfig(node) ? 'node' : 'basic';
   nodePanelVisible.value = true;
   if (node.nodeType === 'EXCLUSIVE_BRANCH') {
     parseConditionToBuilder(node.conditionExpression || '');
@@ -1731,6 +1319,11 @@ async function nextDefinitionStep() {
   if (!(await validateStep(definitionStep.value, false))) {
     return;
   }
+  if (definitionStep.value === 1) {
+    syncCurrentWorkflowForm();
+    definitionForm.formJson = stringifyWorkflowFormConfig();
+    await nextTick();
+  }
   definitionStep.value = Math.min(definitionStep.value + 1, 2);
 }
 
@@ -1744,6 +1337,11 @@ async function goDefinitionStep(targetStep: number) {
       definitionStep.value = step;
       return;
     }
+  }
+  if (targetStep >= 2) {
+    syncCurrentWorkflowForm();
+    definitionForm.formJson = stringifyWorkflowFormConfig();
+    await nextTick();
   }
   definitionStep.value = targetStep;
 }
@@ -1771,14 +1369,6 @@ async function validateStep(step: number, silent: boolean) {
     return false;
   }
   return true;
-}
-
-function zoomIn() {
-  canvasZoom.value = Math.min(1.4, Number((canvasZoom.value + 0.1).toFixed(1)));
-}
-
-function zoomOut() {
-  canvasZoom.value = Math.max(0.7, Number((canvasZoom.value - 0.1).toFixed(1)));
 }
 
 async function deployDefinition(row: WorkflowDefinition) {
@@ -1890,72 +1480,6 @@ async function deleteGroup(row: WorkflowGroup) {
   await Promise.all([loadGroupsPage(), loadGroupOptions()]);
 }
 
-function openNodeDialog(row?: WorkflowNodeDefinition) {
-  Object.assign(nodeForm, row || {
-    id: undefined,
-    nodeDefinitionCode: '',
-    nodeType: '',
-    nodeName: '',
-    categoryCode: 'BASIC',
-    categoryName: '基础节点',
-    groupName: '基础节点',
-    description: '',
-    bpmnType: 'userTask',
-    executionType: 'USER_TASK',
-    color: '#2563eb',
-    icon: 'Setting',
-    propertySchema: '',
-    defaultProperties: '{}',
-    sort: 0,
-    status: 1,
-  });
-  nodeDialog.value = true;
-}
-
-async function saveNodeDefinition() {
-  await nodeFormRef.value?.validate();
-  JSON.parse(nodeForm.defaultProperties || '{}');
-  saving.value = true;
-  try {
-    nodeForm.groupName = nodeForm.categoryName;
-    if (nodeForm.id) {
-      await workflowApi.updateNodeDefinition(nodeForm);
-    } else {
-      await workflowApi.createNodeDefinition(nodeForm);
-    }
-    ElMessage.success('保存成功');
-    nodeDialog.value = false;
-    await Promise.all([loadNodeDefinitions(), loadNodeCatalog()]);
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function toggleNodeStatus(row: WorkflowNodeDefinition) {
-  await workflowApi.updateNodeDefinitionStatus(row.id!, row.status === 1 ? 0 : 1);
-  ElMessage.success('状态已更新');
-  await Promise.all([loadNodeDefinitions(), loadNodeCatalog()]);
-}
-
-async function deleteNodeDefinition(row: WorkflowNodeDefinition) {
-  await ElMessageBox.confirm(`确认删除节点定义「${row.nodeName}」？`, '删除节点定义', { type: 'warning' });
-  await workflowApi.deleteNodeDefinition(row.id!);
-  ElMessage.success('删除成功');
-  await Promise.all([loadNodeDefinitions(), loadNodeCatalog()]);
-}
-
-function branchNode(name: string, expression: string): WorkflowDesignerNode {
-  return {
-    id: createNodeId('branch'),
-    nodeName: name,
-    nodeType: 'EXCLUSIVE_BRANCH',
-    conditionExpression: expression,
-    childNode: null,
-    conditionNodes: [],
-    properties: {},
-  };
-}
-
 function nodeIcon(item: Partial<WorkflowNodeCatalog | WorkflowDesignerNode>) {
   const iconName = 'icon' in item ? item.icon : undefined;
   if (iconName && iconName in NODE_ICON_MAP) {
@@ -1964,20 +1488,23 @@ function nodeIcon(item: Partial<WorkflowNodeCatalog | WorkflowDesignerNode>) {
   return NODE_ICON_MAP[item.nodeType || ''] || NODE_ICON_MAP[item.executionType || ''] || Setting;
 }
 
-function nodePickerDescription(item: WorkflowNodeCatalog) {
-  if (item.description) {
-    return item.description;
+function workflowIconComponent(icon?: string) {
+  return workflowIconOptions.find(item => item.value === icon)?.component || Setting;
+}
+
+function isWorkflowPresetIcon(icon?: string) {
+  return workflowIconOptions.some(item => item.value === icon);
+}
+
+function workflowIconLabel(icon?: string) {
+  return workflowIconOptions.find(item => item.value === icon)?.label || '流程图标';
+}
+
+function workflowIconPreviewUrl(icon?: string) {
+  if (!icon) {
+    return '';
   }
-  if (item.executionType === 'USER_TASK') {
-    return '人工处理节点';
-  }
-  if (item.bpmnType?.includes('Gateway')) {
-    return '控制流程分支和并行';
-  }
-  if (item.executionType && item.executionType !== 'NONE') {
-    return `执行动作：${item.executionType}`;
-  }
-  return '通用流程节点';
+  return isWorkflowPresetIcon(icon) ? '' : icon;
 }
 
 function loadWorkflowFormConfig(value?: string) {
@@ -2090,6 +1617,8 @@ function addCustomFormField() {
     type: 'input',
     required: false,
     optionsText: '',
+    placeholder: '',
+    defaultValue: '',
   });
   syncCustomWorkflowForm();
 }
@@ -2164,12 +1693,16 @@ function normalizeCustomFormFieldsValue(fields: any[]): CustomFormField[] {
     .map((field, index) => {
       const key = normalizeFieldKey(field?.key || field?.field || createFieldKey(index + 1));
       const label = String(field?.label || field?.title || key);
+      const props = field?.props || {};
+      const type = normalizeCustomFieldType(props?.workflowDataType || field?.workflowDataType || field?.type);
       return {
         key,
         label,
-        type: normalizeCustomFieldType(field?.type),
+        type,
         required: Boolean(field?.required || field?.validate?.some?.((rule: any) => rule?.required) || field?.rules?.some?.((rule: any) => rule?.required)),
-        optionsText: field?.optionsText || optionsToText(field?.options),
+        optionsText: type === 'select' ? field?.optionsText || optionsToText(field?.options) : '',
+        placeholder: String(field?.placeholder || props?.placeholder || ''),
+        defaultValue: field?.defaultValue === undefined || field?.defaultValue === null ? '' : String(field.defaultValue),
       };
     });
 }
@@ -2177,8 +1710,9 @@ function normalizeCustomFormFieldsValue(fields: any[]): CustomFormField[] {
 function normalizeCustomFieldType(type?: string) {
   if (type === 'number') return 'inputNumber';
   if (type === 'datetime') return 'datePicker';
-  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker'].includes(String(type))) {
-    return String(type);
+  const normalized = String(type || '');
+  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker', 'systemUser', 'systemOrg', 'systemPost', 'systemRole'].includes(normalized)) {
+    return normalized;
   }
   return 'input';
 }
@@ -2186,12 +1720,16 @@ function normalizeCustomFieldType(type?: string) {
 function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
   const rules = normalizeCustomFormFieldsValue(fields)
     .map((field): FcRule => {
+      const formCreateType = customFieldToFormCreateType(field.type);
       const rule: FcRule = {
-        type: field.type,
+        type: formCreateType,
         field: field.key,
         title: field.label,
         props: {
-          placeholder: field.type === 'select' ? `请选择${field.label}` : `请输入${field.label}`,
+          placeholder: field.placeholder || (isSelectLikeCustomFieldType(field.type) ? `请选择${field.label}` : `请输入${field.label}`),
+          workflowDataType: isSystemCustomFieldType(field.type) ? field.type : undefined,
+          clearable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
+          filterable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
         },
         validate: field.required
           ? [{ required: true, message: `${field.label}不能为空`, trigger: field.type === 'input' || field.type === 'textarea' ? 'blur' : 'change' }]
@@ -2199,6 +1737,22 @@ function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
       };
       if (field.type === 'select') {
         rule.options = textToOptions(field.optionsText);
+      }
+      if (isSystemCustomFieldType(field.type)) {
+        const options = customFieldSystemOptions(field.type).map(item => ({ label: item.label, value: item.value }));
+        if (field.type === 'systemOrg') {
+          rule.props = {
+            ...rule.props,
+            data: approvalOrgTreeOptions.value,
+            nodeKey: 'value',
+            checkStrictly: true,
+          };
+        } else {
+          rule.options = options;
+        }
+      }
+      if (field.defaultValue) {
+        (rule as any).value = field.defaultValue;
       }
       return rule;
     });
@@ -2208,14 +1762,98 @@ function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
 function formCreateRulesToCustomFields(rules: FcRule[]): CustomFormField[] {
   return collectWorkflowFormVariables(rules).map(variable => {
     const rule = findRuleByField(rules, variable.value) || {};
+    const props = rule.props || {};
     return {
       key: variable.value,
       label: variable.label,
-      type: normalizeCustomFieldType(String(rule.type || 'input')),
+      type: normalizeCustomFieldType(String(props.workflowDataType || rule.type || 'input')),
       required: Array.isArray(rule.validate) && rule.validate.some((item: any) => item?.required),
       optionsText: optionsToText(rule.options),
+      placeholder: String(props.placeholder || ''),
+      defaultValue: rule.value === undefined || rule.value === null ? '' : String(rule.value),
     };
   });
+}
+
+function customFieldToFormCreateType(type: string) {
+  if (type === 'systemOrg') {
+    return 'elTreeSelect';
+  }
+  if (isSystemCustomFieldType(type)) {
+    return 'select';
+  }
+  return type;
+}
+
+function isSelectLikeCustomFieldType(type: string) {
+  return type === 'select' || isSystemCustomFieldType(type);
+}
+
+function isSystemCustomFieldType(type: string) {
+  return ['systemUser', 'systemOrg', 'systemPost', 'systemRole'].includes(String(type));
+}
+
+function customFieldSystemLoading(type: string) {
+  const key = customFieldSystemLoadingKey(type);
+  return key ? approvalTargetLoading[key] : false;
+}
+
+function customFieldSystemOptions(type: string): ApprovalTargetOption[] {
+  if (type === 'systemUser') return approvalUserOptions.value;
+  if (type === 'systemOrg') return flattenApprovalOrgTree(approvalOrgTreeOptions.value);
+  if (type === 'systemPost') return approvalPostOptions.value;
+  if (type === 'systemRole') return approvalRoleOptions.value;
+  return [];
+}
+
+async function ensureCustomFieldSystemOptions(type: string) {
+  if (type === 'systemUser') {
+    await ensureApprovalUsersLoaded();
+  } else if (type === 'systemOrg') {
+    await ensureApprovalOrgsLoaded();
+  } else if (type === 'systemPost') {
+    await ensureApprovalPostsLoaded();
+  } else if (type === 'systemRole') {
+    await ensureApprovalRolesLoaded();
+  }
+}
+
+function customFieldSystemLoadingKey(type: string): keyof typeof approvalTargetLoading | undefined {
+  if (type === 'systemUser') return 'users';
+  if (type === 'systemOrg') return 'orgs';
+  if (type === 'systemPost') return 'posts';
+  if (type === 'systemRole') return 'roles';
+  return undefined;
+}
+
+function updateCustomFieldDefault(field: CustomFormField, value: string) {
+  field.defaultValue = value || '';
+  syncCustomWorkflowForm();
+}
+
+function handleCustomFieldTypeChange(field: CustomFormField) {
+  field.defaultValue = '';
+  if (field.type !== 'select') {
+    field.optionsText = '';
+  }
+  if (isSystemCustomFieldType(field.type)) {
+    void ensureCustomFieldSystemOptions(field.type);
+  }
+  syncCustomWorkflowForm();
+}
+
+function flattenApprovalOrgTree(items: ApprovalOrgTreeOption[]): ApprovalTargetOption[] {
+  const result: ApprovalTargetOption[] = [];
+  const visit = (nodes: ApprovalOrgTreeOption[]) => {
+    for (const node of nodes || []) {
+      result.push({ value: String(node.value), label: String(node.label) });
+      if (node.children?.length) {
+        visit(node.children);
+      }
+    }
+  };
+  visit(items);
+  return result;
 }
 
 function findRuleByField(rules: any[], field: string): any {
@@ -2294,7 +1932,12 @@ function collectWorkflowFormVariables(rules: FcRule[]): WorkflowVariableOption[]
   const visit = (items: any[]) => {
     for (const item of items || []) {
       if (isFormInputRule(item) && item.field) {
-        variables.push({ label: item.title || item.field, value: item.field });
+        variables.push({
+          label: item.title || item.field,
+          value: item.field,
+          source: '表单字段',
+          dataType: workflowFormRuleDataType(item),
+        });
       }
       if (Array.isArray(item.children)) {
         visit(item.children);
@@ -2305,34 +1948,42 @@ function collectWorkflowFormVariables(rules: FcRule[]): WorkflowVariableOption[]
   return variables;
 }
 
+function workflowFormRuleDataType(rule: any): WorkflowVariableOption['dataType'] {
+  const workflowDataType = String(rule?.props?.workflowDataType || '').trim();
+  if (workflowDataType === 'systemUser') return 'USER';
+  if (workflowDataType === 'systemOrg') return 'ORG';
+  if (workflowDataType === 'systemPost') return 'POST';
+  if (workflowDataType === 'systemRole') return 'ROLE';
+  const type = String(rule?.type || '').trim();
+  if (type === 'inputNumber') return 'NUMBER';
+  if (type === 'datePicker' || type === 'timePicker' || type === 'timeRange' || type === 'dateRange') return 'DATE';
+  return 'TEXT';
+}
+
+function normalizeWorkflowVariableDataType(type?: WorkflowVariableDataType) {
+  const normalized = String(type || '').toUpperCase();
+  if (['USER', 'ORG', 'POST', 'ROLE', 'NUMBER', 'DATE'].includes(normalized)) {
+    return normalized as 'USER' | 'ORG' | 'POST' | 'ROLE' | 'NUMBER' | 'DATE';
+  }
+  return 'TEXT';
+}
+
+function findWorkflowVariable(variable: string) {
+  for (const group of workflowVariableGroups.value) {
+    const matched = group.options.find(item => item.value === variable);
+    if (matched) {
+      return matched;
+    }
+  }
+  return undefined;
+}
+
+function workflowVariableDataType(variable: string) {
+  return normalizeWorkflowVariableDataType(findWorkflowVariable(variable)?.dataType);
+}
+
 function isFormInputRule(rule: any) {
   return Boolean(rule?.field && rule.type !== 'hidden') || ['input', 'textarea', 'inputNumber', 'select', 'radio', 'checkbox', 'switch', 'datePicker', 'timePicker', 'cascader', 'treeSelect'].includes(String(rule?.type));
-}
-
-function parseDefaultProperties(value?: string) {
-  if (!value) return {};
-  try {
-    return JSON.parse(value);
-  } catch {
-    return {};
-  }
-}
-
-function formatNodeProperties(node: WorkflowDesignerNode) {
-  return JSON.stringify(node.properties || {}, null, 2);
-}
-
-function updateNodeProperties(node: WorkflowDesignerNode, value: string) {
-  try {
-    node.properties = JSON.parse(value || '{}');
-    syncDesignerJson();
-  } catch {
-    ElMessage.error('节点属性必须是合法 JSON');
-  }
-}
-
-function nodePropertyValue(node: WorkflowDesignerNode, key: string, fallback: any = '') {
-  return node.properties?.[key] ?? fallback;
 }
 
 function updateNodeProperty(node: WorkflowDesignerNode, key: string, value: any) {
@@ -2342,6 +1993,114 @@ function updateNodeProperty(node: WorkflowDesignerNode, key: string, value: any)
   } else {
     node.properties[key] = value;
   }
+  syncDesignerJson();
+}
+
+function defaultEventNotifyConfig(): WorkflowEventNotifyConfig {
+  return {
+    enabled: false,
+    type: 'HTTP',
+    method: 'POST',
+    timeoutMillis: 5000,
+  };
+}
+
+interface WorkflowRootNodeConfig {
+  scopeType?: string;
+  userIds?: string[];
+  orgIds?: string[];
+  roleIds?: string[];
+  postIds?: string[];
+  formPermissions?: Record<string, WorkflowFormPermission>;
+}
+
+interface WorkflowCcNodeConfig {
+  targetTypes?: string[];
+  userIds?: string[];
+  orgIds?: string[];
+  roleIds?: string[];
+  postIds?: string[];
+  eventName?: string;
+  messageTemplate?: string;
+}
+
+function isRootNode(node: WorkflowDesignerNode) {
+  return node.nodeType === 'ROOT' || node.bpmnType === 'startEvent';
+}
+
+function isCcNode(node: WorkflowDesignerNode) {
+  return node.nodeType === 'CC';
+}
+
+function rootConfig(node: WorkflowDesignerNode): WorkflowRootNodeConfig {
+  const current = node.properties?.rootConfig || {};
+  return {
+    scopeType: 'ALL',
+    userIds: [],
+    orgIds: [],
+    roleIds: [],
+    postIds: [],
+    formPermissions: {},
+    ...current,
+  };
+}
+
+function updateRootConfig(node: WorkflowDesignerNode, patch: Partial<WorkflowRootNodeConfig>) {
+  node.properties ||= {};
+  node.properties.rootConfig = {
+    ...rootConfig(node),
+    ...patch,
+  };
+  syncDesignerJson();
+}
+
+function ccConfig(node: WorkflowDesignerNode): WorkflowCcNodeConfig {
+  const current = node.properties?.ccConfig || {};
+  return {
+    targetTypes: [],
+    userIds: [],
+    orgIds: [],
+    roleIds: [],
+    postIds: [],
+    eventName: node.properties?.eventName || 'workflow.cc',
+    messageTemplate: '',
+    ...current,
+  };
+}
+
+function updateCcConfig(node: WorkflowDesignerNode, patch: WorkflowCcNodeConfig) {
+  node.properties ||= {};
+  const next = {
+    ...ccConfig(node),
+    ...patch,
+  };
+  node.properties.ccConfig = next;
+  node.properties.eventName = next.eventName || 'workflow.cc';
+  syncDesignerJson();
+}
+
+function reservedNodePropertyKeys(node: WorkflowDesignerNode) {
+  const keys = ['approvalConfig', 'rootConfig', 'ccConfig', 'formPermissions', 'eventNotify', 'conditionEditMode'];
+  if (isCcNode(node)) {
+    keys.push('eventName');
+  }
+  return keys;
+}
+
+function advancedNodeProperties(node: WorkflowDesignerNode) {
+  const reserved = new Set(reservedNodePropertyKeys(node));
+  return Object.fromEntries(Object.entries(node.properties || {}).filter(([key]) => !reserved.has(key)));
+}
+
+function updateAdvancedNodeProperties(node: WorkflowDesignerNode, value: Record<string, any>) {
+  node.properties ||= {};
+  const reserved = new Set(reservedNodePropertyKeys(node));
+  for (const key of Object.keys(node.properties)) {
+    if (!reserved.has(key)) {
+      delete node.properties[key];
+    }
+  }
+  Object.assign(node.properties, value);
   syncDesignerJson();
 }
 
@@ -2360,6 +2119,32 @@ function approvalConfig(node: WorkflowDesignerNode): WorkflowApprovalNodeConfig 
   };
 }
 
+function nodeEventNotifyConfig(node: WorkflowDesignerNode): WorkflowEventNotifyConfig {
+  if (isUserTaskNode(node)) {
+    return {
+      ...defaultEventNotifyConfig(),
+      ...(approvalConfig(node).eventNotify || {}),
+    };
+  }
+  return {
+    ...defaultEventNotifyConfig(),
+    ...(node.properties?.eventNotify || {}),
+  };
+}
+
+function updateNodeEventNotifyConfig(node: WorkflowDesignerNode, patch: Partial<WorkflowEventNotifyConfig>) {
+  if (isUserTaskNode(node)) {
+    updateApprovalEventNotify(node, patch);
+    return;
+  }
+  node.properties ||= {};
+  node.properties.eventNotify = {
+    ...nodeEventNotifyConfig(node),
+    ...patch,
+  };
+  syncDesignerJson();
+}
+
 function updateApprovalConfig(node: WorkflowDesignerNode, patch: Partial<WorkflowApprovalNodeConfig>) {
   node.properties ||= {};
   const config = approvalConfig(node);
@@ -2376,7 +2161,9 @@ function updateApprovalAssigneeType(node: WorkflowDesignerNode, value: unknown) 
     void ensureApprovalUsersLoaded();
   } else if (value === 'SPECIFIED_ROLE') {
     void ensureApprovalRolesLoaded();
-  } else if (value === 'ORG_LEADER') {
+  } else if (value === 'SPECIFIED_POST') {
+    void ensureApprovalPostsLoaded();
+  } else if (value === 'SPECIFIED_ORG' || value === 'ORG_LEADER') {
     void ensureApprovalOrgsLoaded();
   }
 }
@@ -2396,6 +2183,9 @@ function showApprovalModeConfig(node: WorkflowDesignerNode) {
   if (config.assigneeType === 'SPECIFIED_ROLE' || config.assigneeType === 'ORG_LEADER') {
     return true;
   }
+  if (config.assigneeType === 'SPECIFIED_POST' || config.assigneeType === 'SPECIFIED_ORG') {
+    return true;
+  }
   if (config.assigneeType === 'INITIATOR_SELECT') {
     return Boolean(config.initiatorSelectMultiple);
   }
@@ -2413,17 +2203,6 @@ function updateApprovalEventNotify(node: WorkflowDesignerNode, patch: Partial<Wo
     },
   };
   syncDesignerJson();
-}
-
-function approvalListText(node: WorkflowDesignerNode, key: keyof WorkflowApprovalNodeConfig) {
-  const value = approvalConfig(node)[key];
-  return Array.isArray(value) ? value.join(',') : '';
-}
-
-function updateApprovalList(node: WorkflowDesignerNode, key: keyof WorkflowApprovalNodeConfig, value: string) {
-  updateApprovalConfig(node, {
-    [key]: splitTextList(value),
-  } as Partial<WorkflowApprovalNodeConfig>);
 }
 
 function updateApprovalListValue(node: WorkflowDesignerNode, key: keyof WorkflowApprovalNodeConfig, value: unknown) {
@@ -2571,25 +2350,43 @@ function toApprovalOrgTree(items: any[]): ApprovalOrgTreeOption[] {
     .filter(Boolean) as ApprovalOrgTreeOption[];
 }
 
-function approvalFieldPermission(node: WorkflowDesignerNode, field: string): WorkflowFormPermission {
-  return approvalConfig(node).formPermissions?.[field] || 'READONLY';
+function nodeFieldPermission(node: WorkflowDesignerNode, field: string): WorkflowFormPermission {
+  if (isRootNode(node)) {
+    return rootConfig(node).formPermissions?.[field] || 'EDITABLE';
+  }
+  if (isUserTaskNode(node)) {
+    return approvalConfig(node).formPermissions?.[field] || 'READONLY';
+  }
+  return node.properties?.formPermissions?.[field] || 'READONLY';
 }
 
-function updateApprovalFieldPermission(node: WorkflowDesignerNode, field: string, permission: WorkflowFormPermission) {
+function updateNodeFieldPermission(node: WorkflowDesignerNode, field: string, permission: WorkflowFormPermission) {
+  if (isRootNode(node)) {
+    const config = rootConfig(node);
+    updateRootConfig(node, {
+      formPermissions: {
+        ...(config.formPermissions || {}),
+        [field]: permission,
+      },
+    });
+    return;
+  }
   const config = approvalConfig(node);
-  updateApprovalConfig(node, {
-    formPermissions: {
-      ...(config.formPermissions || {}),
-      [field]: permission,
-    },
-  });
-}
-
-function splitTextList(value: string) {
-  return String(value || '')
-    .split(',')
-    .map(item => item.trim())
-    .filter(Boolean);
+  if (isUserTaskNode(node)) {
+    updateApprovalConfig(node, {
+      formPermissions: {
+        ...(config.formPermissions || {}),
+        [field]: permission,
+      },
+    });
+    return;
+  }
+  node.properties ||= {};
+  node.properties.formPermissions = {
+    ...(node.properties.formPermissions || {}),
+    [field]: permission,
+  };
+  syncDesignerJson();
 }
 
 function isUserTaskNode(node: WorkflowDesignerNode) {
@@ -2611,29 +2408,73 @@ function hasAdvancedNodeProperties(node: WorkflowDesignerNode) {
 }
 
 function hasNodeSpecificConfig(node: WorkflowDesignerNode) {
-  return node.nodeType === 'EXCLUSIVE_BRANCH' || isUserTaskNode(node) || isServiceTaskNode(node) || hasAdvancedNodeProperties(node);
+  return isRootNode(node) || node.nodeType === 'EXCLUSIVE_BRANCH' || isUserTaskNode(node) || isCcNode(node) || isServiceTaskNode(node) || hasAdvancedNodeProperties(node);
+}
+
+function conditionEditMode(node: WorkflowDesignerNode): ConditionEditMode {
+  return node.properties?.conditionEditMode === 'EXPRESSION' ? 'EXPRESSION' : 'BUILDER';
+}
+
+function updateConditionEditMode(node: WorkflowDesignerNode, mode: ConditionEditMode) {
+  node.properties ||= {};
+  node.properties.conditionEditMode = mode;
+  if (mode === 'BUILDER') {
+    parseConditionToBuilder(node.conditionExpression || '');
+    applyConditionBuilder();
+  }
+  syncDesignerJson();
 }
 
 function createConditionRow(partial: Partial<ConditionRow> = {}): ConditionRow {
+  const operator = partial.operator || '==';
+  const shouldValidateOperator = Boolean(partial.variable) && isWorkflowVariableGroupsReady();
   return {
     id: createNodeId('condition'),
     connector: partial.connector || 'AND',
     variable: partial.variable || '',
-    operator: partial.operator || '==',
-    value: partial.value || '',
+    operator: shouldValidateOperator && !validConditionOperator(partial.variable || '', operator) ? defaultConditionOperator(partial.variable || '') : operator,
+    value: partial.value ?? '',
   };
 }
 
-function addConditionRow() {
-  conditionRows.value.push(createConditionRow());
+function addConditionRow(groupIndex?: number) {
+  const targetIndex = typeof groupIndex === 'number' ? groupIndex : conditionGroups.value.length - 1;
+  const targetGroup = conditionGroups.value[targetIndex];
+  if (!targetGroup) {
+    conditionGroups.value = [createConditionGroup()];
+    return;
+  }
+  targetGroup.rows.push(createConditionRow());
   applyConditionBuilder();
 }
 
-function removeConditionRow(index: number) {
-  if (conditionRows.value.length <= 1) {
+function createConditionGroup(partial: Partial<ConditionGroup> = {}): ConditionGroup {
+  return {
+    id: createNodeId('condition-group'),
+    connector: partial.connector || 'AND',
+    rows: partial.rows?.length ? partial.rows : [createConditionRow()],
+  };
+}
+
+function addConditionGroup() {
+  conditionGroups.value.push(createConditionGroup({ connector: 'AND' }));
+  applyConditionBuilder();
+}
+
+function removeConditionGroup(index: number) {
+  if (conditionGroups.value.length <= 1) {
     return;
   }
-  conditionRows.value.splice(index, 1);
+  conditionGroups.value.splice(index, 1);
+  applyConditionBuilder();
+}
+
+function removeConditionRow(groupIndex: number, rowIndex: number) {
+  const group = conditionGroups.value[groupIndex];
+  if (!group || group.rows.length <= 1) {
+    return;
+  }
+  group.rows.splice(rowIndex, 1);
   applyConditionBuilder();
 }
 
@@ -2641,54 +2482,213 @@ function applyConditionBuilder() {
   if (!selectedNode.value || selectedNode.value.nodeType !== 'EXCLUSIVE_BRANCH') {
     return;
   }
-  const parts = conditionRows.value
-    .filter(row => row.variable)
-    .map((row, index) => {
-      const expression = `${row.variable} ${row.operator} ${formatConditionValue(row.value)}`;
-      if (index === 0) {
-        return expression;
+  const groupParts = conditionGroups.value
+    .map((group, groupIndex) => {
+      const rows = group.rows
+        .filter(row => row.variable)
+        .map((row, rowIndex) => {
+          const expression = formatConditionExpression(row);
+          if (rowIndex === 0) {
+            return expression;
+          }
+          return `${row.connector === 'OR' ? '||' : '&&'} ${expression}`;
+        })
+        .filter(Boolean);
+      if (rows.length === 0) {
+        return undefined;
       }
-      return `${row.connector === 'OR' ? '||' : '&&'} ${expression}`;
-    });
-  if (parts.length === 0) {
+      return {
+        connector: groupIndex === 0 ? 'AND' : group.connector,
+        expression: `(${rows.join(' ')})`,
+      };
+    })
+    .filter(Boolean) as Array<{ connector: 'AND' | 'OR'; expression: string }>;
+  if (groupParts.length === 0) {
     selectedNode.value.conditionExpression = '';
     syncDesignerJson();
     return;
   }
-  selectedNode.value.conditionExpression = `\${${parts.join(' ')}}`;
+  selectedNode.value.conditionExpression = `\${${groupParts.map((groupPart, index) => index === 0 ? groupPart.expression : `${groupPart.connector === 'OR' ? '||' : '&&'} ${groupPart.expression}`).join(' ')}}`;
   syncDesignerJson();
+}
+
+function conditionOperatorOptions(variable: string) {
+  const dataType = workflowVariableDataType(variable);
+  if (dataType === 'NUMBER' || dataType === 'DATE') {
+    return ['==', '!=', '>', '>=', '<', '<='];
+  }
+  return ['==', '!=', 'contains', 'notContains'];
+}
+
+function isWorkflowVariableGroupsReady() {
+  try {
+    return Array.isArray(workflowVariableGroups.value);
+  } catch {
+    return false;
+  }
+}
+
+function defaultConditionOperator(variable: string) {
+  return conditionOperatorOptions(variable)[0] || '==';
+}
+
+function validConditionOperator(variable: string, operator: string) {
+  return conditionOperatorOptions(variable).includes(operator);
 }
 
 function parseConditionToBuilder(expression: string) {
   const inner = expression.match(/^\$\{\s*(.+?)\s*}$/)?.[1] || '';
   if (!inner) {
-    conditionRows.value = [createConditionRow()];
+    conditionGroups.value = [createConditionGroup()];
     return;
   }
-  const rows: ConditionRow[] = [];
-  const regex = /(?:^|\s*(&&|\|\|)\s*)([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/g;
-  let matched: RegExpExecArray | null;
-  while ((matched = regex.exec(inner)) !== null) {
-    rows.push(createConditionRow({
-      connector: matched[1] === '||' ? 'OR' : 'AND',
-      variable: matched[2],
-      operator: matched[3],
-      value: unformatConditionValue(matched[4]),
-    }));
-  }
-  conditionRows.value = rows.length > 0 ? rows : [createConditionRow()];
+  const groups = splitConditionTerms(inner).map((groupPart, groupIndex) => {
+    const groupText = stripConditionWrapper(groupPart.text);
+    const rows = splitConditionTerms(groupText).map((rowPart, rowIndex) => {
+      const rowText = stripConditionWrapper(rowPart.text);
+      const matched = rowText.match(/^([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/);
+      if (!matched) {
+        return undefined;
+      }
+      return createConditionRow({
+        connector: rowIndex === 0 ? 'AND' : rowPart.connector,
+        variable: matched[1],
+        operator: matched[2],
+        value: unformatConditionValue(matched[3]),
+      });
+    }).filter(Boolean) as ConditionRow[];
+    return createConditionGroup({
+      connector: groupIndex === 0 ? 'AND' : groupPart.connector,
+      rows: rows.length > 0 ? rows : [createConditionRow()],
+    });
+  });
+  conditionGroups.value = groups.length > 0 ? groups : [createConditionGroup()];
 }
 
-function formatConditionValue(value: string) {
+function splitConditionTerms(expression: string) {
+  const parts: Array<{ connector: 'AND' | 'OR'; text: string }> = [];
+  let buffer = '';
+  let depth = 0;
+  let quote: string | undefined;
+  let pendingConnector: 'AND' | 'OR' = 'AND';
+  for (let i = 0; i < expression.length; i += 1) {
+    const char = expression[i];
+    const next = expression[i + 1];
+    if (quote) {
+      buffer += char;
+      if (char === '\\') {
+        buffer += next || '';
+        i += next ? 1 : 0;
+        continue;
+      }
+      if (char === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '\'' || char === '"') {
+      quote = char;
+      buffer += char;
+      continue;
+    }
+    if (char === '(') {
+      depth += 1;
+      buffer += char;
+      continue;
+    }
+    if (char === ')') {
+      depth = Math.max(0, depth - 1);
+      buffer += char;
+      continue;
+    }
+    if (depth === 0 && char === '&' && next === '&') {
+      if (buffer.trim()) {
+        parts.push({ connector: pendingConnector, text: buffer.trim() });
+      }
+      pendingConnector = 'AND';
+      buffer = '';
+      i += 1;
+      continue;
+    }
+    if (depth === 0 && char === '|' && next === '|') {
+      if (buffer.trim()) {
+        parts.push({ connector: pendingConnector, text: buffer.trim() });
+      }
+      pendingConnector = 'OR';
+      buffer = '';
+      i += 1;
+      continue;
+    }
+    buffer += char;
+  }
+  if (buffer.trim()) {
+    parts.push({ connector: pendingConnector, text: buffer.trim() });
+  }
+  return parts.length > 0 ? parts : [{ connector: 'AND', text: expression.trim() }];
+}
+
+function stripConditionWrapper(value: string) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed.startsWith('(') || !trimmed.endsWith(')')) {
+    return trimmed;
+  }
+  let depth = 0;
+  let quote: string | undefined;
+  for (let i = 0; i < trimmed.length; i += 1) {
+    const char = trimmed[i];
+    const next = trimmed[i + 1];
+    if (quote) {
+      if (char === '\\') {
+        i += next ? 1 : 0;
+        continue;
+      }
+      if (char === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '\'' || char === '"') {
+      quote = char;
+      continue;
+    }
+    if (char === '(') {
+      depth += 1;
+    }
+    if (char === ')') {
+      depth -= 1;
+      if (depth === 0 && i < trimmed.length - 1) {
+        return trimmed;
+      }
+    }
+  }
+  return depth === 0 ? trimmed.slice(1, -1).trim() : trimmed;
+}
+
+function formatConditionValue(value: string | number, dataType: string) {
   const trimmed = String(value ?? '').trim();
   if (!trimmed) return "''";
-  if (/^(true|false|null)$/i.test(trimmed) || /^-?\d+(\.\d+)?$/.test(trimmed)) {
+  if (dataType === 'NUMBER') {
+    return /^-?\d+(\.\d+)?$/.test(trimmed) ? trimmed : "''";
+  }
+  if (/^(true|false|null)$/i.test(trimmed)) {
     return trimmed;
   }
   if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
     return trimmed;
   }
   return `'${trimmed.replace(/'/g, "\\'")}'`;
+}
+
+function formatConditionExpression(row: ConditionRow) {
+  const dataType = workflowVariableDataType(row.variable);
+  const operator = validConditionOperator(row.variable, row.operator) ? row.operator : defaultConditionOperator(row.variable);
+  if (operator === 'contains') {
+    return `${row.variable}.contains(${formatConditionValue(row.value ?? '', dataType)})`;
+  }
+  if (operator === 'notContains') {
+    return `!${row.variable}.contains(${formatConditionValue(row.value ?? '', dataType)})`;
+  }
+  return `${row.variable} ${operator} ${formatConditionValue(row.value ?? '', dataType)}`;
 }
 
 function unformatConditionValue(value: string) {
@@ -2720,8 +2720,14 @@ function collectNodeErrors(node: WorkflowDesignerNode | null | undefined, errors
   if ((node.nodeType === 'EXCLUSIVE_GATEWAY' || node.nodeType === 'PARALLEL_GATEWAY') && (node.conditionNodes?.length || 0) < 2) {
     errors.push(`${node.nodeName || '网关节点'} 至少需要两个分支`);
   }
+  if (isRootNode(node)) {
+    collectRootConfigErrors(node, errors);
+  }
   if (isUserTaskNode(node)) {
     collectApprovalConfigErrors(node, errors);
+  }
+  if (isCcNode(node)) {
+    collectCcConfigErrors(node, errors);
   }
   const branches = node.conditionNodes || [];
   for (let index = 0; index < branches.length; index += 1) {
@@ -2741,8 +2747,14 @@ function collectApprovalConfigErrors(node: WorkflowDesignerNode, errors: string[
   if (config.assigneeType === 'SPECIFIED_ROLE' && !(config.roleIds || []).length) {
     errors.push(`${nodeName} 未选择角色`);
   }
-  if (config.assigneeType === 'ORG_LEADER' && !(config.orgIds || []).length) {
+  if (config.assigneeType === 'SPECIFIED_POST' && !(config.postIds || []).length) {
+    errors.push(`${nodeName} 未选择岗位`);
+  }
+  if (config.assigneeType === 'SPECIFIED_ORG' && !(config.orgIds || []).length) {
     errors.push(`${nodeName} 未选择组织`);
+  }
+  if (config.assigneeType === 'ORG_LEADER' && config.orgLeaderUseInitiatorOrg === false && !(config.orgIds || []).length) {
+    errors.push(`${nodeName} 未选择主管所在组织`);
   }
   if (config.assigneeType === 'FORM_USER' && !config.formUserField) {
     errors.push(`${nodeName} 未选择表单人员字段`);
@@ -2755,17 +2767,30 @@ function collectApprovalConfigErrors(node: WorkflowDesignerNode, errors: string[
   }
 }
 
-function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
-  const groupsMap = new Map<string, WorkflowNodeCatalog[]>();
-  for (const item of catalog) {
-    if (item.nodeType === 'ROOT') continue;
-    if (!COMMON_DESIGNER_NODE_TYPES.has(item.nodeType) && !COMMON_DESIGNER_NODE_TYPES.has(item.nodeDefinitionCode)) continue;
-    const list = groupsMap.get(item.groupName) || [];
-    list.push(item);
-    groupsMap.set(item.groupName, list);
+function collectRootConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
+  const config = rootConfig(node);
+  const nodeName = node.nodeName || '发起人';
+  const hasCompositeTargets = Boolean((config.userIds || []).length || (config.orgIds || []).length || (config.roleIds || []).length || (config.postIds || []).length);
+  if (config.scopeType === 'SPECIFIED_USER' && !(config.userIds || []).length) {
+    errors.push(`${nodeName} 未选择可发起成员`);
   }
-  return Array.from(groupsMap.entries()).map(([name, items]) => ({ name, items }));
+  if (config.scopeType === 'SPECIFIED_ORG' && !(config.orgIds || []).length) {
+    errors.push(`${nodeName} 未选择可发起组织`);
+  }
+  if (config.scopeType === 'COMPOSITE' && !hasCompositeTargets) {
+    errors.push(`${nodeName} 未选择可发起对象`);
+  }
 }
+
+function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
+  const config = ccConfig(node);
+  const nodeName = node.nodeName || '抄送节点';
+  const hasTargets = Boolean((config.userIds || []).length || (config.orgIds || []).length || (config.roleIds || []).length || (config.postIds || []).length);
+  if (!hasTargets) {
+    errors.push(`${nodeName} 未选择抄送对象`);
+  }
+}
+
 </script>
 
 <style scoped>
@@ -2774,7 +2799,24 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .workflow-tabs {
+  overflow: hidden;
+  border: 1px solid var(--mango-border-light);
+  border-radius: 6px;
   background: var(--el-bg-color);
+}
+
+.workflow-tabs :deep(.el-tabs__header) {
+  padding: 0 16px;
+  margin: 0;
+}
+
+.workflow-tabs :deep(.el-tabs__nav-wrap::after) {
+  left: -16px;
+  right: -16px;
+}
+
+.workflow-tabs :deep(.el-tabs__content) {
+  padding: 16px;
 }
 
 .workflow-definition-actions {
@@ -2814,7 +2856,8 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .builder-step {
-  display: inline-flex;
+  display: flex;
+  width: max-content;
   align-items: center;
   gap: 10px;
   min-width: 156px;
@@ -2872,7 +2915,7 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .builder-content {
-  padding: 18px 28px 22px;
+  padding: 18px 28px 28px;
 }
 
 .builder-pane {
@@ -2890,32 +2933,9 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   align-items: center;
 }
 
-.builder-pane-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.basic-pane .builder-pane-head {
-  width: min(760px, 100%);
-}
-
-.pane-kicker {
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--el-color-primary);
-}
-
-.builder-pane-head h3 {
-  margin: 0;
-  font-size: 22px;
-  color: var(--el-text-color-primary);
-}
-
 .pane-help {
-  width: min(760px, 100%);
+  width: min(640px, 100%);
+  padding-top: 2px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.6;
@@ -2923,7 +2943,7 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 
 .builder-form {
   max-width: none;
-  padding: 22px 22px 10px;
+  padding: 0;
 }
 
 .builder-footer {
@@ -2969,56 +2989,170 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .basic-pane .step-form {
-  width: min(760px, 100%);
-}
-
-.form-mode-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.form-mode-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  min-height: 86px;
-  padding: 18px 20px;
-  border: 2px solid var(--el-border-color-light);
+  width: min(560px, 100%);
+  max-width: 560px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 24px 24px 20px;
+  border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color);
-  color: var(--el-text-color-primary);
-  text-align: left;
-  cursor: pointer;
 }
 
-.form-mode-card.active {
-  border-color: var(--el-color-primary);
+.basic-pane .basic-field {
+  margin-bottom: 0;
 }
 
-.form-mode-card strong {
+.basic-pane .basic-field.full {
+  grid-column: 1 / -1;
+}
+
+.basic-pane .el-select {
+  width: 100%;
+}
+
+.workflow-icon-field {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.workflow-icon-item :deep(.el-form-item__content) {
+  display: flex;
+  justify-content: center;
+}
+
+.workflow-icon-uploader {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.workflow-icon-uploader :deep(.image-upload),
+.workflow-icon-uploader :deep(.avatar-uploader) {
+  width: 64px;
+}
+
+.workflow-icon-uploader :deep(.el-upload),
+.workflow-icon-uploader :deep(.image-upload__card),
+.workflow-icon-uploader :deep(.el-upload--picture-card),
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+}
+
+.workflow-icon-uploader :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.workflow-icon-uploader.empty .workflow-icon-upload-control :deep(.el-upload--picture-card) {
+  opacity: 0;
+}
+
+.workflow-icon-uploader :deep(.el-upload--picture-card:hover) {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-fill-color-light);
+}
+
+.workflow-icon-uploader.filled .workflow-icon-upload-control :deep(.el-upload--picture-card) {
+  display: none;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card) {
   display: block;
-  margin-bottom: 8px;
-  font-size: 16px;
 }
 
-.form-mode-card em {
-  display: block;
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  margin: 0;
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list__item-status-label) {
+  display: none;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 10px;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions span) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-preview),
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-delete) {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.workflow-icon-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+}
+
+.workflow-icon-empty-state {
   color: var(--el-text-color-secondary);
-  font-style: normal;
+  transition: all 0.2s ease;
+  gap: 8px;
+}
+
+.workflow-icon-uploader.empty:hover .workflow-icon-empty-state {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.workflow-icon-empty-state .el-icon,
+.workflow-icon-legacy-preview .el-icon {
+  font-size: 18px;
+}
+
+.workflow-icon-empty-state span,
+.workflow-icon-legacy-preview span {
+  font-size: 12px;
   font-weight: 600;
 }
 
-.mode-radio {
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  border: 2px solid var(--el-border-color);
-  border-radius: 50%;
+.workflow-icon-legacy-preview {
+  color: var(--el-color-primary);
 }
 
-.form-mode-card.active .mode-radio {
-  border: 5px solid var(--el-color-primary);
+.field-label-with-help {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-label-with-help .el-icon {
+  color: var(--el-text-color-secondary);
+  cursor: help;
 }
 
 .form-step-layout {
@@ -3029,25 +3163,52 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   min-width: 0;
 }
 
-.form-designer-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 12px 14px;
+.form-design-shell {
+  width: min(1180px, 100%);
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fafcff 0%, var(--el-bg-color) 72px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.form-config-bar {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.form-config-main {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) minmax(0, 1fr);
+  align-items: end;
+  gap: 18px;
 }
 
 .form-code-form {
-  flex: 1;
-  max-width: 420px;
+  min-width: 0;
 }
 
 .form-code-form :deep(.el-form-item) {
   margin-bottom: 0;
+}
+
+.form-type-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.form-type-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .form-designer-summary {
@@ -3063,6 +3224,42 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   font-size: 22px;
 }
 
+.dynamic-designer-wrap,
+.custom-form-builder {
+  padding: 16px 18px 18px;
+}
+
+.dynamic-designer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.dynamic-designer-title {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.dynamic-designer-title strong {
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+}
+
+.dynamic-designer-title span {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.dynamic-designer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .workflow-form-designer {
   min-height: 560px;
   overflow: hidden;
@@ -3071,18 +3268,42 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   background: var(--el-bg-color);
 }
 
+.dynamic-designer-wrap.hide-left :deep(._fc-l-menu),
+.dynamic-designer-wrap.hide-left :deep(._fc-l) {
+  display: none;
+}
+
+.dynamic-designer-wrap.hide-right :deep(._fc-r) {
+  display: none;
+}
+
+.dynamic-designer-wrap :deep(._fc-m) {
+  min-width: 0;
+}
+
 .custom-form-builder {
   display: grid;
   gap: 16px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: var(--el-bg-color);
+  background: transparent;
 }
 
 .custom-route-section {
   display: grid;
   gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+}
+
+.custom-route-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.custom-route-form :deep(.el-form-item) {
+  margin-bottom: 0;
 }
 
 .section-title {
@@ -3100,74 +3321,85 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   font-size: 13px;
 }
 
+.custom-field-section {
+  display: grid;
+  gap: 12px;
+}
+
+.custom-field-list {
+  display: grid;
+  gap: 12px;
+}
+
+.custom-field-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+}
+
+.custom-field-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.custom-field-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1fr) 128px;
+  gap: 12px;
+}
+
+.custom-field-main :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.custom-field-main :deep(.el-select),
+.custom-field-extra :deep(.el-select) {
+  width: 100%;
+}
+
+.custom-field-extra {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.custom-field-extra label {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .designer-workbench {
   min-width: 0;
   overflow: hidden;
 }
 
-.designer-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 0 10px;
-  border-bottom: 0;
-}
-
-.designer-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.designer-subtitle {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
 .designer-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
   position: relative;
   min-height: calc(100vh - 260px);
-  padding: 14px;
-  background: #f7f8fb;
+  padding: 0;
+  background: transparent;
 }
 
-.node-canvas {
-  position: relative;
-  overflow: auto;
-  padding: 24px 20px 40px;
-  text-align: center;
-}
-
-.node-canvas-scale {
-  display: inline-block;
-  min-width: 620px;
-  --workflow-line-color: #a8b3c7;
-  --workflow-line-width: 2px;
-  transform-origin: top center;
-  transition: transform 0.16s ease-out;
-}
-
-.canvas-tools {
-  position: sticky;
-  right: 18px;
-  bottom: 18px;
-  z-index: 3;
-  float: right;
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 18px;
-  background: var(--el-bg-color);
-  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.12);
-  color: var(--el-text-color-secondary);
-  font-weight: 700;
-}
-
-.approval-target-select {
-  width: 100%;
+.designer-body.has-node-panel {
+  grid-template-columns: minmax(0, 1fr) 380px;
 }
 
 :deep(.workflow-node-drawer) {
@@ -3176,134 +3408,63 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 
 :deep(.workflow-node-drawer .el-drawer__header) {
   margin-bottom: 0;
-  padding: 24px 30px 18px;
+  padding: 18px 22px 14px;
   color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-:deep(.workflow-node-drawer .el-drawer__body) {
-  padding: 0 30px 28px;
-}
-
-.approval-config-tabs {
-  border: 1px solid var(--el-border-color);
-  background: var(--el-bg-color);
-}
-
-.approval-config-tabs :deep(.el-tabs__header) {
-  margin: 0;
-  background: #f6f7fb;
-}
-
-.approval-config-tabs :deep(.el-tabs__nav) {
-  width: 100%;
-}
-
-.approval-config-tabs :deep(.el-tabs__item) {
-  flex: 1;
-  height: 48px;
-  padding: 0 24px;
-  border-right: 1px solid var(--el-border-color);
-  color: var(--el-text-color-secondary);
   font-size: 16px;
   font-weight: 700;
 }
 
-.approval-config-tabs :deep(.el-tabs__item.is-active) {
-  background: var(--el-bg-color);
-  color: var(--el-color-primary);
-}
-
-.approval-config-tabs :deep(.el-tabs__active-bar) {
-  display: none;
-}
-
-.approval-config-tabs :deep(.el-tabs__content) {
-  padding: 24px;
-}
-
-.approval-drawer-section {
-  padding: 24px 0;
-  border-top: 1px solid var(--el-border-color-light);
-}
-
-.approval-drawer-section.first {
-  padding-top: 6px;
-  border-top: 0;
-}
-
-.approval-section-title {
-  margin-bottom: 16px;
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.approval-radio-grid {
-  display: grid;
-  width: 100%;
-  row-gap: 18px;
-}
-
-.assignee-grid {
-  grid-template-columns: repeat(3, minmax(112px, 1fr));
-}
-
-.empty-strategy-grid {
-  grid-template-columns: repeat(4, minmax(116px, 1fr));
-}
-
-.approval-radio-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-}
-
-.approval-radio-column {
-  display: grid;
-  gap: 24px;
-}
-
-.approval-radio-grid :deep(.el-radio),
-.approval-radio-row :deep(.el-radio),
-.approval-radio-column :deep(.el-radio) {
-  height: auto;
-  margin-right: 0;
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.approval-radio-grid :deep(.el-radio.is-checked),
-.approval-radio-row :deep(.el-radio.is-checked),
-.approval-radio-column :deep(.el-radio.is-checked) {
-  color: var(--el-color-primary);
-}
-
-.approval-target-block {
-  margin-top: 18px;
-}
-
-.approval-target-block :deep(.el-select-dropdown),
-.approval-target-block :deep(.el-tree-select__popper) {
-  max-width: 100%;
+:deep(.workflow-node-drawer .el-drawer__body) {
+  padding: 0 22px 22px;
 }
 
 .drawer-form {
   padding: 4px 0;
 }
 
-.drawer-condition-builder {
-  margin-bottom: 18px;
+.compact-node-form :deep(.el-form-item) {
+  margin-bottom: 14px;
 }
 
-.drawer-condition-builder .condition-row {
-  grid-template-columns: 78px minmax(120px, 1fr) 112px minmax(100px, 1fr) 48px;
+.node-property-tabs {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
 }
 
-.drawer-permission-list {
-  gap: 12px;
+.node-property-tabs :deep(.el-tabs__header) {
+  margin: -4px 0 14px;
+}
+
+.node-property-tabs :deep(.el-tabs__item) {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.node-property-tabs :deep(.el-tabs__content) {
+  flex: 1;
+}
+
+.form-permission-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.form-permission-head,
+.form-permission-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-permission-head {
+  padding: 0 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .form-permission-list {
@@ -3312,321 +3473,94 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .form-permission-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  min-height: 48px;
   padding: 8px 10px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-bg-color);
 }
 
-.form-permission-row span {
+.form-permission-field {
+  display: grid;
+  gap: 2px;
   min-width: 0;
-  color: var(--el-text-color-primary);
-  font-weight: 600;
+}
+
+.form-permission-field strong,
+.form-permission-field small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-:deep(.workflow-node-wrap) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-:deep(.workflow-node-card) {
-  position: relative;
-  z-index: 2;
-  width: 220px;
-  min-height: 72px;
-  border: 1px solid color-mix(in srgb, var(--node-color) 36%, var(--el-border-color));
-  border-radius: 8px;
-  background: var(--el-bg-color);
-  box-shadow: 0 4px 14px rgba(31, 41, 55, 0.08);
-  cursor: pointer;
-  overflow: hidden;
-}
-
-:deep(.workflow-node-card.branch-node) {
-  border-style: dashed;
-}
-
-:deep(.workflow-node-card.root) {
-  border-color: var(--el-color-primary-light-5);
-}
-
-:deep(.node-card-title) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  font-weight: 600;
-  color: #fff;
-  background: var(--node-color);
-}
-
-:deep(.node-card-type) {
-  padding: 10px 12px;
-  text-align: left;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-:deep(.add-node-button) {
-  margin: 18px 0;
-  position: relative;
-  z-index: 3;
-}
-
-:deep(.add-node-button::before),
-:deep(.add-node-button::after) {
-  content: '';
-  position: absolute;
-  left: 50%;
-  width: var(--workflow-line-width);
-  height: 18px;
-  background: var(--workflow-line-color);
-  transform: translateX(-50%);
-}
-
-:deep(.add-node-button::before) {
-  bottom: 100%;
-}
-
-:deep(.add-node-button::after) {
-  top: 100%;
-}
-
-:deep(.remove-node) {
-  margin-top: 4px;
-}
-
-:deep(.branch-area) {
-  position: relative;
-  margin-top: 18px;
-  min-width: 520px;
-  padding-top: 24px;
-}
-
-:deep(.branch-area::before) {
-  content: '';
-  position: absolute;
-  top: 24px;
-  left: 50%;
-  width: var(--workflow-line-width);
-  height: 24px;
-  background: var(--workflow-line-color);
-  transform: translate(-50%, -100%);
-}
-
-:deep(.branch-list) {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 16px;
-  margin-top: 10px;
-}
-
-:deep(.branch-list::before) {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 115px;
-  right: 115px;
-  height: var(--workflow-line-width);
-  background: var(--workflow-line-color);
-}
-
-:deep(.branch-column) {
-  position: relative;
-  min-width: 230px;
-  padding: 22px 12px 12px;
-  border: 1px dashed #c4ccda;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-:deep(.branch-column::before) {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: var(--workflow-line-width);
-  height: 22px;
-  background: var(--workflow-line-color);
-  transform: translateX(-50%);
-}
-
-:deep(.branch-card) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  background: var(--el-fill-color-light);
-  cursor: pointer;
-}
-
-:deep(.branch-condition),
-:deep(.branch-default) {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-:deep(.branch-default) {
-  color: var(--el-color-warning);
-}
-
-.end-node {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 72px;
-  height: 30px;
-  margin-top: 4px;
-  border-radius: 999px;
-  background: var(--el-fill-color-dark);
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-}
-
-.condition-config-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: -4px 0 8px;
+.form-permission-field strong {
   color: var(--el-text-color-primary);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.condition-builder {
-  display: grid;
-  gap: 8px;
-  margin: -8px 0 18px;
-}
-
-.condition-row {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr) 42px;
-  gap: 8px;
-  align-items: center;
-}
-
-.condition-variable {
-  grid-column: span 2;
-}
-
-.condition-operator {
-  grid-column: 1 / 2;
-}
-
-.condition-value {
-  grid-column: 2 / 3;
-}
-
-.condition-connector,
-.condition-connector-placeholder {
-  width: 88px;
-}
-
-.condition-connector-placeholder {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  border-radius: 6px;
-  background: var(--el-fill-color-lighter);
-  color: var(--el-text-color-regular);
   font-size: 13px;
 }
 
-:deep(.node-picker) {
+.form-permission-field small {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.variable-reference-panel {
   display: grid;
   gap: 14px;
+  padding-bottom: 8px;
 }
 
-:deep(.node-picker-group) {
+.variable-reference-group {
   display: grid;
   gap: 8px;
 }
 
-:deep(.node-picker-title) {
+.variable-reference-source {
+  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 700;
-  color: var(--el-text-color-primary);
 }
 
-:deep(.node-picker-grid) {
+.variable-reference-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-:deep(.node-picker-item) {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  column-gap: 10px;
-  row-gap: 2px;
-  min-height: 66px;
-  padding: 10px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color);
-  text-align: left;
-  cursor: pointer;
-}
-
-:deep(.node-picker-item:hover) {
-  border-color: color-mix(in srgb, var(--node-color, #2563eb) 42%, var(--el-border-color));
-  background: var(--el-fill-color-lighter);
-}
-
-:deep(.node-picker-icon) {
-  grid-row: 1 / span 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--node-color, #2563eb) 14%, #fff);
-  color: var(--node-color, #2563eb);
-}
-
-:deep(.node-picker-name) {
-  min-width: 0;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-}
-
-:deep(.node-picker-desc) {
-  min-width: 0;
   overflow: hidden;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
 }
 
-:deep(.node-picker-empty) {
-  padding: 18px 12px;
+.variable-reference-item {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.variable-reference-item:first-child {
+  border-top: 0;
+}
+
+.variable-reference-item strong,
+.variable-reference-item em {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.variable-reference-item strong {
+  color: var(--el-text-color-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.variable-reference-item em {
   color: var(--el-text-color-secondary);
-  text-align: center;
+  font-size: 13px;
+  font-style: normal;
+}
+
+.node-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
 }
 
 .catalog-group {
@@ -3668,8 +3602,36 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   height: 72px;
 }
 
+.code-editor-form-item :deep(.el-form-item__content) {
+  display: block;
+  width: 100%;
+}
+
+.code-editor-form-item :deep(.code-editor-container),
+.code-editor-form-item :deep(.cm-editor),
+.code-editor-form-item :deep(.CodeMirror) {
+  width: 100%;
+}
+
 :deep(.el-select) {
   min-width: 160px;
+}
+
+@media (max-width: 1024px) {
+  .form-config-main,
+  .custom-field-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-type-row,
+  .dynamic-designer-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .custom-field-extra {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 1180px) {
@@ -3687,6 +3649,11 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   .form-step-layout,
   .designer-body {
     grid-template-columns: 1fr;
+  }
+
+  .basic-pane .step-form {
+    grid-template-columns: 1fr;
+    padding: 18px;
   }
 }
 </style>

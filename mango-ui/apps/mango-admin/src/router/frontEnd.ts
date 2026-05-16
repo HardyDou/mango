@@ -55,20 +55,17 @@ export function getFrontEndRoutes(): RouteRecordRaw[] {
  * @description 使用 LayoutParentView 组件包裹路由
  */
 export function getTabBarRoutes(routes: RouteRecordRaw[]): RouteRecordRaw[] {
-  return routes.map((route) => {
-    if (route.children && route.children.length > 0) {
-      return {
-        ...route,
-        component: () => import('@/layout/routerView/parent.vue'),
-        children: route.children.map((child) => ({
-          ...child,
-          component: child.component || (() => import('@/layout/routerView/parent.vue')),
-        })),
-      };
-    }
+  const parentView = () => import('@/layout/routerView/parent.vue');
+
+  function normalizeRoute(route: RouteRecordRaw): RouteRecordRaw {
+    const children = route.children?.map(normalizeRoute);
+
     return {
       ...route,
-      component: route.component || (() => import('@/layout/routerView/parent.vue')),
+      component: route.component || parentView,
+      children,
     };
-  });
+  }
+
+  return routes.map(normalizeRoute);
 }

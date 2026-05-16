@@ -10,6 +10,7 @@ export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
 export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_END' | 'TO_ADMIN' | 'TO_USER';
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
+export type WorkflowId = string | number;
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -42,7 +43,7 @@ export interface WorkflowApprovalNodeConfig {
 }
 
 export interface WorkflowGroup {
-  id?: number;
+  id?: WorkflowId;
   groupName: string;
   groupCode: string;
   sort?: number;
@@ -53,9 +54,11 @@ export interface WorkflowGroup {
 }
 
 export interface WorkflowDefinition {
-  id?: number;
-  groupId: number;
+  id?: WorkflowId;
+  groupId: WorkflowId;
   groupName?: string;
+  adminUsers?: string[];
+  icon?: string;
   definitionName: string;
   definitionKey: string;
   deploymentId?: string;
@@ -73,11 +76,15 @@ export interface WorkflowDefinition {
   updatedTime?: string;
 }
 
+type WorkflowDefinitionCommand = Pick<WorkflowDefinition,
+  'id' | 'groupId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
+>;
+
 export interface WorkflowPageQuery {
   pageNum?: number;
   pageSize?: number;
   keyword?: string;
-  groupId?: number | '';
+  groupId?: WorkflowId | '';
   status?: string;
   categoryCode?: string;
   bpmnType?: string;
@@ -107,8 +114,8 @@ export interface WorkflowDesignerNode {
 }
 
 export interface WorkflowDefinitionVersion {
-  id: number;
-  definitionId: number;
+  id: WorkflowId;
+  definitionId: WorkflowId;
   versionNo: number;
   designerJson: string;
   formJson?: string;
@@ -122,7 +129,7 @@ export interface WorkflowDefinitionVersion {
 }
 
 export interface WorkflowNodeCatalog {
-  id?: number;
+  id?: WorkflowId;
   nodeDefinitionCode: string;
   nodeType: string;
   nodeName: string;
@@ -138,11 +145,6 @@ export interface WorkflowNodeCatalog {
   defaultProperties?: string;
   sort?: number;
   status?: number;
-}
-
-export interface WorkflowNodeDefinition extends WorkflowNodeCatalog {
-  createdTime?: string;
-  updatedTime?: string;
 }
 
 export interface WorkflowTask {
@@ -163,7 +165,7 @@ export interface WorkflowTask {
 export interface WorkflowProcessInstance {
   processInstanceId: string;
   businessKey?: string;
-  definitionId?: number;
+  definitionId?: WorkflowId;
   processName: string;
   processKey: string;
   processDefinitionId?: string;
@@ -174,7 +176,7 @@ export interface WorkflowProcessInstance {
 }
 
 export interface StartWorkflowProcessCommand {
-  definitionId: number;
+  definitionId: WorkflowId;
   businessKey?: string;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
@@ -187,14 +189,14 @@ export interface WorkflowUserOption {
 }
 
 export interface WorkflowTaskRecord {
-  id?: number;
+  id?: WorkflowId;
   processInstanceId: string;
   taskId?: string;
   taskName?: string;
   taskDefinitionKey?: string;
   action: string;
   actionName: string;
-  operatorId?: number;
+  operatorId?: WorkflowId;
   operatorName?: string;
   comment?: string;
   variables?: Record<string, any>;
@@ -230,34 +232,24 @@ export const workflowApi = {
     .then(data => fromBackendPageResult(data, normalizeGroup, params)),
   groupsList: (status?: number) => get<WorkflowGroup[]>('/workflow/groups/list', { params: { status } })
     .then(list => (Array.isArray(list) ? list.map(normalizeGroup) : [])),
-  groupDetail: (id: number) => get<WorkflowGroup>('/workflow/groups/detail', { params: { id } }).then(normalizeGroup),
-  createGroup: (data: WorkflowGroup) => post<number>('/workflow/groups', data),
+  groupDetail: (id: WorkflowId) => get<WorkflowGroup>('/workflow/groups/detail', { params: { id } }).then(normalizeGroup),
+  createGroup: (data: WorkflowGroup) => post<WorkflowId>('/workflow/groups', data),
   updateGroup: (data: WorkflowGroup) => put<boolean>('/workflow/groups', data),
-  deleteGroup: (id: number) => del<boolean>('/workflow/groups', { params: { id } }),
+  deleteGroup: (id: WorkflowId) => del<boolean>('/workflow/groups', { params: { id } }),
 
   definitionsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/definitions/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeDefinition, params)),
-  definitionDetail: (id: number) => get<WorkflowDefinition>('/workflow/definitions/detail', { params: { id } }).then(normalizeDefinition),
-  createDefinition: (data: WorkflowDefinition) => post<number>('/workflow/definitions', data),
-  updateDefinition: (data: WorkflowDefinition) => put<boolean>('/workflow/definitions', data),
-  deleteDefinition: (id: number) => del<boolean>('/workflow/definitions', { params: { id } }),
-  updateDefinitionStatus: (id: number, status: WorkflowStatus) => put<boolean>('/workflow/definitions/status', { id, status }),
-  deployDefinition: (id: number) => post<any>('/workflow/definitions/deploy', undefined, { params: { id } }),
-  definitionVersions: (definitionId: number) => get<WorkflowDefinitionVersion[]>('/workflow/definitions/versions', { params: { definitionId } })
+  definitionDetail: (id: WorkflowId) => get<WorkflowDefinition>('/workflow/definitions/detail', { params: { id } }).then(normalizeDefinition),
+  createDefinition: (data: WorkflowDefinition) => post<WorkflowId>('/workflow/definitions', toDefinitionCommand(data, false)),
+  updateDefinition: (data: WorkflowDefinition) => put<boolean>('/workflow/definitions', toDefinitionCommand(data, true)),
+  deleteDefinition: (id: WorkflowId) => del<boolean>('/workflow/definitions', { params: { id } }),
+  updateDefinitionStatus: (id: WorkflowId, status: WorkflowStatus) => put<boolean>('/workflow/definitions/status', { id, status }),
+  deployDefinition: (id: WorkflowId) => post<any>('/workflow/definitions/deploy', undefined, { params: { id } }),
+  definitionVersions: (definitionId: WorkflowId) => get<WorkflowDefinitionVersion[]>('/workflow/definitions/versions', { params: { definitionId } })
     .then(list => Array.isArray(list) ? list.map(normalizeVersion) : []),
-  definitionVersionDetail: (id: number) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
+  definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
   nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
     .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
-
-  nodeDefinitionsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/node-definitions/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeNodeDefinition, params)),
-  nodeDefinitionsList: (status?: number) => get<WorkflowNodeDefinition[]>('/workflow/node-definitions/list', { params: { status } })
-    .then(list => Array.isArray(list) ? list.map(normalizeNodeDefinition) : []),
-  nodeDefinitionDetail: (id: number) => get<WorkflowNodeDefinition>('/workflow/node-definitions/detail', { params: { id } }).then(normalizeNodeDefinition),
-  createNodeDefinition: (data: WorkflowNodeDefinition) => post<number>('/workflow/node-definitions', data),
-  updateNodeDefinition: (data: WorkflowNodeDefinition) => put<boolean>('/workflow/node-definitions', data),
-  updateNodeDefinitionStatus: (id: number, status: number) => put<boolean>('/workflow/node-definitions/status', { id, status }),
-  deleteNodeDefinition: (id: number) => del<boolean>('/workflow/node-definitions', { params: { id } }),
 
   todoTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
@@ -437,6 +429,7 @@ function toPageList<T>(data: any): T[] {
 function normalizeGroup(item: any): WorkflowGroup {
   return {
     ...item,
+    id: normalizeId(item?.id),
     createdTime: normalizeDateTime(item?.createdTime),
     updatedTime: normalizeDateTime(item?.updatedTime),
   };
@@ -445,6 +438,10 @@ function normalizeGroup(item: any): WorkflowGroup {
 function normalizeDefinition(item: any): WorkflowDefinition {
   return {
     ...item,
+    id: normalizeId(item?.id),
+    groupId: normalizeId(item?.groupId),
+    adminUsers: normalizeStringList(item?.adminUsers),
+    icon: item?.icon || 'Setting',
     designerJson: item?.designerJson || defaultDesignerJson(),
     createdTime: normalizeDateTime(item?.createdTime),
     updatedTime: normalizeDateTime(item?.updatedTime),
@@ -452,11 +449,56 @@ function normalizeDefinition(item: any): WorkflowDefinition {
   };
 }
 
+function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): WorkflowDefinitionCommand {
+  const command: WorkflowDefinitionCommand = {
+    groupId: data.groupId,
+    adminUsers: normalizeStringList(data.adminUsers),
+    icon: data.icon || 'Setting',
+    definitionName: data.definitionName,
+    definitionKey: data.definitionKey,
+    designerJson: data.designerJson,
+    formCode: data.formCode,
+    formJson: data.formJson,
+    status: data.status,
+    remark: data.remark,
+  };
+  if (includeId) {
+    command.id = data.id;
+  }
+  return command;
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(item => String(item).trim()).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    const text = value.trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        return parsed.map(item => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      // Fallback to comma separated values.
+    }
+    return text.split(',').map(item => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function normalizeVersion(item: any): WorkflowDefinitionVersion {
   return {
     ...item,
+    id: normalizeId(item?.id),
+    definitionId: normalizeId(item?.definitionId),
     publishTime: normalizeDateTime(item?.publishTime),
   };
+}
+
+function normalizeId(value: unknown): WorkflowId {
+  return value == null ? '' : String(value);
 }
 
 function normalizeNodeCatalog(item: any): WorkflowNodeCatalog {
@@ -467,16 +509,6 @@ function normalizeNodeCatalog(item: any): WorkflowNodeCatalog {
     categoryName: item?.categoryName || item?.groupName || '基础节点',
     groupName: item?.groupName || item?.categoryName || '基础节点',
     executionType: item?.executionType || (item?.bpmnType === 'userTask' ? 'USER_TASK' : 'NONE'),
-  };
-}
-
-function normalizeNodeDefinition(item: any): WorkflowNodeDefinition {
-  return {
-    ...normalizeNodeCatalog(item),
-    id: item?.id,
-    status: item?.status,
-    createdTime: normalizeDateTime(item?.createdTime),
-    updatedTime: normalizeDateTime(item?.updatedTime),
   };
 }
 
@@ -501,7 +533,7 @@ function normalizeProcessInstance(item: any): WorkflowProcessInstance {
   return {
     processInstanceId: item?.processInstanceId ? String(item.processInstanceId) : '',
     businessKey: item?.businessKey,
-    definitionId: item?.definitionId ? Number(item.definitionId) : undefined,
+    definitionId: item?.definitionId ? normalizeId(item.definitionId) : undefined,
     processName: item?.processName || '-',
     processKey: item?.processKey || '-',
     processDefinitionId: item?.processDefinitionId,
@@ -539,14 +571,14 @@ function normalizeRecords(records: any): WorkflowTaskRecord[] {
     return [];
   }
   return records.map((item) => ({
-    id: item?.id ? Number(item.id) : undefined,
+    id: item?.id ? normalizeId(item.id) : undefined,
     processInstanceId: item?.processInstanceId ? String(item.processInstanceId) : '',
     taskId: item?.taskId,
     taskName: item?.taskName,
     taskDefinitionKey: item?.taskDefinitionKey,
     action: item?.action || '',
     actionName: item?.actionName || item?.action || '-',
-    operatorId: item?.operatorId ? Number(item.operatorId) : undefined,
+    operatorId: item?.operatorId ? normalizeId(item.operatorId) : undefined,
     operatorName: item?.operatorName,
     comment: item?.comment,
     variables: normalizeVariables(item?.variables),

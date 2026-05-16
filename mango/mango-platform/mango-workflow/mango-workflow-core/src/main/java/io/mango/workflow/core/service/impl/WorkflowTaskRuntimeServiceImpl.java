@@ -51,6 +51,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
@@ -453,7 +454,9 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
                     ? WorkflowEmptyAssigneeStrategy.TO_ADMIN
                     : config.getEmptyAssigneeStrategy();
             if (strategy == WorkflowEmptyAssigneeStrategy.TO_ADMIN) {
-                taskService.setAssignee(task.getId(), WorkflowAssigneeResolver.ADMIN_USER);
+                taskService.setAssignee(task.getId(), definitionAdminUsers(task.getProcessInstanceId()).stream()
+                        .findFirst()
+                        .orElse(WorkflowAssigneeResolver.ADMIN_USER));
                 return true;
             }
             if (strategy == WorkflowEmptyAssigneeStrategy.TO_USER
@@ -467,7 +470,8 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         boolean changed = false;
         Map<String, Object> variables = readStoredVariables(task.getProcessInstanceId());
         WorkflowAssigneeResolver.ResolvedAssignees resolved = assigneeResolver.applyEmptyStrategy(config,
-                assigneeResolver.resolve(config, variables, initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey()));
+                assigneeResolver.resolve(config, variables, initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey()),
+                variables);
         if (resolved.empty()) {
             return applyAutoEmptyStrategy(task, resolved.emptyStrategy(), variables);
         }
@@ -511,6 +515,19 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             return true;
         }
         return false;
+    }
+
+    private List<String> definitionAdminUsers(String processInstanceId) {
+        Object value = readStoredVariables(processInstanceId).get(WorkflowAssigneeResolver.DEFINITION_ADMIN_USERS_VAR);
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(String::valueOf).filter(StringUtils::hasText).toList();
+        }
+        return Arrays.stream(String.valueOf(value).split("\\s*,\\s*"))
+                .filter(StringUtils::hasText)
+                .toList();
     }
 
     private Set<String> taskIdentityGroups(String taskId) {

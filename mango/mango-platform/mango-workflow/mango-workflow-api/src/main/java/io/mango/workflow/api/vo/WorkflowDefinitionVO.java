@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 流程定义视图。
@@ -20,6 +21,12 @@ public class WorkflowDefinitionVO {
 
     @Schema(description = "流程分组名称")
     private String groupName;
+
+    @Schema(description = "流程管理员用户名列表")
+    private List<String> adminUsers;
+
+    @Schema(description = "流程图标")
+    private String icon;
 
     @Schema(description = "流程名称")
     private String definitionName;

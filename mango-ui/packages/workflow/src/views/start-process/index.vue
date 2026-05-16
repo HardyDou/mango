@@ -283,7 +283,7 @@ onMounted(loadData);
 
 <style scoped>
 .workflow-start-page {
-  padding: 16px;
+  padding: 0;
 }
 
 .card-header {

@@ -2,6 +2,7 @@ package io.mango.workflow.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
@@ -34,7 +35,10 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +52,9 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
     private static final String INITIATOR_VAR = "mangoInitiator";
     private static final String INITIATOR_NAME_VAR = "mangoInitiatorName";
     private static final String DEFINITION_ID_VAR = "mangoDefinitionId";
+    private static final String DEFINITION_ADMIN_USERS_VAR = "mangoDefinitionAdminUsers";
+    private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
+    };
 
     private final WorkflowDefinitionMapper definitionMapper;
     private final WorkflowFormInstanceMapper formInstanceMapper;
@@ -80,6 +87,7 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
         variables.put(INITIATOR_VAR, initiator);
         variables.put(INITIATOR_NAME_VAR, initiator);
         variables.put(DEFINITION_ID_VAR, String.valueOf(definition.getId()));
+        variables.put(DEFINITION_ADMIN_USERS_VAR, parseAdminUsers(definition.getAdminUsers()));
 
         String businessKey = StringUtils.hasText(command.getBusinessKey())
                 ? command.getBusinessKey().trim()
@@ -207,6 +215,30 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService {
         } catch (JsonProcessingException e) {
             return "{}";
         }
+    }
+
+    private List<String> parseAdminUsers(String value) {
+        if (!StringUtils.hasText(value)) {
+            return List.of();
+        }
+        try {
+            return cleanList(objectMapper.readValue(value, STRING_LIST_TYPE));
+        } catch (JsonProcessingException e) {
+            return cleanList(List.of(value.split("\\s*,\\s*")));
+        }
+    }
+
+    private List<String> cleanList(Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        LinkedHashSet<String> set = new LinkedHashSet<>();
+        for (String value : values) {
+            if (StringUtils.hasText(value)) {
+                set.add(value.trim());
+            }
+        }
+        return new ArrayList<>(set);
     }
 
     private String currentUser() {

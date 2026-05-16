@@ -22,7 +22,7 @@ public interface IWorkflowDefinitionService {
 
     R<WorkflowDefinitionVO> get(Long id);
 
-    R<Long> create(SaveWorkflowDefinitionCommand command);
+    R<String> create(SaveWorkflowDefinitionCommand command);
 
     R<Boolean> update(SaveWorkflowDefinitionCommand command);
 

@@ -1,5 +1,7 @@
 package io.mango.infra.web.starter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.mango.infra.kv.api.expression.KvContextContributor;
 import io.mango.infra.kv.api.IKvStore;
@@ -14,8 +16,10 @@ import io.mango.infra.web.support.InnerMappingScanner;
 import io.mango.infra.web.support.ServletRequestContextProvider;
 import io.mango.infra.web.support.WebKvContextContributor;
 import io.mango.infra.web.support.WebTraceIdResolver;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -28,14 +32,10 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-
-import java.util.List;
 
 /**
  * Mango Infra Web 自动配置。
@@ -66,19 +66,27 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @Bean
     @ConditionalOnMissingBean(name = "mangoLongToStringJacksonCustomizer")
     public Jackson2ObjectMapperBuilderCustomizer mangoLongToStringJacksonCustomizer() {
+        // Snowflake IDs exceed JavaScript's safe integer range, so HTTP JSON emits Long values as strings.
         return builder -> builder
                 .serializerByType(Long.class, ToStringSerializer.instance)
                 .serializerByType(Long.TYPE, ToStringSerializer.instance);
     }
 
-    @Override
-    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.stream()
-                .filter(MappingJackson2HttpMessageConverter.class::isInstance)
-                .map(MappingJackson2HttpMessageConverter.class::cast)
-                .forEach(converter -> converter.getObjectMapper()
-                        .registerModule(new com.fasterxml.jackson.databind.module.SimpleModule()
-                                .addSerializer(Long.class, ToStringSerializer.instance)));
+    @Bean
+    @ConditionalOnMissingBean(name = "mangoLongToStringObjectMapperPostProcessor")
+    public BeanPostProcessor mangoLongToStringObjectMapperPostProcessor() {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+                if (bean instanceof ObjectMapper objectMapper) {
+                    SimpleModule module = new SimpleModule("mango-long-to-string");
+                    module.addSerializer(Long.class, ToStringSerializer.instance);
+                    module.addSerializer(Long.TYPE, ToStringSerializer.instance);
+                    objectMapper.registerModule(module);
+                }
+                return bean;
+            }
+        };
     }
 
     @Bean

@@ -45,7 +45,7 @@ onMounted(loadData);
 
 <style scoped>
 .workflow-form-page {
-  padding: 16px;
+  padding: 0;
 }
 
 .card-header {
