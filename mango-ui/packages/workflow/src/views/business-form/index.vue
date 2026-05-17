@@ -1155,7 +1155,10 @@ async function loadExpenseHistory(businessKey: string) {
       expenseForm.businessStatus = latest.status;
       expenseForm.submitCount = records.length;
     }
-    detailVisitedNodeKeys.value = await loadVisitedNodeKeys(expenseForm.currentProcessInstanceId);
+    detailVisitedNodeKeys.value = uniqueKeys([
+      ...currentTaskKeysFromHistory(ordered),
+      ...await loadVisitedNodeKeys(expenseForm.currentProcessInstanceId),
+    ]);
   } finally {
     historyLoading.value = false;
   }
@@ -1177,7 +1180,10 @@ async function loadSealHistory(businessKey: string) {
       sealForm.businessStatus = latest.status;
       sealForm.submitCount = records.length;
     }
-    detailVisitedNodeKeys.value = await loadVisitedNodeKeys(sealForm.currentProcessInstanceId);
+    detailVisitedNodeKeys.value = uniqueKeys([
+      ...currentTaskKeysFromHistory(ordered),
+      ...await loadVisitedNodeKeys(sealForm.currentProcessInstanceId),
+    ]);
   } finally {
     historyLoading.value = false;
   }
@@ -1274,6 +1280,17 @@ function firstCurrentTaskKey(apply: WorkflowBusinessApply) {
   return apply.currentTaskDefinitionKeys
     || apply.currentTasks?.map(task => task.taskDefinitionKey).filter(Boolean).join(',')
     || '';
+}
+
+function currentTaskKeysFromHistory(applies: WorkflowBusinessApply[]) {
+  return applies.map(apply => firstCurrentTaskKey(apply)).filter(Boolean);
+}
+
+function uniqueKeys(keys: string[]) {
+  return Array.from(new Set(keys
+    .flatMap(key => String(key).split(','))
+    .map(key => key.trim())
+    .filter(Boolean)));
 }
 
 function isTerminalStatus(status: ExpenseStatus) {

@@ -74,16 +74,26 @@ const WorkflowTreeNode = defineComponent({
   },
   setup(nodeProps) {
     const visitedSet = () => new Set(nodeProps.visitedNodeKeys || []);
+    const currentKeySet = () => new Set(String(nodeProps.currentNodeKey || '')
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean));
+    const rejectedNodeKey = () => {
+      const currentKeys = currentKeySet();
+      if (currentKeys.size) {
+        return '';
+      }
+      const visitedKeys = nodeProps.visitedNodeKeys || [];
+      return visitedKeys[visitedKeys.length - 1] || '';
+    };
     const isCurrent = (node: WorkflowDesignerNode) => Boolean(
       !nodeProps.completed
       && !nodeProps.rejected
-      && nodeProps.currentNodeKey
-      && node.id === nodeProps.currentNodeKey,
+      && currentKeySet().has(node.id),
     );
     const isRejectedNode = (node: WorkflowDesignerNode) => Boolean(
       nodeProps.rejected
-      && nodeProps.currentNodeKey
-      && node.id === nodeProps.currentNodeKey,
+      && (currentKeySet().has(node.id) || rejectedNodeKey() === node.id),
     );
     const hasWorkflowStarted = () => Boolean(
       nodeProps.currentNodeKey
