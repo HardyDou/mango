@@ -126,7 +126,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     const config = resolveRuntimeConfig(menu, moduleConfig);
     const container = containerRef.value;
     if (!config || !container) {
-      mountMessage(`缺少微应用运行配置：${moduleConfig?.runtimeCode || menu.moduleCode || menu.path}`);
+      mountMessage(`缺少微应用运行配置：${resolveRuntimeCode(menu, moduleConfig)}`);
       return;
     }
     activeRuntimeApp.value = config;
@@ -158,11 +158,11 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   }
 
   function resolveRuntimeConfig(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
-    return runtimeApps.value.find(app => moduleConfig?.runtimeCode && app.appCode === moduleConfig.runtimeCode)
-      || runtimeApps.value.find(app => menu.appCode && menu.appCode !== 'internal-admin' && app.appCode === menu.appCode)
-      || runtimeApps.value.find(app => app.appCode === 'mango-admin-local')
-      || runtimeApps.value.find(app => app.appCode === 'internal-admin')
-      || runtimeApps.value[0];
+    const runtimeCode = resolveRuntimeCode(menu, moduleConfig);
+    if (!runtimeCode) {
+      return undefined;
+    }
+    return runtimeApps.value.find(app => app.appCode === runtimeCode);
   }
 
   function resolveModuleConfig(menu: ShellMenu) {
@@ -269,6 +269,16 @@ function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig[] {
       preload: module.preload === true,
       alive: module.alive === true,
     }));
+}
+
+function resolveRuntimeCode(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
+  if (moduleConfig?.runtimeCode) {
+    return moduleConfig.runtimeCode;
+  }
+  if (menu.appCode && menu.appCode !== 'internal-admin') {
+    return menu.appCode;
+  }
+  return menu.moduleCode || menu.path || menu.component || 'unknown';
 }
 
 function preloadRuntimeApps(apps: MangoRuntimeAppConfig[]) {

@@ -63,6 +63,25 @@ const brokenHybridConfig = {
   },
 };
 
+const missingEntryHybridConfig = {
+  profile: 'hybrid',
+  modules: {
+    'mango-authorization': {
+      mode: 'micro',
+      runtimeCode: 'mango-admin-rbac-app',
+      entry: 'http://b.mango.io:5181/',
+    },
+    'mango-system': {
+      mode: 'local',
+      runtimeCode: 'mango-admin-system-local',
+    },
+    'mango-workflow': {
+      mode: 'micro',
+      runtimeCode: 'mango-admin-workflow-app',
+    },
+  },
+};
+
 test.describe.serial('Shell runtime composition', () => {
   test.beforeAll(() => {
     originalRuntimeConfig = readFileSync(runtimeConfigPath, 'utf-8');
@@ -147,6 +166,21 @@ test.describe.serial('Shell runtime composition', () => {
     await expect(page.getByText(/运行单元：mango-admin-rbac-app/)).toBeVisible();
     await expect(page.getByText(/入口地址：http:\/\/b\.mango\.io:5999\//)).toBeVisible();
     await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
+  });
+
+  test('missing remote entry does not fall back to another micro app', async ({ page }) => {
+    writeRuntimeConfig(missingEntryHybridConfig);
+    await login(page);
+
+    await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
+    await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
+    await expectRuntime(page, {
+      moduleCode: 'mango-workflow',
+      runtimeCode: 'mango-admin-workflow-app',
+      pageType: 'MICRO_ROUTE',
+    });
+    await expect(page.getByText('缺少微应用运行配置：mango-admin-workflow-app')).toBeVisible();
+    await expect(page.locator('main')).not.toContainText('新增套餐');
   });
 });
 
