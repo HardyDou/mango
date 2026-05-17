@@ -349,6 +349,9 @@ export const workflowApi = {
   businessApplyLatestProgress: (businessType: string, businessKey: string) => get<WorkflowBusinessApplyProgress | null>('/workflow/business-applies/progress/latest', {
     params: { businessType, businessKey },
   }).then(data => data ? normalizeBusinessApplyProgress(data) : null),
+  businessApplyByProcessInstance: (processInstanceId: string) => get<WorkflowBusinessApply>('/workflow/business-applies/progress/by-process-instance', {
+    params: { processInstanceId },
+  }).then(normalizeBusinessApply),
   businessApplyLatestProgressBatch: (businessType: string, businessKeys: string[]) => post<Record<string, WorkflowBusinessApplyProgress>>('/workflow/business-applies/progress/latest-batch', {
     businessType,
     businessKeys,

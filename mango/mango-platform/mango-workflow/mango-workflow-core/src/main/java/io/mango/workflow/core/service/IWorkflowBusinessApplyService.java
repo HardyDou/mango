@@ -10,6 +10,8 @@ public interface IWorkflowBusinessApplyService extends WorkflowBusinessApplyApi 
     void markProcessStarted(Long applyId, Long processDefinitionId, String processDefinitionKey,
                             String engineProcessDefinitionId, String processName, String processInstanceId);
 
+    io.mango.common.result.R<io.mango.workflow.api.vo.WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId);
+
     void refreshCurrentTasks(String processInstanceId);
 
     void markApproved(String processInstanceId);

@@ -131,6 +131,14 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
     }
 
     @Override
+    public R<WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId) {
+        Require.notBlank(processInstanceId, WorkflowCode.APPLY_INVALID.getCode(), "流程实例ID不能为空");
+        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
+        return R.ok(toVo(apply, tasksByApplyId(apply.getId())));
+    }
+
+    @Override
     public R<PageResult<WorkflowBusinessApplyVO>> history(String businessType, String businessKey, WorkflowBusinessApplyPageQuery query) {
         Require.notBlank(businessType, WorkflowCode.APPLY_INVALID.getCode(), "业务类型不能为空");
         Require.notBlank(businessKey, WorkflowCode.APPLY_INVALID.getCode(), "业务主键不能为空");

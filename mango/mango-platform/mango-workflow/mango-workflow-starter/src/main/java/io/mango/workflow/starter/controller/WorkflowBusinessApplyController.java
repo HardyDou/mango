@@ -81,4 +81,11 @@ public class WorkflowBusinessApplyController {
             @Valid @RequestBody WorkflowBusinessApplyProgressBatchQuery query) {
         return R.ok(workflowBusinessApplyService.latestProgress(query.getBusinessType(), query.getBusinessKeys()));
     }
+
+    @GetMapping("/progress/by-process-instance")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:business-apply:detail")
+    @Operation(summary = "按流程实例查询业务申请")
+    public R<WorkflowBusinessApplyVO> byProcessInstance(@RequestParam String processInstanceId) {
+        return workflowBusinessApplyService.byProcessInstance(processInstanceId);
+    }
 }

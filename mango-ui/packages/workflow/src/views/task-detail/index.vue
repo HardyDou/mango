@@ -139,7 +139,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { workflowApi, type WorkflowProcessDetail, type WorkflowTaskDetail } from '../../api/workflow';
+import { workflowApi, type WorkflowBusinessApply, type WorkflowProcessDetail, type WorkflowTaskDetail } from '../../api/workflow';
 import {
   applyIdOf,
   businessPermissionsOf,
@@ -157,6 +157,7 @@ const loading = ref(false);
 const submitting = ref(false);
 const taskDetail = ref<WorkflowTaskDetail | null>(null);
 const processDetail = ref<WorkflowProcessDetail | null>(null);
+const businessApply = ref<WorkflowBusinessApply | null>(null);
 const runtimeFields = ref<RuntimeFormField[]>([]);
 const unsupportedFields = ref<Array<{ label: string; type: string }>>([]);
 const actionForm = ref({
@@ -184,8 +185,9 @@ const currentTaskDefinitionKey = computed(() =>
   detail.value?.task?.taskDefinitionKey
   || (detail.value?.task?.id ? firstCurrentTaskDefinitionKey() : latestTaskDefinitionKey()),
 );
-const businessType = computed(() => businessTypeOf(detail.value?.variables));
-const businessComponent = computed(() => resolveBusinessApprovalComponent(businessType.value));
+const businessType = computed(() => businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
+const renderMode = computed(() => businessApply.value?.renderMode || (businessType.value ? 'CUSTOM_PAGE' : 'DYNAMIC_FORM'));
+const businessComponent = computed(() => renderMode.value === 'CUSTOM_PAGE' ? resolveBusinessApprovalComponent(businessType.value) : null);
 const businessContext = computed<BusinessApprovalContext | null>(() => {
   if (!detail.value || !businessType.value) {
     return null;
@@ -193,8 +195,8 @@ const businessContext = computed<BusinessApprovalContext | null>(() => {
   const variables = detail.value.variables || {};
   return {
     businessType: businessType.value,
-    businessKey: String(variables.businessKey || detail.value.process.businessKey || detail.value.task?.businessKey || ''),
-    applyId: applyIdOf(variables),
+    businessKey: String(businessApply.value?.businessKey || variables.businessKey || detail.value.process.businessKey || detail.value.task?.businessKey || ''),
+    applyId: String(businessApply.value?.id || applyIdOf(variables)),
     processInstanceId: detail.value.process.processInstanceId,
     taskId: detail.value.task?.id,
     taskDefinitionKey: currentTaskDefinitionKey.value,
@@ -220,11 +222,25 @@ async function loadDetail() {
       ElMessage.warning('缺少任务ID或流程实例ID');
       return;
     }
+    await loadBusinessApply();
     const parsed = parseRuntimeForm(detail.value?.formJson);
     runtimeFields.value = parsed.fields;
     unsupportedFields.value = parsed.unsupported;
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadBusinessApply() {
+  const processInstanceId = detail.value?.process.processInstanceId;
+  if (!processInstanceId) {
+    businessApply.value = null;
+    return;
+  }
+  try {
+    businessApply.value = await workflowApi.businessApplyByProcessInstance(processInstanceId);
+  } catch {
+    businessApply.value = null;
   }
 }
 

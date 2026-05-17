@@ -240,7 +240,13 @@ async function submitStart() {
   try {
     const instance = await workflowApi.startProcess({
       definitionId: selectedDefinition.value.id,
+      businessType: String(formVariables.value.businessType || selectedDefinition.value.definitionKey || ''),
+      businessKey: String(formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode || ''),
       variables: {
+        title: formVariables.value.title || selectedDefinition.value.definitionName,
+        summary: formVariables.value.summary || selectedDefinition.value.remark || selectedDefinition.value.definitionKey,
+        businessType: formVariables.value.businessType || selectedDefinition.value.definitionKey,
+        businessKey: formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode,
         ...formVariables.value,
         ...advancedVariables,
       },

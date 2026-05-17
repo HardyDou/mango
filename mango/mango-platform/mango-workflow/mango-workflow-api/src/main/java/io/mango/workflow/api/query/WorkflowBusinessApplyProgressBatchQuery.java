@@ -16,7 +16,6 @@ import java.util.List;
 public class WorkflowBusinessApplyProgressBatchQuery {
 
     @Schema(description = "业务类型")
-    @NotBlank(message = "业务类型不能为空")
     @Size(max = 128, message = "业务类型最多128个字符")
     private String businessType;
 
