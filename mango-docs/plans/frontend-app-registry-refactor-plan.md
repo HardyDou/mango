@@ -12,8 +12,8 @@
 - 后端模块继续表达领域能力，前端应用表达用户入口和运行单元。
 - 当前 `internal-admin` 继续作为默认内置管理端应用，确保现有登录、菜单、角色、租户能力不破坏。
 - 先支持本地应用注册，再扩展远程微应用加载。
-- 主框架只依赖统一协议，不直接依赖具体微前端引擎。
-- `qiankun`、`wujie`、`iframe`、外链等作为 adapter 层实现，避免业务代码被引擎绑定。
+- 主框架只依赖统一协议，不让业务页面直接依赖具体微前端引擎。
+- `wujie` 已作为当前 `MICRO_APP` adapter 落地；`qiankun`、`iframe`、外链等仍可作为 adapter 层替换或扩展。
 
 ## 管理后台双形态样例
 
@@ -169,13 +169,13 @@ export interface MangoAppRuntime {
 
 ```text
 local adapter       本地包内置注册
+wujie adapter       当前远程微应用运行时
 iframe adapter      iframe 过渡
-wujie adapter       可选远程微应用
 qiankun adapter     可选远程微应用
 link adapter        外链跳转
 ```
 
-第一阶段实现 `local adapter` 和 `iframe/link adapter`，微前端引擎先预留接口。
+当前阶段已经实现 `local adapter`、`wujie adapter`、`iframe/link adapter`。远程子应用通过 Wujie 加载 HTML 入口，Shell 继续统一管理菜单、登录态、主题、TagsView 和 `/api` 代理。
 
 ### P0：单体模式保持可用
 

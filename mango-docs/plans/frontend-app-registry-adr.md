@@ -16,8 +16,8 @@
 ## 约束
 
 - `internal-admin` 是默认内置本地应用，必须保持单体打包可用。
-- 主框架只依赖统一协议和 adapter，不直接绑定 qiankun、wujie 等具体微前端引擎。
-- 第一阶段只落地 local、iframe、link 的协议和 adapter；微前端引擎只预留扩展点。
+- 主框架只依赖统一协议和 adapter，业务页面不直接绑定 qiankun、wujie 等具体微前端引擎。
+- 当前管理后台微前端形态已使用 Wujie 作为 `MICRO_APP` adapter；local、iframe、link 仍通过同一协议保留。
 
 ## 管理后台示例
 
@@ -43,3 +43,5 @@ deployMode=HYBRID
 ```
 
 两种形态共享同一个授权边界、租户开通关系和菜单权限树；差异只体现在前端运行配置与菜单页面运行类型。
+
+当前 `internal-admin` 的部署形态切换以 `mango-admin-shell/public/runtime-config.json` 为准，不要求修改后端表、菜单、权限或租户数据。
