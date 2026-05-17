@@ -6,6 +6,7 @@
   "dependencies": {
     "@mango/auth": "workspace:*",
     "@mango/common": "workspace:*",
+    "@mango/file": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",
     "@mango/workflow": "workspace:*",

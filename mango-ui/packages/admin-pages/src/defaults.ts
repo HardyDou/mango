@@ -35,8 +35,14 @@ export function registerDefaultAdminPages() {
         'system/route/index': () => import('@mango/system/src/views/route/index.vue'),
         'system/public-path/index': () => import('@mango/system/src/views/public-path/index.vue'),
         'system/area/index': () => import('@mango/system/src/views/area/index.vue'),
-        'system/file/index': () => import('@mango/system/src/views/file/index.vue'),
-        'system/file-storage/index': () => import('@mango/system/src/views/file-storage/index.vue'),
+      },
+    },
+    {
+      moduleCode: 'mango-file',
+      pages: {
+        'file/files/index': () => import('@mango/file').then(m => m.FileView),
+        'file/storage-configs/index': () => import('@mango/file').then(m => m.FileStorageView),
+        'file/settings/index': () => import('@mango/file').then(m => m.FileSettingsView),
       },
     },
     {

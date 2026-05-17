@@ -24,6 +24,10 @@
             <artifactId>mango-infra-kv-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
         <!-- Redisson client bean for Redis-backed KV store -->
         <dependency>
             <groupId>org.redisson</groupId>

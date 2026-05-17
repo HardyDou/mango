@@ -1,228 +1,128 @@
-# 文件能力基础模块计划
+# 文件服务收敛与后续任务计划
 
-更新时间：2026-05-09
+更新时间：2026-05-17
 
-## 任务来源
+## 当前结论
 
-参考旧项目：
+`mango-file` 定位为文件资产服务，只负责文件记录、存储、访问、目录、权限、归档、版本和派生关系。文档处理和模板渲染不放在文件服务内：
 
-- `/Users/hardy/Work/baohan/baohan/mango-api/mango-file`
+- Office 转 PDF、PDF 合并/拆分/压缩/水印、OCR、缩略图：归到 `mango-document`。
+- 模板分类、变量定义、模板版本、按业务数据生成 Word/PDF：归到 `mango-template`。
+- 在线 Office 编辑：由 `mango-document` 作为 provider 适配，`mango-file` 只提供文件读写、权限校验、新版本保存。
 
-为当前 `mango` 增加统一文件能力。旧模块只能作为能力参考，不直接整体搬迁；新实现必须遵循当前 `mango` 的模块分层、权限模型、机构隔离和 Flyway 迁移规范。
+## 已完成基础能力
 
-## 目标
+- 后端模块已按 `mango-file-api / mango-file-core / mango-file-starter` 拆分。
+- 管理端已作为一级菜单“文件中心”，不再挂在 system 下。
+- 已支持文件上传、批量上传、分页、详情、预览元数据、下载、归档。
+- 已支持逻辑目录、文件配置、存储配置。
+- 已支持本地存储、S3 兼容、MinIO、AWS S3、阿里云 OSS、腾讯云 COS、七牛云 Kodo。
+- MinIO 本地联调已支持内部 endpoint 与浏览器 public endpoint 分离，浏览器地址使用 `http://file.mango.io:9000`。
+- 文件表名已从 `sys_file_*` 收敛为 `file_*`。
+- 前端 Long ID 统一按字符串处理。
+- README 已明确文件服务边界，不再把文档处理和模板能力塞入文件服务。
+- 上传、下载、预览入口按流式处理设计，禁止把完整文件一次性加载到内存。
 
-文件能力作为平台基础能力，向系统管理、组织、授权、后续业务模块统一提供文件上传、下载、元数据管理和存储适配能力。
+## P0：当前收尾任务
 
-业务模块只依赖文件 API，不直接关心本地磁盘、MinIO、OSS、COS、S3 等具体存储实现。
+| 任务 | 内容 | 验收 |
+|---|---|---|
+| 表名规范收尾 | 确认实体、迁移、README、运行库全部使用 `file_*`；保留兼容迁移将旧 `sys_file_*` rename 到新表 | 后端编译通过；文件接口使用新表；E2E 上传/预览/下载通过 |
+| Maven 启动问题修复 | 修正根项目 `spring-boot:run` 执行到 parent POM 的问题，保证指定 `:mango-monolith-app` 可直接启动 | `mvn -pl :mango-monolith-app -am spring-boot:run` 不再寻找 parent mainClass |
+| 文件配置 YML/DB 优先级确认 | 明确数据库租户配置优先，YML 作为默认兜底 | README 已说明；接口返回 `defaultConfig` 表意清楚 |
+| 测试数据清理 | E2E 产生的文件记录、目录、MinIO 对象清理 | `file_record` / `file_directory` 无 `mango-file-e2e%` 残留 |
 
-## 模块规划
+## P1：文件服务核心增强
 
-建议新增平台模块：
+| 任务 | 内容 | 验收 |
+|---|---|---|
+| 统一前端 Upload 组件 | `@mango/file` 提供单一 `Upload.vue`，不按 Image/File/Excel 拆核心上传器 | 文件中心页面、工作流动态表单、业务页面可复用同一个组件 |
+| Upload 简化配置 | 支持 `fmt`、`count`、`size`、`sizes`、`display`、`columns` | 不配置 `fmt` 表示不限格式；`count>1` 自动多文件；list/table 可配置显示列 |
+| 上传业务上下文 | 上传支持 `bizType`、`bizId`、`purpose`、`directoryId`、`meta` | 上传记录可展示业务 ID、用途、上传时间、账号、自定义参数 |
+| 文件记录扩展字段 | 增加 `biz_meta`，保存业务自定义参数 JSON；保留标准字段独立查询 | 详情和分页返回 `bizMeta`；业务自定义参数不污染固定列 |
+| 前端旧组件兼容 | 旧 `ImageUpload/FileUpload/ExcelUpload` 暂时转发到新 Upload，避免一次性破坏旧页面 | 构建通过；旧引用可用；新增业务推荐使用 `Upload` |
+| Browser Upload API | 面向浏览器，保留 multipart 上传、目录、业务上下文、权限和策略校验 | 登录态、按钮权限、租户隔离、格式大小校验均生效 |
+| Internal File Save API | 面向后端服务上传，支持 `InputStream/Resource` 保存系统生成文件 | `mango-document` / `mango-template` 可通过 Java API 保存生成文件，不模拟前端 multipart |
+| 统一底层 FileAssetService | Browser API 和 Internal API 共用对象命名、存储写入、hash、记录创建、权限字段处理 | 不复制两套存储逻辑 |
+| 大文件内存约束 | 上传、哈希、下载、预览代理必须流式处理；内部上传使用临时文件或分片中转，不使用 `byte[]` 承载完整文件 | 代码审查无 `readAllBytes` / 全量 `byte[]` 保存大文件；大文件上传内存平稳 |
+| 文件下载审计 | 记录预览、下载、归档等访问行为 | 审计记录可按文件 ID、用户、时间查询 |
 
-- `mango-platform/mango-file/mango-file-api`
-  - 文件记录 VO、Command、Query。
-  - `FileClient` 或领域服务接口。
-  - 文件状态、访问级别、存储类型枚举。
-- `mango-platform/mango-file/mango-file-core`
-  - 文件记录持久化。
-  - 文件上传、下载、归档、元数据查询。
-  - 存储适配接口与本地存储实现。
-  - 机构隔离、公开文件、私有文件访问校验。
-- `mango-platform/mango-file/mango-file-starter`
-  - Web Controller。
-  - Swagger/Knife4j 中文接口文档。
-  - 自动配置和默认本地存储配置。
+## P2：大文件与对象存储增强
 
-首期先不放到 `mango-infra`，因为文件记录、访问权限、机构边界、审计都属于平台业务基础能力；底层存储适配抽象可以保持干净，后续如需要可下沉到 infra。
+| 任务 | 内容 | 验收 |
+|---|---|---|
+| 浏览器直传 | 服务端生成 MinIO/S3 预签名 PUT URL，浏览器直传对象存储 | 上传大文件不经过业务后端流量 |
+| 分片上传 | 支持 init、part sign、complete、abort、list parts | 大于阈值文件自动分片；失败可恢复 |
+| 断点续传 | 基于 uploadId、part 列表、hash 校验恢复上传 | 刷新页面后可继续上传未完成文件 |
+| 秒传增强 | 基于 SHA-256 支持租户内或全局复用底层对象 | 相同文件无需重复上传对象 |
+| 文件版本模型 | 支持同一业务附件多版本、系统生成新版本 | 版本可追溯，默认下载最新或指定版本 |
+| 派生文件关系 | 支持原文件、预览 PDF、压缩版、缩略图等关系 | `mango-document` 产物能挂回原文件 |
+| 生命周期清理 | 清理过期临时上传、过期预签名任务、按策略归档/删除 | 定时任务可观测、可重试 |
+| 内容安全扩展点 | 预留病毒扫描、敏感内容检测、文件类型真实识别 | 可插拔，不阻塞基础上传链路 |
 
-## 能力范围
+## 双入口策略
 
-### P0：先完成可替代前端和业务接入的基础能力
+### Browser Upload API
 
-- 单文件上传。
-- 多文件上传。
-- 文件详情查询。
-- 文件下载。
-- 文件预览元数据。
-- 文件归档/删除。
-- 文件记录分页查询。
-- 默认本地存储。
-- 机构内私有文件隔离。
-- 平台管理员可查看平台范围文件记录。
-- Swagger/Knife4j 可直接调试。
-- 前端通用上传组件可接入，并替换原 mock/占位上传地址。
-- 文件管理页面可完成上传、查询、预览元数据、下载、归档。
+面向浏览器用户：
 
-### P1：补正式存储能力
+- 使用登录态、租户/机构上下文和按钮权限。
+- 必须执行格式、大小、Content-Type、目录、归档策略校验。
+- 支持 `bizType`、`bizId`、`purpose`、`directoryId`、`meta`。
+- 支持后续直传、分片、断点续传。
+- 审计记录为用户上传。
 
-- S3 兼容存储适配，覆盖 MinIO、阿里云 OSS、腾讯云 COS、AWS S3。
-- 签名 URL。
-- 文件 hash、大小、扩展名、MIME 校验。
-- 文件访问级别：
-  - `PRIVATE`：仅所属机构或授权主体可访问。
-  - `PUBLIC_READ`：公开读取，写入仍需授权。
-  - `INTERNAL`：仅系统内部接口使用。
-- 文件用途字段，例如头像、附件、合同、资质材料。
-- 上传大小、扩展名、MIME 白名单配置。
+### Internal File Save API
 
-### P2：补大文件和批处理能力
+面向内部后端服务：
 
-- 分块上传。
-- 断点续传。
-- 云存储直传。
-- 批量下载 ZIP。
-- 文件生命周期清理任务。
-- 病毒扫描/内容安全扩展点。
+- 不模拟 multipart 前端请求。
+- 提供 Java API，必要时再补内部 REST/Feign。
+- 输入为 `InputStream` 或 `Resource`；小文件可提供便捷重载，但底层不得依赖全量 `byte[]`。
+- 权限使用服务身份和调用方授权，不走按钮权限。
+- 仍必须写入同一套文件记录、存储配置、对象命名、hash、审计和租户字段。
+- 支持 `source=USER_UPLOAD / SYSTEM_GENERATED / DOCUMENT_DERIVED`、`sourceFileId`、`bizType`、`bizId`、`purpose`、`meta`。
 
-## 旧模块参考结论
+### 内存与大文件规则
 
-旧 `mango-file` 已具备这些可复用设计：
+- 禁止使用 `readAllBytes()`、`ByteArrayOutputStream` 或 `FileReader` 作为通用文件处理路径。
+- 后端浏览器上传使用 `MultipartFile.getInputStream()`，哈希计算和对象写入均为流式读取。
+- 内部服务上传如果输入流不可重复读取，先流式写入临时文件，再从临时文件计算哈希和上传对象；临时文件必须在事务结束后清理。
+- 下载接口返回 `InputStreamResource`，不把对象内容转成 `byte[]`。
+- 预览入口只返回元数据、登录态下载地址、预签名 URL 或外部预览服务地址；文件转换不在 `mango-file` 内完成。
+- 前端通用 `Upload` 不做 Excel/Word/PDF 内容解析，避免大文件在浏览器内存中展开；业务确需解析时应由专用业务组件明确限制文件大小。
 
-- `FileTemplate` 存储抽象。
-- `LocalFileTemplate` 本地存储。
-- `S3FileTemplate` S3 兼容存储。
-- `sys_file_record` 文件记录表。
-- 单文件、多文件、分块、批量下载接口。
-- `file.provider.type` 配置模型。
+## 前端 Upload 目标 API
 
-不能直接照搬的点：
+```vue
+<Upload
+  v-model="attachments"
+  fmt="image,pdf,word,excel,zip"
+  count="20"
+  size="100MB"
+  display="list"
+  biz-type="expense"
+  :biz-id="expenseId"
+  :biz-meta="{ stage: 'apply', category: 'invoice' }"
+  :columns="['fileName', 'fileSize', 'bizId', 'createdBy', 'createdTime', 'actions']"
+/>
+```
 
-- 包名是 `com.mango`，当前项目使用 `io.mango`。
-- 旧接口返回体没有统一使用当前 `R<T>` 规范。
-- 旧权限边界较弱，下载和详情需要补机构/公开/内部访问控制。
-- 旧表字段缺少当前平台需要的 `institution/tenant` 语义说明、访问级别、业务归属、归档语义。
-- 旧 controller 中文描述不够完整，需要按当前 API 规范补齐每个接口和参数说明。
-- 旧迁移文件在模块根路径，当前必须按模块 Flyway 规范放入 `db/migration/file` 或项目约定路径。
+规则：
 
-## 推荐接口
+- `fmt` 不传表示允许所有格式；支持分类和扩展名混用。
+- `count` 控制数量，大于 1 自动多选。
+- `size` 是单文件大小限制，默认使用文件中心后台策略。
+- `sizes` 支持按分类覆盖单文件大小，例如 `{ image: '10MB', video: '500MB' }`。
+- `display` 支持 `list / thumbnail / table / drag`。
+- `columns` 控制列表列，支持文件名、大小、格式、用途、业务类型、业务 ID、上传账号、上传时间、存储方式、状态、操作。
 
-### 上传
+## 不做事项
 
-- `POST /file/files`
-  - 单文件上传。
-  - `multipart/form-data`。
-  - 参数：`file`、`purpose`、`accessLevel`、`bizType`、`bizId`。
+- 不在文件服务内实现 Word 转 PDF。
+- 不在文件服务内实现 PDF 合并、拆分、压缩、水印。
+- 不在文件服务内实现 OCR。
+- 不在文件服务内实现模板变量和模板渲染。
+- 不在上传组件内集成 ONLYOFFICE / WPS / Collabora。
 
-- `POST /file/files/batch`
-  - 多文件上传。
-  - `multipart/form-data`。
-
-### 查询
-
-- `GET /file/files/page`
-  - 文件记录分页。
-  - 默认按当前机构过滤。
-
-- `GET /file/files/{fileId}`
-  - 文件详情。
-
-- `GET /file/files/{fileId}/preview`
-  - 预览元数据。
-  - 返回文件名、MIME、大小、可预览类型、临时访问地址。
-
-### 访问
-
-- `GET /file/files/{fileId}/download`
-  - 文件下载。
-
-- `GET /file/files/{fileId}/url`
-  - 获取临时访问地址。
-
-### 删除/归档
-
-- `DELETE /file/files/{fileId}`
-  - 默认归档文件记录，不直接物理删除对象。
-
-- `DELETE /file/files/{fileId}/object`
-  - 物理删除对象，仅平台管理员或内部维护接口使用。
-
-## 权限边界
-
-- 上传必须登录。
-- 私有文件只允许所属机构、创建人、被授权主体访问。
-- 公开文件允许匿名读取，但文件元数据维护仍需登录。
-- 内部文件不对外开放，只允许内部服务或平台维护能力访问。
-- 跨机构访问默认拒绝。
-- 下载接口需要记录审计日志。
-- 物理删除需要高权限，不作为普通业务页面默认能力。
-
-## 数据表建议
-
-文件记录表建议命名：
-
-- `sys_file_record`
-
-核心字段：
-
-- `id`
-- `tenant_id`
-- `biz_type`
-- `biz_id`
-- `purpose`
-- `access_level`
-- `storage_type`
-- `bucket_name`
-- `object_name`
-- `file_name`
-- `file_ext`
-- `file_size`
-- `content_type`
-- `file_hash`
-- `status`
-- `archived`
-- `created_by`
-- `created_time`
-- `updated_by`
-- `updated_time`
-
-## 当前执行记录
-
-### 2026-05-09 P0 已实现
-
-- 新增 `mango-platform/mango-file`，按 `api/core/starter` 拆分。
-- 单体服务已接入 `mango-file-starter`。
-- 新增 `sys_file_record` Flyway 迁移，迁移路径为 `db/migration/file`。
-- 新增文件管理菜单 Flyway 迁移。
-- 文件接口已提供上传、批量上传、分页、详情、预览元数据、下载、归档。
-- 前端新增文件管理页面。
-- 前端通用上传组件默认接入 `/api/file/files`，不再使用旧 `/admin/upload/*` 地址。
-- 前端上传组件完成真实文件接口联调：
-  - `FileUpload` 默认返回 `mango-file:{id}`，可通过 `valueType=record` 返回完整文件记录。
-  - `ImageUpload` 默认返回 `mango-file:{id}`，支持通过统一 request 拉取 blob 预览，避免预览时丢失认证头。
-  - `ExcelUpload` 上传原始 Excel 到文件模块，同时保留本地解析预览能力，原始文件记录通过 `upload-success` 事件返回。
-  - `Upload` 基础拖拽组件默认走统一文件模块，并把上传结果回填到 `fileList`。
-- 文件下载改为统一 request blob 下载，避免 `window.open` 无法携带 `Authorization` 头。
-- 新增 `mango-platform/mango-file/README.md`。
-
-### 2026-05-09 P0 边界说明
-
-- 当前用户可见术语是“机构”，底层字段仍为 `tenant_id`。
-- 当前实现按机构隔离，不做平台机构绕过查询全部文件。
-- `PUBLIC_READ` 作为访问级别先保留，匿名公开下载暂未开放。
-- 文件归档只修改记录状态，不物理删除存储对象。
-
-## 验收
-
-### 后端验证
-
-- Flyway 正常执行，不禁用迁移。
-- 单体服务 `5555` 可启动。
-- Knife4j 显示“文件管理-文件管理接口”中文分组。
-- 上传、详情、预览、下载、归档接口返回正常。
-- 未登录上传返回 401。
-- 无权限跨机构访问私有文件返回 403。
-- 公开文件匿名下载可用（P1 开放）。
-
-### 前端 E2E
-
-- 通用上传组件使用真实接口上传。
-- 现有 `FileUpload`、`ImageUpload`、`ExcelUpload` 相关 API 使用 `/file/files` 文件能力接口。
-- 上传成功后页面展示文件名、大小、状态。
-- 点击下载可以获取文件。
-- 删除/归档后页面刷新不再显示。
-- A 公司无法访问芒果集团私有文件。
-
-## 执行顺序
-
-当前作为插入任务进入系统基础待办。执行时必须先完成当前进行中的机构模型任务验收，再进入文件能力实现，避免机构边界和文件权限边界同时变更导致验证失焦。
+这些能力已拆到 [文档处理与模板中心能力规划](./document-template-capability-plan.md)。

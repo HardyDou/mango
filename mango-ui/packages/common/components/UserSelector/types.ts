@@ -8,6 +8,7 @@ export interface UserSelectorOption {
 
 export interface UserSelectorProps {
   modelValue?: string | string[];
+  mode?: 'select' | 'dialog';
   multiple?: boolean;
   placeholder?: string;
   title?: string;

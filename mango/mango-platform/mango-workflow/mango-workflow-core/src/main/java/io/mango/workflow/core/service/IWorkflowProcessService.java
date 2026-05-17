@@ -17,4 +17,6 @@ public interface IWorkflowProcessService {
     R<PageResult<WorkflowProcessInstanceVO>> initiated(WorkflowTaskPageQuery query);
 
     R<WorkflowProcessDetailVO> detail(String processInstanceId);
+
+    R<PageResult<WorkflowProcessInstanceVO>> historyByBusinessKey(String businessKey, WorkflowTaskPageQuery query);
 }

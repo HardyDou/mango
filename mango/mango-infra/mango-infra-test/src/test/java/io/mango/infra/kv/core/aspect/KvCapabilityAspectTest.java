@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.aspect;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.expression.KvContextContributor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -76,7 +77,7 @@ class KvCapabilityAspectTest {
 
     @Test
     void resolveKey_inlineTokenWithoutTemplate_rejected() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> resolveKey("user:#userId"));
+        BizException exception = assertThrows(BizException.class, () -> resolveKey("user:#userId"));
 
         assertTrue(exception.getMessage().contains("SpEL template syntax"));
     }

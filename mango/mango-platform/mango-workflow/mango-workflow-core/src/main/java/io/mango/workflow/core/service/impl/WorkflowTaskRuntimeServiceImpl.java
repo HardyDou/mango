@@ -28,9 +28,11 @@ import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
 import io.mango.workflow.core.entity.WorkflowFormInstance;
 import io.mango.workflow.core.entity.WorkflowTaskRecord;
+import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
+import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
@@ -51,6 +53,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
@@ -65,7 +68,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeService {
 
-    private static final String DEFAULT_REJECT_REASON = "审批拒绝";
+    private static final String DEFAULT_REJECT_REASON = "审批驳回";
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
 
@@ -78,6 +81,8 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     private final ObjectMapper objectMapper;
     private final WorkflowAssigneeResolver assigneeResolver;
     private final WorkflowCandidateGroupProvider candidateGroupProvider;
+    private final IWorkflowBusinessApplyService workflowBusinessApplyService;
+    private final WorkflowEventPublisher workflowEventPublisher;
 
     @Override
     public R<PageResult<WorkflowTaskVO>> todo(WorkflowTaskPageQuery query) {
@@ -163,8 +168,15 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         claimIfUnassigned(task);
         taskService.complete(task.getId(), variables);
         saveRecord(task, WorkflowTaskAction.COMPLETE, command.getComment(), command.getVariables());
+        boolean ended = isProcessEnded(task.getProcessInstanceId());
         updateFormInstance(task.getProcessInstanceId(), variables,
-                isProcessEnded(task.getProcessInstanceId()) ? WorkflowInstanceStatus.COMPLETED : WorkflowInstanceStatus.RUNNING);
+                ended ? WorkflowInstanceStatus.COMPLETED : WorkflowInstanceStatus.RUNNING);
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        workflowEventPublisher.publishTaskCompleted(task, formInstance, variables, command.getComment());
+        if (ended) {
+            workflowEventPublisher.publishProcessCompleted(task.getProcessInstanceId(), formInstance, variables);
+            workflowBusinessApplyService.markApproved(task.getProcessInstanceId());
+        }
         triggerEventNotify(task, variables);
         advanceRuntimeTasks(task.getProcessInstanceId());
         return R.ok(Boolean.TRUE);
@@ -189,6 +201,12 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         runtimeService.deleteProcessInstance(task.getProcessInstanceId(),
                 StringUtils.hasText(command.getComment()) ? command.getComment().trim() : DEFAULT_REJECT_REASON);
         updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.REJECTED);
+        WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        String reason = StringUtils.hasText(command.getComment()) ? command.getComment().trim() : DEFAULT_REJECT_REASON;
+        workflowEventPublisher.publishTaskRejected(task, formInstance, variables, command.getComment());
+        workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
+        workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
+        workflowBusinessApplyService.markRejected(task.getProcessInstanceId(), reason, task.getId(), task.getTaskDefinitionKey());
         return R.ok(Boolean.TRUE);
     }
 
@@ -206,7 +224,14 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             }
             updateFormInstance(processInstanceId, readStoredVariables(processInstanceId),
                     isProcessEnded(processInstanceId) ? WorkflowInstanceStatus.COMPLETED : WorkflowInstanceStatus.RUNNING);
+            workflowBusinessApplyService.refreshCurrentTasks(processInstanceId);
             if (!changed || isProcessEnded(processInstanceId)) {
+                if (isProcessEnded(processInstanceId)) {
+                    WorkflowFormInstance formInstance = findFormInstance(processInstanceId);
+                    if (formInstance != null && WorkflowInstanceStatus.COMPLETED.name().equals(formInstance.getStatus())) {
+                        workflowBusinessApplyService.markApproved(processInstanceId);
+                    }
+                }
                 return;
             }
         }
@@ -280,6 +305,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         WorkflowTaskVO vo = new WorkflowTaskVO();
         vo.setId(task.getId());
         vo.setTaskName(task.getName());
+        vo.setTaskDefinitionKey(task.getTaskDefinitionKey());
         vo.setProcessInstanceId(task.getProcessInstanceId());
         vo.setProcessDefinitionId(task.getProcessDefinitionId());
         vo.setAssigneeName(task.getAssignee());
@@ -303,6 +329,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         WorkflowTaskVO vo = new WorkflowTaskVO();
         vo.setId(task.getId());
         vo.setTaskName(task.getName());
+        vo.setTaskDefinitionKey(task.getTaskDefinitionKey());
         vo.setProcessInstanceId(task.getProcessInstanceId());
         vo.setProcessDefinitionId(task.getProcessDefinitionId());
         vo.setAssigneeName(task.getAssignee());
@@ -453,7 +480,9 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
                     ? WorkflowEmptyAssigneeStrategy.TO_ADMIN
                     : config.getEmptyAssigneeStrategy();
             if (strategy == WorkflowEmptyAssigneeStrategy.TO_ADMIN) {
-                taskService.setAssignee(task.getId(), WorkflowAssigneeResolver.ADMIN_USER);
+                taskService.setAssignee(task.getId(), definitionAdminUsers(task.getProcessInstanceId()).stream()
+                        .findFirst()
+                        .orElse(WorkflowAssigneeResolver.ADMIN_USER));
                 return true;
             }
             if (strategy == WorkflowEmptyAssigneeStrategy.TO_USER
@@ -467,7 +496,8 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         boolean changed = false;
         Map<String, Object> variables = readStoredVariables(task.getProcessInstanceId());
         WorkflowAssigneeResolver.ResolvedAssignees resolved = assigneeResolver.applyEmptyStrategy(config,
-                assigneeResolver.resolve(config, variables, initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey()));
+                assigneeResolver.resolve(config, variables, initiator(task.getProcessInstanceId()), task.getTaskDefinitionKey()),
+                variables);
         if (resolved.empty()) {
             return applyAutoEmptyStrategy(task, resolved.emptyStrategy(), variables);
         }
@@ -499,18 +529,41 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             return true;
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.AUTO_REJECT) {
-            saveRecord(task, WorkflowTaskAction.AUTO_REJECT, "审批人为空，系统自动拒绝", variables);
-            runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "审批人为空，系统自动拒绝");
+            saveRecord(task, WorkflowTaskAction.AUTO_REJECT, "审批人为空，系统自动驳回", variables);
+            runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "审批人为空，系统自动驳回");
             updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.REJECTED);
+            WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+            String reason = "审批人为空，系统自动驳回";
+            workflowEventPublisher.publishTaskRejected(task, formInstance, variables, reason);
+            workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
+            workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
+            workflowBusinessApplyService.markRejected(task.getProcessInstanceId(), reason, task.getId(), task.getTaskDefinitionKey());
             return true;
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.AUTO_END) {
             saveRecord(task, WorkflowTaskAction.AUTO_END, "审批人为空，系统自动结束", variables);
             runtimeService.deleteProcessInstance(task.getProcessInstanceId(), "审批人为空，系统自动结束");
             updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.ENDED);
+            workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), findFormInstance(task.getProcessInstanceId()),
+                    variables, "审批人为空，系统自动结束");
+            workflowBusinessApplyService.markTerminated(task.getProcessInstanceId(), "审批人为空，系统自动结束",
+                    task.getId(), task.getTaskDefinitionKey());
             return true;
         }
         return false;
+    }
+
+    private List<String> definitionAdminUsers(String processInstanceId) {
+        Object value = readStoredVariables(processInstanceId).get(WorkflowAssigneeResolver.DEFINITION_ADMIN_USERS_VAR);
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(String::valueOf).filter(StringUtils::hasText).toList();
+        }
+        return Arrays.stream(String.valueOf(value).split("\\s*,\\s*"))
+                .filter(StringUtils::hasText)
+                .toList();
     }
 
     private Set<String> taskIdentityGroups(String taskId) {

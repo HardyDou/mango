@@ -42,6 +42,12 @@ packages/common -> packages/api-schema
 - 菜单配置返回的组件路径必须通过 `componentsMap.ts` 或 `import.meta.glob()` 解析
 - 禁止使用无法被 Vite 预分析的 `import(\`/src/${path}\`)`
 
+### 4. Long ID 类型
+
+- 后端 `Long`、雪花 ID、数据库主键、业务主键等标识字段在前端统一按字符串处理，公共类型使用 `ApiId`。
+- API 类型、路由参数、表格行数据、上传文件标识和组件 model 中的 ID 禁止用 `Number(id)`、`parseInt(id)` 归一化。
+- 只有页码、数量、金额、排序等真实数值字段可以转成 number。
+
 ## 开发流程
 
 ### 本地开发

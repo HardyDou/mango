@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.ICache;
 import io.mango.infra.kv.api.IKvStore;
 import lombok.RequiredArgsConstructor;
@@ -36,20 +37,14 @@ public class KvStoreCache implements ICache {
     }
 
     private void validateKey(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
     }
 
     private void validateValue(String value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
+        Require.notNull(value, "value cannot be null");
     }
 
     private void validateTtl(long ttlSeconds) {
-        if (ttlSeconds <= 0) {
-            throw new IllegalArgumentException("ttlSeconds must be positive");
-        }
+        Require.positive(ttlSeconds, "ttlSeconds must be positive");
     }
 }

@@ -33,6 +33,12 @@ public class WorkflowProcessInstanceVO {
     @Schema(description = "发起人")
     private String initiatorName;
 
+    @Schema(description = "当前执行节点名称")
+    private String currentTaskName;
+
+    @Schema(description = "当前执行节点定义键")
+    private String currentTaskDefinitionKey;
+
     @Schema(description = "状态")
     private String status;
 

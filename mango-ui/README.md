@@ -133,6 +133,7 @@ npx playwright test
 - 跨包共享类型优先放在 `packages/api-schema`
 - `packages/common` 需要的公共请求封装放在包内 `api/`
 - 不允许 `packages/common` 通过 `@/api/*` 访问基座 API
+- 后端 `Long`、雪花 ID、数据库主键、业务主键等标识字段在前端统一按字符串处理，公共类型使用 `ApiId`。除页码、数量、金额、排序等真实数值外，禁止对 ID 调用 `Number(id)`、`parseInt(id)` 后再请求接口或生成组件状态。
 
 ### 导入规则
 

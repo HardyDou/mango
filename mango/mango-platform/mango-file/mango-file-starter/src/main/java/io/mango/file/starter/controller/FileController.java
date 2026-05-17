@@ -39,8 +39,8 @@ public class FileController {
     private final IFileService fileService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "单文件上传")
-    @Operation(summary = "单文件上传", description = "登录接口。上传文件并创建当前机构下的文件记录")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "单文件上传", description = "权限接口。上传文件并创建当前机构下的文件记录")
     public R<FileRecordVO> upload(
             @Parameter(description = "文件", required = true)
             @RequestPart("file") MultipartFile file,
@@ -51,13 +51,17 @@ public class FileController {
             @Parameter(description = "业务类型")
             @RequestParam(required = false) String bizType,
             @Parameter(description = "业务ID")
-            @RequestParam(required = false) String bizId) {
-        return fileService.upload(file, purpose, accessLevel, bizType, bizId);
+            @RequestParam(required = false) String bizId,
+            @Parameter(description = "业务自定义参数 JSON")
+            @RequestParam(required = false) String bizMeta,
+            @Parameter(description = "逻辑目录ID。根目录为0")
+            @RequestParam(required = false) Long directoryId) {
+        return fileService.upload(file, purpose, accessLevel, bizType, bizId, bizMeta, directoryId);
     }
 
     @PostMapping(path = "/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "多文件上传")
-    @Operation(summary = "多文件上传", description = "登录接口。批量上传文件并创建当前机构下的文件记录")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "多文件上传", description = "权限接口。批量上传文件并创建当前机构下的文件记录")
     public R<List<FileRecordVO>> uploadBatch(
             @Parameter(description = "文件列表", required = true)
             @RequestPart("files") MultipartFile[] files,
@@ -68,20 +72,24 @@ public class FileController {
             @Parameter(description = "业务类型")
             @RequestParam(required = false) String bizType,
             @Parameter(description = "业务ID")
-            @RequestParam(required = false) String bizId) {
-        return fileService.uploadBatch(files, purpose, accessLevel, bizType, bizId);
+            @RequestParam(required = false) String bizId,
+            @Parameter(description = "业务自定义参数 JSON")
+            @RequestParam(required = false) String bizMeta,
+            @Parameter(description = "逻辑目录ID。根目录为0")
+            @RequestParam(required = false) Long directoryId) {
+        return fileService.uploadBatch(files, purpose, accessLevel, bizType, bizId, bizMeta, directoryId);
     }
 
     @GetMapping("/page")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "分页查询文件记录")
-    @Operation(summary = "分页查询文件记录", description = "登录接口。按当前登录机构查询文件记录")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:list")
+    @Operation(summary = "分页查询文件记录", description = "权限接口。按当前登录机构查询文件记录")
     public R<PageResult<FileRecordVO>> page(@ParameterObject FileRecordPageQuery query) {
         return fileService.page(query);
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取文件详情")
-    @Operation(summary = "获取文件详情", description = "登录接口。按文件ID查询文件记录详情")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
+    @Operation(summary = "获取文件详情", description = "权限接口。按文件ID查询文件记录详情")
     public R<FileRecordVO> get(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
@@ -89,8 +97,8 @@ public class FileController {
     }
 
     @GetMapping("/preview")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "获取文件预览元数据")
-    @Operation(summary = "获取文件预览元数据", description = "登录接口。返回文件名、类型、大小、预览地址和下载地址")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
+    @Operation(summary = "获取文件预览元数据", description = "权限接口。返回文件名、类型、大小、预览地址和下载地址")
     public R<FilePreviewVO> preview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
@@ -98,8 +106,8 @@ public class FileController {
     }
 
     @GetMapping("/download")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "下载文件")
-    @Operation(summary = "下载文件", description = "登录接口。按文件ID下载当前机构文件")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
+    @Operation(summary = "下载文件", description = "权限接口。按文件ID下载当前机构文件")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> download(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
@@ -120,8 +128,8 @@ public class FileController {
     }
 
     @DeleteMapping
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "归档文件")
-    @Operation(summary = "归档文件", description = "登录接口。默认只归档文件记录，不物理删除存储对象")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:archive")
+    @Operation(summary = "归档文件", description = "权限接口。默认只归档文件记录，不物理删除存储对象")
     public R<Boolean> archive(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id,
@@ -134,8 +142,8 @@ public class FileController {
     }
 
     @PutMapping("/archive")
-    @ApiAccess(mode = ApiResourceAccessMode.LOGIN, desc = "归档文件")
-    @Operation(summary = "归档文件", description = "登录接口。按命令归档文件记录，不物理删除存储对象")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:archive")
+    @Operation(summary = "归档文件", description = "权限接口。按命令归档文件记录，不物理删除存储对象")
     public R<Boolean> archiveByCommand(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id,

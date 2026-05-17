@@ -11,7 +11,7 @@ import lombok.Getter;
 public enum WorkflowEmptyAssigneeStrategy {
 
     AUTO_PASS("自动通过"),
-    AUTO_REJECT("自动拒绝"),
+    AUTO_REJECT("自动驳回"),
     AUTO_END("自动结束"),
     TO_ADMIN("转交管理员"),
     TO_USER("转交指定成员");

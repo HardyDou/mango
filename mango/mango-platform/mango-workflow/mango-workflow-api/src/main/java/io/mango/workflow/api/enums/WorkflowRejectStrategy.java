@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 审批拒绝处理策略。
+ * 审批驳回处理策略。
  */
 @Getter
 @AllArgsConstructor

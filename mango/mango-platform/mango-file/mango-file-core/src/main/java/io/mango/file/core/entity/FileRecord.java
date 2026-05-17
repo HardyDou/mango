@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * 文件记录实体。
  */
 @Data
-@TableName("sys_file_record")
+@TableName("file_record")
 public class FileRecord {
 
     @TableId(type = IdType.ASSIGN_ID)
@@ -21,6 +21,8 @@ public class FileRecord {
     private String bizType;
     private String bizId;
     private String purpose;
+    private String bizMeta;
+    private Long directoryId;
     private String accessLevel;
     private String storageType;
     private Long storageConfigId;

@@ -18,40 +18,48 @@
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" :data="tableData" stripe>
-        <el-table-column prop="definitionName" label="流程名称" min-width="180" />
-        <el-table-column prop="definitionKey" label="流程编码" min-width="180" />
-        <el-table-column prop="groupName" label="流程分组" width="160" />
-        <el-table-column prop="formCode" label="表单编码" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="lastDeployTime" label="发布时间" width="180" />
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link :disabled="!row.processDefinitionId" @click="openStartDialog(row)">
-              发起
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div v-loading="loading" class="workflow-launch-board">
+        <el-empty v-if="!groupedDefinitions.length" description="暂无可发起流程" />
+        <section v-for="group in groupedDefinitions" v-else :key="group.name" class="workflow-launch-group">
+          <div class="group-title">{{ group.name }}</div>
+          <div class="workflow-launch-grid">
+            <button
+              v-for="item in group.items"
+              :key="item.id || item.definitionKey"
+              class="workflow-launch-card"
+              :class="{ disabled: !item.processDefinitionId }"
+              type="button"
+              :disabled="!item.processDefinitionId"
+              @click="openStartDialog(item)"
+            >
+              <span class="workflow-launch-icon">
+                <img v-if="isImageIcon(item.icon)" :src="item.icon" :alt="item.definitionName" />
+                <el-icon v-else><component :is="workflowIconComponent(item.icon)" /></el-icon>
+              </span>
+              <span class="workflow-launch-content">
+                <span class="workflow-launch-name">{{ item.definitionName }}</span>
+                <span class="workflow-launch-subtitle">{{ item.remark || item.definitionKey }}</span>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="发起流程" width="680px" destroy-on-close>
-      <el-descriptions v-if="selectedDefinition" :column="2" border class="definition-summary">
-        <el-descriptions-item label="流程名称">{{ selectedDefinition.definitionName }}</el-descriptions-item>
-        <el-descriptions-item label="流程编码">{{ selectedDefinition.definitionKey }}</el-descriptions-item>
-        <el-descriptions-item label="流程分组">{{ selectedDefinition.groupName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="引擎版本">{{ selectedDefinition.processDefinitionVersion || '-' }}</el-descriptions-item>
-      </el-descriptions>
+    <el-dialog v-model="dialogVisible" :title="selectedDefinition?.definitionName || '发起流程'" width="680px" destroy-on-close>
+      <div v-if="selectedDefinition" class="definition-summary">
+        <span class="definition-name">{{ selectedDefinition.definitionName }}</span>
+        <span class="definition-meta">{{ selectedDefinition.definitionKey }}</span>
+        <span v-if="selectedDefinition.groupName" class="definition-meta">{{ selectedDefinition.groupName }}</span>
+        <span v-if="selectedDefinition.processDefinitionVersion" class="definition-meta">
+          v{{ selectedDefinition.processDefinitionVersion }}
+        </span>
+      </div>
 
       <el-form ref="startFormRef" :model="formVariables" label-width="96px">
-        <el-form-item label="业务主键">
-          <el-input v-model="startForm.businessKey" placeholder="可为空；为空时后端自动生成" clearable />
-        </el-form-item>
-
         <template v-if="startFields.length">
           <el-divider content-position="left">流程表单</el-divider>
-          <el-form-item v-for="field in startFields" :key="field.key" :label="field.label" :prop="field.key" :rules="field.rules">
-            <RuntimeFormRenderer :fields="[field]" :model="formVariables" label-width="0" />
-          </el-form-item>
+          <RuntimeFormRenderer :fields="startFields" :model="formVariables" />
         </template>
 
         <el-alert
@@ -92,17 +100,15 @@
           </el-form-item>
         </template>
 
-        <el-collapse class="start-advanced">
-          <el-collapse-item title="高级变量 JSON" name="variables">
+        <el-collapse v-if="showDebugFormTools" v-model="debugPanels" class="start-advanced">
+          <el-collapse-item title="开发调试" name="debug">
             <el-input
               v-model="startForm.variablesJson"
               type="textarea"
               :rows="6"
-              placeholder='例如：{"days":2,"reason":"年假"}'
+              placeholder='高级变量 JSON，例如：{"days":2,"reason":"年假"}'
             />
-          </el-collapse-item>
-          <el-collapse-item v-if="selectedDefinition?.formJson" title="表单配置预览" name="formJson">
-            <pre class="form-json-preview">{{ selectedDefinition.formJson }}</pre>
+            <pre v-if="selectedDefinition?.formJson" class="form-json-preview">{{ selectedDefinition.formJson }}</pre>
           </el-collapse-item>
         </el-collapse>
       </el-form>
@@ -116,8 +122,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { ElMessage, type FormInstance } from 'element-plus';
+import { Bell, Box, Cloudy, Connection, DocumentChecked, ForkSpoon, Share, User } from '@element-plus/icons-vue';
 import { parseDesignerJson, workflowApi, type WorkflowDefinition, type WorkflowDesignerNode, type WorkflowUserOption } from '../../api/workflow';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { createDefaultVariables, parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
@@ -130,7 +137,6 @@ const selectedDefinition = ref<WorkflowDefinition | null>(null);
 const startFormRef = ref<FormInstance>();
 const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED' });
 const startForm = ref({
-  businessKey: '',
   variablesJson: '{}',
 });
 const formVariables = ref<Record<string, any>>({});
@@ -141,6 +147,20 @@ const selectedAssignees = ref<Record<string, string | string[]>>({});
 const userOptions = ref<WorkflowUserOption[]>([]);
 const userLoading = ref(false);
 const usersLoaded = ref(false);
+const showDebugFormTools = import.meta.env.DEV;
+const debugPanels = ref<string[]>([]);
+
+const groupedDefinitions = computed(() => {
+  const groupMap = new Map<string, WorkflowDefinition[]>();
+  tableData.value.forEach(item => {
+    const groupName = item.groupName || '未分组';
+    if (!groupMap.has(groupName)) {
+      groupMap.set(groupName, []);
+    }
+    groupMap.get(groupName)!.push(item);
+  });
+  return Array.from(groupMap.entries()).map(([name, items]) => ({ name, items }));
+});
 
 async function loadData() {
   loading.value = true;
@@ -157,6 +177,23 @@ function resetQuery() {
   loadData();
 }
 
+function isImageIcon(value?: string) {
+  return Boolean(value && (/^(https?:|data:|blob:)/.test(value) || value.startsWith('/')));
+}
+
+function workflowIconComponent(value?: string) {
+  const iconMap = {
+    User,
+    Bell,
+    ForkSpoon,
+    Share,
+    Box,
+    Cloudy,
+    Connection,
+  };
+  return iconMap[value as keyof typeof iconMap] || DocumentChecked;
+}
+
 function openStartDialog(row: WorkflowDefinition) {
   selectedDefinition.value = row;
   const parsed = parseRuntimeForm(row.formJson);
@@ -164,7 +201,6 @@ function openStartDialog(row: WorkflowDefinition) {
   unsupportedFields.value = parsed.unsupported;
   formVariables.value = createDefaultVariables(parsed.fields);
   startForm.value = {
-    businessKey: '',
     variablesJson: '{}',
   };
   initiatorSelectNodes.value = collectInitiatorSelectNodes(row.designerJson);
@@ -184,17 +220,19 @@ async function submitStart() {
     return;
   }
   let advancedVariables: Record<string, any> = {};
-  try {
-    advancedVariables = startForm.value.variablesJson.trim()
-      ? JSON.parse(startForm.value.variablesJson)
-      : {};
-  } catch {
-    ElMessage.error('表单变量必须是合法 JSON');
-    return;
-  }
-  if (!advancedVariables || Array.isArray(advancedVariables) || typeof advancedVariables !== 'object') {
-    ElMessage.error('表单变量 JSON 必须是对象');
-    return;
+  if (showDebugFormTools) {
+    try {
+      advancedVariables = startForm.value.variablesJson.trim()
+        ? JSON.parse(startForm.value.variablesJson)
+        : {};
+    } catch {
+      ElMessage.error('表单变量必须是合法 JSON');
+      return;
+    }
+    if (!advancedVariables || Array.isArray(advancedVariables) || typeof advancedVariables !== 'object') {
+      ElMessage.error('表单变量 JSON 必须是对象');
+      return;
+    }
   }
   if (!validateSelectedAssignees()) {
     return;
@@ -203,8 +241,13 @@ async function submitStart() {
   try {
     const instance = await workflowApi.startProcess({
       definitionId: selectedDefinition.value.id,
-      businessKey: startForm.value.businessKey || undefined,
+      businessType: String(formVariables.value.businessType || selectedDefinition.value.definitionKey || ''),
+      businessKey: String(formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode || ''),
       variables: {
+        title: formVariables.value.title || selectedDefinition.value.definitionName,
+        summary: formVariables.value.summary || selectedDefinition.value.remark || selectedDefinition.value.definitionKey,
+        businessType: formVariables.value.businessType || selectedDefinition.value.definitionKey,
+        businessKey: formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode,
         ...formVariables.value,
         ...advancedVariables,
       },
@@ -283,7 +326,7 @@ onMounted(loadData);
 
 <style scoped>
 .workflow-start-page {
-  padding: 16px;
+  padding: 0;
 }
 
 .card-header {
@@ -293,12 +336,153 @@ onMounted(loadData);
 }
 
 .search-form {
+  margin-bottom: 12px;
+}
+
+.workflow-launch-board {
+  min-height: 280px;
+}
+
+.workflow-launch-group + .workflow-launch-group {
+  margin-top: 22px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.group-title::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--el-color-primary);
+}
+
+.workflow-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.workflow-launch-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 14px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.workflow-launch-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.workflow-launch-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.workflow-launch-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.workflow-launch-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.workflow-launch-icon .el-icon {
+  font-size: 24px;
+}
+
+.workflow-launch-content {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  text-align: left;
+}
+
+.workflow-launch-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-launch-subtitle {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.start-alert {
   margin-bottom: 16px;
 }
 
-.definition-summary,
-.start-alert {
-  margin-bottom: 16px;
+.definition-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.definition-name {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.definition-meta {
+  position: relative;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.definition-meta::before {
+  content: '/';
+  margin-right: 10px;
+  color: var(--el-text-color-placeholder);
 }
 
 .start-advanced {

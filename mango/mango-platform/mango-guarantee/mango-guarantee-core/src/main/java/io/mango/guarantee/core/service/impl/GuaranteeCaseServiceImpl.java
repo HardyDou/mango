@@ -11,7 +11,10 @@ import io.mango.guarantee.core.mapper.GuaranteeCaseMapper;
 import io.mango.guarantee.core.service.IGuaranteeCaseService;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
+import io.mango.workflow.api.WorkflowBusinessProcessApi;
+import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -19,7 +22,11 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 保函业务单服务实现。
@@ -32,6 +39,7 @@ public class GuaranteeCaseServiceImpl implements IGuaranteeCaseService {
     private static final String DEFAULT_CURRENCY = "CNY";
 
     private final GuaranteeCaseMapper caseMapper;
+    private final ObjectProvider<WorkflowBusinessProcessApi> workflowBusinessProcessApiProvider;
 
     @Override
     public PersistencePageResult<GuaranteeCaseVO> page(GuaranteeCaseQuery query) {
@@ -39,6 +47,7 @@ public class GuaranteeCaseServiceImpl implements IGuaranteeCaseService {
         Long tenantId = currentTenantId();
         Page<GuaranteeCaseVO> page = new Page<>(positive(actualQuery.getPage(), 1), positive(actualQuery.getSize(), 10));
         page.setRecords(caseMapper.selectVisiblePage(page, tenantId, actualQuery));
+        fillWorkflowProgress(page.getRecords());
         return PersistencePageResult.of(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
     }
 
@@ -47,6 +56,7 @@ public class GuaranteeCaseServiceImpl implements IGuaranteeCaseService {
         Require.notNull(caseId, "业务单ID不能为空");
         GuaranteeCaseVO detail = caseMapper.selectVisibleById(caseId, currentTenantId());
         Require.notNull(detail, GuaranteeCode.CASE_NOT_FOUND);
+        fillWorkflowProgress(List.of(detail));
         return detail;
     }
 
@@ -110,7 +120,39 @@ public class GuaranteeCaseServiceImpl implements IGuaranteeCaseService {
         try {
             return Long.valueOf(tenantId);
         } catch (NumberFormatException e) {
-            throw new IllegalStateException("当前机构上下文不是有效数字: " + tenantId, e);
+            return Require.fail(GuaranteeCode.TENANT_CONTEXT_REQUIRED.getCode(), "当前机构上下文不是有效数字: " + tenantId);
+        }
+    }
+
+    private void fillWorkflowProgress(List<GuaranteeCaseVO> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        WorkflowBusinessProcessApi workflowApi = workflowBusinessProcessApiProvider.getIfAvailable();
+        if (workflowApi == null) {
+            return;
+        }
+        List<String> businessKeys = records.stream()
+                .map(GuaranteeCaseVO::getCaseNo)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+        if (businessKeys.isEmpty()) {
+            return;
+        }
+        Map<String, WorkflowBusinessProcessVO> processByBusinessKey = workflowApi.latestByBusinessKeys(businessKeys)
+                .stream()
+                .collect(Collectors.toMap(WorkflowBusinessProcessVO::getBusinessKey, Function.identity(), (left, right) -> left));
+        for (GuaranteeCaseVO record : records) {
+            WorkflowBusinessProcessVO process = processByBusinessKey.get(record.getCaseNo());
+            if (process == null) {
+                continue;
+            }
+            record.setProcessInstanceId(process.getProcessInstanceId());
+            record.setProcessName(process.getProcessName());
+            record.setProcessStatus(process.getStatus());
+            record.setCurrentTaskName(process.getCurrentTaskName());
+            record.setCurrentTaskDefinitionKey(process.getCurrentTaskDefinitionKey());
         }
     }
 

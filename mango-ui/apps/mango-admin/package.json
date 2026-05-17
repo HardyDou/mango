@@ -17,6 +17,7 @@
   "dependencies": {
     "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
+    "@mango/file": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",
     "@mango/common": "workspace:*",

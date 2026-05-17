@@ -4,17 +4,27 @@ import com.qcloud.cos.COSClient;
 import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
+import com.qcloud.cos.http.HttpMethodName;
 import com.qcloud.cos.http.HttpProtocol;
 import com.qcloud.cos.model.COSObject;
+import com.qcloud.cos.model.GeneratePresignedUrlRequest;
 import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.model.PutObjectRequest;
+import com.qcloud.cos.model.ResponseHeaderOverrides;
 import com.qcloud.cos.region.Region;
 import io.mango.file.api.FileCode;
 import io.mango.file.core.entity.FileStorageConfig;
 import io.mango.common.result.Require;
 import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Optional;
 
 /**
  * 腾讯云 COS 文件存储实现。
@@ -51,7 +61,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
         try {
             COSObject object = client.getObject(config.getBucketName(), objectName);
             ObjectMetadata metadata = object.getObjectMetadata();
-            return new FileObject(object.getObjectContent(), metadata.getContentLength(), metadata.getContentType());
+            return FileObject.of(object.getObjectContent(), metadata.getContentLength(), metadata.getContentType(), client::shutdown);
         } catch (Exception e) {
             client.shutdown();
             return Require.fail(FileCode.FILE_READ_FAILED);
@@ -75,8 +85,58 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     public void test(FileStorageConfig config) {
         requireConfig(config);
         COSClient client = client(config);
+        String objectName = ".mango-storage-test";
         try {
-            client.doesBucketExist(config.getBucketName());
+            Require.isTrue(client.doesBucketExist(config.getBucketName()), FileCode.STORAGE_CONFIG_TEST_FAILED);
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(1L);
+            metadata.setContentType("application/octet-stream");
+            client.putObject(config.getBucketName(), objectName, new ByteArrayInputStream(new byte[]{1}), metadata);
+            client.deleteObject(config.getBucketName(), objectName);
+        } finally {
+            client.shutdown();
+        }
+    }
+
+    @Override
+    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return presignedUrl(config, objectName, fileName, expires, false);
+    }
+
+    @Override
+    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return presignedUrl(config, objectName, fileName, expires, true);
+    }
+
+    @Override
+    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+        return publicObjectUrl(config, objectName);
+    }
+
+    private Optional<String> presignedUrl(FileStorageConfig config,
+                                          String objectName,
+                                          String fileName,
+                                          Duration expires,
+                                          boolean attachment) {
+        requireConfig(config);
+        Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
+        Require.notNull(expires, FileCode.STORAGE_CONFIG_INVALID);
+        Require.isTrue(!expires.isNegative() && !expires.isZero(), FileCode.STORAGE_CONFIG_INVALID);
+        COSClient client = client(config);
+        try {
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(
+                    config.getBucketName(),
+                    objectName,
+                    HttpMethodName.GET);
+            request.setExpiration(Date.from(Instant.now().plus(expires)));
+            if (attachment && StringUtils.hasText(fileName)) {
+                ResponseHeaderOverrides headers = new ResponseHeaderOverrides();
+                headers.setContentDisposition(contentDisposition(fileName));
+                request.setResponseHeaders(headers);
+            }
+            return Optional.of(client.generatePresignedUrl(request).toString());
+        } catch (Exception e) {
+            return Optional.empty();
         } finally {
             client.shutdown();
         }
@@ -85,7 +145,7 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
     private void requireConfig(FileStorageConfig config) {
         requireBucket(config);
         requireAccessSecret(config);
-        Require.notBlank(config.getRegion(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "腾讯云 COS 区域不能为空");
+        Require.notBlank(config.getRegion(), FileCode.STORAGE_CONFIG_INVALID);
     }
 
     private COSClient client(FileStorageConfig config) {
@@ -93,5 +153,10 @@ public class TencentCosFileStorage extends AbstractCloudFileStorage {
         ClientConfig clientConfig = new ClientConfig(new Region(config.getRegion()));
         clientConfig.setHttpProtocol(enabled(config.getSslEnabled()) ? HttpProtocol.https : HttpProtocol.http);
         return new COSClient(credentials, clientConfig);
+    }
+
+    private String contentDisposition(String fileName) {
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return "attachment; filename*=UTF-8''" + encoded;
     }
 }

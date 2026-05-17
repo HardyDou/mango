@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.ITokenStore;
 import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,10 +54,10 @@ class TokenStoreTest extends KvStoreCapabilityTestSupport {
             ITokenStore tokenStore = new KvStoreTokenStore(fixture.store());
             String key = fixture.key("access:invalid");
 
-            assertThatThrownBy(() -> tokenStore.store(null, "v", 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> tokenStore.store("  ", "v", 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> tokenStore.store(key, null, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> tokenStore.store(key, "v", 0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> tokenStore.store(null, "v", 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> tokenStore.store("  ", "v", 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> tokenStore.store(key, null, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> tokenStore.store(key, "v", 0)).isInstanceOf(BizException.class);
         }
     }
 }

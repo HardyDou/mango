@@ -4,30 +4,24 @@
       <!-- 左侧：字典类型列表 -->
       <el-col :span="8">
         <el-card class="type-card">
-          <template #header>
-            <div class="card-header">
-              <span>字典类型</span>
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleAddType"
-              >
-                新增类型
-              </el-button>
-            </div>
-          </template>
-
-          <!-- 搜索框 -->
-          <el-input
-            v-model="typeKeyword"
-            placeholder="搜索类型名称/编码"
-            clearable
-            @input="handleTypeSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
+          <div class="search-toolbar dict-type-toolbar">
+            <el-input
+              v-model="typeKeyword"
+              placeholder="搜索类型名称/编码"
+              clearable
+              @input="handleTypeSearch"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button
+              type="primary"
+              @click="handleAddType"
+            >
+              新增类型
+            </el-button>
+          </div>
 
           <!-- 类型列表 -->
           <div class="type-list">
@@ -77,20 +71,6 @@
       <!-- 右侧：字典数据列表 -->
       <el-col :span="16">
         <el-card class="data-card">
-          <template #header>
-            <div class="card-header">
-              <span>字典数据 {{ currentType ? `- ${currentType.name}` : '' }}</span>
-              <el-button
-                type="primary"
-                :disabled="!currentType"
-                @click="handleAddData"
-              >
-                新增数据
-              </el-button>
-            </div>
-          </template>
-
-          <!-- 搜索框 -->
           <el-form
             :inline="true"
             class="search-form"
@@ -115,6 +95,19 @@
               </el-button>
             </el-form-item>
           </el-form>
+
+          <div class="action-toolbar">
+            <div class="toolbar-left">
+              <span class="current-type">{{ currentType ? `当前字典：${currentType.name}` : '请选择字典类型' }}</span>
+            </div>
+            <el-button
+              type="primary"
+              :disabled="!currentType"
+              @click="handleAddData"
+            >
+              新增数据
+            </el-button>
+          </div>
 
           <!-- 数据表格 -->
           <el-table
@@ -152,7 +145,11 @@
               prop="createTime"
               label="创建时间"
               width="180"
-            />
+            >
+              <template #default="{ row }">
+                {{ formatDate(row.createTime) }}
+              </template>
+            </el-table-column>
             <el-table-column
               label="操作"
               width="150"
@@ -359,9 +356,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import DictTag from '@mango/common/components/DictTag/index.vue';
-import Pagination from '@mango/common/components/Pagination/index.vue';
-import { useDict } from '@mango/common/hooks/useDict';
+import { DictTag, Pagination, formatDate, useDict } from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
@@ -639,16 +634,20 @@ onMounted(() => {
 .data-card {
   height: calc(100vh - 140px);
   overflow: auto;
-
-  :deep(.el-card__header) {
-    padding: 12px 20px;
-  }
 }
 
-.card-header {
+.search-toolbar,
+.action-toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dict-type-toolbar {
+  :deep(.el-input) {
+    flex: 1;
+  }
 }
 
 .type-list {
@@ -707,5 +706,14 @@ onMounted(() => {
   :deep(.el-form-item) {
     margin-bottom: 0;
   }
+}
+
+.action-toolbar {
+  margin-bottom: 12px;
+}
+
+.current-type {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 </style>

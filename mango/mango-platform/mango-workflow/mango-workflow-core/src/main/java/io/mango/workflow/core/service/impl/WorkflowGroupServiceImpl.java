@@ -59,7 +59,7 @@ public class WorkflowGroupServiceImpl implements IWorkflowGroupService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Long> create(SaveWorkflowGroupCommand command) {
+    public R<String> create(SaveWorkflowGroupCommand command) {
         Require.notNull(command, WorkflowCode.GROUP_INVALID);
         validate(command);
         WorkflowGroup entity = new WorkflowGroup();
@@ -73,7 +73,7 @@ public class WorkflowGroupServiceImpl implements IWorkflowGroupService {
         entity.setUpdatedTime(now);
         entity.setUpdatedAt(now);
         mapper.insert(entity);
-        return R.ok(entity.getId());
+        return R.ok(String.valueOf(entity.getId()));
     }
 
     @Override

@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import type { UploadProps, UploadRequestOptions } from 'element-plus';
@@ -93,7 +93,6 @@ const emit = defineEmits<{
 const uploadRef = ref();
 const previewVisible = ref(false);
 const previewUrl = ref('');
-const objectUrls = ref<string[]>([]);
 
 const accept = 'image/*';
 
@@ -173,9 +172,7 @@ const handleError: UploadProps['onError'] = (error, file) => {
 const handlePreview: UploadProps['onPreview'] = async (file) => {
   const url = file.url || '';
   if (url.startsWith('mango-file:')) {
-    const objectUrl = await createUploadedFileObjectUrl(Number(url.replace('mango-file:', '')));
-    objectUrls.value.push(objectUrl);
-    previewUrl.value = objectUrl;
+    previewUrl.value = await createUploadedFileObjectUrl(url.replace('mango-file:', ''));
   } else {
     previewUrl.value = url;
   }
@@ -208,10 +205,6 @@ defineExpose({
   upload: () => uploadRef.value?.submit(),
   abort: () => uploadRef.value?.abort(),
   clearFiles: () => uploadRef.value?.clearFiles(),
-});
-
-onBeforeUnmount(() => {
-  objectUrls.value.forEach(URL.revokeObjectURL);
 });
 </script>
 

@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.capability;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.IIdempotent;
 import io.mango.infra.kv.core.KvStoreTestFixtures.StoreFixture;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,9 +50,9 @@ class IdempotentTest extends KvStoreCapabilityTestSupport {
             IIdempotent idempotent = new KvStoreIdempotent(fixture.store());
             String key = fixture.key("request:invalid");
 
-            assertThatThrownBy(() -> idempotent.checkAndMark(null, 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> idempotent.checkAndMark("  ", 60)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> idempotent.checkAndMark(key, 0)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> idempotent.checkAndMark(null, 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> idempotent.checkAndMark("  ", 60)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> idempotent.checkAndMark(key, 0)).isInstanceOf(BizException.class);
         }
     }
 }

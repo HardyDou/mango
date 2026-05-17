@@ -30,6 +30,15 @@ public class FileRecordVO implements Serializable {
     @Schema(description = "文件用途")
     private String purpose;
 
+    @Schema(description = "业务自定义参数 JSON")
+    private String bizMeta;
+
+    @Schema(description = "逻辑目录ID")
+    private Long directoryId;
+
+    @Schema(description = "逻辑目录名称")
+    private String directoryName;
+
     @Schema(description = "访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
     private String accessLevel;
 
@@ -74,4 +83,25 @@ public class FileRecordVO implements Serializable {
 
     @Schema(description = "更新时间")
     private LocalDateTime updatedTime;
+
+    @Schema(description = "动态访问地址，不入库")
+    private String url;
+
+    @Schema(description = "动态下载地址，不入库")
+    private String downloadUrl;
+
+    @Schema(description = "是否支持对象存储直连访问")
+    private Boolean directAccess;
+
+    @Schema(description = "对象存储直连预览地址，不入库")
+    private String directPreviewUrl;
+
+    @Schema(description = "对象存储直连下载地址，不入库")
+    private String directDownloadUrl;
+
+    @Schema(description = "直连预览地址有效期，单位秒")
+    private Long directPreviewExpireSeconds;
+
+    @Schema(description = "直连下载地址有效期，单位秒")
+    private Long directDownloadExpireSeconds;
 }

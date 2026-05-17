@@ -289,6 +289,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
             vo.setMemberName(member.getDisplayName());
             vo.setMemberType(member.getMemberType());
             vo.setMemberStatus(member.getStatus());
+            vo.setPrimaryOrgId(member.getPrimaryOrgId());
         }
         vo.setUsername(user.getUsername());
         vo.setNickname(user.getNickname());

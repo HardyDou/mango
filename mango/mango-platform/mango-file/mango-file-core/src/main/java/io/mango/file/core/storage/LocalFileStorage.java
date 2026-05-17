@@ -12,6 +12,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * 本地磁盘文件存储。
@@ -61,11 +64,31 @@ public class LocalFileStorage implements FileStorage {
         Files.createDirectories(target.getParent());
     }
 
+    @Override
+    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+        if (!StringUtils.hasText(config.getPublicEndpoint()) || !StringUtils.hasText(objectName)) {
+            return Optional.empty();
+        }
+        String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
+        String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
+        return Optional.of(endpoint + "/" + encode(bucket) + "/" + encodeObjectName(objectName));
+    }
+
     private Path resolvePath(String bucketName, String objectName) {
         String bucket = StringUtils.hasText(bucketName) ? bucketName.trim() : properties.getDefaultBucket();
         Path root = Path.of(properties.getLocal().getRootPath()).toAbsolutePath().normalize();
         Path resolved = root.resolve(bucket).resolve(objectName).normalize();
         Require.isTrue(resolved.startsWith(root), FileCode.FILE_ACCESS_DENIED);
         return resolved;
+    }
+
+    private String encodeObjectName(String objectName) {
+        return URLEncoder.encode(objectName, StandardCharsets.UTF_8)
+                .replace("+", "%20")
+                .replace("%2F", "/");
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 }

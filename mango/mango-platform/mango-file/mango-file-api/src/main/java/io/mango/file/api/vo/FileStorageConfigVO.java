@@ -37,6 +37,9 @@ public class FileStorageConfigVO implements Serializable {
     @Schema(description = "存储桶名称")
     private String bucketName;
 
+    @Schema(description = "存储路径前缀")
+    private String storagePath;
+
     @Schema(description = "访问密钥 AccessKey")
     private String accessKey;
 

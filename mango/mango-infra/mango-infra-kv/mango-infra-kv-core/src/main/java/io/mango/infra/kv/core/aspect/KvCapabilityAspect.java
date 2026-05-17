@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.aspect;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.*;
 import io.mango.infra.kv.api.annotation.Cacheable;
 import io.mango.infra.kv.api.annotation.Idempotent;
@@ -203,11 +204,10 @@ public class KvCapabilityAspect {
             return String.valueOf(expr.getValue(context));
         }
 
-        if (!isDirectExpression(keyExpression)) {
-            throw new IllegalArgumentException("KV key expression must use SpEL template syntax, for example "
-                    + "'user:#{#userId}', or be a direct SpEL expression starting with '#' or '@': "
-                    + keyExpression);
-        }
+        Require.isTrue(isDirectExpression(keyExpression),
+                "KV key expression must use SpEL template syntax, for example "
+                        + "'user:#{#userId}', or be a direct SpEL expression starting with '#' or '@': "
+                        + keyExpression);
 
         // Direct SpEL expression: #paramName or @beanName.method()
         org.springframework.expression.Expression expr = EXPRESSION_CACHE.computeIfAbsent(

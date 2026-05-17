@@ -3,6 +3,9 @@ package io.mango.workflow.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
@@ -37,7 +40,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,12 +55,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService {
 
+    private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
+    };
+
     private final WorkflowDefinitionMapper mapper;
     private final WorkflowDefinitionVersionMapper versionMapper;
     private final WorkflowGroupMapper groupMapper;
     private final WorkflowNodeDefinitionMapper nodeDefinitionMapper;
     private final RepositoryService repositoryService;
     private final WorkflowDesignerBpmnConverter bpmnConverter;
+    private final ObjectMapper objectMapper;
 
     @Override
     public R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query) {
@@ -78,7 +88,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public R<Long> create(SaveWorkflowDefinitionCommand command) {
+    public R<String> create(SaveWorkflowDefinitionCommand command) {
         Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
         validate(command, false);
         WorkflowDefinition entity = new WorkflowDefinition();
@@ -92,7 +102,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         entity.setUpdatedTime(now);
         entity.setUpdatedAt(now);
         mapper.insert(entity);
-        return R.ok(entity.getId());
+        return R.ok(String.valueOf(entity.getId()));
     }
 
     @Override
@@ -268,6 +278,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     }
 
     private void validate(SaveWorkflowDefinitionCommand command, boolean update) {
+        Require.notNull(command.getGroupId(), WorkflowCode.GROUP_INVALID.getCode(), "流程分组不能为空");
+        Require.isTrue(command.getGroupId() > 0, WorkflowCode.GROUP_INVALID.getCode(), "流程分组不能为空");
         Require.notNull(groupMapper.selectById(command.getGroupId()), WorkflowCode.GROUP_NOT_FOUND);
         Require.notBlank(command.getDefinitionName(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程名称不能为空");
         Require.notBlank(command.getDefinitionKey(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程编码不能为空");
@@ -283,6 +295,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     private void copy(SaveWorkflowDefinitionCommand command, WorkflowDefinition entity) {
         entity.setGroupId(command.getGroupId());
+        entity.setAdminUsers(toJsonList(command.getAdminUsers()));
+        entity.setIcon(trimToNull(command.getIcon()));
         entity.setDefinitionName(command.getDefinitionName().trim());
         entity.setDefinitionKey(command.getDefinitionKey().trim());
         entity.setDesignerJson(command.getDesignerJson());
@@ -322,6 +336,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setId(entity.getId());
         vo.setGroupId(entity.getGroupId());
         vo.setGroupName(groupName);
+        vo.setAdminUsers(parseStringList(entity.getAdminUsers()));
+        vo.setIcon(entity.getIcon());
         vo.setDefinitionName(entity.getDefinitionName());
         vo.setDefinitionKey(entity.getDefinitionKey());
         vo.setDeploymentId(entity.getDeploymentId());
@@ -350,6 +366,43 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     private String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String toJsonList(Collection<String> values) {
+        List<String> users = cleanList(values);
+        if (users.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(users);
+        } catch (JsonProcessingException e) {
+            return String.join(",", users);
+        }
+    }
+
+    private List<String> parseStringList(String value) {
+        if (!StringUtils.hasText(value)) {
+            return List.of();
+        }
+        try {
+            List<String> users = objectMapper.readValue(value, STRING_LIST_TYPE);
+            return cleanList(users);
+        } catch (JsonProcessingException e) {
+            return cleanList(List.of(value.split("\\s*,\\s*")));
+        }
+    }
+
+    private List<String> cleanList(Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        LinkedHashSet<String> set = new LinkedHashSet<>();
+        for (String value : values) {
+            if (StringUtils.hasText(value)) {
+                set.add(value.trim());
+            }
+        }
+        return new ArrayList<>(set);
     }
 
     private int nextVersionNo(Long definitionId) {

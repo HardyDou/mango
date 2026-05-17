@@ -60,7 +60,7 @@ public class WorkflowDefinitionController {
     @PostMapping
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:add")
     @Operation(summary = "新增流程定义", description = "权限接口。创建流程定义草稿")
-    public R<Long> create(
+    public R<String> create(
             @Parameter(description = "保存流程定义命令", required = true)
             @Valid @RequestBody SaveWorkflowDefinitionCommand command) {
         return workflowDefinitionService.create(command);

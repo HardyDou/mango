@@ -25,6 +25,9 @@ public class FileRecordPageQuery extends PageQuery {
     @Schema(description = "文件用途")
     private String purpose;
 
+    @Schema(description = "逻辑目录ID。根目录为0")
+    private Long directoryId;
+
     @Schema(description = "访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
     private String accessLevel;
 

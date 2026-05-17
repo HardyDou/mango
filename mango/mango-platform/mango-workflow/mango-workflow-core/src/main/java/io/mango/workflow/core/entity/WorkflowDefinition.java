@@ -19,6 +19,8 @@ public class WorkflowDefinition {
 
     private Long tenantId;
     private Long groupId;
+    private String adminUsers;
+    private String icon;
     private String definitionName;
     private String definitionKey;
     private String deploymentId;

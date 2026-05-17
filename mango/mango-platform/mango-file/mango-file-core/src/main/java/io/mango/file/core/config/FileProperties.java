@@ -28,6 +28,12 @@ public class FileProperties {
     /** 上传限制配置。 */
     private Upload upload = new Upload();
 
+    /** 访问控制默认配置。 */
+    private Access access = new Access();
+
+    /** 预览默认配置。 */
+    private Preview preview = new Preview();
+
     @Data
     public static class Local {
 
@@ -46,5 +52,44 @@ public class FileProperties {
 
         /** 禁止的扩展名。 */
         private List<String> blockedExtensions = List.of("exe", "bat", "cmd", "sh", "jar");
+
+        /** 是否启用秒传。 */
+        private boolean instantUploadEnabled = true;
+
+        /** 是否允许浏览器直传对象存储。 */
+        private boolean directUploadEnabled = false;
+
+        /** 直传 URL 有效期，单位秒。 */
+        private long directUploadExpireSeconds = 900L;
+    }
+
+    @Data
+    public static class Access {
+
+        /** 文件访问模式：PROXY-通过 Java 服务转发，DIRECT-直连底层存储。 */
+        private String mode = "PROXY";
+
+        /** 是否启用带时效的访问令牌。 */
+        private boolean tokenEnabled = false;
+
+        /** 下载/访问令牌有效期，单位秒。 */
+        private long tokenExpireSeconds = 600L;
+    }
+
+    @Data
+    public static class Preview {
+
+        /** 文档预览服务地址。 */
+        private String providerUrl;
+
+        /** 文档预览访问有效期，单位秒。 */
+        private long expireSeconds = 600L;
+
+        /** 可交由文档预览服务处理的扩展名。 */
+        private List<String> externalExtensions = List.of(
+                "doc", "docx", "xls", "xlsx", "xlsm", "ppt", "pptx",
+                "odt", "ods", "odp", "ofd", "wps", "et", "dps",
+                "csv", "txt", "zip", "rar", "7z", "eml", "msg"
+        );
     }
 }

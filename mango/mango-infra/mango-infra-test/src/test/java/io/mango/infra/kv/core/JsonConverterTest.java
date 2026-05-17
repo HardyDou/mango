@@ -2,6 +2,7 @@ package io.mango.infra.kv.core.support;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.mango.common.exception.BizException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,14 +25,14 @@ class JsonConverterTest {
     }
 
     @Test
-    void convert_nullSource_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> converter.convert(null, TargetPerson.class));
+    void convert_nullSource_throwsBizException() {
+        assertThrows(BizException.class, () -> converter.convert(null, TargetPerson.class));
     }
 
     @Test
-    void convert_nullTargetClass_throwsIllegalArgumentException() {
+    void convert_nullTargetClass_throwsBizException() {
         SourcePerson source = new SourcePerson("John", 30);
-        assertThrows(IllegalArgumentException.class, () -> converter.convert(source, null));
+        assertThrows(BizException.class, () -> converter.convert(source, null));
     }
 
     // Helper classes for testing - proper Java beans

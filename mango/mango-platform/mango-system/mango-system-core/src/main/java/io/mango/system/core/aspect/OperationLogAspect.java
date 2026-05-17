@@ -15,9 +15,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.InputStream;
 import java.time.LocalDateTime;
 
 @Aspect
@@ -68,7 +71,7 @@ public class OperationLogAspect {
             opLog.setHandlerMethod(signature.getDeclaringTypeName() + "." + signature.getName());
             opLog.setUrl(request.getRequestURI());
             opLog.setParams(truncate(resolveParams(request, point)));
-            opLog.setResult(error == null ? truncate(JacksonUtils.toJsonStr(result)) : null);
+            opLog.setResult(error == null ? truncate(resolveResult(result)) : null);
             opLog.setStatus(error == null ? 1 : 0);
             opLog.setErrorMsg(error == null ? null : truncate(error.getMessage()));
             opLog.setDuration(duration);
@@ -96,6 +99,28 @@ public class OperationLogAspect {
             return queryParams;
         }
         return JacksonUtils.toJsonStr(point.getArgs());
+    }
+
+    private String resolveResult(Object result) {
+        if (result == null) {
+            return null;
+        }
+        if (result instanceof ResponseEntity<?> responseEntity) {
+            Object body = responseEntity.getBody();
+            if (isBinaryBody(body)) {
+                return "ResponseEntity(status=" + responseEntity.getStatusCode().value() + ", body=binary)";
+            }
+        }
+        if (isBinaryBody(result)) {
+            return "binary";
+        }
+        return JacksonUtils.toJsonStr(result);
+    }
+
+    private boolean isBinaryBody(Object value) {
+        return value instanceof Resource
+                || value instanceof InputStream
+                || value instanceof byte[];
     }
 
     private String getClientIp(HttpServletRequest request) {

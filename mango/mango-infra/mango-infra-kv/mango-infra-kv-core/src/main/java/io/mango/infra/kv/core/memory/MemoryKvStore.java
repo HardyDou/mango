@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.memory;
 
+import io.mango.common.result.Require;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
 import jakarta.annotation.PreDestroy;
@@ -54,12 +55,8 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
      */
     @SuppressWarnings("unchecked")
     public MemoryKvStore(int cleanupIntervalMinutes, int bucketCount) {
-        if (cleanupIntervalMinutes <= 0) {
-            throw new IllegalArgumentException("cleanupIntervalMinutes must be positive");
-        }
-        if (bucketCount <= 0) {
-            throw new IllegalArgumentException("bucketCount must be positive");
-        }
+        Require.positive(cleanupIntervalMinutes, "cleanupIntervalMinutes must be positive");
+        Require.positive(bucketCount, "bucketCount must be positive");
         buckets = new ConcurrentHashMap[bucketCount];
         for (int i = 0; i < bucketCount; i++) {
             buckets[i] = new ConcurrentHashMap<>();
@@ -131,9 +128,7 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
     @Override
     public long incrementBy(String key, long delta, long windowSeconds) {
         validateKey(key);
-        if (windowSeconds <= 0) {
-            throw new IllegalArgumentException("windowSeconds must be positive, was: " + windowSeconds);
-        }
+        Require.positive(windowSeconds, "windowSeconds must be positive, was: " + windowSeconds);
         ConcurrentHashMap<String, KvEntry> b = bucket(key);
         Instant expiry = Instant.now().plusSeconds(windowSeconds);
         // Per-bucket lock replaces global lock — less contention under high concurrency
@@ -267,9 +262,7 @@ public class MemoryKvStore implements IKvStore, IKvSortedSet, AutoCloseable {
     }
 
     private void validateKey(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("key cannot be null or blank");
-        }
+        Require.notBlank(key, "key cannot be null or blank");
     }
 
     private static final class KvEntry {

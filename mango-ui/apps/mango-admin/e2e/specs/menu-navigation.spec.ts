@@ -17,8 +17,17 @@ function collectVisibleMenus(menus: any[]): any[] {
 }
 
 async function expectMenuIcon(page: import('@playwright/test').Page, name: string) {
-  const menuItem = page.getByText(name, { exact: true }).first();
-  await expect(menuItem).toBeVisible({ timeout: 10000 });
+  const menuItem = page.locator(
+    [
+      '.el-menu-item',
+      '.el-sub-menu__title',
+      '.layout-top-system-item',
+      '.layout-columns-aside li',
+    ].join(', '),
+    { hasText: name },
+  ).first();
+  await expect(menuItem, `${name} 菜单必须可见`).toBeVisible({ timeout: 10000 });
+  await expect(menuItem.locator('.el-icon svg, img').first(), `${name} 必须渲染菜单图标`).toBeVisible();
 }
 
 async function loginPage(
@@ -96,7 +105,7 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '抄送给我');
     await expectMenuIcon(page, '发起流程');
     await expectMenuIcon(page, '流程管理');
-    await expectMenuIcon(page, '业务表单');
+    await expectMenuIcon(page, '业务示例');
   });
 
   test('A 公司登录后只渲染机构授权范围内的系统管理与协同办公导航', async ({ page }) => {
@@ -128,7 +137,7 @@ test.describe('用户菜单导航 E2E', () => {
       '任务管理',
       '发起流程',
       '流程管理',
-      '业务表单',
+      '业务示例',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();

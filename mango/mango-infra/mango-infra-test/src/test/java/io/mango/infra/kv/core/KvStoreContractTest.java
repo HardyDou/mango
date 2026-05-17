@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core;
 
+import io.mango.common.exception.BizException;
 import io.mango.infra.kv.api.IKvStore;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,13 +64,13 @@ class KvStoreContractTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#kvStores")
-    void invalidKey_throwsIllegalArgumentException(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
+    void invalidKey_throwsBizException(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
         try (fixture) {
             IKvStore store = fixture.rawStore();
 
-            assertThrows(IllegalArgumentException.class, () -> store.get(" "));
-            assertThrows(IllegalArgumentException.class, () -> store.set(null, "v", 60));
-            assertThrows(IllegalArgumentException.class, () -> store.delete(""));
+            assertThrows(BizException.class, () -> store.get(" "));
+            assertThrows(BizException.class, () -> store.set(null, "v", 60));
+            assertThrows(BizException.class, () -> store.delete(""));
         }
     }
 }

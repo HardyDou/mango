@@ -57,6 +57,9 @@ public class IdentityUserVO {
     @Schema(description = "当前机构成员状态：0-禁用，1-启用")
     private Integer memberStatus;
 
+    @Schema(description = "主组织ID")
+    private Long primaryOrgId;
+
     @Schema(description = "机构ID")
     private String tenantId;
 

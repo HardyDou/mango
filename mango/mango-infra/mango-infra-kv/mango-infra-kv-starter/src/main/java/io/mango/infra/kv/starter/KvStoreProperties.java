@@ -23,6 +23,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *       appEnabled: false
  *     capability:
  *       enabled: false
+ *       outbox: false
  * </pre>
  */
 @Data
@@ -216,5 +217,6 @@ public class KvStoreProperties {
         private boolean idGenerator;
         private boolean serializer;
         private boolean converter;
+        private boolean outbox;
     }
 }

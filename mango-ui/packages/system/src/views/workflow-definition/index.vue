@@ -29,12 +29,6 @@
 
       <div class="builder-content">
         <section v-show="definitionStep === 0" class="builder-pane basic-pane">
-          <div class="builder-pane-head">
-            <div>
-              <div class="pane-kicker">基础信息</div>
-              <h3>流程基础信息</h3>
-            </div>
-          </div>
           <el-form
             ref="definitionFormRef"
             :model="definitionForm"
@@ -42,71 +36,85 @@
             class="step-form builder-form"
             label-position="top"
           >
-            <el-form-item label="流程分组" prop="groupId">
-              <el-select v-model="definitionForm.groupId" placeholder="请选择流程分组">
+            <el-form-item class="basic-field full workflow-icon-item" label="流程图标">
+              <div class="workflow-icon-field">
+                <div class="workflow-icon-uploader" :class="{ empty: !workflowIconPreviewUrl(definitionForm.icon), filled: Boolean(workflowIconPreviewUrl(definitionForm.icon)) }">
+                  <ImageUpload v-model="definitionForm.icon" :limit="1" :multiple="false" class="workflow-icon-upload-control" />
+                  <div v-if="isWorkflowPresetIcon(definitionForm.icon)" class="workflow-icon-overlay workflow-icon-legacy-preview">
+                    <el-icon><component :is="workflowIconComponent(definitionForm.icon)" /></el-icon>
+                    <span>{{ workflowIconLabel(definitionForm.icon) }}</span>
+                  </div>
+                  <div v-else-if="!definitionForm.icon" class="workflow-icon-overlay workflow-icon-empty-state">
+                    <el-icon><PictureFilled /></el-icon>
+                    <span>图标</span>
+                  </div>
+                </div>
+              </div>
+            </el-form-item>
+            <el-form-item class="basic-field full" prop="definitionKey">
+              <template #label>
+                <span class="field-label-with-help">
+                  流程编码
+                  <el-tooltip content="流程编码对应 Flowable process id，发布后保持稳定，不建议修改。" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </span>
+              </template>
+              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 guarantee_approve" />
+            </el-form-item>
+            <el-form-item class="basic-field full" label="流程名称" prop="definitionName">
+              <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
+            </el-form-item>
+            <el-form-item class="basic-field full" label="流程分组" prop="groupId">
+              <el-select v-model="definitionForm.groupId" filterable placeholder="请选择流程分组">
                 <el-option v-for="item in groups" :key="item.id" :label="item.groupName" :value="item.id" />
               </el-select>
             </el-form-item>
-            <el-form-item label="流程名称" prop="definitionName">
-              <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
+            <el-form-item class="basic-field full" prop="adminUsers">
+              <template #label>
+                <span class="field-label-with-help">
+                  流程管理员
+                  <el-tooltip content="用于流程维护；审批人为空且策略为转交管理员时，优先转交给这里配置的人员。" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </span>
+              </template>
+              <UserSelector v-model="definitionForm.adminUsers" multiple placeholder="请选择流程管理员" title="选择流程管理员" />
             </el-form-item>
-            <el-form-item label="流程编码" prop="definitionKey">
-              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 guarantee_approve" />
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="definitionForm.status">
-                <el-option v-for="item in workflowStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="备注">
+            <el-form-item class="basic-field full" label="备注">
               <el-input v-model="definitionForm.remark" :rows="3" placeholder="说明流程适用场景、发起条件或维护边界" type="textarea" />
             </el-form-item>
           </el-form>
           <div class="pane-help">
-            流程编码用于发布到 Flowable 引擎，发布后应保持稳定；流程分组用于后台管理和业务入口归类。
+            先选择分组再定义流程；发布、停用等状态由列表操作和发布动作维护。
           </div>
         </section>
 
         <section v-show="definitionStep === 1" class="builder-pane form-pane">
-          <div class="form-mode-cards">
-            <button
-              class="form-mode-card"
-              :class="{ active: workflowFormMode === 'DYNAMIC' }"
-              type="button"
-              @click="setWorkflowFormMode('DYNAMIC')"
-            >
-              <span class="mode-radio" />
-              <span>
-                <strong>动态表单</strong>
-                <em>使用可视化表单设计器创建表单</em>
-              </span>
-            </button>
-            <button
-              class="form-mode-card"
-              :class="{ active: workflowFormMode === 'CUSTOM' }"
-              type="button"
-              @click="setWorkflowFormMode('CUSTOM')"
-            >
-              <span class="mode-radio" />
-              <span>
-                <strong>自定义表单</strong>
-                <em>使用自定义页面作为表单</em>
-              </span>
-            </button>
+          <div class="form-config-bar">
+            <div class="form-config-main">
+              <el-form class="form-code-form" label-position="top">
+                <el-form-item label="表单编码">
+                  <el-input v-model="definitionForm.formCode" placeholder="如 guarantee_apply_form" />
+                </el-form-item>
+              </el-form>
+              <div class="form-type-row">
+                <div class="form-type-control">
+                  <span>表单类型</span>
+                  <el-radio-group v-model="workflowFormMode" @change="setWorkflowFormMode">
+                    <el-radio-button label="DYNAMIC">动态表单</el-radio-button>
+                    <el-radio-button label="CUSTOM">自定义表单</el-radio-button>
+                  </el-radio-group>
+                </div>
+                <div class="form-designer-summary">
+                  <strong>{{ workflowFormVariableOptions.length }}</strong>
+                  <span>个字段变量</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-step-layout">
             <div class="form-designer-main">
-              <div class="form-designer-toolbar">
-                <el-form class="form-code-form" label-position="top">
-                  <el-form-item label="表单编码">
-                    <el-input v-model="definitionForm.formCode" placeholder="如 guarantee_apply_form" />
-                  </el-form-item>
-                </el-form>
-                <div class="form-designer-summary">
-                  <strong>{{ workflowFormVariableOptions.length }}</strong>
-                  <span>个表单字段变量</span>
-                </div>
-              </div>
               <template v-if="workflowFormMode === 'DYNAMIC'">
                 <FcDesigner
                   ref="formDesignerRef"
@@ -192,12 +200,6 @@
 
         <section v-show="definitionStep === 2" class="builder-pane process-pane">
           <div class="designer-workbench">
-            <div class="designer-head">
-              <div>
-                <div class="designer-title">流程设计器</div>
-              </div>
-            </div>
-
             <div class="designer-body">
               <div class="node-canvas">
                 <div class="node-canvas-scale" :style="{ transform: `scale(${canvasZoom})` }">
@@ -217,16 +219,26 @@
                 </div>
               </div>
 
-              <div class="node-panel">
-                <div class="panel-title">节点属性</div>
-                <template v-if="selectedNode">
+              <transition name="node-panel-slide">
+                <aside v-if="selectedNode" class="node-panel node-panel-floating">
+                  <div class="node-panel-header">
+                    <div class="node-panel-heading">
+                      <span class="node-panel-icon">
+                        <el-icon><component :is="nodeIcon(selectedNode)" /></el-icon>
+                      </span>
+                      <div>
+                        <strong>节点配置</strong>
+                        <el-tag effect="plain" size="small">{{ workflowNodeTypeLabel(selectedNode) }}</el-tag>
+                      </div>
+                    </div>
+                    <el-button :icon="Close" circle text @click="selectedNode = undefined" />
+                  </div>
+                  <div class="node-panel-body">
+                    <div class="node-drawer-basic">
+                      <label class="node-name-label">节点名称</label>
+                      <el-input v-model="selectedNode.nodeName" class="node-name-input" placeholder="请输入节点名称" @input="syncDesignerJson" />
+                    </div>
                   <el-form label-position="top">
-                    <el-form-item label="节点名称">
-                      <el-input v-model="selectedNode.nodeName" @input="syncDesignerJson" />
-                    </el-form-item>
-                    <el-form-item label="节点类型">
-                      <el-input :model-value="selectedNode.nodeType" disabled />
-                    </el-form-item>
                     <div class="node-config-section">
                       <div class="node-config-title">节点参数</div>
                       <template v-if="selectedNode.nodeType === 'EXCLUSIVE_BRANCH'">
@@ -356,9 +368,9 @@
                       <el-input v-model="selectedNode.description" :rows="3" type="textarea" @input="syncDesignerJson" />
                     </el-form-item>
                   </el-form>
-                </template>
-                <el-empty v-else description="选择节点后配置属性" />
-              </div>
+                  </div>
+                </aside>
+              </transition>
             </div>
           </div>
         </section>
@@ -520,69 +532,6 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="节点定义" name="nodes">
-        <div class="page-toolbar">
-          <el-form :inline="true" :model="nodeQuery" class="query-form">
-            <el-form-item label="关键字">
-              <el-input v-model="nodeQuery.keyword" clearable placeholder="节点名称/编码/类型" />
-            </el-form-item>
-            <el-form-item label="分类">
-              <el-select v-model="nodeQuery.categoryCode" clearable placeholder="全部分类">
-                <el-option v-for="item in nodeCategoryOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="nodeQuery.status" clearable placeholder="全部状态">
-                <el-option label="启用" :value="1" />
-                <el-option label="停用" :value="0" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button :icon="Search" type="primary" @click="loadNodeDefinitions">查询</el-button>
-              <el-button :icon="Refresh" @click="resetNodeQuery">重置</el-button>
-            </el-form-item>
-          </el-form>
-          <el-button :icon="Plus" type="primary" @click="openNodeDialog()">新增节点</el-button>
-        </div>
-
-        <el-table v-loading="nodeLoading" :data="nodeRows" border>
-          <el-table-column label="节点名称" min-width="150" prop="nodeName" />
-          <el-table-column label="节点编码" min-width="190" prop="nodeDefinitionCode" />
-          <el-table-column label="分类" width="110" prop="categoryName" />
-          <el-table-column label="BPMN类型" width="130" prop="bpmnType" />
-          <el-table-column label="执行类型" width="150" prop="executionType" />
-          <el-table-column label="颜色" width="80">
-            <template #default="{ row }">
-              <span class="color-swatch" :style="{ background: row.color || '#64748b' }" />
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="90">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="说明" min-width="220" prop="description" show-overflow-tooltip />
-          <el-table-column fixed="right" label="操作" width="180">
-            <template #default="{ row }">
-              <el-button link type="primary" @click="openNodeDialog(row)">编辑</el-button>
-              <el-button link type="warning" @click="toggleNodeStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
-              <el-button link type="danger" @click="deleteNodeDefinition(row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="pagination-row">
-          <el-pagination
-            v-model:current-page="nodeQuery.pageNum"
-            v-model:page-size="nodeQuery.pageSize"
-            :page-sizes="[10, 20, 50]"
-            :total="nodeTotal"
-            layout="total, sizes, prev, pager, next, jumper"
-            @current-change="loadNodeDefinitions"
-            @size-change="loadNodeDefinitions"
-          />
-        </div>
-      </el-tab-pane>
     </el-tabs>
 
     <el-drawer v-model="versionDrawer" title="发布版本" size="720px">
@@ -624,102 +573,18 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="nodeDialog" :title="nodeForm.id ? '编辑节点定义' : '新增节点定义'" width="760px">
-      <el-form ref="nodeFormRef" :model="nodeForm" :rules="nodeRules" label-width="120px">
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="节点名称" prop="nodeName">
-              <el-input v-model="nodeForm.nodeName" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="节点编码" prop="nodeDefinitionCode">
-              <el-input v-model="nodeForm.nodeDefinitionCode" :disabled="Boolean(nodeForm.id)" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="节点类型" prop="nodeType">
-              <el-input v-model="nodeForm.nodeType" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="分类编码" prop="categoryCode">
-              <el-input v-model="nodeForm.categoryCode" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="分类名称" prop="categoryName">
-              <el-input v-model="nodeForm.categoryName" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="BPMN类型" prop="bpmnType">
-              <el-select v-model="nodeForm.bpmnType">
-                <el-option label="人工任务 userTask" value="userTask" />
-                <el-option label="服务任务 serviceTask" value="serviceTask" />
-                <el-option label="条件网关 exclusiveGateway" value="exclusiveGateway" />
-                <el-option label="并行网关 parallelGateway" value="parallelGateway" />
-                <el-option label="开始事件 startEvent" value="startEvent" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="执行类型" prop="executionType">
-              <el-select v-model="nodeForm.executionType">
-                <el-option label="无动作 NONE" value="NONE" />
-                <el-option label="人工任务 USER_TASK" value="USER_TASK" />
-                <el-option label="Spring Bean" value="SPRING_BEAN" />
-                <el-option label="HTTP URL" value="HTTP_URL" />
-                <el-option label="远程服务" value="REMOTE_SERVICE" />
-                <el-option label="事件发布" value="EVENT_PUBLISH" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="颜色">
-              <el-color-picker v-model="nodeForm.color" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="排序">
-              <el-input-number v-model="nodeForm.sort" :min="0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="状态">
-              <el-switch v-model="nodeEnabled" active-text="启用" inactive-text="停用" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="默认属性JSON">
-              <CodeEditor v-model="nodeForm.defaultProperties" language="json" height="160px" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="节点说明">
-              <el-input v-model="nodeForm.description" :rows="3" type="textarea" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <template #footer>
-        <el-button @click="nodeDialog = false">取消</el-button>
-        <el-button :loading="saving" type="primary" @click="saveNodeDefinition">保存</el-button>
-      </template>
-    </el-dialog>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, defineComponent, h, nextTick, onMounted, reactive, ref, type PropType } from 'vue';
 import { ElButton, ElIcon, ElMessage, ElMessageBox, ElPopover, type FormInstance, type FormRules } from 'element-plus';
-import { Bell, Box, Cloudy, Connection, ForkSpoon, Plus, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
+import { Bell, Box, Cloudy, Close, Connection, ForkSpoon, PictureFilled, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
 import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designer';
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
-import CodeEditor from '@mango/common/components/CodeEditor/index.vue';
+import { ImageUpload, UserSelector } from '@mango/common';
 import {
   createNodeId,
   defaultDesignerJson,
@@ -733,8 +598,8 @@ import {
   type WorkflowDefinitionVersion,
   type WorkflowDesignerNode,
   type WorkflowGroup,
+  type WorkflowId,
   type WorkflowNodeCatalog,
-  type WorkflowNodeDefinition,
   type WorkflowStatus,
 } from '../../api/workflow';
 
@@ -771,14 +636,21 @@ interface ConditionRow {
   value: string;
 }
 
+interface ConditionGroup {
+  id: string;
+  connector: 'AND' | 'OR';
+  rows: ConditionRow[];
+}
+
 const WorkflowNode = defineComponent({
   name: 'WorkflowNode',
   props: {
     node: { type: Object as PropType<WorkflowDesignerNode>, required: true },
     catalog: { type: Array as PropType<WorkflowNodeCatalog[]>, required: true },
     root: { type: Boolean, default: false },
+    removable: { type: Boolean, default: false },
   },
-  emits: ['select', 'changed'],
+  emits: ['select', 'changed', 'remove-self'],
   setup(props, { emit }) {
     const addPopoverVisible = ref(false);
     const addNode = (item: WorkflowNodeCatalog) => {
@@ -806,7 +678,12 @@ const WorkflowNode = defineComponent({
       emit('changed');
     };
 
-    const removeChild = () => {
+    const removeSelf = (event?: Event) => {
+      event?.stopPropagation();
+      emit('remove-self');
+    };
+
+    const removeCurrentChild = () => {
       props.node.childNode = props.node.childNode?.childNode || null;
       emit('changed');
     };
@@ -845,7 +722,7 @@ const WorkflowNode = defineComponent({
           )),
         ]),
       ).concat(groupedCatalog(props.catalog).length === 0
-        ? [h('div', { class: 'node-picker-empty' }, '暂无可添加的通用节点，请先在节点定义中启用通用节点。')]
+        ? [h('div', { class: 'node-picker-empty' }, '暂无可添加节点，请检查系统内置节点目录。')]
         : [])),
     });
 
@@ -856,11 +733,17 @@ const WorkflowNode = defineComponent({
       return h('div', { class: ['workflow-node-card', props.root ? 'root' : '', node.nodeType === 'EXCLUSIVE_BRANCH' ? 'branch-node' : ''], style: { '--node-color': color }, onClick: () => emit('select', node) }, [
         h('div', { class: 'node-card-title' }, [
           h(ElIcon, null, () => h(icon)),
-          h('span', null, node.nodeName),
+          h('span', { class: 'node-title-display', title: node.nodeName || '节点名称' }, node.nodeName || '节点名称'),
+          props.removable ? h(ElButton, {
+            class: 'node-card-delete',
+            circle: true,
+            text: true,
+            icon: Close,
+            title: '删除节点',
+            onClick: removeSelf,
+          }) : null,
         ]),
-        h('div', { class: 'node-card-type' }, node.nodeType === 'EXCLUSIVE_BRANCH'
-          ? (node.conditionExpression ? `条件：${node.conditionExpression}` : '默认分支或未配置条件')
-          : `${node.nodeType}${node.executionType ? ` · ${node.executionType}` : ''}`),
+        h('div', { class: 'node-card-type' }, workflowNodeCardSummary(node)),
       ]);
     };
 
@@ -868,31 +751,30 @@ const WorkflowNode = defineComponent({
       renderCard(props.node),
       props.node.nodeType === 'EXCLUSIVE_GATEWAY' || props.node.nodeType === 'PARALLEL_GATEWAY'
         ? h('div', { class: 'branch-area' }, [
-            h(ElButton, { link: true, type: 'primary', onClick: addBranch }, () => '添加分支'),
+            h(ElButton, { class: 'branch-add-button', link: true, type: 'primary', onClick: addBranch }, () => '添加分支'),
             h('div', { class: 'branch-list' }, (props.node.conditionNodes || []).map((branch, index) =>
               h('div', { class: 'branch-column' }, [
-                h('div', { class: 'branch-card', onClick: () => emit('select', branch) }, [
-                  h('span', null, branch.nodeName),
-                  h('small', { class: branch.conditionExpression ? 'branch-condition' : 'branch-default' }, branch.conditionExpression || '默认'),
-                  h(ElButton, { link: true, type: 'danger', onClick: (event: Event) => { event.stopPropagation(); removeBranch(index); } }, () => '删除'),
-                ]),
                 h(WorkflowNode, {
                   node: branch,
                   catalog: props.catalog,
+                  removable: true,
                   onSelect: (node: WorkflowDesignerNode) => emit('select', node),
                   onChanged: () => emit('changed'),
+                  onRemoveSelf: () => removeBranch(index),
                 }),
               ]),
             )),
+            h('div', { class: 'branch-join-line' }),
           ])
         : null,
-      !props.root ? h(ElButton, { class: 'remove-node', link: true, type: 'danger', onClick: removeChild }, () => '删除下级节点') : null,
       renderAdd(),
       props.node.childNode ? h(WorkflowNode, {
         node: props.node.childNode,
         catalog: props.catalog,
+        removable: true,
         onSelect: (node: WorkflowDesignerNode) => emit('select', node),
         onChanged: () => emit('changed'),
+        onRemoveSelf: removeCurrentChild,
       }) : null,
     ]);
   },
@@ -911,6 +793,16 @@ const NODE_ICON_MAP: Record<string, any> = {
   EVENT_PUBLISH: Bell,
   EXCLUSIVE_BRANCH: Share,
 };
+
+const workflowIconOptions = [
+  { value: 'User', label: '人员流程', component: User },
+  { value: 'Bell', label: '通知提醒', component: Bell },
+  { value: 'ForkSpoon', label: '条件审批', component: ForkSpoon },
+  { value: 'Share', label: '并行协作', component: Share },
+  { value: 'Box', label: '服务处理', component: Box },
+  { value: 'Cloudy', label: '接口流程', component: Cloudy },
+  { value: 'Connection', label: '外部连接', component: Connection },
+];
 
 const COMMON_DESIGNER_NODE_TYPES = new Set([
   'APPROVAL',
@@ -955,6 +847,11 @@ type WorkflowBusinessComponent = FormDesignerMenuItem & {
 };
 
 const formDesignerMenu: FormDesignerMenu[] = [
+  {
+    name: 'business',
+    title: '业务组件',
+    list: [],
+  },
   {
     name: 'aide',
     title: '辅助组件',
@@ -1003,11 +900,6 @@ const formDesignerMenu: FormDesignerMenu[] = [
       { name: 'elTreeSelect', label: '树形选择', icon: 'icon-tree-select' },
       { name: 'fcEditor', label: '富文本', icon: 'icon-editor' },
     ],
-  },
-  {
-    name: 'business',
-    title: '业务组件',
-    list: [],
   },
 ];
 
@@ -1175,24 +1067,20 @@ const defaultWorkflowFormRules = (): FcRule[] => [
 const activeTab = ref('definitions');
 const definitionLoading = ref(false);
 const groupLoading = ref(false);
-const nodeLoading = ref(false);
 const saving = ref(false);
 const versionLoading = ref(false);
 
 const groups = ref<WorkflowGroup[]>([]);
 const groupRows = ref<WorkflowGroup[]>([]);
 const definitions = ref<WorkflowDefinition[]>([]);
-const nodeRows = ref<WorkflowNodeDefinition[]>([]);
 const nodeCatalog = ref<WorkflowNodeCatalog[]>([]);
 const versions = ref<WorkflowDefinitionVersion[]>([]);
 const currentVersionXml = ref('');
 const definitionTotal = ref(0);
 const groupTotal = ref(0);
-const nodeTotal = ref(0);
 
-const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', groupId: '' as number | '', status: '' });
+const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', groupId: '' as WorkflowId | '', status: '' });
 const groupQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '' as number | '' });
-const nodeQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', categoryCode: '', status: '' as number | '' });
 
 const designerMode = ref(false);
 const publishing = ref(false);
@@ -1200,11 +1088,9 @@ const validateDialogShow = ref(false);
 const validateFlowStep = ref(0);
 const validateErrMsg = ref<string[]>([]);
 const groupDialog = ref(false);
-const nodeDialog = ref(false);
 const versionDrawer = ref(false);
 const definitionFormRef = ref<FormInstance>();
 const groupFormRef = ref<FormInstance>();
-const nodeFormRef = ref<FormInstance>();
 const formDesignerRef = ref<InstanceType<typeof FcDesigner>>();
 const designerRoot = ref<WorkflowDesignerNode>(parseDesignerJson(defaultDesignerJson()));
 const selectedNode = ref<WorkflowDesignerNode>();
@@ -1222,7 +1108,9 @@ const designerSteps = [
 ];
 
 const definitionForm = reactive<WorkflowDefinition>({
-  groupId: 0,
+  groupId: '',
+  adminUsers: [],
+  icon: '',
   definitionName: '',
   definitionKey: '',
   designerJson: defaultDesignerJson(),
@@ -1236,43 +1124,9 @@ const groupForm = reactive<WorkflowGroup>({
   status: 1,
 });
 
-const nodeForm = reactive<WorkflowNodeDefinition>({
-  nodeDefinitionCode: '',
-  nodeType: '',
-  nodeName: '',
-  categoryCode: 'BASIC',
-  categoryName: '基础节点',
-  groupName: '基础节点',
-  description: '',
-  bpmnType: 'userTask',
-  executionType: 'USER_TASK',
-  color: '#2563eb',
-  icon: 'Setting',
-  propertySchema: '',
-  defaultProperties: '{}',
-  sort: 0,
-  status: 1,
-});
-
 const groupEnabled = computed({
   get: () => groupForm.status === 1,
   set: value => { groupForm.status = value ? 1 : 0; },
-});
-
-const nodeEnabled = computed({
-  get: () => nodeForm.status === 1,
-  set: value => { nodeForm.status = value ? 1 : 0; },
-});
-
-const nodeCategoryOptions = computed(() => {
-  const map = new Map<string, string>();
-  for (const item of nodeCatalog.value) {
-    map.set(item.categoryCode, item.categoryName);
-  }
-  for (const item of nodeRows.value) {
-    map.set(item.categoryCode, item.categoryName);
-  }
-  return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
 });
 
 const workflowSystemVariableOptions: WorkflowVariableOption[] = [
@@ -1296,8 +1150,21 @@ const workflowVariableGroups = computed<WorkflowVariableGroup[]>(() => [
   { label: '系统内置参数', options: workflowSystemVariableOptions },
 ].filter(group => group.options.length > 0));
 
+function validateDefinitionGroup(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
+  const groupId = String(value || '').trim();
+  if (!groupId) {
+    callback(new Error('请选择流程分组'));
+    return;
+  }
+  if (!groups.value.some(item => String(item.id) === groupId)) {
+    callback(new Error('流程分组不存在或已停用，请重新选择'));
+    return;
+  }
+  callback();
+}
+
 const definitionRules: FormRules = {
-  groupId: [{ required: true, message: '请选择流程分组', trigger: 'change' }],
+  groupId: [{ validator: validateDefinitionGroup, trigger: 'change' }],
   definitionName: [{ required: true, message: '请输入流程名称', trigger: 'blur' }],
   definitionKey: [{ required: true, message: '请输入流程编码', trigger: 'blur' }],
   designerJson: [{ required: true, message: '请设计流程节点', trigger: 'blur' }],
@@ -1308,19 +1175,9 @@ const groupRules: FormRules = {
   groupCode: [{ required: true, message: '请输入分组编码', trigger: 'blur' }],
 };
 
-const nodeRules: FormRules = {
-  nodeName: [{ required: true, message: '请输入节点名称', trigger: 'blur' }],
-  nodeDefinitionCode: [{ required: true, message: '请输入节点编码', trigger: 'blur' }],
-  nodeType: [{ required: true, message: '请输入节点类型', trigger: 'blur' }],
-  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
-  categoryName: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
-  bpmnType: [{ required: true, message: '请选择BPMN类型', trigger: 'change' }],
-  executionType: [{ required: true, message: '请选择执行类型', trigger: 'change' }],
-};
-
 onMounted(async () => {
   await Promise.all([loadGroupOptions(), loadNodeCatalog()]);
-  await Promise.all([loadDefinitions(), loadGroupsPage(), loadNodeDefinitions()]);
+  await Promise.all([loadDefinitions(), loadGroupsPage()]);
 });
 
 async function registerWorkflowBusinessFormComponents() {
@@ -1363,17 +1220,6 @@ async function loadGroupsPage() {
   }
 }
 
-async function loadNodeDefinitions() {
-  nodeLoading.value = true;
-  try {
-    const page = await workflowApi.nodeDefinitionsPage(nodeQuery as any);
-    nodeRows.value = page.list;
-    nodeTotal.value = page.total;
-  } finally {
-    nodeLoading.value = false;
-  }
-}
-
 function resetDefinitionQuery() {
   Object.assign(definitionQuery, { pageNum: 1, pageSize: 10, keyword: '', groupId: '', status: '' });
   loadDefinitions();
@@ -1384,16 +1230,13 @@ function resetGroupQuery() {
   loadGroupsPage();
 }
 
-function resetNodeQuery() {
-  Object.assign(nodeQuery, { pageNum: 1, pageSize: 10, keyword: '', categoryCode: '', status: '' });
-  loadNodeDefinitions();
-}
-
 async function openDefinitionForm(row?: WorkflowDefinition) {
   await Promise.all([loadGroupOptions(), loadNodeCatalog()]);
   Object.assign(definitionForm, row || {
     id: undefined,
-    groupId: groups.value[0]?.id || 0,
+    groupId: groups.value[0]?.id || '',
+    adminUsers: [],
+    icon: '',
     definitionName: '',
     definitionKey: '',
     formCode: '',
@@ -1620,60 +1463,6 @@ async function deleteGroup(row: WorkflowGroup) {
   await Promise.all([loadGroupsPage(), loadGroupOptions()]);
 }
 
-function openNodeDialog(row?: WorkflowNodeDefinition) {
-  Object.assign(nodeForm, row || {
-    id: undefined,
-    nodeDefinitionCode: '',
-    nodeType: '',
-    nodeName: '',
-    categoryCode: 'BASIC',
-    categoryName: '基础节点',
-    groupName: '基础节点',
-    description: '',
-    bpmnType: 'userTask',
-    executionType: 'USER_TASK',
-    color: '#2563eb',
-    icon: 'Setting',
-    propertySchema: '',
-    defaultProperties: '{}',
-    sort: 0,
-    status: 1,
-  });
-  nodeDialog.value = true;
-}
-
-async function saveNodeDefinition() {
-  await nodeFormRef.value?.validate();
-  JSON.parse(nodeForm.defaultProperties || '{}');
-  saving.value = true;
-  try {
-    nodeForm.groupName = nodeForm.categoryName;
-    if (nodeForm.id) {
-      await workflowApi.updateNodeDefinition(nodeForm);
-    } else {
-      await workflowApi.createNodeDefinition(nodeForm);
-    }
-    ElMessage.success('保存成功');
-    nodeDialog.value = false;
-    await Promise.all([loadNodeDefinitions(), loadNodeCatalog()]);
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function toggleNodeStatus(row: WorkflowNodeDefinition) {
-  await workflowApi.updateNodeDefinitionStatus(row.id!, row.status === 1 ? 0 : 1);
-  ElMessage.success('状态已更新');
-  await Promise.all([loadNodeDefinitions(), loadNodeCatalog()]);
-}
-
-async function deleteNodeDefinition(row: WorkflowNodeDefinition) {
-  await ElMessageBox.confirm(`确认删除节点定义「${row.nodeName}」？`, '删除节点定义', { type: 'warning' });
-  await workflowApi.deleteNodeDefinition(row.id!);
-  ElMessage.success('删除成功');
-  await Promise.all([loadNodeDefinitions(), loadNodeCatalog()]);
-}
-
 function branchNode(name: string, expression: string): WorkflowDesignerNode {
   return {
     id: createNodeId('branch'),
@@ -1692,6 +1481,25 @@ function nodeIcon(item: Partial<WorkflowNodeCatalog | WorkflowDesignerNode>) {
     return NODE_ICON_MAP[iconName];
   }
   return NODE_ICON_MAP[item.nodeType || ''] || NODE_ICON_MAP[item.executionType || ''] || Setting;
+}
+
+function workflowIconComponent(icon?: string) {
+  return workflowIconOptions.find(item => item.value === icon)?.component || Setting;
+}
+
+function isWorkflowPresetIcon(icon?: string) {
+  return workflowIconOptions.some(item => item.value === icon);
+}
+
+function workflowIconLabel(icon?: string) {
+  return workflowIconOptions.find(item => item.value === icon)?.label || '流程图标';
+}
+
+function workflowIconPreviewUrl(icon?: string) {
+  if (!icon) {
+    return '';
+  }
+  return isWorkflowPresetIcon(icon) ? '' : icon;
 }
 
 function nodePickerDescription(item: WorkflowNodeCatalog) {
@@ -2228,7 +2036,24 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .workflow-tabs {
+  overflow: hidden;
+  border: 1px solid var(--mango-border-light);
+  border-radius: 6px;
   background: var(--el-bg-color);
+}
+
+.workflow-tabs :deep(.el-tabs__header) {
+  padding: 0 16px;
+  margin: 0;
+}
+
+.workflow-tabs :deep(.el-tabs__nav-wrap::after) {
+  left: -16px;
+  right: -16px;
+}
+
+.workflow-tabs :deep(.el-tabs__content) {
+  padding: 16px;
 }
 
 .workflow-definition-actions {
@@ -2326,7 +2151,7 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .builder-content {
-  padding: 18px 28px 22px;
+  padding: 18px 28px 28px;
 }
 
 .builder-pane {
@@ -2344,32 +2169,9 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   align-items: center;
 }
 
-.builder-pane-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.basic-pane .builder-pane-head {
-  width: min(760px, 100%);
-}
-
-.pane-kicker {
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--el-color-primary);
-}
-
-.builder-pane-head h3 {
-  margin: 0;
-  font-size: 22px;
-  color: var(--el-text-color-primary);
-}
-
 .pane-help {
-  width: min(760px, 100%);
+  width: min(640px, 100%);
+  padding-top: 2px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.6;
@@ -2377,7 +2179,7 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 
 .builder-form {
   max-width: none;
-  padding: 22px 22px 10px;
+  padding: 0;
 }
 
 .builder-footer {
@@ -2424,56 +2226,169 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 .basic-pane .step-form {
-  width: min(760px, 100%);
-}
-
-.form-mode-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.form-mode-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  min-height: 86px;
-  padding: 18px 20px;
-  border: 2px solid var(--el-border-color-light);
+  width: min(560px, 100%);
+  max-width: 560px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 24px 24px 20px;
+  border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color);
-  color: var(--el-text-color-primary);
-  text-align: left;
-  cursor: pointer;
 }
 
-.form-mode-card.active {
-  border-color: var(--el-color-primary);
+.basic-pane .basic-field {
+  margin-bottom: 0;
 }
 
-.form-mode-card strong {
+.basic-pane .basic-field.full {
+  grid-column: 1 / -1;
+}
+
+.basic-pane .el-select {
+  width: 100%;
+}
+
+.workflow-icon-field {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.workflow-icon-item :deep(.el-form-item__content) {
+  display: flex;
+  justify-content: center;
+}
+
+.workflow-icon-uploader {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.workflow-icon-uploader :deep(.image-upload),
+.workflow-icon-uploader :deep(.avatar-uploader) {
+  width: 64px;
+}
+
+.workflow-icon-uploader :deep(.el-upload),
+.workflow-icon-uploader :deep(.image-upload__card),
+.workflow-icon-uploader :deep(.el-upload--picture-card),
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+}
+
+.workflow-icon-uploader :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.workflow-icon-uploader.empty .workflow-icon-upload-control :deep(.el-upload--picture-card) {
+  opacity: 0;
+}
+
+.workflow-icon-uploader :deep(.el-upload--picture-card:hover) {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-fill-color-light);
+}
+
+.workflow-icon-uploader.filled .workflow-icon-upload-control :deep(.el-upload--picture-card) {
+  display: none;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card) {
   display: block;
-  margin-bottom: 8px;
-  font-size: 16px;
 }
 
-.form-mode-card em {
-  display: block;
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
+  margin: 0;
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list__item-status-label) {
+  display: none;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 10px;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions span) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-preview),
+.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-delete) {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.workflow-icon-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+}
+
+.workflow-icon-empty-state {
   color: var(--el-text-color-secondary);
-  font-style: normal;
+  transition: all 0.2s ease;
+}
+
+.workflow-icon-uploader.empty:hover .workflow-icon-empty-state {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.workflow-icon-empty-state .el-icon,
+.workflow-icon-legacy-preview .el-icon {
+  font-size: 20px;
+}
+
+.workflow-icon-empty-state span,
+.workflow-icon-legacy-preview span {
+  font-size: 12px;
   font-weight: 600;
 }
 
-.mode-radio {
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  border: 2px solid var(--el-border-color);
-  border-radius: 50%;
+.workflow-icon-legacy-preview {
+  color: var(--el-color-primary);
 }
 
-.form-mode-card.active .mode-radio {
-  border: 5px solid var(--el-color-primary);
+.field-label-with-help {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-label-with-help .el-icon {
+  color: var(--el-text-color-secondary);
+  cursor: help;
 }
 
 .form-step-layout {
@@ -2484,12 +2399,12 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   min-width: 0;
 }
 
-.form-designer-toolbar {
+.form-config-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 14px;
   padding: 12px 14px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
@@ -2503,6 +2418,15 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 
 .form-code-form :deep(.el-form-item) {
   margin-bottom: 0;
+}
+
+.form-type-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .form-designer-summary {
@@ -2560,40 +2484,20 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   overflow: hidden;
 }
 
-.designer-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 0 10px;
-  border-bottom: 0;
-}
-
-.designer-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.designer-subtitle {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
 .designer-body {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(380px, 440px);
   gap: 14px;
-  padding: 14px;
-  background: #f7f8fb;
+  padding: 0;
+  background: transparent;
   min-height: calc(100vh - 260px);
 }
 
 .node-canvas {
   position: relative;
   overflow: auto;
-  padding: 24px 20px 40px;
+  padding: 14px 10px 36px;
   text-align: center;
 }
 
@@ -2689,6 +2593,28 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   background: var(--node-color);
 }
 
+:deep(.node-title-display) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:deep(.node-card-delete) {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+:deep(.node-card-delete:hover) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
 :deep(.node-card-type) {
   padding: 10px 12px;
   text-align: left;
@@ -2721,15 +2647,14 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   top: 100%;
 }
 
-:deep(.remove-node) {
-  margin-top: 4px;
-}
-
 :deep(.branch-area) {
   position: relative;
   margin-top: 18px;
   min-width: 520px;
-  padding-top: 24px;
+  padding: 24px 16px 16px;
+  border: 1px dashed #c8d2e3;
+  border-radius: 10px;
+  background: #f7f9fc;
 }
 
 :deep(.branch-area::before) {
@@ -2765,10 +2690,10 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 :deep(.branch-column) {
   position: relative;
   min-width: 230px;
-  padding: 22px 12px 12px;
-  border: 1px dashed #c4ccda;
+  padding: 22px 8px 8px;
+  border: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: transparent;
 }
 
 :deep(.branch-column::before) {
@@ -2780,34 +2705,6 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   height: 22px;
   background: var(--workflow-line-color);
   transform: translateX(-50%);
-}
-
-:deep(.branch-card) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  background: var(--el-fill-color-light);
-  cursor: pointer;
-}
-
-:deep(.branch-condition),
-:deep(.branch-default) {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-:deep(.branch-default) {
-  color: var(--el-color-warning);
 }
 
 .end-node {
@@ -2892,22 +2789,22 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 
 :deep(.node-picker-grid) {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(72px, 1fr));
   gap: 8px;
 }
 
 :deep(.node-picker-item) {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  column-gap: 10px;
-  row-gap: 2px;
-  min-height: 66px;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 78px;
+  padding: 10px 8px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color);
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -2917,7 +2814,6 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 }
 
 :deep(.node-picker-icon) {
-  grid-row: 1 / span 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2930,17 +2826,16 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
 
 :deep(.node-picker-name) {
   min-width: 0;
+  width: 100%;
   font-weight: 700;
   color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.node-picker-desc) {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: none;
 }
 
 :deep(.node-picker-empty) {
@@ -2988,6 +2883,17 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   height: 72px;
 }
 
+.code-editor-form-item :deep(.el-form-item__content) {
+  display: block;
+  width: 100%;
+}
+
+.code-editor-form-item :deep(.code-editor-container),
+.code-editor-form-item :deep(.cm-editor),
+.code-editor-form-item :deep(.CodeMirror) {
+  width: 100%;
+}
+
 :deep(.el-select) {
   min-width: 160px;
 }
@@ -3007,6 +2913,11 @@ function groupedCatalog(catalog: WorkflowNodeCatalog[]) {
   .form-step-layout,
   .designer-body {
     grid-template-columns: 1fr;
+  }
+
+  .basic-pane .step-form {
+    grid-template-columns: 1fr;
+    padding: 18px;
   }
 }
 </style>

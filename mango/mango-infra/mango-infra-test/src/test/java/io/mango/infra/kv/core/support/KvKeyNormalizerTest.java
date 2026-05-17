@@ -1,5 +1,6 @@
 package io.mango.infra.kv.core.support;
 
+import io.mango.common.exception.BizException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,7 +42,7 @@ class KvKeyNormalizerTest {
     @Test
     void normalize_invalidEnv_throws() {
         assertThatThrownBy(() -> new KvKeyNormalizer(true, "mango:kv", "prod:blue", false, null))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("env");
     }
 }

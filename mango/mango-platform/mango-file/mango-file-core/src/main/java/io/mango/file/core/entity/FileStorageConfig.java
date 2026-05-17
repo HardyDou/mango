@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * 文件存储配置实体。
  */
 @Data
-@TableName("sys_file_storage_config")
+@TableName("file_storage_config")
 public class FileStorageConfig {
 
     @TableId(type = IdType.ASSIGN_ID)
@@ -24,6 +24,7 @@ public class FileStorageConfig {
     private String publicEndpoint;
     private String region;
     private String bucketName;
+    private String storagePath;
     private String accessKey;
     private String secretKey;
     private Integer pathStyleAccess;

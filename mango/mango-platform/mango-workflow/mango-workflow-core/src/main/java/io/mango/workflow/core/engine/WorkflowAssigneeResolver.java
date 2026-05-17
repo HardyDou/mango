@@ -27,6 +27,7 @@ public class WorkflowAssigneeResolver {
     public static final String GROUP_ORG_PREFIX = "ORG:";
     public static final String GROUP_ORG_LEADER_PREFIX = "ORG_LEADER:";
     public static final String ADMIN_USER = "admin";
+    public static final String DEFINITION_ADMIN_USERS_VAR = "mangoDefinitionAdminUsers";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -79,6 +80,12 @@ public class WorkflowAssigneeResolver {
     }
 
     public ResolvedAssignees applyEmptyStrategy(WorkflowApprovalNodeConfig config, ResolvedAssignees resolved) {
+        return applyEmptyStrategy(config, resolved, Map.of());
+    }
+
+    public ResolvedAssignees applyEmptyStrategy(WorkflowApprovalNodeConfig config,
+                                                ResolvedAssignees resolved,
+                                                Map<String, Object> variables) {
         if (resolved != null && !resolved.empty()) {
             return resolved;
         }
@@ -89,7 +96,8 @@ public class WorkflowAssigneeResolver {
             return users(config.getEmptyAssigneeUserIds());
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.TO_ADMIN) {
-            return users(List.of(ADMIN_USER));
+            List<String> admins = valueList(variables == null ? null : variables.get(DEFINITION_ADMIN_USERS_VAR));
+            return users(admins.isEmpty() ? List.of(ADMIN_USER) : admins);
         }
         return ResolvedAssignees.empty(strategy);
     }

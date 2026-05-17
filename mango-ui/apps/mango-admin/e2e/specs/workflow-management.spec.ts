@@ -1,4 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 type LoginTenant = {
   tenantId: string;
@@ -108,6 +111,26 @@ async function cleanupWorkflow(request: APIRequestContext, token: string, keywor
       });
     }
   }
+}
+
+async function cleanupWorkflowUploadFiles(request: APIRequestContext, token: string, fileIds: string[]) {
+  const headers = { Authorization: `Bearer ${token}` };
+  for (const id of fileIds) {
+    await request.delete(`http://localhost:5555/file/files?id=${encodeURIComponent(id)}&reason=e2e-workflow-cleanup`, {
+      headers,
+    }).catch(() => undefined);
+  }
+}
+
+function expectWorkflowUploadValueOnlyContainsFileIds(value: unknown, expectedIds: string[]) {
+  expect(value).toEqual(expectedIds);
+  const serialized = JSON.stringify(value);
+  expect(serialized).not.toContain('http');
+  expect(serialized).not.toContain('/api/file/files/download');
+  expect(serialized).not.toContain('url');
+  expect(serialized).not.toContain('downloadUrl');
+  expect(serialized).not.toContain('directPreviewUrl');
+  expect(serialized).not.toContain('directDownloadUrl');
 }
 
 function designerJson(unique: number) {
@@ -283,6 +306,110 @@ function leaveFormJson() {
   ]);
 }
 
+function runtimeComponentFormJson() {
+  return JSON.stringify([
+    {
+      type: 'elCard',
+      title: '申请信息',
+      children: [
+        {
+          type: 'input',
+          field: 'applySubject',
+          title: '申请主题',
+          props: {
+            placeholder: '请输入申请主题',
+          },
+          validate: [
+            { required: true, message: '申请主题不能为空', trigger: 'blur' },
+          ],
+        },
+        {
+          type: 'select',
+          field: 'expenseType',
+          title: '费用类型',
+          props: {
+            placeholder: '请选择费用类型',
+            clearable: true,
+            filterable: true,
+          },
+          options: [
+            { label: '差旅费', value: 'TRAVEL' },
+            { label: '办公费', value: 'OFFICE' },
+          ],
+          validate: [
+            { required: true, message: '费用类型不能为空', trigger: 'change' },
+          ],
+        },
+        {
+          type: 'upload',
+          field: 'attachments',
+          title: '附件',
+          props: {
+            accept: '.pdf,.docx,.png',
+            limit: 3,
+          },
+        },
+        {
+          type: 'upload',
+          field: 'images',
+          title: '图片',
+          props: {
+            accept: 'image/*',
+            listType: 'picture-card',
+            limit: 2,
+          },
+        },
+      ],
+    },
+    {
+      type: 'fcRow',
+      title: '金额信息',
+      children: [
+        {
+          type: 'inputNumber',
+          field: 'amount',
+          title: '申请金额',
+          props: {
+            placeholder: '请输入申请金额',
+            min: 1,
+          },
+          validate: [
+            { required: true, message: '申请金额不能为空', trigger: 'change' },
+          ],
+        },
+        {
+          type: 'elTreeSelect',
+          field: 'deptId',
+          title: '申请部门',
+          props: {
+            placeholder: '请选择申请部门',
+            workflowDataType: 'systemDept',
+            data: [
+              {
+                label: '芒果集团',
+                value: '1',
+                children: [
+                  { label: '财务部', value: 'finance' },
+                ],
+              },
+            ],
+            nodeKey: 'value',
+            checkStrictly: true,
+          },
+        },
+      ],
+    },
+    {
+      type: 'elAlert',
+      title: '表单说明',
+      props: {
+        type: 'info',
+        content: '请按实际业务上传审批附件。',
+      },
+    },
+  ]);
+}
+
 async function prepareLeaveWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
   const headers = { Authorization: `Bearer ${token}` };
   const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
@@ -448,8 +575,18 @@ async function expectNoAuthError(page: Page) {
   await expect(page.locator('.el-message--error')).toHaveCount(0);
 }
 
+function startProcessCard(page: Page, name: string) {
+  return page.locator('.workflow-launch-card', { hasText: name });
+}
+
+function startProcessDialog(page: Page, name: string) {
+  return page.getByRole('dialog', { name });
+}
+
 test.describe('工作流配置真实接口闭环', () => {
   test('创建流程进入独立三步设计工作台', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const pageErrors: string[] = [];
     const unique = Date.now();
     const keyword = `e2e_workflow_ui_${unique}`;
     const groupName = `E2E设计分组${unique}`;
@@ -458,6 +595,7 @@ test.describe('工作流配置真实接口闭环', () => {
     const definitionKey = `e2e_ui_process_${unique}`;
     const token = await loginToken(request, platformTenant);
     const headers = { Authorization: `Bearer ${token}` };
+    page.on('pageerror', error => pageErrors.push(error.message));
 
     try {
       await cleanupWorkflow(request, token, keyword);
@@ -490,71 +628,143 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.getByPlaceholder('如 guarantee_approve').fill(definitionKey);
       await page.getByRole('button', { name: '下一步' }).click();
 
-      await expect(page.locator('.form-mode-card', { hasText: '动态表单' })).toBeVisible();
-      await expect(page.locator('.form-mode-card.active', { hasText: '动态表单' })).toBeVisible();
-      await expect(page.locator('.form-mode-card', { hasText: '自定义表单' })).toBeVisible();
+      await expect(page.getByRole('radio', { name: '内置设计器' })).toBeChecked();
+      await expect(page.getByRole('radio', { name: '自定义页面' })).toBeVisible();
       await page.getByPlaceholder('如 guarantee_apply_form').fill(`form_${keyword}`);
       await expect(page.locator('.workflow-form-designer')).toBeVisible();
       await expect(page.locator('.workflow-form-designer')).toContainText('辅助组件');
       await expect(page.locator('.workflow-form-designer')).toContainText('子表单组件');
+      await expect(page.locator('.workflow-form-designer')).toContainText('布局组件');
       await expect(page.locator('.workflow-form-designer')).toContainText('基础组件');
       await expect(page.locator('.workflow-form-designer')).toContainText('业务组件');
       await expect(page.locator('.workflow-form-designer')).toContainText('人员');
       await expect(page.locator('.workflow-form-designer')).toContainText('部门');
+      await expect(page.locator('.workflow-form-designer')).toContainText('组织架构');
+      await expect(page.locator('.workflow-form-designer')).toContainText('字典');
+      await expect(page.locator('.workflow-form-designer')).toContainText('业务类型');
+      await expect(page.locator('.workflow-form-designer')).toContainText('上传');
       await expect(page.locator('.workflow-form-designer')).toContainText('签名');
       await expect(page.locator('.workflow-form-designer')).toContainText('流水号');
       await expect(page.locator('.workflow-form-designer')).toContainText('流程金额');
       await expect(page.locator('.workflow-form-designer')).toContainText('流程类型');
       await page.getByRole('button', { name: '下一步' }).click();
 
-      await expect(page.getByText('流程设计器')).toBeVisible();
-      await expect(page.getByText('发起人')).toBeVisible();
+      await expect(page.locator('.node-canvas')).toBeVisible();
+      await expect(page.locator('.workflow-node-card.root', { hasText: '发起人' })).toBeVisible();
+      await page.locator('.workflow-node-card.root', { hasText: '发起人' }).click();
+      const nodePanel = page.locator('.workflow-node-property-panel');
+      await expect(nodePanel).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '基础信息' })).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '表单权限' })).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '节点属性' })).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '扩展属性' })).toBeVisible();
+      await nodePanel.getByRole('tab', { name: '表单权限' }).click();
+      await expect(nodePanel.locator('.form-permission-row', { hasText: '流程金额' })).toBeVisible();
+      await expect(nodePanel.getByRole('radio', { name: '隐藏' }).first()).toBeVisible();
+      await expect(nodePanel.getByRole('radio', { name: '只读' }).first()).toBeVisible();
+      await expect(nodePanel.getByRole('radio', { name: '编辑' }).first()).toBeVisible();
+      await nodePanel.getByRole('tab', { name: '节点属性' }).click();
+      await expect(nodePanel.getByText('发起人范围')).toBeVisible();
+      await nodePanel.locator('.workflow-participant-selector .participant-trigger').click();
+      const participantDialog = page.locator('.participant-dialog', { hasText: '选择对象' });
+      await expect(participantDialog).toBeVisible();
+      await expect(participantDialog.getByRole('tab', { name: '用户' })).toBeVisible();
+      await expect(participantDialog.getByRole('tab', { name: '部门范围' })).toBeVisible();
+      await expect(participantDialog.getByRole('tab', { name: '岗位' })).toBeVisible();
+      await expect(participantDialog.getByRole('tab', { name: '角色' })).toBeVisible();
+      await expect(participantDialog.locator('.participant-item', { hasText: /admin/ }).first()).toBeVisible({ timeout: 10000 });
+      await participantDialog.locator('.participant-item', { hasText: /admin/ }).first().click();
+      await participantDialog.getByRole('tab', { name: '部门范围' }).click();
+      await expect(participantDialog.locator('.participant-tree-wrap .el-tree')).toBeVisible({ timeout: 10000 });
+      await participantDialog.getByRole('button', { name: '确认' }).click();
+      await expect(nodePanel.locator('.participant-selected-group', { hasText: '用户：' })).toBeVisible();
+      await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
+      await expect(nodePanel).toBeHidden();
       const approvalNode = page.locator('.workflow-node-card:not(.root)', { hasText: '人工审批' });
       await expect(approvalNode).toBeVisible();
       await approvalNode.click();
-      const approvalDrawer = page.locator('.workflow-node-drawer');
-      await expect(approvalDrawer).toBeVisible();
-      await expect(approvalDrawer).toContainText('审批人设置');
-      await expect(approvalDrawer.getByRole('tab', { name: '设置审批人' })).toBeVisible();
-      await expect(approvalDrawer.getByRole('tab', { name: '表单权限' })).toBeVisible();
-      await expect(approvalDrawer.getByRole('tab', { name: '事件通知' })).toBeVisible();
-      await expect(approvalDrawer.getByText('指定成员')).toBeVisible();
-      await expect(approvalDrawer.getByText('部门主管')).toBeVisible();
-      await expect(approvalDrawer.getByText('角色')).toBeVisible();
-      await expect(approvalDrawer.getByText('发起人自选')).toBeVisible();
-      await expect(approvalDrawer.getByText('发起人自己')).toBeVisible();
-      await expect(approvalDrawer.getByText('表单人员')).toBeVisible();
-      await expect(approvalDrawer.getByText('流程表达式')).toBeVisible();
-      await expect(approvalDrawer.getByText('指定岗位')).toHaveCount(0);
-      await expect(approvalDrawer.getByText('指定组织')).toHaveCount(0);
-      await expect(approvalDrawer.getByText('审批人为空时')).toBeVisible();
-      await expect(approvalDrawer.getByText('审批被拒绝')).toBeVisible();
-      await approvalDrawer.getByText('发起人自选').click();
-      await expect(approvalDrawer.getByText('选择方式')).toBeVisible();
-      await expect(approvalDrawer.getByText('多人审批时采用的审批方式')).toHaveCount(0);
-      await approvalDrawer.getByText('多选').click();
-      await expect(approvalDrawer.getByText('多人审批时采用的审批方式')).toBeVisible();
-      await approvalDrawer.getByText('发起人自己').click();
-      await expect(approvalDrawer.getByText('选择方式')).toHaveCount(0);
-      await expect(approvalDrawer.getByText('多人审批时采用的审批方式')).toHaveCount(0);
-      await approvalDrawer.getByText('指定成员').click();
-      await approvalDrawer.locator('.approval-target-select').first().click();
+      await expect(nodePanel).toBeVisible();
+      await expect(nodePanel).toContainText('节点配置');
+      await expect(nodePanel.getByRole('tab', { name: '基础信息' })).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '表单权限' })).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '节点属性' })).toBeVisible();
+      await expect(nodePanel.getByRole('tab', { name: '扩展属性' })).toBeVisible();
+      await expect(nodePanel.getByText('指定成员')).toBeVisible();
+      await expect(nodePanel.getByText('部门主管')).toBeVisible();
+      await expect(nodePanel.getByText('角色')).toBeVisible();
+      await expect(nodePanel.getByText('发起人自选')).toBeVisible();
+      await expect(nodePanel.getByText('发起人自己')).toBeVisible();
+      await expect(nodePanel.getByText('表单人员')).toBeVisible();
+      await expect(nodePanel.getByText('流程表达式')).toBeVisible();
+      await expect(nodePanel.getByText('指定岗位')).toBeVisible();
+      await expect(nodePanel.getByText('指定组织')).toBeVisible();
+      await expect(nodePanel.getByText('审批人为空时')).toBeVisible();
+      await expect(nodePanel.getByText('审批被驳回')).toBeVisible();
+      await nodePanel.getByRole('tab', { name: '表单权限' }).click();
+      await expect(nodePanel.locator('.form-permission-row', { hasText: '流程金额' })).toBeVisible();
+      await expect(nodePanel.getByRole('radio', { name: '隐藏' }).first()).toBeVisible();
+      await expect(nodePanel.getByRole('radio', { name: '只读' }).first()).toBeVisible();
+      await expect(nodePanel.getByRole('radio', { name: '编辑' }).first()).toBeVisible();
+      await nodePanel.getByRole('tab', { name: '节点属性' }).click();
+      await nodePanel.getByText('指定岗位').click();
+      await expect(nodePanel.locator('.approval-target-select').first()).toBeVisible();
+      await nodePanel.getByText('指定组织').click();
+      await expect(nodePanel.locator('.approval-target-select').first()).toBeVisible();
+      await nodePanel.getByText('发起人自选').click();
+      await expect(nodePanel.getByText('选择方式')).toBeVisible();
+      await expect(nodePanel.getByText('多人审批时采用的审批方式')).toHaveCount(0);
+      await nodePanel.getByText('多选').click();
+      await expect(nodePanel.getByText('多人审批时采用的审批方式')).toBeVisible();
+      await nodePanel.getByText('发起人自己').click();
+      await expect(nodePanel.getByText('选择方式')).toHaveCount(0);
+      await expect(nodePanel.getByText('多人审批时采用的审批方式')).toHaveCount(0);
+      await nodePanel.getByText('指定成员').click();
+      await nodePanel.locator('.approval-target-select').first().click();
       await expect(page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ })).toBeVisible({ timeout: 10000 });
       await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: /admin/ }).first().click();
-      await expect(approvalDrawer.locator('.el-tag', { hasText: /admin/ })).toBeVisible();
-      await page.locator('.el-overlay').last().click({ position: { x: 8, y: 8 } });
-      await expect(approvalDrawer).toBeHidden();
-      await page.locator('.add-node-button').last().click();
+      await expect(nodePanel.locator('.el-tag', { hasText: /admin/ })).toBeVisible();
+      await nodePanel.getByRole('tab', { name: '扩展属性' }).click();
+      await nodePanel.getByRole('button', { name: '添加属性' }).click();
+      await nodePanel.locator('.advanced-row').first().locator('.advanced-key input').fill('priority');
+      await nodePanel.locator('.advanced-row').first().locator('.advanced-value input').fill('normal');
+      await expect(nodePanel.locator('.advanced-row')).toHaveCount(1);
+      await page.locator('.node-canvas').click({ position: { x: 48, y: 128 } });
+      await expect(nodePanel).toBeHidden();
+      await page.locator('.workflow-add-node-button').last().click();
       await page.getByRole('button', { name: /条件分支/ }).click();
-      await page.getByRole('dialog', { name: '节点属性' }).getByRole('button', { name: 'Close this dialog' }).click();
-      await expect(page.getByRole('dialog', { name: '节点属性' })).toBeHidden();
-      await expect(page.locator('.branch-card', { hasText: '分支1' })).toBeVisible();
-      await page.locator('.branch-card', { hasText: '分支1' }).click();
-      await expect(page.getByRole('dialog', { name: '条件设置' })).toBeVisible();
+      await expect(nodePanel).toBeVisible();
+      await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
+      await expect(nodePanel).toBeHidden();
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toBeVisible();
+      await expect(page.locator('.workflow-branch-box')).toBeVisible();
+      await expect(page.locator('.workflow-branch-col')).toHaveCount(2);
+      await expect(page.locator('.top-left-cover-line')).toBeVisible();
+      await expect(page.locator('.bottom-right-cover-line')).toBeVisible();
+      await page.locator('.workflow-node-card.branch-node', { hasText: '分支1' }).click();
+      await expect(nodePanel).toBeVisible();
+      await expect(nodePanel).toContainText('条件设置');
       await page.locator('.condition-row').first().locator('.condition-variable').click();
-      await expect(page.getByRole('option', { name: /当前机构ID（tenantId）/ })).toBeVisible();
-      await expect(page.getByRole('option', { name: /申请人ID（applicant.id）/ })).toBeVisible();
-      await page.getByRole('option', { name: /流程金额/ }).click();
+      const visibleConditionOptions = page.locator('.el-select-dropdown:visible .el-select-dropdown__item');
+      await expect(visibleConditionOptions.filter({ hasText: '当前机构ID' }).filter({ hasText: 'tenantId' })).toBeVisible();
+      await expect(visibleConditionOptions.filter({ hasText: '申请人ID' }).filter({ hasText: 'applicant.id' })).toBeVisible();
+      await expect(visibleConditionOptions.filter({ hasText: '申请人部门ID' }).filter({ hasText: 'applicant.orgId' })).toBeVisible();
+      await expect(visibleConditionOptions.filter({ hasText: '申请人岗位ID' }).filter({ hasText: 'applicant.postId' })).toBeVisible();
+      await visibleConditionOptions.filter({ hasText: '申请人部门ID' }).filter({ hasText: 'applicant.orgId' }).first().click();
+      await expect(page.locator('.condition-row').first()).toContainText('选择部门');
+      await page.locator('.condition-row').first().locator('.condition-value').click();
+      await expect(page.locator('.el-tree-select__popper:visible').filter({ hasText: '芒果集团' }).first()).toBeVisible();
+      await page.keyboard.press('Escape');
+      await page.locator('.condition-row').first().locator('.condition-variable').click();
+      await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: '申请人ID' }).filter({ hasText: 'applicant.id' }).first().click();
+      await expect(page.locator('.condition-row').first()).toContainText('选择人员');
+      await page.locator('.condition-row').first().locator('.condition-operator').click();
+      await expect(page.getByRole('option', { name: '是', exact: true })).toBeVisible();
+      await expect(page.getByRole('option', { name: '不是', exact: true })).toBeVisible();
+      await expect(page.getByRole('option', { name: '属于/包含', exact: true })).toBeVisible();
+      await expect(page.getByRole('option', { name: '不属于/不包含', exact: true })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await page.locator('.condition-row').first().locator('.condition-variable').click();
+      await visibleConditionOptions.filter({ hasText: '流程金额' }).first().click();
       await page.locator('.condition-row').first().locator('.condition-operator').click();
       await page.getByRole('option', { name: '等于 ==' }).click();
       await page.locator('.condition-row').first().getByPlaceholder('比较值').fill('1000');
@@ -562,16 +772,69 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.condition-row').nth(1).locator('.el-select').first().click();
       await page.getByRole('option', { name: '或者 OR' }).click();
       await page.locator('.condition-row').nth(1).locator('.condition-variable').click();
-      await page.getByRole('option', { name: /当前机构ID（tenantId）/ }).click();
+      await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: '当前机构ID' }).filter({ hasText: 'tenantId' }).first().click();
       await page.locator('.condition-row').nth(1).getByPlaceholder('比较值').fill('1');
       await page.locator('.condition-row').nth(1).getByPlaceholder('比较值').blur();
-      await expect(page.getByPlaceholder('${amount > 100000 && tenantId == 1}')).toHaveValue('${amount == 1000 || tenantId == 1}');
-      await page.getByRole('dialog', { name: '条件设置' }).getByRole('button', { name: 'Close this dialog' }).click();
-      await expect(page.getByRole('dialog', { name: '条件设置' })).toBeHidden();
+      await expect(nodePanel.getByRole('textbox', { name: '条件表达式' })).toHaveValue("${(amount == 1000 || tenantId == '1')}");
+      await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
+      await expect(nodePanel).toBeHidden();
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('流程金额 是 1000');
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).toContainText('当前机构ID 是 1');
+      await expect(page.locator('.workflow-node-card.branch-node', { hasText: '分支1' })).not.toContainText('${');
+      await page.locator('.workflow-add-node-button').last().click();
+      await page.getByRole('button', { name: /抄送节点/ }).click();
+      await expect(nodePanel).toBeVisible();
+      await expect(nodePanel.getByText('抄送对象')).toBeVisible();
+      await nodePanel.locator('.workflow-participant-selector .participant-trigger').click();
+      await expect(participantDialog).toBeVisible();
+      await participantDialog.getByRole('tab', { name: '用户' }).click();
+      await expect(participantDialog.locator('.participant-item', { hasText: /admin/ }).first()).toBeVisible({ timeout: 10000 });
+      await participantDialog.locator('.participant-item', { hasText: /admin/ }).first().click();
+      await participantDialog.getByRole('button', { name: '确认' }).click();
+      await expect(nodePanel.locator('.participant-selected-group', { hasText: '用户：' })).toBeVisible();
+      await nodePanel.getByPlaceholder('workflow.cc').fill('workflow.cc.e2e');
+      await nodePanel.getByRole('button', { name: '关闭节点配置' }).click();
+      await expect(nodePanel).toBeHidden();
+
+      const saveDraftResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions')
+        && response.request().method() === 'POST'
+      );
+      await page.getByRole('button', { name: '保存草稿' }).click();
+      const saveDraftResponse = await saveDraftResponsePromise;
+      const saveDraftBody = await saveDraftResponse.json();
+      expect(saveDraftResponse.status(), JSON.stringify({
+        request: saveDraftResponse.request().postDataJSON(),
+        response: saveDraftBody,
+      }, null, 2)).toBe(200);
+      expect(saveDraftBody.success || saveDraftBody.code === 200).toBeTruthy();
+      await expect(page.getByText('草稿已保存')).toBeVisible();
+
       await page.getByRole('button', { name: '发布流程' }).last().click();
       await expect(page.getByRole('dialog', { name: '发布前检查' })).toBeVisible();
       await expect(page.getByText('检查通过')).toBeVisible({ timeout: 10000 });
+      const updateDefinitionResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions')
+        && response.request().method() === 'PUT'
+      );
+      const deployResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions/deploy')
+      );
+      await page.getByRole('button', { name: '确认发布' }).click();
+      const [updateDefinitionResponse, deployResponse] = await Promise.all([
+        updateDefinitionResponsePromise,
+        deployResponsePromise,
+      ]);
+      expect(updateDefinitionResponse.status()).toBe(200);
+      const updateDefinitionBody = await updateDefinitionResponse.json();
+      expect(updateDefinitionBody.success || updateDefinitionBody.code === 200).toBeTruthy();
+      expect(deployResponse.status()).toBe(200);
+      const deployBody = await deployResponse.json();
+      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      await expect(page.getByText('发布成功')).toBeVisible();
+      await expect(page.getByRole('button', { name: '创建流程' })).toBeVisible({ timeout: 10000 });
       await expectNoAuthError(page);
+      expect(pageErrors).toEqual([]);
     } finally {
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
     }
@@ -663,9 +926,9 @@ test.describe('工作流配置真实接口闭环', () => {
       await pageResponsePromise;
       await expect(page.getByText('流程定义').first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByRole('button', { name: '创建流程' })).toBeVisible();
-      await expect(page.getByRole('button', { name: '创建分组' })).toBeVisible();
-      await page.locator('.query-form .el-form-item', { hasText: '流程分组' }).locator('.el-select').click();
-      await page.getByRole('option', { name: groupName }).click();
+      await page.getByRole('button', { name: '流程分组' }).click();
+      await expect(page.getByRole('button', { name: '新增分组' })).toBeVisible();
+      await page.getByRole('button', { name: '流程定义' }).click();
       await page.getByPlaceholder('流程名称/编码').fill(definitionName);
       await page.getByRole('button', { name: '查询' }).first().click();
       await expect(page.locator('.el-table__row', { hasText: definitionName })).toBeVisible({ timeout: 10000 });
@@ -684,7 +947,6 @@ test.describe('工作流配置真实接口闭环', () => {
     const groupCode = keyword;
     const definitionName = `E2E请假流程${unique}`;
     const definitionKey = `e2e_leave_${unique}`;
-    const businessKey = `leave-${unique}`;
     const token = await loginToken(request, platformTenant);
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -738,12 +1000,12 @@ test.describe('工作流配置真实接口闭环', () => {
       await definitionsResponsePromise;
       await page.getByPlaceholder('搜索流程名称/编码').fill(definitionName);
       await page.getByRole('button', { name: '查询' }).click();
-      await expect(page.locator('.el-table__row', { hasText: definitionName })).toBeVisible({ timeout: 10000 });
+      const launchCard = startProcessCard(page, definitionName);
+      await expect(launchCard).toBeVisible({ timeout: 10000 });
 
-      await page.locator('.el-table__row', { hasText: definitionName }).getByRole('button', { name: '发起' }).click();
-      await expect(page.getByRole('dialog', { name: '发起流程' })).toBeVisible();
+      await launchCard.click();
+      await expect(startProcessDialog(page, definitionName)).toBeVisible();
       await expect(page.getByText('流程表单')).toBeVisible();
-      await page.locator('.el-form-item', { hasText: '业务主键' }).getByRole('textbox').fill(businessKey);
       await page.getByPlaceholder('请输入请假天数').fill('2');
       await page.getByPlaceholder('请输入请假原因').fill('E2E 请假发起验证');
 
@@ -754,7 +1016,8 @@ test.describe('工作流配置真实接口闭环', () => {
       const startResponse = await startResponsePromise;
       const startBody = await startResponse.json();
       expect(startBody.success || startBody.code === 200).toBeTruthy();
-      expect(startBody.data.businessKey).toBe(businessKey);
+      const startedBusinessKey = startBody.data.businessKey as string;
+      expect(startedBusinessKey).toBeTruthy();
       await expect(page.getByText(/流程已发起/)).toBeVisible({ timeout: 10000 });
 
       const initiatedResponsePromise = page.waitForResponse((response) =>
@@ -762,10 +1025,144 @@ test.describe('工作流配置真实接口闭环', () => {
       );
       await openInitiatedTasks(page);
       await initiatedResponsePromise;
-      await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('.el-table__row', { hasText: businessKey })).toContainText(definitionKey);
+      await expect(page.locator('.el-table__row', { hasText: startedBusinessKey })).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.el-table__row', { hasText: startedBusinessKey })).toContainText(definitionKey);
       await expectNoAuthError(page);
     } finally {
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
+  test('发起流程弹窗可渲染布局、业务选择和上传类动态表单组件', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const unique = Date.now();
+    const keyword = `e2e_workflow_runtime_form_${unique}`;
+    const groupName = `E2E表单组件分组${unique}`;
+    const groupCode = keyword;
+    const definitionName = `E2E费用报销流程${unique}`;
+    const definitionKey = `e2e_runtime_form_${unique}`;
+    const token = await loginToken(request, platformTenant);
+    const headers = { Authorization: `Bearer ${token}` };
+    const uploadedFileIds: string[] = [];
+
+    try {
+      await cleanupWorkflow(request, token, keyword);
+
+      const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+        headers,
+        data: {
+          groupName,
+          groupCode,
+          sort: 96,
+          status: 1,
+          remark: 'E2E动态表单组件渲染验证数据',
+        },
+      });
+      expect(createGroupResponse.status()).toBe(200);
+      const createGroupBody = await createGroupResponse.json();
+      expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+
+      const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+        headers,
+        data: {
+          groupId: createGroupBody.data,
+          definitionName,
+          definitionKey,
+          designerJson: designerJson(unique),
+          formCode: `form_${keyword}`,
+          formJson: runtimeComponentFormJson(),
+          status: 'DRAFT',
+          remark: 'E2E动态表单组件渲染验证数据',
+        },
+      });
+      expect(createDefinitionResponse.status()).toBe(200);
+      const createDefinitionBody = await createDefinitionResponse.json();
+      expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
+
+      const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+        headers,
+      });
+      expect(deployResponse.status()).toBe(200);
+      const deployBody = await deployResponse.json();
+      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      expect(deployBody.data.processDefinitionId).toBeTruthy();
+
+      await loginPage(page, platformTenant);
+      const definitionsResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions/page') && response.status() === 200
+      );
+      await openStartProcess(page);
+      await definitionsResponsePromise;
+      await page.getByPlaceholder('搜索流程名称/编码').fill(definitionName);
+      await page.getByRole('button', { name: '查询' }).click();
+      const launchCard = startProcessCard(page, definitionName);
+      await expect(launchCard).toBeVisible({ timeout: 10000 });
+
+      await launchCard.click();
+      const dialog = startProcessDialog(page, definitionName);
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator('.runtime-container-title', { hasText: '申请信息' })).toBeVisible();
+      await expect(dialog.locator('.runtime-container-title', { hasText: '金额信息' })).toBeVisible();
+      await expect(dialog.locator('.el-alert__title', { hasText: '请按实际业务上传审批附件。' })).toBeVisible();
+      await expect(dialog.locator('.mango-file-upload')).toHaveCount(2);
+      await expect(dialog.locator('.mango-file-upload.is-thumbnail')).toHaveCount(1);
+
+      const attachmentPath = join(tmpdir(), `mango-workflow-attachment-${unique}.pdf`);
+      const imagePath = join(tmpdir(), `mango-workflow-image-${unique}.png`);
+      writeFileSync(attachmentPath, Buffer.from('%PDF-1.4\n% e2e workflow attachment\n', 'utf-8'));
+      writeFileSync(imagePath, Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+        'base64',
+      ));
+
+      const attachmentUploadResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/files')
+        && response.request().method() === 'POST'
+        && response.status() === 200
+      );
+      await dialog.locator('.el-form-item', { hasText: '附件' }).locator('input[type="file"]').setInputFiles(attachmentPath);
+      const attachmentUploadResponse = await attachmentUploadResponsePromise;
+      const attachmentUploadBody = await attachmentUploadResponse.json();
+      expect(attachmentUploadBody.success || attachmentUploadBody.code === 200).toBeTruthy();
+      const attachmentFileId = String(attachmentUploadBody.data.id);
+      expect(attachmentFileId).toBeTruthy();
+      uploadedFileIds.push(attachmentFileId);
+
+      const imageUploadResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/files')
+        && response.request().method() === 'POST'
+        && response.status() === 200
+      );
+      await dialog.locator('.el-form-item', { hasText: '图片' }).locator('input[type="file"]').setInputFiles(imagePath);
+      const imageUploadResponse = await imageUploadResponsePromise;
+      const imageUploadBody = await imageUploadResponse.json();
+      expect(imageUploadBody.success || imageUploadBody.code === 200).toBeTruthy();
+      const imageFileId = String(imageUploadBody.data.id);
+      expect(imageFileId).toBeTruthy();
+      uploadedFileIds.push(imageFileId);
+
+      await dialog.getByPlaceholder('请输入申请主题').fill('E2E 费用报销申请');
+      await dialog.locator('.el-form-item', { hasText: '费用类型' }).locator('.el-select__wrapper').click();
+      await page.getByRole('option', { name: '差旅费' }).click();
+      await dialog.getByRole('spinbutton', { name: /申请金额/ }).fill('1280');
+      await dialog.locator('.el-form-item', { hasText: '申请部门' }).locator('.el-select__wrapper').click();
+      await page.getByRole('option', { name: '芒果集团' }).click();
+
+      const startResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/processes/start') && response.status() === 200
+      );
+      await page.getByRole('button', { name: '确认发起' }).click();
+      const startResponse = await startResponsePromise;
+      const startRequestBody = JSON.parse(startResponse.request().postData() || '{}');
+      expectWorkflowUploadValueOnlyContainsFileIds(startRequestBody.variables.attachments, [attachmentFileId]);
+      expectWorkflowUploadValueOnlyContainsFileIds(startRequestBody.variables.images, [imageFileId]);
+      const startBody = await startResponse.json();
+      expect(startBody.success || startBody.code === 200).toBeTruthy();
+      expect(startBody.data.businessKey).toBeTruthy();
+      await expect(page.getByText(/流程已发起/)).toBeVisible({ timeout: 10000 });
+      await expectNoAuthError(page);
+    } finally {
+      await cleanupWorkflowUploadFiles(request, token, uploadedFileIds);
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
     }
   });
@@ -774,7 +1171,6 @@ test.describe('工作流配置真实接口闭环', () => {
     test.setTimeout(60000);
     const unique = Date.now();
     const keyword = `e2e_workflow_select_${unique}`;
-    const businessKey = `starter-select-${unique}`;
     const token = await loginToken(request, platformTenant);
 
     try {
@@ -789,13 +1185,13 @@ test.describe('工作流配置真实接口闭环', () => {
       await definitionsResponsePromise;
       await page.getByPlaceholder('搜索流程名称/编码').fill(workflow.definitionName);
       await page.getByRole('button', { name: '查询' }).click();
-      await expect(page.locator('.el-table__row', { hasText: workflow.definitionName })).toBeVisible({ timeout: 10000 });
+      const launchCard = startProcessCard(page, workflow.definitionName);
+      await expect(launchCard).toBeVisible({ timeout: 10000 });
 
-      await page.locator('.el-table__row', { hasText: workflow.definitionName }).getByRole('button', { name: '发起' }).click();
-      const startDialog = page.getByRole('dialog', { name: '发起流程' });
+      await launchCard.click();
+      const startDialog = startProcessDialog(page, workflow.definitionName);
       await expect(startDialog).toBeVisible();
       await expect(startDialog.getByText('发起人自选审批人')).toBeVisible();
-      await page.locator('.el-form-item', { hasText: '业务主键' }).getByRole('textbox').fill(businessKey);
       await page.getByPlaceholder('请输入请假天数').fill('4');
       await page.getByPlaceholder('请输入请假原因').fill('E2E 发起人自选验证');
 
@@ -813,7 +1209,8 @@ test.describe('工作流配置真实接口闭环', () => {
       const startResponse = await startResponsePromise;
       const startBody = await startResponse.json();
       expect(startBody.success || startBody.code === 200).toBeTruthy();
-      expect(startBody.data.businessKey).toBe(businessKey);
+      const startedBusinessKey = startBody.data.businessKey as string;
+      expect(startedBusinessKey).toBeTruthy();
       await expect(page.getByText(/流程已发起/)).toBeVisible({ timeout: 10000 });
 
       const todoResponsePromise = page.waitForResponse((response) =>
@@ -821,8 +1218,8 @@ test.describe('工作流配置真实接口闭环', () => {
       );
       await openTodoTasks(page);
       await todoResponsePromise;
-      await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('.el-table__row', { hasText: businessKey })).toContainText('发起人自选审批');
+      await expect(page.locator('.el-table__row', { hasText: startedBusinessKey })).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('.el-table__row', { hasText: startedBusinessKey })).toContainText('发起人自选审批');
       await expectNoAuthError(page);
     } finally {
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
@@ -857,13 +1254,11 @@ test.describe('工作流配置真实接口闭环', () => {
       await taskRow.getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await detailResponsePromise;
-      await expect(page.getByText('处理任务')).toBeVisible();
       await expect(page.getByRole('spinbutton', { name: '请假天数' })).toHaveValue('5');
       await expect(page.getByRole('textbox', { name: '请假原因' })).toHaveValue('E2E 发起人自己审批验证');
       await expect(page.getByText('发起 · admin')).toBeVisible();
 
       await page.getByPlaceholder('请输入审批意见').fill('本人确认通过');
-      await page.getByPlaceholder('例如：{"approved":true}').fill('{"approved":true,"selfApproved":true}');
       const completeResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/tasks/complete') && response.status() === 200
       );
@@ -906,14 +1301,12 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await detailResponsePromise;
-      await expect(page.getByText('处理任务')).toBeVisible();
       await expect(page.getByText('请假天数')).toBeVisible();
       await expect(page.getByRole('spinbutton', { name: '请假天数' })).toHaveValue('3');
       await expect(page.getByRole('textbox', { name: '请假原因' })).toHaveValue('E2E 审批通过验证');
       await expect(page.getByText('发起 · admin')).toBeVisible();
 
       await page.getByPlaceholder('请输入审批意见').fill('同意，UI E2E');
-      await page.getByPlaceholder('例如：{"approved":true}').fill('{"approved":true,"approveRemark":"ui complete"}');
       const completeResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/tasks/complete') && response.status() === 200
       );
@@ -930,7 +1323,7 @@ test.describe('工作流配置真实接口闭环', () => {
     }
   });
 
-  test('平台管理员可在我的待办拒绝审批并在我的发起查看已拒绝详情', async ({ page, request }) => {
+  test('平台管理员可在我的待办驳回审批并在我的发起查看已驳回详情', async ({ page, request }) => {
     test.setTimeout(60000);
     const unique = Date.now();
     const keyword = `e2e_workflow_reject_${unique}`;
@@ -940,7 +1333,7 @@ test.describe('工作流配置真实接口闭环', () => {
     try {
       await cleanupWorkflow(request, token, keyword);
       const workflow = await prepareLeaveWorkflow(request, token, unique, keyword);
-      await startLeaveProcess(request, token, workflow.definitionId, businessKey, 1, 'E2E 审批拒绝验证');
+      await startLeaveProcess(request, token, workflow.definitionId, businessKey, 1, 'E2E 审批驳回验证');
 
       await loginPage(page, platformTenant);
       const todoResponsePromise = page.waitForResponse((response) =>
@@ -952,14 +1345,13 @@ test.describe('工作流配置真实接口闭环', () => {
 
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '处理' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
-      await expect(page.getByText('E2E 审批拒绝验证')).toBeVisible();
-      await page.getByPlaceholder('请输入审批意见').fill('拒绝，UI E2E');
-      await page.getByPlaceholder('例如：{"approved":true}').fill('{"approved":false,"rejectReason":"ui reject"}');
+      await expect(page.getByRole('textbox', { name: '请假原因' })).toHaveValue('E2E 审批驳回验证');
+      await page.getByPlaceholder('请输入审批意见').fill('驳回，UI E2E');
       const rejectResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/tasks/reject') && response.status() === 200
       );
-      await page.getByRole('button', { name: '拒绝' }).click();
-      await page.getByRole('dialog', { name: '审批拒绝' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page.getByRole('button', { name: '驳回' }).click();
+      await page.getByRole('dialog', { name: '审批驳回' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
       const rejectResponse = await rejectResponsePromise;
       const rejectBody = await rejectResponse.json();
       expect(rejectBody.success || rejectBody.code === 200).toBeTruthy();
@@ -970,7 +1362,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await openInitiatedTasks(page);
       await initiatedResponsePromise;
       await expect(page.locator('.el-table__row', { hasText: businessKey })).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('.el-table__row', { hasText: businessKey })).toContainText('已拒绝');
+      await expect(page.locator('.el-table__row', { hasText: businessKey })).toContainText('已驳回');
 
       const processDetailResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/processes/detail') && response.status() === 200
@@ -978,10 +1370,10 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.el-table__row', { hasText: businessKey }).getByRole('button', { name: '查看' }).click();
       await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
       await processDetailResponsePromise;
-      await expect(page.getByText('流程详情')).toBeVisible();
-      await expect(page.locator('.header-actions').getByText('已拒绝', { exact: true })).toBeVisible();
-      await expect(page.getByText('拒绝 · admin')).toBeVisible();
-      await expect(page.getByText('拒绝，UI E2E')).toBeVisible();
+      await expect(page.getByText('结束时间')).toBeVisible();
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('E2E 审批驳回验证');
+      await expect(page.getByText('驳回 · admin')).toBeVisible();
+      await expect(page.getByText('驳回，UI E2E')).toBeVisible();
       await expectNoAuthError(page);
     } finally {
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);

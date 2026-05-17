@@ -18,6 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.time.Duration;
+import java.util.Optional;
 
 /**
  * 七牛云 Kodo 文件存储实现。
@@ -44,7 +46,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
     @Override
     public FileObject getObject(FileStorageConfig config, String objectName) {
         requireConfig(config);
-        Require.notBlank(config.getPublicEndpoint(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "七牛云下载需要配置公开访问地址");
+        Require.notBlank(config.getPublicEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
         try {
             FileInfo info = bucketManager(config).stat(config.getBucketName(), objectName);
             String url = normalizePublicEndpoint(config.getPublicEndpoint()) + "/" + objectName;
@@ -77,9 +79,34 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
         bucketManager(config).delete(config.getBucketName(), objectName);
     }
 
+    @Override
+    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return privateDownloadUrl(config, objectName, expires);
+    }
+
+    @Override
+    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return privateDownloadUrl(config, objectName, expires);
+    }
+
+    @Override
+    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+        return publicObjectUrl(config, objectName);
+    }
+
     private void requireConfig(FileStorageConfig config) {
         requireBucket(config);
         requireAccessSecret(config);
+    }
+
+    private Optional<String> privateDownloadUrl(FileStorageConfig config, String objectName, Duration expires) {
+        requireConfig(config);
+        Require.notBlank(config.getPublicEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
+        if (!StringUtils.hasText(objectName) || expires == null || expires.isNegative() || expires.isZero()) {
+            return Optional.empty();
+        }
+        String url = normalizePublicEndpoint(config.getPublicEndpoint()) + "/" + encodeObjectName(objectName);
+        return Optional.of(auth(config).privateDownloadUrl(url, expires.getSeconds()));
     }
 
     private Auth auth(FileStorageConfig config) {

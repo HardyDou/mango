@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: mango-monolith-app
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 1024MB
   autoconfigure:
     exclude:
       - org.redisson.spring.starter.RedissonAutoConfigurationV2
