@@ -4,7 +4,7 @@
     "mango-authorization": {
       "mode": "micro",
       "runtimeCode": "mango-admin-rbac-app",
-      "entry": "http://b.mango.io:5181/src/micro.ts"
+      "entry": "http://b.mango.io:5181/"
     },
     "mango-system": {
       "mode": "local",
@@ -13,7 +13,7 @@
     "mango-workflow": {
       "mode": "micro",
       "runtimeCode": "mango-admin-workflow-app",
-      "entry": "http://c.mango.io:5182/src/micro.ts"
+      "entry": "http://c.mango.io:5182/"
     }
   }
 }

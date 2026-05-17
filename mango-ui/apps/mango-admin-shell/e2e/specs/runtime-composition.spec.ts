@@ -11,7 +11,7 @@ const hybridConfig = {
     'mango-authorization': {
       mode: 'micro',
       runtimeCode: 'mango-admin-rbac-app',
-      entry: 'http://b.mango.io:5181/src/micro.ts',
+      entry: 'http://b.mango.io:5181/',
     },
     'mango-system': {
       mode: 'local',
@@ -20,7 +20,7 @@ const hybridConfig = {
     'mango-workflow': {
       mode: 'micro',
       runtimeCode: 'mango-admin-workflow-app',
-      entry: 'http://c.mango.io:5182/src/micro.ts',
+      entry: 'http://c.mango.io:5182/',
     },
   },
 };
@@ -62,10 +62,10 @@ test.describe.serial('Shell runtime composition', () => {
       moduleCode: 'mango-authorization',
       runtimeCode: 'mango-admin-rbac-app',
       pageType: 'MICRO_ROUTE',
-      entryIncludes: 'b.mango.io:5181/src/micro.ts',
+      entryIncludes: 'b.mango.io:5181',
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
-    await expectRemoteResource(page, 'b.mango.io:5181/src/micro.ts');
+    await expectRemoteResource(page, 'b.mango.io:5181');
 
     await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
     await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
@@ -73,10 +73,10 @@ test.describe.serial('Shell runtime composition', () => {
       moduleCode: 'mango-workflow',
       runtimeCode: 'mango-admin-workflow-app',
       pageType: 'MICRO_ROUTE',
-      entryIncludes: 'c.mango.io:5182/src/micro.ts',
+      entryIncludes: 'c.mango.io:5182',
     });
     await expect(page.locator('main')).toContainText('需要当前用户处理的流程任务');
-    await expectRemoteResource(page, 'c.mango.io:5182/src/micro.ts');
+    await expectRemoteResource(page, 'c.mango.io:5182');
   });
 
   test('monolith profile renders modules locally without loading remote apps', async ({ page }) => {
@@ -112,9 +112,9 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.getByPlaceholder('用户名').fill('admin');
   await page.getByPlaceholder('密码').fill('admin123');
-  await page.getByRole('button', { name: '登 录' }).click();
-  await page.waitForURL('**/#/system/menu-package', { timeout: 15000 });
+  await page.getByRole('button', { name: /登\s*录/ }).click();
   await expect(page.getByRole('button', { name: /系统管理/ })).toBeVisible();
+  await expect(page.locator('.shell-runtime-content')).toBeVisible();
 }
 
 async function expectRuntime(

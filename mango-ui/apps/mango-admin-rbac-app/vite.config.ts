@@ -39,14 +39,6 @@ export default defineConfig((mode: ConfigEnv) => {
     build: {
       outDir: 'dist',
       target: 'es2020',
-      lib: {
-        entry: resolve(__dirname, 'src/micro.ts'),
-        formats: ['es'],
-        fileName: () => 'mango-admin-rbac-app.js',
-      },
-      rollupOptions: {
-        external: [],
-      },
     },
   };
 });

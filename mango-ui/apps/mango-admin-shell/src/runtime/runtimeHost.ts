@@ -282,6 +282,7 @@ function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAp
     token: Session.getToken?.() || '',
     tenantId: userInfo.tenantId,
     appCode: config.appCode,
+    apiBaseUrl: window.location.origin + '/api',
     menu,
     userInfo,
     permissions: userInfo.permissions || [],

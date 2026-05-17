@@ -34,7 +34,7 @@ type UnauthorizedHandler = () => void | Promise<void>;
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
-  baseURL: '/api', // Vite 代理路径
+  baseURL: resolveApiBaseUrl(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8',
@@ -47,6 +47,13 @@ let requestCount = 0;
 // 401 重定向保护标志
 let isRedirecting = false;
 let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+function resolveApiBaseUrl(): string {
+  const wujieRuntime = typeof window !== 'undefined'
+    ? (window as any).$wujie?.props?.mangoRuntime
+    : undefined;
+  return wujieRuntime?.apiBaseUrl || '/api';
+}
 
 export function registerUnauthorizedHandler(handler: UnauthorizedHandler): void {
   unauthorizedHandler = handler;

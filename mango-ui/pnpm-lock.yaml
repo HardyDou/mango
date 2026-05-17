@@ -387,6 +387,9 @@ importers:
       vue-router:
         specifier: ^4.1.6
         version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+      wujie:
+        specifier: ^1.0.29
+        version: 1.0.29
 
   packages/auth:
     dependencies:
@@ -3683,6 +3686,9 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
+  wujie@1.0.29:
+    resolution: {integrity: sha512-u7PmBT4l5ov7ciwmZNG8DLIRKrYrnXDa0LnAFgRQikJ/ZrVZYzzSNz6duzEJoj8/o46dnMy/g9Hh/PBYGbgFUw==}
+
   xlsx@0.18.5:
     resolution: {integrity: sha512-dmg3LCjBPHZnQp5/F/+nnTa+miPJxUXB6vtk42YjBBKayDNagxGEeIdWApkYPOf3Z3pm3k62Knjzp7lMeTEtFQ==}
     engines: {node: '>=0.8'}
@@ -6846,6 +6852,10 @@ snapshots:
       strip-ansi: 7.2.0
 
   wrappy@1.0.2: {}
+
+  wujie@1.0.29:
+    dependencies:
+      '@babel/runtime': 7.29.2
 
   xlsx@0.18.5:
     dependencies:

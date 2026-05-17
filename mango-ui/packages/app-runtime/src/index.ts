@@ -1,5 +1,6 @@
 import type { Component } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
+import { destroyApp, startApp } from 'wujie';
 
 export type MangoFrontendAppType = 'LOCAL' | 'MICRO_APP' | 'IFRAME' | 'EXTERNAL_LINK';
 export type MangoDeployMode = 'EMBEDDED' | 'REMOTE' | 'HYBRID';
@@ -27,6 +28,7 @@ export interface MangoAppRuntime {
   token: string;
   tenantId?: string | number;
   appCode: string;
+  apiBaseUrl?: string;
   menu?: MangoMenu;
   userInfo: unknown;
   permissions: string[];
@@ -118,7 +120,7 @@ export class MangoRuntimeError extends Error {
 }
 
 const localApps = new Map<string, MangoFrontendApp>();
-const microApps = new Map<string, MangoMicroAppModule>();
+const wujieDestroyers = new Map<string, Function>();
 
 type MangoMicroAppDebugEvent = {
   appCode: string;
@@ -136,11 +138,13 @@ export function getLocalApp(appCode: string) {
 }
 
 export function registerMicroApp(appCode: string, app: MangoMicroAppModule) {
-  microApps.set(appCode, app);
+  void appCode;
+  void app;
 }
 
 export function getMicroApp(appCode: string) {
-  return microApps.get(appCode);
+  void appCode;
+  return undefined;
 }
 
 export async function loadRuntimeConfig(defaultConfig: MangoRuntimeConfig): Promise<MangoRuntimeConfig> {
@@ -172,28 +176,6 @@ export function mergeRuntimeConfig(base: MangoRuntimeConfig, override?: Partial<
   };
 }
 
-async function loadMicroApp(config: MangoRuntimeAppConfig): Promise<MangoMicroAppModule | undefined> {
-  const cached = getMicroApp(config.appCode);
-  if (cached) {
-    return cached;
-  }
-
-  if (!config.entryUrl) {
-    return undefined;
-  }
-
-  await loadRemoteStyle(config);
-  const module = await importWithTimeout(config.entryUrl, config.timeoutMs || 15000, config);
-  const app = module.default || module;
-  if (typeof app?.mount !== 'function') {
-    throw new Error(`Invalid Mango micro app module: ${config.appCode}`);
-  }
-
-  registerMicroApp(config.appCode, app as MangoMicroAppModule);
-  recordMicroAppDebug(config, 'load');
-  return app as MangoMicroAppModule;
-}
-
 export const localAdapter: MangoAppAdapter = {
   type: 'LOCAL',
   async mount(config, container, runtime) {
@@ -211,16 +193,51 @@ export const localAdapter: MangoAppAdapter = {
 export const microAppAdapter: MangoAppAdapter = {
   type: 'MICRO_APP',
   async mount(config, container, runtime) {
-    const app = await loadMicroApp(config);
-    if (!app) {
+    if (!config.entryUrl) {
       throw new MangoRuntimeError(`Missing Mango micro app entry: ${config.appCode}`, config);
     }
+    await microAppAdapter.unmount?.(config);
     container.innerHTML = '';
-    await app.mount(container, runtime);
+    recordMicroAppDebug(config, 'load');
+    try {
+      const destroy = await startApp({
+        name: config.appCode,
+        url: config.entryUrl,
+        el: container,
+        props: {
+          mangoRuntime: runtime,
+          mangoConfig: config,
+        },
+        alive: false,
+        sync: false,
+        fiber: true,
+        attrs: {
+          'data-mango-app': config.appCode,
+        },
+        degradeAttrs: {
+          'data-mango-app': config.appCode,
+        },
+        loadError(url, error) {
+          throw new MangoRuntimeError(`Failed to load Mango micro app: ${config.appCode} (${url})`, config, { cause: error });
+        },
+      });
+      if (typeof destroy === 'function') {
+        wujieDestroyers.set(config.appCode, destroy);
+      }
+    } catch (error) {
+      throw error instanceof MangoRuntimeError
+        ? error
+        : new MangoRuntimeError(`Failed to mount Mango micro app: ${config.appCode}`, config, { cause: error });
+    }
     recordMicroAppDebug(config, 'mount');
   },
   async unmount(config) {
-    await getMicroApp(config.appCode)?.unmount?.();
+    const destroy = wujieDestroyers.get(config.appCode);
+    if (destroy) {
+      destroy();
+      wujieDestroyers.delete(config.appCode);
+    }
+    destroyApp(config.appCode);
     recordMicroAppDebug(config, 'unmount');
   },
 };
@@ -274,55 +291,6 @@ function normalizeRuntimeConfig(config: MangoRuntimeConfig): MangoRuntimeConfig 
     profile: config.profile || 'monolith',
     modules,
   };
-}
-
-function importWithTimeout(entryUrl: string, timeoutMs: number, config: MangoRuntimeAppConfig): Promise<any> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const importPromise = import(/* @vite-ignore */ entryUrl).catch((error) => {
-    throw new MangoRuntimeError(`Failed to load Mango micro app: ${config.appCode}`, config, { cause: error });
-  });
-  const timeoutPromise = new Promise((_resolve, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new MangoRuntimeError(`Mango micro app load timeout: ${config.appCode}`, config));
-    }, timeoutMs);
-  });
-  return Promise.race([importPromise, timeoutPromise]).finally(() => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  });
-}
-
-function loadRemoteStyle(config: MangoRuntimeAppConfig): Promise<void> {
-  const styleUrl = config.styleUrl || inferRemoteStyleUrl(config.entryUrl);
-  if (!styleUrl || typeof document === 'undefined') {
-    return Promise.resolve();
-  }
-  const styleId = `mango-remote-style-${config.appCode}`;
-  if (document.getElementById(styleId)) {
-    return Promise.resolve();
-  }
-  return new Promise((resolve, reject) => {
-    const link = document.createElement('link');
-    link.id = styleId;
-    link.rel = 'stylesheet';
-    link.href = styleUrl;
-    link.dataset.mangoRemoteStyle = config.appCode;
-    link.onload = () => resolve();
-    link.onerror = () => reject(new MangoRuntimeError(`Failed to load Mango micro app style: ${config.appCode}`, config));
-    document.head.appendChild(link);
-  });
-}
-
-function inferRemoteStyleUrl(entryUrl?: string) {
-  if (!entryUrl || /\/src\/micro\.ts($|\?)/.test(entryUrl)) {
-    return undefined;
-  }
-  try {
-    return new URL('style.css', entryUrl).toString();
-  } catch (error) {
-    return undefined;
-  }
 }
 
 function recordMicroAppDebug(config: MangoRuntimeAppConfig, phase: MangoMicroAppDebugEvent['phase']) {

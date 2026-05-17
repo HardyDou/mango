@@ -8,7 +8,7 @@ export const defaultRuntimeConfig: MangoRuntimeConfig = {
   modules: {
     'mango-authorization': {
       mode: (import.meta.env.VITE_MANGO_RBAC_MODE || 'local') as any,
-      entry: import.meta.env.VITE_MANGO_RBAC_ENTRY || 'http://127.0.0.1:5181/src/micro.ts',
+      entry: import.meta.env.VITE_MANGO_RBAC_ENTRY || 'http://127.0.0.1:5181/',
       runtimeCode: 'mango-admin-rbac-app',
       appType: 'MICRO_APP',
       framework: 'vue3',
@@ -21,7 +21,7 @@ export const defaultRuntimeConfig: MangoRuntimeConfig = {
     },
     'mango-workflow': {
       mode: (import.meta.env.VITE_MANGO_WORKFLOW_MODE || 'local') as any,
-      entry: import.meta.env.VITE_MANGO_WORKFLOW_ENTRY || 'http://127.0.0.1:5182/src/micro.ts',
+      entry: import.meta.env.VITE_MANGO_WORKFLOW_ENTRY || 'http://127.0.0.1:5182/',
       runtimeCode: 'mango-admin-workflow-app',
       appType: 'MICRO_APP',
       framework: 'vue3',
