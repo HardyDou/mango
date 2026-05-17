@@ -98,6 +98,60 @@ Vary: Origin
 
 业务接口由 Shell 统一代理。子应用在 Wujie 环境会从主应用注入的 `apiBaseUrl` 调用 `https://admin.example.com/api`，避免每个子应用重复暴露后端跨域策略。
 
+## 生产部署
+
+推荐按运行单元独立部署静态产物：
+
+```text
+admin.mango.io    -> apps/mango-admin-shell/dist
+rbac.mango.io     -> apps/mango-admin-rbac-app/dist
+workflow.mango.io -> apps/mango-admin-workflow-app/dist
+```
+
+Shell 域名统一代理业务接口：
+
+```text
+https://admin.mango.io/api -> http://mango-backend:18081
+```
+
+子应用不直接暴露后端代理给浏览器正式入口；被 Shell 加载时使用主应用注入的 `apiBaseUrl`。这样业务接口、token 过期、租户上下文和 401 跳转都由 Shell 统一处理。
+
+nginx 示例见：
+
+```text
+mango-ui/deploy/nginx/mango-admin-micro.conf
+```
+
+`runtime-config.json` 必须按环境作为可替换静态配置发布，建议禁用缓存：
+
+```nginx
+location = /runtime-config.json {
+    add_header Cache-Control "no-store";
+    try_files $uri =404;
+}
+```
+
+切换部署形态时只替换 `admin.mango.io/runtime-config.json`：
+
+```bash
+# 单体组合，所有模块本地渲染
+cp runtime-config.monolith.json runtime-config.json
+
+# 混合组合，RBAC/Workflow 远程，System 本地
+cp runtime-config.hybrid.json runtime-config.json
+```
+
+生产子应用 CORS 使用明确白名单：
+
+```nginx
+map $http_origin $mango_micro_allowed_origin {
+    default "";
+    "https://admin.mango.io" $http_origin;
+}
+```
+
+不要用 `Access-Control-Allow-Origin: *` 承载带凭证的生产后台。
+
 ## 验证
 
 构建：

@@ -97,6 +97,16 @@ test.describe.serial('Shell runtime composition', () => {
     });
     await expect(page.locator('main')).toContainText('需要当前用户处理的流程任务');
     await expectRemoteResource(page, 'c.mango.io:5182');
+
+    await closeTag(page, '我的待办');
+    await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
+    await expectRuntime(page, {
+      moduleCode: 'mango-authorization',
+      runtimeCode: 'mango-admin-rbac-app',
+      pageType: 'MICRO_ROUTE',
+      entryIncludes: 'b.mango.io:5181',
+    });
+    await expect(page.getByText('新增套餐')).toBeVisible();
   });
 
   test('monolith profile renders modules locally without loading remote apps', async ({ page }) => {
@@ -205,4 +215,10 @@ async function remoteRuntimeResources(page: Page) {
       .map((entry) => entry.name)
       .filter((url) => url.includes('b.mango.io:5181') || url.includes('c.mango.io:5182'))
   );
+}
+
+async function closeTag(page: Page, title: string) {
+  const tag = page.locator('.tags-view-item', { hasText: title }).last();
+  await expect(tag).toBeVisible();
+  await tag.locator('.close-icon').click();
 }

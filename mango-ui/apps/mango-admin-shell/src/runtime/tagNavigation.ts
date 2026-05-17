@@ -1,4 +1,5 @@
 import type { RouteLocationRaw, RouteRecordRaw } from 'vue-router';
+import { isRunnableMenu, type ShellRouteMenu } from './menuHost';
 
 export function resolveTagLocation(tag: any, replace = false): RouteLocationRaw {
   return {
@@ -19,12 +20,12 @@ export function resolveFirstVisibleRoute(routes: RouteRecordRaw[], excludePath?:
     if (item.meta?.isHide || item.path === excludePath) {
       continue;
     }
+    if (isRunnableMenu(item as ShellRouteMenu)) {
+      return item;
+    }
     const child = resolveFirstVisibleRoute((item.children || []) as RouteRecordRaw[], excludePath);
     if (child) {
       return child;
-    }
-    if (item.path) {
-      return item;
     }
   }
   return undefined;
