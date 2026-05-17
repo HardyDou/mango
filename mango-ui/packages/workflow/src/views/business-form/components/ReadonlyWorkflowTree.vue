@@ -1,21 +1,25 @@
 <template>
   <div class="readonly-workflow-tree">
-    <WorkflowTreeNode
-      v-if="node"
-      :node="node"
-      :current-node-key="currentNodeKey"
-      :visited-node-keys="visitedNodeKeys"
-      :completed="completed"
-      :rejected="rejected"
-      root
-    />
+    <div v-if="node" class="readonly-flow-sequence">
+      <div class="readonly-terminal-node start" :class="terminalStartState">开始</div>
+      <div class="readonly-tree-body">
+        <WorkflowTreeNode
+          :node="node"
+          :current-node-key="currentNodeKey"
+          :visited-node-keys="visitedNodeKeys"
+          :completed="completed"
+          :rejected="rejected"
+          root
+        />
+      </div>
+      <div class="readonly-terminal-node end" :class="terminalEndState">结束</div>
+    </div>
     <el-empty v-else description="暂无流程设计图" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, defineComponent, h, type PropType } from 'vue';
-import { Bell, Box, Cloudy, Connection, ForkSpoon, Share, User } from '@element-plus/icons-vue';
 import type { WorkflowDesignerNode } from '../../../api/workflow';
 
 defineOptions({ name: 'ReadonlyWorkflowTree' });
@@ -29,20 +33,18 @@ const props = defineProps<{
 
 const completed = computed(() => props.status === '已通过' || props.status === '已结束');
 const rejected = computed(() => props.status === '已驳回');
-
-const nodeIconMap: Record<string, any> = {
-  ROOT: User,
-  APPROVAL: User,
-  CC: Bell,
-  EXCLUSIVE_GATEWAY: ForkSpoon,
-  PARALLEL_GATEWAY: Share,
-  SERVICE: Box,
-  SERVICE_BEAN: Box,
-  SERVICE_HTTP: Cloudy,
-  SERVICE_REMOTE: Connection,
-  EVENT_PUBLISH: Bell,
-  EXCLUSIVE_BRANCH: Share,
-};
+const hasWorkflowStarted = computed(() => Boolean(
+  props.currentNodeKey
+  || completed.value
+  || rejected.value
+  || props.visitedNodeKeys?.length,
+));
+const terminalStartState = computed(() => hasWorkflowStarted.value ? 'done' : 'pending');
+const terminalEndState = computed(() => {
+  if (rejected.value) return 'rejected';
+  if (completed.value) return 'done';
+  return 'pending';
+});
 
 const WorkflowTreeNode = defineComponent({
   name: 'WorkflowTreeNode',
@@ -134,34 +136,14 @@ const WorkflowTreeNode = defineComponent({
       if (node.bpmnType === 'serviceTask' || node.nodeType?.startsWith('SERVICE')) return '服务任务';
       return node.description || '流程节点';
     };
-    const nodeSummary = (node: WorkflowDesignerNode) => {
-      if (node.nodeType === 'EXCLUSIVE_BRANCH') {
-        return node.conditionExpression ? `条件：${formatConditionSummary(node.conditionExpression)}` : '默认分支';
-      }
-      if (node.nodeType === 'EXCLUSIVE_GATEWAY') return '满足条件的一个分支继续流转';
-      if (node.nodeType === 'PARALLEL_GATEWAY') return '多个分支并行执行后汇聚';
-      if (node.nodeType === 'ROOT') return '业务提交申请后进入流程';
-      return node.description || nodeTypeLabel(node);
-    };
-    const nodeStateLabel = (node: WorkflowDesignerNode) => {
-      const state = nodeState(node);
-      if (state === 'active') return '当前';
-      if (state === 'done') return '经过';
-      if (state === 'rejected') return '驳回';
-      return '未经过';
-    };
-    const iconOf = (node: WorkflowDesignerNode) => nodeIconMap[node.nodeType] || nodeIconMap[node.executionType || ''] || Box;
 
     const renderCard = (node: WorkflowDesignerNode) => h('div', {
       class: ['readonly-node-card', nodeState(node), { root: nodeProps.root, branch: node.nodeType === 'EXCLUSIVE_BRANCH' }],
     }, [
       h('div', { class: 'readonly-node-title' }, [
-        h('span', { class: 'readonly-node-icon' }, [h(iconOf(node))]),
+        h('span', { class: 'readonly-node-dot' }),
         h('span', { class: 'readonly-node-name', title: nodeTitle(node) }, nodeTitle(node)),
-        h('span', { class: 'readonly-node-state-badge' }, nodeStateLabel(node)),
       ]),
-      h('div', { class: 'readonly-node-type' }, nodeTypeLabel(node)),
-      h('div', { class: 'readonly-node-summary' }, nodeSummary(node)),
     ]);
 
     const renderNode = (node: WorkflowDesignerNode, root = false): any => {
@@ -202,36 +184,6 @@ const WorkflowTreeNode = defineComponent({
 function isGatewayNode(node: WorkflowDesignerNode) {
   return node.nodeType === 'EXCLUSIVE_GATEWAY' || node.nodeType === 'PARALLEL_GATEWAY';
 }
-
-function formatConditionSummary(expression: string) {
-  const inner = expression.match(/^\$\{\s*(.+?)\s*}$/)?.[1] || expression;
-  return inner
-    .replace(/\(([^()]+)\)/g, '$1')
-    .replace(/([A-Za-z_][\w.]*)\s*(==|!=|>=|<=|>|<)\s*('(?:\\'|[^'])*'|true|false|null|-?\d+(?:\.\d+)?|[^\s&|]+)/g, (_, field, operator, value) => `${field} ${operatorLabel(operator)} ${formatConditionSummaryValue(value)}`)
-    .replace(/\s*&&\s*/g, ' 且 ')
-    .replace(/\s*\|\|\s*/g, ' 或 ')
-    .trim();
-}
-
-function operatorLabel(operator: string) {
-  const map: Record<string, string> = {
-    '==': '是',
-    '!=': '不是',
-    '>': '大于',
-    '>=': '大于等于',
-    '<': '小于',
-    '<=': '小于等于',
-  };
-  return map[operator] || operator;
-}
-
-function formatConditionSummaryValue(value: string) {
-  const trimmed = String(value || '').trim();
-  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
-    return trimmed.slice(1, -1).replace(/\\'/g, "'");
-  }
-  return trimmed;
-}
 </script>
 
 <style>
@@ -241,6 +193,70 @@ function formatConditionSummaryValue(value: string) {
   min-width: max-content;
   padding: 12px 24px 24px;
   background: var(--el-bg-color);
+}
+
+.readonly-flow-sequence,
+.readonly-tree-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.readonly-tree-body::before {
+  content: '';
+  width: var(--workflow-line-width);
+  height: 24px;
+  background: var(--workflow-line-color);
+}
+
+.readonly-terminal-node {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  height: 34px;
+  padding: 0 18px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--el-bg-color);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.readonly-terminal-node.end {
+  margin-top: 24px;
+}
+
+.readonly-terminal-node.end::before {
+  content: '';
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  width: var(--workflow-line-width);
+  height: 24px;
+  background: var(--workflow-line-color);
+  transform: translateX(-50%);
+}
+
+.readonly-terminal-node.done {
+  border-color: var(--el-color-success-light-5);
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
+}
+
+.readonly-terminal-node.rejected {
+  border-color: var(--el-color-danger-light-5);
+  color: var(--el-color-danger);
+  background: var(--el-color-danger-light-9);
+}
+
+.readonly-terminal-node.pending {
+  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-blank);
 }
 
 .readonly-node-stack {
@@ -266,13 +282,13 @@ function formatConditionSummaryValue(value: string) {
 }
 
 .readonly-node-card {
-  width: 220px;
-  min-height: 86px;
+  width: 176px;
+  min-height: 40px;
   overflow: hidden;
   border: 1px solid var(--el-border-color);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--el-bg-color);
-  box-shadow: 0 4px 14px rgba(31, 41, 55, 0.06);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
 .readonly-node-card.done {
@@ -306,103 +322,56 @@ function formatConditionSummaryValue(value: string) {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 9px 14px;
   color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 600;
-  background: var(--el-fill-color-light);
 }
 
 .readonly-node-card.active .readonly-node-title {
   color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
 }
 
 .readonly-node-card.done .readonly-node-title {
   color: var(--el-color-success);
-  background: var(--el-color-success-light-9);
 }
 
 .readonly-node-card.rejected .readonly-node-title {
   color: var(--el-color-danger);
-  background: var(--el-color-danger-light-9);
 }
 
 .readonly-node-card.pending .readonly-node-title {
   color: var(--el-text-color-secondary);
-  background: var(--el-fill-color-light);
 }
 
-.readonly-node-icon {
+.readonly-node-dot {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  overflow: hidden;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 999px;
+  background: var(--el-border-color);
 }
 
-.readonly-node-icon svg {
-  display: block;
-  width: 16px;
-  height: 16px;
+.readonly-node-card.done .readonly-node-dot {
+  background: var(--el-color-success);
 }
 
-.readonly-node-title span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.readonly-node-card.active .readonly-node-dot {
+  background: var(--el-color-primary);
+}
+
+.readonly-node-card.rejected .readonly-node-dot {
+  background: var(--el-color-danger);
 }
 
 .readonly-node-name {
   flex: 1;
-}
-
-.readonly-node-state-badge {
-  flex: 0 0 auto;
-  padding: 1px 6px;
-  border-radius: 999px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--el-fill-color);
-}
-
-.readonly-node-card.done .readonly-node-state-badge {
-  color: var(--el-color-success);
-  background: var(--el-color-success-light-8);
-}
-
-.readonly-node-card.active .readonly-node-state-badge {
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-8);
-}
-
-.readonly-node-card.rejected .readonly-node-state-badge {
-  color: var(--el-color-danger);
-  background: var(--el-color-danger-light-8);
-}
-
-.readonly-node-type,
-.readonly-node-summary {
-  padding: 0 12px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.readonly-node-type {
-  margin-top: 10px;
-  color: var(--el-text-color-primary);
-  font-weight: 600;
-}
-
-.readonly-node-summary {
-  margin: 4px 0 10px;
-  min-height: 18px;
-  word-break: break-word;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .readonly-branch-box-wrap {
