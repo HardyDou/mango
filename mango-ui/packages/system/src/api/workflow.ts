@@ -2,7 +2,7 @@
  * Workflow API - 工作流配置。
  */
 
-import { del, get, post, put } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export type WorkflowStatus = 'DRAFT' | 'PUBLISHED' | 'DISABLED';
 

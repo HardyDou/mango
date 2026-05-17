@@ -357,6 +357,9 @@ importers:
 
   packages/admin-pages:
     dependencies:
+      '@mango/auth':
+        specifier: workspace:*
+        version: link:../auth
       '@mango/common':
         specifier: workspace:*
         version: link:../common

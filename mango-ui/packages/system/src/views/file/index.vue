@@ -182,7 +182,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type UploadRequestOptions } from 'element-plus';
-import { Pagination } from '@mango/common';
+import Pagination from '@mango/common/components/Pagination/index.vue';
 import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
 
 const loading = ref(false);

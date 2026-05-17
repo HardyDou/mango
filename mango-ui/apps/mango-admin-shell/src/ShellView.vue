@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import Layout from './layout/index.vue';
-import { Session } from '@mango/common';
+import { Session } from '@mango/common/utils/storage';
 import { registerShellLocalApps } from './runtime/localApps';
 import { useUserInfo } from './stores/userInfo';
 

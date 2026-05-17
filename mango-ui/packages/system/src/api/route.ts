@@ -2,7 +2,7 @@
  * Route API - 路由管理
  */
 
-import { get, post, put, del } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export interface SysRoute {
   id?: number | string;

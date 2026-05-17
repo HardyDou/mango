@@ -266,7 +266,10 @@
 <script setup lang="ts" name="SystemRole">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
-import { DictTag, Session, formatDate, useDict } from '@mango/common';
+import DictTag from '@mango/common/components/DictTag/index.vue';
+import { useDict } from '@mango/common/hooks/useDict';
+import { formatDate } from '@mango/common/utils/formatTime';
+import { Session } from '@mango/common/utils/storage';
 import { appApi, type AppLoginContext, type AuthorizationApp } from '../../api/app';
 import { roleApi, type RoleVO } from '../../api/role';
 import type { SysMenuVO } from '../../api/menu';

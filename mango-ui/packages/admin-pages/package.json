@@ -4,6 +4,7 @@
   "private": true,
   "main": "src/index.ts",
   "dependencies": {
+    "@mango/auth": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",

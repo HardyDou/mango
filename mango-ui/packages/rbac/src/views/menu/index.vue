@@ -489,7 +489,8 @@
 <script setup lang="ts" name="SystemMenu">
 import { ref, reactive, onMounted, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, useDict } from '@mango/common';
+import DictTag from '@mango/common/components/DictTag/index.vue';
+import { useDict } from '@mango/common/hooks/useDict';
 import { Plus } from '@element-plus/icons-vue';
 import { menuApi, type SysMenuVO } from '../../api/menu';
 

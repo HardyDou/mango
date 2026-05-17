@@ -236,7 +236,8 @@
 <script setup lang="ts" name="SystemRoute">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, useDict } from '@mango/common';
+import DictTag from '@mango/common/components/DictTag/index.vue';
+import { useDict } from '@mango/common/hooks/useDict';
 import { routeApi, type SysRoute } from '../../api/route';
 
 const { options: routeTypeOptions } = useDict('system_route_type');

@@ -36,13 +36,13 @@ const menuItems: MenuItem[] = [
     path: '/profile',
     name: 'Profile',
     meta: { title: '个人中心', icon: 'User' },
-    component: () => import('@/views/profile/index.vue'),
+    component: () => import('@mango/auth').then(m => m.ProfileView),
   },
   {
     path: '/password',
     name: 'Password',
     meta: { title: '修改密码', icon: 'Lock' },
-    component: () => import('@/views/password/index.vue'),
+    component: () => import('@mango/auth').then(m => m.PasswordView),
   },
   {
     path: '/demo',

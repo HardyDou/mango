@@ -86,6 +86,9 @@ Shell 会对 `runtime-config.json` 做运行时校验：
 - `mode` 只允许 `local / micro`，非法值降级为 `local`。
 - `mode=micro` 必须配置 `entry`，否则该模块页面显示明确错误，不会 fallback 到其它子应用。
 - `timeoutMs` 非法时降级为 `15000`。
+- 生产构建默认禁止 `http://` 远程入口。
+- 生产构建的绝对远程入口必须命中 `VITE_MANGO_ALLOWED_REMOTE_ORIGINS`，生产不启用 host 宽泛白名单。
+- 生产构建加载不到 `runtime-config.json` 时会失败关闭，不再静默回退到默认配置。
 
 开发态可在浏览器控制台查看：
 
@@ -195,6 +198,46 @@ VITE_PUBLIC_PATH=/workflow/ pnpm -C mango-ui --filter mango-admin-workflow-app b
 ```
 
 对应 `runtime-config.json` 的 `entry` 要指向同一个子路径。
+
+生产 Shell 构建时必须声明允许加载的子应用来源：
+
+```bash
+VITE_MANGO_ALLOWED_REMOTE_ORIGINS=https://rbac.mango.io,https://workflow.mango.io pnpm -C mango-ui --filter mango-admin-shell build
+```
+
+`VITE_MANGO_ALLOWED_REMOTE_HOSTS` 只允许用于开发、测试或本地 preview 便利配置；`prd/prod/production` 环境会忽略它。生产必须使用 exact origin，避免同 host 不同 scheme/port 或宽泛 host 配置误放行。
+
+本地用 `vite preview` 做生产产物验收时，因为仍是 HTTP 域名，需要显式打开本地开关：
+
+```bash
+VITE_MANGO_E2E=true \
+VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES=true \
+VITE_MANGO_ALLOWED_REMOTE_ORIGINS=http://b.mango.io:4181,http://c.mango.io:4182 \
+pnpm -C mango-ui build:micro
+
+pnpm -C mango-ui preview:micro
+PLAYWRIGHT_BASE_URL=http://a.mango.io:4176 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
+```
+
+`VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES=true` 只用于本地或预发 HTTP 验收。正式生产必须使用 HTTPS 远程入口，并用 `VITE_MANGO_ALLOWED_REMOTE_ORIGINS` 做精确来源白名单。
+
+## 主题同步和运行日志
+
+Shell 会把当前主题快照注入 Wujie 子应用，并在主题、布局、组件尺寸变化时通过 `theme-change` 事件同步。子应用通过 `@mango/app-runtime/vue-micro` 的 `bindMangoRuntimeTheme` 应用 CSS 变量，保持按钮、表格、表单主色和暗色状态一致。
+
+运行期日志默认保留最近 200 条到：
+
+```js
+window.__MANGO_RUNTIME_LOGS__
+```
+
+生产错误会输出到 `console.error`，可用 `setMangoRuntimeLogger()` 对接 Sentry、日志网关或自建埋点服务。建议至少上报：
+
+- `runtime-config-error`
+- `micro-app-error`
+- `micro-app-timeout`
+- `micro-app-mount`
+- `micro-app-unmount`
 
 ## 验证
 

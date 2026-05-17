@@ -117,7 +117,9 @@
 <script setup lang="ts" name="RbacMenuPackage">
 import { nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictSelect, DictTag, useDict } from '@mango/common';
+import DictSelect from '@mango/common/components/DictSelect/index.vue';
+import DictTag from '@mango/common/components/DictTag/index.vue';
+import { useDict } from '@mango/common/hooks/useDict';
 import { menuApi, type SysMenuVO } from '../../api/menu';
 import { menuPackageApi, type MenuPackageVO } from '../../api/menuPackage';
 

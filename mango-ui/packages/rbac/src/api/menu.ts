@@ -1,4 +1,4 @@
-import { get, post, put, del } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 import type { MangoMenuPageType } from '@mango/app-runtime';
 
 /**

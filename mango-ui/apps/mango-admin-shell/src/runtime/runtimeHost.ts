@@ -1,19 +1,26 @@
 import { computed, createApp, h, nextTick, ref, type App as VueApp, type Ref } from 'vue';
 import type { Router } from 'vue-router';
-import ElementPlus from 'element-plus';
-import { get, Session } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
+import { Session } from '@mango/common/utils/storage';
 import {
   createRuntimeEventBus,
+  emitMangoRuntimeLog,
   loadRuntimeConfig,
   preloadMicroApp,
   resolveAdapter,
   type MangoAppRuntime,
+  type MangoRuntimeTheme,
   type MangoModuleRuntimeConfig,
   type MangoRuntimeConfig,
   type MangoRuntimeConfigDiagnostic,
+  MangoRuntimeConfigError,
   type MangoRuntimeAppConfig,
 } from '@mango/app-runtime';
-import { getPageLoader } from '@mango/admin-pages';
+import { getPageLoader } from '@mango/admin-pages/src/core';
+import { useThemeStore } from '@/stores/theme';
+import { useLayoutStore } from '@/stores/layout';
+import { usePreferencesStore } from '@/stores/preferences';
+import { installShellApp } from '../appBootstrap';
 import type { ShellMenu, ShellRouteMenu } from './menuHost';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
@@ -38,14 +45,18 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
   const runtimeConfig = ref<MangoRuntimeConfig>(defaultRuntimeConfig);
   const activeRuntimeApp = ref<MangoRuntimeAppConfig>();
   const runtimeDecision = ref<RuntimeDecision>();
+  const runtimeConfigAvailable = ref(true);
   let mountedLocalPage: VueApp | undefined;
   let mountedMicroConfig: MangoRuntimeAppConfig | undefined;
   let currentMenu: ShellMenu | undefined;
+  let mountSeq = 0;
+  let defaultPagesPromise: Promise<void> | undefined;
 
   async function loadRuntimeApps() {
     loading.value = true;
     try {
       runtimeConfig.value = await loadShellRuntimeConfig();
+      runtimeConfigAvailable.value = true;
       recordRuntimeConfigDiagnostics(runtimeConfig.value.diagnostics);
       runtimeApps.value = toRuntimeApps(runtimeConfig.value);
       preloadRuntimeApps(runtimeApps.value);
@@ -53,7 +64,11 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     } catch (error) {
       runtimeApps.value = [];
       runtimeConfig.value = defaultRuntimeConfig;
+      runtimeConfigAvailable.value = false;
       activeRuntimeApp.value = undefined;
+      if (error instanceof MangoRuntimeConfigError) {
+        recordRuntimeConfigDiagnostics(error.diagnostics);
+      }
       await mountFallback();
       return false;
     } finally {
@@ -66,6 +81,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!menu) {
       return;
     }
+    const seq = ++mountSeq;
     const sourceMenu = normalizeMenu(menu);
     currentMenu = sourceMenu;
 
@@ -75,7 +91,14 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
 
     await unmountCurrentPage();
+    if (!isLatestMount(seq)) {
+      return;
+    }
     container.innerHTML = '';
+    if (!runtimeConfigAvailable.value) {
+      await mountFallback();
+      return;
+    }
 
     const moduleConfig = resolveModuleConfig(sourceMenu);
     const pageType = resolvePageType(sourceMenu, moduleConfig);
@@ -83,6 +106,9 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     recordRuntimeDecision(runtimeDecision.value);
     applyRuntimeMarker(container, runtimeDecision.value);
     if (pageType === 'IFRAME') {
+      if (!isLatestMount(seq)) {
+        return;
+      }
       mountIframe(sourceMenu);
       return;
     }
@@ -94,25 +120,33 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
     if (pageType === 'MICRO_ROUTE') {
       try {
-        await mountMicroMenu(sourceMenu, moduleConfig);
+        await mountMicroMenu(sourceMenu, moduleConfig, seq);
       } catch (error) {
-        mountRuntimeError(sourceMenu, error, moduleConfig);
+        if (isLatestMount(seq)) {
+          mountRuntimeError(sourceMenu, error, moduleConfig);
+        }
       }
       return;
     }
     try {
-      await mountLocalMenu(sourceMenu);
+      await mountLocalMenu(sourceMenu, seq);
     } catch (error) {
-      mountRuntimeError(sourceMenu, error, moduleConfig);
+      if (isLatestMount(seq)) {
+        mountRuntimeError(sourceMenu, error, moduleConfig);
+      }
     }
   }
 
-  async function mountLocalMenu(menu: ShellMenu) {
+  async function mountLocalMenu(menu: ShellMenu, seq: number) {
     const container = containerRef.value;
     if (!container) {
       return;
     }
 
+    await ensureDefaultPages();
+    if (!isLatestMount(seq)) {
+      return;
+    }
     const loader = getPageLoader(menu.moduleCode, menu.component) || getPageLoader(undefined, menu.component);
     if (!loader) {
       mountMessage(`缺少本地组件映射：${menu.component || menu.path}`);
@@ -120,14 +154,17 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
 
     const module = await loader();
+    if (!isLatestMount(seq)) {
+      return;
+    }
     const component = module.default || module;
     mountedLocalPage = createApp({ render: () => h(component) });
-    mountedLocalPage.use(ElementPlus);
+    installShellApp(mountedLocalPage);
     mountedLocalPage.use(router);
     mountedLocalPage.mount(container);
   }
 
-  async function mountMicroMenu(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
+  async function mountMicroMenu(menu: ShellMenu, moduleConfig: MangoModuleRuntimeConfig | undefined, seq: number) {
     const config = resolveRuntimeConfig(menu, moduleConfig);
     const container = containerRef.value;
     if (!config || !container) {
@@ -138,6 +175,9 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     mountedMicroConfig = config;
     const adapter = resolveAdapter(config.appType || 'MICRO_APP');
     await adapter.mount(config, container, createRuntime(config, menu));
+    if (!isLatestMount(seq)) {
+      await adapter.unmount?.(config);
+    }
   }
 
   async function retryCurrentMenu() {
@@ -170,6 +210,15 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     return runtimeApps.value.find(app => app.appCode === runtimeCode);
   }
 
+  function ensureDefaultPages() {
+    if (!defaultPagesPromise) {
+      defaultPagesPromise = import('@mango/admin-pages/src/defaults').then(({ registerDefaultAdminPages }) => {
+        registerDefaultAdminPages();
+      });
+    }
+    return defaultPagesPromise;
+  }
+
   function resolveModuleConfig(menu: ShellMenu) {
     return menu.moduleCode ? runtimeConfig.value.modules[menu.moduleCode] : undefined;
   }
@@ -195,14 +244,10 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!container) {
       return;
     }
-    container.innerHTML = `
-      <div class="micro-runtime-empty">
-        <div>
-          <h3>${message}</h3>
-          <p>请检查菜单运行类型、组件路径或运行配置。</p>
-        </div>
-      </div>
-    `;
+    renderRuntimeState(container, {
+      title: message,
+      description: '请检查菜单运行类型、组件路径或运行配置。',
+    });
   }
 
   function mountRuntimeError(menu: ShellMenu, error: unknown, moduleConfig?: MangoModuleRuntimeConfig) {
@@ -213,20 +258,15 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     const errorMessage = error instanceof Error ? error.message : '页面加载失败';
     const entry = moduleConfig?.entry || activeRuntimeApp.value?.entryUrl || '';
     const runtimeCode = moduleConfig?.runtimeCode || activeRuntimeApp.value?.appCode || menu.moduleCode || '';
-    container.innerHTML = `
-      <div class="micro-runtime-empty">
-        <div>
-          <h3>页面加载失败</h3>
-          <p>${escapeHtml(menu.menuName || menu.path || '当前页面')}：${escapeHtml(errorMessage)}</p>
-          ${runtimeCode ? `<p class="micro-runtime-detail">运行单元：${escapeHtml(runtimeCode)}</p>` : ''}
-          ${entry ? `<p class="micro-runtime-detail">入口地址：${escapeHtml(entry)}</p>` : ''}
-          <button class="micro-runtime-retry" type="button">重试</button>
-        </div>
-      </div>
-    `;
-    container.querySelector('.micro-runtime-retry')?.addEventListener('click', () => {
-      void retryCurrentMenu();
-    }, { once: true });
+    renderRuntimeState(container, {
+      title: '页面加载失败',
+      description: `${menu.menuName || menu.path || '当前页面'}：${errorMessage}`,
+      details: [
+        runtimeCode ? `运行单元：${runtimeCode}` : '',
+        entry ? `入口地址：${entry}` : '',
+      ].filter(Boolean),
+      retry: retryCurrentMenu,
+    });
   }
 
   function mountRuntimeConfigError(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
@@ -236,21 +276,13 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
     const runtimeCode = resolveRuntimeCode(menu, moduleConfig);
     const diagnostics = findRuntimeDiagnostics(menu, moduleConfig);
-    const details = diagnostics.length
-      ? diagnostics.map(item => `<p class="micro-runtime-detail">${escapeHtml(item.message)}</p>`).join('')
-      : '<p class="micro-runtime-detail">请检查 runtime-config.json 是否配置 entry 和 runtimeCode。</p>';
-    container.innerHTML = `
-      <div class="micro-runtime-empty">
-        <div>
-          <h3>缺少微应用运行配置：${escapeHtml(runtimeCode)}</h3>
-          ${details}
-          <button class="micro-runtime-retry" type="button">重试</button>
-        </div>
-      </div>
-    `;
-    container.querySelector('.micro-runtime-retry')?.addEventListener('click', () => {
-      void retryCurrentMenu();
-    }, { once: true });
+    renderRuntimeState(container, {
+      title: `缺少微应用运行配置：${runtimeCode}`,
+      details: diagnostics.length
+        ? diagnostics.map(item => item.message)
+        : ['请检查 runtime-config.json 是否配置 entry 和 runtimeCode。'],
+      retry: retryCurrentMenu,
+    });
   }
 
   function findRuntimeDiagnostics(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
@@ -267,24 +299,31 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!container) {
       return;
     }
-    container.innerHTML = `
-      <div class="micro-runtime-empty">
-        <div>
-          <h3>运行配置加载失败</h3>
-          <p>请确认登录态、租户开通关系和后端服务状态。</p>
-        </div>
-      </div>
-    `;
+    renderRuntimeState(container, {
+      title: '运行配置加载失败',
+      description: '请确认登录态、租户开通关系、runtime-config.json 和后端服务状态。',
+    });
+  }
+
+  function dispose() {
+    mountSeq += 1;
+    return unmountCurrentPage();
+  }
+
+  function isLatestMount(seq: number) {
+    return seq === mountSeq;
   }
 
   return {
     loading,
     runtimeApps,
     runtimeConfig,
+    runtimeConfigAvailable: computed(() => runtimeConfigAvailable.value),
     activeRuntimeApp: computed(() => activeRuntimeApp.value),
     runtimeDecision: computed(() => runtimeDecision.value),
     loadRuntimeApps,
     mountMenu,
+    dispose,
   };
 }
 
@@ -334,13 +373,45 @@ function normalizeMenu(menu: ShellMenu | ShellRouteMenu): ShellMenu {
   return 'sourceMenu' in menu ? menu.sourceMenu : menu;
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function renderRuntimeState(
+  container: HTMLElement,
+  options: {
+    title: string;
+    description?: string;
+    details?: string[];
+    retry?: () => void | Promise<void>;
+  }
+) {
+  container.replaceChildren();
+  const wrapper = document.createElement('div');
+  wrapper.className = 'micro-runtime-empty';
+  const content = document.createElement('div');
+  const title = document.createElement('h3');
+  title.textContent = options.title;
+  content.appendChild(title);
+  if (options.description) {
+    const description = document.createElement('p');
+    description.textContent = options.description;
+    content.appendChild(description);
+  }
+  options.details?.forEach((detail) => {
+    const item = document.createElement('p');
+    item.className = 'micro-runtime-detail';
+    item.textContent = detail;
+    content.appendChild(item);
+  });
+  if (options.retry) {
+    const retry = document.createElement('button');
+    retry.className = 'micro-runtime-retry';
+    retry.type = 'button';
+    retry.textContent = '重试';
+    retry.addEventListener('click', () => {
+      void options.retry?.();
+    }, { once: true });
+    content.appendChild(retry);
+  }
+  wrapper.appendChild(content);
+  container.appendChild(wrapper);
 }
 
 function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAppRuntime {
@@ -360,10 +431,56 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
     menu: undefined,
     userInfo,
     permissions: userInfo.permissions || [],
-    request: get,
+    request: {
+      get,
+      post,
+      put,
+      delete: del,
+    },
     eventBus: shellRuntimeEventBus,
-    theme: {},
+    theme: createShellRuntimeTheme(),
   };
+}
+
+export function createShellRuntimeTheme(): MangoRuntimeTheme {
+  const themeStore = useThemeStore();
+  const layoutStore = useLayoutStore();
+  const preferencesStore = usePreferencesStore();
+  return {
+    primary: themeStore.primary,
+    isDark: themeStore.isDark,
+    topBar: themeStore.topBar,
+    topBarColor: themeStore.topBarColor,
+    menuBar: themeStore.menuBar,
+    menuBarColor: themeStore.menuBarColor,
+    menuBarActiveColor: themeStore.menuBarActiveColor,
+    columnsMenuBar: themeStore.columnsMenuBar,
+    columnsMenuBarColor: themeStore.columnsMenuBarColor,
+    layout: layoutStore.layout,
+    componentSize: preferencesStore.globalComponentSize,
+    tokens: {
+      '--mango-color-primary': themeStore.primary,
+      '--el-color-primary': themeStore.primary,
+      '--mango-bg-top-bar': themeStore.topBar,
+      '--mango-bg-menu-bar': themeStore.menuBar,
+      '--mango-bg-columns-menu-bar': themeStore.columnsMenuBar,
+    },
+  };
+}
+
+export function emitShellThemeChange(theme: MangoRuntimeTheme = createShellRuntimeTheme()) {
+  shellRuntimeEventBus.emit('theme-change', theme);
+  emitMangoRuntimeLog({
+    level: 'info',
+    event: 'theme-change',
+    message: 'Shell runtime theme changed',
+    detail: {
+      primary: theme.primary,
+      isDark: theme.isDark,
+      layout: theme.layout,
+      componentSize: theme.componentSize,
+    },
+  });
 }
 
 export function onShellRuntimeUnauthorized(handler: () => void | Promise<void>) {
@@ -419,6 +536,6 @@ function recordRuntimeConfigDiagnostics(diagnostics?: MangoRuntimeConfigDiagnost
   console.warn('[mango-runtime] config diagnostics', diagnostics);
 }
 
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.VITE_MANGO_E2E === 'true')) {
   (window as any).__MANGO_RUNTIME_EVENT_BUS__ = shellRuntimeEventBus;
 }

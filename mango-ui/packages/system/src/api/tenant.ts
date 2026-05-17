@@ -3,7 +3,7 @@
  * 后端路径和字段暂保留 tenant 命名，前端展示统一使用“机构”。
  */
 
-import { get, post, put, del } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export interface SysTenant {
   id?: number;

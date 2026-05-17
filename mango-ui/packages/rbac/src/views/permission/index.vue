@@ -253,7 +253,7 @@
 <script setup lang="ts" name="SystemPermission">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Pagination } from '@mango/common';
+import Pagination from '@mango/common/components/Pagination/index.vue';
 
 // ==================== 类型定义 ====================
 interface SysPermission {

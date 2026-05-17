@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
@@ -43,6 +43,7 @@ const {
   runtimeDecision,
   loadRuntimeApps,
   mountMenu,
+  dispose,
 } = useRuntimeHost(containerRef, router);
 const {
   menuLoading,
@@ -140,6 +141,9 @@ async function mountShellMenu(menu: any) {
 }
 
 onMounted(initShellRuntime);
+onBeforeUnmount(() => {
+  void dispose();
+});
 </script>
 
 <style scoped>

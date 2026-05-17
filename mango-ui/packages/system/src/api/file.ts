@@ -2,7 +2,7 @@
  * File API - 文件管理。
  */
 
-import { del, get, post, request } from '@mango/common';
+import { del, get, post, request } from '@mango/common/utils/request';
 
 export interface FileRecord {
   id: number;

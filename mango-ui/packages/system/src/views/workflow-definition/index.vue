@@ -719,7 +719,7 @@ import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designe
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
-import { CodeEditor } from '@mango/common';
+import CodeEditor from '@mango/common/components/CodeEditor/index.vue';
 import {
   createNodeId,
   defaultDesignerJson,

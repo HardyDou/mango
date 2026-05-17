@@ -441,7 +441,8 @@
 <script setup lang="ts" name="SystemConfig">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { DictTag, useDict } from '@mango/common';
+import DictTag from '@mango/common/components/DictTag/index.vue';
+import { useDict } from '@mango/common/hooks/useDict';
 import { paramApi, type SysParam } from '../../api/param';
 import { configApi, type SysConfig } from '../../api/config';
 

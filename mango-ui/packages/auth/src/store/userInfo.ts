@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { Session } from '@mango/common';
+import { Session } from '@mango/common/utils/storage';
 
 export const useUserInfo = defineStore('userInfo', {
   state: (): { userInfos: UserInfosState['userInfos'] } => ({

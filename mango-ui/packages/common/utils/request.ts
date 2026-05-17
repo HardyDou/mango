@@ -236,6 +236,8 @@ export function del<T = any>(url: string, config?: RequestConfig): Promise<T> {
   return service.delete(url, config);
 }
 
+export const request = service;
+
 /**
  * 错误码对照表
  */

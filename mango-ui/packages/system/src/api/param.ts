@@ -2,7 +2,7 @@
  * System Param API - 系统参数
  */
 
-import { get, post, put, del } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export interface SysParam {
   id?: number;

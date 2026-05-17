@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "pnpm -F mango-admin dev",
     "dev:micro": "node ./scripts/dev-micro.mjs",
+    "preview:micro": "node ./scripts/preview-micro.mjs",
     "build": "pnpm -r build",
     "build:micro": "pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build",
-    "test:micro": "pnpm -C apps/mango-admin-shell test:e2e",
+    "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint"
   },
   "devDependencies": {

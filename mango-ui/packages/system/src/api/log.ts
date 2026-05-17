@@ -2,7 +2,7 @@
  * System Log API - 系统日志
  */
 
-import { get, del } from '@mango/common';
+import { del, get } from '@mango/common/utils/request';
 
 // ==================== 登录日志 ====================
 

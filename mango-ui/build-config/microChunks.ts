@@ -44,6 +44,30 @@ export function mangoMicroManualChunks(id: string) {
   if (id.includes('/packages/auth/')) {
     return 'mango-auth';
   }
+  if (id.includes('/packages/common/index.ts')) {
+    return 'mango-common-barrel';
+  }
+  if (id.includes('/packages/common/utils/') || id.includes('/packages/common/api/') || id.includes('/packages/common/hooks/')) {
+    return 'mango-common-core';
+  }
+  if (id.includes('/packages/common/components/CodeEditor/')) {
+    return 'mango-common-code-editor';
+  }
+  if (id.includes('/packages/common/components/ECharts/')) {
+    return 'mango-common-chart';
+  }
+  if (id.includes('/packages/common/components/Editor/')) {
+    return 'mango-common-editor';
+  }
+  if (id.includes('/packages/common/components/FormCreate/')) {
+    return 'mango-common-form-create';
+  }
+  if (id.includes('/packages/common/components/ExcelUpload/')) {
+    return 'mango-common-excel-upload';
+  }
+  if (id.includes('/packages/common/components/')) {
+    return 'mango-common-components';
+  }
   if (id.includes('/packages/common/')) {
     return 'mango-common';
   }

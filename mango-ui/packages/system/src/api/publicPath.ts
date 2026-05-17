@@ -1,4 +1,4 @@
-import { request as request } from '@mango/common';
+import { request } from '@mango/common/utils/request';
 
 /**
  * Public path types

@@ -1,7 +1,7 @@
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import { resolve } from 'path';
-import { createAllowedOrigins } from './vite.cors';
+import { createAllowedOrigins, createPreviewCorsHeaders } from './vite.cors';
 import { mangoMicroManualChunks } from '../../build-config/microChunks';
 
 export default defineConfig((mode: ConfigEnv) => {
@@ -37,6 +37,12 @@ export default defineConfig((mode: ConfigEnv) => {
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
       },
+    },
+    preview: {
+      host: env.VITE_HOST || '0.0.0.0',
+      port: Number(env.VITE_PREVIEW_PORT || 4181),
+      allowedHosts,
+      headers: createPreviewCorsHeaders(allowedOrigins),
     },
     build: {
       outDir: 'dist',

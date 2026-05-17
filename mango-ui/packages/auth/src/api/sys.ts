@@ -1,5 +1,5 @@
-import { get, post } from '@mango/common';
-import { generateArithmetic } from '@mango/common';
+import { get, post } from '@mango/common/utils/request';
+import { generateArithmetic } from '@mango/common/api/captcha';
 
 /**
  * 登录

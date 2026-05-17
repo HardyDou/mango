@@ -5,7 +5,7 @@
  * Response: {code, msg, data: [{id, name, parentId, sort, children[]}]}
  */
 
-import { del, get, post, put } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export interface SysOrg {
   id: number;

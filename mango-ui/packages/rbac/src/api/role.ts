@@ -1,4 +1,4 @@
-import { del, get, post, put } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 import type { SysMenuVO } from './menu';
 
 export interface RoleVO {

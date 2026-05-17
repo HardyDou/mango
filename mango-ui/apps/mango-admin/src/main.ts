@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersist from 'pinia-plugin-persistedstate';
 import { ElMessage } from 'element-plus';
 import { registerUnauthorizedHandler } from '@mango/common';
+import { installMangoAuth } from '@mango/auth';
 import App from './App.vue';
 import router from './router';
 import { i18n } from './i18n';
@@ -40,6 +41,28 @@ app.use(createPinia().use(piniaPluginPersist));
 app.use(router);
 app.use(i18n);
 app.use(ElementPlus);
+installMangoAuth(app, {
+  login: {
+    brand: {
+      title: 'Mango Admin',
+      subtitle: '企业级管理平台',
+    },
+    defaults: {
+      tenantCode: 'default',
+      realm: 'INTERNAL',
+      actorType: 'INTERNAL_USER',
+      partyType: 'INTERNAL_ORG',
+      appCode: 'internal-admin',
+      redirectPath: '/home',
+    },
+  },
+  profile: {
+    roleLabel: '超级管理员',
+  },
+  password: {
+    minLength: 6,
+  },
+});
 
 // 在 Vue 首帧渲染前同步恢复 store 状态（布局/深色模式等），避免闪屏
 initThemeBeforeRender();

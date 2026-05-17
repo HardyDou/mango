@@ -1,7 +1,6 @@
 import { computed, ref } from 'vue';
-import { get } from '@mango/common';
+import { get } from '@mango/common/utils/request';
 import type { MangoMenuPageType } from '@mango/app-runtime';
-import { resolvePageModuleCode } from '@mango/admin-pages';
 import type { RouteRecordRaw } from 'vue-router';
 
 export enum MenuTypeEnum {
@@ -61,7 +60,10 @@ export function useMenuHost() {
       const response = await get<ShellMenu[]>('/authorization/menus/user', {
         params: { fmt: 'tree', appCode: 'internal-admin' },
       });
-      menus.value = filterMenuForNav(response || []).map(toShellRouteMenu);
+      menus.value = [
+        ...filterMenuForNav(response || []).map(toShellRouteMenu),
+        ...createAccountRouteMenus(),
+      ];
       const first = resolveFirstMenu(menus.value[0]);
       activeTopPath.value = menus.value[0]?.path || '';
       activeMenuPath.value = first?.path || '';
@@ -117,7 +119,7 @@ function filterMenuForNav(menus: ShellMenu[]): ShellMenu[] {
 }
 
 function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
-  const moduleCode = menu.moduleCode || resolvePageModuleCode(menu.component, menu.path);
+  const moduleCode = menu.moduleCode || inferModuleCode(menu.component, menu.path);
   const sourceMenu = {
     ...menu,
     moduleCode,
@@ -137,6 +139,67 @@ function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
     sourceMenu,
     children: menu.children?.map(toShellRouteMenu),
   };
+}
+
+function inferModuleCode(component?: string, path?: string) {
+  const target = `${component || ''} ${path || ''}`;
+  if (target.includes('profile') || target.includes('password')) {
+    return 'mango-authorization';
+  }
+  if (target.includes('workflow/')) {
+    return 'mango-workflow';
+  }
+  if (target.includes('system/dict')
+    || target.includes('system/operation-log')
+    || target.includes('system/login-log')
+    || target.includes('system/tenant')
+    || target.includes('system/config')
+    || target.includes('system/route')
+    || target.includes('system/public-path')
+    || target.includes('system/area')
+    || target.includes('system/file')) {
+    return 'mango-system';
+  }
+  if (target.includes('system/')) {
+    return 'mango-authorization';
+  }
+  return undefined;
+}
+
+function createAccountRouteMenus(): ShellRouteMenu[] {
+  return [
+    createAccountRouteMenu({
+      menuId: 'account-profile',
+      menuName: '个人中心',
+      menuCode: 'account:profile',
+      path: '/profile',
+      component: 'profile/index',
+      icon: 'User',
+    }),
+    createAccountRouteMenu({
+      menuId: 'account-password',
+      menuName: '修改密码',
+      menuCode: 'account:password',
+      path: '/password',
+      component: 'password/index',
+      icon: 'Lock',
+    }),
+  ];
+}
+
+function createAccountRouteMenu(menu: Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'path' | 'component' | 'icon'>): ShellRouteMenu {
+  return toShellRouteMenu({
+    ...menu,
+    appCode: 'internal-admin',
+    moduleCode: 'mango-authorization',
+    parentId: 0,
+    menuType: MenuTypeEnum.MENU,
+    sort: 0,
+    status: 1,
+    visible: 0,
+    pageType: 'LOCAL_ROUTE',
+    children: [],
+  });
 }
 
 export function resolveFirstMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefined {

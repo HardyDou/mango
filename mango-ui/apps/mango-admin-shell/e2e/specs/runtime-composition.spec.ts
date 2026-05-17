@@ -1,9 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const runtimeConfigPath = resolve(__dirname, '../../public/runtime-config.json');
+const distRuntimeConfigPath = resolve(__dirname, '../../dist/runtime-config.json');
+const shellOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL || 'http://a.mango.io:5176').origin;
+const rbacEntry = process.env.PLAYWRIGHT_RBAC_ENTRY || resolvePeerEntry('b.mango.io', 5181, 4181);
+const workflowEntry = process.env.PLAYWRIGHT_WORKFLOW_ENTRY || resolvePeerEntry('c.mango.io', 5182, 4182);
+const brokenRbacEntry = rbacEntry.replace(/:\d+\//, ':5999/');
+const failClosedRuntimeConfig = new URL(shellOrigin).port === '4176';
 let originalRuntimeConfig = '';
+let originalDistRuntimeConfig = '';
 
 const hybridConfig = {
   profile: 'hybrid',
@@ -11,7 +18,7 @@ const hybridConfig = {
     'mango-authorization': {
       mode: 'micro',
       runtimeCode: 'mango-admin-rbac-app',
-      entry: 'http://b.mango.io:5181/',
+      entry: rbacEntry,
     },
     'mango-system': {
       mode: 'local',
@@ -20,7 +27,7 @@ const hybridConfig = {
     'mango-workflow': {
       mode: 'micro',
       runtimeCode: 'mango-admin-workflow-app',
-      entry: 'http://c.mango.io:5182/',
+      entry: workflowEntry,
     },
   },
 };
@@ -49,7 +56,7 @@ const brokenHybridConfig = {
     'mango-authorization': {
       mode: 'micro',
       runtimeCode: 'mango-admin-rbac-app',
-      entry: 'http://b.mango.io:5999/',
+      entry: brokenRbacEntry,
       timeoutMs: 1000,
     },
     'mango-system': {
@@ -69,7 +76,7 @@ const missingEntryHybridConfig = {
     'mango-authorization': {
       mode: 'micro',
       runtimeCode: 'mango-admin-rbac-app',
-      entry: 'http://b.mango.io:5181/',
+      entry: rbacEntry,
     },
     'mango-system': {
       mode: 'local',
@@ -88,7 +95,7 @@ const invalidModeConfig = {
     'mango-authorization': {
       mode: 'remote',
       runtimeCode: 'mango-admin-rbac-app',
-      entry: 'http://b.mango.io:5181/',
+      entry: rbacEntry,
     },
     'mango-system': {
       mode: 'local',
@@ -104,11 +111,17 @@ const invalidModeConfig = {
 test.describe.serial('Shell runtime composition', () => {
   test.beforeAll(() => {
     originalRuntimeConfig = readFileSync(runtimeConfigPath, 'utf-8');
+    if (existsSync(distRuntimeConfigPath)) {
+      originalDistRuntimeConfig = readFileSync(distRuntimeConfigPath, 'utf-8');
+    }
   });
 
   test.afterAll(() => {
     if (originalRuntimeConfig) {
       writeFileSync(runtimeConfigPath, originalRuntimeConfig);
+    }
+    if (originalDistRuntimeConfig && existsSync(distRuntimeConfigPath)) {
+      writeFileSync(distRuntimeConfigPath, originalDistRuntimeConfig);
     }
   });
 
@@ -120,10 +133,11 @@ test.describe.serial('Shell runtime composition', () => {
       moduleCode: 'mango-authorization',
       runtimeCode: 'mango-admin-rbac-app',
       pageType: 'MICRO_ROUTE',
-      entryIncludes: 'b.mango.io:5181',
+      entryIncludes: new URL(rbacEntry).host,
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
-    await expectRemoteResource(page, 'b.mango.io:5181');
+    await expectRemoteResource(page, new URL(rbacEntry).host);
+    await expectBusinessSmoke(page, 'rbac');
 
     await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
     await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
@@ -131,20 +145,22 @@ test.describe.serial('Shell runtime composition', () => {
       moduleCode: 'mango-workflow',
       runtimeCode: 'mango-admin-workflow-app',
       pageType: 'MICRO_ROUTE',
-      entryIncludes: 'c.mango.io:5182',
+      entryIncludes: new URL(workflowEntry).host,
     });
     await expect(page.locator('main')).toContainText('需要当前用户处理的流程任务');
-    await expectRemoteResource(page, 'c.mango.io:5182');
+    await expectRemoteResource(page, new URL(workflowEntry).host);
+    await expectBusinessSmoke(page, 'workflow');
 
-    await closeTag(page, '我的待办');
+    await page.goto('/#/system/menu-package');
     await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-authorization',
       runtimeCode: 'mango-admin-rbac-app',
       pageType: 'MICRO_ROUTE',
-      entryIncludes: 'b.mango.io:5181',
+      entryIncludes: new URL(rbacEntry).host,
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
+    await expectBusinessSmoke(page, 'rbac');
   });
 
   test('monolith profile renders modules locally without loading remote apps', async ({ page }) => {
@@ -157,6 +173,7 @@ test.describe.serial('Shell runtime composition', () => {
       pageType: 'LOCAL_ROUTE',
     });
     await expect(page.getByText('新增套餐')).toBeVisible();
+    await expectBusinessSmoke(page, 'rbac');
 
     await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
     await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
@@ -166,6 +183,7 @@ test.describe.serial('Shell runtime composition', () => {
       pageType: 'LOCAL_ROUTE',
     });
     await expect(page.locator('main')).toContainText('需要当前用户处理的流程任务');
+    await expectBusinessSmoke(page, 'workflow');
 
     const remoteResources = await remoteRuntimeResources(page);
     expect(remoteResources).toEqual([]);
@@ -175,15 +193,25 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(brokenHybridConfig);
     await login(page);
 
+    if (failClosedRuntimeConfig) {
+      await expect(page.getByText('运行配置加载失败')).toBeVisible();
+      await expectRuntimeDiagnostic(page, {
+        moduleCode: 'mango-authorization',
+        field: 'entry',
+        level: 'error',
+      });
+      return;
+    }
+
     await expectRuntime(page, {
       moduleCode: 'mango-authorization',
       runtimeCode: 'mango-admin-rbac-app',
       pageType: 'MICRO_ROUTE',
-      entryIncludes: 'b.mango.io:5999',
+      entryIncludes: new URL(brokenRbacEntry).host,
     });
     await expect(page.getByText('页面加载失败')).toBeVisible();
     await expect(page.getByText(/运行单元：mango-admin-rbac-app/)).toBeVisible();
-    await expect(page.getByText(/入口地址：http:\/\/b\.mango\.io:5999\//)).toBeVisible();
+    await expect(page.getByText(new RegExp(`入口地址：${escapeRegExp(brokenRbacEntry)}`))).toBeVisible();
     await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
   });
 
@@ -193,6 +221,11 @@ test.describe.serial('Shell runtime composition', () => {
 
     await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
     await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
+    if (failClosedRuntimeConfig) {
+      await expect(page.getByText('运行配置加载失败')).toBeVisible();
+      await expect(page.locator('main')).not.toContainText('新增套餐');
+      return;
+    }
     await expectRuntime(page, {
       moduleCode: 'mango-workflow',
       runtimeCode: 'mango-admin-workflow-app',
@@ -211,6 +244,13 @@ test.describe.serial('Shell runtime composition', () => {
   test('invalid runtime mode falls back to local rendering with diagnostics', async ({ page }) => {
     writeRuntimeConfig(invalidModeConfig);
     await login(page);
+
+    if (failClosedRuntimeConfig) {
+      await expect(page.getByText('运行配置加载失败')).toBeVisible();
+      const remoteResources = await remoteRuntimeResources(page);
+      expect(remoteResources).toEqual([]);
+      return;
+    }
 
     await expectRuntime(page, {
       moduleCode: 'mango-authorization',
@@ -237,13 +277,17 @@ test.describe.serial('Shell runtime composition', () => {
 
     await page.waitForURL('**/#/login', { timeout: 10000 });
     await expect(page.getByPlaceholder('用户名')).toBeVisible();
-    const token = await page.evaluate(() => sessionStorage.getItem('token'));
+    const token = await page.evaluate(() => sessionStorage.getItem('MANGO_TOKEN'));
     expect(token).toBeNull();
   });
 });
 
 function writeRuntimeConfig(config: unknown) {
-  writeFileSync(runtimeConfigPath, `${JSON.stringify(config, null, 2)}\n`);
+  const content = `${JSON.stringify(config, null, 2)}\n`;
+  writeFileSync(runtimeConfigPath, content);
+  if (existsSync(distRuntimeConfigPath)) {
+    writeFileSync(distRuntimeConfigPath, content);
+  }
 }
 
 async function login(page: Page) {
@@ -300,6 +344,49 @@ async function expectRemoteResource(page: Page, urlPart: string) {
   }).toBeTruthy();
 }
 
+async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow') {
+  if (module === 'rbac') {
+    await page.goto('/#/system/role');
+    await expectRuntime(page, {
+      moduleCode: 'mango-authorization',
+      runtimeCode: await currentRuntimeCode(page),
+      pageType: await currentPageType(page),
+    });
+    await expect(page.getByText('新增角色')).toBeVisible();
+    await expect(page.getByText('角色名称')).toBeVisible();
+
+    await page.goto('/#/system/menu');
+    await expect(page.getByRole('button', { name: '新增菜单' })).toBeVisible();
+    await expect(page.getByText('菜单名称')).toBeVisible();
+    return;
+  }
+
+  await page.goto('/#/workflow/task/initiated');
+  await expectRuntime(page, {
+    moduleCode: 'mango-workflow',
+    runtimeCode: await currentRuntimeCode(page),
+    pageType: await currentPageType(page),
+  });
+  await expect(page.locator('main')).toContainText('我的发起');
+  await expect(page.locator('main')).toContainText('当前用户发起的流程实例');
+
+  await page.goto('/#/workflow/task/done');
+  await expect(page.locator('main')).toContainText('我的已办');
+  await expect(page.locator('main')).toContainText('当前用户已经处理完成的流程任务');
+}
+
+async function currentRuntimeCode(page: Page) {
+  return page.locator('.shell-runtime-content').evaluate((el) =>
+    (el as HTMLElement).dataset.mangoRuntimeCode || ''
+  );
+}
+
+async function currentPageType(page: Page) {
+  return page.locator('.shell-runtime-content').evaluate((el) =>
+    (el as HTMLElement).dataset.mangoRuntimePageType || ''
+  );
+}
+
 async function expectRuntimeDiagnostic(
   page: Page,
   expected: {
@@ -329,8 +416,23 @@ async function remoteRuntimeResources(page: Page) {
     performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .filter((url) => url.includes('b.mango.io:5181') || url.includes('c.mango.io:5182'))
+      .filter((url) =>
+        url.includes('b.mango.io:5181')
+        || url.includes('c.mango.io:5182')
+        || url.includes('b.mango.io:4181')
+        || url.includes('c.mango.io:4182')
+      )
   );
+}
+
+function resolvePeerEntry(hostname: string, devPort: number, previewPort: number) {
+  const shellUrl = new URL(shellOrigin);
+  const port = shellUrl.port === '4176' ? previewPort : devPort;
+  return `${shellUrl.protocol}//${hostname}:${port}/`;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function closeTag(page: Page, title: string) {

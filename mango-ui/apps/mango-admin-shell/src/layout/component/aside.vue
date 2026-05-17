@@ -43,7 +43,7 @@ import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useLayoutStore } from '@/stores/layout';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
-import { mittBus } from '@mango/common';
+import { mittBus } from '@mango/common/utils/mitt';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));

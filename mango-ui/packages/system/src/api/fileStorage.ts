@@ -2,7 +2,7 @@
  * File Storage API - 文件存储配置。
  */
 
-import { del, get, post, put } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export type FileStorageType = 'LOCAL' | 'S3' | 'MINIO' | 'AWS_S3' | 'ALIYUN_OSS' | 'TENCENT_COS' | 'QINIU_KODO';
 

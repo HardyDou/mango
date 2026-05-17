@@ -2,7 +2,7 @@
  * System Config API - 系统配置
  */
 
-import { get, post, put, del } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 export interface SysConfig {
   id?: number;

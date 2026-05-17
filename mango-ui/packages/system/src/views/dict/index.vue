@@ -359,7 +359,9 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import { DictTag, Pagination, useDict } from '@mango/common';
+import DictTag from '@mango/common/components/DictTag/index.vue';
+import Pagination from '@mango/common/components/Pagination/index.vue';
+import { useDict } from '@mango/common/hooks/useDict';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
 
 const { options: statusOptions } = useDict('sys_normal_disable');

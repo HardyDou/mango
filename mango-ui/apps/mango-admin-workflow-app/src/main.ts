@@ -4,10 +4,9 @@ import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { registerUnauthorizedHandler } from '@mango/common';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
-import { createMangoWujieVueApp } from '@mango/app-runtime/vue-micro';
+import { bindMangoRuntimeTheme, createMangoWujieVueApp } from '@mango/app-runtime/vue-micro';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
-import StandaloneRoot from './StandaloneRoot.vue';
 import RuntimeRoot from './App.vue';
 import router from './router';
 
@@ -37,7 +36,7 @@ function installCommon(appInstance: VueApp) {
 }
 
 createMangoWujieVueApp({
-  standaloneRoot: StandaloneRoot,
+  standaloneRoot: () => import('./StandaloneRoot.vue'),
   standaloneRouter: router,
   runtimeRoot: RuntimeRoot,
   install: installCommon,
@@ -46,9 +45,11 @@ createMangoWujieVueApp({
       await router.push('/login');
     });
   },
-  onMicroReady() {
+  onMicroReady(runtime) {
+    const unbindTheme = bindMangoRuntimeTheme(runtime);
     registerUnauthorizedHandler(async () => {
       window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');
     });
+    return unbindTheme;
   },
 });

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { RouteRecordRaw } from 'vue-router';
-import { Session } from '@mango/common';
+import { Session } from '@mango/common/utils/storage';
 
 export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
   state: (): {

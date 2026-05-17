@@ -2,15 +2,34 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-left">
-        <div class="login-title">
-          <h1>Mango Admin</h1>
-          <p>企业级管理平台</p>
+        <component
+          :is="loginSlots.brand"
+          v-if="loginSlots.brand"
+          :brand="loginBrand"
+        />
+        <div
+          v-else
+          class="login-title"
+        >
+          <h1>{{ loginBrand.title }}</h1>
+          <p>{{ loginBrand.subtitle }}</p>
         </div>
       </div>
       <div class="login-form">
+        <component
+          :is="loginSlots.formHeader"
+          v-if="loginSlots.formHeader"
+          :form="form"
+        />
         <h2 class="form-title">
-          {{ $t('login.title') }}
+          {{ loginBrand.panelTitle || $t('login.title') }}
         </h2>
+        <component
+          :is="loginSlots.formBefore"
+          v-if="loginSlots.formBefore"
+          :form="form"
+          :tenant-options="tenantOptions"
+        />
         <el-form
           ref="loginFormRef"
           :model="form"
@@ -29,11 +48,18 @@
               <el-option
                 v-for="tenant in tenantOptions"
                 :key="tenant.tenantId"
-                :label="tenant.tenantName"
-                :value="tenant.tenantId"
-              >
-                <span>{{ tenant.tenantName }}</span>
-                <span class="tenant-code">{{ tenant.tenantCode }}</span>
+              :label="tenant.tenantName"
+              :value="tenant.tenantId"
+            >
+                <component
+                  :is="loginSlots.tenantOption"
+                  v-if="loginSlots.tenantOption"
+                  :tenant="tenant"
+                />
+                <template v-else>
+                  <span>{{ tenant.tenantName }}</span>
+                  <span class="tenant-code">{{ tenant.tenantCode }}</span>
+                </template>
               </el-option>
             </el-select>
           </el-form-item>
@@ -72,6 +98,16 @@
             </el-button>
           </el-form-item>
         </el-form>
+        <component
+          :is="loginSlots.formAfter"
+          v-if="loginSlots.formAfter"
+          :form="form"
+          :tenant-options="tenantOptions"
+        />
+        <component
+          :is="loginSlots.footer"
+          v-if="loginSlots.footer"
+        />
       </div>
     </div>
   </div>
@@ -81,7 +117,7 @@
 import { computed, onMounted, ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { Session } from '@mango/common';
+import { Session } from '@mango/common/utils/storage';
 import {
   getAccountLoginTenantOptions,
   getLoginTenantOptions,
@@ -89,10 +125,19 @@ import {
   type LoginTenantOption,
 } from '../api/sys';
 import { useUserInfo } from '../store/userInfo';
+import { useAuthConfig } from '../composables/useAuthConfig';
 
 const router = useRouter();
 const loginFormRef = ref();
 const userInfoStore = useUserInfo();
+const authConfig = useAuthConfig();
+const loginDefaults = computed(() => authConfig.value.login?.defaults || {});
+const loginSlots = computed(() => authConfig.value.login?.slots || {});
+const loginBrand = computed(() => ({
+  title: authConfig.value.login?.brand?.title || 'Mango Admin',
+  subtitle: authConfig.value.login?.brand?.subtitle || '企业级管理平台',
+  panelTitle: authConfig.value.login?.brand?.panelTitle,
+}));
 
 // 表单数据
 const form = reactive({
@@ -126,7 +171,7 @@ const loadLoginTenants = async () => {
     const options = await getLoginTenantOptions();
     tenantOptions.value = Array.isArray(options) ? options : [];
     if (!form.tenantId && tenantOptions.value.length > 0) {
-      form.tenantId = tenantOptions.value.find((tenant) => tenant.tenantCode === 'default')?.tenantId
+      form.tenantId = tenantOptions.value.find((tenant) => tenant.tenantCode === (loginDefaults.value.tenantCode || 'default'))?.tenantId
         || tenantOptions.value[0].tenantId;
     }
   } catch (error) {
@@ -148,7 +193,7 @@ const applyTenantOptions = (options: LoginTenantOption[]) => {
 
   const selectedExists = tenantOptions.value.some((tenant) => tenant.tenantId === form.tenantId);
   if (!form.tenantId || !selectedExists) {
-    form.tenantId = tenantOptions.value.find((tenant) => tenant.tenantCode === 'default')?.tenantId
+    form.tenantId = tenantOptions.value.find((tenant) => tenant.tenantCode === (loginDefaults.value.tenantCode || 'default'))?.tenantId
       || tenantOptions.value[0].tenantId;
   }
 };
@@ -173,8 +218,8 @@ const refreshAccountTenants = async (strict = false) => {
     const options = await getAccountLoginTenantOptions({
       username: form.username.trim(),
       password: form.password,
-      realm: 'INTERNAL',
-      appCode: 'internal-admin',
+      realm: loginDefaults.value.realm || 'INTERNAL',
+      appCode: loginDefaults.value.appCode || 'internal-admin',
     });
     accountTenantResolvedKey.value = accountTenantKey();
     const canKeepSelected = !selectedTenantId
@@ -226,10 +271,10 @@ const handleLogin = async () => {
         password: form.password,
         tenantId: form.tenantId,
         tenantCode: selectedTenant.value?.tenantCode,
-        realm: 'INTERNAL',
-        actorType: 'INTERNAL_USER',
-        partyType: 'INTERNAL_ORG',
-        appCode: 'internal-admin',
+        realm: loginDefaults.value.realm || 'INTERNAL',
+        actorType: loginDefaults.value.actorType || 'INTERNAL_USER',
+        partyType: loginDefaults.value.partyType || 'INTERNAL_ORG',
+        appCode: loginDefaults.value.appCode || 'internal-admin',
       };
 
       // 调用真实登录接口
@@ -250,7 +295,7 @@ const handleLogin = async () => {
       }
 
       ElMessage.success('登录成功');
-      await router.push('/home');
+      await router.push(loginDefaults.value.redirectPath || '/home');
     } catch (error) {
       console.error('登录失败:', error);
       ElMessage.error('登录失败，请检查用户名和密码');

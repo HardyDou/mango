@@ -1,9 +1,14 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import { Session } from '@mango/common';
+import { Session } from '@mango/common/utils/storage';
 
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
+    {
+      path: '/login',
+      name: 'Login',
+      component: () => import('@mango/auth').then(m => m.LoginView),
+    },
     {
       path: '/',
       name: 'Shell',
@@ -19,11 +24,6 @@ export const router = createRouter({
       name: 'ShellMenu',
       component: () => import('./ShellView.vue'),
       meta: { isHide: true },
-    },
-    {
-      path: '/login',
-      name: 'Login',
-      component: () => import('@mango/auth').then((m) => m.LoginView),
     },
   ],
 });

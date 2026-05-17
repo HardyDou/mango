@@ -1,7 +1,6 @@
 import { createApp, type App as VueApp } from 'vue';
-import ElementPlus from 'element-plus';
 import { registerLocalApp } from '@mango/app-runtime';
-import { AppView, MenuView, RoleView } from '@mango/rbac';
+import { installShellApp } from '../appBootstrap';
 
 let mountedLocalApp: VueApp | undefined;
 let registered = false;
@@ -16,6 +15,11 @@ export function registerShellLocalApps() {
     appCode: 'internal-admin',
     name: '内部管理后台本地入口',
     async mount(container) {
+      const [{ default: AppView }, { default: MenuView }, { default: RoleView }] = await Promise.all([
+        import('@mango/rbac/src/views/app/index.vue'),
+        import('@mango/rbac/src/views/menu/index.vue'),
+        import('@mango/rbac/src/views/role/index.vue'),
+      ]);
       const LocalWorkbench = {
         components: { AppView, MenuView, RoleView },
         template: `
@@ -27,7 +31,7 @@ export function registerShellLocalApps() {
         `,
       };
       mountedLocalApp = createApp(LocalWorkbench);
-      mountedLocalApp.use(ElementPlus);
+      installShellApp(mountedLocalApp);
       mountedLocalApp.mount(container);
     },
     async unmount() {

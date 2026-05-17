@@ -5,7 +5,7 @@
  * Response: {code, msg, data, success}
  */
 
-import { get, post, put, del } from '@mango/common';
+import { del, get, post, put } from '@mango/common/utils/request';
 
 // ==================== 类型定义 ====================
 
