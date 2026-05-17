@@ -9,6 +9,7 @@ export type MangoMenuPageType = 'LOCAL_ROUTE' | 'MICRO_ROUTE' | 'IFRAME' | 'EXTE
 export type MangoRuntimeProfile = 'monolith' | 'hybrid' | 'micro';
 export type MangoModuleRuntimeMode = 'local' | 'micro';
 export type MangoPageLoader = () => Promise<Component | { default?: Component } | unknown>;
+export type MangoRuntimeConfigDiagnosticLevel = 'warning' | 'error';
 
 export interface MangoMenu {
   appCode?: string;
@@ -84,6 +85,14 @@ export interface MangoModuleRuntimeConfig {
 export interface MangoRuntimeConfig {
   profile: MangoRuntimeProfile;
   modules: Record<string, MangoModuleRuntimeConfig>;
+  diagnostics?: MangoRuntimeConfigDiagnostic[];
+}
+
+export interface MangoRuntimeConfigDiagnostic {
+  level: MangoRuntimeConfigDiagnosticLevel;
+  moduleCode?: string;
+  field?: string;
+  message: string;
 }
 
 export interface MangoPageRegistration {
@@ -123,8 +132,23 @@ export class MangoRuntimeError extends Error {
   }
 }
 
+export class MangoRuntimeConfigError extends Error {
+  diagnostics?: MangoRuntimeConfigDiagnostic[];
+
+  constructor(message: string, diagnostics?: MangoRuntimeConfigDiagnostic[], options?: { cause?: unknown }) {
+    super(message);
+    this.name = 'MangoRuntimeConfigError';
+    this.diagnostics = diagnostics;
+    if (options?.cause) {
+      (this as any).cause = options.cause;
+    }
+  }
+}
+
 const localApps = new Map<string, MangoFrontendApp>();
 const wujieDestroyers = new Map<string, Function>();
+const validProfiles = new Set<MangoRuntimeProfile>(['monolith', 'hybrid', 'micro']);
+const validModes = new Set<MangoModuleRuntimeMode>(['local', 'micro']);
 
 type MangoMicroAppDebugEvent = {
   appCode: string;
@@ -164,7 +188,7 @@ export function getMicroApp(appCode: string) {
 
 export async function loadRuntimeConfig(defaultConfig: MangoRuntimeConfig): Promise<MangoRuntimeConfig> {
   if (typeof fetch !== 'function') {
-    return defaultConfig;
+    return normalizeRuntimeConfig(defaultConfig);
   }
   try {
     const response = await fetch('/runtime-config.json', {
@@ -172,12 +196,20 @@ export async function loadRuntimeConfig(defaultConfig: MangoRuntimeConfig): Prom
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {
-      return defaultConfig;
+      return normalizeRuntimeConfig(defaultConfig);
     }
-    const remote = await response.json();
+    let remote: Partial<MangoRuntimeConfig>;
+    try {
+      remote = await response.json();
+    } catch (error) {
+      throw new MangoRuntimeConfigError('Invalid runtime-config.json: JSON parse failed', undefined, { cause: error });
+    }
     return normalizeRuntimeConfig(mergeRuntimeConfig(defaultConfig, remote));
   } catch (error) {
-    return defaultConfig;
+    if (error instanceof MangoRuntimeConfigError) {
+      throw error;
+    }
+    return normalizeRuntimeConfig(defaultConfig);
   }
 }
 
@@ -327,20 +359,119 @@ export function resolveAdapter(type: MangoFrontendAppType): MangoAppAdapter {
 }
 
 function normalizeRuntimeConfig(config: MangoRuntimeConfig): MangoRuntimeConfig {
+  const diagnostics: MangoRuntimeConfigDiagnostic[] = [];
   const modules = Object.entries(config.modules || {}).reduce<Record<string, MangoModuleRuntimeConfig>>((acc, [moduleCode, module]) => {
-    const mode = module?.mode === 'micro' ? 'micro' : 'local';
+    const mode = normalizeRuntimeMode(moduleCode, module?.mode, diagnostics);
+    const timeoutMs = normalizeTimeout(moduleCode, module?.timeoutMs, diagnostics);
     acc[moduleCode] = {
       ...module,
       mode,
       appType: module?.appType || (mode === 'micro' ? 'MICRO_APP' : 'LOCAL'),
-      timeoutMs: Number(module?.timeoutMs || 15000),
+      timeoutMs,
     };
+    if (mode === 'micro') {
+      validateMicroModule(moduleCode, acc[moduleCode], diagnostics);
+    }
     return acc;
   }, {});
   return {
-    profile: config.profile || 'monolith',
+    profile: normalizeRuntimeProfile(config.profile, diagnostics),
     modules,
+    diagnostics,
   };
+}
+
+function normalizeRuntimeProfile(profile: unknown, diagnostics: MangoRuntimeConfigDiagnostic[]): MangoRuntimeProfile {
+  if (typeof profile === 'string' && validProfiles.has(profile as MangoRuntimeProfile)) {
+    return profile as MangoRuntimeProfile;
+  }
+  if (profile !== undefined) {
+    diagnostics.push({
+      level: 'error',
+      field: 'profile',
+      message: `Invalid runtime profile '${String(profile)}', fallback to monolith`,
+    });
+  }
+  return 'monolith';
+}
+
+function normalizeRuntimeMode(
+  moduleCode: string,
+  mode: unknown,
+  diagnostics: MangoRuntimeConfigDiagnostic[]
+): MangoModuleRuntimeMode {
+  if (typeof mode === 'string' && validModes.has(mode as MangoModuleRuntimeMode)) {
+    return mode as MangoModuleRuntimeMode;
+  }
+  diagnostics.push({
+    level: 'error',
+    moduleCode,
+    field: 'mode',
+    message: `Invalid runtime mode '${String(mode)}', fallback to local`,
+  });
+  return 'local';
+}
+
+function normalizeTimeout(
+  moduleCode: string,
+  timeoutMs: unknown,
+  diagnostics: MangoRuntimeConfigDiagnostic[]
+) {
+  const timeout = Number(timeoutMs || 15000);
+  if (Number.isFinite(timeout) && timeout >= 1000) {
+    return timeout;
+  }
+  diagnostics.push({
+    level: 'warning',
+    moduleCode,
+    field: 'timeoutMs',
+    message: `Invalid timeoutMs '${String(timeoutMs)}', fallback to 15000`,
+  });
+  return 15000;
+}
+
+function validateMicroModule(
+  moduleCode: string,
+  module: MangoModuleRuntimeConfig,
+  diagnostics: MangoRuntimeConfigDiagnostic[]
+) {
+  if (!module.runtimeCode) {
+    diagnostics.push({
+      level: 'warning',
+      moduleCode,
+      field: 'runtimeCode',
+      message: `Micro module '${moduleCode}' does not define runtimeCode, fallback to moduleCode`,
+    });
+  }
+  if (!module.entry) {
+    diagnostics.push({
+      level: 'error',
+      moduleCode,
+      field: 'entry',
+      message: `Micro module '${moduleCode}' is missing entry`,
+    });
+    return;
+  }
+  if (!isValidRuntimeEntry(module.entry)) {
+    diagnostics.push({
+      level: 'error',
+      moduleCode,
+      field: 'entry',
+      message: `Micro module '${moduleCode}' has invalid entry '${module.entry}'`,
+    });
+  }
+}
+
+function isValidRuntimeEntry(entry: string) {
+  if (entry.startsWith('/')) {
+    return true;
+  }
+  try {
+    const url = new URL(entry);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch (error) {
+    return false;
+  }
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, config: MangoRuntimeAppConfig): Promise<T> {

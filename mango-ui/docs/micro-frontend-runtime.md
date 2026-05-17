@@ -78,6 +78,25 @@ Workflow: http://c.mango.io:5182
 
 切换形态只替换这个前端静态配置文件，不改后端、不改数据库、不改菜单、不改权限。
 
+## 配置诊断
+
+Shell 会对 `runtime-config.json` 做运行时校验：
+
+- `profile` 只允许 `monolith / hybrid / micro`，非法值降级为 `monolith`。
+- `mode` 只允许 `local / micro`，非法值降级为 `local`。
+- `mode=micro` 必须配置 `entry`，否则该模块页面显示明确错误，不会 fallback 到其它子应用。
+- `timeoutMs` 非法时降级为 `15000`。
+
+开发态可在浏览器控制台查看：
+
+```js
+window.__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__
+window.__MANGO_RUNTIME_DEBUG__
+window.__MANGO_MICRO_APP_EVENTS__
+```
+
+这些诊断只用于排障，不参与业务权限判断。
+
 ## 跨域要求
 
 Wujie 加载子应用 HTML、JS、CSS 时，子应用域名必须允许 Shell origin。

@@ -82,6 +82,25 @@ const missingEntryHybridConfig = {
   },
 };
 
+const invalidModeConfig = {
+  profile: 'hybrid',
+  modules: {
+    'mango-authorization': {
+      mode: 'remote',
+      runtimeCode: 'mango-admin-rbac-app',
+      entry: 'http://b.mango.io:5181/',
+    },
+    'mango-system': {
+      mode: 'local',
+      runtimeCode: 'mango-admin-system-local',
+    },
+    'mango-workflow': {
+      mode: 'local',
+      runtimeCode: 'mango-admin-workflow-local',
+    },
+  },
+};
+
 test.describe.serial('Shell runtime composition', () => {
   test.beforeAll(() => {
     originalRuntimeConfig = readFileSync(runtimeConfigPath, 'utf-8');
@@ -180,7 +199,32 @@ test.describe.serial('Shell runtime composition', () => {
       pageType: 'MICRO_ROUTE',
     });
     await expect(page.getByText('缺少微应用运行配置：mango-admin-workflow-app')).toBeVisible();
+    await expect(page.getByText(/Micro module 'mango-workflow' is missing entry/)).toBeVisible();
+    await expectRuntimeDiagnostic(page, {
+      moduleCode: 'mango-workflow',
+      field: 'entry',
+      level: 'error',
+    });
     await expect(page.locator('main')).not.toContainText('新增套餐');
+  });
+
+  test('invalid runtime mode falls back to local rendering with diagnostics', async ({ page }) => {
+    writeRuntimeConfig(invalidModeConfig);
+    await login(page);
+
+    await expectRuntime(page, {
+      moduleCode: 'mango-authorization',
+      runtimeCode: 'mango-admin-rbac-app',
+      pageType: 'LOCAL_ROUTE',
+    });
+    await expect(page.getByText('新增套餐')).toBeVisible();
+    await expectRuntimeDiagnostic(page, {
+      moduleCode: 'mango-authorization',
+      field: 'mode',
+      level: 'error',
+    });
+    const remoteResources = await remoteRuntimeResources(page);
+    expect(remoteResources).toEqual([]);
   });
 });
 
@@ -239,6 +283,30 @@ async function expectRemoteResource(page: Page, urlPart: string) {
       return Boolean(active?.entryUrl?.includes(part) || events.some((event) => event.entryUrl?.includes(part)));
     }, urlPart);
     return runtimeEvidence;
+  }).toBeTruthy();
+}
+
+async function expectRuntimeDiagnostic(
+  page: Page,
+  expected: {
+    moduleCode: string;
+    field: string;
+    level: string;
+  }
+) {
+  await expect.poll(async () => {
+    return page.evaluate((item) => {
+      const diagnostics = ((window as any).__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__ || []) as Array<{
+        moduleCode?: string;
+        field?: string;
+        level?: string;
+      }>;
+      return diagnostics.some(diagnostic =>
+        diagnostic.moduleCode === item.moduleCode
+        && diagnostic.field === item.field
+        && diagnostic.level === item.level
+      );
+    }, expected);
   }).toBeTruthy();
 }
 

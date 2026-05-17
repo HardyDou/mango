@@ -9,6 +9,7 @@ import {
   type MangoAppRuntime,
   type MangoModuleRuntimeConfig,
   type MangoRuntimeConfig,
+  type MangoRuntimeConfigDiagnostic,
   type MangoRuntimeAppConfig,
 } from '@mango/app-runtime';
 import { getPageLoader } from '@mango/admin-pages';
@@ -42,6 +43,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     loading.value = true;
     try {
       runtimeConfig.value = await loadShellRuntimeConfig();
+      recordRuntimeConfigDiagnostics(runtimeConfig.value.diagnostics);
       runtimeApps.value = toRuntimeApps(runtimeConfig.value);
       preloadRuntimeApps(runtimeApps.value);
       return true;
@@ -126,7 +128,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     const config = resolveRuntimeConfig(menu, moduleConfig);
     const container = containerRef.value;
     if (!config || !container) {
-      mountMessage(`缺少微应用运行配置：${resolveRuntimeCode(menu, moduleConfig)}`);
+      mountRuntimeConfigError(menu, moduleConfig);
       return;
     }
     activeRuntimeApp.value = config;
@@ -222,6 +224,38 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     container.querySelector('.micro-runtime-retry')?.addEventListener('click', () => {
       void retryCurrentMenu();
     }, { once: true });
+  }
+
+  function mountRuntimeConfigError(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
+    const container = containerRef.value;
+    if (!container) {
+      return;
+    }
+    const runtimeCode = resolveRuntimeCode(menu, moduleConfig);
+    const diagnostics = findRuntimeDiagnostics(menu, moduleConfig);
+    const details = diagnostics.length
+      ? diagnostics.map(item => `<p class="micro-runtime-detail">${escapeHtml(item.message)}</p>`).join('')
+      : '<p class="micro-runtime-detail">请检查 runtime-config.json 是否配置 entry 和 runtimeCode。</p>';
+    container.innerHTML = `
+      <div class="micro-runtime-empty">
+        <div>
+          <h3>缺少微应用运行配置：${escapeHtml(runtimeCode)}</h3>
+          ${details}
+          <button class="micro-runtime-retry" type="button">重试</button>
+        </div>
+      </div>
+    `;
+    container.querySelector('.micro-runtime-retry')?.addEventListener('click', () => {
+      void retryCurrentMenu();
+    }, { once: true });
+  }
+
+  function findRuntimeDiagnostics(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
+    const moduleCode = menu.moduleCode;
+    const runtimeCode = moduleConfig?.runtimeCode;
+    return (runtimeConfig.value.diagnostics || []).filter(item =>
+      item.moduleCode === moduleCode || item.moduleCode === runtimeCode
+    );
   }
 
   async function mountFallback() {
@@ -364,4 +398,14 @@ function recordRuntimeDecision(decision: RuntimeDecision) {
     return;
   }
   console.debug('[mango-runtime] menu decision', decision);
+}
+
+function recordRuntimeConfigDiagnostics(diagnostics?: MangoRuntimeConfigDiagnostic[]) {
+  if (typeof window !== 'undefined') {
+    (window as any).__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__ = diagnostics || [];
+  }
+  if (!import.meta.env.DEV || !diagnostics?.length) {
+    return;
+  }
+  console.warn('[mango-runtime] config diagnostics', diagnostics);
 }
