@@ -48,7 +48,7 @@ createMangoWujieVueApp({
   },
   onMicroReady() {
     registerUnauthorizedHandler(async () => {
-      (window.$wujie?.props?.mangoRuntime?.eventBus as any)?.emit?.('unauthorized');
+      window.$wujie?.props?.mangoRuntime?.eventBus.emit('unauthorized');
     });
   },
 });

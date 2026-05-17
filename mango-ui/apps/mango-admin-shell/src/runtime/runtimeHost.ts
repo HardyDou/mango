@@ -3,6 +3,7 @@ import type { Router } from 'vue-router';
 import ElementPlus from 'element-plus';
 import { get, Session } from '@mango/common';
 import {
+  createRuntimeEventBus,
   loadRuntimeConfig,
   preloadMicroApp,
   resolveAdapter,
@@ -15,6 +16,8 @@ import {
 import { getPageLoader } from '@mango/admin-pages';
 import type { ShellMenu, ShellRouteMenu } from './menuHost';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
+
+const shellRuntimeEventBus = createRuntimeEventBus();
 
 export interface RuntimeDecision {
   menuName?: string;
@@ -358,9 +361,15 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
     userInfo,
     permissions: userInfo.permissions || [],
     request: get,
-    eventBus: undefined,
+    eventBus: shellRuntimeEventBus,
     theme: {},
   };
+}
+
+export function onShellRuntimeUnauthorized(handler: () => void | Promise<void>) {
+  return shellRuntimeEventBus.on('unauthorized', () => {
+    void handler();
+  });
 }
 
 function createRuntimeDecision(
@@ -408,4 +417,8 @@ function recordRuntimeConfigDiagnostics(diagnostics?: MangoRuntimeConfigDiagnost
     return;
   }
   console.warn('[mango-runtime] config diagnostics', diagnostics);
+}
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as any).__MANGO_RUNTIME_EVENT_BUS__ = shellRuntimeEventBus;
 }

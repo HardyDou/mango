@@ -226,6 +226,20 @@ test.describe.serial('Shell runtime composition', () => {
     const remoteResources = await remoteRuntimeResources(page);
     expect(remoteResources).toEqual([]);
   });
+
+  test('micro app unauthorized event is handled by the shell', async ({ page }) => {
+    writeRuntimeConfig(hybridConfig);
+    await login(page);
+
+    await page.evaluate(() => {
+      (window as any).__MANGO_RUNTIME_EVENT_BUS__.emit('unauthorized');
+    });
+
+    await page.waitForURL('**/#/login', { timeout: 10000 });
+    await expect(page.getByPlaceholder('用户名')).toBeVisible();
+    const token = await page.evaluate(() => sessionStorage.getItem('token'));
+    expect(token).toBeNull();
+  });
 });
 
 function writeRuntimeConfig(config: unknown) {

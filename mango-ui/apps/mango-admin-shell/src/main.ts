@@ -2,12 +2,13 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import { registerUnauthorizedHandler } from '@mango/common';
+import { registerUnauthorizedHandler, Session } from '@mango/common';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
 import App from './App.vue';
 import router from './router';
+import { onShellRuntimeUnauthorized } from './runtime/runtimeHost';
 
 const app = createApp(App);
 
@@ -27,8 +28,12 @@ app.config.globalProperties.$t = (key: string) => ({
   'login.btn': '登 录',
 }[key] || key);
 
-registerUnauthorizedHandler(async () => {
+async function redirectToLogin() {
+  Session.clearSession();
   await router.push('/login');
-});
+}
+
+registerUnauthorizedHandler(redirectToLogin);
+onShellRuntimeUnauthorized(redirectToLogin);
 
 app.mount('#app');

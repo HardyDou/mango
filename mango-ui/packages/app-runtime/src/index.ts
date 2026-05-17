@@ -35,7 +35,15 @@ export interface MangoAppRuntime {
   permissions: string[];
   theme: unknown;
   request: unknown;
-  eventBus: unknown;
+  eventBus: MangoRuntimeEventBus;
+}
+
+export type MangoRuntimeEventName = 'unauthorized' | 'theme-change' | 'runtime-error';
+
+export interface MangoRuntimeEventBus {
+  on: (eventName: MangoRuntimeEventName, handler: (...args: unknown[]) => void) => () => void;
+  off: (eventName: MangoRuntimeEventName, handler: (...args: unknown[]) => void) => void;
+  emit: (eventName: MangoRuntimeEventName, ...args: unknown[]) => void;
 }
 
 export interface MangoFrontendApp {
@@ -184,6 +192,26 @@ export function registerMicroApp(appCode: string, app: MangoMicroAppModule) {
 export function getMicroApp(appCode: string) {
   void appCode;
   return undefined;
+}
+
+export function createRuntimeEventBus(): MangoRuntimeEventBus {
+  const listeners = new Map<MangoRuntimeEventName, Set<(...args: unknown[]) => void>>();
+  return {
+    on(eventName, handler) {
+      const handlers = listeners.get(eventName) || new Set();
+      handlers.add(handler);
+      listeners.set(eventName, handlers);
+      return () => {
+        handlers.delete(handler);
+      };
+    },
+    off(eventName, handler) {
+      listeners.get(eventName)?.delete(handler);
+    },
+    emit(eventName, ...args) {
+      listeners.get(eventName)?.forEach((handler) => handler(...args));
+    },
+  };
 }
 
 export async function loadRuntimeConfig(defaultConfig: MangoRuntimeConfig): Promise<MangoRuntimeConfig> {
