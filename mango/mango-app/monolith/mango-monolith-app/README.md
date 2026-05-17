@@ -16,7 +16,16 @@
 ## 启动
 
 ```bash
-mvn spring-boot:run -pl mango-app/monolith/mango-monolith-app -am
+mvn -pl :mango-monolith-app -am spring-boot:run
 ```
 
 默认端口：`5555`。
+
+根工程默认让非应用模块跳过 `spring-boot:run`，只有应用模块显式声明 `mainClass` 并开启运行。这样从仓库根目录启动时，依赖模块只参与编译，不会被 Maven 误当作 Spring Boot 应用执行。
+
+本地调试常用参数：
+
+```bash
+mvn -pl :mango-monolith-app -am spring-boot:run \
+  -Dspring-boot.run.arguments="--server.port=5555 --mango.persistence.flyway.enabled=false --mango.kv.store.type=memory --spring.autoconfigure.exclude=org.redisson.spring.starter.RedissonAutoConfigurationV2"
+```

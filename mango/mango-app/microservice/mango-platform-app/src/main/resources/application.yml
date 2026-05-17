@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: mango-platform-app
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 1024MB
   datasource:
     url: jdbc:h2:mem:mango_platform;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver

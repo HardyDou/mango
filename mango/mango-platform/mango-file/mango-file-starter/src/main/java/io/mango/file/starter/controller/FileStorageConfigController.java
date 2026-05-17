@@ -37,14 +37,14 @@ public class FileStorageConfigController {
     private final IFileStorageConfigService storageConfigService;
 
     @GetMapping("/page")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:list")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:list")
     @Operation(summary = "分页查询文件存储配置", description = "权限接口。分页查询平台级文件存储配置，配置本身不按机构隔离")
     public R<PageResult<FileStorageConfigVO>> page(@ParameterObject FileStorageConfigPageQuery query) {
         return storageConfigService.page(query);
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:query")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:query")
     @Operation(summary = "获取文件存储配置详情", description = "权限接口。按配置ID查询文件存储配置详情，SecretKey 不会明文返回")
     public R<FileStorageConfigVO> get(
             @Parameter(description = "存储配置ID", required = true)
@@ -53,7 +53,7 @@ public class FileStorageConfigController {
     }
 
     @PostMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:add")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:add")
     @Operation(summary = "新增文件存储配置", description = "权限接口。创建本地、S3兼容、MinIO、AWS S3、阿里云OSS、腾讯云COS或七牛云Kodo存储配置")
     public R<Long> create(
             @Parameter(description = "保存文件存储配置命令", required = true)
@@ -62,7 +62,7 @@ public class FileStorageConfigController {
     }
 
     @PutMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:edit")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:edit")
     @Operation(summary = "修改文件存储配置", description = "权限接口。修改文件存储配置，SecretKey 为空表示保持原值")
     public R<Boolean> update(
             @Parameter(description = "保存文件存储配置命令", required = true)
@@ -71,7 +71,7 @@ public class FileStorageConfigController {
     }
 
     @DeleteMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:delete")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:delete")
     @Operation(summary = "删除文件存储配置", description = "权限接口。删除非默认启用的文件存储配置")
     public R<Boolean> delete(
             @Parameter(description = "存储配置ID", required = true)
@@ -80,7 +80,7 @@ public class FileStorageConfigController {
     }
 
     @PutMapping("/active")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:active")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:active")
     @Operation(summary = "启用默认文件存储配置", description = "权限接口。将指定配置设为默认启用配置，后续上传会使用该配置")
     public R<Boolean> activate(
             @Parameter(description = "存储配置ID", required = true)
@@ -89,7 +89,7 @@ public class FileStorageConfigController {
     }
 
     @PostMapping("/test")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:file-storage:test")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:storage-configs:test")
     @Operation(summary = "测试文件存储配置", description = "权限接口。测试已保存配置或临时配置的连接可用性")
     public R<FileStorageConfigTestVO> test(
             @Parameter(description = "测试文件存储配置命令", required = true)

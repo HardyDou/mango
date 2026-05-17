@@ -49,6 +49,13 @@ const elementPlusIconNames = [
   'Postcard',
   'ChatDotRound',
   'Connection',
+  'FolderOpened',
+  'Files',
+  'UploadFilled',
+  'Download',
+  'View',
+  'Delete',
+  'CirclePlus',
 ] as const;
 
 // 导出所有支持的图标名称列表

@@ -1,7 +1,10 @@
 import request, { post } from '../utils/request';
+import type { ApiId } from '@mango/api-schema';
+
+export type FileId = ApiId;
 
 export interface UploadResult {
-  id?: number;
+  id?: FileId;
   url: string;
   fileName: string;
   fileSize: number;
@@ -10,7 +13,7 @@ export interface UploadResult {
 }
 
 export interface ExcelUploadResult {
-  id?: number;
+  id?: FileId;
   url: string;
   fileName: string;
   fileSize: number;
@@ -77,30 +80,47 @@ export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
   }).then(records => records.map(toUploadResult));
 }
 
-export async function downloadUploadedFile(id: number) {
+export async function downloadUploadedFile(id: FileId) {
   const response = await request.get('/file/files/download', {
     params: { id },
     responseType: 'blob',
     rawResponse: true,
   } as any);
+  await assertBinaryDownloadResponse(response as any);
   return response as any;
 }
 
-export async function createUploadedFileObjectUrl(id: number): Promise<string> {
-  const response = await downloadUploadedFile(id);
-  const blob = new Blob([response.data], {
-    type: response.headers?.['content-type'] || 'application/octet-stream',
-  });
-  return URL.createObjectURL(blob);
+export async function createUploadedFileObjectUrl(id: FileId): Promise<string> {
+  return `/api/file/files/download?id=${encodeURIComponent(String(id))}`;
 }
 
 function toUploadResult(record: any): UploadResult {
   return {
-    id: record.id,
+    id: normalizeId(record.id),
     url: record.id ? `mango-file:${record.id}` : '',
     fileName: record.fileName,
     fileSize: Number(record.fileSize ?? 0),
     contentType: record.contentType,
     objectName: record.objectName,
   };
+}
+
+function normalizeId(value: any): FileId | undefined {
+  return value === undefined || value === null || value === '' ? undefined : String(value);
+}
+
+async function assertBinaryDownloadResponse(response: any) {
+  const contentType = String(response.headers?.['content-type'] || '').toLowerCase();
+  if (!contentType.includes('application/json')) return;
+  const data = response.data;
+  const text = data instanceof Blob ? await data.text() : String(data || '');
+  try {
+    const body = JSON.parse(text);
+    throw new Error(body?.msg || body?.message || '文件下载失败');
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error('文件下载失败');
+    }
+    throw error;
+  }
 }

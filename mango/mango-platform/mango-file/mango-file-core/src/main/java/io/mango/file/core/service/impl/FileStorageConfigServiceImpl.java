@@ -80,7 +80,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> update(SaveFileStorageConfigCommand command) {
         Require.notNull(command, FileCode.STORAGE_CONFIG_INVALID);
-        Require.notNull(command.getId(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "配置ID不能为空");
+        Require.notNull(command.getId(), FileCode.STORAGE_CONFIG_INVALID);
         validate(command, true);
         FileStorageConfig entity = selectRequired(command.getId());
         copy(command, entity, true);
@@ -96,7 +96,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
     @Transactional(rollbackFor = Exception.class)
     public R<Boolean> delete(Long id) {
         FileStorageConfig entity = selectRequired(id);
-        Require.isFalse(Integer.valueOf(1).equals(entity.getActive()), FileCode.STORAGE_CONFIG_INVALID.getCode(), "默认启用配置不能删除");
+        Require.isFalse(Integer.valueOf(1).equals(entity.getActive()), FileCode.STORAGE_CONFIG_ACTIVE_DELETE_FORBIDDEN);
         return R.ok(mapper.deleteById(id) > 0);
     }
 
@@ -149,6 +149,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
         fallback.setConfigName("配置文件默认存储");
         fallback.setStorageType(properties.getStorageType().name());
         fallback.setBucketName(properties.getDefaultBucket());
+        fallback.setStoragePath("");
         fallback.setActive(1);
         fallback.setStatus(1);
         fallback.setPathStyleAccess(0);
@@ -168,6 +169,10 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
                     .eq(FileStorageConfig::getBucketName, bucketName)
                     .eq(FileStorageConfig::getStatus, 1)
                     .last("LIMIT 1"));
+        }
+        if (entity == null && (id == null || id <= 0) && StringUtils.hasText(storageType)
+                && storageType.equalsIgnoreCase(properties.getStorageType().name())) {
+            return activeConfig();
         }
         Require.notNull(entity, FileCode.STORAGE_CONFIG_NOT_FOUND);
         Require.isTrue(Integer.valueOf(1).equals(entity.getStatus()), FileCode.STORAGE_CONFIG_DISABLED);
@@ -191,27 +196,27 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
     }
 
     private FileStorageConfig selectRequired(Long id) {
-        Require.notNull(id, FileCode.STORAGE_CONFIG_INVALID.getCode(), "配置ID不能为空");
+        Require.notNull(id, FileCode.STORAGE_CONFIG_INVALID);
         FileStorageConfig entity = mapper.selectById(id);
         Require.notNull(entity, FileCode.STORAGE_CONFIG_NOT_FOUND);
         return entity;
     }
 
     private void validate(SaveFileStorageConfigCommand command, boolean update) {
-        Require.notBlank(command.getConfigName(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "配置名称不能为空");
-        Require.notNull(command.getStorageType(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "存储类型不能为空");
-        Require.notBlank(command.getBucketName(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "存储桶不能为空");
+        Require.notBlank(command.getConfigName(), FileCode.STORAGE_CONFIG_INVALID);
+        Require.notNull(command.getStorageType(), FileCode.STORAGE_CONFIG_INVALID);
+        Require.notBlank(command.getBucketName(), FileCode.STORAGE_CONFIG_INVALID);
         if (command.getStorageType() != FileStorageType.LOCAL) {
-            Require.notBlank(command.getAccessKey(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "AccessKey不能为空");
+            Require.notBlank(command.getAccessKey(), FileCode.STORAGE_CONFIG_INVALID);
             Require.isTrue(update || StringUtils.hasText(command.getSecretKey()),
-                    FileCode.STORAGE_CONFIG_INVALID.getCode(), "SecretKey不能为空");
+                    FileCode.STORAGE_CONFIG_INVALID);
         }
         if (command.getStorageType() == FileStorageType.ALIYUN_OSS || command.getStorageType() == FileStorageType.MINIO
                 || command.getStorageType() == FileStorageType.S3) {
-            Require.notBlank(command.getEndpoint(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "接入地址不能为空");
+            Require.notBlank(command.getEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
         }
         if (command.getStorageType() == FileStorageType.TENCENT_COS) {
-            Require.notBlank(command.getRegion(), FileCode.STORAGE_CONFIG_INVALID.getCode(), "腾讯云 COS 区域不能为空");
+            Require.notBlank(command.getRegion(), FileCode.STORAGE_CONFIG_INVALID);
         }
     }
 
@@ -222,6 +227,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
         entity.setPublicEndpoint(trimToNull(command.getPublicEndpoint()));
         entity.setRegion(trimToNull(command.getRegion()));
         entity.setBucketName(command.getBucketName().trim());
+        entity.setStoragePath(normalizeStoragePath(command.getStoragePath()));
         entity.setAccessKey(trimToNull(command.getAccessKey()));
         if (!keepSecretWhenBlank || StringUtils.hasText(command.getSecretKey())) {
             entity.setSecretKey(trimToNull(command.getSecretKey()));
@@ -255,6 +261,7 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
         vo.setPublicEndpoint(entity.getPublicEndpoint());
         vo.setRegion(entity.getRegion());
         vo.setBucketName(entity.getBucketName());
+        vo.setStoragePath(entity.getStoragePath());
         vo.setAccessKey(entity.getAccessKey());
         vo.setSecretConfigured(StringUtils.hasText(entity.getSecretKey()));
         vo.setPathStyleAccess(Integer.valueOf(1).equals(entity.getPathStyleAccess()));
@@ -269,5 +276,20 @@ public class FileStorageConfigServiceImpl implements IFileStorageConfigService {
 
     private String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String normalizeStoragePath(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        String path = value.trim().replace("\\", "/");
+        while (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        Require.isFalse(path.contains(".."), FileCode.STORAGE_PATH_INVALID);
+        return path;
     }
 }

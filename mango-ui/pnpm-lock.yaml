@@ -26,6 +26,9 @@ importers:
       '@mango/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../../packages/file
       '@mango/rbac':
         specifier: workspace:*
         version: link:../../packages/rbac
@@ -313,6 +316,21 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
 
+  packages/file:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../common
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+
   packages/rbac:
     dependencies:
       '@element-plus/icons-vue':
@@ -378,6 +396,9 @@ importers:
       '@mango/common':
         specifier: workspace:*
         version: link:../common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../file
       element-plus:
         specifier: 2.5.5
         version: 2.5.5(vue@3.5.13(typescript@5.9.3))

@@ -101,6 +101,10 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
+                <configuration>
+                    <skip>false</skip>
+                    <mainClass>io.mango.app.microservice.platform.MangoPlatformAppApplication</mainClass>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

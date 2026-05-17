@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_SM4_KEY: string;
   readonly VITE_APP_TITLE: string;
   readonly VITE_PUBLIC_PATH: string;
+  readonly VITE_FILE_PREVIEW_PROVIDER_URL: string;
 }
 
 interface ImportMeta {

@@ -155,7 +155,8 @@ IUseCase 体系     → 管"缓存、锁、计数、防重、ID 生成"
 | `mango-guarantee` | 保函申请/审批/出函/签章/验真/注销/索赔 | P0 |
 | `mango-institution` | 下游金融机构对接 | P1 |
 | `mango-payment` | 支付流程 | P1 |
-| `mango-document` | 电子保函文档/模板/签章 | P2 |
+| `mango-document` | 文档处理：Office 转 PDF、PDF 工具、OCR、缩略图、在线 Office provider 适配 | P2 |
+| `mango-template` | 模板中心：模板分类、变量定义、版本管理、按业务数据生成 Word/PDF | P2 |
 
 ---
 

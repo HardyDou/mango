@@ -1,8 +1,18 @@
 package io.mango.infra.web.starter;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.datatype.jsr310.PackageVersion;
+import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import io.mango.infra.kv.api.expression.KvContextContributor;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
@@ -31,11 +41,21 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Mango Infra Web 自动配置。
@@ -44,6 +64,11 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 @EnableScheduling
 @EnableConfigurationProperties(MangoWebProperties.class)
 public class WebAutoConfiguration implements WebMvcConfigurer {
+
+    private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    private static final String DATE_PATTERN = "yyyy-MM-dd";
+    private static final String TIME_PATTERN = "HH:mm:ss";
+    private static final String ASIA_SHANGHAI = "Asia/Shanghai";
 
     private final MangoWebProperties properties;
 
@@ -66,8 +91,13 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @Bean
     @ConditionalOnMissingBean(name = "mangoLongToStringJacksonCustomizer")
     public Jackson2ObjectMapperBuilderCustomizer mangoLongToStringJacksonCustomizer() {
-        // Snowflake IDs exceed JavaScript's safe integer range, so HTTP JSON emits Long values as strings.
+        // Snowflake IDs exceed JavaScript's safe integer range; Java time values must be HTTP strings.
         return builder -> builder
+                .locale(Locale.CHINA)
+                .timeZone(TimeZone.getTimeZone(ASIA_SHANGHAI))
+                .simpleDateFormat(DATE_TIME_PATTERN)
+                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .modules(mangoJavaTimeModule())
                 .serializerByType(Long.class, ToStringSerializer.instance)
                 .serializerByType(Long.TYPE, ToStringSerializer.instance);
     }
@@ -83,6 +113,8 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
                     module.addSerializer(Long.class, ToStringSerializer.instance);
                     module.addSerializer(Long.TYPE, ToStringSerializer.instance);
                     objectMapper.registerModule(module);
+                    objectMapper.registerModule(mangoJavaTimeModule());
+                    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
                 }
                 return bean;
             }
@@ -157,6 +189,21 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     }
 
     @Override
+    public void addFormatters(FormatterRegistry registry) {
+        DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
+        registrar.setDateTimeFormatter(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN));
+        registrar.setDateFormatter(DateTimeFormatter.ofPattern(DATE_PATTERN));
+        registrar.setTimeFormatter(DateTimeFormatter.ofPattern(TIME_PATTERN));
+        registrar.registerFormatters(registry);
+        registry.addConverter(String.class, Long.class, value -> {
+            if (value == null || value.isBlank()) {
+                return null;
+            }
+            return Long.valueOf(value.trim());
+        });
+    }
+
+    @Override
     public void addCorsMappings(CorsRegistry registry) {
         MangoWebProperties.Cors cors = properties.getCors();
         if (!cors.isEnabled()) {
@@ -173,5 +220,21 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 保留 Spring Boot 默认静态资源处理逻辑。
+    }
+
+    private SimpleModule mangoJavaTimeModule() {
+        SimpleModule module = new SimpleModule("mango-java-time", PackageVersion.VERSION);
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DATE_PATTERN);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(TIME_PATTERN);
+        module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
+        module.addSerializer(LocalDate.class, new LocalDateSerializer(dateFormatter));
+        module.addSerializer(LocalTime.class, new LocalTimeSerializer(timeFormatter));
+        module.addSerializer(Instant.class, InstantSerializer.INSTANCE);
+        module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
+        module.addDeserializer(LocalDate.class, new LocalDateDeserializer(dateFormatter));
+        module.addDeserializer(LocalTime.class, new LocalTimeDeserializer(timeFormatter));
+        module.addDeserializer(Instant.class, InstantDeserializer.INSTANT);
+        return module;
     }
 }

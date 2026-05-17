@@ -3,17 +3,19 @@
  */
 
 import { del, get, post, put } from '@mango/common';
+import type { ApiId } from '@mango/api-schema';
 
 export type FileStorageType = 'LOCAL' | 'S3' | 'MINIO' | 'AWS_S3' | 'ALIYUN_OSS' | 'TENCENT_COS' | 'QINIU_KODO';
 
 export interface FileStorageConfig {
-  id?: number;
+  id?: ApiId;
   configName: string;
   storageType: FileStorageType;
   endpoint?: string;
   publicEndpoint?: string;
   region?: string;
   bucketName: string;
+  storagePath?: string;
   accessKey?: string;
   secretKey?: string;
   secretConfigured?: boolean;
@@ -43,7 +45,7 @@ export interface PageResult<T> {
 }
 
 export interface TestStorageConfigCommand {
-  id?: number;
+  id?: ApiId;
   config?: FileStorageConfig;
 }
 
@@ -55,11 +57,11 @@ export interface TestStorageConfigResult {
 export const fileStorageApi = {
   page: (params?: FileStorageConfigQuery) => get<any>('/file/storage-configs/page', { params: toBackendPageParams(params) })
     .then((data) => fromBackendPageResult(data, fromBackendStorageConfig, params)),
-  detail: (id: number) => get<FileStorageConfig>('/file/storage-configs/detail', { params: { id } }).then(fromBackendStorageConfig),
-  create: (data: FileStorageConfig) => post<number>('/file/storage-configs', toBackendStorageConfig(data)),
+  detail: (id: ApiId) => get<FileStorageConfig>('/file/storage-configs/detail', { params: { id } }).then(fromBackendStorageConfig),
+  create: (data: FileStorageConfig) => post<ApiId>('/file/storage-configs', toBackendStorageConfig(data)),
   update: (data: FileStorageConfig) => put<boolean>('/file/storage-configs', toBackendStorageConfig(data)),
-  delete: (id: number) => del<boolean>('/file/storage-configs', { params: { id } }),
-  activate: (id: number) => put<boolean>('/file/storage-configs/active', undefined, { params: { id } }),
+  delete: (id: ApiId) => del<boolean>('/file/storage-configs', { params: { id } }),
+  activate: (id: ApiId) => put<boolean>('/file/storage-configs/active', undefined, { params: { id } }),
   test: (command: TestStorageConfigCommand) => post<TestStorageConfigResult>('/file/storage-configs/test', command),
 };
 
@@ -91,6 +93,7 @@ function toBackendStorageConfig(data: FileStorageConfig) {
 function fromBackendStorageConfig(item: any): FileStorageConfig {
   return {
     ...item,
+    id: normalizeId(item.id),
     pathStyleAccess: Boolean(item.pathStyleAccess),
     sslEnabled: Boolean(item.sslEnabled),
     active: Boolean(item.active),
@@ -98,6 +101,10 @@ function fromBackendStorageConfig(item: any): FileStorageConfig {
     createdTime: normalizeDateTime(item.createdTime),
     updatedTime: normalizeDateTime(item.updatedTime),
   };
+}
+
+function normalizeId(value: any): ApiId | undefined {
+  return value === undefined || value === null ? undefined : String(value);
 }
 
 function toBackendPageParams(params?: FileStorageConfigQuery) {

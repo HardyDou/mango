@@ -11,12 +11,13 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE IF NOT EXISTS `sys_file_record` (
+CREATE TABLE IF NOT EXISTS `file_record` (
   `id` bigint NOT NULL COMMENT '文件ID',
   `tenant_id` bigint NOT NULL COMMENT '机构隔离ID，用户可见语义为机构，技术字段保留tenant_id',
   `biz_type` varchar(64) DEFAULT NULL COMMENT '业务类型',
   `biz_id` varchar(128) DEFAULT NULL COMMENT '业务ID',
   `purpose` varchar(64) DEFAULT NULL COMMENT '文件用途',
+  `biz_meta` json DEFAULT NULL COMMENT '业务自定义参数JSON',
   `access_level` varchar(32) NOT NULL DEFAULT 'PRIVATE' COMMENT '访问级别: PRIVATE-机构私有 PUBLIC_READ-公开读取 INTERNAL-内部文件',
   `storage_type` varchar(32) NOT NULL DEFAULT 'LOCAL' COMMENT '存储类型: LOCAL-本地 S3-S3兼容',
   `storage_config_id` bigint DEFAULT NULL COMMENT '存储配置ID',
@@ -45,13 +46,13 @@ CREATE TABLE IF NOT EXISTS `sys_file_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `sys_file_record` WRITE;
-/*!40000 ALTER TABLE `sys_file_record` DISABLE KEYS */;
-/*!40000 ALTER TABLE `sys_file_record` ENABLE KEYS */;
+LOCK TABLES `file_record` WRITE;
+/*!40000 ALTER TABLE `file_record` DISABLE KEYS */;
+/*!40000 ALTER TABLE `file_record` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE IF NOT EXISTS `sys_file_storage_config` (
+CREATE TABLE IF NOT EXISTS `file_storage_config` (
   `id` bigint NOT NULL COMMENT '存储配置ID',
   `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID，用户可见语义为机构，技术字段保留tenant_id',
   `config_name` varchar(64) NOT NULL COMMENT '配置名称',
@@ -80,10 +81,10 @@ CREATE TABLE IF NOT EXISTS `sys_file_storage_config` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件存储配置表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `sys_file_storage_config` WRITE;
-/*!40000 ALTER TABLE `sys_file_storage_config` DISABLE KEYS */;
-INSERT INTO `sys_file_storage_config` (`id`, `tenant_id`, `config_name`, `storage_type`, `endpoint`, `public_endpoint`, `region`, `bucket_name`, `access_key`, `secret_key`, `path_style_access`, `ssl_enabled`, `active`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`) VALUES (1,1,'本地默认存储','LOCAL',NULL,NULL,NULL,'local',NULL,NULL,0,0,1,1,'系统默认本地文件存储',NULL,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24','2026-05-10 00:04:24');
-/*!40000 ALTER TABLE `sys_file_storage_config` ENABLE KEYS */;
+LOCK TABLES `file_storage_config` WRITE;
+/*!40000 ALTER TABLE `file_storage_config` DISABLE KEYS */;
+INSERT INTO `file_storage_config` (`id`, `tenant_id`, `config_name`, `storage_type`, `endpoint`, `public_endpoint`, `region`, `bucket_name`, `access_key`, `secret_key`, `path_style_access`, `ssl_enabled`, `active`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`) VALUES (1,1,'本地默认存储','LOCAL',NULL,NULL,NULL,'local',NULL,NULL,0,0,1,1,'系统默认本地文件存储',NULL,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24','2026-05-10 00:04:24');
+/*!40000 ALTER TABLE `file_storage_config` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

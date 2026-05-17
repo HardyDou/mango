@@ -6,6 +6,7 @@ import io.mango.common.result.Require;
 import lombok.RequiredArgsConstructor;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +32,22 @@ public class FileStorageRouter {
 
     public void test(FileStorageConfig config) throws Exception {
         storage(config).test(config);
+    }
+
+    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return storage(config).presignedGetUrl(config, objectName, fileName, expires);
+    }
+
+    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return storage(config).presignedDownloadUrl(config, objectName, fileName, expires);
+    }
+
+    public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
+        return storage(config).publicGetUrl(config, objectName, fileName);
+    }
+
+    public Optional<String> publicDownloadUrl(FileStorageConfig config, String objectName, String fileName) {
+        return storage(config).publicDownloadUrl(config, objectName, fileName);
     }
 
     private FileStorage storage(FileStorageConfig config) {

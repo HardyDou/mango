@@ -188,11 +188,11 @@ service.interceptors.response.use(
     if (status === 401) {
       void handleUnauthorized('登录已过期，请重新登录');
     } else if (status === 403) {
-      ElMessage.error('没有权限访问该资源');
+      ElMessage.error(message || '没有权限访问该资源');
     } else if (status === 500) {
-      ElMessage.error('服务器错误');
+      ElMessage.error(message || '服务器错误');
     } else if (status === 502) {
-      ElMessage.error('网关错误');
+      ElMessage.error(message || '网关错误');
     } else {
       ElMessage.error(message);
     }

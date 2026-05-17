@@ -47,10 +47,10 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">
+          <el-button v-auth="'file:storage-configs:list'" type="primary" @click="handleSearch">
             查询
           </el-button>
-          <el-button @click="handleReset">
+          <el-button v-auth="'file:storage-configs:list'" @click="handleReset">
             重置
           </el-button>
         </el-form-item>
@@ -58,7 +58,7 @@
 
       <div class="action-toolbar">
         <div class="toolbar-left">
-          <el-button type="primary" @click="handleAdd">
+          <el-button v-auth="'file:storage-configs:add'" type="primary" @click="handleAdd">
             新增配置
           </el-button>
         </div>
@@ -90,6 +90,16 @@
           min-width="150"
           show-overflow-tooltip
         />
+        <el-table-column
+          prop="storagePath"
+          label="存储路径"
+          min-width="160"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            {{ row.storagePath || '/' }}
+          </template>
+        </el-table-column>
         <el-table-column
           prop="endpoint"
           label="接入地址"
@@ -134,10 +144,11 @@
           fixed="right"
         >
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleTestSaved(row)">
+            <el-button v-auth="'file:storage-configs:test'" link type="primary" size="small" @click="handleTestSaved(row)">
               测试
             </el-button>
             <el-button
+              v-auth="'file:storage-configs:active'"
               v-if="!row.active && row.status === 1"
               link
               type="primary"
@@ -146,10 +157,11 @@
             >
               设为默认
             </el-button>
-            <el-button link type="primary" size="small" @click="handleEdit(row)">
+            <el-button v-auth="'file:storage-configs:edit'" link type="primary" size="small" @click="handleEdit(row)">
               编辑
             </el-button>
             <el-button
+              v-auth="'file:storage-configs:delete'"
               v-if="!row.active"
               link
               type="danger"
@@ -215,12 +227,16 @@
           </el-col>
         </el-row>
 
+        <el-form-item label="存储路径">
+          <el-input v-model="form.storagePath" placeholder="可选，如 prod/files；对象会落到该路径前缀下" />
+        </el-form-item>
+
         <el-form-item label="接入地址" prop="endpoint">
           <el-input v-model="form.endpoint" :placeholder="endpointPlaceholder" />
         </el-form-item>
 
-        <el-form-item label="公开地址">
-          <el-input v-model="form.publicEndpoint" placeholder="可选，用于公开访问或七牛下载域名" />
+        <el-form-item label="浏览器访问地址">
+          <el-input v-model="form.publicEndpoint" placeholder="如 http://file.mango.io:9000；用于直连预览/下载签名" />
         </el-form-item>
 
         <el-row :gutter="16">
@@ -284,10 +300,15 @@
         <el-button @click="dialogVisible = false">
           取消
         </el-button>
-        <el-button @click="handleTestEditing">
+        <el-button v-auth="'file:storage-configs:test'" @click="handleTestEditing">
           测试连接
         </el-button>
-        <el-button type="primary" :loading="saving" @click="handleSubmit">
+        <el-button
+          v-auth="form.id ? 'file:storage-configs:edit' : 'file:storage-configs:add'"
+          type="primary"
+          :loading="saving"
+          @click="handleSubmit"
+        >
           保存
         </el-button>
       </template>
@@ -332,6 +353,7 @@ const form = reactive<FileStorageConfig>({
   publicEndpoint: '',
   region: '',
   bucketName: 'local',
+  storagePath: '',
   accessKey: '',
   secretKey: '',
   secretConfigured: false,
@@ -421,6 +443,7 @@ function resetForm() {
     publicEndpoint: '',
     region: '',
     bucketName: 'local',
+    storagePath: '',
     accessKey: '',
     secretKey: '',
     secretConfigured: false,
@@ -440,7 +463,8 @@ function handleAdd() {
 
 async function handleEdit(row: FileStorageConfig) {
   resetForm();
-  const detail = await fileStorageApi.detail(row.id!);
+  if (!row.id) return;
+  const detail = await fileStorageApi.detail(row.id);
   Object.assign(form, detail, { secretKey: '' });
   dialogTitle.value = '编辑存储配置';
   dialogVisible.value = true;
@@ -457,6 +481,7 @@ function handleStorageTypeChange(value: FileStorageType) {
   if (value === 'MINIO') {
     form.bucketName = form.bucketName === 'local' ? 'mango-file' : form.bucketName;
     form.endpoint = form.endpoint || 'http://127.0.0.1:9000';
+    form.publicEndpoint = form.publicEndpoint || 'http://file.mango.io:9000';
     form.pathStyleAccess = true;
   }
 }
@@ -496,7 +521,8 @@ async function handleActivate(row: FileStorageConfig) {
     cancelButtonText: '取消',
     type: 'warning',
   });
-  await fileStorageApi.activate(row.id!);
+  if (!row.id) return;
+  await fileStorageApi.activate(row.id);
   ElMessage.success('已设为默认存储');
   loadData();
 }
@@ -507,7 +533,8 @@ async function handleDelete(row: FileStorageConfig) {
     cancelButtonText: '取消',
     type: 'warning',
   });
-  await fileStorageApi.delete(row.id!);
+  if (!row.id) return;
+  await fileStorageApi.delete(row.id);
   ElMessage.success('删除成功');
   loadData();
 }

@@ -44,6 +44,10 @@ public class SaveFileStorageConfigCommand implements Serializable {
     @Schema(description = "存储桶名称", requiredMode = Schema.RequiredMode.REQUIRED)
     private String bucketName;
 
+    @Size(max = 255, message = "存储路径不能超过255个字符")
+    @Schema(description = "存储路径前缀。用于隔离对象落点，例如 prod/files 或 tenant-assets")
+    private String storagePath;
+
     @Schema(description = "访问密钥 AccessKey。本地存储可为空")
     private String accessKey;
 

@@ -1,7 +1,8 @@
 import type { UploadUserFile } from 'element-plus';
+import type { ApiId } from '@mango/api-schema';
 
 export interface MangoUploadFileMeta {
-  id?: number;
+  id?: ApiId;
   uid?: number;
   name: string;
   url: string;
@@ -14,21 +15,21 @@ export interface MangoUploadFileMeta {
 export type MangoUploadModelValue = string | string[] | MangoUploadFileMeta | MangoUploadFileMeta[];
 
 export type MangoUploadUserFile = UploadUserFile & {
-  id?: number;
-  fileId?: number;
+  id?: ApiId;
+  fileId?: ApiId;
   fileName?: string;
   fileSize?: number;
   contentType?: string;
   objectName?: string;
 };
 
-export function fileToken(id?: number): string {
+export function fileToken(id?: ApiId): string {
   return id ? `mango-file:${id}` : '';
 }
 
 export function normalizeUploadResult(response: any): MangoUploadFileMeta {
   const data = response?.data && !response?.url ? response.data : response;
-  const id = Number(data?.id || 0) || undefined;
+  const id = normalizeId(data?.id);
   const url = data?.url || fileToken(id);
   const fileName = data?.fileName || data?.name || url || '';
 
@@ -41,6 +42,10 @@ export function normalizeUploadResult(response: any): MangoUploadFileMeta {
     contentType: data?.contentType,
     objectName: data?.objectName,
   };
+}
+
+function normalizeId(value: any): ApiId | undefined {
+  return value === undefined || value === null || value === '' ? undefined : String(value);
 }
 
 export function modelValueToUploadFiles(value?: MangoUploadModelValue): MangoUploadUserFile[] {
