@@ -10,6 +10,7 @@ export default defineConfig((mode: ConfigEnv) => {
   const allowedOrigins = createAllowedOrigins(env.VITE_MANGO_ALLOWED_ORIGINS);
 
   return {
+    base: env.VITE_PUBLIC_PATH || '/',
     plugins: [vue()],
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode.mode === 'production' ? 'production' : 'development'),

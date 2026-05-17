@@ -68,7 +68,9 @@ Workflow: http://c.mango.io:5182
     "mango-workflow": {
       "mode": "micro",
       "runtimeCode": "mango-admin-workflow-app",
-      "entry": "http://c.mango.io:5182/"
+      "entry": "http://c.mango.io:5182/",
+      "preload": true,
+      "alive": false
     }
   }
 }
@@ -151,6 +153,29 @@ map $http_origin $mango_micro_allowed_origin {
 ```
 
 不要用 `Access-Control-Allow-Origin: *` 承载带凭证的生产后台。
+
+## 子应用加载策略
+
+远程模块支持两个生产参数：
+
+```json
+{
+  "preload": true,
+  "alive": false
+}
+```
+
+- `preload=true`：Shell 加载运行配置后提前拉取子应用资源，适合常用模块。
+- `alive=true`：Wujie 保活子应用实例，页面状态不丢；默认关闭，避免后台管理页面跨菜单残留筛选条件、弹窗和事件监听。
+
+构建产物默认按域名根路径部署。若运维要挂到子路径，构建时设置 `VITE_PUBLIC_PATH`：
+
+```bash
+VITE_PUBLIC_PATH=/rbac/ pnpm -C mango-ui --filter mango-admin-rbac-app build
+VITE_PUBLIC_PATH=/workflow/ pnpm -C mango-ui --filter mango-admin-workflow-app build
+```
+
+对应 `runtime-config.json` 的 `entry` 要指向同一个子路径。
 
 ## 验证
 

@@ -1,6 +1,6 @@
 import type { Component } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
-import { destroyApp, startApp } from 'wujie';
+import { destroyApp, preloadApp, startApp } from 'wujie';
 
 export type MangoFrontendAppType = 'LOCAL' | 'MICRO_APP' | 'IFRAME' | 'EXTERNAL_LINK';
 export type MangoDeployMode = 'EMBEDDED' | 'REMOTE' | 'HYBRID';
@@ -65,6 +65,8 @@ export interface MangoRuntimeAppConfig {
   sort?: number;
   status: number;
   timeoutMs?: number;
+  preload?: boolean;
+  alive?: boolean;
 }
 
 export interface MangoModuleRuntimeConfig {
@@ -75,6 +77,8 @@ export interface MangoModuleRuntimeConfig {
   appType?: MangoFrontendAppType;
   framework?: string;
   timeoutMs?: number;
+  preload?: boolean;
+  alive?: boolean;
 }
 
 export interface MangoRuntimeConfig {
@@ -127,6 +131,7 @@ type MangoMicroAppDebugEvent = {
   entryUrl?: string;
   phase:
     | 'load'
+    | 'preload'
     | 'before-load'
     | 'before-mount'
     | 'mount'
@@ -218,7 +223,7 @@ export const microAppAdapter: MangoAppAdapter = {
           mangoRuntime: runtime,
           mangoConfig: config,
         },
-        alive: false,
+        alive: config.alive === true,
         sync: false,
         fiber: true,
         attrs: {
@@ -259,6 +264,33 @@ export const microAppAdapter: MangoAppAdapter = {
     recordMicroAppDebug(config, 'unmount');
   },
 };
+
+export function preloadMicroApp(config: MangoRuntimeAppConfig, runtime?: Partial<MangoAppRuntime>) {
+  if (config.appType !== 'MICRO_APP' || !config.entryUrl) {
+    return;
+  }
+  recordMicroAppDebug(config, 'preload');
+  preloadApp({
+    name: config.appCode,
+    url: config.entryUrl,
+    props: {
+      mangoRuntime: runtime,
+      mangoConfig: config,
+    },
+    alive: config.alive === true,
+    fiber: true,
+    attrs: {
+      'data-mango-app': config.appCode,
+    },
+    degradeAttrs: {
+      'data-mango-app': config.appCode,
+    },
+    loadError(url, error) {
+      recordMicroAppDebug(config, 'load-error', url);
+      throw new MangoRuntimeError(`Failed to preload Mango micro app: ${config.appCode} (${url})`, config, { cause: error });
+    },
+  });
+}
 
 export const iframeAdapter: MangoAppAdapter = {
   type: 'IFRAME',

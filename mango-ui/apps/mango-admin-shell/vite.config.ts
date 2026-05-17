@@ -18,6 +18,7 @@ export default defineConfig((mode: ConfigEnv) => {
   const proxyTarget = validateProxyTarget(env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:18081');
 
   return {
+    base: env.VITE_PUBLIC_PATH || '/',
     plugins: [vue()],
     resolve: {
       alias: {

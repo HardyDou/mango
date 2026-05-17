@@ -4,6 +4,7 @@ import ElementPlus from 'element-plus';
 import { get, Session } from '@mango/common';
 import {
   loadRuntimeConfig,
+  preloadMicroApp,
   resolveAdapter,
   type MangoAppRuntime,
   type MangoModuleRuntimeConfig,
@@ -42,6 +43,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     try {
       runtimeConfig.value = await loadShellRuntimeConfig();
       runtimeApps.value = toRuntimeApps(runtimeConfig.value);
+      preloadRuntimeApps(runtimeApps.value);
       return true;
     } catch (error) {
       runtimeApps.value = [];
@@ -264,7 +266,21 @@ function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig[] {
       styleIsolation: 'NONE',
       status: 1,
       timeoutMs: module.timeoutMs || 15000,
+      preload: module.preload === true,
+      alive: module.alive === true,
     }));
+}
+
+function preloadRuntimeApps(apps: MangoRuntimeAppConfig[]) {
+  apps
+    .filter(app => app.preload)
+    .forEach((app) => {
+      try {
+        preloadMicroApp(app, createBaseRuntime(app));
+      } catch (error) {
+        console.warn('[mango-runtime] preload failed', app.appCode, error);
+      }
+    });
 }
 
 function normalizeMenu(menu: ShellMenu | ShellRouteMenu): ShellMenu {
@@ -281,13 +297,20 @@ function escapeHtml(value: string) {
 }
 
 function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAppRuntime {
+  return {
+    ...createBaseRuntime(config),
+    menu,
+  };
+}
+
+function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
   const userInfo = Session.get('userInfo') || {};
   return {
     token: Session.getToken?.() || '',
     tenantId: userInfo.tenantId,
     appCode: config.appCode,
     apiBaseUrl: window.location.origin + '/api',
-    menu,
+    menu: undefined,
     userInfo,
     permissions: userInfo.permissions || [],
     request: get,

@@ -5,7 +5,9 @@
       "mode": "micro",
       "runtimeCode": "mango-admin-rbac-app",
       "entry": "https://rbac.mango.io/",
-      "timeoutMs": 15000
+      "timeoutMs": 15000,
+      "preload": false,
+      "alive": false
     },
     "mango-system": {
       "mode": "local",
@@ -15,7 +17,9 @@
       "mode": "micro",
       "runtimeCode": "mango-admin-workflow-app",
       "entry": "https://workflow.mango.io/",
-      "timeoutMs": 15000
+      "timeoutMs": 15000,
+      "preload": true,
+      "alive": false
     }
   }
 }
