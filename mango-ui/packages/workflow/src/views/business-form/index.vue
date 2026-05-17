@@ -22,7 +22,7 @@
           <div class="intro-eyebrow">业务接入方式</div>
           <h3>业务保存当前态，工作流保存流程态和关键变量</h3>
           <p>
-            列表来自我的发起流程实例；详情按业务单号查询流程历史。当前节点直接读取后端返回的运行中任务名称。
+            列表来自工作流申请中心；详情按业务类型和业务单号查询申请历史。当前节点读取申请中心同步的运行中任务。
           </p>
         </section>
         <section class="example-flow">
@@ -485,11 +485,9 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   parseDesignerJson,
   workflowApi,
+  type WorkflowBusinessApply,
   type WorkflowDefinition,
   type WorkflowDesignerNode,
-  type WorkflowProcessDetail,
-  type WorkflowProcessInstance,
-  type WorkflowTask,
 } from '../../api/workflow';
 import DocumentTableApprovalDetail from '../../components/business/DocumentTableApprovalDetail.vue';
 import type { BusinessApprovalContext } from '../../components/businessApproval';
@@ -669,14 +667,14 @@ const integrationSteps = [
 async function loadData() {
   loading.value = true;
   try {
-    const [definitionsResult, processResult, todoResult] = await Promise.all([
+    const [definitionsResult, expenseApplyResult, sealApplyResult] = await Promise.all([
       workflowApi.definitionsPage({ pageNum: 1, pageSize: 100, status: 'PUBLISHED' }),
-      workflowApi.initiatedProcesses({ pageNum: 1, pageSize: 100 }),
-      workflowApi.todoTasks({ pageNum: 1, pageSize: 100 }),
+      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: 'EXPENSE_REIMBURSEMENT', latestOnly: true }),
+      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: 'CONTRACT_SEAL_APPROVAL', latestOnly: true }),
     ]);
     workflowDefinitions.value = definitionsResult.list;
-    expenseList.value = await buildExpenseRows(processResult.list, todoResult.list);
-    sealList.value = await buildSealRows(processResult.list, todoResult.list);
+    expenseList.value = buildExpenseRows(expenseApplyResult.list);
+    sealList.value = buildSealRows(sealApplyResult.list);
   } finally {
     loading.value = false;
   }
@@ -907,6 +905,7 @@ async function submitExpense(row: ExpenseExampleRow) {
     const applyId = `APPLY-${row.code}-${String(row.submitCount + 1).padStart(3, '0')}`;
     await workflowApi.startProcess({
       definitionId: reimbursementFlow.value.id,
+      businessType: 'EXPENSE_REIMBURSEMENT',
       businessKey: row.code,
       variables: {
         businessType: 'EXPENSE_REIMBURSEMENT',
@@ -957,6 +956,7 @@ async function submitSeal(row: SealExampleRow) {
     const applyId = `APPLY-${row.code}-${String(row.submitCount + 1).padStart(3, '0')}`;
     await workflowApi.startProcess({
       definitionId: sealFlow.value.id,
+      businessType: 'CONTRACT_SEAL_APPROVAL',
       businessKey: row.code,
       variables: {
         businessType: 'CONTRACT_SEAL_APPROVAL',
@@ -1031,134 +1031,56 @@ async function submitSeal(row: SealExampleRow) {
   }
 }
 
-async function buildExpenseRows(processes: WorkflowProcessInstance[], todoTasks: WorkflowTask[]) {
-  const todoMap = new Map<string, WorkflowTask>();
-  todoTasks.forEach((task) => {
-    if (task.processInstanceId) {
-      todoMap.set(task.processInstanceId, task);
-    }
-  });
-
-  const groups = new Map<string, WorkflowProcessInstance[]>();
-  processes
-    .filter(process => isExpenseProcess(process))
-    .forEach((process) => {
-      const key = process.businessKey || process.processInstanceId;
-      groups.set(key, [...(groups.get(key) || []), process]);
-    });
-
-  const rows = await Promise.all(Array.from(groups.entries()).map(async ([businessKey, list]) => {
-    const ordered = sortProcessesDesc(list);
-    const latest = ordered[0];
-    const detail = await workflowApi.processDetail(latest.processInstanceId);
-    if (!isExpenseBusinessDetail(detail)) {
-      return null;
-    }
-    return buildExpenseRow(detail, latest, ordered.length, todoMap.get(latest.processInstanceId));
-  }));
-  return rows
-    .filter((row): row is ExpenseExampleRow => Boolean(row))
+function buildExpenseRows(applies: WorkflowBusinessApply[]) {
+  return applies
+    .filter(apply => apply.businessType === 'EXPENSE_REIMBURSEMENT')
+    .map(buildExpenseRowFromApply)
     .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
 }
 
-async function buildSealRows(processes: WorkflowProcessInstance[], todoTasks: WorkflowTask[]) {
-  const todoMap = new Map<string, WorkflowTask>();
-  todoTasks.forEach((task) => {
-    if (task.processInstanceId) {
-      todoMap.set(task.processInstanceId, task);
-    }
-  });
-
-  const groups = new Map<string, WorkflowProcessInstance[]>();
-  processes
-    .filter(process => isSealProcess(process))
-    .forEach((process) => {
-      const key = process.businessKey || process.processInstanceId;
-      groups.set(key, [...(groups.get(key) || []), process]);
-    });
-
-  const rows = await Promise.all(Array.from(groups.entries()).map(async ([, list]) => {
-    const ordered = sortProcessesDesc(list);
-    const latest = ordered[0];
-    const detail = await workflowApi.processDetail(latest.processInstanceId);
-    if (!isSealBusinessDetail(detail)) {
-      return null;
-    }
-    return buildSealRow(detail, latest, ordered.length, todoMap.get(latest.processInstanceId));
-  }));
-  return rows
-    .filter((row): row is SealExampleRow => Boolean(row))
+function buildSealRows(applies: WorkflowBusinessApply[]) {
+  return applies
+    .filter(apply => apply.businessType === 'CONTRACT_SEAL_APPROVAL')
+    .map(buildSealRowFromApply)
     .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
 }
 
-function isExpenseProcess(process: WorkflowProcessInstance) {
-  return /报销|费用|expense|reimburse/i.test(`${process.processName}${process.processKey}${process.businessKey || ''}`);
-}
-
-function isExpenseBusinessDetail(detail: WorkflowProcessDetail) {
-  const variables = detail.variables || {};
-  return variables.businessType === 'EXPENSE_REIMBURSEMENT'
-    || String(variables.expenseCode || detail.process.businessKey || '').startsWith('EXP-');
-}
-
-function isSealProcess(process: WorkflowProcessInstance) {
-  return /合同|用印|印章|seal|contract/i.test(`${process.processName}${process.processKey}${process.businessKey || ''}`);
-}
-
-function isSealBusinessDetail(detail: WorkflowProcessDetail) {
-  const variables = detail.variables || {};
-  return variables.businessType === 'CONTRACT_SEAL_APPROVAL'
-    || String(detail.process.businessKey || '').startsWith('SEAL-');
-}
-
-function buildExpenseRow(
-  detail: WorkflowProcessDetail,
-  process: WorkflowProcessInstance,
-  submitCount: number,
-  todoTask?: WorkflowTask,
-) {
-  const variables = detail.variables || {};
-  const status = normalizeBusinessStatus(process.status || detail.process.status);
-  const lastRecord = latestRecordWithNode(detail);
+function buildExpenseRowFromApply(apply: WorkflowBusinessApply) {
+  const variables = apply.variables || {};
+  const status = normalizeBusinessStatus(apply.applyStatusName || apply.applyStatus);
   return createExpenseRow({
-    id: process.processInstanceId,
-    code: String(process.businessKey || variables.businessKey || variables.expenseCode || process.processInstanceId),
-    applicant: String(variables.applicant || detail.process.initiatorName || process.initiatorName || '-'),
+    id: String(apply.processInstanceId || apply.id),
+    code: String(apply.businessKey || variables.businessKey || variables.expenseCode || apply.id),
+    applicant: String(variables.applicant || apply.applicantName || '-'),
     category: String(variables.category || ''),
     amount: Number(variables.amount || 0),
     expenseDate: String(variables.expenseDate || ''),
-    reason: String(variables.reason || variables.summary || ''),
+    reason: String(variables.reason || variables.summary || apply.applySummary || ''),
     invoiceCount: Number(variables.invoiceCount || 0),
     bankAccount: String(variables.bankAccount || ''),
     budgetSubject: String(variables.budgetSubject || ''),
     businessStatus: status,
-    workflowName: detail.process.processName || process.processName || '费用报销审批',
-    currentProcessInstanceId: process.processInstanceId,
-    currentApplyId: String(variables.applyId || ''),
-    currentNodeName: currentNodeNameOf(process, status, todoTask, lastRecord),
-    currentNodeKey: process.currentTaskDefinitionKey || todoTask?.taskDefinitionKey || String(lastRecord?.taskDefinitionKey || ''),
-    submitCount,
-    startTime: process.startTime || detail.process.startTime,
-    endTime: process.endTime || detail.process.endTime,
+    workflowName: apply.processName || apply.applyTitle || '费用报销审批',
+    currentProcessInstanceId: apply.processInstanceId,
+    currentApplyId: String(apply.id || variables.applyId || ''),
+    currentNodeName: currentNodeNameOfApply(apply, status),
+    currentNodeKey: firstCurrentTaskKey(apply),
+    submitCount: 1,
+    startTime: apply.createdAt,
+    endTime: isTerminalStatus(status) ? apply.updatedAt : '',
     applyRecords: [],
   });
 }
 
-function buildSealRow(
-  detail: WorkflowProcessDetail,
-  process: WorkflowProcessInstance,
-  submitCount: number,
-  todoTask?: WorkflowTask,
-) {
-  const variables = detail.variables || {};
-  const status = normalizeBusinessStatus(process.status || detail.process.status);
-  const lastRecord = latestRecordWithNode(detail);
+function buildSealRowFromApply(apply: WorkflowBusinessApply) {
+  const variables = apply.variables || {};
+  const status = normalizeBusinessStatus(apply.applyStatusName || apply.applyStatus);
   return createSealRow({
-    id: process.processInstanceId,
-    code: String(process.businessKey || variables.businessKey || process.processInstanceId),
-    applicant: String(variables.applicant || detail.process.initiatorName || process.initiatorName || '-'),
+    id: String(apply.processInstanceId || apply.id),
+    code: String(apply.businessKey || variables.businessKey || apply.id),
+    applicant: String(variables.applicant || apply.applicantName || '-'),
     department: String(variables.department || ''),
-    contractName: String(variables.contractName || variables.title || ''),
+    contractName: String(variables.contractName || variables.title || apply.applyTitle || ''),
     contractCode: String(variables.contractCode || ''),
     counterparty: String(variables.counterparty || ''),
     contractType: String(variables.contractType || ''),
@@ -1169,20 +1091,20 @@ function buildSealRow(
     urgency: String(variables.urgency || ''),
     riskLevel: String(variables.riskLevel || ''),
     attachmentList: String(variables.attachmentList || ''),
-    purpose: String(variables.purpose || variables.summary || ''),
+    purpose: String(variables.purpose || variables.summary || apply.applySummary || ''),
     legalOpinion: String(variables.legalOpinion || ''),
     financeOpinion: String(variables.financeOpinion || ''),
     approvedSealCount: Number(variables.approvedSealCount || variables.sealCount || 0),
     sealKeeperOpinion: String(variables.sealKeeperOpinion || ''),
     businessStatus: status,
-    workflowName: detail.process.processName || process.processName || '合同用印审批',
-    currentProcessInstanceId: process.processInstanceId,
-    currentApplyId: String(variables.applyId || ''),
-    currentNodeName: currentNodeNameOf(process, status, todoTask, lastRecord),
-    currentNodeKey: process.currentTaskDefinitionKey || todoTask?.taskDefinitionKey || String(lastRecord?.taskDefinitionKey || ''),
-    submitCount,
-    startTime: process.startTime || detail.process.startTime,
-    endTime: process.endTime || detail.process.endTime,
+    workflowName: apply.processName || apply.applyTitle || '合同用印审批',
+    currentProcessInstanceId: apply.processInstanceId,
+    currentApplyId: String(apply.id || variables.applyId || ''),
+    currentNodeName: currentNodeNameOfApply(apply, status),
+    currentNodeKey: firstCurrentTaskKey(apply),
+    submitCount: 1,
+    startTime: apply.createdAt,
+    endTime: isTerminalStatus(status) ? apply.updatedAt : '',
     applyRecords: [],
   });
 }
@@ -1220,12 +1142,9 @@ async function resolveWorkflowDefinition(row: ExpenseExampleRow | SealExampleRow
 async function loadExpenseHistory(businessKey: string) {
   historyLoading.value = true;
   try {
-    const history = await workflowApi.processHistoryByBusinessKey(businessKey, { pageNum: 1, pageSize: 50 });
-    const ordered = sortProcessesAsc(history.list);
-    const records = await Promise.all(ordered.map(async (process, index) => {
-      const detail = await workflowApi.processDetail(process.processInstanceId);
-      return buildApplyRecord(detail, process, index + 1);
-    }));
+    const history = await workflowApi.businessApplyHistory('EXPENSE_REIMBURSEMENT', businessKey, { pageNum: 1, pageSize: 50 });
+    const ordered = sortAppliesAsc(history.list);
+    const records = ordered.map((apply, index) => buildApplyRecordFromApply(apply, index + 1));
     expenseForm.applyRecords = records;
     const latest = records[records.length - 1];
     if (latest) {
@@ -1245,12 +1164,9 @@ async function loadExpenseHistory(businessKey: string) {
 async function loadSealHistory(businessKey: string) {
   historyLoading.value = true;
   try {
-    const history = await workflowApi.processHistoryByBusinessKey(businessKey, { pageNum: 1, pageSize: 50 });
-    const ordered = sortProcessesAsc(history.list);
-    const records = await Promise.all(ordered.map(async (process, index) => {
-      const detail = await workflowApi.processDetail(process.processInstanceId);
-      return buildSealApplyRecord(detail, process, index + 1);
-    }));
+    const history = await workflowApi.businessApplyHistory('CONTRACT_SEAL_APPROVAL', businessKey, { pageNum: 1, pageSize: 50 });
+    const ordered = sortAppliesAsc(history.list);
+    const records = ordered.map((apply, index) => buildSealApplyRecordFromApply(apply, index + 1));
     sealForm.applyRecords = records;
     const latest = records[records.length - 1];
     if (latest) {
@@ -1275,46 +1191,43 @@ async function loadVisitedNodeKeys(processInstanceId?: string) {
     .filter((key): key is string => Boolean(key))));
 }
 
-function buildApplyRecord(detail: WorkflowProcessDetail, process: WorkflowProcessInstance, index: number) {
-  const variables = detail.variables || {};
-  const status = normalizeBusinessStatus(process.status || detail.process.status);
-  const lastRecord = latestRecordWithNode(detail);
+function buildApplyRecordFromApply(apply: WorkflowBusinessApply, index: number) {
+  const variables = apply.variables || {};
+  const status = normalizeBusinessStatus(apply.applyStatusName || apply.applyStatus);
   return createApplyRecord(
-    String(variables.applyId || `APPLY-${process.processInstanceId}`),
+    String(apply.id || variables.applyId || `APPLY-${apply.processInstanceId || apply.businessKey}`),
     `第 ${index} 次申请`,
-    process.processInstanceId,
+    apply.processInstanceId,
     status,
-    currentNodeNameOf(process, status, undefined, lastRecord),
-    process.currentTaskDefinitionKey || String(lastRecord?.taskDefinitionKey || ''),
-    process.startTime || detail.process.startTime || '',
+    currentNodeNameOfApply(apply, status),
+    firstCurrentTaskKey(apply),
+    apply.createdAt || '',
     {
-      applicant: String(variables.applicant || detail.process.initiatorName || process.initiatorName || '-'),
+      applicant: String(variables.applicant || apply.applicantName || '-'),
       category: String(variables.category || ''),
       amount: Number(variables.amount || 0),
       expenseDate: String(variables.expenseDate || ''),
-      reason: String(variables.reason || variables.summary || ''),
+      reason: String(variables.reason || variables.summary || apply.applySummary || ''),
       invoiceCount: Number(variables.invoiceCount || 0),
       bankAccount: String(variables.bankAccount || ''),
       budgetSubject: String(variables.budgetSubject || ''),
     },
-    [...detail.records].reverse().find(record => record.comment)?.comment,
   );
 }
 
-function buildSealApplyRecord(detail: WorkflowProcessDetail, process: WorkflowProcessInstance, index: number) {
-  const variables = detail.variables || {};
-  const status = normalizeBusinessStatus(process.status || detail.process.status);
-  const lastRecord = latestRecordWithNode(detail);
+function buildSealApplyRecordFromApply(apply: WorkflowBusinessApply, index: number) {
+  const variables = apply.variables || {};
+  const status = normalizeBusinessStatus(apply.applyStatusName || apply.applyStatus);
   return createSealApplyRecord(
-    String(variables.applyId || `APPLY-${process.processInstanceId}`),
+    String(apply.id || variables.applyId || `APPLY-${apply.processInstanceId || apply.businessKey}`),
     `第 ${index} 次申请`,
-    process.processInstanceId,
+    apply.processInstanceId,
     status,
-    currentNodeNameOf(process, status, undefined, lastRecord),
-    process.currentTaskDefinitionKey || String(lastRecord?.taskDefinitionKey || ''),
-    process.startTime || detail.process.startTime || '',
+    currentNodeNameOfApply(apply, status),
+    firstCurrentTaskKey(apply),
+    apply.createdAt || '',
     {
-      applicant: String(variables.applicant || detail.process.initiatorName || process.initiatorName || '-'),
+      applicant: String(variables.applicant || apply.applicantName || '-'),
       department: String(variables.department || ''),
       contractName: String(variables.contractName || ''),
       contractCode: String(variables.contractCode || ''),
@@ -1327,32 +1240,13 @@ function buildSealApplyRecord(detail: WorkflowProcessDetail, process: WorkflowPr
       urgency: String(variables.urgency || ''),
       riskLevel: String(variables.riskLevel || ''),
       attachmentList: String(variables.attachmentList || ''),
-      purpose: String(variables.purpose || variables.summary || ''),
+      purpose: String(variables.purpose || variables.summary || apply.applySummary || ''),
       legalOpinion: String(variables.legalOpinion || ''),
       financeOpinion: String(variables.financeOpinion || ''),
       approvedSealCount: Number(variables.approvedSealCount || variables.sealCount || 0),
       sealKeeperOpinion: String(variables.sealKeeperOpinion || ''),
     },
-    [...detail.records].reverse().find(record => record.comment)?.comment,
   );
-}
-
-function latestRecordWithNode(detail: WorkflowProcessDetail) {
-  return [...(detail.records || [])].reverse().find(record => record.taskName || record.taskDefinitionKey);
-}
-
-function currentNodeNameOf(
-  process: WorkflowProcessInstance,
-  status: ExpenseStatus,
-  todoTask?: WorkflowTask,
-  lastRecord?: { taskName?: string },
-) {
-  if (status === '审批中') {
-    return process.currentTaskName || todoTask?.taskName || lastRecord?.taskName || '审批中';
-  }
-  if (status === '已驳回') return '已驳回';
-  if (status === '已通过' || status === '已结束') return '已结束';
-  return '未发起';
 }
 
 function normalizeBusinessStatus(status?: string): ExpenseStatus {
@@ -1363,12 +1257,27 @@ function normalizeBusinessStatus(status?: string): ExpenseStatus {
   return '审批中';
 }
 
-function sortProcessesDesc(processes: WorkflowProcessInstance[]) {
-  return processes.slice().sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
+function sortAppliesAsc(applies: WorkflowBusinessApply[]) {
+  return applies.slice().sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
 }
 
-function sortProcessesAsc(processes: WorkflowProcessInstance[]) {
-  return processes.slice().sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')));
+function currentNodeNameOfApply(apply: WorkflowBusinessApply, status: ExpenseStatus) {
+  if (status === '审批中') {
+    return apply.currentTaskNames || apply.currentTasks?.map(task => task.taskName).filter(Boolean).join(',') || '审批中';
+  }
+  if (status === '已驳回') return '已驳回';
+  if (status === '已通过' || status === '已结束') return '已结束';
+  return '未发起';
+}
+
+function firstCurrentTaskKey(apply: WorkflowBusinessApply) {
+  return apply.currentTaskDefinitionKeys
+    || apply.currentTasks?.map(task => task.taskDefinitionKey).filter(Boolean).join(',')
+    || '';
+}
+
+function isTerminalStatus(status: ExpenseStatus) {
+  return status === '已通过' || status === '已驳回' || status === '已结束';
 }
 
 function viewWorkflow(row: ExpenseExampleRow | SealExampleRow) {

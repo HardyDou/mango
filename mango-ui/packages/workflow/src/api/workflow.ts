@@ -181,8 +181,76 @@ export interface WorkflowProcessInstance {
 export interface StartWorkflowProcessCommand {
   definitionId: WorkflowId;
   businessKey?: string;
+  businessType?: string;
+  applyId?: WorkflowId;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
+}
+
+export type WorkflowApplyStatus = 'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
+export type WorkflowApplyRenderMode = 'DYNAMIC_FORM' | 'CUSTOM_PAGE';
+
+export interface WorkflowBusinessApplyCurrentTask {
+  taskId?: string;
+  taskDefinitionKey?: string;
+  taskName?: string;
+  assigneeId?: WorkflowId;
+  assigneeName?: string;
+  arrivedAt?: string;
+}
+
+export interface WorkflowBusinessApply {
+  id: WorkflowId;
+  applyCode?: string;
+  businessType: string;
+  businessKey: string;
+  applyTitle: string;
+  applySummary?: string;
+  applicantId?: WorkflowId;
+  applicantName?: string;
+  processDefinitionId?: WorkflowId;
+  processDefinitionKey?: string;
+  engineProcessDefinitionId?: string;
+  processInstanceId?: string;
+  processName?: string;
+  applyStatus?: WorkflowApplyStatus;
+  applyStatusName?: string;
+  currentTaskNames?: string;
+  currentTaskDefinitionKeys?: string;
+  currentAssigneeNames?: string;
+  renderMode?: WorkflowApplyRenderMode;
+  applyPageKey?: string;
+  approvePageKey?: string;
+  formKey?: string;
+  formVersion?: number;
+  snapshotRef?: string;
+  latestFlag?: boolean;
+  variables?: Record<string, any>;
+  extension?: Record<string, any>;
+  currentTasks?: WorkflowBusinessApplyCurrentTask[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type WorkflowBusinessApplyProgress = Pick<WorkflowBusinessApply,
+  'businessType' | 'businessKey' | 'applyTitle' | 'processInstanceId' | 'processName' | 'applyStatus'
+  | 'applyStatusName' | 'currentTaskNames' | 'currentTaskDefinitionKeys' | 'currentAssigneeNames' | 'currentTasks'
+  | 'createdAt' | 'updatedAt'
+> & {
+  applyId?: WorkflowId;
+  applyCode?: string;
+};
+
+export interface WorkflowBusinessApplyPageQuery extends WorkflowPageQuery {
+  businessType?: string;
+  businessKey?: string;
+  statuses?: WorkflowApplyStatus[];
+  latestOnly?: boolean;
+  applicantId?: WorkflowId;
+  currentTaskDefinitionKeys?: string[];
+  currentAssigneeIds?: WorkflowId[];
+  startedAtBegin?: string;
+  startedAtEnd?: string;
 }
 
 export interface WorkflowUserOption {
@@ -269,6 +337,22 @@ export const workflowApi = {
 
   startProcess: (data: StartWorkflowProcessCommand) => post<WorkflowProcessInstance>('/workflow/processes/start', data)
     .then(normalizeProcessInstance),
+  businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
+    .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
+  businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) => get<any>('/workflow/business-applies/history', {
+    params: {
+      ...toBackendPageParams(params),
+      businessType,
+      businessKey,
+    },
+  }).then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
+  businessApplyLatestProgress: (businessType: string, businessKey: string) => get<WorkflowBusinessApplyProgress | null>('/workflow/business-applies/progress/latest', {
+    params: { businessType, businessKey },
+  }).then(data => data ? normalizeBusinessApplyProgress(data) : null),
+  businessApplyLatestProgressBatch: (businessType: string, businessKeys: string[]) => post<Record<string, WorkflowBusinessApplyProgress>>('/workflow/business-applies/progress/latest-batch', {
+    businessType,
+    businessKeys,
+  }).then(data => Object.fromEntries(Object.entries(data || {}).map(([key, value]) => [key, normalizeBusinessApplyProgress(value)]))),
   initiatedProcesses: (params?: WorkflowPageQuery) => get<any>('/workflow/processes/initiated', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
   processHistoryByBusinessKey: (businessKey: string, params?: WorkflowPageQuery) => get<any>('/workflow/processes/history', {
@@ -398,6 +482,17 @@ export function createNodeId(prefix = 'node'): string {
 }
 
 function toBackendPageParams(params?: WorkflowPageQuery) {
+  if (!params) return params;
+  const { pageNum, pageSize, groupId, ...rest } = params;
+  return {
+    ...rest,
+    groupId: groupId === '' ? undefined : groupId,
+    page: pageNum,
+    size: pageSize,
+  };
+}
+
+function toBackendBusinessApplyPageParams(params?: WorkflowBusinessApplyPageQuery) {
   if (!params) return params;
   const { pageNum, pageSize, groupId, ...rest } = params;
   return {
@@ -553,6 +648,41 @@ function normalizeProcessInstance(item: any): WorkflowProcessInstance {
     status: item?.status || '-',
     startTime: normalizeDateTime(item?.startTime),
     endTime: normalizeDateTime(item?.endTime),
+  };
+}
+
+function normalizeBusinessApplyCurrentTask(item: any): WorkflowBusinessApplyCurrentTask {
+  return {
+    taskId: item?.taskId,
+    taskDefinitionKey: item?.taskDefinitionKey,
+    taskName: item?.taskName,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeName: item?.assigneeName,
+    arrivedAt: normalizeDateTime(item?.arrivedAt),
+  };
+}
+
+function normalizeBusinessApply(item: any): WorkflowBusinessApply {
+  return {
+    ...item,
+    id: normalizeId(item?.id),
+    applicantId: item?.applicantId ? normalizeId(item.applicantId) : undefined,
+    processDefinitionId: item?.processDefinitionId ? normalizeId(item.processDefinitionId) : undefined,
+    currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
+    variables: normalizeVariables(item?.variables),
+    extension: normalizeVariables(item?.extension),
+    createdAt: normalizeDateTime(item?.createdAt),
+    updatedAt: normalizeDateTime(item?.updatedAt),
+  };
+}
+
+function normalizeBusinessApplyProgress(item: any): WorkflowBusinessApplyProgress {
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
+    createdAt: normalizeDateTime(item?.createdAt),
+    updatedAt: normalizeDateTime(item?.updatedAt),
   };
 }
 
