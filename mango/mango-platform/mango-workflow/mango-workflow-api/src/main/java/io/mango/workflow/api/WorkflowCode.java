@@ -38,6 +38,12 @@ public enum WorkflowCode implements BizCode {
     /** 流程实例不存在。 */
     PROCESS_INSTANCE_NOT_FOUND(3640, "流程实例不存在"),
 
+    /** 业务申请不存在。 */
+    APPLY_NOT_FOUND(3641, "业务申请不存在"),
+
+    /** 业务申请参数非法。 */
+    APPLY_INVALID(3642, "业务申请参数非法"),
+
     /** 流程任务不存在。 */
     TASK_NOT_FOUND(3650, "流程任务不存在"),
 
