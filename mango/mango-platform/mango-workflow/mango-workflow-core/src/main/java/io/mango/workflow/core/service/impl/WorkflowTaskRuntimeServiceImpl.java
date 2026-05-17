@@ -32,6 +32,7 @@ import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
+import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
@@ -80,6 +81,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     private final ObjectMapper objectMapper;
     private final WorkflowAssigneeResolver assigneeResolver;
     private final WorkflowCandidateGroupProvider candidateGroupProvider;
+    private final IWorkflowBusinessApplyService workflowBusinessApplyService;
     private final WorkflowEventPublisher workflowEventPublisher;
 
     @Override
@@ -173,6 +175,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         workflowEventPublisher.publishTaskCompleted(task, formInstance, variables, command.getComment());
         if (ended) {
             workflowEventPublisher.publishProcessCompleted(task.getProcessInstanceId(), formInstance, variables);
+            workflowBusinessApplyService.markApproved(task.getProcessInstanceId());
         }
         triggerEventNotify(task, variables);
         advanceRuntimeTasks(task.getProcessInstanceId());
@@ -203,6 +206,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         workflowEventPublisher.publishTaskRejected(task, formInstance, variables, command.getComment());
         workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
         workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
+        workflowBusinessApplyService.markRejected(task.getProcessInstanceId(), reason, task.getId(), task.getTaskDefinitionKey());
         return R.ok(Boolean.TRUE);
     }
 
@@ -220,7 +224,14 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             }
             updateFormInstance(processInstanceId, readStoredVariables(processInstanceId),
                     isProcessEnded(processInstanceId) ? WorkflowInstanceStatus.COMPLETED : WorkflowInstanceStatus.RUNNING);
+            workflowBusinessApplyService.refreshCurrentTasks(processInstanceId);
             if (!changed || isProcessEnded(processInstanceId)) {
+                if (isProcessEnded(processInstanceId)) {
+                    WorkflowFormInstance formInstance = findFormInstance(processInstanceId);
+                    if (formInstance != null && WorkflowInstanceStatus.COMPLETED.name().equals(formInstance.getStatus())) {
+                        workflowBusinessApplyService.markApproved(processInstanceId);
+                    }
+                }
                 return;
             }
         }
@@ -526,6 +537,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             workflowEventPublisher.publishTaskRejected(task, formInstance, variables, reason);
             workflowEventPublisher.publishProcessRejected(task.getProcessInstanceId(), formInstance, variables, reason);
             workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), formInstance, variables, reason);
+            workflowBusinessApplyService.markRejected(task.getProcessInstanceId(), reason, task.getId(), task.getTaskDefinitionKey());
             return true;
         }
         if (strategy == WorkflowEmptyAssigneeStrategy.AUTO_END) {
@@ -534,6 +546,8 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             updateFormInstance(task.getProcessInstanceId(), variables, WorkflowInstanceStatus.ENDED);
             workflowEventPublisher.publishProcessEnded(task.getProcessInstanceId(), findFormInstance(task.getProcessInstanceId()),
                     variables, "审批人为空，系统自动结束");
+            workflowBusinessApplyService.markTerminated(task.getProcessInstanceId(), "审批人为空，系统自动结束",
+                    task.getId(), task.getTaskDefinitionKey());
             return true;
         }
         return false;

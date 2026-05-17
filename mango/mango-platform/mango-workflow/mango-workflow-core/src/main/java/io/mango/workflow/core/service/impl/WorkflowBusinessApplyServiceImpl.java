@@ -27,6 +27,8 @@ import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowBusinessApplyStatusLogMapper;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import lombok.RequiredArgsConstructor;
+import org.flowable.engine.TaskService;
+import org.flowable.task.api.Task;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -56,6 +58,7 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
     private final WorkflowBusinessApplyMapper applyMapper;
     private final WorkflowBusinessApplyCurrentTaskMapper currentTaskMapper;
     private final WorkflowBusinessApplyStatusLogMapper statusLogMapper;
+    private final TaskService taskService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -151,18 +154,19 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
 
     @Override
     public Map<String, WorkflowBusinessApplyProgressVO> latestProgress(String businessType, Collection<String> businessKeys) {
-        if (!StringUtils.hasText(businessType) || businessKeys == null || businessKeys.isEmpty()) {
+        if (businessKeys == null || businessKeys.isEmpty()) {
             return Map.of();
         }
         List<String> keys = cleanStrings(businessKeys);
         if (keys.isEmpty()) {
             return Map.of();
         }
-        List<WorkflowBusinessApply> applies = applyMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApply>()
-                .eq(WorkflowBusinessApply::getBusinessType, businessType.trim())
+        LambdaQueryWrapper<WorkflowBusinessApply> wrapper = new LambdaQueryWrapper<WorkflowBusinessApply>()
                 .in(WorkflowBusinessApply::getBusinessKey, keys)
                 .eq(WorkflowBusinessApply::getLatestFlag, Boolean.TRUE)
-                .orderByDesc(WorkflowBusinessApply::getCreatedAt));
+                .orderByDesc(WorkflowBusinessApply::getCreatedAt);
+        wrapper.eq(StringUtils.hasText(businessType), WorkflowBusinessApply::getBusinessType, trim(businessType));
+        List<WorkflowBusinessApply> applies = applyMapper.selectList(wrapper);
         Map<Long, List<WorkflowBusinessApplyCurrentTask>> taskMap = tasksByApplyIds(applies.stream()
                 .map(WorkflowBusinessApply::getId)
                 .toList());
@@ -178,6 +182,111 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
         return latestProgress(businessType, businessKeys).values().stream()
                 .map(this::fromProgress)
                 .toList();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markProcessStarted(Long applyId, Long processDefinitionId, String processDefinitionKey,
+                                   String engineProcessDefinitionId, String processName, String processInstanceId) {
+        if (applyId == null || !StringUtils.hasText(processInstanceId)) {
+            return;
+        }
+        WorkflowBusinessApply apply = applyMapper.selectById(applyId);
+        if (apply == null) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        String fromStatus = apply.getApplyStatus();
+        apply.setProcessDefinitionId(processDefinitionId);
+        apply.setProcessDefinitionKey(trim(processDefinitionKey));
+        apply.setEngineProcessDefinitionId(trim(engineProcessDefinitionId));
+        apply.setProcessInstanceId(processInstanceId);
+        apply.setProcessName(trim(processName));
+        apply.setApplyStatus(WorkflowApplyStatus.IN_APPROVAL.name());
+        apply.setUpdatedBy(MangoContextHolder.userId());
+        apply.setUpdatedTime(now);
+        apply.setUpdatedAt(now);
+        applyMapper.updateById(apply);
+        saveStatusLog(apply, fromStatus, WorkflowApplyStatus.IN_APPROVAL.name(), WorkflowApplyAction.START_PROCESS, null, null, null);
+        refreshCurrentTasks(processInstanceId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void refreshCurrentTasks(String processInstanceId) {
+        if (!StringUtils.hasText(processInstanceId)) {
+            return;
+        }
+        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        if (apply == null) {
+            return;
+        }
+        currentTaskMapper.delete(new LambdaQueryWrapper<WorkflowBusinessApplyCurrentTask>()
+                .eq(WorkflowBusinessApplyCurrentTask::getApplyId, apply.getId()));
+        List<Task> tasks = taskService.createTaskQuery()
+                .processInstanceId(processInstanceId)
+                .orderByTaskCreateTime()
+                .asc()
+                .list();
+        LocalDateTime now = LocalDateTime.now();
+        for (Task task : tasks) {
+            WorkflowBusinessApplyCurrentTask currentTask = new WorkflowBusinessApplyCurrentTask();
+            currentTask.setTenantId(currentTenantId());
+            currentTask.setApplyId(apply.getId());
+            currentTask.setBusinessType(apply.getBusinessType());
+            currentTask.setBusinessKey(apply.getBusinessKey());
+            currentTask.setProcessInstanceId(processInstanceId);
+            currentTask.setTaskId(task.getId());
+            currentTask.setTaskDefinitionKey(task.getTaskDefinitionKey());
+            currentTask.setTaskName(task.getName());
+            currentTask.setAssigneeName(task.getAssignee());
+            currentTask.setArrivedAt(task.getCreateTime() == null
+                    ? now
+                    : task.getCreateTime().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+            currentTask.setCreatedAt(now);
+            currentTask.setUpdatedAt(now);
+            currentTaskMapper.insert(currentTask);
+        }
+        updateCurrentTaskSummary(apply, tasks, now);
+        if (!tasks.isEmpty() && WorkflowApplyStatus.SUBMITTED.name().equals(apply.getApplyStatus())) {
+            updateStatus(apply, WorkflowApplyStatus.IN_APPROVAL, WorkflowApplyAction.TASK_CREATED, null, null, null);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markApproved(String processInstanceId) {
+        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        if (apply == null) {
+            return;
+        }
+        clearCurrentTasks(apply.getId());
+        updateCurrentTaskSummary(apply, List.of(), LocalDateTime.now());
+        updateStatus(apply, WorkflowApplyStatus.APPROVED, WorkflowApplyAction.COMPLETE, null, null, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markRejected(String processInstanceId, String comment, String taskId, String taskDefinitionKey) {
+        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        if (apply == null) {
+            return;
+        }
+        clearCurrentTasks(apply.getId());
+        updateCurrentTaskSummary(apply, List.of(), LocalDateTime.now());
+        updateStatus(apply, WorkflowApplyStatus.REJECTED, WorkflowApplyAction.REJECT, comment, taskId, taskDefinitionKey);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markTerminated(String processInstanceId, String comment, String taskId, String taskDefinitionKey) {
+        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        if (apply == null) {
+            return;
+        }
+        clearCurrentTasks(apply.getId());
+        updateCurrentTaskSummary(apply, List.of(), LocalDateTime.now());
+        updateStatus(apply, WorkflowApplyStatus.TERMINATED, WorkflowApplyAction.TERMINATE, comment, taskId, taskDefinitionKey);
     }
 
     private LambdaQueryWrapper<WorkflowBusinessApply> wrapper(WorkflowBusinessApplyPageQuery query) {
@@ -227,6 +336,48 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
                 .eq(WorkflowBusinessApply::getLatestFlag, Boolean.TRUE)
                 .orderByDesc(WorkflowBusinessApply::getCreatedAt)
                 .last("limit 1"));
+    }
+
+    private WorkflowBusinessApply applyByProcessInstanceId(String processInstanceId) {
+        if (!StringUtils.hasText(processInstanceId)) {
+            return null;
+        }
+        return applyMapper.selectOne(new LambdaQueryWrapper<WorkflowBusinessApply>()
+                .eq(WorkflowBusinessApply::getProcessInstanceId, processInstanceId)
+                .last("limit 1"));
+    }
+
+    private void updateCurrentTaskSummary(WorkflowBusinessApply apply, List<Task> tasks, LocalDateTime now) {
+        applyMapper.update(null, new LambdaUpdateWrapper<WorkflowBusinessApply>()
+                .eq(WorkflowBusinessApply::getId, apply.getId())
+                .set(WorkflowBusinessApply::getCurrentTaskNames, join(tasks.stream().map(Task::getName).toList()))
+                .set(WorkflowBusinessApply::getCurrentTaskDefinitionKeys, join(tasks.stream().map(Task::getTaskDefinitionKey).toList()))
+                .set(WorkflowBusinessApply::getCurrentAssigneeNames, join(tasks.stream().map(Task::getAssignee).toList()))
+                .set(WorkflowBusinessApply::getUpdatedBy, MangoContextHolder.userId())
+                .set(WorkflowBusinessApply::getUpdatedTime, now)
+                .set(WorkflowBusinessApply::getUpdatedAt, now));
+    }
+
+    private void updateStatus(WorkflowBusinessApply apply, WorkflowApplyStatus status, WorkflowApplyAction action,
+                              String comment, String taskId, String taskDefinitionKey) {
+        String fromStatus = apply.getApplyStatus();
+        if (status.name().equals(fromStatus)) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        applyMapper.update(null, new LambdaUpdateWrapper<WorkflowBusinessApply>()
+                .eq(WorkflowBusinessApply::getId, apply.getId())
+                .set(WorkflowBusinessApply::getApplyStatus, status.name())
+                .set(WorkflowBusinessApply::getUpdatedBy, MangoContextHolder.userId())
+                .set(WorkflowBusinessApply::getUpdatedTime, now)
+                .set(WorkflowBusinessApply::getUpdatedAt, now));
+        apply.setApplyStatus(status.name());
+        saveStatusLog(apply, fromStatus, status.name(), action, comment, taskId, taskDefinitionKey);
+    }
+
+    private void clearCurrentTasks(Long applyId) {
+        currentTaskMapper.delete(new LambdaQueryWrapper<WorkflowBusinessApplyCurrentTask>()
+                .eq(WorkflowBusinessApplyCurrentTask::getApplyId, applyId));
     }
 
     private void clearLatestFlag(String businessType, String businessKey) {
@@ -375,6 +526,10 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
         log.setProcessInstanceId(apply.getProcessInstanceId());
         log.setCreatedAt(LocalDateTime.now());
         statusLogMapper.insert(log);
+    }
+
+    private String join(Collection<String> values) {
+        return cleanStrings(values).isEmpty() ? null : String.join(",", cleanStrings(values));
     }
 
     private String resolveApplyCode(CreateWorkflowBusinessApplyCommand command, LocalDateTime now) {

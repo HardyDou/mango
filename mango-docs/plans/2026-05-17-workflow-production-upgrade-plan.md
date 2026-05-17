@@ -21,7 +21,7 @@
 | 优先级 | 任务 | 验收标准 | 状态 |
 |---|---|---|---|
 | P0 | Apply Center 后端基础模型与接口 | 新增申请、当前任务、状态流水模型；支持创建申请、分页查询、最新进度批量查询、申请历史查询 | 已完成 |
-| P0 | 流程启动/审批流转接入 Apply Center | 发起流程生成 apply 关系；通过/驳回/结束同步申请状态、当前节点、状态流水 | 未开始 |
+| P0 | 流程启动/审批流转接入 Apply Center | 发起流程生成 apply 关系；通过/驳回/结束同步申请状态、当前节点、状态流水 | 已完成 |
 | P0 | 前端业务列表接入 Apply Center | 业务列表通过批量进度接口显示审批状态、当前节点、处理人；详情展示历史申请与流程图 | 未开始 |
 | P0 | 渲染模式接入 | 申请/审批固定外壳，根据 `DYNAMIC_FORM` / `CUSTOM_PAGE` 渲染动态表单或业务自定义页面 | 未开始 |
 | P0 | 详情审批流程图按真实 tree 渲染状态 | 经过、当前、未经过、驳回节点用不同状态标识，支持分支/并发结构显示 | 未开始 |
@@ -44,4 +44,9 @@
   - `mvn -pl :mango-workflow-api,:mango-workflow-core,:mango-workflow-starter -am -DskipITs -DskipTests compile`
   - `git diff --check`
   - `rg "throw new IllegalArgumentException|Objects\\.requireNonNull|new IllegalStateException|requireText\\(" mango/mango-platform/mango-workflow -n`
-- 当前任务：P0 流程启动/审批流转接入 Apply Center。
+- 已完成任务：P0 流程启动/审批流转接入 Apply Center。
+- 已完成验证：
+  - `mvn -pl :mango-workflow-api,:mango-workflow-core,:mango-workflow-starter -am -DskipITs -DskipTests compile`
+  - `git diff --check`
+  - `rg "throw new IllegalArgumentException|Objects\\.requireNonNull|new IllegalStateException|requireText\\(" mango/mango-platform/mango-workflow -n`
+- 当前任务：P0 前端业务列表接入 Apply Center。

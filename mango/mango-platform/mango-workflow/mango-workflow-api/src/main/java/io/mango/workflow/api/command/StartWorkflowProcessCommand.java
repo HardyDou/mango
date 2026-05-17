@@ -22,6 +22,13 @@ public class StartWorkflowProcessCommand {
     @Size(max = 128, message = "业务主键最多128个字符")
     private String businessKey;
 
+    @Schema(description = "业务类型")
+    @Size(max = 128, message = "业务类型最多128个字符")
+    private String businessType;
+
+    @Schema(description = "业务申请ID")
+    private Long applyId;
+
     @Schema(description = "发起表单变量")
     private Map<String, Object> variables;
 

@@ -10,12 +10,15 @@ import io.mango.common.vo.PageResult;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.workflow.api.WorkflowBusinessProcessApi;
 import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.command.CreateWorkflowBusinessApplyCommand;
 import io.mango.workflow.api.command.StartWorkflowProcessCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
+import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowBusinessProcessVO;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import io.mango.workflow.core.entity.WorkflowDefinition;
@@ -25,6 +28,7 @@ import io.mango.workflow.core.event.WorkflowEventPublisher;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
+import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowProcessService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +64,9 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
     private static final String INITIATOR_NAME_VAR = "mangoInitiatorName";
     private static final String DEFINITION_ID_VAR = "mangoDefinitionId";
     private static final String DEFINITION_ADMIN_USERS_VAR = "mangoDefinitionAdminUsers";
+    private static final String BUSINESS_TYPE_VAR = "businessType";
+    private static final String BUSINESS_KEY_VAR = "businessKey";
+    private static final String APPLY_ID_VAR = "applyId";
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
     };
 
@@ -71,6 +78,7 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
     private final HistoryService historyService;
     private final ObjectMapper objectMapper;
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;
+    private final IWorkflowBusinessApplyService workflowBusinessApplyService;
     private final WorkflowEventPublisher workflowEventPublisher;
 
     @Override
@@ -89,6 +97,12 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         if (command.getVariables() != null) {
             variables.putAll(command.getVariables());
         }
+        if (StringUtils.hasText(command.getBusinessType())) {
+            variables.put(BUSINESS_TYPE_VAR, command.getBusinessType().trim());
+        }
+        if (command.getApplyId() != null) {
+            variables.put(APPLY_ID_VAR, String.valueOf(command.getApplyId()));
+        }
         if (command.getSelectedAssignees() != null && !command.getSelectedAssignees().isEmpty()) {
             variables.put("mangoSelectedAssignees", command.getSelectedAssignees());
         }
@@ -101,6 +115,11 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         String businessKey = StringUtils.hasText(command.getBusinessKey())
                 ? command.getBusinessKey().trim()
                 : definition.getDefinitionKey() + "-" + System.currentTimeMillis();
+        variables.put(BUSINESS_KEY_VAR, businessKey);
+        Long applyId = resolveApplyId(command, definition, businessKey, variables);
+        if (applyId != null) {
+            variables.put(APPLY_ID_VAR, String.valueOf(applyId));
+        }
         ProcessInstance instance = runtimeService.startProcessInstanceById(
                 definition.getProcessDefinitionId(),
                 businessKey,
@@ -108,6 +127,8 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         saveFormInstance(definition, instance, variables);
         saveStartRecord(instance.getProcessInstanceId(), variables);
         workflowEventPublisher.publishProcessStarted(definition, instance, variables);
+        workflowBusinessApplyService.markProcessStarted(applyId, definition.getId(), definition.getDefinitionKey(),
+                definition.getProcessDefinitionId(), definition.getDefinitionName(), instance.getProcessInstanceId());
         workflowTaskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
 
         WorkflowProcessInstanceVO vo = new WorkflowProcessInstanceVO();
@@ -169,6 +190,13 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         if (businessKeys == null || businessKeys.isEmpty()) {
             return List.of();
         }
+        Map<String, io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO> applyProgress =
+                workflowBusinessApplyService.latestProgress(null, businessKeys);
+        if (!applyProgress.isEmpty()) {
+            return applyProgress.values().stream()
+                    .map(this::fromApplyProgress)
+                    .toList();
+        }
         return businessKeys.stream()
                 .filter(StringUtils::hasText)
                 .map(String::trim)
@@ -176,6 +204,19 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
                 .map(this::latestByBusinessKey)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private WorkflowBusinessProcessVO fromApplyProgress(io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO progress) {
+        WorkflowBusinessProcessVO vo = new WorkflowBusinessProcessVO();
+        vo.setBusinessKey(progress.getBusinessKey());
+        vo.setProcessInstanceId(progress.getProcessInstanceId());
+        vo.setProcessName(progress.getProcessName());
+        vo.setCurrentTaskName(progress.getCurrentTaskNames());
+        vo.setCurrentTaskDefinitionKey(progress.getCurrentTaskDefinitionKeys());
+        vo.setStatus(progress.getApplyStatusName());
+        vo.setStartTime(progress.getCreatedAt());
+        vo.setEndTime(progress.getUpdatedAt());
+        return vo;
     }
 
     private WorkflowBusinessProcessVO latestByBusinessKey(String businessKey) {
@@ -202,6 +243,30 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         vo.setStartTime(process.getStartTime());
         vo.setEndTime(process.getEndTime());
         return vo;
+    }
+
+    private Long resolveApplyId(StartWorkflowProcessCommand command, WorkflowDefinition definition,
+                                String businessKey, Map<String, Object> variables) {
+        if (command.getApplyId() != null) {
+            return command.getApplyId();
+        }
+        if (!StringUtils.hasText(command.getBusinessType())) {
+            return null;
+        }
+        CreateWorkflowBusinessApplyCommand applyCommand = new CreateWorkflowBusinessApplyCommand();
+        applyCommand.setBusinessType(command.getBusinessType().trim());
+        applyCommand.setBusinessKey(businessKey);
+        applyCommand.setApplyTitle(definition.getDefinitionName());
+        applyCommand.setApplySummary(definition.getRemark());
+        applyCommand.setProcessDefinitionId(definition.getId());
+        applyCommand.setProcessDefinitionKey(definition.getDefinitionKey());
+        applyCommand.setRenderMode(WorkflowApplyRenderMode.DYNAMIC_FORM);
+        applyCommand.setFormKey(definition.getFormCode());
+        applyCommand.setFormVersion(definition.getPublishedVersionNo());
+        applyCommand.setFormJsonSnapshot(definition.getFormJson());
+        applyCommand.setVariables(variables);
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.create(applyCommand).getData();
+        return apply == null ? null : apply.getId();
     }
 
     private WorkflowProcessInstanceVO fromHistoricInstance(HistoricProcessInstance instance) {
