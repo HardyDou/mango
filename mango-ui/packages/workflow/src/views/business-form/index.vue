@@ -907,6 +907,10 @@ async function submitExpense(row: ExpenseExampleRow) {
       definitionId: reimbursementFlow.value.id,
       businessType: 'EXPENSE_REIMBURSEMENT',
       businessKey: row.code,
+      renderMode: 'CUSTOM_PAGE',
+      applyPageKey: 'workflow.expense.apply',
+      approvePageKey: 'workflow.expense.approve',
+      snapshotRef: `EXPENSE_REIMBURSEMENT:${applyId}`,
       variables: {
         businessType: 'EXPENSE_REIMBURSEMENT',
         businessKey: row.code,
@@ -958,6 +962,10 @@ async function submitSeal(row: SealExampleRow) {
       definitionId: sealFlow.value.id,
       businessType: 'CONTRACT_SEAL_APPROVAL',
       businessKey: row.code,
+      renderMode: 'CUSTOM_PAGE',
+      applyPageKey: 'workflow.contractSeal.apply',
+      approvePageKey: 'workflow.contractSeal.approve',
+      snapshotRef: `CONTRACT_SEAL_APPROVAL:${applyId}`,
       variables: {
         businessType: 'CONTRACT_SEAL_APPROVAL',
         businessKey: row.code,

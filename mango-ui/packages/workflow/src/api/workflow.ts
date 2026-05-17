@@ -183,6 +183,10 @@ export interface StartWorkflowProcessCommand {
   businessKey?: string;
   businessType?: string;
   applyId?: WorkflowId;
+  renderMode?: WorkflowApplyRenderMode;
+  applyPageKey?: string;
+  approvePageKey?: string;
+  snapshotRef?: string;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
 }

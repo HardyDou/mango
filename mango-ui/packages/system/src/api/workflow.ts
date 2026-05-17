@@ -178,6 +178,12 @@ export interface WorkflowProcessInstance {
 export interface StartWorkflowProcessCommand {
   definitionId: WorkflowId;
   businessKey?: string;
+  businessType?: string;
+  applyId?: WorkflowId;
+  renderMode?: 'DYNAMIC_FORM' | 'CUSTOM_PAGE';
+  applyPageKey?: string;
+  approvePageKey?: string;
+  snapshotRef?: string;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
 }

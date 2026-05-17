@@ -260,10 +260,15 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         applyCommand.setApplySummary(definition.getRemark());
         applyCommand.setProcessDefinitionId(definition.getId());
         applyCommand.setProcessDefinitionKey(definition.getDefinitionKey());
-        applyCommand.setRenderMode(WorkflowApplyRenderMode.DYNAMIC_FORM);
+        applyCommand.setRenderMode(command.getRenderMode() == null
+                ? WorkflowApplyRenderMode.DYNAMIC_FORM
+                : command.getRenderMode());
+        applyCommand.setApplyPageKey(trim(command.getApplyPageKey()));
+        applyCommand.setApprovePageKey(trim(command.getApprovePageKey()));
         applyCommand.setFormKey(definition.getFormCode());
         applyCommand.setFormVersion(definition.getPublishedVersionNo());
         applyCommand.setFormJsonSnapshot(definition.getFormJson());
+        applyCommand.setSnapshotRef(trim(command.getSnapshotRef()));
         applyCommand.setVariables(variables);
         WorkflowBusinessApplyVO apply = workflowBusinessApplyService.create(applyCommand).getData();
         return apply == null ? null : apply.getId();
@@ -389,6 +394,10 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
             }
         }
         return new ArrayList<>(set);
+    }
+
+    private String trim(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     private String currentUser() {

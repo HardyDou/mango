@@ -142,7 +142,7 @@ GET  /workflow/processes/history?businessKey=...
 
 ## 审批结束如何通知业务
 
-Workflow 通过 `mango-infra-event` 发布标准领域事件。默认是进程内同步分发；投产需要可靠投递时，开启 `mango-infra-kv` 的 Outbox capability，让 `IDomainEventPublisher` 先写入 Outbox，再由 `IOutboxDispatcher` 投递到事件总线。
+Workflow 通过 `mango-infra-kv` 的 Outbox capability 发布标准领域事件。默认可以使用进程内实现；投产需要可靠投递时，切换为 redis 或 jdbc 承载，让事件先写入 Outbox，再由 dispatcher 投递到应用内订阅器或业务回调处理器。这里不引入 MQ。
 
 ```yaml
 mango:
@@ -220,7 +220,7 @@ mango-ui/packages/workflow/src/components/business/ExpenseApprovalDetail.vue
 - 节点参与人、发起人自选审批人、空审批人策略。
 - 任务审批记录和流程变量快照。
 - `WorkflowTaskVO.taskDefinitionKey` 后端返回，前端可精确匹配当前节点业务区块权限。
-- `mango-infra-event` 内存事件总线，以及 workflow 标准事件发布。
+- Workflow 标准事件发布。
 - `mango-infra-kv` Outbox 可靠投递能力，可用 memory / redis / jdbc 承载，不引入 MQ。
 
 待补齐：
