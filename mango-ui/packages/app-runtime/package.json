@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./vue-micro": "./src/vue-micro.ts"
+  },
   "dependencies": {
     "vue-router": "^4.1.6",
     "wujie": "^1.0.29"

@@ -1,27 +1,21 @@
-import { createApp, type App as VueApp } from 'vue';
+import type { App as VueApp } from 'vue';
 import { createPinia } from 'pinia';
-import { createMemoryHistory, createRouter } from 'vue-router';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { registerUnauthorizedHandler } from '@mango/common';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
-import type { MangoAppRuntime } from '@mango/app-runtime';
+import { createMangoWujieVueApp } from '@mango/app-runtime/vue-micro';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
 import StandaloneRoot from './StandaloneRoot.vue';
 import RuntimeRoot from './App.vue';
 import router from './router';
 
-let app: VueApp | undefined;
-
 declare global {
   interface Window {
-    __POWERED_BY_WUJIE__?: boolean;
-    __WUJIE_MOUNT?: () => void;
-    __WUJIE_UNMOUNT?: () => void;
     $wujie?: {
       props?: {
-        mangoRuntime?: MangoAppRuntime;
+        mangoRuntime?: import('@mango/app-runtime').MangoAppRuntime;
       };
     };
   }
@@ -42,48 +36,19 @@ function installCommon(appInstance: VueApp) {
   }[key] || key);
 }
 
-function mountStandalone() {
-  app = createApp(StandaloneRoot);
-  installCommon(app);
-  app.use(router);
-  registerUnauthorizedHandler(async () => {
-    await router.push('/login');
-  });
-  app.mount('#app');
-}
-
-function mountWujie() {
-  const runtime = window.$wujie?.props?.mangoRuntime;
-  app = createApp(RuntimeRoot);
-  installCommon(app);
-  const runtimeRouter = createRouter({
-    history: createMemoryHistory(),
-    routes: [
-      {
-        path: '/:pathMatch(.*)*',
-        component: { render: () => null },
-      },
-    ],
-  });
-  app.use(runtimeRouter);
-  if (runtime) {
-    app.provide('mangoRuntime', runtime);
-    void runtimeRouter.push(runtime.menu?.path || '/');
-  }
-  registerUnauthorizedHandler(async () => {
-    (window.$wujie?.props?.mangoRuntime?.eventBus as any)?.emit?.('unauthorized');
-  });
-  app.mount('#app');
-}
-
-function unmountWujie() {
-  app?.unmount();
-  app = undefined;
-}
-
-if (window.__POWERED_BY_WUJIE__) {
-  window.__WUJIE_MOUNT = mountWujie;
-  window.__WUJIE_UNMOUNT = unmountWujie;
-} else {
-  mountStandalone();
-}
+createMangoWujieVueApp({
+  standaloneRoot: StandaloneRoot,
+  standaloneRouter: router,
+  runtimeRoot: RuntimeRoot,
+  install: installCommon,
+  onStandaloneReady() {
+    registerUnauthorizedHandler(async () => {
+      await router.push('/login');
+    });
+  },
+  onMicroReady() {
+    registerUnauthorizedHandler(async () => {
+      (window.$wujie?.props?.mangoRuntime?.eventBus as any)?.emit?.('unauthorized');
+    });
+  },
+});
