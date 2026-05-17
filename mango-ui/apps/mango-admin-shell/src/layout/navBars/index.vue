@@ -84,6 +84,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { iconMap } from '@/config/iconConfig';
+import { resolveFirstMenu } from '@/runtime/menuHost';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
@@ -115,11 +116,7 @@ const resolveFirstRoute = (item: any): string => {
   if (item.redirect && typeof item.redirect === 'string') {
     return item.redirect;
   }
-  const firstChild = item.children?.[0];
-  if (firstChild) {
-    return resolveFirstRoute(firstChild);
-  }
-  return item.path;
+  return resolveFirstMenu(item)?.path || item.path;
 };
 
 const toggleCollapse = () => {

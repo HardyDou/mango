@@ -125,8 +125,18 @@ const wujieDestroyers = new Map<string, Function>();
 type MangoMicroAppDebugEvent = {
   appCode: string;
   entryUrl?: string;
-  phase: 'load' | 'mount' | 'unmount';
+  phase:
+    | 'load'
+    | 'before-load'
+    | 'before-mount'
+    | 'mount'
+    | 'before-unmount'
+    | 'unmount'
+    | 'after-unmount'
+    | 'load-error'
+    | 'timeout';
   at: string;
+  detail?: string;
 };
 
 export function registerLocalApp(app: MangoFrontendApp) {
@@ -200,7 +210,7 @@ export const microAppAdapter: MangoAppAdapter = {
     container.innerHTML = '';
     recordMicroAppDebug(config, 'load');
     try {
-      const destroy = await startApp({
+      const destroy = await withTimeout(startApp({
         name: config.appCode,
         url: config.entryUrl,
         el: container,
@@ -217,14 +227,21 @@ export const microAppAdapter: MangoAppAdapter = {
         degradeAttrs: {
           'data-mango-app': config.appCode,
         },
+        beforeLoad: () => recordMicroAppDebug(config, 'before-load'),
+        beforeMount: () => recordMicroAppDebug(config, 'before-mount'),
+        afterMount: () => recordMicroAppDebug(config, 'mount'),
+        beforeUnmount: () => recordMicroAppDebug(config, 'before-unmount'),
+        afterUnmount: () => recordMicroAppDebug(config, 'after-unmount'),
         loadError(url, error) {
+          recordMicroAppDebug(config, 'load-error', url);
           throw new MangoRuntimeError(`Failed to load Mango micro app: ${config.appCode} (${url})`, config, { cause: error });
         },
-      });
+      }), config.timeoutMs || 15000, config);
       if (typeof destroy === 'function') {
         wujieDestroyers.set(config.appCode, destroy);
       }
     } catch (error) {
+      destroyApp(config.appCode);
       throw error instanceof MangoRuntimeError
         ? error
         : new MangoRuntimeError(`Failed to mount Mango micro app: ${config.appCode}`, config, { cause: error });
@@ -232,6 +249,7 @@ export const microAppAdapter: MangoAppAdapter = {
     recordMicroAppDebug(config, 'mount');
   },
   async unmount(config) {
+    recordMicroAppDebug(config, 'before-unmount');
     const destroy = wujieDestroyers.get(config.appCode);
     if (destroy) {
       destroy();
@@ -293,7 +311,22 @@ function normalizeRuntimeConfig(config: MangoRuntimeConfig): MangoRuntimeConfig 
   };
 }
 
-function recordMicroAppDebug(config: MangoRuntimeAppConfig, phase: MangoMicroAppDebugEvent['phase']) {
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, config: MangoRuntimeAppConfig): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      recordMicroAppDebug(config, 'timeout', `${timeoutMs}ms`);
+      reject(new MangoRuntimeError(`Mango micro app load timeout: ${config.appCode} (${timeoutMs}ms)`, config));
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
+
+function recordMicroAppDebug(config: MangoRuntimeAppConfig, phase: MangoMicroAppDebugEvent['phase'], detail?: string) {
   if (!import.meta.env.DEV || typeof window === 'undefined') {
     return;
   }
@@ -302,6 +335,7 @@ function recordMicroAppDebug(config: MangoRuntimeAppConfig, phase: MangoMicroApp
     entryUrl: config.entryUrl,
     phase,
     at: new Date().toISOString(),
+    detail,
   };
   const runtimeWindow = window as any;
   const events = Array.isArray(runtimeWindow.__MANGO_MICRO_APP_EVENTS__)

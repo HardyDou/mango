@@ -6,6 +6,7 @@ export type MangoPageRegistry = {
 };
 
 const pageLoaders = new Map<string, MangoPageLoader>();
+const moduleByPage = new Map<string, string>();
 
 export function normalizeComponentPath(componentPath?: string) {
   return (componentPath || '')
@@ -18,12 +19,16 @@ export function normalizeComponentPath(componentPath?: string) {
 
 export function registerModulePages(registry: MangoPageRegistry) {
   Object.entries(registry.pages).forEach(([component, loader]) => {
-    pageLoaders.set(`${registry.moduleCode}:${normalizeComponentPath(component)}`, loader);
+    const normalized = normalizeComponentPath(component);
+    pageLoaders.set(`${registry.moduleCode}:${normalized}`, loader);
+    moduleByPage.set(normalized, registry.moduleCode);
   });
 }
 
 export function registerPage(moduleCode: string, component: string, loader: MangoPageLoader) {
-  pageLoaders.set(`${moduleCode}:${normalizeComponentPath(component)}`, loader);
+  const normalized = normalizeComponentPath(component);
+  pageLoaders.set(`${moduleCode}:${normalized}`, loader);
+  moduleByPage.set(normalized, moduleCode);
 }
 
 export function getPageLoader(moduleCode?: string, component?: string) {
@@ -37,6 +42,24 @@ export function getPageLoader(moduleCode?: string, component?: string) {
     }
   }
   return undefined;
+}
+
+export function resolvePageModuleCode(component?: string, path?: string) {
+  const normalizedComponent = normalizeComponentPath(component);
+  const byComponent = moduleByPage.get(normalizedComponent);
+  if (byComponent) {
+    return byComponent;
+  }
+  const normalizedRoute = normalizeRoutePath(path);
+  const routeAsIndex = normalizedRoute ? `${normalizedRoute}/index` : '';
+  return moduleByPage.get(routeAsIndex) || moduleByPage.get(normalizedRoute);
+}
+
+function normalizeRoutePath(path?: string) {
+  return (path || '')
+    .replace(/^#/, '')
+    .replace(/^\//, '')
+    .replace(/\/$/, '');
 }
 
 export function registerDefaultAdminPages() {

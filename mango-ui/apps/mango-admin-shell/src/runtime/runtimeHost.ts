@@ -89,14 +89,14 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       try {
         await mountMicroMenu(sourceMenu, moduleConfig);
       } catch (error) {
-        mountRuntimeError(sourceMenu, error);
+        mountRuntimeError(sourceMenu, error, moduleConfig);
       }
       return;
     }
     try {
       await mountLocalMenu(sourceMenu);
     } catch (error) {
-      mountRuntimeError(sourceMenu, error);
+      mountRuntimeError(sourceMenu, error, moduleConfig);
     }
   }
 
@@ -198,17 +198,21 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     `;
   }
 
-  function mountRuntimeError(menu: ShellMenu, error: unknown) {
+  function mountRuntimeError(menu: ShellMenu, error: unknown, moduleConfig?: MangoModuleRuntimeConfig) {
     const container = containerRef.value;
     if (!container) {
       return;
     }
     const errorMessage = error instanceof Error ? error.message : '页面加载失败';
+    const entry = moduleConfig?.entry || activeRuntimeApp.value?.entryUrl || '';
+    const runtimeCode = moduleConfig?.runtimeCode || activeRuntimeApp.value?.appCode || menu.moduleCode || '';
     container.innerHTML = `
       <div class="micro-runtime-empty">
         <div>
           <h3>页面加载失败</h3>
           <p>${escapeHtml(menu.menuName || menu.path || '当前页面')}：${escapeHtml(errorMessage)}</p>
+          ${runtimeCode ? `<p class="micro-runtime-detail">运行单元：${escapeHtml(runtimeCode)}</p>` : ''}
+          ${entry ? `<p class="micro-runtime-detail">入口地址：${escapeHtml(entry)}</p>` : ''}
           <button class="micro-runtime-retry" type="button">重试</button>
         </div>
       </div>

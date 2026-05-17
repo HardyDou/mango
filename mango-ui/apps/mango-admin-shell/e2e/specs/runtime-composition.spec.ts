@@ -43,6 +43,26 @@ const monolithConfig = {
   },
 };
 
+const brokenHybridConfig = {
+  profile: 'hybrid',
+  modules: {
+    'mango-authorization': {
+      mode: 'micro',
+      runtimeCode: 'mango-admin-rbac-app',
+      entry: 'http://b.mango.io:5999/',
+      timeoutMs: 1000,
+    },
+    'mango-system': {
+      mode: 'local',
+      runtimeCode: 'mango-admin-system-local',
+    },
+    'mango-workflow': {
+      mode: 'local',
+      runtimeCode: 'mango-admin-workflow-local',
+    },
+  },
+};
+
 test.describe.serial('Shell runtime composition', () => {
   test.beforeAll(() => {
     originalRuntimeConfig = readFileSync(runtimeConfigPath, 'utf-8');
@@ -101,6 +121,22 @@ test.describe.serial('Shell runtime composition', () => {
 
     const remoteResources = await remoteRuntimeResources(page);
     expect(remoteResources).toEqual([]);
+  });
+
+  test('broken remote app shows an actionable runtime error', async ({ page }) => {
+    writeRuntimeConfig(brokenHybridConfig);
+    await login(page);
+
+    await expectRuntime(page, {
+      moduleCode: 'mango-authorization',
+      runtimeCode: 'mango-admin-rbac-app',
+      pageType: 'MICRO_ROUTE',
+      entryIncludes: 'b.mango.io:5999',
+    });
+    await expect(page.getByText('页面加载失败')).toBeVisible();
+    await expect(page.getByText(/运行单元：mango-admin-rbac-app/)).toBeVisible();
+    await expect(page.getByText(/入口地址：http:\/\/b\.mango\.io:5999\//)).toBeVisible();
+    await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
   });
 });
 

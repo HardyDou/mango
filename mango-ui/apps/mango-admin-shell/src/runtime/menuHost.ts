@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { get } from '@mango/common';
 import type { MangoMenuPageType } from '@mango/app-runtime';
+import { resolvePageModuleCode } from '@mango/admin-pages';
 import type { RouteRecordRaw } from 'vue-router';
 
 export enum MenuTypeEnum {
@@ -116,6 +117,11 @@ function filterMenuForNav(menus: ShellMenu[]): ShellMenu[] {
 }
 
 function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
+  const moduleCode = menu.moduleCode || resolvePageModuleCode(menu.component, menu.path);
+  const sourceMenu = {
+    ...menu,
+    moduleCode,
+  };
   return {
     path: menu.path,
     name: menu.menuCode || menu.menuName,
@@ -128,7 +134,7 @@ function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
       keepAlive: menu.keepAlive === 1,
       embedded: menu.embedded === 1,
     },
-    sourceMenu: menu,
+    sourceMenu,
     children: menu.children?.map(toShellRouteMenu),
   };
 }
@@ -137,10 +143,27 @@ export function resolveFirstMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefi
   if (!menu) {
     return undefined;
   }
-  if (menu.children && menu.children.length > 0) {
-    return resolveFirstMenu(menu.children[0]);
+  if (isRunnableMenu(menu)) {
+    return menu;
   }
-  return menu;
+  for (const child of menu.children || []) {
+    const first = resolveFirstMenu(child);
+    if (first) {
+      return first;
+    }
+  }
+  return undefined;
+}
+
+export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
+  const source = menu?.sourceMenu;
+  if (!source || source.menuType === MenuTypeEnum.BUTTON || source.visible === 0) {
+    return false;
+  }
+  if (source.pageType === 'IFRAME' || source.pageType === 'EXTERNAL_LINK') {
+    return Boolean(source.externalUrl);
+  }
+  return source.menuType === MenuTypeEnum.MENU && Boolean(source.component || source.path);
 }
 
 function findMenuByPath(menus: ShellRouteMenu[], path: string): ShellRouteMenu | undefined {
