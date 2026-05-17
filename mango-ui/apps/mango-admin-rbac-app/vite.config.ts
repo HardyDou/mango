@@ -2,6 +2,7 @@ import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import { resolve } from 'path';
 import { createAllowedOrigins } from './vite.cors';
+import { mangoMicroManualChunks } from '../../build-config/microChunks';
 
 export default defineConfig((mode: ConfigEnv) => {
   const env = loadEnv(mode.mode, process.cwd());
@@ -40,6 +41,11 @@ export default defineConfig((mode: ConfigEnv) => {
     build: {
       outDir: 'dist',
       target: 'es2020',
+      rollupOptions: {
+        output: {
+          manualChunks: mangoMicroManualChunks,
+        },
+      },
     },
   };
 });
