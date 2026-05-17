@@ -64,6 +64,7 @@
               type="primary"
               size="large"
               :loading="loading"
+              :disabled="loading"
               class="login-btn"
               @click="handleLogin"
             >
@@ -112,6 +113,8 @@ const loading = ref(false);
 const tenantLoading = ref(false);
 const tenantOptions = ref<LoginTenantOption[]>([]);
 const accountTenantResolvedKey = ref('');
+const accountTenantPendingKey = ref('');
+let accountTenantPendingPromise: Promise<boolean> | undefined;
 
 const selectedTenant = computed(() => {
   return tenantOptions.value.find((tenant) => tenant.tenantId === form.tenantId);
@@ -155,9 +158,18 @@ const refreshAccountTenants = async (strict = false) => {
     return !strict;
   }
 
+  const key = accountTenantKey();
+  if (accountTenantResolvedKey.value === key) {
+    return true;
+  }
+  if (accountTenantPendingPromise && accountTenantPendingKey.value === key) {
+    return accountTenantPendingPromise;
+  }
+
   const selectedTenantId = form.tenantId;
   tenantLoading.value = true;
-  try {
+  accountTenantPendingKey.value = key;
+  accountTenantPendingPromise = (async () => {
     const options = await getAccountLoginTenantOptions({
       username: form.username.trim(),
       password: form.password,
@@ -173,11 +185,17 @@ const refreshAccountTenants = async (strict = false) => {
       return false;
     }
     return true;
+  })();
+
+  try {
+    return await accountTenantPendingPromise;
   } catch (error) {
     console.error('查询账号可登录机构失败:', error);
     return false;
   } finally {
     tenantLoading.value = false;
+    accountTenantPendingKey.value = '';
+    accountTenantPendingPromise = undefined;
   }
 };
 
@@ -187,10 +205,11 @@ onMounted(() => {
 
 // 登录处理
 const handleLogin = async () => {
-  if (!loginFormRef.value) return;
+  if (!loginFormRef.value || loading.value) return;
 
   await loginFormRef.value.validate(async (valid) => {
     if (!valid) return;
+    if (loading.value) return;
 
     loading.value = true;
     const loadingStartedAt = Date.now();
@@ -198,7 +217,7 @@ const handleLogin = async () => {
       const accountTenantsReady = accountTenantResolvedKey.value === accountTenantKey()
         || await refreshAccountTenants(true);
       if (!accountTenantsReady) {
-        return;
+        throw new Error('账号机构校验失败');
       }
 
       // 构造登录数据

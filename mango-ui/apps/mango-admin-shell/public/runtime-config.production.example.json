@@ -1,0 +1,23 @@
+{
+  "profile": "hybrid",
+  "modules": {
+    "mango-authorization": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-rbac-app",
+      "entry": "https://rbac.mango.io/mango-admin-rbac-app.js",
+      "style": "https://rbac.mango.io/style.css",
+      "timeoutMs": 15000
+    },
+    "mango-system": {
+      "mode": "local",
+      "runtimeCode": "mango-admin-system-local"
+    },
+    "mango-workflow": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-workflow-app",
+      "entry": "https://workflow.mango.io/mango-admin-workflow-app.js",
+      "style": "https://workflow.mango.io/style.css",
+      "timeoutMs": 15000
+    }
+  }
+}

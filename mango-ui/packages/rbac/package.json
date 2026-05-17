@@ -8,6 +8,7 @@
     "vue-router": "^4.1.6",
     "element-plus": "2.5.5",
     "@element-plus/icons-vue": "^2.0.10",
+    "@mango/app-runtime": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/api-schema": "workspace:*"
   }

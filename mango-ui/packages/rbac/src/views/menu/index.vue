@@ -50,6 +50,20 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="模块">
+          <el-select
+            v-model="query.moduleCode"
+            placeholder="请选择"
+            clearable
+          >
+            <el-option
+              v-for="item in moduleOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态">
           <el-select
             v-model="query.status"
@@ -107,10 +121,33 @@
           label="路由路径"
         />
         <el-table-column
-          prop="component"
-          label="组件路径"
+          prop="moduleCode"
+          label="来源模块"
+          min-width="150"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            {{ moduleLabel(row.moduleCode) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="pageType"
+          label="页面类型"
+          width="110"
+        >
+          <template #default="{ row }">
+            {{ pageTypeLabel(row.pageType, row.menuType) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="运行入口"
+          min-width="180"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">
+            {{ row.externalUrl || row.component || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column
           prop="menuType"
           label="类型"
@@ -272,6 +309,22 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item
+          label="来源模块"
+          prop="moduleCode"
+        >
+          <el-select
+            v-model="form.moduleCode"
+            placeholder="请选择能力模块"
+          >
+            <el-option
+              v-for="item in moduleOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="父级菜单">
           <el-tree-select
             v-model="form.parentId"
@@ -324,12 +377,36 @@
           />
         </el-form-item>
         <el-form-item
+          label="页面类型"
+          prop="pageType"
+        >
+          <el-select v-model="form.pageType">
+            <el-option
+              v-for="item in pageTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          v-if="form.pageType === 'LOCAL_ROUTE'"
           label="组件路径"
           prop="component"
         >
           <el-input
             v-model="form.component"
             placeholder="前端组件路径，如：/views/system/user/index.vue"
+          />
+        </el-form-item>
+        <el-form-item
+          v-if="form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK'"
+          label="外部地址"
+          prop="externalUrl"
+        >
+          <el-input
+            v-model="form.externalUrl"
+            placeholder="iframe 或外链 URL"
           />
         </el-form-item>
         <el-form-item label="图标">
@@ -418,6 +495,20 @@ import { menuApi, type SysMenuVO } from '../../api/menu';
 
 const { options: menuTypeOptions } = useDict('authorization_menu_type');
 const { options: statusOptions } = useDict('sys_normal_disable');
+
+const pageTypeOptions = [
+  { label: '本地页面', value: 'LOCAL_ROUTE' },
+  { label: '微应用页面', value: 'MICRO_ROUTE' },
+  { label: 'Iframe', value: 'IFRAME' },
+  { label: '外链', value: 'EXTERNAL_LINK' },
+  { label: '按钮', value: 'BUTTON' },
+];
+
+const moduleOptions = [
+  { label: '授权权限模块', value: 'mango-authorization' },
+  { label: '系统基础模块', value: 'mango-system' },
+  { label: '协同流程模块', value: 'mango-workflow' },
+];
 
 function getMenuTypeTagType(type?: number) {
   if (type === 2) return 'success';
@@ -515,6 +606,7 @@ const query = reactive({
   keyword: '',
   menuType: undefined as number | undefined,
   status: undefined as number | undefined,
+  moduleCode: undefined as string | undefined,
   groupCode: 'internal-admin',
 });
 
@@ -522,12 +614,15 @@ const dialogVisible = ref(false);
 const formRef = ref<FormInstance>();
 const form = reactive<SysMenuVO & { groupCode?: string }>({
   menuId: undefined,
+  moduleCode: 'mango-system',
   parentId: 0,
   menuType: 2,
   menuName: '',
   menuCode: '',
   path: '',
+  pageType: 'LOCAL_ROUTE',
   component: '',
+  externalUrl: '',
   icon: '',
   sort: 0,
   status: 1,
@@ -536,12 +631,16 @@ const form = reactive<SysMenuVO & { groupCode?: string }>({
   groupCode: 'internal-admin',
 });
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
   menuCode: [{ required: true, message: '请输入菜单编码', trigger: 'blur' }],
-  path: [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
+  path: form.menuType === 3 ? [] : [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
+  pageType: form.menuType === 3 ? [] : [{ required: true, message: '请选择页面类型', trigger: 'change' }],
+  externalUrl: form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK'
+    ? [{ required: true, message: '请输入访问地址', trigger: 'blur' }]
+    : [],
   menuType: [{ required: true, message: '请选择菜单类型', trigger: 'change' }],
-};
+}));
 
 const menuTree = computed(() => {
   return buildTree(tableData.value);
@@ -587,6 +686,7 @@ async function loadData() {
       menuName: query.keyword || undefined,
       type: query.menuType,
       status: query.status,
+      moduleCode: query.moduleCode,
     });
     tableData.value = data || [];
   } catch (error) {
@@ -609,17 +709,21 @@ function handleReset() {
   query.keyword = '';
   query.menuType = undefined;
   query.status = undefined;
+  query.moduleCode = undefined;
   loadData();
 }
 
 function handleAdd() {
   form.menuId = undefined;
+  form.moduleCode = query.moduleCode || 'mango-system';
   form.parentId = 0;
   form.menuType = 2;
   form.menuName = '';
   form.menuCode = '';
   form.path = '';
+  form.pageType = 'LOCAL_ROUTE';
   form.component = '';
+  form.externalUrl = '';
   form.icon = '';
   form.sort = 0;
   form.status = 1;
@@ -631,12 +735,15 @@ function handleAdd() {
 
 function handleAddChild(row: SysMenuVO) {
   form.menuId = undefined;
+  form.moduleCode = row.moduleCode || query.moduleCode || 'mango-system';
   form.parentId = row.menuId;
   form.menuType = row.menuType === 1 ? 2 : 3;
   form.menuName = '';
   form.menuCode = '';
   form.path = '';
+  form.pageType = row.menuType === 2 ? 'LOCAL_ROUTE' : 'BUTTON';
   form.component = '';
+  form.externalUrl = '';
   form.icon = '';
   form.sort = 0;
   form.status = 1;
@@ -649,12 +756,15 @@ function handleAddChild(row: SysMenuVO) {
 function handleEdit(row: SysMenuVO) {
   Object.assign(form, {
     menuId: row.menuId,
+    moduleCode: row.moduleCode || 'mango-system',
     parentId: row.parentId,
     menuType: row.menuType,
     menuName: row.menuName,
     menuCode: row.menuCode,
     path: row.path,
+    pageType: row.pageType || inferPageType(row),
     component: row.component,
+    externalUrl: row.externalUrl,
     icon: row.icon,
     sort: row.sort,
     status: row.status,
@@ -665,6 +775,22 @@ function handleEdit(row: SysMenuVO) {
   dialogVisible.value = true;
 }
 
+function inferPageType(row: Partial<SysMenuVO>) {
+  if (row.menuType === 3) return 'BUTTON';
+  if (row.externalUrl && row.embedded === 1) return 'IFRAME';
+  if (row.externalUrl) return 'EXTERNAL_LINK';
+  return 'LOCAL_ROUTE';
+}
+
+function pageTypeLabel(pageType?: string, menuType?: number) {
+  const value = pageType || inferPageType({ menuType });
+  return pageTypeOptions.find((item) => item.value === value)?.label || value || '-';
+}
+
+function moduleLabel(moduleCode?: string) {
+  return moduleOptions.find((item) => item.value === moduleCode)?.label || moduleCode || '-';
+}
+
 async function handleSubmit() {
   if (!formRef.value) return;
   try {
@@ -672,6 +798,11 @@ async function handleSubmit() {
     const payload = {
       ...form,
       appCode: form.groupCode || activeGroup.value,
+      moduleCode: form.moduleCode || 'mango-system',
+      pageType: form.menuType === 3 ? 'BUTTON' : form.pageType,
+      embedded: form.menuType !== 3 && form.pageType === 'IFRAME' ? 1 : 0,
+      component: form.pageType === 'LOCAL_ROUTE' ? form.component : '',
+      externalUrl: form.pageType === 'IFRAME' || form.pageType === 'EXTERNAL_LINK' ? form.externalUrl : '',
     };
     if (form.menuId) {
       await menuApi.updateMenu(payload);

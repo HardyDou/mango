@@ -1,0 +1,13 @@
+{
+  "name": "@mango/admin-pages",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "@mango/common": "workspace:*",
+    "@mango/rbac": "workspace:*",
+    "@mango/system": "workspace:*",
+    "@mango/workflow": "workspace:*",
+    "vue": "3.5.13"
+  }
+}

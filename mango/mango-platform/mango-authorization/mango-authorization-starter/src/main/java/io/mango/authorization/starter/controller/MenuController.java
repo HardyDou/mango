@@ -43,6 +43,7 @@ public class MenuController implements MenuApi {
     public R<List<MenuVO>> getMenus(@ParameterObject MenuTreeQuery query) {
         List<MenuVO> menus = menuService.listMenus(
                 query.getAppCode(),
+                query.getModuleCode(),
                 query.getType(),
                 query.getParentId(),
                 query.getMenuName(),
@@ -174,11 +175,14 @@ public class MenuController implements MenuApi {
         MenuVO po = new MenuVO();
         po.setMenuId(entity.getMenuId());
         po.setAppCode(entity.getAppCode());
+        po.setModuleCode(entity.getModuleCode());
         po.setParentId(entity.getParentId());
         po.setMenuType(entity.getMenuType());
         po.setMenuName(entity.getMenuName());
         po.setMenuCode(entity.getMenuCode());
         po.setPath(entity.getPath());
+        po.setPageType(entity.getPageType());
+        po.setExternalUrl(entity.getExternalUrl());
         po.setIcon(entity.getIcon());
         po.setSort(entity.getSort());
         po.setStatus(entity.getStatus());
@@ -206,11 +210,14 @@ public class MenuController implements MenuApi {
         io.mango.authorization.core.entity.Menu entity = new io.mango.authorization.core.entity.Menu();
         entity.setMenuId(po.getMenuId());
         entity.setAppCode(po.getAppCode());
+        entity.setModuleCode(po.getModuleCode());
         entity.setParentId(po.getParentId());
         entity.setMenuType(po.getMenuType());
         entity.setMenuName(po.getMenuName());
         entity.setMenuCode(po.getMenuCode());
         entity.setPath(po.getPath());
+        entity.setPageType(po.getPageType());
+        entity.setExternalUrl(po.getExternalUrl());
         entity.setIcon(po.getIcon());
         entity.setSort(po.getSort());
         entity.setStatus(po.getStatus());

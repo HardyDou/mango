@@ -43,7 +43,9 @@ export interface SysMenuVO {
   menuName: string;
   menuCode: string;
   path: string;
+  pageType?: 'LOCAL_ROUTE' | 'MICRO_ROUTE' | 'IFRAME' | 'EXTERNAL_LINK' | 'BUTTON';
   component?: string;
+  externalUrl?: string;
   icon?: string;
   sort: number;
   status: number;

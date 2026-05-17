@@ -36,16 +36,13 @@ export const Session = {
     if (token) {
       return token;
     }
+    const cookieToken = readCookie('MANGO_TOKEN');
+    if (cookieToken) {
+      return cookieToken;
+    }
     // Fallback: try reading from httpOnly Cookie (set by backend)
     // Note: httpOnly Cookies can't be read by JS, so this fallback won't work for them
     // But it works for non-httpOnly cookies if any exist
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'MANGO_TOKEN') {
-        return value;
-      }
-    }
     return null;
   },
 
@@ -53,6 +50,7 @@ export const Session = {
     // Also store in sessionStorage for frontend auth checks (httpOnly Cookie can't be read by JS)
     // The httpOnly Cookie is for backend authentication
     sessionStorage.setItem('MANGO_TOKEN', token);
+    document.cookie = `MANGO_TOKEN=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
   },
 
   clearToken(): void {
@@ -66,6 +64,18 @@ export const Session = {
     this.clear();
   },
 };
+
+function readCookie(name: string): string | null {
+  const cookies = document.cookie ? document.cookie.split(';') : [];
+  for (const cookie of cookies) {
+    const trimmed = cookie.trim();
+    if (!trimmed.startsWith(`${name}=`)) {
+      continue;
+    }
+    return decodeURIComponent(trimmed.slice(name.length + 1));
+  }
+  return null;
+}
 
 /**
  * Local Storage 封装

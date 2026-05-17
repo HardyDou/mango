@@ -7,6 +7,7 @@ import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
+import io.mango.authorization.core.service.ITenantAppBindingService;
 import io.mango.system.api.tenant.TenantDependencyChecker;
 import io.mango.system.api.tenant.TenantProvisionContext;
 import io.mango.system.api.tenant.TenantProvisioner;
@@ -42,9 +43,11 @@ public class AuthorizationTenantProvisioner implements TenantProvisioner, Tenant
     private final RoleMapper roleMapper;
     private final MenuMapper menuMapper;
     private final RoleMenuMapper roleMenuMapper;
+    private final ITenantAppBindingService tenantAppBindingService;
 
     @Override
     public void provision(TenantProvisionContext context) {
+        tenantAppBindingService.ensureEnabled(context.tenantId(), DEFAULT_APP_CODE);
         Role role = ensureAdminRole(context);
         grantTenantAdminDefaultMenus(context.tenantId(), role.getRoleId());
     }

@@ -20,6 +20,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: workspace:*
+        version: link:../../packages/admin-pages
       '@mango/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -214,11 +217,176 @@ importers:
         specifier: ^9.1.0
         version: 9.4.3(eslint@8.57.1)
 
+  apps/mango-admin-rbac-app:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: workspace:*
+        version: link:../../packages/admin-pages
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
+      '@mango/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: ^2.0.33
+        version: 2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
+  apps/mango-admin-shell:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: workspace:*
+        version: link:../../packages/admin-pages
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
+      '@mango/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
+      '@mango/system':
+        specifier: workspace:*
+        version: link:../../packages/system
+      '@mango/workflow':
+        specifier: workspace:*
+        version: link:../../packages/workflow
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: 2.0.32
+        version: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.59.1
+        version: 1.59.1
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
+  apps/mango-admin-workflow-app:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: workspace:*
+        version: link:../../packages/admin-pages
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
+      '@mango/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/workflow':
+        specifier: workspace:*
+        version: link:../../packages/workflow
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: ^2.0.33
+        version: 2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
+  packages/admin-pages:
+    dependencies:
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../common
+      '@mango/rbac':
+        specifier: workspace:*
+        version: link:../rbac
+      '@mango/system':
+        specifier: workspace:*
+        version: link:../system
+      '@mango/workflow':
+        specifier: workspace:*
+        version: link:../workflow
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+
   packages/api-schema:
     dependencies:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+
+  packages/app-runtime:
+    dependencies:
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
 
   packages/auth:
     dependencies:
@@ -321,6 +489,9 @@ importers:
       '@mango/api-schema':
         specifier: workspace:*
         version: link:../api-schema
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../app-runtime
       '@mango/common':
         specifier: workspace:*
         version: link:../common
@@ -2784,6 +2955,15 @@ packages:
     peerDependenciesMeta:
       '@vue/composition-api':
         optional: true
+      typescript:
+        optional: true
+
+  pinia@2.3.1:
+    resolution: {integrity: sha512-khUlZSwt9xXCaTbbxFYBKDc/bWAGWJjOgvxETwkTN7KRm66EeT1ZdZj6i2ceh9sP2Pzqsbc704r2yngBrxBVug==}
+    peerDependencies:
+      typescript: '>=4.4.4'
+      vue: ^2.7.0 || ^3.5.11
+    peerDependenciesMeta:
       typescript:
         optional: true
 
@@ -5897,6 +6077,16 @@ snapshots:
       vue-demi: 0.14.10(vue@3.5.13(typescript@5.9.3))
     optionalDependencies:
       typescript: 5.9.3
+
+  pinia@2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3)):
+    dependencies:
+      '@vue/devtools-api': 6.6.4
+      vue: 3.5.13(typescript@5.9.3)
+      vue-demi: 0.14.10(vue@3.5.13(typescript@5.9.3))
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - '@vue/composition-api'
 
   pirates@4.0.7: {}
 

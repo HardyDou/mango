@@ -18,6 +18,8 @@ public class MenuCommand implements Serializable {
     private Long menuId;
     @Schema(description = "应用编码")
     private String appCode;
+    @Schema(description = "能力模块编码，来自 module.properties 的 module-name")
+    private String moduleCode;
     @Schema(description = "父菜单ID")
     private Long parentId;
     @Schema(description = "菜单类型")
@@ -28,6 +30,10 @@ public class MenuCommand implements Serializable {
     private String menuCode;
     @Schema(description = "路由路径")
     private String path;
+    @Schema(description = "页面运行类型：LOCAL_ROUTE/MICRO_ROUTE/IFRAME/EXTERNAL_LINK/BUTTON")
+    private String pageType;
+    @Schema(description = "iframe 或外链地址")
+    private String externalUrl;
     @Schema(description = "图标")
     private String icon;
     @Schema(description = "排序号")

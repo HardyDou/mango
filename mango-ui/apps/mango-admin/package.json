@@ -15,6 +15,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",

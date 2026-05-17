@@ -14,7 +14,7 @@ public interface IMenuService {
     /**
      * 查询菜单资源列表或树。
      */
-    List<MenuVO> listMenus(String appCode, Integer type, Long parentId, String menuName, Integer status, boolean tree);
+    List<MenuVO> listMenus(String appCode, String moduleCode, Integer type, Long parentId, String menuName, Integer status, boolean tree);
 
     /**
      * 查询当前用户菜单列表或树。

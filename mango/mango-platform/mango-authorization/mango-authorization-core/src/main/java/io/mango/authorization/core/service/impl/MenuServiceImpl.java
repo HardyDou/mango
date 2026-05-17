@@ -3,10 +3,14 @@ package io.mango.authorization.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import io.mango.authorization.api.AuthorizationQuery;
+import io.mango.authorization.core.entity.AuthorizationAppModule;
+import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
 import io.mango.authorization.api.vo.MenuVO;
+import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
+import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
@@ -18,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,12 +44,15 @@ public class MenuServiceImpl implements IMenuService {
     private final MenuMapper menuMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
     private final RoleMenuMapper roleMenuMapper;
+    private final FrontendMenuRuntimeConfigMapper frontendMenuRuntimeConfigMapper;
+    private final AuthorizationAppModuleMapper appModuleMapper;
     private final ISubjectAuthorityService subjectAuthorityService;
 
     @Override
-    public List<MenuVO> listMenus(String appCode, Integer type, Long parentId, String menuName, Integer status, boolean tree) {
+    public List<MenuVO> listMenus(String appCode, String moduleCode, Integer type, Long parentId, String menuName, Integer status, boolean tree) {
         LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(appCode != null && !appCode.isBlank(), Menu::getAppCode, appCode)
+                .eq(StringUtils.hasText(moduleCode), Menu::getModuleCode, moduleCode)
                 .eq(parentId != null, Menu::getParentId, parentId)
                 .eq(type != null, Menu::getMenuType, type)
                 .eq(status != null, Menu::getStatus, status)
@@ -86,7 +94,9 @@ public class MenuServiceImpl implements IMenuService {
 
     @Override
     public Menu getById(Long menuId) {
-        return menuMapper.selectById(menuId);
+        Menu menu = menuMapper.selectById(menuId);
+        applyRuntimeConfig(menu);
+        return menu;
     }
 
     @Override
@@ -105,6 +115,7 @@ public class MenuServiceImpl implements IMenuService {
         if (menus == null || menus.isEmpty()) {
             return new ArrayList<>();
         }
+        applyRuntimeConfig(menus);
         Map<Long, List<Menu>> childrenByParentId = menus.stream()
                 .collect(Collectors.groupingBy(menu -> menu.getParentId() == null ? 0L : menu.getParentId()));
         Set<Long> menuIds = menus.stream()
@@ -134,12 +145,15 @@ public class MenuServiceImpl implements IMenuService {
         MenuVO vo = new MenuVO();
         vo.setMenuId(menu.getMenuId());
         vo.setAppCode(menu.getAppCode());
+        vo.setModuleCode(menu.getModuleCode());
         vo.setParentId(menu.getParentId());
         vo.setMenuType(menu.getMenuType());
         vo.setMenuName(menu.getMenuName());
         vo.setMenuCode(menu.getMenuCode());
         vo.setPath(menu.getPath());
+        vo.setPageType(menu.getPageType());
         vo.setComponent(menu.getComponent());
+        vo.setExternalUrl(menu.getExternalUrl());
         vo.setIcon(menu.getIcon());
         vo.setSort(menu.getSort());
         vo.setStatus(menu.getStatus());
@@ -153,6 +167,10 @@ public class MenuServiceImpl implements IMenuService {
         MenuVO.MenuMeta meta = new MenuVO.MenuMeta();
         meta.setTitle(menu.getMenuName());
         meta.setIcon(menu.getIcon());
+        meta.setLink(menu.getExternalUrl());
+        meta.setFrameSrc(menu.getExternalUrl());
+        meta.setIsFrame("IFRAME".equals(menu.getPageType()));
+        meta.setIsLink("EXTERNAL_LINK".equals(menu.getPageType()));
         vo.setMeta(meta);
 
         return vo;
@@ -162,6 +180,7 @@ public class MenuServiceImpl implements IMenuService {
         if (menus == null || menus.isEmpty()) {
             return new ArrayList<>();
         }
+        applyRuntimeConfig(menus);
         if (tree) {
             return buildMenuTree(menus);
         }
@@ -176,7 +195,24 @@ public class MenuServiceImpl implements IMenuService {
                 .eq(Menu::getStatus, 1)
                 .eq(Menu::getVisible, 1)
                 .orderByAsc(Menu::getSort);
+        List<String> enabledModuleCodes = listEnabledModuleCodes(appCode);
+        if (!enabledModuleCodes.isEmpty()) {
+            wrapper.in(Menu::getModuleCode, enabledModuleCodes);
+        }
         return menuMapper.selectList(wrapper);
+    }
+
+    private List<String> listEnabledModuleCodes(String appCode) {
+        if (!StringUtils.hasText(appCode)) {
+            return List.of();
+        }
+        return appModuleMapper.selectList(new LambdaQueryWrapper<AuthorizationAppModule>()
+                        .eq(AuthorizationAppModule::getAppCode, appCode)
+                        .eq(AuthorizationAppModule::getStatus, 1))
+                .stream()
+                .map(AuthorizationAppModule::getModuleCode)
+                .filter(StringUtils::hasText)
+                .toList();
     }
 
     private boolean hasAllMenuAccess(AuthorizationQuery query) {
@@ -293,6 +329,18 @@ public class MenuServiceImpl implements IMenuService {
             this.childrenByParentId = this.sortedMenus.stream()
                     .collect(Collectors.groupingBy(menu -> menu.getParentId() == null ? 0L : menu.getParentId()));
         }
+
+        private static String firstText(String... values) {
+            if (values == null) {
+                return null;
+            }
+            for (String value : values) {
+                if (StringUtils.hasText(value)) {
+                    return value;
+                }
+            }
+            return null;
+        }
     }
 
     @Override
@@ -313,12 +361,18 @@ public class MenuServiceImpl implements IMenuService {
         }
         fillCreateDefaults(menu);
         int rows = menuMapper.insert(menu);
+        if (rows > 0) {
+            saveRuntimeConfig(menu);
+        }
         return rows > 0;
     }
 
     private void fillCreateDefaults(Menu menu) {
         if (!StringUtils.hasText(menu.getAppCode())) {
             menu.setAppCode("internal-admin");
+        }
+        if (!StringUtils.hasText(menu.getModuleCode())) {
+            menu.setModuleCode(resolveDefaultModuleCode(menu));
         }
         if (menu.getTenantId() == null) {
             menu.setTenantId(1L);
@@ -365,6 +419,7 @@ public class MenuServiceImpl implements IMenuService {
         LambdaUpdateWrapper<Menu> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(Menu::getMenuId, menuId);
         if (menu.getAppCode() != null) wrapper.set(Menu::getAppCode, menu.getAppCode());
+        if (menu.getModuleCode() != null) wrapper.set(Menu::getModuleCode, menu.getModuleCode());
         if (menu.getParentId() != null) wrapper.set(Menu::getParentId, menu.getParentId());
         if (menu.getMenuType() != null) wrapper.set(Menu::getMenuType, menu.getMenuType());
         if (menu.getMenuName() != null) wrapper.set(Menu::getMenuName, menu.getMenuName());
@@ -383,6 +438,13 @@ public class MenuServiceImpl implements IMenuService {
         // createBy、createTime、delFlag 不在普通更新中修改。
 
         int rows = menuMapper.update(null, wrapper);
+        if (rows > 0) {
+            menu.setMenuId(menuId);
+            if (!StringUtils.hasText(menu.getAppCode())) {
+                menu.setAppCode(existing.getAppCode());
+            }
+            saveRuntimeConfig(menu);
+        }
         return rows > 0;
     }
 
@@ -400,6 +462,114 @@ public class MenuServiceImpl implements IMenuService {
             return false;
         }
         int rows = menuMapper.deleteById(menuId);
+        if (rows > 0) {
+            frontendMenuRuntimeConfigMapper.delete(new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
+                    .eq(FrontendMenuRuntimeConfig::getMenuId, menuId));
+        }
         return rows > 0;
+    }
+
+    private void saveRuntimeConfig(Menu menu) {
+        if (menu == null || menu.getMenuId() == null) {
+            return;
+        }
+        FrontendMenuRuntimeConfig config = frontendMenuRuntimeConfigMapper.selectOne(
+                new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
+                        .eq(FrontendMenuRuntimeConfig::getMenuId, menu.getMenuId())
+                        .last("LIMIT 1"));
+        LocalDateTime now = LocalDateTime.now();
+        if (config == null) {
+            config = new FrontendMenuRuntimeConfig();
+            config.setMenuId(menu.getMenuId());
+            config.setCreateTime(now);
+        }
+        config.setAppCode(defaultString(menu.getAppCode(), "internal-admin"));
+        String pageType = normalizePageType(menu);
+        config.setPageType(pageType);
+        config.setExternalUrl(isExternalPageType(pageType) ? menu.getExternalUrl() : null);
+        config.setUpdateTime(now);
+        if (config.getConfigId() == null) {
+            frontendMenuRuntimeConfigMapper.insert(config);
+        } else {
+            frontendMenuRuntimeConfigMapper.updateById(config);
+        }
+    }
+
+    private void applyRuntimeConfig(Menu menu) {
+        if (menu == null || menu.getMenuId() == null) {
+            return;
+        }
+        FrontendMenuRuntimeConfig config = frontendMenuRuntimeConfigMapper.selectOne(
+                new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
+                        .eq(FrontendMenuRuntimeConfig::getMenuId, menu.getMenuId())
+                        .last("LIMIT 1"));
+        applyRuntimeConfig(menu, config);
+    }
+
+    private void applyRuntimeConfig(List<Menu> menus) {
+        List<Long> menuIds = menus.stream()
+                .map(Menu::getMenuId)
+                .filter(id -> id != null)
+                .toList();
+        if (menuIds.isEmpty()) {
+            return;
+        }
+        Map<Long, FrontendMenuRuntimeConfig> configByMenuId = frontendMenuRuntimeConfigMapper.selectList(
+                        new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
+                                .in(FrontendMenuRuntimeConfig::getMenuId, menuIds))
+                .stream()
+                .collect(Collectors.toMap(FrontendMenuRuntimeConfig::getMenuId, item -> item, (left, right) -> left));
+        menus.forEach(menu -> applyRuntimeConfig(menu, configByMenuId.get(menu.getMenuId())));
+    }
+
+    private void applyRuntimeConfig(Menu menu, FrontendMenuRuntimeConfig config) {
+        menu.setPageType(defaultString(config == null ? null : config.getPageType(), defaultPageType(menu)));
+        menu.setExternalUrl(config == null ? null : config.getExternalUrl());
+    }
+
+    private String normalizePageType(Menu menu) {
+        if (menu != null && Integer.valueOf(3).equals(menu.getMenuType())) {
+            return "BUTTON";
+        }
+        String pageType = menu == null ? null : menu.getPageType();
+        if ("MICRO_ROUTE".equals(pageType) || "IFRAME".equals(pageType) || "EXTERNAL_LINK".equals(pageType)) {
+            return pageType;
+        }
+        return "LOCAL_ROUTE";
+    }
+
+    private boolean isExternalPageType(String pageType) {
+        return "IFRAME".equals(pageType) || "EXTERNAL_LINK".equals(pageType);
+    }
+
+    private String defaultPageType(Menu menu) {
+        if (menu != null && Integer.valueOf(3).equals(menu.getMenuType())) {
+            return "BUTTON";
+        }
+        if (menu != null && Integer.valueOf(1).equals(menu.getEmbedded())) {
+            return "IFRAME";
+        }
+        return "LOCAL_ROUTE";
+    }
+
+    private String defaultString(String value, String fallback) {
+        return StringUtils.hasText(value) ? value : fallback;
+    }
+
+    private String resolveDefaultModuleCode(Menu menu) {
+        String code = menu == null ? null : menu.getMenuCode();
+        String permissions = menu == null ? null : menu.getPermissions();
+        String path = menu == null ? null : menu.getPath();
+        String source = StreamContext.firstText(code, permissions, path);
+        if (!StringUtils.hasText(source)) {
+            return "mango-system";
+        }
+        if (source.startsWith("authorization:")) {
+            return "mango-authorization";
+        }
+        if (source.startsWith("workflow:") || source.startsWith("/workflow")) {
+            return "mango-workflow";
+        }
+        return "mango-system";
     }
 }

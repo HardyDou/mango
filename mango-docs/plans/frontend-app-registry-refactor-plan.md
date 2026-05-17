@@ -2,7 +2,7 @@
 
 ## 背景
 
-当前 `authorization_app` 已经承载 `appCode`、登录上下文、菜单和角色隔离等能力，但在产品语义上仍更像普通应用 CRUD。下一阶段需要把它升级为“前端入口注册表 + 授权边界 + 可单体/可微前端运行单元”。
+当前 `authorization_app` 已经承载 `appCode`、登录上下文、菜单和角色隔离等能力，但在产品语义上仍更像普通应用 CRUD。下一阶段需要把它升级为“逻辑应用 + 授权边界”，并用独立前端运行配置表达单体、混合和远程微前端形态。
 
 目标不是马上全面微前端化，而是先把基础架构、代码边界和协议一步到位。部署形态后置决策：同一套代码未来既可以整体打包成 Mango Admin 单体，也可以按应用拆成多个远程前端入口。
 
@@ -15,11 +15,22 @@
 - 主框架只依赖统一协议，不直接依赖具体微前端引擎。
 - `qiankun`、`wujie`、`iframe`、外链等作为 adapter 层实现，避免业务代码被引擎绑定。
 
+## 管理后台双形态样例
+
+`internal-admin` 是唯一默认管理后台逻辑应用。单体版和微前端版不是两个业务应用，而是同一应用的两种部署形态：
+
+```text
+单体版：internal-admin + LOCAL + EMBEDDED + apps/mango-admin
+微前端版：internal-admin + MICRO_APP + HYBRID + apps/mango-admin-shell + apps/mango-admin-rbac-app
+```
+
+后端模块仍是能力模块，例如 `mango-authorization`、`mango-system`、`mango-workflow`；前端包仍是代码复用单元，例如 `@mango/rbac`；部署单元是实际运行产物，例如 `mango-admin` 或 `mango-admin-shell`。
+
 ## 目标模型
 
 ### 应用入口
 
-把授权应用扩展为入口注册表：
+把授权应用和前端运行配置组合成入口注册表视图：
 
 ```text
 appCode              应用编码，稳定唯一

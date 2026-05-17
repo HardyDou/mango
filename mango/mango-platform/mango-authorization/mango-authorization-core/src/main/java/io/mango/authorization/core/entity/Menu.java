@@ -30,6 +30,9 @@ public class Menu implements Serializable {
     /** 应用编码。 */
     private String appCode;
 
+    /** 能力模块编码，来自 module.properties 的 module-name。 */
+    private String moduleCode;
+
     /** 父菜单 ID，0 表示根节点。 */
     private Long parentId;
 
@@ -44,6 +47,14 @@ public class Menu implements Serializable {
 
     /** 前端路由路径。 */
     private String path;
+
+    /** 前端页面运行类型，来自 frontend_menu_runtime_config。 */
+    @TableField(exist = false)
+    private String pageType;
+
+    /** iframe 或外链地址，来自 frontend_menu_runtime_config。 */
+    @TableField(exist = false)
+    private String externalUrl;
 
     /** 菜单图标。 */
     private String icon;

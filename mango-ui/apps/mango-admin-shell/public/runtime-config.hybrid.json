@@ -1,0 +1,19 @@
+{
+  "profile": "hybrid",
+  "modules": {
+    "mango-authorization": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-rbac-app",
+      "entry": "http://b.mango.io:5181/src/micro.ts"
+    },
+    "mango-system": {
+      "mode": "local",
+      "runtimeCode": "mango-admin-system-local"
+    },
+    "mango-workflow": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-workflow-app",
+      "entry": "http://c.mango.io:5182/src/micro.ts"
+    }
+  }
+}

@@ -15,6 +15,8 @@ public class MenuTreeQuery implements Serializable {
     private static final long serialVersionUID = 1L;
     @Schema(description = "应用编码")
     private String appCode;
+    @Schema(description = "能力模块编码")
+    private String moduleCode;
     @Schema(description = "返回格式：list-列表，tree-树形；默认 list")
     private String fmt;
     @Schema(description = "菜单类型")

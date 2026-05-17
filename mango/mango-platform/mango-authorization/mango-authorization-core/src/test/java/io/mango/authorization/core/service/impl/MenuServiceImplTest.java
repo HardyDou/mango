@@ -2,7 +2,9 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.vo.MenuVO;
+import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
@@ -39,6 +41,8 @@ class MenuServiceImplTest {
     @Mock
     private RoleMenuMapper roleMenuMapper;
     @Mock
+    private FrontendMenuRuntimeConfigMapper frontendMenuRuntimeConfigMapper;
+    @Mock
     private ISubjectAuthorityService subjectAuthorityService;
 
     private MenuServiceImpl menuService;
@@ -49,6 +53,7 @@ class MenuServiceImplTest {
                 menuMapper,
                 subjectRoleBindingMapper,
                 roleMenuMapper,
+                frontendMenuRuntimeConfigMapper,
                 subjectAuthorityService);
     }
 
@@ -56,12 +61,19 @@ class MenuServiceImplTest {
     @DisplayName("getById should return menu when exists")
     void getById_existingMenu_returnsMenu() {
         Menu menu = createMenu(1L, "Test Menu", "test:menu");
+        FrontendMenuRuntimeConfig config = new FrontendMenuRuntimeConfig();
+        config.setMenuId(1L);
+        config.setPageType("IFRAME");
+        config.setExternalUrl("https://example.com/frame");
         when(menuMapper.selectById(1L)).thenReturn(menu);
+        when(frontendMenuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(config);
 
         Menu result = menuService.getById(1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getMenuId());
+        assertEquals("IFRAME", result.getPageType());
+        assertEquals("https://example.com/frame", result.getExternalUrl());
     }
 
     @Test
@@ -124,11 +136,19 @@ class MenuServiceImplTest {
     @DisplayName("addMenu should return true when menu is valid")
     void addMenu_validMenu_returnsTrue() {
         Menu menu = createMenu(1L, "Test Menu", "test:menu");
+        menu.setMenuType(2);
+        menu.setPageType("IFRAME");
+        menu.setExternalUrl("https://example.com/frame");
         when(menuMapper.insert(menu)).thenReturn(1);
+        when(frontendMenuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(frontendMenuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
 
         boolean result = menuService.addMenu(menu);
 
         assertTrue(result);
+        verify(frontendMenuRuntimeConfigMapper).insert(argThat((FrontendMenuRuntimeConfig config) ->
+                "IFRAME".equals(config.getPageType())
+                        && "https://example.com/frame".equals(config.getExternalUrl())));
     }
 
     @Test

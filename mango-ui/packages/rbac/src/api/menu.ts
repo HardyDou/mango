@@ -1,4 +1,5 @@
 import { get, post, put, del } from '@mango/common';
+import type { MangoMenuPageType } from '@mango/app-runtime';
 
 /**
  * 菜单类型枚举
@@ -38,12 +39,16 @@ export interface MenuMeta {
  */
 export interface SysMenuVO {
   menuId: string | number;
+  appCode?: string;
+  moduleCode?: string;
   parentId: string | number;
   menuType: MenuTypeEnum;
   menuName: string;
   menuCode: string;
   path: string;
+  pageType?: MangoMenuPageType;
   component?: string;
+  externalUrl?: string;
   icon?: string;
   sort: number;
   status: number;
@@ -66,6 +71,7 @@ export interface MenuResponse {
 
 export interface MenuQuery {
   appCode?: string;
+  moduleCode?: string;
   fmt?: MenuFormat;
   type?: number;
   parentId?: number;
@@ -85,6 +91,7 @@ type MenuPayload = Pick<
   | 'menuName'
   | 'menuCode'
   | 'path'
+  | 'pageType'
   | 'icon'
   | 'sort'
   | 'status'
@@ -96,17 +103,21 @@ type MenuPayload = Pick<
   | 'component'
 > & {
   appCode?: string;
+  moduleCode?: string;
+  externalUrl?: string;
 };
 
 function toBackendPayload(data: Partial<SysMenuVO> & { appCode?: string }): Partial<MenuPayload> {
   return {
     menuId: data.menuId,
     appCode: data.appCode,
+    moduleCode: data.moduleCode,
     parentId: data.parentId ?? 0,
     menuType: data.menuType,
     menuName: data.menuName,
     menuCode: data.menuCode,
     path: data.path,
+    pageType: data.pageType,
     icon: data.icon,
     sort: data.sort ?? 0,
     status: data.status ?? 1,
@@ -116,6 +127,7 @@ function toBackendPayload(data: Partial<SysMenuVO> & { appCode?: string }): Part
     redirect: data.redirect,
     permissions: data.permissions,
     component: data.component,
+    externalUrl: data.externalUrl,
   };
 }
 

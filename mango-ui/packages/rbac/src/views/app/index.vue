@@ -28,6 +28,30 @@
           min-width="160"
         />
         <el-table-column
+          prop="appType"
+          label="入口类型"
+          width="120"
+        >
+          <template #default="{ row }">
+            {{ appTypeLabel(row.appType) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="deployMode"
+          label="部署模式"
+          width="110"
+        >
+          <template #default="{ row }">
+            {{ deployModeLabel(row.deployMode) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="mountPath"
+          label="挂载路径"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column
           label="登录上下文"
           min-width="260"
         >
@@ -102,10 +126,18 @@
         </el-table-column>
         <el-table-column
           label="操作"
-          width="150"
+          width="210"
           fixed="right"
         >
           <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="handleModules(row)"
+            >
+              模块
+            </el-button>
             <el-button
               link
               type="primary"
@@ -153,6 +185,102 @@
             v-model="form.appCode"
             :disabled="!!form.appId"
           />
+        </el-form-item>
+        <el-form-item
+          label="入口类型"
+          prop="appType"
+        >
+          <el-select v-model="form.appType">
+            <el-option
+              v-for="item in appTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          label="部署模式"
+          prop="deployMode"
+        >
+          <el-select v-model="form.deployMode">
+            <el-option
+              v-for="item in deployModeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          label="入口地址"
+          prop="entryUrl"
+          v-if="form.appType !== 'LOCAL'"
+        >
+          <el-input
+            v-model="form.entryUrl"
+            placeholder="远程入口、iframe 或外链地址"
+          />
+        </el-form-item>
+        <el-form-item
+          label="挂载路径"
+          prop="mountPath"
+        >
+          <el-input
+            v-model="form.mountPath"
+            placeholder="/micro/workflow"
+          />
+        </el-form-item>
+        <el-form-item
+          label="激活规则"
+          prop="activeRule"
+        >
+          <el-input
+            v-model="form.activeRule"
+            placeholder="/workflow/**"
+          />
+        </el-form-item>
+        <el-form-item label="运行框架">
+          <el-select
+            v-model="form.framework"
+            clearable
+            filterable
+          >
+            <el-option
+              v-for="item in frameworkOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="版本">
+          <el-input
+            v-model="form.version"
+            placeholder="例如 1.0.0"
+          />
+        </el-form-item>
+        <el-form-item label="健康检查">
+          <el-input
+            v-model="form.healthCheckUrl"
+            placeholder="健康检查地址"
+          />
+        </el-form-item>
+        <el-form-item
+          label="沙箱"
+          v-if="form.appType === 'MICRO_APP' || form.deployMode !== 'EMBEDDED'"
+        >
+          <el-switch v-model="form.sandboxEnabled" />
+        </el-form-item>
+        <el-form-item label="样式隔离">
+          <el-select v-model="form.styleIsolation">
+            <el-option
+              v-for="item in styleIsolationOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item
           label="登录上下文"
@@ -295,6 +423,180 @@
       ref="iconSelectorRef"
       v-model="iconValue"
     />
+
+    <el-drawer
+      v-model="moduleDrawerVisible"
+      :title="`${currentApp?.appName || ''} 集成模块`"
+      size="520px"
+    >
+      <div class="module-toolbar">
+        <el-button
+          v-for="item in moduleOptions"
+          :key="item.value"
+          size="small"
+          @click="enableModule(item.value)"
+        >
+          开通{{ item.label }}
+        </el-button>
+      </div>
+      <el-table
+        v-loading="moduleLoading"
+        :data="moduleBindings"
+        stripe
+      >
+        <el-table-column
+          prop="moduleCode"
+          label="模块编码"
+          min-width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="模块名称"
+          min-width="130"
+        >
+          <template #default="{ row }">
+            {{ moduleLabel(row.moduleCode) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="80"
+        >
+          <template #default="{ row }">
+            <DictTag
+              dict-code="sys_normal_disable"
+              :value="row.status"
+              size="small"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="150"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="syncModuleMenus(row.moduleCode)"
+            >
+              同步菜单
+            </el-button>
+            <el-button
+              link
+              type="danger"
+              size="small"
+              :disabled="row.status === 0"
+              @click="disableModule(row.moduleCode)"
+            >
+              停用
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-divider content-position="left">
+        模块运行策略
+      </el-divider>
+      <div class="strategy-toolbar">
+        <el-radio-group
+          v-model="strategyProfile"
+          size="small"
+          @change="loadRuntimeStrategies"
+        >
+          <el-radio-button label="monolith">
+            单体
+          </el-radio-button>
+          <el-radio-button label="hybrid">
+            混合
+          </el-radio-button>
+          <el-radio-button label="micro">
+            微前端
+          </el-radio-button>
+        </el-radio-group>
+      </div>
+      <el-table
+        v-loading="strategyLoading"
+        :data="runtimeStrategies"
+        stripe
+      >
+        <el-table-column
+          prop="moduleCode"
+          label="模块"
+          min-width="140"
+        >
+          <template #default="{ row }">
+            {{ moduleLabel(row.moduleCode) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="pageType"
+          label="运行方式"
+          width="140"
+        >
+          <template #default="{ row }">
+            <el-select
+              v-model="row.pageType"
+              size="small"
+              @change="handleStrategyTypeChange(row)"
+            >
+              <el-option
+                label="本地页面"
+                value="LOCAL_ROUTE"
+              />
+              <el-option
+                label="微应用页面"
+                value="MICRO_ROUTE"
+              />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="runtimeCode"
+          label="运行单元"
+          min-width="170"
+        >
+          <template #default="{ row }">
+            <el-input
+              v-model="row.runtimeCode"
+              size="small"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-switch
+              v-model="row.status"
+              :active-value="1"
+              :inactive-value="0"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="90"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="saveRuntimeStrategy(row)"
+            >
+              保存
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-drawer>
   </div>
 </template>
 
@@ -302,9 +604,51 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { DictSelect, DictTag, IconSelector, useDict } from '@mango/common';
-import { appApi, type AppLoginContext, type AuthorizationApp } from '../../api/app';
+import {
+  appApi,
+  appModuleApi,
+  type AppLoginContext,
+  type AppModuleBinding,
+  type AppModuleRuntimeStrategy,
+  type AuthorizationApp,
+} from '../../api/app';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
+
+const appTypeOptions = [
+  { label: '本地应用', value: 'LOCAL' },
+  { label: '微应用', value: 'MICRO_APP' },
+  { label: 'Iframe', value: 'IFRAME' },
+  { label: '外链', value: 'EXTERNAL_LINK' },
+];
+
+const deployModeOptions = [
+  { label: '内置', value: 'EMBEDDED' },
+  { label: '远程', value: 'REMOTE' },
+  { label: '混合', value: 'HYBRID' },
+];
+
+const frameworkOptions = [
+  { label: 'Vue 3', value: 'vue3' },
+  { label: 'Vue 2', value: 'vue2' },
+  { label: 'React', value: 'react' },
+  { label: 'Iframe', value: 'iframe' },
+  { label: 'Link', value: 'link' },
+  { label: 'Other', value: 'other' },
+];
+
+const styleIsolationOptions = [
+  { label: '无', value: 'NONE' },
+  { label: 'Scoped', value: 'SCOPED' },
+  { label: 'Shadow DOM', value: 'SHADOW_DOM' },
+  { label: 'Iframe', value: 'IFRAME' },
+];
+
+const moduleOptions = [
+  { label: '授权权限模块', value: 'mango-authorization', sort: 1 },
+  { label: '系统基础模块', value: 'mango-system', sort: 2 },
+  { label: '协同流程模块', value: 'mango-workflow', sort: 3 },
+];
 
 const actorTypeByRealm: Record<string, string> = {
   INTERNAL: 'INTERNAL_USER',
@@ -316,8 +660,15 @@ const actorTypeByRealm: Record<string, string> = {
 
 const loading = ref(false);
 const submitLoading = ref(false);
+const moduleLoading = ref(false);
+const strategyLoading = ref(false);
 const dialogVisible = ref(false);
+const moduleDrawerVisible = ref(false);
 const tableData = ref<AuthorizationApp[]>([]);
+const moduleBindings = ref<AppModuleBinding[]>([]);
+const runtimeStrategies = ref<AppModuleRuntimeStrategy[]>([]);
+const strategyProfile = ref('hybrid');
+const currentApp = ref<AuthorizationApp>();
 const formRef = ref<FormInstance>();
 const iconSelectorRef = ref<{ open: () => void }>();
 
@@ -325,6 +676,16 @@ const form = reactive<AuthorizationApp>({
   appId: undefined,
   appCode: '',
   appName: '',
+  appType: 'LOCAL',
+  deployMode: 'EMBEDDED',
+  entryUrl: '',
+  mountPath: '',
+  activeRule: '',
+  framework: 'vue3',
+  version: '',
+  healthCheckUrl: '',
+  sandboxEnabled: false,
+  styleIsolation: 'NONE',
   loginContexts: [createContext('INTERNAL')],
   icon: 'Setting',
   sort: 0,
@@ -335,6 +696,8 @@ const form = reactive<AuthorizationApp>({
 const rules: FormRules = {
   appName: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
   appCode: [{ required: true, message: '请输入应用编码', trigger: 'blur' }],
+  appType: [{ required: true, message: '请选择入口类型', trigger: 'change' }],
+  deployMode: [{ required: true, message: '请选择部署模式', trigger: 'change' }],
   loginContexts: [{ required: true, validator: validateLoginContexts, trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
@@ -361,6 +724,16 @@ function resetForm() {
   form.appId = undefined;
   form.appCode = '';
   form.appName = '';
+  form.appType = 'LOCAL';
+  form.deployMode = 'EMBEDDED';
+  form.entryUrl = '';
+  form.mountPath = '';
+  form.activeRule = '';
+  form.framework = 'vue3';
+  form.version = '';
+  form.healthCheckUrl = '';
+  form.sandboxEnabled = false;
+  form.styleIsolation = 'NONE';
   form.loginContexts = [createContext('INTERNAL')];
   form.icon = 'Setting';
   form.sort = 0;
@@ -376,11 +749,127 @@ function handleAdd() {
 function handleEdit(row: AuthorizationApp) {
   Object.assign(form, {
     ...row,
+    appType: row.appType || 'LOCAL',
+    deployMode: row.deployMode || 'EMBEDDED',
+    sandboxEnabled: row.sandboxEnabled ?? false,
+    styleIsolation: row.styleIsolation || 'NONE',
     loginContexts: row.loginContexts?.length
       ? row.loginContexts.map((item, index) => normalizeContext(item, index))
       : [createContext('INTERNAL')],
   });
   dialogVisible.value = true;
+}
+
+async function handleModules(row: AuthorizationApp) {
+  currentApp.value = row;
+  moduleDrawerVisible.value = true;
+  await Promise.all([
+    loadModules(row.appCode),
+    loadRuntimeStrategies(),
+  ]);
+}
+
+async function loadModules(appCode: string) {
+  moduleLoading.value = true;
+  try {
+    moduleBindings.value = await appModuleApi.list({ appCode });
+  } finally {
+    moduleLoading.value = false;
+  }
+}
+
+async function enableModule(moduleCode: string) {
+  if (!currentApp.value) return;
+  const option = moduleOptions.find((item) => item.value === moduleCode);
+  await appModuleApi.save({
+    appCode: currentApp.value.appCode,
+    moduleCode,
+    moduleName: moduleCode,
+    status: 1,
+    sort: option?.sort || 0,
+  });
+  ElMessage.success('模块已开通');
+  await loadModules(currentApp.value.appCode);
+}
+
+async function disableModule(moduleCode: string) {
+  if (!currentApp.value) return;
+  await appModuleApi.disable(currentApp.value.appCode, moduleCode);
+  ElMessage.success('模块已停用');
+  await loadModules(currentApp.value.appCode);
+}
+
+async function syncModuleMenus(moduleCode: string) {
+  if (!currentApp.value) return;
+  const count = await appModuleApi.syncMenus(currentApp.value.appCode, moduleCode);
+  ElMessage.success(`已同步 ${count || 0} 个菜单资源`);
+}
+
+async function loadRuntimeStrategies() {
+  if (!currentApp.value) return;
+  strategyLoading.value = true;
+  try {
+    const rows = await appModuleApi.listRuntimeStrategies({
+      appCode: currentApp.value.appCode,
+      deployProfile: strategyProfile.value,
+    });
+    runtimeStrategies.value = normalizeRuntimeStrategies(rows || []);
+  } finally {
+    strategyLoading.value = false;
+  }
+}
+
+function normalizeRuntimeStrategies(rows: AppModuleRuntimeStrategy[]) {
+  const byModule = new Map(rows.map((item) => [item.moduleCode, item]));
+  return moduleOptions.map((module) => {
+    const existing = byModule.get(module.value);
+    if (existing) {
+      return existing;
+    }
+    const micro = strategyProfile.value !== 'monolith' && module.value === 'mango-authorization';
+    return {
+      appCode: currentApp.value?.appCode || 'internal-admin',
+      moduleCode: module.value,
+      deployProfile: strategyProfile.value,
+      pageType: micro ? 'MICRO_ROUTE' : 'LOCAL_ROUTE',
+      runtimeCode: micro ? 'mango-admin-rbac-app' : 'mango-admin-local',
+      status: 1,
+      sort: module.sort,
+    } as AppModuleRuntimeStrategy;
+  });
+}
+
+function handleStrategyTypeChange(row: AppModuleRuntimeStrategy) {
+  row.runtimeCode = row.pageType === 'MICRO_ROUTE' ? defaultMicroRuntime(row.moduleCode) : 'mango-admin-local';
+}
+
+function defaultMicroRuntime(moduleCode: string) {
+  if (moduleCode === 'mango-authorization') {
+    return 'mango-admin-rbac-app';
+  }
+  return 'mango-admin-local';
+}
+
+async function saveRuntimeStrategy(row: AppModuleRuntimeStrategy) {
+  await appModuleApi.saveRuntimeStrategy({
+    ...row,
+    appCode: currentApp.value?.appCode || row.appCode,
+    deployProfile: strategyProfile.value,
+  });
+  ElMessage.success('运行策略已保存');
+  await loadRuntimeStrategies();
+}
+
+function appTypeLabel(value?: string) {
+  return appTypeOptions.find((item) => item.value === (value || 'LOCAL'))?.label || value || '-';
+}
+
+function deployModeLabel(value?: string) {
+  return deployModeOptions.find((item) => item.value === (value || 'EMBEDDED'))?.label || value || '-';
+}
+
+function moduleLabel(moduleCode?: string) {
+  return moduleOptions.find((item) => item.value === moduleCode)?.label || moduleCode || '-';
 }
 
 function createContext(realm = ''): AppLoginContext {
@@ -539,6 +1028,19 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+  }
+
+  .module-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .strategy-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
   }
 
   .context-editor {

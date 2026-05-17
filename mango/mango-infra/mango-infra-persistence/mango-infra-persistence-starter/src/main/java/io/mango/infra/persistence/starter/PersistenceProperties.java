@@ -105,6 +105,8 @@ public class PersistenceProperties {
                         "sys_tenant", "sys_config", "sys_route_conf", "sys_dict_type", "sys_dict_data", "sys_area",
                         "authorization_api_resource", "authorization_permission",
                         "authorization_menu", "authorization_app", "authorization_app_login_context",
+                        "authorization_app_module", "frontend_app_registry", "frontend_menu_runtime_config",
+                        "frontend_module_runtime_strategy",
                         "identity_user", "tenant_member", "tenant_member_org"));
     }
 
@@ -139,6 +141,8 @@ public class PersistenceProperties {
          */
         private List<String> excludedTables = new ArrayList<>(
                 List.of("flyway_schema_history*", "databasechangelog", "databasechangeloglock",
-                        "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log"));
+                        "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log",
+                        "authorization_app_module", "frontend_app_registry", "frontend_menu_runtime_config",
+                        "frontend_module_runtime_strategy"));
     }
 }

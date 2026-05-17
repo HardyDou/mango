@@ -1,55 +1,18 @@
-export const componentsMap: Record<string, any> = {
-  'system/menu/index': () => import('@mango/rbac').then(m => m.MenuView),
-  'system/menu-package/index': () => import('@mango/rbac').then(m => m.MenuPackageView),
-  'system/role/index': () => import('@mango/rbac').then(m => m.RoleView),
-  'system/user/index': () => import('@mango/rbac').then(m => m.UserView),
-  'system/org/index': () => import('@mango/rbac').then(m => m.OrgView),
-  'system/permission/index': () => import('@mango/rbac').then(m => m.PermissionView),
-  'system/app/index': () => import('@mango/rbac').then(m => m.AppView),
-  'system/post/index': () => import('@mango/rbac').then(m => m.PostView),
-  'views/system/menu/index': () => import('@mango/rbac').then(m => m.MenuView),
-  'views/system/menu-package/index': () => import('@mango/rbac').then(m => m.MenuPackageView),
-  'views/system/role/index': () => import('@mango/rbac').then(m => m.RoleView),
-  'views/system/user/index': () => import('@mango/rbac').then(m => m.UserView),
-  'views/system/org/index': () => import('@mango/rbac').then(m => m.OrgView),
-  'views/system/permission/index': () => import('@mango/rbac').then(m => m.PermissionView),
-  'views/system/app/index': () => import('@mango/rbac').then(m => m.AppView),
-  'views/system/post/index': () => import('@mango/rbac').then(m => m.PostView),
-  
-  'system/dict/index': () => import('@mango/system').then(m => m.DictView),
-  'system/operation-log/index': () => import('@mango/system').then(m => m.OperationLogView),
-  'system/login-log/index': () => import('@mango/system').then(m => m.LoginLogView),
-  'system/tenant/index': () => import('@mango/system').then(m => m.TenantView),
-  'system/config/index': () => import('@mango/system').then(m => m.ConfigView),
-  'system/route/index': () => import('@mango/system').then(m => m.RouteView),
-  'system/public-path/index': () => import('@mango/system').then(m => m.PublicPathView),
-  'system/area/index': () => import('@mango/system').then(m => m.AreaView),
-  'system/file/index': () => import('@mango/system').then(m => m.FileView),
-  'system/file-storage/index': () => import('@mango/system').then(m => m.FileStorageView),
-  'system/workflow-definition/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowDefinitionView),
-  'workflow/task/todo/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'workflow/task/initiated/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'workflow/task/done/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'workflow/task/copied/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'workflow/task/detail/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskDetailView),
-  'workflow/start-process/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowStartProcessView),
-  'workflow/business-form/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowBusinessFormView),
-  'views/system/dict/index': () => import('@mango/system').then(m => m.DictView),
-  'views/system/operation-log/index': () => import('@mango/system').then(m => m.OperationLogView),
-  'views/system/login-log/index': () => import('@mango/system').then(m => m.LoginLogView),
-  'views/system/tenant/index': () => import('@mango/system').then(m => m.TenantView),
-  'views/system/config/index': () => import('@mango/system').then(m => m.ConfigView),
-  'views/system/route/index': () => import('@mango/system').then(m => m.RouteView),
-  'views/system/public-path/index': () => import('@mango/system').then(m => m.PublicPathView),
-  'views/system/area/index': () => import('@mango/system').then(m => m.AreaView),
-  'views/system/file/index': () => import('@mango/system').then(m => m.FileView),
-  'views/system/file-storage/index': () => import('@mango/system').then(m => m.FileStorageView),
-  'views/system/workflow-definition/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowDefinitionView),
-  'views/workflow/task/todo/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'views/workflow/task/initiated/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'views/workflow/task/done/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'views/workflow/task/copied/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskListView),
-  'views/workflow/task/detail/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowTaskDetailView),
-  'views/workflow/start-process/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowStartProcessView),
-  'views/workflow/business-form/index': () => import('../../../../packages/workflow/src/index').then(m => m.WorkflowBusinessFormView),
-};
+import {
+  getPageLoader,
+  normalizeComponentPath,
+  registerDefaultAdminPages,
+} from '@mango/admin-pages';
+
+registerDefaultAdminPages();
+
+export const componentsMap: Record<string, any> = new Proxy({}, {
+  get(_target, key: string) {
+    return getPageLoader(undefined, key);
+  },
+  has(_target, key: string) {
+    return Boolean(getPageLoader(undefined, key));
+  },
+});
+
+export { normalizeComponentPath };

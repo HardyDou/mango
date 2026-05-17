@@ -14,12 +14,15 @@ public class MenuVO {
     private static final long serialVersionUID = 1L;
     private Long menuId;
     private String appCode;
+    private String moduleCode;
     private Long parentId;
     private Integer menuType;
     private String menuName;
     private String menuCode;
     private String path;
+    private String pageType;
     private String component;
+    private String externalUrl;
     private String icon;
     private Integer sort;
     private Integer status;
