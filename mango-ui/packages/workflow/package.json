@@ -6,6 +6,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
     "@form-create/element-ui": "3.2.16",
+    "@mango/file": "workspace:*",
     "@mango/api-schema": "workspace:*",
     "@mango/common": "workspace:*",
     "element-plus": "2.5.5",

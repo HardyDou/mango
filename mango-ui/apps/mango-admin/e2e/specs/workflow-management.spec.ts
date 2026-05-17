@@ -1,4 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 type LoginTenant = {
   tenantId: string;
@@ -108,6 +111,26 @@ async function cleanupWorkflow(request: APIRequestContext, token: string, keywor
       });
     }
   }
+}
+
+async function cleanupWorkflowUploadFiles(request: APIRequestContext, token: string, fileIds: string[]) {
+  const headers = { Authorization: `Bearer ${token}` };
+  for (const id of fileIds) {
+    await request.delete(`http://localhost:5555/file/files?id=${encodeURIComponent(id)}&reason=e2e-workflow-cleanup`, {
+      headers,
+    }).catch(() => undefined);
+  }
+}
+
+function expectWorkflowUploadValueOnlyContainsFileIds(value: unknown, expectedIds: string[]) {
+  expect(value).toEqual(expectedIds);
+  const serialized = JSON.stringify(value);
+  expect(serialized).not.toContain('http');
+  expect(serialized).not.toContain('/api/file/files/download');
+  expect(serialized).not.toContain('url');
+  expect(serialized).not.toContain('downloadUrl');
+  expect(serialized).not.toContain('directPreviewUrl');
+  expect(serialized).not.toContain('directDownloadUrl');
 }
 
 function designerJson(unique: number) {
@@ -279,6 +302,110 @@ function leaveFormJson() {
       validate: [
         { required: true, message: '请假原因不能为空', trigger: 'blur' },
       ],
+    },
+  ]);
+}
+
+function runtimeComponentFormJson() {
+  return JSON.stringify([
+    {
+      type: 'elCard',
+      title: '申请信息',
+      children: [
+        {
+          type: 'input',
+          field: 'applySubject',
+          title: '申请主题',
+          props: {
+            placeholder: '请输入申请主题',
+          },
+          validate: [
+            { required: true, message: '申请主题不能为空', trigger: 'blur' },
+          ],
+        },
+        {
+          type: 'select',
+          field: 'expenseType',
+          title: '费用类型',
+          props: {
+            placeholder: '请选择费用类型',
+            clearable: true,
+            filterable: true,
+          },
+          options: [
+            { label: '差旅费', value: 'TRAVEL' },
+            { label: '办公费', value: 'OFFICE' },
+          ],
+          validate: [
+            { required: true, message: '费用类型不能为空', trigger: 'change' },
+          ],
+        },
+        {
+          type: 'upload',
+          field: 'attachments',
+          title: '附件',
+          props: {
+            accept: '.pdf,.docx,.png',
+            limit: 3,
+          },
+        },
+        {
+          type: 'upload',
+          field: 'images',
+          title: '图片',
+          props: {
+            accept: 'image/*',
+            listType: 'picture-card',
+            limit: 2,
+          },
+        },
+      ],
+    },
+    {
+      type: 'fcRow',
+      title: '金额信息',
+      children: [
+        {
+          type: 'inputNumber',
+          field: 'amount',
+          title: '申请金额',
+          props: {
+            placeholder: '请输入申请金额',
+            min: 1,
+          },
+          validate: [
+            { required: true, message: '申请金额不能为空', trigger: 'change' },
+          ],
+        },
+        {
+          type: 'elTreeSelect',
+          field: 'deptId',
+          title: '申请部门',
+          props: {
+            placeholder: '请选择申请部门',
+            workflowDataType: 'systemDept',
+            data: [
+              {
+                label: '芒果集团',
+                value: '1',
+                children: [
+                  { label: '财务部', value: 'finance' },
+                ],
+              },
+            ],
+            nodeKey: 'value',
+            checkStrictly: true,
+          },
+        },
+      ],
+    },
+    {
+      type: 'elAlert',
+      title: '表单说明',
+      props: {
+        type: 'info',
+        content: '请按实际业务上传审批附件。',
+      },
     },
   ]);
 }
@@ -902,6 +1029,140 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.locator('.el-table__row', { hasText: startedBusinessKey })).toContainText(definitionKey);
       await expectNoAuthError(page);
     } finally {
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
+  test('发起流程弹窗可渲染布局、业务选择和上传类动态表单组件', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const unique = Date.now();
+    const keyword = `e2e_workflow_runtime_form_${unique}`;
+    const groupName = `E2E表单组件分组${unique}`;
+    const groupCode = keyword;
+    const definitionName = `E2E费用报销流程${unique}`;
+    const definitionKey = `e2e_runtime_form_${unique}`;
+    const token = await loginToken(request, platformTenant);
+    const headers = { Authorization: `Bearer ${token}` };
+    const uploadedFileIds: string[] = [];
+
+    try {
+      await cleanupWorkflow(request, token, keyword);
+
+      const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+        headers,
+        data: {
+          groupName,
+          groupCode,
+          sort: 96,
+          status: 1,
+          remark: 'E2E动态表单组件渲染验证数据',
+        },
+      });
+      expect(createGroupResponse.status()).toBe(200);
+      const createGroupBody = await createGroupResponse.json();
+      expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+
+      const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+        headers,
+        data: {
+          groupId: createGroupBody.data,
+          definitionName,
+          definitionKey,
+          designerJson: designerJson(unique),
+          formCode: `form_${keyword}`,
+          formJson: runtimeComponentFormJson(),
+          status: 'DRAFT',
+          remark: 'E2E动态表单组件渲染验证数据',
+        },
+      });
+      expect(createDefinitionResponse.status()).toBe(200);
+      const createDefinitionBody = await createDefinitionResponse.json();
+      expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
+
+      const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+        headers,
+      });
+      expect(deployResponse.status()).toBe(200);
+      const deployBody = await deployResponse.json();
+      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      expect(deployBody.data.processDefinitionId).toBeTruthy();
+
+      await loginPage(page, platformTenant);
+      const definitionsResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions/page') && response.status() === 200
+      );
+      await openStartProcess(page);
+      await definitionsResponsePromise;
+      await page.getByPlaceholder('搜索流程名称/编码').fill(definitionName);
+      await page.getByRole('button', { name: '查询' }).click();
+      const launchCard = startProcessCard(page, definitionName);
+      await expect(launchCard).toBeVisible({ timeout: 10000 });
+
+      await launchCard.click();
+      const dialog = startProcessDialog(page, definitionName);
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator('.runtime-container-title', { hasText: '申请信息' })).toBeVisible();
+      await expect(dialog.locator('.runtime-container-title', { hasText: '金额信息' })).toBeVisible();
+      await expect(dialog.locator('.el-alert__title', { hasText: '请按实际业务上传审批附件。' })).toBeVisible();
+      await expect(dialog.locator('.mango-file-upload')).toHaveCount(2);
+      await expect(dialog.locator('.mango-file-upload.is-thumbnail')).toHaveCount(1);
+
+      const attachmentPath = join(tmpdir(), `mango-workflow-attachment-${unique}.pdf`);
+      const imagePath = join(tmpdir(), `mango-workflow-image-${unique}.png`);
+      writeFileSync(attachmentPath, Buffer.from('%PDF-1.4\n% e2e workflow attachment\n', 'utf-8'));
+      writeFileSync(imagePath, Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+        'base64',
+      ));
+
+      const attachmentUploadResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/files')
+        && response.request().method() === 'POST'
+        && response.status() === 200
+      );
+      await dialog.locator('.el-form-item', { hasText: '附件' }).locator('input[type="file"]').setInputFiles(attachmentPath);
+      const attachmentUploadResponse = await attachmentUploadResponsePromise;
+      const attachmentUploadBody = await attachmentUploadResponse.json();
+      expect(attachmentUploadBody.success || attachmentUploadBody.code === 200).toBeTruthy();
+      const attachmentFileId = String(attachmentUploadBody.data.id);
+      expect(attachmentFileId).toBeTruthy();
+      uploadedFileIds.push(attachmentFileId);
+
+      const imageUploadResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/files')
+        && response.request().method() === 'POST'
+        && response.status() === 200
+      );
+      await dialog.locator('.el-form-item', { hasText: '图片' }).locator('input[type="file"]').setInputFiles(imagePath);
+      const imageUploadResponse = await imageUploadResponsePromise;
+      const imageUploadBody = await imageUploadResponse.json();
+      expect(imageUploadBody.success || imageUploadBody.code === 200).toBeTruthy();
+      const imageFileId = String(imageUploadBody.data.id);
+      expect(imageFileId).toBeTruthy();
+      uploadedFileIds.push(imageFileId);
+
+      await dialog.getByPlaceholder('请输入申请主题').fill('E2E 费用报销申请');
+      await dialog.locator('.el-form-item', { hasText: '费用类型' }).locator('.el-select__wrapper').click();
+      await page.getByRole('option', { name: '差旅费' }).click();
+      await dialog.getByRole('spinbutton', { name: /申请金额/ }).fill('1280');
+      await dialog.locator('.el-form-item', { hasText: '申请部门' }).locator('.el-select__wrapper').click();
+      await page.getByRole('option', { name: '芒果集团' }).click();
+
+      const startResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/processes/start') && response.status() === 200
+      );
+      await page.getByRole('button', { name: '确认发起' }).click();
+      const startResponse = await startResponsePromise;
+      const startRequestBody = JSON.parse(startResponse.request().postData() || '{}');
+      expectWorkflowUploadValueOnlyContainsFileIds(startRequestBody.variables.attachments, [attachmentFileId]);
+      expectWorkflowUploadValueOnlyContainsFileIds(startRequestBody.variables.images, [imageFileId]);
+      const startBody = await startResponse.json();
+      expect(startBody.success || startBody.code === 200).toBeTruthy();
+      expect(startBody.data.businessKey).toBeTruthy();
+      await expect(page.getByText(/流程已发起/)).toBeVisible({ timeout: 10000 });
+      await expectNoAuthError(page);
+    } finally {
+      await cleanupWorkflowUploadFiles(request, token, uploadedFileIds);
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
     }
   });

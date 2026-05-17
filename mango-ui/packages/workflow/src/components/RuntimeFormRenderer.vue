@@ -1,161 +1,178 @@
 <template>
   <el-form :model="model" :label-width="labelWidth" class="runtime-form-renderer">
-    <el-form-item v-for="field in visibleFields" :key="field.key" :label="fieldLabel(field)" :prop="fieldProp(field)" :rules="field.rules">
-      <el-alert
-        v-if="field.type === 'alert'"
-        :title="field.content || field.label"
-        :type="field.props?.type || 'info'"
-        :closable="field.props?.closable !== false"
-        show-icon
-      />
-      <span v-else-if="field.type === 'text'" class="display-text">{{ field.content || field.label }}</span>
-      <span v-else-if="field.type === 'html'" class="display-html" v-html="field.content" />
-      <el-divider v-else-if="field.type === 'divider'" :content-position="field.props?.contentPosition || 'left'">
-        {{ field.content || field.label }}
-      </el-divider>
-      <el-tag v-else-if="field.type === 'tag'" :type="field.props?.type">{{ field.content || field.label }}</el-tag>
-      <el-image v-else-if="field.type === 'image'" class="display-image" :src="field.props?.src || field.props?.url" fit="cover" />
-      <el-button v-else-if="field.type === 'button'" :type="field.props?.type || 'primary'" disabled>{{ field.content || field.label }}</el-button>
-      <el-alert v-else-if="field.type === 'container'" :title="`${field.label} 暂以内部字段渲染`" type="info" :closable="false" />
-      <span v-else-if="readonly || fieldPermission(field) === 'READONLY'" class="readonly-value">{{ displayValue(field) }}</span>
-      <template v-else>
-        <el-input
-          v-if="field.type === 'input' || field.type === 'password'"
-          v-model="model[field.key]"
-          :type="field.type === 'password' ? 'password' : 'text'"
-          :placeholder="field.placeholder"
-          :readonly="field.readonly"
-          clearable
+    <template v-for="field in visibleFields" :key="field.key">
+      <div v-if="field.type === 'container'" class="runtime-container" :class="containerClass(field)">
+        <div v-if="field.label && field.props?.originalType !== 'space'" class="runtime-container-title">{{ field.label }}</div>
+        <RuntimeFormRenderer
+          v-if="field.children?.length"
+          :fields="field.children"
+          :model="model"
+          :readonly="readonly"
+          :label-width="labelWidth"
+          :permissions="permissions"
         />
-        <el-input
-          v-else-if="field.type === 'textarea'"
-          v-model="model[field.key]"
-          type="textarea"
-          :rows="4"
-          :placeholder="field.placeholder"
-          :readonly="field.readonly"
+        <el-empty v-else description="暂无字段" :image-size="64" />
+      </div>
+      <el-form-item v-else :label="fieldLabel(field)" :prop="fieldProp(field)" :rules="field.rules">
+        <el-alert
+          v-if="field.type === 'alert'"
+          :title="field.content || field.label"
+          :type="field.props?.type || 'info'"
+          :closable="field.props?.closable !== false"
+          show-icon
         />
-        <el-input-number
-          v-else-if="field.type === 'number'"
-          v-model="model[field.key]"
-          :placeholder="field.placeholder"
-          :min="field.min"
-          :max="field.max"
-          :step="field.step || 1"
-          controls-position="right"
-        />
-        <el-select
-          v-else-if="isSelectField(field)"
-          v-model="model[field.key]"
-          :placeholder="field.placeholder"
-          :multiple="field.props?.multiple"
-          :clearable="field.props?.clearable !== false"
-          :filterable="field.props?.filterable !== false"
-          collapse-tags
-          collapse-tags-tooltip
-        >
-          <el-option v-for="option in field.options" :key="String(option.value)" :label="option.label" :value="option.value" />
-        </el-select>
-        <el-radio-group v-else-if="field.type === 'radio'" v-model="model[field.key]">
-          <el-radio v-for="option in field.options" :key="String(option.value)" :label="option.value">
-            {{ option.label }}
-          </el-radio>
-        </el-radio-group>
-        <el-checkbox-group v-else-if="field.type === 'checkbox'" v-model="model[field.key]">
-          <el-checkbox v-for="option in field.options" :key="String(option.value)" :label="option.value">
-            {{ option.label }}
-          </el-checkbox>
-        </el-checkbox-group>
-        <el-switch v-else-if="field.type === 'switch'" v-model="model[field.key]" />
-        <el-date-picker v-else-if="field.type === 'date'" v-model="model[field.key]" type="date" :placeholder="field.placeholder" value-format="YYYY-MM-DD" />
-        <el-date-picker
-          v-else-if="field.type === 'datetime'"
-          v-model="model[field.key]"
-          type="datetime"
-          :placeholder="field.placeholder"
-          value-format="YYYY-MM-DD HH:mm:ss"
-        />
-        <el-date-picker
-          v-else-if="field.type === 'daterange'"
-          v-model="model[field.key]"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          value-format="YYYY-MM-DD"
-        />
-        <el-date-picker
-          v-else-if="field.type === 'datetimerange'"
-          v-model="model[field.key]"
-          type="datetimerange"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          value-format="YYYY-MM-DD HH:mm:ss"
-        />
-        <el-time-picker v-else-if="field.type === 'time'" v-model="model[field.key]" :placeholder="field.placeholder" value-format="HH:mm:ss" />
-        <el-time-picker
-          v-else-if="field.type === 'timerange'"
-          v-model="model[field.key]"
-          is-range
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          value-format="HH:mm:ss"
-        />
-        <el-rate v-else-if="field.type === 'rate'" v-model="model[field.key]" />
-        <el-slider v-else-if="field.type === 'slider'" v-model="model[field.key]" :min="field.min" :max="field.max" :step="field.step || 1" />
-        <el-color-picker v-else-if="field.type === 'color'" v-model="model[field.key]" />
-        <el-cascader
-          v-else-if="field.type === 'cascader'"
-          v-model="model[field.key]"
-          :options="field.treeOptions || field.options"
-          :props="cascaderProps(field)"
-          :placeholder="field.placeholder"
-          :clearable="field.props?.clearable !== false"
-          :filterable="field.props?.filterable !== false"
-        />
-        <el-tree-select
-          v-else-if="field.type === 'treeSelect' || field.type === 'systemOrg' || field.type === 'systemDept'"
-          v-model="model[field.key]"
-          :data="field.treeOptions"
-          :props="treeProps(field)"
-          :node-key="field.props?.nodeKey || 'value'"
-          :multiple="field.props?.multiple"
-          :check-strictly="field.props?.checkStrictly !== false"
-          :placeholder="field.placeholder"
-          :clearable="field.props?.clearable !== false"
-          :filterable="field.props?.filterable !== false"
-        />
-        <el-transfer
-          v-else-if="field.type === 'transfer'"
-          v-model="model[field.key]"
-          :data="transferOptions(field)"
-          :filterable="field.props?.filterable !== false"
-        />
-        <ImageUpload
+        <span v-else-if="field.type === 'text'" class="display-text">{{ field.content || field.label }}</span>
+        <span v-else-if="field.type === 'html'" class="display-html" v-html="field.content" />
+        <el-divider v-else-if="field.type === 'divider'" :content-position="field.props?.contentPosition || 'left'">
+          {{ field.content || field.label }}
+        </el-divider>
+        <el-tag v-else-if="field.type === 'tag'" :type="field.props?.type">{{ field.content || field.label }}</el-tag>
+        <el-image v-else-if="field.type === 'image'" class="display-image" :src="field.props?.src || field.props?.url" fit="cover" />
+        <el-button v-else-if="field.type === 'button'" :type="field.props?.type || 'primary'" disabled>{{ field.content || field.label }}</el-button>
+        <MUpload
           v-else-if="field.type === 'imageUpload'"
           v-model="model[field.key]"
-          :limit="field.props?.limit || 6"
-          :multiple="field.props?.multiple !== false"
-          :disabled="field.readonly"
+          fmt="image"
+          display="thumbnail"
+          value-type="id"
+          :count="field.props?.limit || 6"
+          :size="field.props?.size || field.props?.maxSize"
+          :readonly="fieldReadonly(field)"
         />
-        <FileUpload
+        <MUpload
           v-else-if="field.type === 'upload'"
           v-model="model[field.key]"
-          :accept="field.props?.accept || '*'"
-          :limit="field.props?.limit || 5"
-          :multiple="field.props?.multiple !== false"
-          :disabled="field.readonly"
+          :fmt="uploadFmt(field)"
+          value-type="id"
+          :count="field.props?.limit || 5"
+          :size="field.props?.size || field.props?.maxSize"
+          :readonly="fieldReadonly(field)"
         />
-        <el-input v-else-if="field.type === 'editor'" v-model="model[field.key]" type="textarea" :rows="6" :placeholder="field.placeholder" />
-        <el-input v-else-if="field.type === 'signature' || field.type === 'serialNo'" v-model="model[field.key]" :placeholder="field.placeholder" readonly />
-        <el-alert v-else :title="`暂不支持组件：${field.type}`" type="warning" :closable="false" />
-      </template>
-    </el-form-item>
+        <span v-else-if="fieldReadonly(field)" class="readonly-value">{{ displayValue(field) }}</span>
+        <template v-else>
+          <el-input
+            v-if="field.type === 'input' || field.type === 'password'"
+            v-model="model[field.key]"
+            :type="field.type === 'password' ? 'password' : 'text'"
+            :placeholder="field.placeholder"
+            :readonly="field.readonly"
+            clearable
+          />
+          <el-input
+            v-else-if="field.type === 'textarea'"
+            v-model="model[field.key]"
+            type="textarea"
+            :rows="4"
+            :placeholder="field.placeholder"
+            :readonly="field.readonly"
+          />
+          <el-input-number
+            v-else-if="field.type === 'number'"
+            v-model="model[field.key]"
+            :placeholder="field.placeholder"
+            :min="field.min"
+            :max="field.max"
+            :step="field.step || 1"
+            controls-position="right"
+          />
+          <el-select
+            v-else-if="isSelectField(field)"
+            v-model="model[field.key]"
+            :placeholder="field.placeholder"
+            :multiple="field.props?.multiple"
+            :clearable="field.props?.clearable !== false"
+            :filterable="field.props?.filterable !== false"
+            collapse-tags
+            collapse-tags-tooltip
+          >
+            <el-option v-for="option in field.options" :key="String(option.value)" :label="option.label" :value="option.value" />
+          </el-select>
+          <el-radio-group v-else-if="field.type === 'radio'" v-model="model[field.key]">
+            <el-radio v-for="option in field.options" :key="String(option.value)" :label="option.value">
+              {{ option.label }}
+            </el-radio>
+          </el-radio-group>
+          <el-checkbox-group v-else-if="field.type === 'checkbox'" v-model="model[field.key]">
+            <el-checkbox v-for="option in field.options" :key="String(option.value)" :label="option.value">
+              {{ option.label }}
+            </el-checkbox>
+          </el-checkbox-group>
+          <el-switch v-else-if="field.type === 'switch'" v-model="model[field.key]" />
+          <el-date-picker v-else-if="field.type === 'date'" v-model="model[field.key]" type="date" :placeholder="field.placeholder" value-format="YYYY-MM-DD" />
+          <el-date-picker
+            v-else-if="field.type === 'datetime'"
+            v-model="model[field.key]"
+            type="datetime"
+            :placeholder="field.placeholder"
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+          <el-date-picker
+            v-else-if="field.type === 'daterange'"
+            v-model="model[field.key]"
+            type="daterange"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+          />
+          <el-date-picker
+            v-else-if="field.type === 'datetimerange'"
+            v-model="model[field.key]"
+            type="datetimerange"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+          <el-time-picker v-else-if="field.type === 'time'" v-model="model[field.key]" :placeholder="field.placeholder" value-format="HH:mm:ss" />
+          <el-time-picker
+            v-else-if="field.type === 'timerange'"
+            v-model="model[field.key]"
+            is-range
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="HH:mm:ss"
+          />
+          <el-rate v-else-if="field.type === 'rate'" v-model="model[field.key]" />
+          <el-slider v-else-if="field.type === 'slider'" v-model="model[field.key]" :min="field.min" :max="field.max" :step="field.step || 1" />
+          <el-color-picker v-else-if="field.type === 'color'" v-model="model[field.key]" />
+          <el-cascader
+            v-else-if="field.type === 'cascader'"
+            v-model="model[field.key]"
+            :options="field.treeOptions || field.options"
+            :props="cascaderProps(field)"
+            :placeholder="field.placeholder"
+            :clearable="field.props?.clearable !== false"
+            :filterable="field.props?.filterable !== false"
+          />
+          <el-tree-select
+            v-else-if="field.type === 'treeSelect' || field.type === 'systemOrg' || field.type === 'systemDept'"
+            v-model="model[field.key]"
+            :data="field.treeOptions"
+            :props="treeProps(field)"
+            :node-key="field.props?.nodeKey || 'value'"
+            :multiple="field.props?.multiple"
+            :check-strictly="field.props?.checkStrictly !== false"
+            :placeholder="field.placeholder"
+            :clearable="field.props?.clearable !== false"
+            :filterable="field.props?.filterable !== false"
+          />
+          <el-transfer
+            v-else-if="field.type === 'transfer'"
+            v-model="model[field.key]"
+            :data="transferOptions(field)"
+            :filterable="field.props?.filterable !== false"
+          />
+          <el-input v-else-if="field.type === 'editor'" v-model="model[field.key]" type="textarea" :rows="6" :placeholder="field.placeholder" />
+          <el-input v-else-if="field.type === 'signature' || field.type === 'serialNo'" v-model="model[field.key]" :placeholder="field.placeholder" readonly />
+          <el-alert v-else :title="`暂不支持组件：${field.type}`" type="warning" :closable="false" />
+        </template>
+      </el-form-item>
+    </template>
   </el-form>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { FileUpload, ImageUpload } from '@mango/common';
+import { MUpload } from '@mango/file';
 import type { RuntimeFormField } from './runtimeForm';
 
 type RuntimeFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
@@ -176,6 +193,10 @@ const visibleFields = computed(() => props.fields.filter(field => fieldPermissio
 
 function fieldPermission(field: RuntimeFormField): RuntimeFormPermission {
   return (props.permissions?.[field.key] as RuntimeFormPermission) || (props.readonly || field.readonly ? 'READONLY' : 'EDITABLE');
+}
+
+function fieldReadonly(field: RuntimeFormField) {
+  return fieldPermission(field) === 'READONLY';
 }
 
 function fieldLabel(field: RuntimeFormField) {
@@ -215,12 +236,62 @@ function displaySingleValue(field: RuntimeFormField, value: any) {
   return String(value);
 }
 
+function uploadFmt(field: RuntimeFormField) {
+  const accept = String(field.props?.fmt || field.props?.accept || '').trim();
+  if (!accept || accept === '*') {
+    return undefined;
+  }
+  if (accept === 'image/*') {
+    return 'image';
+  }
+  return accept
+    .split(',')
+    .map(item => acceptItemToFmt(item))
+    .filter(Boolean)
+    .join(',');
+}
+
+function acceptItemToFmt(value: string) {
+  const item = value.trim().toLowerCase();
+  const groups: Record<string, string> = {
+    'image/*': 'image',
+    'video/*': 'video',
+    'audio/*': 'audio',
+    'application/pdf': 'pdf',
+    'application/msword': 'doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'application/vnd.ms-excel': 'xls',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+    'application/vnd.ms-powerpoint': 'ppt',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  };
+  if (groups[item]) {
+    return groups[item];
+  }
+  if (item.includes('/')) {
+    return '';
+  }
+  return item.replace(/^\./, '').replace(/\/\*$/, '');
+}
+
 function isSelectField(field: RuntimeFormField) {
   return ['select', 'systemUser', 'systemPost', 'systemRole', 'systemDict', 'businessType'].includes(field.type);
 }
 
 function isDisplayField(field: RuntimeFormField) {
   return ['alert', 'text', 'html', 'divider', 'tag', 'image', 'button', 'container'].includes(field.type);
+}
+
+function containerClass(field: RuntimeFormField) {
+  const originalType = String(field.props?.originalType || '');
+  return {
+    'is-card': ['elCard', 'ElCard', 'group', 'subForm'].includes(originalType),
+    'is-row': ['fcRow', 'FcRow', 'col', 'elCol', 'ElCol'].includes(originalType),
+    'is-tabs': ['elTabs', 'ElTabs', 'elTabPane', 'ElTabPane'].includes(originalType),
+    'is-collapse': ['elCollapse', 'ElCollapse', 'elCollapseItem', 'ElCollapseItem'].includes(originalType),
+    'is-table': originalType === 'fcTable' || originalType === 'tableForm',
+    'is-space': originalType === 'space',
+  };
 }
 
 function treeProps(field: RuntimeFormField) {
@@ -273,8 +344,7 @@ function findTreeNode(nodes: any[], value: any): any | null {
 .runtime-form-renderer :deep(.el-date-editor),
 .runtime-form-renderer :deep(.el-input-number),
 .runtime-form-renderer :deep(.el-slider),
-.runtime-form-renderer :deep(.file-upload-container),
-.runtime-form-renderer :deep(.image-upload-container) {
+.runtime-form-renderer :deep(.mango-file-upload) {
   width: 100%;
 }
 
@@ -293,5 +363,38 @@ function findTreeNode(nodes: any[], value: any): any | null {
 .display-image {
   max-width: 240px;
   border-radius: 6px;
+}
+
+.runtime-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.runtime-container-title {
+  margin-bottom: 10px;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.runtime-container.is-card,
+.runtime-container.is-table {
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.runtime-container.is-row :deep(.runtime-form-renderer),
+.runtime-container.is-space :deep(.runtime-form-renderer) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+@media (max-width: 760px) {
+  .runtime-container.is-row :deep(.runtime-form-renderer),
+  .runtime-container.is-space :deep(.runtime-form-renderer) {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

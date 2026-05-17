@@ -98,7 +98,7 @@ defineOptions({
 });
 
 export type UploadDisplay = 'list' | 'thumbnail' | 'table' | 'drag';
-export type UploadValueType = 'token' | 'record';
+export type UploadValueType = 'id' | 'token' | 'record';
 export type UploadColumnKey = keyof FileRecord | `meta.${string}` | string;
 
 export interface UploadSizeRules {
@@ -326,11 +326,19 @@ function syncValue() {
   const records = internalFiles.value
     .map(fileToRecord)
     .filter((item): item is FileRecord => Boolean(item));
-  const value = props.valueType === 'record'
-    ? (multiple.value ? records : records[0] || null)
-    : (multiple.value ? records.map(item => token(item.id)) : token(records[0]?.id));
+  const value = modelValueFromRecords(records);
   emit('update:modelValue', value);
   emit('change', value, records);
+}
+
+function modelValueFromRecords(records: FileRecord[]): UploadModelValue {
+  if (props.valueType === 'record') {
+    return multiple.value ? records : records[0] || null;
+  }
+  if (props.valueType === 'id') {
+    return multiple.value ? records.map(item => String(item.id || '')).filter(Boolean) : String(records[0]?.id || '');
+  }
+  return multiple.value ? records.map(item => token(item.id)) : token(records[0]?.id);
 }
 
 function uploadParams() {
@@ -362,7 +370,7 @@ function modelValueIds(value?: UploadModelValue) {
     .map((item) => {
       if (!item) return '';
       if (typeof item === 'string') {
-        return item.startsWith('mango-file:') ? item.replace('mango-file:', '') : '';
+        return item.startsWith('mango-file:') ? item.replace('mango-file:', '') : item;
       }
       return item.id ? String(item.id) : '';
     })
@@ -380,7 +388,7 @@ function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
         id,
         name: `file-${id || index}`,
         fileName: `file-${id || index}`,
-        url: item.startsWith('mango-file:') ? fileApi.downloadUrl(id) : item,
+        url: id ? fileApi.downloadUrl(id) : '',
       };
     }
     return recordToFile(item);

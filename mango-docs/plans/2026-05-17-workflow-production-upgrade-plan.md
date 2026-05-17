@@ -26,7 +26,9 @@
 | P0 | 渲染模式接入 | 申请/审批固定外壳，根据 `DYNAMIC_FORM` / `CUSTOM_PAGE` 渲染动态表单或业务自定义页面 | 已完成 |
 | P0 | 详情审批流程图按真实 tree 渲染状态 | 经过、当前、未经过、驳回节点用不同状态标识，支持分支/并发结构显示 | 已完成 |
 | P1 | 自定义 Word 表格式审批页面案例 | 合同用印类案例使用自定义申请/审批页面，支持节点权限只读/编辑/隐藏 | 已完成 |
-| P1 | 表单设计和渲染组件补齐 | 开源 form-create 基础/子/辅助/布局组件与公共业务组件可设计、可预览、可渲染 | 未开始 |
+| P1 | 表单设计和渲染组件补齐 | 开源 form-create 基础/子/辅助/布局组件与公共业务组件可设计、可预览、可渲染 | 已完成 |
+| P1 | 流程管理菜单恢复 | 修复流程管理与文件中心菜单 ID 冲突，协同办公下能进入流程管理 | 已完成 |
+| P1 | 工作流附件变量只保存文件 ID | 动态表单上传组件提交业务变量时只写入文件 ID，展示时再通过文件服务动态取地址 | 已完成 |
 | P1 | 任务管理页面筛选和列优化 | 待办/已办/我发起等页面筛选项、列字段符合办公审批实际使用 | 未开始 |
 | P1 | 协同办公升级为审批中心信息架构 | 协同办公审批相关菜单统一为审批中心口径，入口、标题、图标和路由命名清晰，不改变底层固定审批流程 | 未开始 |
 | P1 | 协同办公菜单图标补齐 | 协同办公下所有菜单有清晰图标 | 未开始 |
@@ -70,4 +72,14 @@
   - `pnpm -F mango-admin build`
   - `git diff --check`
   - `rg "throw new IllegalArgumentException|Objects\\.requireNonNull|new IllegalStateException|requireText\\(" mango/mango-platform/mango-workflow -n`
-- 当前任务：P1 表单设计和渲染组件补齐。
+- 已完成任务：P1 表单设计和渲染组件补齐。
+- 已完成验证：
+  - `pnpm -F mango-admin build`
+  - `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:7777 pnpm --dir apps/mango-admin exec playwright test e2e/specs/workflow-management.spec.ts --project=chromium --grep "发起流程弹窗可渲染布局、业务选择和上传类动态表单组件"`
+  - `git diff --check`
+- 已完成任务：P1 流程管理菜单恢复。
+- 已完成验证：
+  - `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:7777 pnpm --dir apps/mango-admin exec playwright test e2e/specs/workflow-management.spec.ts --project=chromium --grep "创建流程进入独立三步设计工作台"`
+- 已完成任务：P1 工作流附件变量只保存文件 ID。
+- 已完成验证：
+  - `PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:7777 pnpm --dir apps/mango-admin exec playwright test e2e/specs/workflow-management.spec.ts --project=chromium --grep "发起流程弹窗可渲染布局、业务选择和上传类动态表单组件"`

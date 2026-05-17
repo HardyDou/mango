@@ -100,7 +100,7 @@
           </el-form-item>
         </template>
 
-        <el-collapse v-if="showDebugFormTools" class="start-advanced">
+        <el-collapse v-if="showDebugFormTools" v-model="debugPanels" class="start-advanced">
           <el-collapse-item title="开发调试" name="debug">
             <el-input
               v-model="startForm.variablesJson"
@@ -148,6 +148,7 @@ const userOptions = ref<WorkflowUserOption[]>([]);
 const userLoading = ref(false);
 const usersLoaded = ref(false);
 const showDebugFormTools = import.meta.env.DEV;
+const debugPanels = ref<string[]>([]);
 
 const groupedDefinitions = computed(() => {
   const groupMap = new Map<string, WorkflowDefinition[]>();

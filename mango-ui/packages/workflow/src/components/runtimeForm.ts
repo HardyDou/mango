@@ -60,6 +60,7 @@ export interface RuntimeFormField {
   rules?: any[];
   defaultValue?: any;
   content?: string;
+  children?: RuntimeFormField[];
 }
 
 export function parseRuntimeForm(formJson?: string): { fields: RuntimeFormField[]; unsupported: Array<{ label: string; type: string }> } {
@@ -75,16 +76,10 @@ export function parseRuntimeForm(formJson?: string): { fields: RuntimeFormField[
         : Array.isArray(parsed?.fields)
           ? customFieldsToRules(parsed.fields)
           : [];
-    const fields: RuntimeFormField[] = [];
-    const unsupported: Array<{ label: string; type: string }> = [];
-    for (const [index, rule] of flattenRules(rules).entries()) {
-      const field = ruleToRuntimeField(rule, index);
-      if (field) {
-        fields.push(field);
-      } else if (rule?.field && !isContainerType(rule.type)) {
-        unsupported.push({ label: String(rule.title || rule.label || rule.field), type: String(rule.type || 'unknown') });
-      }
-    }
+    const fields = flattenRules(rules)
+      .map((rule, index) => ruleToRuntimeField(rule, index, `${index}`))
+      .filter(Boolean) as RuntimeFormField[];
+    const unsupported = collectUnsupportedRules(rules);
     return { fields, unsupported };
   } catch {
     return { fields: [], unsupported: [{ label: '表单配置', type: 'invalid-json' }] };
@@ -92,28 +87,50 @@ export function parseRuntimeForm(formJson?: string): { fields: RuntimeFormField[
 }
 
 export function createDefaultVariables(fields: RuntimeFormField[]) {
-  return fields.reduce<Record<string, any>>((values, field) => {
-    if (!isValueField(field)) {
-      return values;
+  const values: Record<string, any> = {};
+  fields.forEach(field => fillDefaultVariable(values, field));
+  return values;
+}
+
+function fillDefaultVariable(values: Record<string, any>, field: RuntimeFormField) {
+  if (field.children?.length) {
+    field.children.forEach(child => fillDefaultVariable(values, child));
+  }
+  if (!isValueField(field)) {
+    return;
+  }
+  if (field.defaultValue !== undefined) {
+    values[field.key] = field.defaultValue;
+  } else if (isArrayValueField(field)) {
+    values[field.key] = [];
+  } else if (field.type === 'switch') {
+    values[field.key] = false;
+  } else {
+    values[field.key] = undefined;
+  }
+}
+
+function collectUnsupportedRules(rules: any[]): Array<{ label: string; type: string }> {
+  return (rules || []).flatMap((rule) => {
+    const children = Array.isArray(rule?.children) ? collectUnsupportedRules(rule.children) : [];
+    if (rule?.field && !resolveRuntimeType(rule)) {
+      return [
+        { label: String(rule.title || rule.label || rule.field), type: String(rule.type || 'unknown') },
+        ...children,
+      ];
     }
-    if (field.defaultValue !== undefined) {
-      values[field.key] = field.defaultValue;
-    } else if (isArrayValueField(field)) {
-      values[field.key] = [];
-    } else if (field.type === 'switch') {
-      values[field.key] = false;
-    } else {
-      values[field.key] = undefined;
-    }
-    return values;
-  }, {});
+    return children;
+  });
 }
 
 function flattenRules(rules: any[]): any[] {
-  return (rules || []).flatMap((rule) => [
-    rule,
-    ...flattenRules(Array.isArray(rule?.children) ? rule.children : []),
-  ]);
+  return (rules || []).flatMap((rule) => {
+    if (isContainerType(rule?.type)) {
+      const field = ruleToRuntimeField(rule, 0, '0');
+      return field ? [rule] : flattenRules(Array.isArray(rule?.children) ? rule.children : []);
+    }
+    return [rule];
+  });
 }
 
 function customFieldsToRules(fields: any[]) {
@@ -140,7 +157,7 @@ function customFieldsToRules(fields: any[]) {
   });
 }
 
-function ruleToRuntimeField(rule: any, index: number): RuntimeFormField | null {
+function ruleToRuntimeField(rule: any, index: number, path = `${index}`): RuntimeFormField | null {
   if (!rule?.field && !isDisplayType(rule?.type) && !isContainerType(rule?.type)) {
     return null;
   }
@@ -152,8 +169,13 @@ function ruleToRuntimeField(rule: any, index: number): RuntimeFormField | null {
   const props = rule.props || {};
   const workflowDataType = String(props.workflowDataType || rule.workflowDataType || '');
   const isImageUpload = mappedType === 'imageUpload';
+  const children = Array.isArray(rule.children)
+    ? rule.children
+      .map((child: any, childIndex: number) => ruleToRuntimeField(child, childIndex, `${path}_${childIndex}`))
+      .filter(Boolean) as RuntimeFormField[]
+    : [];
   return {
-    key: String(rule.field || `__runtime_${mappedType}_${index}`),
+    key: String(rule.field || `__runtime_${mappedType}_${path}`),
     label,
     type: mappedType,
     placeholder: props.placeholder || (isSelectLikeField(mappedType) ? `请选择${label}` : `请输入${label}`),
@@ -166,6 +188,7 @@ function ruleToRuntimeField(rule: any, index: number): RuntimeFormField | null {
     props: {
       ...props,
       workflowDataType,
+      originalType: rule.type,
       multiple: Boolean(props.multiple),
       clearable: props.clearable !== false,
       filterable: props.filterable !== false,
@@ -175,34 +198,44 @@ function ruleToRuntimeField(rule: any, index: number): RuntimeFormField | null {
     rules: normalizeRules(rule.validate || rule.rules, label, mappedType),
     defaultValue: rule.value ?? rule.defaultValue ?? props.defaultValue,
     content: normalizeContent(rule, props),
+    children,
   };
 }
 
 function mapFieldType(type?: string): RuntimeFormFieldType | null {
   const normalized = String(type || '');
+  if (['input', 'elInput', 'ElInput'].includes(normalized)) return 'input';
+  if (['password'].includes(normalized)) return 'password';
+  if (['textarea'].includes(normalized)) return 'textarea';
+  if (['select', 'elSelect', 'ElSelect'].includes(normalized)) return 'select';
+  if (['radio', 'elRadio', 'elRadioGroup', 'ElRadio', 'ElRadioGroup'].includes(normalized)) return 'radio';
+  if (['checkbox', 'elCheckbox', 'elCheckboxGroup', 'ElCheckbox', 'ElCheckboxGroup'].includes(normalized)) return 'checkbox';
+  if (['switch', 'elSwitch', 'ElSwitch'].includes(normalized)) return 'switch';
+  if (['rate', 'elRate', 'ElRate'].includes(normalized)) return 'rate';
+  if (['slider', 'elSlider', 'ElSlider'].includes(normalized)) return 'slider';
   if (['input', 'password', 'textarea', 'select', 'radio', 'checkbox', 'switch', 'rate', 'slider'].includes(normalized)) {
     return normalized as RuntimeFormFieldType;
   }
-  if (['inputNumber', 'number'].includes(normalized)) return 'number';
-  if (['datePicker', 'date'].includes(normalized)) return 'date';
+  if (['inputNumber', 'elInputNumber', 'ElInputNumber', 'number'].includes(normalized)) return 'number';
+  if (['datePicker', 'elDatePicker', 'ElDatePicker', 'date'].includes(normalized)) return 'date';
   if (['dateRange', 'daterange'].includes(normalized)) return 'daterange';
   if (['datetimePicker', 'datetime'].includes(normalized)) return 'datetime';
   if (['datetimeRange', 'datetimerange'].includes(normalized)) return 'datetimerange';
-  if (['timePicker', 'time'].includes(normalized)) return 'time';
+  if (['timePicker', 'elTimePicker', 'ElTimePicker', 'time'].includes(normalized)) return 'time';
   if (['timeRange', 'timerange'].includes(normalized)) return 'timerange';
-  if (['colorPicker', 'color'].includes(normalized)) return 'color';
-  if (['cascader'].includes(normalized)) return 'cascader';
-  if (['elTreeSelect', 'treeSelect', 'tree'].includes(normalized)) return 'treeSelect';
-  if (['elTransfer', 'transfer'].includes(normalized)) return 'transfer';
+  if (['colorPicker', 'elColorPicker', 'ElColorPicker', 'color'].includes(normalized)) return 'color';
+  if (['cascader', 'elCascader', 'ElCascader'].includes(normalized)) return 'cascader';
+  if (['elTreeSelect', 'ElTreeSelect', 'treeSelect', 'tree', 'elTree', 'ElTree'].includes(normalized)) return 'treeSelect';
+  if (['elTransfer', 'ElTransfer', 'transfer'].includes(normalized)) return 'transfer';
   if (['fcEditor', 'editor'].includes(normalized)) return 'editor';
-  if (['upload'].includes(normalized)) return 'upload';
-  if (['elAlert', 'alert'].includes(normalized)) return 'alert';
+  if (['upload', 'elUpload', 'ElUpload', 'fcUpload'].includes(normalized)) return 'upload';
+  if (['elAlert', 'ElAlert', 'alert'].includes(normalized)) return 'alert';
   if (['text'].includes(normalized)) return 'text';
   if (['html'].includes(normalized)) return 'html';
-  if (['elDivider', 'divider'].includes(normalized)) return 'divider';
-  if (['elTag', 'tag'].includes(normalized)) return 'tag';
-  if (['elImage', 'image'].includes(normalized)) return 'image';
-  if (['elButton', 'button'].includes(normalized)) return 'button';
+  if (['elDivider', 'ElDivider', 'divider'].includes(normalized)) return 'divider';
+  if (['elTag', 'ElTag', 'tag'].includes(normalized)) return 'tag';
+  if (['elImage', 'ElImage', 'image'].includes(normalized)) return 'image';
+  if (['elButton', 'ElButton', 'button'].includes(normalized)) return 'button';
   if (isContainerType(normalized)) return 'container';
   return null;
 }
@@ -231,8 +264,8 @@ function normalizeOptions(options: any): RuntimeFormOption[] {
     return [];
   }
   return options.map((option) => ({
-    label: String(option.label ?? option.name ?? option.value ?? ''),
-    value: option.value ?? option.label ?? option.name,
+    label: String(option.label ?? option.name ?? option.title ?? option.key ?? option.value ?? ''),
+    value: option.value ?? option.id ?? option.key ?? option.label ?? option.name,
   }));
 }
 
@@ -289,9 +322,9 @@ function isSystemDataType(type: string) {
 }
 
 function isDisplayType(type?: string) {
-  return ['elAlert', 'alert', 'text', 'html', 'elDivider', 'divider', 'elTag', 'tag', 'elImage', 'image', 'elButton', 'button', 'div'].includes(String(type || ''));
+  return ['elAlert', 'ElAlert', 'alert', 'text', 'html', 'elDivider', 'ElDivider', 'divider', 'elTag', 'ElTag', 'tag', 'elImage', 'ElImage', 'image', 'elButton', 'ElButton', 'button', 'div'].includes(String(type || ''));
 }
 
 function isContainerType(type?: string) {
-  return ['group', 'subForm', 'tableForm', 'tableFormColumn', 'fcRow', 'FcRow', 'col', 'elCol', 'elCard', 'elTabs', 'elTabPane', 'elCollapse', 'elCollapseItem', 'fcTable', 'space'].includes(String(type || ''));
+  return ['group', 'subForm', 'tableForm', 'tableFormColumn', 'fcRow', 'FcRow', 'col', 'elCol', 'ElCol', 'elCard', 'ElCard', 'elTabs', 'ElTabs', 'elTabPane', 'ElTabPane', 'elCollapse', 'ElCollapse', 'elCollapseItem', 'ElCollapseItem', 'fcTable', 'space'].includes(String(type || ''));
 }
