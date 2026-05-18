@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts" name="navMenuSubItem">
-import { iconMap } from '@/config/iconConfig';
+import { iconMap } from '@mango/common/utils/iconConfig';
 
 defineProps<{
   chil: any[];

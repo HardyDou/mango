@@ -1,7 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { ElMessage } from 'element-plus';
 import { router } from './index';
-import { Session } from '@mango/common';
+import { containsMenuPath } from '@mango/common';
 import { useUserInfo } from '@/stores/userInfo';
 import { useRoutesList } from '@/stores/routesList';
 import { usePreferencesStore } from '@/stores/preferences';
@@ -22,6 +21,10 @@ export async function initBackEndControlRoutes(): Promise<void> {
     if (import.meta.env.DEV) console.log('[backEnd] 从后端加载菜单配置...');
     const menuItems = await menuLoader.loadFromBackend();
 
+    if (!menuLoader.isBackendMode()) {
+      throw new Error('后端菜单加载失败');
+    }
+
     if (!menuItems || menuItems.length === 0) {
       throw new Error('菜单数据为空');
     }
@@ -39,10 +42,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
 
     // 存储路由列表
     storesRoutesList.setRoutesList(accessRoutes);
-    const activeTopRoute = accessRoutes.find(route =>
-      router.currentRoute.value.path === route.path
-      || router.currentRoute.value.path.startsWith(`${route.path}/`)
-    ) || accessRoutes[0];
+    const activeTopRoute = accessRoutes.find(route => containsMenuPath(route, router.currentRoute.value.path)) || accessRoutes[0];
     if (activeTopRoute?.path) {
       storesRoutesList.setActiveTopRoutePath(activeTopRoute.path);
     }
@@ -72,8 +72,9 @@ export async function initBackEndControlRoutes(): Promise<void> {
     // 这解决刷新页面时动态路由未加载导致的白屏问题
     router.addRoute('Layout', {
       path: ':pathMatch(.*)*',
-      redirect: '/',
-      meta: { title: 'Redirecting...' }
+      name: 'LayoutNotFound',
+      component: () => import('@/views/error/404.vue'),
+      meta: { title: '404', isHide: true },
     });
 
     if (import.meta.env.DEV) console.log('[backEnd] tabBarRoutes:', tabBarRoutes.map(r => ({ path: r.path, name: r.name })));
@@ -102,9 +103,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
     preferencesStore.isRequestRoutes = true;
   } catch (error) {
     console.error('初始化后端路由失败:', error);
-    Session.clearSession();
-    ElMessage.error('路由加载失败，请重新登录');
-    router.push('/login');
+    throw new Error('路由加载失败，请重新登录');
   }
 }
 

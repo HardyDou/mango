@@ -20,6 +20,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { useScrollbar } from '@/composables/useScrollbar';
+import { containsMenuPath } from '@mango/common/utils/menuTree';
 
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
 const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
@@ -40,7 +41,7 @@ watch(
   () => {
     const activeTop = activeTopRoutePath.value
       ? routesList.value.find(item => item.path === activeTopRoutePath.value)
-      : routesList.value.find(item => route.path === item.path || route.path.startsWith(`${item.path}/`));
+      : routesList.value.find(item => containsMenuPath(item, route.path));
     menuList.value = activeTop?.children?.length ? activeTop.children : [];
   },
   { immediate: true }

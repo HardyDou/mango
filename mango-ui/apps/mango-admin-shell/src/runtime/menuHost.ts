@@ -2,6 +2,13 @@ import { computed, ref } from 'vue';
 import { get } from '@mango/common/utils/request';
 import type { MangoMenuPageType } from '@mango/app-runtime';
 import type { RouteRecordRaw } from 'vue-router';
+import {
+  containsMenuPath,
+  findMenuByPath,
+  findTopMenuByPath,
+  resolveFirstMenu as resolveFirstMenuNode,
+  type MangoMenuTreeNode,
+} from '@mango/common/utils/menuTree';
 
 export enum MenuTypeEnum {
   DIRECTORY = 1,
@@ -37,10 +44,7 @@ export interface ShellRouteMenu extends RouteRecordRaw {
   children?: ShellRouteMenu[];
 }
 
-export type ShellMenuTreeNode = {
-  path: string;
-  children?: ShellMenuTreeNode[];
-};
+export type ShellMenuTreeNode = MangoMenuTreeNode;
 
 export function useMenuHost() {
   const menuLoading = ref(false);
@@ -95,7 +99,7 @@ export function useMenuHost() {
       return undefined;
     }
     activeMenuPath.value = menu.path;
-    const top = findTopByPath(menus.value, menu.path);
+    const top = findTopMenuByPath(menus.value, menu.path);
     if (top) {
       activeTopPath.value = top.path;
     }
@@ -195,6 +199,27 @@ function createHomeRouteMenu(): ShellRouteMenu {
     status: 1,
     visible: 1,
     keepAlive: 1,
+    pageType: 'LOCAL_ROUTE',
+    children: [],
+  });
+}
+
+export function createNotFoundRouteMenu(path = '/404'): ShellRouteMenu {
+  return toShellRouteMenu({
+    appCode: 'internal-admin',
+    moduleCode: 'mango-shell',
+    menuId: 'shell-not-found',
+    menuName: '404',
+    menuCode: 'shell:not-found',
+    parentId: 0,
+    menuType: MenuTypeEnum.MENU,
+    path,
+    component: 'error/404',
+    icon: 'Warning',
+    sort: -999,
+    status: 1,
+    visible: 0,
+    keepAlive: 0,
     pageType: 'LOCAL_ROUTE',
     children: [],
   });
@@ -406,20 +431,10 @@ function createAccountRouteMenu(menu: Pick<ShellMenu, 'menuId' | 'menuName' | 'm
   });
 }
 
+export { containsMenuPath };
+
 export function resolveFirstMenu(menu?: ShellRouteMenu): ShellRouteMenu | undefined {
-  if (!menu) {
-    return undefined;
-  }
-  if (isRunnableMenu(menu)) {
-    return menu;
-  }
-  for (const child of menu.children || []) {
-    const first = resolveFirstMenu(child);
-    if (first) {
-      return first;
-    }
-  }
-  return undefined;
+  return resolveFirstMenuNode(menu, isRunnableMenu);
 }
 
 export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
@@ -431,28 +446,4 @@ export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
     return Boolean(source.externalUrl);
   }
   return source.menuType === MenuTypeEnum.MENU && Boolean(source.component || source.path);
-}
-
-function findMenuByPath(menus: ShellRouteMenu[], path: string): ShellRouteMenu | undefined {
-  for (const menu of menus) {
-    if (menu.path === path) {
-      return menu;
-    }
-    const child = findMenuByPath(menu.children || [], path);
-    if (child) {
-      return child;
-    }
-  }
-  return undefined;
-}
-
-function findTopByPath(menus: ShellRouteMenu[], path: string): ShellRouteMenu | undefined {
-  return menus.find(menu => containsMenuPath(menu, path));
-}
-
-export function containsMenuPath(menu: ShellMenuTreeNode, path: string): boolean {
-  if (path === menu.path || path.startsWith(`${menu.path}/`)) {
-    return true;
-  }
-  return Boolean(menu.children?.some(child => containsMenuPath(child, path)));
 }

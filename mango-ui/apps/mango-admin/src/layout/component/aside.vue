@@ -43,7 +43,7 @@ import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useLayoutStore } from '@/stores/layout';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
-import { mittBus } from '@mango/common';
+import { containsMenuPath, mittBus, type MangoMenuTreeNode } from '@mango/common';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));
@@ -60,9 +60,9 @@ const menuList = ref<any[]>([]);
 const columnsChildren = ref<any[]>([]);
 const clientWidth = ref(document.body.clientWidth);
 
-const findRouteTop = (items: any[], path: string): any | undefined => {
+const findRouteTop = (items: MangoMenuTreeNode[], path: string): MangoMenuTreeNode | undefined => {
   for (const item of items) {
-    if (path === item.path || path.startsWith(`${item.path}/`)) {
+    if (containsMenuPath(item, path)) {
       return item;
     }
   }

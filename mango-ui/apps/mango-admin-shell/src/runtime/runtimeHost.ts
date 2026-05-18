@@ -149,7 +149,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
     const loader = getPageLoader(menu.moduleCode, menu.component) || getPageLoader(undefined, menu.component);
     if (!loader) {
-      mountMessage(`缺少本地组件映射：${menu.component || menu.path}`);
+      await mountNotFound(seq);
       return;
     }
 
@@ -178,6 +178,27 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!isLatestMount(seq)) {
       await adapter.unmount?.(config);
     }
+  }
+
+  async function mountNotFound(seq: number) {
+    await ensureDefaultPages();
+    if (!isLatestMount(seq)) {
+      return;
+    }
+    const loader = getPageLoader('mango-shell', 'error/404') || getPageLoader(undefined, 'error/404');
+    if (!loader) {
+      mountMessage('404');
+      return;
+    }
+    const module = await loader();
+    if (!isLatestMount(seq)) {
+      return;
+    }
+    const component = (module as any).default || module;
+    mountedLocalPage = createApp({ render: () => h(component) });
+    installShellApp(mountedLocalPage);
+    mountedLocalPage.use(router);
+    mountedLocalPage.mount(containerRef.value!);
   }
 
   async function retryCurrentMenu() {

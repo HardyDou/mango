@@ -83,7 +83,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
-import { iconMap } from '@/config/iconConfig';
+import { iconMap } from '@mango/common/utils/iconConfig';
+import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
@@ -106,20 +107,9 @@ const headerAsideExpanded = computed(() => {
   return !layoutStore.isCollapse;
 });
 
-const findTopByPath = (path: string) => {
-  return topMenus.value.find(item => path === item.path || path.startsWith(`${item.path}/`))
+const findTopByPath = (path: string): MangoMenuTreeNode | undefined => {
+  return topMenus.value.find(item => containsMenuPath(item, path))
     || topMenus.value[0];
-};
-
-const resolveFirstRoute = (item: any): string => {
-  if (item.redirect && typeof item.redirect === 'string') {
-    return item.redirect;
-  }
-  const firstChild = item.children?.[0];
-  if (firstChild) {
-    return resolveFirstRoute(firstChild);
-  }
-  return item.path;
 };
 
 const toggleCollapse = () => {
@@ -134,9 +124,9 @@ const onToggleMobileMenu = () => {
   layoutStore.toggleMobileMenu();
 };
 
-const onTopMenuClick = (item: any) => {
+const onTopMenuClick = (item: MangoMenuTreeNode) => {
   storesRoutesList.setActiveTopRoutePath(item.path);
-  const targetPath = resolveFirstRoute(item);
+  const targetPath = resolveFirstMenuPath(item);
   if (targetPath && targetPath !== route.path) {
     router.push(targetPath);
   }

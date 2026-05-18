@@ -39,7 +39,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { mittBus } from '@mango/common';
-import { iconMap } from '@/config/iconConfig';
+import { iconMap } from '@mango/common/utils/iconConfig';
 
 interface MenuItem {
   path: string;

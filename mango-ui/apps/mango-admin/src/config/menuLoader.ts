@@ -59,6 +59,20 @@ function filterDevOnlyMenus(menus: MenuConfigItem[]): MenuConfigItem[] {
     }));
 }
 
+function createHomeMenuItem(): MenuItem {
+  return {
+    path: '/home',
+    name: 'Home',
+    meta: {
+      title: '首页',
+      icon: 'HomeFilled',
+      isAffix: true,
+      keepAlive: true,
+    },
+    component: () => import('@/views/home/index.vue'),
+  };
+}
+
 /**
  * 菜单元数据
  */
@@ -95,6 +109,7 @@ const appViewMap = new Map(
 
 export class MenuLoader {
   private static instance: MenuLoader;
+  private homeMenuItem: MenuItem;
   private frontendMenuItems: MenuItem[] = [];
   private backendMenuItems: MenuItem[] = [];
   private mergedMenuItems: MenuItem[] = [];
@@ -102,6 +117,7 @@ export class MenuLoader {
 
   private constructor() {
     // 初始化时加载前端配置。开发中心只在开发环境展示，不进入测试/生产菜单。
+    this.homeMenuItem = createHomeMenuItem();
     this.frontendMenuItems = this.jsonToMenuItem(filterDevOnlyMenus(menuJson as MenuConfigItem[]));
   }
 
@@ -175,7 +191,8 @@ export class MenuLoader {
       return appViewLoader as () => Promise<any>;
     }
 
-    return () => Promise.reject(new Error(`Invalid component path: ${componentPath}`));
+    console.warn(`[MenuLoader] 未找到菜单组件，使用 404 页面: ${componentPath}`);
+    return () => import('@/views/error/404.vue');
   }
 
   /**
@@ -206,31 +223,26 @@ export class MenuLoader {
    * 合并策略：前端配置（组件库、示例页面）在前，后端配置（系统管理）在后
    */
   async loadFromBackend(): Promise<MenuItem[]> {
-    try {
-      const response = await menuApi.getUserMenus({ fmt: 'tree' });
-      const backendMenus = filterMenuForNav(response.menus || []);
-      if (backendMenus && backendMenus.length > 0) {
-        // 将后端菜单转换为配置格式
-        const backendConfig = this.backendToConfig(backendMenus);
-        this.backendMenuItems = this.jsonToMenuItem(backendConfig);
-
-        // 合并：后端菜单在前，前端菜单（组件库/示例页面/开发调试）在最下面
-        // 去重：后端菜单中移除与前端菜单路径相同的项
-        const frontendPaths = new Set(this.frontendMenuItems.map(m => m.path));
-        const uniqueBackendItems = this.backendMenuItems.filter(m => !frontendPaths.has(m.path));
-        this.mergedMenuItems = [...uniqueBackendItems, ...this.frontendMenuItems];
-
-        this.backendMode = true;
-        if (import.meta.env.DEV) console.log('[MenuLoader] 从后端加载菜单成功，共', this.mergedMenuItems.length, '个菜单（前端:', this.frontendMenuItems.length, '后端:', this.backendMenuItems.length, '）');
-        return this.mergedMenuItems;
-      }
-    } catch (e) {
-      console.error('[MenuLoader] 从后端加载菜单失败，使用前端配置', e);
+    const response = await menuApi.getUserMenus({ fmt: 'tree' });
+    const backendMenus = filterMenuForNav(response.menus || []);
+    if (!backendMenus || backendMenus.length === 0) {
+      this.resetBackendCache();
+      throw new Error('后端菜单数据为空');
     }
 
-    // 失败时降级到前端配置
-    this.mergedMenuItems = [...this.frontendMenuItems];
-    this.backendMode = false;
+    // 将后端菜单转换为配置格式
+    const backendConfig = this.backendToConfig(backendMenus);
+    this.backendMenuItems = this.jsonToMenuItem(backendConfig);
+
+    // 合并：固定首页在前，后端业务菜单居中，本地开发菜单在最后。
+    // 去重：后端或本地追加菜单以后配置 /home 时，以固定首页为准。
+    const localPaths = new Set([this.homeMenuItem.path, ...this.frontendMenuItems.map(m => m.path)]);
+    const uniqueBackendItems = this.backendMenuItems.filter(m => !localPaths.has(m.path));
+    const uniqueFrontendItems = this.frontendMenuItems.filter(m => m.path !== this.homeMenuItem.path);
+    this.mergedMenuItems = [this.homeMenuItem, ...uniqueBackendItems, ...uniqueFrontendItems];
+
+    this.backendMode = true;
+    if (import.meta.env.DEV) console.log('[MenuLoader] 从后端加载菜单成功，共', this.mergedMenuItems.length, '个菜单（前端:', this.frontendMenuItems.length, '后端:', this.backendMenuItems.length, '）');
     return this.mergedMenuItems;
   }
 
@@ -248,14 +260,14 @@ export class MenuLoader {
    * 获取前端菜单配置（不含后端）
    */
   getFrontendMenuItems(): MenuItem[] {
-    return this.frontendMenuItems;
+    return [this.homeMenuItem, ...this.frontendMenuItems.filter(m => m.path !== this.homeMenuItem.path)];
   }
 
   /**
    * 获取合并后的菜单配置
    */
   getMenuConfig(): MenuItem[] {
-    return this.mergedMenuItems.length > 0 ? this.mergedMenuItems : this.frontendMenuItems;
+    return this.mergedMenuItems.length > 0 ? this.mergedMenuItems : this.getFrontendMenuItems();
   }
 
   /**

@@ -28,7 +28,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
 import { useRuntimeHost } from './runtimeHost';
-import { containsMenuPath, useMenuHost, type ShellRouteMenu } from './menuHost';
+import { containsMenuPath, createNotFoundRouteMenu, useMenuHost, type ShellRouteMenu } from './menuHost';
 import { useRoutesList } from '../stores/routesList';
 import { useTagsViewRoutes } from '../stores/tagsViewRoutes';
 
@@ -60,20 +60,18 @@ let mountedFullPath = '';
 
 async function initShellRuntime() {
   try {
-    const [runtimeOk, firstMenu] = await Promise.all([
+    const [runtimeOk] = await Promise.all([
       loadRuntimeApps(),
       loadMenus(),
     ]);
     routesListStore.setRoutesList(menus.value);
 
     const currentMenu = selectMenu(route.path);
-    const targetMenu = currentMenu || firstMenu || activeMenu.value;
+    const targetMenu = currentMenu || createNotFoundRouteMenu(route.path);
     if (targetMenu) {
       activeTopRoutePath.value = findTopPath(targetMenu.path) || activeTopRoutePath.value;
-      ensureTag(targetMenu);
-      if (!currentMenu && route.path !== targetMenu.path) {
-        await router.replace(targetMenu.path);
-        return;
+      if (currentMenu) {
+        ensureTag(targetMenu);
       }
       await mountShellMenu(targetMenu);
     }
@@ -93,12 +91,12 @@ watch(
       return;
     }
     const menu = selectMenu(route.path);
-    if (!menu) {
-      return;
+    const targetMenu = menu || createNotFoundRouteMenu(route.path);
+    activeTopRoutePath.value = findTopPath(targetMenu.path) || activeTopRoutePath.value;
+    if (menu) {
+      ensureTag(targetMenu);
     }
-    activeTopRoutePath.value = findTopPath(menu.path) || activeTopRoutePath.value;
-    ensureTag(menu);
-    await mountShellMenu(menu);
+    await mountShellMenu(targetMenu);
   }
 );
 

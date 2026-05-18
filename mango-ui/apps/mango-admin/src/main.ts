@@ -1,8 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersist from 'pinia-plugin-persistedstate';
-import { ElMessage } from 'element-plus';
-import { registerUnauthorizedHandler } from '@mango/common';
+import { mangoMessage, registerUnauthorizedHandler } from '@mango/common';
 import { installMangoAuth } from '@mango/auth';
 import App from './App.vue';
 import router from './router';
@@ -34,7 +33,7 @@ app.config.errorHandler = (err, instance, info) => {
   console.error('Vue 错误:', err);
   console.error('组件:', instance);
   console.error('错误信息:', info);
-  ElMessage.error('系统错误，请刷新页面');
+  mangoMessage.error('系统错误，请刷新页面');
 };
 
 app.use(createPinia().use(piniaPluginPersist));

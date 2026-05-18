@@ -10,6 +10,7 @@
       刷新
     </div>
     <div
+      v-if="!isCurrentHomeTag"
       class="context-menu-item"
       @click="onClose"
     >
@@ -31,9 +32,10 @@
 </template>
 
 <script setup lang="ts" name="contextMenu">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
+import { isHomeTag } from '@mango/common';
 
 const props = defineProps<{
   tag: any;
@@ -43,6 +45,7 @@ const emit = defineEmits(['close']);
 const router = useRouter();
 const storesTagsViewRoutes = useTagsViewRoutes();
 const visible = ref(true);
+const isCurrentHomeTag = computed(() => isHomeTag(props.tag));
 
 watch(
   () => props.tag,
@@ -57,6 +60,10 @@ const onRefresh = () => {
 };
 
 const onClose = () => {
+  if (isHomeTag(props.tag)) {
+    emit('close');
+    return;
+  }
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.path !== props.tag.path);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
   if (tags.length > 0) {

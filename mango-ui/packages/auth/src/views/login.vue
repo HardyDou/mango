@@ -286,12 +286,23 @@ const handleLogin = async () => {
         throw new Error('登录响应无效');
       }
 
-      // 保存 Token 和用户信息
+      // 保存 Token 和用户信息。登录上下文必须写入 userInfo，后续菜单、权限和文件等接口依赖它组装租户头。
       const userInfo = res.userInfo || res;
+      const normalizedUserInfo = {
+        ...userInfo,
+        tenantId: userInfo.tenantId ?? res.tenantId ?? form.tenantId,
+        tenantCode: userInfo.tenantCode ?? res.tenantCode ?? selectedTenant.value?.tenantCode ?? loginData.tenantCode,
+        tenantName: userInfo.tenantName ?? res.tenantName ?? selectedTenant.value?.tenantName,
+        realm: userInfo.realm ?? res.realm ?? loginData.realm,
+        actorType: userInfo.actorType ?? res.actorType ?? loginData.actorType,
+        partyType: userInfo.partyType ?? res.partyType ?? loginData.partyType,
+        partyId: userInfo.partyId ?? res.partyId ?? loginData.partyId,
+        appCode: userInfo.appCode ?? res.appCode ?? loginData.appCode,
+      };
       Session.setToken(token);
-      userInfoStore.setUserInfos(userInfo);
-      if (res.tenantId) {
-        Session.set('tenantId', res.tenantId);
+      userInfoStore.setUserInfos(normalizedUserInfo);
+      if (normalizedUserInfo.tenantId) {
+        Session.set('tenantId', normalizedUserInfo.tenantId);
       }
 
       ElMessage.success('登录成功');

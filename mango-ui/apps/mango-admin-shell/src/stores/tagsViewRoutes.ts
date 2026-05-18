@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { RouteRecordRaw } from 'vue-router';
-import { Session } from '@mango/common/utils/storage';
+import { normalizeTagsViewRoutes, Session } from '@mango/common';
 
 export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
   state: (): {
@@ -14,7 +14,7 @@ export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
   }),
   actions: {
     setTagsViewRoutes(data: RouteRecordRaw[]) {
-      this.tagsViewRoutes = data;
+      this.tagsViewRoutes = normalizeTagsViewRoutes(data);
     },
     setCurrenFullscreen(bool: boolean) {
       Session.set('isTagsViewCurrenFull', bool);
@@ -28,7 +28,7 @@ export const useTagsViewRoutes = defineStore('tagsViewRoutes', {
       if (idx > -1) this.favoriteRoutes.splice(idx, 1);
     },
     clearTagsView() {
-      this.tagsViewRoutes = [];
+      this.tagsViewRoutes = normalizeTagsViewRoutes([]);
     },
   },
   persist: {

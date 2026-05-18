@@ -13,6 +13,8 @@ export function registerDefaultAdminPages() {
       moduleCode: 'mango-shell',
       pages: {
         'home/index': () => import('../../../apps/mango-admin/src/views/home/index.vue'),
+        'error/404': () => import('../../../apps/mango-admin-shell/src/views/error/404.vue'),
+        'error/not-found': () => import('../../../apps/mango-admin-shell/src/views/error/404.vue'),
         'demo/components/EditorView': () => import('../../../apps/mango-admin/src/views/demo/components/EditorView.vue'),
         'demo/components/CodeEditorView': () => import('../../../apps/mango-admin/src/views/demo/components/CodeEditorView.vue'),
         'demo/components/UploadView': () => import('../../../apps/mango-admin/src/views/demo/components/UploadView.vue'),

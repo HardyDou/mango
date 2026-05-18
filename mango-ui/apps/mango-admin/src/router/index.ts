@@ -1,7 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { Session } from '@mango/common';
+import { mangoMessage, Session } from '@mango/common';
 import { useUserInfo } from '@/stores/userInfo';
 import { usePreferencesStore } from '@/stores/preferences';
 import { useRoutesList } from '@/stores/routesList';
@@ -38,10 +37,13 @@ async function initRoutes(): Promise<void> {
     return;
   }
 
-  initPromise = doInitRoutes().finally(() => {
-    isRoutesInitialized.value = true;
-    initPromise = null;
-  });
+  initPromise = doInitRoutes()
+    .then(() => {
+      isRoutesInitialized.value = true;
+    })
+    .finally(() => {
+      initPromise = null;
+    });
 
   return initPromise;
 }
@@ -143,8 +145,9 @@ router.beforeEach(async (to, from, next) => {
     }
   } catch (error) {
     console.error('路由守卫失败:', error);
-    Session.clearToken();
-    ElMessage.error('登录已过期，请重新登录');
+    isNavigatingAfterInit = false;
+    Session.clearSession();
+    mangoMessage.error(error instanceof Error ? error.message : '登录已过期，请重新登录');
     next('/login');
   }
 });

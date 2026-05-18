@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ElMessage } from 'element-plus';
 import { Session } from './storage';
+import { mangoMessage } from './message';
 
 // 环境变量（当前未使用，预留）
 // const VITE_ADMIN_PROXY_PATH = import.meta.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555';
@@ -76,7 +76,7 @@ async function handleUnauthorized(message?: string): Promise<void> {
   }
   isRedirecting = true;
   Session.clearSession();
-  ElMessage.warning(message || '登录已过期，请重新登录');
+  mangoMessage.warning(message || '登录已过期，请重新登录');
   try {
     await redirectToLogin();
   } finally {
@@ -121,7 +121,7 @@ function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
  */
 function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
   const userInfo = Session.get('userInfo');
-  const tenantId = userInfo?.tenantId;
+  const tenantId = userInfo?.tenantId ?? Session.get('tenantId');
   if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
     config.headers = config.headers || {};
     config.headers['X-Mango-Tenant-Id'] = String(tenantId);
@@ -181,7 +181,7 @@ service.interceptors.response.use(
     }
 
     // 其他错误
-    ElMessage.error(message || '请求失败');
+    mangoMessage.error(message || '请求失败');
     return Promise.reject(new Error(message || '请求失败'));
   },
   (error) => {
@@ -195,13 +195,13 @@ service.interceptors.response.use(
     if (status === 401) {
       void handleUnauthorized('登录已过期，请重新登录');
     } else if (status === 403) {
-      ElMessage.error(message || '没有权限访问该资源');
+      mangoMessage.error(message || '没有权限访问该资源');
     } else if (status === 500) {
-      ElMessage.error(message || '服务器错误');
+      mangoMessage.error(message || '服务器错误');
     } else if (status === 502) {
-      ElMessage.error(message || '网关错误');
+      mangoMessage.error(message || '网关错误');
     } else {
-      ElMessage.error(message);
+      mangoMessage.error(message);
     }
 
     return Promise.reject(error);

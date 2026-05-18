@@ -12,6 +12,10 @@ export * from './utils/authFunction';
 export * from './utils/errorCode';
 export * from './utils/getStyleSheets';
 export * from './utils/toolsValidate';
+export * from './utils/menuTree';
+export * from './utils/iconConfig';
+export * from './utils/message';
+export * from './utils/tagsView';
 
 export * from './hooks/useTitle';
 export * from './api/upload';

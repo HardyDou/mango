@@ -83,7 +83,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
-import { iconMap } from '@/config/iconConfig';
+import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenu, type ShellRouteMenu } from '@/runtime/menuHost';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 

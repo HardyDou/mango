@@ -38,6 +38,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
+import { isHomeTag } from '@mango/common';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
@@ -84,6 +85,9 @@ const openContextMenu = (e: MouseEvent, tag: any) => {
 };
 
 const closeSelectedTag = (tag: any) => {
+  if (isHomeTag(tag)) {
+    return;
+  }
   const idx = visitedViews.value.findIndex((t) => t.path === tag.path);
   if (idx > -1) {
     const newTags = [...visitedViews.value];

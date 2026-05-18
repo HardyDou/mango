@@ -1,7 +1,8 @@
 import type { App as VueApp } from 'vue';
 import { createPinia, type Pinia } from 'pinia';
-import ElementPlus, { ElMessage } from 'element-plus';
+import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
+import { mangoMessage } from '@mango/common';
 import { installMangoAuth } from '@mango/auth';
 
 let shellPinia: Pinia | undefined;
@@ -51,6 +52,6 @@ export function installShellApp(app: VueApp) {
     console.error('[mango-shell] Vue error:', err);
     console.error('[mango-shell] component:', instance);
     console.error('[mango-shell] info:', info);
-    ElMessage.error('系统错误，请刷新页面');
+    mangoMessage.error('系统错误，请刷新页面');
   };
 }

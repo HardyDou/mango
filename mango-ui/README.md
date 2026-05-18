@@ -614,6 +614,8 @@ packages/common -> packages/api-schema
 - 业务包直接依赖基座私有路径，如 `@/stores`、`@/api`、`@/config`。
 - 公共组件通过相对路径回跳到应用目录。
 - 为了微前端把同一业务页面复制到多个目录。
+- 用临时 import 后缀、私有中转文件、重复映射表等方式绕过共享能力归属问题。
+- 把只解决当前报错、没有根因说明和验证结论的代码作为最终实现。
 
 组件和 API：
 
@@ -623,6 +625,13 @@ packages/common -> packages/api-schema
 - Workflow 业务页面放 `packages/workflow`。
 - 跨包共享类型优先放 `packages/api-schema`。
 - ID 类型按字符串处理，除页码、数量、金额、排序等真实数值外，不要对 ID 做 `Number(id)` 或 `parseInt(id)`。
+- 单体和微前端共用的菜单树、图标、权限、运行时工具放 `packages/common` 或 `packages/app-runtime`，业务代码直接依赖共享包稳定入口。
+
+临时代码规则：
+
+- 临时代码只能用于本地排查，提交前必须删除或升级为正式方案。
+- 正式方案需要符合依赖方向和模块归属，不能靠局部特殊写法掩盖架构问题。
+- 修复运行态问题时，必须覆盖开发态访问和生产构建验证。
 
 ## 构建和验证
 

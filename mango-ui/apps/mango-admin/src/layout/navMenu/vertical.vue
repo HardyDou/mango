@@ -47,7 +47,7 @@
 import { defineAsyncComponent, reactive, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLayoutStore } from '@/stores/layout';
-import { iconMap } from '@/config/iconConfig';
+import { iconMap } from '@mango/common/utils/iconConfig';
 
 const SubItem = defineAsyncComponent(() => import('./subItem.vue'));
 
