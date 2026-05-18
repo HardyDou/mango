@@ -84,7 +84,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '@/stores/layout';
 import { useRoutesList } from '@/stores/routesList';
 import { iconMap } from '@/config/iconConfig';
-import { resolveFirstMenu } from '@/runtime/menuHost';
+import { containsMenuPath, resolveFirstMenu, type ShellRouteMenu } from '@/runtime/menuHost';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
@@ -107,12 +107,12 @@ const headerAsideExpanded = computed(() => {
   return !layoutStore.isCollapse;
 });
 
-const findTopByPath = (path: string) => {
-  return topMenus.value.find(item => path === item.path || path.startsWith(`${item.path}/`))
+const findTopByPath = (path: string): ShellRouteMenu | undefined => {
+  return topMenus.value.find(item => containsMenuPath(item, path))
     || topMenus.value[0];
 };
 
-const resolveFirstRoute = (item: any): string => {
+const resolveFirstRoute = (item: ShellRouteMenu): string => {
   if (item.redirect && typeof item.redirect === 'string') {
     return item.redirect;
   }
@@ -131,7 +131,7 @@ const onToggleMobileMenu = () => {
   layoutStore.toggleMobileMenu();
 };
 
-const onTopMenuClick = (item: any) => {
+const onTopMenuClick = (item: ShellRouteMenu) => {
   storesRoutesList.setActiveTopRoutePath(item.path);
   const targetPath = resolveFirstRoute(item);
   if (targetPath && targetPath !== route.path) {

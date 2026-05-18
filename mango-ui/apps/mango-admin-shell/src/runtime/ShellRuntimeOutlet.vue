@@ -28,7 +28,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
 import { useRuntimeHost } from './runtimeHost';
-import { useMenuHost } from './menuHost';
+import { containsMenuPath, useMenuHost, type ShellRouteMenu } from './menuHost';
 import { useRoutesList } from '../stores/routesList';
 import { useTagsViewRoutes } from '../stores/tagsViewRoutes';
 
@@ -55,7 +55,6 @@ const {
 
 const pageLoading = computed(() => loading.value || menuLoading.value);
 const showRuntimeBadge = computed(() => import.meta.env.DEV && route.query.runtimeDebug === '1');
-let mountedPath = '';
 let mountingPath = '';
 let mountedFullPath = '';
 
@@ -65,7 +64,7 @@ async function initShellRuntime() {
       loadRuntimeApps(),
       loadMenus(),
     ]);
-    routesListStore.setRoutesList(menus.value as any);
+    routesListStore.setRoutesList(menus.value);
 
     const currentMenu = selectMenu(route.path);
     const targetMenu = currentMenu || firstMenu || activeMenu.value;
@@ -104,10 +103,10 @@ watch(
 );
 
 function findTopPath(path: string) {
-  return menus.value.find(menu => path === menu.path || path.startsWith(`${menu.path}/`))?.path;
+  return menus.value.find(menu => containsMenuPath(menu, path))?.path;
 }
 
-function ensureTag(menu: any) {
+function ensureTag(menu: ShellRouteMenu) {
   const exists = tagsViewStore.tagsViewRoutes.some(tag => tag.path === menu.path);
   if (exists) {
     return;
@@ -122,18 +121,17 @@ function ensureTag(menu: any) {
         icon: menu.meta?.icon || menu.sourceMenu?.icon,
         isAffix: menu.meta?.isAffix,
       },
-    } as any,
+    },
   ]);
 }
 
-async function mountShellMenu(menu: any) {
+async function mountShellMenu(menu: ShellRouteMenu) {
   if (!menu?.path || mountedFullPath === route.fullPath || mountingPath === menu.path) {
     return;
   }
   mountingPath = menu.path;
   try {
     await mountMenu(menu);
-    mountedPath = menu.path;
     mountedFullPath = route.fullPath;
   } finally {
     mountingPath = '';

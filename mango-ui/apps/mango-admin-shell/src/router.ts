@@ -16,10 +16,6 @@ export const router = createRouter({
       meta: { isHide: true },
     },
     {
-      path: '/home',
-      redirect: '/',
-    },
-    {
       path: '/:pathMatch(.*)*',
       name: 'ShellMenu',
       component: () => import('./ShellView.vue'),

@@ -37,6 +37,11 @@ export interface ShellRouteMenu extends RouteRecordRaw {
   children?: ShellRouteMenu[];
 }
 
+export type ShellMenuTreeNode = {
+  path: string;
+  children?: ShellMenuTreeNode[];
+};
+
 export function useMenuHost() {
   const menuLoading = ref(false);
   const menus = ref<ShellRouteMenu[]>([]);
@@ -61,7 +66,9 @@ export function useMenuHost() {
         params: { fmt: 'tree', appCode: 'internal-admin' },
       });
       menus.value = [
+        createHomeRouteMenu(),
         ...filterMenuForNav(response || []).map(toShellRouteMenu),
+        ...createDevRouteMenus(),
         ...createAccountRouteMenus(),
       ];
       const first = resolveFirstMenu(menus.value[0]);
@@ -143,8 +150,14 @@ function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
 
 function inferModuleCode(component?: string, path?: string) {
   const target = `${component || ''} ${path || ''}`;
+  if (target.includes('components/') || target.includes('demo/') || target.includes('debug/')) {
+    return 'mango-shell';
+  }
   if (target.includes('profile') || target.includes('password')) {
     return 'mango-authorization';
+  }
+  if (target.includes('home')) {
+    return 'mango-shell';
   }
   if (target.includes('workflow/')) {
     return 'mango-workflow';
@@ -164,6 +177,197 @@ function inferModuleCode(component?: string, path?: string) {
     return 'mango-authorization';
   }
   return undefined;
+}
+
+function createHomeRouteMenu(): ShellRouteMenu {
+  return toShellRouteMenu({
+    appCode: 'internal-admin',
+    moduleCode: 'mango-shell',
+    menuId: 'shell-home',
+    menuName: '首页',
+    menuCode: 'shell:home',
+    parentId: 0,
+    menuType: MenuTypeEnum.MENU,
+    path: '/home',
+    component: 'home/index',
+    icon: 'HomeFilled',
+    sort: -1000,
+    status: 1,
+    visible: 1,
+    keepAlive: 1,
+    pageType: 'LOCAL_ROUTE',
+    children: [],
+  });
+}
+
+function createDevRouteMenus(): ShellRouteMenu[] {
+  if (!import.meta.env.DEV) {
+    return [];
+  }
+
+  return [
+    toShellRouteMenu({
+      appCode: 'internal-admin',
+      moduleCode: 'mango-shell',
+      menuId: 'shell-develop',
+      menuName: '开发中心',
+      menuCode: 'shell:develop',
+      parentId: 0,
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/develop',
+      icon: 'Monitor',
+      sort: 999999,
+      status: 1,
+      visible: 1,
+      pageType: 'LOCAL_ROUTE',
+      redirect: '/components/editor',
+      children: [
+        {
+          appCode: 'internal-admin',
+          moduleCode: 'mango-shell',
+          menuId: 'shell-develop-components',
+          menuName: '组件库',
+          menuCode: 'shell:develop:components',
+          parentId: 'shell-develop',
+          menuType: MenuTypeEnum.DIRECTORY,
+          path: '/develop/components',
+          icon: 'Box',
+          sort: 1,
+          status: 1,
+          visible: 1,
+          pageType: 'LOCAL_ROUTE',
+          redirect: '/components/editor',
+          children: createComponentDemoMenus(),
+        },
+      ],
+    }),
+  ];
+}
+
+function createComponentDemoMenus(): ShellMenu[] {
+  const pages: Array<Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'path' | 'component' | 'icon'> & { sort: number }> = [
+    {
+      menuId: 'shell-components-editor',
+      menuName: '富文本编辑器',
+      menuCode: 'shell:components:editor',
+      path: '/components/editor',
+      component: 'demo/components/EditorView',
+      icon: 'Edit',
+      sort: 1,
+    },
+    {
+      menuId: 'shell-components-code-editor',
+      menuName: '代码编辑器',
+      menuCode: 'shell:components:code-editor',
+      path: '/components/code-editor',
+      component: 'demo/components/CodeEditorView',
+      icon: 'Code',
+      sort: 2,
+    },
+    {
+      menuId: 'shell-components-upload',
+      menuName: '文件上传',
+      menuCode: 'shell:components:upload',
+      path: '/components/upload',
+      component: 'demo/components/UploadView',
+      icon: 'Upload',
+      sort: 3,
+    },
+    {
+      menuId: 'shell-components-charts',
+      menuName: '数据图表',
+      menuCode: 'shell:components:charts',
+      path: '/components/charts',
+      component: 'demo/components/ChartsView',
+      icon: 'TrendCharts',
+      sort: 4,
+    },
+    {
+      menuId: 'shell-components-directive',
+      menuName: '功能指令',
+      menuCode: 'shell:components:directive',
+      path: '/components/directive',
+      component: 'demo/components/DirectiveView',
+      icon: 'Pointer',
+      sort: 5,
+    },
+    {
+      menuId: 'shell-demo-chat',
+      menuName: 'AI 对话',
+      menuCode: 'shell:demo:chat',
+      path: '/demo/chat',
+      component: 'demo/components/ChatView',
+      icon: 'ChatDotRound',
+      sort: 6,
+    },
+    {
+      menuId: 'shell-demo-sse',
+      menuName: '服务端推送',
+      menuCode: 'shell:demo:sse',
+      path: '/demo/sse',
+      component: 'demo/components/SSEView',
+      icon: 'Connection',
+      sort: 7,
+    },
+    {
+      menuId: 'shell-demo-websocket',
+      menuName: 'WebSocket',
+      menuCode: 'shell:demo:websocket',
+      path: '/demo/websocket',
+      component: 'demo/components/WebsocketView',
+      icon: 'Connection',
+      sort: 8,
+    },
+    {
+      menuId: 'shell-demo-china-area',
+      menuName: '中国行政区划',
+      menuCode: 'shell:demo:china-area',
+      path: '/demo/china-area',
+      component: 'demo/components/ChinaAreaView',
+      icon: 'MapLocation',
+      sort: 9,
+    },
+    {
+      menuId: 'shell-demo-org-selector',
+      menuName: '机构选择器',
+      menuCode: 'shell:demo:org-selector',
+      path: '/demo/org-selector',
+      component: 'demo/components/OrgSelectorView',
+      icon: 'Management',
+      sort: 10,
+    },
+    {
+      menuId: 'shell-demo-captcha',
+      menuName: '验证码',
+      menuCode: 'shell:demo:captcha',
+      path: '/demo/captcha',
+      component: 'demo/components/CaptchaView',
+      icon: 'Key',
+      sort: 11,
+    },
+    {
+      menuId: 'shell-debug-test',
+      menuName: '测试页面',
+      menuCode: 'shell:debug:test',
+      path: '/debug/test',
+      component: 'demo/components/CaptchaView',
+      icon: 'Bug',
+      sort: 12,
+    },
+  ];
+
+  return pages.map(page => ({
+    ...page,
+    appCode: 'internal-admin',
+    moduleCode: 'mango-shell',
+    parentId: 'shell-develop-components',
+    menuType: MenuTypeEnum.MENU,
+    status: 1,
+    visible: 1,
+    keepAlive: 1,
+    pageType: 'LOCAL_ROUTE',
+    children: [],
+  }));
 }
 
 function createAccountRouteMenus(): ShellRouteMenu[] {
@@ -243,5 +447,12 @@ function findMenuByPath(menus: ShellRouteMenu[], path: string): ShellRouteMenu |
 }
 
 function findTopByPath(menus: ShellRouteMenu[], path: string): ShellRouteMenu | undefined {
-  return menus.find(menu => path === menu.path || path.startsWith(`${menu.path}/`));
+  return menus.find(menu => containsMenuPath(menu, path));
+}
+
+export function containsMenuPath(menu: ShellMenuTreeNode, path: string): boolean {
+  if (path === menu.path || path.startsWith(`${menu.path}/`)) {
+    return true;
+  }
+  return Boolean(menu.children?.some(child => containsMenuPath(child, path)));
 }

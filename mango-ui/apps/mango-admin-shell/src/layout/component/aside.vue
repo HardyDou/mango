@@ -18,8 +18,6 @@
       <Logo v-if="layoutStore.isShowLogo && (layoutStore.layout === 'defaults' || layoutStore.layout === 'columns')" />
       <el-scrollbar
         class="flex-auto"
-        @mouseenter="onAsideEnterLeave(true)"
-        @mouseleave="onAsideEnterLeave(false)"
       >
         <Vertical
           v-if="layoutStore.layout !== 'columns'"
@@ -37,39 +35,39 @@
 </template>
 
 <script setup lang="ts" name="layoutAside">
-import { computed, defineAsyncComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useRoutesList } from '@/stores/routesList';
 import { useLayoutStore } from '@/stores/layout';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
 import { mittBus } from '@mango/common/utils/mitt';
+import { containsMenuPath, type ShellRouteMenu } from '@/runtime/menuHost';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));
 const route = useRoute();
 
-const layoutAsideScrollbarRef = ref();
 const storesRoutesList = useRoutesList();
 const layoutStore = useLayoutStore();
 const storesTagsViewRoutes = useTagsViewRoutes();
 const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 const { isTagsViewCurrenFull } = storeToRefs(storesTagsViewRoutes);
 
-const menuList = ref<any[]>([]);
-const columnsChildren = ref<any[]>([]);
+const menuList = ref<ShellRouteMenu[]>([]);
+const columnsChildren = ref<ShellRouteMenu[]>([]);
 const clientWidth = ref(document.body.clientWidth);
 
-const findRouteTop = (items: any[], path: string): any | undefined => {
+const findRouteTop = (items: ShellRouteMenu[], path: string): ShellRouteMenu | undefined => {
   for (const item of items) {
-    if (path === item.path || path.startsWith(`${item.path}/`)) {
+    if (containsMenuPath(item, path)) {
       return item;
     }
   }
   return items[0];
 };
 
-const getSideMenus = (items: any[], topPath?: string): any[] => {
+const getSideMenus = (items: ShellRouteMenu[], topPath?: string): ShellRouteMenu[] => {
   if (!items || items.length === 0) {
     return [];
   }
@@ -123,8 +121,6 @@ const setCollapseStyle = computed(() => {
   return layoutStore.isCollapse ? 'layout-aside-pc-64' : 'layout-aside-pc-220';
 });
 
-const onAsideEnterLeave = (_bool: boolean) => {};
-
 const onCloseMobileMenu = () => {
   layoutStore.closeMobileMenu();
 };
@@ -136,7 +132,7 @@ let cleanupMobileResize: (() => void) | undefined;
 
 onMounted(() => {
   // Listen for columns children data
-  cleanupSendColumns = mittBus.on('setSendColumnsChildren', (data: any) => {
+  cleanupSendColumns = mittBus.on('setSendColumnsChildren', (data: { children?: ShellRouteMenu[] }) => {
     if (data?.children) {
       columnsChildren.value = data.children;
     }

@@ -50,6 +50,15 @@ function filterMenuForNav(menus: SysMenuVO[]): SysMenuVO[] {
     })) as SysMenuVO[];
 }
 
+function filterDevOnlyMenus(menus: MenuConfigItem[]): MenuConfigItem[] {
+  return menus
+    .filter(menu => import.meta.env.DEV || !menu.meta?.devOnly)
+    .map(menu => ({
+      ...menu,
+      children: menu.children ? filterDevOnlyMenus(menu.children) : undefined,
+    }));
+}
+
 /**
  * 菜单元数据
  */
@@ -92,8 +101,8 @@ export class MenuLoader {
   private backendMode = false;
 
   private constructor() {
-    // 初始化时加载前端配置
-    this.frontendMenuItems = this.jsonToMenuItem(menuJson as MenuConfigItem[]);
+    // 初始化时加载前端配置。开发中心只在开发环境展示，不进入测试/生产菜单。
+    this.frontendMenuItems = this.jsonToMenuItem(filterDevOnlyMenus(menuJson as MenuConfigItem[]));
   }
 
   /**

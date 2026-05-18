@@ -10,151 +10,133 @@
     "component": "@/views/workflow/task/detail/index.vue"
   },
   {
-    "path": "/components",
-    "name": "Components",
+    "path": "/develop",
+    "name": "DevelopCenter",
     "meta": {
-      "title": "组件库",
-      "icon": "Box"
+      "title": "开发中心",
+      "icon": "Monitor",
+      "devOnly": true
     },
-    "redirect": "/components/formcreate",
+    "redirect": "/components/editor",
     "children": [
       {
-        "path": "/components/formcreate",
-        "name": "FormCreate",
+        "path": "/develop/components",
+        "name": "DevelopComponents",
         "meta": {
-          "title": "FormCreate",
-          "icon": "Document"
+          "title": "组件库",
+          "icon": "Box"
         },
-        "component": "@/views/components/formcreate/index.vue"
-      },
-      {
-        "path": "/components/editor",
-        "name": "Editor",
-        "meta": {
-          "title": "富文本编辑器",
-          "icon": "Edit"
-        },
-        "component": "@/views/demo/components/EditorView.vue"
-      },
-      {
-        "path": "/components/code-editor",
-        "name": "CodeEditor",
-        "meta": {
-          "title": "代码编辑器",
-          "icon": "Code"
-        },
-        "component": "@/views/demo/components/CodeEditorView.vue"
-      },
-      {
-        "path": "/components/upload",
-        "name": "Upload",
-        "meta": {
-          "title": "文件上传",
-          "icon": "Upload"
-        },
-        "component": "@/views/demo/components/UploadView.vue"
-      },
-      {
-        "path": "/components/charts",
-        "name": "Charts",
-        "meta": {
-          "title": "数据图表",
-          "icon": "TrendCharts"
-        },
-        "component": "@/views/demo/components/ChartsView.vue"
-      },
-      {
-        "path": "/components/directive",
-        "name": "Directive",
-        "meta": {
-          "title": "功能指令",
-          "icon": "Pointer"
-        },
-        "component": "@/views/demo/components/DirectiveView.vue"
-      }
-    ]
-  },
-  {
-    "path": "/demo",
-    "name": "Demo",
-    "meta": {
-      "title": "示例页面",
-      "icon": "Guide"
-    },
-    "redirect": "/demo/chat",
-    "children": [
-      {
-        "path": "/demo/chat",
-        "name": "DemoChat",
-        "meta": {
-          "title": "AI 对话",
-          "icon": "ChatDotRound"
-        },
-        "component": "@/views/demo/components/ChatView.vue"
-      },
-      {
-        "path": "/demo/sse",
-        "name": "DemoSSE",
-        "meta": {
-          "title": "服务端推送",
-          "icon": "Connection"
-        },
-        "component": "@/views/demo/components/SSEView.vue"
-      },
-      {
-        "path": "/demo/websocket",
-        "name": "DemoWebsocket",
-        "meta": {
-          "title": "WebSocket",
-          "icon": "Connection"
-        },
-        "component": "@/views/demo/components/WebsocketView.vue"
-      },
-      {
-        "path": "/demo/china-area",
-        "name": "DemoChinaArea",
-        "meta": {
-          "title": "中国行政区划",
-          "icon": "MapLocation"
-        },
-        "component": "@/views/demo/components/ChinaAreaView.vue"
-      },
-      {
-        "path": "/demo/org-selector",
-        "name": "DemoOrgSelector",
-        "meta": {
-          "title": "机构选择器",
-          "icon": "Management"
-        },
-        "component": "@/views/demo/components/OrgSelectorView.vue"
-      },
-      {
-        "path": "/demo/captcha",
-        "name": "DemoCaptcha",
-        "meta": {
-          "title": "验证码",
-          "icon": "Key"
-        },
-        "component": "@/views/demo/components/CaptchaView.vue"
-      }
-    ]
-  },
-  {
-    "path": "/debug",
-    "name": "Debug",
-    "meta": {
-      "title": "开发调试",
-      "icon": "Bug"
-    },
-    "children": [
-      {
-        "path": "/debug/test",
-        "name": "DebugTest",
-        "meta": {
-          "title": "测试页面",
-          "icon": "Document"
-        },
-        "component": "@/views/demo/components/CaptchaView.vue"
+        "redirect": "/components/editor",
+        "children": [
+          {
+            "path": "/components/editor",
+            "name": "Editor",
+            "meta": {
+              "title": "富文本编辑器",
+              "icon": "Edit"
+            },
+            "component": "@/views/demo/components/EditorView.vue"
+          },
+          {
+            "path": "/components/code-editor",
+            "name": "CodeEditor",
+            "meta": {
+              "title": "代码编辑器",
+              "icon": "Code"
+            },
+            "component": "@/views/demo/components/CodeEditorView.vue"
+          },
+          {
+            "path": "/components/upload",
+            "name": "Upload",
+            "meta": {
+              "title": "文件上传",
+              "icon": "Upload"
+            },
+            "component": "@/views/demo/components/UploadView.vue"
+          },
+          {
+            "path": "/components/charts",
+            "name": "Charts",
+            "meta": {
+              "title": "数据图表",
+              "icon": "TrendCharts"
+            },
+            "component": "@/views/demo/components/ChartsView.vue"
+          },
+          {
+            "path": "/components/directive",
+            "name": "Directive",
+            "meta": {
+              "title": "功能指令",
+              "icon": "Pointer"
+            },
+            "component": "@/views/demo/components/DirectiveView.vue"
+          },
+          {
+            "path": "/demo/chat",
+            "name": "DemoChat",
+            "meta": {
+              "title": "AI 对话",
+              "icon": "ChatDotRound"
+            },
+            "component": "@/views/demo/components/ChatView.vue"
+          },
+          {
+            "path": "/demo/sse",
+            "name": "DemoSSE",
+            "meta": {
+              "title": "服务端推送",
+              "icon": "Connection"
+            },
+            "component": "@/views/demo/components/SSEView.vue"
+          },
+          {
+            "path": "/demo/websocket",
+            "name": "DemoWebsocket",
+            "meta": {
+              "title": "WebSocket",
+              "icon": "Connection"
+            },
+            "component": "@/views/demo/components/WebsocketView.vue"
+          },
+          {
+            "path": "/demo/china-area",
+            "name": "DemoChinaArea",
+            "meta": {
+              "title": "中国行政区划",
+              "icon": "MapLocation"
+            },
+            "component": "@/views/demo/components/ChinaAreaView.vue"
+          },
+          {
+            "path": "/demo/org-selector",
+            "name": "DemoOrgSelector",
+            "meta": {
+              "title": "机构选择器",
+              "icon": "Management"
+            },
+            "component": "@/views/demo/components/OrgSelectorView.vue"
+          },
+          {
+            "path": "/demo/captcha",
+            "name": "DemoCaptcha",
+            "meta": {
+              "title": "验证码",
+              "icon": "Key"
+            },
+            "component": "@/views/demo/components/CaptchaView.vue"
+          },
+          {
+            "path": "/debug/test",
+            "name": "DebugTest",
+            "meta": {
+              "title": "测试页面",
+              "icon": "Bug"
+            },
+            "component": "@/views/demo/components/CaptchaView.vue"
+          }
+        ]
       }
     ]
   }

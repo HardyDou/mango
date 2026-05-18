@@ -28,10 +28,15 @@ const elementPlusIconNames = [
   'Coin',
   'List',
   'Platform',
+  'Promotion',
+  'Position',
   'Switch',
   'Collection',
   'Tickets',
   'DocumentChecked',
+  'CircleCheck',
+  'Message',
+  'Operation',
   'Tools',
   'Clock',
   'Management',
@@ -44,19 +49,35 @@ const elementPlusIconNames = [
   'Postcard',
   'ChatDotRound',
   'Connection',
+  'FolderOpened',
+  'Files',
+  'UploadFilled',
+  'Download',
+  'View',
+  'Delete',
+  'CirclePlus',
 ] as const;
 
 // 导出所有支持的图标名称列表
-export const iconNames = [...elementPlusIconNames];
+export const iconNames = Array.from(new Set([
+  ...elementPlusIconNames,
+  ...Object.keys(ElementPlusIcons),
+]));
 
 // 图标映射表：通过图标名称查找图标组件
-export const iconMap: Record<string, Component> = elementPlusIconNames.reduce(
-  (acc, name) => {
-    acc[name] = ElementPlusIcons[name] as Component;
-    return acc;
+const explicitIconMap = elementPlusIconNames.reduce((acc, name) => {
+  acc[name] = ElementPlusIcons[name] as Component;
+  return acc;
+}, {} as Record<string, Component>);
+
+export const iconMap: Record<string, Component | undefined> = new Proxy(explicitIconMap, {
+  get(target, key: string) {
+    return target[key] || (ElementPlusIcons as Record<string, Component | undefined>)[key];
   },
-  {} as Record<string, Component>
-);
+  has(target, key: string) {
+    return Boolean(target[key] || (ElementPlusIcons as Record<string, Component | undefined>)[key]);
+  },
+});
 
 // 便捷函数：获取图标组件
 export function getIcon(name: string): Component | undefined {
