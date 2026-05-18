@@ -1015,7 +1015,6 @@ create table ACT_HI_ATTACHMENT (
     primary key (ID_)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_bin;
 
-
 create index ACT_IDX_HI_PRO_INST_END on ACT_HI_PROCINST(END_TIME_);
 create index ACT_IDX_HI_PRO_I_BUSKEY on ACT_HI_PROCINST(BUSINESS_KEY_);
 create index ACT_IDX_HI_PRO_SUPER_PROCINST on ACT_HI_PROCINST(SUPER_PROCESS_INSTANCE_ID_);
@@ -1059,6 +1058,8 @@ CREATE TABLE IF NOT EXISTS `workflow_definition` (
   `id` bigint NOT NULL COMMENT '流程定义ID',
   `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
   `group_id` bigint NOT NULL COMMENT '流程分组ID',
+  `admin_users` varchar(1000) DEFAULT NULL COMMENT '流程管理员用户名JSON数组',
+  `icon` varchar(512) DEFAULT NULL COMMENT '流程图标',
   `definition_name` varchar(128) NOT NULL COMMENT '流程名称',
   `definition_key` varchar(128) NOT NULL COMMENT '流程编码，对应 Flowable process id',
   `deployment_id` varchar(128) DEFAULT NULL COMMENT 'Flowable 部署ID',
@@ -1166,26 +1167,381 @@ VALUES
 (360000108,1,'GUARANTEE_ARCHIVE','GUARANTEE_ARCHIVE','出函归档','GUARANTEE','保函节点','出函后归档资料并同步业务状态','serviceTask','EVENT_PUBLISH','#16a34a','Archive',NULL,JSON_OBJECT('businessStage','ARCHIVE','eventName','guarantee.archived'),180,1,NULL,NOW(),NOW(),NULL,NOW(),NOW())
 ON DUPLICATE KEY UPDATE `node_name` = VALUES(`node_name`), `category_code` = VALUES(`category_code`), `category_name` = VALUES(`category_name`), `description` = VALUES(`description`), `bpmn_type` = VALUES(`bpmn_type`), `execution_type` = VALUES(`execution_type`), `color` = VALUES(`color`), `icon` = VALUES(`icon`), `default_properties` = VALUES(`default_properties`), `sort` = VALUES(`sort`), `status` = VALUES(`status`);
 
+-- -----------------------------------------------------------------------------
+-- Folded from V2__workflow_process_start_permission.sql
+-- -----------------------------------------------------------------------------
+
 INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
 VALUES
-(24,1,'internal-admin',19,2,'工作流配置','system:workflow','/system/workflow','Workflow','@/views/system/workflow-definition/index.vue',8,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程分组、流程定义和发布配置',0,NULL,NOW(),NULL,NOW()),
-(24001,1,'internal-admin',24,3,'查询工作流','system:workflow:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'system:workflow:query',NULL,NULL,NOW(),NOW(),'工作流详情查询权限',0,NULL,NOW(),NULL,NOW()),
-(24002,1,'internal-admin',24,3,'新增工作流','system:workflow:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:workflow:add',NULL,NULL,NOW(),NOW(),'工作流新增权限',0,NULL,NOW(),NULL,NOW()),
-(24003,1,'internal-admin',24,3,'编辑工作流','system:workflow:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:workflow:edit',NULL,NULL,NOW(),NOW(),'工作流编辑权限',0,NULL,NOW(),NULL,NOW()),
-(24004,1,'internal-admin',24,3,'删除工作流','system:workflow:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:workflow:delete',NULL,NULL,NOW(),NOW(),'工作流删除权限',0,NULL,NOW(),NULL,NOW()),
-(24005,1,'internal-admin',24,3,'调整工作流状态','system:workflow:status',NULL,NULL,NULL,5,1,0,0,0,NULL,'system:workflow:status',NULL,NULL,NOW(),NOW(),'工作流状态调整权限',0,NULL,NOW(),NULL,NOW()),
-(24006,1,'internal-admin',24,3,'发布工作流','system:workflow:deploy',NULL,NULL,NULL,6,1,0,0,0,NULL,'system:workflow:deploy',NULL,NULL,NOW(),NOW(),'工作流发布权限',0,NULL,NOW(),NULL,NOW()),
-(24007,1,'internal-admin',24,3,'管理流程节点定义','system:workflow:node-definition',NULL,NULL,NULL,7,1,0,0,0,NULL,'system:workflow:edit',NULL,NULL,NOW(),NOW(),'流程节点定义管理权限',0,NULL,NOW(),NULL,NOW())
-ON DUPLICATE KEY UPDATE `menu_name` = VALUES(`menu_name`), `component` = VALUES(`component`), `permissions` = VALUES(`permissions`);
+(2602000,1,'internal-admin',2602,3,'发起流程','workflow:process:start',NULL,NULL,NULL,1,1,0,0,0,NULL,'workflow:process:start',NULL,NULL,NOW(),NOW(),'发起已发布流程实例',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE `permissions` = VALUES(`permissions`), `status` = VALUES(`status`), `visible` = VALUES(`visible`), `del_flag` = VALUES(`del_flag`);
 
-INSERT INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(1101,1,1,2602000,101),
+(2054,1,2,2602000,54);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+(52602000,1,1,2602000,NOW(),NULL,NOW(),NULL,NOW()),
+(62602000,2,2,2602000,NOW(),NULL,NOW(),NULL,NOW()),
+(72602000,3,3,2602000,NOW(),NULL,NOW(),NULL,NOW()),
+(82602000,4,4,2602000,NOW(),NULL,NOW(),NULL,NOW());
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V3__workflow_runtime_tables.sql
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `workflow_form_instance` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `process_instance_id` varchar(128) NOT NULL COMMENT '流程实例ID',
+  `business_key` varchar(128) DEFAULT NULL COMMENT '业务主键',
+  `definition_id` bigint DEFAULT NULL COMMENT 'Mango流程定义ID',
+  `definition_key` varchar(128) DEFAULT NULL COMMENT '流程定义编码',
+  `definition_name` varchar(128) DEFAULT NULL COMMENT '流程定义名称',
+  `process_definition_id` varchar(128) DEFAULT NULL COMMENT 'Flowable流程定义ID',
+  `process_definition_version` int DEFAULT NULL COMMENT 'Flowable流程版本',
+  `form_code` varchar(128) DEFAULT NULL COMMENT '表单编码',
+  `form_json` longtext COMMENT '表单JSON快照',
+  `variables_json` longtext COMMENT '表单变量JSON快照',
+  `status` varchar(32) NOT NULL DEFAULT 'RUNNING' COMMENT '状态: RUNNING/COMPLETED/REJECTED',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人',
+  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人',
+  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_workflow_form_instance_proc` (`process_instance_id`),
+  KEY `idx_workflow_form_instance_definition` (`definition_id`),
+  KEY `idx_workflow_form_instance_status` (`status`),
+  KEY `idx_workflow_form_instance_tenant` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程实例表单快照';
+
+CREATE TABLE IF NOT EXISTS `workflow_task_record` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `process_instance_id` varchar(128) NOT NULL COMMENT '流程实例ID',
+  `task_id` varchar(128) DEFAULT NULL COMMENT '任务ID',
+  `task_name` varchar(255) DEFAULT NULL COMMENT '任务名称',
+  `task_definition_key` varchar(128) DEFAULT NULL COMMENT '任务定义Key',
+  `action` varchar(32) NOT NULL COMMENT '动作: START/COMPLETE/REJECT',
+  `action_name` varchar(64) NOT NULL COMMENT '动作名称',
+  `operator_id` bigint DEFAULT NULL COMMENT '处理人ID',
+  `operator_name` varchar(128) DEFAULT NULL COMMENT '处理人',
+  `comment` varchar(1000) DEFAULT NULL COMMENT '处理意见',
+  `variables_json` longtext COMMENT '处理变量JSON',
+  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '处理时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_workflow_task_record_proc` (`process_instance_id`),
+  KEY `idx_workflow_task_record_task` (`task_id`),
+  KEY `idx_workflow_task_record_action` (`action`),
+  KEY `idx_workflow_task_record_tenant` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='工作流任务处理记录';
+
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
 VALUES
-(100000024,1,1,24,NOW(),NULL,NOW(),NULL,NOW()),
-(100024001,1,1,24001,NOW(),NULL,NOW(),NULL,NOW()),
-(100024002,1,1,24002,NOW(),NULL,NOW(),NULL,NOW()),
-(100024003,1,1,24003,NOW(),NULL,NOW(),NULL,NOW()),
-(100024004,1,1,24004,NOW(),NULL,NOW(),NULL,NOW()),
-(100024005,1,1,24005,NOW(),NULL,NOW(),NULL,NOW()),
-(100024006,1,1,24006,NOW(),NULL,NOW(),NULL,NOW()),
-(100024007,1,1,24007,NOW(),NULL,NOW(),NULL,NOW())
-ON DUPLICATE KEY UPDATE `updated_at` = VALUES(`updated_at`);
+(2601001,1,'internal-admin',2601,3,'查询任务详情','workflow:task:detail',NULL,NULL,NULL,101,1,0,0,0,NULL,'workflow:task:detail',NULL,NULL,NOW(),NOW(),'查询工作流任务详情、表单与审批记录',0,NULL,NOW(),NULL,NOW()),
+(2601002,1,'internal-admin',2601,3,'审批通过','workflow:task:complete',NULL,NULL,NULL,102,1,0,0,0,NULL,'workflow:task:complete',NULL,NULL,NOW(),NOW(),'完成工作流待办任务',0,NULL,NOW(),NULL,NOW()),
+(2601003,1,'internal-admin',2601,3,'审批驳回','workflow:task:reject',NULL,NULL,NULL,103,1,0,0,0,NULL,'workflow:task:reject',NULL,NULL,NOW(),NOW(),'驳回并终止当前工作流实例',0,NULL,NOW(),NULL,NOW()),
+(2602001,1,'internal-admin',2602,3,'查询流程详情','workflow:process:detail',NULL,NULL,NULL,104,1,0,0,0,NULL,'workflow:process:detail',NULL,NULL,NOW(),NOW(),'查询工作流实例详情与审批轨迹',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE `permissions` = VALUES(`permissions`), `status` = VALUES(`status`), `visible` = VALUES(`visible`), `del_flag` = VALUES(`del_flag`);
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(1102,1,1,2601001,102),
+(1103,1,1,2601002,103),
+(1104,1,1,2601003,104),
+(1105,1,1,2602001,105),
+(2055,1,2,2601001,55),
+(2056,1,2,2601002,56),
+(2057,1,2,2601003,57),
+(2058,1,2,2602001,58);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+(52601001,1,1,2601001,NOW(),NULL,NOW(),NULL,NOW()),
+(52601002,1,1,2601002,NOW(),NULL,NOW(),NULL,NOW()),
+(52601003,1,1,2601003,NOW(),NULL,NOW(),NULL,NOW()),
+(52602001,1,1,2602001,NOW(),NULL,NOW(),NULL,NOW()),
+(62601001,2,2,2601001,NOW(),NULL,NOW(),NULL,NOW()),
+(62601002,2,2,2601002,NOW(),NULL,NOW(),NULL,NOW()),
+(62601003,2,2,2601003,NOW(),NULL,NOW(),NULL,NOW()),
+(62602001,2,2,2602001,NOW(),NULL,NOW(),NULL,NOW()),
+(72601001,3,3,2601001,NOW(),NULL,NOW(),NULL,NOW()),
+(72601002,3,3,2601002,NOW(),NULL,NOW(),NULL,NOW()),
+(72601003,3,3,2601003,NOW(),NULL,NOW(),NULL,NOW()),
+(72602001,3,3,2602001,NOW(),NULL,NOW(),NULL,NOW()),
+(82601001,4,4,2601001,NOW(),NULL,NOW(),NULL,NOW()),
+(82601002,4,4,2601002,NOW(),NULL,NOW(),NULL,NOW()),
+(82601003,4,4,2601003,NOW(),NULL,NOW(),NULL,NOW()),
+(82602001,4,4,2602001,NOW(),NULL,NOW(),NULL,NOW());
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V8__workflow_business_apply_center.sql
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `workflow_business_apply` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `apply_code` varchar(128) NOT NULL COMMENT '申请编号',
+  `business_type` varchar(128) NOT NULL COMMENT '业务类型',
+  `business_key` varchar(128) NOT NULL COMMENT '业务主键',
+  `apply_title` varchar(255) NOT NULL COMMENT '申请标题',
+  `apply_summary` varchar(1000) DEFAULT NULL COMMENT '申请摘要',
+  `applicant_id` bigint DEFAULT NULL COMMENT '申请人ID',
+  `applicant_name` varchar(128) DEFAULT NULL COMMENT '申请人名称',
+  `applicant_dept_id` bigint DEFAULT NULL COMMENT '申请部门ID',
+  `applicant_dept_name` varchar(128) DEFAULT NULL COMMENT '申请部门名称',
+  `process_definition_id` bigint DEFAULT NULL COMMENT 'Mango流程定义ID',
+  `process_definition_key` varchar(128) DEFAULT NULL COMMENT '流程定义编码',
+  `engine_process_definition_id` varchar(128) DEFAULT NULL COMMENT 'Flowable流程定义ID',
+  `process_instance_id` varchar(128) DEFAULT NULL COMMENT '流程实例ID',
+  `process_name` varchar(128) DEFAULT NULL COMMENT '流程名称',
+  `apply_status` varchar(32) NOT NULL DEFAULT 'DRAFT' COMMENT '申请状态',
+  `current_task_names` varchar(1000) DEFAULT NULL COMMENT '当前节点名称，多个逗号分隔',
+  `current_task_definition_keys` varchar(1000) DEFAULT NULL COMMENT '当前节点定义Key，多个逗号分隔',
+  `current_assignee_names` varchar(1000) DEFAULT NULL COMMENT '当前处理人名称，多个逗号分隔',
+  `render_mode` varchar(32) NOT NULL DEFAULT 'DYNAMIC_FORM' COMMENT '渲染模式',
+  `apply_page_key` varchar(128) DEFAULT NULL COMMENT '自定义申请页Key',
+  `approve_page_key` varchar(128) DEFAULT NULL COMMENT '自定义审批页Key',
+  `form_key` varchar(128) DEFAULT NULL COMMENT '表单Key',
+  `form_version` int DEFAULT NULL COMMENT '表单版本',
+  `form_json_snapshot` longtext COMMENT '动态表单JSON快照',
+  `form_data_snapshot` longtext COMMENT '动态表单数据快照',
+  `snapshot_ref` varchar(255) DEFAULT NULL COMMENT '业务快照引用',
+  `snapshot_digest` varchar(128) DEFAULT NULL COMMENT '业务快照摘要',
+  `variables_json` longtext COMMENT '流程变量JSON',
+  `extension_json` longtext COMMENT '扩展配置JSON',
+  `reapply_from_apply_id` bigint DEFAULT NULL COMMENT '重新申请来源ID',
+  `latest_flag` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否最新申请',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人',
+  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人',
+  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_workflow_business_apply_code` (`apply_code`),
+  KEY `idx_workflow_business_apply_biz_latest` (`tenant_id`, `business_type`, `business_key`, `latest_flag`),
+  KEY `idx_workflow_business_apply_status` (`tenant_id`, `business_type`, `apply_status`),
+  KEY `idx_workflow_business_apply_process` (`process_instance_id`),
+  KEY `idx_workflow_business_apply_definition` (`process_definition_id`),
+  KEY `idx_workflow_business_apply_reapply` (`reapply_from_apply_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务工作流申请中心';
+
+CREATE TABLE IF NOT EXISTS `workflow_business_apply_current_task` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `apply_id` bigint NOT NULL COMMENT '申请ID',
+  `business_type` varchar(128) NOT NULL COMMENT '业务类型',
+  `business_key` varchar(128) NOT NULL COMMENT '业务主键',
+  `process_instance_id` varchar(128) DEFAULT NULL COMMENT '流程实例ID',
+  `task_id` varchar(128) DEFAULT NULL COMMENT '任务ID',
+  `task_definition_key` varchar(128) DEFAULT NULL COMMENT '任务定义Key',
+  `task_name` varchar(255) DEFAULT NULL COMMENT '任务名称',
+  `assignee_id` bigint DEFAULT NULL COMMENT '处理人ID',
+  `assignee_name` varchar(128) DEFAULT NULL COMMENT '处理人名称',
+  `arrived_at` datetime DEFAULT NULL COMMENT '到达时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_workflow_business_apply_current_apply` (`apply_id`),
+  KEY `idx_workflow_business_apply_current_biz` (`tenant_id`, `business_type`, `business_key`),
+  KEY `idx_workflow_business_apply_current_task` (`task_id`),
+  KEY `idx_workflow_business_apply_current_node` (`task_definition_key`),
+  KEY `idx_workflow_business_apply_current_assignee` (`assignee_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务工作流申请当前任务';
+
+CREATE TABLE IF NOT EXISTS `workflow_business_apply_status_log` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT 1 COMMENT '租户ID',
+  `apply_id` bigint NOT NULL COMMENT '申请ID',
+  `from_status` varchar(32) DEFAULT NULL COMMENT '变更前状态',
+  `to_status` varchar(32) NOT NULL COMMENT '变更后状态',
+  `action` varchar(32) NOT NULL COMMENT '动作',
+  `action_name` varchar(64) NOT NULL COMMENT '动作名称',
+  `operator_id` bigint DEFAULT NULL COMMENT '操作人ID',
+  `operator_name` varchar(128) DEFAULT NULL COMMENT '操作人名称',
+  `comment` varchar(1000) DEFAULT NULL COMMENT '备注',
+  `task_id` varchar(128) DEFAULT NULL COMMENT '任务ID',
+  `task_definition_key` varchar(128) DEFAULT NULL COMMENT '任务定义Key',
+  `process_instance_id` varchar(128) DEFAULT NULL COMMENT '流程实例ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_workflow_business_apply_log_apply` (`apply_id`),
+  KEY `idx_workflow_business_apply_log_process` (`process_instance_id`),
+  KEY `idx_workflow_business_apply_log_action` (`action`),
+  KEY `idx_workflow_business_apply_log_tenant` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='业务工作流申请状态流水';
+
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(2602002,1,'internal-admin',2602,3,'创建业务申请','workflow:business-apply:create',NULL,NULL,NULL,106,1,0,0,0,NULL,'workflow:business-apply:create',NULL,NULL,NOW(),NOW(),'创建业务申请与流程实例关联记录',0,NULL,NOW(),NULL,NOW()),
+(2602003,1,'internal-admin',2602,3,'查询业务申请','workflow:business-apply:list',NULL,NULL,NULL,107,1,0,0,0,NULL,'workflow:business-apply:list',NULL,NULL,NOW(),NOW(),'查询业务申请列表与最新进度',0,NULL,NOW(),NULL,NOW()),
+(2602004,1,'internal-admin',2602,3,'查看业务申请','workflow:business-apply:detail',NULL,NULL,NULL,108,1,0,0,0,NULL,'workflow:business-apply:detail',NULL,NULL,NOW(),NOW(),'查看业务申请详情、历史和进度',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE `permissions` = VALUES(`permissions`), `status` = VALUES(`status`), `visible` = VALUES(`visible`), `del_flag` = VALUES(`del_flag`);
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(1106,1,1,2602002,106),
+(1107,1,1,2602003,107),
+(1108,1,1,2602004,108),
+(2059,1,2,2602002,59),
+(2060,1,2,2602003,60),
+(2061,1,2,2602004,61);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+(52602002,1,1,2602002,NOW(),NULL,NOW(),NULL,NOW()),
+(52602003,1,1,2602003,NOW(),NULL,NOW(),NULL,NOW()),
+(52602004,1,1,2602004,NOW(),NULL,NOW(),NULL,NOW()),
+(62602002,2,2,2602002,NOW(),NULL,NOW(),NULL,NOW()),
+(62602003,2,2,2602003,NOW(),NULL,NOW(),NULL,NOW()),
+(62602004,2,2,2602004,NOW(),NULL,NOW(),NULL,NOW()),
+(72602002,3,3,2602002,NOW(),NULL,NOW(),NULL,NOW()),
+(72602003,3,3,2602003,NOW(),NULL,NOW(),NULL,NOW()),
+(72602004,3,3,2602004,NOW(),NULL,NOW(),NULL,NOW()),
+(82602002,4,4,2602002,NOW(),NULL,NOW(),NULL,NOW()),
+(82602003,4,4,2602003,NOW(),NULL,NOW(),NULL,NOW()),
+(82602004,4,4,2602004,NOW(),NULL,NOW(),NULL,NOW());
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V9__workflow_menu_id_repair.sql
+-- -----------------------------------------------------------------------------
+
+DELETE FROM `authorization_role_menu`
+WHERE `menu_id` IN (2604,2604000,2604001,2604002,2604003,2604004,2604005,2604006);
+
+DELETE FROM `authorization_menu_package_item`
+WHERE `menu_id` IN (2604,2604000,2604001,2604002,2604003,2604004,2604005,2604006);
+
+DELETE FROM `authorization_menu`
+WHERE `id` IN (2604,2604000,2604001,2604002,2604003,2604004,2604005,2604006);
+
+DELETE FROM `authorization_role_menu`
+WHERE `menu_id` IN (24,24000,24003,24004,24005,24006)
+  AND EXISTS (
+      SELECT 1
+      FROM `authorization_menu` m
+      WHERE m.`id` = 24
+        AND m.`parent_id` = 26
+        AND m.`path` = '/workflow/manage'
+  );
+
+DELETE FROM `authorization_menu_package_item`
+WHERE `menu_id` IN (24,24000,24003,24004,24005,24006)
+  AND EXISTS (
+      SELECT 1
+      FROM `authorization_menu` m
+      WHERE m.`id` = 24
+        AND m.`parent_id` = 26
+        AND m.`path` = '/workflow/manage'
+  );
+
+DELETE FROM `authorization_menu`
+WHERE (
+      `id` IN (24000,24003,24004,24005,24006)
+      AND (`menu_code` IS NULL OR `menu_code` LIKE 'system:workflow%')
+  )
+  OR (
+      `id` = 24
+      AND `parent_id` = 26
+      AND `path` = '/workflow/manage'
+  );
+
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(2604,1,'internal-admin',26,2,'流程管理','system:workflow','/workflow/manage','Operation','@/views/system/workflow-definition/index.vue',3,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程分组与流程定义管理',0,NULL,NOW(),NULL,NOW()),
+(2604000,1,'internal-admin',2604,3,'查询流程','system:workflow:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程管理列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(2604001,1,'internal-admin',2604,3,'查看流程','system:workflow:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'system:workflow:query',NULL,NULL,NOW(),NOW(),'流程管理详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(2604002,1,'internal-admin',2604,3,'新增流程','system:workflow:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:workflow:add',NULL,NULL,NOW(),NOW(),'流程管理新增权限',0,NULL,NOW(),NULL,NOW()),
+(2604003,1,'internal-admin',2604,3,'编辑流程','system:workflow:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:workflow:edit',NULL,NULL,NOW(),NOW(),'流程管理编辑权限',0,NULL,NOW(),NULL,NOW()),
+(2604004,1,'internal-admin',2604,3,'删除流程','system:workflow:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:workflow:delete',NULL,NULL,NOW(),NOW(),'流程管理删除权限',0,NULL,NOW(),NULL,NOW()),
+(2604005,1,'internal-admin',2604,3,'调整状态','system:workflow:status',NULL,NULL,NULL,5,1,0,0,0,NULL,'system:workflow:status',NULL,NULL,NOW(),NOW(),'流程管理状态调整权限',0,NULL,NOW(),NULL,NOW()),
+(2604006,1,'internal-admin',2604,3,'发布流程','system:workflow:deploy',NULL,NULL,NULL,6,1,0,0,0,NULL,'system:workflow:deploy',NULL,NULL,NOW(),NOW(),'流程管理发布权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+`parent_id` = VALUES(`parent_id`),
+`menu_type` = VALUES(`menu_type`),
+`menu_name` = VALUES(`menu_name`),
+`menu_code` = VALUES(`menu_code`),
+`path` = VALUES(`path`),
+`icon` = VALUES(`icon`),
+`component` = VALUES(`component`),
+`sort` = VALUES(`sort`),
+`status` = VALUES(`status`),
+`visible` = VALUES(`visible`),
+`permissions` = VALUES(`permissions`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`),
+`update_time` = NOW(),
+`updated_at` = NOW();
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(12604,1,1,2604,24),
+(1260400,1,1,2604000,86),
+(1260401,1,1,2604001,87),
+(1260402,1,1,2604002,88),
+(1260403,1,1,2604003,89),
+(1260404,1,1,2604004,90),
+(1260405,1,1,2604005,91),
+(1260406,1,1,2604006,92),
+(22604,1,2,2604,17),
+(2260400,1,2,2604000,20),
+(2260401,1,2,2604001,21),
+(2260402,1,2,2604002,22),
+(2260403,1,2,2604003,23),
+(2260404,1,2,2604004,24),
+(2260405,1,2,2604005,25),
+(2260406,1,2,2604006,26);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+(52604,1,1,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(5260400,1,1,2604000,NOW(),NULL,NOW(),NULL,NOW()),
+(5260401,1,1,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(5260402,1,1,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(5260403,1,1,2604003,NOW(),NULL,NOW(),NULL,NOW()),
+(5260404,1,1,2604004,NOW(),NULL,NOW(),NULL,NOW()),
+(5260405,1,1,2604005,NOW(),NULL,NOW(),NULL,NOW()),
+(5260406,1,1,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(62604,1,2,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(6260400,1,2,2604000,NOW(),NULL,NOW(),NULL,NOW()),
+(6260401,1,2,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(6260402,1,2,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(6260403,1,2,2604003,NOW(),NULL,NOW(),NULL,NOW()),
+(6260404,1,2,2604004,NOW(),NULL,NOW(),NULL,NOW()),
+(6260405,1,2,2604005,NOW(),NULL,NOW(),NULL,NOW()),
+(6260406,1,2,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(72604,1,3,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(7260400,1,3,2604000,NOW(),NULL,NOW(),NULL,NOW()),
+(7260401,1,3,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(7260402,1,3,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(7260403,1,3,2604003,NOW(),NULL,NOW(),NULL,NOW()),
+(7260404,1,3,2604004,NOW(),NULL,NOW(),NULL,NOW()),
+(7260405,1,3,2604005,NOW(),NULL,NOW(),NULL,NOW()),
+(7260406,1,3,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(82604,1,4,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(8260400,1,4,2604000,NOW(),NULL,NOW(),NULL,NOW()),
+(8260401,1,4,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(8260402,1,4,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(8260403,1,4,2604003,NOW(),NULL,NOW(),NULL,NOW()),
+(8260404,1,4,2604004,NOW(),NULL,NOW(),NULL,NOW()),
+(8260405,1,4,2604005,NOW(),NULL,NOW(),NULL,NOW()),
+(8260406,1,4,2604006,NOW(),NULL,NOW(),NULL,NOW());
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V10__workflow_reject_label_to_return.sql
+-- -----------------------------------------------------------------------------
+
+UPDATE `authorization_menu`
+SET `menu_name` = '审批驳回',
+    `remark` = '驳回并终止当前工作流实例',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `menu_code` = 'workflow:task:reject';

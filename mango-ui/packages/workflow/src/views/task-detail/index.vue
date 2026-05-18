@@ -179,15 +179,18 @@ const detail = computed(() => {
     formJson: processDetail.value.formJson,
     variables: processDetail.value.variables,
     records: processDetail.value.records,
+    formPermissions: processDetail.value.renderConfig?.formPermissions || {},
+    renderConfig: processDetail.value.renderConfig,
   } as unknown as WorkflowTaskDetail;
 });
 const currentTaskDefinitionKey = computed(() =>
   detail.value?.task?.taskDefinitionKey
   || (detail.value?.task?.id ? firstCurrentTaskDefinitionKey() : latestTaskDefinitionKey()),
 );
-const businessType = computed(() => businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
-const renderMode = computed(() => businessApply.value?.renderMode || (businessType.value ? 'CUSTOM_PAGE' : 'DYNAMIC_FORM'));
-const businessComponent = computed(() => renderMode.value === 'CUSTOM_PAGE' ? resolveBusinessApprovalComponent(businessType.value) : null);
+const renderConfig = computed(() => detail.value?.renderConfig);
+const businessType = computed(() => renderConfig.value?.businessType || businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
+const renderMode = computed(() => renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM');
+const businessComponent = computed(() => renderMode.value === 'CUSTOM_PAGE' ? resolveBusinessApprovalComponent(renderConfig.value?.approvePageKey || businessType.value) : null);
 const businessContext = computed<BusinessApprovalContext | null>(() => {
   if (!detail.value || !businessType.value) {
     return null;
@@ -195,15 +198,16 @@ const businessContext = computed<BusinessApprovalContext | null>(() => {
   const variables = detail.value.variables || {};
   return {
     businessType: businessType.value,
-    businessKey: String(businessApply.value?.businessKey || variables.businessKey || detail.value.process.businessKey || detail.value.task?.businessKey || ''),
-    applyId: String(businessApply.value?.id || applyIdOf(variables)),
+    businessKey: String(renderConfig.value?.businessKey || businessApply.value?.businessKey || variables.businessKey || detail.value.process.businessKey || detail.value.task?.businessKey || ''),
+    applyId: String(renderConfig.value?.applyId || businessApply.value?.id || applyIdOf(variables)),
     processInstanceId: detail.value.process.processInstanceId,
     taskId: detail.value.task?.id,
     taskDefinitionKey: currentTaskDefinitionKey.value,
     nodeName: detail.value.task?.taskName || latestTaskName(),
+    nodeExtension: renderConfig.value?.nodeExtension || {},
     readonly: readonlyMode.value,
     variables,
-    permissions: businessPermissionsOf(variables, currentTaskDefinitionKey.value),
+    permissions: renderConfig.value?.businessPermissions || businessPermissionsOf(variables, currentTaskDefinitionKey.value),
   };
 });
 

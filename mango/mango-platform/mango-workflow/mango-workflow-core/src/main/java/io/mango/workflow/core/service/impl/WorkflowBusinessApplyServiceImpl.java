@@ -133,9 +133,21 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
     @Override
     public R<WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId) {
         Require.notBlank(processInstanceId, WorkflowCode.APPLY_INVALID.getCode(), "流程实例ID不能为空");
-        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        WorkflowBusinessApplyVO apply = findByProcessInstance(processInstanceId);
         Require.notNull(apply, WorkflowCode.APPLY_NOT_FOUND);
-        return R.ok(toVo(apply, tasksByApplyId(apply.getId())));
+        return R.ok(apply);
+    }
+
+    @Override
+    public WorkflowBusinessApplyVO findByProcessInstance(String processInstanceId) {
+        if (!StringUtils.hasText(processInstanceId)) {
+            return null;
+        }
+        WorkflowBusinessApply apply = applyByProcessInstanceId(processInstanceId);
+        if (apply == null) {
+            return null;
+        }
+        return toVo(apply, tasksByApplyId(apply.getId()));
     }
 
     @Override
@@ -315,11 +327,17 @@ public class WorkflowBusinessApplyServiceImpl implements IWorkflowBusinessApplyS
                     .like(WorkflowBusinessApply::getApplySummary, keyword));
         }
         if (query.getCurrentTaskDefinitionKeys() != null && !query.getCurrentTaskDefinitionKeys().isEmpty()) {
-            wrapper.and(item -> {
-                for (String key : cleanStrings(query.getCurrentTaskDefinitionKeys())) {
-                    item.like(WorkflowBusinessApply::getCurrentTaskDefinitionKeys, key);
-                }
-            });
+            List<String> taskDefinitionKeys = cleanStrings(query.getCurrentTaskDefinitionKeys());
+            List<Long> applyIds = taskDefinitionKeys.isEmpty()
+                    ? List.of()
+                    : currentTaskMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApplyCurrentTask>()
+                                    .in(WorkflowBusinessApplyCurrentTask::getTaskDefinitionKey, taskDefinitionKeys))
+                            .stream()
+                            .map(WorkflowBusinessApplyCurrentTask::getApplyId)
+                            .distinct()
+                            .toList();
+            wrapper.in(!applyIds.isEmpty(), WorkflowBusinessApply::getId, applyIds);
+            wrapper.eq(applyIds.isEmpty(), WorkflowBusinessApply::getId, -1L);
         }
         if (query.getCurrentAssigneeIds() != null && !query.getCurrentAssigneeIds().isEmpty()) {
             List<Long> applyIds = currentTaskMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApplyCurrentTask>()

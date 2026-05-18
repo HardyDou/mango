@@ -25,6 +25,9 @@ public class WorkflowProcessDetailVO {
     @Schema(description = "当前变量")
     private Map<String, Object> variables;
 
+    @Schema(description = "申请/审批页面渲染协议")
+    private WorkflowRenderConfigVO renderConfig;
+
     @Schema(description = "审批记录")
     private List<WorkflowTaskRecordVO> records;
 }

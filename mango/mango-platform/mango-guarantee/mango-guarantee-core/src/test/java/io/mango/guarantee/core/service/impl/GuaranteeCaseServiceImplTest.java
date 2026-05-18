@@ -48,7 +48,7 @@ class GuaranteeCaseServiceImplTest {
         processVO.setStatus("审批中");
         processVO.setCurrentTaskName("风控初审");
         processVO.setCurrentTaskDefinitionKey("risk_review");
-        when(workflowApi.latestByBusinessKeys(List.of("GH202605170001"))).thenReturn(List.of(processVO));
+        when(workflowApi.latestByBusinessKeys("GUARANTEE_CASE", List.of("GH202605170001"))).thenReturn(List.of(processVO));
 
         PersistencePageResult<GuaranteeCaseVO> result = service.page(new GuaranteeCaseQuery());
 
@@ -59,7 +59,7 @@ class GuaranteeCaseServiceImplTest {
         assertThat(filled.getProcessStatus()).isEqualTo("审批中");
         assertThat(filled.getCurrentTaskName()).isEqualTo("风控初审");
         assertThat(filled.getCurrentTaskDefinitionKey()).isEqualTo("risk_review");
-        verify(workflowApi).latestByBusinessKeys(List.of("GH202605170001"));
+        verify(workflowApi).latestByBusinessKeys("GUARANTEE_CASE", List.of("GH202605170001"));
     }
 
     private record SingleObjectProvider(WorkflowBusinessProcessApi api)

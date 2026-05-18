@@ -187,15 +187,23 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
 
     @Override
     public List<WorkflowBusinessProcessVO> latestByBusinessKeys(Collection<String> businessKeys) {
+        return latestByBusinessKeys(null, businessKeys);
+    }
+
+    @Override
+    public List<WorkflowBusinessProcessVO> latestByBusinessKeys(String businessType, Collection<String> businessKeys) {
         if (businessKeys == null || businessKeys.isEmpty()) {
             return List.of();
         }
         Map<String, io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO> applyProgress =
-                workflowBusinessApplyService.latestProgress(null, businessKeys);
+                workflowBusinessApplyService.latestProgress(businessType, businessKeys);
         if (!applyProgress.isEmpty()) {
             return applyProgress.values().stream()
                     .map(this::fromApplyProgress)
                     .toList();
+        }
+        if (StringUtils.hasText(businessType)) {
+            return List.of();
         }
         return businessKeys.stream()
                 .filter(StringUtils::hasText)
@@ -209,11 +217,16 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
     private WorkflowBusinessProcessVO fromApplyProgress(io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO progress) {
         WorkflowBusinessProcessVO vo = new WorkflowBusinessProcessVO();
         vo.setBusinessKey(progress.getBusinessKey());
+        vo.setBusinessType(progress.getBusinessType());
+        vo.setApplyId(progress.getApplyId());
+        vo.setApplyCode(progress.getApplyCode());
         vo.setProcessInstanceId(progress.getProcessInstanceId());
         vo.setProcessName(progress.getProcessName());
         vo.setCurrentTaskName(progress.getCurrentTaskNames());
         vo.setCurrentTaskDefinitionKey(progress.getCurrentTaskDefinitionKeys());
         vo.setStatus(progress.getApplyStatusName());
+        vo.setApplyStatus(progress.getApplyStatus() == null ? null : progress.getApplyStatus().name());
+        vo.setApplyStatusName(progress.getApplyStatusName());
         vo.setStartTime(progress.getCreatedAt());
         vo.setEndTime(progress.getUpdatedAt());
         return vo;

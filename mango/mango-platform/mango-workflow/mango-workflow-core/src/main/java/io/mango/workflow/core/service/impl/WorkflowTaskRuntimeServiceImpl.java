@@ -13,22 +13,27 @@ import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
 import io.mango.workflow.api.enums.WorkflowEmptyAssigneeStrategy;
+import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
 import io.mango.workflow.api.enums.WorkflowFormPermission;
 import io.mango.workflow.api.enums.WorkflowInstanceStatus;
 import io.mango.workflow.api.enums.WorkflowTaskAction;
 import io.mango.workflow.api.enums.WorkflowTaskRuntimeStatus;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
+import io.mango.workflow.api.vo.WorkflowBusinessApplyVO;
 import io.mango.workflow.api.vo.WorkflowProcessDetailVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
+import io.mango.workflow.api.vo.WorkflowRenderConfigVO;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskRecordVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
 import io.mango.workflow.core.engine.WorkflowAssigneeResolver;
 import io.mango.workflow.core.engine.WorkflowAssigneeCollection;
 import io.mango.workflow.core.engine.WorkflowCandidateGroupProvider;
+import io.mango.workflow.core.entity.WorkflowBusinessApply;
 import io.mango.workflow.core.entity.WorkflowFormInstance;
 import io.mango.workflow.core.entity.WorkflowTaskRecord;
 import io.mango.workflow.core.event.WorkflowEventPublisher;
+import io.mango.workflow.core.mapper.WorkflowBusinessApplyMapper;
 import io.mango.workflow.core.mapper.WorkflowFormInstanceMapper;
 import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
@@ -76,6 +81,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
     private final RepositoryService repositoryService;
+    private final WorkflowBusinessApplyMapper businessApplyMapper;
     private final WorkflowFormInstanceMapper formInstanceMapper;
     private final WorkflowTaskRecordMapper taskRecordMapper;
     private final ObjectMapper objectMapper;
@@ -89,6 +95,8 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         WorkflowTaskPageQuery resolved = resolve(query);
         long offset = (resolved.getPage() - 1) * resolved.getSize();
         var taskQuery = taskService.createTaskQuery();
+        String keyword = trim(resolved.getKeyword());
+        List<String> businessProcessInstanceIds = businessProcessInstanceIds(keyword);
         List<String> candidateGroups = candidateGroupProvider.currentCandidateGroups();
         if (isAdminUser()) {
             taskQuery.or().taskCandidateOrAssigned(currentUser());
@@ -104,8 +112,16 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             taskQuery.endOr();
         }
         taskQuery.orderByTaskCreateTime().desc();
-        if (StringUtils.hasText(resolved.getKeyword())) {
-            taskQuery.taskNameLike("%" + resolved.getKeyword() + "%");
+        if (StringUtils.hasText(keyword)) {
+            taskQuery.or()
+                    .taskNameLike("%" + keyword + "%")
+                    .processDefinitionNameLike("%" + keyword + "%")
+                    .processInstanceBusinessKeyLike("%" + keyword + "%")
+                    .processVariableValueLike("businessKey", "%" + keyword + "%");
+            if (!businessProcessInstanceIds.isEmpty()) {
+                taskQuery.processInstanceIdIn(businessProcessInstanceIds);
+            }
+            taskQuery.endOr();
         }
         long total = taskQuery.count();
         List<WorkflowTaskVO> records = taskQuery
@@ -120,13 +136,23 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
     public R<PageResult<WorkflowTaskVO>> done(WorkflowTaskPageQuery query) {
         WorkflowTaskPageQuery resolved = resolve(query);
         long offset = (resolved.getPage() - 1) * resolved.getSize();
+        String keyword = trim(resolved.getKeyword());
+        List<String> businessProcessInstanceIds = businessProcessInstanceIds(keyword);
         var taskQuery = historyService.createHistoricTaskInstanceQuery()
                 .taskAssignee(currentUser())
                 .finished()
                 .orderByHistoricTaskInstanceEndTime()
                 .desc();
-        if (StringUtils.hasText(resolved.getKeyword())) {
-            taskQuery.taskNameLike("%" + resolved.getKeyword() + "%");
+        if (StringUtils.hasText(keyword)) {
+            taskQuery.or()
+                    .taskNameLike("%" + keyword + "%")
+                    .processDefinitionNameLike("%" + keyword + "%")
+                    .processInstanceBusinessKeyLike("%" + keyword + "%")
+                    .processVariableValueLike("businessKey", "%" + keyword + "%");
+            if (!businessProcessInstanceIds.isEmpty()) {
+                taskQuery.processInstanceIdIn(businessProcessInstanceIds);
+            }
+            taskQuery.endOr();
         }
         long total = taskQuery.count();
         List<WorkflowTaskVO> records = taskQuery
@@ -148,6 +174,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
         fillForm(vo, formInstance, readRuntimeVariables(task.getProcessInstanceId()));
         vo.setFormPermissions(taskFormPermissions(task));
+        vo.setRenderConfig(renderConfig(task, formInstance, vo.getFormPermissions()));
         vo.setRecords(records(task.getProcessInstanceId()));
         return R.ok(vo);
     }
@@ -246,12 +273,35 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         vo.setFormCode(formInstance == null ? null : formInstance.getFormCode());
         vo.setFormJson(formInstance == null ? null : formInstance.getFormJson());
         vo.setVariables(formInstance == null ? readRuntimeVariables(processInstanceId) : parseMap(formInstance.getVariablesJson()));
+        vo.setRenderConfig(renderConfig(processInstanceId, null, formInstance, Map.of()));
         vo.setRecords(records(processInstanceId));
         return R.ok(vo);
     }
 
     private WorkflowTaskPageQuery resolve(WorkflowTaskPageQuery query) {
         return query == null ? new WorkflowTaskPageQuery() : query;
+    }
+
+    private List<String> businessProcessInstanceIds(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return List.of();
+        }
+        return businessApplyMapper.selectList(new LambdaQueryWrapper<WorkflowBusinessApply>()
+                        .select(WorkflowBusinessApply::getProcessInstanceId)
+                        .isNotNull(WorkflowBusinessApply::getProcessInstanceId)
+                        .and(wrapper -> wrapper
+                                .like(WorkflowBusinessApply::getBusinessKey, keyword)
+                                .or()
+                                .like(WorkflowBusinessApply::getApplyTitle, keyword)
+                                .or()
+                                .like(WorkflowBusinessApply::getProcessName, keyword)
+                                .or()
+                                .like(WorkflowBusinessApply::getCurrentTaskNames, keyword)))
+                .stream()
+                .map(WorkflowBusinessApply::getProcessInstanceId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
     }
 
     private void fillForm(WorkflowTaskDetailVO vo, WorkflowFormInstance formInstance, Map<String, Object> runtimeVariables) {
@@ -314,13 +364,17 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             vo.setCreateTime(task.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
         }
         WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
         if (formInstance != null) {
             vo.setBusinessKey(formInstance.getBusinessKey());
             vo.setProcessName(formInstance.getDefinitionName());
             vo.setProcessKey(formInstance.getDefinitionKey());
+        } else if (apply != null) {
+            vo.setBusinessKey(apply.getBusinessKey());
+            vo.setProcessName(apply.getProcessName());
+            vo.setProcessKey(apply.getProcessDefinitionKey());
         } else {
-            vo.setProcessName(task.getProcessDefinitionId());
-            vo.setProcessKey(task.getProcessDefinitionId());
+            fillProcessFallback(vo, task.getProcessInstanceId(), task.getProcessDefinitionId());
         }
         return vo;
     }
@@ -341,15 +395,37 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
             vo.setEndTime(task.getEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
         }
         WorkflowFormInstance formInstance = findFormInstance(task.getProcessInstanceId());
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(task.getProcessInstanceId());
         if (formInstance != null) {
             vo.setBusinessKey(formInstance.getBusinessKey());
             vo.setProcessName(formInstance.getDefinitionName());
             vo.setProcessKey(formInstance.getDefinitionKey());
+        } else if (apply != null) {
+            vo.setBusinessKey(apply.getBusinessKey());
+            vo.setProcessName(apply.getProcessName());
+            vo.setProcessKey(apply.getProcessDefinitionKey());
         } else {
-            vo.setProcessName(task.getProcessDefinitionId());
-            vo.setProcessKey(task.getProcessDefinitionId());
+            fillProcessFallback(vo, task.getProcessInstanceId(), task.getProcessDefinitionId());
         }
         return vo;
+    }
+
+    private void fillProcessFallback(WorkflowTaskVO vo, String processInstanceId, String processDefinitionId) {
+        HistoricProcessInstance instance = historyService.createHistoricProcessInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .singleResult();
+        if (instance == null) {
+            vo.setProcessName(processDefinitionId);
+            vo.setProcessKey(processDefinitionId);
+            return;
+        }
+        vo.setBusinessKey(instance.getBusinessKey());
+        vo.setProcessName(StringUtils.hasText(instance.getProcessDefinitionName())
+                ? instance.getProcessDefinitionName()
+                : processDefinitionId);
+        vo.setProcessKey(StringUtils.hasText(instance.getProcessDefinitionKey())
+                ? instance.getProcessDefinitionKey()
+                : processDefinitionId);
     }
 
     private List<WorkflowTaskRecordVO> records(String processInstanceId) {
@@ -587,6 +663,88 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         return permissions;
     }
 
+    private WorkflowRenderConfigVO renderConfig(Task task, WorkflowFormInstance formInstance,
+                                                Map<String, String> formPermissions) {
+        return renderConfig(task.getProcessInstanceId(), task, formInstance, formPermissions);
+    }
+
+    private WorkflowRenderConfigVO renderConfig(String processInstanceId, Task task, WorkflowFormInstance formInstance,
+                                                Map<String, String> formPermissions) {
+        WorkflowBusinessApplyVO apply = workflowBusinessApplyService.findByProcessInstance(processInstanceId);
+        Map<String, Object> variables = formInstance == null ? readStoredVariables(processInstanceId) : parseMap(formInstance.getVariablesJson());
+        WorkflowRenderConfigVO vo = new WorkflowRenderConfigVO();
+        vo.setProcessInstanceId(processInstanceId);
+        vo.setBusinessType(apply == null ? variableString(variables, "businessType") : apply.getBusinessType());
+        vo.setBusinessKey(apply == null ? (formInstance == null ? variableString(variables, "businessKey") : formInstance.getBusinessKey()) : apply.getBusinessKey());
+        vo.setApplyId(apply == null ? variableLong(variables, "applyId") : apply.getId());
+        vo.setRenderMode(resolveRenderMode(apply, variables));
+        vo.setApplyPageKey(apply == null ? variableString(variables, "applyPageKey") : apply.getApplyPageKey());
+        vo.setApprovePageKey(apply == null ? variableString(variables, "approvePageKey") : apply.getApprovePageKey());
+        vo.setFormKey(apply == null ? (formInstance == null ? null : formInstance.getFormCode()) : apply.getFormKey());
+        vo.setFormVersion(apply == null ? null : apply.getFormVersion());
+        vo.setSnapshotRef(apply == null ? variableString(variables, "snapshotRef") : apply.getSnapshotRef());
+        vo.setTaskDefinitionKey(task == null ? null : task.getTaskDefinitionKey());
+        WorkflowApprovalNodeConfig config = taskApprovalConfig(task);
+        vo.setNodeExtension(config == null || config.getExtension() == null ? Map.of() : config.getExtension());
+        vo.setFormPermissions(formPermissions == null ? Map.of() : formPermissions);
+        vo.setBusinessPermissions(businessPermissions(variables, task == null ? null : task.getTaskDefinitionKey()));
+        return vo;
+    }
+
+    private WorkflowApplyRenderMode resolveRenderMode(WorkflowBusinessApplyVO apply, Map<String, Object> variables) {
+        if (apply != null && apply.getRenderMode() != null) {
+            return apply.getRenderMode();
+        }
+        String renderMode = variableString(variables, "renderMode");
+        if (StringUtils.hasText(renderMode)) {
+            WorkflowApplyRenderMode parsed = WorkflowApplyRenderMode.fromCode(renderMode);
+            if (parsed != null) {
+                return parsed;
+            }
+        }
+        return StringUtils.hasText(variableString(variables, "businessType"))
+                ? WorkflowApplyRenderMode.CUSTOM_PAGE
+                : WorkflowApplyRenderMode.DYNAMIC_FORM;
+    }
+
+    private Map<String, Object> businessPermissions(Map<String, Object> variables, String taskDefinitionKey) {
+        Object permissions = variables.get("businessPermissions");
+        if (!(permissions instanceof Map<?, ?> map) || !StringUtils.hasText(taskDefinitionKey)) {
+            return Map.of();
+        }
+        Object nodePermissions = map.get(taskDefinitionKey);
+        if (!(nodePermissions instanceof Map<?, ?> nodeMap)) {
+            return Map.of();
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        nodeMap.forEach((key, value) -> {
+            if (key != null) {
+                result.put(String.valueOf(key), value);
+            }
+        });
+        return result;
+    }
+
+    private String variableString(Map<String, Object> variables, String key) {
+        Object value = variables == null ? null : variables.get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private Long variableLong(Map<String, Object> variables, String key) {
+        Object value = variables == null ? null : variables.get(key);
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (!StringUtils.hasText(String.valueOf(value))) {
+            return null;
+        }
+        try {
+            return Long.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     private WorkflowApprovalNodeConfig taskApprovalConfig(Task task) {
         if (task == null || !StringUtils.hasText(task.getProcessDefinitionId()) || !StringUtils.hasText(task.getTaskDefinitionKey())) {
             return null;
@@ -648,6 +806,10 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         } catch (JsonProcessingException e) {
             return "{}";
         }
+    }
+
+    private String trim(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
     }
 
     private String currentUser() {

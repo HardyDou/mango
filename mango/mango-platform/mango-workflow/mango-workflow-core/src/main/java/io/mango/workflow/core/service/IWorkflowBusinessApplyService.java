@@ -12,6 +12,8 @@ public interface IWorkflowBusinessApplyService extends WorkflowBusinessApplyApi 
 
     io.mango.common.result.R<io.mango.workflow.api.vo.WorkflowBusinessApplyVO> byProcessInstance(String processInstanceId);
 
+    io.mango.workflow.api.vo.WorkflowBusinessApplyVO findByProcessInstance(String processInstanceId);
+
     void refreshCurrentTasks(String processInstanceId);
 
     void markApproved(String processInstanceId);

@@ -32,6 +32,7 @@ public class WorkflowApprovalNodeConfig {
     private List<String> emptyAssigneeUserIds = new ArrayList<>();
     private WorkflowRejectStrategy rejectStrategy = WorkflowRejectStrategy.END_PROCESS;
     private Map<String, WorkflowFormPermission> formPermissions = new LinkedHashMap<>();
+    private Map<String, Object> extension = new LinkedHashMap<>();
     private WorkflowEventNotifyConfig eventNotify = new WorkflowEventNotifyConfig();
     private boolean initiatorSelectMultiple;
     private boolean orgLeaderUseInitiatorOrg = true;

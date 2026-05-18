@@ -89,13 +89,13 @@ const emit = defineEmits<SignEmits>();
 const { t } = useI18n();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const hasDrawn = ref(false);
+const hasError = ref(false);
+const errorMessage = ref('');
 let ctx: CanvasRenderingContext2D | null = null;
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
-let hasDrawn = false;
-let hasError = false;
-let errorMessage = '';
 let imageLoadTimestamp = 0; // Track image load order to ignore stale callbacks
 const currentStrokeColor = ref(props.strokeColor);
 
@@ -106,7 +106,7 @@ const colors = [
   { label: 'Green', value: '#00FF00' },
 ];
 
-const isEmpty = computed(() => !hasDrawn);
+const isEmpty = computed(() => !hasDrawn.value);
 
 function initCanvas() {
   const canvas = canvasRef.value;
@@ -125,7 +125,7 @@ function initCanvas() {
     const img = new Image();
     img.onload = () => {
       ctx?.drawImage(img, 0, 0);
-      hasDrawn = true;
+      hasDrawn.value = true;
     };
     img.src = props.modelValue;
   }
@@ -171,14 +171,14 @@ function handleMove(e: MouseEvent | TouchEvent) {
 
   lastX = pos.x;
   lastY = pos.y;
-  hasDrawn = true;
+  hasDrawn.value = true;
 }
 
 function handleEnd() {
   if (!isDrawing) return;
   isDrawing = false;
 
-  if (hasDrawn) {
+  if (hasDrawn.value) {
     generateSignature();
   }
 }
@@ -196,9 +196,9 @@ function handleClear() {
   if (!canvas || !ctx) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  hasDrawn = false;
-  hasError = false;
-  errorMessage = '';
+  hasDrawn.value = false;
+  hasError.value = false;
+  errorMessage.value = '';
   emit('update:modelValue', '');
   emit('change', '');
 }
@@ -217,13 +217,13 @@ function generateSignature() {
 
   try {
     const dataUrl = canvas.toDataURL('image/png');
-    hasError = false;
-    errorMessage = '';
+    hasError.value = false;
+    errorMessage.value = '';
     emit('update:modelValue', dataUrl);
     emit('change', dataUrl);
   } catch (error) {
-    hasError = true;
-    errorMessage = t('sign.error');
+    hasError.value = true;
+    errorMessage.value = t('sign.error');
     console.error('Failed to generate signature:', error);
   }
 }
@@ -258,7 +258,7 @@ watch(
         if (imageLoadTimestamp !== currentTimestamp) return;
         ctx?.clearRect(0, 0, canvas.width, canvas.height);
         ctx?.drawImage(img, 0, 0);
-        hasDrawn = true;
+        hasDrawn.value = true;
       };
       img.src = newValue;
     }

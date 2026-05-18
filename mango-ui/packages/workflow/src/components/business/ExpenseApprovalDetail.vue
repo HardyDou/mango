@@ -5,7 +5,10 @@
         <div class="business-eyebrow">费用报销</div>
         <h3>{{ snapshot.title || snapshot.expenseCode || context.businessKey || '报销申请' }}</h3>
       </div>
-      <el-tag :type="amountRiskType" effect="plain">{{ snapshot.riskLabel }}</el-tag>
+      <div class="title-tags">
+        <el-tag v-if="nodePreset" effect="plain">{{ nodePreset }}</el-tag>
+        <el-tag :type="amountRiskType" effect="plain">{{ snapshot.riskLabel }}</el-tag>
+      </div>
     </div>
 
     <div class="snapshot-grid">
@@ -101,6 +104,7 @@ const approvedAmount = computed({
 });
 
 const amountRiskType = computed(() => snapshot.value.amount >= 5000 ? 'warning' : 'success');
+const nodePreset = computed(() => String(props.context.nodeExtension?.sectionPreset || '').trim());
 const maskedAccount = computed(() => {
   const account = String(snapshot.value.bankAccount || '');
   if (account.length <= 6) return account || '-';
@@ -131,6 +135,13 @@ function formatAmount(value: number) {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.title-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .business-eyebrow {

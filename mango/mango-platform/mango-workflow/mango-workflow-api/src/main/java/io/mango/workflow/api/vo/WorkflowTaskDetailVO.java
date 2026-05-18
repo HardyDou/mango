@@ -31,6 +31,9 @@ public class WorkflowTaskDetailVO {
     @Schema(description = "当前节点表单字段权限，key 为字段标识，value 为 HIDDEN/READONLY/EDITABLE")
     private Map<String, String> formPermissions;
 
+    @Schema(description = "申请/审批页面渲染协议")
+    private WorkflowRenderConfigVO renderConfig;
+
     @Schema(description = "审批记录")
     private List<WorkflowTaskRecordVO> records;
 }

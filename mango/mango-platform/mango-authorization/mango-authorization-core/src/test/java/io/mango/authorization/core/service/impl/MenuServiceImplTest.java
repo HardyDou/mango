@@ -5,6 +5,7 @@ import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
 import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
+import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
@@ -43,6 +44,8 @@ class MenuServiceImplTest {
     @Mock
     private FrontendMenuRuntimeConfigMapper frontendMenuRuntimeConfigMapper;
     @Mock
+    private AuthorizationAppModuleMapper appModuleMapper;
+    @Mock
     private ISubjectAuthorityService subjectAuthorityService;
 
     private MenuServiceImpl menuService;
@@ -54,6 +57,7 @@ class MenuServiceImplTest {
                 subjectRoleBindingMapper,
                 roleMenuMapper,
                 frontendMenuRuntimeConfigMapper,
+                appModuleMapper,
                 subjectAuthorityService);
     }
 

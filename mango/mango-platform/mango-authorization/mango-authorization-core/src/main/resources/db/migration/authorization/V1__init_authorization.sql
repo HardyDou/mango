@@ -325,3 +325,461 @@ UNLOCK TABLES;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V2__menu_package_and_navigation_restructure.sql
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `authorization_menu_package` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `package_name` varchar(100) NOT NULL COMMENT '套餐名称',
+  `package_code` varchar(64) NOT NULL COMMENT '套餐编码',
+  `app_code` varchar(64) NOT NULL COMMENT '应用编码',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态:0-禁用,1-启用',
+  `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建人',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '修改人',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记: 0-正常, 1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_authorization_menu_package_code` (`tenant_id`,`package_code`),
+  KEY `idx_authorization_menu_package_tenant_id` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单授权套餐主档';
+
+CREATE TABLE IF NOT EXISTS `authorization_menu_package_item` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `package_id` bigint NOT NULL COMMENT '套餐ID',
+  `menu_id` bigint NOT NULL COMMENT '菜单ID',
+  `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_authorization_menu_package_item` (`tenant_id`,`package_id`,`menu_id`),
+  KEY `idx_authorization_menu_package_item_tenant_id` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜单授权套餐-菜单关联表';
+
+DELETE FROM `authorization_role_menu` WHERE `menu_id` IN (21, 21000, 21001, 21002, 21003, 21004);
+DELETE FROM `authorization_menu` WHERE `id` IN (21, 21000, 21001, 21002, 21003, 21004);
+
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(25,1,'internal-admin',2,2,'套餐管理','system:menu-package','/system/menu-package','Tickets','@/views/system/menu-package/index.vue',1,1,1,0,0,NULL,'system:menu-package:list',NULL,NULL,NOW(),NOW(),'菜单授权套餐管理',0,NULL,NOW(),NULL,NOW()),
+(1200,1,'internal-admin',12,3,'查询机构列表','system:tenant:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:tenant:list',NULL,NULL,NOW(),NOW(),'机构列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(1400,1,'internal-admin',14,3,'查询应用列表','authorization:app:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'authorization:app:list',NULL,NULL,NOW(),NOW(),'授权应用列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(4000,1,'internal-admin',4,3,'查询菜单列表','system:menu:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:menu:list',NULL,NULL,NOW(),NOW(),'菜单列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(6000,1,'internal-admin',6,3,'查询系统配置列表','system:config:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:config:list',NULL,NULL,NOW(),NOW(),'系统配置列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(7000,1,'internal-admin',7,3,'查询字典类型列表','system:dict:type:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:dict:type:list',NULL,NULL,NOW(),NOW(),'字典类型列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(7001,1,'internal-admin',7,3,'查询字典类型','system:dict:type:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'system:dict:type:query',NULL,NULL,NOW(),NOW(),'字典类型详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(7002,1,'internal-admin',7,3,'新增字典类型','system:dict:type:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:dict:type:add',NULL,NULL,NOW(),NOW(),'字典类型新增权限',0,NULL,NOW(),NULL,NOW()),
+(7003,1,'internal-admin',7,3,'修改字典类型','system:dict:type:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:dict:type:edit',NULL,NULL,NOW(),NOW(),'字典类型修改权限',0,NULL,NOW(),NULL,NOW()),
+(7004,1,'internal-admin',7,3,'删除字典类型','system:dict:type:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:dict:type:delete',NULL,NULL,NOW(),NOW(),'字典类型删除权限',0,NULL,NOW(),NULL,NOW()),
+(7010,1,'internal-admin',7,3,'查询字典数据列表','system:dict:data:list',NULL,NULL,NULL,10,1,0,0,0,NULL,'system:dict:data:list',NULL,NULL,NOW(),NOW(),'字典数据列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(7011,1,'internal-admin',7,3,'查询字典数据','system:dict:data:query',NULL,NULL,NULL,11,1,0,0,0,NULL,'system:dict:data:query',NULL,NULL,NOW(),NOW(),'字典数据详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(7012,1,'internal-admin',7,3,'新增字典数据','system:dict:data:add',NULL,NULL,NULL,12,1,0,0,0,NULL,'system:dict:data:add',NULL,NULL,NOW(),NOW(),'字典数据新增权限',0,NULL,NOW(),NULL,NOW()),
+(7013,1,'internal-admin',7,3,'修改字典数据','system:dict:data:edit',NULL,NULL,NULL,13,1,0,0,0,NULL,'system:dict:data:edit',NULL,NULL,NOW(),NOW(),'字典数据修改权限',0,NULL,NOW(),NULL,NOW()),
+(7014,1,'internal-admin',7,3,'删除字典数据','system:dict:data:delete',NULL,NULL,NULL,14,1,0,0,0,NULL,'system:dict:data:delete',NULL,NULL,NOW(),NOW(),'字典数据删除权限',0,NULL,NOW(),NULL,NOW()),
+(25000,1,'internal-admin',25,3,'查询套餐列表','system:menu-package:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:menu-package:list',NULL,NULL,NOW(),NOW(),'套餐列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(25001,1,'internal-admin',25,3,'查询套餐','system:menu-package:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'system:menu-package:query',NULL,NULL,NOW(),NOW(),'套餐详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(25002,1,'internal-admin',25,3,'新增套餐','system:menu-package:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:menu-package:add',NULL,NULL,NOW(),NOW(),'套餐新增权限',0,NULL,NOW(),NULL,NOW()),
+(25003,1,'internal-admin',25,3,'修改套餐','system:menu-package:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:menu-package:edit',NULL,NULL,NOW(),NOW(),'套餐修改权限',0,NULL,NOW(),NULL,NOW()),
+(25004,1,'internal-admin',25,3,'删除套餐','system:menu-package:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:menu-package:delete',NULL,NULL,NOW(),NOW(),'套餐删除权限',0,NULL,NOW(),NULL,NOW()),
+(26,1,'internal-admin',0,1,'协同办公','workflow','/workflow','Promotion',NULL,2,1,1,0,0,'/workflow/task/todo',NULL,NULL,NULL,NOW(),NOW(),'协同办公工作台入口',0,NULL,NOW(),NULL,NOW()),
+(2601,1,'internal-admin',26,1,'任务管理','workflow:task','/workflow/task','List',NULL,1,1,1,0,0,'/workflow/task/todo',NULL,NULL,NULL,NOW(),NOW(),'协同办公任务中心',0,NULL,NOW(),NULL,NOW()),
+(260101,1,'internal-admin',2601,2,'我的待办','workflow:task:todo','/workflow/task/todo','Tickets','@/views/workflow/task/todo/index.vue',1,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户待办流程任务',0,NULL,NOW(),NULL,NOW()),
+(260102,1,'internal-admin',2601,2,'我的发起','workflow:task:initiated','/workflow/task/initiated','Position','@/views/workflow/task/initiated/index.vue',2,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户发起的流程',0,NULL,NOW(),NULL,NOW()),
+(260103,1,'internal-admin',2601,2,'我的已办','workflow:task:done','/workflow/task/done','CircleCheck','@/views/workflow/task/done/index.vue',3,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户已办流程任务',0,NULL,NOW(),NULL,NOW()),
+(260104,1,'internal-admin',2601,2,'抄送给我','workflow:task:copied','/workflow/task/copied','Message','@/views/workflow/task/copied/index.vue',4,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'抄送给当前用户的流程事项',0,NULL,NOW(),NULL,NOW()),
+(2601000,1,'internal-admin',2601,3,'查询协同任务','workflow:task:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'协同办公任务列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(2602,1,'internal-admin',26,2,'发起流程','workflow:start-process','/workflow/start-process','Promotion','@/views/workflow/start-process/index.vue',2,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'选择已发布流程并发起',0,NULL,NOW(),NULL,NOW()),
+(2603,1,'internal-admin',26,2,'业务示例','workflow:business-form','/workflow/business-form','Document','@/views/workflow/business-form/index.vue',4,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'业务接入工作流示例',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+`parent_id` = VALUES(`parent_id`),
+`menu_type` = VALUES(`menu_type`),
+`menu_name` = VALUES(`menu_name`),
+`menu_code` = VALUES(`menu_code`),
+`path` = VALUES(`path`),
+`icon` = VALUES(`icon`),
+`component` = VALUES(`component`),
+`sort` = VALUES(`sort`),
+`status` = VALUES(`status`),
+`visible` = VALUES(`visible`),
+`redirect` = VALUES(`redirect`),
+`permissions` = VALUES(`permissions`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`);
+
+UPDATE `authorization_menu` SET `redirect`='/system/menu-package' WHERE `id`=1;
+UPDATE `authorization_menu` SET `menu_name`='权限管理', `menu_code`='system:permission', `path`='/system/permission', `icon`='Lock', `redirect`='/system/menu-package', `remark`='机构、成员、角色、菜单与套餐权限管理', `status`=1, `visible`=1 WHERE `id`=2;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=1, `status`=1, `visible`=1 WHERE `id`=25;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=2, `status`=1, `visible`=1 WHERE `id`=12;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=3, `status`=1, `visible`=1 WHERE `id`=17;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=4, `status`=1, `visible`=1 WHERE `id`=15;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=5, `status`=1, `visible`=1 WHERE `id`=20;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=6, `status`=1, `visible`=1 WHERE `id`=3;
+UPDATE `authorization_menu` SET `parent_id`=2, `sort`=7, `status`=1, `visible`=1 WHERE `id`=4;
+UPDATE `authorization_menu` SET `parent_id`=1, `sort`=2, `status`=1, `visible`=1 WHERE `id`=14;
+UPDATE `authorization_menu` SET `parent_id`=1, `menu_type`=2, `menu_name`='字典管理', `menu_code`='system:dict', `path`='/system/dict', `icon`='Collection', `component`='@/views/system/dict/index.vue', `sort`=3, `redirect`=NULL, `permissions`='system:dict:list', `remark`='字典类型与字典数据管理', `status`=1, `visible`=1 WHERE `id`=7;
+UPDATE `authorization_menu` SET `parent_id`=1, `sort`=4, `status`=1, `visible`=1 WHERE `id`=6;
+UPDATE `authorization_menu` SET `parent_id`=1, `sort`=5, `status`=1, `visible`=1 WHERE `id`=16;
+UPDATE `authorization_menu` SET `menu_name`='日志管理', `menu_code`='system:log', `path`='/system/log', `icon`='DocumentChecked', `sort`=6, `redirect`='/system/login-log', `remark`='登录与操作审计日志', `status`=1, `visible`=1 WHERE `id`=8;
+UPDATE `authorization_menu` SET `status`=0, `visible`=0, `redirect`=NULL WHERE `id` IN (5,18,19,22,23,27);
+
+INSERT INTO `authorization_menu_package` (`id`, `tenant_id`, `package_name`, `package_code`, `app_code`, `status`, `sort`, `remark`, `create_by`, `update_by`, `create_time`, `update_time`, `del_flag`)
+VALUES
+(1,1,'平台管理套餐','platform_admin','internal-admin',1,1,'平台管理员默认菜单授权套餐',NULL,NULL,NOW(),NOW(),0),
+(2,1,'机构协同套餐','institution_collaboration','internal-admin',1,2,'普通机构后台默认菜单授权套餐',NULL,NULL,NOW(),NOW(),0)
+ON DUPLICATE KEY UPDATE
+`package_name` = VALUES(`package_name`),
+`app_code` = VALUES(`app_code`),
+`status` = VALUES(`status`),
+`sort` = VALUES(`sort`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`);
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(1001,1,1,1,1),(1002,1,1,2,2),(1003,1,1,25,3),(1004,1,1,12,4),(1005,1,1,17,5),(1006,1,1,15,6),(1007,1,1,20,7),(1008,1,1,3,8),(1009,1,1,4,9),(1010,1,1,14,10),(1011,1,1,7,11),(1012,1,1,6,12),(1013,1,1,16,13),(1014,1,1,8,14),(1015,1,1,9,15),(1016,1,1,10,16),(1017,1,1,26,17),(1018,1,1,2601,18),(1019,1,1,260101,19),(1020,1,1,260102,20),(1021,1,1,260103,21),(1022,1,1,260104,22),(1023,1,1,2602,23),(1024,1,1,24,24),(1025,1,1,2603,25),
+(1026,1,1,1200,26),(1027,1,1,1201,27),(1028,1,1,1202,28),(1029,1,1,1203,29),(1030,1,1,1204,30),
+(1031,1,1,1500,31),(1032,1,1,1501,32),(1033,1,1,1502,33),(1034,1,1,1503,34),(1035,1,1,1504,35),
+(1036,1,1,1700,36),(1037,1,1,1701,37),(1038,1,1,1702,38),(1039,1,1,1703,39),(1040,1,1,1704,40),
+(1041,1,1,2000,41),(1042,1,1,2001,42),(1043,1,1,2002,43),(1044,1,1,2003,44),(1045,1,1,2004,45),(1046,1,1,2005,46),(1047,1,1,2006,47),(1048,1,1,2007,48),
+(1049,1,1,3000,49),(1050,1,1,3001,50),(1051,1,1,3002,51),(1052,1,1,3003,52),(1053,1,1,3004,53),(1054,1,1,3005,54),
+(1055,1,1,4000,55),(1056,1,1,4001,56),(1057,1,1,4002,57),(1058,1,1,4003,58),(1059,1,1,4004,59),
+(1060,1,1,1400,60),(1061,1,1,1401,61),(1062,1,1,1402,62),(1063,1,1,1403,63),(1064,1,1,1404,64),
+(1065,1,1,6000,65),(1066,1,1,6001,66),(1067,1,1,6002,67),(1068,1,1,6003,68),(1069,1,1,6004,69),
+(1070,1,1,7000,70),(1071,1,1,7001,71),(1072,1,1,7002,72),(1073,1,1,7003,73),(1074,1,1,7004,74),(1075,1,1,7010,75),(1076,1,1,7011,76),(1077,1,1,7012,77),(1078,1,1,7013,78),(1079,1,1,7014,79),
+(1080,1,1,9002,80),(1081,1,1,9003,81),(1082,1,1,9004,82),(1083,1,1,10002,83),(1084,1,1,10003,84),(1085,1,1,10004,85),(1086,1,1,2601000,86),(1087,1,1,2601001,87),(1088,1,1,2601002,88),(1089,1,1,2601003,89),(1090,1,1,2602001,90),(1091,1,1,25000,91),(1092,1,1,25001,92),(1093,1,1,25002,93),(1094,1,1,25003,94),(1095,1,1,25004,95),
+(2001,1,2,1,1),(2002,1,2,2,2),(2003,1,2,17,3),(2004,1,2,15,4),(2005,1,2,20,5),(2006,1,2,3,6),(2007,1,2,8,7),(2008,1,2,9,8),(2009,1,2,10,9),(2010,1,2,26,10),(2011,1,2,2601,11),(2012,1,2,260101,12),(2013,1,2,260102,13),(2014,1,2,260103,14),(2015,1,2,260104,15),(2016,1,2,2602,16),(2017,1,2,2603,17),(2018,1,2,2601000,18);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 500000 + `menu_id`, 1, 1, `menu_id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu_package_item`
+WHERE `package_id` = 1;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 600000 + `menu_id`, 2, 2, `menu_id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu_package_item`
+WHERE `package_id` = 2;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 700000 + `menu_id`, 3, 3, `menu_id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu_package_item`
+WHERE `package_id` = 2;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 800000 + `menu_id`, 4, 4, `menu_id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu_package_item`
+WHERE `package_id` = 2;
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V3__workflow_task_menu_component_fix.sql
+-- -----------------------------------------------------------------------------
+
+UPDATE `authorization_menu`
+SET `component` = '@/views/workflow/task-list/index.vue',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` IN (260101,260102,260103,260104);
+
+UPDATE `authorization_menu`
+SET `component` = NULL,
+    `redirect` = '/workflow/task/todo',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 2601;
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V4__remove_workflow_node_definition_menu.sql
+-- -----------------------------------------------------------------------------
+
+DELETE FROM `authorization_role_menu`
+WHERE `menu_id` = 24007;
+
+DELETE FROM `authorization_menu`
+WHERE `id` = 24007
+   OR `menu_code` = 'system:workflow:node-definition';
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V5__frontend_app_registry_runtime.sql
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `frontend_app_registry` (
+  `id` bigint NOT NULL COMMENT '前端入口注册ID',
+  `app_code` varchar(64) NOT NULL COMMENT '授权应用编码',
+  `app_type` varchar(32) NOT NULL DEFAULT 'LOCAL' COMMENT '前端入口类型: LOCAL/MICRO_APP/IFRAME/EXTERNAL_LINK',
+  `deploy_mode` varchar(32) NOT NULL DEFAULT 'EMBEDDED' COMMENT '部署模式: EMBEDDED/REMOTE/HYBRID',
+  `entry_url` varchar(500) DEFAULT NULL COMMENT '远程入口地址',
+  `mount_path` varchar(255) DEFAULT NULL COMMENT '主框架挂载路径',
+  `active_rule` varchar(255) DEFAULT NULL COMMENT '激活规则',
+  `framework` varchar(64) DEFAULT NULL COMMENT '前端运行框架',
+  `version` varchar(64) DEFAULT NULL COMMENT '当前版本',
+  `health_check_url` varchar(500) DEFAULT NULL COMMENT '健康检查地址',
+  `sandbox_enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否启用沙箱',
+  `style_isolation` varchar(32) NOT NULL DEFAULT 'NONE' COMMENT '样式隔离: NONE/SCOPED/SHADOW_DOM/IFRAME',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_frontend_app_registry_app_code` (`app_code`),
+  KEY `idx_frontend_app_registry_type` (`app_type`),
+  KEY `idx_frontend_app_registry_mount_path` (`mount_path`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前端应用入口注册表';
+
+INSERT IGNORE INTO `frontend_app_registry`
+  (`id`, `app_code`, `app_type`, `deploy_mode`, `framework`, `sandbox_enabled`, `style_isolation`, `create_time`, `update_time`)
+VALUES
+  (1, 'internal-admin', 'LOCAL', 'EMBEDDED', 'vue3', 0, 'NONE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS `frontend_menu_runtime_config` (
+  `id` bigint NOT NULL COMMENT '菜单运行配置ID',
+  `menu_id` bigint NOT NULL COMMENT '授权菜单ID',
+  `app_code` varchar(64) NOT NULL COMMENT '授权应用编码',
+  `page_type` varchar(32) NOT NULL DEFAULT 'LOCAL_ROUTE' COMMENT '页面运行类型: LOCAL_ROUTE/MICRO_ROUTE/IFRAME/EXTERNAL_LINK/BUTTON',
+  `external_url` varchar(500) DEFAULT NULL COMMENT 'iframe 或外链地址',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_frontend_menu_runtime_menu_id` (`menu_id`),
+  KEY `idx_frontend_menu_runtime_app_code` (`app_code`),
+  KEY `idx_frontend_menu_runtime_page_type` (`page_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前端菜单运行配置表';
+
+INSERT IGNORE INTO `frontend_menu_runtime_config`
+  (`id`, `menu_id`, `app_code`, `page_type`, `create_time`, `update_time`)
+SELECT `id`, `id`, `app_code`,
+       CASE
+         WHEN `menu_type` = 3 THEN 'BUTTON'
+         WHEN `embedded` = 1 THEN 'IFRAME'
+         ELSE 'LOCAL_ROUTE'
+       END,
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP
+FROM `authorization_menu`;
+
+CREATE TABLE IF NOT EXISTS `frontend_tenant_app_binding` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL COMMENT '租户 ID',
+  `app_code` varchar(64) NOT NULL COMMENT '前端入口所属授权应用编码',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用, 1-启用',
+  `expire_time` datetime DEFAULT NULL COMMENT '过期时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_frontend_tenant_app_binding` (`tenant_id`,`app_code`),
+  KEY `idx_frontend_tenant_app_binding_app_code` (`app_code`),
+  KEY `idx_frontend_tenant_app_binding_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前端租户应用开通关系表';
+
+INSERT IGNORE INTO `frontend_tenant_app_binding`
+  (`id`, `tenant_id`, `app_code`, `status`, `create_time`, `update_time`)
+SELECT `tenant_id`, `tenant_id`, 'internal-admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM `authorization_role`
+WHERE `app_code` = 'internal-admin'
+GROUP BY `tenant_id`;
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V6__app_module_menu_resource_pool.sql
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `authorization_app_module` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `app_code` varchar(64) NOT NULL COMMENT '逻辑应用编码',
+  `module_code` varchar(128) NOT NULL COMMENT '能力模块编码',
+  `module_name` varchar(128) NOT NULL COMMENT '能力模块名称',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用, 1-启用',
+  `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_authorization_app_module` (`app_code`,`module_code`),
+  KEY `idx_authorization_app_module_app` (`app_code`),
+  KEY `idx_authorization_app_module_module` (`module_code`),
+  KEY `idx_authorization_app_module_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='逻辑应用集成能力模块表';
+
+SET @menu_module_column_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'authorization_menu'
+    AND COLUMN_NAME = 'module_code'
+);
+SET @add_menu_module_column_sql := IF(
+  @menu_module_column_exists = 0,
+  'ALTER TABLE `authorization_menu` ADD COLUMN `module_code` varchar(128) NOT NULL DEFAULT ''mango-system'' COMMENT ''能力模块编码'' AFTER `app_code`',
+  'SELECT 1'
+);
+PREPARE add_menu_module_column_stmt FROM @add_menu_module_column_sql;
+EXECUTE add_menu_module_column_stmt;
+DEALLOCATE PREPARE add_menu_module_column_stmt;
+
+SET @menu_module_index_exists := (
+  SELECT COUNT(1)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'authorization_menu'
+    AND INDEX_NAME = 'idx_authorization_menu_module_code'
+);
+SET @add_menu_module_index_sql := IF(
+  @menu_module_index_exists = 0,
+  'ALTER TABLE `authorization_menu` ADD KEY `idx_authorization_menu_module_code` (`module_code`)',
+  'SELECT 1'
+);
+PREPARE add_menu_module_index_stmt FROM @add_menu_module_index_sql;
+EXECUTE add_menu_module_index_stmt;
+DEALLOCATE PREPARE add_menu_module_index_stmt;
+
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (1, 'internal-admin', 'mango-authorization', 'mango-authorization', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (2, 'internal-admin', 'mango-system', 'mango-system', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (3, 'internal-admin', 'mango-workflow', 'mango-workflow', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-workflow'
+WHERE `app_code` = 'internal-admin'
+  AND (
+    `menu_code` LIKE 'workflow:%'
+    OR `path` LIKE '/workflow%'
+    OR `component` LIKE '%/workflow/%'
+    OR `permissions` LIKE 'workflow:%'
+  );
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-authorization'
+WHERE `app_code` = 'internal-admin'
+  AND (
+    `menu_code` LIKE 'authorization:%'
+    OR `permissions` LIKE 'authorization:%'
+    OR `menu_code` IN ('system:permission', 'system:account-access', 'system:role', 'system:menu', 'system:menu-package')
+    OR `permissions` IN ('system:menu:list', 'system:menu:query', 'system:menu:add', 'system:menu:edit', 'system:menu:delete',
+                         'system:menu-package:list', 'system:menu-package:query', 'system:menu-package:add',
+                         'system:menu-package:edit', 'system:menu-package:delete')
+  );
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-system'
+WHERE `app_code` = 'internal-admin'
+  AND (`module_code` IS NULL OR `module_code` = '' OR `module_code` = 'mango-system');
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V7__frontend_module_runtime_strategy.sql
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `frontend_module_runtime_strategy` (
+  `id` bigint NOT NULL COMMENT '模块运行策略ID',
+  `app_code` varchar(64) NOT NULL COMMENT '逻辑应用编码',
+  `module_code` varchar(128) NOT NULL COMMENT '能力模块编码',
+  `deploy_profile` varchar(32) NOT NULL DEFAULT 'monolith' COMMENT '部署配置档: monolith/hybrid/micro',
+  `page_type` varchar(32) NOT NULL DEFAULT 'LOCAL_ROUTE' COMMENT '页面运行类型: LOCAL_ROUTE/MICRO_ROUTE/IFRAME/EXTERNAL_LINK',
+  `runtime_code` varchar(64) NOT NULL COMMENT '前端运行单元编码，关联 frontend_app_registry.app_code',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用, 1-启用',
+  `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_frontend_module_runtime_strategy` (`app_code`,`module_code`,`deploy_profile`),
+  KEY `idx_frontend_module_runtime_strategy_app` (`app_code`),
+  KEY `idx_frontend_module_runtime_strategy_runtime` (`runtime_code`),
+  KEY `idx_frontend_module_runtime_strategy_profile` (`deploy_profile`,`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='前端模块运行策略表';
+
+INSERT INTO `frontend_app_registry`
+  (`id`, `app_code`, `app_type`, `deploy_mode`, `entry_url`, `mount_path`, `active_rule`, `framework`, `version`, `sandbox_enabled`, `style_isolation`, `create_time`, `update_time`)
+VALUES
+  (1001, 'mango-admin-local', 'LOCAL', 'EMBEDDED', NULL, '/', '/**', 'vue3', 'dev', 0, 'NONE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (1002, 'mango-admin-rbac-app', 'MICRO_APP', 'REMOTE', 'http://127.0.0.1:5181/src/micro.ts', '/micro/rbac', '/system/**', 'vue3', 'dev', 0, 'NONE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `app_type` = VALUES(`app_type`),
+  `deploy_mode` = VALUES(`deploy_mode`),
+  `entry_url` = VALUES(`entry_url`),
+  `mount_path` = VALUES(`mount_path`),
+  `active_rule` = VALUES(`active_rule`),
+  `framework` = VALUES(`framework`),
+  `version` = VALUES(`version`),
+  `sandbox_enabled` = VALUES(`sandbox_enabled`),
+  `style_isolation` = VALUES(`style_isolation`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+INSERT INTO `frontend_module_runtime_strategy`
+  (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (1, 'internal-admin', 'mango-authorization', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (2, 'internal-admin', 'mango-system', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (3, 'internal-admin', 'mango-workflow', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (11, 'internal-admin', 'mango-authorization', 'hybrid', 'MICRO_ROUTE', 'mango-admin-rbac-app', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (12, 'internal-admin', 'mango-system', 'hybrid', 'LOCAL_ROUTE', 'mango-admin-local', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (13, 'internal-admin', 'mango-workflow', 'hybrid', 'LOCAL_ROUTE', 'mango-admin-local', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (21, 'internal-admin', 'mango-authorization', 'micro', 'MICRO_ROUTE', 'mango-admin-rbac-app', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (22, 'internal-admin', 'mango-system', 'micro', 'LOCAL_ROUTE', 'mango-admin-local', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (23, 'internal-admin', 'mango-workflow', 'micro', 'LOCAL_ROUTE', 'mango-admin-local', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `page_type` = VALUES(`page_type`),
+  `runtime_code` = VALUES(`runtime_code`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V8__workflow_menu_icons.sql
+-- -----------------------------------------------------------------------------
+
+UPDATE `authorization_menu`
+SET `icon` = CASE `menu_code`
+    WHEN 'workflow' THEN 'Promotion'
+    WHEN 'workflow:task' THEN 'List'
+    WHEN 'workflow:task:todo' THEN 'Tickets'
+    WHEN 'workflow:task:initiated' THEN 'Position'
+    WHEN 'workflow:task:done' THEN 'CircleCheck'
+    WHEN 'workflow:task:copied' THEN 'Message'
+    WHEN 'workflow:start-process' THEN 'Promotion'
+    WHEN 'system:workflow' THEN 'Operation'
+    WHEN 'workflow:business-form' THEN 'Document'
+    ELSE `icon`
+  END,
+  `update_time` = NOW(),
+  `updated_at` = NOW()
+WHERE `menu_code` IN (
+  'workflow',
+  'workflow:task',
+  'workflow:task:todo',
+  'workflow:task:initiated',
+  'workflow:task:done',
+  'workflow:task:copied',
+  'workflow:start-process',
+  'system:workflow',
+  'workflow:business-form'
+);
+
+
+
+-- -----------------------------------------------------------------------------
+-- Folded from V9__workflow_business_example_label.sql
+-- -----------------------------------------------------------------------------
+
+UPDATE `authorization_menu`
+SET `menu_name` = '业务示例',
+    `remark` = '业务接入工作流示例',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `menu_code` = 'workflow:business-form';

@@ -37,6 +37,7 @@ public class GuaranteeCaseServiceImpl implements IGuaranteeCaseService {
 
     private static final int DEFAULT_STATUS = 0;
     private static final String DEFAULT_CURRENCY = "CNY";
+    private static final String WORKFLOW_BUSINESS_TYPE = "GUARANTEE_CASE";
 
     private final GuaranteeCaseMapper caseMapper;
     private final ObjectProvider<WorkflowBusinessProcessApi> workflowBusinessProcessApiProvider;
@@ -140,7 +141,7 @@ public class GuaranteeCaseServiceImpl implements IGuaranteeCaseService {
         if (businessKeys.isEmpty()) {
             return;
         }
-        Map<String, WorkflowBusinessProcessVO> processByBusinessKey = workflowApi.latestByBusinessKeys(businessKeys)
+        Map<String, WorkflowBusinessProcessVO> processByBusinessKey = workflowApi.latestByBusinessKeys(WORKFLOW_BUSINESS_TYPE, businessKeys)
                 .stream()
                 .collect(Collectors.toMap(WorkflowBusinessProcessVO::getBusinessKey, Function.identity(), (left, right) -> left));
         for (GuaranteeCaseVO record : records) {

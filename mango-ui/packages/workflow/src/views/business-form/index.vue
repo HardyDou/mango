@@ -1265,8 +1265,8 @@ function buildSealApplyRecordFromApply(apply: WorkflowBusinessApply, index: numb
 
 function normalizeBusinessStatus(status?: string): ExpenseStatus {
   if (status === '已驳回' || status === '已拒绝' || status === 'REJECTED') return '已驳回';
-  if (status === '已完成' || status === 'COMPLETED') return '已通过';
-  if (status === '已结束' || status === 'ENDED') return '已结束';
+  if (status === '已完成' || status === '已通过' || status === 'COMPLETED' || status === 'APPROVED') return '已通过';
+  if (status === '已结束' || status === 'ENDED' || status === 'TERMINATED') return '已结束';
   if (status === '草稿') return '草稿';
   return '审批中';
 }
