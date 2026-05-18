@@ -50,7 +50,7 @@ test.describe.serial('上传组件文件接口联调', () => {
     uploadedFileIds = [];
     await login(page);
 
-    await page.goto('/#/demo/upload');
+    await page.goto('/#/components/upload');
     await expect(page.getByTestId('mixed-upload-panel')).toBeVisible({ timeout: 10000 });
   });
 
@@ -89,11 +89,11 @@ test.describe.serial('上传组件文件接口联调', () => {
   });
 
   test('右侧文章目录点击只滚动页面不改变系统 hash 路由', async ({ page }) => {
-    await expect(page).toHaveURL(/#\/demo\/upload/);
+    await expect(page).toHaveURL(/#\/components\/upload/);
 
     await page.getByRole('button', { name: '支持属性' }).click();
 
-    await expect(page).toHaveURL(/#\/demo\/upload/);
+    await expect(page).toHaveURL(/#\/components\/upload/);
     await expect(page.locator('#props')).toBeInViewport({ timeout: 10000 });
   });
 

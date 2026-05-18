@@ -5,6 +5,13 @@
       <el-button link type="primary" @click="refresh">刷新</el-button>
     </div>
     <div ref="trackRef" class="track">
+      <img
+        v-if="captchaData?.backgroundImage"
+        class="captcha-image"
+        :src="captchaData.backgroundImage"
+        alt="滑块验证码背景"
+      >
+      <div v-else class="captcha-placeholder">加载中...</div>
       <div class="target" :style="{ left: `${targetLeft}px` }" />
       <div
         class="slider"
@@ -38,7 +45,7 @@ let dragging = false;
 async function refresh() {
   captchaData.value = await generateBlockPuzzle();
   sliderLeft.value = 0;
-  targetLeft.value = Math.floor(60 + Math.random() * 140);
+  targetLeft.value = Number(captchaData.value.x ?? 0);
   errorMessage.value = '';
   emit('refresh');
 }
@@ -68,7 +75,7 @@ function handleTouchDrag(event: TouchEvent) {
 }
 
 function updateSlider(clientX: number) {
-  const maxLeft = Math.max((trackRef.value?.offsetWidth ?? 260) - 40, 0);
+  const maxLeft = Math.max((trackRef.value?.offsetWidth ?? 280) - 40, 0);
   sliderLeft.value = Math.min(Math.max(clientX - dragStartX, 0), maxLeft);
 }
 
@@ -133,29 +140,49 @@ defineExpose({ refresh });
 
   .track {
     position: relative;
-    height: 48px;
-    border-radius: 24px;
-    background: #f5f7fa;
+    width: 280px;
+    max-width: 100%;
+    height: 160px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+    background: var(--el-fill-color-light);
     overflow: hidden;
+  }
+
+  .captcha-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .captcha-placeholder {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--el-text-color-secondary);
   }
 
   .target {
     position: absolute;
-    top: 4px;
+    top: 55px;
     width: 40px;
     height: 40px;
-    border-radius: 20px;
-    background: rgba(64, 158, 255, 0.15);
-    border: 1px dashed #409eff;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 30%);
+    border: 2px dashed var(--el-color-primary);
+    box-shadow: 0 0 0 999px rgb(0 0 0 / 8%);
   }
 
   .slider {
     position: absolute;
-    top: 4px;
+    top: 55px;
     width: 40px;
     height: 40px;
-    border-radius: 20px;
-    background: #409eff;
+    border-radius: 8px;
+    background: var(--el-color-primary);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 16%);
     cursor: grab;
   }
 

@@ -29,7 +29,7 @@ test.describe('验证码组件 E2E', () => {
 
     await loginByUi(page);
 
-    await page.goto('/#/demo/captcha');
+    await page.goto('/#/components/captcha');
     await expect(page.getByText('验证码组件演示')).toBeVisible();
     await page.getByRole('tab', { name: '算术验证码' }).click();
     const arithmeticPanel = page.getByRole('tabpanel', { name: '算术验证码' });

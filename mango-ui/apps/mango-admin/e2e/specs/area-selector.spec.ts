@@ -35,7 +35,7 @@ test.describe('行政区划选择器 E2E', () => {
     expect(cityBody.data[0]).toMatchObject({ id: 1101, name: '北京市' });
 
     await loginByUi(page);
-    await page.goto('/#/demo/china-area');
+    await page.goto('/#/components/china-area');
     await expect(page.getByText('省市区选择器').first()).toBeVisible();
 
     await page.getByPlaceholder('请选择省市区').first().click();

@@ -2,14 +2,16 @@
   <div
     ref="containerRef"
     class="code-editor-container"
+    :style="{ height: normalizedHeight, width }"
   >
     <textarea ref="textareaRef" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import CodeMirror from 'codemirror';
+import 'codemirror/lib/codemirror.css';
 // Import modes
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/mode/xml/xml';
@@ -36,7 +38,8 @@ const props = withDefaults(
     lineNumbers?: boolean;
     matchBrackets?: boolean;
     autoCloseBrackets?: boolean;
-    height?: string;
+    height?: string | number;
+    width?: string;
   }>(),
   {
     modelValue: '',
@@ -47,6 +50,7 @@ const props = withDefaults(
     matchBrackets: true,
     autoCloseBrackets: true,
     height: '300px',
+    width: '100%',
   }
 );
 
@@ -58,6 +62,9 @@ const emit = defineEmits<{
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
 let editor: CodeMirror.Editor | null = null;
+let resizeObserver: ResizeObserver | null = null;
+
+const normalizedHeight = computed(() => normalizeCssSize(props.height));
 
 // Language mode mapping
 const getMode = (lang: string): string | object => {
@@ -84,9 +91,11 @@ const getMode = (lang: string): string | object => {
 // Initialize editor
 const initEditor = () => {
   if (!textareaRef.value) return;
+  if (editor) return;
+
+  textareaRef.value.value = props.modelValue || '';
 
   editor = CodeMirror.fromTextArea(textareaRef.value, {
-    value: props.modelValue || '',
     mode: getMode(props.language),
     theme: props.theme === 'default' ? 'default' : props.theme,
     readOnly: props.readonly,
@@ -101,14 +110,8 @@ const initEditor = () => {
     },
   });
 
-  // Set height - using explicit pixel value
-  const heightStr = typeof props.height === 'number' ? `${props.height}px` : String(props.height);
-  editor.setSize('100%', heightStr);
-
-  // Apply CSS to container after editor is created
-  if (containerRef.value) {
-    containerRef.value.style.height = heightStr;
-  }
+  editor.setValue(props.modelValue || '');
+  editor.setSize('100%', normalizedHeight.value);
 
   // Listen for changes
   editor.on('change', (cm) => {
@@ -116,10 +119,17 @@ const initEditor = () => {
     emit('update:modelValue', value);
     emit('change', value);
   });
+
+  nextTick(() => {
+    editor?.refresh();
+    observeResize();
+  });
 };
 
 // Destroy editor
 const destroyEditor = () => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
   if (editor) {
     editor.toTextArea();
     editor = null;
@@ -171,12 +181,16 @@ watch(
   () => props.height,
   (newHeight) => {
     if (editor) {
-      const heightStr = typeof newHeight === 'number' ? `${newHeight}px` : String(newHeight);
-      editor.setSize('100%', heightStr);
-      if (containerRef.value) {
-        containerRef.value.style.height = heightStr;
-      }
+      editor.setSize('100%', normalizeCssSize(newHeight));
+      nextTick(() => editor?.refresh());
     }
+  }
+);
+
+watch(
+  () => props.width,
+  () => {
+    nextTick(() => editor?.refresh());
   }
 );
 
@@ -199,14 +213,30 @@ defineExpose({
   refresh: () => editor?.refresh(),
   focus: () => editor?.focus(),
 });
+
+function normalizeCssSize(value?: string | number) {
+  return typeof value === 'number' ? `${value}px` : String(value || '300px');
+}
+
+function observeResize() {
+  if (!containerRef.value || typeof ResizeObserver === 'undefined') return;
+  resizeObserver?.disconnect();
+  resizeObserver = new ResizeObserver(() => {
+    editor?.refresh();
+  });
+  resizeObserver.observe(containerRef.value);
+}
 </script>
 
 <style scoped lang="scss">
 .code-editor-container {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   overflow: hidden;
-  height: 300px;
   position: relative;
 
   // The original textarea should be hidden but present for CodeMirror
@@ -215,7 +245,9 @@ defineExpose({
   }
 
   :deep(.CodeMirror) {
+    width: 100%;
     height: 100%;
+    box-sizing: border-box;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
     font-size: 14px;
     line-height: 1.5;

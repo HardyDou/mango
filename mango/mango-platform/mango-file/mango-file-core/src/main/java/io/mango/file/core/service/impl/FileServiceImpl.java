@@ -402,14 +402,9 @@ public class FileServiceImpl implements IFileService {
         vo.setUrl(fallbackUrl);
         vo.setDownloadUrl(fallbackUrl);
         vo.setDirectAccess(false);
-        if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
-            return;
-        }
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                record.getStorageConfigId(),
-                record.getStorageType(),
-                record.getBucketName());
-        if (!shouldUsePresignedUrl(record, settings)) {
+        FileStorageConfig storageConfig = resolveStorageConfig(record);
+        boolean directMode = FileAccessMode.of(settings.getAccessMode()) == FileAccessMode.DIRECT;
+        if (!directMode || !shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, record.getObjectName(), record.getFileName())
                     .ifPresent(url -> {
                         vo.setDirectAccess(true);
@@ -442,6 +437,13 @@ public class FileServiceImpl implements IFileService {
                     vo.setDirectDownloadUrl(url);
                     vo.setDirectDownloadExpireSeconds(downloadExpireSeconds);
                 });
+    }
+
+    private FileStorageConfig resolveStorageConfig(FileRecord record) {
+        return storageConfigService.getEnabledConfig(
+                record.getStorageConfigId(),
+                record.getStorageType(),
+                record.getBucketName());
     }
 
     private String relativeDownloadUrl(Long fileId) {
