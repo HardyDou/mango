@@ -22,6 +22,31 @@ Workflow 子应用：apps/mango-admin-workflow-app
 
 Shell 负责登录态、菜单树、权限上下文、主题、TagsView、错误态和 `/api` 代理。子应用只负责当前业务页面渲染。
 
+## 职责边界
+
+主应用 Shell 是唯一的后台框架所有者：
+
+- 统一加载 `/authorization/menus/user?fmt=tree&appCode=internal-admin`。
+- 统一渲染顶部、左侧、TagsView、用户菜单、主题设置。
+- 统一维护 token、tenantId、userInfo、permissions、request、eventBus、theme。
+- 统一根据 `runtime-config.json` 决定本地渲染还是 Wujie 挂载。
+- 统一处理远程加载失败、超时、卸载、运行日志。
+
+子应用是业务页面运行单元：
+
+- 被 Shell 加载时只渲染当前菜单对应的业务页面。
+- 独立访问只用于开发调试，可以有轻量 debug shell，但不能作为正式主框架。
+- 不读取全局后台菜单，不渲染主导航，不维护 TagsView。
+- 不直接决定业务模块是否可见，模块可见性由后端菜单/权限和 Shell 统一控制。
+
+不要把“逻辑应用”“能力模块”“前端运行单元”混成一个概念：
+
+```text
+internal-admin      # 逻辑应用，授权边界
+mango-authorization # 能力模块，贡献 RBAC 菜单和页面
+mango-admin-rbac-app # 前端运行单元，承载 RBAC 页面远程运行
+```
+
 ## 本地开发
 
 先配置 hosts：
@@ -77,6 +102,48 @@ Workflow: http://c.mango.io:5182
 ```
 
 切换形态只替换这个前端静态配置文件，不改后端、不改数据库、不改菜单、不改权限。
+
+## 页面分发规范
+
+Shell 点击菜单后的分发顺序：
+
+1. 读取菜单 `moduleCode` 和 `component`。
+2. 读取当前前端 runtime config。
+3. `mode=local`：从 `packages/admin-pages` 查找页面并本地渲染。
+4. `mode=micro`：按 `entry` 使用 Wujie 加载子应用，并把当前菜单和 runtime 上下文传入。
+5. `IFRAME / EXTERNAL_LINK`：按菜单运行类型处理。
+
+页面注册表是唯一映射来源：
+
+```text
+packages/admin-pages/src/defaults.ts
+```
+
+新增或调整业务页面时必须遵守：
+
+- 后端菜单的 `component` 要能命中页面注册表。
+- 单体、Shell 本地模式、子应用独立调试应复用同一套页面组件。
+- 不在 Shell 和子应用各写一套页面映射。
+- 不复制 `@mango/rbac`、`@mango/workflow` 等业务页面源码。
+- 菜单归属按菜单树关系判断，不按 URL 前缀硬编码。父菜单路径和子页面路径可以不同前缀。
+
+## 开发中心菜单
+
+`开发中心` 是前端开发态辅助菜单，只在 Vite dev 环境追加，不来自后端，也不进入测试/生产菜单。
+
+用途：
+
+- 组件库
+- 示例页面
+- 本地调试页
+
+约束：
+
+- 不写入数据库菜单表。
+- 不参与客户交付菜单。
+- 不承载真实业务模块入口。
+- 新增开发页也要走 `packages/admin-pages` 注册，避免 Shell 和单体页面来源不一致。
+- 如果历史页面路径仍是 `/components/*` 或 `/demo/*`，可以保留直接访问路径，但菜单树上归属 `开发中心 > 组件库`。
 
 ## 配置诊断
 
@@ -220,6 +287,54 @@ PLAYWRIGHT_BASE_URL=http://a.mango.io:4176 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=tru
 ```
 
 `VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES=true` 只用于本地或预发 HTTP 验收。正式生产必须使用 HTTPS 远程入口，并用 `VITE_MANGO_ALLOWED_REMOTE_ORIGINS` 做精确来源白名单。
+
+## 研发规范
+
+新增能力模块页面：
+
+1. 页面放到对应业务包，例如 `packages/rbac`、`packages/system`、`packages/workflow`。
+2. 在 `packages/admin-pages` 注册 `moduleCode + componentPath`。
+3. 后端菜单只维护业务菜单和权限，不维护部署形态。
+4. 需要远程运行时，为该模块新增或复用子应用入口。
+5. 通过 `runtime-config.json` 切换 local/micro。
+
+修改 Shell：
+
+- 只能处理框架级能力：布局、导航、主题、TagsView、runtime、错误边界。
+- 不直接写业务页面逻辑。
+- 不把某个业务模块的页面细节写死在 Shell。
+
+修改子应用：
+
+- 保持 `mount(container, runtime)` / `unmount()` 协议稳定。
+- 被 Shell 挂载时不得显示顶部、左侧、TagsView。
+- 业务接口走 Shell 注入的请求上下文。
+- 独立访问只做开发调试，不作为客户正式入口。
+
+提交前检查：
+
+```bash
+pnpm -C mango-ui --filter mango-admin build
+pnpm -C mango-ui --filter mango-admin-shell build
+pnpm -C mango-ui build:micro
+```
+
+改了 Wujie、runtime config、主题同步、子应用生命周期时，补充：
+
+```bash
+PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
+```
+
+运行 `eslint --fix` 后必须检查工作区，避免把无关历史文件自动格式化混入提交。
+
+## 常见误区
+
+- 不要把每个能力模块都建成后端逻辑应用。默认是 `internal-admin` 集成多个能力模块。
+- 不要通过改数据库菜单切换单体/微前端。部署形态由前端 runtime config 控制。
+- 不要让子应用拥有主菜单。菜单由 Shell 统一管理。
+- 不要把业务接口拆成每个子应用一套跨域策略。正式业务接口由 Shell 统一代理。
+- 不要用 `Access-Control-Allow-Origin: *` 承载生产后台带凭证访问。
+- 不要用 URL 前缀判断菜单归属，应按菜单树父子关系判断。
 
 ## 主题同步和运行日志
 
