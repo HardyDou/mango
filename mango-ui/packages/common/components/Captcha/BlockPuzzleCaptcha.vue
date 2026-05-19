@@ -46,8 +46,9 @@
     <template v-else>
       <el-dialog
         v-model="panelVisible"
+        class="block-puzzle-dialog"
         title="请完成安全验证"
-        width="360px"
+        width="340px"
         append-to-body
         @opened="handlePanelShow"
         @closed="handlePopupClosed"
@@ -147,6 +148,8 @@ const controlHandleStyle = computed(() => ({
 const controlFillStyle = computed(() => ({
   width: `${sliderLeft.value + controlHandleSize}px`,
 }));
+
+const controlIcon = computed(() => (verified.value ? Check : Right));
 
 function setTrackRef(element: Element | null) {
   resizeObserver?.disconnect();
@@ -386,8 +389,7 @@ const PuzzleContent = defineComponent({
               startTouchDrag(event);
             },
           }, [
-            h(Check, { class: verified.value ? '' : 'is-hidden' }),
-            h(Right, { class: verified.value ? 'is-hidden' : '' }),
+            h(controlIcon.value),
           ]),
           h('div', { class: 'control-text' }, verified.value ? '验证通过' : '向右拖动滑块填充拼图'),
         ])
@@ -410,7 +412,12 @@ defineExpose({ refresh, verify });
   }
 
   .puzzle-panel {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  &.is-popup .puzzle-panel {
+    width: 280px;
   }
 
   :deep(.track) {
@@ -542,9 +549,9 @@ defineExpose({ refresh, verify });
   :deep(.control-handle) {
     position: absolute;
     top: -1px;
-    bottom: -1px;
     z-index: 2;
     display: inline-flex;
+    height: 38px;
     min-width: 38px;
     align-items: center;
     justify-content: center;
@@ -567,10 +574,6 @@ defineExpose({ refresh, verify });
 
     &:disabled {
       cursor: default;
-    }
-
-    .is-hidden {
-      display: none;
     }
   }
 
@@ -779,5 +782,24 @@ defineExpose({ refresh, verify });
 .is-popup {
   width: 100%;
   max-width: 420px;
+}
+
+:global(.block-puzzle-dialog) {
+  --el-dialog-padding-primary: 24px;
+}
+
+:global(.block-puzzle-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding-bottom: 16px;
+}
+
+:global(.block-puzzle-dialog .el-dialog__title) {
+  color: var(--el-text-color-primary);
+  font-size: 24px;
+  line-height: 1.3;
+}
+
+:global(.block-puzzle-dialog .el-dialog__body) {
+  padding-top: 0;
 }
 </style>
