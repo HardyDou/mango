@@ -20,6 +20,8 @@
     "@mango/file": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",
+    "@mango/workflow": "workspace:*",
+    "@mango/workflow-business-example": "workspace:*",
     "@mango/common": "workspace:*",
     "@element-plus/icons-vue": "^2.0.10",
     "@microsoft/fetch-event-source": "^2.0.1",

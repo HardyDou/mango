@@ -13,6 +13,7 @@
     "@mango/auth": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/workflow": "workspace:*",
+    "@mango/workflow-business-example": "workspace:*",
     "@element-plus/icons-vue": "^2.0.10",
     "element-plus": "2.5.5",
     "pinia": "^2.0.33",

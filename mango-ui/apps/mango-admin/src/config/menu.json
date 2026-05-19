@@ -10,6 +10,16 @@
     "component": "@/views/workflow/task/detail/index.vue"
   },
   {
+    "path": "/workflow/custom-apply",
+    "name": "WorkflowCustomApply",
+    "meta": {
+      "title": "自定义申请",
+      "icon": "DocumentAdd",
+      "isHide": true
+    },
+    "component": "@/views/workflow/custom-apply/index.vue"
+  },
+  {
     "path": "/develop",
     "name": "DevelopCenter",
     "meta": {

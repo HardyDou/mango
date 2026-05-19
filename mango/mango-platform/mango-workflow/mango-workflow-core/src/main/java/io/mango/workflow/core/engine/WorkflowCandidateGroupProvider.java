@@ -93,7 +93,23 @@ public class WorkflowCandidateGroupProvider {
                 from tenant_member
                 where tenant_id = ? and id = ? and primary_org_id is not null
                   and member_type in ('INSTITUTION_ADMIN','ORG_LEADER','ORG_MANAGER')
-                """, tenantId, memberId);
+                union
+                select tmo.org_id
+                from tenant_member_org tmo
+                where tmo.tenant_id = ? and tmo.member_id = ? and tmo.leader_flag = 1
+                union
+                select tmo.org_id
+                from tenant_member_org tmo
+                join org_post op on op.id = tmo.post_id and op.tenant_id = tmo.tenant_id
+                where tmo.tenant_id = ? and tmo.member_id = ?
+                  and op.post_status = '1'
+                  and (
+                    upper(op.post_code) in ('DEPT_MANAGER','ORG_MANAGER','TEAM_LEADER')
+                    or right(upper(op.post_code), 13) = '_DEPT_MANAGER'
+                    or right(upper(op.post_code), 12) = '_ORG_MANAGER'
+                    or right(upper(op.post_code), 12) = '_TEAM_LEADER'
+                  )
+                """, tenantId, memberId, tenantId, memberId, tenantId, memberId);
     }
 
     private List<Long> queryIds(String sql, Object... args) {

@@ -1,0 +1,110 @@
+import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
+import { registerBusinessApplyComponents } from '@mango/workflow/src/components/businessApply';
+import { registerBusinessApprovalComponents } from '@mango/workflow/src/components/businessApproval';
+import WorkflowBusinessFormView from './views/business-form/index.vue';
+import DocumentTableApprovalDetail from './business-components/DocumentTableApprovalDetail.vue';
+import ExpenseApprovalDetail from './business-components/ExpenseApprovalDetail.vue';
+
+let registered = false;
+
+export function registerWorkflowBusinessExampleComponents() {
+  if (registered) {
+    return;
+  }
+  registered = true;
+
+  registerBusinessApplyComponents({
+    'workflow.expense.apply': {
+      title: '费用报销申请',
+      component: WorkflowBusinessFormView,
+    },
+    'workflow.contractSeal.apply': {
+      title: '合同用印申请',
+      component: WorkflowBusinessFormView,
+    },
+  });
+
+  registerBusinessApprovalComponents({
+    'workflow.contractSeal.approve': {
+      component: DocumentTableApprovalDetail,
+      collectVariables: collectContractSealVariables,
+      collectComment: collectContractSealComment,
+      commentMode: 'BUSINESS_FORM',
+    },
+    'workflow.contractSeal.approve.manager': {
+      component: DocumentTableApprovalDetail,
+      collectVariables: collectContractSealVariables,
+      collectComment: collectContractSealComment,
+      commentMode: 'BUSINESS_FORM',
+    },
+    'workflow.contractSeal.approve.legal': {
+      component: DocumentTableApprovalDetail,
+      collectVariables: collectContractSealVariables,
+      collectComment: collectContractSealComment,
+      commentMode: 'BUSINESS_FORM',
+    },
+    'workflow.contractSeal.approve.finance': {
+      component: DocumentTableApprovalDetail,
+      collectVariables: collectContractSealVariables,
+      collectComment: collectContractSealComment,
+      commentMode: 'BUSINESS_FORM',
+    },
+    'workflow.contractSeal.approve.sealKeeper': {
+      component: DocumentTableApprovalDetail,
+      collectVariables: collectContractSealVariables,
+      collectComment: collectContractSealComment,
+      commentMode: 'BUSINESS_FORM',
+    },
+    'workflow.expense.approve': {
+      component: ExpenseApprovalDetail,
+      collectVariables: collectExpenseVariables,
+    },
+    'workflow.expense.approve.manager': {
+      component: ExpenseApprovalDetail,
+      collectVariables: collectExpenseVariables,
+    },
+    'workflow.expense.approve.finance': {
+      component: ExpenseApprovalDetail,
+      collectVariables: collectExpenseVariables,
+    },
+  });
+}
+
+export const registerWorkflowBusinessExampleApprovalComponents = registerWorkflowBusinessExampleComponents;
+
+function collectExpenseVariables(context: BusinessApprovalContext) {
+  if (context.permissions.financeReview !== 'EDITABLE') {
+    return {};
+  }
+  return {
+    approvedAmount: context.variables.approvedAmount,
+  };
+}
+
+function collectContractSealVariables(context: BusinessApprovalContext) {
+  const result: Record<string, any> = {};
+  if (context.permissions.legalOpinion === 'EDITABLE') {
+    result.legalOpinion = context.variables.legalOpinion;
+  }
+  if (context.permissions.financeOpinion === 'EDITABLE') {
+    result.financeOpinion = context.variables.financeOpinion;
+  }
+  if (context.permissions.sealKeeperOpinion === 'EDITABLE') {
+    result.approvedSealCount = context.variables.approvedSealCount;
+    result.sealKeeperOpinion = context.variables.sealKeeperOpinion;
+  }
+  return result;
+}
+
+function collectContractSealComment(context: BusinessApprovalContext) {
+  if (context.permissions.legalOpinion === 'EDITABLE') {
+    return context.variables.legalOpinion;
+  }
+  if (context.permissions.financeOpinion === 'EDITABLE') {
+    return context.variables.financeOpinion;
+  }
+  if (context.permissions.sealKeeperOpinion === 'EDITABLE') {
+    return context.variables.sealKeeperOpinion;
+  }
+  return undefined;
+}

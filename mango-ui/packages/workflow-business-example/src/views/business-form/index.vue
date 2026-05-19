@@ -4,19 +4,35 @@
       <template #header>
         <div class="card-header">
           <div>
-            <div class="page-title">业务示例</div>
-            <div class="page-subtitle">从真实工作流实例读取申请快照、当前节点和审批历史</div>
+            <div class="page-title">{{ pageTitle }}</div>
+            <div class="page-subtitle">{{ pageSubtitle }}</div>
           </div>
-          <div class="header-actions">
+          <div v-if="!applyEntryMode" class="header-actions">
             <el-tag type="info">费用报销</el-tag>
             <el-tag type="success">合同用印</el-tag>
             <el-button @click="loadData">刷新</el-button>
             <el-button type="primary" @click="openApplyDialog()">申请报销</el-button>
             <el-button type="success" @click="openSealApplyDialog()">申请合同用印</el-button>
           </div>
+          <div v-else class="header-actions">
+            <el-tag type="primary" effect="plain">{{ activeApplyDefinition?.definitionName || activeApplyLauncher?.label || '流程申请' }}</el-tag>
+            <el-button @click="exitApplyEntryMode">返回业务示例</el-button>
+          </div>
         </div>
       </template>
 
+      <div v-if="applyEntryMode" class="custom-apply-focus">
+        <div class="focus-copy">
+          <div class="intro-eyebrow">自定义申请页</div>
+          <h3>{{ activeApplyDefinition?.definitionName || activeApplyLauncher?.label || '流程申请' }}</h3>
+          <p>
+            请确认申请信息，提交后进入审批流程。
+          </p>
+        </div>
+        <el-button @click="exitApplyEntryMode">返回业务示例</el-button>
+      </div>
+
+      <template v-else>
       <div class="example-overview">
         <section class="example-intro">
           <div class="intro-eyebrow">业务接入方式</div>
@@ -60,11 +76,10 @@
         </el-table-column>
         <el-table-column prop="submitCount" label="申请次数" width="100" />
         <el-table-column prop="workflowName" label="关联流程" min-width="160" show-overflow-tooltip />
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetailDialog(row)">详情</el-button>
             <el-button v-if="canSubmit(row)" link type="primary" @click="openApplyDialog(row)">再申请</el-button>
-            <el-button v-if="row.currentProcessInstanceId" link type="primary" @click="viewWorkflow(row)">查看流程</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -102,14 +117,14 @@
         </el-table-column>
         <el-table-column prop="submitCount" label="申请次数" width="100" />
         <el-table-column prop="workflowName" label="关联流程" min-width="170" show-overflow-tooltip />
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openSealDetailDialog(row)">详情</el-button>
             <el-button v-if="canSubmit(row)" link type="primary" @click="openSealApplyDialog(row)">再申请</el-button>
-            <el-button v-if="row.currentProcessInstanceId" link type="primary" @click="viewWorkflow(row)">查看流程</el-button>
           </template>
         </el-table-column>
       </el-table>
+      </template>
     </el-card>
 
     <el-dialog
@@ -118,6 +133,7 @@
       width="720px"
       class="expense-apply-dialog"
       destroy-on-close
+      @closed="handleApplyDialogClosed(expenseBusiness.applyPageKey)"
     >
       <div class="expense-apply-layout">
         <el-form ref="expenseFormRef" :model="expenseForm" :rules="expenseRules" label-width="92px" class="expense-form">
@@ -168,6 +184,7 @@
       width="960px"
       class="seal-apply-dialog"
       destroy-on-close
+      @closed="handleApplyDialogClosed(sealBusiness.applyPageKey)"
     >
       <div class="seal-dialog-body">
         <div class="seal-word-sheet">
@@ -310,177 +327,236 @@
     <el-drawer
       v-model="detailDrawerVisible"
       title="报销详情"
-      size="min(1120px, 92vw)"
+      size="min(1280px, 96vw)"
       destroy-on-close
       class="expense-detail-drawer"
     >
       <div v-loading="historyLoading || flowTreeLoading" class="expense-detail-layout">
-        <section class="detail-hero">
-          <div>
-            <div class="detail-eyebrow">费用报销</div>
-            <h3>{{ expenseForm.code }}</h3>
-            <p>{{ expenseForm.reason || '暂无报销事由' }}</p>
-          </div>
-          <div class="detail-status">
-            <el-tag :type="businessStatusTag(expenseForm.businessStatus)" size="large">{{ expenseForm.businessStatus }}</el-tag>
-            <span>{{ currentApplyRecord?.currentNodeName || expenseForm.currentNodeName }}</span>
-          </div>
-        </section>
-
-        <section class="detail-section">
-          <div class="section-title-row">
-            <div>
-              <h4>申请快照</h4>
-              <p>展示本次申请提交给流程的关键业务数据</p>
-            </div>
-            <el-tag effect="plain">{{ currentApplyRecord?.applyNo || '当前申请' }}</el-tag>
-          </div>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="申请人">{{ expenseForm.applicant || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="费用类型">{{ expenseForm.category || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="报销金额">{{ formatAmount(expenseForm.amount) }}</el-descriptions-item>
-            <el-descriptions-item label="发生日期">{{ expenseForm.expenseDate || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="票据张数">{{ expenseForm.invoiceCount || 0 }}</el-descriptions-item>
-            <el-descriptions-item label="预算科目">{{ expenseForm.budgetSubject || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="收款账户" :span="2">{{ expenseForm.bankAccount || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="报销事由" :span="2">{{ expenseForm.reason || '-' }}</el-descriptions-item>
-          </el-descriptions>
-        </section>
-
-        <section class="detail-section">
-          <div class="section-title-row">
-            <div>
-              <h4>审批流程</h4>
-              <p>按流程设计器 JSON 渲染，条件分支和并行分支保持原结构</p>
-            </div>
-            <el-tag effect="plain">{{ detailWorkflowName }}</el-tag>
-          </div>
-          <div class="flow-tree-scroll">
-            <ReadonlyWorkflowTree
-              :node="detailWorkflowTree"
-              :current-node-key="expenseForm.currentNodeKey"
-              :visited-node-keys="detailVisitedNodeKeys"
-              :status="expenseForm.businessStatus"
-            />
-          </div>
-        </section>
-
-        <section class="detail-section">
-          <div class="section-title-row">
-            <div>
-              <h4>历史申请</h4>
-              <p>同一业务单号可多次申请，每次申请对应一个独立流程实例</p>
-            </div>
-          </div>
-          <el-timeline v-if="expenseForm.applyRecords.length" class="apply-timeline">
-            <el-timeline-item
-              v-for="record in expenseForm.applyRecords"
-              :key="record.applyId"
-              :timestamp="record.submittedAt"
-              placement="top"
-            >
-              <div class="apply-record">
-                <div class="apply-record-title">
-                  <strong>{{ record.applyNo }}</strong>
-                  <el-tag :type="businessStatusTag(record.status)" size="small">{{ record.status }}</el-tag>
+        <div class="detail-content-grid">
+          <main class="detail-main">
+            <section class="detail-section">
+              <div class="detail-basic-panel">
+                <div class="summary-main">
+                  <div class="summary-item">
+                    <span>业务单号：</span>
+                    <strong>{{ expenseForm.code }}</strong>
+                  </div>
+                  <div class="summary-item">
+                    <span>申请金额：</span>
+                    <strong>{{ formatAmount(expenseForm.amount) }}</strong>
+                  </div>
                 </div>
-                <div class="apply-record-meta">
-                  {{ formatAmount(record.snapshot.amount) }} · {{ record.snapshot.category || '-' }} · {{ record.currentNodeName }}
+                <div class="summary-stamp" :class="`is-${businessStatusTag(expenseForm.businessStatus)}`">
+                  <strong>{{ expenseForm.businessStatus }}</strong>
                 </div>
-                <div v-if="record.comment" class="apply-record-comment">{{ record.comment }}</div>
               </div>
-            </el-timeline-item>
-          </el-timeline>
-          <el-empty v-else description="暂无申请记录" />
-        </section>
+
+              <el-tabs v-model="expenseDetailActiveTab" class="detail-tabs">
+                <el-tab-pane label="申请内容" name="snapshot">
+                  <div class="section-title-row">
+                    <div>
+                      <h4>申请快照</h4>
+                      <p>本次申请提交给流程的关键业务数据</p>
+                    </div>
+                    <el-tag effect="plain">{{ currentApplyRecord?.applyNo || '当前申请' }}</el-tag>
+                  </div>
+                  <el-descriptions :column="2" border>
+                    <el-descriptions-item label="申请人">{{ expenseForm.applicant || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="费用类型">{{ expenseForm.category || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="报销金额">{{ formatAmount(expenseForm.amount) }}</el-descriptions-item>
+                    <el-descriptions-item label="发生日期">{{ expenseForm.expenseDate || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="票据张数">{{ expenseForm.invoiceCount || 0 }}</el-descriptions-item>
+                    <el-descriptions-item label="预算科目">{{ expenseForm.budgetSubject || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="收款账户" :span="2">{{ expenseForm.bankAccount || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="报销事由" :span="2">{{ expenseForm.reason || '-' }}</el-descriptions-item>
+                  </el-descriptions>
+                </el-tab-pane>
+                <el-tab-pane label="审批流程" name="flow">
+                  <div class="section-title-row">
+                    <div>
+                      <h4>审批流程</h4>
+                      <p>经过、当前、未经过节点按状态区分</p>
+                    </div>
+                    <el-tag effect="plain">{{ detailWorkflowName }}</el-tag>
+                  </div>
+                  <div class="flow-tree-scroll">
+                    <WorkflowProgressTree
+                      :node="detailWorkflowTree"
+                      :current-node-key="expenseForm.currentNodeKey"
+                      :visited-node-keys="detailVisitedNodeKeys"
+                      :status="expenseForm.businessStatus"
+                    />
+                  </div>
+                </el-tab-pane>
+                <el-tab-pane label="历史申请" name="history">
+                  <div class="section-title-row">
+                    <div>
+                      <h4>历史申请</h4>
+                      <p>同一业务单每次申请对应独立流程实例</p>
+                    </div>
+                  </div>
+                  <el-timeline v-if="expenseForm.applyRecords.length" class="apply-timeline">
+                    <el-timeline-item
+                      v-for="record in expenseForm.applyRecords"
+                      :key="record.applyId"
+                      :timestamp="record.submittedAt"
+                      placement="top"
+                    >
+                      <div class="apply-record">
+                        <div class="apply-record-title">
+                          <strong>{{ record.applyNo }}</strong>
+                          <el-tag :type="businessStatusTag(record.status)" size="small">{{ record.status }}</el-tag>
+                        </div>
+                        <div class="apply-record-meta">
+                          {{ formatAmount(record.snapshot.amount) }} · {{ record.snapshot.category || '-' }} · {{ record.currentNodeName }}
+                        </div>
+                        <div v-if="record.comment" class="apply-record-comment">{{ record.comment }}</div>
+                      </div>
+                    </el-timeline-item>
+                  </el-timeline>
+                  <el-empty v-else description="暂无申请记录" />
+                </el-tab-pane>
+              </el-tabs>
+            </section>
+          </main>
+
+          <aside class="detail-side">
+            <section class="detail-section approval-record-panel">
+              <div class="section-title-row">
+                <div>
+                  <h4>审批节点</h4>
+                  <p>全部节点、状态和节点审批内容</p>
+                </div>
+                <el-tag effect="plain">{{ detailWorkflowName }}</el-tag>
+              </div>
+              <WorkflowNodeTimeline
+                :node="detailWorkflowTree"
+                :current-node-key="expenseForm.currentNodeKey"
+                :visited-node-keys="detailVisitedNodeKeys"
+                :status="expenseForm.businessStatus"
+                :records="detailTaskRecords"
+              />
+            </section>
+          </aside>
+        </div>
       </div>
     </el-drawer>
 
     <el-drawer
       v-model="sealDetailDrawerVisible"
       title="合同用印详情"
-      size="min(1180px, 94vw)"
+      size="min(1280px, 96vw)"
       destroy-on-close
       class="expense-detail-drawer"
     >
       <div v-loading="historyLoading || flowTreeLoading" class="expense-detail-layout">
-        <section class="detail-hero">
-          <div>
-            <div class="detail-eyebrow">合同用印</div>
-            <h3>{{ sealForm.contractName || sealForm.code }}</h3>
-            <p>{{ sealForm.counterparty || '暂无对方单位' }}</p>
-          </div>
-          <div class="detail-status">
-            <el-tag :type="businessStatusTag(sealForm.businessStatus)" size="large">{{ sealForm.businessStatus }}</el-tag>
-            <span>{{ currentSealApplyRecord?.currentNodeName || sealForm.currentNodeName }}</span>
-          </div>
-        </section>
-
-        <section class="detail-section">
-          <div class="section-title-row">
-            <div>
-              <h4>申请快照</h4>
-              <p>以业务提交当时的关键数据渲染 Word 表格式审批单</p>
-            </div>
-            <el-tag effect="plain">{{ currentSealApplyRecord?.applyNo || '当前申请' }}</el-tag>
-          </div>
-          <DocumentTableApprovalDetail :context="sealReadonlyContext" />
-        </section>
-
-        <section class="detail-section">
-          <div class="section-title-row">
-            <div>
-              <h4>审批流程</h4>
-              <p>按流程设计器 JSON 渲染，条件分支和并行分支保持原结构</p>
-            </div>
-            <el-tag effect="plain">{{ detailWorkflowName }}</el-tag>
-          </div>
-          <div class="flow-tree-scroll">
-            <ReadonlyWorkflowTree
-              :node="detailWorkflowTree"
-              :current-node-key="sealForm.currentNodeKey"
-              :visited-node-keys="detailVisitedNodeKeys"
-              :status="sealForm.businessStatus"
-            />
-          </div>
-        </section>
-
-        <section class="detail-section">
-          <div class="section-title-row">
-            <div>
-              <h4>历史申请</h4>
-              <p>同一业务单号可多次申请，每次申请对应一个独立流程实例</p>
-            </div>
-          </div>
-          <el-timeline v-if="sealForm.applyRecords.length" class="apply-timeline">
-            <el-timeline-item
-              v-for="record in sealForm.applyRecords"
-              :key="record.applyId"
-              :timestamp="record.submittedAt"
-              placement="top"
-            >
-              <div class="apply-record">
-                <div class="apply-record-title">
-                  <strong>{{ record.applyNo }}</strong>
-                  <el-tag :type="businessStatusTag(record.status)" size="small">{{ record.status }}</el-tag>
+        <div class="detail-content-grid">
+          <main class="detail-main">
+            <section class="detail-section">
+              <div class="detail-basic-panel">
+                <div class="summary-main summary-main-vertical">
+                  <div class="summary-item">
+                    <span>业务单号：</span>
+                    <strong>{{ sealForm.code }}</strong>
+                  </div>
+                  <div class="summary-item wide">
+                    <span>合同名称：</span>
+                    <strong>{{ sealForm.contractName || '-' }}</strong>
+                  </div>
                 </div>
-                <div class="apply-record-meta">
-                  {{ record.snapshot.contractName }} · {{ formatAmount(record.snapshot.contractAmount) }} · {{ record.currentNodeName }}
+                <div class="summary-stamp" :class="`is-${businessStatusTag(sealForm.businessStatus)}`">
+                  <strong>{{ sealForm.businessStatus }}</strong>
                 </div>
-                <div v-if="record.comment" class="apply-record-comment">{{ record.comment }}</div>
               </div>
-            </el-timeline-item>
-          </el-timeline>
-          <el-empty v-else description="暂无申请记录" />
-        </section>
+
+              <el-tabs v-model="sealDetailActiveTab" class="detail-tabs">
+                <el-tab-pane label="申请内容" name="snapshot">
+                  <div class="section-title-row">
+                    <div>
+                      <h4>申请快照</h4>
+                      <p>业务提交当时的 Word 表格式审批单</p>
+                    </div>
+                    <el-tag effect="plain">{{ currentSealApplyRecord?.applyNo || '当前申请' }}</el-tag>
+                  </div>
+                  <DocumentTableApprovalDetail :context="sealReadonlyContext" />
+                </el-tab-pane>
+                <el-tab-pane label="审批流程" name="flow">
+                  <div class="section-title-row">
+                    <div>
+                      <h4>审批流程</h4>
+                      <p>经过、当前、未经过节点按状态区分</p>
+                    </div>
+                    <el-tag effect="plain">{{ detailWorkflowName }}</el-tag>
+                  </div>
+                  <div class="flow-tree-scroll">
+                    <WorkflowProgressTree
+                      :node="detailWorkflowTree"
+                      :current-node-key="sealForm.currentNodeKey"
+                      :visited-node-keys="detailVisitedNodeKeys"
+                      :status="sealForm.businessStatus"
+                    />
+                  </div>
+                </el-tab-pane>
+                <el-tab-pane label="历史申请" name="history">
+                  <div class="section-title-row">
+                    <div>
+                      <h4>历史申请</h4>
+                      <p>同一业务单每次申请对应独立流程实例</p>
+                    </div>
+                  </div>
+                  <el-timeline v-if="sealForm.applyRecords.length" class="apply-timeline">
+                    <el-timeline-item
+                      v-for="record in sealForm.applyRecords"
+                      :key="record.applyId"
+                      :timestamp="record.submittedAt"
+                      placement="top"
+                    >
+                      <div class="apply-record">
+                        <div class="apply-record-title">
+                          <strong>{{ record.applyNo }}</strong>
+                          <el-tag :type="businessStatusTag(record.status)" size="small">{{ record.status }}</el-tag>
+                        </div>
+                        <div class="apply-record-meta">
+                          {{ record.snapshot.contractName }} · {{ formatAmount(record.snapshot.contractAmount) }} · {{ record.currentNodeName }}
+                        </div>
+                        <div v-if="record.comment" class="apply-record-comment">{{ record.comment }}</div>
+                      </div>
+                    </el-timeline-item>
+                  </el-timeline>
+                  <el-empty v-else description="暂无申请记录" />
+                </el-tab-pane>
+              </el-tabs>
+            </section>
+          </main>
+
+          <aside class="detail-side">
+            <section class="detail-section approval-record-panel">
+              <div class="section-title-row">
+                <div>
+                  <h4>审批节点</h4>
+                  <p>全部节点、状态和节点审批内容</p>
+                </div>
+                <el-tag effect="plain">{{ detailWorkflowName }}</el-tag>
+              </div>
+              <WorkflowNodeTimeline
+                :node="detailWorkflowTree"
+                :current-node-key="sealForm.currentNodeKey"
+                :visited-node-keys="detailVisitedNodeKeys"
+                :status="sealForm.businessStatus"
+                :records="detailTaskRecords"
+              />
+            </section>
+          </aside>
+        </div>
       </div>
     </el-drawer>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   parseDesignerJson,
@@ -488,10 +564,22 @@ import {
   type WorkflowBusinessApply,
   type WorkflowDefinition,
   type WorkflowDesignerNode,
-} from '../../api/workflow';
-import DocumentTableApprovalDetail from '../../components/business/DocumentTableApprovalDetail.vue';
-import type { BusinessApprovalContext } from '../../components/businessApproval';
-import ReadonlyWorkflowTree from './components/ReadonlyWorkflowTree.vue';
+  type WorkflowTaskRecord,
+} from '@mango/workflow/src/api/workflow';
+import { parseWorkflowFormConfig } from '@mango/workflow/src/workflowFormConfig';
+import type { BusinessApplyContext } from '@mango/workflow/src/components/businessApply';
+import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
+import WorkflowNodeTimeline from '@mango/workflow/src/components/trace/WorkflowNodeTimeline.vue';
+import WorkflowProgressTree from '@mango/workflow/src/components/trace/WorkflowProgressTree.vue';
+import DocumentTableApprovalDetail from '../../business-components/DocumentTableApprovalDetail.vue';
+
+const props = defineProps<{
+  context?: BusinessApplyContext;
+}>();
+
+const emit = defineEmits<{
+  submitted: [];
+}>();
 
 type ExpenseStatus = '草稿' | '审批中' | '已通过' | '已驳回' | '已结束';
 type ExampleStatus = ExpenseStatus;
@@ -511,6 +599,9 @@ interface ExpenseApplyRecord {
   applyId: string;
   applyNo: string;
   processInstanceId?: string;
+  processDefinitionId?: string;
+  engineProcessDefinitionId?: string;
+  formVersion?: number;
   submittedAt: string;
   status: ExpenseStatus;
   currentNodeName: string;
@@ -559,6 +650,9 @@ interface SealApplyRecord {
   applyId: string;
   applyNo: string;
   processInstanceId?: string;
+  processDefinitionId?: string;
+  engineProcessDefinitionId?: string;
+  formVersion?: number;
   submittedAt: string;
   status: ExampleStatus;
   currentNodeName: string;
@@ -582,6 +676,7 @@ interface SealExampleRow extends SealSnapshot {
   applyRecords: SealApplyRecord[];
 }
 
+const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const historyLoading = ref(false);
@@ -591,14 +686,31 @@ const applyDialogVisible = ref(false);
 const detailDrawerVisible = ref(false);
 const sealApplyDialogVisible = ref(false);
 const sealDetailDrawerVisible = ref(false);
+const expenseDetailActiveTab = ref('snapshot');
+const sealDetailActiveTab = ref('snapshot');
+const applyEntryMode = ref(false);
+const activeApplyPageKey = ref('');
 const expenseFormRef = ref<FormInstance>();
 const sealFormRef = ref<FormInstance>();
 const workflowDefinitions = ref<WorkflowDefinition[]>([]);
 const expenseList = ref<ExpenseExampleRow[]>([]);
 const sealList = ref<SealExampleRow[]>([]);
 const detailWorkflowTree = ref<WorkflowDesignerNode | null>(null);
-const detailWorkflowName = ref('费用报销审批');
+const detailWorkflowName = ref('');
 const detailVisitedNodeKeys = ref<string[]>([]);
+const detailTaskRecords = ref<WorkflowTaskRecord[]>([]);
+const routedDefinitionIds = ref<Record<string, string>>({});
+
+const expenseBusiness = {
+  businessType: 'EXPENSE_REIMBURSEMENT',
+  applyPageKey: 'workflow.expense.apply',
+  approvePageKey: 'workflow.expense.approve',
+};
+const sealBusiness = {
+  businessType: 'CONTRACT_SEAL_APPROVAL',
+  applyPageKey: 'workflow.contractSeal.apply',
+  approvePageKey: 'workflow.contractSeal.approve',
+};
 
 const expenseForm = reactive<ExpenseExampleRow>(createEmptyExpense());
 const sealForm = reactive<SealExampleRow>(createEmptySeal());
@@ -630,16 +742,36 @@ const sealRules: FormRules = {
 const reimbursementFlow = computed(() => workflowDefinitions.value.find(item =>
   item.status === 'PUBLISHED'
   && item.id
-  && /报销|费用|expense|reimburse/i.test(`${item.definitionName}${item.definitionKey}${item.formCode || ''}`),
+  && parseWorkflowFormConfig(item.formJson).customConfig.applyPageKey === expenseBusiness.applyPageKey,
 ));
 const sealFlow = computed(() => workflowDefinitions.value.find(item =>
   item.status === 'PUBLISHED'
   && item.id
-  && /合同|用印|印章|seal|contract/i.test(`${item.definitionName}${item.definitionKey}${item.formCode || ''}`),
+  && parseWorkflowFormConfig(item.formJson).customConfig.applyPageKey === sealBusiness.applyPageKey,
 ));
 
 const expenseRows = computed(() => expenseList.value);
 const sealRows = computed(() => sealList.value);
+const businessApplyLaunchers = computed(() => [
+  {
+    applyPageKey: expenseBusiness.applyPageKey,
+    label: '费用报销',
+    open: () => openApplyDialog(),
+  },
+  {
+    applyPageKey: sealBusiness.applyPageKey,
+    label: '合同用印',
+    open: () => openSealApplyDialog(),
+  },
+]);
+const activeApplyLauncher = computed(() => resolveBusinessApplyLauncher(activeApplyPageKey.value));
+const activeApplyDefinition = computed(() => resolveApplyDefinition(activeApplyPageKey.value));
+const pageTitle = computed(() => applyEntryMode.value
+  ? (activeApplyDefinition.value?.definitionName || activeApplyLauncher.value?.label || '流程申请')
+  : '业务示例');
+const pageSubtitle = computed(() => applyEntryMode.value
+  ? '按流程定义渲染自定义申请页面'
+  : '从真实工作流实例读取申请快照、当前节点和审批历史');
 
 const currentApplyRecord = computed(() => expenseForm.applyRecords.find(record => record.applyId === expenseForm.currentApplyId)
   || expenseForm.applyRecords[expenseForm.applyRecords.length - 1]);
@@ -659,7 +791,7 @@ const sealReadonlyContext = computed<BusinessApprovalContext>(() => ({
 
 const integrationSteps = [
   { index: '01', title: '保存业务数据', desc: '业务侧保存当前报销单和申请快照。' },
-  { index: '02', title: '发起工作流', desc: '传业务主键、申请ID和流程判断变量。' },
+  { index: '02', title: '发起工作流', desc: '传业务单号、申请ID和流程判断变量。' },
   { index: '03', title: '展示当前节点', desc: '列表读取运行中任务的节点名称。' },
   { index: '04', title: '事件回写业务', desc: '流程结束后由业务订阅事件更新状态。' },
 ];
@@ -669,14 +801,58 @@ async function loadData() {
   try {
     const [definitionsResult, expenseApplyResult, sealApplyResult] = await Promise.all([
       workflowApi.definitionsPage({ pageNum: 1, pageSize: 100, status: 'PUBLISHED' }),
-      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: 'EXPENSE_REIMBURSEMENT', latestOnly: true }),
-      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: 'CONTRACT_SEAL_APPROVAL', latestOnly: true }),
+      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: expenseBusiness.businessType, latestOnly: true }),
+      workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: sealBusiness.businessType, latestOnly: true }),
     ]);
     workflowDefinitions.value = definitionsResult.list;
     expenseList.value = buildExpenseRows(expenseApplyResult.list);
     sealList.value = buildSealRows(sealApplyResult.list);
   } finally {
     loading.value = false;
+  }
+}
+
+async function openApplyDialogFromRoute() {
+  const applyPageKey = String(props.context?.applyPageKey || route.query.applyPageKey || '');
+  if (!applyPageKey) {
+    return;
+  }
+  const definitionId = String(props.context?.definitionId || route.query.definitionId || '');
+  if (definitionId) {
+    routedDefinitionIds.value = {
+      ...routedDefinitionIds.value,
+      [applyPageKey]: definitionId,
+    };
+  }
+  applyEntryMode.value = true;
+  activeApplyPageKey.value = applyPageKey;
+  await nextTick();
+  const launcher = resolveBusinessApplyLauncher(applyPageKey);
+  launcher?.open();
+  if (!launcher) {
+    ElMessage.warning(`自定义申请页未注册：${applyPageKey}`);
+  }
+  if (props.context) {
+    return;
+  }
+  router.replace({
+    path: route.path,
+    query: Object.fromEntries(Object.entries(route.query).filter(([key]) => !['applyPageKey', 'definitionId', 'definitionKey'].includes(key))),
+  });
+}
+
+function resolveBusinessApplyLauncher(applyPageKey: string) {
+  return businessApplyLaunchers.value.find(item => item.applyPageKey === applyPageKey);
+}
+
+function exitApplyEntryMode() {
+  applyEntryMode.value = false;
+  activeApplyPageKey.value = '';
+}
+
+function handleApplyDialogClosed(applyPageKey: string) {
+  if (applyEntryMode.value && activeApplyPageKey.value === applyPageKey) {
+    exitApplyEntryMode();
   }
 }
 
@@ -690,11 +866,12 @@ async function openDetailDialog(row: ExpenseExampleRow) {
   detailWorkflowName.value = row.workflowName || '费用报销审批';
   detailWorkflowTree.value = null;
   detailVisitedNodeKeys.value = [];
+  detailTaskRecords.value = [];
+  expenseDetailActiveTab.value = 'snapshot';
   detailDrawerVisible.value = true;
   if (row?.code) {
     void loadExpenseHistory(row.code);
   }
-  void loadDetailWorkflowTree(row);
 }
 
 function openSealApplyDialog(row?: SealExampleRow) {
@@ -707,11 +884,12 @@ async function openSealDetailDialog(row: SealExampleRow) {
   detailWorkflowName.value = row.workflowName || '合同用印审批';
   detailWorkflowTree.value = null;
   detailVisitedNodeKeys.value = [];
+  detailTaskRecords.value = [];
+  sealDetailActiveTab.value = 'snapshot';
   sealDetailDrawerVisible.value = true;
   if (row?.code) {
     void loadSealHistory(row.code);
   }
-  void loadDetailWorkflowTree(row);
 }
 
 function createEmptyExpense(): ExpenseExampleRow {
@@ -781,6 +959,9 @@ function createApplyRecord(
   applyId: string,
   applyNo: string,
   processInstanceId: string | undefined,
+  processDefinitionId: string | undefined,
+  engineProcessDefinitionId: string | undefined,
+  formVersion: number | undefined,
   status: ExpenseStatus,
   currentNodeName: string,
   currentNodeKey: string,
@@ -792,6 +973,9 @@ function createApplyRecord(
     applyId,
     applyNo,
     processInstanceId,
+    processDefinitionId,
+    engineProcessDefinitionId,
+    formVersion,
     submittedAt,
     status,
     currentNodeName,
@@ -828,6 +1012,9 @@ function createSealApplyRecord(
   applyId: string,
   applyNo: string,
   processInstanceId: string | undefined,
+  processDefinitionId: string | undefined,
+  engineProcessDefinitionId: string | undefined,
+  formVersion: number | undefined,
   status: ExampleStatus,
   currentNodeName: string,
   currentNodeKey: string,
@@ -839,6 +1026,9 @@ function createSealApplyRecord(
     applyId,
     applyNo,
     processInstanceId,
+    processDefinitionId,
+    engineProcessDefinitionId,
+    formVersion,
     submittedAt,
     status,
     currentNodeName,
@@ -896,7 +1086,8 @@ async function submitSealFromDialog() {
 }
 
 async function submitExpense(row: ExpenseExampleRow) {
-  if (!reimbursementFlow.value?.id) {
+  const definition = resolveApplyDefinition(expenseBusiness.applyPageKey, reimbursementFlow.value);
+  if (!definition?.id) {
     ElMessage.warning('未找到已发布的费用报销流程，请先在流程管理中创建并发布报销流程');
     return;
   }
@@ -904,15 +1095,15 @@ async function submitExpense(row: ExpenseExampleRow) {
   try {
     const applyId = `APPLY-${row.code}-${String(row.submitCount + 1).padStart(3, '0')}`;
     await workflowApi.startProcess({
-      definitionId: reimbursementFlow.value.id,
-      businessType: 'EXPENSE_REIMBURSEMENT',
+      definitionId: String(definition.id),
+      businessType: expenseBusiness.businessType,
       businessKey: row.code,
       renderMode: 'CUSTOM_PAGE',
-      applyPageKey: 'workflow.expense.apply',
-      approvePageKey: 'workflow.expense.approve',
-      snapshotRef: `EXPENSE_REIMBURSEMENT:${applyId}`,
+      applyPageKey: expenseBusiness.applyPageKey,
+      approvePageKey: expenseBusiness.approvePageKey,
+      snapshotRef: `${expenseBusiness.businessType}:${applyId}`,
       variables: {
-        businessType: 'EXPENSE_REIMBURSEMENT',
+        businessType: expenseBusiness.businessType,
         businessKey: row.code,
         applyId,
         title: `费用报销 ${row.code}`,
@@ -944,6 +1135,7 @@ async function submitExpense(row: ExpenseExampleRow) {
     });
     ElMessage.success('报销申请已提交审批');
     applyDialogVisible.value = false;
+    emit('submitted');
     await loadData();
   } finally {
     submitting.value = false;
@@ -951,7 +1143,8 @@ async function submitExpense(row: ExpenseExampleRow) {
 }
 
 async function submitSeal(row: SealExampleRow) {
-  if (!sealFlow.value?.id) {
+  const definition = resolveApplyDefinition(sealBusiness.applyPageKey, sealFlow.value);
+  if (!definition?.id) {
     ElMessage.warning('未找到已发布的合同用印流程，请先在流程管理中创建并发布合同用印流程');
     return;
   }
@@ -959,15 +1152,15 @@ async function submitSeal(row: SealExampleRow) {
   try {
     const applyId = `APPLY-${row.code}-${String(row.submitCount + 1).padStart(3, '0')}`;
     await workflowApi.startProcess({
-      definitionId: sealFlow.value.id,
-      businessType: 'CONTRACT_SEAL_APPROVAL',
+      definitionId: String(definition.id),
+      businessType: sealBusiness.businessType,
       businessKey: row.code,
       renderMode: 'CUSTOM_PAGE',
-      applyPageKey: 'workflow.contractSeal.apply',
-      approvePageKey: 'workflow.contractSeal.approve',
-      snapshotRef: `CONTRACT_SEAL_APPROVAL:${applyId}`,
+      applyPageKey: sealBusiness.applyPageKey,
+      approvePageKey: sealBusiness.approvePageKey,
+      snapshotRef: `${sealBusiness.businessType}:${applyId}`,
       variables: {
-        businessType: 'CONTRACT_SEAL_APPROVAL',
+        businessType: sealBusiness.businessType,
         businessKey: row.code,
         applyId,
         title: `合同用印 ${row.contractName}`,
@@ -1033,6 +1226,7 @@ async function submitSeal(row: SealExampleRow) {
     });
     ElMessage.success('合同用印申请已提交审批');
     sealApplyDialogVisible.value = false;
+    emit('submitted');
     await loadData();
   } finally {
     submitting.value = false;
@@ -1041,14 +1235,14 @@ async function submitSeal(row: SealExampleRow) {
 
 function buildExpenseRows(applies: WorkflowBusinessApply[]) {
   return applies
-    .filter(apply => apply.businessType === 'EXPENSE_REIMBURSEMENT')
+    .filter(apply => apply.businessType === expenseBusiness.businessType)
     .map(buildExpenseRowFromApply)
     .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
 }
 
 function buildSealRows(applies: WorkflowBusinessApply[]) {
   return applies
-    .filter(apply => apply.businessType === 'CONTRACT_SEAL_APPROVAL')
+    .filter(apply => apply.businessType === sealBusiness.businessType)
     .map(buildSealRowFromApply)
     .sort((a, b) => String(b.startTime || '').localeCompare(String(a.startTime || '')));
 }
@@ -1120,6 +1314,13 @@ function buildSealRowFromApply(apply: WorkflowBusinessApply) {
 async function loadDetailWorkflowTree(row: ExpenseExampleRow | SealExampleRow) {
   flowTreeLoading.value = true;
   try {
+    const applyRecord = isSealExampleRow(row) ? currentSealApplyRecord.value : currentApplyRecord.value;
+    const version = await resolveWorkflowDefinitionVersion(row, applyRecord);
+    if (version?.designerJson) {
+      detailWorkflowTree.value = parseDesignerJson(version.designerJson);
+      detailWorkflowName.value = row.workflowName || definitionNameByRow(row);
+      return;
+    }
     const definition = await resolveWorkflowDefinition(row);
     detailWorkflowName.value = definition?.definitionName || row.workflowName || '费用报销审批';
     detailWorkflowTree.value = parseDesignerJson(definition?.designerJson);
@@ -1128,13 +1329,46 @@ async function loadDetailWorkflowTree(row: ExpenseExampleRow | SealExampleRow) {
   }
 }
 
+async function resolveWorkflowDefinitionVersion(row: ExpenseExampleRow | SealExampleRow, applyRecord?: ExpenseApplyRecord | SealApplyRecord) {
+  const definitionId = applyRecord?.processDefinitionId;
+  if (!definitionId) {
+    return null;
+  }
+  try {
+    const versions = await workflowApi.definitionVersions(definitionId);
+    if (applyRecord.engineProcessDefinitionId) {
+      const matchedByEngine = versions.find(version =>
+        version.processDefinitionId === applyRecord.engineProcessDefinitionId,
+      );
+      if (matchedByEngine) {
+        return matchedByEngine;
+      }
+    }
+    if (applyRecord.formVersion) {
+      const matchedByVersion = versions.find(version => version.versionNo === applyRecord.formVersion);
+      if (matchedByVersion) {
+        return matchedByVersion;
+      }
+    }
+    return versions.find(version =>
+      version.processDefinitionId === applyRecord.processDefinitionId,
+    ) || null;
+  } catch {
+    return null;
+  }
+}
+
+function definitionNameByRow(row: ExpenseExampleRow | SealExampleRow) {
+  return isSealExampleRow(row) ? '合同用印审批' : '费用报销审批';
+}
+
 async function resolveWorkflowDefinition(row: ExpenseExampleRow | SealExampleRow) {
   const matched = workflowDefinitions.value.find(item =>
     item.id
     && (
       item.definitionName === row.workflowName
       || item.definitionKey === row.workflowName
-      || workflowPatternOf(row).test(`${item.definitionName}${item.definitionKey}${item.formCode || ''}`)
+      || matchesExampleFlow(row, item)
     ),
   );
   if (!matched?.id) {
@@ -1150,7 +1384,7 @@ async function resolveWorkflowDefinition(row: ExpenseExampleRow | SealExampleRow
 async function loadExpenseHistory(businessKey: string) {
   historyLoading.value = true;
   try {
-    const history = await workflowApi.businessApplyHistory('EXPENSE_REIMBURSEMENT', businessKey, { pageNum: 1, pageSize: 50 });
+    const history = await workflowApi.businessApplyHistory(expenseBusiness.businessType, businessKey, { pageNum: 1, pageSize: 50 });
     const ordered = sortAppliesAsc(history.list);
     const records = ordered.map((apply, index) => buildApplyRecordFromApply(apply, index + 1));
     expenseForm.applyRecords = records;
@@ -1165,8 +1399,9 @@ async function loadExpenseHistory(businessKey: string) {
     }
     detailVisitedNodeKeys.value = uniqueKeys([
       ...currentTaskKeysFromHistory(ordered),
-      ...await loadVisitedNodeKeys(expenseForm.currentProcessInstanceId),
+      ...await loadDetailProcessRecords(expenseForm.currentProcessInstanceId),
     ]);
+    await loadDetailWorkflowTree(expenseForm);
   } finally {
     historyLoading.value = false;
   }
@@ -1175,7 +1410,7 @@ async function loadExpenseHistory(businessKey: string) {
 async function loadSealHistory(businessKey: string) {
   historyLoading.value = true;
   try {
-    const history = await workflowApi.businessApplyHistory('CONTRACT_SEAL_APPROVAL', businessKey, { pageNum: 1, pageSize: 50 });
+    const history = await workflowApi.businessApplyHistory(sealBusiness.businessType, businessKey, { pageNum: 1, pageSize: 50 });
     const ordered = sortAppliesAsc(history.list);
     const records = ordered.map((apply, index) => buildSealApplyRecordFromApply(apply, index + 1));
     sealForm.applyRecords = records;
@@ -1190,16 +1425,21 @@ async function loadSealHistory(businessKey: string) {
     }
     detailVisitedNodeKeys.value = uniqueKeys([
       ...currentTaskKeysFromHistory(ordered),
-      ...await loadVisitedNodeKeys(sealForm.currentProcessInstanceId),
+      ...await loadDetailProcessRecords(sealForm.currentProcessInstanceId),
     ]);
+    await loadDetailWorkflowTree(sealForm);
   } finally {
     historyLoading.value = false;
   }
 }
 
-async function loadVisitedNodeKeys(processInstanceId?: string) {
-  if (!processInstanceId) return [];
+async function loadDetailProcessRecords(processInstanceId?: string) {
+  if (!processInstanceId) {
+    detailTaskRecords.value = [];
+    return [];
+  }
   const detail = await workflowApi.processDetail(processInstanceId);
+  detailTaskRecords.value = detail.records || [];
   return Array.from(new Set((detail.records || [])
     .map(record => record.taskDefinitionKey)
     .filter((key): key is string => Boolean(key))));
@@ -1212,6 +1452,9 @@ function buildApplyRecordFromApply(apply: WorkflowBusinessApply, index: number) 
     String(apply.id || variables.applyId || `APPLY-${apply.processInstanceId || apply.businessKey}`),
     `第 ${index} 次申请`,
     apply.processInstanceId,
+    apply.processDefinitionId,
+    apply.engineProcessDefinitionId,
+    apply.formVersion,
     status,
     currentNodeNameOfApply(apply, status),
     firstCurrentTaskKey(apply),
@@ -1236,6 +1479,9 @@ function buildSealApplyRecordFromApply(apply: WorkflowBusinessApply, index: numb
     String(apply.id || variables.applyId || `APPLY-${apply.processInstanceId || apply.businessKey}`),
     `第 ${index} 次申请`,
     apply.processInstanceId,
+    apply.processDefinitionId,
+    apply.engineProcessDefinitionId,
+    apply.formVersion,
     status,
     currentNodeNameOfApply(apply, status),
     firstCurrentTaskKey(apply),
@@ -1305,21 +1551,6 @@ function isTerminalStatus(status: ExpenseStatus) {
   return status === '已通过' || status === '已驳回' || status === '已结束';
 }
 
-function viewWorkflow(row: ExpenseExampleRow | SealExampleRow) {
-  if (!row.currentProcessInstanceId) {
-    ElMessage.info('当前业务单据还未发起流程');
-    return;
-  }
-  router.push({
-    path: '/workflow/task/detail',
-    query: {
-      mode: 'view',
-      from: 'initiated',
-      processInstanceId: row.currentProcessInstanceId,
-    },
-  });
-}
-
 function cloneExpense(row: ExpenseExampleRow): ExpenseExampleRow {
   return JSON.parse(JSON.stringify(row));
 }
@@ -1332,11 +1563,26 @@ function isSealExampleRow(row: ExpenseExampleRow | SealExampleRow): row is SealE
   return 'contractName' in row;
 }
 
-function workflowPatternOf(row: ExpenseExampleRow | SealExampleRow) {
-  return isSealExampleRow(row) ? /合同|用印|印章|seal|contract/i : /报销|费用|expense|reimburse/i;
+function matchesExampleFlow(row: ExpenseExampleRow | SealExampleRow, definition: WorkflowDefinition) {
+  const applyPageKey = isSealExampleRow(row) ? sealBusiness.applyPageKey : expenseBusiness.applyPageKey;
+  return parseWorkflowFormConfig(definition.formJson).customConfig.applyPageKey === applyPageKey;
 }
 
-onMounted(loadData);
+function resolveApplyDefinition(applyPageKey: string, fallback?: WorkflowDefinition) {
+  const routedDefinitionId = routedDefinitionIds.value[applyPageKey];
+  if (routedDefinitionId) {
+    const matched = workflowDefinitions.value.find(item => String(item.id || '') === routedDefinitionId);
+    if (matched) {
+      return matched;
+    }
+  }
+  return fallback;
+}
+
+onMounted(async () => {
+  await loadData();
+  await openApplyDialogFromRoute();
+});
 </script>
 
 <style scoped>
@@ -1378,6 +1624,35 @@ onMounted(loadData);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-fill-color-extra-light);
+}
+
+.custom-apply-focus {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.focus-copy {
+  max-width: 680px;
+}
+
+.focus-copy h3 {
+  margin: 6px 0 8px;
+  color: var(--el-text-color-primary);
+  font-size: 18px;
+}
+
+.focus-copy p {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .example-intro h3 {
@@ -1593,57 +1868,136 @@ onMounted(loadData);
 }
 
 .expense-detail-layout {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
+  min-height: 100%;
+  padding: 14px;
 }
 
-.detail-hero,
 .detail-section {
-  padding: 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-bg-color);
 }
 
-.detail-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+.detail-section {
+  padding: 16px;
+}
+
+.detail-basic-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 16px;
+  min-height: 76px;
+  margin-bottom: 14px;
+  padding: 2px 2px 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
-.detail-eyebrow {
-  color: var(--el-color-primary);
-  font-size: 12px;
-  font-weight: 600;
+.summary-main {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-width: 0;
 }
 
-.detail-hero h3 {
-  margin: 4px 0 6px;
-  color: var(--el-text-color-primary);
-  font-size: 20px;
-  font-weight: 650;
-}
-
-.detail-hero p {
-  margin: 0;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.detail-status {
-  display: flex;
-  align-items: flex-end;
-  flex-direction: column;
+.summary-main-vertical {
+  grid-template-columns: 1fr;
   gap: 8px;
-  min-width: 140px;
 }
 
-.detail-status span {
+.summary-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  min-height: 38px;
+  padding: 5px 13px;
+  border: 2px solid var(--el-color-info);
+  border-radius: 6px;
+  color: var(--el-color-info);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1;
+  transform: rotate(-8deg);
+}
+
+.summary-stamp.is-success {
+  border-color: var(--el-color-success);
+  color: var(--el-color-success);
+}
+
+.summary-stamp.is-danger {
+  border-color: var(--el-color-danger);
+  color: var(--el-color-danger);
+}
+
+.summary-stamp.is-warning {
+  border-color: var(--el-color-warning);
+  color: var(--el-color-warning);
+}
+
+.summary-stamp.is-primary {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+}
+
+.summary-item {
+  min-width: 0;
+}
+
+.summary-item.wide {
+  min-width: min(360px, 100%);
+}
+
+.summary-item span {
+  display: inline;
+  margin-right: 2px;
   color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.summary-item strong {
+  display: inline;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
   font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 360px);
+  gap: 12px;
+  align-items: start;
+}
+
+.detail-main,
+.detail-side {
+  min-width: 0;
+}
+
+.detail-side {
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - 92px);
+  overflow: auto;
+}
+
+.approval-record-panel {
+  min-height: calc(100vh - 94px);
+}
+
+.detail-tabs :deep(.el-tabs__header) {
+  margin-bottom: 14px;
+}
+
+.detail-tabs :deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background: var(--el-border-color-lighter);
 }
 
 .section-title-row {
@@ -1667,6 +2021,7 @@ onMounted(loadData);
 }
 
 .flow-tree-scroll {
+  max-height: calc(100vh - 250px);
   overflow: auto;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -1694,6 +2049,19 @@ onMounted(loadData);
   .example-flow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .detail-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-side {
+    position: static;
+    max-height: none;
+  }
+
+  .approval-record-panel {
+    min-height: 0;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1711,16 +2079,27 @@ onMounted(loadData);
     flex-direction: column;
   }
 
+  .custom-apply-focus {
+    flex-direction: column;
+  }
+
   .expense-form {
     grid-template-columns: 1fr;
   }
 
-  .detail-hero {
-    flex-direction: column;
+  .detail-basic-panel {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
   }
 
-  .detail-status {
-    align-items: flex-start;
+  .summary-main {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .summary-stamp {
+    justify-self: flex-start;
+    transform: rotate(-5deg);
   }
 }
 </style>

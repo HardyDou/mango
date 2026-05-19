@@ -85,7 +85,7 @@
             />
           </section>
 
-          <section v-if="!readonlyMode" class="task-section approval-section">
+          <section v-if="!readonlyMode && showActionCommentInput" class="task-section approval-section">
             <div class="section-header compact">
               <h3>审批动作</h3>
             </div>
@@ -144,8 +144,9 @@ import {
   applyIdOf,
   businessPermissionsOf,
   businessTypeOf,
+  collectBusinessApprovalComment,
   collectBusinessApprovalVariables,
-  resolveBusinessApprovalComponent,
+  resolveBusinessApprovalRegistration,
   type BusinessApprovalContext,
 } from '../../components/businessApproval';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
@@ -190,7 +191,14 @@ const currentTaskDefinitionKey = computed(() =>
 const renderConfig = computed(() => detail.value?.renderConfig);
 const businessType = computed(() => renderConfig.value?.businessType || businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
 const renderMode = computed(() => renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM');
-const businessComponent = computed(() => renderMode.value === 'CUSTOM_PAGE' ? resolveBusinessApprovalComponent(renderConfig.value?.approvePageKey || businessType.value) : null);
+const approvePageKey = computed(() =>
+  String(renderConfig.value?.nodeExtension?.approvePageKey || renderConfig.value?.approvePageKey || '').trim(),
+);
+const businessRegistration = computed(() => renderMode.value === 'CUSTOM_PAGE'
+  ? resolveBusinessApprovalRegistration(approvePageKey.value)
+  : null);
+const businessComponent = computed(() => businessRegistration.value?.component || null);
+const showActionCommentInput = computed(() => businessRegistration.value?.commentMode !== 'BUSINESS_FORM');
 const businessContext = computed<BusinessApprovalContext | null>(() => {
   if (!detail.value || !businessType.value) {
     return null;
@@ -259,10 +267,11 @@ async function submitAction(action: 'complete' | 'reject') {
   submitting.value = true;
   try {
     const variables = editableFormVariables();
+    const comment = collectBusinessApprovalComment(businessRegistration.value, businessContext.value, actionForm.value.comment);
     if (action === 'complete') {
-      await workflowApi.completeTask({ taskId, comment: actionForm.value.comment, variables });
+      await workflowApi.completeTask({ taskId, comment, variables });
     } else {
-      await workflowApi.rejectTask({ taskId, comment: actionForm.value.comment, variables });
+      await workflowApi.rejectTask({ taskId, comment, variables });
     }
     ElMessage.success(`审批已${actionName}`);
     await router.push('/workflow/task/done');
@@ -282,7 +291,7 @@ function editableFormVariables() {
   }, {});
   return {
     ...values,
-    ...collectBusinessApprovalVariables(businessType.value, current, businessContext.value?.permissions || {}),
+    ...collectBusinessApprovalVariables(businessRegistration.value, businessContext.value),
   };
 }
 

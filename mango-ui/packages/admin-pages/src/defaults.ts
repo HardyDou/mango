@@ -1,4 +1,5 @@
 import { registerModulePages, type MangoPageRegistry } from './core';
+import { registerWorkflowBusinessExampleComponents } from '@mango/workflow-business-example';
 
 let registered = false;
 
@@ -7,6 +8,7 @@ export function registerDefaultAdminPages() {
     return;
   }
   registered = true;
+  registerWorkflowBusinessExampleComponents();
 
   const registries: MangoPageRegistry[] = [
     {
@@ -75,7 +77,8 @@ export function registerDefaultAdminPages() {
         'workflow/task-list/index': () => import('@mango/workflow/src/views/task-list/index.vue'),
         'workflow/task/detail/index': () => import('@mango/workflow/src/views/task-detail/index.vue'),
         'workflow/start-process/index': () => import('@mango/workflow/src/views/start-process/index.vue'),
-        'workflow/business-form/index': () => import('@mango/workflow/src/views/business-form/index.vue'),
+        'workflow/custom-apply/index': () => import('@mango/workflow/src/views/custom-apply/index.vue'),
+        'workflow/business-form/index': () => import('@mango/workflow-business-example/src/views/business-form/index.vue'),
       },
     },
   ];

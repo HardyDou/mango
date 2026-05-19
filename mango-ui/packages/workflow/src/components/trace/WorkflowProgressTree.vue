@@ -1,8 +1,8 @@
 <template>
-  <div class="readonly-workflow-tree">
-    <div v-if="node" class="readonly-flow-sequence">
-      <div class="readonly-terminal-node start" :class="terminalStartState">开始</div>
-      <div class="readonly-tree-body">
+  <div class="workflow-progress-tree">
+    <div v-if="node" class="workflow-flow-sequence">
+      <div class="workflow-terminal-node start" :class="terminalStartState">开始</div>
+      <div class="workflow-tree-body">
         <WorkflowTreeNode
           :node="node"
           :current-node-key="currentNodeKey"
@@ -12,7 +12,7 @@
           root
         />
       </div>
-      <div class="readonly-terminal-node end" :class="terminalEndState">结束</div>
+      <div class="workflow-terminal-node end" :class="terminalEndState">结束</div>
     </div>
     <el-empty v-else description="暂无流程设计图" />
   </div>
@@ -20,9 +20,9 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, type PropType } from 'vue';
-import type { WorkflowDesignerNode } from '../../../api/workflow';
+import type { WorkflowDesignerNode } from '../../api/workflow';
 
-defineOptions({ name: 'ReadonlyWorkflowTree' });
+defineOptions({ name: 'WorkflowProgressTree' });
 
 const props = defineProps<{
   node?: WorkflowDesignerNode | null;
@@ -31,8 +31,8 @@ const props = defineProps<{
   status?: string;
 }>();
 
-const completed = computed(() => props.status === '已通过' || props.status === '已结束');
-const rejected = computed(() => props.status === '已驳回');
+const completed = computed(() => props.status === '已通过' || props.status === '已结束' || props.status === 'APPROVED' || props.status === 'COMPLETED');
+const rejected = computed(() => props.status === '已驳回' || props.status === '已拒绝' || props.status === 'REJECTED');
 const hasWorkflowStarted = computed(() => Boolean(
   props.currentNodeKey
   || completed.value
@@ -138,34 +138,34 @@ const WorkflowTreeNode = defineComponent({
     };
 
     const renderCard = (node: WorkflowDesignerNode) => h('div', {
-      class: ['readonly-node-card', nodeState(node), { root: nodeProps.root, branch: node.nodeType === 'EXCLUSIVE_BRANCH' }],
+      class: ['workflow-node-card', nodeState(node), { root: nodeProps.root, branch: node.nodeType === 'EXCLUSIVE_BRANCH' }],
     }, [
-      h('div', { class: 'readonly-node-title' }, [
-        h('span', { class: 'readonly-node-dot' }),
-        h('span', { class: 'readonly-node-name', title: nodeTitle(node) }, nodeTitle(node)),
+      h('div', { class: 'workflow-node-title' }, [
+        h('span', { class: 'workflow-node-dot' }),
+        h('span', { class: 'workflow-node-name', title: nodeTitle(node) }, nodeTitle(node)),
       ]),
     ]);
 
     const renderNode = (node: WorkflowDesignerNode, root = false): any => {
       const child = node.childNode ? renderNode(node.childNode) : null;
       if (!isGatewayNode(node)) {
-        return h('div', { class: 'readonly-node-stack' }, [
-          h('div', { class: ['readonly-node-wrap', { root }] }, [renderCard(node)]),
+        return h('div', { class: 'workflow-node-stack' }, [
+          h('div', { class: ['workflow-node-wrap', { root }] }, [renderCard(node)]),
           child,
         ]);
       }
 
       const branches = node.conditionNodes || [];
-      return h('div', { class: 'readonly-node-stack gateway-stack' }, [
-        h('div', { class: ['readonly-node-wrap', { root }] }, [renderCard(node)]),
-        h('div', { class: 'readonly-branch-box-wrap' }, [
-          h('div', { class: 'readonly-branch-label' }, node.nodeType === 'PARALLEL_GATEWAY' ? '并行' : '分支'),
-          h('div', { class: 'readonly-branch-box' }, branches.map((branch, index) =>
-            h('div', { class: 'readonly-branch-col', key: branch.id || `${branch.nodeName}-${index}` }, [
-              h('div', { class: 'readonly-condition-node' }, [renderCard(branch)]),
+      return h('div', { class: 'workflow-node-stack gateway-stack' }, [
+        h('div', { class: ['workflow-node-wrap', { root }] }, [renderCard(node)]),
+        h('div', { class: 'workflow-branch-box-wrap' }, [
+          h('div', { class: 'workflow-branch-label' }, node.nodeType === 'PARALLEL_GATEWAY' ? '并行' : '分支'),
+          h('div', { class: 'workflow-branch-box' }, branches.map((branch, index) =>
+            h('div', { class: 'workflow-branch-col', key: branch.id || `${branch.nodeName}-${index}` }, [
+              h('div', { class: 'workflow-condition-node' }, [renderCard(branch)]),
               branch.childNode
                 ? renderNode(branch.childNode)
-                : h('div', { class: 'readonly-empty-branch' }, '无后续节点'),
+                : h('div', { class: 'workflow-empty-branch' }, '无后续节点'),
               index === 0 ? h('div', { class: 'top-left-cover-line' }) : null,
               index === 0 ? h('div', { class: 'bottom-left-cover-line' }) : null,
               index === branches.length - 1 ? h('div', { class: 'top-right-cover-line' }) : null,
@@ -187,7 +187,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
 </script>
 
 <style>
-.readonly-workflow-tree {
+.workflow-progress-tree {
   --workflow-line-color: var(--el-border-color);
   --workflow-line-width: 2px;
   min-width: max-content;
@@ -195,21 +195,21 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   background: var(--el-bg-color);
 }
 
-.readonly-flow-sequence,
-.readonly-tree-body {
+.workflow-flow-sequence,
+.workflow-tree-body {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.readonly-tree-body::before {
+.workflow-tree-body::before {
   content: '';
   width: var(--workflow-line-width);
   height: 24px;
   background: var(--workflow-line-color);
 }
 
-.readonly-terminal-node {
+.workflow-terminal-node {
   position: relative;
   z-index: 3;
   display: inline-flex;
@@ -227,11 +227,11 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
-.readonly-terminal-node.end {
+.workflow-terminal-node.end {
   margin-top: 24px;
 }
 
-.readonly-terminal-node.end::before {
+.workflow-terminal-node.end::before {
   content: '';
   position: absolute;
   top: -25px;
@@ -242,46 +242,46 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   transform: translateX(-50%);
 }
 
-.readonly-terminal-node.done {
+.workflow-terminal-node.done {
   border-color: var(--el-color-success-light-5);
   color: var(--el-color-success);
   background: var(--el-color-success-light-9);
 }
 
-.readonly-terminal-node.rejected {
+.workflow-terminal-node.rejected {
   border-color: var(--el-color-danger-light-5);
   color: var(--el-color-danger);
   background: var(--el-color-danger-light-9);
 }
 
-.readonly-terminal-node.pending {
+.workflow-terminal-node.pending {
   color: var(--el-text-color-secondary);
   background: var(--el-fill-color-blank);
 }
 
-.readonly-node-stack {
+.workflow-node-stack {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
 }
 
-.readonly-node-stack > .readonly-node-stack::before,
-.readonly-branch-box-wrap + .readonly-node-stack::before {
+.workflow-node-stack > .workflow-node-stack::before,
+.workflow-branch-box-wrap + .workflow-node-stack::before {
   content: '';
   width: var(--workflow-line-width);
   height: 24px;
   background: var(--workflow-line-color);
 }
 
-.readonly-node-wrap {
+.workflow-node-wrap {
   position: relative;
   z-index: 2;
   display: flex;
   justify-content: center;
 }
 
-.readonly-node-card {
+.workflow-node-card {
   width: 176px;
   min-height: 40px;
   overflow: hidden;
@@ -291,33 +291,33 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
-.readonly-node-card.done {
+.workflow-node-card.done {
   border-color: var(--el-color-success-light-5);
   background: var(--el-color-success-light-9);
 }
 
-.readonly-node-card.active {
+.workflow-node-card.active {
   border-color: var(--el-color-primary);
   background: var(--el-color-primary-light-9);
   box-shadow: 0 0 0 2px var(--el-color-primary-light-8);
 }
 
-.readonly-node-card.pending {
+.workflow-node-card.pending {
   border-color: var(--el-border-color);
   background: var(--el-fill-color-blank);
 }
 
-.readonly-node-card.rejected {
+.workflow-node-card.rejected {
   border-color: var(--el-color-danger);
   background: var(--el-color-danger-light-9);
   box-shadow: 0 0 0 2px var(--el-color-danger-light-8);
 }
 
-.readonly-node-card.branch {
+.workflow-node-card.branch {
   border-style: dashed;
 }
 
-.readonly-node-title {
+.workflow-node-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -328,23 +328,23 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   font-weight: 600;
 }
 
-.readonly-node-card.active .readonly-node-title {
+.workflow-node-card.active .workflow-node-title {
   color: var(--el-color-primary);
 }
 
-.readonly-node-card.done .readonly-node-title {
+.workflow-node-card.done .workflow-node-title {
   color: var(--el-color-success);
 }
 
-.readonly-node-card.rejected .readonly-node-title {
+.workflow-node-card.rejected .workflow-node-title {
   color: var(--el-color-danger);
 }
 
-.readonly-node-card.pending .readonly-node-title {
+.workflow-node-card.pending .workflow-node-title {
   color: var(--el-text-color-secondary);
 }
 
-.readonly-node-dot {
+.workflow-node-dot {
   display: inline-flex;
   width: 8px;
   height: 8px;
@@ -353,19 +353,19 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   background: var(--el-border-color);
 }
 
-.readonly-node-card.done .readonly-node-dot {
+.workflow-node-card.done .workflow-node-dot {
   background: var(--el-color-success);
 }
 
-.readonly-node-card.active .readonly-node-dot {
+.workflow-node-card.active .workflow-node-dot {
   background: var(--el-color-primary);
 }
 
-.readonly-node-card.rejected .readonly-node-dot {
+.workflow-node-card.rejected .workflow-node-dot {
   background: var(--el-color-danger);
 }
 
-.readonly-node-name {
+.workflow-node-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -374,7 +374,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   white-space: nowrap;
 }
 
-.readonly-branch-box-wrap {
+.workflow-branch-box-wrap {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -382,14 +382,14 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   min-width: 100%;
 }
 
-.readonly-branch-box-wrap::before {
+.workflow-branch-box-wrap::before {
   content: '';
   width: var(--workflow-line-width);
   height: 24px;
   background: var(--workflow-line-color);
 }
 
-.readonly-branch-label {
+.workflow-branch-label {
   position: absolute;
   top: 9px;
   z-index: 3;
@@ -401,7 +401,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   background: var(--el-bg-color);
 }
 
-.readonly-branch-box {
+.workflow-branch-box {
   position: relative;
   display: flex;
   min-height: 220px;
@@ -409,7 +409,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   border-bottom: var(--workflow-line-width) solid var(--workflow-line-color);
 }
 
-.readonly-branch-col {
+.workflow-branch-col {
   position: relative;
   display: inline-flex;
   flex-direction: column;
@@ -418,7 +418,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   padding: 28px 32px;
 }
 
-.readonly-branch-col::before {
+.workflow-branch-col::before {
   content: '';
   position: absolute;
   top: 0;
@@ -430,15 +430,15 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   transform: translateX(-50%);
 }
 
-.readonly-condition-node,
-.readonly-branch-col > .readonly-node-stack,
-.readonly-empty-branch {
+.workflow-condition-node,
+.workflow-branch-col > .workflow-node-stack,
+.workflow-empty-branch {
   position: relative;
   z-index: 1;
 }
 
-.readonly-condition-node + .readonly-node-stack::before,
-.readonly-condition-node + .readonly-empty-branch::before {
+.workflow-condition-node + .workflow-node-stack::before,
+.workflow-condition-node + .workflow-empty-branch::before {
   content: '';
   display: block;
   width: var(--workflow-line-width);
@@ -447,7 +447,7 @@ function isGatewayNode(node: WorkflowDesignerNode) {
   background: var(--workflow-line-color);
 }
 
-.readonly-empty-branch {
+.workflow-empty-branch {
   width: 160px;
   padding: 10px 12px;
   border: 1px dashed var(--el-border-color);

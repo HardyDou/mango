@@ -2,6 +2,7 @@ package io.mango.workflow.core.support;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.infra.context.core.MangoContextHolder;
@@ -97,10 +98,13 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
                 .eq(WorkflowDefinition::getTenantId, properties.getTenantId())
                 .eq(WorkflowDefinition::getDefinitionKey, sample.definitionKey())
                 .last("LIMIT 1"));
-        if (isPublishedAndDeployable(definition)) {
+        boolean needsRefresh = needsSampleRefresh(definition, sample);
+        if (isPublishedAndDeployable(definition) && !needsRefresh) {
             return;
         }
-        Long definitionId = definition == null ? createDefinition(groupId, sample) : definition.getId();
+        Long definitionId = definition == null
+                ? createDefinition(groupId, sample)
+                : needsRefresh ? updateDefinition(definition, sample) : definition.getId();
         R<?> deployResult = definitionService.deploy(definitionId);
         if (!deployResult.isSuccess()) {
             log.warn("内置示例流程发布失败，definitionKey={}, msg={}", sample.definitionKey(), deployResult.getMsg());
@@ -116,6 +120,74 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         return repositoryService.createProcessDefinitionQuery()
                 .processDefinitionId(definition.getProcessDefinitionId())
                 .singleResult() != null;
+    }
+
+    private boolean needsSampleRefresh(WorkflowDefinition definition, SampleDefinition sample) {
+        if (definition == null || !StringUtils.hasText(definition.getFormJson())) {
+            return true;
+        }
+        return needsSampleFormRefresh(definition, sample) || needsSampleDesignerRefresh(definition, sample);
+    }
+
+    private boolean needsSampleFormRefresh(WorkflowDefinition definition, SampleDefinition sample) {
+        if (!sample.formJson().contains("\"customConfig\"")) {
+            return false;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(definition.getFormJson());
+            JsonNode sampleRoot = objectMapper.readTree(sample.formJson());
+            String currentSubmitPath = root.path("customConfig").path("submitPath").asText("");
+            String currentApplyPageKey = root.path("customConfig").path("applyPageKey").asText("");
+            String sampleSubmitPath = sampleRoot.path("customConfig").path("submitPath").asText("");
+            String sampleApplyPageKey = sampleRoot.path("customConfig").path("applyPageKey").asText("");
+            return !sampleSubmitPath.equals(currentSubmitPath) || !sampleApplyPageKey.equals(currentApplyPageKey);
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private boolean needsSampleDesignerRefresh(WorkflowDefinition definition, SampleDefinition sample) {
+        if (!sample.designerJson().contains("\"approvePageKey\"")) {
+            return false;
+        }
+        if (!StringUtils.hasText(definition.getDesignerJson())) {
+            return true;
+        }
+        try {
+            JsonNode currentRoot = objectMapper.readTree(definition.getDesignerJson());
+            JsonNode sampleRoot = objectMapper.readTree(sample.designerJson());
+            return !collectApprovePageKeys(currentRoot).containsAll(collectApprovePageKeys(sampleRoot));
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private List<String> collectApprovePageKeys(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return List.of();
+        }
+        List<String> result = new java.util.ArrayList<>();
+        collectApprovePageKeys(node, result);
+        return result;
+    }
+
+    private void collectApprovePageKeys(JsonNode node, List<String> result) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return;
+        }
+        String approvePageKey = node.path("properties")
+                .path("approvalConfig")
+                .path("extension")
+                .path("approvePageKey")
+                .asText("");
+        if (StringUtils.hasText(approvePageKey)) {
+            result.add(approvePageKey);
+        }
+        collectApprovePageKeys(node.path("childNode"), result);
+        JsonNode conditionNodes = node.path("conditionNodes");
+        if (conditionNodes.isArray()) {
+            conditionNodes.forEach(child -> collectApprovePageKeys(child, result));
+        }
     }
 
     private Long createDefinition(Long groupId, SampleDefinition sample) {
@@ -137,6 +209,26 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         return Long.valueOf(createResult.getData());
     }
 
+    private Long updateDefinition(WorkflowDefinition definition, SampleDefinition sample) {
+        SaveWorkflowDefinitionCommand command = new SaveWorkflowDefinitionCommand();
+        command.setId(definition.getId());
+        command.setGroupId(definition.getGroupId());
+        command.setAdminUsers(List.of("admin"));
+        command.setIcon(sample.icon());
+        command.setDefinitionName(sample.definitionName());
+        command.setDefinitionKey(sample.definitionKey());
+        command.setDesignerJson(sample.designerJson());
+        command.setFormCode(sample.formCode());
+        command.setFormJson(sample.formJson());
+        command.setStatus(WorkflowDefinitionStatus.DRAFT.name());
+        command.setRemark(sample.remark());
+        R<Boolean> updateResult = definitionService.update(command);
+        if (!updateResult.isSuccess()) {
+            throw new IllegalStateException("内置示例流程更新失败：" + updateResult.getMsg());
+        }
+        return definition.getId();
+    }
+
     private List<SampleDefinition> samples() {
         return List.of(expenseSample(), sealSample(), leaveSample());
     }
@@ -151,7 +243,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
                         approvalNode("财务复核", "finance_review", null,
                                 Map.of("approvePageKey", "workflow.expense.approve.finance", "sectionPreset", "FINANCE_REVIEW")),
                         Map.of("approvePageKey", "workflow.expense.approve.manager", "sectionPreset", "MANAGER_APPROVE"))),
-                "[]",
+                customFormJson("/workflow/custom-apply", "/workflow/business-form", "workflow.expense.apply", "workflow.expense.approve"),
                 "费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。");
     }
 
@@ -173,7 +265,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
                                         "sectionPreset", "LEGAL_REVIEW")),
                         Map.of("approvePageKey", "workflow.contractSeal.approve.manager",
                                 "sectionPreset", "MANAGER_APPROVE"))),
-                "[]",
+                customFormJson("/workflow/custom-apply", "/workflow/business-form", "workflow.contractSeal.apply", "workflow.contractSeal.approve"),
                 "合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。");
     }
 
@@ -248,6 +340,20 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
                 "title", title,
                 "props", props,
                 "validate", List.of(Map.of("required", true, "message", title + "不能为空", "trigger", "blur")));
+    }
+
+    private String customFormJson(String submitPath, String viewPath, String applyPageKey, String approvePageKey) {
+        Map<String, Object> customConfig = new LinkedHashMap<>();
+        customConfig.put("submitPath", submitPath);
+        customConfig.put("viewPath", viewPath);
+        customConfig.put("applyPageKey", applyPageKey);
+        customConfig.put("approvePageKey", approvePageKey);
+        Map<String, Object> formConfig = new LinkedHashMap<>();
+        formConfig.put("mode", "CUSTOM");
+        formConfig.put("rules", List.of());
+        formConfig.put("fields", List.of());
+        formConfig.put("customConfig", customConfig);
+        return json(formConfig);
     }
 
     private String json(Object value) {

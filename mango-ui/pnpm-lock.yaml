@@ -38,6 +38,12 @@ importers:
       '@mango/system':
         specifier: workspace:*
         version: link:../../packages/system
+      '@mango/workflow':
+        specifier: workspace:*
+        version: link:../../packages/workflow
+      '@mango/workflow-business-example':
+        specifier: workspace:*
+        version: link:../../packages/workflow-business-example
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
@@ -289,6 +295,9 @@ importers:
       '@mango/workflow':
         specifier: workspace:*
         version: link:../../packages/workflow
+      '@mango/workflow-business-example':
+        specifier: workspace:*
+        version: link:../../packages/workflow-business-example
       element-plus:
         specifier: 2.5.5
         version: 2.5.5(vue@3.5.13(typescript@5.9.3))
@@ -335,6 +344,9 @@ importers:
       '@mango/workflow':
         specifier: workspace:*
         version: link:../../packages/workflow
+      '@mango/workflow-business-example':
+        specifier: workspace:*
+        version: link:../../packages/workflow-business-example
       element-plus:
         specifier: 2.5.5
         version: 2.5.5(vue@3.5.13(typescript@5.9.3))
@@ -378,6 +390,9 @@ importers:
       '@mango/workflow':
         specifier: workspace:*
         version: link:../workflow
+      '@mango/workflow-business-example':
+        specifier: workspace:*
+        version: link:../workflow-business-example
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.9.3)
@@ -492,6 +507,10 @@ importers:
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
+    devDependencies:
+      '@mango/api-schema':
+        specifier: workspace:*
+        version: link:../api-schema
 
   packages/file:
     dependencies:
@@ -585,6 +604,21 @@ importers:
       form-create-designer:
         specifier: 3.2.11-oem
         version: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+
+  packages/workflow-business-example:
+    dependencies:
+      '@mango/workflow':
+        specifier: workspace:*
+        version: link:../workflow
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.9.3)

@@ -20,7 +20,7 @@
 
       <el-table v-loading="loading" :data="tableData" stripe>
         <el-table-column prop="taskName" label="任务名称" min-width="160" />
-        <el-table-column prop="businessKey" label="业务主键" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="businessKey" label="业务单号" min-width="160" show-overflow-tooltip />
         <el-table-column prop="processName" label="流程名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="processKey" label="流程编码" min-width="180" show-overflow-tooltip />
         <el-table-column prop="initiatorName" label="发起人" width="120" />

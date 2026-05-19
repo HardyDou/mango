@@ -1,6 +1,4 @@
 import type { Component } from 'vue';
-import DocumentTableApprovalDetail from './business/DocumentTableApprovalDetail.vue';
-import ExpenseApprovalDetail from './business/ExpenseApprovalDetail.vue';
 
 export type BusinessPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 
@@ -18,18 +16,35 @@ export interface BusinessApprovalContext {
   permissions: Record<string, BusinessPermission>;
 }
 
-const businessApprovalComponents: Record<string, Component> = {
-  CONTRACT_SEAL_APPROVAL: DocumentTableApprovalDetail,
-  'workflow.contractSeal.approve': DocumentTableApprovalDetail,
-  EXPENSE_REIMBURSEMENT: ExpenseApprovalDetail,
-  'workflow.expense.approve': ExpenseApprovalDetail,
-};
+export interface BusinessApprovalRegistration {
+  component: Component;
+  collectVariables?: (context: BusinessApprovalContext) => Record<string, any>;
+  commentMode?: 'ACTION_BAR' | 'BUSINESS_FORM';
+  collectComment?: (context: BusinessApprovalContext) => string | undefined;
+}
 
-export function resolveBusinessApprovalComponent(businessType?: string): Component | null {
-  if (!businessType) {
-    return null;
+const businessApprovalRegistrations = new Map<string, BusinessApprovalRegistration>();
+
+export function registerBusinessApprovalComponent(key: string, registration: BusinessApprovalRegistration) {
+  const normalizedKey = normalizeRegistryKey(key);
+  if (!normalizedKey) {
+    return;
   }
-  return businessApprovalComponents[businessType] || null;
+  businessApprovalRegistrations.set(normalizedKey, registration);
+}
+
+export function registerBusinessApprovalComponents(registrations: Record<string, BusinessApprovalRegistration>) {
+  Object.entries(registrations).forEach(([key, registration]) => {
+    registerBusinessApprovalComponent(key, registration);
+  });
+}
+
+export function resolveBusinessApprovalRegistration(key?: string): BusinessApprovalRegistration | null {
+  return businessApprovalRegistrations.get(normalizeRegistryKey(key)) || null;
+}
+
+export function resolveBusinessApprovalComponent(key?: string): Component | null {
+  return resolveBusinessApprovalRegistration(key)?.component || null;
 }
 
 export function businessTypeOf(variables?: Record<string, any>): string {
@@ -37,7 +52,7 @@ export function businessTypeOf(variables?: Record<string, any>): string {
 }
 
 export function applyIdOf(variables?: Record<string, any>): string {
-  return String(variables?.applyId || variables?.snapshotId || variables?.expenseApplyId || '').trim();
+  return String(variables?.applyId || variables?.workflowApplyId || variables?.businessApplyId || variables?.snapshotId || '').trim();
 }
 
 export function businessPermissionsOf(
@@ -53,33 +68,24 @@ export function businessPermissionsOf(
 }
 
 export function collectBusinessApprovalVariables(
-  businessType: string | undefined,
-  variables: Record<string, any> | undefined,
-  permissions: Record<string, BusinessPermission>,
+  registration: BusinessApprovalRegistration | null | undefined,
+  context: BusinessApprovalContext | null | undefined,
 ): Record<string, any> {
-  if (!businessType || !variables) {
+  if (!registration?.collectVariables || !context) {
     return {};
   }
-  if (businessType === 'EXPENSE_REIMBURSEMENT' && permissions.financeReview === 'EDITABLE') {
-    return {
-      approvedAmount: variables.approvedAmount,
-    };
+  return registration.collectVariables(context);
+}
+
+export function collectBusinessApprovalComment(
+  registration: BusinessApprovalRegistration | null | undefined,
+  context: BusinessApprovalContext | null | undefined,
+  fallbackComment = '',
+): string {
+  if (registration?.collectComment && context) {
+    return String(registration.collectComment(context) || '').trim();
   }
-  if (businessType === 'CONTRACT_SEAL_APPROVAL') {
-    const result: Record<string, any> = {};
-    if (permissions.legalOpinion === 'EDITABLE') {
-      result.legalOpinion = variables.legalOpinion;
-    }
-    if (permissions.financeOpinion === 'EDITABLE') {
-      result.financeOpinion = variables.financeOpinion;
-    }
-    if (permissions.sealKeeperOpinion === 'EDITABLE') {
-      result.approvedSealCount = variables.approvedSealCount;
-      result.sealKeeperOpinion = variables.sealKeeperOpinion;
-    }
-    return result;
-  }
-  return {};
+  return fallbackComment;
 }
 
 function normalizePermissions(value: any): Record<string, BusinessPermission> {
@@ -92,4 +98,8 @@ function normalizePermissions(value: any): Record<string, BusinessPermission> {
     }
     return result;
   }, {});
+}
+
+function normalizeRegistryKey(key?: string) {
+  return String(key || '').trim();
 }

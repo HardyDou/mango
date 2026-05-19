@@ -144,6 +144,12 @@
                       <el-form-item label="表单查看路径">
                         <el-input v-model="customFormConfig.viewPath" placeholder="例如：/flow/guarantee/detail" @input="syncCustomWorkflowForm" />
                       </el-form-item>
+                      <el-form-item label="申请页Key">
+                        <el-input v-model="customFormConfig.applyPageKey" placeholder="例如：workflow.guarantee.apply" @input="syncCustomWorkflowForm" />
+                      </el-form-item>
+                      <el-form-item label="审批页Key">
+                        <el-input v-model="customFormConfig.approvePageKey" placeholder="例如：workflow.guarantee.approve" @input="syncCustomWorkflowForm" />
+                      </el-form-item>
                     </el-form>
                   </div>
                   <div class="custom-field-section">
@@ -712,6 +718,8 @@ interface CustomFormField {
 interface CustomFormConfig {
   submitPath: string;
   viewPath: string;
+  applyPageKey?: string;
+  approvePageKey?: string;
 }
 
 interface BackendPageResult<T> {
@@ -1192,7 +1200,7 @@ const workflowSystemVariableOptions: WorkflowVariableOption[] = [
   { label: '流程定义编码', value: 'definitionKey', source: '系统内置', dataType: 'TEXT' },
   { label: '流程发起人', value: 'initiator', source: '系统内置', dataType: 'USER' },
   { label: '流程启动时间', value: 'startTime', source: '系统内置', dataType: 'DATE' },
-  { label: '业务主键', value: 'businessKey', source: '系统内置', dataType: 'TEXT' },
+  { label: '业务单号', value: 'businessKey', source: '系统内置', dataType: 'TEXT' },
 ];
 
 const workflowFormVariableOptions = computed(() => collectWorkflowFormVariables(workflowFormRules.value));
@@ -1830,13 +1838,15 @@ function legacyFieldsToFormCreateRules(fields: any[]): FcRule[] {
 }
 
 function defaultCustomFormConfig(): CustomFormConfig {
-  return { submitPath: '', viewPath: '' };
+  return { submitPath: '', viewPath: '', applyPageKey: '', approvePageKey: '' };
 }
 
 function normalizeCustomFormConfig(value: any): CustomFormConfig {
   return {
     submitPath: String(value?.submitPath || value?.createPath || ''),
     viewPath: String(value?.viewPath || value?.detailPath || ''),
+    applyPageKey: String(value?.applyPageKey || ''),
+    approvePageKey: String(value?.approvePageKey || ''),
   };
 }
 
@@ -2489,7 +2499,7 @@ async function ensureApprovalOrgsLoaded() {
 async function loadApprovalOrgs() {
   approvalTargetLoading.orgs = true;
   try {
-    const data = await get<any[]>('/org/tree', { params: { parentId: 0, includeDisabled: true } });
+    const data = await get<any[]>('/org/tree', { params: { parentId: '0', includeDisabled: true } });
     approvalOrgTreeOptions.value = toApprovalOrgTree(data || []);
     approvalTargetLoaded.orgs = true;
   } finally {

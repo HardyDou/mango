@@ -65,7 +65,7 @@
         <el-alert
           v-else
           class="start-alert"
-          title="当前流程没有可渲染的基础表单字段，可以通过高级变量 JSON 传入流程变量。"
+          title="当前流程没有可渲染的申请表单，请在流程定义中配置动态表单或自定义申请页。"
           type="info"
           :closable="false"
           show-icon
@@ -74,7 +74,7 @@
         <el-alert
           v-if="unsupportedFields.length"
           class="start-alert"
-          :title="`有 ${unsupportedFields.length} 个复杂组件暂未渲染，可通过高级变量 JSON 补充变量。`"
+          :title="`有 ${unsupportedFields.length} 个复杂组件暂未渲染，请检查表单设计器组件支持情况。`"
           type="warning"
           :closable="false"
           show-icon
@@ -123,12 +123,15 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { Bell, Box, Cloudy, Connection, DocumentChecked, ForkSpoon, Share, User } from '@element-plus/icons-vue';
 import { parseDesignerJson, workflowApi, type WorkflowDefinition, type WorkflowDesignerNode, type WorkflowUserOption } from '../../api/workflow';
+import { customApplyRouteOf } from '../../workflowFormConfig';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { createDefaultVariables, parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
 
+const router = useRouter();
 const loading = ref(false);
 const submitting = ref(false);
 const dialogVisible = ref(false);
@@ -195,6 +198,11 @@ function workflowIconComponent(value?: string) {
 }
 
 function openStartDialog(row: WorkflowDefinition) {
+  const customApplyRoute = customApplyRouteOf(row);
+  if (customApplyRoute) {
+    router.push(customApplyRoute);
+    return;
+  }
   selectedDefinition.value = row;
   const parsed = parseRuntimeForm(row.formJson);
   startFields.value = parsed.fields;
