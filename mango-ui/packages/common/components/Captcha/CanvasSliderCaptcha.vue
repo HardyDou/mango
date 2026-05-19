@@ -202,8 +202,8 @@ defineExpose({ refresh, verify });
 
   :deep(.track) {
     position: relative;
-    height: 48px;
-    border-radius: 24px;
+    height: 38px;
+    border-radius: 19px;
     background: linear-gradient(90deg, #eef5ff 0%, #f6faff 100%);
     overflow: hidden;
   }
@@ -211,9 +211,9 @@ defineExpose({ refresh, verify });
   :deep(.target) {
     position: absolute;
     top: 4px;
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
     background: rgba(103, 194, 58, 0.15);
     border: 1px dashed #67c23a;
   }
@@ -221,15 +221,22 @@ defineExpose({ refresh, verify });
   :deep(.slider) {
     position: absolute;
     top: 4px;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
+    border-radius: 15px;
     background: #409eff;
     color: #fff;
     cursor: grab;
+    font-size: 15px;
+    box-shadow: 0 2px 6px rgb(64 158 255 / 20%);
+  }
+
+  :deep(.slider svg) {
+    width: 15px;
+    height: 15px;
   }
 
   :deep(.slider:active) {
