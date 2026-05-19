@@ -146,13 +146,13 @@
 
     <section id="behavior" class="doc-section">
       <h2>无感行为验证</h2>
-      <p>适合登录、注册和高频表单提交。组件静默采集鼠标、键盘、点击和设备特征，提交时由后端返回 score、riskLevel 和 suggestAction。</p>
+      <p>适合登录、注册和高频表单提交。用户点击验证条后，组件提交已静默采集的行为和设备特征，后端返回 score、riskLevel 和 suggestAction。</p>
       <div class="demo-block">
         <div class="demo-source">
           <div class="mock-form-card behavior-card">
             <div class="mock-form-head">
               <h3>登录风控校验</h3>
-              <span>用户不需要操作验证码，点击登录时自动完成行为评分。</span>
+              <span>先点击验证条完成无感评分，再提交登录表单。</span>
             </div>
             <el-form class="mock-form" :model="behaviorForm" label-position="top">
               <el-form-item label="登录账号">
@@ -164,17 +164,16 @@
             </el-form>
             <div class="captcha-check-area">
               <CaptchaSelector
-                ref="behaviorCaptchaRef"
                 :type="CaptchaType.BEHAVIOR"
                 @success="(key, code, type) => handleSuccess('behavior', key, code, type)"
                 @refresh="() => handleRefresh('behavior')"
               />
             </div>
             <div class="mock-actions">
-              <el-button type="primary" @click="submitBehaviorDemo">
+              <el-button type="primary" :disabled="!captchaResults.behavior" @click="submitDemo('behavior')">
                 登录
               </el-button>
-              <span>{{ captchaResults.behavior ? '行为验证已通过' : '提交时自动校验行为评分' }}</span>
+              <span>{{ captchaResults.behavior ? '验证成功，可以登录' : '请先点击完成验证' }}</span>
             </div>
             <div v-if="submitResults.behavior" class="mock-result">{{ submitResults.behavior }}</div>
           </div>
@@ -373,7 +372,6 @@ const codeVisible = ref<Record<DemoKey, boolean>>({
 });
 
 const arithmeticCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
-const behaviorCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
 const arithmeticCaptchaInput = ref('');
 const arithmeticForm = reactive({ title: '组件库访问申请', description: '申请开通开发中心组件库的访问权限' });
 const blockForm = reactive({ reason: '运维审批单 OPS-20260519 已通过' });
@@ -463,29 +461,20 @@ const behaviorCode = `<template>
     </el-form>
 
     <CaptchaSelector
-      ref="behaviorCaptchaRef"
       :type="CaptchaType.BEHAVIOR"
       @success="handleCaptchaSuccess"
       @refresh="captchaResult = null"
     />
 
-    <el-button type="primary" @click="submit">
+    <el-button type="primary" :disabled="!captchaResult" @click="submit">
       登录
     </el-button>
   </div>
 </template>
 
 <script setup lang="ts">
-const behaviorCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
-
-async function submit() {
-  const passed = await behaviorCaptchaRef.value?.verify?.();
-  if (!passed) {
-    // 可按 suggestAction 切换滑块或点选文字二次验证
-    return;
-  }
-  // submit business form with captchaResult.key and score
-}
+// 用户点击验证条后组件会自动 verify；
+// 登录按钮提交时携带 captchaResult.key 和 score。
 <\\/script>`;
 
 const smsCode = `<template>
@@ -580,12 +569,6 @@ async function submitArithmeticDemo() {
   const verified = await arithmeticCaptchaRef.value?.verify?.();
   if (!verified) return;
   submitDemo('arithmetic');
-}
-
-async function submitBehaviorDemo() {
-  const passed = await behaviorCaptchaRef.value?.verify?.();
-  if (!passed) return;
-  submitDemo('behavior');
 }
 
 function submitDemo(demo: DemoKey) {

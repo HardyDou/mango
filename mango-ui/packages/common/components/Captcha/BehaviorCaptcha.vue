@@ -1,17 +1,20 @@
 <template>
   <div class="captcha-card behavior-captcha">
-    <div class="captcha-header">
-      <span>无感行为验证</span>
-      <el-button link type="primary" @click="refresh">重新初始化</el-button>
-    </div>
-    <div class="behavior-status" :class="statusClass">
-      <span class="status-dot" />
-      <div>
-        <strong>{{ statusText }}</strong>
-        <p>{{ statusDesc }}</p>
-      </div>
-    </div>
-    <div v-if="verifyResult" class="score-panel">
+    <button
+      class="verify-bar"
+      :class="statusClass"
+      type="button"
+      :disabled="loading || verifyResult?.passed"
+      @click="handleVerifyClick"
+    >
+      <span class="verify-icon" aria-hidden="true">
+        <el-icon v-if="verifyResult?.passed"><Check /></el-icon>
+        <el-icon v-else-if="loading" class="is-loading"><Loading /></el-icon>
+        <el-icon v-else><Key /></el-icon>
+      </span>
+      <span class="verify-text">{{ statusText }}</span>
+    </button>
+    <div v-if="verifyResult && props.showScore" class="score-panel">
       <span>Score {{ verifyResult.score.toFixed(2) }}</span>
       <span>{{ verifyResult.riskLevel }} / {{ verifyResult.suggestAction }}</span>
     </div>
@@ -21,6 +24,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Check, Key, Loading } from '@element-plus/icons-vue';
 import {
   CaptchaType,
   generateBehavior,
@@ -45,9 +49,16 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
+const props = withDefaults(defineProps<{
+  showScore?: boolean;
+}>(), {
+  showScore: false,
+});
+
 const captchaData = ref<CaptchaResponse | null>(null);
 const verifyResult = ref<BehaviorCaptchaVerifyResult | null>(null);
 const errorMessage = ref('');
+const loading = ref(false);
 const mouseTrack: TrackPoint[] = [];
 const clickList: TrackPoint[] = [];
 const keyList: KeyPoint[] = [];
@@ -60,15 +71,10 @@ const statusClass = computed(() => {
 });
 
 const statusText = computed(() => {
-  if (verifyResult.value?.passed) return '验证已通过';
-  if (verifyResult.value && !verifyResult.value.passed) return '需要二次验证';
-  return '已开始静默采集';
-});
-
-const statusDesc = computed(() => {
-  if (verifyResult.value?.passed) return '业务提交时可携带 captchaKey 和 score。';
-  if (verifyResult.value && !verifyResult.value.passed) return '当前行为评分不足，业务可切换滑块或点选文字验证。';
-  return '用户无需点击验证码，提交表单时自动完成行为评分。';
+  if (loading.value) return '验证中...';
+  if (verifyResult.value?.passed) return '验证成功';
+  if (verifyResult.value && !verifyResult.value.passed) return '点击重新验证';
+  return '点击完成验证';
 });
 
 function trimTrack(list: TrackPoint[], maxLength: number) {
@@ -128,6 +134,7 @@ function createPayload() {
 async function refresh() {
   errorMessage.value = '';
   verifyResult.value = null;
+  loading.value = false;
   mouseTrack.splice(0);
   clickList.splice(0);
   keyList.splice(0);
@@ -142,6 +149,8 @@ async function verify() {
     return false;
   }
   try {
+    loading.value = true;
+    errorMessage.value = '';
     verifyResult.value = await verifyBehaviorCaptcha({
       key: captchaData.value.key,
       type: CaptchaType.BEHAVIOR,
@@ -156,7 +165,16 @@ async function verify() {
   } catch {
     errorMessage.value = '行为验证未通过';
     return false;
+  } finally {
+    loading.value = false;
   }
+}
+
+async function handleVerifyClick() {
+  if (verifyResult.value && !verifyResult.value.passed) {
+    await refresh();
+  }
+  await verify();
 }
 
 onMounted(() => {
@@ -177,53 +195,72 @@ defineExpose({ refresh, verify });
 
 <style scoped lang="scss">
 .behavior-captcha {
-  .captcha-header {
+  .verify-bar {
     display: flex;
-    justify-content: space-between;
+    width: 100%;
+    min-height: 48px;
     align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .behavior-status {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
-    border: 1px solid var(--el-border-color-light);
+    justify-content: center;
+    gap: 14px;
+    padding: 0 16px;
+    border: 1px solid var(--el-border-color);
     border-radius: 4px;
-    background: var(--el-fill-color-lighter);
+    background: var(--el-fill-color-blank);
+    color: #10183f;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
 
-    strong {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--el-text-color-primary);
-      font-size: 14px;
-      font-weight: 500;
+    &:hover:not(:disabled) {
+      border-color: var(--el-color-primary-light-5);
+      background: var(--el-color-primary-light-9);
     }
 
-    p {
-      margin: 0;
-      color: var(--el-text-color-regular);
-      font-size: 13px;
-      line-height: 1.5;
+    &:focus-visible {
+      outline: 2px solid var(--el-color-primary-light-5);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: default;
     }
   }
 
-  .status-dot {
-    flex: 0 0 8px;
-    width: 8px;
-    height: 8px;
-    margin-top: 6px;
+  .verify-icon {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
-    background: var(--el-color-primary);
+    background: var(--el-fill-color-light);
+    box-shadow: 0 4px 12px rgb(31 45 61 / 16%);
+    color: #687083;
+    font-size: 22px;
+  }
+
+  .verify-text {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .is-loading {
+    animation: behavior-rotate 0.9s linear infinite;
   }
 
   .is-success {
-    border-color: var(--el-color-success-light-5);
+    border-color: #80c9bb;
     background: var(--el-color-success-light-9);
+    color: #7abdaf;
 
-    .status-dot {
-      background: var(--el-color-success);
+    .verify-icon {
+      background: rgb(255 255 255 / 86%);
+      color: #7abdaf;
+      box-shadow: none;
     }
   }
 
@@ -231,8 +268,8 @@ defineExpose({ refresh, verify });
     border-color: var(--el-color-warning-light-5);
     background: var(--el-color-warning-light-9);
 
-    .status-dot {
-      background: var(--el-color-warning);
+    .verify-icon {
+      color: var(--el-color-warning);
     }
   }
 
@@ -249,6 +286,16 @@ defineExpose({ refresh, verify });
     margin-top: 8px;
     color: var(--el-color-danger);
     font-size: 12px;
+  }
+}
+
+@keyframes behavior-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
