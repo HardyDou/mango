@@ -337,13 +337,13 @@
             <section class="detail-section">
               <div class="detail-basic-panel">
                 <div class="summary-main">
-                  <div class="summary-item">
-                    <span>业务单号：</span>
-                    <strong>{{ expenseForm.code }}</strong>
-                  </div>
-                  <div class="summary-item">
-                    <span>申请金额：</span>
-                    <strong>{{ formatAmount(expenseForm.amount) }}</strong>
+                  <div
+                    v-for="item in expenseBasicSummary"
+                    :key="item.label"
+                    class="summary-item"
+                  >
+                    <span>{{ item.label }}：</span>
+                    <strong>{{ item.value || '-' }}</strong>
                   </div>
                 </div>
                 <div class="summary-stamp" :class="`is-${businessStatusTag(expenseForm.businessStatus)}`">
@@ -454,14 +454,14 @@
           <main class="detail-main">
             <section class="detail-section">
               <div class="detail-basic-panel">
-                <div class="summary-main summary-main-vertical">
-                  <div class="summary-item">
-                    <span>业务单号：</span>
-                    <strong>{{ sealForm.code }}</strong>
-                  </div>
-                  <div class="summary-item wide">
-                    <span>合同名称：</span>
-                    <strong>{{ sealForm.contractName || '-' }}</strong>
+                <div class="summary-main">
+                  <div
+                    v-for="item in sealBasicSummary"
+                    :key="item.label"
+                    class="summary-item"
+                  >
+                    <span>{{ item.label }}：</span>
+                    <strong>{{ item.value || '-' }}</strong>
                   </div>
                 </div>
                 <div class="summary-stamp" :class="`is-${businessStatusTag(sealForm.businessStatus)}`">
@@ -777,6 +777,8 @@ const currentApplyRecord = computed(() => expenseForm.applyRecords.find(record =
   || expenseForm.applyRecords[expenseForm.applyRecords.length - 1]);
 const currentSealApplyRecord = computed(() => sealForm.applyRecords.find(record => record.applyId === sealForm.currentApplyId)
   || sealForm.applyRecords[sealForm.applyRecords.length - 1]);
+const expenseBasicSummary = computed(() => businessBasicSummary(expenseForm));
+const sealBasicSummary = computed(() => businessBasicSummary(sealForm));
 const sealReadonlyContext = computed<BusinessApprovalContext>(() => ({
   businessType: 'CONTRACT_SEAL_APPROVAL',
   businessKey: sealForm.code,
@@ -1540,6 +1542,12 @@ function currentTaskKeysFromHistory(applies: WorkflowBusinessApply[]) {
   return applies.map(apply => firstCurrentTaskKey(apply)).filter(Boolean);
 }
 
+function businessBasicSummary(row: ExpenseExampleRow | SealExampleRow) {
+  return [
+    { label: '业务单号', value: row.code },
+  ];
+}
+
 function uniqueKeys(keys: string[]) {
   return Array.from(new Set(keys
     .flatMap(key => String(key).split(','))
@@ -1895,14 +1903,9 @@ onMounted(async () => {
 
 .summary-main {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px 14px;
   min-width: 0;
-}
-
-.summary-main-vertical {
-  grid-template-columns: 1fr;
-  gap: 8px;
 }
 
 .summary-stamp {
@@ -1943,22 +1946,22 @@ onMounted(async () => {
 }
 
 .summary-item {
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 
-.summary-item.wide {
-  min-width: min(360px, 100%);
-}
-
 .summary-item span {
-  display: inline;
+  flex: none;
   margin-right: 2px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .summary-item strong {
-  display: inline;
+  display: block;
+  min-width: 0;
   overflow: hidden;
   color: var(--el-text-color-primary);
   font-size: 13px;
