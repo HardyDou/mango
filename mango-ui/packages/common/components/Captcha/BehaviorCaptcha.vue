@@ -4,7 +4,7 @@
       class="verify-bar"
       :class="statusClass"
       type="button"
-      :disabled="loading || verifyResult?.passed"
+      :disabled="initializing || loading || verifyResult?.passed"
       @click="handleVerifyClick"
     >
       <span class="verify-icon" aria-hidden="true">
@@ -59,6 +59,7 @@ const captchaData = ref<CaptchaResponse | null>(null);
 const verifyResult = ref<BehaviorCaptchaVerifyResult | null>(null);
 const errorMessage = ref('');
 const loading = ref(false);
+const initializing = ref(false);
 const mouseTrack: TrackPoint[] = [];
 const clickList: TrackPoint[] = [];
 const keyList: KeyPoint[] = [];
@@ -71,6 +72,7 @@ const statusClass = computed(() => {
 });
 
 const statusText = computed(() => {
+  if (initializing.value) return '初始化中...';
   if (loading.value) return '验证中...';
   if (verifyResult.value?.passed) return '验证成功';
   if (verifyResult.value && !verifyResult.value.passed) return '点击重新验证';
@@ -134,19 +136,29 @@ function createPayload() {
 async function refresh() {
   errorMessage.value = '';
   verifyResult.value = null;
-  loading.value = false;
+  initializing.value = true;
   mouseTrack.splice(0);
   clickList.splice(0);
   keyList.splice(0);
   startTime = Date.now();
-  captchaData.value = await generateBehavior();
-  emit('refresh');
+  try {
+    captchaData.value = await generateBehavior();
+    emit('refresh');
+  } catch {
+    captchaData.value = null;
+    errorMessage.value = '行为验证初始化失败，请稍后重试';
+  } finally {
+    initializing.value = false;
+  }
 }
 
 async function verify() {
   if (!captchaData.value?.key) {
-    errorMessage.value = '验证会话已过期，请重新初始化';
-    return false;
+    await refresh();
+    if (!captchaData.value?.key) {
+      errorMessage.value = '验证会话初始化失败，请重试';
+      return false;
+    }
   }
   try {
     loading.value = true;
@@ -160,6 +172,11 @@ async function verify() {
       emit('success', captchaData.value.key, JSON.stringify(verifyResult.value));
       return true;
     }
+    if (['CHALLENGE_NOT_FOUND', 'CHALLENGE_EXPIRED'].includes(verifyResult.value.reason)) {
+      errorMessage.value = '验证会话已刷新，请重新验证';
+      await refresh();
+      return false;
+    }
     errorMessage.value = `评分不足：${verifyResult.value.score.toFixed(2)}`;
     return false;
   } catch {
@@ -171,6 +188,7 @@ async function verify() {
 }
 
 async function handleVerifyClick() {
+  if (initializing.value) return;
   if (verifyResult.value && !verifyResult.value.passed) {
     await refresh();
   }
