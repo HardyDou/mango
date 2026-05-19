@@ -118,13 +118,6 @@ const displaySliderLeft = computed(() => {
   return (sliderLeft.value / triggerMaxHandleLeft.value) * triggerMaxPieceLeft.value;
 });
 
-const targetStyle = computed(() => ({
-  left: `${Math.round(displayTargetLeft.value)}px`,
-  top: `${Math.round(displayTargetTop.value)}px`,
-  width: `${Math.round(displaySliderSize.value)}px`,
-  height: `${Math.round(displaySliderSize.value)}px`,
-}));
-
 const sliderStyle = computed(() => ({
   left: `${Math.round(displaySliderLeft.value)}px`,
   top: `${Math.round(displayTargetTop.value)}px`,
@@ -315,9 +308,6 @@ const PuzzleContent = defineComponent({
             alt: '滑块验证码背景',
           })
           : h('div', { class: 'captcha-placeholder' }, '加载中...'),
-        captchaData.value?.backgroundImage
-          ? h('div', { class: 'target', style: targetStyle.value })
-          : null,
         h('div', {
           class: 'slider',
           style: sliderStyle.value,
@@ -383,19 +373,6 @@ defineExpose({ refresh });
     align-items: center;
     justify-content: center;
     color: var(--el-text-color-secondary);
-  }
-
-  :deep(.target) {
-    position: absolute;
-    z-index: 1;
-    box-sizing: border-box;
-    border: 2px dashed rgb(255 255 255 / 95%);
-    border-radius: 4px;
-    background: rgb(0 0 0 / 22%);
-    box-shadow:
-      inset 0 0 0 1px rgb(0 0 0 / 35%),
-      0 0 0 999px rgb(0 0 0 / 5%);
-    pointer-events: none;
   }
 
   :deep(.slider) {
