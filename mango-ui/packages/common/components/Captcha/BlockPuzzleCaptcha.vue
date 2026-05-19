@@ -1,6 +1,6 @@
 <template>
   <div class="captcha-card block-puzzle-captcha" :class="`is-${mode}`">
-    <template v-if="mode === 'embedded'">
+    <template v-if="mode !== 'trigger'">
       <div class="captcha-header">
         <span>拖动滑块完成拼图</span>
         <el-button link type="primary" @click="refresh">刷新</el-button>
@@ -43,21 +43,6 @@
       </div>
     </template>
 
-    <template v-else>
-      <el-dialog
-        v-model="panelVisible"
-        class="block-puzzle-dialog"
-        title="请完成安全验证"
-        width="340px"
-        append-to-body
-        @opened="handlePanelShow"
-        @closed="handlePopupClosed"
-      >
-        <div class="puzzle-panel">
-          <PuzzleContent />
-        </div>
-      </el-dialog>
-    </template>
   </div>
 </template>
 
@@ -206,7 +191,6 @@ async function verify() {
   if (verified.value) return true;
   if (mode.value !== 'popup') return false;
   if (verifyPromise) return verifyPromise;
-  panelVisible.value = true;
   await handlePanelShow();
   verifyPromise = new Promise<boolean>((resolve) => {
     verifyResolver = resolve;
@@ -414,10 +398,6 @@ defineExpose({ refresh, verify });
   .puzzle-panel {
     width: fit-content;
     max-width: 100%;
-  }
-
-  &.is-popup .puzzle-panel {
-    width: 280px;
   }
 
   :deep(.track) {
@@ -784,22 +764,4 @@ defineExpose({ refresh, verify });
   max-width: 420px;
 }
 
-:global(.block-puzzle-dialog) {
-  --el-dialog-padding-primary: 24px;
-}
-
-:global(.block-puzzle-dialog .el-dialog__header) {
-  margin-right: 0;
-  padding-bottom: 16px;
-}
-
-:global(.block-puzzle-dialog .el-dialog__title) {
-  color: var(--el-text-color-primary);
-  font-size: 24px;
-  line-height: 1.3;
-}
-
-:global(.block-puzzle-dialog .el-dialog__body) {
-  padding-top: 0;
-}
 </style>

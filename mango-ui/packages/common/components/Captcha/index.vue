@@ -1,12 +1,40 @@
 <template>
-  <div class="captcha-selector">
+  <div v-if="isPopupMode" class="captcha-selector is-popup">
+    <el-dialog
+      v-model="popupVisible"
+      class="captcha-selector-dialog"
+      title="请完成安全验证"
+      width="380px"
+      append-to-body
+      @closed="handlePopupClosed"
+    >
+      <component
+        :is="currentComponent"
+        :ref="setFixedRef"
+        v-bind="currentComponentProps"
+        @success="onSuccess"
+        @refresh="handleRefresh"
+        @input-change="onInputChange"
+      />
+      <template v-if="showPopupFooter" #footer>
+        <el-button @click="closePopup(false)">取消</el-button>
+        <el-button
+          type="primary"
+          @click="confirmPopup"
+        >
+          确认
+        </el-button>
+      </template>
+    </el-dialog>
+  </div>
+  <div v-else class="captcha-selector">
     <component
       :is="currentComponent"
       v-if="fixedType"
       :ref="setFixedRef"
       v-bind="currentComponentProps"
       @success="onSuccess"
-      @refresh="emit('refresh')"
+      @refresh="handleRefresh"
       @input-change="onInputChange"
     />
     <el-tabs
@@ -18,7 +46,7 @@
         <ArithmeticCaptcha
           ref="arithmeticRef"
           @success="onSuccess"
-          @refresh="emit('refresh')"
+          @refresh="handleRefresh"
           @input-change="onInputChange"
         />
       </el-tab-pane>
@@ -27,21 +55,21 @@
           ref="blockPuzzleRef"
           :mode="mode"
           @success="onSuccess"
-          @refresh="emit('refresh')"
+          @refresh="handleRefresh"
         />
       </el-tab-pane>
       <el-tab-pane label="点选文字" name="CLICK_WORD">
         <ClickWordCaptcha
           ref="clickWordRef"
           @success="onSuccess"
-          @refresh="emit('refresh')"
+          @refresh="handleRefresh"
         />
       </el-tab-pane>
       <el-tab-pane label="无感行为" name="BEHAVIOR">
         <BehaviorCaptcha
           ref="behaviorRef"
           @success="onSuccess"
-          @refresh="emit('refresh')"
+          @refresh="handleRefresh"
         />
       </el-tab-pane>
       <el-tab-pane label="Canvas滑块" name="CANVAS_SLIDER">
@@ -49,7 +77,7 @@
           ref="canvasSliderRef"
           :mode="mode"
           @success="onSuccess"
-          @refresh="emit('refresh')"
+          @refresh="handleRefresh"
         />
       </el-tab-pane>
       <el-tab-pane label="短信" name="SMS">
@@ -63,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { CaptchaType } from '../../api/captcha';
 import ArithmeticCaptcha from './ArithmeticCaptcha.vue';
 import BlockPuzzleCaptcha from './BlockPuzzleCaptcha.vue';
@@ -90,6 +118,7 @@ const emit = defineEmits<{
 
 const fixedType = computed(() => props.type);
 const mode = computed(() => props.mode);
+const isPopupMode = computed(() => mode.value === 'popup');
 const currentType = ref<CaptchaType>(props.type ?? CaptchaType.CANVAS_SLIDER);
 const arithmeticRef = ref<InstanceType<typeof ArithmeticCaptcha> | null>(null);
 const blockPuzzleRef = ref<InstanceType<typeof BlockPuzzleCaptcha> | null>(null);
@@ -98,6 +127,10 @@ const behaviorRef = ref<InstanceType<typeof BehaviorCaptcha> | null>(null);
 const canvasSliderRef = ref<InstanceType<typeof CanvasSliderCaptcha> | null>(null);
 const smsRef = ref<InstanceType<typeof SmsCaptcha> | null>(null);
 const emailRef = ref<InstanceType<typeof EmailCaptcha> | null>(null);
+const popupVisible = ref(false);
+const popupVerified = ref(false);
+let popupResolver: ((passed: boolean) => void) | null = null;
+let popupPromise: Promise<boolean> | null = null;
 
 const componentMap = {
   [CaptchaType.ARITHMETIC]: ArithmeticCaptcha,
@@ -112,10 +145,31 @@ const componentMap = {
 const currentComponent = computed(() => componentMap[currentType.value]);
 const currentComponentProps = computed(() => {
   if ([CaptchaType.BLOCK_PUZZLE, CaptchaType.CANVAS_SLIDER].includes(currentType.value)) {
-    return { mode: mode.value };
+    return { mode: isPopupMode.value ? 'embedded' : mode.value };
   }
   return {};
 });
+
+const currentRef = computed(() => {
+  const refs: Partial<Record<CaptchaType, { refresh?: () => void; verify?: () => Promise<boolean> } | null>> = {
+    [CaptchaType.ARITHMETIC]: arithmeticRef.value,
+    [CaptchaType.BLOCK_PUZZLE]: blockPuzzleRef.value,
+    [CaptchaType.CLICK_WORD]: clickWordRef.value,
+    [CaptchaType.BEHAVIOR]: behaviorRef.value,
+    [CaptchaType.CANVAS_SLIDER]: canvasSliderRef.value,
+    [CaptchaType.SMS]: smsRef.value,
+    [CaptchaType.EMAIL]: emailRef.value,
+  };
+  return refs[currentType.value] ?? null;
+});
+
+const currentVerifier = computed(() => currentRef.value?.verify);
+const showPopupFooter = computed(() => [
+  CaptchaType.ARITHMETIC,
+  CaptchaType.BEHAVIOR,
+  CaptchaType.SMS,
+  CaptchaType.EMAIL,
+].includes(currentType.value));
 
 watch(() => props.type, (type) => {
   if (type) {
@@ -124,11 +178,16 @@ watch(() => props.type, (type) => {
 }, { immediate: true });
 
 function onSuccess(key: string, code?: string) {
+  popupVerified.value = true;
   emit('success', key, code, currentType.value);
+  if (isPopupMode.value) {
+    closePopup(true);
+  }
 }
 
 function handleTabChange(type: string | number) {
   currentType.value = type as CaptchaType;
+  popupVerified.value = false;
 }
 
 function setFixedRef(instance: unknown) {
@@ -157,31 +216,82 @@ function setFixedRef(instance: unknown) {
 }
 
 function refresh() {
-  const refreshers: Partial<Record<CaptchaType, { refresh?: () => void } | null>> = {
-    [CaptchaType.ARITHMETIC]: arithmeticRef.value,
-    [CaptchaType.BLOCK_PUZZLE]: blockPuzzleRef.value,
-    [CaptchaType.CLICK_WORD]: clickWordRef.value,
-    [CaptchaType.BEHAVIOR]: behaviorRef.value,
-    [CaptchaType.CANVAS_SLIDER]: canvasSliderRef.value,
-    [CaptchaType.SMS]: smsRef.value,
-    [CaptchaType.EMAIL]: emailRef.value,
-  };
-  refreshers[currentType.value]?.refresh?.();
+  popupVerified.value = false;
+  currentRef.value?.refresh?.();
 }
 
 function verify() {
-  const verifiers: Partial<Record<CaptchaType, { verify?: () => Promise<boolean> } | null>> = {
-    [CaptchaType.ARITHMETIC]: arithmeticRef.value,
-    [CaptchaType.BLOCK_PUZZLE]: blockPuzzleRef.value,
-    [CaptchaType.BEHAVIOR]: behaviorRef.value,
-    [CaptchaType.CANVAS_SLIDER]: canvasSliderRef.value,
-  };
-  return verifiers[currentType.value]?.verify?.() ?? Promise.resolve(false);
+  if (isPopupMode.value) {
+    return openPopup();
+  }
+  return currentVerifier.value?.() ?? Promise.resolve(false);
 }
 
 function onInputChange(value: string) {
   emit('inputChange', value, currentType.value);
 }
 
+function handleRefresh() {
+  popupVerified.value = false;
+  emit('refresh');
+}
+
+async function openPopup() {
+  if (popupVerified.value) return true;
+  if (popupPromise) return popupPromise;
+  popupVisible.value = true;
+  await nextTick();
+  popupPromise = new Promise<boolean>((resolve) => {
+    popupResolver = resolve;
+  });
+  return popupPromise;
+}
+
+async function confirmPopup() {
+  const passed = await currentVerifier.value?.();
+  if (passed) {
+    popupVerified.value = true;
+    closePopup(true);
+  }
+}
+
+function closePopup(passed: boolean) {
+  popupVisible.value = false;
+  popupResolver?.(passed);
+  popupResolver = null;
+  popupPromise = null;
+}
+
+function handlePopupClosed() {
+  if (!popupVerified.value) {
+    closePopup(false);
+  }
+}
+
 defineExpose({ refresh, verify });
 </script>
+
+<style scoped lang="scss">
+.captcha-selector.is-popup {
+  display: contents;
+}
+
+:global(.captcha-selector-dialog) {
+  --el-dialog-padding-primary: 24px;
+}
+
+:global(.captcha-selector-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding-bottom: 16px;
+}
+
+:global(.captcha-selector-dialog .el-dialog__title) {
+  color: var(--el-text-color-primary);
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+:global(.captcha-selector-dialog .el-dialog__body) {
+  padding-top: 0;
+}
+</style>

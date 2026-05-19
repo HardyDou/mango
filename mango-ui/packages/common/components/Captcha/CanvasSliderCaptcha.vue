@@ -1,6 +1,6 @@
 <template>
   <div class="captcha-card canvas-slider-captcha" :class="`is-${mode}`">
-    <template v-if="mode === 'embedded'">
+    <template v-if="mode !== 'trigger'">
       <div class="captcha-header">
         <span>拖动滑块完成验证</span>
         <el-button link type="primary" @click="refresh">刷新</el-button>
@@ -35,18 +35,6 @@
       </el-popover>
     </template>
 
-    <template v-else>
-      <el-dialog
-        v-model="panelVisible"
-        title="请完成安全验证"
-        width="360px"
-        append-to-body
-        @opened="refresh"
-        @closed="handlePopupClosed"
-      >
-        <SliderContent />
-      </el-dialog>
-    </template>
   </div>
 </template>
 
@@ -135,7 +123,6 @@ async function verify() {
   if (verified.value) return true;
   if (mode.value !== 'popup') return false;
   if (verifyPromise) return verifyPromise;
-  panelVisible.value = true;
   verifyPromise = new Promise<boolean>((resolve) => {
     verifyResolver = resolve;
   });

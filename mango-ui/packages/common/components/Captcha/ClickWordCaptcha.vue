@@ -106,7 +106,11 @@ function clearClicks() {
 }
 
 async function verifyPoints() {
-  if (!captchaData.value?.key) return;
+  if (!captchaData.value?.key) return false;
+  if (clickPoints.value.length < pointCount.value) {
+    errorMessage.value = '请先按提示完成点选';
+    return false;
+  }
   try {
     const result = await verifyCaptcha({
       key: captchaData.value.key,
@@ -117,20 +121,21 @@ async function verifyPoints() {
     });
     if (result) {
       emit('success', captchaData.value.key);
-      return;
+      return true;
     }
   } catch {
     // ignored
   }
   errorMessage.value = '点击位置不正确，请重试';
   await refresh();
+  return false;
 }
 
 onMounted(() => {
   void refresh();
 });
 
-defineExpose({ refresh });
+defineExpose({ refresh, verify: verifyPoints });
 </script>
 
 <style scoped lang="scss">
