@@ -1,12 +1,54 @@
 <template>
-  <div class="captcha-card block-puzzle-captcha" :class="`is-${mode}`">
+  <div class="captcha-card block-puzzle-captcha" :class="[`is-${mode}`, { 'is-compact': compact }]">
     <template v-if="mode !== 'trigger'">
-      <div class="captcha-header">
+      <div v-if="!compact" class="captcha-header">
         <span>拖动滑块完成拼图</span>
         <el-button link type="primary" @click="refresh">刷新</el-button>
       </div>
       <div class="puzzle-panel">
-        <PuzzleContent />
+        <div ref="setTrackRef" class="track">
+          <div class="track-ratio" :style="{ aspectRatio: trackAspectRatio }">
+            <img
+              v-if="captchaData?.backgroundImage"
+              class="captcha-image"
+              :src="captchaData.backgroundImage"
+              alt="滑块验证码背景"
+            >
+            <div v-else class="captcha-placeholder">加载中...</div>
+            <div class="slider" :style="sliderStyle">
+              <img
+                v-if="captchaData?.sliderImage"
+                class="slider-image"
+                :src="captchaData.sliderImage"
+                alt="滑块拼图片"
+              >
+              <span
+                v-else-if="captchaData?.backgroundImage"
+                class="slider-fallback"
+                :style="sliderFallbackStyle"
+              />
+              <span v-else class="slider-empty" />
+            </div>
+          </div>
+        </div>
+        <div
+          class="control-track"
+          :class="{ 'is-success': verified, 'is-failed': failed, 'is-dragging': dragging }"
+        >
+          <div class="control-fill" :style="controlFillStyle" />
+          <button
+            class="control-handle"
+            :style="controlHandleStyle"
+            type="button"
+            :disabled="verified"
+            @mousedown="startDrag"
+            @touchstart.prevent="startTouchDrag"
+          >
+            <el-icon><component :is="controlIcon" /></el-icon>
+          </button>
+          <div class="control-text">{{ verified ? '验证通过' : '向右拖动滑块填充拼图' }}</div>
+        </div>
+        <div v-if="errorMessage && !compact" class="error-msg">{{ errorMessage }}</div>
       </div>
     </template>
 
@@ -17,7 +59,32 @@
         @mouseleave="hideTriggerPanel"
       >
         <div v-show="panelVisible || dragging" class="trigger-panel">
-          <PuzzleContent />
+          <div ref="setTrackRef" class="track">
+            <div class="track-ratio" :style="{ aspectRatio: trackAspectRatio }">
+              <img
+                v-if="captchaData?.backgroundImage"
+                class="captcha-image"
+                :src="captchaData.backgroundImage"
+                alt="滑块验证码背景"
+              >
+              <div v-else class="captcha-placeholder">加载中...</div>
+              <div class="slider" :style="sliderStyle">
+                <img
+                  v-if="captchaData?.sliderImage"
+                  class="slider-image"
+                  :src="captchaData.sliderImage"
+                  alt="滑块拼图片"
+                >
+                <span
+                  v-else-if="captchaData?.backgroundImage"
+                  class="slider-fallback"
+                  :style="sliderFallbackStyle"
+                />
+                <span v-else class="slider-empty" />
+              </div>
+            </div>
+          </div>
+          <div v-if="errorMessage" class="error-msg">{{ errorMessage }}</div>
         </div>
         <div
           ref="triggerTrackRef"
@@ -48,7 +115,7 @@
 
 <script setup lang="ts">
 import { Check, Right } from '@element-plus/icons-vue';
-import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { CaptchaType, generateBlockPuzzle, verifyCaptcha, type CaptchaResponse } from '../../api/captcha';
 
 type CaptchaDisplayMode = 'embedded' | 'trigger' | 'popup';
@@ -65,6 +132,7 @@ const emit = defineEmits<{
 }>();
 
 const mode = computed(() => props.mode);
+const compact = computed(() => mode.value === 'popup');
 const trackRef = ref<HTMLElement | null>(null);
 const triggerTrackRef = ref<HTMLElement | null>(null);
 const captchaData = ref<CaptchaResponse | null>(null);
@@ -323,66 +391,6 @@ watch(() => props.mode, () => {
   void nextTick(handlePanelShow);
 });
 
-const PuzzleContent = defineComponent({
-  name: 'BlockPuzzleContent',
-  setup() {
-    return () => [
-      h('div', { ref: setTrackRef, class: 'track' }, [
-        h('div', { class: 'track-ratio', style: { aspectRatio: trackAspectRatio.value } }, [
-          captchaData.value?.backgroundImage
-            ? h('img', {
-              class: 'captcha-image',
-              src: captchaData.value.backgroundImage,
-              alt: '滑块验证码背景',
-            })
-            : h('div', { class: 'captcha-placeholder' }, '加载中...'),
-          h('div', {
-            class: 'slider',
-            style: sliderStyle.value,
-          }, [
-            captchaData.value?.sliderImage
-              ? h('img', {
-                class: 'slider-image',
-                src: captchaData.value.sliderImage,
-                alt: '滑块拼图片',
-              })
-              : captchaData.value?.backgroundImage
-                ? h('span', { class: 'slider-fallback', style: sliderFallbackStyle.value })
-                : h('span', { class: 'slider-empty' }),
-          ]),
-        ]),
-      ]),
-      mode.value !== 'trigger'
-        ? h('div', {
-          class: [
-            'control-track',
-            verified.value ? 'is-success' : '',
-            failed.value ? 'is-failed' : '',
-            dragging.value ? 'is-dragging' : '',
-          ],
-        }, [
-          h('div', { class: 'control-fill', style: controlFillStyle.value }),
-          h('button', {
-            class: 'control-handle',
-            style: controlHandleStyle.value,
-            type: 'button',
-            disabled: verified.value,
-            onMousedown: startDrag,
-            onTouchstart: (event: TouchEvent) => {
-              event.preventDefault();
-              startTouchDrag(event);
-            },
-          }, [
-            h(controlIcon.value),
-          ]),
-          h('div', { class: 'control-text' }, verified.value ? '验证通过' : '向右拖动滑块填充拼图'),
-        ])
-        : null,
-      errorMessage.value ? h('div', { class: 'error-msg' }, errorMessage.value) : null,
-    ];
-  },
-});
-
 defineExpose({ refresh, verify });
 </script>
 
@@ -398,6 +406,24 @@ defineExpose({ refresh, verify });
   .puzzle-panel {
     width: fit-content;
     max-width: 100%;
+  }
+
+  &.is-compact {
+    width: 280px;
+    max-width: 100%;
+
+    .puzzle-panel {
+      width: 100%;
+    }
+
+    :deep(.track),
+    :deep(.control-track) {
+      width: 100%;
+    }
+
+    :deep(.control-text) {
+      display: none;
+    }
   }
 
   :deep(.track) {
@@ -761,7 +787,7 @@ defineExpose({ refresh, verify });
 .is-trigger,
 .is-popup {
   width: 100%;
-  max-width: 420px;
+  max-width: 318px;
 }
 
 </style>

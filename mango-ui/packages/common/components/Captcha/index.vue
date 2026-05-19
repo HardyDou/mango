@@ -3,8 +3,9 @@
     <el-dialog
       v-model="popupVisible"
       class="captcha-selector-dialog"
+      :class="`is-${currentType.toLowerCase().replace('_', '-')}`"
       title="请完成安全验证"
-      width="380px"
+      :width="popupWidth"
       append-to-body
       @closed="handlePopupClosed"
     >
@@ -145,7 +146,7 @@ const componentMap = {
 const currentComponent = computed(() => componentMap[currentType.value]);
 const currentComponentProps = computed(() => {
   if ([CaptchaType.BLOCK_PUZZLE, CaptchaType.CANVAS_SLIDER].includes(currentType.value)) {
-    return { mode: isPopupMode.value ? 'embedded' : mode.value };
+    return { mode: mode.value };
   }
   return {};
 });
@@ -170,6 +171,15 @@ const showPopupFooter = computed(() => [
   CaptchaType.SMS,
   CaptchaType.EMAIL,
 ].includes(currentType.value));
+const popupWidth = computed(() => {
+  if ([CaptchaType.BLOCK_PUZZLE, CaptchaType.CANVAS_SLIDER].includes(currentType.value)) {
+    return '340px';
+  }
+  if (currentType.value === CaptchaType.CLICK_WORD) {
+    return '380px';
+  }
+  return '420px';
+});
 
 watch(() => props.type, (type) => {
   if (type) {
