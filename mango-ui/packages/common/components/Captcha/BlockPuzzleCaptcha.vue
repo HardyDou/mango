@@ -6,7 +6,7 @@
         <el-button link type="primary" @click="refresh">刷新</el-button>
       </div>
       <div class="puzzle-panel">
-        <div ref="setTrackRef" class="track">
+        <div :ref="setTrackRef" class="track">
           <div class="track-ratio" :style="{ aspectRatio: trackAspectRatio }">
             <img
               v-if="captchaData?.backgroundImage"
@@ -59,7 +59,7 @@
         @mouseleave="hideTriggerPanel"
       >
         <div v-show="panelVisible || dragging" class="trigger-panel">
-          <div ref="setTrackRef" class="track">
+          <div :ref="setTrackRef" class="track">
             <div class="track-ratio" :style="{ aspectRatio: trackAspectRatio }">
               <img
                 v-if="captchaData?.backgroundImage"
