@@ -104,23 +104,32 @@ let resizeObserver: ResizeObserver | null = null;
 const baseWidth = 280;
 const baseHeight = 160;
 const sliderSize = 50;
+const triggerTrackWidth = 318;
+const triggerHandleSize = 38;
 const displayScale = computed(() => trackWidth.value / baseWidth);
 const displaySliderSize = computed(() => sliderSize * displayScale.value);
 const displayTargetLeft = computed(() => targetLeft.value * displayScale.value);
 const displayTargetTop = computed(() => targetTop.value * displayScale.value);
+const triggerMaxHandleLeft = computed(() => Math.max(trackWidth.value - triggerHandleSize, 0));
+const triggerMaxPieceLeft = computed(() => Math.max(trackWidth.value - displaySliderSize.value, 0));
+const displaySliderLeft = computed(() => {
+  if (mode.value !== 'trigger') return sliderLeft.value;
+  if (triggerMaxHandleLeft.value <= 0) return 0;
+  return (sliderLeft.value / triggerMaxHandleLeft.value) * triggerMaxPieceLeft.value;
+});
 
 const targetStyle = computed(() => ({
-  left: `${displayTargetLeft.value}px`,
-  top: `${displayTargetTop.value}px`,
-  width: `${displaySliderSize.value}px`,
-  height: `${displaySliderSize.value}px`,
+  left: `${Math.round(displayTargetLeft.value)}px`,
+  top: `${Math.round(displayTargetTop.value)}px`,
+  width: `${Math.round(displaySliderSize.value)}px`,
+  height: `${Math.round(displaySliderSize.value)}px`,
 }));
 
 const sliderStyle = computed(() => ({
-  left: `${sliderLeft.value}px`,
-  top: `${displayTargetTop.value}px`,
-  width: `${displaySliderSize.value}px`,
-  height: `${displaySliderSize.value}px`,
+  left: `${Math.round(displaySliderLeft.value)}px`,
+  top: `${Math.round(displayTargetTop.value)}px`,
+  width: `${Math.round(displaySliderSize.value)}px`,
+  height: `${Math.round(displaySliderSize.value)}px`,
 }));
 
 const sliderFallbackStyle = computed(() => ({
@@ -131,11 +140,11 @@ const sliderFallbackStyle = computed(() => ({
 
 const triggerHandleStyle = computed(() => ({
   left: `${sliderLeft.value}px`,
-  width: `${displaySliderSize.value}px`,
+  width: `${triggerHandleSize}px`,
 }));
 
 const triggerFillStyle = computed(() => ({
-  width: `${sliderLeft.value + displaySliderSize.value}px`,
+  width: `${sliderLeft.value + triggerHandleSize}px`,
 }));
 
 function setTrackRef(element: Element | null) {
@@ -182,7 +191,7 @@ function hideTriggerPanel() {
 
 function syncTriggerTrackWidth() {
   if (mode.value === 'trigger' && triggerTrackRef.value) {
-    trackWidth.value = triggerTrackRef.value.offsetWidth || baseWidth;
+    trackWidth.value = triggerTrackRef.value.offsetWidth || triggerTrackWidth;
   }
 }
 
@@ -220,7 +229,9 @@ function handleTouchDrag(event: TouchEvent) {
 }
 
 function updateSlider(clientX: number) {
-  const maxLeft = Math.max(trackWidth.value - displaySliderSize.value, 0);
+  const maxLeft = mode.value === 'trigger'
+    ? triggerMaxHandleLeft.value
+    : Math.max(trackWidth.value - displaySliderSize.value, 0);
   sliderLeft.value = Math.min(Math.max(clientX - dragStartX, 0), maxLeft);
 }
 
@@ -231,7 +242,7 @@ async function verifyPosition() {
       key: captchaData.value.key,
       type: CaptchaType.BLOCK_PUZZLE,
       pointJson: JSON.stringify({
-        x: Math.round(sliderLeft.value / displayScale.value),
+        x: Math.round(displaySliderLeft.value / displayScale.value),
         y: Math.round(targetTop.value),
       }),
     });
@@ -377,6 +388,7 @@ defineExpose({ refresh });
   :deep(.target) {
     position: absolute;
     z-index: 1;
+    box-sizing: border-box;
     border: 2px dashed rgb(255 255 255 / 95%);
     border-radius: 4px;
     background: rgb(0 0 0 / 22%);
@@ -389,6 +401,7 @@ defineExpose({ refresh });
   :deep(.slider) {
     position: absolute;
     z-index: 2;
+    box-sizing: border-box;
     border-radius: 4px;
     background: transparent;
     filter: drop-shadow(0 6px 10px rgb(0 0 0 / 24%));
@@ -405,7 +418,7 @@ defineExpose({ refresh });
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: fill;
   }
 
   :deep(.slider-fallback) {
@@ -481,8 +494,8 @@ defineExpose({ refresh });
 
   .trigger-shell {
     position: relative;
-    width: 100%;
-    max-width: 640px;
+    width: 318px;
+    max-width: 100%;
   }
 
   .trigger-panel {
@@ -519,7 +532,9 @@ defineExpose({ refresh });
 
   .trigger-track {
     position: relative;
-    height: 48px;
+    width: 318px;
+    max-width: 100%;
+    height: 38px;
     border: 1px solid var(--el-border-color);
     border-radius: 4px;
     background: var(--el-fill-color-lighter);
@@ -577,7 +592,7 @@ defineExpose({ refresh });
     bottom: -1px;
     z-index: 2;
     display: inline-flex;
-    min-width: 50px;
+    min-width: 38px;
     align-items: center;
     justify-content: center;
     border: 1px solid var(--el-border-color);
@@ -586,7 +601,7 @@ defineExpose({ refresh });
     box-shadow: 0 2px 8px rgb(31 45 61 / 18%);
     color: var(--el-text-color-regular);
     cursor: grab;
-    font-size: 24px;
+    font-size: 22px;
     transition:
       background-color 0.2s ease,
       border-color 0.2s ease,
@@ -609,9 +624,9 @@ defineExpose({ refresh });
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-left: 58px;
+    padding-left: 44px;
     color: var(--el-text-color-regular);
-    font-size: 16px;
+    font-size: 15px;
     pointer-events: none;
   }
 }
@@ -619,6 +634,6 @@ defineExpose({ refresh });
 .is-trigger,
 .is-popup {
   width: 100%;
-  max-width: 640px;
+  max-width: 420px;
 }
 </style>
