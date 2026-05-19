@@ -48,6 +48,27 @@
           :size="field.props?.size || field.props?.maxSize"
           :readonly="fieldReadonly(field)"
         />
+        <div v-else-if="fieldReadonly(field) && field.type === 'signature'" class="readonly-signature">
+          <el-image
+            v-if="model[field.key]"
+            :src="model[field.key]"
+            fit="contain"
+            :preview-src-list="[model[field.key]]"
+            preview-teleported
+          />
+          <span v-else class="readonly-value">-</span>
+        </div>
+        <RuntimeDictReadonlyValue
+          v-else-if="fieldReadonly(field) && field.type === 'systemDict'"
+          :field="field"
+          :value="model[field.key]"
+        />
+        <RuntimeDictSelect
+          v-else-if="field.type === 'systemDict'"
+          v-model="model[field.key]"
+          :field="field"
+          :disabled="fieldReadonly(field)"
+        />
         <span v-else-if="fieldReadonly(field)" class="readonly-value">{{ displayValue(field) }}</span>
         <template v-else>
           <el-input
@@ -162,7 +183,15 @@
             :filterable="field.props?.filterable !== false"
           />
           <el-input v-else-if="field.type === 'editor'" v-model="model[field.key]" type="textarea" :rows="6" :placeholder="field.placeholder" />
-          <el-input v-else-if="field.type === 'signature' || field.type === 'serialNo'" v-model="model[field.key]" :placeholder="field.placeholder" readonly />
+          <Sign
+            v-else-if="field.type === 'signature'"
+            v-model="model[field.key]"
+            class="runtime-signature"
+            :width="signatureWidth(field)"
+            :height="signatureHeight(field)"
+            :placeholder="field.placeholder || '请在此处签名'"
+          />
+          <el-input v-else-if="field.type === 'serialNo'" v-model="model[field.key]" :placeholder="field.placeholder" readonly />
           <el-alert v-else :title="`暂不支持组件：${field.type}`" type="warning" :closable="false" />
         </template>
       </el-form-item>
@@ -171,8 +200,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, defineComponent, h } from 'vue';
 import { MUpload } from '@mango/file';
+import { DictSelect, Sign, useDict } from '@mango/common';
 import type { RuntimeFormField } from './runtimeForm';
 
 type RuntimeFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
@@ -190,6 +220,71 @@ const props = withDefaults(defineProps<{
 });
 
 const visibleFields = computed(() => props.fields.filter(field => fieldPermission(field) !== 'HIDDEN'));
+
+const RuntimeDictSelect = defineComponent({
+  name: 'RuntimeDictSelect',
+  props: {
+    modelValue: {
+      type: [String, Number, Array],
+      default: undefined,
+    },
+    field: {
+      type: Object as () => RuntimeFormField,
+      required: true,
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  emits: ['update:modelValue'],
+  setup(componentProps, { emit }) {
+    return () => {
+      const dictType = fieldDictType(componentProps.field);
+      if (!dictType) {
+        return h('div', { class: 'runtime-dict-missing' }, '请先在表单设计器中绑定字典类型');
+      }
+      return h(DictSelect, {
+        modelValue: componentProps.modelValue,
+        dictType,
+        placeholder: componentProps.field.placeholder || '请选择字典值',
+        clearable: componentProps.field.props?.clearable !== false,
+        filterable: componentProps.field.props?.filterable !== false,
+        multiple: Boolean(componentProps.field.props?.multiple),
+        disabled: componentProps.disabled,
+        'onUpdate:modelValue': (value: any) => emit('update:modelValue', value),
+      });
+    };
+  },
+});
+
+const RuntimeDictReadonlyValue = defineComponent({
+  name: 'RuntimeDictReadonlyValue',
+  props: {
+    value: {
+      type: [String, Number, Array],
+      default: undefined,
+    },
+    field: {
+      type: Object as () => RuntimeFormField,
+      required: true,
+    },
+  },
+  setup(componentProps) {
+    const dictType = computed(() => fieldDictType(componentProps.field));
+    const { getLabel } = useDict(dictType);
+    return () => {
+      const value = componentProps.value;
+      if (value === undefined || value === null || value === '') {
+        return h('span', { class: 'readonly-value' }, '-');
+      }
+      const text = Array.isArray(value)
+        ? value.map(item => getLabel(item)).filter(Boolean).join('，')
+        : getLabel(value);
+      return h('span', { class: 'readonly-value' }, text || '-');
+    };
+  },
+});
 
 function fieldPermission(field: RuntimeFormField): RuntimeFormPermission {
   return (props.permissions?.[field.key] as RuntimeFormPermission) || (props.readonly || field.readonly ? 'READONLY' : 'EDITABLE');
@@ -236,6 +331,18 @@ function displaySingleValue(field: RuntimeFormField, value: any) {
   return String(value);
 }
 
+function fieldDictType(field: RuntimeFormField) {
+  return String(field.props?.dictType || field.props?.dictCode || field.props?.typeCode || '').trim();
+}
+
+function signatureWidth(field: RuntimeFormField) {
+  return Number(field.props?.width || 520);
+}
+
+function signatureHeight(field: RuntimeFormField) {
+  return Number(field.props?.height || 180);
+}
+
 function uploadFmt(field: RuntimeFormField) {
   const accept = String(field.props?.fmt || field.props?.accept || '').trim();
   if (!accept || accept === '*') {
@@ -275,7 +382,7 @@ function acceptItemToFmt(value: string) {
 }
 
 function isSelectField(field: RuntimeFormField) {
-  return ['select', 'systemUser', 'systemPost', 'systemRole', 'systemDict', 'businessType'].includes(field.type);
+  return ['select', 'systemUser', 'systemPost', 'systemRole', 'businessType'].includes(field.type);
 }
 
 function isDisplayField(field: RuntimeFormField) {
@@ -344,8 +451,34 @@ function findTreeNode(nodes: any[], value: any): any | null {
 .runtime-form-renderer :deep(.el-date-editor),
 .runtime-form-renderer :deep(.el-input-number),
 .runtime-form-renderer :deep(.el-slider),
+.runtime-form-renderer :deep(.dict-select),
 .runtime-form-renderer :deep(.mango-file-upload) {
   width: 100%;
+}
+
+.runtime-signature :deep(canvas) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.readonly-signature {
+  width: 100%;
+  max-width: 420px;
+  padding: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.readonly-signature :deep(.el-image) {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+}
+
+.runtime-dict-missing {
+  color: var(--el-color-danger);
+  font-size: 13px;
 }
 
 .readonly-value {

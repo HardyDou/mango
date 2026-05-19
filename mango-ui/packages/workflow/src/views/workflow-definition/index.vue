@@ -192,7 +192,22 @@
                           </template>
                           <template v-else-if="isSystemCustomFieldType(field.type)">
                             <label>系统数据</label>
+                            <span v-if="field.type === 'signature'" class="custom-field-hint">运行时渲染为手写签名区域，保存 base64 PNG。</span>
                             <el-select
+                              v-else-if="field.type === 'systemDict'"
+                              v-model="field.dictType"
+                              clearable
+                              filterable
+                              :loading="customFieldSystemLoading(field.type)"
+                              placeholder="请选择绑定字典"
+                              @focus="ensureCustomFieldSystemOptions(field.type)"
+                              @visible-change="visible => visible && ensureCustomFieldSystemOptions(field.type)"
+                              @change="syncCustomWorkflowForm"
+                            >
+                              <el-option v-for="item in workflowDictOptions" :key="item.value" :label="item.label" :value="item.value" />
+                            </el-select>
+                            <el-select
+                              v-else
                               :model-value="field.defaultValue"
                               clearable
                               filterable
@@ -691,6 +706,7 @@ interface CustomFormField {
   optionsText?: string;
   placeholder?: string;
   defaultValue?: string;
+  dictType?: string;
 }
 
 interface CustomFormConfig {
@@ -771,7 +787,7 @@ type WorkflowBusinessComponent = FormDesignerMenuItem & {
   validate?: string[];
   languageKey: string[];
   rule: () => FcRule;
-  props: () => any[];
+  props: (rule?: FcRule) => any[];
 };
 
 const formDesignerMenu: FormDesignerMenu[] = [
@@ -853,6 +869,7 @@ function createWorkflowBusinessComponent(
   icon: string,
   ruleFactory: () => FcRule,
   validate: string[] = ['string'],
+  propsFactory: (rule?: FcRule) => any[] = () => [],
 ): WorkflowBusinessComponent {
   return {
     name,
@@ -864,12 +881,49 @@ function createWorkflowBusinessComponent(
     validate,
     languageKey: [],
     rule: ruleFactory,
-    props: () => [],
+    props: propsFactory,
   };
 }
 
 function toFormCreateOption(item: ApprovalTargetOption) {
   return { label: item.label, value: item.value };
+}
+
+function workflowDictComponentProps(): any[] {
+  return [
+    {
+      type: 'select',
+      title: '绑定字典',
+      field: 'props>dictType',
+      value: workflowDictOptions.value[0]?.value || '',
+      props: {
+        placeholder: '请选择字典类型',
+        clearable: false,
+        filterable: true,
+      },
+      options: workflowDictOptions.value.map(toFormCreateOption),
+    },
+    {
+      type: 'switch',
+      title: '可清空',
+      field: 'props>clearable',
+    },
+    {
+      type: 'switch',
+      title: '可搜索',
+      field: 'props>filterable',
+    },
+    {
+      type: 'switch',
+      title: '多选',
+      field: 'props>multiple',
+    },
+    {
+      type: 'input',
+      title: '占位提示',
+      field: 'props>placeholder',
+    },
+  ];
 }
 
 function toWorkflowBusinessMenuItems(): FormDesignerMenuItem[] {
@@ -996,7 +1050,9 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
     title: '签名',
     props: {
       placeholder: '请完成签名',
-      readonly: true,
+      workflowDataType: 'signature',
+      width: 520,
+      height: 180,
     },
   })),
   createWorkflowBusinessComponent('workflowDict', '字典', 'icon-select', () => ({
@@ -1008,9 +1064,10 @@ const workflowBusinessFormComponents: WorkflowBusinessComponent[] = [
       clearable: true,
       filterable: true,
       workflowDataType: 'systemDict',
+      dictType: workflowDictOptions.value[0]?.value || '',
     },
-    options: workflowDictOptions.value.map(toFormCreateOption),
-  })),
+    options: [],
+  }), ['string', 'number', 'array'], workflowDictComponentProps),
   createWorkflowBusinessComponent('workflowSerialNo', '流水号', 'icon-number', () => ({
     type: 'input',
     field: createWorkflowBusinessField('serialNo'),
@@ -1173,6 +1230,7 @@ const customFieldSystemTypeOptions = [
   { label: '岗位', value: 'systemPost' },
   { label: '角色', value: 'systemRole' },
   { label: '字典', value: 'systemDict' },
+  { label: '签名', value: 'signature' },
 ];
 
 const nodeDrawerTitle = computed(() => {
@@ -1746,6 +1804,16 @@ function normalizeFormCreateRules(rules: any[]): FcRule[] {
 
 function normalizeFormCreateRule(rule: any, index: number): FcRule {
   const next = { ...rule };
+  const props = { ...(next.props || {}) };
+  if (props.workflowDataType === 'systemDict') {
+    next.options = [];
+    props.dictType = props.dictType || props.dictCode || props.typeCode || '';
+  }
+  if (props.workflowDataType === 'signature') {
+    next.type = 'input';
+    next.options = undefined;
+  }
+  next.props = props;
   if (next.field) {
     next.field = normalizeFieldKey(next.field);
   } else if (isFormInputRule(next)) {
@@ -1788,6 +1856,7 @@ function normalizeCustomFormFieldsValue(fields: any[]): CustomFormField[] {
         optionsText: type === 'select' ? field?.optionsText || optionsToText(field?.options) : '',
         placeholder: String(field?.placeholder || props?.placeholder || ''),
         defaultValue: field?.defaultValue === undefined || field?.defaultValue === null ? '' : String(field.defaultValue),
+        dictType: type === 'systemDict' ? String(field?.dictType || props?.dictType || props?.dictCode || props?.typeCode || '') : '',
       };
     });
 }
@@ -1796,7 +1865,7 @@ function normalizeCustomFieldType(type?: string) {
   if (type === 'number') return 'inputNumber';
   if (type === 'datetime') return 'datePicker';
   const normalized = String(type || '');
-  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker', 'systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict'].includes(normalized)) {
+  if (['input', 'textarea', 'inputNumber', 'select', 'datePicker', 'systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'signature'].includes(normalized)) {
     return normalized;
   }
   return 'input';
@@ -1813,6 +1882,7 @@ function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
         props: {
           placeholder: field.placeholder || (isSelectLikeCustomFieldType(field.type) ? `请选择${field.label}` : `请输入${field.label}`),
           workflowDataType: isSystemCustomFieldType(field.type) ? field.type : undefined,
+          dictType: field.type === 'systemDict' ? field.dictType : undefined,
           clearable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
           filterable: isSelectLikeCustomFieldType(field.type) ? true : undefined,
         },
@@ -1832,6 +1902,8 @@ function customFieldsToFormCreateRules(fields: CustomFormField[]): FcRule[] {
             nodeKey: 'value',
             checkStrictly: true,
           };
+        } else if (field.type === 'systemDict') {
+          rule.options = [];
         } else {
           rule.options = options;
         }
@@ -1856,6 +1928,7 @@ function formCreateRulesToCustomFields(rules: FcRule[]): CustomFormField[] {
       optionsText: optionsToText(rule.options),
       placeholder: String(props.placeholder || ''),
       defaultValue: rule.value === undefined || rule.value === null ? '' : String(rule.value),
+      dictType: String(props.dictType || props.dictCode || props.typeCode || ''),
     };
   });
 }
@@ -1864,6 +1937,9 @@ function customFieldToFormCreateType(type: string) {
   if (type === 'systemOrg' || type === 'systemDept') {
     return 'elTreeSelect';
   }
+  if (type === 'signature') {
+    return 'input';
+  }
   if (isSystemCustomFieldType(type)) {
     return 'select';
   }
@@ -1871,11 +1947,11 @@ function customFieldToFormCreateType(type: string) {
 }
 
 function isSelectLikeCustomFieldType(type: string) {
-  return type === 'select' || isSystemCustomFieldType(type);
+  return type === 'select' || (isSystemCustomFieldType(type) && type !== 'signature');
 }
 
 function isSystemCustomFieldType(type: string) {
-  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict'].includes(String(type));
+  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'signature'].includes(String(type));
 }
 
 function customFieldSystemLoading(type: string) {
@@ -1922,6 +1998,7 @@ function updateCustomFieldDefault(field: CustomFormField, value: string) {
 
 function handleCustomFieldTypeChange(field: CustomFormField) {
   field.defaultValue = '';
+  field.dictType = '';
   if (field.type !== 'select') {
     field.optionsText = '';
   }
@@ -2177,11 +2254,18 @@ function reservedNodePropertyKeys(node: WorkflowDesignerNode) {
 }
 
 function advancedNodeProperties(node: WorkflowDesignerNode) {
+  if (isUserTaskNode(node)) {
+    return approvalConfig(node).extension || {};
+  }
   const reserved = new Set(reservedNodePropertyKeys(node));
   return Object.fromEntries(Object.entries(node.properties || {}).filter(([key]) => !reserved.has(key)));
 }
 
 function updateAdvancedNodeProperties(node: WorkflowDesignerNode, value: Record<string, any>) {
+  if (isUserTaskNode(node)) {
+    updateApprovalConfig(node, { extension: value });
+    return;
+  }
   node.properties ||= {};
   const reserved = new Set(reservedNodePropertyKeys(node));
   for (const key of Object.keys(node.properties)) {
@@ -2204,6 +2288,9 @@ function approvalConfig(node: WorkflowDesignerNode): WorkflowApprovalNodeConfig 
     },
     formPermissions: {
       ...(current.formPermissions || {}),
+    },
+    extension: {
+      ...(current.extension || {}),
     },
   };
 }
@@ -3505,6 +3592,12 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   color: var(--el-text-color-secondary);
   font-size: 13px;
   font-weight: 700;
+}
+
+.custom-field-hint {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .designer-workbench {

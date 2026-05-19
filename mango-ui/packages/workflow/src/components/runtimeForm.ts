@@ -189,6 +189,7 @@ function ruleToRuntimeField(rule: any, index: number, path = `${index}`): Runtim
       ...props,
       workflowDataType,
       originalType: rule.type,
+      dictType: props.dictType || props.dictCode || props.typeCode,
       multiple: Boolean(props.multiple),
       clearable: props.clearable !== false,
       filterable: props.filterable !== false,
@@ -318,7 +319,7 @@ function isSelectLikeType(type: string) {
 }
 
 function isSystemDataType(type: string) {
-  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'businessType'].includes(type);
+  return ['systemUser', 'systemOrg', 'systemDept', 'systemPost', 'systemRole', 'systemDict', 'businessType', 'signature'].includes(type);
 }
 
 function isDisplayType(type?: string) {

@@ -38,6 +38,7 @@ export interface WorkflowApprovalNodeConfig {
   rejectStrategy: WorkflowRejectStrategy;
   formPermissions?: Record<string, WorkflowFormPermission>;
   eventNotify?: WorkflowEventNotifyConfig;
+  extension?: Record<string, any>;
   initiatorSelectMultiple?: boolean;
   orgLeaderUseInitiatorOrg?: boolean;
 }
@@ -278,6 +279,23 @@ export interface WorkflowTaskRecord {
   createdTime?: string;
 }
 
+export interface WorkflowRenderConfig {
+  renderMode?: WorkflowApplyRenderMode;
+  businessType?: string;
+  businessKey?: string;
+  applyId?: WorkflowId;
+  processInstanceId?: string;
+  applyPageKey?: string;
+  approvePageKey?: string;
+  formKey?: string;
+  formVersion?: number;
+  snapshotRef?: string;
+  taskDefinitionKey?: string;
+  nodeExtension?: Record<string, any>;
+  formPermissions?: Record<string, WorkflowFormPermission>;
+  businessPermissions?: Record<string, any>;
+}
+
 export interface WorkflowTaskDetail {
   task: WorkflowTask;
   process: WorkflowProcessInstance;
@@ -285,6 +303,7 @@ export interface WorkflowTaskDetail {
   formJson?: string;
   variables: Record<string, any>;
   formPermissions?: Record<string, WorkflowFormPermission>;
+  renderConfig?: WorkflowRenderConfig;
   records: WorkflowTaskRecord[];
 }
 
@@ -293,6 +312,7 @@ export interface WorkflowProcessDetail {
   formCode?: string;
   formJson?: string;
   variables: Record<string, any>;
+  renderConfig?: WorkflowRenderConfig;
   records: WorkflowTaskRecord[];
 }
 
@@ -464,6 +484,7 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
       method: 'POST',
       timeoutMillis: 5000,
     },
+    extension: {},
     initiatorSelectMultiple: false,
     orgLeaderUseInitiatorOrg: true,
   };
@@ -701,6 +722,7 @@ function normalizeTaskDetail(item: any): WorkflowTaskDetail {
     formJson: item?.formJson,
     variables: normalizeVariables(item?.variables),
     formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
+    renderConfig: normalizeRenderConfig(item?.renderConfig),
     records: normalizeRecords(item?.records),
   };
 }
@@ -711,7 +733,21 @@ function normalizeProcessDetail(item: any): WorkflowProcessDetail {
     formCode: item?.formCode,
     formJson: item?.formJson,
     variables: normalizeVariables(item?.variables),
+    renderConfig: normalizeRenderConfig(item?.renderConfig),
     records: normalizeRecords(item?.records),
+  };
+}
+
+function normalizeRenderConfig(item: any): WorkflowRenderConfig | undefined {
+  if (!item) {
+    return undefined;
+  }
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
+    nodeExtension: normalizeVariables(item?.nodeExtension),
+    businessPermissions: normalizeVariables(item?.businessPermissions),
   };
 }
 

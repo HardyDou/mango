@@ -15,6 +15,15 @@ public class WorkflowBusinessProcessVO {
     @Schema(description = "业务主键")
     private String businessKey;
 
+    @Schema(description = "业务类型")
+    private String businessType;
+
+    @Schema(description = "申请ID")
+    private Long applyId;
+
+    @Schema(description = "申请编号")
+    private String applyCode;
+
     @Schema(description = "流程实例ID")
     private String processInstanceId;
 
@@ -32,6 +41,12 @@ public class WorkflowBusinessProcessVO {
 
     @Schema(description = "流程状态")
     private String status;
+
+    @Schema(description = "申请状态")
+    private String applyStatus;
+
+    @Schema(description = "申请状态名称")
+    private String applyStatusName;
 
     @Schema(description = "发起时间")
     private LocalDateTime startTime;

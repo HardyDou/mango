@@ -17,4 +17,13 @@ public interface WorkflowBusinessProcessApi {
      * @return 最新流程状态列表
      */
     List<WorkflowBusinessProcessVO> latestByBusinessKeys(Collection<String> businessKeys);
+
+    /**
+     * 按业务类型和业务主键批量查询每个业务最新一次申请的流程状态。
+     *
+     * @param businessType 业务类型
+     * @param businessKeys 业务主键集合
+     * @return 最新流程状态列表
+     */
+    List<WorkflowBusinessProcessVO> latestByBusinessKeys(String businessType, Collection<String> businessKeys);
 }

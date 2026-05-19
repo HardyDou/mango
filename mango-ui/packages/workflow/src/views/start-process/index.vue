@@ -243,6 +243,7 @@ async function submitStart() {
       definitionId: selectedDefinition.value.id,
       businessType: String(formVariables.value.businessType || selectedDefinition.value.definitionKey || ''),
       businessKey: String(formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode || ''),
+      renderMode: 'DYNAMIC_FORM',
       variables: {
         title: formVariables.value.title || selectedDefinition.value.definitionName,
         summary: formVariables.value.summary || selectedDefinition.value.remark || selectedDefinition.value.definitionKey,

@@ -37,6 +37,44 @@
 
 驳回后再次申请时，不激活旧实例。旧流程实例保持 `REJECTED` 或已结束状态，新提交创建新的申请记录和新的流程实例。业务详情页应能看到同一 `businessKey` 下的多次申请历史。
 
+Workflow 统一维护业务申请中心表，用来固化申请记录和流程实例的关系：
+
+- `workflow_business_apply`：每次申请一行，保存 `businessType + businessKey + applyId + snapshotRef + processInstanceId`、申请状态、渲染模式、变量快照。
+- `workflow_business_apply_current_task`：当前正在处理的节点，用来支撑业务列表显示当前节点、按节点筛选。
+- `workflow_business_apply_status_log`：申请状态流水，用来审计申请从创建、发起、审批中、通过、驳回、终止的变化。
+
+业务模块仍然负责自己的业务主表和业务快照内容。Workflow 的变量快照只用于流程判断、通用回显和审计辅助，不替代业务不可变快照表。
+
+业务列表展示工作流列时，后端模块优先使用：
+
+```java
+workflowBusinessProcessApi.latestByBusinessKeys("EXPENSE_REIMBURSEMENT", businessKeys);
+```
+
+前端或跨模块接口可以使用：
+
+```http
+POST /workflow/business-applies/progress/latest-batch
+GET  /workflow/business-applies/progress/latest?businessType=...&businessKey=...
+```
+
+按状态或当前节点筛选业务申请：
+
+```http
+POST /workflow/business-applies/page
+```
+
+```json
+{
+  "businessType": "EXPENSE_REIMBURSEMENT",
+  "statuses": ["IN_APPROVAL"],
+  "currentTaskDefinitionKeys": ["manager_approve"],
+  "latestOnly": true,
+  "page": 1,
+  "size": 20
+}
+```
+
 ## 发起流程
 
 当前后端接口：
@@ -101,10 +139,24 @@ GET  /workflow/processes/history?businessKey=...
 - 业务审批页：适合报销、采购、合同、用印等复杂业务。前端按 `businessType` 注册业务组件，再用 `businessKey + applyId` 展示业务申请快照和必要审批字段。
 - 业务详情页可以按 `businessKey` 拉取历史流程实例列表，展示同一业务单据的多次申请记录。
 
+后端任务详情和流程详情都会返回统一渲染协议 `renderConfig`：
+
+| 字段 | 说明 |
+| --- | --- |
+| `renderMode` | `DYNAMIC_FORM` 渲染流程设计器表单；`CUSTOM_PAGE` 渲染业务注册页面。 |
+| `businessType` / `businessKey` | 业务类型和业务主键，用于定位业务组件和业务单据。 |
+| `applyId` / `snapshotRef` | 本次申请记录和业务快照引用，用于历史查看。 |
+| `applyPageKey` / `approvePageKey` | 自定义申请页、审批页注册 Key。 |
+| `taskDefinitionKey` | 当前节点定义 Key，用于读取节点权限和业务区块权限。 |
+| `nodeExtension` | 流程节点扩展属性，适合放节点页面视图、审批策略提示、区块开关等配置。 |
+| `formPermissions` | 动态表单字段权限，值为 `HIDDEN`、`READONLY`、`EDITABLE`。 |
+| `businessPermissions` | 当前节点业务页面权限，由业务组件解释，例如 `expenseReason: READONLY`。 |
+
 节点可见性建议使用两层配置：
 
 - 通用动态字段权限：流程定义节点上的 `formPermissions`，后端返回到任务详情。
-- 业务页面区块权限：业务变量中的 `businessPermissions[taskDefinitionKey]`，由业务前端或业务后端解释。
+- 业务页面区块权限：业务变量中的 `businessPermissions[taskDefinitionKey]`，后端按当前节点解析后放入 `renderConfig.businessPermissions`。
+- 节点扩展属性：流程节点上的 `approvalConfig.extension`，后端放入 `renderConfig.nodeExtension`。它不参与流程流转判断，主要服务页面渲染和业务节点差异化展示。
 
 审批通过提交变量示例：
 
@@ -139,6 +191,13 @@ GET  /workflow/processes/history?businessKey=...
 - 审批动作需要调用业务领域服务，而不是只更新几个流程变量。
 
 推荐做法是：工作流主流程、任务列表、审批记录、节点权限保持通用；业务申请页和业务审批页通过 `businessType` 扩展。
+
+动态表单组件语义：
+
+- 字典组件不是运行时列出所有字典类型，而是在设计期绑定具体字典类型，例如 `dictType=sys_normal_disable`；运行时只展示该字典下的字典值。
+- 签字组件使用公共 `Sign` 组件，运行时支持手写签字，提交值为 `data:image/png;base64,...`。
+- 上传组件提交文件 ID，不提交临时访问地址。业务数据保存文件 ID，显示和下载时再通过文件服务换取访问地址。
+- 字段权限在申请、审批、详情都走同一套渲染逻辑：隐藏不渲染，只读显示值，可编辑才允许提交。
 
 ## 审批结束如何通知业务
 
@@ -220,12 +279,13 @@ mango-ui/packages/workflow/src/components/business/ExpenseApprovalDetail.vue
 - 节点参与人、发起人自选审批人、空审批人策略。
 - 任务审批记录和流程变量快照。
 - `WorkflowTaskVO.taskDefinitionKey` 后端返回，前端可精确匹配当前节点业务区块权限。
+- 业务申请中心：申请记录、流程实例关联、最新状态、当前节点、历史申请、按状态/当前节点查询。
+- 申请/审批渲染协议：`DYNAMIC_FORM` / `CUSTOM_PAGE`、节点扩展属性、动态字段权限、业务区块权限。
 - Workflow 标准事件发布。
 - `mango-infra-kv` Outbox 可靠投递能力，可用 memory / redis / jdbc 承载，不引入 MQ。
 
 待补齐：
 
 - 转办、加签、委托、撤回、暂存等运行时动作。
-- 按 `businessKey` 查询历史流程实例和申请记录的业务侧标准接口。
 - 业务申请快照/审批快照的领域建模示例和后端落库示例。
 - 动态表单组件与公共数据源的后端元数据接口标准化。

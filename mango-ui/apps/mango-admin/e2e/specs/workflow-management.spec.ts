@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -122,6 +123,10 @@ async function cleanupWorkflowUploadFiles(request: APIRequestContext, token: str
   }
 }
 
+function expectApiSuccess(body: any, context: string) {
+  expect(body.success || body.code === 200, `${context}: ${JSON.stringify(body, null, 2)}`).toBeTruthy();
+}
+
 function expectWorkflowUploadValueOnlyContainsFileIds(value: unknown, expectedIds: string[]) {
   expect(value).toEqual(expectedIds);
   const serialized = JSON.stringify(value);
@@ -183,6 +188,83 @@ function approvalDesignerJson(unique: number) {
           emptyAssigneeUserIds: [],
           rejectStrategy: 'END_PROCESS',
           formPermissions: {},
+          eventNotify: {
+            enabled: false,
+            type: 'HTTP',
+            method: 'POST',
+            timeoutMillis: 5000,
+          },
+          initiatorSelectMultiple: false,
+        },
+      },
+    },
+    conditionNodes: [],
+    properties: {},
+  });
+}
+
+function expenseApprovalDesignerJson(unique: number) {
+  return JSON.stringify({
+    id: 'startEvent',
+    nodeName: '发起人',
+    nodeType: 'ROOT',
+    childNode: {
+      id: `manager_approve_${unique}`,
+      nodeName: '部门经理审批',
+      nodeType: 'APPROVAL',
+      bpmnType: 'userTask',
+      executionType: 'USER_TASK',
+      childNode: {
+        id: `finance_review_${unique}`,
+        nodeName: '财务复核',
+        nodeType: 'APPROVAL',
+        bpmnType: 'userTask',
+        executionType: 'USER_TASK',
+        childNode: null,
+        conditionNodes: [],
+        properties: {
+          approvalConfig: {
+            assigneeType: 'SPECIFIED_USER',
+            assigneeIds: ['admin'],
+            roleIds: [],
+            postIds: [],
+            orgIds: [],
+            approvalMode: 'COUNTERSIGN',
+            emptyAssigneeStrategy: 'TO_ADMIN',
+            emptyAssigneeUserIds: [],
+            rejectStrategy: 'END_PROCESS',
+            formPermissions: {},
+            extension: {
+              approvePageKey: 'workflow.expense.approve.finance',
+              sectionPreset: 'FINANCE_REVIEW',
+            },
+            eventNotify: {
+              enabled: false,
+              type: 'HTTP',
+              method: 'POST',
+              timeoutMillis: 5000,
+            },
+            initiatorSelectMultiple: false,
+          },
+        },
+      },
+      conditionNodes: [],
+      properties: {
+        approvalConfig: {
+          assigneeType: 'SPECIFIED_USER',
+          assigneeIds: ['admin'],
+          roleIds: [],
+          postIds: [],
+          orgIds: [],
+          approvalMode: 'COUNTERSIGN',
+          emptyAssigneeStrategy: 'TO_ADMIN',
+          emptyAssigneeUserIds: [],
+          rejectStrategy: 'END_PROCESS',
+          formPermissions: {},
+          extension: {
+            approvePageKey: 'workflow.expense.approve.manager',
+            sectionPreset: 'MANAGER_APPROVE',
+          },
           eventNotify: {
             enabled: false,
             type: 'HTTP',
@@ -397,6 +479,35 @@ function runtimeComponentFormJson() {
             checkStrictly: true,
           },
         },
+        {
+          type: 'select',
+          field: 'expenseCategoryDict',
+          title: '费用字典',
+          props: {
+            placeholder: '请选择费用字典',
+            workflowDataType: 'systemDict',
+            dictType: 'sys_normal_disable',
+            clearable: true,
+            filterable: true,
+          },
+          validate: [
+            { required: true, message: '费用字典不能为空', trigger: 'change' },
+          ],
+        },
+        {
+          type: 'input',
+          field: 'applicantSignature',
+          title: '申请人签字',
+          props: {
+            placeholder: '请在此处签名',
+            workflowDataType: 'signature',
+            width: 520,
+            height: 180,
+          },
+          validate: [
+            { required: true, message: '申请人签字不能为空', trigger: 'change' },
+          ],
+        },
       ],
     },
     {
@@ -408,6 +519,223 @@ function runtimeComponentFormJson() {
       },
     },
   ]);
+}
+
+async function prepareExpenseWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
+  const headers = { Authorization: `Bearer ${token}` };
+  const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+    headers,
+    data: {
+      groupName: `E2E费用报销分组${unique}`,
+      groupCode: keyword,
+      sort: 93,
+      status: 1,
+      remark: 'E2E费用报销业务接入验证数据',
+    },
+  });
+  expect(createGroupResponse.status()).toBe(200);
+  const createGroupBody = await createGroupResponse.json();
+  expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+
+  const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+    headers,
+    data: {
+      groupId: createGroupBody.data,
+      definitionName: `E2E费用报销审批${unique}`,
+      definitionKey: `e2e_expense_reimbursement_${unique}`,
+      designerJson: expenseApprovalDesignerJson(unique),
+      formCode: `form_${keyword}`,
+      formJson: JSON.stringify([]),
+      status: 'DRAFT',
+      remark: 'E2E费用报销业务接入验证数据',
+    },
+  });
+  expect(createDefinitionResponse.status()).toBe(200);
+  const createDefinitionBody = await createDefinitionResponse.json();
+  expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
+
+  const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+    headers,
+  });
+  expect(deployResponse.status()).toBe(200);
+  const deployBody = await deployResponse.json();
+  expectApiSuccess(deployBody, '费用报销流程部署失败');
+
+  return {
+    definitionId: createDefinitionBody.data as string,
+    definitionName: `E2E费用报销审批${unique}`,
+    definitionKey: `e2e_expense_reimbursement_${unique}`,
+  };
+}
+
+function expenseVariables(businessKey: string, applySequence: number, amount: number, reason: string) {
+  const applyId = `APPLY-${businessKey}-${String(applySequence).padStart(3, '0')}`;
+  return {
+    businessType: 'EXPENSE_REIMBURSEMENT',
+    businessKey,
+    applyId,
+    title: `费用报销 ${businessKey}`,
+    summary: `差旅费 ¥${amount.toFixed(2)}`,
+    expenseCode: businessKey,
+    applicant: 'admin',
+    category: '差旅费',
+    amount,
+    expenseDate: '2026-05-18',
+    reason,
+    invoiceCount: applySequence,
+    bankAccount: `622202******${String(8000 + applySequence)}`,
+    budgetSubject: '销售中心-差旅费',
+    businessPermissions: {
+      [`manager_approve_${businessKey.split('-').at(-1)}`]: {
+        expenseReason: 'READONLY',
+        invoiceInfo: 'READONLY',
+        paymentInfo: 'HIDDEN',
+        financeReview: 'HIDDEN',
+      },
+      [`finance_review_${businessKey.split('-').at(-1)}`]: {
+        expenseReason: 'READONLY',
+        invoiceInfo: 'READONLY',
+        paymentInfo: 'READONLY',
+        financeReview: 'EDITABLE',
+      },
+    },
+  };
+}
+
+async function startExpenseProcess(
+  request: APIRequestContext,
+  token: string,
+  definitionId: string,
+  unique: number,
+  businessKey: string,
+  applySequence: number,
+  amount: number,
+  reason: string,
+) {
+  const variables = {
+    ...expenseVariables(businessKey, applySequence, amount, reason),
+    businessPermissions: {
+      [`manager_approve_${unique}`]: {
+        expenseReason: 'READONLY',
+        invoiceInfo: 'READONLY',
+        paymentInfo: 'HIDDEN',
+        financeReview: 'HIDDEN',
+      },
+      [`finance_review_${unique}`]: {
+        expenseReason: 'READONLY',
+        invoiceInfo: 'READONLY',
+        paymentInfo: 'READONLY',
+        financeReview: 'EDITABLE',
+      },
+    },
+  };
+  const response = await request.post('http://localhost:5555/workflow/processes/start', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      definitionId,
+      businessType: 'EXPENSE_REIMBURSEMENT',
+      businessKey,
+      renderMode: 'CUSTOM_PAGE',
+      applyPageKey: 'workflow.expense.apply',
+      approvePageKey: 'workflow.expense.approve',
+      snapshotRef: `EXPENSE_REIMBURSEMENT:${variables.applyId}`,
+      variables,
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.success || body.code === 200).toBeTruthy();
+  return {
+    processInstanceId: body.data.processInstanceId as string,
+    variables,
+  };
+}
+
+async function latestBusinessApply(request: APIRequestContext, token: string, businessKey: string) {
+  const response = await request.get('http://localhost:5555/workflow/business-applies/progress/latest', {
+    headers: { Authorization: `Bearer ${token}` },
+    params: {
+      businessType: 'EXPENSE_REIMBURSEMENT',
+      businessKey,
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.success || body.code === 200).toBeTruthy();
+  return body.data;
+}
+
+async function businessApplyHistory(request: APIRequestContext, token: string, businessKey: string) {
+  const response = await request.get('http://localhost:5555/workflow/business-applies/history', {
+    headers: { Authorization: `Bearer ${token}` },
+    params: {
+      businessType: 'EXPENSE_REIMBURSEMENT',
+      businessKey,
+      page: 1,
+      size: 50,
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.success || body.code === 200).toBeTruthy();
+  return body.data?.list || body.data?.records || [];
+}
+
+async function findTodoTask(request: APIRequestContext, token: string, businessKey: string, taskName: string) {
+  const response = await request.get('http://localhost:5555/workflow/tasks/todo', {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { page: 1, size: 50, keyword: businessKey },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.success || body.code === 200).toBeTruthy();
+  const tasks = body.data?.list || body.data?.records || [];
+  const task = tasks.find((item: any) => String(item.businessKey) === businessKey && String(item.taskName).includes(taskName));
+  expect(task, `未找到 ${businessKey} 的待办 ${taskName}`).toBeTruthy();
+  return task;
+}
+
+async function completeTask(request: APIRequestContext, token: string, taskId: string, comment: string, variables: Record<string, any> = {}) {
+  const response = await request.post('http://localhost:5555/workflow/tasks/complete', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { taskId, comment, variables },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.success || body.code === 200).toBeTruthy();
+}
+
+async function queryBusinessAppliesByCurrentNode(
+  request: APIRequestContext,
+  token: string,
+  businessKey: string,
+  taskDefinitionKey: string,
+) {
+  const response = await request.post('http://localhost:5555/workflow/business-applies/page', {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {
+      page: 1,
+      size: 20,
+      businessType: 'EXPENSE_REIMBURSEMENT',
+      businessKey,
+      statuses: ['IN_APPROVAL'],
+      currentTaskDefinitionKeys: [taskDefinitionKey],
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.success || body.code === 200).toBeTruthy();
+  return body.data?.list || body.data?.records || [];
+}
+
+function cleanupWorkflowBusinessApplies(businessKeyPrefix: string) {
+  execFileSync('mysql', ['-uroot', 'mango', '-e', [
+    `DELETE FROM workflow_business_apply_current_task WHERE business_key LIKE '${businessKeyPrefix}%'`,
+    `DELETE FROM workflow_business_apply_status_log WHERE apply_id IN (SELECT id FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%')`,
+    `DELETE FROM workflow_business_apply WHERE business_key LIKE '${businessKeyPrefix}%'`,
+    `DELETE FROM workflow_task_record WHERE process_instance_id IN (SELECT process_instance_id FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%')`,
+    `DELETE FROM workflow_form_instance WHERE business_key LIKE '${businessKeyPrefix}%'`,
+  ].join('; ')]);
 }
 
 async function prepareLeaveWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
@@ -448,7 +776,7 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
   });
   expect(deployResponse.status()).toBe(200);
   const deployBody = await deployResponse.json();
-  expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+  expectApiSuccess(deployBody, '审批流程部署失败');
 
   return {
     definitionId: createDefinitionBody.data as string,
@@ -495,7 +823,7 @@ async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token:
   });
   expect(deployResponse.status()).toBe(200);
   const deployBody = await deployResponse.json();
-  expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+  expectApiSuccess(deployBody, '发起人自选流程部署失败');
 
   return {
     definitionId: createDefinitionBody.data as string,
@@ -542,7 +870,7 @@ async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: s
   });
   expect(deployResponse.status()).toBe(200);
   const deployBody = await deployResponse.json();
-  expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+  expectApiSuccess(deployBody, '发起人自审流程部署失败');
 
   return {
     definitionId: createDefinitionBody.data as string,
@@ -830,7 +1158,7 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(updateDefinitionBody.success || updateDefinitionBody.code === 200).toBeTruthy();
       expect(deployResponse.status()).toBe(200);
       const deployBody = await deployResponse.json();
-      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      expectApiSuccess(deployBody, '设计工作台流程部署失败');
       await expect(page.getByText('发布成功')).toBeVisible();
       await expect(page.getByRole('button', { name: '创建流程' })).toBeVisible({ timeout: 10000 });
       await expectNoAuthError(page);
@@ -903,7 +1231,7 @@ test.describe('工作流配置真实接口闭环', () => {
       });
       expect(deployResponse.status()).toBe(200);
       const deployBody = await deployResponse.json();
-      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      expectApiSuccess(deployBody, '流程版本部署失败');
       expect(deployBody.data.deploymentId).toBeTruthy();
       expect(deployBody.data.processDefinitionId).toBeTruthy();
       expect(deployBody.data.versionNo).toBe(1);
@@ -989,7 +1317,7 @@ test.describe('工作流配置真实接口闭环', () => {
       });
       expect(deployResponse.status()).toBe(200);
       const deployBody = await deployResponse.json();
-      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      expectApiSuccess(deployBody, '审批闭环流程部署失败');
       expect(deployBody.data.processDefinitionId).toBeTruthy();
 
       await loginPage(page, platformTenant);
@@ -1084,7 +1412,7 @@ test.describe('工作流配置真实接口闭环', () => {
       });
       expect(deployResponse.status()).toBe(200);
       const deployBody = await deployResponse.json();
-      expect(deployBody.success || deployBody.code === 200).toBeTruthy();
+      expectApiSuccess(deployBody, '动态表单流程部署失败');
       expect(deployBody.data.processDefinitionId).toBeTruthy();
 
       await loginPage(page, platformTenant);
@@ -1147,6 +1475,19 @@ test.describe('工作流配置真实接口闭环', () => {
       await dialog.getByRole('spinbutton', { name: /申请金额/ }).fill('1280');
       await dialog.locator('.el-form-item', { hasText: '申请部门' }).locator('.el-select__wrapper').click();
       await page.getByRole('option', { name: '芒果集团' }).click();
+      await dialog.locator('.el-form-item', { hasText: '费用字典' }).locator('.dict-select .el-select__wrapper').click();
+      const dictDropdown = page.locator('.el-select-dropdown:visible');
+      await expect(dictDropdown.getByRole('option', { name: '启用' })).toBeVisible({ timeout: 10000 });
+      await dictDropdown.getByRole('option', { name: '启用' }).click();
+      const signatureCanvas = dialog.locator('.el-form-item', { hasText: '申请人签字' }).locator('canvas');
+      await expect(signatureCanvas).toBeVisible();
+      const box = await signatureCanvas.boundingBox();
+      expect(box).toBeTruthy();
+      await page.mouse.move(box!.x + 24, box!.y + 36);
+      await page.mouse.down();
+      await page.mouse.move(box!.x + 120, box!.y + 72);
+      await page.mouse.move(box!.x + 180, box!.y + 44);
+      await page.mouse.up();
 
       const startResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/processes/start') && response.status() === 200
@@ -1156,6 +1497,8 @@ test.describe('工作流配置真实接口闭环', () => {
       const startRequestBody = JSON.parse(startResponse.request().postData() || '{}');
       expectWorkflowUploadValueOnlyContainsFileIds(startRequestBody.variables.attachments, [attachmentFileId]);
       expectWorkflowUploadValueOnlyContainsFileIds(startRequestBody.variables.images, [imageFileId]);
+      expect(startRequestBody.variables.expenseCategoryDict).toBeTruthy();
+      expect(String(startRequestBody.variables.applicantSignature)).toMatch(/^data:image\/png;base64,/);
       const startBody = await startResponse.json();
       expect(startBody.success || startBody.code === 200).toBeTruthy();
       expect(startBody.data.businessKey).toBeTruthy();
@@ -1376,6 +1719,132 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByText('驳回，UI E2E')).toBeVisible();
       await expectNoAuthError(page);
     } finally {
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
+  test('费用报销按业务接入模型支持申请、驳回、再申请、历史查看和自定义审批页', async ({ page, request }) => {
+    test.setTimeout(120_000);
+    const unique = Date.now();
+    const keyword = `e2e_workflow_expense_${unique}`;
+    const businessKey = `EXP-E2E-${unique}`;
+    const token = await loginToken(request, platformTenant);
+
+    try {
+      cleanupWorkflowBusinessApplies(businessKey);
+      await cleanupWorkflow(request, token, keyword);
+      const workflow = await prepareExpenseWorkflow(request, token, unique, keyword);
+
+      const firstStart = await startExpenseProcess(
+        request,
+        token,
+        workflow.definitionId,
+        unique,
+        businessKey,
+        1,
+        1280,
+        'E2E 首次差旅报销',
+      );
+      expect(firstStart.processInstanceId).toBeTruthy();
+
+      const firstProgress = await latestBusinessApply(request, token, businessKey);
+      expect(String(firstProgress.businessType)).toBe('EXPENSE_REIMBURSEMENT');
+      expect(String(firstProgress.businessKey)).toBe(businessKey);
+      expect(String(firstProgress.processInstanceId)).toBe(firstStart.processInstanceId);
+      expect(String(firstProgress.applyStatus)).toBe('IN_APPROVAL');
+      expect(String(firstProgress.currentTaskNames)).toContain('部门经理审批');
+      expect(String(firstProgress.currentTaskDefinitionKeys)).toContain(`manager_approve_${unique}`);
+      const nodeFiltered = await queryBusinessAppliesByCurrentNode(request, token, businessKey, `manager_approve_${unique}`);
+      expect(nodeFiltered.some((item: any) => String(item.businessKey) === businessKey)).toBeTruthy();
+
+      await loginPage(page, platformTenant);
+      await openTodoTasks(page);
+      const taskRow = page.locator('.el-table__row', { hasText: businessKey });
+      await expect(taskRow).toBeVisible({ timeout: 10000 });
+      await expect(taskRow).toContainText('部门经理审批');
+      const detailResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/tasks/detail') && response.status() === 200
+      );
+      await taskRow.getByRole('button', { name: '处理' }).click();
+      await page.waitForURL('**/#/workflow/task/detail**', { timeout: 10000 });
+      await detailResponsePromise;
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('业务审批信息');
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('费用报销');
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('E2E 首次差旅报销');
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('¥1280.00');
+      await expect(page.locator('.workflow-task-detail-page')).not.toContainText('622202******8001');
+      await expect(page.locator('.workflow-task-detail-page')).toContainText('MANAGER_APPROVE');
+
+      await page.getByPlaceholder('请输入审批意见').fill('预算说明不完整，驳回重提');
+      const rejectResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/tasks/reject') && response.status() === 200
+      );
+      await page.getByRole('button', { name: '驳回' }).click();
+      await page.getByRole('dialog', { name: '审批驳回' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      const rejectResponse = await rejectResponsePromise;
+      const rejectBody = await rejectResponse.json();
+      expect(rejectBody.success || rejectBody.code === 200).toBeTruthy();
+
+      const rejectedProgress = await latestBusinessApply(request, token, businessKey);
+      expect(String(rejectedProgress.applyStatus)).toBe('REJECTED');
+      expect(String(rejectedProgress.applyStatusName)).toBe('已驳回');
+      expect(String(rejectedProgress.currentTaskNames || '')).toBe('');
+
+      const secondStart = await startExpenseProcess(
+        request,
+        token,
+        workflow.definitionId,
+        unique,
+        businessKey,
+        2,
+        1399.5,
+        'E2E 补充预算说明后重新报销',
+      );
+      expect(secondStart.processInstanceId).toBeTruthy();
+      expect(secondStart.processInstanceId).not.toBe(firstStart.processInstanceId);
+      const secondProgress = await latestBusinessApply(request, token, businessKey);
+      expect(String(secondProgress.applyStatus)).toBe('IN_APPROVAL');
+      expect(String(secondProgress.processInstanceId)).toBe(secondStart.processInstanceId);
+      expect(String(secondProgress.applyId)).not.toBe(String(firstProgress.applyId));
+
+      const historyAfterReapply = await businessApplyHistory(request, token, businessKey);
+      expect(historyAfterReapply).toHaveLength(2);
+      const firstHistory = historyAfterReapply.find((item: any) => String(item.processInstanceId) === firstStart.processInstanceId);
+      const secondHistory = historyAfterReapply.find((item: any) => String(item.processInstanceId) === secondStart.processInstanceId);
+      expect(firstHistory?.variables?.reason).toBe('E2E 首次差旅报销');
+      expect(Number(firstHistory?.variables?.amount)).toBe(1280);
+      expect(firstHistory?.applyStatus).toBe('REJECTED');
+      expect(secondHistory?.variables?.reason).toBe('E2E 补充预算说明后重新报销');
+      expect(Number(secondHistory?.variables?.amount)).toBe(1399.5);
+
+      const managerTask = await findTodoTask(request, token, businessKey, '部门经理审批');
+      await completeTask(request, token, String(managerTask.id), '部门经理同意');
+      const financeProgress = await latestBusinessApply(request, token, businessKey);
+      expect(String(financeProgress.applyStatus)).toBe('IN_APPROVAL');
+      expect(String(financeProgress.currentTaskNames)).toContain('财务复核');
+      expect(String(financeProgress.currentTaskDefinitionKeys)).toContain(`finance_review_${unique}`);
+
+      const financeTask = await findTodoTask(request, token, businessKey, '财务复核');
+      const financeDetailResponse = await request.get('http://localhost:5555/workflow/tasks/detail', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { taskId: financeTask.id },
+      });
+      expect(financeDetailResponse.status()).toBe(200);
+      const financeDetailBody = await financeDetailResponse.json();
+      expect(financeDetailBody.success || financeDetailBody.code === 200).toBeTruthy();
+      expect(financeDetailBody.data.renderConfig.renderMode).toBe('CUSTOM_PAGE');
+      expect(financeDetailBody.data.renderConfig.businessType).toBe('EXPENSE_REIMBURSEMENT');
+      expect(financeDetailBody.data.renderConfig.taskDefinitionKey).toBe(`finance_review_${unique}`);
+      expect(financeDetailBody.data.renderConfig.nodeExtension.sectionPreset).toBe('FINANCE_REVIEW');
+      expect(financeDetailBody.data.renderConfig.businessPermissions.financeReview).toBe('EDITABLE');
+
+      await completeTask(request, token, String(financeTask.id), '财务复核通过', { approvedAmount: 1399.5 });
+      const approvedProgress = await latestBusinessApply(request, token, businessKey);
+      expect(String(approvedProgress.applyStatus)).toBe('APPROVED');
+      expect(String(approvedProgress.applyStatusName)).toBe('已通过');
+      expect(String(approvedProgress.currentTaskNames || '')).toBe('');
+    } finally {
+      cleanupWorkflowBusinessApplies(businessKey);
       await cleanupWorkflow(request, token, keyword).catch(() => undefined);
     }
   });

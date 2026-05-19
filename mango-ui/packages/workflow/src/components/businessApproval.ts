@@ -12,6 +12,7 @@ export interface BusinessApprovalContext {
   taskId?: string;
   taskDefinitionKey?: string;
   nodeName?: string;
+  nodeExtension?: Record<string, any>;
   readonly: boolean;
   variables: Record<string, any>;
   permissions: Record<string, BusinessPermission>;
@@ -19,7 +20,9 @@ export interface BusinessApprovalContext {
 
 const businessApprovalComponents: Record<string, Component> = {
   CONTRACT_SEAL_APPROVAL: DocumentTableApprovalDetail,
+  'workflow.contractSeal.approve': DocumentTableApprovalDetail,
   EXPENSE_REIMBURSEMENT: ExpenseApprovalDetail,
+  'workflow.expense.approve': ExpenseApprovalDetail,
 };
 
 export function resolveBusinessApprovalComponent(businessType?: string): Component | null {
