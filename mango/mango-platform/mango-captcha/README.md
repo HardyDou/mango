@@ -56,6 +56,10 @@ mango:
 classpath:captcha/block-puzzle/workspace.jpg
 classpath:captcha/block-puzzle/city.jpg
 classpath:captcha/block-puzzle/garden.jpg
+classpath:captcha/block-puzzle/pears.jpg
+classpath:captcha/block-puzzle/village.jpg
+classpath:captcha/block-puzzle/mountain.jpg
+classpath:captcha/block-puzzle/courtyard.jpg
 ```
 
 业务项目可以维护自己的图库，并通过配置替换默认图库。支持 `classpath:`、`file:`、`http:`、`https:` 路径；不写协议时按 `classpath:` 处理。

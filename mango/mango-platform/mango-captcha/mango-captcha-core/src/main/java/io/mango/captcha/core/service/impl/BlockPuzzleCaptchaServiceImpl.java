@@ -38,7 +38,11 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
     private static final String[] BACKGROUND_IMAGES = {
         "classpath:captcha/block-puzzle/workspace.jpg",
         "classpath:captcha/block-puzzle/city.jpg",
-        "classpath:captcha/block-puzzle/garden.jpg"
+        "classpath:captcha/block-puzzle/garden.jpg",
+        "classpath:captcha/block-puzzle/pears.jpg",
+        "classpath:captcha/block-puzzle/village.jpg",
+        "classpath:captcha/block-puzzle/mountain.jpg",
+        "classpath:captcha/block-puzzle/courtyard.jpg"
     };
 
     private static final String IMAGE_PREFIX = "data:image/png;base64,";
