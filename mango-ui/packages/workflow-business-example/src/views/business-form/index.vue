@@ -1545,6 +1545,7 @@ function currentTaskKeysFromHistory(applies: WorkflowBusinessApply[]) {
 function businessBasicSummary(row: ExpenseExampleRow | SealExampleRow) {
   return [
     { label: '业务单号', value: row.code },
+    { label: '流程名称', value: row.workflowName },
   ];
 }
 
@@ -1903,7 +1904,7 @@ onMounted(async () => {
 
 .summary-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 14px;
   min-width: 0;
 }
