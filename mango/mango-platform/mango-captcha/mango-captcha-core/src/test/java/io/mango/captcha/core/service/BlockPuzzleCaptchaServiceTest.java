@@ -5,7 +5,16 @@ import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,5 +72,38 @@ class BlockPuzzleCaptchaServiceTest {
         // 这里只验证都在合理范围内
         assertTrue(response1.getX() >= 0);
         assertTrue(response2.getX() >= 0);
+    }
+
+    @Test
+    void generate_usesConfiguredImageGallery(@TempDir Path tempDir) throws Exception {
+        File galleryImage = tempDir.resolve("captcha-gallery.png").toFile();
+        BufferedImage image = new BufferedImage(320, 180, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            graphics.setColor(new Color(36, 116, 94));
+            graphics.fillRect(0, 0, 320, 180);
+            graphics.setColor(new Color(242, 198, 87));
+            graphics.fillOval(212, 28, 48, 48);
+            graphics.setColor(new Color(82, 154, 204));
+            graphics.fillRoundRect(42, 72, 118, 70, 12, 12);
+        } finally {
+            graphics.dispose();
+        }
+        ImageIO.write(image, "png", galleryImage);
+
+        BlockPuzzleCaptchaServiceImpl service = new BlockPuzzleCaptchaServiceImpl(
+                List.of(galleryImage.toURI().toString())
+        );
+        ReflectionTestUtils.setField(service, "width", 280);
+        ReflectionTestUtils.setField(service, "height", 160);
+        ReflectionTestUtils.setField(service, "sliderSize", 50);
+
+        CaptchaResponse response = service.generate();
+
+        assertEquals(CaptchaType.BLOCK_PUZZLE, response.getType());
+        assertTrue(response.getBackgroundImage().startsWith("data:image/png;base64,"));
+        assertTrue(response.getSliderImage().startsWith("data:image/png;base64,"));
+        assertNotNull(response.getX());
+        assertNotNull(response.getY());
     }
 }

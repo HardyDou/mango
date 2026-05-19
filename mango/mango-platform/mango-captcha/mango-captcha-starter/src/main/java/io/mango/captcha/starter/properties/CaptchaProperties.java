@@ -3,6 +3,9 @@ package io.mango.captcha.starter.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 验证码配置属性
  *
@@ -56,6 +59,11 @@ public class CaptchaProperties {
         private int width = 280;
         private int height = 160;
         private int sliderSize = 50;
+        /**
+         * 滑块验证码图库。支持 classpath:/file:/http(s) 路径。
+         * 为空时使用组件内置图库。
+         */
+        private List<String> imageLocations = new ArrayList<>();
     }
 
     @Data

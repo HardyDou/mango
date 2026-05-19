@@ -5,7 +5,9 @@ import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -19,6 +21,9 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -31,14 +36,29 @@ import java.util.Random;
 public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService {
 
     private static final String[] BACKGROUND_IMAGES = {
-        "captcha/block-puzzle/workspace.jpg",
-        "captcha/block-puzzle/city.jpg",
-        "captcha/block-puzzle/garden.jpg"
+        "classpath:captcha/block-puzzle/workspace.jpg",
+        "classpath:captcha/block-puzzle/city.jpg",
+        "classpath:captcha/block-puzzle/garden.jpg"
     };
 
     private static final String IMAGE_PREFIX = "data:image/png;base64,";
 
     private final Random random = new Random();
+    private final ResourceLoader resourceLoader;
+    private final List<String> imageLocations;
+
+    public BlockPuzzleCaptchaServiceImpl() {
+        this(Collections.emptyList());
+    }
+
+    public BlockPuzzleCaptchaServiceImpl(List<String> imageLocations) {
+        this(new DefaultResourceLoader(), imageLocations);
+    }
+
+    BlockPuzzleCaptchaServiceImpl(ResourceLoader resourceLoader, List<String> imageLocations) {
+        this.resourceLoader = resourceLoader;
+        this.imageLocations = normalizeImageLocations(imageLocations);
+    }
 
     @Value("${mango.captcha.block-puzzle.width:280}")
     private int width = 280;
@@ -93,8 +113,51 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
     }
 
     private BufferedImage loadRandomBackground() throws IOException {
-        String imagePath = BACKGROUND_IMAGES[random.nextInt(BACKGROUND_IMAGES.length)];
-        return ImageIO.read(new ClassPathResource(imagePath).getInputStream());
+        List<String> locations = imageLocations.isEmpty() ? defaultImageLocations() : imageLocations;
+        List<String> candidates = new ArrayList<>(locations);
+        Collections.shuffle(candidates, random);
+        IOException lastException = null;
+
+        for (String location : candidates) {
+            try {
+                Resource resource = resourceLoader.getResource(location);
+                BufferedImage image = ImageIO.read(resource.getInputStream());
+                if (image != null) {
+                    return image;
+                }
+                lastException = new IOException("Unsupported captcha image format: " + location);
+            } catch (IOException e) {
+                lastException = e;
+                log.warn("加载滑块验证码图库图片失败: location={}", location, e);
+            }
+        }
+
+        if (lastException != null) {
+            throw lastException;
+        }
+        throw new IOException("No captcha block puzzle image available");
+    }
+
+    private static List<String> defaultImageLocations() {
+        return List.of(BACKGROUND_IMAGES);
+    }
+
+    private static List<String> normalizeImageLocations(List<String> locations) {
+        if (locations == null || locations.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return locations.stream()
+                .filter(location -> location != null && !location.isBlank())
+                .map(String::trim)
+                .map(BlockPuzzleCaptchaServiceImpl::normalizeImageLocation)
+                .toList();
+    }
+
+    private static String normalizeImageLocation(String location) {
+        if (location.contains(":")) {
+            return location;
+        }
+        return "classpath:" + location;
     }
 
     private BufferedImage resize(BufferedImage source, int targetWidth, int targetHeight) {

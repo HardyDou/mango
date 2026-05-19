@@ -48,7 +48,7 @@ public class CaptchaAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(BlockPuzzleCaptchaService.class)
     public BlockPuzzleCaptchaService blockPuzzleCaptchaService() {
-        return new BlockPuzzleCaptchaServiceImpl();
+        return new BlockPuzzleCaptchaServiceImpl(properties.getBlockPuzzle().getImageLocations());
     }
 
     @Bean

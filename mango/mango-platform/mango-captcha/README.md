@@ -48,6 +48,33 @@ mango:
     storage: auto  # auto/redis/db/memory
 ```
 
+## 滑块验证码图库
+
+滑块验证码默认使用模块内置图库：
+
+```text
+classpath:captcha/block-puzzle/workspace.jpg
+classpath:captcha/block-puzzle/city.jpg
+classpath:captcha/block-puzzle/garden.jpg
+```
+
+业务项目可以维护自己的图库，并通过配置替换默认图库。支持 `classpath:`、`file:`、`http:`、`https:` 路径；不写协议时按 `classpath:` 处理。
+
+```yaml
+mango:
+  captcha:
+    block-puzzle:
+      width: 280
+      height: 160
+      slider-size: 50
+      image-locations:
+        - classpath:captcha/block-puzzle/office.jpg
+        - classpath:captcha/block-puzzle/street.jpg
+        - file:/data/mango/captcha/gallery/lobby.jpg
+```
+
+接口仍返回前端可直接渲染的 `backgroundImage`、`sliderImage`、`x`、`y`，前端不需要关心图片来自内置图库还是业务图库。
+
 ## API 接口
 
 ### 生成验证码
