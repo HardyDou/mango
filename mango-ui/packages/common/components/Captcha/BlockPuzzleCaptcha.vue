@@ -11,33 +11,36 @@
     </template>
 
     <template v-else-if="mode === 'trigger'">
-      <el-popover
-        v-model:visible="panelVisible"
-        trigger="click"
-        placement="bottom-start"
-        :width="panelWidth"
-        :teleported="false"
-        :disabled="verified"
-        popper-class="captcha-popper"
-        @show="handlePanelShow"
+      <div
+        class="trigger-shell"
+        @mouseenter="showTriggerPanel"
+        @mouseleave="hideTriggerPanel"
       >
-        <template #reference>
-          <button class="verify-bar" :class="{ 'is-success': verified }" type="button" :disabled="verified">
-            <span class="verify-handle">
-              <el-icon v-if="verified"><Check /></el-icon>
-              <el-icon v-else><Right /></el-icon>
-            </span>
-            <span>{{ verified ? '验证通过' : '向右拖动滑块填充拼图' }}</span>
-          </button>
-        </template>
-        <div class="puzzle-panel">
-          <div class="captcha-header">
-            <span>拖动滑块完成拼图</span>
-            <el-button link type="primary" @click="refresh">刷新</el-button>
-          </div>
+        <div v-show="panelVisible || dragging" class="trigger-panel">
           <PuzzleContent />
         </div>
-      </el-popover>
+        <div
+          ref="triggerTrackRef"
+          class="trigger-track"
+          :class="{ 'is-success': verified, 'is-failed': failed, 'is-dragging': dragging }"
+        >
+          <div class="trigger-fill" :style="triggerFillStyle" />
+          <button
+            class="trigger-handle"
+            :style="triggerHandleStyle"
+            type="button"
+            :disabled="verified"
+            @mousedown="startDrag"
+            @touchstart.prevent="startTouchDrag"
+          >
+            <el-icon v-if="verified"><Check /></el-icon>
+            <el-icon v-else><Right /></el-icon>
+          </button>
+          <div class="trigger-text">
+            {{ verified ? '验证通过' : '向右拖动滑块填充拼图' }}
+          </div>
+        </div>
+      </div>
     </template>
 
     <template v-else>
@@ -83,6 +86,7 @@ const emit = defineEmits<{
 
 const mode = computed(() => props.mode);
 const trackRef = ref<HTMLElement | null>(null);
+const triggerTrackRef = ref<HTMLElement | null>(null);
 const captchaData = ref<CaptchaResponse | null>(null);
 const sliderLeft = ref(0);
 const trackWidth = ref(280);
@@ -91,16 +95,15 @@ const targetTop = ref(55);
 const errorMessage = ref('');
 const verified = ref(false);
 const panelVisible = ref(false);
+const failed = ref(false);
 
 let dragStartX = 0;
-let dragging = false;
+const dragging = ref(false);
 let resizeObserver: ResizeObserver | null = null;
 
 const baseWidth = 280;
 const baseHeight = 160;
 const sliderSize = 50;
-const panelWidth = 320;
-
 const displayScale = computed(() => trackWidth.value / baseWidth);
 const displaySliderSize = computed(() => sliderSize * displayScale.value);
 const displayTargetLeft = computed(() => targetLeft.value * displayScale.value);
@@ -126,6 +129,15 @@ const sliderFallbackStyle = computed(() => ({
   backgroundPosition: `-${displayTargetLeft.value}px -${displayTargetTop.value}px`,
 }));
 
+const triggerHandleStyle = computed(() => ({
+  left: `${sliderLeft.value}px`,
+  width: `${displaySliderSize.value}px`,
+}));
+
+const triggerFillStyle = computed(() => ({
+  width: `${sliderLeft.value + displaySliderSize.value}px`,
+}));
+
 function setTrackRef(element: Element | null) {
   resizeObserver?.disconnect();
   trackRef.value = element as HTMLElement | null;
@@ -137,20 +149,40 @@ function setTrackRef(element: Element | null) {
   resizeObserver.observe(trackRef.value);
 }
 
-async function refresh() {
+async function refresh(options: { errorMessage?: string; failed?: boolean } = {}) {
   captchaData.value = await generateBlockPuzzle();
   sliderLeft.value = 0;
   targetLeft.value = Number(captchaData.value.x ?? 0);
   targetTop.value = Number(captchaData.value.y ?? 55);
-  errorMessage.value = '';
+  errorMessage.value = options.errorMessage ?? '';
   verified.value = false;
+  failed.value = options.failed ?? false;
   emit('refresh');
 }
 
 async function handlePanelShow() {
   await nextTick();
+  syncTriggerTrackWidth();
   if (trackRef.value) {
-    trackWidth.value = trackRef.value.offsetWidth || baseWidth;
+    trackWidth.value = trackRef.value.offsetWidth || trackWidth.value || baseWidth;
+  }
+}
+
+async function showTriggerPanel() {
+  if (verified.value) return;
+  panelVisible.value = true;
+  await handlePanelShow();
+}
+
+function hideTriggerPanel() {
+  if (!dragging.value) {
+    panelVisible.value = false;
+  }
+}
+
+function syncTriggerTrackWidth() {
+  if (mode.value === 'trigger' && triggerTrackRef.value) {
+    trackWidth.value = triggerTrackRef.value.offsetWidth || baseWidth;
   }
 }
 
@@ -160,26 +192,30 @@ function openPopup() {
 }
 
 function startDrag(event: MouseEvent) {
+  void showTriggerPanel();
+  syncTriggerTrackWidth();
   dragStartX = event.clientX - sliderLeft.value;
-  dragging = true;
+  dragging.value = true;
   document.addEventListener('mousemove', handleDrag);
   document.addEventListener('mouseup', finishDrag);
 }
 
 function startTouchDrag(event: TouchEvent) {
+  void showTriggerPanel();
+  syncTriggerTrackWidth();
   dragStartX = event.touches[0].clientX - sliderLeft.value;
-  dragging = true;
+  dragging.value = true;
   document.addEventListener('touchmove', handleTouchDrag);
   document.addEventListener('touchend', finishTouchDrag);
 }
 
 function handleDrag(event: MouseEvent) {
-  if (!dragging) return;
+  if (!dragging.value) return;
   updateSlider(event.clientX);
 }
 
 function handleTouchDrag(event: TouchEvent) {
-  if (!dragging) return;
+  if (!dragging.value) return;
   updateSlider(event.touches[0].clientX);
 }
 
@@ -209,8 +245,18 @@ async function verifyPosition() {
     // ignored
   }
 
-  errorMessage.value = '校验失败，请重试';
-  await refresh();
+  await refresh({ errorMessage: '校验失败，请重试', failed: true });
+  await handlePanelShow();
+  if (mode.value === 'trigger') {
+    panelVisible.value = true;
+    window.setTimeout(() => {
+      if (!dragging.value && !verified.value) {
+        failed.value = false;
+        errorMessage.value = '';
+        panelVisible.value = false;
+      }
+    }, 800);
+  }
 }
 
 function cleanupEvents() {
@@ -221,13 +267,13 @@ function cleanupEvents() {
 }
 
 function finishDrag() {
-  dragging = false;
+  dragging.value = false;
   cleanupEvents();
   void verifyPosition();
 }
 
 function finishTouchDrag() {
-  dragging = false;
+  dragging.value = false;
   cleanupEvents();
   void verifyPosition();
 }
@@ -432,11 +478,147 @@ defineExpose({ refresh });
     color: var(--el-text-color-regular);
     font-size: 22px;
   }
+
+  .trigger-shell {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .trigger-panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 16px);
+    left: 0;
+    z-index: 10;
+    padding: 0;
+    border-radius: 4px;
+    background: var(--el-bg-color);
+    box-shadow: 0 8px 24px rgb(31 45 61 / 18%);
+
+    :deep(.track) {
+      width: 100%;
+      aspect-ratio: 2 / 1;
+      border-color: var(--el-border-color);
+      box-shadow: none;
+    }
+
+    :deep(.error-msg) {
+      position: absolute;
+      right: 10px;
+      bottom: 8px;
+      z-index: 3;
+      margin: 0;
+      padding: 3px 8px;
+      border-radius: 3px;
+      background: rgb(0 0 0 / 55%);
+      color: #fff;
+      font-size: 12px;
+    }
+  }
+
+  .trigger-track {
+    position: relative;
+    height: 48px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    background: var(--el-fill-color-lighter);
+    overflow: hidden;
+    user-select: none;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+
+    &.is-dragging {
+      border-color: var(--el-color-primary);
+    }
+
+    &.is-success {
+      border-color: var(--el-color-success);
+      background: var(--el-color-success-light-9);
+
+      .trigger-fill {
+        background: var(--el-color-success-light-8);
+      }
+
+      .trigger-handle {
+        border-color: var(--el-color-success);
+        background: var(--el-color-success);
+        color: #fff;
+        cursor: default;
+      }
+
+      .trigger-text {
+        color: var(--el-color-success);
+      }
+    }
+
+    &.is-failed {
+      border-color: var(--el-color-danger);
+
+      .trigger-fill {
+        background: var(--el-color-danger-light-9);
+      }
+    }
+  }
+
+  .trigger-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 0;
+    background: var(--el-color-primary-light-8);
+  }
+
+  .trigger-handle {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    z-index: 2;
+    display: inline-flex;
+    min-width: 50px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    background: var(--el-bg-color);
+    box-shadow: 0 2px 8px rgb(31 45 61 / 18%);
+    color: var(--el-text-color-regular);
+    cursor: grab;
+    font-size: 24px;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  .trigger-text {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 58px;
+    color: var(--el-text-color-regular);
+    font-size: 16px;
+    pointer-events: none;
+  }
 }
 
 .is-trigger,
 .is-popup {
   width: 100%;
-  max-width: 420px;
+  max-width: 640px;
 }
 </style>
