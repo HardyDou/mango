@@ -23,6 +23,11 @@ public enum CaptchaType {
     CLICK_WORD("点选文字验证码"),
 
     /**
+     * 无感行为验证 - 静默采集行为并由后端评分
+     */
+    BEHAVIOR("无感行为验证"),
+
+    /**
      * 短信验证码
      */
     SMS("短信验证码"),

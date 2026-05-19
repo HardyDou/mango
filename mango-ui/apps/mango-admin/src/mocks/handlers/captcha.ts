@@ -92,7 +92,7 @@ export const captchaHandlers = [
       success: true,
       message: 'success',
       data: {
-        types: ['ARITHMETIC', 'BLOCK_PUZZLE', 'CLICK_WORD', 'SMS', 'EMAIL'],
+        types: ['ARITHMETIC', 'BLOCK_PUZZLE', 'CLICK_WORD', 'BEHAVIOR', 'SMS', 'EMAIL'],
         currentStorage: 'memory',
       },
     });
@@ -145,6 +145,43 @@ export const captchaHandlers = [
         target: '云,山,月',
         expireTime: 120,
         extra: JSON.stringify({ width: 320, height: 180, pointCount: 3 }),
+      },
+    });
+  }),
+
+  // 生成无感行为验证
+  http.get('/api/captcha/behavior', () => {
+    return HttpResponse.json({
+      code: 200,
+      success: true,
+      message: 'success',
+      data: {
+        key: `behavior-${Date.now()}`,
+        type: 'BEHAVIOR',
+        expireTime: 120,
+        extra: JSON.stringify({ mode: 'silent', passScore: 0.7, secondaryScore: 0.4 }),
+      },
+    });
+  }),
+
+  // 校验无感行为验证
+  http.post('/api/captcha/behavior/verify', async ({ request }) => {
+    const body = await request.json() as { key: string; pointJson?: string };
+    const payload = body.pointJson ? JSON.parse(body.pointJson) : {};
+    const trackSize = payload.behavior?.mouseTrack?.length ?? 0;
+    const score = trackSize > 8 ? 0.86 : 0.38;
+    const passed = score >= 0.7;
+    return HttpResponse.json({
+      code: 200,
+      success: true,
+      message: passed ? '验证成功' : '验证失败',
+      data: {
+        key: body.key,
+        score,
+        passed,
+        riskLevel: passed ? 'LOW' : 'HIGH',
+        suggestAction: passed ? 'ALLOW' : 'DENY',
+        reason: passed ? 'OK' : 'MOUSE_TRACK_TOO_SHORT',
       },
     });
   }),

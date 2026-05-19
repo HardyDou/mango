@@ -4,6 +4,7 @@ export enum CaptchaType {
   ARITHMETIC = 'ARITHMETIC',
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
   CLICK_WORD = 'CLICK_WORD',
+  BEHAVIOR = 'BEHAVIOR',
   CANVAS_SLIDER = 'CANVAS_SLIDER',
   SMS = 'SMS',
   EMAIL = 'EMAIL',
@@ -29,6 +30,15 @@ export interface CaptchaVerifyRequest {
   pointJson?: string;
 }
 
+export interface BehaviorCaptchaVerifyResult {
+  key: string;
+  score: number;
+  passed: boolean;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  suggestAction: 'ALLOW' | 'SECONDARY_VERIFY' | 'DENY';
+  reason: string;
+}
+
 export interface CaptchaTypesResponse {
   types: CaptchaType[];
   currentStorage: string;
@@ -48,6 +58,14 @@ export function generateBlockPuzzle() {
 
 export function generateClickWord() {
   return get<CaptchaResponse>('/captcha/click-word');
+}
+
+export function generateBehavior() {
+  return get<CaptchaResponse>('/captcha/behavior');
+}
+
+export function verifyBehaviorCaptcha(request: CaptchaVerifyRequest) {
+  return post<BehaviorCaptchaVerifyResult>('/captcha/behavior/verify', request);
 }
 
 export function sendSms(mobile: string) {

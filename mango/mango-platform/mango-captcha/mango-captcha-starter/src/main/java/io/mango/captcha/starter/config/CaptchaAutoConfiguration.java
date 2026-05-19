@@ -5,10 +5,12 @@ import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.service.ArithmeticCaptchaService;
+import io.mango.captcha.core.service.BehaviorCaptchaService;
 import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
 import io.mango.captcha.core.service.ClickWordCaptchaService;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.captcha.core.service.impl.ArithmeticCaptchaServiceImpl;
+import io.mango.captcha.core.service.impl.BehaviorCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.CaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.ClickWordCaptchaServiceImpl;
@@ -60,11 +62,18 @@ public class CaptchaAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(BehaviorCaptchaService.class)
+    public BehaviorCaptchaService behaviorCaptchaService(ObjectMapper objectMapper) {
+        return new BehaviorCaptchaServiceImpl(objectMapper);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(CaptchaApi.class)
     public ICaptchaService captchaApi(IKvStore kvStore,
                                       ArithmeticCaptchaService arithmeticCaptchaService,
                                       BlockPuzzleCaptchaService blockPuzzleCaptchaService,
                                       ClickWordCaptchaService clickWordCaptchaService,
+                                      BehaviorCaptchaService behaviorCaptchaService,
                                       List<SmsProvider> smsProviders,
                                       List<EmailProvider> emailProviders,
                                       ObjectMapper objectMapper) {
@@ -73,6 +82,7 @@ public class CaptchaAutoConfiguration {
                 arithmeticCaptchaService,
                 blockPuzzleCaptchaService,
                 clickWordCaptchaService,
+                behaviorCaptchaService,
                 smsProviders,
                 emailProviders,
                 objectMapper

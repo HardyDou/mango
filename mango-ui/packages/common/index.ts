@@ -72,6 +72,7 @@ export { default as CaptchaSelector } from './components/Captcha/index.vue';
 export { default as ArithmeticCaptcha } from './components/Captcha/ArithmeticCaptcha.vue';
 export { default as BlockPuzzleCaptcha } from './components/Captcha/BlockPuzzleCaptcha.vue';
 export { default as ClickWordCaptcha } from './components/Captcha/ClickWordCaptcha.vue';
+export { default as BehaviorCaptcha } from './components/Captcha/BehaviorCaptcha.vue';
 export { default as CanvasSliderCaptcha } from './components/Captcha/CanvasSliderCaptcha.vue';
 export { default as SmsCaptcha } from './components/Captcha/SmsCaptcha.vue';
 export { default as EmailCaptcha } from './components/Captcha/EmailCaptcha.vue';

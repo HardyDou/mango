@@ -10,6 +10,8 @@ export enum CaptchaType {
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
   /** 点选文字验证码 */
   CLICK_WORD = 'CLICK_WORD',
+  /** 无感行为验证 */
+  BEHAVIOR = 'BEHAVIOR',
   /** 滑块验证码（Canvas） */
   CANVAS_SLIDER = 'CANVAS_SLIDER',
   /** 短信验证码 */
@@ -55,6 +57,24 @@ export interface CaptchaVerifyRequest {
 }
 
 /**
+ * 无感行为验证评分结果
+ */
+export interface BehaviorCaptchaVerifyResult {
+  /** 验证码key */
+  key: string;
+  /** 0.0 到 1.0 的行为评分，分数越高越像真人 */
+  score: number;
+  /** 是否通过 */
+  passed: boolean;
+  /** 风险等级 */
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  /** 建议业务动作 */
+  suggestAction: 'ALLOW' | 'SECONDARY_VERIFY' | 'DENY';
+  /** 评分原因 */
+  reason: string;
+}
+
+/**
  * 验证码类型响应
  */
 export interface CaptchaTypesResponse {
@@ -91,6 +111,20 @@ export function generateBlockPuzzle() {
  */
 export function generateClickWord() {
   return get<CaptchaResponse>('/captcha/click-word');
+}
+
+/**
+ * 生成无感行为验证
+ */
+export function generateBehavior() {
+  return get<CaptchaResponse>('/captcha/behavior');
+}
+
+/**
+ * 校验无感行为验证
+ */
+export function verifyBehaviorCaptcha(request: CaptchaVerifyRequest) {
+  return post<BehaviorCaptchaVerifyResult>('/captcha/behavior/verify', request);
 }
 
 /**

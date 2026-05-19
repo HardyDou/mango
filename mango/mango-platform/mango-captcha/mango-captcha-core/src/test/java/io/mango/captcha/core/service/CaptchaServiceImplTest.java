@@ -1,6 +1,7 @@
 package io.mango.captcha.core.service;
 
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -40,6 +41,9 @@ class CaptchaServiceImplTest {
     private ClickWordCaptchaService clickWordCaptchaService;
 
     @Mock
+    private BehaviorCaptchaService behaviorCaptchaService;
+
+    @Mock
     private SmsProvider smsProvider;
 
     @Mock
@@ -54,6 +58,7 @@ class CaptchaServiceImplTest {
                 arithmeticCaptchaService,
                 blockPuzzleCaptchaService,
                 clickWordCaptchaService,
+                behaviorCaptchaService,
                 Arrays.asList(smsProvider),
                 Arrays.asList(emailProvider),
                 new ObjectMapper()
@@ -112,6 +117,22 @@ class CaptchaServiceImplTest {
         assertNotNull(result);
         assertEquals(CaptchaType.SMS, result.getType());
         assertEquals("13800138000", result.getTarget());
+    }
+
+    @Test
+    void generate_behaviorType_savesChallengeToStorage() {
+        CaptchaResponse behaviorResponse = new CaptchaResponse();
+        behaviorResponse.setExpireTime(300L);
+        behaviorResponse.setExtra("{\"mode\":\"silent\"}");
+        when(behaviorCaptchaService.generate()).thenReturn(behaviorResponse);
+        when(behaviorCaptchaService.createChallengeJson(anyString())).thenReturn("{\"key\":\"behavior-key\"}");
+
+        CaptchaResponse result = captchaService.generate(CaptchaType.BEHAVIOR, null);
+
+        assertNotNull(result);
+        assertEquals(CaptchaType.BEHAVIOR, result.getType());
+        assertEquals("{\"mode\":\"silent\"}", result.getExtra());
+        verify(kvStore).set(startsWith("captcha:"), eq("{\"key\":\"behavior-key\"}"), eq(300L));
     }
 
     @Test
@@ -184,6 +205,42 @@ class CaptchaServiceImplTest {
     }
 
     @Test
+    void verify_behaviorWithPassingScore_returnsTrue() {
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey("behavior-key");
+        request.setType(CaptchaType.BEHAVIOR);
+        request.setPointJson("{\"behavior\":{\"mouseTrack\":[]}}");
+        BehaviorCaptchaVerifyResult behaviorResult = new BehaviorCaptchaVerifyResult();
+        behaviorResult.setPassed(true);
+        when(kvStore.get("captcha:behavior-key")).thenReturn("{\"key\":\"behavior-key\"}");
+        when(behaviorCaptchaService.verify(anyString(), anyString())).thenReturn(behaviorResult);
+
+        boolean result = captchaService.verify(request);
+
+        assertTrue(result);
+        verify(kvStore).delete("captcha:behavior-key");
+    }
+
+    @Test
+    void verifyBehavior_returnsScoreResult() {
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey("behavior-key");
+        request.setType(CaptchaType.BEHAVIOR);
+        request.setPointJson("{\"behavior\":{\"mouseTrack\":[]}}");
+        BehaviorCaptchaVerifyResult behaviorResult = new BehaviorCaptchaVerifyResult();
+        behaviorResult.setScore(0.86D);
+        behaviorResult.setPassed(true);
+        when(kvStore.get("captcha:behavior-key")).thenReturn("{\"key\":\"behavior-key\"}");
+        when(behaviorCaptchaService.verify(anyString(), anyString())).thenReturn(behaviorResult);
+
+        BehaviorCaptchaVerifyResult result = captchaService.verifyBehavior(request);
+
+        assertTrue(result.isPassed());
+        assertEquals("behavior-key", result.getKey());
+        assertEquals(0.86D, result.getScore());
+    }
+
+    @Test
     void sendSms_generatesCodeAndSaves() {
         when(smsProvider.send(anyString(), any(), any())).thenReturn(true);
 
@@ -243,10 +300,11 @@ class CaptchaServiceImplTest {
         List<CaptchaType> types = captchaService.getSupportedTypes();
 
         assertNotNull(types);
-        assertEquals(5, types.size());
+        assertEquals(6, types.size());
         assertTrue(types.contains(CaptchaType.ARITHMETIC));
         assertTrue(types.contains(CaptchaType.BLOCK_PUZZLE));
         assertTrue(types.contains(CaptchaType.CLICK_WORD));
+        assertTrue(types.contains(CaptchaType.BEHAVIOR));
         assertTrue(types.contains(CaptchaType.SMS));
         assertTrue(types.contains(CaptchaType.EMAIL));
     }

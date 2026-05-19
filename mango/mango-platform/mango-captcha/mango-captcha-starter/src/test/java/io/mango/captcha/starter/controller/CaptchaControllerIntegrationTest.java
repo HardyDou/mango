@@ -45,7 +45,7 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.types").isArray())
                 .andExpect(jsonPath("$.data.types[*]").value(
                         org.hamcrest.Matchers.containsInAnyOrder(
-                                "ARITHMETIC", "BLOCK_PUZZLE", "CLICK_WORD", "SMS", "EMAIL"
+                                "ARITHMETIC", "BLOCK_PUZZLE", "CLICK_WORD", "BEHAVIOR", "SMS", "EMAIL"
                         )
                 ))
                 .andExpect(jsonPath("$.data.currentStorage").exists());
@@ -87,6 +87,17 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.key").exists())
                 .andExpect(jsonPath("$.data.image").exists())
                 .andExpect(jsonPath("$.data.target").exists())
+                .andExpect(jsonPath("$.data.extra").exists());
+    }
+
+    @Test
+    void generateBehavior_returnsValidCaptcha() throws Exception {
+        mockMvc.perform(get("/captcha/behavior"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.type").value("BEHAVIOR"))
+                .andExpect(jsonPath("$.data.key").exists())
+                .andExpect(jsonPath("$.data.expireTime").exists())
                 .andExpect(jsonPath("$.data.extra").exists());
     }
 

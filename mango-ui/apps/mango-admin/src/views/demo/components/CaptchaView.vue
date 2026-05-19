@@ -144,6 +144,49 @@
       </div>
     </section>
 
+    <section id="behavior" class="doc-section">
+      <h2>无感行为验证</h2>
+      <p>适合登录、注册和高频表单提交。组件静默采集鼠标、键盘、点击和设备特征，提交时由后端返回 score、riskLevel 和 suggestAction。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <div class="mock-form-card behavior-card">
+            <div class="mock-form-head">
+              <h3>登录风控校验</h3>
+              <span>用户不需要操作验证码，点击登录时自动完成行为评分。</span>
+            </div>
+            <el-form class="mock-form" :model="behaviorForm" label-position="top">
+              <el-form-item label="登录账号">
+                <el-input v-model="behaviorForm.account" placeholder="请输入登录账号" />
+              </el-form-item>
+              <el-form-item label="登录密码">
+                <el-input v-model="behaviorForm.password" type="password" placeholder="请输入登录密码" show-password />
+              </el-form-item>
+            </el-form>
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                ref="behaviorCaptchaRef"
+                :type="CaptchaType.BEHAVIOR"
+                @success="(key, code, type) => handleSuccess('behavior', key, code, type)"
+                @refresh="() => handleRefresh('behavior')"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="primary" @click="submitBehaviorDemo">
+                登录
+              </el-button>
+              <span>{{ captchaResults.behavior ? '行为验证已通过' : '提交时自动校验行为评分' }}</span>
+            </div>
+            <div v-if="submitResults.behavior" class="mock-result">{{ submitResults.behavior }}</div>
+          </div>
+        </div>
+        <div class="op-btns" @click="toggleCode('behavior')">
+          <el-icon><component :is="codeVisible.behavior ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.behavior ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.behavior" :code="behaviorCode" />
+      </div>
+    </section>
+
     <section id="sms" class="doc-section">
       <h2>短信验证码</h2>
       <p>适合手机号确认、登录二次校验等场景；发送接口返回 captchaKey，输入验证码后统一走 verify 接口。</p>
@@ -298,7 +341,7 @@ import { CaptchaSelector, CaptchaType } from '@mango/common';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
-type DemoKey = 'arithmetic' | 'block' | 'clickWord' | 'sms' | 'email' | 'selector';
+type DemoKey = 'arithmetic' | 'block' | 'clickWord' | 'behavior' | 'sms' | 'email' | 'selector';
 
 interface CaptchaResult {
   key: string;
@@ -310,6 +353,7 @@ const tocItems = [
   { id: 'arithmetic', label: '算术验证码' },
   { id: 'block', label: '图片滑块验证码' },
   { id: 'click-word', label: '点选文字验证码' },
+  { id: 'behavior', label: '无感行为验证' },
   { id: 'sms', label: '短信验证码' },
   { id: 'email', label: '邮件验证码' },
   { id: 'selector', label: '综合选择器' },
@@ -322,15 +366,18 @@ const codeVisible = ref<Record<DemoKey, boolean>>({
   arithmetic: false,
   block: false,
   clickWord: false,
+  behavior: false,
   sms: false,
   email: false,
   selector: false,
 });
 
 const arithmeticCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
+const behaviorCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
 const arithmeticCaptchaInput = ref('');
 const arithmeticForm = reactive({ title: '组件库访问申请', description: '申请开通开发中心组件库的访问权限' });
 const blockForm = reactive({ reason: '运维审批单 OPS-20260519 已通过' });
+const behaviorForm = reactive({ account: 'admin', password: 'admin123' });
 const smsForm = reactive({ oldMobile: '138****8000', scene: 'work-mobile' });
 const emailForm = reactive({ account: 'admin@mango.local' });
 const captchaResults = reactive<Partial<Record<DemoKey, CaptchaResult>>>({});
@@ -404,6 +451,43 @@ const clickWordCode = `<template>
   </div>
 </template>`;
 
+const behaviorCode = `<template>
+  <div class="login-risk-panel">
+    <el-form :model="form" label-position="top">
+      <el-form-item label="登录账号">
+        <el-input v-model="form.account" />
+      </el-form-item>
+      <el-form-item label="登录密码">
+        <el-input v-model="form.password" type="password" show-password />
+      </el-form-item>
+    </el-form>
+
+    <CaptchaSelector
+      ref="behaviorCaptchaRef"
+      :type="CaptchaType.BEHAVIOR"
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
+
+    <el-button type="primary" @click="submit">
+      登录
+    </el-button>
+  </div>
+</template>
+
+<script setup lang="ts">
+const behaviorCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
+
+async function submit() {
+  const passed = await behaviorCaptchaRef.value?.verify?.();
+  if (!passed) {
+    // 可按 suggestAction 切换滑块或点选文字二次验证
+    return;
+  }
+  // submit business form with captchaResult.key and score
+}
+<\\/script>`;
+
 const smsCode = `<template>
   <div class="mobile-change-panel">
     <el-form :model="form" label-position="top">
@@ -454,7 +538,7 @@ const eventsTable = [
 
 const responseTable = [
   { name: 'key', description: '验证码键，提交业务接口或 verify 接口时使用', example: 'captcha-key' },
-  { name: 'type', description: '验证码类型', example: 'ARITHMETIC / BLOCK_PUZZLE / CLICK_WORD / SMS / EMAIL' },
+  { name: 'type', description: '验证码类型', example: 'ARITHMETIC / BLOCK_PUZZLE / CLICK_WORD / BEHAVIOR / SMS / EMAIL' },
   { name: 'image', description: '算术或点选文字验证码图片', example: 'data:image/png;base64,...' },
   { name: 'backgroundImage', description: '图片滑块背景图，已经绘制目标缺口', example: 'data:image/png;base64,...' },
   { name: 'sliderImage', description: '图片滑块小图，由后端从 backgroundImage 对应位置裁剪生成', example: 'data:image/png;base64,...' },
@@ -463,6 +547,9 @@ const responseTable = [
   { name: 'expireTime', description: '过期时间，单位秒', example: '300' },
   { name: 'target', description: '短信或邮件验证码发送目标；点选文字验证码中为点击顺序提示', example: '13800138000 / 云,山,月' },
   { name: 'extra', description: '点选文字验证码返回图片宽高和点击数量；正确坐标只保存在后端缓存', example: '{"width":320,"height":180,"pointCount":3}' },
+  { name: 'score', description: '无感行为验证返回评分，0.0 到 1.0，分数越高越像真人', example: '0.86' },
+  { name: 'riskLevel', description: '无感行为验证风险等级', example: 'LOW / MEDIUM / HIGH' },
+  { name: 'suggestAction', description: '无感行为验证建议业务动作', example: 'ALLOW / SECONDARY_VERIFY / DENY' },
 ];
 
 function handleSuccess(demo: DemoKey, key: string, code?: string, type?: CaptchaType) {
@@ -495,13 +582,30 @@ async function submitArithmeticDemo() {
   submitDemo('arithmetic');
 }
 
+async function submitBehaviorDemo() {
+  const passed = await behaviorCaptchaRef.value?.verify?.();
+  if (!passed) return;
+  submitDemo('behavior');
+}
+
 function submitDemo(demo: DemoKey) {
   const result = captchaResults[demo];
   if (!result) {
     ElMessage.warning('请先完成验证码');
     return;
   }
-  submitResults[demo] = `已提交：type=${result.type ?? 'UNKNOWN'}，captchaKey=${result.key}${result.code ? `，code=${result.code}` : ''}`;
+  let detail = '';
+  if (demo === 'behavior' && result.code) {
+    try {
+      const behaviorResult = JSON.parse(result.code) as { score?: number; riskLevel?: string; suggestAction?: string };
+      detail = `，score=${behaviorResult.score}，riskLevel=${behaviorResult.riskLevel}，suggestAction=${behaviorResult.suggestAction}`;
+    } catch {
+      detail = '';
+    }
+  } else {
+    detail = result.code ? `，code=${result.code}` : '';
+  }
+  submitResults[demo] = `已提交：type=${result.type ?? 'UNKNOWN'}，captchaKey=${result.key}${detail}`;
 }
 
 function toggleCode(key: DemoKey) {
@@ -531,6 +635,10 @@ function toggleCode(key: DemoKey) {
 
 .risk-card {
   width: min(560px, 100%);
+}
+
+.behavior-card {
+  width: min(480px, 100%);
 }
 
 .mock-form-head {

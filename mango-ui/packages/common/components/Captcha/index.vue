@@ -35,6 +35,13 @@
           @refresh="emit('refresh')"
         />
       </el-tab-pane>
+      <el-tab-pane label="无感行为" name="BEHAVIOR">
+        <BehaviorCaptcha
+          ref="behaviorRef"
+          @success="onSuccess"
+          @refresh="emit('refresh')"
+        />
+      </el-tab-pane>
       <el-tab-pane label="Canvas滑块" name="CANVAS_SLIDER">
         <CanvasSliderCaptcha
           ref="canvasSliderRef"
@@ -58,6 +65,7 @@ import { CaptchaType } from '../../api/captcha';
 import ArithmeticCaptcha from './ArithmeticCaptcha.vue';
 import BlockPuzzleCaptcha from './BlockPuzzleCaptcha.vue';
 import ClickWordCaptcha from './ClickWordCaptcha.vue';
+import BehaviorCaptcha from './BehaviorCaptcha.vue';
 import CanvasSliderCaptcha from './CanvasSliderCaptcha.vue';
 import SmsCaptcha from './SmsCaptcha.vue';
 import EmailCaptcha from './EmailCaptcha.vue';
@@ -77,6 +85,7 @@ const currentType = ref<CaptchaType>(props.type ?? CaptchaType.CANVAS_SLIDER);
 const arithmeticRef = ref<InstanceType<typeof ArithmeticCaptcha> | null>(null);
 const blockPuzzleRef = ref<InstanceType<typeof BlockPuzzleCaptcha> | null>(null);
 const clickWordRef = ref<InstanceType<typeof ClickWordCaptcha> | null>(null);
+const behaviorRef = ref<InstanceType<typeof BehaviorCaptcha> | null>(null);
 const canvasSliderRef = ref<InstanceType<typeof CanvasSliderCaptcha> | null>(null);
 const smsRef = ref<InstanceType<typeof SmsCaptcha> | null>(null);
 const emailRef = ref<InstanceType<typeof EmailCaptcha> | null>(null);
@@ -85,6 +94,7 @@ const componentMap = {
   [CaptchaType.ARITHMETIC]: ArithmeticCaptcha,
   [CaptchaType.BLOCK_PUZZLE]: BlockPuzzleCaptcha,
   [CaptchaType.CLICK_WORD]: ClickWordCaptcha,
+  [CaptchaType.BEHAVIOR]: BehaviorCaptcha,
   [CaptchaType.CANVAS_SLIDER]: CanvasSliderCaptcha,
   [CaptchaType.SMS]: SmsCaptcha,
   [CaptchaType.EMAIL]: EmailCaptcha,
@@ -117,6 +127,9 @@ function setFixedRef(instance: unknown) {
   if (currentType.value === CaptchaType.CLICK_WORD) {
     clickWordRef.value = refreshable as InstanceType<typeof ClickWordCaptcha> | null;
   }
+  if (currentType.value === CaptchaType.BEHAVIOR) {
+    behaviorRef.value = refreshable as InstanceType<typeof BehaviorCaptcha> | null;
+  }
   if (currentType.value === CaptchaType.CANVAS_SLIDER) {
     canvasSliderRef.value = refreshable as InstanceType<typeof CanvasSliderCaptcha> | null;
   }
@@ -133,6 +146,7 @@ function refresh() {
     [CaptchaType.ARITHMETIC]: arithmeticRef.value,
     [CaptchaType.BLOCK_PUZZLE]: blockPuzzleRef.value,
     [CaptchaType.CLICK_WORD]: clickWordRef.value,
+    [CaptchaType.BEHAVIOR]: behaviorRef.value,
     [CaptchaType.CANVAS_SLIDER]: canvasSliderRef.value,
     [CaptchaType.SMS]: smsRef.value,
     [CaptchaType.EMAIL]: emailRef.value,
@@ -143,6 +157,7 @@ function refresh() {
 function verify() {
   const verifiers: Partial<Record<CaptchaType, { verify?: () => Promise<boolean> } | null>> = {
     [CaptchaType.ARITHMETIC]: arithmeticRef.value,
+    [CaptchaType.BEHAVIOR]: behaviorRef.value,
   };
   return verifiers[currentType.value]?.verify?.() ?? Promise.resolve(false);
 }
