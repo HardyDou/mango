@@ -689,6 +689,22 @@ function toggleCode(key: DemoKey) {
   border-radius: 6px;
   background: var(--el-bg-color);
   box-shadow: 0 8px 24px rgb(31 45 61 / 7%);
+  text-align: left;
+}
+
+.captcha-demo {
+  :deep(.page-header),
+  :deep(.doc-section),
+  :deep(.mock-form-head),
+  :deep(.mode-title),
+  :deep(.captcha-panel-title) {
+    text-align: left;
+  }
+
+  :deep(.demo-source) {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .arithmetic-card {
@@ -767,11 +783,16 @@ function toggleCode(key: DemoKey) {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
   :deep(.captcha-card),
   :deep(.captcha-form) {
     width: 100%;
     max-width: 420px;
+    align-self: center;
+    text-align: left;
   }
 
   :deep(.captcha-form .row) {
@@ -794,16 +815,19 @@ function toggleCode(key: DemoKey) {
 .slider-mode-item {
   display: grid;
   gap: 10px;
+  justify-items: center;
 
   :deep(.captcha-card) {
     width: 100%;
     max-width: 420px;
+    text-align: left;
   }
 }
 
 .mode-title {
   display: grid;
   gap: 4px;
+  justify-self: stretch;
 
   strong {
     color: var(--el-text-color-primary);
