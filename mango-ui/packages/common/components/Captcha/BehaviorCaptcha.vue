@@ -7,10 +7,30 @@
       :disabled="initializing || loading || verifyResult?.passed"
       @click="handleVerifyClick"
     >
+      <span v-if="loading" class="verify-ripple" aria-hidden="true" />
       <span class="verify-icon" aria-hidden="true">
         <el-icon v-if="verifyResult?.passed"><Check /></el-icon>
-        <el-icon v-else-if="loading" class="is-loading"><Loading /></el-icon>
-        <el-icon v-else><Key /></el-icon>
+        <svg
+          v-else
+          class="shield-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          focusable="false"
+        >
+          <path
+            d="M12 3.2 5.6 5.4v5.2c0 4.1 2.6 7.7 6.4 9.1 3.8-1.4 6.4-5 6.4-9.1V5.4L12 3.2Z"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M9 12.1 11.1 14 15.4 9.5"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </span>
       <span class="verify-text">{{ statusText }}</span>
     </button>
@@ -24,7 +44,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { Check, Key, Loading } from '@element-plus/icons-vue';
+import { Check } from '@element-plus/icons-vue';
 import {
   CaptchaType,
   generateBehavior,
@@ -64,6 +84,7 @@ const mouseTrack: TrackPoint[] = [];
 const clickList: TrackPoint[] = [];
 const keyList: KeyPoint[] = [];
 let startTime = Date.now();
+let failureResetTimer: ReturnType<typeof window.setTimeout> | null = null;
 
 const statusClass = computed(() => {
   if (verifyResult.value?.passed) return 'is-success';
@@ -134,6 +155,7 @@ function createPayload() {
 }
 
 async function refresh() {
+  clearFailureResetTimer();
   errorMessage.value = '';
   verifyResult.value = null;
   initializing.value = true;
@@ -178,12 +200,28 @@ async function verify() {
       return false;
     }
     errorMessage.value = `评分不足：${verifyResult.value.score.toFixed(2)}`;
+    resetAfterFailure();
     return false;
   } catch {
     errorMessage.value = '行为验证未通过';
+    resetAfterFailure();
     return false;
   } finally {
     loading.value = false;
+  }
+}
+
+function resetAfterFailure() {
+  clearFailureResetTimer();
+  failureResetTimer = window.setTimeout(() => {
+    void refresh();
+  }, 900);
+}
+
+function clearFailureResetTimer() {
+  if (failureResetTimer) {
+    window.clearTimeout(failureResetTimer);
+    failureResetTimer = null;
   }
 }
 
@@ -203,6 +241,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  clearFailureResetTimer();
   window.removeEventListener('mousemove', handleMouseMove);
   window.removeEventListener('click', handleClick);
   window.removeEventListener('keydown', handleKeydown);
@@ -214,6 +253,7 @@ defineExpose({ refresh, verify });
 <style scoped lang="scss">
 .behavior-captcha {
   .verify-bar {
+    position: relative;
     display: flex;
     width: 100%;
     min-height: 48px;
@@ -226,6 +266,7 @@ defineExpose({ refresh, verify });
     background: var(--el-fill-color-blank);
     color: #10183f;
     cursor: pointer;
+    overflow: hidden;
     transition:
       border-color 0.2s ease,
       background-color 0.2s ease,
@@ -235,6 +276,12 @@ defineExpose({ refresh, verify });
     &:hover:not(:disabled) {
       border-color: var(--el-color-primary-light-5);
       background: var(--el-color-primary-light-9);
+      color: var(--el-color-primary);
+
+      .verify-icon {
+        color: var(--el-color-primary);
+        transform: translateY(-1px);
+      }
     }
 
     &:focus-visible {
@@ -247,7 +294,42 @@ defineExpose({ refresh, verify });
     }
   }
 
+  .verify-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scaleX(1);
+    animation: behavior-ripple 0.78s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  .verify-ripple::before,
+  .verify-ripple::after {
+    position: absolute;
+    top: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--el-color-primary) 16%, transparent);
+    content: '';
+  }
+
+  .verify-ripple::before {
+    right: 100%;
+  }
+
+  .verify-ripple::after {
+    left: 100%;
+  }
+
   .verify-icon {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     width: 38px;
     height: 38px;
@@ -258,27 +340,44 @@ defineExpose({ refresh, verify });
     box-shadow: 0 4px 12px rgb(31 45 61 / 16%);
     color: #687083;
     font-size: 22px;
+    transition:
+      color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .shield-icon {
+    width: 23px;
+    height: 23px;
   }
 
   .verify-text {
+    position: relative;
+    z-index: 1;
     font-size: 18px;
     font-weight: 500;
     line-height: 1.3;
-  }
-
-  .is-loading {
-    animation: behavior-rotate 0.9s linear infinite;
+    transition: color 0.2s ease;
   }
 
   .is-success {
-    border-color: #80c9bb;
-    background: var(--el-color-success-light-9);
-    color: #7abdaf;
+    border-color: var(--el-color-primary);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--el-color-primary) 16%, transparent),
+        color-mix(in srgb, var(--el-color-primary) 10%, transparent)
+      ),
+      var(--el-color-success-light-9);
+    color: var(--el-color-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 16%, transparent);
 
     .verify-icon {
       background: rgb(255 255 255 / 86%);
-      color: #7abdaf;
-      box-shadow: none;
+      color: var(--el-color-primary);
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+      animation: behavior-success-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1);
     }
   }
 
@@ -307,13 +406,34 @@ defineExpose({ refresh, verify });
   }
 }
 
-@keyframes behavior-rotate {
-  from {
-    transform: rotate(0deg);
+@keyframes behavior-ripple {
+  0% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scaleX(0.45);
   }
 
-  to {
-    transform: rotate(360deg);
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(9);
+  }
+}
+
+@keyframes behavior-success-pop {
+  0% {
+    transform: scale(0.86);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .behavior-captcha {
+    .verify-ripple,
+    .is-success .verify-icon {
+      animation: none;
+    }
   }
 }
 </style>
