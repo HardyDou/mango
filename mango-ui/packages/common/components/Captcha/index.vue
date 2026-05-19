@@ -41,6 +41,7 @@
     <el-tabs
       v-else
       v-model="currentType"
+      class="captcha-type-tabs"
       @tab-change="handleTabChange"
     >
       <el-tab-pane label="算术" name="ARITHMETIC">
@@ -282,6 +283,67 @@ defineExpose({ refresh, verify });
 </script>
 
 <style scoped lang="scss">
+.captcha-selector {
+  width: 100%;
+  min-width: 0;
+}
+
+.captcha-type-tabs {
+  width: 100%;
+  min-width: 0;
+
+  :deep(.el-tabs__header) {
+    margin-bottom: 14px;
+  }
+
+  :deep(.el-tabs__nav-wrap) {
+    overflow: visible;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  :deep(.el-tabs__nav-scroll) {
+    overflow: visible;
+  }
+
+  :deep(.el-tabs__nav) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 100%;
+    transform: none !important;
+  }
+
+  :deep(.el-tabs__active-bar) {
+    display: none;
+  }
+
+  :deep(.el-tabs__item) {
+    height: 28px;
+    flex: 0 1 auto;
+    max-width: 100%;
+    padding: 0 10px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    color: var(--el-text-color-regular);
+    font-size: 13px;
+    line-height: 26px;
+    white-space: nowrap;
+  }
+
+  :deep(.el-tabs__item.is-active) {
+    border-color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+  }
+
+  :deep(.el-tabs__content) {
+    min-width: 0;
+  }
+}
+
 .captcha-selector.is-popup {
   display: contents;
 }
