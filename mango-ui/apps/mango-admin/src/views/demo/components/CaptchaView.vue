@@ -76,12 +76,43 @@
               </div>
             </div>
             <el-input v-model="blockForm.reason" type="textarea" :rows="2" placeholder="请输入操作原因" />
-            <div class="captcha-check-area">
-              <CaptchaSelector
-                :type="CaptchaType.BLOCK_PUZZLE"
-                @success="(key, code, type) => handleSuccess('block', key, code, type)"
-                @refresh="() => handleRefresh('block')"
-              />
+            <div class="slider-mode-list">
+              <div class="slider-mode-item">
+                <div class="mode-title">
+                  <strong>触发式</strong>
+                  <span>默认只占一行验证条，点击后展开拼图，不打断表单布局。</span>
+                </div>
+                <CaptchaSelector
+                  :type="CaptchaType.BLOCK_PUZZLE"
+                  mode="trigger"
+                  @success="(key, code, type) => handleSuccess('block', key, code, type)"
+                  @refresh="() => handleRefresh('block')"
+                />
+              </div>
+              <div class="slider-mode-item">
+                <div class="mode-title">
+                  <strong>嵌入式</strong>
+                  <span>直接展示完整拼图区域，适合安全确认页或空间充足的表单。</span>
+                </div>
+                <CaptchaSelector
+                  :type="CaptchaType.BLOCK_PUZZLE"
+                  mode="embedded"
+                  @success="(key, code, type) => handleSuccess('block', key, code, type)"
+                  @refresh="() => handleRefresh('block')"
+                />
+              </div>
+              <div class="slider-mode-item">
+                <div class="mode-title">
+                  <strong>弹出式</strong>
+                  <span>点击验证条后在弹窗内完成验证，适合页面空间紧张的场景。</span>
+                </div>
+                <CaptchaSelector
+                  :type="CaptchaType.BLOCK_PUZZLE"
+                  mode="popup"
+                  @success="(key, code, type) => handleSuccess('block', key, code, type)"
+                  @refresh="() => handleRefresh('block')"
+                />
+              </div>
             </div>
             <div class="mock-actions">
               <el-button type="danger" :disabled="!captchaResults.block" @click="submitDemo('block')">
@@ -421,8 +452,26 @@ const blockCode = `<template>
     <div class="risk-summary">重置租户管理员密码</div>
     <el-input v-model="form.reason" type="textarea" />
 
+    <!-- 触发式：点击验证条后展开拼图 -->
     <CaptchaSelector
       :type="CaptchaType.BLOCK_PUZZLE"
+      mode="trigger"
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
+
+    <!-- 嵌入式：直接展示完整拼图区域 -->
+    <CaptchaSelector
+      :type="CaptchaType.BLOCK_PUZZLE"
+      mode="embedded"
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
+
+    <!-- 弹出式：点击验证条后在弹窗内完成验证 -->
+    <CaptchaSelector
+      :type="CaptchaType.BLOCK_PUZZLE"
+      mode="popup"
       @success="handleCaptchaSuccess"
       @refresh="captchaResult = null"
     />
@@ -517,6 +566,7 @@ const selectorCode = `<template>
 
 const propsTable = [
   { name: 'type', description: '固定验证码类型；不传时展示综合选择器', type: 'CaptchaType', defaultValue: '-' },
+  { name: 'mode', description: '图片滑块 / Canvas 滑块展示形态；trigger 为触发式，embedded 为嵌入式，popup 为弹出式', type: "'trigger' | 'embedded' | 'popup'", defaultValue: 'embedded' },
 ];
 
 const eventsTable = [
@@ -617,7 +667,7 @@ function toggleCode(key: DemoKey) {
 }
 
 .risk-card {
-  width: min(560px, 100%);
+  width: min(680px, 100%);
 }
 
 .behavior-card {
@@ -697,6 +747,41 @@ function toggleCode(key: DemoKey) {
 
   :deep(.captcha-form .row .el-input) {
     flex: 1 1 180px;
+  }
+}
+
+.slider-mode-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.slider-mode-item {
+  display: grid;
+  gap: 10px;
+
+  :deep(.captcha-card) {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+.mode-title {
+  display: grid;
+  gap: 4px;
+
+  strong {
+    color: var(--el-text-color-primary);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  span {
+    color: var(--el-text-color-regular);
+    font-size: 14px;
+    line-height: 1.6;
   }
 }
 

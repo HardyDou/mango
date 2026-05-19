@@ -4,6 +4,7 @@
       :is="currentComponent"
       v-if="fixedType"
       :ref="setFixedRef"
+      v-bind="currentComponentProps"
       @success="onSuccess"
       @refresh="emit('refresh')"
       @input-change="onInputChange"
@@ -24,6 +25,7 @@
       <el-tab-pane label="图片滑块" name="BLOCK_PUZZLE">
         <BlockPuzzleCaptcha
           ref="blockPuzzleRef"
+          :mode="mode"
           @success="onSuccess"
           @refresh="emit('refresh')"
         />
@@ -45,6 +47,7 @@
       <el-tab-pane label="Canvas滑块" name="CANVAS_SLIDER">
         <CanvasSliderCaptcha
           ref="canvasSliderRef"
+          :mode="mode"
           @success="onSuccess"
           @refresh="emit('refresh')"
         />
@@ -70,9 +73,14 @@ import CanvasSliderCaptcha from './CanvasSliderCaptcha.vue';
 import SmsCaptcha from './SmsCaptcha.vue';
 import EmailCaptcha from './EmailCaptcha.vue';
 
-const props = defineProps<{
+type CaptchaDisplayMode = 'embedded' | 'trigger' | 'popup';
+
+const props = withDefaults(defineProps<{
   type?: CaptchaType;
-}>();
+  mode?: CaptchaDisplayMode;
+}>(), {
+  mode: 'embedded',
+});
 
 const emit = defineEmits<{
   success: [key: string, code?: string, type?: CaptchaType];
@@ -81,6 +89,7 @@ const emit = defineEmits<{
 }>();
 
 const fixedType = computed(() => props.type);
+const mode = computed(() => props.mode);
 const currentType = ref<CaptchaType>(props.type ?? CaptchaType.CANVAS_SLIDER);
 const arithmeticRef = ref<InstanceType<typeof ArithmeticCaptcha> | null>(null);
 const blockPuzzleRef = ref<InstanceType<typeof BlockPuzzleCaptcha> | null>(null);
@@ -101,6 +110,12 @@ const componentMap = {
 };
 
 const currentComponent = computed(() => componentMap[currentType.value]);
+const currentComponentProps = computed(() => {
+  if ([CaptchaType.BLOCK_PUZZLE, CaptchaType.CANVAS_SLIDER].includes(currentType.value)) {
+    return { mode: mode.value };
+  }
+  return {};
+});
 
 watch(() => props.type, (type) => {
   if (type) {
