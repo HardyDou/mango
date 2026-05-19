@@ -336,15 +336,9 @@
           <main class="detail-main">
             <section class="detail-section">
               <div class="detail-basic-panel">
-                <div class="summary-main">
-                  <div
-                    v-for="item in expenseBasicSummary"
-                    :key="item.label"
-                    class="summary-item"
-                  >
-                    <span>{{ item.label }}：</span>
-                    <strong>{{ item.value || '-' }}</strong>
-                  </div>
+                <div class="summary-title-block">
+                  <strong>{{ expenseForm.workflowName || '-' }}</strong>
+                  <span>{{ expenseForm.code || '-' }}</span>
                 </div>
                 <div class="summary-stamp" :class="`is-${businessStatusTag(expenseForm.businessStatus)}`">
                   <strong>{{ expenseForm.businessStatus }}</strong>
@@ -454,15 +448,9 @@
           <main class="detail-main">
             <section class="detail-section">
               <div class="detail-basic-panel">
-                <div class="summary-main">
-                  <div
-                    v-for="item in sealBasicSummary"
-                    :key="item.label"
-                    class="summary-item"
-                  >
-                    <span>{{ item.label }}：</span>
-                    <strong>{{ item.value || '-' }}</strong>
-                  </div>
+                <div class="summary-title-block">
+                  <strong>{{ sealForm.workflowName || '-' }}</strong>
+                  <span>{{ sealForm.code || '-' }}</span>
                 </div>
                 <div class="summary-stamp" :class="`is-${businessStatusTag(sealForm.businessStatus)}`">
                   <strong>{{ sealForm.businessStatus }}</strong>
@@ -777,8 +765,6 @@ const currentApplyRecord = computed(() => expenseForm.applyRecords.find(record =
   || expenseForm.applyRecords[expenseForm.applyRecords.length - 1]);
 const currentSealApplyRecord = computed(() => sealForm.applyRecords.find(record => record.applyId === sealForm.currentApplyId)
   || sealForm.applyRecords[sealForm.applyRecords.length - 1]);
-const expenseBasicSummary = computed(() => businessBasicSummary(expenseForm));
-const sealBasicSummary = computed(() => businessBasicSummary(sealForm));
 const sealReadonlyContext = computed<BusinessApprovalContext>(() => ({
   businessType: 'CONTRACT_SEAL_APPROVAL',
   businessKey: sealForm.code,
@@ -1542,13 +1528,6 @@ function currentTaskKeysFromHistory(applies: WorkflowBusinessApply[]) {
   return applies.map(apply => firstCurrentTaskKey(apply)).filter(Boolean);
 }
 
-function businessBasicSummary(row: ExpenseExampleRow | SealExampleRow) {
-  return [
-    { label: '业务单号', value: row.code },
-    { label: '流程名称', value: row.workflowName },
-  ];
-}
-
 function uniqueKeys(keys: string[]) {
   return Array.from(new Set(keys
     .flatMap(key => String(key).split(','))
@@ -1902,11 +1881,30 @@ onMounted(async () => {
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
-.summary-main {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
+.summary-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
+}
+
+.summary-title-block strong {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-title-block span {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summary-stamp {
@@ -1944,32 +1942,6 @@ onMounted(async () => {
 .summary-stamp.is-primary {
   border-color: var(--el-color-primary);
   color: var(--el-color-primary);
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.summary-item span {
-  flex: none;
-  margin-right: 2px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.summary-item strong {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .detail-content-grid {
@@ -2094,11 +2066,6 @@ onMounted(async () => {
   .detail-basic-panel {
     grid-template-columns: 1fr;
     align-items: flex-start;
-  }
-
-  .summary-main {
-    grid-template-columns: 1fr;
-    width: 100%;
   }
 
   .summary-stamp {
