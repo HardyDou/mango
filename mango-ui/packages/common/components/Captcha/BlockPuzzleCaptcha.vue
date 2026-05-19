@@ -102,16 +102,18 @@ const baseHeight = 160;
 const sliderSize = 50;
 const triggerTrackWidth = 318;
 const triggerHandleSize = 38;
+const controlHandleSize = 38;
 const displayScale = computed(() => trackWidth.value / baseWidth);
 const displaySliderSize = computed(() => sliderSize * displayScale.value);
 const displayTargetLeft = computed(() => targetLeft.value * displayScale.value);
 const displayTargetTop = computed(() => targetTop.value * displayScale.value);
 const triggerMaxHandleLeft = computed(() => Math.max(trackWidth.value - triggerHandleSize, 0));
 const triggerMaxPieceLeft = computed(() => Math.max(trackWidth.value - displaySliderSize.value, 0));
+const controlMaxHandleLeft = computed(() => Math.max(trackWidth.value - controlHandleSize, 0));
 const displaySliderLeft = computed(() => {
-  if (mode.value !== 'trigger') return sliderLeft.value;
-  if (triggerMaxHandleLeft.value <= 0) return 0;
-  return (sliderLeft.value / triggerMaxHandleLeft.value) * triggerMaxPieceLeft.value;
+  const maxHandleLeft = mode.value === 'trigger' ? triggerMaxHandleLeft.value : controlMaxHandleLeft.value;
+  if (maxHandleLeft <= 0) return 0;
+  return (sliderLeft.value / maxHandleLeft) * triggerMaxPieceLeft.value;
 });
 
 const sliderStyle = computed(() => ({
@@ -134,6 +136,15 @@ const triggerHandleStyle = computed(() => ({
 
 const triggerFillStyle = computed(() => ({
   width: `${sliderLeft.value + triggerHandleSize}px`,
+}));
+
+const controlHandleStyle = computed(() => ({
+  left: `${sliderLeft.value}px`,
+  width: `${controlHandleSize}px`,
+}));
+
+const controlFillStyle = computed(() => ({
+  width: `${sliderLeft.value + controlHandleSize}px`,
 }));
 
 function setTrackRef(element: Element | null) {
@@ -209,7 +220,11 @@ function handlePopupClosed() {
 }
 
 function startDrag(event: MouseEvent) {
-  void showTriggerPanel();
+  if (mode.value === 'trigger') {
+    void showTriggerPanel();
+  }
+  failed.value = false;
+  errorMessage.value = '';
   syncTriggerTrackWidth();
   dragStartX = event.clientX - sliderLeft.value;
   dragging.value = true;
@@ -218,7 +233,11 @@ function startDrag(event: MouseEvent) {
 }
 
 function startTouchDrag(event: TouchEvent) {
-  void showTriggerPanel();
+  if (mode.value === 'trigger') {
+    void showTriggerPanel();
+  }
+  failed.value = false;
+  errorMessage.value = '';
   syncTriggerTrackWidth();
   dragStartX = event.touches[0].clientX - sliderLeft.value;
   dragging.value = true;
@@ -239,7 +258,7 @@ function handleTouchDrag(event: TouchEvent) {
 function updateSlider(clientX: number) {
   const maxLeft = mode.value === 'trigger'
     ? triggerMaxHandleLeft.value
-    : Math.max(trackWidth.value - displaySliderSize.value, 0);
+    : controlMaxHandleLeft.value;
   sliderLeft.value = Math.min(Math.max(clientX - dragStartX, 0), maxLeft);
 }
 
@@ -328,11 +347,6 @@ const PuzzleContent = defineComponent({
         h('div', {
           class: 'slider',
           style: sliderStyle.value,
-          onMousedown: startDrag,
-          onTouchstart: (event: TouchEvent) => {
-            event.preventDefault();
-            startTouchDrag(event);
-          },
         }, [
           captchaData.value?.sliderImage
             ? h('img', {
@@ -345,6 +359,33 @@ const PuzzleContent = defineComponent({
               : h('span', { class: 'slider-empty' }),
         ]),
       ]),
+      mode.value !== 'trigger'
+        ? h('div', {
+          class: [
+            'control-track',
+            verified.value ? 'is-success' : '',
+            failed.value ? 'is-failed' : '',
+            dragging.value ? 'is-dragging' : '',
+          ],
+        }, [
+          h('div', { class: 'control-fill', style: controlFillStyle.value }),
+          h('button', {
+            class: 'control-handle',
+            style: controlHandleStyle.value,
+            type: 'button',
+            disabled: verified.value,
+            onMousedown: startDrag,
+            onTouchstart: (event: TouchEvent) => {
+              event.preventDefault();
+              startTouchDrag(event);
+            },
+          }, [
+            h(Check, { class: verified.value ? '' : 'is-hidden' }),
+            h(Right, { class: verified.value ? 'is-hidden' : '' }),
+          ]),
+          h('div', { class: 'control-text' }, verified.value ? '验证通过' : '向右拖动滑块填充拼图'),
+        ])
+        : null,
       errorMessage.value ? h('div', { class: 'error-msg' }, errorMessage.value) : null,
     ];
   },
@@ -399,13 +440,8 @@ defineExpose({ refresh, verify });
     border-radius: 4px;
     background: transparent;
     filter: drop-shadow(0 6px 10px rgb(0 0 0 / 24%));
-    cursor: grab;
     overflow: hidden;
-    touch-action: none;
-  }
-
-  :deep(.slider:active) {
-    cursor: grabbing;
+    pointer-events: none;
   }
 
   :deep(.slider-image) {
@@ -434,6 +470,111 @@ defineExpose({ refresh, verify });
     margin-top: 8px;
     color: #f56c6c;
     font-size: 12px;
+  }
+
+  :deep(.control-track) {
+    position: relative;
+    width: 280px;
+    max-width: 100%;
+    height: 38px;
+    margin-top: 12px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    background: var(--el-fill-color-lighter);
+    overflow: hidden;
+    user-select: none;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+
+    &.is-dragging {
+      border-color: var(--el-color-primary);
+    }
+
+    &.is-success {
+      border-color: var(--el-color-success);
+      background: var(--el-color-success-light-9);
+
+      .control-fill {
+        background: var(--el-color-success-light-8);
+      }
+
+      .control-handle {
+        border-color: var(--el-color-success);
+        background: var(--el-color-success);
+        color: #fff;
+        cursor: default;
+      }
+
+      .control-text {
+        color: var(--el-color-success);
+      }
+    }
+
+    &.is-failed {
+      border-color: var(--el-color-danger);
+
+      .control-fill {
+        background: var(--el-color-danger-light-9);
+      }
+    }
+  }
+
+  :deep(.control-fill) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 0;
+    background: var(--el-color-primary-light-8);
+  }
+
+  :deep(.control-handle) {
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    z-index: 2;
+    display: inline-flex;
+    min-width: 38px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    background: var(--el-bg-color);
+    box-shadow: 0 2px 8px rgb(31 45 61 / 18%);
+    color: var(--el-text-color-regular);
+    cursor: grab;
+    font-size: 22px;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    .is-hidden {
+      display: none;
+    }
+  }
+
+  :deep(.control-text) {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 44px;
+    color: var(--el-text-color-regular);
+    font-size: 15px;
+    pointer-events: none;
   }
 
   .verify-bar {
