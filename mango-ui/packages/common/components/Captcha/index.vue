@@ -297,10 +297,13 @@ defineExpose({ refresh, verify });
   }
 
   :deep(.el-tabs__nav-wrap) {
-    overflow: visible;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
 
     &::after {
-      display: none;
+      bottom: 0;
     }
   }
 
@@ -309,34 +312,16 @@ defineExpose({ refresh, verify });
   }
 
   :deep(.el-tabs__nav) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
     max-width: 100%;
-    transform: none !important;
-  }
-
-  :deep(.el-tabs__active-bar) {
-    display: none;
   }
 
   :deep(.el-tabs__item) {
-    height: 28px;
-    flex: 0 1 auto;
-    max-width: 100%;
-    padding: 0 10px;
-    border: 1px solid var(--el-border-color);
-    border-radius: 4px;
-    color: var(--el-text-color-regular);
-    font-size: 13px;
-    line-height: 26px;
+    padding: 0 12px;
     white-space: nowrap;
   }
 
-  :deep(.el-tabs__item.is-active) {
-    border-color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
-    color: var(--el-color-primary);
+  :deep(.el-tabs__item:first-child) {
+    padding-left: 0;
   }
 
   :deep(.el-tabs__content) {
