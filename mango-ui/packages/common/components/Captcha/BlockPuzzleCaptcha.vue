@@ -12,13 +12,20 @@
         alt="滑块验证码背景"
       >
       <div v-else class="captcha-placeholder">加载中...</div>
-      <div class="target" :style="{ left: `${targetLeft}px` }" />
       <div
         class="slider"
-        :style="{ left: `${sliderLeft}px` }"
+        :style="{ left: `${sliderLeft}px`, top: `${targetTop}px` }"
         @mousedown="startDrag"
         @touchstart.prevent="startTouchDrag"
-      />
+      >
+        <img
+          v-if="captchaData?.sliderImage"
+          class="slider-image"
+          :src="captchaData.sliderImage"
+          alt="滑块拼图片"
+        >
+        <span v-else class="slider-fallback" />
+      </div>
     </div>
     <div v-if="errorMessage" class="error-msg">{{ errorMessage }}</div>
   </div>
@@ -36,7 +43,7 @@ const emit = defineEmits<{
 const trackRef = ref<HTMLElement | null>(null);
 const captchaData = ref<CaptchaResponse | null>(null);
 const sliderLeft = ref(0);
-const targetLeft = ref(0);
+const targetTop = ref(55);
 const errorMessage = ref('');
 
 let dragStartX = 0;
@@ -45,7 +52,7 @@ let dragging = false;
 async function refresh() {
   captchaData.value = await generateBlockPuzzle();
   sliderLeft.value = 0;
-  targetLeft.value = Number(captchaData.value.x ?? 0);
+  targetTop.value = Number(captchaData.value.y ?? 55);
   errorMessage.value = '';
   emit('refresh');
 }
@@ -75,7 +82,7 @@ function handleTouchDrag(event: TouchEvent) {
 }
 
 function updateSlider(clientX: number) {
-  const maxLeft = Math.max((trackRef.value?.offsetWidth ?? 280) - 40, 0);
+  const maxLeft = Math.max((trackRef.value?.offsetWidth ?? 280) - 50, 0);
   sliderLeft.value = Math.min(Math.max(clientX - dragStartX, 0), maxLeft);
 }
 
@@ -85,7 +92,7 @@ async function verifyPosition() {
     const result = await verifyCaptcha({
       key: captchaData.value.key,
       type: CaptchaType.BLOCK_PUZZLE,
-      pointJson: JSON.stringify({ x: sliderLeft.value, y: 0 }),
+      pointJson: JSON.stringify({ x: Math.round(sliderLeft.value), y: Math.round(targetTop.value) }),
     });
     if (result) {
       emit('success', captchaData.value.key);
@@ -164,26 +171,33 @@ defineExpose({ refresh });
     color: var(--el-text-color-secondary);
   }
 
-  .target {
-    position: absolute;
-    top: 55px;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: rgb(255 255 255 / 30%);
-    border: 2px dashed var(--el-color-primary);
-    box-shadow: 0 0 0 999px rgb(0 0 0 / 8%);
-  }
-
   .slider {
     position: absolute;
-    top: 55px;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background: var(--el-color-primary);
-    box-shadow: 0 4px 12px rgb(0 0 0 / 16%);
+    width: 50px;
+    height: 50px;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 82%);
+    box-shadow: 0 6px 16px rgb(0 0 0 / 22%);
     cursor: grab;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .slider:active {
+    cursor: grabbing;
+  }
+
+  .slider-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .slider-fallback {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--el-color-primary);
   }
 
   .error-msg {

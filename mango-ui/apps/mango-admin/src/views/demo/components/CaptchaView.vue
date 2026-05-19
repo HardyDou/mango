@@ -2,20 +2,43 @@
   <DemoDocLayout
     class="captcha-demo"
     title="验证码组件"
-    subtitle="统一使用 CaptchaSelector 组件，按场景固定验证码类型或启用综合选择器。"
+    subtitle="统一使用 CaptchaSelector 组件。示例按登录、风险确认、换绑和找回密码等真实业务流程组织。"
     content-box
     :toc-items="tocItems"
   >
     <section id="arithmetic" class="doc-section">
       <h2>算术验证码</h2>
-      <p>适合登录、表单提交等轻量校验场景；验证成功后返回 captchaKey 和用户输入结果。</p>
+      <p>适合登录、表单提交等轻量校验场景；用户输入计算结果后组件触发 success，业务表单再携带 captchaKey 提交。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <CaptchaSelector
-            :type="CaptchaType.ARITHMETIC"
-            @success="handleSuccess"
-            @refresh="handleRefresh"
-          />
+          <div class="mock-form-card login-card">
+            <div class="mock-form-head">
+              <h3>账号登录</h3>
+              <span>输入账号密码后完成验证码，再提交登录。</span>
+            </div>
+            <el-form class="mock-form" :model="arithmeticForm" label-position="top">
+              <el-form-item label="账号">
+                <el-input v-model="arithmeticForm.username" placeholder="请输入账号" />
+              </el-form-item>
+              <el-form-item label="密码">
+                <el-input v-model="arithmeticForm.password" type="password" show-password placeholder="请输入密码" />
+              </el-form-item>
+            </el-form>
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                :type="CaptchaType.ARITHMETIC"
+                @success="(key, code, type) => handleSuccess('arithmetic', key, code, type)"
+                @refresh="() => handleRefresh('arithmetic')"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="primary" :disabled="!captchaResults.arithmetic" @click="submitDemo('arithmetic')">
+                登录
+              </el-button>
+              <span>{{ captchaResults.arithmetic ? '验证码已通过' : '请先完成验证码' }}</span>
+            </div>
+            <div v-if="submitResults.arithmetic" class="mock-result">{{ submitResults.arithmetic }}</div>
+          </div>
         </div>
         <div class="op-btns" @click="toggleCode('arithmetic')">
           <el-icon><component :is="codeVisible.arithmetic ? ArrowUp : ArrowDown" /></el-icon>
@@ -27,14 +50,40 @@
 
     <section id="block" class="doc-section">
       <h2>图片滑块验证码</h2>
-      <p>使用后端返回的背景图和目标坐标，前端只负责拖动交互并提交 pointJson 校验。</p>
+      <p>后端从真实图片库中选择背景，并从目标位置裁剪小图。前端展示背景缺口、拖动真实裁片并提交 pointJson 校验。</p>
       <div class="demo-block">
-        <div class="demo-source demo-panel-medium">
-          <CaptchaSelector
-            :type="CaptchaType.BLOCK_PUZZLE"
-            @success="handleSuccess"
-            @refresh="handleRefresh"
-          />
+        <div class="demo-source">
+          <div class="mock-form-card risk-card">
+            <div class="mock-form-head">
+              <h3>风险操作确认</h3>
+              <span>高风险操作提交前，先通过图片滑块确认操作者行为。</span>
+            </div>
+            <div class="risk-summary">
+              <div>
+                <span>操作类型</span>
+                <strong>重置租户管理员密码</strong>
+              </div>
+              <div>
+                <span>影响范围</span>
+                <strong>tenant-prod-01</strong>
+              </div>
+            </div>
+            <el-input v-model="blockForm.reason" type="textarea" :rows="2" placeholder="请输入操作原因" />
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                :type="CaptchaType.BLOCK_PUZZLE"
+                @success="(key, code, type) => handleSuccess('block', key, code, type)"
+                @refresh="() => handleRefresh('block')"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="danger" :disabled="!captchaResults.block" @click="submitDemo('block')">
+                确认执行
+              </el-button>
+              <span>{{ captchaResults.block ? '滑块校验已通过' : '拖动拼图块完成验证' }}</span>
+            </div>
+            <div v-if="submitResults.block" class="mock-result">{{ submitResults.block }}</div>
+          </div>
         </div>
         <div class="op-btns" @click="toggleCode('block')">
           <el-icon><component :is="codeVisible.block ? ArrowUp : ArrowDown" /></el-icon>
@@ -48,11 +97,37 @@
       <h2>短信验证码</h2>
       <p>适合手机号确认、登录二次校验等场景；发送接口返回 captchaKey，输入验证码后统一走 verify 接口。</p>
       <div class="demo-block">
-        <div class="demo-source demo-panel-medium">
-          <CaptchaSelector
-            :type="CaptchaType.SMS"
-            @success="handleSuccess"
-          />
+        <div class="demo-source">
+          <div class="mock-form-card verify-card">
+            <div class="mock-form-head">
+              <h3>手机号换绑</h3>
+              <span>先校验新手机号，再提交换绑申请。</span>
+            </div>
+            <el-form class="mock-form" :model="smsForm" label-position="top">
+              <el-form-item label="当前手机号">
+                <el-input v-model="smsForm.oldMobile" disabled />
+              </el-form-item>
+              <el-form-item label="换绑原因">
+                <el-select v-model="smsForm.scene" placeholder="请选择原因">
+                  <el-option label="更换工作手机号" value="work-mobile" />
+                  <el-option label="原手机号停用" value="mobile-disabled" />
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                :type="CaptchaType.SMS"
+                @success="(key, code, type) => handleSuccess('sms', key, code, type)"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="primary" :disabled="!captchaResults.sms" @click="submitDemo('sms')">
+                提交换绑
+              </el-button>
+              <span>{{ captchaResults.sms ? '短信验证码已通过' : '请先发送并校验短信验证码' }}</span>
+            </div>
+            <div v-if="submitResults.sms" class="mock-result">{{ submitResults.sms }}</div>
+          </div>
         </div>
         <div class="op-btns" @click="toggleCode('sms')">
           <el-icon><component :is="codeVisible.sms ? ArrowUp : ArrowDown" /></el-icon>
@@ -66,11 +141,31 @@
       <h2>邮件验证码</h2>
       <p>适合邮箱确认、找回密码等场景；组件内置邮箱格式校验、倒计时和验证码提交。</p>
       <div class="demo-block">
-        <div class="demo-source demo-panel-medium">
-          <CaptchaSelector
-            :type="CaptchaType.EMAIL"
-            @success="handleSuccess"
-          />
+        <div class="demo-source">
+          <div class="mock-form-card verify-card">
+            <div class="mock-form-head">
+              <h3>找回密码</h3>
+              <span>通过邮箱验证码确认身份后，继续进入重置密码流程。</span>
+            </div>
+            <el-form class="mock-form" :model="emailForm" label-position="top">
+              <el-form-item label="登录账号">
+                <el-input v-model="emailForm.account" placeholder="请输入登录账号" />
+              </el-form-item>
+            </el-form>
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                :type="CaptchaType.EMAIL"
+                @success="(key, code, type) => handleSuccess('email', key, code, type)"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="primary" :disabled="!captchaResults.email" @click="submitDemo('email')">
+                下一步
+              </el-button>
+              <span>{{ captchaResults.email ? '邮件验证码已通过' : '请先发送并校验邮件验证码' }}</span>
+            </div>
+            <div v-if="submitResults.email" class="mock-result">{{ submitResults.email }}</div>
+          </div>
         </div>
         <div class="op-btns" @click="toggleCode('email')">
           <el-icon><component :is="codeVisible.email ? ArrowUp : ArrowDown" /></el-icon>
@@ -84,11 +179,27 @@
       <h2>综合选择器</h2>
       <p>不传 type 时展示组件内置的类型切换，用于调试或需要用户选择验证方式的场景。</p>
       <div class="demo-block">
-        <div class="demo-source demo-panel-medium">
-          <CaptchaSelector
-            @success="handleSuccess"
-            @refresh="handleRefresh"
-          />
+        <div class="demo-source">
+          <div class="mock-form-card verify-card">
+            <div class="mock-form-head">
+              <h3>安全校验</h3>
+              <span>业务方不固定验证码类型时，交给组件选择器完成。</span>
+            </div>
+            <el-alert title="当前操作需要完成一次安全校验" type="warning" show-icon :closable="false" />
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                @success="(key, code, type) => handleSuccess('selector', key, code, type)"
+                @refresh="() => handleRefresh('selector')"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="primary" :disabled="!captchaResults.selector" @click="submitDemo('selector')">
+                确认提交
+              </el-button>
+              <span>{{ captchaResults.selector ? '验证码已通过' : '请选择并完成一种验证码' }}</span>
+            </div>
+            <div v-if="submitResults.selector" class="mock-result">{{ submitResults.selector }}</div>
+          </div>
         </div>
         <div class="op-btns" @click="toggleCode('selector')">
           <el-icon><component :is="codeVisible.selector ? ArrowUp : ArrowDown" /></el-icon>
@@ -129,12 +240,20 @@
 </template>
 
 <script setup lang="ts" name="CaptchaDemo">
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
 import { CaptchaSelector, CaptchaType } from '@mango/common';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
+
+type DemoKey = 'arithmetic' | 'block' | 'sms' | 'email' | 'selector';
+
+interface CaptchaResult {
+  key: string;
+  code?: string;
+  type?: CaptchaType;
+}
 
 const tocItems = [
   { id: 'arithmetic', label: '算术验证码' },
@@ -147,7 +266,7 @@ const tocItems = [
   { id: 'response', label: '返回字段' },
 ];
 
-const codeVisible = ref<Record<string, boolean>>({
+const codeVisible = ref<Record<DemoKey, boolean>>({
   arithmetic: false,
   block: false,
   sms: false,
@@ -155,40 +274,98 @@ const codeVisible = ref<Record<string, boolean>>({
   selector: false,
 });
 
-const arithmeticCode = `<CaptchaSelector
-  :type="CaptchaType.ARITHMETIC"
-  @success="handleSuccess"
-  @refresh="handleRefresh"
-/>`;
+const arithmeticForm = reactive({ username: 'mango-admin', password: '123456' });
+const blockForm = reactive({ reason: '运维审批单 OPS-20260519 已通过' });
+const smsForm = reactive({ oldMobile: '138****8000', scene: 'work-mobile' });
+const emailForm = reactive({ account: 'admin@mango.local' });
+const captchaResults = reactive<Partial<Record<DemoKey, CaptchaResult>>>({});
+const submitResults = reactive<Partial<Record<DemoKey, string>>>({});
 
-const blockCode = `<CaptchaSelector
-  :type="CaptchaType.BLOCK_PUZZLE"
-  @success="handleSuccess"
-  @refresh="handleRefresh"
-/>`;
+const arithmeticCode = `<template>
+  <div class="login-panel">
+    <el-form :model="form" label-position="top">
+      <el-form-item label="账号">
+        <el-input v-model="form.username" />
+      </el-form-item>
+      <el-form-item label="密码">
+        <el-input v-model="form.password" type="password" show-password />
+      </el-form-item>
+    </el-form>
 
-const smsCode = `<CaptchaSelector
-  :type="CaptchaType.SMS"
-  @success="handleSuccess"
-/>`;
+    <CaptchaSelector
+      :type="CaptchaType.ARITHMETIC"
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
 
-const emailCode = `<CaptchaSelector
-  :type="CaptchaType.EMAIL"
-  @success="handleSuccess"
-/>`;
+    <el-button type="primary" :disabled="!captchaResult" @click="submit">
+      登录
+    </el-button>
+  </div>
+</template>`;
 
-const selectorCode = `<CaptchaSelector
-  @success="handleSuccess"
-  @refresh="handleRefresh"
-/>`;
+const blockCode = `<template>
+  <div class="risk-confirm-panel">
+    <div class="risk-summary">重置租户管理员密码</div>
+    <el-input v-model="form.reason" type="textarea" />
+
+    <CaptchaSelector
+      :type="CaptchaType.BLOCK_PUZZLE"
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
+
+    <el-button type="danger" :disabled="!captchaResult" @click="submit">
+      确认执行
+    </el-button>
+  </div>
+</template>`;
+
+const smsCode = `<template>
+  <div class="mobile-change-panel">
+    <el-form :model="form" label-position="top">
+      <el-form-item label="当前手机号">
+        <el-input v-model="form.oldMobile" disabled />
+      </el-form-item>
+    </el-form>
+
+    <CaptchaSelector :type="CaptchaType.SMS" @success="handleCaptchaSuccess" />
+
+    <el-button type="primary" :disabled="!captchaResult" @click="submit">
+      提交换绑
+    </el-button>
+  </div>
+</template>`;
+
+const emailCode = `<template>
+  <div class="password-reset-panel">
+    <el-input v-model="form.account" placeholder="请输入登录账号" />
+    <CaptchaSelector :type="CaptchaType.EMAIL" @success="handleCaptchaSuccess" />
+    <el-button type="primary" :disabled="!captchaResult" @click="submit">
+      下一步
+    </el-button>
+  </div>
+</template>`;
+
+const selectorCode = `<template>
+  <div class="security-check-panel">
+    <CaptchaSelector
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
+    <el-button type="primary" :disabled="!captchaResult" @click="submit">
+      确认提交
+    </el-button>
+  </div>
+</template>`;
 
 const propsTable = [
   { name: 'type', description: '固定验证码类型；不传时展示综合选择器', type: 'CaptchaType', defaultValue: '-' },
 ];
 
 const eventsTable = [
-  { name: 'success', description: '验证码通过后触发', payload: '(key: string, code?: string, type?: CaptchaType) => void' },
-  { name: 'refresh', description: '刷新图形验证码后触发', payload: '() => void' },
+  { name: 'success', description: '验证码通过后触发，业务表单应保存 key 并在确认提交时携带', payload: '(key: string, code?: string, type?: CaptchaType) => void' },
+  { name: 'refresh', description: '刷新图形验证码后触发，业务表单应清空已保存的验证码结果', payload: '() => void' },
   { name: 'refresh', description: '组件暴露方法，用于刷新当前验证码', payload: '() => void' },
 ];
 
@@ -196,31 +373,172 @@ const responseTable = [
   { name: 'key', description: '验证码键，提交业务接口或 verify 接口时使用', example: 'captcha-key' },
   { name: 'type', description: '验证码类型', example: 'ARITHMETIC / BLOCK_PUZZLE / SMS / EMAIL' },
   { name: 'image', description: '算术验证码图片', example: 'data:image/png;base64,...' },
-  { name: 'backgroundImage', description: '图片滑块背景图', example: 'data:image/png;base64,...' },
-  { name: 'x', description: '图片滑块目标 X 坐标，前端只用于展示目标位置', example: '128' },
+  { name: 'backgroundImage', description: '图片滑块背景图，已经绘制目标缺口', example: 'data:image/png;base64,...' },
+  { name: 'sliderImage', description: '图片滑块小图，由后端从 backgroundImage 对应位置裁剪生成', example: 'data:image/png;base64,...' },
+  { name: 'x', description: '图片滑块目标 X 坐标；组件内部提交 pointJson 时使用', example: '128' },
+  { name: 'y', description: '图片滑块目标 Y 坐标；组件内部渲染小图高度时使用', example: '54' },
   { name: 'expireTime', description: '过期时间，单位秒', example: '300' },
   { name: 'target', description: '短信或邮件验证码发送目标', example: '13800138000' },
 ];
 
-function handleSuccess(key: string, code?: string, type?: CaptchaType) {
-  ElMessage.success(`验证成功：${type ?? 'UNKNOWN'} / ${key}${code ? ` / ${code}` : ''}`);
+function handleSuccess(demo: DemoKey, key: string, code?: string, type?: CaptchaType) {
+  captchaResults[demo] = { key, code, type };
+  submitResults[demo] = '';
+  ElMessage.success('验证码校验通过，可以确认提交');
 }
 
-function handleRefresh() {}
+function handleRefresh(demo: DemoKey) {
+  captchaResults[demo] = undefined;
+  submitResults[demo] = '';
+}
 
-function toggleCode(key: string) {
+function submitDemo(demo: DemoKey) {
+  const result = captchaResults[demo];
+  if (!result) {
+    ElMessage.warning('请先完成验证码');
+    return;
+  }
+  submitResults[demo] = `已提交：type=${result.type ?? 'UNKNOWN'}，captchaKey=${result.key}${result.code ? `，code=${result.code}` : ''}`;
+}
+
+function toggleCode(key: DemoKey) {
   codeVisible.value[key] = !codeVisible.value[key];
 }
-
 </script>
 
 <style scoped lang="scss">
 @use './demo-page.scss';
 
-.captcha-demo {
+.mock-form-card {
+  width: min(460px, 100%);
+  padding: 22px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+  box-shadow: 0 8px 24px rgb(31 45 61 / 7%);
+}
+
+.login-card,
+.verify-card {
+  max-width: 420px;
+}
+
+.risk-card {
+  width: min(560px, 100%);
+}
+
+.mock-form-head {
+  margin-bottom: 18px;
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  span {
+    color: var(--el-text-color-regular);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+}
+
+.mock-form {
+  :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+
+  :deep(.el-select) {
+    width: 100%;
+  }
+}
+
+.captcha-check-area {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--el-border-color-lighter);
+
   :deep(.captcha-card),
   :deep(.captcha-form) {
+    width: 100%;
     max-width: 420px;
+  }
+
+  :deep(.captcha-form .row) {
+    flex-wrap: wrap;
+  }
+
+  :deep(.captcha-form .row .el-input) {
+    flex: 1 1 180px;
+  }
+}
+
+.mock-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+
+  .el-button {
+    min-width: 104px;
+  }
+
+  span {
+    color: var(--el-text-color-regular);
+    font-size: 14px;
+  }
+}
+
+.mock-result {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success-dark-2);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.risk-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+
+  div {
+    padding: 12px;
+    border-radius: 4px;
+    background: var(--el-fill-color-lighter);
+  }
+
+  span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
+  strong {
+    color: var(--el-text-color-primary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 768px) {
+  .mock-form-card {
+    padding: 16px;
+  }
+
+  .risk-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .mock-actions {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

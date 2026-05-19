@@ -68,6 +68,7 @@ public class CaptchaServiceImpl implements ICaptchaService {
                 response.setBackgroundImage(puzzle.getBackgroundImage());
                 response.setSliderImage(puzzle.getSliderImage());
                 response.setX(puzzle.getX());
+                response.setY(puzzle.getY());
                 response.setExpireTime(defaultTtl);
                 kvStore.set(KEY_PREFIX + key, String.valueOf(puzzle.getX()), defaultTtl);
             }

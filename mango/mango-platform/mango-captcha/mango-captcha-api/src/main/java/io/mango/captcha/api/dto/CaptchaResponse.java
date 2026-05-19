@@ -54,6 +54,12 @@ public class CaptchaResponse implements Serializable {
     private Integer x;
 
     /**
+     * 滑块Y坐标
+     */
+    @Schema(description = "滑块 Y 坐标，用于前端渲染拼图块")
+    private Integer y;
+
+    /**
      * 过期时间（秒）
      */
     @Schema(description = "过期时间，单位秒")

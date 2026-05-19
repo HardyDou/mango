@@ -73,7 +73,9 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.type").value("BLOCK_PUZZLE"))
                 .andExpect(jsonPath("$.data.key").exists())
-                .andExpect(jsonPath("$.data.backgroundImage").exists());
+                .andExpect(jsonPath("$.data.backgroundImage").exists())
+                .andExpect(jsonPath("$.data.sliderImage").exists())
+                .andExpect(jsonPath("$.data.y").exists());
     }
 
     @Test

@@ -39,6 +39,8 @@ class BlockPuzzleCaptchaServiceTest {
 
         assertNotNull(response.getBackgroundImage());
         assertTrue(response.getBackgroundImage().startsWith("data:image/png;base64,"));
+        assertNotNull(response.getSliderImage());
+        assertTrue(response.getSliderImage().startsWith("data:image/png;base64,"));
     }
 
     @Test
@@ -46,8 +48,10 @@ class BlockPuzzleCaptchaServiceTest {
         CaptchaResponse response = blockPuzzleCaptchaService.generate();
 
         assertNotNull(response.getX());
+        assertNotNull(response.getY());
         // X 坐标应该在合理范围内
         assertTrue(response.getX() >= 0);
+        assertTrue(response.getY() >= 0);
     }
 
     @Test
