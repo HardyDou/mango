@@ -6,6 +6,7 @@
       :ref="setFixedRef"
       @success="onSuccess"
       @refresh="emit('refresh')"
+      @input-change="onInputChange"
     />
     <el-tabs
       v-else
@@ -17,6 +18,7 @@
           ref="arithmeticRef"
           @success="onSuccess"
           @refresh="emit('refresh')"
+          @input-change="onInputChange"
         />
       </el-tab-pane>
       <el-tab-pane label="图片滑块" name="BLOCK_PUZZLE">
@@ -59,6 +61,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   success: [key: string, code?: string, type?: CaptchaType];
   refresh: [];
+  inputChange: [value: string, type?: CaptchaType];
 }>();
 
 const fixedType = computed(() => props.type);
@@ -94,7 +97,7 @@ function handleTabChange(type: string | number) {
 }
 
 function setFixedRef(instance: unknown) {
-  const refreshable = instance as { refresh?: () => void } | null;
+  const refreshable = instance as { refresh?: () => void; verify?: () => Promise<boolean> } | null;
   if (currentType.value === CaptchaType.ARITHMETIC) {
     arithmeticRef.value = refreshable as InstanceType<typeof ArithmeticCaptcha> | null;
   }
@@ -123,5 +126,16 @@ function refresh() {
   refreshers[currentType.value]?.refresh?.();
 }
 
-defineExpose({ refresh });
+function verify() {
+  const verifiers: Partial<Record<CaptchaType, { verify?: () => Promise<boolean> } | null>> = {
+    [CaptchaType.ARITHMETIC]: arithmeticRef.value,
+  };
+  return verifiers[currentType.value]?.verify?.() ?? Promise.resolve(false);
+}
+
+function onInputChange(value: string) {
+  emit('inputChange', value, currentType.value);
+}
+
+defineExpose({ refresh, verify });
 </script>

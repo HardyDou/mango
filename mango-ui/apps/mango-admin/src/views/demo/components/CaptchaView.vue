@@ -11,31 +11,38 @@
       <p>适合登录、表单提交等轻量校验场景；用户输入计算结果后组件触发 success，业务表单再携带 captchaKey 提交。</p>
       <div class="demo-block">
         <div class="demo-source">
-          <div class="mock-form-card login-card">
+          <div class="mock-form-card arithmetic-card">
             <div class="mock-form-head">
-              <h3>账号登录</h3>
-              <span>输入账号密码后完成验证码，再提交登录。</span>
+              <h3>表单提交校验</h3>
+              <span>填写业务内容和验证码，点击提交时统一校验验证码。</span>
             </div>
-            <el-form class="mock-form" :model="arithmeticForm" label-position="top">
-              <el-form-item label="账号">
-                <el-input v-model="arithmeticForm.username" placeholder="请输入账号" />
-              </el-form-item>
-              <el-form-item label="密码">
-                <el-input v-model="arithmeticForm.password" type="password" show-password placeholder="请输入密码" />
-              </el-form-item>
-            </el-form>
-            <div class="captcha-check-area">
-              <CaptchaSelector
-                :type="CaptchaType.ARITHMETIC"
-                @success="(key, code, type) => handleSuccess('arithmetic', key, code, type)"
-                @refresh="() => handleRefresh('arithmetic')"
-              />
-            </div>
-            <div class="mock-actions">
-              <el-button type="primary" :disabled="!captchaResults.arithmetic" @click="submitDemo('arithmetic')">
-                登录
-              </el-button>
-              <span>{{ captchaResults.arithmetic ? '验证码已通过' : '请先完成验证码' }}</span>
+            <div class="arithmetic-layout">
+              <div class="arithmetic-form-side">
+                <el-form class="mock-form" :model="arithmeticForm" label-position="top">
+                  <el-form-item label="申请标题">
+                    <el-input v-model="arithmeticForm.title" placeholder="请输入申请标题" />
+                  </el-form-item>
+                  <el-form-item label="申请说明">
+                    <el-input v-model="arithmeticForm.description" type="textarea" :rows="3" placeholder="请输入申请说明" />
+                  </el-form-item>
+                </el-form>
+                <div class="mock-actions">
+                  <el-button type="primary" :disabled="!arithmeticCaptchaInput.trim()" @click="submitArithmeticDemo">
+                    提交表单
+                  </el-button>
+                  <span>{{ arithmeticCaptchaInput.trim() ? '点击提交时校验验证码' : '请输入右侧验证码' }}</span>
+                </div>
+              </div>
+              <div class="arithmetic-captcha-side">
+                <div class="captcha-panel-title">图形验证码</div>
+                <CaptchaSelector
+                  ref="arithmeticCaptchaRef"
+                  :type="CaptchaType.ARITHMETIC"
+                  @success="(key, code, type) => handleSuccess('arithmetic', key, code, type)"
+                  @refresh="() => handleRefresh('arithmetic')"
+                  @input-change="handleArithmeticInputChange"
+                />
+              </div>
             </div>
             <div v-if="submitResults.arithmetic" class="mock-result">{{ submitResults.arithmetic }}</div>
           </div>
@@ -274,7 +281,9 @@ const codeVisible = ref<Record<DemoKey, boolean>>({
   selector: false,
 });
 
-const arithmeticForm = reactive({ username: 'mango-admin', password: '123456' });
+const arithmeticCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
+const arithmeticCaptchaInput = ref('');
+const arithmeticForm = reactive({ title: '组件库访问申请', description: '申请开通开发中心组件库的访问权限' });
 const blockForm = reactive({ reason: '运维审批单 OPS-20260519 已通过' });
 const smsForm = reactive({ oldMobile: '138****8000', scene: 'work-mobile' });
 const emailForm = reactive({ account: 'admin@mango.local' });
@@ -282,27 +291,39 @@ const captchaResults = reactive<Partial<Record<DemoKey, CaptchaResult>>>({});
 const submitResults = reactive<Partial<Record<DemoKey, string>>>({});
 
 const arithmeticCode = `<template>
-  <div class="login-panel">
-    <el-form :model="form" label-position="top">
-      <el-form-item label="账号">
-        <el-input v-model="form.username" />
-      </el-form-item>
-      <el-form-item label="密码">
-        <el-input v-model="form.password" type="password" show-password />
-      </el-form-item>
-    </el-form>
-
-    <CaptchaSelector
-      :type="CaptchaType.ARITHMETIC"
-      @success="handleCaptchaSuccess"
-      @refresh="captchaResult = null"
-    />
-
-    <el-button type="primary" :disabled="!captchaResult" @click="submit">
-      登录
-    </el-button>
+  <div class="submit-panel">
+    <div class="form-side">
+      <el-form :model="form" label-position="top">
+        <el-form-item label="申请标题">
+          <el-input v-model="form.title" />
+        </el-form-item>
+      </el-form>
+      <el-button type="primary" :disabled="!captchaInput" @click="submit">
+        提交表单
+      </el-button>
+    </div>
+    <div class="captcha-side">
+      <CaptchaSelector
+        ref="captchaRef"
+        :type="CaptchaType.ARITHMETIC"
+        @success="handleCaptchaSuccess"
+        @refresh="captchaResult = null"
+        @input-change="captchaInput = $event"
+      />
+    </div>
   </div>
-</template>`;
+</template>
+
+<script setup lang="ts">
+const captchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
+const captchaInput = ref('');
+
+async function submit() {
+  const verified = await captchaRef.value?.verify?.();
+  if (!verified) return;
+  // submit business form with captchaResult.key
+}
+<\\/script>`;
 
 const blockCode = `<template>
   <div class="risk-confirm-panel">
@@ -390,6 +411,25 @@ function handleSuccess(demo: DemoKey, key: string, code?: string, type?: Captcha
 function handleRefresh(demo: DemoKey) {
   captchaResults[demo] = undefined;
   submitResults[demo] = '';
+  if (demo === 'arithmetic') {
+    arithmeticCaptchaInput.value = '';
+  }
+}
+
+function handleArithmeticInputChange(value: string) {
+  arithmeticCaptchaInput.value = value;
+  captchaResults.arithmetic = undefined;
+  submitResults.arithmetic = '';
+}
+
+async function submitArithmeticDemo() {
+  if (!arithmeticCaptchaInput.value.trim()) {
+    ElMessage.warning('请输入验证码');
+    return;
+  }
+  const verified = await arithmeticCaptchaRef.value?.verify?.();
+  if (!verified) return;
+  submitDemo('arithmetic');
 }
 
 function submitDemo(demo: DemoKey) {
@@ -418,7 +458,10 @@ function toggleCode(key: DemoKey) {
   box-shadow: 0 8px 24px rgb(31 45 61 / 7%);
 }
 
-.login-card,
+.arithmetic-card {
+  width: min(760px, 100%);
+}
+
 .verify-card {
   max-width: 420px;
 }
@@ -452,6 +495,35 @@ function toggleCode(key: DemoKey) {
   :deep(.el-select) {
     width: 100%;
   }
+}
+
+.arithmetic-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 24px;
+  align-items: start;
+}
+
+.arithmetic-form-side {
+  min-width: 0;
+}
+
+.arithmetic-captcha-side {
+  min-width: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--el-border-color-lighter);
+
+  :deep(.captcha-card) {
+    width: 100%;
+  }
+}
+
+.captcha-panel-title {
+  margin-bottom: 10px;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .captcha-check-area {
@@ -534,6 +606,18 @@ function toggleCode(key: DemoKey) {
 
   .risk-summary {
     grid-template-columns: 1fr;
+  }
+
+  .arithmetic-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .arithmetic-captcha-side {
+    padding-top: 18px;
+    padding-left: 0;
+    border-top: 1px solid var(--el-border-color-lighter);
+    border-left: 0;
   }
 
   .mock-actions {
