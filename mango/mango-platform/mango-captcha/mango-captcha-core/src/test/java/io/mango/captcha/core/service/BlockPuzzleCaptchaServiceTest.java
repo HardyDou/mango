@@ -50,6 +50,9 @@ class BlockPuzzleCaptchaServiceTest {
         assertTrue(response.getBackgroundImage().startsWith("data:image/png;base64,"));
         assertNotNull(response.getSliderImage());
         assertTrue(response.getSliderImage().startsWith("data:image/png;base64,"));
+        assertEquals(280, response.getBackgroundWidth());
+        assertEquals(160, response.getBackgroundHeight());
+        assertEquals(50, response.getSliderSize());
     }
 
     @Test
@@ -105,5 +108,8 @@ class BlockPuzzleCaptchaServiceTest {
         assertTrue(response.getSliderImage().startsWith("data:image/png;base64,"));
         assertNotNull(response.getX());
         assertNotNull(response.getY());
+        assertEquals(280, response.getBackgroundWidth());
+        assertEquals(160, response.getBackgroundHeight());
+        assertEquals(50, response.getSliderSize());
     }
 }

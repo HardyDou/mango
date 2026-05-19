@@ -77,6 +77,7 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
     public CaptchaResponse generate() {
         CaptchaResponse response = new CaptchaResponse();
         response.setType(CaptchaType.BLOCK_PUZZLE);
+        applyDimensionMetadata(response);
 
         try {
             BufferedImage source = loadRandomBackground();
@@ -114,6 +115,12 @@ public class BlockPuzzleCaptchaServiceImpl implements BlockPuzzleCaptchaService 
         }
 
         return response;
+    }
+
+    private void applyDimensionMetadata(CaptchaResponse response) {
+        response.setBackgroundWidth(width);
+        response.setBackgroundHeight(height);
+        response.setSliderSize(sliderSize);
     }
 
     private BufferedImage loadRandomBackground() throws IOException {

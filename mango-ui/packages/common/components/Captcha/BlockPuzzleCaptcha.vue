@@ -90,6 +90,9 @@ const errorMessage = ref('');
 const verified = ref(false);
 const panelVisible = ref(false);
 const failed = ref(false);
+const backgroundWidth = ref(280);
+const backgroundHeight = ref(160);
+const sliderSourceSize = ref(50);
 
 let dragStartX = 0;
 const dragging = ref(false);
@@ -97,16 +100,14 @@ let resizeObserver: ResizeObserver | null = null;
 let verifyResolver: ((passed: boolean) => void) | null = null;
 let verifyPromise: Promise<boolean> | null = null;
 
-const baseWidth = 280;
-const baseHeight = 160;
-const sliderSize = 50;
 const triggerTrackWidth = 318;
 const triggerHandleSize = 38;
 const controlHandleSize = 38;
-const displayScale = computed(() => trackWidth.value / baseWidth);
-const displaySliderSize = computed(() => sliderSize * displayScale.value);
+const displayScale = computed(() => trackWidth.value / backgroundWidth.value);
+const displaySliderSize = computed(() => sliderSourceSize.value * displayScale.value);
 const displayTargetLeft = computed(() => targetLeft.value * displayScale.value);
 const displayTargetTop = computed(() => targetTop.value * displayScale.value);
+const trackAspectRatio = computed(() => `${backgroundWidth.value} / ${backgroundHeight.value}`);
 const triggerMaxHandleLeft = computed(() => Math.max(trackWidth.value - triggerHandleSize, 0));
 const triggerMaxPieceLeft = computed(() => Math.max(trackWidth.value - displaySliderSize.value, 0));
 const controlMaxHandleLeft = computed(() => Math.max(trackWidth.value - controlHandleSize, 0));
@@ -125,7 +126,7 @@ const sliderStyle = computed(() => ({
 
 const sliderFallbackStyle = computed(() => ({
   backgroundImage: captchaData.value?.backgroundImage ? `url(${captchaData.value.backgroundImage})` : undefined,
-  backgroundSize: `${trackWidth.value}px ${baseHeight * displayScale.value}px`,
+  backgroundSize: `${trackWidth.value}px ${backgroundHeight.value * displayScale.value}px`,
   backgroundPosition: `-${displayTargetLeft.value}px -${displayTargetTop.value}px`,
 }));
 
@@ -151,9 +152,9 @@ function setTrackRef(element: Element | null) {
   resizeObserver?.disconnect();
   trackRef.value = element as HTMLElement | null;
   if (!trackRef.value) return;
-  trackWidth.value = trackRef.value.offsetWidth || baseWidth;
+  trackWidth.value = trackRef.value.offsetWidth || backgroundWidth.value;
   resizeObserver = new ResizeObserver(([entry]) => {
-    trackWidth.value = entry.contentRect.width || baseWidth;
+    trackWidth.value = entry.contentRect.width || backgroundWidth.value;
   });
   resizeObserver.observe(trackRef.value);
 }
@@ -161,6 +162,9 @@ function setTrackRef(element: Element | null) {
 async function refresh(options: { errorMessage?: string; failed?: boolean } = {}) {
   captchaData.value = await generateBlockPuzzle();
   sliderLeft.value = 0;
+  backgroundWidth.value = Number(captchaData.value.backgroundWidth ?? 280);
+  backgroundHeight.value = Number(captchaData.value.backgroundHeight ?? 160);
+  sliderSourceSize.value = Number(captchaData.value.sliderSize ?? 50);
   targetLeft.value = Number(captchaData.value.x ?? 0);
   targetTop.value = Number(captchaData.value.y ?? 55);
   errorMessage.value = options.errorMessage ?? '';
@@ -173,7 +177,7 @@ async function handlePanelShow() {
   await nextTick();
   syncTriggerTrackWidth();
   if (trackRef.value) {
-    trackWidth.value = trackRef.value.offsetWidth || trackWidth.value || baseWidth;
+    trackWidth.value = trackRef.value.offsetWidth || trackWidth.value || backgroundWidth.value;
   }
 }
 
@@ -337,26 +341,28 @@ const PuzzleContent = defineComponent({
   setup() {
     return () => [
       h('div', { ref: setTrackRef, class: 'track' }, [
-        captchaData.value?.backgroundImage
-          ? h('img', {
-            class: 'captcha-image',
-            src: captchaData.value.backgroundImage,
-            alt: '滑块验证码背景',
-          })
-          : h('div', { class: 'captcha-placeholder' }, '加载中...'),
-        h('div', {
-          class: 'slider',
-          style: sliderStyle.value,
-        }, [
-          captchaData.value?.sliderImage
+        h('div', { class: 'track-ratio', style: { aspectRatio: trackAspectRatio.value } }, [
+          captchaData.value?.backgroundImage
             ? h('img', {
-              class: 'slider-image',
-              src: captchaData.value.sliderImage,
-              alt: '滑块拼图片',
+              class: 'captcha-image',
+              src: captchaData.value.backgroundImage,
+              alt: '滑块验证码背景',
             })
-            : captchaData.value?.backgroundImage
-              ? h('span', { class: 'slider-fallback', style: sliderFallbackStyle.value })
-              : h('span', { class: 'slider-empty' }),
+            : h('div', { class: 'captcha-placeholder' }, '加载中...'),
+          h('div', {
+            class: 'slider',
+            style: sliderStyle.value,
+          }, [
+            captchaData.value?.sliderImage
+              ? h('img', {
+                class: 'slider-image',
+                src: captchaData.value.sliderImage,
+                alt: '滑块拼图片',
+              })
+              : captchaData.value?.backgroundImage
+                ? h('span', { class: 'slider-fallback', style: sliderFallbackStyle.value })
+                : h('span', { class: 'slider-empty' }),
+          ]),
         ]),
       ]),
       mode.value !== 'trigger'
@@ -408,13 +414,17 @@ defineExpose({ refresh, verify });
   }
 
   :deep(.track) {
-    position: relative;
     width: 280px;
     max-width: 100%;
-    aspect-ratio: 7 / 4;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 4px;
     background: var(--el-fill-color-light);
+    overflow: hidden;
+  }
+
+  :deep(.track-ratio) {
+    position: relative;
+    width: 100%;
     overflow: hidden;
   }
 
@@ -646,7 +656,6 @@ defineExpose({ refresh, verify });
 
     :deep(.track) {
       width: 100%;
-      aspect-ratio: 2 / 1;
       border-color: var(--el-border-color);
       box-shadow: none;
     }

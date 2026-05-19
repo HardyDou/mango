@@ -16,6 +16,9 @@ export interface CaptchaResponse {
   image?: string;
   backgroundImage?: string;
   sliderImage?: string;
+  backgroundWidth?: number;
+  backgroundHeight?: number;
+  sliderSize?: number;
   x?: number;
   y?: number;
   expireTime: number;

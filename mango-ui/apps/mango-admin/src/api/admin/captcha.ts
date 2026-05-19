@@ -34,6 +34,12 @@ export interface CaptchaResponse {
   backgroundImage?: string;
   /** 滑块图片 */
   sliderImage?: string;
+  /** 滑块背景图生成宽度 */
+  backgroundWidth?: number;
+  /** 滑块背景图生成高度 */
+  backgroundHeight?: number;
+  /** 滑块拼图片生成尺寸 */
+  sliderSize?: number;
   /** 过期时间（秒） */
   expireTime: number;
   /** 目标（手机号/邮箱） */

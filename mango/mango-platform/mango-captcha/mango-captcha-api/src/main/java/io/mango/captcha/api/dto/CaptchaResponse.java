@@ -48,6 +48,24 @@ public class CaptchaResponse implements Serializable {
     private String sliderImage;
 
     /**
+     * 滑块背景图生成宽度
+     */
+    @Schema(description = "滑块背景图生成宽度，用于前端等比缩放坐标")
+    private Integer backgroundWidth;
+
+    /**
+     * 滑块背景图生成高度
+     */
+    @Schema(description = "滑块背景图生成高度，用于前端等比缩放坐标")
+    private Integer backgroundHeight;
+
+    /**
+     * 滑块拼图片生成尺寸
+     */
+    @Schema(description = "滑块拼图片生成尺寸，用于前端等比缩放拼图片")
+    private Integer sliderSize;
+
+    /**
      * 滑块X坐标（服务端校验用，不返回前端）
      */
     @Schema(description = "滑块 X 坐标，服务端校验用")
