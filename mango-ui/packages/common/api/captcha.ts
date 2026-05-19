@@ -3,6 +3,7 @@ import { get, post } from '../utils/request';
 export enum CaptchaType {
   ARITHMETIC = 'ARITHMETIC',
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
+  CLICK_WORD = 'CLICK_WORD',
   CANVAS_SLIDER = 'CANVAS_SLIDER',
   SMS = 'SMS',
   EMAIL = 'EMAIL',
@@ -43,6 +44,10 @@ export function generateArithmetic() {
 
 export function generateBlockPuzzle() {
   return get<CaptchaResponse>('/captcha/block-puzzle');
+}
+
+export function generateClickWord() {
+  return get<CaptchaResponse>('/captcha/click-word');
 }
 
 export function sendSms(mobile: string) {

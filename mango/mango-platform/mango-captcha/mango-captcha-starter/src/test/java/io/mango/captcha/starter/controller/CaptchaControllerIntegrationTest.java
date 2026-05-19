@@ -45,7 +45,7 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.types").isArray())
                 .andExpect(jsonPath("$.data.types[*]").value(
                         org.hamcrest.Matchers.containsInAnyOrder(
-                                "ARITHMETIC", "BLOCK_PUZZLE", "SMS", "EMAIL"
+                                "ARITHMETIC", "BLOCK_PUZZLE", "CLICK_WORD", "SMS", "EMAIL"
                         )
                 ))
                 .andExpect(jsonPath("$.data.currentStorage").exists());
@@ -76,6 +76,18 @@ class CaptchaControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.backgroundImage").exists())
                 .andExpect(jsonPath("$.data.sliderImage").exists())
                 .andExpect(jsonPath("$.data.y").exists());
+    }
+
+    @Test
+    void generateClickWord_returnsValidCaptcha() throws Exception {
+        mockMvc.perform(get("/captcha/click-word"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.type").value("CLICK_WORD"))
+                .andExpect(jsonPath("$.data.key").exists())
+                .andExpect(jsonPath("$.data.image").exists())
+                .andExpect(jsonPath("$.data.target").exists())
+                .andExpect(jsonPath("$.data.extra").exists());
     }
 
     @Test

@@ -18,6 +18,11 @@ public enum CaptchaType {
     BLOCK_PUZZLE("滑块验证码"),
 
     /**
+     * 点选文字验证码 - 按提示依次点击图片上的文字
+     */
+    CLICK_WORD("点选文字验证码"),
+
+    /**
      * 短信验证码
      */
     SMS("短信验证码"),

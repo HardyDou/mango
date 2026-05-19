@@ -87,12 +87,14 @@ mango:
 GET /captcha/types
 GET /captcha/arithmetic
 GET /captcha/block-puzzle
+GET /captcha/click-word
 ```
 
 | 类型 | URL |
 |-----|-----|
 | 算术验证码 | GET /captcha/arithmetic |
 | 滑块验证码 | GET /captcha/block-puzzle |
+| 点选文字验证码 | GET /captcha/click-word |
 
 返回：
 ```json
@@ -115,7 +117,18 @@ Content-Type: application/json
 
 {
   "key": "d37af63fb25348619f1e712c526baba2",
+  "type": "ARITHMETIC",
   "code": "32"
+}
+```
+
+点选文字验证码校验时，前端提交按提示顺序点击的坐标：
+
+```json
+{
+  "key": "d37af63fb25348619f1e712c526baba2",
+  "type": "CLICK_WORD",
+  "pointJson": "{\"points\":[{\"x\":80,\"y\":60},{\"x\":160,\"y\":110},{\"x\":250,\"y\":70}]}"
 }
 ```
 

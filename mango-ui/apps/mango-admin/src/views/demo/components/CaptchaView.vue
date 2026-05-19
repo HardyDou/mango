@@ -100,6 +100,50 @@
       </div>
     </section>
 
+    <section id="click-word" class="doc-section">
+      <h2>点选文字验证码</h2>
+      <p>适合风控二次确认场景；用户按提示顺序点击图片文字，组件内部提交点击坐标并完成校验。</p>
+      <div class="demo-block">
+        <div class="demo-source">
+          <div class="mock-form-card risk-card">
+            <div class="mock-form-head">
+              <h3>敏感配置发布</h3>
+              <span>发布生产配置前，通过点选文字确认是真人操作。</span>
+            </div>
+            <div class="risk-summary">
+              <div>
+                <span>配置项</span>
+                <strong>auth.login.policy</strong>
+              </div>
+              <div>
+                <span>发布环境</span>
+                <strong>production</strong>
+              </div>
+            </div>
+            <div class="captcha-check-area">
+              <CaptchaSelector
+                :type="CaptchaType.CLICK_WORD"
+                @success="(key, code, type) => handleSuccess('clickWord', key, code, type)"
+                @refresh="() => handleRefresh('clickWord')"
+              />
+            </div>
+            <div class="mock-actions">
+              <el-button type="warning" :disabled="!captchaResults.clickWord" @click="submitDemo('clickWord')">
+                确认发布
+              </el-button>
+              <span>{{ captchaResults.clickWord ? '点选文字校验已通过' : '请按提示点击图片文字' }}</span>
+            </div>
+            <div v-if="submitResults.clickWord" class="mock-result">{{ submitResults.clickWord }}</div>
+          </div>
+        </div>
+        <div class="op-btns" @click="toggleCode('clickWord')">
+          <el-icon><component :is="codeVisible.clickWord ? ArrowUp : ArrowDown" /></el-icon>
+          <span>{{ codeVisible.clickWord ? '隐藏代码' : '显示代码' }}</span>
+        </div>
+        <DemoCodeBlock v-show="codeVisible.clickWord" :code="clickWordCode" />
+      </div>
+    </section>
+
     <section id="sms" class="doc-section">
       <h2>短信验证码</h2>
       <p>适合手机号确认、登录二次校验等场景；发送接口返回 captchaKey，输入验证码后统一走 verify 接口。</p>
@@ -254,7 +298,7 @@ import { CaptchaSelector, CaptchaType } from '@mango/common';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
-type DemoKey = 'arithmetic' | 'block' | 'sms' | 'email' | 'selector';
+type DemoKey = 'arithmetic' | 'block' | 'clickWord' | 'sms' | 'email' | 'selector';
 
 interface CaptchaResult {
   key: string;
@@ -265,6 +309,7 @@ interface CaptchaResult {
 const tocItems = [
   { id: 'arithmetic', label: '算术验证码' },
   { id: 'block', label: '图片滑块验证码' },
+  { id: 'click-word', label: '点选文字验证码' },
   { id: 'sms', label: '短信验证码' },
   { id: 'email', label: '邮件验证码' },
   { id: 'selector', label: '综合选择器' },
@@ -276,6 +321,7 @@ const tocItems = [
 const codeVisible = ref<Record<DemoKey, boolean>>({
   arithmetic: false,
   block: false,
+  clickWord: false,
   sms: false,
   email: false,
   selector: false,
@@ -342,6 +388,22 @@ const blockCode = `<template>
   </div>
 </template>`;
 
+const clickWordCode = `<template>
+  <div class="publish-confirm-panel">
+    <div class="risk-summary">发布生产配置 auth.login.policy</div>
+
+    <CaptchaSelector
+      :type="CaptchaType.CLICK_WORD"
+      @success="handleCaptchaSuccess"
+      @refresh="captchaResult = null"
+    />
+
+    <el-button type="warning" :disabled="!captchaResult" @click="submit">
+      确认发布
+    </el-button>
+  </div>
+</template>`;
+
 const smsCode = `<template>
   <div class="mobile-change-panel">
     <el-form :model="form" label-position="top">
@@ -392,14 +454,15 @@ const eventsTable = [
 
 const responseTable = [
   { name: 'key', description: '验证码键，提交业务接口或 verify 接口时使用', example: 'captcha-key' },
-  { name: 'type', description: '验证码类型', example: 'ARITHMETIC / BLOCK_PUZZLE / SMS / EMAIL' },
-  { name: 'image', description: '算术验证码图片', example: 'data:image/png;base64,...' },
+  { name: 'type', description: '验证码类型', example: 'ARITHMETIC / BLOCK_PUZZLE / CLICK_WORD / SMS / EMAIL' },
+  { name: 'image', description: '算术或点选文字验证码图片', example: 'data:image/png;base64,...' },
   { name: 'backgroundImage', description: '图片滑块背景图，已经绘制目标缺口', example: 'data:image/png;base64,...' },
   { name: 'sliderImage', description: '图片滑块小图，由后端从 backgroundImage 对应位置裁剪生成', example: 'data:image/png;base64,...' },
   { name: 'x', description: '图片滑块目标 X 坐标；组件内部提交 pointJson 时使用', example: '128' },
   { name: 'y', description: '图片滑块目标 Y 坐标；组件内部渲染小图高度时使用', example: '54' },
   { name: 'expireTime', description: '过期时间，单位秒', example: '300' },
-  { name: 'target', description: '短信或邮件验证码发送目标', example: '13800138000' },
+  { name: 'target', description: '短信或邮件验证码发送目标；点选文字验证码中为点击顺序提示', example: '13800138000 / 云,山,月' },
+  { name: 'extra', description: '点选文字验证码返回图片宽高和点击数量；正确坐标只保存在后端缓存', example: '{"width":320,"height":180,"pointCount":3}' },
 ];
 
 function handleSuccess(demo: DemoKey, key: string, code?: string, type?: CaptchaType) {

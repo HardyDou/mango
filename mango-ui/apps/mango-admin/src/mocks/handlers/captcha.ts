@@ -6,6 +6,11 @@ import { http, HttpResponse } from 'msw';
 
 const blockPuzzleX = 168;
 const blockPuzzleY = 64;
+const clickWordPoints = [
+  { x: 76, y: 62 },
+  { x: 166, y: 112 },
+  { x: 252, y: 72 },
+];
 
 function svgDataUrl(svg: string) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -57,6 +62,28 @@ function createMockBlockSlider() {
   `);
 }
 
+function createMockClickWordImage() {
+  return svgDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+      <rect width="320" height="180" fill="#f2f7fa"/>
+      <path d="M0 128 C48 96 86 118 126 82 C174 39 230 67 320 26 L320 180 L0 180 Z" fill="#d6e5d5"/>
+      <circle cx="262" cy="42" r="32" fill="#ead7bd"/>
+      <rect x="34" y="34" width="92" height="48" rx="18" fill="#c6ddea"/>
+      <rect x="190" y="112" width="96" height="38" rx="15" fill="#e1dcec"/>
+      <g fill="none" stroke="#9fb3c4" stroke-opacity=".28">
+        <path d="M0 20 L180 180"/>
+        <path d="M44 0 L224 180"/>
+        <path d="M92 0 L272 180"/>
+        <path d="M146 0 L320 174"/>
+      </g>
+      <text x="60" y="76" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#274f8e" transform="rotate(-9 76 62)">云</text>
+      <text x="150" y="126" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#267a57" transform="rotate(8 166 112)">山</text>
+      <text x="236" y="86" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#98432f" transform="rotate(-5 252 72)">月</text>
+      <text x="210" y="45" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#6f499b" transform="rotate(12 225 34)">竹</text>
+    </svg>
+  `);
+}
+
 export const captchaHandlers = [
   // 获取验证码类型
   http.get('/api/captcha/types', () => {
@@ -65,7 +92,7 @@ export const captchaHandlers = [
       success: true,
       message: 'success',
       data: {
-        types: ['ARITHMETIC', 'BLOCK_PUZZLE', 'SMS', 'EMAIL'],
+        types: ['ARITHMETIC', 'BLOCK_PUZZLE', 'CLICK_WORD', 'SMS', 'EMAIL'],
         currentStorage: 'memory',
       },
     });
@@ -105,6 +132,23 @@ export const captchaHandlers = [
     });
   }),
 
+  // 生成点选文字验证码
+  http.get('/api/captcha/click-word', () => {
+    return HttpResponse.json({
+      code: 200,
+      success: true,
+      message: 'success',
+      data: {
+        key: `click-word-${Date.now()}`,
+        type: 'CLICK_WORD',
+        image: createMockClickWordImage(),
+        target: '云,山,月',
+        expireTime: 120,
+        extra: JSON.stringify({ width: 320, height: 180, pointCount: 3 }),
+      },
+    });
+  }),
+
   // 发送短信验证码（Mock 直接成功）
   http.post('/api/auth/captcha/sms/send', () => {
     return HttpResponse.json({
@@ -127,7 +171,7 @@ export const captchaHandlers = [
 
   // 校验验证码
   http.post('/api/captcha/verify', async ({ request }) => {
-    const body = await request.json() as { key: string; type: string; code?: string };
+    const body = await request.json() as { key: string; type: string; code?: string; pointJson?: string };
     // Mock: 算术验证码答案 "10" 正确
     if (body.type === 'ARITHMETIC' && body.code === '10') {
       return HttpResponse.json({
@@ -135,6 +179,18 @@ export const captchaHandlers = [
         success: true,
         message: '验证成功',
         data: true,
+      });
+    }
+    if (body.type === 'CLICK_WORD') {
+      const points = body.pointJson ? JSON.parse(body.pointJson).points as Array<{ x: number; y: number }> : [];
+      const passed = points.length === clickWordPoints.length && points.every((point, index) => (
+        Math.hypot(point.x - clickWordPoints[index].x, point.y - clickWordPoints[index].y) <= 28
+      ));
+      return HttpResponse.json({
+        code: passed ? 200 : 400,
+        success: passed,
+        message: passed ? '验证成功' : '验证失败',
+        data: passed,
       });
     }
     // 其他情况也返回成功（Mock 模式）

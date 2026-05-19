@@ -8,6 +8,8 @@ export enum CaptchaType {
   ARITHMETIC = 'ARITHMETIC',
   /** 滑块验证码（图片） */
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
+  /** 点选文字验证码 */
+  CLICK_WORD = 'CLICK_WORD',
   /** 滑块验证码（Canvas） */
   CANVAS_SLIDER = 'CANVAS_SLIDER',
   /** 短信验证码 */
@@ -82,6 +84,13 @@ export function generateArithmetic() {
  */
 export function generateBlockPuzzle() {
   return get<CaptchaResponse>('/captcha/block-puzzle');
+}
+
+/**
+ * 生成点选文字验证码
+ */
+export function generateClickWord() {
+  return get<CaptchaResponse>('/captcha/click-word');
 }
 
 /**

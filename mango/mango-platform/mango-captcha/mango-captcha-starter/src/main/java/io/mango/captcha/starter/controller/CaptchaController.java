@@ -66,6 +66,16 @@ public class CaptchaController {
     }
 
     /**
+     * 生成点选文字验证码
+     */
+    @GetMapping("/click-word")
+    @Operation(summary = "生成点选文字验证码", description = "生成按提示依次点击图片文字的验证码")
+    public R<CaptchaResponse> generateClickWord() {
+        CaptchaResponse response = captchaService.generate(CaptchaType.CLICK_WORD, null);
+        return R.ok(response);
+    }
+
+    /**
      * 校验验证码
      */
     @PostMapping("/verify")
