@@ -172,7 +172,9 @@ function refresh() {
 function verify() {
   const verifiers: Partial<Record<CaptchaType, { verify?: () => Promise<boolean> } | null>> = {
     [CaptchaType.ARITHMETIC]: arithmeticRef.value,
+    [CaptchaType.BLOCK_PUZZLE]: blockPuzzleRef.value,
     [CaptchaType.BEHAVIOR]: behaviorRef.value,
+    [CaptchaType.CANVAS_SLIDER]: canvasSliderRef.value,
   };
   return verifiers[currentType.value]?.verify?.() ?? Promise.resolve(false);
 }

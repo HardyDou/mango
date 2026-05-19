@@ -104,14 +104,22 @@
               <div class="slider-mode-item">
                 <div class="mode-title">
                   <strong>弹出式</strong>
-                  <span>点击验证条后在弹窗内完成验证，适合页面空间紧张的场景。</span>
+                  <span>提交表单时自动弹出安全验证弹窗，验证通过后继续提交。</span>
                 </div>
                 <CaptchaSelector
+                  ref="blockPopupCaptchaRef"
                   :type="CaptchaType.BLOCK_PUZZLE"
                   mode="popup"
-                  @success="(key, code, type) => handleSuccess('block', key, code, type)"
-                  @refresh="() => handleRefresh('block')"
+                  @success="(key, code, type) => handleSuccess('blockPopup', key, code, type)"
+                  @refresh="() => handleRefresh('blockPopup')"
                 />
+                <div class="mock-actions slider-popup-actions">
+                  <el-button type="danger" @click="submitBlockPopupDemo">
+                    提交表单并验证
+                  </el-button>
+                  <span>{{ captchaResults.blockPopup ? '弹窗滑块校验已通过' : '提交时会弹出滑块验证码' }}</span>
+                </div>
+                <div v-if="submitResults.blockPopup" class="mock-result">{{ submitResults.blockPopup }}</div>
               </div>
             </div>
             <div class="mock-actions">
@@ -371,7 +379,7 @@ import { CaptchaSelector, CaptchaType } from '@mango/common';
 import DemoCodeBlock from './DemoCodeBlock.vue';
 import DemoDocLayout from './DemoDocLayout.vue';
 
-type DemoKey = 'arithmetic' | 'block' | 'clickWord' | 'behavior' | 'sms' | 'email' | 'selector';
+type DemoKey = 'arithmetic' | 'block' | 'blockPopup' | 'clickWord' | 'behavior' | 'sms' | 'email' | 'selector';
 
 interface CaptchaResult {
   key: string;
@@ -395,6 +403,7 @@ const tocItems = [
 const codeVisible = ref<Record<DemoKey, boolean>>({
   arithmetic: false,
   block: false,
+  blockPopup: false,
   clickWord: false,
   behavior: false,
   sms: false,
@@ -403,6 +412,7 @@ const codeVisible = ref<Record<DemoKey, boolean>>({
 });
 
 const arithmeticCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
+const blockPopupCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
 const arithmeticCaptchaInput = ref('');
 const arithmeticForm = reactive({ title: '组件库访问申请', description: '申请开通开发中心组件库的访问权限' });
 const blockForm = reactive({ reason: '运维审批单 OPS-20260519 已通过' });
@@ -468,19 +478,31 @@ const blockCode = `<template>
       @refresh="captchaResult = null"
     />
 
-    <!-- 弹出式：点击验证条后在弹窗内完成验证 -->
+    <!-- 弹出式：提交表单时自动打开安全验证弹窗 -->
     <CaptchaSelector
+      ref="popupCaptchaRef"
       :type="CaptchaType.BLOCK_PUZZLE"
       mode="popup"
       @success="handleCaptchaSuccess"
       @refresh="captchaResult = null"
     />
 
-    <el-button type="danger" :disabled="!captchaResult" @click="submit">
+    <el-button type="danger" @click="submit">
       确认执行
     </el-button>
   </div>
-</template>`;
+</template>
+
+<script setup lang="ts">
+const popupCaptchaRef = ref<{ verify?: () => Promise<boolean> } | null>(null);
+const captchaResult = ref(null);
+
+async function submit() {
+  const passed = captchaResult.value || await popupCaptchaRef.value?.verify?.();
+  if (!passed) return;
+  // submit business form with captchaResult.key
+}
+<\\/script>`;
 
 const clickWordCode = `<template>
   <div class="publish-confirm-panel">
@@ -619,6 +641,14 @@ async function submitArithmeticDemo() {
   const verified = await arithmeticCaptchaRef.value?.verify?.();
   if (!verified) return;
   submitDemo('arithmetic');
+}
+
+async function submitBlockPopupDemo() {
+  if (!captchaResults.blockPopup) {
+    const verified = await blockPopupCaptchaRef.value?.verify?.();
+    if (!verified) return;
+  }
+  submitDemo('blockPopup');
 }
 
 function submitDemo(demo: DemoKey) {

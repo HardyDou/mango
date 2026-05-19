@@ -44,19 +44,13 @@
     </template>
 
     <template v-else>
-      <button class="verify-bar" :class="{ 'is-success': verified }" type="button" @click="openPopup">
-        <span class="verify-handle">
-          <el-icon v-if="verified"><Check /></el-icon>
-          <el-icon v-else><Right /></el-icon>
-        </span>
-        <span>{{ verified ? '验证通过' : '点击完成滑块验证' }}</span>
-      </button>
       <el-dialog
         v-model="panelVisible"
-        title="安全验证"
+        title="请完成安全验证"
         width="360px"
         append-to-body
         @opened="handlePanelShow"
+        @closed="handlePopupClosed"
       >
         <div class="puzzle-panel">
           <PuzzleContent />
@@ -100,6 +94,8 @@ const failed = ref(false);
 let dragStartX = 0;
 const dragging = ref(false);
 let resizeObserver: ResizeObserver | null = null;
+let verifyResolver: ((passed: boolean) => void) | null = null;
+let verifyPromise: Promise<boolean> | null = null;
 
 const baseWidth = 280;
 const baseHeight = 160;
@@ -188,9 +184,28 @@ function syncTriggerTrackWidth() {
   }
 }
 
-function openPopup() {
-  if (verified.value) return;
+async function verify() {
+  if (verified.value) return true;
+  if (mode.value !== 'popup') return false;
+  if (verifyPromise) return verifyPromise;
   panelVisible.value = true;
+  await handlePanelShow();
+  verifyPromise = new Promise<boolean>((resolve) => {
+    verifyResolver = resolve;
+  });
+  return verifyPromise;
+}
+
+function resolveVerify(passed: boolean) {
+  verifyResolver?.(passed);
+  verifyResolver = null;
+  verifyPromise = null;
+}
+
+function handlePopupClosed() {
+  if (!verified.value) {
+    resolveVerify(false);
+  }
 }
 
 function startDrag(event: MouseEvent) {
@@ -243,6 +258,7 @@ async function verifyPosition() {
       verified.value = true;
       panelVisible.value = false;
       emit('success', captchaData.value.key);
+      resolveVerify(true);
       return;
     }
   } catch {
@@ -289,6 +305,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   cleanupEvents();
   resizeObserver?.disconnect();
+  resolveVerify(false);
 });
 
 watch(() => props.mode, () => {
@@ -333,7 +350,7 @@ const PuzzleContent = defineComponent({
   },
 });
 
-defineExpose({ refresh });
+defineExpose({ refresh, verify });
 </script>
 
 <style scoped lang="scss">

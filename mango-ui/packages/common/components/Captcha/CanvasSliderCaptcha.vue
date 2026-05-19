@@ -36,14 +36,14 @@
     </template>
 
     <template v-else>
-      <button class="verify-bar" :class="{ 'is-success': verified }" type="button" @click="openPopup">
-        <span class="verify-handle">
-          <el-icon v-if="verified"><Check /></el-icon>
-          <el-icon v-else><Right /></el-icon>
-        </span>
-        <span>{{ verified ? '验证通过' : '点击完成滑块验证' }}</span>
-      </button>
-      <el-dialog v-model="panelVisible" title="安全验证" width="360px" append-to-body @opened="refresh">
+      <el-dialog
+        v-model="panelVisible"
+        title="请完成安全验证"
+        width="360px"
+        append-to-body
+        @opened="refresh"
+        @closed="handlePopupClosed"
+      >
         <SliderContent />
       </el-dialog>
     </template>
@@ -77,6 +77,8 @@ const panelVisible = ref(false);
 
 let dragStartX = 0;
 let dragging = false;
+let verifyResolver: ((passed: boolean) => void) | null = null;
+let verifyPromise: Promise<boolean> | null = null;
 
 function buildKey() {
   return `canvas_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -89,11 +91,6 @@ function refresh() {
   errorMessage.value = '';
   verified.value = false;
   emit('refresh');
-}
-
-function openPopup() {
-  if (verified.value) return;
-  panelVisible.value = true;
 }
 
 function startDrag(event: MouseEvent) {
@@ -127,10 +124,34 @@ function verifyCurrent() {
     verified.value = true;
     panelVisible.value = false;
     emit('success', key.value);
+    resolveVerify(true);
     return;
   }
   errorMessage.value = '位置不正确，请重试';
   refresh();
+}
+
+async function verify() {
+  if (verified.value) return true;
+  if (mode.value !== 'popup') return false;
+  if (verifyPromise) return verifyPromise;
+  panelVisible.value = true;
+  verifyPromise = new Promise<boolean>((resolve) => {
+    verifyResolver = resolve;
+  });
+  return verifyPromise;
+}
+
+function resolveVerify(passed: boolean) {
+  verifyResolver?.(passed);
+  verifyResolver = null;
+  verifyPromise = null;
+}
+
+function handlePopupClosed() {
+  if (!verified.value) {
+    resolveVerify(false);
+  }
 }
 
 function finishDrag() {
@@ -154,6 +175,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cleanupEvents();
+  resolveVerify(false);
 });
 
 const SliderContent = defineComponent({
@@ -179,7 +201,7 @@ const SliderContent = defineComponent({
   },
 });
 
-defineExpose({ refresh });
+defineExpose({ refresh, verify });
 </script>
 
 <style scoped lang="scss">
