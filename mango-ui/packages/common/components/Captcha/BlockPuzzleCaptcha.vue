@@ -13,8 +13,13 @@
       >
       <div v-else class="captcha-placeholder">加载中...</div>
       <div
+        v-if="captchaData?.backgroundImage"
+        class="target"
+        :style="targetStyle"
+      />
+      <div
         class="slider"
-        :style="{ left: `${sliderLeft}px`, top: `${targetTop}px` }"
+        :style="sliderStyle"
         @mousedown="startDrag"
         @touchstart.prevent="startTouchDrag"
       >
@@ -24,7 +29,12 @@
           :src="captchaData.sliderImage"
           alt="滑块拼图片"
         >
-        <span v-else class="slider-fallback" />
+        <span
+          v-else-if="captchaData?.backgroundImage"
+          class="slider-fallback"
+          :style="sliderFallbackStyle"
+        />
+        <span v-else class="slider-empty" />
       </div>
     </div>
     <div v-if="errorMessage" class="error-msg">{{ errorMessage }}</div>
@@ -32,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { CaptchaType, generateBlockPuzzle, verifyCaptcha, type CaptchaResponse } from '../../api/captcha';
 
 const emit = defineEmits<{
@@ -43,15 +53,48 @@ const emit = defineEmits<{
 const trackRef = ref<HTMLElement | null>(null);
 const captchaData = ref<CaptchaResponse | null>(null);
 const sliderLeft = ref(0);
+const trackWidth = ref(280);
+const targetLeft = ref(0);
 const targetTop = ref(55);
 const errorMessage = ref('');
 
 let dragStartX = 0;
 let dragging = false;
+let resizeObserver: ResizeObserver | null = null;
+
+const baseWidth = 280;
+const baseHeight = 160;
+const sliderSize = 50;
+
+const displayScale = computed(() => trackWidth.value / baseWidth);
+const displaySliderSize = computed(() => sliderSize * displayScale.value);
+const displayTargetLeft = computed(() => targetLeft.value * displayScale.value);
+const displayTargetTop = computed(() => targetTop.value * displayScale.value);
+
+const targetStyle = computed(() => ({
+  left: `${displayTargetLeft.value}px`,
+  top: `${displayTargetTop.value}px`,
+  width: `${displaySliderSize.value}px`,
+  height: `${displaySliderSize.value}px`,
+}));
+
+const sliderStyle = computed(() => ({
+  left: `${sliderLeft.value}px`,
+  top: `${displayTargetTop.value}px`,
+  width: `${displaySliderSize.value}px`,
+  height: `${displaySliderSize.value}px`,
+}));
+
+const sliderFallbackStyle = computed(() => ({
+  backgroundImage: captchaData.value?.backgroundImage ? `url(${captchaData.value.backgroundImage})` : undefined,
+  backgroundSize: `${trackWidth.value}px ${baseHeight * displayScale.value}px`,
+  backgroundPosition: `-${displayTargetLeft.value}px -${displayTargetTop.value}px`,
+}));
 
 async function refresh() {
   captchaData.value = await generateBlockPuzzle();
   sliderLeft.value = 0;
+  targetLeft.value = Number(captchaData.value.x ?? 0);
   targetTop.value = Number(captchaData.value.y ?? 55);
   errorMessage.value = '';
   emit('refresh');
@@ -82,7 +125,7 @@ function handleTouchDrag(event: TouchEvent) {
 }
 
 function updateSlider(clientX: number) {
-  const maxLeft = Math.max((trackRef.value?.offsetWidth ?? 280) - 50, 0);
+  const maxLeft = Math.max(trackWidth.value - displaySliderSize.value, 0);
   sliderLeft.value = Math.min(Math.max(clientX - dragStartX, 0), maxLeft);
 }
 
@@ -92,7 +135,10 @@ async function verifyPosition() {
     const result = await verifyCaptcha({
       key: captchaData.value.key,
       type: CaptchaType.BLOCK_PUZZLE,
-      pointJson: JSON.stringify({ x: Math.round(sliderLeft.value), y: Math.round(targetTop.value) }),
+      pointJson: JSON.stringify({
+        x: Math.round(sliderLeft.value / displayScale.value),
+        y: Math.round(targetTop.value),
+      }),
     });
     if (result) {
       emit('success', captchaData.value.key);
@@ -126,11 +172,19 @@ function finishTouchDrag() {
 }
 
 onMounted(() => {
+  if (trackRef.value) {
+    trackWidth.value = trackRef.value.offsetWidth || baseWidth;
+    resizeObserver = new ResizeObserver(([entry]) => {
+      trackWidth.value = entry.contentRect.width || baseWidth;
+    });
+    resizeObserver.observe(trackRef.value);
+  }
   void refresh();
 });
 
 onBeforeUnmount(() => {
   cleanupEvents();
+  resizeObserver?.disconnect();
 });
 
 defineExpose({ refresh });
@@ -149,7 +203,7 @@ defineExpose({ refresh });
     position: relative;
     width: 280px;
     max-width: 100%;
-    height: 160px;
+    aspect-ratio: 7 / 4;
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 4px;
     background: var(--el-fill-color-light);
@@ -171,13 +225,24 @@ defineExpose({ refresh });
     color: var(--el-text-color-secondary);
   }
 
+  .target {
+    position: absolute;
+    z-index: 1;
+    border: 2px dashed rgb(255 255 255 / 95%);
+    border-radius: 4px;
+    background: rgb(0 0 0 / 22%);
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 35%),
+      0 0 0 999px rgb(0 0 0 / 5%);
+    pointer-events: none;
+  }
+
   .slider {
     position: absolute;
-    width: 50px;
-    height: 50px;
+    z-index: 2;
     border-radius: 4px;
-    background: rgb(255 255 255 / 82%);
-    box-shadow: 0 6px 16px rgb(0 0 0 / 22%);
+    background: transparent;
+    filter: drop-shadow(0 6px 10px rgb(0 0 0 / 24%));
     cursor: grab;
     overflow: hidden;
     touch-action: none;
@@ -191,13 +256,22 @@ defineExpose({ refresh });
     display: block;
     width: 100%;
     height: 100%;
+    object-fit: contain;
   }
 
   .slider-fallback {
     display: block;
     width: 100%;
     height: 100%;
-    background: var(--el-color-primary);
+    background-repeat: no-repeat;
+    background-color: var(--el-fill-color-light);
+  }
+
+  .slider-empty {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--el-fill-color);
   }
 
   .error-msg {
