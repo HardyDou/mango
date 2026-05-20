@@ -8,34 +8,22 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 文件记录实体。
+ * 文件秒传哈希映射。
  */
 @Data
-@TableName("file_record")
-public class FileRecord {
+@TableName("file_hash_mapping")
+public class FileHashMappingEntity {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
+    private String scopeType;
     private Long tenantId;
-    private String bizType;
-    private String bizId;
-    private String purpose;
-    private String bizMeta;
-    private Long directoryId;
-    private String accessLevel;
-    private Long objectId;
-    private String storageType;
     private Long storageConfigId;
-    private String bucketName;
-    private String objectName;
-    private String fileName;
-    private String fileExt;
-    private Long fileSize;
-    private String contentType;
     private String fileHash;
+    private Long fileSize;
+    private Long objectId;
     private Integer status;
-    private Integer archived;
     private Long createdBy;
     private LocalDateTime createdTime;
     private LocalDateTime createdAt;

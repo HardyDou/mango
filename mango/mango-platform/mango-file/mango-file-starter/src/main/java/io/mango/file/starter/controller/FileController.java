@@ -4,10 +4,15 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.file.api.command.CompleteFileUploadPartCommand;
+import io.mango.file.api.command.CreateFileUploadPartSignCommand;
+import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
+import io.mango.file.api.vo.FileUploadInitVO;
+import io.mango.file.api.vo.FileUploadPartSignVO;
 import io.mango.file.core.service.FileDownload;
 import io.mango.file.core.service.IFileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -151,5 +156,64 @@ public class FileController {
         FileArchiveCommand resolved = command == null ? new FileArchiveCommand() : command;
         resolved.setId(id);
         return fileService.archive(resolved);
+    }
+
+    @PostMapping("/uploads")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "初始化分片上传", description = "权限接口。按当前生效存储配置创建上传会话，命中秒传时直接返回文件记录")
+    public R<FileUploadInitVO> createUploadSession(
+            @Valid @RequestBody CreateFileUploadSessionCommand command) {
+        return fileService.createUploadSession(command);
+    }
+
+    @PostMapping("/uploads/{sessionId}/parts/sign")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "签发分片上传地址", description = "权限接口。为 MinIO/S3 原生分片上传生成浏览器可直传的预签名地址")
+    public R<FileUploadPartSignVO> createUploadPartSign(
+            @Parameter(description = "上传会话ID", required = true)
+            @PathVariable Long sessionId,
+            @Valid @RequestBody CreateFileUploadPartSignCommand command) {
+        return fileService.createUploadPartSign(sessionId, command);
+    }
+
+    @PostMapping(path = "/uploads/{sessionId}/parts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "上传后端分片", description = "权限接口。用于不支持对象存储原生分片的存储类型，由后端接收分片并在完成时合并")
+    public R<Boolean> uploadServerPart(
+            @Parameter(description = "上传会话ID", required = true)
+            @PathVariable Long sessionId,
+            @Parameter(description = "分片序号，从 1 开始", required = true)
+            @RequestParam Integer partNumber,
+            @Parameter(description = "分片文件", required = true)
+            @RequestPart("file") MultipartFile file) {
+        return fileService.uploadServerPart(sessionId, partNumber, file);
+    }
+
+    @PutMapping("/uploads/{sessionId}/parts")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "登记分片完成", description = "权限接口。登记对象存储返回的分片 ETag 或后端分片元数据")
+    public R<Boolean> completeUploadPart(
+            @Parameter(description = "上传会话ID", required = true)
+            @PathVariable Long sessionId,
+            @Valid @RequestBody CompleteFileUploadPartCommand command) {
+        return fileService.completeUploadPart(sessionId, command);
+    }
+
+    @PostMapping("/uploads/{sessionId}/complete")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "完成分片上传", description = "权限接口。完成对象存储原生分片或后端分片合并，并创建文件记录")
+    public R<FileRecordVO> completeUploadSession(
+            @Parameter(description = "上传会话ID", required = true)
+            @PathVariable Long sessionId) {
+        return fileService.completeUploadSession(sessionId);
+    }
+
+    @DeleteMapping("/uploads/{sessionId}")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:upload")
+    @Operation(summary = "取消分片上传", description = "权限接口。取消对象存储分片上传或清理后端临时分片")
+    public R<Boolean> abortUploadSession(
+            @Parameter(description = "上传会话ID", required = true)
+            @PathVariable Long sessionId) {
+        return fileService.abortUploadSession(sessionId);
     }
 }

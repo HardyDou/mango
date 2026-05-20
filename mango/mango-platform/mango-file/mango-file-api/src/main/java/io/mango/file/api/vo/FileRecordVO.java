@@ -42,6 +42,9 @@ public class FileRecordVO implements Serializable {
     @Schema(description = "访问级别：PRIVATE、PUBLIC_READ、INTERNAL")
     private String accessLevel;
 
+    @Schema(description = "物理文件对象ID")
+    private Long objectId;
+
     @Schema(description = "存储类型：LOCAL、S3、MINIO、AWS_S3、ALIYUN_OSS、TENCENT_COS、QINIU_KODO")
     private String storageType;
 

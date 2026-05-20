@@ -4,6 +4,7 @@ import io.mango.file.core.entity.FileStorageConfig;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -44,5 +45,37 @@ public interface FileStorage {
     /** 生成浏览器可直接下载底层存储对象的公开地址。 */
     default Optional<String> publicDownloadUrl(FileStorageConfig config, String objectName, String fileName) {
         return publicGetUrl(config, objectName, fileName);
+    }
+
+    /** 是否支持对象存储原生分片上传。 */
+    default boolean supportsMultipartUpload(FileStorageConfig config) {
+        return false;
+    }
+
+    /** 初始化对象存储原生分片上传。 */
+    default MultipartUpload initiateMultipartUpload(FileStorageConfig config, String objectName, String contentType) {
+        throw new UnsupportedOperationException("Multipart upload is not supported");
+    }
+
+    /** 生成对象存储分片上传地址。 */
+    default UploadPartSign presignedUploadPartUrl(FileStorageConfig config,
+                                                  String objectName,
+                                                  String uploadId,
+                                                  int partNumber,
+                                                  Duration expires) {
+        throw new UnsupportedOperationException("Multipart upload is not supported");
+    }
+
+    /** 完成对象存储原生分片上传。 */
+    default void completeMultipartUpload(FileStorageConfig config,
+                                         String objectName,
+                                         String uploadId,
+                                         List<CompletedUploadPart> parts) {
+        throw new UnsupportedOperationException("Multipart upload is not supported");
+    }
+
+    /** 取消对象存储原生分片上传。 */
+    default void abortMultipartUpload(FileStorageConfig config, String objectName, String uploadId) {
+        throw new UnsupportedOperationException("Multipart upload is not supported");
     }
 }

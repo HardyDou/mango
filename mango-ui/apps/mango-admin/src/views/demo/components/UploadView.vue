@@ -131,11 +131,11 @@
 
       <section id="manual" class="doc-section">
         <h2>手动上传</h2>
-        <p>auto=false 时先选择文件，再统一点击上传到服务器；一次选择多个文件时走文件中心批量上传接口。</p>
+        <p>auto=false 时先选择文件，再统一点击上传到服务器；多个小文件走批量接口，遇到大文件时自动切换分片上传链路。</p>
         <div class="demo-block" data-testid="manual-upload-panel">
           <div class="demo-source">
             <FeatureTags
-              :items="['手动提交', '选取后不立即上传', '多文件批量接口', '提交后回填标识']"
+              :items="['手动提交', '选取后不立即上传', '小文件批量接口', '大文件分片上传']"
             />
             <MUpload
               v-model="manualTokens"

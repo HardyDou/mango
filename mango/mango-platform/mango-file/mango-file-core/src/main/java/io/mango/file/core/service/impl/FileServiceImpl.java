@@ -1,37 +1,57 @@
 package io.mango.file.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
-import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.FileCode;
+import io.mango.file.api.command.CompleteFileUploadPartCommand;
+import io.mango.file.api.command.CreateFileUploadPartSignCommand;
+import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
 import io.mango.file.api.enums.FileDuplicateNameStrategy;
 import io.mango.file.api.enums.FileInstantUploadScope;
+import io.mango.file.api.enums.FileObjectStatus;
 import io.mango.file.api.enums.FileObjectNameStrategy;
 import io.mango.file.api.enums.FileRecordStatus;
+import io.mango.file.api.enums.FileUploadMode;
+import io.mango.file.api.enums.FileUploadSessionStatus;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
+import io.mango.file.api.vo.FileUploadInitVO;
+import io.mango.file.api.vo.FileUploadPartSignVO;
 import io.mango.file.core.entity.FileDirectory;
+import io.mango.file.core.entity.FileHashMappingEntity;
+import io.mango.file.core.entity.FileObjectEntity;
 import io.mango.file.core.entity.FileRecord;
 import io.mango.file.core.entity.FileStorageConfig;
+import io.mango.file.core.entity.FileUploadPartEntity;
+import io.mango.file.core.entity.FileUploadSessionEntity;
 import io.mango.file.core.mapper.FileDirectoryMapper;
+import io.mango.file.core.mapper.FileHashMappingMapper;
+import io.mango.file.core.mapper.FileObjectMapper;
 import io.mango.file.core.mapper.FileRecordMapper;
+import io.mango.file.core.mapper.FileUploadPartMapper;
+import io.mango.file.core.mapper.FileUploadSessionMapper;
 import io.mango.file.core.service.FileDownload;
 import io.mango.file.core.service.IFileDirectoryService;
 import io.mango.file.core.service.IFileService;
 import io.mango.file.core.service.IFileSettingsService;
 import io.mango.file.core.service.IFileStorageConfigService;
+import io.mango.file.core.storage.CompletedUploadPart;
 import io.mango.file.core.storage.FileObject;
 import io.mango.file.core.storage.FileStorageRouter;
+import io.mango.file.core.storage.MultipartUpload;
+import io.mango.file.core.storage.UploadPartSign;
 import io.mango.infra.context.core.MangoContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -47,13 +67,16 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -70,12 +93,20 @@ public class FileServiceImpl implements IFileService {
 
     private static final DateTimeFormatter DATE_PATH = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final int BIZ_META_MAX_LENGTH = 4000;
+    private static final long DEFAULT_CHUNK_SIZE = 10L * 1024 * 1024;
+    private static final long MIN_CHUNK_SIZE = 5L * 1024 * 1024;
+    private static final long UPLOAD_SESSION_EXPIRE_HOURS = 24L;
+    private static final String PART_STATUS_COMPLETED = "COMPLETED";
 
     private final FileStorageRouter fileStorageRouter;
     private final IFileStorageConfigService storageConfigService;
     private final IFileSettingsService settingsService;
     private final IFileDirectoryService directoryService;
     private final FileRecordMapper fileRecordMapper;
+    private final FileObjectMapper fileObjectMapper;
+    private final FileHashMappingMapper fileHashMappingMapper;
+    private final FileUploadSessionMapper fileUploadSessionMapper;
+    private final FileUploadPartMapper fileUploadPartMapper;
     private final FileDirectoryMapper fileDirectoryMapper;
     private final ObjectMapper objectMapper;
 
@@ -129,51 +160,36 @@ public class FileServiceImpl implements IFileService {
         validateContentType(input.contentType, settings);
         String normalizedBizMeta = normalizeBizMeta(bizMeta);
         String hash = sha256(input);
-        FileRecord reusedRecord = findInstantUploadRecord(tenantId, hash, settings);
-        FileStorageConfig storageConfig;
-        String objectName;
-        if (reusedRecord != null) {
-            storageConfig = storageConfigService.getEnabledConfig(
-                    reusedRecord.getStorageConfigId(),
-                    reusedRecord.getStorageType(),
-                    reusedRecord.getBucketName());
-            objectName = reusedRecord.getObjectName();
-        } else {
-            storageConfig = storageConfigService.activeConfig();
-            Require.isTrue(Integer.valueOf(1).equals(storageConfig.getStatus()), FileCode.STORAGE_CONFIG_DISABLED);
-            objectName = generateObjectName(storageConfig, tenantId, resolvedDirectoryId, originalFilename, fileExt, hash, settings);
+        FileStorageConfig storageConfig = activeStorageConfig();
+        FileObjectEntity fileObject = findInstantUploadObject(tenantId, storageConfig, hash, input.fileSize, settings);
+        if (fileObject == null) {
+            String objectName = generateObjectName(storageConfig, tenantId, resolvedDirectoryId, originalFilename, fileExt, hash, settings);
             try (InputStream uploadInput = input.openStream()) {
                 fileStorageRouter.putObject(storageConfig, objectName, uploadInput, input.fileSize, input.contentType);
             } catch (Exception e) {
                 return Require.fail(FileCode.FILE_STORE_FAILED);
             }
+            fileObject = createFileObject(tenantId, storageConfig, objectName, hash, input.fileSize, input.contentType, 0L);
+            createHashMapping(tenantId, storageConfig, hash, input.fileSize, fileObject, settings);
         }
 
-        FileRecord entity = new FileRecord();
-        entity.setTenantId(tenantId);
-        entity.setBizType(trimToNull(bizType));
-        entity.setBizId(trimToNull(bizId));
-        entity.setPurpose(trimToNull(purpose));
-        entity.setBizMeta(normalizedBizMeta);
-        entity.setDirectoryId(resolvedDirectoryId);
-        entity.setAccessLevel(resolveAccessLevel(accessLevel, settings).name());
-        entity.setStorageType(storageConfig.getStorageType());
-        entity.setStorageConfigId(storageConfig.getId() == null || storageConfig.getId() <= 0 ? null : storageConfig.getId());
-        entity.setBucketName(storageConfig.getBucketName());
-        entity.setObjectName(objectName);
-        entity.setFileName(originalFilename);
-        entity.setFileExt(fileExt);
-        entity.setFileSize(input.fileSize);
-        entity.setContentType(trimToNull(input.contentType));
-        entity.setFileHash(hash);
-        entity.setStatus(FileRecordStatus.COMPLETED.value());
-        entity.setArchived(0);
-        entity.setCreatedBy(userId);
-        entity.setUpdatedBy(userId);
-        LocalDateTime now = LocalDateTime.now();
-        entity.setCreatedTime(now);
-        entity.setUpdatedTime(now);
+        FileRecord entity = createFileRecord(tenantId,
+                userId,
+                fileObject,
+                originalFilename,
+                fileExt,
+                input.fileSize,
+                input.contentType,
+                hash,
+                purpose,
+                accessLevel,
+                bizType,
+                bizId,
+                normalizedBizMeta,
+                resolvedDirectoryId,
+                settings);
         fileRecordMapper.insert(entity);
+        incrementObjectRefCount(fileObject.getId());
         return R.ok(toVO(entity));
     }
 
@@ -229,11 +245,8 @@ public class FileServiceImpl implements IFileService {
     @Override
     public FileDownload download(Long id) {
         FileRecord record = selectVisible(id);
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                record.getStorageConfigId(),
-                record.getStorageType(),
-                record.getBucketName());
-        FileObject object = fileStorageRouter.getObject(storageConfig, record.getObjectName());
+        StoredObject storedObject = resolveStoredObject(record);
+        FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());
         String contentType = StringUtils.hasText(record.getContentType()) ? record.getContentType() : object.contentType();
         return new FileDownload(object.inputStream(), record.getFileName(), contentType, object.contentLength());
     }
@@ -248,10 +261,238 @@ public class FileServiceImpl implements IFileService {
         record.setUpdatedBy(MangoContextHolder.userId());
         record.setUpdatedTime(LocalDateTime.now());
         boolean updated = fileRecordMapper.updateById(record) > 0;
+        if (updated && record.getObjectId() != null) {
+            decrementObjectRefCount(record.getObjectId());
+        }
         if (updated && Boolean.TRUE.equals(settingsService.current().getPhysicalDeleteEnabled())) {
             removePhysicalObjectIfUnreferenced(record);
         }
         return R.ok(updated);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileUploadInitVO> createUploadSession(CreateFileUploadSessionCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        Long tenantId = requireTenantId();
+        Long userId = MangoContextHolder.userId();
+        Long resolvedDirectoryId = normalizeDirectoryId(command.getDirectoryId());
+        directoryService.selectVisible(resolvedDirectoryId);
+        FileSettingsVO settings = settingsService.current();
+        Require.isTrue(command.getFileSize() <= settings.getMaxSize(), FileCode.FILE_SIZE_EXCEEDED);
+        String fileName = resolveFileName(tenantId, resolvedDirectoryId, normalizeFileName(command.getFileName()), settings);
+        String fileExt = fileExt(fileName);
+        validateExtension(fileExt, settings);
+        validateContentType(command.getContentType(), settings);
+        String fileHash = trimToNull(command.getFileHash());
+        Require.notBlank(fileHash, FileCode.FILE_UPLOAD_PART_INVALID);
+        String normalizedBizMeta = normalizeBizMeta(command.getBizMeta());
+        FileStorageConfig storageConfig = activeStorageConfig();
+        FileObjectEntity instantObject = findInstantUploadObject(tenantId, storageConfig, fileHash, command.getFileSize(), settings);
+        if (instantObject != null) {
+            FileRecord record = createFileRecord(tenantId,
+                    userId,
+                    instantObject,
+                    fileName,
+                    fileExt,
+                    command.getFileSize(),
+                    command.getContentType(),
+                    fileHash,
+                    command.getPurpose(),
+                    command.getAccessLevel(),
+                    command.getBizType(),
+                    command.getBizId(),
+                    normalizedBizMeta,
+                    resolvedDirectoryId,
+                    settings);
+            fileRecordMapper.insert(record);
+            incrementObjectRefCount(instantObject.getId());
+            FileUploadInitVO vo = new FileUploadInitVO();
+            vo.setInstant(true);
+            vo.setFileRecord(toVO(record));
+            return R.ok(vo);
+        }
+
+        long chunkSize = resolveChunkSize(command.getChunkSize());
+        int totalParts = resolveTotalParts(command.getTotalParts(), command.getFileSize(), chunkSize);
+        String objectName = generateObjectName(storageConfig, tenantId, resolvedDirectoryId, fileName, fileExt, fileHash, settings);
+        FileUploadMode uploadMode = fileStorageRouter.supportsMultipartUpload(storageConfig)
+                ? FileUploadMode.S3_MULTIPART : FileUploadMode.SERVER_CHUNK;
+        String storageUploadId = null;
+        if (uploadMode == FileUploadMode.S3_MULTIPART) {
+            MultipartUpload upload = fileStorageRouter.initiateMultipartUpload(storageConfig, objectName, command.getContentType());
+            storageUploadId = upload.uploadId();
+        }
+        FileUploadSessionEntity session = new FileUploadSessionEntity();
+        session.setTenantId(tenantId);
+        session.setStorageConfigId(normalizedStorageConfigId(storageConfig));
+        session.setStorageType(storageConfig.getStorageType());
+        session.setBucketName(storageConfig.getBucketName());
+        session.setObjectName(objectName);
+        session.setUploadMode(uploadMode.name());
+        session.setStorageUploadId(storageUploadId);
+        session.setFileName(fileName);
+        session.setFileExt(fileExt);
+        session.setFileHash(fileHash);
+        session.setFileSize(command.getFileSize());
+        session.setContentType(trimToNull(command.getContentType()));
+        session.setChunkSize(chunkSize);
+        session.setTotalParts(totalParts);
+        session.setUploadedParts(0);
+        session.setStatus(FileUploadSessionStatus.INIT.name());
+        session.setExpiresAt(LocalDateTime.now().plusHours(UPLOAD_SESSION_EXPIRE_HOURS));
+        session.setPurpose(trimToNull(command.getPurpose()));
+        session.setAccessLevel(resolveAccessLevel(command.getAccessLevel(), settings).name());
+        session.setBizType(trimToNull(command.getBizType()));
+        session.setBizId(trimToNull(command.getBizId()));
+        session.setBizMeta(normalizedBizMeta);
+        session.setDirectoryId(resolvedDirectoryId);
+        session.setCreatedBy(userId);
+        session.setUpdatedBy(userId);
+        LocalDateTime now = LocalDateTime.now();
+        session.setCreatedTime(now);
+        session.setUpdatedTime(now);
+        fileUploadSessionMapper.insert(session);
+
+        FileUploadInitVO vo = new FileUploadInitVO();
+        vo.setInstant(false);
+        vo.setSessionId(session.getId());
+        vo.setUploadMode(session.getUploadMode());
+        vo.setStorageUploadId(session.getStorageUploadId());
+        vo.setChunkSize(session.getChunkSize());
+        vo.setTotalParts(session.getTotalParts());
+        vo.setExpiresAt(session.getExpiresAt());
+        return R.ok(vo);
+    }
+
+    @Override
+    public R<FileUploadPartSignVO> createUploadPartSign(Long sessionId, CreateFileUploadPartSignCommand command) {
+        Require.notNull(command, FileCode.FILE_UPLOAD_PART_INVALID);
+        FileUploadSessionEntity session = selectUploadSession(sessionId);
+        requireUploadSessionActive(session);
+        Require.isTrue(command.getPartNumber() <= session.getTotalParts(), FileCode.FILE_UPLOAD_PART_INVALID);
+        Require.isTrue(FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode()), FileCode.FILE_UPLOAD_SESSION_INVALID);
+        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
+                session.getStorageConfigId(),
+                session.getStorageType(),
+                session.getBucketName());
+        long expireSeconds = positiveOrDefault(settingsService.current().getDirectUploadExpireSeconds(), 900L);
+        UploadPartSign sign = fileStorageRouter.presignedUploadPartUrl(storageConfig,
+                session.getObjectName(),
+                session.getStorageUploadId(),
+                command.getPartNumber(),
+                Duration.ofSeconds(expireSeconds));
+        FileUploadPartSignVO vo = new FileUploadPartSignVO();
+        vo.setPartNumber(sign.partNumber());
+        vo.setUploadUrl(sign.uploadUrl());
+        vo.setMethod(sign.method());
+        vo.setExpireSeconds(sign.expireSeconds());
+        return R.ok(vo);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> uploadServerPart(Long sessionId, Integer partNumber, MultipartFile file) {
+        Require.notNull(file, FileCode.FILE_EMPTY);
+        Require.notNull(partNumber, FileCode.FILE_UPLOAD_PART_INVALID);
+        FileUploadSessionEntity session = selectUploadSession(sessionId);
+        requireUploadSessionActive(session);
+        Require.isTrue(FileUploadMode.SERVER_CHUNK.name().equals(session.getUploadMode()), FileCode.FILE_UPLOAD_SESSION_INVALID);
+        Require.isTrue(partNumber >= 1 && partNumber <= session.getTotalParts(), FileCode.FILE_UPLOAD_PART_INVALID);
+        Require.isFalse(file.isEmpty(), FileCode.FILE_EMPTY);
+        Path target = serverChunkPath(session.getId(), partNumber);
+        try (InputStream input = file.getInputStream()) {
+            Files.createDirectories(target.getParent());
+            Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+        upsertUploadPart(session, partNumber, file.getSize(), null, "server-" + partNumber);
+        return R.ok(true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> completeUploadPart(Long sessionId, CompleteFileUploadPartCommand command) {
+        Require.notNull(command, FileCode.FILE_UPLOAD_PART_INVALID);
+        FileUploadSessionEntity session = selectUploadSession(sessionId);
+        requireUploadSessionActive(session);
+        Require.isTrue(command.getPartNumber() <= session.getTotalParts(), FileCode.FILE_UPLOAD_PART_INVALID);
+        upsertUploadPart(session, command.getPartNumber(), command.getPartSize(), command.getPartHash(), command.getEtag());
+        return R.ok(true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileRecordVO> completeUploadSession(Long sessionId) {
+        FileUploadSessionEntity session = selectUploadSession(sessionId);
+        requireUploadSessionActive(session);
+        List<FileUploadPartEntity> parts = fileUploadPartMapper.selectList(new LambdaQueryWrapper<FileUploadPartEntity>()
+                .eq(FileUploadPartEntity::getSessionId, session.getId())
+                .eq(FileUploadPartEntity::getStatus, PART_STATUS_COMPLETED)
+                .orderByAsc(FileUploadPartEntity::getPartNumber));
+        Require.isTrue(parts.size() == session.getTotalParts(), FileCode.FILE_UPLOAD_PART_INVALID);
+        session.setStatus(FileUploadSessionStatus.COMPLETING.name());
+        session.setUpdatedBy(MangoContextHolder.userId());
+        session.setUpdatedTime(LocalDateTime.now());
+        fileUploadSessionMapper.updateById(session);
+        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
+                session.getStorageConfigId(),
+                session.getStorageType(),
+                session.getBucketName());
+        completePhysicalUpload(session, storageConfig, parts);
+        FileObjectEntity fileObject = createFileObject(session.getTenantId(),
+                storageConfig,
+                session.getObjectName(),
+                session.getFileHash(),
+                session.getFileSize(),
+                session.getContentType(),
+                0L);
+        createHashMapping(session.getTenantId(), storageConfig, session.getFileHash(), session.getFileSize(), fileObject, settingsService.current());
+        FileRecord record = createFileRecord(session.getTenantId(),
+                MangoContextHolder.userId(),
+                fileObject,
+                session.getFileName(),
+                session.getFileExt(),
+                session.getFileSize(),
+                session.getContentType(),
+                session.getFileHash(),
+                session.getPurpose(),
+                session.getAccessLevel(),
+                session.getBizType(),
+                session.getBizId(),
+                session.getBizMeta(),
+                session.getDirectoryId(),
+                settingsService.current());
+        fileRecordMapper.insert(record);
+        incrementObjectRefCount(fileObject.getId());
+        session.setObjectId(fileObject.getId());
+        session.setFileRecordId(record.getId());
+        session.setStatus(FileUploadSessionStatus.COMPLETED.name());
+        session.setUpdatedTime(LocalDateTime.now());
+        fileUploadSessionMapper.updateById(session);
+        return R.ok(toVO(record));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> abortUploadSession(Long sessionId) {
+        FileUploadSessionEntity session = selectUploadSession(sessionId);
+        if (FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode())
+                && StringUtils.hasText(session.getStorageUploadId())) {
+            FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
+                    session.getStorageConfigId(),
+                    session.getStorageType(),
+                    session.getBucketName());
+            fileStorageRouter.abortMultipartUpload(storageConfig, session.getObjectName(), session.getStorageUploadId());
+        }
+        if (FileUploadMode.SERVER_CHUNK.name().equals(session.getUploadMode())) {
+            cleanupServerChunkSession(session.getId());
+        }
+        session.setStatus(FileUploadSessionStatus.ABORTED.name());
+        session.setUpdatedBy(MangoContextHolder.userId());
+        session.setUpdatedTime(LocalDateTime.now());
+        return R.ok(fileUploadSessionMapper.updateById(session) > 0);
     }
 
     private LambdaQueryWrapper<FileRecord> wrapper(FileRecordPageQuery query) {
@@ -362,41 +603,45 @@ public class FileServiceImpl implements IFileService {
 
     private void fillDirectAccess(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
         vo.setDirectAccess(false);
-        vo.setPreviewUrl(downloadUrl(record.getId()));
-        vo.setDownloadUrl(downloadUrl(record.getId()));
+        String fallbackUrl = downloadUrl(record.getId());
+        vo.setPreviewUrl(fallbackUrl);
+        vo.setDownloadUrl(fallbackUrl);
         if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
             return;
         }
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                record.getStorageConfigId(),
-                record.getStorageType(),
-                record.getBucketName());
+        StoredObject storedObject = resolveStoredObject(record);
+        FileStorageConfig storageConfig = storedObject.storageConfig();
+        String objectName = storedObject.objectName();
         if (!shouldUsePresignedUrl(record, settings)) {
-            fileStorageRouter.publicGetUrl(storageConfig, record.getObjectName(), record.getFileName())
+            fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
                         vo.setDirectAccess(true);
+                        vo.setPreviewUrl(url);
                         vo.setDirectPreviewUrl(url);
                     });
-            fileStorageRouter.publicDownloadUrl(storageConfig, record.getObjectName(), record.getFileName())
+            fileStorageRouter.publicDownloadUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
                         vo.setDirectAccess(true);
+                        vo.setDownloadUrl(url);
                         vo.setDirectDownloadUrl(url);
                     });
             return;
         }
         long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
         long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 600L);
-        fileStorageRouter.presignedGetUrl(storageConfig, record.getObjectName(), record.getFileName(),
+        fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                 .ifPresent(url -> {
                     vo.setDirectAccess(true);
+                    vo.setPreviewUrl(url);
                     vo.setDirectPreviewUrl(url);
                     vo.setDirectPreviewExpireSeconds(previewExpireSeconds);
                 });
-        fileStorageRouter.presignedDownloadUrl(storageConfig, record.getObjectName(), record.getFileName(),
+        fileStorageRouter.presignedDownloadUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(downloadExpireSeconds))
                 .ifPresent(url -> {
                     vo.setDirectAccess(true);
+                    vo.setDownloadUrl(url);
                     vo.setDirectDownloadUrl(url);
                     vo.setDirectDownloadExpireSeconds(downloadExpireSeconds);
                 });
@@ -411,19 +656,18 @@ public class FileServiceImpl implements IFileService {
         if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
             return;
         }
-        FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
-                record.getStorageConfigId(),
-                record.getStorageType(),
-                record.getBucketName());
+        StoredObject storedObject = resolveStoredObject(record);
+        FileStorageConfig storageConfig = storedObject.storageConfig();
+        String objectName = storedObject.objectName();
         if (!shouldUsePresignedUrl(record, settings)) {
-            fileStorageRouter.publicGetUrl(storageConfig, record.getObjectName(), record.getFileName())
+            fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
                         vo.setDirectAccess(true);
                         vo.setUrl(url);
                         vo.setPreviewUrl(url);
                         vo.setDirectPreviewUrl(url);
                     });
-            fileStorageRouter.publicDownloadUrl(storageConfig, record.getObjectName(), record.getFileName())
+            fileStorageRouter.publicDownloadUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
                         vo.setDirectAccess(true);
                         vo.setDownloadUrl(url);
@@ -433,7 +677,7 @@ public class FileServiceImpl implements IFileService {
         }
         long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
         long downloadExpireSeconds = positiveOrDefault(settings.getAccessTokenExpireSeconds(), 600L);
-        fileStorageRouter.presignedGetUrl(storageConfig, record.getObjectName(), record.getFileName(),
+        fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                     .ifPresent(url -> {
                         vo.setDirectAccess(true);
@@ -442,7 +686,7 @@ public class FileServiceImpl implements IFileService {
                         vo.setDirectPreviewUrl(url);
                         vo.setDirectPreviewExpireSeconds(previewExpireSeconds);
                     });
-        fileStorageRouter.presignedDownloadUrl(storageConfig, record.getObjectName(), record.getFileName(),
+        fileStorageRouter.presignedDownloadUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(downloadExpireSeconds))
                 .ifPresent(url -> {
                     vo.setDirectAccess(true);
@@ -652,39 +896,391 @@ public class FileServiceImpl implements IFileService {
         }
     }
 
-    private FileRecord findInstantUploadRecord(Long tenantId, String hash, FileSettingsVO settings) {
-        if (!Boolean.TRUE.equals(settings.getInstantUploadEnabled()) || !StringUtils.hasText(hash)) {
-            return null;
-        }
-        LambdaQueryWrapper<FileRecord> wrapper = new LambdaQueryWrapper<FileRecord>()
-                .eq(FileRecord::getFileHash, hash)
-                .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value())
-                .eq(FileRecord::getArchived, 0)
-                .orderByDesc(FileRecord::getCreatedTime)
-                .last("LIMIT 1");
-        if (FileInstantUploadScope.of(settings.getInstantUploadScope()) == FileInstantUploadScope.TENANT) {
-            wrapper.eq(FileRecord::getTenantId, tenantId);
-        }
-        return fileRecordMapper.selectOne(wrapper);
+    private FileStorageConfig activeStorageConfig() {
+        FileStorageConfig storageConfig = storageConfigService.activeConfig();
+        Require.isTrue(Integer.valueOf(1).equals(storageConfig.getStatus()), FileCode.STORAGE_CONFIG_DISABLED);
+        return storageConfig;
     }
 
-    private void removePhysicalObjectIfUnreferenced(FileRecord record) {
-        Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecord>()
-                .eq(FileRecord::getStorageType, record.getStorageType())
-                .eq(FileRecord::getBucketName, record.getBucketName())
-                .eq(FileRecord::getObjectName, record.getObjectName())
-                .eq(record.getStorageConfigId() != null, FileRecord::getStorageConfigId, record.getStorageConfigId())
-                .eq(FileRecord::getArchived, 0)
-                .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
-        if (activeRefs > 0) {
+    private long resolveChunkSize(Long requestedChunkSize) {
+        long chunkSize = requestedChunkSize == null || requestedChunkSize <= 0 ? DEFAULT_CHUNK_SIZE : requestedChunkSize;
+        return Math.max(chunkSize, MIN_CHUNK_SIZE);
+    }
+
+    private int resolveTotalParts(Integer requestedTotalParts, long fileSize, long chunkSize) {
+        int calculated = (int) ((fileSize + chunkSize - 1) / chunkSize);
+        if (requestedTotalParts != null) {
+            Require.isTrue(requestedTotalParts == calculated, FileCode.FILE_UPLOAD_PART_INVALID);
+        }
+        Require.isTrue(calculated > 0 && calculated <= 10000, FileCode.FILE_UPLOAD_PART_INVALID);
+        return calculated;
+    }
+
+    private FileUploadSessionEntity selectUploadSession(Long sessionId) {
+        Require.notNull(sessionId, FileCode.FILE_UPLOAD_SESSION_NOT_FOUND);
+        FileUploadSessionEntity session = fileUploadSessionMapper.selectOne(new LambdaQueryWrapper<FileUploadSessionEntity>()
+                .eq(FileUploadSessionEntity::getTenantId, requireTenantId())
+                .eq(FileUploadSessionEntity::getId, sessionId)
+                .last("LIMIT 1"));
+        Require.notNull(session, FileCode.FILE_UPLOAD_SESSION_NOT_FOUND);
+        return session;
+    }
+
+    private void requireUploadSessionActive(FileUploadSessionEntity session) {
+        Require.isFalse(FileUploadSessionStatus.COMPLETED.name().equals(session.getStatus())
+                || FileUploadSessionStatus.ABORTED.name().equals(session.getStatus())
+                || FileUploadSessionStatus.FAILED.name().equals(session.getStatus())
+                || FileUploadSessionStatus.EXPIRED.name().equals(session.getStatus()), FileCode.FILE_UPLOAD_SESSION_INVALID);
+        Require.isTrue(session.getExpiresAt() == null || session.getExpiresAt().isAfter(LocalDateTime.now()),
+                FileCode.FILE_UPLOAD_SESSION_INVALID);
+    }
+
+    private void upsertUploadPart(FileUploadSessionEntity session,
+                                  Integer partNumber,
+                                  Long partSize,
+                                  String partHash,
+                                  String etag) {
+        FileUploadPartEntity existing = fileUploadPartMapper.selectOne(new LambdaQueryWrapper<FileUploadPartEntity>()
+                .eq(FileUploadPartEntity::getSessionId, session.getId())
+                .eq(FileUploadPartEntity::getPartNumber, partNumber)
+                .last("LIMIT 1"));
+        boolean created = existing == null;
+        FileUploadPartEntity part = created ? new FileUploadPartEntity() : existing;
+        Long userId = MangoContextHolder.userId();
+        part.setTenantId(session.getTenantId());
+        part.setSessionId(session.getId());
+        part.setPartNumber(partNumber);
+        part.setPartSize(partSize);
+        part.setPartHash(trimToNull(partHash));
+        part.setEtag(trimToNull(etag));
+        part.setStatus(PART_STATUS_COMPLETED);
+        LocalDateTime now = LocalDateTime.now();
+        part.setUpdatedBy(userId);
+        part.setUpdatedTime(now);
+        if (created) {
+            part.setCreatedBy(userId);
+            part.setCreatedTime(now);
+            fileUploadPartMapper.insert(part);
+            session.setUploadedParts(session.getUploadedParts() + 1);
+        } else {
+            fileUploadPartMapper.updateById(part);
+        }
+        session.setStatus(FileUploadSessionStatus.UPLOADING.name());
+        session.setUpdatedBy(userId);
+        session.setUpdatedTime(now);
+        fileUploadSessionMapper.updateById(session);
+    }
+
+    private void completePhysicalUpload(FileUploadSessionEntity session,
+                                        FileStorageConfig storageConfig,
+                                        List<FileUploadPartEntity> parts) {
+        if (FileUploadMode.S3_MULTIPART.name().equals(session.getUploadMode())) {
+            List<CompletedUploadPart> completedParts = parts.stream()
+                    .sorted(Comparator.comparing(FileUploadPartEntity::getPartNumber))
+                    .map(item -> new CompletedUploadPart(item.getPartNumber(), item.getEtag()))
+                    .collect(Collectors.toList());
+            fileStorageRouter.completeMultipartUpload(storageConfig,
+                    session.getObjectName(),
+                    session.getStorageUploadId(),
+                    completedParts);
             return;
+        }
+        Path merged = null;
+        try {
+            merged = Files.createTempFile("mango-file-merged-", ".upload");
+            try (OutputStream output = Files.newOutputStream(merged)) {
+                for (FileUploadPartEntity part : parts) {
+                    Path partPath = serverChunkPath(session.getId(), part.getPartNumber());
+                    Require.isTrue(Files.exists(partPath), FileCode.FILE_UPLOAD_PART_INVALID);
+                    Files.copy(partPath, output);
+                }
+            }
+            try (InputStream input = Files.newInputStream(merged)) {
+                fileStorageRouter.putObject(storageConfig,
+                        session.getObjectName(),
+                        input,
+                        Files.size(merged),
+                        session.getContentType());
+            }
+            cleanupServerChunkSession(session.getId());
+        } catch (IOException e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        } catch (Exception e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        } finally {
+            if (merged != null) {
+                try {
+                    Files.deleteIfExists(merged);
+                } catch (IOException ignored) {
+                    // 临时文件清理失败不影响主流程结果。
+                }
+            }
+        }
+    }
+
+    private Path serverChunkPath(Long sessionId, Integer partNumber) {
+        return Path.of(System.getProperty("java.io.tmpdir"))
+                .resolve("mango-file")
+                .resolve("upload-session-" + sessionId)
+                .resolve(partNumber + ".part")
+                .toAbsolutePath()
+                .normalize();
+    }
+
+    private void cleanupServerChunkSession(Long sessionId) {
+        Path directory = Path.of(System.getProperty("java.io.tmpdir"))
+                .resolve("mango-file")
+                .resolve("upload-session-" + sessionId)
+                .toAbsolutePath()
+                .normalize();
+        if (!Files.exists(directory)) {
+            return;
+        }
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
+            for (Path path : stream) {
+                Files.deleteIfExists(path);
+            }
+            Files.deleteIfExists(directory);
+        } catch (IOException ignored) {
+            // 临时分片清理失败不影响会话取消或完成结果。
+        }
+    }
+
+    private Long normalizedStorageConfigId(FileStorageConfig storageConfig) {
+        return storageConfig.getId() == null || storageConfig.getId() <= 0 ? 0L : storageConfig.getId();
+    }
+
+    private FileObjectEntity findInstantUploadObject(Long tenantId,
+                                                     FileStorageConfig storageConfig,
+                                                     String hash,
+                                                     Long fileSize,
+                                                     FileSettingsVO settings) {
+        if (!Boolean.TRUE.equals(settings.getInstantUploadEnabled()) || !StringUtils.hasText(hash) || fileSize == null) {
+            return null;
+        }
+        FileHashMappingEntity mapping = fileHashMappingMapper.selectOne(new LambdaQueryWrapper<FileHashMappingEntity>()
+                .eq(FileHashMappingEntity::getScopeType, hashScope(settings).name())
+                .eq(FileHashMappingEntity::getTenantId, hashTenantId(tenantId, settings))
+                .eq(FileHashMappingEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
+                .eq(FileHashMappingEntity::getFileHash, hash)
+                .eq(FileHashMappingEntity::getFileSize, fileSize)
+                .eq(FileHashMappingEntity::getStatus, 1)
+                .last("LIMIT 1"));
+        if (mapping == null) {
+            return null;
+        }
+        FileObjectEntity fileObject = fileObjectMapper.selectById(mapping.getObjectId());
+        if (fileObject == null || !Integer.valueOf(FileObjectStatus.COMPLETED.value()).equals(fileObject.getStatus())) {
+            return null;
+        }
+        return fileObject;
+    }
+
+    private FileObjectEntity createFileObject(Long tenantId,
+                                              FileStorageConfig storageConfig,
+                                              String objectName,
+                                              String hash,
+                                              Long fileSize,
+                                              String contentType,
+                                              Long refCount) {
+        FileObjectEntity entity = new FileObjectEntity();
+        entity.setTenantId(tenantId);
+        entity.setStorageConfigId(normalizedStorageConfigId(storageConfig));
+        entity.setStorageType(storageConfig.getStorageType());
+        entity.setBucketName(storageConfig.getBucketName());
+        entity.setObjectName(objectName);
+        entity.setFileHash(hash);
+        entity.setFileSize(fileSize);
+        entity.setContentType(trimToNull(contentType));
+        entity.setStatus(FileObjectStatus.COMPLETED.value());
+        entity.setRefCount(refCount == null ? 0L : refCount);
+        LocalDateTime now = LocalDateTime.now();
+        Long userId = MangoContextHolder.userId();
+        entity.setCreatedBy(userId);
+        entity.setCreatedTime(now);
+        entity.setUpdatedBy(userId);
+        entity.setUpdatedTime(now);
+        fileObjectMapper.insert(entity);
+        return entity;
+    }
+
+    private void createHashMapping(Long tenantId,
+                                   FileStorageConfig storageConfig,
+                                   String hash,
+                                   Long fileSize,
+                                   FileObjectEntity fileObject,
+                                   FileSettingsVO settings) {
+        if (!Boolean.TRUE.equals(settings.getInstantUploadEnabled()) || !StringUtils.hasText(hash) || fileSize == null) {
+            return;
+        }
+        FileHashMappingEntity existing = fileHashMappingMapper.selectOne(new LambdaQueryWrapper<FileHashMappingEntity>()
+                .eq(FileHashMappingEntity::getScopeType, hashScope(settings).name())
+                .eq(FileHashMappingEntity::getTenantId, hashTenantId(tenantId, settings))
+                .eq(FileHashMappingEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
+                .eq(FileHashMappingEntity::getFileHash, hash)
+                .eq(FileHashMappingEntity::getFileSize, fileSize)
+                .last("LIMIT 1"));
+        if (existing != null) {
+            existing.setObjectId(fileObject.getId());
+            existing.setStatus(1);
+            existing.setUpdatedBy(MangoContextHolder.userId());
+            existing.setUpdatedTime(LocalDateTime.now());
+            fileHashMappingMapper.updateById(existing);
+            return;
+        }
+        FileHashMappingEntity mapping = new FileHashMappingEntity();
+        mapping.setScopeType(hashScope(settings).name());
+        mapping.setTenantId(hashTenantId(tenantId, settings));
+        mapping.setStorageConfigId(normalizedStorageConfigId(storageConfig));
+        mapping.setFileHash(hash);
+        mapping.setFileSize(fileSize);
+        mapping.setObjectId(fileObject.getId());
+        mapping.setStatus(1);
+        LocalDateTime now = LocalDateTime.now();
+        Long userId = MangoContextHolder.userId();
+        mapping.setCreatedBy(userId);
+        mapping.setCreatedTime(now);
+        mapping.setUpdatedBy(userId);
+        mapping.setUpdatedTime(now);
+        fileHashMappingMapper.insert(mapping);
+    }
+
+    private FileInstantUploadScope hashScope(FileSettingsVO settings) {
+        return FileInstantUploadScope.of(settings.getInstantUploadScope()) == FileInstantUploadScope.GLOBAL
+                ? FileInstantUploadScope.GLOBAL : FileInstantUploadScope.TENANT;
+    }
+
+    private Long hashTenantId(Long tenantId, FileSettingsVO settings) {
+        return hashScope(settings) == FileInstantUploadScope.GLOBAL ? 0L : tenantId;
+    }
+
+    private FileRecord createFileRecord(Long tenantId,
+                                        Long userId,
+                                        FileObjectEntity fileObject,
+                                        String fileName,
+                                        String fileExt,
+                                        Long fileSize,
+                                        String contentType,
+                                        String fileHash,
+                                        String purpose,
+                                        String accessLevel,
+                                        String bizType,
+                                        String bizId,
+                                        String bizMeta,
+                                        Long directoryId,
+                                        FileSettingsVO settings) {
+        FileRecord entity = new FileRecord();
+        entity.setTenantId(tenantId);
+        entity.setBizType(trimToNull(bizType));
+        entity.setBizId(trimToNull(bizId));
+        entity.setPurpose(trimToNull(purpose));
+        entity.setBizMeta(bizMeta);
+        entity.setDirectoryId(directoryId);
+        entity.setAccessLevel(resolveAccessLevel(accessLevel, settings).name());
+        entity.setObjectId(fileObject.getId());
+        entity.setStorageType(fileObject.getStorageType());
+        entity.setStorageConfigId(fileObject.getStorageConfigId());
+        entity.setBucketName(fileObject.getBucketName());
+        entity.setObjectName(fileObject.getObjectName());
+        entity.setFileName(fileName);
+        entity.setFileExt(fileExt);
+        entity.setFileSize(fileSize);
+        entity.setContentType(trimToNull(contentType));
+        entity.setFileHash(fileHash);
+        entity.setStatus(FileRecordStatus.COMPLETED.value());
+        entity.setArchived(0);
+        entity.setCreatedBy(userId);
+        entity.setUpdatedBy(userId);
+        LocalDateTime now = LocalDateTime.now();
+        entity.setCreatedTime(now);
+        entity.setUpdatedTime(now);
+        return entity;
+    }
+
+    private void incrementObjectRefCount(Long objectId) {
+        Require.notNull(objectId, FileCode.FILE_NOT_FOUND);
+        fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getId, objectId)
+                .setSql("ref_count = ref_count + 1")
+                .set(FileObjectEntity::getUpdatedTime, LocalDateTime.now()));
+    }
+
+    private void decrementObjectRefCount(Long objectId) {
+        Require.notNull(objectId, FileCode.FILE_NOT_FOUND);
+        fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getId, objectId)
+                .gt(FileObjectEntity::getRefCount, 0)
+                .setSql("ref_count = ref_count - 1")
+                .set(FileObjectEntity::getUpdatedTime, LocalDateTime.now()));
+    }
+
+    private void markObjectUnreferenced(Long objectId) {
+        fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getId, objectId)
+                .set(FileObjectEntity::getStatus, FileObjectStatus.UNREFERENCED.value())
+                .set(FileObjectEntity::getUpdatedTime, LocalDateTime.now()));
+    }
+
+    private void markObjectDeleted(Long objectId) {
+        fileObjectMapper.update(null, new LambdaUpdateWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getId, objectId)
+                .set(FileObjectEntity::getStatus, FileObjectStatus.DELETED.value())
+                .set(FileObjectEntity::getUpdatedTime, LocalDateTime.now()));
+    }
+
+    private void disableHashMapping(Long objectId) {
+        fileHashMappingMapper.update(null, new LambdaUpdateWrapper<FileHashMappingEntity>()
+                .eq(FileHashMappingEntity::getObjectId, objectId)
+                .set(FileHashMappingEntity::getStatus, 0)
+                .set(FileHashMappingEntity::getUpdatedTime, LocalDateTime.now()));
+    }
+
+    private StoredObject resolveStoredObject(FileRecord record) {
+        if (record.getObjectId() != null) {
+            FileObjectEntity fileObject = fileObjectMapper.selectById(record.getObjectId());
+            Require.notNull(fileObject, FileCode.FILE_NOT_FOUND);
+            FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
+                    fileObject.getStorageConfigId(),
+                    fileObject.getStorageType(),
+                    fileObject.getBucketName());
+            return new StoredObject(fileObject, storageConfig, fileObject.getObjectName());
         }
         FileStorageConfig storageConfig = storageConfigService.getEnabledConfig(
                 record.getStorageConfigId(),
                 record.getStorageType(),
                 record.getBucketName());
+        return new StoredObject(null, storageConfig, record.getObjectName());
+    }
+
+    private void removePhysicalObjectIfUnreferenced(FileRecord record) {
+        StoredObject storedObject = resolveStoredObject(record);
+        if (record.getObjectId() != null) {
+            Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecord>()
+                    .eq(FileRecord::getObjectId, record.getObjectId())
+                    .eq(FileRecord::getArchived, 0)
+                    .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
+            if (activeRefs > 0) {
+                return;
+            }
+            markObjectUnreferenced(record.getObjectId());
+        } else {
+            Long activeRefs = fileRecordMapper.selectCount(new LambdaQueryWrapper<FileRecord>()
+                    .eq(FileRecord::getStorageType, record.getStorageType())
+                    .eq(FileRecord::getBucketName, record.getBucketName())
+                    .eq(FileRecord::getObjectName, record.getObjectName())
+                    .eq(record.getStorageConfigId() != null, FileRecord::getStorageConfigId, record.getStorageConfigId())
+                    .eq(FileRecord::getArchived, 0)
+                    .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
+            if (activeRefs > 0) {
+                return;
+            }
+        }
         try {
-            fileStorageRouter.removeObject(storageConfig, record.getObjectName());
+            fileStorageRouter.removeObject(storedObject.storageConfig(), storedObject.objectName());
+            if (record.getObjectId() != null) {
+                markObjectDeleted(record.getObjectId());
+                disableHashMapping(record.getObjectId());
+            }
         } catch (Exception e) {
             Require.fail(FileCode.FILE_READ_FAILED);
         }
@@ -749,6 +1345,7 @@ public class FileServiceImpl implements IFileService {
         vo.setDirectoryId(entity.getDirectoryId());
         vo.setDirectoryName(directoryName(entity.getDirectoryId()));
         vo.setAccessLevel(entity.getAccessLevel());
+        vo.setObjectId(entity.getObjectId());
         vo.setStorageType(entity.getStorageType());
         vo.setStorageConfigId(entity.getStorageConfigId());
         vo.setBucketName(entity.getBucketName());
@@ -827,6 +1424,9 @@ public class FileServiceImpl implements IFileService {
                 Files.deleteIfExists(tempPath);
             }
         }
+    }
+
+    private record StoredObject(FileObjectEntity fileObject, FileStorageConfig storageConfig, String objectName) {
     }
 
     private String directoryName(Long directoryId) {

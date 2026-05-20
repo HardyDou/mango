@@ -50,6 +50,33 @@ public class FileStorageRouter {
         return storage(config).publicDownloadUrl(config, objectName, fileName);
     }
 
+    public boolean supportsMultipartUpload(FileStorageConfig config) {
+        return storage(config).supportsMultipartUpload(config);
+    }
+
+    public MultipartUpload initiateMultipartUpload(FileStorageConfig config, String objectName, String contentType) {
+        return storage(config).initiateMultipartUpload(config, objectName, contentType);
+    }
+
+    public UploadPartSign presignedUploadPartUrl(FileStorageConfig config,
+                                                 String objectName,
+                                                 String uploadId,
+                                                 int partNumber,
+                                                 Duration expires) {
+        return storage(config).presignedUploadPartUrl(config, objectName, uploadId, partNumber, expires);
+    }
+
+    public void completeMultipartUpload(FileStorageConfig config,
+                                        String objectName,
+                                        String uploadId,
+                                        List<CompletedUploadPart> parts) {
+        storage(config).completeMultipartUpload(config, objectName, uploadId, parts);
+    }
+
+    public void abortMultipartUpload(FileStorageConfig config, String objectName, String uploadId) {
+        storage(config).abortMultipartUpload(config, objectName, uploadId);
+    }
+
     private FileStorage storage(FileStorageConfig config) {
         Require.notNull(config, FileCode.STORAGE_CONFIG_NOT_FOUND);
         String storageType = config.getStorageType();

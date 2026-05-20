@@ -32,6 +32,15 @@ public enum FileCode implements BizCode {
     /** 文件状态非法。 */
     FILE_STATUS_INVALID(3410, "文件状态非法"),
 
+    /** 文件上传会话不存在。 */
+    FILE_UPLOAD_SESSION_NOT_FOUND(3411, "文件上传会话不存在"),
+
+    /** 文件上传会话状态非法。 */
+    FILE_UPLOAD_SESSION_INVALID(3412, "文件上传会话状态非法"),
+
+    /** 文件分片非法。 */
+    FILE_UPLOAD_PART_INVALID(3413, "文件分片非法"),
+
     /** 文件存储失败。 */
     FILE_STORE_FAILED(3501, "文件存储失败"),
 

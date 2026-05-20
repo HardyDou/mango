@@ -2,7 +2,7 @@
  * File API - 文件管理。
  */
 
-import { del, get, post, request, type RequestConfig } from '@mango/common';
+import { del, get, post, put, request, type RequestConfig } from '@mango/common';
 import type { ApiId } from '@mango/api-schema';
 
 export type FileId = ApiId;
@@ -18,6 +18,7 @@ export interface FileRecord {
   directoryId?: FileId;
   directoryName?: string;
   accessLevel?: string;
+  objectId?: FileId;
   storageType?: string;
   storageConfigId?: FileId;
   bucketName?: string;
@@ -72,7 +73,44 @@ export interface FileQuery {
 }
 
 export type FileUploadParams = Partial<Pick<FileRecord, 'purpose' | 'accessLevel' | 'bizType' | 'bizId' | 'bizMeta' | 'directoryId'>>;
-export type FileUploadOptions = Pick<RequestConfig, 'onUploadProgress'>;
+export interface FileUploadOptions extends Pick<RequestConfig, 'onUploadProgress'> {
+  multipartThreshold?: number;
+  chunkSize?: number;
+}
+
+export interface CreateFileUploadSessionCommand extends FileUploadParams {
+  fileName: string;
+  fileSize: number;
+  fileHash: string;
+  contentType?: string;
+  chunkSize?: number;
+  totalParts?: number;
+}
+
+export interface FileUploadInit {
+  instant?: boolean;
+  fileRecord?: FileRecord;
+  sessionId?: FileId;
+  uploadMode?: 'SERVER_CHUNK' | 'S3_MULTIPART';
+  storageUploadId?: string;
+  chunkSize?: number;
+  totalParts?: number;
+  expiresAt?: string;
+}
+
+export interface FileUploadPartSign {
+  partNumber: number;
+  uploadUrl: string;
+  method: 'PUT' | string;
+  expireSeconds?: number;
+}
+
+export interface CompleteFileUploadPartCommand {
+  partNumber: number;
+  etag: string;
+  partSize?: number;
+  partHash?: string;
+}
 
 export interface PageResult<T> {
   list: T[];
@@ -97,15 +135,7 @@ export const fileApi = {
     directPreviewExpireSeconds: Number(item.directPreviewExpireSeconds ?? 0),
     directDownloadExpireSeconds: Number(item.directDownloadExpireSeconds ?? 0),
   })),
-  upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    appendOptional(formData, params);
-    return post<FileRecord>('/file/files', formData as any, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: options?.onUploadProgress,
-    }).then(fromBackendFileRecord);
-  },
+  upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => uploadSmart(file, params, options),
   uploadBatch: (files: File[], params?: FileUploadParams, options?: FileUploadOptions) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
@@ -116,6 +146,28 @@ export const fileApi = {
     }).then(items => (items || []).map(fromBackendFileRecord));
   },
   archive: (id: FileId, reason?: string) => del<boolean>('/file/files', { params: { id, reason } }),
+  createUploadSession: (command: CreateFileUploadSessionCommand) => post<FileUploadInit>('/file/files/uploads', normalizeUploadSessionCommand(command) as any)
+    .then(fromBackendUploadInit),
+  createUploadPartSign: (sessionId: FileId, partNumber: number, partSize?: number) => post<FileUploadPartSign>(
+    `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts/sign`,
+    { partNumber, partSize },
+  ),
+  uploadServerPart: (sessionId: FileId, partNumber: number, chunk: Blob, fileName: string) => {
+    const formData = new FormData();
+    formData.append('partNumber', String(partNumber));
+    formData.append('file', chunk, fileName);
+    return post<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`, formData as any, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  completeUploadPart: (sessionId: FileId, command: CompleteFileUploadPartCommand) => put<boolean>(
+    `/file/files/uploads/${encodeURIComponent(String(sessionId))}/parts`,
+    command,
+  ),
+  completeUploadSession: (sessionId: FileId) => post<FileRecord>(
+    `/file/files/uploads/${encodeURIComponent(String(sessionId))}/complete`,
+  ).then(fromBackendFileRecord),
+  abortUploadSession: (sessionId: FileId) => del<boolean>(`/file/files/uploads/${encodeURIComponent(String(sessionId))}`),
   downloadUrl: (id: FileId) => `/api/file/files/download?id=${encodeURIComponent(String(id))}`,
   download: async (id: FileId) => {
     const response = await request.get('/file/files/download', {
@@ -141,6 +193,104 @@ export async function downloadFileRecord(row: Pick<FileRecord, 'id' | 'fileName'
   openDirectDownload(fileApi.downloadUrl(row.id), row.fileName || `file-${row.id}`);
 }
 
+export const DEFAULT_MULTIPART_THRESHOLD = 20 * 1024 * 1024;
+export const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024;
+
+async function uploadSmart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
+  const threshold = options?.multipartThreshold ?? DEFAULT_MULTIPART_THRESHOLD;
+  if (file.size < threshold) {
+    return uploadSimple(file, params, options);
+  }
+  return uploadMultipart(file, params, options);
+}
+
+function uploadSimple(file: File, params?: FileUploadParams, options?: FileUploadOptions) {
+  const formData = new FormData();
+  formData.append('file', file);
+  appendOptional(formData, params);
+  return post<FileRecord>('/file/files', formData as any, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: options?.onUploadProgress,
+  }).then(fromBackendFileRecord);
+}
+
+async function uploadMultipart(file: File, params?: FileUploadParams, options?: FileUploadOptions): Promise<FileRecord> {
+  const chunkSize = options?.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const totalParts = Math.ceil(file.size / chunkSize);
+  const fileHash = await sha256(file);
+  const init = await fileApi.createUploadSession({
+    ...params,
+    fileName: file.name,
+    fileSize: file.size,
+    fileHash,
+    contentType: file.type || undefined,
+    chunkSize,
+    totalParts,
+  });
+  if (init.instant && init.fileRecord) {
+    options?.onUploadProgress?.({ loaded: file.size, total: file.size, progress: 1 } as any);
+    return init.fileRecord;
+  }
+  if (!init.sessionId || !init.uploadMode) {
+    throw new Error('文件上传会话创建失败');
+  }
+  const resolvedChunkSize = Number(init.chunkSize || chunkSize);
+  const resolvedTotalParts = Number(init.totalParts || totalParts);
+  try {
+    for (let partNumber = 1; partNumber <= resolvedTotalParts; partNumber++) {
+      const start = (partNumber - 1) * resolvedChunkSize;
+      const end = Math.min(start + resolvedChunkSize, file.size);
+      const chunk = file.slice(start, end);
+      if (init.uploadMode === 'S3_MULTIPART') {
+        await uploadS3MultipartPart(init.sessionId, partNumber, chunk);
+      } else {
+        await fileApi.uploadServerPart(init.sessionId, partNumber, chunk, file.name);
+      }
+      reportMultipartProgress(options, end, file.size);
+    }
+    return await fileApi.completeUploadSession(init.sessionId);
+  } catch (error) {
+    await fileApi.abortUploadSession(init.sessionId).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function uploadS3MultipartPart(sessionId: FileId, partNumber: number, chunk: Blob) {
+  const sign = await fileApi.createUploadPartSign(sessionId, partNumber, chunk.size);
+  const response = await fetch(sign.uploadUrl, {
+    method: sign.method || 'PUT',
+    body: chunk,
+  });
+  if (!response.ok) {
+    throw new Error(`分片上传失败：${response.status}`);
+  }
+  const etag = response.headers.get('ETag')?.replace(/^"|"$/g, '') || '';
+  if (!etag) {
+    throw new Error('对象存储未返回分片 ETag');
+  }
+  await fileApi.completeUploadPart(sessionId, {
+    partNumber,
+    etag,
+    partSize: chunk.size,
+  });
+}
+
+function reportMultipartProgress(options: FileUploadOptions | undefined, loaded: number, total: number) {
+  options?.onUploadProgress?.({
+    loaded,
+    total,
+    progress: total ? loaded / total : 0,
+  } as any);
+}
+
+async function sha256(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(digest))
+    .map(item => item.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 function openDirectDownload(url: string, fileName: string) {
   const link = document.createElement('a');
   link.href = url;
@@ -159,11 +309,38 @@ function appendOptional(formData: FormData, params?: Record<string, any>) {
   });
 }
 
+function normalizeUploadSessionCommand(command: CreateFileUploadSessionCommand) {
+  return {
+    ...command,
+    bizId: command.bizId ? String(command.bizId) : undefined,
+    directoryId: command.directoryId ? String(command.directoryId) : undefined,
+    bizMeta: normalizeBizMetaForRequest(command.bizMeta),
+  };
+}
+
+function normalizeBizMetaForRequest(value?: FileBizMeta) {
+  if (!value) return undefined;
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
+function fromBackendUploadInit(item: any): FileUploadInit {
+  return {
+    ...item,
+    instant: Boolean(item?.instant),
+    fileRecord: item?.fileRecord ? fromBackendFileRecord(item.fileRecord) : undefined,
+    sessionId: normalizeId(item?.sessionId),
+    chunkSize: Number(item?.chunkSize ?? 0),
+    totalParts: Number(item?.totalParts ?? 0),
+    expiresAt: normalizeDateTime(item?.expiresAt),
+  };
+}
+
 function fromBackendFileRecord(item: any): FileRecord {
   return {
     ...item,
     id: normalizeId(item.id),
     tenantId: normalizeId(item.tenantId),
+    objectId: normalizeId(item.objectId),
     storageConfigId: normalizeId(item.storageConfigId),
     createdBy: normalizeId(item.createdBy),
     directoryId: normalizeId(item.directoryId ?? 0),

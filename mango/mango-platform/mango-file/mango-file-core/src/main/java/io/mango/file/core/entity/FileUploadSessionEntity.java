@@ -8,34 +8,40 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 文件记录实体。
+ * 文件分片上传会话。
  */
 @Data
-@TableName("file_record")
-public class FileRecord {
+@TableName("file_upload_session")
+public class FileUploadSessionEntity {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     private Long tenantId;
-    private String bizType;
-    private String bizId;
-    private String purpose;
-    private String bizMeta;
-    private Long directoryId;
-    private String accessLevel;
-    private Long objectId;
-    private String storageType;
     private Long storageConfigId;
+    private String storageType;
     private String bucketName;
     private String objectName;
+    private String uploadMode;
+    private String storageUploadId;
     private String fileName;
     private String fileExt;
+    private String fileHash;
     private Long fileSize;
     private String contentType;
-    private String fileHash;
-    private Integer status;
-    private Integer archived;
+    private Long chunkSize;
+    private Integer totalParts;
+    private Integer uploadedParts;
+    private String status;
+    private LocalDateTime expiresAt;
+    private String purpose;
+    private String accessLevel;
+    private String bizType;
+    private String bizId;
+    private String bizMeta;
+    private Long directoryId;
+    private Long objectId;
+    private Long fileRecordId;
     private Long createdBy;
     private LocalDateTime createdTime;
     private LocalDateTime createdAt;

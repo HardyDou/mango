@@ -19,6 +19,12 @@
 - `GET /file/files/preview?id=1`：预览元数据。
 - `GET /file/files/download?id=1`：文件下载。
 - `DELETE /file/files?id=1`：归档文件记录。默认不物理删除对象；开启物理删除策略时，会在没有其他文件记录引用同一对象后删除底层对象。
+- `POST /file/files/uploads`：初始化分片上传。命中秒传时直接返回文件记录；未命中时返回上传会话。
+- `POST /file/files/uploads/{sessionId}/parts/sign`：为 MinIO/S3 原生分片上传签发分片 PUT 地址。
+- `POST /file/files/uploads/{sessionId}/parts`：后端接收分片，用于不支持原生分片的存储类型。
+- `PUT /file/files/uploads/{sessionId}/parts`：登记已完成分片。
+- `POST /file/files/uploads/{sessionId}/complete`：完成分片上传并创建文件记录。
+- `DELETE /file/files/uploads/{sessionId}`：取消分片上传并清理对象存储会话或后端临时分片。
 - `GET /file/storage-configs/page`：文件存储配置分页。
 - `GET /file/storage-configs/detail?id=1`：文件存储配置详情。
 - `POST /file/storage-configs`：新增文件存储配置。
@@ -157,7 +163,24 @@ mango:
 
 上传校验以后端策略为准，前端只做提前提示。高频上传路径读取的是按机构缓存的策略，策略保存后会清理对应机构缓存。
 
-归档语义：归档是逻辑移出正常使用范围。归档后默认不在普通列表展示，也不能通过普通预览和下载接口访问。历史记录仍保留，用于审计和追溯。物理删除是额外策略，默认关闭；开启后也会先检查是否还有其他文件记录引用同一 `bucket + objectName`，避免秒传复用对象被误删。
+## 物理对象、秒传与分片上传
+
+文件服务把业务文件记录和底层物理对象拆开：
+
+- `file_record` 是业务上传记录，保存文件名、业务归属、访问级别、目录、归档状态，并通过 `object_id` 指向物理对象。
+- `file_object` 是底层存储对象，保存 `storage_config_id`、`storage_type`、`bucket_name`、`object_name`、哈希、大小和引用数。
+- `file_hash_mapping` 是秒传索引，按 `scope_type + tenant_id + storage_config_id + file_hash + file_size` 定位物理对象。
+
+秒传不会再从历史 `file_record` 里按哈希任意复用对象，而是先解析当前生效存储配置，再只复用同一 `storage_config_id` 下的已完成物理对象。这样切换默认存储为 MinIO 后，不会命中旧的 LOCAL 记录，也不会返回本地代理地址。跨存储复制属于后续扩展能力，默认策略是严格复用目标存储内对象。
+
+普通上传、批量上传和分片上传完成后都会写入同一套 `file_object` 与 `file_hash_mapping`。上传响应、详情、预览和下载都以 `object_id` 解析真实存储位置，并保留 `file_record` 上的存储字段作为历史兼容兜底。
+
+分片上传分两种模式：
+
+- `S3_MULTIPART`：MinIO/S3/AWS S3 使用对象存储原生 multipart。后端创建 uploadId、签发每个分片的预签名 PUT URL，前端直传对象存储，再把 ETag 登记给文件服务，最终由文件服务完成 multipart 并创建文件记录。
+- `SERVER_CHUNK`：LOCAL、OSS、COS、Kodo 等尚未实现原生分片适配的存储，由后端接收分片到临时目录，完成时按序合并并写入当前存储。
+
+归档语义：归档是逻辑移出正常使用范围。归档后默认不在普通列表展示，也不能通过普通预览和下载接口访问。历史记录仍保留，用于审计和追溯。物理删除是额外策略，默认关闭；开启后会先检查是否还有其他文件记录引用同一 `object_id`，没有引用时才删除底层对象并停用对应秒传映射。
 
 MinIO/S3 直传和直连访问要注意签名域名：服务端内部读写可以使用内网 `endpoint`，但给浏览器使用的预签名 PUT/GET 必须用浏览器可访问的 `public_endpoint` 参与签名，不能签完内网地址后替换 Host。S3 V4 签名包含 Host，替换域名会导致签名失效。
 
@@ -196,9 +219,9 @@ Compose 会启动 MinIO 并创建 `mango-file` bucket：
 - AccessKey：`minioadmin`
 - SecretKey：`minioadmin`
 - Path Style：开启
-- 设为默认：按需开启
+- 设为默认：启用
 
-迁移脚本会内置一条“MinIO 本地联调”配置，默认启用状态为“启用”，但不会设为默认，避免未启动 MinIO 时影响普通本地上传。需要验证对象存储时，在“文件中心 / 存储配置”中将它设为默认。
+迁移脚本会内置一条“MinIO 本地联调”配置。本次文件服务改造后，清理历史文件数据并将本地 MinIO 设为默认存储；上传、详情和预览响应优先返回 MinIO/S3 预签名绝对地址。未启动 MinIO 的环境需要先启动 Compose，或在“文件中心 / 存储配置”中切回本地存储。
 
 SecretKey 不会在详情接口明文返回；编辑时留空表示不修改。
 

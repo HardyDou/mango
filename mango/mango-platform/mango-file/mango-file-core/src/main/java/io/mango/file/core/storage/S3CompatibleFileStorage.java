@@ -12,23 +12,35 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner.Builder;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedUploadPartRequest;
+import software.amazon.awssdk.services.s3.presigner.model.UploadPartPresignRequest;
 
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * S3 兼容对象存储实现，覆盖 S3、MinIO、AWS S3。
@@ -112,6 +124,103 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
     @Override
     public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
         return publicObjectUrl(config, objectName);
+    }
+
+    @Override
+    public boolean supportsMultipartUpload(FileStorageConfig config) {
+        return supports(config.getStorageType());
+    }
+
+    @Override
+    public MultipartUpload initiateMultipartUpload(FileStorageConfig config, String objectName, String contentType) {
+        requireConfig(config);
+        Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
+        try (S3Client client = client(config)) {
+            CreateMultipartUploadRequest.Builder builder = CreateMultipartUploadRequest.builder()
+                    .bucket(config.getBucketName())
+                    .key(objectName);
+            if (StringUtils.hasText(contentType)) {
+                builder.contentType(contentType);
+            }
+            CreateMultipartUploadResponse response = client.createMultipartUpload(builder.build());
+            return new MultipartUpload(response.uploadId());
+        } catch (Exception e) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    @Override
+    public UploadPartSign presignedUploadPartUrl(FileStorageConfig config,
+                                                 String objectName,
+                                                 String uploadId,
+                                                 int partNumber,
+                                                 Duration expires) {
+        requireConfig(config);
+        Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
+        Require.notBlank(uploadId, FileCode.FILE_UPLOAD_SESSION_INVALID);
+        Require.isTrue(partNumber > 0, FileCode.FILE_UPLOAD_PART_INVALID);
+        Require.notNull(expires, FileCode.STORAGE_CONFIG_INVALID);
+        Require.isTrue(!expires.isNegative() && !expires.isZero(), FileCode.STORAGE_CONFIG_INVALID);
+        try (S3Presigner presigner = presigner(config)) {
+            UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
+                    .bucket(config.getBucketName())
+                    .key(objectName)
+                    .uploadId(uploadId)
+                    .partNumber(partNumber)
+                    .build();
+            UploadPartPresignRequest presignRequest = UploadPartPresignRequest.builder()
+                    .signatureDuration(expires)
+                    .uploadPartRequest(uploadPartRequest)
+                    .build();
+            PresignedUploadPartRequest request = presigner.presignUploadPart(presignRequest);
+            return new UploadPartSign(partNumber, request.url().toString(), "PUT", expires.toSeconds());
+        } catch (Exception e) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    @Override
+    public void completeMultipartUpload(FileStorageConfig config,
+                                        String objectName,
+                                        String uploadId,
+                                        List<CompletedUploadPart> parts) {
+        requireConfig(config);
+        Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
+        Require.notBlank(uploadId, FileCode.FILE_UPLOAD_SESSION_INVALID);
+        Require.notEmpty(parts, FileCode.FILE_UPLOAD_PART_INVALID);
+        List<CompletedPart> completedParts = parts.stream()
+                .sorted(Comparator.comparing(CompletedUploadPart::partNumber))
+                .map(item -> CompletedPart.builder()
+                        .partNumber(item.partNumber())
+                        .eTag(item.etag())
+                        .build())
+                .collect(Collectors.toList());
+        try (S3Client client = client(config)) {
+            client.completeMultipartUpload(CompleteMultipartUploadRequest.builder()
+                    .bucket(config.getBucketName())
+                    .key(objectName)
+                    .uploadId(uploadId)
+                    .multipartUpload(CompletedMultipartUpload.builder().parts(completedParts).build())
+                    .build());
+        } catch (Exception e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    @Override
+    public void abortMultipartUpload(FileStorageConfig config, String objectName, String uploadId) {
+        requireConfig(config);
+        Require.notBlank(objectName, FileCode.FILE_NOT_FOUND);
+        Require.notBlank(uploadId, FileCode.FILE_UPLOAD_SESSION_INVALID);
+        try (S3Client client = client(config)) {
+            client.abortMultipartUpload(AbortMultipartUploadRequest.builder()
+                    .bucket(config.getBucketName())
+                    .key(objectName)
+                    .uploadId(uploadId)
+                    .build());
+        } catch (Exception e) {
+            Require.fail(FileCode.FILE_STORE_FAILED);
+        }
     }
 
     private Optional<String> presignedUrl(FileStorageConfig config,

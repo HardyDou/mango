@@ -92,7 +92,7 @@ import { computed, ref, watch } from 'vue';
 import { ElMessage, type UploadProps, type UploadRequestOptions, type UploadUserFile } from 'element-plus';
 import type { AxiosProgressEvent } from 'axios';
 import { Plus, Upload as UploadIcon, UploadFilled } from '@element-plus/icons-vue';
-import { fileApi, type FileRecord, type FileBizMeta, type FileId } from '../api/file';
+import { DEFAULT_MULTIPART_THRESHOLD, fileApi, type FileRecord, type FileBizMeta, type FileId } from '../api/file';
 import { formatBytes } from '../api/fileSettings';
 
 defineOptions({
@@ -268,10 +268,10 @@ async function submitUpload() {
       file.percentage = 0;
     });
     const files = pending.map(item => item.raw as File);
-    const records = files.length === 1
+    const records = files.length === 1 || hasMultipartCandidate(files)
       ? [await fileApi.upload(files[0], uploadParams(), {
           onUploadProgress: event => updateSingleProgress(pending[0], event),
-        })]
+        }), ...(await uploadRemainingFiles(files.slice(1), pending.slice(1)))]
       : await fileApi.uploadBatch(files, uploadParams(), {
           onUploadProgress: event => updateBatchProgress(pending, event),
         });
@@ -314,6 +314,20 @@ function updateBatchProgress(files: InternalUploadFile[], event: AxiosProgressEv
     file.percentage = progressPercent(fileLoaded, size);
     offset += size;
   });
+}
+
+async function uploadRemainingFiles(files: File[], pending: InternalUploadFile[]) {
+  const records: FileRecord[] = [];
+  for (let index = 0; index < files.length; index++) {
+    records.push(await fileApi.upload(files[index], uploadParams(), {
+      onUploadProgress: event => updateSingleProgress(pending[index], event),
+    }));
+  }
+  return records;
+}
+
+function hasMultipartCandidate(files: File[]) {
+  return files.some(file => file.size >= DEFAULT_MULTIPART_THRESHOLD);
 }
 
 function progressPercent(loaded: number, total: number) {

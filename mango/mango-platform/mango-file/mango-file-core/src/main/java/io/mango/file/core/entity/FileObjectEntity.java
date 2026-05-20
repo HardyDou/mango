@@ -8,34 +8,25 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 文件记录实体。
+ * 物理文件对象。
  */
 @Data
-@TableName("file_record")
-public class FileRecord {
+@TableName("file_object")
+public class FileObjectEntity {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     private Long tenantId;
-    private String bizType;
-    private String bizId;
-    private String purpose;
-    private String bizMeta;
-    private Long directoryId;
-    private String accessLevel;
-    private Long objectId;
-    private String storageType;
     private Long storageConfigId;
+    private String storageType;
     private String bucketName;
     private String objectName;
-    private String fileName;
-    private String fileExt;
+    private String fileHash;
     private Long fileSize;
     private String contentType;
-    private String fileHash;
     private Integer status;
-    private Integer archived;
+    private Long refCount;
     private Long createdBy;
     private LocalDateTime createdTime;
     private LocalDateTime createdAt;

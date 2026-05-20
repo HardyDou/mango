@@ -2,11 +2,16 @@ package io.mango.file.core.service;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.file.api.command.CompleteFileUploadPartCommand;
+import io.mango.file.api.command.CreateFileUploadPartSignCommand;
+import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
+import io.mango.file.api.vo.FileUploadInitVO;
+import io.mango.file.api.vo.FileUploadPartSignVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -31,4 +36,16 @@ public interface IFileService {
     FileDownload download(Long id);
 
     R<Boolean> archive(FileArchiveCommand command);
+
+    R<FileUploadInitVO> createUploadSession(CreateFileUploadSessionCommand command);
+
+    R<FileUploadPartSignVO> createUploadPartSign(Long sessionId, CreateFileUploadPartSignCommand command);
+
+    R<Boolean> uploadServerPart(Long sessionId, Integer partNumber, MultipartFile file);
+
+    R<Boolean> completeUploadPart(Long sessionId, CompleteFileUploadPartCommand command);
+
+    R<FileRecordVO> completeUploadSession(Long sessionId);
+
+    R<Boolean> abortUploadSession(Long sessionId);
 }
