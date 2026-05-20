@@ -6,6 +6,8 @@ export type FileId = ApiId;
 export interface UploadResult {
   id?: FileId;
   url: string;
+  previewUrl?: string;
+  downloadUrl?: string;
   fileName: string;
   fileSize: number;
   contentType?: string;
@@ -15,6 +17,8 @@ export interface UploadResult {
 export interface ExcelUploadResult {
   id?: FileId;
   url: string;
+  previewUrl?: string;
+  downloadUrl?: string;
   fileName: string;
   fileSize: number;
   contentType?: string;
@@ -57,7 +61,9 @@ export function uploadExcel(file: File): Promise<ExcelUploadResult> {
     },
   }).then((record) => ({
     id: record.id,
-    url: record.id ? `mango-file:${record.id}` : '',
+    url: record.previewUrl || record.url || (record.id ? `mango-file:${record.id}` : ''),
+    previewUrl: record.previewUrl || record.url,
+    downloadUrl: record.downloadUrl,
     fileName: record.fileName,
     fileSize: Number(record.fileSize ?? 0),
     contentType: record.contentType,
@@ -97,7 +103,9 @@ export async function createUploadedFileObjectUrl(id: FileId): Promise<string> {
 function toUploadResult(record: any): UploadResult {
   return {
     id: normalizeId(record.id),
-    url: record.id ? `mango-file:${record.id}` : '',
+    url: record.previewUrl || record.url || (record.id ? `mango-file:${record.id}` : ''),
+    previewUrl: record.previewUrl || record.url,
+    downloadUrl: record.downloadUrl,
     fileName: record.fileName,
     fileSize: Number(record.fileSize ?? 0),
     contentType: record.contentType,

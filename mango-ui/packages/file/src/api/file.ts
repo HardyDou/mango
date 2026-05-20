@@ -33,6 +33,7 @@ export interface FileRecord {
   createdTime?: string;
   updatedTime?: string;
   url?: string;
+  previewUrl?: string;
   downloadUrl?: string;
   directAccess?: boolean;
   directPreviewUrl?: string;
@@ -171,6 +172,7 @@ function fromBackendFileRecord(item: any): FileRecord {
     createdTime: normalizeDateTime(item.createdTime),
     updatedTime: normalizeDateTime(item.updatedTime),
     url: normalizeApiUrl(item.url),
+    previewUrl: normalizeApiUrl(item.previewUrl),
     downloadUrl: normalizeApiUrl(item.downloadUrl),
     directAccess: Boolean(item.directAccess),
     directPreviewUrl: normalizeApiUrl(item.directPreviewUrl),

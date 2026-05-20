@@ -87,6 +87,9 @@ public class FileRecordVO implements Serializable {
     @Schema(description = "动态访问地址，不入库")
     private String url;
 
+    @Schema(description = "动态预览地址，不入库")
+    private String previewUrl;
+
     @Schema(description = "动态下载地址，不入库")
     private String downloadUrl;
 
