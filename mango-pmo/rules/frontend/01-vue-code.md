@@ -33,6 +33,13 @@
 - 禁止对 ID 调用 `Number(id)`、`parseInt(id)` 后再用于接口请求、路由参数、表格 key、组件 model 或文件 token。
 - 只有页码、数量、金额、排序等真实数值字段可以建模为 `number`。
 
+## 4.1 文件上传与回显规则
+
+- 业务表单提交给业务 API 时，只能提交文件中心标识，例如 `fileId`、`fileIds`、`attachmentIds`、`mango-file:{id}` token。
+- 上传组件返回的 `url`、`previewUrl`、`downloadUrl`、`directPreviewUrl`、`directDownloadUrl` 只允许用于当前页面即时展示，禁止写入业务表单 payload。
+- 业务页面回显图片、附件、图标时，应按文件 ID 通过 `@mango/file` 或 `mango-file` API 获取临时预览/下载地址。
+- 禁止把 MinIO/S3/OSS/COS/Kodo 直连地址、预签名 URL、文件服务下载 URL 存入业务字段、前端缓存或配置 JSON 作为长期数据。
+
 ## 5. 样式规则
 
 - 优先使用现有设计变量和主题变量。
@@ -61,6 +68,7 @@
 - 提交临时代码、止血代码、绕过式兼容代码作为最终实现
 - 为了规避构建或运行错误，给 import、类型、接口参数增加没有架构含义的特殊写法
 - 在没有定位根因和完成验证前，把“能跑起来”的改动交付
+- 业务表单把文件访问地址当作业务数据提交
 
 ## 9. 临时代码处理规则
 

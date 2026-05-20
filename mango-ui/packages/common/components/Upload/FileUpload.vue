@@ -43,11 +43,12 @@ import { computed, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Upload } from '@element-plus/icons-vue';
 import type { UploadProps, UploadRequestOptions } from 'element-plus';
-import { uploadFile } from '../../api/upload';
+import { getUploadedFileDetail, uploadFile } from '../../api/upload';
 import {
   mergeUploadResult,
   modelValueToUploadFiles,
   normalizeUploadFiles,
+  normalizeUploadResult,
   type MangoUploadFileMeta,
   type MangoUploadModelValue,
   type MangoUploadUserFile,
@@ -114,6 +115,7 @@ const fileApiRequest = computed(() => (
 
 const initFileList = () => {
   internalFileList.value = modelValueToUploadFiles(props.modelValue);
+  void hydrateFileList();
 };
 
 initFileList();
@@ -180,6 +182,35 @@ const updateModelValue = () => {
   emit('update:modelValue', value);
   emit('change', value);
 };
+
+async function hydrateFileList() {
+  const files = internalFileList.value.filter(file => (file.id || file.fileId) && !file.fileName);
+  if (!files.length) return;
+  const records = await Promise.all(files.map(file => getUploadedFileDetail(file.id || file.fileId || '').catch(() => null)));
+  const recordMap = new Map(
+    records
+      .filter((item): item is MangoUploadFileMeta => Boolean(item?.id))
+      .map(item => [String(item.id), normalizeUploadResult(item)]),
+  );
+  if (!recordMap.size) return;
+  internalFileList.value = internalFileList.value.map((file) => {
+    const id = file.id || file.fileId;
+    const record = id ? recordMap.get(String(id)) : undefined;
+    return record
+      ? {
+          ...file,
+          id: record.id,
+          fileId: record.id,
+          name: record.fileName,
+          url: record.url,
+          fileName: record.fileName,
+          fileSize: record.fileSize,
+          contentType: record.contentType,
+          objectName: record.objectName,
+        }
+      : file;
+  });
+}
 
 // Expose methods
 defineExpose({

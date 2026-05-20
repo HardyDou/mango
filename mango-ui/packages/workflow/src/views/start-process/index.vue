@@ -33,7 +33,7 @@
               @click="openStartDialog(item)"
             >
               <span class="workflow-launch-icon">
-                <img v-if="isImageIcon(item.icon)" :src="item.icon" :alt="item.definitionName" />
+                <img v-if="workflowIconImageUrl(item)" :src="workflowIconImageUrl(item)" :alt="item.definitionName" />
                 <el-icon v-else><component :is="workflowIconComponent(item.icon)" /></el-icon>
               </span>
               <span class="workflow-launch-content">
@@ -122,11 +122,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { Bell, Box, Cloudy, Connection, DocumentChecked, ForkSpoon, Share, User } from '@element-plus/icons-vue';
 import { parseDesignerJson, workflowApi, type WorkflowDefinition, type WorkflowDesignerNode, type WorkflowUserOption } from '../../api/workflow';
+import { fileApi, fileRuntimeUrl, normalizeFileId } from '@mango/file';
 import { customApplyRouteOf } from '../../workflowFormConfig';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { createDefaultVariables, parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
@@ -136,6 +137,7 @@ const loading = ref(false);
 const submitting = ref(false);
 const dialogVisible = ref(false);
 const tableData = ref<WorkflowDefinition[]>([]);
+const workflowIconUrlMap = ref<Record<string, string>>({});
 const selectedDefinition = ref<WorkflowDefinition | null>(null);
 const startFormRef = ref<FormInstance>();
 const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED' });
@@ -180,8 +182,30 @@ function resetQuery() {
   loadData();
 }
 
-function isImageIcon(value?: string) {
+function workflowIconImageUrl(item: WorkflowDefinition) {
+  const icon = item.icon || '';
+  if (isImageUrl(icon)) return icon;
+  const fileId = normalizeFileId(icon);
+  return fileId ? workflowIconUrlMap.value[String(fileId)] || '' : '';
+}
+
+function isImageUrl(value?: string) {
   return Boolean(value && (/^(https?:|data:|blob:)/.test(value) || value.startsWith('/')));
+}
+
+async function hydrateWorkflowIconUrls() {
+  const ids = tableData.value
+    .map(item => normalizeFileId(item.icon))
+    .filter((id): id is string => Boolean(id && !workflowIconUrlMap.value[String(id)]));
+  const uniqueIds = Array.from(new Set(ids));
+  if (!uniqueIds.length) return;
+  const previews = await Promise.all(uniqueIds.map(id => fileApi.preview(id).catch(() => null)));
+  const next = { ...workflowIconUrlMap.value };
+  previews.forEach((preview) => {
+    if (!preview?.id) return;
+    next[String(preview.id)] = fileRuntimeUrl(preview);
+  });
+  workflowIconUrlMap.value = next;
 }
 
 function workflowIconComponent(value?: string) {
@@ -330,6 +354,7 @@ async function ensureUsersLoaded() {
   }
 }
 
+watch(tableData, hydrateWorkflowIconUrls);
 onMounted(loadData);
 </script>
 

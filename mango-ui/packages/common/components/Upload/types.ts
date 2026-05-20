@@ -27,6 +27,18 @@ export function fileToken(id?: ApiId): string {
   return id ? `mango-file:${id}` : '';
 }
 
+export function fileIdFromValue(value?: string | MangoUploadFileMeta | null): ApiId | undefined {
+  if (!value) return undefined;
+  if (typeof value !== 'string') return value.id;
+  if (isFileAccessUrl(value)) return undefined;
+  return value.startsWith('mango-file:') ? value.replace('mango-file:', '') : value;
+}
+
+export function isFileAccessUrl(value?: string): boolean {
+  if (!value) return false;
+  return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/');
+}
+
 export function normalizeUploadResult(response: any): MangoUploadFileMeta {
   const data = response?.data && !response?.url ? response.data : response;
   const id = normalizeId(data?.id);
@@ -56,9 +68,12 @@ export function modelValueToUploadFiles(value?: MangoUploadModelValue): MangoUpl
     .filter(Boolean)
     .map((item, index) => {
       if (typeof item === 'string') {
+        const id = fileIdFromValue(item);
         return {
+          id,
+          fileId: id,
           name: fallbackName(item, index),
-          url: item,
+          url: isFileAccessUrl(item) ? item : '',
         };
       }
 
@@ -83,9 +98,9 @@ export function uploadFilesToModelValue(
 ): string | string[] | MangoUploadFileMeta | MangoUploadFileMeta[] | null {
   const values = files
     .map(uploadUserFileToMeta)
-    .filter(item => item.url && !item.url.startsWith('blob:'));
+    .filter(item => item.id || (item.url && !item.url.startsWith('blob:')));
 
-  const result = valueType === 'record' ? values : values.map(item => item.url);
+  const result = valueType === 'record' ? values : values.map(item => fileToken(item.id) || item.url);
   return multiple ? result : result[0] || (valueType === 'record' ? null : '');
 }
 

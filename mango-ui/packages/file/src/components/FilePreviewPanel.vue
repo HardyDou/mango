@@ -75,11 +75,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
-import { downloadFileRecord, fileApi, type FilePreview } from '../api/file';
+import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview, type FileReference } from '../api/file';
 import type { ApiId } from '@mango/api-schema';
 
 const props = defineProps<{
-  fileId?: ApiId | null;
+  fileId?: ApiId | `mango-file:${string}` | null;
+  file?: FileReference;
   preview?: FilePreview | null;
   previewProviderUrl?: string;
   previewExternalExtensions?: string[];
@@ -91,6 +92,7 @@ const loadedPreview = ref<FilePreview | null>(null);
 const inlinePreviewUrl = ref('');
 
 const preview = computed(() => props.preview || loadedPreview.value);
+const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId));
 
 const isImage = computed(() => {
   const item = preview.value;
@@ -140,13 +142,13 @@ const previewModeTag = computed(() => externalPreviewUrl.value ? 'success' : 'in
 const downloadPermission = computed(() => props.downloadPermission || 'file:files:download');
 
 async function loadPreview() {
-  if (props.preview || !props.fileId) {
+  if (props.preview || !resolvedFileId.value) {
     loadedPreview.value = null;
     return;
   }
   loading.value = true;
   try {
-    loadedPreview.value = await fileApi.preview(props.fileId);
+    loadedPreview.value = await fileApi.preview(resolvedFileId.value);
   } finally {
     loading.value = false;
   }
@@ -198,7 +200,7 @@ function absoluteUrl(value: string): string {
   return new URL(value, window.location.origin).toString();
 }
 
-watch(() => [props.fileId, props.preview], loadPreview);
+watch(() => [resolvedFileId.value, props.preview], loadPreview);
 watch(preview, loadInlinePreview, { immediate: true });
 onMounted(loadPreview);
 onBeforeUnmount(() => {

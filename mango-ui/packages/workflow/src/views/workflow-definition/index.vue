@@ -51,7 +51,6 @@
                   display="thumbnail"
                   :count="1"
                   size="2MB"
-                  value-type="url"
                   purpose="workflow-icon"
                   access-level="PUBLIC"
                   button-text="上传图标"

@@ -1,4 +1,4 @@
-import request, { post } from '../utils/request';
+import request, { get, post } from '../utils/request';
 import type { ApiId } from '@mango/api-schema';
 
 export type FileId = ApiId;
@@ -86,6 +86,10 @@ export function uploadMultiple(files: File[]): Promise<UploadResult[]> {
   }).then(records => records.map(toUploadResult));
 }
 
+export function getUploadedFileDetail(id: FileId): Promise<UploadResult> {
+  return get<any>('/file/files/detail', { params: { id } }).then(toUploadResult);
+}
+
 export async function downloadUploadedFile(id: FileId) {
   const response = await request.get('/file/files/download', {
     params: { id },
@@ -101,9 +105,10 @@ export async function createUploadedFileObjectUrl(id: FileId): Promise<string> {
 }
 
 function toUploadResult(record: any): UploadResult {
+  const id = normalizeId(record.id);
   return {
-    id: normalizeId(record.id),
-    url: record.previewUrl || record.url || (record.id ? `mango-file:${record.id}` : ''),
+    id,
+    url: record.previewUrl || record.url || fileToken(id),
     previewUrl: record.previewUrl || record.url,
     downloadUrl: record.downloadUrl,
     fileName: record.fileName,
@@ -111,6 +116,10 @@ function toUploadResult(record: any): UploadResult {
     contentType: record.contentType,
     objectName: record.objectName,
   };
+}
+
+export function fileToken(id?: FileId): string {
+  return id ? `mango-file:${id}` : '';
 }
 
 function normalizeId(value: any): FileId | undefined {

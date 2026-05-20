@@ -92,7 +92,17 @@ import { computed, ref, watch } from 'vue';
 import { ElMessage, type UploadProps, type UploadRequestOptions, type UploadUserFile } from 'element-plus';
 import type { AxiosProgressEvent } from 'axios';
 import { Plus, Upload as UploadIcon, UploadFilled } from '@element-plus/icons-vue';
-import { DEFAULT_MULTIPART_THRESHOLD, fileApi, type FileRecord, type FileBizMeta, type FileId } from '../api/file';
+import {
+  DEFAULT_MULTIPART_THRESHOLD,
+  fileApi,
+  fileRuntimeUrl,
+  fileToken,
+  isFileAccessUrl,
+  normalizeFileId,
+  type FileRecord,
+  type FileBizMeta,
+  type FileId,
+} from '../api/file';
 import { formatBytes } from '../api/fileSettings';
 
 defineOptions({
@@ -359,7 +369,7 @@ function modelValueFromRecords(records: FileRecord[]): UploadModelValue {
   if (props.valueType === 'url') {
     return multiple.value ? records.map(recordAccessUrl).filter(Boolean) : recordAccessUrl(records[0]);
   }
-  return multiple.value ? records.map(item => token(item.id)) : token(records[0]?.id);
+  return multiple.value ? records.map(item => fileToken(item.id)) : fileToken(records[0]?.id);
 }
 
 function uploadParams() {
@@ -388,16 +398,7 @@ function modelValueIds(value?: UploadModelValue) {
   if (!value) return [];
   const values = Array.isArray(value) ? value : [value];
   return values
-    .map((item) => {
-      if (!item) return '';
-      if (typeof item === 'string') {
-        if (isPublicPreviewUrl(item) || isProtectedApiUrl(item)) {
-          return '';
-        }
-        return item.startsWith('mango-file:') ? item.replace('mango-file:', '') : item;
-      }
-      return item.id ? String(item.id) : '';
-    })
+    .map(item => normalizeFileId(item as any))
     .filter(Boolean);
 }
 
@@ -407,7 +408,7 @@ function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
   return values.flatMap((item, index) => {
     if (!item) return [];
     if (typeof item === 'string') {
-      if (isPublicPreviewUrl(item)) {
+      if (isFileAccessUrl(item)) {
         return [{
           uid: index,
           name: item.split('/').pop() || `file-${index}`,
@@ -415,10 +416,7 @@ function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
           url: item,
         }];
       }
-      if (isProtectedApiUrl(item)) {
-        return [];
-      }
-      const id = item.startsWith('mango-file:') ? item.replace('mango-file:', '') : item;
+      const id = normalizeFileId(item);
       return [{
         uid: index,
         id,
@@ -468,33 +466,11 @@ function recordToFile(record: FileRecord, uid?: number): InternalUploadFile {
 }
 
 function previewUrl(record: Partial<FileRecord>) {
-  const candidates = [
-    record.directPreviewUrl,
-    record.directDownloadUrl,
-    record.url,
-    record.downloadUrl,
-  ];
-  return candidates.find(isPublicPreviewUrl) || '';
+  return fileRuntimeUrl(record);
 }
 
 function recordAccessUrl(record?: Partial<FileRecord>) {
   return record ? previewUrl(record) : '';
-}
-
-function isPublicPreviewUrl(value?: string) {
-  if (!value || isProtectedApiUrl(value)) return false;
-  return /^(https?:|data:|blob:)/.test(value) || value.startsWith('/');
-}
-
-function isProtectedApiUrl(value?: string) {
-  if (!value) return false;
-  if (value.startsWith('/api/')) return true;
-  try {
-    const url = new URL(value, window.location.origin);
-    return url.pathname.startsWith('/api/');
-  } catch {
-    return false;
-  }
 }
 
 function fileToRecord(file: InternalUploadFile): FileRecord | null {
@@ -579,10 +555,6 @@ function fileExt(fileName?: string) {
 function normalizeBizMeta(value?: FileBizMeta) {
   if (!value) return undefined;
   return typeof value === 'string' ? value : JSON.stringify(value);
-}
-
-function token(id?: FileId) {
-  return id ? `mango-file:${id}` : '';
 }
 
 function normalizeColumns(columns?: Array<UploadColumn | UploadColumnKey>): UploadColumn[] {

@@ -23,6 +23,13 @@
 - 路径参数和查询参数必须声明校验约束。
 - Controller 或 `Api` 必须使用 `@Validated` 或等效机制开启参数校验。
 
+## 2.2 文件字段规则
+
+- 业务 API 的创建、更新入参禁止接收需要持久化的文件访问地址字段，例如 `url`、`previewUrl`、`downloadUrl`、`directPreviewUrl`、`directDownloadUrl`。
+- 业务 API 应接收文件中心标识字段，例如 `fileId`、`fileIds`、`attachmentIds`、`iconFileId`，或明确的 `mango-file:{id}` token。
+- 业务 VO 可以返回文件 ID；如页面需要临时预览或下载地址，由前端通过 `mango-file` 查询，或由业务聚合层在响应时临时组装，禁止反写到业务表。
+- 预签名 URL、对象存储直连地址只允许作为单次响应中的运行时字段，不允许成为业务 Command、Entity 或持久化 JSON 的字段。
+
 ## 2.1 OpenAPI / Knife4j 文档规则
 
 - 所有对外展示的 Controller 必须声明中文 `@Tag(name, description)`，禁止显示默认的 `xxx-controller`。
@@ -81,3 +88,4 @@
 - API 参数绕过 Bean Validation 直接进入业务层
 - 在 `*-api` 中写 `@FeignClient`
 - 在 API 契约中硬编码服务发现名
+- 业务 API 用文件访问地址代替文件 ID

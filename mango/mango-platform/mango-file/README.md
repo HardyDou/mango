@@ -138,7 +138,9 @@ mango:
 
 ## 逻辑目录
 
-文件中心提供业务无关的逻辑目录 `file_directory`。目录只用于文件中心内的组织、筛选和上传落点，不表达业务类型。业务系统仍应只保存 `fileId` 以及自己的业务分类、附件类型、关联关系。
+文件中心提供业务无关的逻辑目录 `file_directory`。目录只用于文件中心内的组织、筛选和上传落点，不表达业务类型。业务系统仍应只保存 `fileId`、`mango-file:{id}` token 或自己的业务附件关联关系。
+
+业务系统禁止保存文件访问地址，包括 `url`、`previewUrl`、`downloadUrl`、对象存储直连地址和预签名 URL。文件访问地址只属于运行时展示数据，需要预览、下载、归档、权限校验、派生文件处理时，必须通过 `mango-file` 按文件 ID 操作。
 
 目录规则：
 
@@ -295,7 +297,9 @@ mango-file -> mango-document 生成预览派生文件
 - `bizType`、`bizId`、`purpose`、`directoryId`：上传上下文字段，会随文件记录保存。
 - `bizMeta`：业务自定义参数，通过文件记录扩展字段保存 JSON。
 
-组件默认返回 `mango-file:{id}` 文件标识，方便已有表单字段继续用字符串保存。需要完整文件记录时，可设置 `value-type="record"`，返回值包含 `id`、`fileName`、`fileSize`、`contentType`、`objectName`、`bizType`、`bizId`、`purpose`、`createdBy`、`createdTime`、`url` 等信息。
+组件默认返回 `mango-file:{id}` 文件标识，方便已有表单字段继续用字符串保存。业务表单持久化时只能提交该标识或文件 ID。
+
+需要完整文件记录时，可设置 `value-type="record"`，返回值包含 `id`、`fileName`、`fileSize`、`contentType`、`objectName`、`bizType`、`bizId`、`purpose`、`createdBy`、`createdTime`、`url`、`previewUrl`、`downloadUrl` 等信息。其中地址字段只用于当前页面展示或本次响应消费，禁止提交给业务 API 或写入业务表、业务扩展 JSON、配置缓存。
 
 文件中心前端包为 `@mango/file`：
 

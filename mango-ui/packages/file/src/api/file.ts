@@ -7,6 +7,7 @@ import type { ApiId } from '@mango/api-schema';
 
 export type FileId = ApiId;
 export type FileBizMeta = Record<string, unknown> | string;
+export type FileReference = FileId | `mango-file:${string}` | FileRecord | FilePreview | null | undefined;
 
 export interface FileRecord {
   id: FileId;
@@ -179,6 +180,38 @@ export const fileApi = {
     return response as any;
   },
 };
+
+export function normalizeFileId(value?: FileReference): FileId {
+  if (!value) return '';
+  if (typeof value !== 'string') {
+    return normalizeId(value.id);
+  }
+  const text = value.trim();
+  if (!text || isFileAccessUrl(text)) return '';
+  return text.startsWith('mango-file:') ? normalizeId(text.slice('mango-file:'.length)) : normalizeId(text);
+}
+
+export function fileToken(id?: FileId): string {
+  const normalized = normalizeId(id);
+  return normalized ? `mango-file:${normalized}` : '';
+}
+
+export function fileRuntimeUrl(record?: Partial<FileRecord | FilePreview> | null): string {
+  if (!record) return '';
+  const candidates = [
+    record.directPreviewUrl,
+    record.directDownloadUrl,
+    'url' in record ? record.url : '',
+    record.previewUrl,
+    record.downloadUrl,
+  ];
+  return candidates.find(item => Boolean(item && !isProtectedApiUrl(item))) || '';
+}
+
+export function isFileAccessUrl(value?: string): boolean {
+  if (!value) return false;
+  return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/') || isProtectedApiUrl(value);
+}
 
 export async function downloadFileRecord(row: Pick<FileRecord, 'id' | 'fileName'> & Partial<Pick<FilePreview, 'directDownloadUrl'>>) {
   if (row.directDownloadUrl) {
@@ -361,6 +394,18 @@ function fromBackendFileRecord(item: any): FileRecord {
 
 function normalizeId(value: any): FileId {
   return value === undefined || value === null ? '' : String(value);
+}
+
+function isProtectedApiUrl(value?: string) {
+  if (!value) return false;
+  if (value.startsWith('/api/')) return true;
+  if (!/^https?:\/\//i.test(value)) return false;
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.pathname.startsWith('/api/');
+  } catch {
+    return false;
+  }
 }
 
 function parseBizMeta(value: any): FileBizMeta | undefined {
