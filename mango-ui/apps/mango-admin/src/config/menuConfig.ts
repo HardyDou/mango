@@ -1,4 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
+import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages';
+import { componentsMap } from './componentsMap';
 
 /**
  * 菜单配置
@@ -17,9 +19,32 @@ export interface MenuItem {
   path: string;
   name: string;
   meta: MenuMeta;
-  component?: () => Promise<any>;
+  component?: RouteRecordRaw['component'];
   redirect?: string;
   children?: MenuItem[];
+}
+
+function createDevelopMenu(): MenuItem {
+  return {
+    path: '/develop',
+    name: 'DevelopCenter',
+    meta: { title: '开发中心', icon: 'Monitor' },
+    redirect: DEV_COMPONENT_DEMO_REDIRECT,
+    children: [
+      {
+        path: '/develop/components',
+        name: 'DevelopComponents',
+        meta: { title: '组件库', icon: 'Box' },
+        redirect: DEV_COMPONENT_DEMO_REDIRECT,
+        children: DEV_COMPONENT_DEMO_PAGES.map((page) => ({
+          path: page.path,
+          name: page.menuCode,
+          meta: { title: page.menuName, icon: page.icon },
+          component: componentsMap[page.component] as NonNullable<RouteRecordRaw['component']>,
+        })),
+      },
+    ],
+  };
 }
 
 /**
@@ -44,44 +69,7 @@ const menuItems: MenuItem[] = [
     meta: { title: '修改密码', icon: 'Lock' },
     component: () => import('@mango/auth').then(m => m.PasswordView),
   },
-  {
-    path: '/demo',
-    name: 'Demo',
-    meta: { title: '组件库', icon: 'Box' },
-    redirect: '/demo/editor',
-    children: [
-      {
-        path: '/demo/editor',
-        name: 'DemoEditor',
-        meta: { title: '富文本编辑器', icon: 'Document' },
-        component: () => import('@/views/demo/components/EditorView.vue'),
-      },
-      {
-        path: '/demo/code-editor',
-        name: 'DemoCodeEditor',
-        meta: { title: '代码编辑器', icon: 'Edit' },
-        component: () => import('@/views/demo/components/CodeEditorView.vue'),
-      },
-      {
-        path: '/demo/upload',
-        name: 'DemoUpload',
-        meta: { title: '文件上传', icon: 'Upload' },
-        component: () => import('@/views/demo/components/UploadView.vue'),
-      },
-      {
-        path: '/demo/charts',
-        name: 'DemoCharts',
-        meta: { title: '数据图表', icon: 'DataLine' },
-        component: () => import('@/views/demo/components/ChartsView.vue'),
-      },
-      {
-        path: '/demo/directive',
-        name: 'DemoDirective',
-        meta: { title: '功能指令', icon: 'Key' },
-        component: () => import('@/views/demo/components/DirectiveView.vue'),
-      },
-    ],
-  },
+  ...(import.meta.env.DEV ? [createDevelopMenu()] : []),
 ];
 
 /**

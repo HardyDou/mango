@@ -33,7 +33,7 @@ test.describe('组织选择器 E2E', () => {
     ]);
 
     await loginByUi(page);
-    await page.goto('/#/demo/org-selector');
+    await page.goto('/#/components/org-selector');
     await expect(page.getByText('组织架构选择器').first()).toBeVisible();
 
     const selects = page.locator('.org-selector .el-select');

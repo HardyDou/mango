@@ -48,6 +48,37 @@ mango:
     storage: auto  # auto/redis/db/memory
 ```
 
+## 滑块验证码图库
+
+滑块验证码默认使用模块内置图库：
+
+```text
+classpath:captcha/block-puzzle/workspace.jpg
+classpath:captcha/block-puzzle/city.jpg
+classpath:captcha/block-puzzle/garden.jpg
+classpath:captcha/block-puzzle/pears.jpg
+classpath:captcha/block-puzzle/village.jpg
+classpath:captcha/block-puzzle/mountain.jpg
+classpath:captcha/block-puzzle/courtyard.jpg
+```
+
+业务项目可以维护自己的图库，并通过配置替换默认图库。支持 `classpath:`、`file:`、`http:`、`https:` 路径；不写协议时按 `classpath:` 处理。
+
+```yaml
+mango:
+  captcha:
+    block-puzzle:
+      width: 280
+      height: 160
+      slider-size: 50
+      image-locations:
+        - classpath:captcha/block-puzzle/office.jpg
+        - classpath:captcha/block-puzzle/street.jpg
+        - file:/data/mango/captcha/gallery/lobby.jpg
+```
+
+接口仍返回前端可直接渲染的 `backgroundImage`、`sliderImage`、`x`、`y`，前端不需要关心图片来自内置图库还是业务图库。
+
 ## API 接口
 
 ### 生成验证码
@@ -56,12 +87,14 @@ mango:
 GET /captcha/types
 GET /captcha/arithmetic
 GET /captcha/block-puzzle
+GET /captcha/click-word
 ```
 
 | 类型 | URL |
 |-----|-----|
 | 算术验证码 | GET /captcha/arithmetic |
 | 滑块验证码 | GET /captcha/block-puzzle |
+| 点选文字验证码 | GET /captcha/click-word |
 
 返回：
 ```json
@@ -84,7 +117,18 @@ Content-Type: application/json
 
 {
   "key": "d37af63fb25348619f1e712c526baba2",
+  "type": "ARITHMETIC",
   "code": "32"
+}
+```
+
+点选文字验证码校验时，前端提交按提示顺序点击的坐标：
+
+```json
+{
+  "key": "d37af63fb25348619f1e712c526baba2",
+  "type": "CLICK_WORD",
+  "pointJson": "{\"points\":[{\"x\":80,\"y\":60},{\"x\":160,\"y\":110},{\"x\":250,\"y\":70}]}"
 }
 ```
 

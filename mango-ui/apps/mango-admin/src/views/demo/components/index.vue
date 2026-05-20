@@ -1,274 +1,131 @@
 <template>
-  <div class="component-demo-container">
-    <h1>前端组件库</h1>
-    <p class="subtitle">
-      已实现组件的演示和测试页面
-    </p>
+  <DemoDocLayout
+    class="component-demo"
+    title="前端组件库"
+    subtitle="按高频业务场景整理的组件入口，详细用法请进入对应组件示例页查看。"
+    content-box
+    :toc-items="tocItems"
+  >
+    <section id="common" class="doc-section">
+      <h2>高频表单组件</h2>
+      <p>文件上传、验证码、组织选择、省市区选择是后台业务表单里使用频率最高的一组组件。</p>
+      <div class="component-grid">
+        <ComponentEntry title="Upload 文件上传" desc="附件、图片、文档和业务附件清单。" path="/components/upload" />
+        <ComponentEntry title="验证码组件" desc="算术、滑块、短信、邮件和综合选择器。" path="/components/captcha" />
+        <ComponentEntry title="组织架构选择器" desc="单选、多选、禁用和组织 ID 回显。" path="/components/org-selector" />
+        <ComponentEntry title="省市区选择器" desc="三级、四级和仅显示末级模式。" path="/components/china-area" />
+      </div>
+    </section>
 
-    <el-row :gutter="20">
-      <!-- 富文本编辑器 -->
-      <el-col :span="12">
-        <el-card class="demo-card">
-          <template #header>
-            <span>富文本编辑器 (Editor)</span>
-          </template>
-          <div
-            class="editor-demo"
-            data-testid="editor-demo"
-          >
-            <Editor
-              v-model="editorContent"
-              height="300"
-            />
-          </div>
-          <div class="demo-tip">
-            <el-tag type="info">
-              v-model 双向绑定
-            </el-tag>
-            <el-tag type="info">
-              高度自适应
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
+    <section id="content" class="doc-section">
+      <h2>内容编辑组件</h2>
+      <p>富文本和代码编辑器用于公告、协议、脚本、SQL、JSON 配置等内容录入。</p>
+      <div class="component-grid">
+        <ComponentEntry title="富文本编辑器" desc="完整模式、简洁模式、只读和方法调用。" path="/components/editor" />
+        <ComponentEntry title="代码编辑器" desc="语言模式、主题、只读和编辑器方法。" path="/components/code-editor" />
+      </div>
+    </section>
 
-      <!-- 代码编辑器 -->
-      <el-col :span="12">
-        <el-card class="demo-card">
-          <template #header>
-            <span>代码编辑器 (CodeEditor)</span>
-          </template>
-          <div
-            class="editor-demo"
-            data-testid="code-editor-demo"
-          >
-            <CodeEditor
-              v-model="codeContent"
-              language="javascript"
-              height="300px"
-            />
-          </div>
-          <div class="demo-tip">
-            <el-tag type="info">
-              多语言支持
-            </el-tag>
-            <el-tag type="info">
-              语法高亮
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <section id="data" class="doc-section">
+      <h2>数据与权限</h2>
+      <p>图表和权限指令用于数据展示、操作按钮可见性控制和常见后台管理页面。</p>
+      <div class="component-grid">
+        <ComponentEntry title="数据图表" desc="折线图、柱状图、饼图、loading 和主题。" path="/components/charts" />
+        <ComponentEntry title="功能指令" desc="v-auth、v-auths、v-auth-all 权限显示控制。" path="/components/directive" />
+      </div>
+    </section>
 
-    <el-row
-      :gutter="20"
-      style="margin-top: 20px"
-    >
-      <!-- 图片上传 -->
-      <el-col :span="8">
-        <el-card class="demo-card">
-          <template #header>
-            <span>图片上传 (ImageUpload)</span>
-          </template>
-          <ImageUpload v-model="imageUrl" />
-          <div class="demo-tip">
-            <el-tag type="info">
-              图片预览
-            </el-tag>
-            <el-tag type="info">
-              自动上传
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 文件上传 -->
-      <el-col :span="8">
-        <el-card class="demo-card">
-          <template #header>
-            <span>文件上传 (FileUpload)</span>
-          </template>
-          <FileUpload v-model="fileUrl" />
-          <div class="demo-tip">
-            <el-tag type="info">
-              通用文件
-            </el-tag>
-            <el-tag type="info">
-              进度显示
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- Excel上传 -->
-      <el-col :span="8">
-        <el-card class="demo-card">
-          <template #header>
-            <span>Excel上传 (ExcelUpload)</span>
-          </template>
-          <ExcelUpload
-            v-model="excelData"
-            @change="handleExcelChange"
-          />
-          <div
-            v-if="excelData"
-            class="excel-preview"
-          >
-            <p>已解析 {{ excelData.length }} 条数据</p>
-          </div>
-          <div class="demo-tip">
-            <el-tag type="info">
-              Excel解析
-            </el-tag>
-            <el-tag type="info">
-              数据预览
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row
-      :gutter="20"
-      style="margin-top: 20px"
-    >
-      <!-- ECharts 图表 -->
-      <el-col :span="12">
-        <el-card class="demo-card">
-          <template #header>
-            <span>数据图表 (ECharts)</span>
-          </template>
-          <ECharts
-            :options="chartOptions"
-            height="300px"
-          />
-          <div class="demo-tip">
-            <el-tag type="info">
-              折线图
-            </el-tag>
-            <el-tag type="info">
-              响应式
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 权限指令 -->
-      <el-col :span="12">
-        <el-card class="demo-card">
-          <template #header>
-            <span>权限指令 (v-auth)</span>
-          </template>
-          <div class="auth-demo">
-            <el-button
-              v-auth="'admin:user:add'"
-              type="primary"
-            >
-              有 admin:user:add 权限可见
-            </el-button>
-            <el-button
-              v-auth="'admin:user:delete'"
-              type="danger"
-            >
-              有 admin:user:delete 权限可见
-            </el-button>
-            <el-button
-              v-auth="'fake:permission'"
-              type="warning"
-            >
-              这个不应该显示
-            </el-button>
-          </div>
-          <div class="demo-tip">
-            <el-tag type="info">
-              v-auth 单权限
-            </el-tag>
-            <el-tag type="info">
-              v-auths 多权限 OR
-            </el-tag>
-            <el-tag type="info">
-              v-auth-all 多权限 AND
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-  </div>
+    <section id="realtime" class="doc-section">
+      <h2>实时通信</h2>
+      <p>AI 对话、WebSocket 和 SSE 用于在线交互、消息推送和服务端通知。</p>
+      <div class="component-grid">
+        <ComponentEntry title="AI 对话组件" desc="浮动对话、推荐问题、会话 ID 和流式返回。" path="/components/chat" />
+        <ComponentEntry title="WebSocket 客户端" desc="认证参数、心跳、重连和消息发送。" path="/components/websocket" />
+        <ComponentEntry title="服务端推送 (SSE)" desc="服务端单向推送、重连和消息通知。" path="/components/sse" />
+      </div>
+    </section>
+  </DemoDocLayout>
 </template>
 
 <script setup lang="ts" name="ComponentDemo">
-import { ref } from 'vue';
-import { Editor, CodeEditor, ImageUpload, FileUpload, ExcelUpload, ECharts } from '@mango/common';
+import { defineComponent, h } from 'vue';
+import { useRouter } from 'vue-router';
+import DemoDocLayout from './DemoDocLayout.vue';
 
-const editorContent = ref('<p>这是一个<b>富文本编辑器</b>示例</p>');
-const codeContent = ref(`function hello() {
-  console.log('Hello, World!');
-}`);
-const imageUrl = ref('');
-const fileUrl = ref('');
-const excelData = ref<any[]>([]);
+const router = useRouter();
 
-const chartOptions = ref({
-  xAxis: {
-    type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+const tocItems = [
+  { id: 'common', label: '高频表单' },
+  { id: 'content', label: '内容编辑' },
+  { id: 'data', label: '数据与权限' },
+  { id: 'realtime', label: '实时通信' },
+];
+
+const ComponentEntry = defineComponent({
+  props: {
+    title: { type: String, required: true },
+    desc: { type: String, required: true },
+    path: { type: String, required: true },
   },
-  yAxis: {
-    type: 'value',
+  setup(props) {
+    return () => h(
+      'button',
+      {
+        class: 'component-entry',
+        type: 'button',
+        onClick: () => router.push(props.path),
+      },
+      [
+        h('span', { class: 'entry-title' }, props.title),
+        h('span', { class: 'entry-desc' }, props.desc),
+      ],
+    );
   },
-  series: [
-    {
-      data: [120, 200, 150, 80, 70, 110, 130],
-      type: 'line',
-      smooth: true,
-    },
-  ],
 });
-
-function handleExcelChange(data: any[]) {
-  excelData.value = data;
-}
 </script>
 
 <style scoped lang="scss">
-.component-demo-container {
-  padding: 20px;
+@use './demo-page.scss';
 
-  h1 {
-    margin-bottom: 8px;
-    font-size: 24px;
-    font-weight: 600;
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.component-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 104px;
+  padding: 16px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  background: var(--el-bg-color);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    border-color: var(--el-color-primary-light-5);
+    box-shadow: 0 6px 16px rgb(31 45 61 / 8%);
+    transform: translateY(-1px);
   }
+}
 
-  .subtitle {
-    margin-bottom: 20px;
-    color: #909399;
-  }
+.entry-title {
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
 
-  .demo-card {
-    .editor-demo {
-      margin-bottom: 10px;
-    }
-
-    .demo-tip {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .auth-demo {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .excel-preview {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f5f7fa;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-  }
+.entry-desc {
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+  line-height: 1.7;
 }
 </style>

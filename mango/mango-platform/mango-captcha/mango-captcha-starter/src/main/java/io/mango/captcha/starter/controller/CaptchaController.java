@@ -3,6 +3,7 @@ package io.mango.captcha.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;
@@ -63,6 +64,37 @@ public class CaptchaController {
     public R<CaptchaResponse> generateBlockPuzzle() {
         CaptchaResponse response = captchaService.generate(CaptchaType.BLOCK_PUZZLE, null);
         return R.ok(response);
+    }
+
+    /**
+     * 生成点选文字验证码
+     */
+    @GetMapping("/click-word")
+    @Operation(summary = "生成点选文字验证码", description = "生成按提示依次点击图片文字的验证码")
+    public R<CaptchaResponse> generateClickWord() {
+        CaptchaResponse response = captchaService.generate(CaptchaType.CLICK_WORD, null);
+        return R.ok(response);
+    }
+
+    /**
+     * 生成无感行为验证 challenge。
+     */
+    @GetMapping("/behavior")
+    @Operation(summary = "生成无感行为验证", description = "生成无感行为验证 challenge，前端静默采集行为后提交 verify")
+    public R<CaptchaResponse> generateBehavior() {
+        CaptchaResponse response = captchaService.generate(CaptchaType.BEHAVIOR, null);
+        return R.ok(response);
+    }
+
+    /**
+     * 校验无感行为验证。
+     */
+    @PostMapping("/behavior/verify")
+    @Operation(summary = "校验无感行为验证", description = "校验前端行为数据并返回 score、riskLevel 和 suggestAction")
+    public R<BehaviorCaptchaVerifyResult> verifyBehavior(@Valid @RequestBody CaptchaVerifyRequest request) {
+        request.setType(CaptchaType.BEHAVIOR);
+        BehaviorCaptchaVerifyResult result = captchaService.verifyBehavior(request);
+        return R.ok(result);
     }
 
     /**

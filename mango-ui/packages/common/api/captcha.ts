@@ -3,6 +3,8 @@ import { get, post } from '../utils/request';
 export enum CaptchaType {
   ARITHMETIC = 'ARITHMETIC',
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
+  CLICK_WORD = 'CLICK_WORD',
+  BEHAVIOR = 'BEHAVIOR',
   CANVAS_SLIDER = 'CANVAS_SLIDER',
   SMS = 'SMS',
   EMAIL = 'EMAIL',
@@ -14,6 +16,11 @@ export interface CaptchaResponse {
   image?: string;
   backgroundImage?: string;
   sliderImage?: string;
+  backgroundWidth?: number;
+  backgroundHeight?: number;
+  sliderSize?: number;
+  x?: number;
+  y?: number;
   expireTime: number;
   target?: string;
   extra?: string;
@@ -24,6 +31,15 @@ export interface CaptchaVerifyRequest {
   type: CaptchaType;
   code?: string;
   pointJson?: string;
+}
+
+export interface BehaviorCaptchaVerifyResult {
+  key: string;
+  score: number;
+  passed: boolean;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  suggestAction: 'ALLOW' | 'SECONDARY_VERIFY' | 'DENY';
+  reason: string;
 }
 
 export interface CaptchaTypesResponse {
@@ -41,6 +57,18 @@ export function generateArithmetic() {
 
 export function generateBlockPuzzle() {
   return get<CaptchaResponse>('/captcha/block-puzzle');
+}
+
+export function generateClickWord() {
+  return get<CaptchaResponse>('/captcha/click-word');
+}
+
+export function generateBehavior() {
+  return get<CaptchaResponse>('/captcha/behavior');
+}
+
+export function verifyBehaviorCaptcha(request: CaptchaVerifyRequest) {
+  return post<BehaviorCaptchaVerifyResult>('/captcha/behavior/verify', request);
 }
 
 export function sendSms(mobile: string) {

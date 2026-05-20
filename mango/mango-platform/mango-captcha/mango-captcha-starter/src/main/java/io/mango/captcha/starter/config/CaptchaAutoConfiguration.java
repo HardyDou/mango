@@ -5,11 +5,15 @@ import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.spi.EmailProvider;
 import io.mango.captcha.api.spi.SmsProvider;
 import io.mango.captcha.core.service.ArithmeticCaptchaService;
+import io.mango.captcha.core.service.BehaviorCaptchaService;
 import io.mango.captcha.core.service.BlockPuzzleCaptchaService;
+import io.mango.captcha.core.service.ClickWordCaptchaService;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.captcha.core.service.impl.ArithmeticCaptchaServiceImpl;
+import io.mango.captcha.core.service.impl.BehaviorCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.BlockPuzzleCaptchaServiceImpl;
 import io.mango.captcha.core.service.impl.CaptchaServiceImpl;
+import io.mango.captcha.core.service.impl.ClickWordCaptchaServiceImpl;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.captcha.starter.controller.CaptchaController;
 import io.mango.captcha.starter.properties.CaptchaProperties;
@@ -48,7 +52,19 @@ public class CaptchaAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(BlockPuzzleCaptchaService.class)
     public BlockPuzzleCaptchaService blockPuzzleCaptchaService() {
-        return new BlockPuzzleCaptchaServiceImpl();
+        return new BlockPuzzleCaptchaServiceImpl(properties.getBlockPuzzle().getImageLocations());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ClickWordCaptchaService.class)
+    public ClickWordCaptchaService clickWordCaptchaService() {
+        return new ClickWordCaptchaServiceImpl();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(BehaviorCaptchaService.class)
+    public BehaviorCaptchaService behaviorCaptchaService(ObjectMapper objectMapper) {
+        return new BehaviorCaptchaServiceImpl(objectMapper);
     }
 
     @Bean
@@ -56,6 +72,8 @@ public class CaptchaAutoConfiguration {
     public ICaptchaService captchaApi(IKvStore kvStore,
                                       ArithmeticCaptchaService arithmeticCaptchaService,
                                       BlockPuzzleCaptchaService blockPuzzleCaptchaService,
+                                      ClickWordCaptchaService clickWordCaptchaService,
+                                      BehaviorCaptchaService behaviorCaptchaService,
                                       List<SmsProvider> smsProviders,
                                       List<EmailProvider> emailProviders,
                                       ObjectMapper objectMapper) {
@@ -63,6 +81,8 @@ public class CaptchaAutoConfiguration {
                 kvStore,
                 arithmeticCaptchaService,
                 blockPuzzleCaptchaService,
+                clickWordCaptchaService,
+                behaviorCaptchaService,
                 smsProviders,
                 emailProviders,
                 objectMapper

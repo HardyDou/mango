@@ -23,7 +23,7 @@ const menus: MangoMenuTreeNode[] = [
         children: [
           { path: '/components/editor' },
           { path: '/components/upload' },
-          { path: '/demo/chat' },
+          { path: '/components/chat' },
         ],
       },
     ],

@@ -65,9 +65,13 @@ async function handleSend() {
 }
 
 async function handleVerify() {
+  return verify();
+}
+
+async function verify() {
   if (!captchaKey.value) {
     errorMessage.value = '请先获取验证码';
-    return;
+    return false;
   }
 
   try {
@@ -78,13 +82,14 @@ async function handleVerify() {
     });
     if (result) {
       emit('success', captchaKey.value);
-      return;
+      return true;
     }
   } catch {
     // ignored
   }
 
   errorMessage.value = '验证码校验失败';
+  return false;
 }
 
 function refresh() {
@@ -103,7 +108,7 @@ onBeforeUnmount(() => {
   if (timer) clearInterval(timer);
 });
 
-defineExpose({ refresh });
+defineExpose({ refresh, verify });
 </script>
 
 <style scoped lang="scss">

@@ -12,6 +12,8 @@ export interface UploadResult {
   fileSize: number;
   contentType?: string;
   objectName?: string;
+  directPreviewUrl?: string;
+  directDownloadUrl?: string;
 }
 
 export interface ExcelUploadResult {
@@ -23,6 +25,8 @@ export interface ExcelUploadResult {
   fileSize: number;
   contentType?: string;
   objectName?: string;
+  directPreviewUrl?: string;
+  directDownloadUrl?: string;
   data: Record<string, unknown>[];
 }
 
@@ -61,13 +65,15 @@ export function uploadExcel(file: File): Promise<ExcelUploadResult> {
     },
   }).then((record) => ({
     id: record.id,
-    url: record.previewUrl || record.url || (record.id ? `mango-file:${record.id}` : ''),
+    url: uploadAccessUrl(record),
     previewUrl: record.previewUrl || record.url,
     downloadUrl: record.downloadUrl,
     fileName: record.fileName,
     fileSize: Number(record.fileSize ?? 0),
     contentType: record.contentType,
     objectName: record.objectName,
+    directPreviewUrl: record.directPreviewUrl,
+    directDownloadUrl: record.directDownloadUrl,
     data: [],
   }));
 }
@@ -108,18 +114,35 @@ function toUploadResult(record: any): UploadResult {
   const id = normalizeId(record.id);
   return {
     id,
-    url: record.previewUrl || record.url || fileToken(id),
+    url: uploadAccessUrl(record),
     previewUrl: record.previewUrl || record.url,
     downloadUrl: record.downloadUrl,
     fileName: record.fileName,
     fileSize: Number(record.fileSize ?? 0),
     contentType: record.contentType,
     objectName: record.objectName,
+    directPreviewUrl: record.directPreviewUrl,
+    directDownloadUrl: record.directDownloadUrl,
   };
 }
 
 export function fileToken(id?: FileId): string {
   return id ? `mango-file:${id}` : '';
+}
+
+function uploadAccessUrl(record: any): string {
+  const id = normalizeId(record?.id);
+  return directUrl(record?.directPreviewUrl)
+    || directUrl(record?.url)
+    || directUrl(record?.directDownloadUrl)
+    || directUrl(record?.downloadUrl)
+    || fileToken(id);
+}
+
+function directUrl(value?: string): string {
+  if (!value) return '';
+  if (/^(https?:)?\/\//i.test(value) || /^(blob|data):/i.test(value)) return value;
+  return '';
 }
 
 function normalizeId(value: any): FileId | undefined {

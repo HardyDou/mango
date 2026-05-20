@@ -8,6 +8,10 @@ export enum CaptchaType {
   ARITHMETIC = 'ARITHMETIC',
   /** 滑块验证码（图片） */
   BLOCK_PUZZLE = 'BLOCK_PUZZLE',
+  /** 点选文字验证码 */
+  CLICK_WORD = 'CLICK_WORD',
+  /** 无感行为验证 */
+  BEHAVIOR = 'BEHAVIOR',
   /** 滑块验证码（Canvas） */
   CANVAS_SLIDER = 'CANVAS_SLIDER',
   /** 短信验证码 */
@@ -30,6 +34,12 @@ export interface CaptchaResponse {
   backgroundImage?: string;
   /** 滑块图片 */
   sliderImage?: string;
+  /** 滑块背景图生成宽度 */
+  backgroundWidth?: number;
+  /** 滑块背景图生成高度 */
+  backgroundHeight?: number;
+  /** 滑块拼图片生成尺寸 */
+  sliderSize?: number;
   /** 过期时间（秒） */
   expireTime: number;
   /** 目标（手机号/邮箱） */
@@ -50,6 +60,24 @@ export interface CaptchaVerifyRequest {
   code?: string;
   /** 滑块验证参数（滑块验证码） */
   pointJson?: string;
+}
+
+/**
+ * 无感行为验证评分结果
+ */
+export interface BehaviorCaptchaVerifyResult {
+  /** 验证码key */
+  key: string;
+  /** 0.0 到 1.0 的行为评分，分数越高越像真人 */
+  score: number;
+  /** 是否通过 */
+  passed: boolean;
+  /** 风险等级 */
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  /** 建议业务动作 */
+  suggestAction: 'ALLOW' | 'SECONDARY_VERIFY' | 'DENY';
+  /** 评分原因 */
+  reason: string;
 }
 
 /**
@@ -82,6 +110,27 @@ export function generateArithmetic() {
  */
 export function generateBlockPuzzle() {
   return get<CaptchaResponse>('/captcha/block-puzzle');
+}
+
+/**
+ * 生成点选文字验证码
+ */
+export function generateClickWord() {
+  return get<CaptchaResponse>('/captcha/click-word');
+}
+
+/**
+ * 生成无感行为验证
+ */
+export function generateBehavior() {
+  return get<CaptchaResponse>('/captcha/behavior');
+}
+
+/**
+ * 校验无感行为验证
+ */
+export function verifyBehaviorCaptcha(request: CaptchaVerifyRequest) {
+  return post<BehaviorCaptchaVerifyResult>('/captcha/behavior/verify', request);
 }
 
 /**

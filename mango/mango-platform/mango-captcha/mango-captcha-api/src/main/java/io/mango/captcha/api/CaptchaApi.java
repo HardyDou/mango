@@ -1,6 +1,7 @@
 package io.mango.captcha.api;
 
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
@@ -30,6 +31,14 @@ public interface CaptchaApi {
      * @return true-校验通过
      */
     boolean verify(CaptchaVerifyRequest request);
+
+    /**
+     * 校验无感行为验证并返回评分详情。
+     *
+     * @param request 校验请求
+     * @return 行为评分结果
+     */
+    BehaviorCaptchaVerifyResult verifyBehavior(CaptchaVerifyRequest request);
 
     /**
      * 发送短信验证码

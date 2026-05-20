@@ -10,6 +10,8 @@ export interface MangoUploadFileMeta {
   fileSize: number;
   contentType?: string;
   objectName?: string;
+  directPreviewUrl?: string;
+  directDownloadUrl?: string;
 }
 
 export type MangoUploadModelValue = string | string[] | MangoUploadFileMeta | MangoUploadFileMeta[];
@@ -21,6 +23,8 @@ export type MangoUploadUserFile = UploadUserFile & {
   fileSize?: number;
   contentType?: string;
   objectName?: string;
+  directPreviewUrl?: string;
+  directDownloadUrl?: string;
 };
 
 export function fileToken(id?: ApiId): string {
@@ -42,7 +46,11 @@ export function isFileAccessUrl(value?: string): boolean {
 export function normalizeUploadResult(response: any): MangoUploadFileMeta {
   const data = response?.data && !response?.url ? response.data : response;
   const id = normalizeId(data?.id);
-  const url = data?.url || fileToken(id);
+  const url = directUrl(data?.directPreviewUrl)
+    || directUrl(data?.url)
+    || directUrl(data?.directDownloadUrl)
+    || directUrl(data?.downloadUrl)
+    || fileToken(id);
   const fileName = data?.fileName || data?.name || url || '';
 
   return {
@@ -53,7 +61,15 @@ export function normalizeUploadResult(response: any): MangoUploadFileMeta {
     fileSize: Number(data?.fileSize ?? data?.size ?? 0),
     contentType: data?.contentType,
     objectName: data?.objectName,
+    directPreviewUrl: data?.directPreviewUrl,
+    directDownloadUrl: data?.directDownloadUrl,
   };
+}
+
+function directUrl(value?: string): string {
+  if (!value) return '';
+  if (/^(https?:)?\/\//i.test(value) || /^(blob|data):/i.test(value)) return value;
+  return '';
 }
 
 function normalizeId(value: any): ApiId | undefined {
@@ -87,6 +103,8 @@ export function modelValueToUploadFiles(value?: MangoUploadModelValue): MangoUpl
         fileSize: item.fileSize,
         contentType: item.contentType,
         objectName: item.objectName,
+        directPreviewUrl: item.directPreviewUrl,
+        directDownloadUrl: item.directDownloadUrl,
       };
     });
 }
@@ -116,6 +134,8 @@ export function mergeUploadResult(file: MangoUploadUserFile, response: any): Man
     fileSize: uploadResult.fileSize,
     contentType: uploadResult.contentType,
     objectName: uploadResult.objectName,
+    directPreviewUrl: uploadResult.directPreviewUrl,
+    directDownloadUrl: uploadResult.directDownloadUrl,
     response,
   };
 }
@@ -144,6 +164,8 @@ function uploadUserFileToMeta(file: MangoUploadUserFile): MangoUploadFileMeta {
     fileSize: Number(file.fileSize ?? responseMeta?.fileSize ?? file.size ?? 0),
     contentType: file.contentType || responseMeta?.contentType,
     objectName: file.objectName || responseMeta?.objectName,
+    directPreviewUrl: file.directPreviewUrl || responseMeta?.directPreviewUrl,
+    directDownloadUrl: file.directDownloadUrl || responseMeta?.directDownloadUrl,
   };
 }
 

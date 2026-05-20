@@ -24,17 +24,27 @@
         :on-preview="handlePreview"
       >
         <template v-if="normalizedDisplay === 'thumbnail'">
-          <el-icon><Plus /></el-icon>
+          <slot name="thumbnail-trigger">
+            <slot name="trigger">
+              <el-icon><Plus /></el-icon>
+            </slot>
+          </slot>
         </template>
         <template v-else-if="normalizedDisplay === 'drag'">
-          <el-icon class="upload-drag-icon"><UploadFilled /></el-icon>
-          <div class="el-upload__text">拖入文件或点击上传</div>
+          <slot name="drag-trigger">
+            <slot name="trigger">
+              <el-icon class="upload-drag-icon"><UploadFilled /></el-icon>
+              <div class="el-upload__text">拖入文件或点击上传</div>
+            </slot>
+          </slot>
         </template>
         <template v-else>
-          <el-button type="primary" :disabled="readonly">
-            <el-icon class="el-icon--left"><UploadIcon /></el-icon>
-            {{ buttonText }}
-          </el-button>
+          <slot name="trigger">
+            <el-button type="primary" :disabled="readonly">
+              <el-icon class="el-icon--left"><UploadIcon /></el-icon>
+              {{ buttonText }}
+            </el-button>
+          </slot>
         </template>
       </el-upload>
 
@@ -95,7 +105,6 @@ import { Plus, Upload as UploadIcon, UploadFilled } from '@element-plus/icons-vu
 import {
   DEFAULT_MULTIPART_THRESHOLD,
   fileApi,
-  fileRuntimeUrl,
   fileToken,
   isFileAccessUrl,
   normalizeFileId,
@@ -110,7 +119,7 @@ defineOptions({
 });
 
 export type UploadDisplay = 'list' | 'thumbnail' | 'table' | 'drag';
-export type UploadValueType = 'id' | 'token' | 'url' | 'record';
+export type UploadValueType = 'id' | 'token' | 'record';
 export type UploadColumnKey = keyof FileRecord | `meta.${string}` | string;
 
 export interface UploadSizeRules {
@@ -194,7 +203,10 @@ watch(() => props.modelValue, (value) => {
   syncing.value = true;
   internalFiles.value = modelValueToFiles(value);
   syncing.value = false;
-  void hydrateFileDetails();
+  internalFiles.value
+    .map(fileToRecord)
+    .filter((item): item is FileRecord => Boolean(item?.id))
+    .forEach(record => void hydratePreviewUrl(record, true));
 }, { immediate: true, deep: true });
 
 async function handleUpload(options: UploadRequestOptions) {
@@ -247,8 +259,14 @@ const handleRemove: UploadProps['onRemove'] = (_file, files) => {
   syncValue();
 };
 
-const handleSuccess: UploadProps['onSuccess'] = (_response, _file, files) => {
-  internalFiles.value = files.map(normalizeUploadFile);
+const handleSuccess: UploadProps['onSuccess'] = (response, file, files) => {
+  const record = normalizeUploadResponse(response);
+  internalFiles.value = files.map((item) => {
+    if (item.uid === file.uid && record?.id) {
+      return recordToFile(record, item.uid);
+    }
+    return normalizeUploadFile(item);
+  });
   syncValue();
 };
 
@@ -366,9 +384,6 @@ function modelValueFromRecords(records: FileRecord[]): UploadModelValue {
   if (props.valueType === 'id') {
     return multiple.value ? records.map(item => String(item.id || '')).filter(Boolean) : String(records[0]?.id || '');
   }
-  if (props.valueType === 'url') {
-    return multiple.value ? records.map(recordAccessUrl).filter(Boolean) : recordAccessUrl(records[0]);
-  }
   return multiple.value ? records.map(item => fileToken(item.id)) : fileToken(records[0]?.id);
 }
 
@@ -429,28 +444,23 @@ function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
   });
 }
 
-async function hydrateFileDetails() {
-  const files = internalFiles.value.filter(item => item.id && !item.response);
-  if (!files.length) return;
-  const records = await Promise.all(files.map(file => fileApi.detail(file.id as FileId).catch(() => null)));
-  const recordMap = new Map(records.filter((item): item is FileRecord => Boolean(item?.id)).map(item => [String(item.id), item]));
-  if (!recordMap.size) return;
-  internalFiles.value = internalFiles.value.map((file) => {
-    const record = file.id ? recordMap.get(String(file.id)) : undefined;
-    return record ? recordToFile(record, file.uid) : file;
-  });
-}
-
 function normalizeUploadFile(file: UploadUserFile): InternalUploadFile {
-  const response = (file as InternalUploadFile).response as FileRecord | undefined;
+  const response = normalizeUploadResponse((file as InternalUploadFile).response);
   if (response?.id) {
     return recordToFile(response, file.uid);
   }
   return file as InternalUploadFile;
 }
 
+function normalizeUploadResponse(response: unknown): FileRecord | undefined {
+  const body = response as { data?: FileRecord; id?: FileId } | FileRecord | undefined;
+  if (!body) return undefined;
+  const record = ('data' in body && body.data ? body.data : body) as FileRecord;
+  return record?.id ? record : undefined;
+}
+
 function recordToFile(record: FileRecord, uid?: number): InternalUploadFile {
-  const url = previewUrl(record);
+  const url = displayUrl(record);
   return {
     ...record,
     uid: uid ?? Number(Date.now()),
@@ -466,11 +476,60 @@ function recordToFile(record: FileRecord, uid?: number): InternalUploadFile {
 }
 
 function previewUrl(record: Partial<FileRecord>) {
-  return fileRuntimeUrl(record);
+  return directDisplayUrl(record.directPreviewUrl)
+    || directDisplayUrl(record.directDownloadUrl)
+    || directDisplayUrl(record.url)
+    || directDisplayUrl(record.previewUrl)
+    || directDisplayUrl(record.downloadUrl)
+    || (record.id ? fileApi.downloadUrl(record.id) : '');
 }
 
-function recordAccessUrl(record?: Partial<FileRecord>) {
-  return record ? previewUrl(record) : '';
+function displayUrl(record: Partial<FileRecord>) {
+  const directUrl = directDisplayUrl(record.directPreviewUrl)
+    || directDisplayUrl(record.directDownloadUrl)
+    || directDisplayUrl(record.url)
+    || directDisplayUrl(record.previewUrl)
+    || directDisplayUrl(record.downloadUrl)
+    || '';
+  if (normalizedDisplay.value === 'thumbnail') {
+    return directUrl;
+  }
+  return directUrl || (record.id ? fileApi.downloadUrl(record.id) : '');
+}
+
+function directDisplayUrl(value?: string) {
+  if (!value) return false;
+  if (/^(blob|data):/i.test(value)) return true;
+  return /^(https?:)?\/\//i.test(value) ? value : false;
+}
+
+async function hydratePreviewUrl(record: FileRecord, shouldSyncValue = false) {
+  if (!record.id || record.directPreviewUrl || record.previewUrl || record.directDownloadUrl) return;
+  try {
+    let hydrated = false;
+    const preview = await fileApi.preview(record.id);
+    internalFiles.value = internalFiles.value.map((file) => {
+      const current = fileToRecord(file);
+      if (!current || String(current.id) !== String(record.id)) {
+        return file;
+      }
+      hydrated = true;
+      return recordToFile({
+        ...current,
+        previewUrl: preview.previewUrl,
+        downloadUrl: preview.downloadUrl || current.downloadUrl,
+        directPreviewUrl: preview.directPreviewUrl,
+        directDownloadUrl: preview.directDownloadUrl,
+        directPreviewExpireSeconds: preview.directPreviewExpireSeconds,
+        directDownloadExpireSeconds: preview.directDownloadExpireSeconds,
+      }, file.uid);
+    });
+    if (hydrated && shouldSyncValue) {
+      syncValue();
+    }
+  } catch {
+    // 预览地址补齐失败时保留上传返回地址，避免影响表单值同步。
+  }
 }
 
 function fileToRecord(file: InternalUploadFile): FileRecord | null {

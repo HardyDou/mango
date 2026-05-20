@@ -1,4 +1,5 @@
-import { registerModulePages, type MangoPageRegistry } from './core';
+import { registerModulePages, type MangoPageLoader, type MangoPageRegistry } from './core';
+import { DEV_COMPONENT_DEMO_PAGES } from './devComponentPages';
 import { registerWorkflowBusinessExampleComponents } from '@mango/workflow-business-example';
 
 let registered = false;
@@ -10,6 +11,24 @@ export function registerDefaultAdminPages() {
   registered = true;
   registerWorkflowBusinessExampleComponents();
 
+  const devComponentPageLoaders: Record<string, MangoPageLoader> = {
+    'demo/components/EditorView': () => import('../../../apps/mango-admin/src/views/demo/components/EditorView.vue'),
+    'demo/components/CodeEditorView': () => import('../../../apps/mango-admin/src/views/demo/components/CodeEditorView.vue'),
+    'demo/components/UploadView': () => import('../../../apps/mango-admin/src/views/demo/components/UploadView.vue'),
+    'demo/components/ChartsView': () => import('../../../apps/mango-admin/src/views/demo/components/ChartsView.vue'),
+    'demo/components/DirectiveView': () => import('../../../apps/mango-admin/src/views/demo/components/DirectiveView.vue'),
+    'demo/components/ChatView': () => import('../../../apps/mango-admin/src/views/demo/components/ChatView.vue'),
+    'demo/components/SSEView': () => import('../../../apps/mango-admin/src/views/demo/components/SSEView.vue'),
+    'demo/components/WebsocketView': () => import('../../../apps/mango-admin/src/views/demo/components/WebsocketView.vue'),
+    'demo/components/ChinaAreaView': () => import('../../../apps/mango-admin/src/views/demo/components/ChinaAreaView.vue'),
+    'demo/components/OrgSelectorView': () => import('../../../apps/mango-admin/src/views/demo/components/OrgSelectorView.vue'),
+    'demo/components/CaptchaView': () => import('../../../apps/mango-admin/src/views/demo/components/CaptchaView.vue'),
+  };
+  const devComponentPages = import.meta.env.DEV ? DEV_COMPONENT_DEMO_PAGES.reduce<Record<string, MangoPageLoader>>((pages, page) => {
+    pages[page.component] = devComponentPageLoaders[page.component];
+    return pages;
+  }, {}) : {};
+
   const registries: MangoPageRegistry[] = [
     {
       moduleCode: 'mango-shell',
@@ -17,17 +36,7 @@ export function registerDefaultAdminPages() {
         'home/index': () => import('../../../apps/mango-admin/src/views/home/index.vue'),
         'error/404': () => import('../../../apps/mango-admin-shell/src/views/error/404.vue'),
         'error/not-found': () => import('../../../apps/mango-admin-shell/src/views/error/404.vue'),
-        'demo/components/EditorView': () => import('../../../apps/mango-admin/src/views/demo/components/EditorView.vue'),
-        'demo/components/CodeEditorView': () => import('../../../apps/mango-admin/src/views/demo/components/CodeEditorView.vue'),
-        'demo/components/UploadView': () => import('../../../apps/mango-admin/src/views/demo/components/UploadView.vue'),
-        'demo/components/ChartsView': () => import('../../../apps/mango-admin/src/views/demo/components/ChartsView.vue'),
-        'demo/components/DirectiveView': () => import('../../../apps/mango-admin/src/views/demo/components/DirectiveView.vue'),
-        'demo/components/ChatView': () => import('../../../apps/mango-admin/src/views/demo/components/ChatView.vue'),
-        'demo/components/SSEView': () => import('../../../apps/mango-admin/src/views/demo/components/SSEView.vue'),
-        'demo/components/WebsocketView': () => import('../../../apps/mango-admin/src/views/demo/components/WebsocketView.vue'),
-        'demo/components/ChinaAreaView': () => import('../../../apps/mango-admin/src/views/demo/components/ChinaAreaView.vue'),
-        'demo/components/OrgSelectorView': () => import('../../../apps/mango-admin/src/views/demo/components/OrgSelectorView.vue'),
-        'demo/components/CaptchaView': () => import('../../../apps/mango-admin/src/views/demo/components/CaptchaView.vue'),
+        ...devComponentPages,
       },
     },
     {

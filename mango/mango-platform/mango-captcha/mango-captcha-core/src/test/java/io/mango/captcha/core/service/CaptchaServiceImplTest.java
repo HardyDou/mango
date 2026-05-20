@@ -1,6 +1,7 @@
 package io.mango.captcha.core.service;
 
 import io.mango.captcha.api.constant.CaptchaType;
+import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
@@ -37,6 +38,12 @@ class CaptchaServiceImplTest {
     private BlockPuzzleCaptchaService blockPuzzleCaptchaService;
 
     @Mock
+    private ClickWordCaptchaService clickWordCaptchaService;
+
+    @Mock
+    private BehaviorCaptchaService behaviorCaptchaService;
+
+    @Mock
     private SmsProvider smsProvider;
 
     @Mock
@@ -50,6 +57,8 @@ class CaptchaServiceImplTest {
                 kvStore,
                 arithmeticCaptchaService,
                 blockPuzzleCaptchaService,
+                clickWordCaptchaService,
+                behaviorCaptchaService,
                 Arrays.asList(smsProvider),
                 Arrays.asList(emailProvider),
                 new ObjectMapper()
@@ -85,12 +94,45 @@ class CaptchaServiceImplTest {
     }
 
     @Test
+    void generate_clickWordType_savesAnswerToStorageAndReturnsPublicExtra() {
+        CaptchaResponse clickWordResponse = new CaptchaResponse();
+        clickWordResponse.setImage("data:image/png;base64,xxx");
+        clickWordResponse.setTarget("云,山,月");
+        clickWordResponse.setExtra("{\"width\":320,\"height\":180,\"tolerance\":24,\"points\":[{\"word\":\"云\",\"x\":80,\"y\":60},{\"word\":\"山\",\"x\":160,\"y\":110},{\"word\":\"月\",\"x\":250,\"y\":70}]}");
+        when(clickWordCaptchaService.generate()).thenReturn(clickWordResponse);
+
+        CaptchaResponse result = captchaService.generate(CaptchaType.CLICK_WORD, null);
+
+        assertNotNull(result);
+        assertEquals(CaptchaType.CLICK_WORD, result.getType());
+        assertEquals("云,山,月", result.getTarget());
+        assertTrue(result.getExtra().contains("\"pointCount\":3"));
+        verify(kvStore).set(startsWith("captcha:"), contains("\"points\""), anyLong());
+    }
+
+    @Test
     void generate_smsType_setsTarget() {
         CaptchaResponse result = captchaService.generate(CaptchaType.SMS, "13800138000");
 
         assertNotNull(result);
         assertEquals(CaptchaType.SMS, result.getType());
         assertEquals("13800138000", result.getTarget());
+    }
+
+    @Test
+    void generate_behaviorType_savesChallengeToStorage() {
+        CaptchaResponse behaviorResponse = new CaptchaResponse();
+        behaviorResponse.setExpireTime(300L);
+        behaviorResponse.setExtra("{\"mode\":\"silent\"}");
+        when(behaviorCaptchaService.generate()).thenReturn(behaviorResponse);
+        when(behaviorCaptchaService.createChallengeJson(anyString())).thenReturn("{\"key\":\"behavior-key\"}");
+
+        CaptchaResponse result = captchaService.generate(CaptchaType.BEHAVIOR, null);
+
+        assertNotNull(result);
+        assertEquals(CaptchaType.BEHAVIOR, result.getType());
+        assertEquals("{\"mode\":\"silent\"}", result.getExtra());
+        verify(kvStore).set(startsWith("captcha:"), eq("{\"key\":\"behavior-key\"}"), eq(300L));
     }
 
     @Test
@@ -132,6 +174,70 @@ class CaptchaServiceImplTest {
         boolean result = captchaService.verify(request);
 
         assertFalse(result);
+    }
+
+    @Test
+    void verify_clickWordWithCorrectPoints_returnsTrue() {
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey("click-key");
+        request.setType(CaptchaType.CLICK_WORD);
+        request.setPointJson("{\"points\":[{\"x\":82,\"y\":61},{\"x\":158,\"y\":108},{\"x\":252,\"y\":69}]}");
+        when(kvStore.get("captcha:click-key")).thenReturn("{\"width\":320,\"height\":180,\"tolerance\":24,\"points\":[{\"word\":\"云\",\"x\":80,\"y\":60},{\"word\":\"山\",\"x\":160,\"y\":110},{\"word\":\"月\",\"x\":250,\"y\":70}]}");
+
+        boolean result = captchaService.verify(request);
+
+        assertTrue(result);
+        verify(kvStore).delete("captcha:click-key");
+    }
+
+    @Test
+    void verify_clickWordWithWrongPoints_returnsFalse() {
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey("click-key");
+        request.setType(CaptchaType.CLICK_WORD);
+        request.setPointJson("{\"points\":[{\"x\":20,\"y\":20},{\"x\":158,\"y\":108},{\"x\":252,\"y\":69}]}");
+        when(kvStore.get("captcha:click-key")).thenReturn("{\"width\":320,\"height\":180,\"tolerance\":24,\"points\":[{\"word\":\"云\",\"x\":80,\"y\":60},{\"word\":\"山\",\"x\":160,\"y\":110},{\"word\":\"月\",\"x\":250,\"y\":70}]}");
+
+        boolean result = captchaService.verify(request);
+
+        assertFalse(result);
+        verify(kvStore, never()).delete("captcha:click-key");
+    }
+
+    @Test
+    void verify_behaviorWithPassingScore_returnsTrue() {
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey("behavior-key");
+        request.setType(CaptchaType.BEHAVIOR);
+        request.setPointJson("{\"behavior\":{\"mouseTrack\":[]}}");
+        BehaviorCaptchaVerifyResult behaviorResult = new BehaviorCaptchaVerifyResult();
+        behaviorResult.setPassed(true);
+        when(kvStore.get("captcha:behavior-key")).thenReturn("{\"key\":\"behavior-key\"}");
+        when(behaviorCaptchaService.verify(anyString(), anyString())).thenReturn(behaviorResult);
+
+        boolean result = captchaService.verify(request);
+
+        assertTrue(result);
+        verify(kvStore).delete("captcha:behavior-key");
+    }
+
+    @Test
+    void verifyBehavior_returnsScoreResult() {
+        CaptchaVerifyRequest request = new CaptchaVerifyRequest();
+        request.setKey("behavior-key");
+        request.setType(CaptchaType.BEHAVIOR);
+        request.setPointJson("{\"behavior\":{\"mouseTrack\":[]}}");
+        BehaviorCaptchaVerifyResult behaviorResult = new BehaviorCaptchaVerifyResult();
+        behaviorResult.setScore(0.86D);
+        behaviorResult.setPassed(true);
+        when(kvStore.get("captcha:behavior-key")).thenReturn("{\"key\":\"behavior-key\"}");
+        when(behaviorCaptchaService.verify(anyString(), anyString())).thenReturn(behaviorResult);
+
+        BehaviorCaptchaVerifyResult result = captchaService.verifyBehavior(request);
+
+        assertTrue(result.isPassed());
+        assertEquals("behavior-key", result.getKey());
+        assertEquals(0.86D, result.getScore());
     }
 
     @Test
@@ -194,9 +300,11 @@ class CaptchaServiceImplTest {
         List<CaptchaType> types = captchaService.getSupportedTypes();
 
         assertNotNull(types);
-        assertEquals(4, types.size());
+        assertEquals(6, types.size());
         assertTrue(types.contains(CaptchaType.ARITHMETIC));
         assertTrue(types.contains(CaptchaType.BLOCK_PUZZLE));
+        assertTrue(types.contains(CaptchaType.CLICK_WORD));
+        assertTrue(types.contains(CaptchaType.BEHAVIOR));
         assertTrue(types.contains(CaptchaType.SMS));
         assertTrue(types.contains(CaptchaType.EMAIL));
     }
