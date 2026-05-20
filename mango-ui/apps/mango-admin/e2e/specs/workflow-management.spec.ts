@@ -282,6 +282,11 @@ function expenseApprovalDesignerJson(unique: number) {
             emptyAssigneeUserIds: [],
             rejectStrategy: 'END_PROCESS',
             formPermissions: {},
+            actions: {
+              complete: { enabled: true, label: '财务确认', requireComment: false, order: 50 },
+              reject: { enabled: true, label: '退回补充', requireComment: true, danger: true, order: 40 },
+              transfer: { enabled: true, label: '转办他人', requireComment: false, order: 20 },
+            },
             extension: {
               approvePageKey: 'workflow.expense.approve.finance',
               sectionPreset: 'FINANCE_REVIEW',
@@ -309,6 +314,10 @@ function expenseApprovalDesignerJson(unique: number) {
           emptyAssigneeUserIds: [],
           rejectStrategy: 'END_PROCESS',
           formPermissions: {},
+          actions: {
+            complete: { enabled: true, label: '经理同意', requireComment: false, order: 50 },
+            reject: { enabled: true, label: '退回修改', requireComment: true, danger: true, order: 40 },
+          },
           extension: {
             approvePageKey: 'workflow.expense.approve.manager',
             sectionPreset: 'MANAGER_APPROVE',
@@ -2068,8 +2077,8 @@ test.describe('工作流配置真实接口闭环', () => {
       const rejectResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/tasks/reject') && response.status() === 200
       );
-      await page.getByRole('button', { name: '驳回' }).click();
-      await page.getByRole('dialog', { name: '审批驳回' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
+      await page.getByRole('button', { name: '退回修改' }).click();
+      await page.getByRole('dialog', { name: '审批退回修改' }).getByRole('button', { name: /^(OK|确定)$/ }).click();
       const rejectResponse = await rejectResponsePromise;
       const rejectBody = await rejectResponse.json();
       expect(rejectBody.success || rejectBody.code === 200).toBeTruthy();
@@ -2126,6 +2135,22 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(financeDetailBody.data.renderConfig.taskDefinitionKey).toBe(`finance_review_${unique}`);
       expect(financeDetailBody.data.renderConfig.nodeExtension.sectionPreset).toBe('FINANCE_REVIEW');
       expect(financeDetailBody.data.renderConfig.businessPermissions.financeReview).toBe('EDITABLE');
+      expect(financeDetailBody.data.renderConfig.nodeActions.complete).toMatchObject({
+        enabled: true,
+        label: '财务确认',
+        requireComment: false,
+      });
+      expect(financeDetailBody.data.renderConfig.nodeActions.reject).toMatchObject({
+        enabled: true,
+        label: '退回补充',
+        requireComment: true,
+      });
+      expect(financeDetailBody.data.renderConfig.nodeActions.transfer).toMatchObject({
+        enabled: true,
+        label: '转办他人',
+        disabled: true,
+        tooltip: '当前后端未提供转办接口',
+      });
 
       await completeTask(request, token, String(financeTask.id), '财务复核通过', { approvedAmount: 1399.5 });
       const approvedProgress = await latestBusinessApply(request, token, businessKey);

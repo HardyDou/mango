@@ -628,6 +628,7 @@ interface SealSnapshot {
   riskLevel: string;
   attachmentList: string;
   purpose: string;
+  managerOpinion?: string;
   legalOpinion?: string;
   financeOpinion?: string;
   approvedSealCount?: number;
@@ -988,6 +989,7 @@ function createSealRow(row: Partial<SealExampleRow> & Pick<SealExampleRow,
     startTime: row.startTime,
     endTime: row.endTime,
     applyRecords: row.applyRecords || [],
+    managerOpinion: row.managerOpinion || '',
     legalOpinion: row.legalOpinion || '',
     financeOpinion: row.financeOpinion || '',
     approvedSealCount: Number(row.approvedSealCount || row.sealCount || 0),
@@ -1175,6 +1177,7 @@ async function submitSeal(row: SealExampleRow) {
             sealInfo: 'READONLY',
             riskInfo: 'READONLY',
             purpose: 'READONLY',
+            managerOpinion: 'EDITABLE',
             legalOpinion: 'HIDDEN',
             financeOpinion: 'HIDDEN',
             sealKeeperOpinion: 'HIDDEN',
@@ -1185,6 +1188,7 @@ async function submitSeal(row: SealExampleRow) {
             sealInfo: 'READONLY',
             riskInfo: 'READONLY',
             purpose: 'READONLY',
+            managerOpinion: 'READONLY',
             legalOpinion: 'EDITABLE',
             financeOpinion: 'HIDDEN',
             sealKeeperOpinion: 'HIDDEN',
@@ -1195,6 +1199,7 @@ async function submitSeal(row: SealExampleRow) {
             sealInfo: 'READONLY',
             riskInfo: 'READONLY',
             purpose: 'READONLY',
+            managerOpinion: 'READONLY',
             legalOpinion: 'READONLY',
             financeOpinion: 'EDITABLE',
             sealKeeperOpinion: 'HIDDEN',
@@ -1205,6 +1210,7 @@ async function submitSeal(row: SealExampleRow) {
             sealInfo: 'READONLY',
             riskInfo: 'READONLY',
             purpose: 'READONLY',
+            managerOpinion: 'READONLY',
             legalOpinion: 'READONLY',
             financeOpinion: 'READONLY',
             sealKeeperOpinion: 'EDITABLE',
@@ -1282,6 +1288,7 @@ function buildSealRowFromApply(apply: WorkflowBusinessApply) {
     riskLevel: String(variables.riskLevel || ''),
     attachmentList: String(variables.attachmentList || ''),
     purpose: String(variables.purpose || variables.summary || apply.applySummary || ''),
+    managerOpinion: String(variables.managerOpinion || ''),
     legalOpinion: String(variables.legalOpinion || ''),
     financeOpinion: String(variables.financeOpinion || ''),
     approvedSealCount: Number(variables.approvedSealCount || variables.sealCount || 0),
@@ -1489,6 +1496,7 @@ function buildSealApplyRecordFromApply(apply: WorkflowBusinessApply, index: numb
       riskLevel: String(variables.riskLevel || ''),
       attachmentList: String(variables.attachmentList || ''),
       purpose: String(variables.purpose || variables.summary || apply.applySummary || ''),
+      managerOpinion: String(variables.managerOpinion || ''),
       legalOpinion: String(variables.legalOpinion || ''),
       financeOpinion: String(variables.financeOpinion || ''),
       approvedSealCount: Number(variables.approvedSealCount || variables.sealCount || 0),

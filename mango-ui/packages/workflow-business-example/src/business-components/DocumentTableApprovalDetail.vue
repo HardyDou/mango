@@ -100,6 +100,12 @@
               <EditableTextarea field="purpose" :editable="fieldEditable('purpose')" placeholder="请输入用印事由和背景说明" />
             </td>
           </tr>
+          <tr v-if="sectionVisible('managerOpinion')">
+            <th>部门负责人意见</th>
+            <td colspan="3">
+              <EditableTextarea field="managerOpinion" :editable="fieldEditable('managerOpinion')" placeholder="请输入部门负责人审批意见" />
+            </td>
+          </tr>
           <tr v-if="sectionVisible('legalOpinion')">
             <th>法务意见</th>
             <td colspan="3">

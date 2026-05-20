@@ -20,6 +20,14 @@ public class WorkflowDefinitionVersion {
     private Long tenantId;
     private Long definitionId;
     private Integer versionNo;
+    private Long categoryId;
+    private Long orgId;
+    private String adminUsers;
+    private String icon;
+    private String definitionName;
+    private String definitionKey;
+    private String remark;
+    private String formCode;
     private String designerJson;
     private String formJson;
     private String bpmnXml;

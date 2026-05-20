@@ -73,6 +73,12 @@ public class WorkflowDefinitionVO {
     @Schema(description = "流程状态：DRAFT-草稿，PUBLISHED-已发布，DISABLED-停用")
     private String status;
 
+    @Schema(description = "是否存在未发布修改：当前编辑稿与最近一次成功发布版本不一致")
+    private Boolean hasUnpublishedChanges;
+
+    @Schema(description = "未发布修改原因")
+    private List<String> unpublishedChangeReasons;
+
     @Schema(description = "最后发布时间")
     private LocalDateTime lastDeployTime;
 

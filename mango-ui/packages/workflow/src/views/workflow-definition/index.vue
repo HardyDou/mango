@@ -22,7 +22,7 @@
           </button>
         </div>
         <div class="builder-actions">
-          <el-button @click="saveDefinitionDraft">保存草稿</el-button>
+          <el-button @click="saveDefinitionDraft">保存</el-button>
           <el-button :loading="publishing" type="primary" @click="publishDefinition">发布流程</el-button>
         </div>
       </div>
@@ -268,49 +268,15 @@
                 :icon="nodeIcon(selectedNode)"
                 @close="clearSelectedNode"
               >
-                <el-tabs v-model="nodePropertyActiveTab" class="node-property-tabs">
-                  <el-tab-pane label="基础信息" name="basic">
-                    <el-form class="drawer-form compact-node-form" label-position="top">
-                      <el-form-item label="节点名称">
-                        <el-input v-model="selectedNode.nodeName" class="node-name-input" placeholder="请输入节点名称" @input="syncDesignerJson" />
-                      </el-form-item>
-                      <el-form-item label="节点类型">
-                        <el-input :model-value="workflowNodeTypeLabel(selectedNode)" disabled />
-                      </el-form-item>
-                      <el-form-item label="节点说明">
-                        <el-input v-model="selectedNode.description" :rows="3" placeholder="说明该节点的处理规则或业务含义" type="textarea" @input="syncDesignerJson" />
-                      </el-form-item>
-                      <div class="node-meta-strip">
-                        <el-tag effect="plain" size="small">{{ workflowNodeTypeLabel(selectedNode) }}</el-tag>
-                        <el-tag v-if="selectedNode.nodeDefinitionCode" effect="plain" size="small" type="info">{{ selectedNode.nodeDefinitionCode }}</el-tag>
-                      </div>
-                    </el-form>
+                <el-tabs v-model="nodePropertyActiveTab" class="node-property-tabs" tab-position="left">
+                  <el-tab-pane v-if="isUserTaskNode(selectedNode)" label="节点能力" name="capability">
+                    <WorkflowNodeCapabilityConfig
+                      :config="approvalConfig(selectedNode)"
+                      @update="patch => updateApprovalConfig(selectedNode!, patch)"
+                    />
                   </el-tab-pane>
 
-                  <el-tab-pane label="表单权限" name="form">
-                    <div v-if="workflowFormVariableOptions.length" class="form-permission-panel">
-                      <div class="form-permission-head">
-                        <span>表单字段</span>
-                        <span>权限</span>
-                      </div>
-                      <div class="form-permission-list drawer-permission-list">
-                        <div v-for="field in workflowFormVariableOptions" :key="field.value" class="form-permission-row">
-                          <span class="form-permission-field">
-                            <strong>{{ field.label }}</strong>
-                            <small>{{ field.value }}</small>
-                          </span>
-                          <el-radio-group :model-value="nodeFieldPermission(selectedNode, field.value)" size="small" @change="value => updateNodeFieldPermission(selectedNode!, field.value, value as WorkflowFormPermission)">
-                            <el-radio-button label="HIDDEN">隐藏</el-radio-button>
-                            <el-radio-button label="READONLY">只读</el-radio-button>
-                            <el-radio-button label="EDITABLE">编辑</el-radio-button>
-                          </el-radio-group>
-                        </div>
-                      </div>
-                    </div>
-                    <el-empty v-else description="先在表单设计中添加字段" :image-size="72" />
-                  </el-tab-pane>
-
-                  <el-tab-pane label="节点属性" name="node">
+                  <el-tab-pane :label="isUserTaskNode(selectedNode) ? '审批设置' : '节点属性'" name="node">
                     <el-form class="drawer-form compact-node-form" label-position="top">
                       <template v-if="isRootNode(selectedNode)">
                         <WorkflowNodeRootConfig
@@ -396,14 +362,55 @@
                     </el-form>
                   </el-tab-pane>
 
-                  <el-tab-pane label="通知事件" name="notify">
+                  <el-tab-pane label="表单权限" name="form">
+                    <div v-if="workflowFormVariableOptions.length" class="form-permission-panel">
+                      <div class="form-permission-head">
+                        <span>表单字段</span>
+                        <span>权限</span>
+                      </div>
+                      <div class="form-permission-list drawer-permission-list">
+                        <div v-for="field in workflowFormVariableOptions" :key="field.value" class="form-permission-row">
+                          <span class="form-permission-field">
+                            <strong>{{ field.label }}</strong>
+                            <small>{{ field.value }}</small>
+                          </span>
+                          <el-radio-group :model-value="nodeFieldPermission(selectedNode, field.value)" size="small" @change="value => updateNodeFieldPermission(selectedNode!, field.value, value as WorkflowFormPermission)">
+                            <el-radio-button label="HIDDEN">隐藏</el-radio-button>
+                            <el-radio-button label="READONLY">只读</el-radio-button>
+                            <el-radio-button label="EDITABLE">编辑</el-radio-button>
+                          </el-radio-group>
+                        </div>
+                      </div>
+                    </div>
+                    <el-empty v-else description="先在表单设计中添加字段" :image-size="72" />
+                  </el-tab-pane>
+
+                  <el-tab-pane label="基础" name="basic">
+                    <el-form class="drawer-form compact-node-form compact-basic-form" label-position="right" label-width="68px">
+                      <el-form-item label="节点名称">
+                        <el-input v-model="selectedNode.nodeName" class="node-name-input" placeholder="请输入节点名称" @input="syncDesignerJson" />
+                      </el-form-item>
+                      <el-form-item label="节点类型">
+                        <el-input :model-value="workflowNodeTypeLabel(selectedNode)" disabled />
+                      </el-form-item>
+                      <el-form-item label="节点说明">
+                        <el-input v-model="selectedNode.description" :rows="2" placeholder="说明该节点的处理规则或业务含义" type="textarea" @input="syncDesignerJson" />
+                      </el-form-item>
+                      <div class="node-meta-strip">
+                        <el-tag effect="plain" size="small">{{ workflowNodeTypeLabel(selectedNode) }}</el-tag>
+                        <el-tag v-if="selectedNode.nodeDefinitionCode" effect="plain" size="small" type="info">{{ selectedNode.nodeDefinitionCode }}</el-tag>
+                      </div>
+                    </el-form>
+                  </el-tab-pane>
+
+                  <el-tab-pane label="通知" name="notify">
                     <WorkflowNodeEventNotifyConfig
                       :config="nodeEventNotifyConfig(selectedNode)"
                       @update="patch => updateNodeEventNotifyConfig(selectedNode!, patch)"
                     />
                   </el-tab-pane>
 
-                  <el-tab-pane label="扩展属性" name="advanced">
+                  <el-tab-pane label="高级" name="advanced">
                     <WorkflowNodeAdvancedConfig
                       :model-value="advancedNodeProperties(selectedNode)"
                       :reserved-keys="reservedNodePropertyKeys(selectedNode)"
@@ -411,7 +418,7 @@
                     />
                   </el-tab-pane>
 
-                  <el-tab-pane label="可用字段" name="variables">
+                  <el-tab-pane label="字段" name="variables">
                     <div v-if="nodePropertyActiveTab === 'variables'" class="variable-reference-panel">
                       <div v-for="group in workflowVariableGroups" :key="group.label" class="variable-reference-group">
                         <div class="variable-reference-source">{{ group.label }}</div>
@@ -532,8 +539,8 @@
           <el-form-item label="关键字">
             <el-input v-model="definitionQuery.keyword" clearable placeholder="流程名称/编码" />
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="definitionQuery.status" clearable placeholder="全部状态">
+          <el-form-item label="生命周期">
+            <el-select v-model="definitionQuery.status" clearable placeholder="全部生命周期">
               <el-option v-for="item in workflowStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -547,13 +554,31 @@
           <el-table-column label="流程名称" min-width="180" prop="definitionName" />
           <el-table-column label="流程编码" min-width="180" prop="definitionKey" />
           <el-table-column label="分类" min-width="120" prop="categoryName" />
-          <el-table-column label="状态" width="100">
+          <el-table-column label="生命周期" width="100">
             <template #default="{ row }">
               <el-tag :type="workflowStatusType(row.status)">{{ workflowStatusLabel(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="发布版本" width="100" prop="publishedVersionNo" />
-          <el-table-column label="引擎版本" width="100" prop="processDefinitionVersion" />
+          <el-table-column label="发布变更" width="100">
+            <template #default="{ row }">
+              <el-tooltip
+                v-if="row.hasUnpublishedChanges"
+                :content="`已保存但未发布：${(row.unpublishedChangeReasons || []).join('、') || '流程配置'}`"
+                placement="top"
+              >
+                <el-tag type="warning">待发布</el-tag>
+              </el-tooltip>
+              <el-tag v-else effect="plain" type="success">已同步</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="生效版本" width="118">
+            <template #default="{ row }">
+              <el-button v-if="row.publishedVersionNo" link type="primary" @click="openVersionDrawer(row)">
+                V{{ row.publishedVersionNo }}
+              </el-button>
+              <span v-else class="muted-text">未发布</span>
+            </template>
+          </el-table-column>
           <el-table-column label="最后发布" width="170" prop="lastDeployTime" />
           <el-table-column label="更新时间" width="170" prop="updatedTime" />
           <el-table-column fixed="right" label="操作" width="190">
@@ -568,8 +593,9 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="version">版本</el-dropdown-item>
+                      <el-dropdown-item command="version">历史版本</el-dropdown-item>
                       <el-dropdown-item command="template">转为模板</el-dropdown-item>
+                      <el-dropdown-item v-if="row.hasUnpublishedChanges" command="discard">撤回修改</el-dropdown-item>
                       <el-dropdown-item command="status">
                         {{ row.status === 'DISABLED' ? '启用' : '停用' }}
                       </el-dropdown-item>
@@ -596,10 +622,23 @@
       </section>
     </div>
 
-    <el-drawer v-model="versionDrawer" title="发布版本" size="720px">
+    <el-drawer v-model="versionDrawer" title="历史版本记录" size="760px">
       <el-table v-loading="versionLoading" :data="versions" border>
-        <el-table-column label="版本号" width="90" prop="versionNo" />
-        <el-table-column label="发布状态" width="110" prop="publishStatus" />
+        <el-table-column label="版本号" width="130">
+          <template #default="{ row }">
+            <div class="version-no-cell">
+              <span>V{{ row.versionNo }}</span>
+              <el-tag v-if="isCurrentEffectiveVersion(row)" size="small" type="success">当前生效</el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="发布状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="workflowPublishStatusType(row.publishStatus)">
+              {{ workflowPublishStatusLabel(row.publishStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="引擎版本" width="100" prop="processDefinitionVersion" />
         <el-table-column label="Deployment ID" min-width="170" prop="deploymentId" show-overflow-tooltip />
         <el-table-column label="发布时间" width="170" prop="publishTime" />
@@ -742,6 +781,7 @@ import { MUpload } from '@mango/file';
 import WorkflowDesignerCanvas from './components/workflow-designer/WorkflowDesignerCanvas.vue';
 import WorkflowNodeAdvancedConfig from './components/workflow-designer/WorkflowNodeAdvancedConfig.vue';
 import WorkflowNodeApprovalConfig from './components/workflow-designer/WorkflowNodeApprovalConfig.vue';
+import WorkflowNodeCapabilityConfig from './components/workflow-designer/WorkflowNodeCapabilityConfig.vue';
 import WorkflowNodeCcConfig from './components/workflow-designer/WorkflowNodeCcConfig.vue';
 import WorkflowNodeConditionConfig from './components/workflow-designer/WorkflowNodeConditionConfig.vue';
 import WorkflowNodeEventNotifyConfig from './components/workflow-designer/WorkflowNodeEventNotifyConfig.vue';
@@ -765,6 +805,8 @@ import {
   parseDesignerJson,
   stringifyDesignerJson,
   workflowApi,
+  workflowPublishStatusLabel,
+  workflowPublishStatusType,
   workflowStatusLabel,
   workflowStatusOptions,
   workflowStatusType,
@@ -1207,6 +1249,7 @@ const importTemplates = ref<WorkflowTemplate[]>([]);
 const templateCategories = ref<WorkflowTemplateCategory[]>([]);
 const nodeCatalog = ref<WorkflowNodeCatalog[]>([]);
 const versions = ref<WorkflowDefinitionVersion[]>([]);
+const currentVersionDefinition = ref<WorkflowDefinition | null>(null);
 const currentVersionXml = ref('');
 const definitionTotal = ref(0);
 
@@ -1557,7 +1600,7 @@ async function closeDesigner() {
 
 function selectNode(node: WorkflowDesignerNode) {
   selectedNode.value = node;
-  nodePropertyActiveTab.value = hasNodeSpecificConfig(node) ? 'node' : 'basic';
+  nodePropertyActiveTab.value = isUserTaskNode(node) ? 'capability' : hasNodeSpecificConfig(node) ? 'node' : 'basic';
   nodePanelVisible.value = true;
   if (node.nodeType === 'EXCLUSIVE_BRANCH') {
     parseConditionToBuilder(node.conditionExpression || '');
@@ -1589,7 +1632,7 @@ async function persistDefinition() {
 
 async function saveDefinitionDraft() {
   await persistDefinition();
-  ElMessage.success('草稿已保存');
+  ElMessage.success(definitionForm.status === 'PUBLISHED' ? '保存成功，修改待发布后生效' : '保存成功');
 }
 
 async function nextDefinitionStep() {
@@ -1649,7 +1692,7 @@ async function validateStep(step: number, silent: boolean) {
 }
 
 async function deployDefinition(row: WorkflowDefinition) {
-  await ElMessageBox.confirm(`确认发布流程「${row.definitionName}」？`, '发布流程', { type: 'warning' });
+  await ElMessageBox.confirm(`确认发布流程「${row.definitionName}」？发布后新发起的流程将使用当前设计。`, '发布流程', { type: 'warning' });
   await workflowApi.deployDefinition(row.id!);
   ElMessage.success('发布成功');
   await loadDefinitions();
@@ -1666,6 +1709,10 @@ function handleDefinitionRowCommand(command: string | number | object, row: Work
   }
   if (command === 'status') {
     toggleDefinitionStatus(row);
+    return;
+  }
+  if (command === 'discard') {
+    discardDefinitionDraft(row);
     return;
   }
   if (command === 'delete') {
@@ -1723,6 +1770,7 @@ function gotoValidateError() {
 async function openVersionDrawer(row: WorkflowDefinition) {
   versionDrawer.value = true;
   versionLoading.value = true;
+  currentVersionDefinition.value = row;
   currentVersionXml.value = '';
   try {
     versions.value = await workflowApi.definitionVersions(row.id!);
@@ -1732,10 +1780,27 @@ async function openVersionDrawer(row: WorkflowDefinition) {
   }
 }
 
+function isCurrentEffectiveVersion(row: WorkflowDefinitionVersion) {
+  return Number(row.versionNo) === Number(currentVersionDefinition.value?.publishedVersionNo);
+}
+
 async function toggleDefinitionStatus(row: WorkflowDefinition) {
   const status: WorkflowStatus = row.status === 'DISABLED' ? 'DRAFT' : 'DISABLED';
   await workflowApi.updateDefinitionStatus(row.id!, status);
   ElMessage.success('状态已更新');
+  await loadDefinitions();
+}
+
+async function discardDefinitionDraft(row: WorkflowDefinition) {
+  await ElMessageBox.confirm(`确认撤回流程「${row.definitionName}」的未发布修改？当前编辑内容会回滚到最近一次已发布版本。`, '撤回修改', { type: 'warning' });
+  await workflowApi.discardDefinitionDraft(row.id!);
+  ElMessage.success('已撤回未发布修改');
+  if (definitionForm.id === row.id) {
+    const latest = await workflowApi.definitionDetail(row.id!);
+    Object.assign(definitionForm, latest);
+    loadWorkflowFormConfig(definitionForm.formJson);
+    designerRoot.value = parseDesignerJson(definitionForm.designerJson);
+  }
   await loadDefinitions();
 }
 
@@ -3592,6 +3657,23 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   margin-left: 0;
 }
 
+.definition-status-cell {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.version-no-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.muted-text {
+  color: var(--el-text-color-secondary);
+}
+
 .danger-dropdown-item {
   color: var(--el-color-danger);
 }
@@ -3985,7 +4067,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 }
 
 .designer-body.has-node-panel {
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) 400px;
 }
 
 :deep(.workflow-node-drawer) {
@@ -4009,28 +4091,39 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 }
 
 .compact-node-form :deep(.el-form-item) {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .node-property-tabs {
   display: flex;
   min-height: 100%;
-  flex-direction: column;
 }
 
 .node-property-tabs :deep(.el-tabs__header) {
-  margin: -4px 0 14px;
+  flex: 0 0 66px;
+  margin: 0 10px 0 0;
+  border-right: 1px solid var(--el-border-color-lighter);
 }
 
 .node-property-tabs :deep(.el-tabs__item) {
-  height: 34px;
-  padding: 0 12px;
-  font-size: 13px;
+  justify-content: flex-start;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
   font-weight: 700;
+}
+
+.node-property-tabs :deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+
+.node-property-tabs :deep(.el-tabs__active-bar) {
+  width: 2px;
 }
 
 .node-property-tabs :deep(.el-tabs__content) {
   flex: 1;
+  min-width: 0;
 }
 
 .form-permission-panel {
@@ -4055,14 +4148,14 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 
 .form-permission-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .form-permission-row {
-  min-height: 48px;
-  padding: 8px 10px;
+  min-height: 38px;
+  padding: 5px 8px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--el-bg-color);
 }
 
@@ -4081,11 +4174,32 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 
 .form-permission-field strong {
   color: var(--el-text-color-primary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .form-permission-field small {
   color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.drawer-permission-list :deep(.el-radio-button__inner) {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.compact-basic-form :deep(.el-form-item__label) {
+  height: 28px;
+  line-height: 28px;
+  padding-right: 8px;
+  font-size: 12px;
+}
+
+.compact-basic-form :deep(.el-input__wrapper) {
+  min-height: 28px;
+}
+
+.compact-basic-form :deep(.el-textarea__inner) {
+  min-height: 52px !important;
   font-size: 12px;
 }
 

@@ -97,17 +97,22 @@
           </section>
 
           <div v-if="!readonlyMode" class="approval-action-bar">
-            <el-tooltip content="当前后端未提供暂存接口">
-              <el-button disabled>暂存</el-button>
+            <el-tooltip
+              v-for="action in visibleNodeActions"
+              :key="action.key"
+              :content="action.tooltip || ''"
+              :disabled="!action.tooltip"
+            >
+              <el-button
+                :type="action.buttonType"
+                :plain="action.key !== 'complete'"
+                :disabled="action.disabled"
+                :loading="submittingAction === action.key"
+                @click="submitAction(action.key)"
+              >
+                {{ action.label }}
+              </el-button>
             </el-tooltip>
-            <el-tooltip content="当前后端未提供转办接口">
-              <el-button disabled>转办</el-button>
-            </el-tooltip>
-            <el-tooltip content="当前后端未提供加签接口">
-              <el-button disabled>加签</el-button>
-            </el-tooltip>
-            <el-button type="danger" plain :loading="submitting" @click="submitAction('reject')">驳回</el-button>
-            <el-button type="primary" :loading="submitting" @click="submitAction('complete')">通过</el-button>
           </div>
         </main>
 
@@ -139,7 +144,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { workflowApi, type WorkflowBusinessApply, type WorkflowProcessDetail, type WorkflowTaskDetail } from '../../api/workflow';
+import { workflowApi, type WorkflowBusinessApply, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
 import {
   applyIdOf,
   businessPermissionsOf,
@@ -151,11 +156,18 @@ import {
 } from '../../components/businessApproval';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
+import {
+  defaultWorkflowActionLabel,
+  isWorkflowCommentRequired,
+  normalizeWorkflowNodeActions,
+  resolveVisibleWorkflowActions,
+} from '../../components/taskActions';
 
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const submitting = ref(false);
+const submittingAction = ref<WorkflowTaskActionKey | ''>('');
 const taskDetail = ref<WorkflowTaskDetail | null>(null);
 const processDetail = ref<WorkflowProcessDetail | null>(null);
 const businessApply = ref<WorkflowBusinessApply | null>(null);
@@ -198,7 +210,15 @@ const businessRegistration = computed(() => renderMode.value === 'CUSTOM_PAGE'
   ? resolveBusinessApprovalRegistration(approvePageKey.value)
   : null);
 const businessComponent = computed(() => businessRegistration.value?.component || null);
-const showActionCommentInput = computed(() => businessRegistration.value?.commentMode !== 'BUSINESS_FORM');
+const commentMode = computed(() => businessRegistration.value?.commentMode || 'ACTION_BAR');
+const showActionCommentInput = computed(() => commentMode.value === 'ACTION_BAR');
+const visibleNodeActions = computed(() => {
+  const overrides = businessContext.value && businessRegistration.value?.getActionOverrides
+    ? businessRegistration.value.getActionOverrides(businessContext.value)
+    : {};
+  return resolveVisibleWorkflowActions(normalizedNodeActions.value, overrides);
+});
+const normalizedNodeActions = computed(() => normalizeWorkflowNodeActions(renderConfig.value?.nodeActions));
 const businessContext = computed<BusinessApprovalContext | null>(() => {
   if (!detail.value || !businessType.value) {
     return null;
@@ -256,31 +276,61 @@ async function loadBusinessApply() {
   }
 }
 
-async function submitAction(action: 'complete' | 'reject') {
+async function submitAction(action: WorkflowTaskActionKey) {
   const taskId = String(route.query.taskId || '');
   if (!taskId) {
     ElMessage.warning('缺少任务ID');
     return;
   }
-  const actionName = action === 'complete' ? '通过' : '驳回';
-  await ElMessageBox.confirm(`确认${actionName}当前任务？`, `审批${actionName}`, { type: action === 'complete' ? 'warning' : 'error' });
-  submitting.value = true;
+  const actionConfig = visibleNodeActions.value.find(item => item.key === action);
+  if (!actionConfig || actionConfig.disabled) {
+    if (actionConfig?.tooltip) ElMessage.warning(actionConfig.tooltip);
+    return;
+  }
+  if (action !== 'complete' && action !== 'reject') {
+    ElMessage.warning(actionConfig.tooltip || '当前动作暂未支持');
+    return;
+  }
+  const actionName = actionConfig.label || defaultWorkflowActionLabel(action);
+  const comment = collectActionComment(action);
+  if (isWorkflowCommentRequired(actionConfig, comment)) {
+    ElMessage.warning('请填写审批意见');
+    return;
+  }
   try {
-    const variables = editableFormVariables();
-    const comment = collectBusinessApprovalComment(businessRegistration.value, businessContext.value, actionForm.value.comment);
+    if (businessRegistration.value?.validateBeforeAction && businessContext.value) {
+      await businessRegistration.value.validateBeforeAction(businessContext.value, action);
+    }
+  } catch (error) {
+    ElMessage.warning(error instanceof Error ? error.message : '请检查审批信息');
+    return;
+  }
+  await ElMessageBox.confirm(actionConfig.confirmText || `确认${actionName}当前任务？`, `审批${actionName}`, { type: action === 'complete' ? 'warning' : 'error' });
+  submitting.value = true;
+  submittingAction.value = action;
+  try {
+    if (businessRegistration.value?.beforeAction && businessContext.value) {
+      await businessRegistration.value.beforeAction(businessContext.value, action);
+    }
+    const variables = editableFormVariables(action);
+    let result: unknown;
     if (action === 'complete') {
-      await workflowApi.completeTask({ taskId, comment, variables });
+      result = await workflowApi.completeTask({ taskId, comment, variables });
     } else {
-      await workflowApi.rejectTask({ taskId, comment, variables });
+      result = await workflowApi.rejectTask({ taskId, comment, variables });
+    }
+    if (businessRegistration.value?.afterAction && businessContext.value) {
+      await businessRegistration.value.afterAction(businessContext.value, action, result);
     }
     ElMessage.success(`审批已${actionName}`);
     await router.push('/workflow/task/done');
   } finally {
     submitting.value = false;
+    submittingAction.value = '';
   }
 }
 
-function editableFormVariables() {
+function editableFormVariables(action: WorkflowTaskActionKey) {
   const current = detail.value?.variables || {};
   const permissions = detail.value?.formPermissions || {};
   const values = runtimeFields.value.reduce<Record<string, any>>((result, field) => {
@@ -291,8 +341,15 @@ function editableFormVariables() {
   }, {});
   return {
     ...values,
-    ...collectBusinessApprovalVariables(businessRegistration.value, businessContext.value),
+    ...collectBusinessApprovalVariables(businessRegistration.value, businessContext.value, action),
   };
+}
+
+function collectActionComment(action: WorkflowTaskActionKey) {
+  if (commentMode.value === 'NONE') {
+    return '';
+  }
+  return collectBusinessApprovalComment(businessRegistration.value, businessContext.value, action, actionForm.value.comment);
 }
 
 function backToList() {

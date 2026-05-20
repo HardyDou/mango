@@ -39,6 +39,7 @@ import io.mango.workflow.core.mapper.WorkflowTaskRecordMapper;
 import io.mango.workflow.core.model.WorkflowApprovalNodeConfig;
 import io.mango.workflow.core.service.IWorkflowBusinessApplyService;
 import io.mango.workflow.core.service.IWorkflowTaskRuntimeService;
+import io.mango.workflow.core.support.WorkflowNodeActionConfigResolver;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
@@ -688,6 +689,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         vo.setNodeExtension(config == null || config.getExtension() == null ? Map.of() : config.getExtension());
         vo.setFormPermissions(formPermissions == null ? Map.of() : formPermissions);
         vo.setBusinessPermissions(businessPermissions(variables, task == null ? null : task.getTaskDefinitionKey()));
+        vo.setNodeActions(WorkflowNodeActionConfigResolver.resolve(config));
         return vo;
     }
 

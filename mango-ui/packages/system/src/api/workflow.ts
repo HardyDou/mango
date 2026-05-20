@@ -11,6 +11,7 @@ export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowId = string;
+export type WorkflowTaskActionKey = 'complete' | 'reject' | 'save' | 'transfer' | 'addSign';
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -20,6 +21,17 @@ export interface WorkflowEventNotifyConfig {
   method?: 'POST' | 'GET' | 'PUT' | 'DELETE';
   timeoutMillis?: number;
   payloadTemplate?: string;
+}
+
+export interface WorkflowNodeActionConfig {
+  enabled?: boolean;
+  label?: string;
+  requireComment?: boolean;
+  confirmText?: string;
+  danger?: boolean;
+  order?: number;
+  disabled?: boolean;
+  tooltip?: string;
 }
 
 export interface WorkflowApprovalNodeConfig {
@@ -37,6 +49,7 @@ export interface WorkflowApprovalNodeConfig {
   emptyAssigneeUserIds?: string[];
   rejectStrategy: WorkflowRejectStrategy;
   formPermissions?: Record<string, WorkflowFormPermission>;
+  actions?: Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>;
   eventNotify?: WorkflowEventNotifyConfig;
   extension?: Record<string, any>;
   initiatorSelectMultiple?: boolean;
@@ -358,6 +371,7 @@ export interface WorkflowRenderConfig {
   nodeExtension?: Record<string, any>;
   formPermissions?: Record<string, WorkflowFormPermission>;
   businessPermissions?: Record<string, any>;
+  nodeActions?: Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>;
 }
 
 export interface WorkflowTaskDetail {
@@ -403,6 +417,7 @@ export const workflowApi = {
   updateDefinition: (data: WorkflowDefinition) => put<boolean>('/workflow/definitions', toDefinitionCommand(data, true)),
   deleteDefinition: (id: WorkflowId) => del<boolean>('/workflow/definitions', { params: { id } }),
   updateDefinitionStatus: (id: WorkflowId, status: WorkflowStatus) => put<boolean>('/workflow/definitions/status', { id, status }),
+  discardDefinitionDraft: (id: WorkflowId) => post<boolean>('/workflow/definitions/discard-draft', undefined, { params: { id } }),
   deployDefinition: (id: WorkflowId) => post<any>('/workflow/definitions/deploy', undefined, { params: { id } }),
   definitionVersions: (definitionId: WorkflowId) => get<WorkflowDefinitionVersion[]>('/workflow/definitions/versions', { params: { definitionId } })
     .then(list => Array.isArray(list) ? list.map(normalizeVersion) : []),
@@ -507,6 +522,24 @@ export function workflowStatusType(value?: string) {
   return workflowStatusOptions.find(item => item.value === value)?.type || 'info';
 }
 
+export function workflowPublishStatusLabel(value?: string) {
+  const labels: Record<string, string> = {
+    PUBLISHING: '发布中',
+    SUCCESS: '成功',
+    FAILED: '失败',
+  };
+  return value ? labels[value] || value : '-';
+}
+
+export function workflowPublishStatusType(value?: string) {
+  const types: Record<string, string> = {
+    PUBLISHING: 'warning',
+    SUCCESS: 'success',
+    FAILED: 'danger',
+  };
+  return types[value || ''] || 'info';
+}
+
 export function defaultBpmnXml(processKey = 'sample_process', processName = '示例流程') {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -559,6 +592,7 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
     emptyAssigneeUserIds: [],
     rejectStrategy: 'END_PROCESS',
     formPermissions: {},
+    actions: defaultNodeActions(),
     eventNotify: {
       enabled: false,
       type: 'HTTP',
@@ -568,6 +602,16 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
     extension: {},
     initiatorSelectMultiple: false,
     orgLeaderUseInitiatorOrg: true,
+  };
+}
+
+export function defaultNodeActions(): Record<WorkflowTaskActionKey, WorkflowNodeActionConfig> {
+  return {
+    save: { enabled: false, label: '暂存', requireComment: false, order: 10 },
+    transfer: { enabled: false, label: '转办', requireComment: false, order: 20 },
+    addSign: { enabled: false, label: '加签', requireComment: false, order: 30 },
+    reject: { enabled: true, label: '驳回', requireComment: true, danger: true, order: 40 },
+    complete: { enabled: true, label: '通过', requireComment: false, order: 50 },
   };
 }
 
@@ -880,6 +924,7 @@ function normalizeRenderConfig(item: any): WorkflowRenderConfig | undefined {
     formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
     nodeExtension: normalizeVariables(item?.nodeExtension),
     businessPermissions: normalizeVariables(item?.businessPermissions),
+    nodeActions: normalizeVariables(item?.nodeActions) as Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>,
   };
 }
 

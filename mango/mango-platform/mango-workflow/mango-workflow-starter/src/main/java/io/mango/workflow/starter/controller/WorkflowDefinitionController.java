@@ -93,6 +93,15 @@ public class WorkflowDefinitionController {
         return workflowDefinitionService.updateStatus(command);
     }
 
+    @PostMapping("/discard-draft")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:edit")
+    @Operation(summary = "撤回未发布修改", description = "权限接口。将当前编辑稿回滚到最近一次成功发布版本")
+    public R<Boolean> discardDraft(
+            @Parameter(description = "流程定义ID", required = true)
+            @RequestParam Long id) {
+        return workflowDefinitionService.discardDraft(id);
+    }
+
     @PostMapping("/deploy")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:deploy")
     @Operation(summary = "发布流程定义", description = "权限接口。将当前设计器JSON转换为 BPMN 并部署到 Flowable 引擎，同时记录发布版本")

@@ -329,10 +329,21 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         config.put("emptyAssigneeUserIds", List.of());
         config.put("rejectStrategy", "END_PROCESS");
         config.put("formPermissions", Map.of());
+        config.put("actions", defaultNodeActions());
         config.put("extension", extension);
         config.put("eventNotify", Map.of("enabled", false, "type", "HTTP", "method", "POST", "timeoutMillis", 5000));
         config.put("initiatorSelectMultiple", false);
         return config;
+    }
+
+    private Map<String, Object> defaultNodeActions() {
+        Map<String, Object> actions = new LinkedHashMap<>();
+        actions.put("save", Map.of("enabled", false, "label", "暂存", "requireComment", false, "order", 10));
+        actions.put("transfer", Map.of("enabled", false, "label", "转办", "requireComment", false, "order", 20));
+        actions.put("addSign", Map.of("enabled", false, "label", "加签", "requireComment", false, "order", 30));
+        actions.put("reject", Map.of("enabled", true, "label", "驳回", "requireComment", true, "danger", true, "order", 40));
+        actions.put("complete", Map.of("enabled", true, "label", "通过", "requireComment", false, "order", 50));
+        return actions;
     }
 
     private Map<String, Object> formItem(String type, String field, String title, Map<String, Object> props) {

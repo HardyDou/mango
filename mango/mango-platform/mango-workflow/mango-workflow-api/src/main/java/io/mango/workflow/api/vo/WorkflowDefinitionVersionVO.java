@@ -21,6 +21,30 @@ public class WorkflowDefinitionVersionVO {
     @Schema(description = "Mango发布版本号")
     private Integer versionNo;
 
+    @Schema(description = "流程分类ID快照")
+    private Long categoryId;
+
+    @Schema(description = "所属组织ID快照")
+    private Long orgId;
+
+    @Schema(description = "流程管理员用户名JSON数组快照")
+    private String adminUsers;
+
+    @Schema(description = "流程图标快照")
+    private String icon;
+
+    @Schema(description = "流程名称快照")
+    private String definitionName;
+
+    @Schema(description = "流程编码快照")
+    private String definitionKey;
+
+    @Schema(description = "备注快照")
+    private String remark;
+
+    @Schema(description = "表单编码快照")
+    private String formCode;
+
     @Schema(description = "设计器JSON快照")
     private String designerJson;
 

@@ -6,7 +6,6 @@ export { default as ConfigView } from './views/config/index.vue';
 export { default as RouteView } from './views/route/index.vue';
 export { default as PublicPathView } from './views/public-path/index.vue';
 export { default as AreaView } from './views/area/index.vue';
-export { default as WorkflowDefinitionView } from './views/workflow-definition/index.vue';
 
 export * from './api/area';
 export * from './api/dict';

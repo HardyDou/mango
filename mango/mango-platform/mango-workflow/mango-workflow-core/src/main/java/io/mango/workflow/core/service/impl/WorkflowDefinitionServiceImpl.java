@@ -144,6 +144,34 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> discardDraft(Long id) {
+        WorkflowDefinition entity = selectRequired(id);
+        WorkflowDefinitionVersion latest = latestSuccessfulVersion(entity.getId());
+        Require.notNull(latest, WorkflowCode.VERSION_NOT_FOUND.getCode(), "暂无可回滚的已发布版本");
+        entity.setCategoryId(latest.getCategoryId());
+        entity.setOrgId(latest.getOrgId());
+        entity.setAdminUsers(latest.getAdminUsers());
+        entity.setIcon(latest.getIcon());
+        entity.setDefinitionName(latest.getDefinitionName());
+        entity.setDefinitionKey(latest.getDefinitionKey());
+        entity.setRemark(latest.getRemark());
+        entity.setFormCode(latest.getFormCode());
+        entity.setDesignerJson(latest.getDesignerJson());
+        entity.setFormJson(latest.getFormJson());
+        entity.setBpmnXml(latest.getBpmnXml());
+        entity.setDeploymentId(latest.getDeploymentId());
+        entity.setProcessDefinitionId(latest.getProcessDefinitionId());
+        entity.setProcessDefinitionVersion(latest.getProcessDefinitionVersion());
+        entity.setPublishedVersionNo(latest.getVersionNo());
+        entity.setStatus(WorkflowDefinitionStatus.PUBLISHED.name());
+        entity.setUpdatedBy(MangoContextHolder.userId());
+        entity.setUpdatedTime(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
+        return R.ok(mapper.updateById(entity) > 0);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public R<WorkflowDeployVO> deploy(Long id) {
         WorkflowDefinition entity = selectRequired(id);
         Require.notBlank(entity.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
@@ -158,6 +186,14 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
             version.setTenantId(resolveTenantId());
             version.setDefinitionId(entity.getId());
             version.setVersionNo(nextVersionNo);
+            version.setCategoryId(entity.getCategoryId());
+            version.setOrgId(entity.getOrgId());
+            version.setAdminUsers(entity.getAdminUsers());
+            version.setIcon(entity.getIcon());
+            version.setDefinitionName(entity.getDefinitionName());
+            version.setDefinitionKey(entity.getDefinitionKey());
+            version.setRemark(entity.getRemark());
+            version.setFormCode(entity.getFormCode());
             version.setDesignerJson(entity.getDesignerJson());
             version.setFormJson(entity.getFormJson());
             version.setBpmnXml(bpmnXml);
@@ -355,6 +391,9 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setFormCode(entity.getFormCode());
         vo.setFormJson(entity.getFormJson());
         vo.setStatus(entity.getStatus());
+        List<String> unpublishedChangeReasons = unpublishedChangeReasons(entity);
+        vo.setHasUnpublishedChanges(!unpublishedChangeReasons.isEmpty());
+        vo.setUnpublishedChangeReasons(unpublishedChangeReasons);
         vo.setLastDeployTime(entity.getLastDeployTime());
         vo.setRemark(entity.getRemark());
         vo.setCreatedTime(entity.getCreatedTime());
@@ -420,11 +459,82 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         return latest == null || latest.getVersionNo() == null ? 1 : latest.getVersionNo() + 1;
     }
 
+    private List<String> unpublishedChangeReasons(WorkflowDefinition entity) {
+        if (entity == null || entity.getPublishedVersionNo() == null) {
+            return List.of();
+        }
+        WorkflowDefinitionVersion latest = latestSuccessfulVersion(entity.getId());
+        if (latest == null) {
+            return List.of();
+        }
+        List<String> reasons = new ArrayList<>();
+        if (!sameNumber(entity.getCategoryId(), latest.getCategoryId())) {
+            reasons.add("流程分类");
+        }
+        if (!sameNumber(entity.getOrgId(), latest.getOrgId())) {
+            reasons.add("所属组织");
+        }
+        if (!sameText(entity.getAdminUsers(), latest.getAdminUsers())) {
+            reasons.add("流程管理员");
+        }
+        if (!sameText(entity.getIcon(), latest.getIcon())) {
+            reasons.add("流程图标");
+        }
+        if (!sameText(entity.getDefinitionName(), latest.getDefinitionName())) {
+            reasons.add("流程名称");
+        }
+        if (!sameText(entity.getDefinitionKey(), latest.getDefinitionKey())) {
+            reasons.add("流程编码");
+        }
+        if (!sameText(entity.getRemark(), latest.getRemark())) {
+            reasons.add("流程备注");
+        }
+        if (!sameText(entity.getDesignerJson(), latest.getDesignerJson())) {
+            reasons.add("流程设计");
+        }
+        if (!sameText(entity.getFormCode(), latest.getFormCode())) {
+            reasons.add("表单编码");
+        }
+        if (!sameText(entity.getFormJson(), latest.getFormJson())) {
+            reasons.add("表单配置");
+        }
+        return reasons;
+    }
+
+    private WorkflowDefinitionVersion latestSuccessfulVersion(Long definitionId) {
+        return versionMapper.selectOne(
+                new LambdaQueryWrapper<WorkflowDefinitionVersion>()
+                        .eq(WorkflowDefinitionVersion::getDefinitionId, definitionId)
+                        .eq(WorkflowDefinitionVersion::getPublishStatus, "SUCCESS")
+                        .orderByDesc(WorkflowDefinitionVersion::getVersionNo)
+                        .last("LIMIT 1"));
+    }
+
+    private boolean sameText(String left, String right) {
+        String a = left == null ? "" : left;
+        String b = right == null ? "" : right;
+        return a.equals(b);
+    }
+
+    private boolean sameNumber(Long left, Long right) {
+        long a = left == null ? 0L : left;
+        long b = right == null ? 0L : right;
+        return a == b;
+    }
+
     private WorkflowDefinitionVersionVO toVersionVO(WorkflowDefinitionVersion entity) {
         WorkflowDefinitionVersionVO vo = new WorkflowDefinitionVersionVO();
         vo.setId(entity.getId());
         vo.setDefinitionId(entity.getDefinitionId());
         vo.setVersionNo(entity.getVersionNo());
+        vo.setCategoryId(entity.getCategoryId());
+        vo.setOrgId(entity.getOrgId());
+        vo.setAdminUsers(entity.getAdminUsers());
+        vo.setIcon(entity.getIcon());
+        vo.setDefinitionName(entity.getDefinitionName());
+        vo.setDefinitionKey(entity.getDefinitionKey());
+        vo.setRemark(entity.getRemark());
+        vo.setFormCode(entity.getFormCode());
         vo.setDesignerJson(entity.getDesignerJson());
         vo.setFormJson(entity.getFormJson());
         vo.setBpmnXml(entity.getBpmnXml());
