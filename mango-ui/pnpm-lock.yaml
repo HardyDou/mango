@@ -565,6 +565,9 @@ importers:
       '@mango/common':
         specifier: workspace:*
         version: link:../common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../file
       '@mango/rbac':
         specifier: workspace:*
         version: link:../rbac

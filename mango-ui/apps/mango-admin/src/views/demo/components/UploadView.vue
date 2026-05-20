@@ -1,8 +1,8 @@
 <template>
   <DemoDocLayout
     class="upload-view"
-    title="Upload 文件上传"
-    subtitle="统一使用文件中心 Upload 组件，覆盖通用附件、图片、办公文档和业务附件清单。"
+    title="MUpload 文件上传"
+    subtitle="统一使用文件中心 MUpload 组件，覆盖通用附件、图片、办公文档和业务附件清单。"
     content-box
     :toc-items="tocItems"
   >

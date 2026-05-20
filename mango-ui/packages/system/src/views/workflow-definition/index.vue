@@ -39,7 +39,17 @@
             <el-form-item class="basic-field full workflow-icon-item" label="流程图标">
               <div class="workflow-icon-field">
                 <div class="workflow-icon-uploader" :class="{ empty: !workflowIconPreviewUrl(definitionForm.icon), filled: Boolean(workflowIconPreviewUrl(definitionForm.icon)) }">
-                  <ImageUpload v-model="definitionForm.icon" :limit="1" :multiple="false" class="workflow-icon-upload-control" />
+                  <MUpload
+                    v-model="definitionForm.icon"
+                    class="workflow-icon-upload-control"
+                    fmt="image"
+                    display="thumbnail"
+                    :count="1"
+                    size="2MB"
+                    purpose="workflow-icon"
+                    access-level="PUBLIC"
+                    button-text="上传图标"
+                  />
                   <div v-if="isWorkflowPresetIcon(definitionForm.icon)" class="workflow-icon-overlay workflow-icon-legacy-preview">
                     <el-icon><component :is="workflowIconComponent(definitionForm.icon)" /></el-icon>
                     <span>{{ workflowIconLabel(definitionForm.icon) }}</span>
@@ -697,7 +707,8 @@ import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designe
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
-import { ImageUpload, UserSelector, get } from '@mango/common';
+import { UserSelector, get } from '@mango/common';
+import { MUpload } from '@mango/file';
 import WorkflowDesignerCanvas from './components/workflow-designer/WorkflowDesignerCanvas.vue';
 import WorkflowNodeAdvancedConfig from './components/workflow-designer/WorkflowNodeAdvancedConfig.vue';
 import WorkflowNodeApprovalConfig from './components/workflow-designer/WorkflowNodeApprovalConfig.vue';
@@ -3361,13 +3372,19 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   height: 64px;
 }
 
-.workflow-icon-uploader :deep(.image-upload),
-.workflow-icon-uploader :deep(.avatar-uploader) {
+.workflow-icon-upload-control {
+  display: block;
   width: 64px;
+  height: 64px;
+}
+
+.workflow-icon-uploader :deep(.upload-control) {
+  display: block;
+  width: 64px;
+  height: 64px;
 }
 
 .workflow-icon-uploader :deep(.el-upload),
-.workflow-icon-uploader :deep(.image-upload__card),
 .workflow-icon-uploader :deep(.el-upload--picture-card),
 .workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
   width: 64px;

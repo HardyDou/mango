@@ -272,7 +272,7 @@ import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type Fil
 import { fileDirectoryApi, rootDirectory, type FileDirectory } from '../../api/fileDirectory';
 import { defaultFileSettings, fileSettingsApi, formatBytes, type FileSettings } from '../../api/fileSettings';
 import FilePreviewPanel from '../../components/FilePreviewPanel.vue';
-import MUpload from '../../components/Upload.vue';
+import MUpload from '../../components/MUpload.vue';
 
 const loading = ref(false);
 const directoryLoading = ref(false);

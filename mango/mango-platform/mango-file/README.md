@@ -271,12 +271,12 @@ mango-file -> mango-document 生成预览派生文件
 
 ## 前端接入
 
-前端通用上传组件默认接入 `/api/file/files`，统一使用 `@mango/file` 的单一 `Upload` 组件。组件通过配置表达上传场景，不再按 `ImageUpload`、`FileUpload`、`ExcelUpload` 拆分核心上传器。
+前端通用上传组件默认接入 `/api/file/files`，统一使用 `@mango/file` 的单一 `MUpload` 组件。组件通过配置表达上传场景，不再按 `ImageUpload`、`FileUpload`、`ExcelUpload` 拆分核心上传器。
 
 推荐使用：
 
 ```vue
-<Upload
+<MUpload
   v-model="attachments"
   fmt="image,pdf,word,excel,zip"
   count="20"
@@ -306,8 +306,7 @@ mango-file -> mango-document 生成预览派生文件
 - `FileView`：文件上传、管理、预览、下载、归档页面。
 - `FileStorageView`：文件存储配置页面。
 - `FileSettingsView`：文件上传、访问、直传和预览策略配置页面。
-- `FileUploadButton`：业务页面可复用上传按钮。
-- `Upload`：业务页面、动态表单和文件中心复用的统一上传组件。
+- `MUpload`：业务页面、动态表单和文件中心复用的统一上传组件。
 - `FilePreviewPanel`：业务页面可复用预览面板，支持内置预览和外部预览服务。
 
 文件管理页面路径：`packages/file/src/views/files/index.vue`。
@@ -327,7 +326,7 @@ mango-file -> mango-document 生成预览派生文件
 
 P1：
 
-- 旧公共上传组件逐步迁移到 `@mango/file/Upload`。
+- 旧公共上传组件逐步迁移到 `@mango/file` 的 `MUpload`。
 - 文件记录业务扩展字段继续完善检索和展示。
 - 签名 URL 访问令牌落地。
 - 云存储直传、分片直传落地。
