@@ -10,7 +10,7 @@ export type WorkflowApprovalMode = 'COUNTERSIGN' | 'OR_SIGN' | 'SEQUENTIAL';
 export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_END' | 'TO_ADMIN' | 'TO_USER';
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
-export type WorkflowId = string | number;
+export type WorkflowId = string;
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -38,14 +38,15 @@ export interface WorkflowApprovalNodeConfig {
   rejectStrategy: WorkflowRejectStrategy;
   formPermissions?: Record<string, WorkflowFormPermission>;
   eventNotify?: WorkflowEventNotifyConfig;
+  extension?: Record<string, any>;
   initiatorSelectMultiple?: boolean;
   orgLeaderUseInitiatorOrg?: boolean;
 }
 
-export interface WorkflowGroup {
+export interface WorkflowCategory {
   id?: WorkflowId;
-  groupName: string;
-  groupCode: string;
+  categoryName: string;
+  categoryCode: string;
   sort?: number;
   status?: number;
   remark?: string;
@@ -55,8 +56,9 @@ export interface WorkflowGroup {
 
 export interface WorkflowDefinition {
   id?: WorkflowId;
-  groupId: WorkflowId;
-  groupName?: string;
+  categoryId: WorkflowId;
+  categoryName?: string;
+  orgId?: WorkflowId;
   adminUsers?: string[];
   icon?: string;
   definitionName: string;
@@ -65,6 +67,9 @@ export interface WorkflowDefinition {
   processDefinitionId?: string;
   processDefinitionVersion?: number;
   publishedVersionNo?: number;
+  sourceTemplateId?: WorkflowId;
+  sourceTemplateCode?: string;
+  sourceTemplateVersion?: number;
   designerJson: string;
   bpmnXml?: string;
   formCode?: string;
@@ -77,18 +82,78 @@ export interface WorkflowDefinition {
 }
 
 type WorkflowDefinitionCommand = Pick<WorkflowDefinition,
-  'id' | 'groupId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
+  'id' | 'categoryId' | 'orgId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
 >;
 
 export interface WorkflowPageQuery {
   pageNum?: number;
   pageSize?: number;
   keyword?: string;
-  groupId?: WorkflowId | '';
+  categoryId?: WorkflowId | '';
+  orgId?: WorkflowId | '';
   status?: string;
   categoryCode?: string;
   bpmnType?: string;
   executionType?: string;
+}
+
+export interface WorkflowTemplateCategory {
+  id?: WorkflowId;
+  parentId?: WorkflowId;
+  categoryName: string;
+  categoryCode: string;
+  icon?: string;
+  sort?: number;
+  status?: number;
+  remark?: string;
+  createdTime?: string;
+  updatedTime?: string;
+}
+
+export interface WorkflowTemplate {
+  id?: WorkflowId;
+  templateName: string;
+  templateCode: string;
+  templateCategoryId?: WorkflowId;
+  templateCategoryName?: string;
+  categoryCode?: string;
+  categoryName?: string;
+  icon?: string;
+  adminUsers?: string[];
+  designerJson: string;
+  formCode?: string;
+  formJson?: string;
+  versionNo?: number;
+  latestFlag?: boolean;
+  status?: 'ENABLED' | 'DISABLED' | 'ARCHIVED' | 'DRAFT';
+  statusName?: string;
+  sourceDefinitionId?: WorkflowId;
+  sourceDefinitionKey?: string;
+  sourceDefinitionName?: string;
+  remark?: string;
+  createdTime?: string;
+  updatedTime?: string;
+}
+
+export interface ImportWorkflowTemplatesCommand {
+  categoryId: WorkflowId;
+  targetTenantId?: WorkflowId;
+  orgId?: WorkflowId;
+  templateCategoryId?: WorkflowId;
+  templateIds?: WorkflowId[];
+  adminUsers?: string[];
+}
+
+export interface WorkflowTemplateImportError {
+  templateId?: WorkflowId;
+  templateName?: string;
+  templateCode?: string;
+  reason?: string;
+}
+
+export interface WorkflowTemplateImportResult {
+  definitionIds: WorkflowId[];
+  errors: WorkflowTemplateImportError[];
 }
 
 export interface PageResult<T> {
@@ -150,6 +215,7 @@ export interface WorkflowNodeCatalog {
 export interface WorkflowTask {
   id: string;
   taskName: string;
+  taskDefinitionKey?: string;
   processInstanceId: string;
   businessKey?: string;
   processName: string;
@@ -170,6 +236,8 @@ export interface WorkflowProcessInstance {
   processKey: string;
   processDefinitionId?: string;
   initiatorName?: string;
+  currentTaskName?: string;
+  currentTaskDefinitionKey?: string;
   status: string;
   startTime?: string;
   endTime?: string;
@@ -180,12 +248,78 @@ export interface StartWorkflowProcessCommand {
   businessKey?: string;
   businessType?: string;
   applyId?: WorkflowId;
-  renderMode?: 'DYNAMIC_FORM' | 'CUSTOM_PAGE';
+  renderMode?: WorkflowApplyRenderMode;
   applyPageKey?: string;
   approvePageKey?: string;
   snapshotRef?: string;
   variables?: Record<string, any>;
   selectedAssignees?: Record<string, string[]>;
+}
+
+export type WorkflowApplyStatus = 'DRAFT' | 'SUBMITTED' | 'IN_APPROVAL' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'CANCELED' | 'TERMINATED';
+export type WorkflowApplyRenderMode = 'DYNAMIC_FORM' | 'CUSTOM_PAGE';
+
+export interface WorkflowBusinessApplyCurrentTask {
+  taskId?: string;
+  taskDefinitionKey?: string;
+  taskName?: string;
+  assigneeId?: WorkflowId;
+  assigneeName?: string;
+  arrivedAt?: string;
+}
+
+export interface WorkflowBusinessApply {
+  id: WorkflowId;
+  applyCode?: string;
+  businessType: string;
+  businessKey: string;
+  applyTitle: string;
+  applySummary?: string;
+  applicantId?: WorkflowId;
+  applicantName?: string;
+  processDefinitionId?: WorkflowId;
+  processDefinitionKey?: string;
+  engineProcessDefinitionId?: string;
+  processInstanceId?: string;
+  processName?: string;
+  applyStatus?: WorkflowApplyStatus;
+  applyStatusName?: string;
+  currentTaskNames?: string;
+  currentTaskDefinitionKeys?: string;
+  currentAssigneeNames?: string;
+  renderMode?: WorkflowApplyRenderMode;
+  applyPageKey?: string;
+  approvePageKey?: string;
+  formKey?: string;
+  formVersion?: number;
+  snapshotRef?: string;
+  latestFlag?: boolean;
+  variables?: Record<string, any>;
+  extension?: Record<string, any>;
+  currentTasks?: WorkflowBusinessApplyCurrentTask[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type WorkflowBusinessApplyProgress = Pick<WorkflowBusinessApply,
+  'businessType' | 'businessKey' | 'applyTitle' | 'processInstanceId' | 'processName' | 'applyStatus'
+  | 'applyStatusName' | 'currentTaskNames' | 'currentTaskDefinitionKeys' | 'currentAssigneeNames' | 'currentTasks'
+  | 'createdAt' | 'updatedAt'
+> & {
+  applyId?: WorkflowId;
+  applyCode?: string;
+};
+
+export interface WorkflowBusinessApplyPageQuery extends WorkflowPageQuery {
+  businessType?: string;
+  businessKey?: string;
+  statuses?: WorkflowApplyStatus[];
+  latestOnly?: boolean;
+  applicantId?: WorkflowId;
+  currentTaskDefinitionKeys?: string[];
+  currentAssigneeIds?: WorkflowId[];
+  startedAtBegin?: string;
+  startedAtEnd?: string;
 }
 
 export interface WorkflowUserOption {
@@ -209,6 +343,23 @@ export interface WorkflowTaskRecord {
   createdTime?: string;
 }
 
+export interface WorkflowRenderConfig {
+  renderMode?: WorkflowApplyRenderMode;
+  businessType?: string;
+  businessKey?: string;
+  applyId?: WorkflowId;
+  processInstanceId?: string;
+  applyPageKey?: string;
+  approvePageKey?: string;
+  formKey?: string;
+  formVersion?: number;
+  snapshotRef?: string;
+  taskDefinitionKey?: string;
+  nodeExtension?: Record<string, any>;
+  formPermissions?: Record<string, WorkflowFormPermission>;
+  businessPermissions?: Record<string, any>;
+}
+
 export interface WorkflowTaskDetail {
   task: WorkflowTask;
   process: WorkflowProcessInstance;
@@ -216,6 +367,7 @@ export interface WorkflowTaskDetail {
   formJson?: string;
   variables: Record<string, any>;
   formPermissions?: Record<string, WorkflowFormPermission>;
+  renderConfig?: WorkflowRenderConfig;
   records: WorkflowTaskRecord[];
 }
 
@@ -224,6 +376,7 @@ export interface WorkflowProcessDetail {
   formCode?: string;
   formJson?: string;
   variables: Record<string, any>;
+  renderConfig?: WorkflowRenderConfig;
   records: WorkflowTaskRecord[];
 }
 
@@ -234,14 +387,14 @@ export interface WorkflowTaskActionCommand {
 }
 
 export const workflowApi = {
-  groupsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/groups/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeGroup, params)),
-  groupsList: (status?: number) => get<WorkflowGroup[]>('/workflow/groups/list', { params: { status } })
-    .then(list => (Array.isArray(list) ? list.map(normalizeGroup) : [])),
-  groupDetail: (id: WorkflowId) => get<WorkflowGroup>('/workflow/groups/detail', { params: { id } }).then(normalizeGroup),
-  createGroup: (data: WorkflowGroup) => post<WorkflowId>('/workflow/groups', data),
-  updateGroup: (data: WorkflowGroup) => put<boolean>('/workflow/groups', data),
-  deleteGroup: (id: WorkflowId) => del<boolean>('/workflow/groups', { params: { id } }),
+  categoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/categories/page', { params: toBackendPageParams(params) })
+    .then(data => fromBackendPageResult(data, normalizeCategory, params)),
+  categoriesList: (status?: number) => get<WorkflowCategory[]>('/workflow/categories/list', { params: { status } })
+    .then(list => (Array.isArray(list) ? list.map(normalizeCategory) : [])),
+  categoryDetail: (id: WorkflowId) => get<WorkflowCategory>('/workflow/categories/detail', { params: { id } }).then(normalizeCategory),
+  createCategory: (data: WorkflowCategory) => post<WorkflowId>('/workflow/categories', data),
+  updateCategory: (data: WorkflowCategory) => put<boolean>('/workflow/categories', data),
+  deleteCategory: (id: WorkflowId) => del<boolean>('/workflow/categories', { params: { id } }),
 
   definitionsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/definitions/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeDefinition, params)),
@@ -256,6 +409,23 @@ export const workflowApi = {
   definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
   nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
     .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
+
+  templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) => get<any>('/workflow/templates/page', { params: toBackendPageParams(params) })
+    .then(data => fromBackendPageResult(data, normalizeTemplate, params)),
+  templateDetail: (id: WorkflowId) => get<WorkflowTemplate>('/workflow/templates/detail', { params: { id } }).then(normalizeTemplate),
+  createTemplate: (data: WorkflowTemplate) => post<WorkflowId>('/workflow/templates', toTemplateCommand(data)),
+  deleteTemplate: (id: WorkflowId) => del<boolean>('/workflow/templates', { params: { id } }),
+  createTemplateFromDefinition: (data: Record<string, any>) => post<WorkflowId>('/workflow/templates/from-definition', data),
+  createDefinitionFromTemplate: (data: Record<string, any>) => post<WorkflowId>('/workflow/templates/create-definition', data),
+  importTemplates: (data: ImportWorkflowTemplatesCommand) => post<WorkflowTemplateImportResult>('/workflow/templates/import', data)
+    .then(normalizeTemplateImportResult),
+  templateCategoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/template-categories/page', { params: toBackendPageParams(params) })
+    .then(data => fromBackendPageResult(data, normalizeTemplateCategory, params)),
+  templateCategoriesList: (status?: number) => get<WorkflowTemplateCategory[]>('/workflow/template-categories/list', { params: { status } })
+    .then(list => (Array.isArray(list) ? list.map(normalizeTemplateCategory) : [])),
+  createTemplateCategory: (data: WorkflowTemplateCategory) => post<WorkflowId>('/workflow/template-categories', data),
+  updateTemplateCategory: (data: WorkflowTemplateCategory) => put<boolean>('/workflow/template-categories', data),
+  deleteTemplateCategory: (id: WorkflowId) => del<boolean>('/workflow/template-categories', { params: { id } }),
 
   todoTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
@@ -272,8 +442,33 @@ export const workflowApi = {
 
   startProcess: (data: StartWorkflowProcessCommand) => post<WorkflowProcessInstance>('/workflow/processes/start', data)
     .then(normalizeProcessInstance),
+  businessAppliesPage: (params?: WorkflowBusinessApplyPageQuery) => post<any>('/workflow/business-applies/page', toBackendBusinessApplyPageParams(params))
+    .then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
+  businessApplyHistory: (businessType: string, businessKey: string, params?: WorkflowBusinessApplyPageQuery) => get<any>('/workflow/business-applies/history', {
+    params: {
+      ...toBackendPageParams(params),
+      businessType,
+      businessKey,
+    },
+  }).then(data => fromBackendPageResult(data, normalizeBusinessApply, params)),
+  businessApplyLatestProgress: (businessType: string, businessKey: string) => get<WorkflowBusinessApplyProgress | null>('/workflow/business-applies/progress/latest', {
+    params: { businessType, businessKey },
+  }).then(data => data ? normalizeBusinessApplyProgress(data) : null),
+  businessApplyByProcessInstance: (processInstanceId: string) => get<WorkflowBusinessApply>('/workflow/business-applies/progress/by-process-instance', {
+    params: { processInstanceId },
+  }).then(normalizeBusinessApply),
+  businessApplyLatestProgressBatch: (businessType: string, businessKeys: string[]) => post<Record<string, WorkflowBusinessApplyProgress>>('/workflow/business-applies/progress/latest-batch', {
+    businessType,
+    businessKeys,
+  }).then(data => Object.fromEntries(Object.entries(data || {}).map(([key, value]) => [key, normalizeBusinessApplyProgress(value)]))),
   initiatedProcesses: (params?: WorkflowPageQuery) => get<any>('/workflow/processes/initiated', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
+  processHistoryByBusinessKey: (businessKey: string, params?: WorkflowPageQuery) => get<any>('/workflow/processes/history', {
+    params: {
+      ...toBackendPageParams(params),
+      businessKey,
+    },
+  }).then(data => fromBackendPageResult(data, normalizeProcessInstance, params)),
   processDetail: (processInstanceId: string) => get<WorkflowProcessDetail>('/workflow/processes/detail', { params: { processInstanceId } })
     .then(normalizeProcessDetail),
   users: (keyword = '') => get<any>('/identity/users/page', {
@@ -370,6 +565,7 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
       method: 'POST',
       timeoutMillis: 5000,
     },
+    extension: {},
     initiatorSelectMultiple: false,
     orgLeaderUseInitiatorOrg: true,
   };
@@ -396,10 +592,23 @@ export function createNodeId(prefix = 'node'): string {
 
 function toBackendPageParams(params?: WorkflowPageQuery) {
   if (!params) return params;
-  const { pageNum, pageSize, groupId, ...rest } = params;
+  const { pageNum, pageSize, categoryId, orgId, ...rest } = params;
   return {
     ...rest,
-    groupId: groupId === '' ? undefined : groupId,
+    categoryId: categoryId === '' ? undefined : categoryId,
+    orgId: orgId === '' ? undefined : orgId,
+    page: pageNum,
+    size: pageSize,
+  };
+}
+
+function toBackendBusinessApplyPageParams(params?: WorkflowBusinessApplyPageQuery) {
+  if (!params) return params;
+  const { pageNum, pageSize, categoryId, orgId, ...rest } = params;
+  return {
+    ...rest,
+    categoryId: categoryId === '' ? undefined : categoryId,
+    orgId: orgId === '' ? undefined : orgId,
     page: pageNum,
     size: pageSize,
   };
@@ -432,10 +641,35 @@ function toPageList<T>(data: any): T[] {
   return [];
 }
 
-function normalizeGroup(item: any): WorkflowGroup {
+function normalizeCategory(item: any): WorkflowCategory {
   return {
     ...item,
     id: normalizeId(item?.id),
+    categoryName: item?.categoryName ?? '',
+    categoryCode: item?.categoryCode ?? '',
+    createdTime: normalizeDateTime(item?.createdTime),
+    updatedTime: normalizeDateTime(item?.updatedTime),
+  };
+}
+
+function normalizeTemplateCategory(item: any): WorkflowTemplateCategory {
+  return {
+    ...item,
+    id: normalizeId(item?.id),
+    parentId: item?.parentId ? normalizeId(item.parentId) : undefined,
+    createdTime: normalizeDateTime(item?.createdTime),
+    updatedTime: normalizeDateTime(item?.updatedTime),
+  };
+}
+
+function normalizeTemplate(item: any): WorkflowTemplate {
+  return {
+    ...item,
+    id: normalizeId(item?.id),
+    templateCategoryId: item?.templateCategoryId ? normalizeId(item.templateCategoryId) : undefined,
+    adminUsers: normalizeStringList(item?.adminUsers),
+    sourceDefinitionId: item?.sourceDefinitionId ? normalizeId(item.sourceDefinitionId) : undefined,
+    designerJson: item?.designerJson || defaultDesignerJson(),
     createdTime: normalizeDateTime(item?.createdTime),
     updatedTime: normalizeDateTime(item?.updatedTime),
   };
@@ -445,7 +679,10 @@ function normalizeDefinition(item: any): WorkflowDefinition {
   return {
     ...item,
     id: normalizeId(item?.id),
-    groupId: normalizeId(item?.groupId),
+    categoryId: normalizeId(item?.categoryId),
+    categoryName: item?.categoryName,
+    orgId: item?.orgId ? normalizeId(item.orgId) : undefined,
+    sourceTemplateId: item?.sourceTemplateId ? normalizeId(item.sourceTemplateId) : undefined,
     adminUsers: normalizeStringList(item?.adminUsers),
     icon: item?.icon || 'Setting',
     designerJson: item?.designerJson || defaultDesignerJson(),
@@ -457,7 +694,8 @@ function normalizeDefinition(item: any): WorkflowDefinition {
 
 function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): WorkflowDefinitionCommand {
   const command: WorkflowDefinitionCommand = {
-    groupId: data.groupId,
+    categoryId: data.categoryId,
+    orgId: data.orgId,
     adminUsers: normalizeStringList(data.adminUsers),
     icon: data.icon || 'Setting',
     definitionName: data.definitionName,
@@ -472,6 +710,26 @@ function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): Work
     command.id = data.id;
   }
   return command;
+}
+
+function toTemplateCommand(data: WorkflowTemplate) {
+  return {
+    ...data,
+    templateCategoryId: data.templateCategoryId || undefined,
+    adminUsers: normalizeStringList(data.adminUsers),
+  };
+}
+
+function normalizeTemplateImportResult(item: any): WorkflowTemplateImportResult {
+  return {
+    definitionIds: Array.isArray(item?.definitionIds) ? item.definitionIds.map(normalizeId) : [],
+    errors: Array.isArray(item?.errors)
+      ? item.errors.map((error: any) => ({
+          ...error,
+          templateId: error?.templateId ? normalizeId(error.templateId) : undefined,
+        }))
+      : [],
+  };
 }
 
 function normalizeStringList(value: unknown): string[] {
@@ -522,6 +780,7 @@ function normalizeTask(item: any): WorkflowTask {
   return {
     id: item?.id ? String(item.id) : '',
     taskName: item?.taskName || '-',
+    taskDefinitionKey: item?.taskDefinitionKey || item?.taskDefinitionCode || item?.activityId,
     processInstanceId: item?.processInstanceId ? String(item.processInstanceId) : '',
     businessKey: item?.businessKey,
     processName: item?.processName || '-',
@@ -544,9 +803,46 @@ function normalizeProcessInstance(item: any): WorkflowProcessInstance {
     processKey: item?.processKey || '-',
     processDefinitionId: item?.processDefinitionId,
     initiatorName: item?.initiatorName,
+    currentTaskName: item?.currentTaskName,
+    currentTaskDefinitionKey: item?.currentTaskDefinitionKey,
     status: item?.status || '-',
     startTime: normalizeDateTime(item?.startTime),
     endTime: normalizeDateTime(item?.endTime),
+  };
+}
+
+function normalizeBusinessApplyCurrentTask(item: any): WorkflowBusinessApplyCurrentTask {
+  return {
+    taskId: item?.taskId,
+    taskDefinitionKey: item?.taskDefinitionKey,
+    taskName: item?.taskName,
+    assigneeId: item?.assigneeId ? normalizeId(item.assigneeId) : undefined,
+    assigneeName: item?.assigneeName,
+    arrivedAt: normalizeDateTime(item?.arrivedAt),
+  };
+}
+
+function normalizeBusinessApply(item: any): WorkflowBusinessApply {
+  return {
+    ...item,
+    id: normalizeId(item?.id),
+    applicantId: item?.applicantId ? normalizeId(item.applicantId) : undefined,
+    processDefinitionId: item?.processDefinitionId ? normalizeId(item.processDefinitionId) : undefined,
+    currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
+    variables: normalizeVariables(item?.variables),
+    extension: normalizeVariables(item?.extension),
+    createdAt: normalizeDateTime(item?.createdAt),
+    updatedAt: normalizeDateTime(item?.updatedAt),
+  };
+}
+
+function normalizeBusinessApplyProgress(item: any): WorkflowBusinessApplyProgress {
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    currentTasks: Array.isArray(item?.currentTasks) ? item.currentTasks.map(normalizeBusinessApplyCurrentTask) : [],
+    createdAt: normalizeDateTime(item?.createdAt),
+    updatedAt: normalizeDateTime(item?.updatedAt),
   };
 }
 
@@ -558,6 +854,7 @@ function normalizeTaskDetail(item: any): WorkflowTaskDetail {
     formJson: item?.formJson,
     variables: normalizeVariables(item?.variables),
     formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
+    renderConfig: normalizeRenderConfig(item?.renderConfig),
     records: normalizeRecords(item?.records),
   };
 }
@@ -568,7 +865,21 @@ function normalizeProcessDetail(item: any): WorkflowProcessDetail {
     formCode: item?.formCode,
     formJson: item?.formJson,
     variables: normalizeVariables(item?.variables),
+    renderConfig: normalizeRenderConfig(item?.renderConfig),
     records: normalizeRecords(item?.records),
+  };
+}
+
+function normalizeRenderConfig(item: any): WorkflowRenderConfig | undefined {
+  if (!item) {
+    return undefined;
+  }
+  return {
+    ...item,
+    applyId: item?.applyId ? normalizeId(item.applyId) : undefined,
+    formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
+    nodeExtension: normalizeVariables(item?.nodeExtension),
+    businessPermissions: normalizeVariables(item?.businessPermissions),
   };
 }
 

@@ -4,13 +4,14 @@
  */
 
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 export interface SysTenant {
-  id?: number;
+  id?: ApiId;
   tenantName: string;
   tenantCode: string;
   institutionType?: string;
-  packageId?: number;
+  packageId?: ApiId;
   capabilityCodes?: string;
   capabilityCodeList?: string[];
   contactName?: string;
@@ -20,16 +21,16 @@ export interface SysTenant {
   mobile?: string;
   email?: string;
   status?: number;
-  createTime?: string | number[];
-  updateTime?: string | number[];
+  createTime?: string;
+  updateTime?: string;
 }
 
 interface SysTenantPayload {
-  id?: number;
+  id?: ApiId;
   tenantName: string;
   tenantCode: string;
   institutionType?: string;
-  packageId?: number;
+  packageId?: ApiId;
   capabilityCodes?: string;
   status?: number;
   contact?: string;
@@ -57,19 +58,19 @@ export const tenantApi = {
     return get<SysTenant[]>('/system/tenant/list', { params })
       .then((list) => toPageResult(filterList(list.map(fromBackend), params), params));
   },
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<SysTenant>('/system/tenant/detail', { params: { id } }).then(fromBackend);
   },
   create: (data: SysTenant) => {
-    return post<number>('/system/tenant', toBackend(data));
+    return post<ApiId>('/system/tenant', toBackend(data));
   },
   update: (data: SysTenant) => {
     return put<boolean>('/system/tenant', toBackend(data));
   },
-  delete: (id: number) => {
+  delete: (id: ApiId) => {
     return del<boolean>('/system/tenant', { params: { id } });
   },
-  updateStatus: (id: number, params: { status: number }) => {
+  updateStatus: (id: ApiId, params: { status: number }) => {
     return put<boolean>('/system/tenant/status', undefined, { params: { id, status: params.status } });
   },
 };

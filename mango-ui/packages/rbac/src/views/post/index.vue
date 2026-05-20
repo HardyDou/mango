@@ -335,17 +335,9 @@ function handleDelete(row: PostVO) {
   }).catch(() => {});
 }
 
-function formatTime(value?: string | number[]) {
+function formatTime(value?: string) {
   if (!value) return '';
-  if (Array.isArray(value)) {
-    const [year, month, day, hour = 0, minute = 0, second = 0] = value;
-    return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
-  }
   return value;
-}
-
-function pad(value: number) {
-  return String(value).padStart(2, '0');
 }
 
 onMounted(() => {

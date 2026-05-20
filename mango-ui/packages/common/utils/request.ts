@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { ApiId } from '@mango/api-schema';
 import { Session } from './storage';
 import { mangoMessage } from './message';
 
@@ -31,6 +32,7 @@ export interface RequestError {
 }
 
 type UnauthorizedHandler = () => void | Promise<void>;
+type JsonRecord = Record<string, unknown>;
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
@@ -171,7 +173,7 @@ service.interceptors.response.use(
 
     // 成功
     if (success || code === 200) {
-      return data;
+      return normalizeApiPayload(data);
     }
 
     // token 过期
@@ -181,8 +183,9 @@ service.interceptors.response.use(
     }
 
     // 其他错误
-    mangoMessage.error(message || '请求失败');
-    return Promise.reject(new Error(message || '请求失败'));
+    const errorMessage = resolveBusinessErrorMessage(code, message);
+    mangoMessage.error(errorMessage);
+    return Promise.reject(new Error(errorMessage));
   },
   (error) => {
     hideLoading();
@@ -190,16 +193,12 @@ service.interceptors.response.use(
     // 处理 HTTP 错误
     const status = error.response?.status;
     const responseData = error.response?.data;
-    const message = responseData?.message || responseData?.msg || responseData?.error || errorCodeMessage[status] || error.message || '网络错误';
+    const message = resolveHttpErrorMessage(status, responseData, error.message);
 
     if (status === 401) {
       void handleUnauthorized('登录已过期，请重新登录');
     } else if (status === 403) {
-      mangoMessage.error(message || '没有权限访问该资源');
-    } else if (status === 500) {
-      mangoMessage.error(message || '服务器错误');
-    } else if (status === 502) {
-      mangoMessage.error(message || '网关错误');
+      mangoMessage.error(message);
     } else {
       mangoMessage.error(message);
     }
@@ -237,6 +236,75 @@ export function del<T = any>(url: string, config?: RequestConfig): Promise<T> {
 }
 
 export const request = service;
+
+function resolveBusinessErrorMessage(code: number, message?: string): string {
+  if (message) {
+    return message;
+  }
+  if (code === 500) {
+    return '系统异常';
+  }
+  return '请求失败';
+}
+
+export function resolveHttpErrorMessage(
+  status?: number,
+  responseData?: Record<string, any>,
+  fallbackMessage?: string
+): string {
+  const responseMessage = responseData?.message
+    || responseData?.msg
+    || responseData?.error;
+  if (responseMessage) {
+    return String(responseMessage);
+  }
+  if (status === 500) {
+    return '系统异常';
+  }
+  if (status === 502) {
+    return '网关错误';
+  }
+  return (status ? errorCodeMessage[status] : undefined)
+    || fallbackMessage
+    || '网络错误';
+}
+
+/**
+ * 后端 Long ID 正常应由 mango-infra-web-starter 序列化为字符串。
+ * 这里作为前端兜底，只处理明确的标识字段，避免影响页码、状态、金额、排序等真实数值。
+ */
+export function normalizeApiPayload<T>(payload: T): T {
+  return normalizeValue(payload, '') as T;
+}
+
+function normalizeValue(value: unknown, key: string): unknown {
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeValue(item, singularKey(key)));
+  }
+  if (value && typeof value === 'object') {
+    const record = value as JsonRecord;
+    const normalized: JsonRecord = {};
+    Object.keys(record).forEach((childKey) => {
+      normalized[childKey] = normalizeValue(record[childKey], childKey);
+    });
+    return normalized;
+  }
+  if (typeof value === 'number' && shouldTreatAsApiId(key)) {
+    return String(value) as ApiId;
+  }
+  return value;
+}
+
+function shouldTreatAsApiId(key: string): boolean {
+  if (!key) {
+    return false;
+  }
+  return /(^id$|Id$|Ids$|By$)/.test(key);
+}
+
+function singularKey(key: string): string {
+  return key.endsWith('Ids') ? `${key.slice(0, -1)}` : key;
+}
 
 /**
  * 错误码对照表

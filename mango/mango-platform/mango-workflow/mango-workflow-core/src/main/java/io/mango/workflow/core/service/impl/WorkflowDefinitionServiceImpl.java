@@ -23,11 +23,11 @@ import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
-import io.mango.workflow.core.entity.WorkflowGroup;
+import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.entity.WorkflowNodeDefinition;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
-import io.mango.workflow.core.mapper.WorkflowGroupMapper;
+import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +60,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     private final WorkflowDefinitionMapper mapper;
     private final WorkflowDefinitionVersionMapper versionMapper;
-    private final WorkflowGroupMapper groupMapper;
+    private final WorkflowCategoryMapper categoryMapper;
     private final WorkflowNodeDefinitionMapper nodeDefinitionMapper;
     private final RepositoryService repositoryService;
     private final WorkflowDesignerBpmnConverter bpmnConverter;
@@ -72,9 +72,9 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         IPage<WorkflowDefinition> page = mapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 wrapper(resolved));
-        Map<Long, String> groupNames = groupNames(page.getRecords());
+        Map<Long, String> categoryNames = categoryNames(page.getRecords());
         List<WorkflowDefinitionVO> records = page.getRecords().stream()
-                .map(item -> toVO(item, groupNames.get(item.getGroupId())))
+                .map(item -> toVO(item, categoryNames.get(item.getCategoryId())))
                 .toList();
         return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
     }
@@ -82,8 +82,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     @Override
     public R<WorkflowDefinitionVO> get(Long id) {
         WorkflowDefinition entity = selectRequired(id);
-        WorkflowGroup group = groupMapper.selectById(entity.getGroupId());
-        return R.ok(toVO(entity, group == null ? null : group.getGroupName()));
+        WorkflowCategory category = categoryMapper.selectById(entity.getCategoryId());
+        return R.ok(toVO(entity, category == null ? null : category.getCategoryName()));
     }
 
     @Override
@@ -265,7 +265,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                         .like(WorkflowDefinition::getDefinitionName, keyword)
                         .or()
                         .like(WorkflowDefinition::getDefinitionKey, keyword))
-                .eq(query.getGroupId() != null, WorkflowDefinition::getGroupId, query.getGroupId())
+                .eq(query.getCategoryId() != null, WorkflowDefinition::getCategoryId, query.getCategoryId())
+                .eq(query.getOrgId() != null, WorkflowDefinition::getOrgId, query.getOrgId())
                 .eq(StringUtils.hasText(query.getStatus()), WorkflowDefinition::getStatus, query.getStatus())
                 .orderByDesc(WorkflowDefinition::getUpdatedTime);
     }
@@ -278,9 +279,9 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     }
 
     private void validate(SaveWorkflowDefinitionCommand command, boolean update) {
-        Require.notNull(command.getGroupId(), WorkflowCode.GROUP_INVALID.getCode(), "流程分组不能为空");
-        Require.isTrue(command.getGroupId() > 0, WorkflowCode.GROUP_INVALID.getCode(), "流程分组不能为空");
-        Require.notNull(groupMapper.selectById(command.getGroupId()), WorkflowCode.GROUP_NOT_FOUND);
+        Require.notNull(command.getCategoryId(), WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
+        Require.isTrue(command.getCategoryId() > 0, WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
+        Require.notNull(categoryMapper.selectById(command.getCategoryId()), WorkflowCode.CATEGORY_NOT_FOUND);
         Require.notBlank(command.getDefinitionName(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程名称不能为空");
         Require.notBlank(command.getDefinitionKey(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程编码不能为空");
         Require.notBlank(command.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
@@ -294,7 +295,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     }
 
     private void copy(SaveWorkflowDefinitionCommand command, WorkflowDefinition entity) {
-        entity.setGroupId(command.getGroupId());
+        entity.setCategoryId(command.getCategoryId());
+        entity.setOrgId(command.getOrgId());
         entity.setAdminUsers(toJsonList(command.getAdminUsers()));
         entity.setIcon(trimToNull(command.getIcon()));
         entity.setDefinitionName(command.getDefinitionName().trim());
@@ -317,25 +319,26 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         }
     }
 
-    private Map<Long, String> groupNames(List<WorkflowDefinition> definitions) {
+    private Map<Long, String> categoryNames(List<WorkflowDefinition> definitions) {
         Map<Long, String> result = new HashMap<>();
-        List<Long> groupIds = definitions.stream()
-                .map(WorkflowDefinition::getGroupId)
+        List<Long> categoryIds = definitions.stream()
+                .map(WorkflowDefinition::getCategoryId)
                 .filter(item -> item != null && !result.containsKey(item))
                 .distinct()
                 .toList();
-        if (groupIds.isEmpty()) {
+        if (categoryIds.isEmpty()) {
             return result;
         }
-        groupMapper.selectBatchIds(groupIds).forEach(item -> result.put(item.getId(), item.getGroupName()));
+        categoryMapper.selectBatchIds(categoryIds).forEach(item -> result.put(item.getId(), item.getCategoryName()));
         return result;
     }
 
-    private WorkflowDefinitionVO toVO(WorkflowDefinition entity, String groupName) {
+    private WorkflowDefinitionVO toVO(WorkflowDefinition entity, String categoryName) {
         WorkflowDefinitionVO vo = new WorkflowDefinitionVO();
         vo.setId(entity.getId());
-        vo.setGroupId(entity.getGroupId());
-        vo.setGroupName(groupName);
+        vo.setCategoryId(entity.getCategoryId());
+        vo.setCategoryName(categoryName);
+        vo.setOrgId(entity.getOrgId());
         vo.setAdminUsers(parseStringList(entity.getAdminUsers()));
         vo.setIcon(entity.getIcon());
         vo.setDefinitionName(entity.getDefinitionName());
@@ -344,6 +347,9 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setProcessDefinitionId(entity.getProcessDefinitionId());
         vo.setProcessDefinitionVersion(entity.getProcessDefinitionVersion());
         vo.setPublishedVersionNo(entity.getPublishedVersionNo());
+        vo.setSourceTemplateId(entity.getSourceTemplateId());
+        vo.setSourceTemplateCode(entity.getSourceTemplateCode());
+        vo.setSourceTemplateVersion(entity.getSourceTemplateVersion());
         vo.setDesignerJson(entity.getDesignerJson());
         vo.setBpmnXml(entity.getBpmnXml());
         vo.setFormCode(entity.getFormCode());

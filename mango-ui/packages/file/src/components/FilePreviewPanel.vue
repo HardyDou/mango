@@ -76,9 +76,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Document } from '@element-plus/icons-vue';
 import { downloadFileRecord, fileApi, type FilePreview } from '../api/file';
+import type { ApiId } from '@mango/api-schema';
 
 const props = defineProps<{
-  fileId?: number | string | null;
+  fileId?: ApiId | null;
   preview?: FilePreview | null;
   previewProviderUrl?: string;
   previewExternalExtensions?: string[];

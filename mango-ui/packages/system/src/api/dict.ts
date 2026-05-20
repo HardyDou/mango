@@ -6,12 +6,13 @@
  */
 
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 // ==================== 类型定义 ====================
 
 /** 字典类型 */
 export interface DictType {
-  id?: number;
+  id?: ApiId;
   name: string;
   code: string;
   description?: string;
@@ -23,8 +24,8 @@ export interface DictType {
 
 /** 字典数据 */
 export interface DictData {
-  id?: number;
-  typeId: number;
+  id?: ApiId;
+  typeId: ApiId;
   dictType?: string;
   label: string;
   value: string;
@@ -47,7 +48,7 @@ export interface DictDataQuery {
   pageNum?: number;
   pageSize?: number;
   keyword?: string;
-  typeId?: number;
+  typeId?: ApiId;
 }
 
 /** 分页结果 */
@@ -72,7 +73,7 @@ export const dictTypeApi = {
   /**
    * 获取字典类型详情
    */
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<any>('/system/dict/type/detail', { params: { id } }).then(fromBackendType);
   },
 
@@ -80,7 +81,7 @@ export const dictTypeApi = {
    * 新增字典类型
    */
   create: (data: DictType) => {
-    return post<number>('/system/dict/type', toBackendType(data));
+    return post<ApiId>('/system/dict/type', toBackendType(data));
   },
 
   /**
@@ -93,7 +94,7 @@ export const dictTypeApi = {
   /**
    * 删除字典类型
    */
-  delete: (id: number) => {
+  delete: (id: ApiId) => {
     return del<boolean>('/system/dict/type', { params: { id } });
   },
 };
@@ -112,7 +113,7 @@ export const dictDataApi = {
   /**
    * 获取字典数据详情
    */
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<any>('/system/dict/data/detail', { params: { id } }).then(fromBackendData);
   },
 
@@ -120,7 +121,7 @@ export const dictDataApi = {
    * 新增字典数据
    */
   create: (data: DictData) => {
-    return post<number>('/system/dict/data', toBackendData(data));
+    return post<ApiId>('/system/dict/data', toBackendData(data));
   },
 
   /**
@@ -133,7 +134,7 @@ export const dictDataApi = {
   /**
    * 删除字典数据
    */
-  delete: (id: number) => {
+  delete: (id: ApiId) => {
     return del<boolean>('/system/dict/data', { params: { id } });
   },
 
@@ -170,10 +171,10 @@ function toBackendType(item: DictType) {
   };
 }
 
-function fromBackendData(item: any, typeId?: number): DictData {
+function fromBackendData(item: any, typeId?: ApiId): DictData {
   return {
     id: item.id,
-    typeId: item.typeId ?? typeId ?? 0,
+    typeId: item.typeId ?? typeId ?? '0',
     dictType: item.dictType,
     label: item.dictLabel ?? item.label,
     value: item.dictValue ?? item.value,
@@ -188,7 +189,7 @@ function fromBackendData(item: any, typeId?: number): DictData {
 function fromBackendOption(item: any): DictData {
   return {
     id: item.id,
-    typeId: 0,
+    typeId: '0',
     label: item.label ?? item.dictLabel,
     value: item.value ?? item.dictValue,
     sort: item.sort ?? 0,

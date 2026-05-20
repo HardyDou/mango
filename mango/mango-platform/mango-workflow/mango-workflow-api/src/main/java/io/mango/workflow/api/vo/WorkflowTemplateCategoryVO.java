@@ -6,20 +6,26 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 流程分组视图。
+ * 流程模板分类视图。
  */
 @Data
-@Schema(description = "流程分组视图")
-public class WorkflowGroupVO {
+@Schema(description = "流程模板分类视图")
+public class WorkflowTemplateCategoryVO {
 
-    @Schema(description = "流程分组ID")
+    @Schema(description = "流程模板分类ID")
     private Long id;
 
-    @Schema(description = "分组名称")
-    private String groupName;
+    @Schema(description = "父级分类ID")
+    private Long parentId;
 
-    @Schema(description = "分组编码")
-    private String groupCode;
+    @Schema(description = "分类名称")
+    private String categoryName;
+
+    @Schema(description = "分类编码")
+    private String categoryCode;
+
+    @Schema(description = "分类图标")
+    private String icon;
 
     @Schema(description = "排序号")
     private Integer sort;

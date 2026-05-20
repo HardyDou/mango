@@ -2,17 +2,19 @@
  * OrgSelector Component Types
  */
 
+import type { ApiId } from '@mango/api-schema';
+
 export interface OrgNode {
-  id: number;
+  id: ApiId;
   name: string;
-  parentId: number;
+  parentId: ApiId;
   sort?: number;
   children?: OrgNode[];
 }
 
 export interface OrgSelectorProps {
   /** v-model binding - selected organization IDs */
-  modelValue?: number | number[];
+  modelValue?: ApiId | ApiId[];
   /** Whether multiple selection is enabled */
   multiple?: boolean;
   /** Placeholder text */
@@ -30,8 +32,8 @@ export interface OrgSelectorProps {
 }
 
 export interface OrgSelectorEmits {
-  (e: 'update:modelValue', value: number | number[] | undefined): void;
-  (e: 'change', value: number | number[] | undefined): void;
+  (e: 'update:modelValue', value: ApiId | ApiId[] | undefined): void;
+  (e: 'change', value: ApiId | ApiId[] | undefined): void;
 }
 
 export interface OrgSelectorExpose {
@@ -40,7 +42,7 @@ export interface OrgSelectorExpose {
   /** Close the dialog */
   close(): void;
   /** Get selected organization IDs */
-  getValue(): number[];
+  getValue(): ApiId[];
   /** Clear selection */
   clear(): void;
 }

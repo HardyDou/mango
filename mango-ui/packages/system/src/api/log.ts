@@ -3,11 +3,12 @@
  */
 
 import { del, get } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 // ==================== 登录日志 ====================
 
 export interface SysLoginLog {
-  id?: number;
+  id?: ApiId;
   username: string;
   ip: string;
   location?: string;
@@ -17,7 +18,7 @@ export interface SysLoginLog {
   loginTime: string;
   status: number;
   msg?: string;
-  tenantId?: number;
+  tenantId?: ApiId;
 }
 
 export interface LoginLogQuery {
@@ -48,7 +49,7 @@ export interface PageResult<T> {
 export const loginLogApi = {
   list: (params?: LoginLogQuery) => get<any>('/system/log/login/list', { params: toBackendPageParams(params) })
     .then((data) => fromBackendPageResult(data, fromBackendLoginLog, params)),
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<any>('/system/log/login/detail', { params: { id } }).then(fromBackendLoginLog);
   },
   clean: (retentionDays?: number) => {
@@ -69,7 +70,7 @@ export const loginLogApi = {
 // ==================== 操作日志 ====================
 
 export interface SysOperationLog {
-  id?: number;
+  id?: ApiId;
   username: string;
   module?: string;
   operation: string;
@@ -85,7 +86,7 @@ export interface SysOperationLog {
   location?: string;
   status: number;
   errorMsg?: string;
-  tenantId?: number;
+  tenantId?: ApiId;
 }
 
 export interface OperationLogQuery {
@@ -100,7 +101,7 @@ export interface OperationLogQuery {
 export const operationLogApi = {
   list: (params?: OperationLogQuery) => get<any>('/system/log/operation/list', { params: toBackendPageParams(params) })
     .then((data) => fromBackendPageResult(data, fromBackendOperationLog, params)),
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<any>('/system/log/operation/detail', { params: { id } }).then(fromBackendOperationLog);
   },
   clean: (retentionDays?: number) => {

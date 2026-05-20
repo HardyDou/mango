@@ -1,7 +1,8 @@
 import mitt, { Emitter } from 'mitt';
+import type { ApiId } from '@mango/api-schema';
 
 interface ColumnChildren {
-  id?: number | string;
+  id?: ApiId;
   path?: string;
   title?: string;
   [key: string]: unknown;

@@ -3,19 +3,10 @@
  * @param date 日期
  * @param format 格式
  */
-export function formatDate(date: Date | string | number | number[], format = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatDate(date: Date | string | number, format = 'YYYY-MM-DD HH:mm:ss'): string {
   if (!date) return '';
 
-  const d = Array.isArray(date)
-    ? new Date(
-      date[0],
-      (date[1] || 1) - 1,
-      date[2] || 1,
-      date[3] || 0,
-      date[4] || 0,
-      date[5] || 0
-    )
-    : new Date(date);
+  const d = new Date(date);
 
   if (Number.isNaN(d.getTime())) return '';
 
@@ -39,7 +30,7 @@ export function formatDate(date: Date | string | number | number[], format = 'YY
  * 相对时间
  * @param date 日期
  */
-export function formatRelativeTime(date: Date | string | number | number[]): string {
+export function formatRelativeTime(date: Date | string | number): string {
   if (!date) return '';
 
   const d = new Date(date);

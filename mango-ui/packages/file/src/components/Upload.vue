@@ -3,6 +3,8 @@
     <div class="upload-control" :class="{ 'is-inline-manual': showInlineManualAction }">
       <el-upload
         ref="uploadRef"
+        class="mango-upload-inner"
+        :class="{ 'is-trigger-hidden': !showUploadTrigger }"
         v-model:file-list="internalFiles"
         :accept="accept"
         :auto-upload="auto"
@@ -98,7 +100,7 @@ defineOptions({
 });
 
 export type UploadDisplay = 'list' | 'thumbnail' | 'table' | 'drag';
-export type UploadValueType = 'id' | 'token' | 'record';
+export type UploadValueType = 'id' | 'token' | 'url' | 'record';
 export type UploadColumnKey = keyof FileRecord | `meta.${string}` | string;
 
 export interface UploadSizeRules {
@@ -173,6 +175,7 @@ const elementListType = computed(() => normalizedDisplay.value === 'thumbnail' ?
 const tableFiles = computed(() => internalFiles.value);
 const pendingFiles = computed(() => internalFiles.value.filter(item => item.status === 'ready' && !item.id));
 const resolvedColumns = computed(() => normalizeColumns(props.columns));
+const showUploadTrigger = computed(() => !props.readonly && (!props.count || internalFiles.value.length < props.count));
 const showManualAction = computed(() => !props.auto && !props.readonly);
 const showInlineManualAction = computed(() => showManualAction.value && normalizedDisplay.value !== 'drag');
 
@@ -181,6 +184,7 @@ watch(() => props.modelValue, (value) => {
   syncing.value = true;
   internalFiles.value = modelValueToFiles(value);
   syncing.value = false;
+  void hydrateFileDetails();
 }, { immediate: true, deep: true });
 
 async function handleUpload(options: UploadRequestOptions) {
@@ -338,6 +342,9 @@ function modelValueFromRecords(records: FileRecord[]): UploadModelValue {
   if (props.valueType === 'id') {
     return multiple.value ? records.map(item => String(item.id || '')).filter(Boolean) : String(records[0]?.id || '');
   }
+  if (props.valueType === 'url') {
+    return multiple.value ? records.map(recordAccessUrl).filter(Boolean) : recordAccessUrl(records[0]);
+  }
   return multiple.value ? records.map(item => token(item.id)) : token(records[0]?.id);
 }
 
@@ -370,6 +377,9 @@ function modelValueIds(value?: UploadModelValue) {
     .map((item) => {
       if (!item) return '';
       if (typeof item === 'string') {
+        if (isPublicPreviewUrl(item) || isProtectedApiUrl(item)) {
+          return '';
+        }
         return item.startsWith('mango-file:') ? item.replace('mango-file:', '') : item;
       }
       return item.id ? String(item.id) : '';
@@ -380,18 +390,42 @@ function modelValueIds(value?: UploadModelValue) {
 function modelValueToFiles(value?: UploadModelValue): InternalUploadFile[] {
   if (!value) return [];
   const values = Array.isArray(value) ? value : [value];
-  return values.filter(Boolean).map((item, index) => {
+  return values.flatMap((item, index) => {
+    if (!item) return [];
     if (typeof item === 'string') {
+      if (isPublicPreviewUrl(item)) {
+        return [{
+          uid: index,
+          name: item.split('/').pop() || `file-${index}`,
+          fileName: item.split('/').pop() || `file-${index}`,
+          url: item,
+        }];
+      }
+      if (isProtectedApiUrl(item)) {
+        return [];
+      }
       const id = item.startsWith('mango-file:') ? item.replace('mango-file:', '') : item;
-      return {
+      return [{
         uid: index,
         id,
         name: `file-${id || index}`,
         fileName: `file-${id || index}`,
-        url: id ? fileApi.downloadUrl(id) : '',
-      };
+        url: '',
+      }];
     }
-    return recordToFile(item);
+    return [recordToFile(item)];
+  });
+}
+
+async function hydrateFileDetails() {
+  const files = internalFiles.value.filter(item => item.id && !item.response);
+  if (!files.length) return;
+  const records = await Promise.all(files.map(file => fileApi.detail(file.id as FileId).catch(() => null)));
+  const recordMap = new Map(records.filter((item): item is FileRecord => Boolean(item?.id)).map(item => [String(item.id), item]));
+  if (!recordMap.size) return;
+  internalFiles.value = internalFiles.value.map((file) => {
+    const record = file.id ? recordMap.get(String(file.id)) : undefined;
+    return record ? recordToFile(record, file.uid) : file;
   });
 }
 
@@ -420,11 +454,33 @@ function recordToFile(record: FileRecord, uid?: number): InternalUploadFile {
 }
 
 function previewUrl(record: Partial<FileRecord>) {
-  return record.directPreviewUrl
-    || record.url
-    || record.directDownloadUrl
-    || record.downloadUrl
-    || (record.id ? fileApi.downloadUrl(record.id) : '');
+  const candidates = [
+    record.directPreviewUrl,
+    record.directDownloadUrl,
+    record.url,
+    record.downloadUrl,
+  ];
+  return candidates.find(isPublicPreviewUrl) || '';
+}
+
+function recordAccessUrl(record?: Partial<FileRecord>) {
+  return record ? previewUrl(record) : '';
+}
+
+function isPublicPreviewUrl(value?: string) {
+  if (!value || isProtectedApiUrl(value)) return false;
+  return /^(https?:|data:|blob:)/.test(value) || value.startsWith('/');
+}
+
+function isProtectedApiUrl(value?: string) {
+  if (!value) return false;
+  if (value.startsWith('/api/')) return true;
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.pathname.startsWith('/api/');
+  } catch {
+    return false;
+  }
 }
 
 function fileToRecord(file: InternalUploadFile): FileRecord | null {
@@ -591,6 +647,10 @@ function safeJson(value: string) {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
+}
+
+.mango-upload-inner.is-trigger-hidden :deep(.el-upload) {
+  display: none;
 }
 
 .manual-submit {

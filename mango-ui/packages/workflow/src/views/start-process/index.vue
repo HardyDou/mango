@@ -50,7 +50,7 @@
       <div v-if="selectedDefinition" class="definition-summary">
         <span class="definition-name">{{ selectedDefinition.definitionName }}</span>
         <span class="definition-meta">{{ selectedDefinition.definitionKey }}</span>
-        <span v-if="selectedDefinition.groupName" class="definition-meta">{{ selectedDefinition.groupName }}</span>
+        <span v-if="selectedDefinition.categoryName" class="definition-meta">{{ selectedDefinition.categoryName }}</span>
         <span v-if="selectedDefinition.processDefinitionVersion" class="definition-meta">
           v{{ selectedDefinition.processDefinitionVersion }}
         </span>
@@ -154,15 +154,15 @@ const showDebugFormTools = import.meta.env.DEV;
 const debugPanels = ref<string[]>([]);
 
 const groupedDefinitions = computed(() => {
-  const groupMap = new Map<string, WorkflowDefinition[]>();
+  const categoryMap = new Map<string, WorkflowDefinition[]>();
   tableData.value.forEach(item => {
-    const groupName = item.groupName || '未分组';
-    if (!groupMap.has(groupName)) {
-      groupMap.set(groupName, []);
+    const categoryName = item.categoryName || '未分类';
+    if (!categoryMap.has(categoryName)) {
+      categoryMap.set(categoryName, []);
     }
-    groupMap.get(groupName)!.push(item);
+    categoryMap.get(categoryName)!.push(item);
   });
-  return Array.from(groupMap.entries()).map(([name, items]) => ({ name, items }));
+  return Array.from(categoryMap.entries()).map(([name, items]) => ({ name, items }));
 });
 
 async function loadData() {

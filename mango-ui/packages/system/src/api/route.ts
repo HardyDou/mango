@@ -3,9 +3,10 @@
  */
 
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 export interface SysRoute {
-  id?: number | string;
+  id?: ApiId;
   routeName: string;
   routePath: string;
   routeType: number;
@@ -39,19 +40,19 @@ export const routeApi = {
   tree: () => {
     return get<any[]>('/system/route/tree').then((list) => list.map(fromBackend));
   },
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<any>('/system/route/detail', { params: { id } }).then(fromBackend);
   },
   create: (data: SysRoute) => {
-    return post<number>('/system/route', toBackend(data));
+    return post<ApiId>('/system/route', toBackend(data));
   },
   update: (data: SysRoute) => {
     return put<boolean>('/system/route', toBackend(data));
   },
-  delete: (id: number) => {
+  delete: (id: ApiId) => {
     return del<boolean>('/system/route', { params: { id } });
   },
-  sort: (data: { id: number | string; sort: number }[]) => {
+  sort: (data: { id: ApiId; sort: number }[]) => {
     return put<boolean>('/system/route/sort', { ids: data.map((item) => item.id) });
   },
 };

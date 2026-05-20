@@ -24,7 +24,7 @@ test.describe('T1 组织岗位权限闭环', () => {
 
     await loginAsCompanyA(page);
 
-    await expect(page.getByText('协同办公')).toHaveCount(0);
+    await expect(page.getByText('审批中心')).toHaveCount(0);
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('菜单管理')).toHaveCount(0);

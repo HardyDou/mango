@@ -3,9 +3,10 @@
  */
 
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 export interface SysConfig {
-  id?: number;
+  id?: ApiId;
   configKey: string;
   configValue: string;
   configGroup: string;
@@ -37,16 +38,16 @@ export const configApi = {
     return get<any[]>('/system/config/list', { params: toBackendQuery(params) })
       .then((list) => toPageResult(list.map(fromBackend), params));
   },
-  detail: (id: number) => {
+  detail: (id: ApiId) => {
     return get<any>('/system/config/detail', { params: { id } }).then(fromBackend);
   },
   create: (data: SysConfig) => {
-    return post<number>('/system/config', toBackend(data));
+    return post<ApiId>('/system/config', toBackend(data));
   },
   update: (data: SysConfig) => {
     return put<boolean>('/system/config', toBackend(data));
   },
-  delete: (id: number) => {
+  delete: (id: ApiId) => {
     return del<boolean>('/system/config', { params: { id } });
   },
   group: (group: string) => {

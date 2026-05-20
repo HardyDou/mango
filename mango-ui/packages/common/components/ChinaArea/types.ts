@@ -2,13 +2,15 @@
  * ChinaArea Component Types
  */
 
+import type { ApiId } from '@mango/api-schema';
+
 export interface AreaNode {
   /** 数据库ID */
-  id: number;
+  id: ApiId;
   /** 名称 */
   name: string;
   /** 父节点ID，0表示根节点 */
-  parentId: number;
+  parentId: ApiId;
   /** 层级: 1-省, 2-市, 3-区/县, 4-街道 */
   level?: number;
   /** 是否热门: 1-是, 0-否 */
@@ -21,7 +23,7 @@ export interface AreaNode {
 
 export interface ChinaAreaProps {
   /** v-model binding - selected area id list */
-  modelValue?: number[];
+  modelValue?: ApiId[];
   /** Placeholder text */
   placeholder?: string;
   /** Linkage level: 3=province/city/district, 4=province/city/district/street */
@@ -43,17 +45,17 @@ export interface ChinaAreaProps {
 }
 
 export interface ChinaAreaEmits {
-  (e: 'update:modelValue', value: number[]): void;
-  (e: 'change', value: number[]): void;
+  (e: 'update:modelValue', value: ApiId[]): void;
+  (e: 'change', value: ApiId[]): void;
 }
 
 export interface ChinaAreaExpose {
   /** Get current selected area ids */
-  getValue(): number[];
+  getValue(): ApiId[];
   /** Clear selection */
   clear(): void;
   /** Clear node cache to force reload */
-  clearNodeCache(parentId: number): void;
+  clearNodeCache(parentId: ApiId): void;
 }
 
 export type ChinaAreaInstance = InstanceType<typeof import('./index.vue').default>;

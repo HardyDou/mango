@@ -60,6 +60,27 @@ public class IdentityUserVO {
     @Schema(description = "主组织ID")
     private Long primaryOrgId;
 
+    @Schema(description = "当前查询组织下的成员组织关系ID")
+    private Long orgRelationId;
+
+    @Schema(description = "当前查询组织ID")
+    private Long orgId;
+
+    @Schema(description = "当前查询组织下的岗位ID")
+    private Long postId;
+
+    @Schema(description = "当前查询组织下的岗位名称")
+    private String postName;
+
+    @Schema(description = "当前查询组织下的岗位编码")
+    private String postCode;
+
+    @Schema(description = "当前查询组织下是否为主组织")
+    private Boolean primaryOrgFlag;
+
+    @Schema(description = "当前查询组织下是否为组织主管")
+    private Boolean orgLeaderFlag;
+
     @Schema(description = "机构ID")
     private String tenantId;
 

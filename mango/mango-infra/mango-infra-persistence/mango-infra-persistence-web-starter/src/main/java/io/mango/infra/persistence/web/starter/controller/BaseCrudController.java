@@ -1,11 +1,11 @@
 package io.mango.infra.persistence.web.starter.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.infra.persistence.api.crud.BatchDeleteCommand;
 import io.mango.infra.persistence.api.crud.DeleteCommand;
 import io.mango.infra.persistence.api.crud.MangoCrudService;
 import io.mango.infra.persistence.api.query.PersistencePageResult;
+import io.mango.infra.web.util.JacksonUtils;
 import io.mango.infra.persistence.web.starter.excel.ExcelExport;
 import io.mango.infra.persistence.web.starter.excel.ExcelExportContext;
 import io.mango.infra.persistence.web.starter.excel.ExcelImport;
@@ -57,8 +57,6 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
 
     @Autowired(required = false)
     private Validator validator;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     protected BaseCrudController(S service) {
         this.service = service;
@@ -186,7 +184,7 @@ public abstract class BaseCrudController<S extends MangoCrudService, C, U, Q> {
         if (targetType == null || Object.class.equals(targetType) || value == null || targetType.isInstance(value)) {
             return value;
         }
-        return objectMapper.convertValue(value, targetType);
+        return JacksonUtils.convertValue(value, targetType);
     }
 
     private ExcelExportContext excelExportContext(String fallbackFileName) {

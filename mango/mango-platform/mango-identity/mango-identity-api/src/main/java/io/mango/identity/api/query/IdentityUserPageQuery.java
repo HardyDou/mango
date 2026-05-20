@@ -39,4 +39,7 @@ public class IdentityUserPageQuery extends PageQuery {
 
     @Schema(description = "归属主体ID")
     private Long partyId;
+
+    @Schema(description = "组织ID。传入后只查询该组织下的成员")
+    private Long orgId;
 }

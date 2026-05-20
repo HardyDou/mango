@@ -117,6 +117,7 @@
 <script setup lang="ts" name="RbacMenuPackage">
 import { nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import type { ApiId } from '@mango/api-schema';
 import DictSelect from '@mango/common/components/DictSelect/index.vue';
 import DictTag from '@mango/common/components/DictTag/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
@@ -194,14 +195,14 @@ function resetForm() {
   });
 }
 
-async function applyCheckedMenuIds(menuIds: number[]) {
+async function applyCheckedMenuIds(menuIds: ApiId[]) {
   await nextTick();
   treeRef.value?.setCheckedKeys(menuIds, false);
   previewTreeRef.value?.setCheckedKeys(menuIds, false);
 }
 
 function collectCheckedKeys(tree: any) {
-  return Array.from(new Set([...(tree?.getCheckedKeys?.() || []), ...(tree?.getHalfCheckedKeys?.() || [])])) as number[];
+  return Array.from(new Set([...(tree?.getCheckedKeys?.() || []), ...(tree?.getHalfCheckedKeys?.() || [])].map(String))) as ApiId[];
 }
 
 function handleTreeCheck() {

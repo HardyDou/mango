@@ -78,7 +78,7 @@
           min-width="180"
         >
           <template #default="{ row }">
-            <span>{{ packageNameMap.get(row.packageId || 0) || '未绑定套餐' }}</span>
+            <span>{{ packageNameMap.get(row.packageId || '0') || '未绑定套餐' }}</span>
           </template>
         </el-table-column>
         <el-table-column
@@ -313,6 +313,7 @@ import { formatDate } from '@mango/common/utils/formatTime';
 import { tenantApi, type SysTenant } from '../../api/tenant';
 import { menuApi, type SysMenuVO } from '@mango/rbac';
 import { menuPackageApi, type MenuPackageVO } from '@mango/rbac';
+import type { ApiId } from '@mango/api-schema';
 
 const { options: statusOptions } = useDict('institution_status');
 
@@ -329,7 +330,7 @@ const total = ref(0);
 const packageOptions = ref<MenuPackageVO[]>([]);
 const packageMenuTree = ref<SysMenuVO[]>([]);
 const packageTreeRef = ref();
-const packageNameMap = computed(() => new Map(packageOptions.value.map(item => [item.packageId || 0, item.packageName])));
+const packageNameMap = computed(() => new Map(packageOptions.value.map(item => [item.packageId || '0', item.packageName])));
 const treeProps = {
   label: 'menuName',
   children: 'children',
@@ -370,7 +371,7 @@ async function loadPackageMenuTree() {
   packageMenuTree.value = await menuApi.getMenuTree({ appCode: 'internal-admin', fmt: 'tree' });
 }
 
-async function applyPackagePreview(packageId?: number) {
+async function applyPackagePreview(packageId?: ApiId) {
   await nextTick();
   packageTreeRef.value?.setCheckedKeys([], false);
   if (!packageId) return;
@@ -425,7 +426,7 @@ async function handleEdit(row: SysTenant) {
   await applyPackagePreview(row.packageId);
 }
 
-async function handlePackageChange(packageId?: number) {
+async function handlePackageChange(packageId?: ApiId) {
   await applyPackagePreview(packageId);
 }
 

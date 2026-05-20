@@ -38,17 +38,24 @@
           >
             <el-form-item class="basic-field full workflow-icon-item" label="流程图标">
               <div class="workflow-icon-field">
-                <div class="workflow-icon-uploader" :class="{ empty: !workflowIconPreviewUrl(definitionForm.icon), filled: Boolean(workflowIconPreviewUrl(definitionForm.icon)) }">
-                  <ImageUpload v-model="definitionForm.icon" :limit="1" :multiple="false" class="workflow-icon-upload-control" />
-                  <div v-if="isWorkflowPresetIcon(definitionForm.icon)" class="workflow-icon-overlay workflow-icon-legacy-preview">
-                    <el-icon><component :is="workflowIconComponent(definitionForm.icon)" /></el-icon>
-                    <span>{{ workflowIconLabel(definitionForm.icon) }}</span>
-                  </div>
-                  <div v-else-if="!definitionForm.icon" class="workflow-icon-overlay workflow-icon-empty-state">
-                    <el-icon><PictureFilled /></el-icon>
-                    <span>图标</span>
-                  </div>
+                <div v-if="isWorkflowPresetIcon(definitionForm.icon)" class="workflow-icon-legacy-preview">
+                  <el-icon><component :is="workflowIconComponent(definitionForm.icon)" /></el-icon>
+                  <span>{{ workflowIconLabel(definitionForm.icon) }}</span>
+                  <el-button link type="primary" @click="clearWorkflowIcon">更换图片</el-button>
                 </div>
+                <MUpload
+                  v-else
+                  v-model="definitionForm.icon"
+                  class="workflow-icon-upload-control"
+                  fmt="image"
+                  display="thumbnail"
+                  :count="1"
+                  size="2MB"
+                  value-type="url"
+                  purpose="workflow-icon"
+                  access-level="PUBLIC"
+                  button-text="上传图标"
+                />
               </div>
             </el-form-item>
             <el-form-item class="basic-field full" prop="definitionKey">
@@ -65,9 +72,9 @@
             <el-form-item class="basic-field full" label="流程名称" prop="definitionName">
               <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
             </el-form-item>
-            <el-form-item class="basic-field full" label="流程分组" prop="groupId">
-              <el-select v-model="definitionForm.groupId" filterable placeholder="请选择流程分组">
-                <el-option v-for="item in groups" :key="item.id" :label="item.groupName" :value="item.id" />
+            <el-form-item class="basic-field full" label="流程分类" prop="categoryId">
+              <el-select v-model="definitionForm.categoryId" filterable placeholder="请选择流程分类">
+                <el-option v-for="item in categories" :key="item.id" :label="item.categoryName" :value="item.id" />
               </el-select>
             </el-form-item>
             <el-form-item class="basic-field full" prop="adminUsers">
@@ -86,7 +93,7 @@
             </el-form-item>
           </el-form>
           <div class="pane-help">
-            先选择分组再定义流程；发布、停用等状态由列表操作和发布动作维护。
+            先选择分类再定义流程；发布、停用等状态由列表操作和发布动作维护。
           </div>
         </section>
 
@@ -247,7 +254,7 @@
               <WorkflowDesignerCanvas
                 :root="designerRoot"
                 :catalog="nodeCatalog"
-                :variable-groups="workflowVariableGroups"
+                :variable-categories="workflowVariableGroups"
                 @select="selectNode"
                 @changed="syncDesignerJson"
                 @blank="clearSelectedNode"
@@ -346,8 +353,8 @@
                       <template v-else-if="selectedNode.nodeType === 'EXCLUSIVE_BRANCH'">
                           <WorkflowNodeConditionConfig
                             :node="selectedNode"
-                            :groups="conditionGroups"
-                            :variable-groups="workflowVariableGroups"
+                            :categories="conditionGroups"
+                            :variable-categories="workflowVariableGroups"
                             :mode="conditionEditMode(selectedNode)"
                             :user-options="approvalUserOptions"
                             :role-options="approvalRoleOptions"
@@ -461,35 +468,70 @@
       </el-dialog>
     </div>
 
-    <el-card v-else class="workflow-list-card">
-      <div class="workflow-section-switch">
-        <button
-          class="workflow-section-tab"
-          :class="{ active: activeTab === 'definitions' }"
-          type="button"
-          @click="activeTab = 'definitions'"
-        >
-          流程定义
-        </button>
-        <button
-          class="workflow-section-tab"
-          :class="{ active: activeTab === 'groups' }"
-          type="button"
-          @click="activeTab = 'groups'"
-        >
-          流程分组
-        </button>
-      </div>
+    <div v-else class="workflow-manage-layout">
+      <aside class="workflow-category-panel">
+        <div class="category-panel-head">
+          <div>
+            <h3>流程分类</h3>
+            <p>按业务域组织流程定义</p>
+          </div>
+          <el-button :icon="Plus" link type="primary" @click="openCategoryForm()">新增</el-button>
+        </div>
+        <div class="category-panel-tools">
+          <el-button :icon="Refresh" text @click="refreshCategories">刷新分类</el-button>
+        </div>
+        <div v-loading="categoryLoading" class="workflow-category-list">
+          <button
+            class="workflow-category-item"
+            :class="{ active: !definitionQuery.categoryId }"
+            type="button"
+            @click="selectDefinitionCategory('')"
+          >
+            <span class="workflow-category-main">
+              <span class="workflow-category-name">全部流程</span>
+              <span class="workflow-category-code">ALL</span>
+            </span>
+            <el-tag size="small" type="info">{{ definitionTotal }}</el-tag>
+          </button>
+          <button
+            v-for="item in categories"
+            :key="item.id"
+            class="workflow-category-item"
+            :class="{ active: definitionQuery.categoryId === item.id }"
+            type="button"
+            @click="selectDefinitionCategory(item.id || '')"
+          >
+            <span class="workflow-category-main">
+              <span class="workflow-category-name">{{ item.categoryName }}</span>
+              <span class="workflow-category-code">{{ item.categoryCode }}</span>
+            </span>
+            <span class="workflow-category-actions" @click.stop>
+              <el-tag :type="item.status === 1 ? 'success' : 'info'" size="small">
+                {{ item.status === 1 ? '启用' : '停用' }}
+              </el-tag>
+              <el-button link type="primary" @click="openCategoryForm(item)">编辑</el-button>
+              <el-button link type="danger" @click="deleteCategory(item)">删除</el-button>
+            </span>
+          </button>
+          <el-empty v-if="!categoryLoading && categories.length === 0" :image-size="88" description="暂无流程分类" />
+        </div>
+      </aside>
 
-      <template v-if="activeTab === 'definitions'">
+      <section class="workflow-definition-panel">
+        <div class="definition-table-head">
+          <div>
+            <h3>{{ currentDefinitionCategoryName }}</h3>
+            <p>流程导入后先生成草稿，确认设计和表单后再发布使用。</p>
+          </div>
+          <div class="definition-head-actions">
+            <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
+            <el-button :icon="Download" type="success" @click="openDefinitionImport">导入流程</el-button>
+          </div>
+        </div>
+
         <el-form :inline="true" :model="definitionQuery" class="search-form">
           <el-form-item label="关键字">
             <el-input v-model="definitionQuery.keyword" clearable placeholder="流程名称/编码" />
-          </el-form-item>
-          <el-form-item label="流程分组">
-            <el-select v-model="definitionQuery.groupId" clearable filterable placeholder="全部分组">
-              <el-option v-for="item in groups" :key="item.id" :label="item.groupName" :value="item.id!" />
-            </el-select>
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="definitionQuery.status" clearable placeholder="全部状态">
@@ -502,14 +544,10 @@
           </el-form-item>
         </el-form>
 
-        <div class="action-toolbar">
-          <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
-        </div>
-
         <el-table v-loading="definitionLoading" :data="definitions" stripe>
           <el-table-column label="流程名称" min-width="180" prop="definitionName" />
           <el-table-column label="流程编码" min-width="180" prop="definitionKey" />
-          <el-table-column label="分组" min-width="120" prop="groupName" />
+          <el-table-column label="分类" min-width="120" prop="categoryName" />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="workflowStatusType(row.status)">{{ workflowStatusLabel(row.status) }}</el-tag>
@@ -532,6 +570,7 @@
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="version">版本</el-dropdown-item>
+                      <el-dropdown-item command="template">转为模板</el-dropdown-item>
                       <el-dropdown-item command="status">
                         {{ row.status === 'DISABLED' ? '启用' : '停用' }}
                       </el-dropdown-item>
@@ -555,60 +594,8 @@
             @size-change="loadDefinitions"
           />
         </div>
-      </template>
-
-      <template v-else>
-        <el-form :inline="true" :model="groupQuery" class="search-form">
-          <el-form-item label="关键字">
-            <el-input v-model="groupQuery.keyword" clearable placeholder="分组名称/编码" />
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="groupQuery.status" clearable placeholder="全部状态">
-              <el-option label="启用" :value="1" />
-              <el-option label="停用" :value="0" />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button :icon="Search" type="primary" @click="loadGroupsPage">查询</el-button>
-            <el-button :icon="Refresh" @click="resetGroupQuery">重置</el-button>
-          </el-form-item>
-        </el-form>
-
-        <div class="action-toolbar">
-          <el-button :icon="Plus" type="primary" @click="openGroupForm()">新增分组</el-button>
-        </div>
-
-        <el-table v-loading="groupLoading" :data="groupRows" stripe>
-          <el-table-column label="分组名称" min-width="160" prop="groupName" />
-          <el-table-column label="分组编码" min-width="160" prop="groupCode" />
-          <el-table-column label="排序" width="90" prop="sort" />
-          <el-table-column label="状态" width="90">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="备注" min-width="180" prop="remark" show-overflow-tooltip />
-          <el-table-column fixed="right" label="操作" width="150">
-            <template #default="{ row }">
-              <el-button link type="primary" @click="openGroupForm(row)">编辑</el-button>
-              <el-button link type="danger" @click="deleteGroup(row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="pagination-row">
-          <el-pagination
-            v-model:current-page="groupQuery.pageNum"
-            v-model:page-size="groupQuery.pageSize"
-            :page-sizes="[10, 20, 50]"
-            :total="groupTotal"
-            layout="total, sizes, prev, pager, next, jumper"
-            @current-change="loadGroupsPage"
-            @size-change="loadGroupsPage"
-          />
-        </div>
-      </template>
-    </el-card>
+      </section>
+    </div>
 
     <el-drawer v-model="versionDrawer" title="发布版本" size="720px">
       <el-table v-loading="versionLoading" :data="versions" border>
@@ -625,27 +612,118 @@
       </el-collapse>
     </el-drawer>
 
-    <el-dialog v-model="groupDialog" :title="groupForm.id ? '编辑流程分组' : '新增流程分组'" width="520px">
-      <el-form ref="groupFormRef" :model="groupForm" :rules="groupRules" label-width="100px">
-        <el-form-item label="分组名称" prop="groupName">
-          <el-input v-model="groupForm.groupName" />
+    <el-dialog v-model="categoryDialog" :title="categoryForm.id ? '编辑流程分类' : '新增流程分类'" width="520px">
+      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px">
+        <el-form-item label="分类名称" prop="categoryName">
+          <el-input v-model="categoryForm.categoryName" />
         </el-form-item>
-        <el-form-item label="分组编码" prop="groupCode">
-          <el-input v-model="groupForm.groupCode" />
+        <el-form-item label="分类编码" prop="categoryCode">
+          <el-input v-model="categoryForm.categoryCode" />
         </el-form-item>
         <el-form-item label="排序">
-          <el-input-number v-model="groupForm.sort" :min="0" />
+          <el-input-number v-model="categoryForm.sort" :min="0" />
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="groupEnabled" active-text="启用" inactive-text="停用" />
+          <el-switch v-model="categoryEnabled" active-text="启用" inactive-text="停用" />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="groupForm.remark" :rows="3" type="textarea" />
+          <el-input v-model="categoryForm.remark" :rows="3" type="textarea" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="groupDialog = false">取消</el-button>
-        <el-button :loading="saving" type="primary" @click="saveGroup">保存</el-button>
+        <el-button @click="categoryDialog = false">取消</el-button>
+        <el-button :loading="saving" type="primary" @click="saveCategory">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="templateDialog" title="流程转模板" width="560px">
+      <el-form ref="templateFormRef" :model="templateForm" :rules="templateRules" label-width="110px">
+        <el-form-item label="模板名称" prop="templateName">
+          <el-input v-model="templateForm.templateName" placeholder="请输入模板名称" />
+        </el-form-item>
+        <el-form-item label="模板编码" prop="templateCode">
+          <el-input v-model="templateForm.templateCode" placeholder="请输入模板编码" />
+        </el-form-item>
+        <el-form-item label="模板分类">
+          <el-select v-model="templateForm.templateCategoryId" clearable filterable placeholder="请选择模板分类">
+            <el-option v-for="item in templateCategories" :key="item.id" :label="item.categoryName" :value="item.id!" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="业务场景编码">
+          <el-input v-model="templateForm.categoryCode" placeholder="可选，用于按业务场景检索模板" />
+        </el-form-item>
+        <el-form-item label="业务场景名称">
+          <el-input v-model="templateForm.categoryName" placeholder="可选，用于按业务场景检索模板" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="templateForm.remark" :rows="3" type="textarea" />
+        </el-form-item>
+      </el-form>
+      <el-alert
+        class="template-rule"
+        title="模板是不可直接运行的流程资产。生成模板后如需使用，必须再导入为流程定义草稿。"
+        type="info"
+        :closable="false"
+        show-icon
+      />
+      <template #footer>
+        <el-button @click="templateDialog = false">取消</el-button>
+        <el-button :loading="saving" type="primary" @click="saveDefinitionAsTemplate">生成模板</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="definitionImportDialog" class="definition-import-dialog" title="导入流程" width="620px">
+      <el-form ref="definitionImportFormRef" :model="definitionImportForm" :rules="definitionImportRules" label-position="top">
+        <el-form-item label="目标分类" prop="categoryId">
+          <el-select v-model="definitionImportForm.categoryId" filterable placeholder="请选择导入后的流程分类">
+            <el-option v-for="item in categories" :key="item.id" :label="item.categoryName" :value="item.id!" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="导入方式">
+          <el-radio-group v-model="definitionImportMode">
+            <el-radio label="SELECTED">选择模板</el-radio>
+            <el-radio label="CATEGORY">导入分类下全部模板</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="模板分类" prop="templateCategoryId">
+          <el-select
+            v-model="definitionImportForm.templateCategoryId"
+            clearable
+            filterable
+            :placeholder="definitionImportMode === 'CATEGORY' ? '请选择模板分类' : '全部模板分类'"
+            @change="handleImportTemplateCategoryChange"
+          >
+            <el-option v-for="item in templateCategories" :key="item.id" :label="item.categoryName" :value="item.id!" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="definitionImportMode === 'SELECTED'" class="definition-import-template-item" label="流程模板" prop="templateIds">
+          <div v-loading="importTemplateLoading" class="definition-import-template-list">
+            <el-checkbox-group v-model="definitionImportForm.templateIds" class="definition-import-template-checks">
+              <el-checkbox
+                v-for="item in importTemplates"
+                :key="item.id"
+                :label="item.id!"
+                class="definition-import-template-option"
+                :disabled="!item.id"
+              >
+                <span class="definition-import-template-name">{{ item.templateName }}</span>
+                <span class="definition-import-template-code">{{ item.templateCode }}</span>
+              </el-checkbox>
+            </el-checkbox-group>
+            <el-empty v-if="!importTemplateLoading && importTemplates.length === 0" :image-size="72" description="暂无可导入模板" />
+          </div>
+        </el-form-item>
+        <el-alert
+          class="template-rule"
+          title="导入会生成当前机构自己的流程草稿；目标分类下如已存在同流程编码，后端会整批拒绝导入。"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+      </el-form>
+      <template #footer>
+        <el-button @click="definitionImportDialog = false">取消</el-button>
+        <el-button :loading="saving" type="primary" @click="submitDefinitionImport">确认导入</el-button>
       </template>
     </el-dialog>
 
@@ -655,12 +733,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { ArrowDown, Bell, Box, Cloudy, Connection, ForkSpoon, PictureFilled, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
+import { ArrowDown, Bell, Box, Cloudy, Connection, Download, ForkSpoon, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
 import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designer';
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
 import 'form-create-designer/src/style/icon.css';
-import { ImageUpload, UserSelector, get } from '@mango/common';
+import { UserSelector, get } from '@mango/common';
+import { MUpload } from '@mango/file';
 import WorkflowDesignerCanvas from './components/workflow-designer/WorkflowDesignerCanvas.vue';
 import WorkflowNodeAdvancedConfig from './components/workflow-designer/WorkflowNodeAdvancedConfig.vue';
 import WorkflowNodeApprovalConfig from './components/workflow-designer/WorkflowNodeApprovalConfig.vue';
@@ -696,10 +775,12 @@ import {
   type WorkflowDesignerNode,
   type WorkflowEventNotifyConfig,
   type WorkflowFormPermission,
-  type WorkflowGroup,
+  type WorkflowCategory,
   type WorkflowId,
   type WorkflowNodeCatalog,
   type WorkflowStatus,
+  type WorkflowTemplate,
+  type WorkflowTemplateCategory,
 } from '../../api/workflow';
 
 type WorkflowFormMode = 'DYNAMIC' | 'CUSTOM';
@@ -1115,33 +1196,36 @@ const defaultWorkflowFormRules = (): FcRule[] => [
   },
 ];
 
-const activeTab = ref('definitions');
 const definitionLoading = ref(false);
-const groupLoading = ref(false);
+const categoryLoading = ref(false);
 const saving = ref(false);
 const versionLoading = ref(false);
+const importTemplateLoading = ref(false);
 
-const groups = ref<WorkflowGroup[]>([]);
-const groupRows = ref<WorkflowGroup[]>([]);
+const categories = ref<WorkflowCategory[]>([]);
 const definitions = ref<WorkflowDefinition[]>([]);
+const importTemplates = ref<WorkflowTemplate[]>([]);
+const templateCategories = ref<WorkflowTemplateCategory[]>([]);
 const nodeCatalog = ref<WorkflowNodeCatalog[]>([]);
 const versions = ref<WorkflowDefinitionVersion[]>([]);
 const currentVersionXml = ref('');
 const definitionTotal = ref(0);
-const groupTotal = ref(0);
 
-const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', groupId: '' as WorkflowId | '', status: '' });
-const groupQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', status: '' as number | '' });
+const definitionQuery = reactive({ pageNum: 1, pageSize: 10, keyword: '', categoryId: '' as WorkflowId | '', status: '' });
 
 const designerMode = ref(false);
 const publishing = ref(false);
 const validateDialogShow = ref(false);
 const validateFlowStep = ref(0);
 const validateErrMsg = ref<string[]>([]);
-const groupDialog = ref(false);
+const categoryDialog = ref(false);
+const templateDialog = ref(false);
+const definitionImportDialog = ref(false);
 const versionDrawer = ref(false);
 const definitionFormRef = ref<FormInstance>();
-const groupFormRef = ref<FormInstance>();
+const categoryFormRef = ref<FormInstance>();
+const templateFormRef = ref<FormInstance>();
+const definitionImportFormRef = ref<FormInstance>();
 const formDesignerRef = ref<InstanceType<typeof FcDesigner>>();
 const designerRoot = ref<WorkflowDesignerNode>(parseDesignerJson(defaultDesignerJson()));
 const selectedNode = ref<WorkflowDesignerNode>();
@@ -1154,13 +1238,13 @@ const workflowFormRules = ref<FcRule[]>(defaultWorkflowFormRules());
 const customFormFields = ref<CustomFormField[]>([]);
 const customFormConfig = reactive<CustomFormConfig>({ submitPath: '', viewPath: '' });
 const designerSteps = [
-  { key: 'basic', title: '基础信息', description: '名称、编码、分组' },
+  { key: 'basic', title: '基础信息', description: '名称、编码、分类' },
   { key: 'form', title: '表单信息', description: '表单模式与变量' },
   { key: 'process', title: '流程设计', description: '节点、分支、执行动作' },
 ];
 
 const definitionForm = reactive<WorkflowDefinition>({
-  groupId: '',
+  categoryId: '',
   adminUsers: [],
   icon: '',
   definitionName: '',
@@ -1169,16 +1253,40 @@ const definitionForm = reactive<WorkflowDefinition>({
   status: 'DRAFT',
 });
 
-const groupForm = reactive<WorkflowGroup>({
-  groupName: '',
-  groupCode: '',
+const categoryForm = reactive<WorkflowCategory>({
+  categoryName: '',
+  categoryCode: '',
   sort: 0,
   status: 1,
 });
 
-const groupEnabled = computed({
-  get: () => groupForm.status === 1,
-  set: value => { groupForm.status = value ? 1 : 0; },
+const templateForm = reactive({
+  definitionId: '' as WorkflowId | '',
+  templateName: '',
+  templateCode: '',
+  templateCategoryId: '' as WorkflowId | '',
+  categoryCode: '',
+  categoryName: '',
+  remark: '',
+});
+
+const definitionImportMode = ref<'SELECTED' | 'CATEGORY'>('SELECTED');
+const definitionImportForm = reactive({
+  categoryId: '' as WorkflowId | '',
+  templateCategoryId: '' as WorkflowId | '',
+  templateIds: [] as WorkflowId[],
+});
+
+const categoryEnabled = computed({
+  get: () => categoryForm.status === 1,
+  set: value => { categoryForm.status = value ? 1 : 0; },
+});
+
+const currentDefinitionCategoryName = computed(() => {
+  if (!definitionQuery.categoryId) {
+    return '全部流程定义';
+  }
+  return categories.value.find(item => item.id === definitionQuery.categoryId)?.categoryName || '流程定义';
 });
 
 const workflowApplicantVariableOptions: WorkflowVariableOption[] = [
@@ -1279,35 +1387,68 @@ const approvalTargetLoading = reactive({
   dicts: false,
 });
 
-function validateDefinitionGroup(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
-  const groupId = String(value || '').trim();
-  if (!groupId) {
-    callback(new Error('请选择流程分组'));
+function validateDefinitionCategory(_rule: unknown, value: unknown, callback: (error?: Error) => void) {
+  const categoryId = String(value || '').trim();
+  if (!categoryId) {
+    callback(new Error('请选择流程分类'));
     return;
   }
-  if (!groups.value.some(item => String(item.id) === groupId)) {
-    callback(new Error('流程分组不存在或已停用，请重新选择'));
+  if (!categories.value.some(item => String(item.id) === categoryId)) {
+    callback(new Error('流程分类不存在或已停用，请重新选择'));
     return;
   }
   callback();
 }
 
 const definitionRules: FormRules = {
-  groupId: [{ validator: validateDefinitionGroup, trigger: 'change' }],
+  categoryId: [{ validator: validateDefinitionCategory, trigger: 'change' }],
   definitionName: [{ required: true, message: '请输入流程名称', trigger: 'blur' }],
   definitionKey: [{ required: true, message: '请输入流程编码', trigger: 'blur' }],
   formCode: [{ required: true, message: '请输入表单编码', trigger: 'blur' }],
   designerJson: [{ required: true, message: '请设计流程节点', trigger: 'blur' }],
 };
 
-const groupRules: FormRules = {
-  groupName: [{ required: true, message: '请输入分组名称', trigger: 'blur' }],
-  groupCode: [{ required: true, message: '请输入分组编码', trigger: 'blur' }],
+const categoryRules: FormRules = {
+  categoryName: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
+  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
+};
+
+const templateRules: FormRules = {
+  templateName: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
+  templateCode: [{ required: true, message: '请输入模板编码', trigger: 'blur' }],
+};
+
+const definitionImportRules: FormRules = {
+  categoryId: [{ required: true, message: '请选择目标流程分类', trigger: 'change' }],
+  templateCategoryId: [
+    {
+      validator: (_rule, value, callback) => {
+        if (definitionImportMode.value === 'CATEGORY' && !value) {
+          callback(new Error('请选择模板分类'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'change',
+    },
+  ],
+  templateIds: [
+    {
+      validator: (_rule, value, callback) => {
+        if (definitionImportMode.value === 'SELECTED' && (!Array.isArray(value) || value.length === 0)) {
+          callback(new Error('请选择要导入的流程模板'));
+          return;
+        }
+        callback();
+      },
+      trigger: 'change',
+    },
+  ],
 };
 
 onMounted(async () => {
-  await Promise.all([loadGroupOptions(), loadNodeCatalog()]);
-  await Promise.all([loadDefinitions(), loadGroupsPage()]);
+  await Promise.all([loadCategoryOptions(), loadNodeCatalog()]);
+  await loadDefinitions();
 });
 
 async function registerWorkflowBusinessFormComponents() {
@@ -1341,8 +1482,12 @@ async function loadNodeCatalog() {
   nodeCatalog.value = await workflowApi.nodeCatalog();
 }
 
-async function loadGroupOptions() {
-  groups.value = await workflowApi.groupsList(1);
+async function loadCategoryOptions() {
+  categories.value = await workflowApi.categoriesList(1);
+}
+
+async function loadTemplateCategoryOptions() {
+  templateCategories.value = await workflowApi.templateCategoriesList(1);
 }
 
 async function loadDefinitions() {
@@ -1356,32 +1501,31 @@ async function loadDefinitions() {
   }
 }
 
-async function loadGroupsPage() {
-  groupLoading.value = true;
-  try {
-    const page = await workflowApi.groupsPage(groupQuery as any);
-    groupRows.value = page.list;
-    groupTotal.value = page.total;
-  } finally {
-    groupLoading.value = false;
-  }
-}
-
 function resetDefinitionQuery() {
-  Object.assign(definitionQuery, { pageNum: 1, pageSize: 10, keyword: '', groupId: '', status: '' });
+  Object.assign(definitionQuery, { pageNum: 1, pageSize: 10, keyword: '', categoryId: '', status: '' });
   loadDefinitions();
 }
 
-function resetGroupQuery() {
-  Object.assign(groupQuery, { pageNum: 1, pageSize: 10, keyword: '', status: '' });
-  loadGroupsPage();
+async function refreshCategories() {
+  categoryLoading.value = true;
+  try {
+    await loadCategoryOptions();
+  } finally {
+    categoryLoading.value = false;
+  }
+}
+
+function selectDefinitionCategory(categoryId: WorkflowId | '') {
+  definitionQuery.categoryId = categoryId;
+  definitionQuery.pageNum = 1;
+  loadDefinitions();
 }
 
 async function openDefinitionForm(row?: WorkflowDefinition) {
-  await Promise.all([loadGroupOptions(), loadNodeCatalog()]);
+  await Promise.all([loadCategoryOptions(), loadNodeCatalog()]);
   Object.assign(definitionForm, row || {
     id: undefined,
-    groupId: groups.value[0]?.id || '',
+    categoryId: categories.value[0]?.id || '',
     adminUsers: [],
     icon: '',
     definitionName: '',
@@ -1437,7 +1581,7 @@ async function persistDefinition() {
     } else {
       definitionForm.id = await workflowApi.createDefinition(definitionForm);
     }
-    await Promise.all([loadDefinitions(), loadGroupOptions()]);
+    await Promise.all([loadDefinitions(), loadCategoryOptions()]);
     return definitionForm.id;
   } finally {
     saving.value = false;
@@ -1515,6 +1659,10 @@ async function deployDefinition(row: WorkflowDefinition) {
 function handleDefinitionRowCommand(command: string | number | object, row: WorkflowDefinition) {
   if (command === 'version') {
     openVersionDrawer(row);
+    return;
+  }
+  if (command === 'template') {
+    openTemplateForm(row);
     return;
   }
   if (command === 'status') {
@@ -1599,33 +1747,124 @@ async function deleteDefinition(row: WorkflowDefinition) {
   await loadDefinitions();
 }
 
-function openGroupForm(row?: WorkflowGroup) {
-  Object.assign(groupForm, row || { id: undefined, groupName: '', groupCode: '', sort: 0, status: 1, remark: '' });
-  groupDialog.value = true;
+async function openTemplateForm(row: WorkflowDefinition) {
+  await loadTemplateCategoryOptions();
+  Object.assign(templateForm, {
+    definitionId: row.id || '',
+    templateName: row.definitionName,
+    templateCode: row.definitionKey,
+    templateCategoryId: templateCategories.value[0]?.id || '',
+    categoryCode: row.categoryName ? String(row.categoryName) : '',
+    categoryName: row.categoryName || '',
+    remark: row.remark || '',
+  });
+  templateDialog.value = true;
 }
 
-async function saveGroup() {
-  await groupFormRef.value?.validate();
+async function saveDefinitionAsTemplate() {
+  await templateFormRef.value?.validate();
   saving.value = true;
   try {
-    if (groupForm.id) {
-      await workflowApi.updateGroup(groupForm);
-    } else {
-      await workflowApi.createGroup(groupForm);
-    }
-    ElMessage.success('保存成功');
-    groupDialog.value = false;
-    await Promise.all([loadGroupsPage(), loadGroupOptions()]);
+    await workflowApi.createTemplateFromDefinition({
+      definitionId: templateForm.definitionId,
+      templateName: templateForm.templateName,
+      templateCode: templateForm.templateCode,
+      templateCategoryId: templateForm.templateCategoryId || undefined,
+      categoryCode: templateForm.categoryCode || undefined,
+      categoryName: templateForm.categoryName || undefined,
+      remark: templateForm.remark || undefined,
+    });
+    ElMessage.success('模板已生成');
+    templateDialog.value = false;
   } finally {
     saving.value = false;
   }
 }
 
-async function deleteGroup(row: WorkflowGroup) {
-  await ElMessageBox.confirm(`确认删除分组「${row.groupName}」？`, '删除分组', { type: 'warning' });
-  await workflowApi.deleteGroup(row.id!);
+function openCategoryForm(row?: WorkflowCategory) {
+  Object.assign(categoryForm, row || { id: undefined, categoryName: '', categoryCode: '', sort: 0, status: 1, remark: '' });
+  categoryDialog.value = true;
+}
+
+async function saveCategory() {
+  await categoryFormRef.value?.validate();
+  saving.value = true;
+  try {
+    if (categoryForm.id) {
+      await workflowApi.updateCategory(categoryForm);
+    } else {
+      await workflowApi.createCategory(categoryForm);
+    }
+    ElMessage.success('保存成功');
+    categoryDialog.value = false;
+    await Promise.all([loadCategoryOptions(), loadDefinitions()]);
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function deleteCategory(row: WorkflowCategory) {
+  await ElMessageBox.confirm(`确认删除分类「${row.categoryName}」？`, '删除分类', { type: 'warning' });
+  await workflowApi.deleteCategory(row.id!);
   ElMessage.success('删除成功');
-  await Promise.all([loadGroupsPage(), loadGroupOptions()]);
+  if (definitionQuery.categoryId === row.id) {
+    definitionQuery.categoryId = '';
+  }
+  await Promise.all([loadCategoryOptions(), loadDefinitions()]);
+}
+
+async function openDefinitionImport() {
+  await Promise.all([loadCategoryOptions(), loadTemplateCategoryOptions()]);
+  Object.assign(definitionImportForm, {
+    categoryId: definitionQuery.categoryId || categories.value[0]?.id || '',
+    templateCategoryId: '',
+    templateIds: [],
+  });
+  definitionImportMode.value = 'SELECTED';
+  definitionImportDialog.value = true;
+  await loadImportTemplates();
+}
+
+async function loadImportTemplates() {
+  importTemplateLoading.value = true;
+  try {
+    const page = await workflowApi.templatesPage({
+      pageNum: 1,
+      pageSize: 200,
+      status: 'ENABLED',
+      templateCategoryId: definitionImportForm.templateCategoryId,
+    });
+    importTemplates.value = page.list;
+    const availableIds = new Set(importTemplates.value.map(item => item.id).filter(Boolean));
+    definitionImportForm.templateIds = definitionImportForm.templateIds.filter(id => availableIds.has(id));
+  } finally {
+    importTemplateLoading.value = false;
+  }
+}
+
+function handleImportTemplateCategoryChange() {
+  loadImportTemplates();
+}
+
+async function submitDefinitionImport() {
+  await definitionImportFormRef.value?.validate();
+  saving.value = true;
+  try {
+    const result = await workflowApi.importTemplates({
+      categoryId: definitionImportForm.categoryId,
+      templateCategoryId: definitionImportMode.value === 'CATEGORY'
+        ? definitionImportForm.templateCategoryId || undefined
+        : undefined,
+      templateIds: definitionImportMode.value === 'SELECTED' ? definitionImportForm.templateIds : undefined,
+    });
+    ElMessage.success(`导入成功 ${result.definitionIds.length} 个流程`);
+    definitionImportDialog.value = false;
+    definitionQuery.categoryId = definitionImportForm.categoryId;
+    definitionQuery.pageNum = 1;
+    await loadDefinitions();
+  } finally {
+    saving.value = false;
+  }
 }
 
 function nodeIcon(item: Partial<WorkflowNodeCatalog | WorkflowDesignerNode>) {
@@ -1648,11 +1887,8 @@ function workflowIconLabel(icon?: string) {
   return workflowIconOptions.find(item => item.value === icon)?.label || '流程图标';
 }
 
-function workflowIconPreviewUrl(icon?: string) {
-  if (!icon) {
-    return '';
-  }
-  return isWorkflowPresetIcon(icon) ? '' : icon;
+function clearWorkflowIcon() {
+  definitionForm.icon = '';
 }
 
 function loadWorkflowFormConfig(value?: string) {
@@ -2751,7 +2987,7 @@ function parseConditionToBuilder(expression: string) {
     conditionGroups.value = [createConditionGroup()];
     return;
   }
-  const groups = splitConditionTerms(inner).map((groupPart, groupIndex) => {
+  const categories = splitConditionTerms(inner).map((groupPart, groupIndex) => {
     const groupText = stripConditionWrapper(groupPart.text);
     const rows = splitConditionTerms(groupText).map((rowPart, rowIndex) => {
       const rowText = stripConditionWrapper(rowPart.text);
@@ -2771,7 +3007,7 @@ function parseConditionToBuilder(expression: string) {
       rows: rows.length > 0 ? rows : [createConditionRow()],
     });
   });
-  conditionGroups.value = groups.length > 0 ? groups : [createConditionGroup()];
+  conditionGroups.value = categories.length > 0 ? categories : [createConditionGroup()];
 }
 
 function splitConditionTerms(expression: string) {
@@ -3007,35 +3243,192 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   padding: 0;
 }
 
-.workflow-list-card {
+.workflow-manage-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
   min-height: calc(100vh - 132px);
 }
 
-.workflow-section-switch {
-  display: inline-flex;
-  gap: 4px;
-  padding: 2px;
-  margin-bottom: 16px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  background: var(--el-fill-color-lighter);
+.workflow-category-panel,
+.workflow-definition-panel {
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
 }
 
-.workflow-section-tab {
-  height: 30px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 4px;
+.workflow-category-panel {
+  position: sticky;
+  top: 12px;
+  overflow: hidden;
+}
+
+.workflow-definition-panel {
+  min-width: 0;
+  padding: 16px;
+}
+
+.category-panel-head,
+.definition-table-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category-panel-head {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.definition-table-head {
+  margin-bottom: 16px;
+}
+
+.category-panel-head h3,
+.definition-table-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--el-text-color-primary);
+}
+
+.category-panel-head p,
+.definition-table-head p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.definition-head-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.category-panel-tools {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.workflow-category-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.workflow-category-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 8px 10px 12px;
+  color: var(--el-text-color-primary);
+  text-align: left;
   background: transparent;
-  color: var(--el-text-color-regular);
+  border: 1px solid transparent;
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.workflow-section-tab.active {
-  background: var(--el-bg-color);
-  color: var(--el-color-primary);
+.workflow-category-item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.workflow-category-item.active {
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-7);
+}
+
+.workflow-category-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workflow-category-name,
+.workflow-category-code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-category-name {
+  font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.workflow-category-code {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.workflow-category-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.definition-import-template-item :deep(.el-form-item__content) {
+  display: block;
+}
+
+.definition-import-template-list {
+  min-height: 168px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-blank);
+}
+
+.definition-import-template-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.definition-import-template-option {
+  height: auto;
+  min-height: 44px;
+  margin-right: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+}
+
+.definition-import-template-option :deep(.el-checkbox__label) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.definition-import-template-name,
+.definition-import-template-code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.definition-import-template-name {
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.definition-import-template-code {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .workflow-builder {
@@ -3257,60 +3650,44 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   justify-content: center;
 }
 
-.workflow-icon-uploader {
-  position: relative;
-  width: 64px;
-  height: 64px;
-}
-
-.workflow-icon-uploader :deep(.image-upload),
-.workflow-icon-uploader :deep(.avatar-uploader) {
+.workflow-icon-upload-control {
   width: 64px;
 }
 
-.workflow-icon-uploader :deep(.el-upload),
-.workflow-icon-uploader :deep(.image-upload__card),
-.workflow-icon-uploader :deep(.el-upload--picture-card),
-.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
+.workflow-icon-upload-control :deep(.el-upload),
+.workflow-icon-upload-control :deep(.el-upload--picture-card),
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item) {
   width: 64px;
   height: 64px;
   border-radius: 10px;
 }
 
-.workflow-icon-uploader :deep(img) {
+.workflow-icon-upload-control :deep(img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.workflow-icon-uploader.empty .workflow-icon-upload-control :deep(.el-upload--picture-card) {
-  opacity: 0;
-}
-
-.workflow-icon-uploader :deep(.el-upload--picture-card:hover) {
+.workflow-icon-upload-control :deep(.el-upload--picture-card:hover) {
   border-color: var(--el-color-primary-light-5);
   background: var(--el-fill-color-light);
 }
 
-.workflow-icon-uploader.filled .workflow-icon-upload-control :deep(.el-upload--picture-card) {
-  display: none;
-}
-
-.workflow-icon-uploader :deep(.el-upload-list--picture-card) {
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card) {
   display: block;
 }
 
-.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item) {
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item) {
   margin: 0;
   border: 1px solid var(--el-border-color);
   border-radius: 10px;
 }
 
-.workflow-icon-uploader :deep(.el-upload-list__item-status-label) {
+.workflow-icon-upload-control :deep(.el-upload-list__item-status-label) {
   display: none;
 }
 
-.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions) {
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item-actions) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3318,7 +3695,7 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   border-radius: 10px;
 }
 
-.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions span) {
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item-actions span) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3329,53 +3706,35 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   box-shadow: none;
 }
 
-.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-preview),
-.workflow-icon-uploader :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-delete) {
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-preview),
+.workflow-icon-upload-control :deep(.el-upload-list--picture-card .el-upload-list__item-actions .el-upload-list__item-delete) {
   margin: 0;
   color: #fff;
   font-size: 18px;
   line-height: 1;
 }
 
-.workflow-icon-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+.workflow-icon-legacy-preview {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+  width: 64px;
+  min-height: 64px;
   border: 1px dashed var(--el-border-color);
   border-radius: 10px;
   background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
-}
-
-.workflow-icon-empty-state {
-  color: var(--el-text-color-secondary);
-  transition: all 0.2s ease;
-  gap: 8px;
-}
-
-.workflow-icon-uploader.empty:hover .workflow-icon-empty-state {
-  border-color: var(--el-color-primary-light-5);
-  background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
 }
 
-.workflow-icon-empty-state .el-icon,
 .workflow-icon-legacy-preview .el-icon {
   font-size: 18px;
 }
 
-.workflow-icon-empty-state span,
 .workflow-icon-legacy-preview span {
   font-size: 12px;
   font-weight: 600;
-}
-
-.workflow-icon-legacy-preview {
-  color: var(--el-color-primary);
 }
 
 .field-label-with-help {
@@ -3814,6 +4173,10 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
   margin-top: 14px;
 }
 
+.template-rule {
+  margin-top: 12px;
+}
+
 .validate-result {
   min-height: 220px;
   padding-top: 18px;
@@ -3846,6 +4209,27 @@ function collectCcConfigErrors(node: WorkflowDesignerNode, errors: string[]) {
 }
 
 @media (max-width: 1024px) {
+  .workflow-manage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-category-panel {
+    position: static;
+  }
+
+  .workflow-category-list {
+    max-height: none;
+  }
+
+  .definition-table-head,
+  .category-panel-head {
+    flex-direction: column;
+  }
+
+  .definition-head-actions {
+    flex-wrap: wrap;
+  }
+
   .custom-field-main {
     grid-template-columns: minmax(0, 1fr);
   }

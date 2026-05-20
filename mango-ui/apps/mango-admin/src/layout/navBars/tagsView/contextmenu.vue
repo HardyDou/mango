@@ -33,7 +33,7 @@
 
 <script setup lang="ts" name="contextMenu">
 import { computed, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '@/stores/tagsViewRoutes';
 import { isHomeTag } from '@mango/common';
 
@@ -42,6 +42,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['close']);
+const route = useRoute();
 const router = useRouter();
 const storesTagsViewRoutes = useTagsViewRoutes();
 const visible = ref(true);
@@ -66,7 +67,7 @@ const onClose = () => {
   }
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.path !== props.tag.path);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  if (tags.length > 0) {
+  if (route.path === props.tag.path && tags.length > 0) {
     router.push(tags[tags.length - 1]);
   }
   emit('close');

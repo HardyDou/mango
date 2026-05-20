@@ -387,15 +387,15 @@ VALUES
 (25002,1,'internal-admin',25,3,'新增套餐','system:menu-package:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:menu-package:add',NULL,NULL,NOW(),NOW(),'套餐新增权限',0,NULL,NOW(),NULL,NOW()),
 (25003,1,'internal-admin',25,3,'修改套餐','system:menu-package:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:menu-package:edit',NULL,NULL,NOW(),NOW(),'套餐修改权限',0,NULL,NOW(),NULL,NOW()),
 (25004,1,'internal-admin',25,3,'删除套餐','system:menu-package:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:menu-package:delete',NULL,NULL,NOW(),NOW(),'套餐删除权限',0,NULL,NOW(),NULL,NOW()),
-(26,1,'internal-admin',0,1,'协同办公','workflow','/workflow','Promotion',NULL,2,1,1,0,0,'/workflow/task/todo',NULL,NULL,NULL,NOW(),NOW(),'协同办公工作台入口',0,NULL,NOW(),NULL,NOW()),
-(2601,1,'internal-admin',26,1,'任务管理','workflow:task','/workflow/task','List',NULL,1,1,1,0,0,'/workflow/task/todo',NULL,NULL,NULL,NOW(),NOW(),'协同办公任务中心',0,NULL,NOW(),NULL,NOW()),
-(260101,1,'internal-admin',2601,2,'我的待办','workflow:task:todo','/workflow/task/todo','Tickets','@/views/workflow/task/todo/index.vue',1,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户待办流程任务',0,NULL,NOW(),NULL,NOW()),
-(260102,1,'internal-admin',2601,2,'我的发起','workflow:task:initiated','/workflow/task/initiated','Position','@/views/workflow/task/initiated/index.vue',2,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户发起的流程',0,NULL,NOW(),NULL,NOW()),
-(260103,1,'internal-admin',2601,2,'我的已办','workflow:task:done','/workflow/task/done','CircleCheck','@/views/workflow/task/done/index.vue',3,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户已办流程任务',0,NULL,NOW(),NULL,NOW()),
-(260104,1,'internal-admin',2601,2,'抄送给我','workflow:task:copied','/workflow/task/copied','Message','@/views/workflow/task/copied/index.vue',4,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'抄送给当前用户的流程事项',0,NULL,NOW(),NULL,NOW()),
-(2601000,1,'internal-admin',2601,3,'查询协同任务','workflow:task:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'协同办公任务列表查询权限',0,NULL,NOW(),NULL,NOW()),
-(2602,1,'internal-admin',26,2,'发起流程','workflow:start-process','/workflow/start-process','Promotion','@/views/workflow/start-process/index.vue',2,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'选择已发布流程并发起',0,NULL,NOW(),NULL,NOW()),
-(2603,1,'internal-admin',26,2,'业务示例','workflow:business-form','/workflow/business-form','Document','@/views/workflow/business-form/index.vue',4,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'业务接入工作流示例',0,NULL,NOW(),NULL,NOW())
+(26,1,'internal-admin',0,1,'审批中心','workflow','/workflow','Stamp',NULL,2,1,1,0,0,'/workflow/start-process',NULL,NULL,NULL,NOW(),NOW(),'流程发起、审批办理和流程配置入口',0,NULL,NOW(),NULL,NOW()),
+(2601,1,'internal-admin',26,1,'流程办理','workflow:task','/workflow/task','Tickets',NULL,1,1,1,0,0,'/workflow/start-process',NULL,NULL,NULL,NOW(),NOW(),'流程发起、待办、已办和抄送事项',0,NULL,NOW(),NULL,NOW()),
+(2602,1,'internal-admin',2601,2,'发起流程','workflow:start-process','/workflow/start-process','Promotion','@/views/workflow/start-process/index.vue',1,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'选择已发布流程并发起',0,NULL,NOW(),NULL,NOW()),
+(260101,1,'internal-admin',2601,2,'我的待办','workflow:task:todo','/workflow/task/todo','Tickets','@/views/workflow/task/todo/index.vue',2,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户待办流程任务',0,NULL,NOW(),NULL,NOW()),
+(260102,1,'internal-admin',2601,2,'我的申请','workflow:task:initiated','/workflow/task/initiated','Position','@/views/workflow/task/initiated/index.vue',3,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户发起的流程',0,NULL,NOW(),NULL,NOW()),
+(260103,1,'internal-admin',2601,2,'我的已办','workflow:task:done','/workflow/task/done','CircleCheck','@/views/workflow/task/done/index.vue',4,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'当前用户已办流程任务',0,NULL,NOW(),NULL,NOW()),
+(260104,1,'internal-admin',2601,2,'抄送给我','workflow:task:copied','/workflow/task/copied','Message','@/views/workflow/task/copied/index.vue',5,1,1,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'抄送给当前用户的流程事项',0,NULL,NOW(),NULL,NOW()),
+(2601000,1,'internal-admin',2601,3,'查询流程任务','workflow:task:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'workflow:task:list',NULL,NULL,NOW(),NOW(),'审批中心任务列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(2603,1,'internal-admin',26,2,'业务示例','workflow:business-form','/workflow/business-form','Document','@/views/workflow/business-form/index.vue',3,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'业务接入工作流示例',0,NULL,NOW(),NULL,NOW())
 ON DUPLICATE KEY UPDATE
 `parent_id` = VALUES(`parent_id`),
 `menu_type` = VALUES(`menu_type`),
@@ -441,7 +441,7 @@ ON DUPLICATE KEY UPDATE
 `del_flag` = VALUES(`del_flag`);
 
 INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
-(1001,1,1,1,1),(1002,1,1,2,2),(1003,1,1,25,3),(1004,1,1,12,4),(1005,1,1,17,5),(1006,1,1,15,6),(1007,1,1,20,7),(1008,1,1,3,8),(1009,1,1,4,9),(1010,1,1,14,10),(1011,1,1,7,11),(1012,1,1,6,12),(1013,1,1,16,13),(1014,1,1,8,14),(1015,1,1,9,15),(1016,1,1,10,16),(1017,1,1,26,17),(1018,1,1,2601,18),(1019,1,1,260101,19),(1020,1,1,260102,20),(1021,1,1,260103,21),(1022,1,1,260104,22),(1023,1,1,2602,23),(1024,1,1,24,24),(1025,1,1,2603,25),
+(1001,1,1,1,1),(1002,1,1,2,2),(1003,1,1,25,3),(1004,1,1,12,4),(1005,1,1,17,5),(1006,1,1,15,6),(1007,1,1,20,7),(1008,1,1,3,8),(1009,1,1,4,9),(1010,1,1,14,10),(1011,1,1,7,11),(1012,1,1,6,12),(1013,1,1,16,13),(1014,1,1,8,14),(1015,1,1,9,15),(1016,1,1,10,16),(1017,1,1,26,17),(1018,1,1,2601,18),(1019,1,1,2602,19),(1020,1,1,260101,20),(1021,1,1,260102,21),(1022,1,1,260103,22),(1023,1,1,260104,23),(1024,1,1,2603,25),
 (1026,1,1,1200,26),(1027,1,1,1201,27),(1028,1,1,1202,28),(1029,1,1,1203,29),(1030,1,1,1204,30),
 (1031,1,1,1500,31),(1032,1,1,1501,32),(1033,1,1,1502,33),(1034,1,1,1503,34),(1035,1,1,1504,35),
 (1036,1,1,1700,36),(1037,1,1,1701,37),(1038,1,1,1702,38),(1039,1,1,1703,39),(1040,1,1,1704,40),
@@ -452,7 +452,7 @@ INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `packag
 (1065,1,1,6000,65),(1066,1,1,6001,66),(1067,1,1,6002,67),(1068,1,1,6003,68),(1069,1,1,6004,69),
 (1070,1,1,7000,70),(1071,1,1,7001,71),(1072,1,1,7002,72),(1073,1,1,7003,73),(1074,1,1,7004,74),(1075,1,1,7010,75),(1076,1,1,7011,76),(1077,1,1,7012,77),(1078,1,1,7013,78),(1079,1,1,7014,79),
 (1080,1,1,9002,80),(1081,1,1,9003,81),(1082,1,1,9004,82),(1083,1,1,10002,83),(1084,1,1,10003,84),(1085,1,1,10004,85),(1086,1,1,2601000,86),(1087,1,1,2601001,87),(1088,1,1,2601002,88),(1089,1,1,2601003,89),(1090,1,1,2602001,90),(1091,1,1,25000,91),(1092,1,1,25001,92),(1093,1,1,25002,93),(1094,1,1,25003,94),(1095,1,1,25004,95),
-(2001,1,2,1,1),(2002,1,2,2,2),(2003,1,2,17,3),(2004,1,2,15,4),(2005,1,2,20,5),(2006,1,2,3,6),(2007,1,2,8,7),(2008,1,2,9,8),(2009,1,2,10,9),(2010,1,2,26,10),(2011,1,2,2601,11),(2012,1,2,260101,12),(2013,1,2,260102,13),(2014,1,2,260103,14),(2015,1,2,260104,15),(2016,1,2,2602,16),(2017,1,2,2603,17),(2018,1,2,2601000,18);
+(2001,1,2,1,1),(2002,1,2,2,2),(2003,1,2,17,3),(2004,1,2,15,4),(2005,1,2,20,5),(2006,1,2,3,6),(2007,1,2,8,7),(2008,1,2,9,8),(2009,1,2,10,9),(2010,1,2,26,10),(2011,1,2,2601,11),(2012,1,2,2602,12),(2013,1,2,260101,13),(2014,1,2,260102,14),(2015,1,2,260103,15),(2016,1,2,260104,16),(2017,1,2,2603,17),(2018,1,2,2601000,18);
 
 INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
 SELECT 500000 + `menu_id`, 1, 1, `menu_id`, NOW(), NULL, NOW(), NULL, NOW()
@@ -488,7 +488,7 @@ WHERE `id` IN (260101,260102,260103,260104);
 
 UPDATE `authorization_menu`
 SET `component` = NULL,
-    `redirect` = '/workflow/task/todo',
+    `redirect` = '/workflow/start-process',
     `update_time` = NOW(),
     `updated_at` = NOW()
 WHERE `id` = 2601;
@@ -644,7 +644,7 @@ INSERT INTO `authorization_app_module`
 VALUES
   (1, 'internal-admin', 'mango-authorization', 'mango-authorization', 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   (2, 'internal-admin', 'mango-system', 'mango-system', 1, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  (3, 'internal-admin', 'mango-workflow', 'mango-workflow', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  (3, 'internal-admin', 'mango-workflow', '审批中心模块', 1, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON DUPLICATE KEY UPDATE
   `module_name` = VALUES(`module_name`),
   `status` = VALUES(`status`),
@@ -741,19 +741,67 @@ ON DUPLICATE KEY UPDATE
 
 
 -- -----------------------------------------------------------------------------
+-- Folded from workflow approval center menu naming
+-- -----------------------------------------------------------------------------
+
+UPDATE `authorization_menu`
+SET `menu_name` = '审批中心',
+    `icon` = 'Stamp',
+    `redirect` = '/workflow/start-process',
+    `remark` = '流程发起、审批办理和流程配置入口',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `menu_code` = 'workflow';
+
+UPDATE `authorization_menu`
+SET `menu_name` = '流程办理',
+    `icon` = 'Tickets',
+    `redirect` = '/workflow/start-process',
+    `remark` = '流程发起、待办、已办和抄送事项',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `menu_code` = 'workflow:task';
+
+UPDATE `authorization_menu`
+SET `parent_id` = 2601,
+    `sort` = 1,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `menu_code` = 'workflow:start-process';
+
+UPDATE `authorization_menu`
+SET `sort` = CASE `menu_code`
+      WHEN 'workflow:task:todo' THEN 2
+      WHEN 'workflow:task:initiated' THEN 3
+      WHEN 'workflow:task:done' THEN 4
+      WHEN 'workflow:task:copied' THEN 5
+      ELSE `sort`
+    END,
+    `menu_name` = CASE `menu_code`
+      WHEN 'workflow:task:initiated' THEN '我的申请'
+      ELSE `menu_name`
+    END,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `menu_code` IN ('workflow:task:todo','workflow:task:initiated','workflow:task:done','workflow:task:copied');
+
+
+-- -----------------------------------------------------------------------------
 -- Folded from V8__workflow_menu_icons.sql
 -- -----------------------------------------------------------------------------
 
 UPDATE `authorization_menu`
 SET `icon` = CASE `menu_code`
-    WHEN 'workflow' THEN 'Promotion'
-    WHEN 'workflow:task' THEN 'List'
+    WHEN 'workflow' THEN 'Stamp'
+    WHEN 'workflow:task' THEN 'Tickets'
     WHEN 'workflow:task:todo' THEN 'Tickets'
     WHEN 'workflow:task:initiated' THEN 'Position'
     WHEN 'workflow:task:done' THEN 'CircleCheck'
     WHEN 'workflow:task:copied' THEN 'Message'
     WHEN 'workflow:start-process' THEN 'Promotion'
-    WHEN 'system:workflow' THEN 'Operation'
+    WHEN 'workflow:manage' THEN 'Operation'
+    WHEN 'workflow:template' THEN 'CollectionTag'
+    WHEN 'system:workflow' THEN 'Files'
     WHEN 'workflow:business-form' THEN 'Document'
     ELSE `icon`
   END,
@@ -767,6 +815,8 @@ WHERE `menu_code` IN (
   'workflow:task:done',
   'workflow:task:copied',
   'workflow:start-process',
+  'workflow:manage',
+  'workflow:template',
   'system:workflow',
   'workflow:business-form'
 );

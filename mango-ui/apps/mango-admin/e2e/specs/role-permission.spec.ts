@@ -58,7 +58,7 @@ test.describe('T2 角色授权闭环', () => {
     await cleanupRole(request, token, roleCode);
 
     await loginAsCompanyA(page);
-    await expect(page.getByText('协同办公')).toHaveCount(0);
+    await expect(page.getByText('审批中心')).toHaveCount(0);
     await expect(page.getByText('机构管理')).toHaveCount(0);
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('菜单管理')).toHaveCount(0);

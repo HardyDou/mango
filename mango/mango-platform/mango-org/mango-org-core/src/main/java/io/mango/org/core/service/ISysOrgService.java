@@ -2,7 +2,10 @@ package io.mango.org.core.service;
 
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.command.CreateOrgCommand;
+import io.mango.org.api.command.AddOrgMemberCommand;
+import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.command.UpdateOrgCommand;
+import io.mango.org.api.vo.OrgMemberVO;
 
 import java.util.List;
 
@@ -69,4 +72,42 @@ public interface ISysOrgService {
      * @param id organization ID
      */
     void delete(Long id);
+
+    /**
+     * Query organization members.
+     *
+     * @param orgId organization ID
+     * @return organization members
+     */
+    List<OrgMemberVO> members(Long orgId);
+
+    /**
+     * Add a member to organization.
+     *
+     * @param orgId organization ID
+     * @param command add command
+     */
+    void addMember(Long orgId, AddOrgMemberCommand command);
+
+    /**
+     * Update organization member relation.
+     *
+     * @param command update command
+     */
+    void updateMember(UpdateOrgMemberCommand command);
+
+    /**
+     * Remove member from organization.
+     *
+     * @param relationId relation ID
+     */
+    void removeMember(Long relationId);
+
+    /**
+     * Resolve organization leader user IDs by organization ID.
+     *
+     * @param orgId organization ID
+     * @return leader user IDs
+     */
+    List<Long> leaderUserIds(Long orgId);
 }

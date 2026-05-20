@@ -1,0 +1,70 @@
+package io.mango.workflow.api.command;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+import java.util.List;
+
+/**
+ * 保存流程模板命令。
+ */
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "保存流程模板命令")
+public class SaveWorkflowTemplateCommand {
+
+    @Schema(description = "流程模板ID，仅详情回显使用；模板不可修改")
+    private Long id;
+
+    @Schema(description = "模板名称")
+    @NotBlank(message = "模板名称不能为空")
+    @Size(max = 128, message = "模板名称最多128个字符")
+    private String templateName;
+
+    @Schema(description = "模板编码")
+    @NotBlank(message = "模板编码不能为空")
+    @Size(max = 128, message = "模板编码最多128个字符")
+    private String templateCode;
+
+    @Schema(description = "流程模板分类ID")
+    private Long templateCategoryId;
+
+    @Schema(description = "业务场景编码")
+    @Size(max = 64, message = "业务场景编码最多64个字符")
+    private String categoryCode;
+
+    @Schema(description = "业务场景名称")
+    @Size(max = 64, message = "业务场景名称最多64个字符")
+    private String categoryName;
+
+    @Schema(description = "流程图标")
+    @Size(max = 512, message = "流程图标最多512个字符")
+    private String icon;
+
+    @Schema(description = "流程管理员用户名列表")
+    private List<String> adminUsers;
+
+    @Schema(description = "设计器JSON内容")
+    @NotBlank(message = "设计器JSON不能为空")
+    private String designerJson;
+
+    @Schema(description = "表单编码")
+    @Size(max = 128, message = "表单编码最多128个字符")
+    private String formCode;
+
+    @Schema(description = "动态表单JSON配置")
+    private String formJson;
+
+    @Schema(description = "模板状态：ENABLED-可导入，DISABLED-停用，ARCHIVED-归档")
+    private String status;
+
+    @Schema(description = "模板版本号")
+    private Integer versionNo;
+
+    @Schema(description = "备注")
+    @Size(max = 255, message = "备注最多255个字符")
+    private String remark;
+}

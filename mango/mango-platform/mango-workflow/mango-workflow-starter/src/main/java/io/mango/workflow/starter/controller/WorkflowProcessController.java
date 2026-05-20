@@ -22,12 +22,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 协同办公流程实例接口。
+ * 审批中心流程实例接口。
  */
 @RestController
 @RequestMapping("/workflow/processes")
 @RequiredArgsConstructor
-@Tag(name = "协同办公流程实例", description = "流程发起与我发起的流程查询接口")
+@Tag(name = "审批中心流程实例", description = "流程发起与我发起的流程查询接口")
 public class WorkflowProcessController {
 
     private final IWorkflowProcessService workflowProcessService;

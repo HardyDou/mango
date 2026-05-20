@@ -20,9 +20,12 @@ public class SaveWorkflowDefinitionCommand {
     @Schema(description = "流程定义ID，新增时为空，修改时必填")
     private Long id;
 
-    @Schema(description = "流程分组ID")
-    @NotNull(message = "流程分组ID不能为空")
-    private Long groupId;
+    @Schema(description = "流程分类ID")
+    @NotNull(message = "流程分类ID不能为空")
+    private Long categoryId;
+
+    @Schema(description = "所属组织ID")
+    private Long orgId;
 
     @Schema(description = "流程管理员用户名列表；审批人为空且策略为转交管理员时优先使用")
     private List<String> adminUsers;

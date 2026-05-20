@@ -43,10 +43,10 @@ export interface WorkflowApprovalNodeConfig {
   orgLeaderUseInitiatorOrg?: boolean;
 }
 
-export interface WorkflowGroup {
+export interface WorkflowCategory {
   id?: WorkflowId;
-  groupName: string;
-  groupCode: string;
+  categoryName: string;
+  categoryCode: string;
   sort?: number;
   status?: number;
   remark?: string;
@@ -56,8 +56,9 @@ export interface WorkflowGroup {
 
 export interface WorkflowDefinition {
   id?: WorkflowId;
-  groupId: WorkflowId;
-  groupName?: string;
+  categoryId: WorkflowId;
+  categoryName?: string;
+  orgId?: WorkflowId;
   adminUsers?: string[];
   icon?: string;
   definitionName: string;
@@ -66,6 +67,9 @@ export interface WorkflowDefinition {
   processDefinitionId?: string;
   processDefinitionVersion?: number;
   publishedVersionNo?: number;
+  sourceTemplateId?: WorkflowId;
+  sourceTemplateCode?: string;
+  sourceTemplateVersion?: number;
   designerJson: string;
   bpmnXml?: string;
   formCode?: string;
@@ -78,18 +82,95 @@ export interface WorkflowDefinition {
 }
 
 type WorkflowDefinitionCommand = Pick<WorkflowDefinition,
-  'id' | 'groupId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
+  'id' | 'categoryId' | 'orgId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
 >;
 
 export interface WorkflowPageQuery {
   pageNum?: number;
   pageSize?: number;
   keyword?: string;
-  groupId?: WorkflowId | '';
+  categoryId?: WorkflowId | '';
+  orgId?: WorkflowId | '';
   status?: string;
   categoryCode?: string;
   bpmnType?: string;
   executionType?: string;
+}
+
+export interface WorkflowTemplateCategory {
+  id?: WorkflowId;
+  parentId?: WorkflowId;
+  categoryName: string;
+  categoryCode: string;
+  icon?: string;
+  sort?: number;
+  status?: number;
+  remark?: string;
+  createdTime?: string;
+  updatedTime?: string;
+}
+
+export interface WorkflowTemplate {
+  id?: WorkflowId;
+  templateName: string;
+  templateCode: string;
+  templateCategoryId?: WorkflowId;
+  templateCategoryName?: string;
+  categoryCode?: string;
+  categoryName?: string;
+  icon?: string;
+  adminUsers?: string[];
+  designerJson: string;
+  formCode?: string;
+  formJson?: string;
+  versionNo?: number;
+  latestFlag?: boolean;
+  status?: 'ENABLED' | 'DISABLED' | 'ARCHIVED' | 'DRAFT';
+  statusName?: string;
+  sourceDefinitionId?: WorkflowId;
+  sourceDefinitionKey?: string;
+  sourceDefinitionName?: string;
+  remark?: string;
+  createdTime?: string;
+  updatedTime?: string;
+}
+
+export interface ImportWorkflowTemplatesCommand {
+  categoryId: WorkflowId;
+  targetTenantId?: WorkflowId;
+  orgId?: WorkflowId;
+  templateCategoryId?: WorkflowId;
+  templateIds?: WorkflowId[];
+  adminUsers?: string[];
+}
+
+export interface PushWorkflowTemplatesCommand {
+  targetTenantIds: WorkflowId[];
+  categoryCode: string;
+  categoryName: string;
+  orgId?: WorkflowId;
+  templateCategoryId?: WorkflowId;
+  templateIds?: WorkflowId[];
+  adminUsers?: string[];
+}
+
+export interface WorkflowTenantOption {
+  id: WorkflowId;
+  tenantName: string;
+  tenantCode?: string;
+  status?: number;
+}
+
+export interface WorkflowTemplateImportError {
+  templateId?: WorkflowId;
+  templateName?: string;
+  templateCode?: string;
+  reason?: string;
+}
+
+export interface WorkflowTemplateImportResult {
+  definitionIds: WorkflowId[];
+  errors: WorkflowTemplateImportError[];
 }
 
 export interface PageResult<T> {
@@ -323,14 +404,14 @@ export interface WorkflowTaskActionCommand {
 }
 
 export const workflowApi = {
-  groupsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/groups/page', { params: toBackendPageParams(params) })
-    .then(data => fromBackendPageResult(data, normalizeGroup, params)),
-  groupsList: (status?: number) => get<WorkflowGroup[]>('/workflow/groups/list', { params: { status } })
-    .then(list => (Array.isArray(list) ? list.map(normalizeGroup) : [])),
-  groupDetail: (id: WorkflowId) => get<WorkflowGroup>('/workflow/groups/detail', { params: { id } }).then(normalizeGroup),
-  createGroup: (data: WorkflowGroup) => post<WorkflowId>('/workflow/groups', data),
-  updateGroup: (data: WorkflowGroup) => put<boolean>('/workflow/groups', data),
-  deleteGroup: (id: WorkflowId) => del<boolean>('/workflow/groups', { params: { id } }),
+  categoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/categories/page', { params: toBackendPageParams(params) })
+    .then(data => fromBackendPageResult(data, normalizeCategory, params)),
+  categoriesList: (status?: number) => get<WorkflowCategory[]>('/workflow/categories/list', { params: { status } })
+    .then(list => (Array.isArray(list) ? list.map(normalizeCategory) : [])),
+  categoryDetail: (id: WorkflowId) => get<WorkflowCategory>('/workflow/categories/detail', { params: { id } }).then(normalizeCategory),
+  createCategory: (data: WorkflowCategory) => post<WorkflowId>('/workflow/categories', data),
+  updateCategory: (data: WorkflowCategory) => put<boolean>('/workflow/categories', data),
+  deleteCategory: (id: WorkflowId) => del<boolean>('/workflow/categories', { params: { id } }),
 
   definitionsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/definitions/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeDefinition, params)),
@@ -345,6 +426,25 @@ export const workflowApi = {
   definitionVersionDetail: (id: WorkflowId) => get<WorkflowDefinitionVersion>('/workflow/definitions/version-detail', { params: { id } }).then(normalizeVersion),
   nodeCatalog: () => get<WorkflowNodeCatalog[]>('/workflow/definitions/node-catalog')
     .then(list => Array.isArray(list) ? list.map(normalizeNodeCatalog) : []),
+
+  templatesPage: (params?: WorkflowPageQuery & { templateCategoryId?: WorkflowId | '' }) => get<any>('/workflow/templates/page', { params: toBackendPageParams(params) })
+    .then(data => fromBackendPageResult(data, normalizeTemplate, params)),
+  templateDetail: (id: WorkflowId) => get<WorkflowTemplate>('/workflow/templates/detail', { params: { id } }).then(normalizeTemplate),
+  createTemplate: (data: WorkflowTemplate) => post<WorkflowId>('/workflow/templates', toTemplateCommand(data)),
+  deleteTemplate: (id: WorkflowId) => del<boolean>('/workflow/templates', { params: { id } }),
+  createTemplateFromDefinition: (data: Record<string, any>) => post<WorkflowId>('/workflow/templates/from-definition', data),
+  createDefinitionFromTemplate: (data: Record<string, any>) => post<WorkflowId>('/workflow/templates/create-definition', data),
+  importTemplates: (data: ImportWorkflowTemplatesCommand) => post<WorkflowTemplateImportResult>('/workflow/templates/import', data)
+    .then(normalizeTemplateImportResult),
+  pushTemplates: (data: PushWorkflowTemplatesCommand) => post<WorkflowTemplateImportResult>('/workflow/templates/push', data)
+    .then(normalizeTemplateImportResult),
+  templateCategoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/template-categories/page', { params: toBackendPageParams(params) })
+    .then(data => fromBackendPageResult(data, normalizeTemplateCategory, params)),
+  templateCategoriesList: (status?: number) => get<WorkflowTemplateCategory[]>('/workflow/template-categories/list', { params: { status } })
+    .then(list => (Array.isArray(list) ? list.map(normalizeTemplateCategory) : [])),
+  createTemplateCategory: (data: WorkflowTemplateCategory) => post<WorkflowId>('/workflow/template-categories', data),
+  updateTemplateCategory: (data: WorkflowTemplateCategory) => put<boolean>('/workflow/template-categories', data),
+  deleteTemplateCategory: (id: WorkflowId) => del<boolean>('/workflow/template-categories', { params: { id } }),
 
   todoTasks: (params?: WorkflowPageQuery) => get<any>('/workflow/tasks/todo', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeTask, params)),
@@ -410,6 +510,19 @@ export const workflowApi = {
       };
     })
     .filter(Boolean) as WorkflowUserOption[]),
+  tenants: (keyword = '') => get<any>('/system/tenant/list', {
+    params: { keyword: keyword || undefined, status: 1 },
+  }).then(data => toPageList<any>(data)
+    .map(item => {
+      const id = item.id ?? item.tenantId;
+      return id === undefined ? undefined : {
+        id: String(id),
+        tenantName: item.tenantName || item.name || String(id),
+        tenantCode: item.tenantCode,
+        status: item.status,
+      };
+    })
+    .filter(Boolean) as WorkflowTenantOption[]),
 };
 
 export const workflowStatusOptions: Array<{ label: string; value: WorkflowStatus; type: 'info' | 'success' | 'warning' }> = [
@@ -511,10 +624,11 @@ export function createNodeId(prefix = 'node'): string {
 
 function toBackendPageParams(params?: WorkflowPageQuery) {
   if (!params) return params;
-  const { pageNum, pageSize, groupId, ...rest } = params;
+  const { pageNum, pageSize, categoryId, orgId, ...rest } = params;
   return {
     ...rest,
-    groupId: groupId === '' ? undefined : groupId,
+    categoryId: categoryId === '' ? undefined : categoryId,
+    orgId: orgId === '' ? undefined : orgId,
     page: pageNum,
     size: pageSize,
   };
@@ -522,10 +636,11 @@ function toBackendPageParams(params?: WorkflowPageQuery) {
 
 function toBackendBusinessApplyPageParams(params?: WorkflowBusinessApplyPageQuery) {
   if (!params) return params;
-  const { pageNum, pageSize, groupId, ...rest } = params;
+  const { pageNum, pageSize, categoryId, orgId, ...rest } = params;
   return {
     ...rest,
-    groupId: groupId === '' ? undefined : groupId,
+    categoryId: categoryId === '' ? undefined : categoryId,
+    orgId: orgId === '' ? undefined : orgId,
     page: pageNum,
     size: pageSize,
   };
@@ -558,10 +673,35 @@ function toPageList<T>(data: any): T[] {
   return [];
 }
 
-function normalizeGroup(item: any): WorkflowGroup {
+function normalizeCategory(item: any): WorkflowCategory {
   return {
     ...item,
     id: normalizeId(item?.id),
+    categoryName: item?.categoryName ?? '',
+    categoryCode: item?.categoryCode ?? '',
+    createdTime: normalizeDateTime(item?.createdTime),
+    updatedTime: normalizeDateTime(item?.updatedTime),
+  };
+}
+
+function normalizeTemplateCategory(item: any): WorkflowTemplateCategory {
+  return {
+    ...item,
+    id: normalizeId(item?.id),
+    parentId: item?.parentId ? normalizeId(item.parentId) : undefined,
+    createdTime: normalizeDateTime(item?.createdTime),
+    updatedTime: normalizeDateTime(item?.updatedTime),
+  };
+}
+
+function normalizeTemplate(item: any): WorkflowTemplate {
+  return {
+    ...item,
+    id: normalizeId(item?.id),
+    templateCategoryId: item?.templateCategoryId ? normalizeId(item.templateCategoryId) : undefined,
+    adminUsers: normalizeStringList(item?.adminUsers),
+    sourceDefinitionId: item?.sourceDefinitionId ? normalizeId(item.sourceDefinitionId) : undefined,
+    designerJson: item?.designerJson || defaultDesignerJson(),
     createdTime: normalizeDateTime(item?.createdTime),
     updatedTime: normalizeDateTime(item?.updatedTime),
   };
@@ -571,7 +711,10 @@ function normalizeDefinition(item: any): WorkflowDefinition {
   return {
     ...item,
     id: normalizeId(item?.id),
-    groupId: normalizeId(item?.groupId),
+    categoryId: normalizeId(item?.categoryId),
+    categoryName: item?.categoryName,
+    orgId: item?.orgId ? normalizeId(item.orgId) : undefined,
+    sourceTemplateId: item?.sourceTemplateId ? normalizeId(item.sourceTemplateId) : undefined,
     adminUsers: normalizeStringList(item?.adminUsers),
     icon: item?.icon || 'Setting',
     designerJson: item?.designerJson || defaultDesignerJson(),
@@ -583,7 +726,8 @@ function normalizeDefinition(item: any): WorkflowDefinition {
 
 function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): WorkflowDefinitionCommand {
   const command: WorkflowDefinitionCommand = {
-    groupId: data.groupId,
+    categoryId: data.categoryId,
+    orgId: data.orgId,
     adminUsers: normalizeStringList(data.adminUsers),
     icon: data.icon || 'Setting',
     definitionName: data.definitionName,
@@ -598,6 +742,26 @@ function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): Work
     command.id = data.id;
   }
   return command;
+}
+
+function toTemplateCommand(data: WorkflowTemplate) {
+  return {
+    ...data,
+    templateCategoryId: data.templateCategoryId || undefined,
+    adminUsers: normalizeStringList(data.adminUsers),
+  };
+}
+
+function normalizeTemplateImportResult(item: any): WorkflowTemplateImportResult {
+  return {
+    definitionIds: Array.isArray(item?.definitionIds) ? item.definitionIds.map(normalizeId) : [],
+    errors: Array.isArray(item?.errors)
+      ? item.errors.map((error: any) => ({
+          ...error,
+          templateId: error?.templateId ? normalizeId(error.templateId) : undefined,
+        }))
+      : [],
+  };
 }
 
 function normalizeStringList(value: unknown): string[] {

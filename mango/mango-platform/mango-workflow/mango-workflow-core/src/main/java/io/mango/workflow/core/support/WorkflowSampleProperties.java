@@ -23,12 +23,12 @@ public class WorkflowSampleProperties {
     private Long tenantId = 1L;
 
     /**
-     * 示例流程所属分组编码。
+     * 示例流程所属分类编码。
      */
-    private String groupCode = "COMMON";
+    private String categoryCode = "COMMON";
 
     /**
-     * 示例流程所属分组名称。
+     * 示例流程所属分类名称。
      */
-    private String groupName = "通用流程";
+    private String categoryName = "通用流程";
 }

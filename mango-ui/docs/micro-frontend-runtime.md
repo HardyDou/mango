@@ -373,6 +373,6 @@ PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm test:e2e
 验收点：
 
 - hybrid 下点击系统管理会加载 `b.mango.io:5181`。
-- hybrid 下点击协同办公会加载 `c.mango.io:5182`。
+- hybrid 下点击审批中心会加载 `c.mango.io:5182`。
 - monolith 下不请求 `5181/5182`。
 - 菜单数量、权限按钮、业务接口和单体入口一致。

@@ -1,10 +1,11 @@
 import { request } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 /**
  * Public path types
  */
 export interface PublicPath {
-  id?: number;
+  id?: ApiId;
   path: string;
   pathType: number;
   pathTypeName?: string;
@@ -41,13 +42,13 @@ export function addPublicPath(data: Partial<PublicPath>) {
 /**
  * Update a public path
  */
-export function updatePublicPath(id: number, data: Partial<PublicPath>) {
+export function updatePublicPath(id: ApiId, data: Partial<PublicPath>) {
   return request.put('/bff/permission/public-path', data, { params: { id } });
 }
 
 /**
  * Delete a public path
  */
-export function deletePublicPath(id: number) {
+export function deletePublicPath(id: ApiId) {
   return request.delete('/bff/permission/public-path', { params: { id } });
 }

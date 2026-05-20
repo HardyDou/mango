@@ -25,6 +25,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getAreaTree } from '../../api/area';
 import type { AreaNode, ChinaAreaProps, ChinaAreaEmits, ChinaAreaExpose } from './types';
+import type { ApiId } from '@mango/api-schema';
 
 const props = withDefaults(
   defineProps<ChinaAreaProps>(),
@@ -47,11 +48,11 @@ const emit = defineEmits<ChinaAreaEmits>();
 const { t } = useI18n();
 
 const areaOptions = ref<AreaNode[]>([]);
-const selectedValue = ref<number[]>([...(props.modelValue || [])]);
+const selectedValue = ref<ApiId[]>([...(props.modelValue || [])]);
 const loading = ref(false);
 
 // 缓存已加载的节点，避免重复请求
-const loadedNodesCache = new Map<number, AreaNode[]>();
+const loadedNodesCache = new Map<ApiId, AreaNode[]>();
 
 // 请求配置
 const REQUEST_TIMEOUT = 10000; // 10秒超时
@@ -107,11 +108,11 @@ async function fetchWithRetry<T>(
  * 懒加载子节点
  */
 async function lazyLoad(
-  node: { value: number; data: AreaNode; children: AreaNode[]; loading: boolean; loaded: boolean },
+  node: { value: ApiId; data: AreaNode; children: AreaNode[]; loading: boolean; loaded: boolean; level: number },
   resolve: (data: AreaNode[]) => void,
   reject: (err: Error) => void
 ) {
-  const parentId = node.level === 0 ? 0 : node.value;
+  const parentId = node.level === 0 ? '0' : node.value;
 
   if (node.level >= props.level) {
     resolve([]);
@@ -160,12 +161,12 @@ const cascaderProps = computed(() => ({
   lazyLoad: (node: any, resolve: any, reject: any) => lazyLoad(node, resolve, reject),
 }));
 
-function handleChange(value: number[]) {
+function handleChange(value: ApiId[]) {
   emit('update:modelValue', value || []);
   emit('change', value || []);
 }
 
-function getValue(): number[] {
+function getValue(): ApiId[] {
   return selectedValue.value;
 }
 
@@ -178,7 +179,7 @@ function clear() {
 /**
  * 清除单个节点的缓存，强制重新加载
  */
-function clearNodeCache(parentId: number) {
+function clearNodeCache(parentId: ApiId) {
   loadedNodesCache.delete(parentId);
 }
 

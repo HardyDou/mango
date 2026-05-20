@@ -15,8 +15,10 @@ import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.core.entity.TenantMember;
+import io.mango.identity.core.entity.TenantMemberOrgEntity;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
+import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.service.IIdentityUserService;
 import io.mango.infra.context.core.MangoContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
+    private final TenantMemberOrgMapper tenantMemberOrgMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -55,7 +58,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         IPage<IdentityUser> page = identityUserMapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
         List<IdentityUserVO> list = page.getRecords().stream()
-                .map(this::toVO)
+                .map(user -> toVO(user, query.getOrgId()))
                 .collect(Collectors.toList());
         return PageResult.of(list, page.getTotal(), page.getCurrent(), page.getSize());
     }
@@ -63,7 +66,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     @Override
     public IdentityUserVO detail(Long userId) {
         IdentityUser user = getManageableUser(userId);
-        return user == null ? null : toVO(user);
+        return user == null ? null : toVO(user, null);
     }
 
     @Override
@@ -224,6 +227,12 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private LambdaQueryWrapper<IdentityUser> buildManageableUserWrapper(IdentityUserPageQuery query) {
         LambdaQueryWrapper<IdentityUser> wrapper = new LambdaQueryWrapper<>();
         Set<Long> subjectIds = currentTenantSubjectIds(query.getStatus());
+        if (query.getOrgId() != null) {
+            Set<Long> orgUserIds = currentTenantOrgUserIds(query.getOrgId(), query.getStatus());
+            subjectIds = subjectIds.stream()
+                    .filter(orgUserIds::contains)
+                    .collect(Collectors.toSet());
+        }
         if (subjectIds.isEmpty()) {
             wrapper.eq(IdentityUser::getUserId, -1L);
         } else {
@@ -271,6 +280,34 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
                 .collect(Collectors.toSet());
     }
 
+    private Set<Long> currentTenantOrgUserIds(Long orgId, Integer memberStatus) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || orgId == null) {
+            return Set.of();
+        }
+        List<TenantMemberOrgEntity> relations = tenantMemberOrgMapper.selectList(
+                new LambdaQueryWrapper<TenantMemberOrgEntity>()
+                        .eq(TenantMemberOrgEntity::getTenantId, tenantId)
+                        .eq(TenantMemberOrgEntity::getOrgId, orgId));
+        if (relations == null || relations.isEmpty()) {
+            return Set.of();
+        }
+        Set<Long> memberIds = relations.stream()
+                .map(TenantMemberOrgEntity::getMemberId)
+                .collect(Collectors.toSet());
+        if (memberIds.isEmpty()) {
+            return Set.of();
+        }
+        LambdaQueryWrapper<TenantMember> wrapper = new LambdaQueryWrapper<TenantMember>()
+                .eq(TenantMember::getTenantId, tenantId)
+                .in(TenantMember::getMemberId, memberIds)
+                .isNull(TenantMember::getLeftAt);
+        wrapper.eq(memberStatus != null, TenantMember::getStatus, memberStatus);
+        return tenantMemberMapper.selectList(wrapper).stream()
+                .map(TenantMember::getUserId)
+                .collect(Collectors.toSet());
+    }
+
     private LambdaQueryWrapper<SubjectRoleBinding> currentTenantSubjectRoleWrapper(Long subjectId) {
         LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SubjectRoleBinding::getSubjectType, "TENANT_MEMBER")
@@ -280,7 +317,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return wrapper;
     }
 
-    private IdentityUserVO toVO(IdentityUser user) {
+    private IdentityUserVO toVO(IdentityUser user, Long queryOrgId) {
         IdentityUserVO vo = new IdentityUserVO();
         TenantMember member = currentTenantMember(user.getUserId());
         vo.setUserId(user.getUserId());
@@ -290,6 +327,7 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
             vo.setMemberType(member.getMemberType());
             vo.setMemberStatus(member.getStatus());
             vo.setPrimaryOrgId(member.getPrimaryOrgId());
+            fillOrgRelation(vo, member, queryOrgId);
         }
         vo.setUsername(user.getUsername());
         vo.setNickname(user.getNickname());
@@ -307,6 +345,28 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         vo.setCreateTime(user.getCreateTime());
         vo.setUpdateTime(user.getUpdateTime());
         return vo;
+    }
+
+    private void fillOrgRelation(IdentityUserVO vo, TenantMember member, Long queryOrgId) {
+        if (queryOrgId == null) {
+            return;
+        }
+        TenantMemberOrgEntity relation = tenantMemberOrgMapper.selectOne(
+                new LambdaQueryWrapper<TenantMemberOrgEntity>()
+                        .eq(TenantMemberOrgEntity::getTenantId, member.getTenantId())
+                        .eq(TenantMemberOrgEntity::getMemberId, member.getMemberId())
+                        .eq(TenantMemberOrgEntity::getOrgId, queryOrgId)
+                        .orderByDesc(TenantMemberOrgEntity::getPrimaryFlag)
+                        .orderByAsc(TenantMemberOrgEntity::getId)
+                        .last("LIMIT 1"));
+        if (relation == null) {
+            return;
+        }
+        vo.setOrgRelationId(relation.getId());
+        vo.setOrgId(relation.getOrgId());
+        vo.setPostId(relation.getPostId());
+        vo.setPrimaryOrgFlag(Integer.valueOf(1).equals(relation.getPrimaryFlag()));
+        vo.setOrgLeaderFlag(Integer.valueOf(1).equals(relation.getLeaderFlag()));
     }
 
     private void createTenantMember(IdentityUser user, String displayName) {

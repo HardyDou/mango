@@ -1035,11 +1035,11 @@ create index ACT_IDX_HI_IDENT_LNK_PROCINST on ACT_HI_IDENTITYLINK(PROC_INST_ID_)
 create index ACT_IDX_HI_TASK_INST_PROCINST on ACT_HI_TASKINST(PROC_INST_ID_);
 
 -- Mango workflow configuration schema.
-CREATE TABLE IF NOT EXISTS `workflow_group` (
-  `id` bigint NOT NULL COMMENT '流程分组ID',
+CREATE TABLE IF NOT EXISTS `workflow_category` (
+  `id` bigint NOT NULL COMMENT '流程分类ID',
   `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
-  `group_name` varchar(64) NOT NULL COMMENT '分组名称',
-  `group_code` varchar(64) NOT NULL COMMENT '分组编码',
+  `category_name` varchar(64) NOT NULL COMMENT '分类名称',
+  `category_code` varchar(64) NOT NULL COMMENT '分类编码',
   `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用 1-启用',
   `remark` varchar(255) DEFAULT NULL COMMENT '备注',
@@ -1050,14 +1050,15 @@ CREATE TABLE IF NOT EXISTS `workflow_group` (
   `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标准更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_workflow_group_code` (`tenant_id`,`group_code`),
-  KEY `idx_workflow_group_status` (`status`,`sort`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程分组表';
+  UNIQUE KEY `uk_workflow_category_code` (`tenant_id`,`category_code`),
+  KEY `idx_workflow_category_status` (`status`,`sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程分类表';
 
 CREATE TABLE IF NOT EXISTS `workflow_definition` (
   `id` bigint NOT NULL COMMENT '流程定义ID',
   `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
-  `group_id` bigint NOT NULL COMMENT '流程分组ID',
+  `category_id` bigint NOT NULL COMMENT '流程分类ID',
+  `org_id` bigint DEFAULT NULL COMMENT '所属组织ID',
   `admin_users` varchar(1000) DEFAULT NULL COMMENT '流程管理员用户名JSON数组',
   `icon` varchar(512) DEFAULT NULL COMMENT '流程图标',
   `definition_name` varchar(128) NOT NULL COMMENT '流程名称',
@@ -1066,6 +1067,9 @@ CREATE TABLE IF NOT EXISTS `workflow_definition` (
   `process_definition_id` varchar(128) DEFAULT NULL COMMENT 'Flowable 流程定义ID',
   `process_definition_version` int DEFAULT NULL COMMENT 'Flowable 流程定义版本',
   `published_version_no` int DEFAULT NULL COMMENT 'Mango最近发布版本号',
+  `source_template_id` bigint DEFAULT NULL COMMENT '来源流程模板ID',
+  `source_template_code` varchar(128) DEFAULT NULL COMMENT '来源流程模板编码',
+  `source_template_version` int DEFAULT NULL COMMENT '来源流程模板版本',
   `designer_json` longtext NOT NULL COMMENT '设计器JSON内容',
   `bpmn_xml` longtext DEFAULT NULL COMMENT '最近一次发布生成的BPMN XML内容',
   `form_code` varchar(128) DEFAULT NULL COMMENT '表单编码',
@@ -1081,10 +1085,69 @@ CREATE TABLE IF NOT EXISTS `workflow_definition` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标准更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_workflow_definition_key` (`tenant_id`,`definition_key`),
-  KEY `idx_workflow_definition_group` (`group_id`),
+  KEY `idx_workflow_definition_category` (`category_id`),
+  KEY `idx_workflow_definition_org` (`org_id`),
   KEY `idx_workflow_definition_status` (`status`),
+  KEY `idx_workflow_definition_source_template` (`source_template_id`),
   KEY `idx_workflow_definition_deployment` (`deployment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程定义配置表';
+
+CREATE TABLE IF NOT EXISTS `workflow_template_category` (
+  `id` bigint NOT NULL COMMENT '流程模板分类ID',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `parent_id` bigint DEFAULT NULL COMMENT '父级分类ID',
+  `category_name` varchar(64) NOT NULL COMMENT '分类名称',
+  `category_code` varchar(64) NOT NULL COMMENT '分类编码',
+  `icon` varchar(128) DEFAULT NULL COMMENT '分类图标',
+  `sort` int NOT NULL DEFAULT '0' COMMENT '排序号',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-停用 1-启用',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
+  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '标准创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标准更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_workflow_template_category_code` (`tenant_id`,`category_code`),
+  KEY `idx_workflow_template_category_parent` (`parent_id`),
+  KEY `idx_workflow_template_category_status` (`status`,`sort`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程模板分类表';
+
+CREATE TABLE IF NOT EXISTS `workflow_template` (
+  `id` bigint NOT NULL COMMENT '流程模板ID',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '机构隔离ID',
+  `template_name` varchar(128) NOT NULL COMMENT '模板名称',
+  `template_code` varchar(128) NOT NULL COMMENT '模板编码',
+  `template_category_id` bigint DEFAULT NULL COMMENT '流程模板分类ID',
+  `category_code` varchar(64) DEFAULT NULL COMMENT '业务场景编码',
+  `category_name` varchar(64) DEFAULT NULL COMMENT '业务场景名称',
+  `icon` varchar(512) DEFAULT NULL COMMENT '流程图标',
+  `admin_users` varchar(1000) DEFAULT NULL COMMENT '流程管理员用户名JSON数组',
+  `designer_json` longtext NOT NULL COMMENT '设计器JSON内容快照',
+  `form_code` varchar(128) DEFAULT NULL COMMENT '表单编码',
+  `form_json` longtext DEFAULT NULL COMMENT '动态表单JSON配置快照',
+  `version_no` int NOT NULL DEFAULT '1' COMMENT '模板版本号',
+  `latest_flag` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否当前版本',
+  `status` varchar(32) NOT NULL DEFAULT 'ENABLED' COMMENT '模板状态: ENABLED-可导入 DISABLED-停用 ARCHIVED-归档',
+  `source_definition_id` bigint DEFAULT NULL COMMENT '来源流程定义ID',
+  `source_definition_key` varchar(128) DEFAULT NULL COMMENT '来源流程编码',
+  `source_definition_name` varchar(128) DEFAULT NULL COMMENT '来源流程名称',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
+  `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '标准创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标准更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_workflow_template_version` (`tenant_id`,`template_code`,`version_no`),
+  KEY `idx_workflow_template_category` (`template_category_id`),
+  KEY `idx_workflow_template_code` (`tenant_id`,`template_code`),
+  KEY `idx_workflow_template_latest` (`tenant_id`,`template_code`,`latest_flag`),
+  KEY `idx_workflow_template_status` (`status`),
+  KEY `idx_workflow_template_source_definition` (`source_definition_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程模板快照表';
 
 CREATE TABLE IF NOT EXISTS `workflow_node_definition` (
   `id` bigint NOT NULL COMMENT '节点定义ID',
@@ -1142,9 +1205,13 @@ CREATE TABLE IF NOT EXISTS `workflow_definition_version` (
   KEY `idx_workflow_version_deployment` (`deployment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='流程定义发布版本表';
 
-INSERT INTO `workflow_group` (`id`, `tenant_id`, `group_name`, `group_code`, `sort`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
-VALUES (1,1,'通用流程','COMMON',1,1,'系统默认通用流程分组',NULL,NOW(),NOW(),NULL,NOW(),NOW())
-ON DUPLICATE KEY UPDATE `group_name` = VALUES(`group_name`);
+INSERT INTO `workflow_category` (`id`, `tenant_id`, `category_name`, `category_code`, `sort`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
+VALUES (1,1,'通用流程','COMMON',1,1,'系统默认通用流程分类',NULL,NOW(),NOW(),NULL,NOW(),NOW())
+ON DUPLICATE KEY UPDATE `category_name` = VALUES(`category_name`);
+
+INSERT INTO `workflow_template_category` (`id`, `tenant_id`, `parent_id`, `category_name`, `category_code`, `icon`, `sort`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
+VALUES (1,1,NULL,'通用模板','COMMON_TEMPLATE','CollectionTag',1,1,'系统默认通用流程模板分类',NULL,NOW(),NOW(),NULL,NOW(),NOW())
+ON DUPLICATE KEY UPDATE `category_name` = VALUES(`category_name`);
 
 INSERT INTO `workflow_node_definition` (`id`, `tenant_id`, `node_definition_code`, `node_type`, `node_name`, `category_code`, `category_name`, `description`, `bpmn_type`, `execution_type`, `color`, `icon`, `property_schema`, `default_properties`, `sort`, `status`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
 VALUES
@@ -1415,13 +1482,13 @@ INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `men
 -- -----------------------------------------------------------------------------
 
 DELETE FROM `authorization_role_menu`
-WHERE `menu_id` IN (2604,2604000,2604001,2604002,2604003,2604004,2604005,2604006);
+WHERE `menu_id` IN (2604,260401,260402,2604000,2604001,2604002,2604003,2604004,2604005,2604006,2604100,2604101,2604102,2604103,2604104,2604105,2604106);
 
 DELETE FROM `authorization_menu_package_item`
-WHERE `menu_id` IN (2604,2604000,2604001,2604002,2604003,2604004,2604005,2604006);
+WHERE `menu_id` IN (2604,260401,260402,2604000,2604001,2604002,2604003,2604004,2604005,2604006,2604100,2604101,2604102,2604103,2604104,2604105,2604106);
 
 DELETE FROM `authorization_menu`
-WHERE `id` IN (2604,2604000,2604001,2604002,2604003,2604004,2604005,2604006);
+WHERE `id` IN (2604,260401,260402,2604000,2604001,2604002,2604003,2604004,2604005,2604006,2604100,2604101,2604102,2604103,2604104,2604105,2604106);
 
 DELETE FROM `authorization_role_menu`
 WHERE `menu_id` IN (24,24000,24003,24004,24005,24006)
@@ -1456,14 +1523,23 @@ WHERE (
 
 INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
 VALUES
-(2604,1,'internal-admin',26,2,'流程管理','system:workflow','/workflow/manage','Operation','@/views/system/workflow-definition/index.vue',3,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程分组与流程定义管理',0,NULL,NOW(),NULL,NOW()),
-(2604000,1,'internal-admin',2604,3,'查询流程','system:workflow:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程管理列表查询权限',0,NULL,NOW(),NULL,NOW()),
-(2604001,1,'internal-admin',2604,3,'查看流程','system:workflow:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'system:workflow:query',NULL,NULL,NOW(),NOW(),'流程管理详情查询权限',0,NULL,NOW(),NULL,NOW()),
-(2604002,1,'internal-admin',2604,3,'新增流程','system:workflow:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:workflow:add',NULL,NULL,NOW(),NOW(),'流程管理新增权限',0,NULL,NOW(),NULL,NOW()),
-(2604003,1,'internal-admin',2604,3,'编辑流程','system:workflow:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:workflow:edit',NULL,NULL,NOW(),NOW(),'流程管理编辑权限',0,NULL,NOW(),NULL,NOW()),
-(2604004,1,'internal-admin',2604,3,'删除流程','system:workflow:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:workflow:delete',NULL,NULL,NOW(),NOW(),'流程管理删除权限',0,NULL,NOW(),NULL,NOW()),
-(2604005,1,'internal-admin',2604,3,'调整状态','system:workflow:status',NULL,NULL,NULL,5,1,0,0,0,NULL,'system:workflow:status',NULL,NULL,NOW(),NOW(),'流程管理状态调整权限',0,NULL,NOW(),NULL,NOW()),
-(2604006,1,'internal-admin',2604,3,'发布流程','system:workflow:deploy',NULL,NULL,NULL,6,1,0,0,0,NULL,'system:workflow:deploy',NULL,NULL,NOW(),NOW(),'流程管理发布权限',0,NULL,NOW(),NULL,NOW())
+(2604,1,'internal-admin',26,1,'流程管理','workflow:manage','/workflow/manage','Operation',NULL,2,1,1,0,0,'/workflow/manage/definition',NULL,NULL,NULL,NOW(),NOW(),'流程模板、流程定义和发布配置管理',0,NULL,NOW(),NULL,NOW()),
+(260401,1,'internal-admin',2604,2,'流程模板','workflow:template','/workflow/manage/template','CollectionTag','@/views/workflow/template/index.vue',1,1,1,0,0,NULL,'workflow:template:list',NULL,NULL,NOW(),NOW(),'系统内置流程模板与租户初始化模板管理',0,NULL,NOW(),NULL,NOW()),
+(260402,1,'internal-admin',2604,2,'流程定义','system:workflow','/workflow/manage/definition','Files','@/views/system/workflow-definition/index.vue',2,1,1,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程分类与流程定义管理',0,NULL,NOW(),NULL,NOW()),
+(2604000,1,'internal-admin',260402,3,'查询流程','system:workflow:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'system:workflow:list',NULL,NULL,NOW(),NOW(),'流程定义列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(2604001,1,'internal-admin',260402,3,'查看流程','system:workflow:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'system:workflow:query',NULL,NULL,NOW(),NOW(),'流程定义详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(2604002,1,'internal-admin',260402,3,'新增流程','system:workflow:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'system:workflow:add',NULL,NULL,NOW(),NOW(),'流程定义新增权限',0,NULL,NOW(),NULL,NOW()),
+(2604003,1,'internal-admin',260402,3,'编辑流程','system:workflow:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'system:workflow:edit',NULL,NULL,NOW(),NOW(),'流程定义编辑权限',0,NULL,NOW(),NULL,NOW()),
+(2604004,1,'internal-admin',260402,3,'删除流程','system:workflow:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'system:workflow:delete',NULL,NULL,NOW(),NOW(),'流程定义删除权限',0,NULL,NOW(),NULL,NOW()),
+(2604005,1,'internal-admin',260402,3,'调整状态','system:workflow:status',NULL,NULL,NULL,5,1,0,0,0,NULL,'system:workflow:status',NULL,NULL,NOW(),NOW(),'流程定义状态调整权限',0,NULL,NOW(),NULL,NOW()),
+(2604006,1,'internal-admin',260402,3,'发布流程','system:workflow:deploy',NULL,NULL,NULL,6,1,0,0,0,NULL,'system:workflow:deploy',NULL,NULL,NOW(),NOW(),'流程定义发布权限',0,NULL,NOW(),NULL,NOW()),
+(2604100,1,'internal-admin',260401,3,'查询模板','workflow:template:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'workflow:template:list',NULL,NULL,NOW(),NOW(),'流程模板列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(2604101,1,'internal-admin',260401,3,'查看模板','workflow:template:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'workflow:template:query',NULL,NULL,NOW(),NOW(),'流程模板详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(2604102,1,'internal-admin',260401,3,'新增模板','workflow:template:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'workflow:template:add',NULL,NULL,NOW(),NOW(),'流程模板新增权限',0,NULL,NOW(),NULL,NOW()),
+(2604103,1,'internal-admin',260401,3,'编辑模板','workflow:template:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'workflow:template:edit',NULL,NULL,NOW(),NOW(),'流程模板编辑权限',0,NULL,NOW(),NULL,NOW()),
+(2604104,1,'internal-admin',260401,3,'删除模板','workflow:template:delete',NULL,NULL,NULL,4,1,0,0,0,NULL,'workflow:template:delete',NULL,NULL,NOW(),NOW(),'流程模板删除权限',0,NULL,NOW(),NULL,NOW()),
+(2604105,1,'internal-admin',260401,3,'由模板创建流程','workflow:template:create-definition',NULL,NULL,NULL,5,1,0,0,0,NULL,'workflow:template:create-definition',NULL,NULL,NOW(),NOW(),'根据流程模板创建租户流程定义权限',0,NULL,NOW(),NULL,NOW()),
+(2604106,1,'internal-admin',260401,3,'推送流程','workflow:template:push',NULL,NULL,NULL,6,1,0,0,0,NULL,'workflow:template:push',NULL,NULL,NOW(),NOW(),'将流程模板推送为目标机构流程草稿权限',0,NULL,NOW(),NULL,NOW())
 ON DUPLICATE KEY UPDATE
 `parent_id` = VALUES(`parent_id`),
 `menu_type` = VALUES(`menu_type`),
@@ -1481,57 +1557,117 @@ ON DUPLICATE KEY UPDATE
 `update_time` = NOW(),
 `updated_at` = NOW();
 
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-workflow',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` IN (2604,260401,260402,2604000,2604001,2604002,2604003,2604004,2604005,2604006,2604100,2604101,2604102,2604103,2604104,2604105,2604106);
+
 INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
 (12604,1,1,2604,24),
-(1260400,1,1,2604000,86),
-(1260401,1,1,2604001,87),
-(1260402,1,1,2604002,88),
-(1260403,1,1,2604003,89),
-(1260404,1,1,2604004,90),
-(1260405,1,1,2604005,91),
-(1260406,1,1,2604006,92),
+(12600401,1,1,260401,86),
+(12600402,1,1,260402,87),
+(126040000,1,1,2604000,88),
+(126040001,1,1,2604001,89),
+(126040002,1,1,2604002,90),
+(126040003,1,1,2604003,91),
+(126040004,1,1,2604004,92),
+(126040005,1,1,2604005,93),
+(126040006,1,1,2604006,94),
+(126041000,1,1,2604100,95),
+(126041001,1,1,2604101,96),
+(126041002,1,1,2604102,97),
+(126041003,1,1,2604103,98),
+(126041004,1,1,2604104,99),
+(126041005,1,1,2604105,100),
+(126041006,1,1,2604106,101),
 (22604,1,2,2604,17),
-(2260400,1,2,2604000,20),
-(2260401,1,2,2604001,21),
-(2260402,1,2,2604002,22),
-(2260403,1,2,2604003,23),
-(2260404,1,2,2604004,24),
-(2260405,1,2,2604005,25),
-(2260406,1,2,2604006,26);
+(22600401,1,2,260401,18),
+(22600402,1,2,260402,19),
+(226040000,1,2,2604000,20),
+(226040001,1,2,2604001,21),
+(226040002,1,2,2604002,22),
+(226040003,1,2,2604003,23),
+(226040004,1,2,2604004,24),
+(226040005,1,2,2604005,25),
+(226040006,1,2,2604006,26),
+(226041000,1,2,2604100,27),
+(226041001,1,2,2604101,28),
+(226041002,1,2,2604102,29),
+(226041003,1,2,2604103,30),
+(226041004,1,2,2604104,31),
+(226041005,1,2,2604105,32),
+(226041006,1,2,2604106,33);
 
 INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
 (52604,1,1,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(526401,1,1,260401,NOW(),NULL,NOW(),NULL,NOW()),
+(526402,1,1,260402,NOW(),NULL,NOW(),NULL,NOW()),
 (5260400,1,1,2604000,NOW(),NULL,NOW(),NULL,NOW()),
-(5260401,1,1,2604001,NOW(),NULL,NOW(),NULL,NOW()),
-(5260402,1,1,2604002,NOW(),NULL,NOW(),NULL,NOW()),
 (5260403,1,1,2604003,NOW(),NULL,NOW(),NULL,NOW()),
 (5260404,1,1,2604004,NOW(),NULL,NOW(),NULL,NOW()),
 (5260405,1,1,2604005,NOW(),NULL,NOW(),NULL,NOW()),
 (5260406,1,1,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(5260407,1,1,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(5260408,1,1,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(5264100,1,1,2604100,NOW(),NULL,NOW(),NULL,NOW()),
+(5264101,1,1,2604101,NOW(),NULL,NOW(),NULL,NOW()),
+(5264102,1,1,2604102,NOW(),NULL,NOW(),NULL,NOW()),
+(5264103,1,1,2604103,NOW(),NULL,NOW(),NULL,NOW()),
+(5264104,1,1,2604104,NOW(),NULL,NOW(),NULL,NOW()),
+(5264105,1,1,2604105,NOW(),NULL,NOW(),NULL,NOW()),
+(5264106,1,1,2604106,NOW(),NULL,NOW(),NULL,NOW()),
 (62604,1,2,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(626401,1,2,260401,NOW(),NULL,NOW(),NULL,NOW()),
+(626402,1,2,260402,NOW(),NULL,NOW(),NULL,NOW()),
 (6260400,1,2,2604000,NOW(),NULL,NOW(),NULL,NOW()),
-(6260401,1,2,2604001,NOW(),NULL,NOW(),NULL,NOW()),
-(6260402,1,2,2604002,NOW(),NULL,NOW(),NULL,NOW()),
 (6260403,1,2,2604003,NOW(),NULL,NOW(),NULL,NOW()),
 (6260404,1,2,2604004,NOW(),NULL,NOW(),NULL,NOW()),
 (6260405,1,2,2604005,NOW(),NULL,NOW(),NULL,NOW()),
 (6260406,1,2,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(6260407,1,2,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(6260408,1,2,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(6264100,1,2,2604100,NOW(),NULL,NOW(),NULL,NOW()),
+(6264101,1,2,2604101,NOW(),NULL,NOW(),NULL,NOW()),
+(6264102,1,2,2604102,NOW(),NULL,NOW(),NULL,NOW()),
+(6264103,1,2,2604103,NOW(),NULL,NOW(),NULL,NOW()),
+(6264104,1,2,2604104,NOW(),NULL,NOW(),NULL,NOW()),
+(6264105,1,2,2604105,NOW(),NULL,NOW(),NULL,NOW()),
+(6264106,1,2,2604106,NOW(),NULL,NOW(),NULL,NOW()),
 (72604,1,3,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(726401,1,3,260401,NOW(),NULL,NOW(),NULL,NOW()),
+(726402,1,3,260402,NOW(),NULL,NOW(),NULL,NOW()),
 (7260400,1,3,2604000,NOW(),NULL,NOW(),NULL,NOW()),
-(7260401,1,3,2604001,NOW(),NULL,NOW(),NULL,NOW()),
-(7260402,1,3,2604002,NOW(),NULL,NOW(),NULL,NOW()),
 (7260403,1,3,2604003,NOW(),NULL,NOW(),NULL,NOW()),
 (7260404,1,3,2604004,NOW(),NULL,NOW(),NULL,NOW()),
 (7260405,1,3,2604005,NOW(),NULL,NOW(),NULL,NOW()),
 (7260406,1,3,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(7260407,1,3,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(7260408,1,3,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(7264100,1,3,2604100,NOW(),NULL,NOW(),NULL,NOW()),
+(7264101,1,3,2604101,NOW(),NULL,NOW(),NULL,NOW()),
+(7264102,1,3,2604102,NOW(),NULL,NOW(),NULL,NOW()),
+(7264103,1,3,2604103,NOW(),NULL,NOW(),NULL,NOW()),
+(7264104,1,3,2604104,NOW(),NULL,NOW(),NULL,NOW()),
+(7264105,1,3,2604105,NOW(),NULL,NOW(),NULL,NOW()),
+(7264106,1,3,2604106,NOW(),NULL,NOW(),NULL,NOW()),
 (82604,1,4,2604,NOW(),NULL,NOW(),NULL,NOW()),
+(826401,1,4,260401,NOW(),NULL,NOW(),NULL,NOW()),
+(826402,1,4,260402,NOW(),NULL,NOW(),NULL,NOW()),
 (8260400,1,4,2604000,NOW(),NULL,NOW(),NULL,NOW()),
-(8260401,1,4,2604001,NOW(),NULL,NOW(),NULL,NOW()),
-(8260402,1,4,2604002,NOW(),NULL,NOW(),NULL,NOW()),
 (8260403,1,4,2604003,NOW(),NULL,NOW(),NULL,NOW()),
 (8260404,1,4,2604004,NOW(),NULL,NOW(),NULL,NOW()),
 (8260405,1,4,2604005,NOW(),NULL,NOW(),NULL,NOW()),
-(8260406,1,4,2604006,NOW(),NULL,NOW(),NULL,NOW());
+(8260406,1,4,2604006,NOW(),NULL,NOW(),NULL,NOW()),
+(8260407,1,4,2604001,NOW(),NULL,NOW(),NULL,NOW()),
+(8260408,1,4,2604002,NOW(),NULL,NOW(),NULL,NOW()),
+(8264100,1,4,2604100,NOW(),NULL,NOW(),NULL,NOW()),
+(8264101,1,4,2604101,NOW(),NULL,NOW(),NULL,NOW()),
+(8264102,1,4,2604102,NOW(),NULL,NOW(),NULL,NOW()),
+(8264103,1,4,2604103,NOW(),NULL,NOW(),NULL,NOW()),
+(8264104,1,4,2604104,NOW(),NULL,NOW(),NULL,NOW()),
+(8264105,1,4,2604105,NOW(),NULL,NOW(),NULL,NOW()),
+(8264106,1,4,2604106,NOW(),NULL,NOW(),NULL,NOW());
 
 
 

@@ -1,18 +1,8 @@
 package io.mango.infra.web.starter;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.fasterxml.jackson.datatype.jsr310.PackageVersion;
-import com.fasterxml.jackson.datatype.jsr310.deser.InstantDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import io.mango.infra.kv.api.expression.KvContextContributor;
 import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.web.api.IInternalPathProvider;
@@ -26,6 +16,7 @@ import io.mango.infra.web.support.InnerMappingScanner;
 import io.mango.infra.web.support.ServletRequestContextProvider;
 import io.mango.infra.web.support.WebKvContextContributor;
 import io.mango.infra.web.support.WebTraceIdResolver;
+import io.mango.infra.web.util.JacksonUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,10 +40,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -65,10 +52,10 @@ import java.util.TimeZone;
 @EnableConfigurationProperties(MangoWebProperties.class)
 public class WebAutoConfiguration implements WebMvcConfigurer {
 
-    private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    private static final String DATE_PATTERN = "yyyy-MM-dd";
-    private static final String TIME_PATTERN = "HH:mm:ss";
-    private static final String ASIA_SHANGHAI = "Asia/Shanghai";
+    private static final String DATE_TIME_PATTERN = JacksonUtils.DATE_TIME_PATTERN;
+    private static final String DATE_PATTERN = JacksonUtils.DATE_PATTERN;
+    private static final String TIME_PATTERN = JacksonUtils.TIME_PATTERN;
+    private static final String ASIA_SHANGHAI = JacksonUtils.ASIA_SHANGHAI;
 
     private final MangoWebProperties properties;
 
@@ -97,7 +84,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
                 .timeZone(TimeZone.getTimeZone(ASIA_SHANGHAI))
                 .simpleDateFormat(DATE_TIME_PATTERN)
                 .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .modules(mangoJavaTimeModule())
+                .modules(JacksonUtils.javaTimeModule())
                 .serializerByType(Long.class, ToStringSerializer.instance)
                 .serializerByType(Long.TYPE, ToStringSerializer.instance);
     }
@@ -109,12 +96,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
             @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
                 if (bean instanceof ObjectMapper objectMapper) {
-                    SimpleModule module = new SimpleModule("mango-long-to-string");
-                    module.addSerializer(Long.class, ToStringSerializer.instance);
-                    module.addSerializer(Long.TYPE, ToStringSerializer.instance);
-                    objectMapper.registerModule(module);
-                    objectMapper.registerModule(mangoJavaTimeModule());
-                    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                    JacksonUtils.configure(objectMapper);
                 }
                 return bean;
             }
@@ -157,6 +139,7 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
+    @ConditionalOnBean(IKvStore.class)
     public InternalCallFilter internalCallFilter(
             @Qualifier("aggregatingInternalPathProvider") IInternalPathProvider internalPathProvider,
             IKvStore kvStore,
@@ -220,21 +203,5 @@ public class WebAutoConfiguration implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 保留 Spring Boot 默认静态资源处理逻辑。
-    }
-
-    private SimpleModule mangoJavaTimeModule() {
-        SimpleModule module = new SimpleModule("mango-java-time", PackageVersion.VERSION);
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DATE_PATTERN);
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(TIME_PATTERN);
-        module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
-        module.addSerializer(LocalDate.class, new LocalDateSerializer(dateFormatter));
-        module.addSerializer(LocalTime.class, new LocalTimeSerializer(timeFormatter));
-        module.addSerializer(Instant.class, InstantSerializer.INSTANCE);
-        module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
-        module.addDeserializer(LocalDate.class, new LocalDateDeserializer(dateFormatter));
-        module.addDeserializer(LocalTime.class, new LocalTimeDeserializer(timeFormatter));
-        module.addDeserializer(Instant.class, InstantDeserializer.INSTANT);
-        return module;
     }
 }

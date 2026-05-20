@@ -16,11 +16,14 @@ public class WorkflowDefinitionVO {
     @Schema(description = "流程定义ID")
     private Long id;
 
-    @Schema(description = "流程分组ID")
-    private Long groupId;
+    @Schema(description = "流程分类ID")
+    private Long categoryId;
 
-    @Schema(description = "流程分组名称")
-    private String groupName;
+    @Schema(description = "流程分类名称")
+    private String categoryName;
+
+    @Schema(description = "所属组织ID")
+    private Long orgId;
 
     @Schema(description = "流程管理员用户名列表")
     private List<String> adminUsers;
@@ -45,6 +48,15 @@ public class WorkflowDefinitionVO {
 
     @Schema(description = "Mango最近发布版本号")
     private Integer publishedVersionNo;
+
+    @Schema(description = "来源流程模板ID")
+    private Long sourceTemplateId;
+
+    @Schema(description = "来源流程模板编码")
+    private String sourceTemplateCode;
+
+    @Schema(description = "来源流程模板版本")
+    private Integer sourceTemplateVersion;
 
     @Schema(description = "设计器JSON内容")
     private String designerJson;

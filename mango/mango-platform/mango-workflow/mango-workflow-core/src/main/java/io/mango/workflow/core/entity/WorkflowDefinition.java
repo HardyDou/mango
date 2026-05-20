@@ -18,7 +18,8 @@ public class WorkflowDefinition {
     private Long id;
 
     private Long tenantId;
-    private Long groupId;
+    private Long categoryId;
+    private Long orgId;
     private String adminUsers;
     private String icon;
     private String definitionName;
@@ -27,6 +28,9 @@ public class WorkflowDefinition {
     private String processDefinitionId;
     private Integer processDefinitionVersion;
     private Integer publishedVersionNo;
+    private Long sourceTemplateId;
+    private String sourceTemplateCode;
+    private Integer sourceTemplateVersion;
     private String designerJson;
     private String bpmnXml;
     private String formCode;

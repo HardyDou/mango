@@ -6,10 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 协同办公任务视图。
+ * 审批中心任务视图。
  */
 @Data
-@Schema(description = "协同办公任务视图")
+@Schema(description = "审批中心任务视图")
 public class WorkflowTaskVO {
 
     @Schema(description = "任务ID")

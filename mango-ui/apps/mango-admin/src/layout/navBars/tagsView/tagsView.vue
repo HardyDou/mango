@@ -16,7 +16,7 @@
         <el-icon
           v-if="!tag.meta?.isAffix"
           class="close-icon"
-          @click.prevent="closeSelectedTag(tag)"
+          @click.prevent.stop="closeSelectedTag(tag)"
         >
           <Close />
         </el-icon>

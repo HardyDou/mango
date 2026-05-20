@@ -16,8 +16,28 @@ const platformTenant: LoginTenant = {
   tenantName: '芒果集团',
 };
 
+const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:5555';
+
+function api(path: string) {
+  return `${apiBaseURL}${path}`;
+}
+
+async function routeMinioDirectAccess(page: Page, request: APIRequestContext) {
+  await page.route('http://file.mango.io:9000/**', async (route) => {
+    const url = new URL(route.request().url());
+    const response = await request.get(`http://127.0.0.1:9000${url.pathname}${url.search}`, {
+      headers: { Host: url.host },
+    });
+    await route.fulfill({
+      status: response.status(),
+      headers: response.headers(),
+      body: await response.body(),
+    });
+  });
+}
+
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(api(`/auth/login`), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -51,63 +71,91 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function openWorkflowManage(page: Page) {
-  await page.getByRole('button', { name: '协同办公' }).click();
+  await page.getByRole('button', { name: '审批中心' }).click();
   await page.getByRole('menuitem', { name: '流程管理' }).click();
-  await page.waitForURL('**/#/workflow/manage', { timeout: 10000 });
+  await page.getByRole('menuitem', { name: '流程定义' }).click();
+  await page.waitForURL('**/#/workflow/manage/definition', { timeout: 10000 });
 }
 
 async function openStartProcess(page: Page) {
-  await page.getByRole('button', { name: '协同办公' }).click();
+  await page.getByRole('button', { name: '审批中心' }).click();
   await page.getByRole('menuitem', { name: '发起流程' }).click();
   await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
 }
 
 async function openInitiatedTasks(page: Page) {
-  await page.getByRole('button', { name: '协同办公' }).click();
-  await page.getByRole('menubar').getByText('任务管理', { exact: true }).click();
-  await page.getByRole('menuitem', { name: '我的发起' }).click();
+  await page.getByRole('button', { name: '审批中心' }).click();
+  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
+  await page.getByRole('menuitem', { name: '我的申请' }).click();
   await page.waitForURL('**/#/workflow/task/initiated', { timeout: 10000 });
 }
 
 async function openTodoTasks(page: Page) {
-  await page.getByRole('button', { name: '协同办公' }).click();
-  await page.getByRole('menubar').getByText('任务管理', { exact: true }).click();
+  await page.getByRole('button', { name: '审批中心' }).click();
+  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
   await page.getByRole('menuitem', { name: '我的待办' }).click();
   await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
 }
 
 async function openDoneTasks(page: Page) {
-  await page.getByRole('button', { name: '协同办公' }).click();
-  await page.getByRole('menubar').getByText('任务管理', { exact: true }).click();
+  await page.getByRole('button', { name: '审批中心' }).click();
+  await page.getByRole('menubar').getByText('流程办理', { exact: true }).click();
   await page.getByRole('menuitem', { name: '我的已办' }).click();
   await page.waitForURL('**/#/workflow/task/done', { timeout: 10000 });
 }
 
 async function cleanupWorkflow(request: APIRequestContext, token: string, keyword: string) {
   const headers = { Authorization: `Bearer ${token}` };
-  const definitionsResponse = await request.get(`http://localhost:5555/workflow/definitions/page?page=1&size=100&keyword=${keyword}`, {
+  const definitionsResponse = await request.get(api(`/workflow/definitions/page?page=1&size=100&keyword=${keyword}`), {
     headers,
   });
   if (definitionsResponse.status() === 200) {
     const definitionsBody = await definitionsResponse.json();
     for (const definition of definitionsBody.data?.list || []) {
-      await request.put('http://localhost:5555/workflow/definitions/status', {
+      await request.put(api(`/workflow/definitions/status`), {
         headers,
         data: { id: definition.id, status: 'DISABLED' },
       });
-      await request.delete(`http://localhost:5555/workflow/definitions?id=${definition.id}`, {
+      await request.delete(api(`/workflow/definitions?id=${definition.id}`), {
         headers,
       });
     }
   }
 
-  const groupsResponse = await request.get(`http://localhost:5555/workflow/groups/page?page=1&size=100&keyword=${keyword}`, {
+  const categoriesResponse = await request.get(api(`/workflow/categories/page?page=1&size=100&keyword=${keyword}`), {
     headers,
   });
-  if (groupsResponse.status() === 200) {
-    const groupsBody = await groupsResponse.json();
-    for (const group of groupsBody.data?.list || []) {
-      await request.delete(`http://localhost:5555/workflow/groups?id=${group.id}`, {
+  if (categoriesResponse.status() === 200) {
+    const categoriesBody = await categoriesResponse.json();
+    for (const category of categoriesBody.data?.list || []) {
+      await request.delete(api(`/workflow/categories?id=${category.id}`), {
+        headers,
+      });
+    }
+  }
+}
+
+async function cleanupWorkflowTemplates(request: APIRequestContext, token: string, keyword: string) {
+  const headers = { Authorization: `Bearer ${token}` };
+  const templatesResponse = await request.get(api(`/workflow/templates/page?page=1&size=100&keyword=${keyword}`), {
+    headers,
+  });
+  if (templatesResponse.status() === 200) {
+    const templatesBody = await templatesResponse.json();
+    for (const template of templatesBody.data?.list || []) {
+      await request.delete(api(`/workflow/templates?id=${template.id}`), {
+        headers,
+      });
+    }
+  }
+
+  const templateCategoriesResponse = await request.get(api(`/workflow/template-categories/page?page=1&size=100&keyword=${keyword}`), {
+    headers,
+  });
+  if (templateCategoriesResponse.status() === 200) {
+    const templateCategoriesBody = await templateCategoriesResponse.json();
+    for (const category of templateCategoriesBody.data?.list || []) {
+      await request.delete(api(`/workflow/template-categories?id=${category.id}`), {
         headers,
       });
     }
@@ -117,7 +165,7 @@ async function cleanupWorkflow(request: APIRequestContext, token: string, keywor
 async function cleanupWorkflowUploadFiles(request: APIRequestContext, token: string, fileIds: string[]) {
   const headers = { Authorization: `Bearer ${token}` };
   for (const id of fileIds) {
-    await request.delete(`http://localhost:5555/file/files?id=${encodeURIComponent(id)}&reason=e2e-workflow-cleanup`, {
+    await request.delete(api(`/file/files?id=${encodeURIComponent(id)}&reason=e2e-workflow-cleanup`), {
       headers,
     }).catch(() => undefined);
   }
@@ -523,24 +571,24 @@ function runtimeComponentFormJson() {
 
 async function prepareExpenseWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
   const headers = { Authorization: `Bearer ${token}` };
-  const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+  const createCategoryResponse = await request.post(api(`/workflow/categories`), {
     headers,
     data: {
-      groupName: `E2E费用报销分组${unique}`,
-      groupCode: keyword,
+      categoryName: `E2E费用报销分类${unique}`,
+      categoryCode: keyword,
       sort: 93,
       status: 1,
       remark: 'E2E费用报销业务接入验证数据',
     },
   });
-  expect(createGroupResponse.status()).toBe(200);
-  const createGroupBody = await createGroupResponse.json();
-  expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
 
-  const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+  const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
     headers,
     data: {
-      groupId: createGroupBody.data,
+      categoryId: createCategoryBody.data,
       definitionName: `E2E费用报销审批${unique}`,
       definitionKey: `e2e_expense_reimbursement_${unique}`,
       designerJson: expenseApprovalDesignerJson(unique),
@@ -554,7 +602,7 @@ async function prepareExpenseWorkflow(request: APIRequestContext, token: string,
   const createDefinitionBody = await createDefinitionResponse.json();
   expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
 
-  const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
     headers,
   });
   expect(deployResponse.status()).toBe(200);
@@ -629,7 +677,7 @@ async function startExpenseProcess(
       },
     },
   };
-  const response = await request.post('http://localhost:5555/workflow/processes/start', {
+  const response = await request.post(api(`/workflow/processes/start`), {
     headers: { Authorization: `Bearer ${token}` },
     data: {
       definitionId,
@@ -652,7 +700,7 @@ async function startExpenseProcess(
 }
 
 async function latestBusinessApply(request: APIRequestContext, token: string, businessKey: string) {
-  const response = await request.get('http://localhost:5555/workflow/business-applies/progress/latest', {
+  const response = await request.get(api(`/workflow/business-applies/progress/latest`), {
     headers: { Authorization: `Bearer ${token}` },
     params: {
       businessType: 'EXPENSE_REIMBURSEMENT',
@@ -666,7 +714,7 @@ async function latestBusinessApply(request: APIRequestContext, token: string, bu
 }
 
 async function businessApplyHistory(request: APIRequestContext, token: string, businessKey: string) {
-  const response = await request.get('http://localhost:5555/workflow/business-applies/history', {
+  const response = await request.get(api(`/workflow/business-applies/history`), {
     headers: { Authorization: `Bearer ${token}` },
     params: {
       businessType: 'EXPENSE_REIMBURSEMENT',
@@ -682,7 +730,7 @@ async function businessApplyHistory(request: APIRequestContext, token: string, b
 }
 
 async function findTodoTask(request: APIRequestContext, token: string, businessKey: string, taskName: string) {
-  const response = await request.get('http://localhost:5555/workflow/tasks/todo', {
+  const response = await request.get(api(`/workflow/tasks/todo`), {
     headers: { Authorization: `Bearer ${token}` },
     params: { page: 1, size: 50, keyword: businessKey },
   });
@@ -696,7 +744,7 @@ async function findTodoTask(request: APIRequestContext, token: string, businessK
 }
 
 async function completeTask(request: APIRequestContext, token: string, taskId: string, comment: string, variables: Record<string, any> = {}) {
-  const response = await request.post('http://localhost:5555/workflow/tasks/complete', {
+  const response = await request.post(api(`/workflow/tasks/complete`), {
     headers: { Authorization: `Bearer ${token}` },
     data: { taskId, comment, variables },
   });
@@ -711,7 +759,7 @@ async function queryBusinessAppliesByCurrentNode(
   businessKey: string,
   taskDefinitionKey: string,
 ) {
-  const response = await request.post('http://localhost:5555/workflow/business-applies/page', {
+  const response = await request.post(api(`/workflow/business-applies/page`), {
     headers: { Authorization: `Bearer ${token}` },
     data: {
       page: 1,
@@ -740,24 +788,24 @@ function cleanupWorkflowBusinessApplies(businessKeyPrefix: string) {
 
 async function prepareLeaveWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
   const headers = { Authorization: `Bearer ${token}` };
-  const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+  const createCategoryResponse = await request.post(api(`/workflow/categories`), {
     headers,
     data: {
-      groupName: `E2E审批分组${unique}`,
-      groupCode: keyword,
+      categoryName: `E2E审批分类${unique}`,
+      categoryCode: keyword,
       sort: 96,
       status: 1,
       remark: 'E2E审批闭环验证数据',
     },
   });
-  expect(createGroupResponse.status()).toBe(200);
-  const createGroupBody = await createGroupResponse.json();
-  expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
 
-  const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+  const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
     headers,
     data: {
-      groupId: createGroupBody.data,
+      categoryId: createCategoryBody.data,
       definitionName: `E2E审批请假流程${unique}`,
       definitionKey: `e2e_approval_leave_${unique}`,
       designerJson: approvalDesignerJson(unique),
@@ -771,7 +819,7 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
   const createDefinitionBody = await createDefinitionResponse.json();
   expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
 
-  const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
     headers,
   });
   expect(deployResponse.status()).toBe(200);
@@ -787,24 +835,24 @@ async function prepareLeaveWorkflow(request: APIRequestContext, token: string, u
 
 async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
   const headers = { Authorization: `Bearer ${token}` };
-  const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+  const createCategoryResponse = await request.post(api(`/workflow/categories`), {
     headers,
     data: {
-      groupName: `E2E自选分组${unique}`,
-      groupCode: keyword,
+      categoryName: `E2E自选分类${unique}`,
+      categoryCode: keyword,
       sort: 95,
       status: 1,
       remark: 'E2E发起人自选验证数据',
     },
   });
-  expect(createGroupResponse.status()).toBe(200);
-  const createGroupBody = await createGroupResponse.json();
-  expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
 
-  const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+  const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
     headers,
     data: {
-      groupId: createGroupBody.data,
+      categoryId: createCategoryBody.data,
       definitionName: `E2E发起人自选流程${unique}`,
       definitionKey: `e2e_initiator_select_${unique}`,
       designerJson: initiatorSelectDesignerJson(unique),
@@ -818,7 +866,7 @@ async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token:
   const createDefinitionBody = await createDefinitionResponse.json();
   expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
 
-  const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
     headers,
   });
   expect(deployResponse.status()).toBe(200);
@@ -834,24 +882,24 @@ async function prepareInitiatorSelectWorkflow(request: APIRequestContext, token:
 
 async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: string, unique: number, keyword: string) {
   const headers = { Authorization: `Bearer ${token}` };
-  const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+  const createCategoryResponse = await request.post(api(`/workflow/categories`), {
     headers,
     data: {
-      groupName: `E2E自审分组${unique}`,
-      groupCode: keyword,
+      categoryName: `E2E自审分类${unique}`,
+      categoryCode: keyword,
       sort: 94,
       status: 1,
       remark: 'E2E发起人自己审批验证数据',
     },
   });
-  expect(createGroupResponse.status()).toBe(200);
-  const createGroupBody = await createGroupResponse.json();
-  expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+  expect(createCategoryResponse.status()).toBe(200);
+  const createCategoryBody = await createCategoryResponse.json();
+  expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
 
-  const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+  const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
     headers,
     data: {
-      groupId: createGroupBody.data,
+      categoryId: createCategoryBody.data,
       definitionName: `E2E发起人自己审批流程${unique}`,
       definitionKey: `e2e_initiator_self_${unique}`,
       designerJson: initiatorSelfDesignerJson(unique),
@@ -865,7 +913,7 @@ async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: s
   const createDefinitionBody = await createDefinitionResponse.json();
   expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
 
-  const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+  const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
     headers,
   });
   expect(deployResponse.status()).toBe(200);
@@ -880,7 +928,7 @@ async function prepareInitiatorSelfWorkflow(request: APIRequestContext, token: s
 }
 
 async function startLeaveProcess(request: APIRequestContext, token: string, definitionId: string, businessKey: string, days: number, reason: string) {
-  const response = await request.post('http://localhost:5555/workflow/processes/start', {
+  const response = await request.post(api(`/workflow/processes/start`), {
     headers: { Authorization: `Bearer ${token}` },
     data: {
       definitionId,
@@ -912,13 +960,109 @@ function startProcessDialog(page: Page, name: string) {
 }
 
 test.describe('工作流配置真实接口闭环', () => {
+  test('流程定义图标上传使用文件组件直连地址并保存到流程', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const unique = Date.now();
+    const keyword = `e2e_workflow_icon_${unique}`;
+    const categoryName = `E2E图标分类${unique}`;
+    const categoryCode = keyword;
+    const definitionName = `E2E图标流程${unique}`;
+    const definitionKey = `e2e_icon_process_${unique}`;
+    const token = await loginToken(request, platformTenant);
+    const headers = { Authorization: `Bearer ${token}` };
+    const uploadedFileIds: string[] = [];
+    const protectedDownloadRequests: string[] = [];
+
+    page.on('request', (request) => {
+      const url = request.url();
+      if (url.includes('/api/file/files/download')) {
+        protectedDownloadRequests.push(url);
+      }
+    });
+
+    try {
+      await cleanupWorkflow(request, token, keyword);
+      await routeMinioDirectAccess(page, request);
+
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
+        headers,
+        data: {
+          categoryName,
+          categoryCode,
+          sort: 92,
+          status: 1,
+          remark: 'E2E流程图标上传验证数据',
+        },
+      });
+      expect(createCategoryResponse.status()).toBe(200);
+      const createCategoryBody = await createCategoryResponse.json();
+      expectApiSuccess(createCategoryBody, '创建流程图标分类失败');
+
+      await loginPage(page, platformTenant);
+      await openWorkflowManage(page);
+      await expect(page.getByText('流程定义').first()).toBeVisible({ timeout: 10000 });
+      await page.getByRole('button', { name: '创建流程' }).click();
+
+      await page.locator('.builder-form .el-select').first().click();
+      await page.getByRole('option', { name: categoryName }).click();
+      await page.getByPlaceholder('请输入流程名称').fill(definitionName);
+      await page.getByPlaceholder('如 guarantee_approve').fill(definitionKey);
+
+      const iconPath = join(tmpdir(), `mango-workflow-icon-${unique}.png`);
+      writeFileSync(iconPath, Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
+        'base64',
+      ));
+      const uploadResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/files')
+        && response.request().method() === 'POST'
+        && response.status() === 200
+      );
+      await page.locator('.workflow-icon-upload-control input[type="file"]').setInputFiles(iconPath);
+      const uploadResponse = await uploadResponsePromise;
+      const uploadBody = await uploadResponse.json();
+      expectApiSuccess(uploadBody, '上传流程图标失败');
+      const fileId = String(uploadBody.data.id);
+      uploadedFileIds.push(fileId);
+      const directIconUrl = String(uploadBody.data.directPreviewUrl || uploadBody.data.directDownloadUrl || uploadBody.data.url || '');
+      expect(directIconUrl).toBeTruthy();
+      expect(directIconUrl).not.toContain('/api/file/files/download');
+
+      await expect(page.locator('.workflow-icon-upload-control .el-upload-list__item-thumbnail')).toBeVisible({ timeout: 10000 });
+      const thumbnailSrc = await page.locator('.workflow-icon-upload-control .el-upload-list__item-thumbnail').first().getAttribute('src');
+      expect(thumbnailSrc || '').toBeTruthy();
+      expect(thumbnailSrc || '').not.toContain('/api/file/files/download');
+
+      await page.getByRole('button', { name: '下一步' }).click();
+      await page.getByPlaceholder('如 guarantee_apply_form').fill(`form_${keyword}`);
+
+      const saveDraftResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions')
+        && response.request().method() === 'POST'
+      );
+      await page.getByRole('button', { name: '保存草稿' }).click();
+      const saveDraftResponse = await saveDraftResponsePromise;
+      const saveDraftRequestBody = saveDraftResponse.request().postDataJSON() as { icon?: string };
+      expect(saveDraftRequestBody.icon).toBeTruthy();
+      expect(String(saveDraftRequestBody.icon)).not.toContain('/api/file/files/download');
+      const saveDraftBody = await saveDraftResponse.json();
+      expectApiSuccess(saveDraftBody, '保存流程图标草稿失败');
+      await expect(page.getByText('草稿已保存')).toBeVisible({ timeout: 10000 });
+      expect(protectedDownloadRequests).toEqual([]);
+      await expectNoAuthError(page);
+    } finally {
+      await cleanupWorkflowUploadFiles(request, token, uploadedFileIds);
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
   test('创建流程进入独立三步设计工作台', async ({ page, request }) => {
     test.setTimeout(90_000);
     const pageErrors: string[] = [];
     const unique = Date.now();
     const keyword = `e2e_workflow_ui_${unique}`;
-    const groupName = `E2E设计分组${unique}`;
-    const groupCode = keyword;
+    const categoryName = `E2E设计分类${unique}`;
+    const categoryCode = keyword;
     const definitionName = `E2E设计流程${unique}`;
     const definitionKey = `e2e_ui_process_${unique}`;
     const token = await loginToken(request, platformTenant);
@@ -928,17 +1072,17 @@ test.describe('工作流配置真实接口闭环', () => {
     try {
       await cleanupWorkflow(request, token, keyword);
 
-      const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
         headers,
         data: {
-          groupName,
-          groupCode,
+          categoryName,
+          categoryCode,
           sort: 98,
           status: 1,
           remark: 'E2E设计工作台验证数据',
         },
       });
-      expect(createGroupResponse.status()).toBe(200);
+      expect(createCategoryResponse.status()).toBe(200);
 
       await loginPage(page, platformTenant);
       await openWorkflowManage(page);
@@ -951,7 +1095,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await expect(page.getByRole('button', { name: /流程设计/ })).toBeVisible();
 
       await page.locator('.builder-form .el-select').first().click();
-      await page.getByRole('option', { name: groupName }).click();
+      await page.getByRole('option', { name: categoryName }).click();
       await page.getByPlaceholder('请输入流程名称').fill(definitionName);
       await page.getByPlaceholder('如 guarantee_approve').fill(definitionKey);
       await page.getByRole('button', { name: '下一步' }).click();
@@ -1168,11 +1312,11 @@ test.describe('工作流配置真实接口闭环', () => {
     }
   });
 
-  test('平台管理员可维护流程分组、流程定义并发布到 Flowable', async ({ page, request }) => {
+  test('平台管理员可维护流程分类、流程定义并发布到 Flowable', async ({ page, request }) => {
     const unique = Date.now();
     const keyword = `e2e_workflow_${unique}`;
-    const groupName = `E2E流程分组${unique}`;
-    const groupCode = keyword;
+    const categoryName = `E2E流程分类${unique}`;
+    const categoryCode = keyword;
     const definitionName = `E2E流程${unique}`;
     const definitionKey = `e2e_process_${unique}`;
     const token = await loginToken(request, platformTenant);
@@ -1181,25 +1325,25 @@ test.describe('工作流配置真实接口闭环', () => {
     try {
       await cleanupWorkflow(request, token, keyword);
 
-      const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
         headers,
         data: {
-          groupName,
-          groupCode,
+          categoryName,
+          categoryCode,
           sort: 99,
           status: 1,
           remark: 'E2E验证数据',
         },
       });
-      expect(createGroupResponse.status()).toBe(200);
-      const createGroupBody = await createGroupResponse.json();
-      expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
-      const groupId = createGroupBody.data;
+      expect(createCategoryResponse.status()).toBe(200);
+      const createCategoryBody = await createCategoryResponse.json();
+      expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
+      const categoryId = createCategoryBody.data;
 
-      const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+      const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
         headers,
         data: {
-          groupId,
+          categoryId,
           definitionName,
           definitionKey,
           designerJson: designerJson(unique),
@@ -1226,7 +1370,7 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
       const definitionId = createDefinitionBody.data;
 
-      const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${definitionId}`, {
+      const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${definitionId}`), {
         headers,
       });
       expect(deployResponse.status()).toBe(200);
@@ -1236,7 +1380,7 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(deployBody.data.processDefinitionId).toBeTruthy();
       expect(deployBody.data.versionNo).toBe(1);
 
-      const versionsResponse = await request.get(`http://localhost:5555/workflow/definitions/versions?definitionId=${definitionId}`, {
+      const versionsResponse = await request.get(api(`/workflow/definitions/versions?definitionId=${definitionId}`), {
         headers,
       });
       expect(versionsResponse.status()).toBe(200);
@@ -1254,8 +1398,8 @@ test.describe('工作流配置真实接口闭环', () => {
       await pageResponsePromise;
       await expect(page.getByText('流程定义').first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByRole('button', { name: '创建流程' })).toBeVisible();
-      await page.getByRole('button', { name: '流程分组' }).click();
-      await expect(page.getByRole('button', { name: '新增分组' })).toBeVisible();
+      await page.getByRole('button', { name: '流程分类' }).click();
+      await expect(page.getByRole('button', { name: '新增分类' })).toBeVisible();
       await page.getByRole('button', { name: '流程定义' }).click();
       await page.getByPlaceholder('流程名称/编码').fill(definitionName);
       await page.getByRole('button', { name: '查询' }).first().click();
@@ -1268,11 +1412,156 @@ test.describe('工作流配置真实接口闭环', () => {
     }
   });
 
+  test('流程可生成模板，模板可导入流程且重复编码整批失败', async ({ request }) => {
+    const unique = Date.now();
+    const keyword = `e2e_workflow_template_${unique}`;
+    const categoryName = `E2E模板目标分类${unique}`;
+    const categoryCode = keyword;
+    const templateCategoryName = `E2E模板分类${unique}`;
+    const templateCategoryCode = `template_${keyword}`;
+    const definitionName = `E2E模板来源流程${unique}`;
+    const definitionKey = `e2e_template_source_${unique}`;
+    const templateName = `E2E流程模板${unique}`;
+    const templateCode = `e2e_template_${unique}`;
+    const token = await loginToken(request, platformTenant);
+    const headers = { Authorization: `Bearer ${token}` };
+
+    try {
+      await cleanupWorkflow(request, token, keyword);
+      await cleanupWorkflowTemplates(request, token, keyword);
+
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
+        headers,
+        data: {
+          categoryName,
+          categoryCode,
+          sort: 98,
+          status: 1,
+          remark: 'E2E模板导入目标分类',
+        },
+      });
+      expect(createCategoryResponse.status()).toBe(200);
+      const createCategoryBody = await createCategoryResponse.json();
+      expectApiSuccess(createCategoryBody, '创建流程分类失败');
+      const categoryId = createCategoryBody.data;
+
+      const createTemplateCategoryResponse = await request.post(api(`/workflow/template-categories`), {
+        headers,
+        data: {
+          categoryName: templateCategoryName,
+          categoryCode: templateCategoryCode,
+          icon: 'CollectionTag',
+          sort: 98,
+          status: 1,
+          remark: 'E2E模板分类',
+        },
+      });
+      expect(createTemplateCategoryResponse.status()).toBe(200);
+      const createTemplateCategoryBody = await createTemplateCategoryResponse.json();
+      expectApiSuccess(createTemplateCategoryBody, '创建流程模板分类失败');
+      const templateCategoryId = createTemplateCategoryBody.data;
+
+      const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
+        headers,
+        data: {
+          categoryId,
+          definitionName,
+          definitionKey,
+          designerJson: approvalDesignerJson(unique),
+          formCode: `form_${keyword}`,
+          formJson: leaveFormJson(),
+          status: 'DRAFT',
+          remark: 'E2E模板来源流程',
+        },
+      });
+      expect(createDefinitionResponse.status()).toBe(200);
+      const createDefinitionBody = await createDefinitionResponse.json();
+      expectApiSuccess(createDefinitionBody, '创建模板来源流程失败');
+      const definitionId = createDefinitionBody.data;
+
+      const createTemplateResponse = await request.post(api(`/workflow/templates/from-definition`), {
+        headers,
+        data: {
+          definitionId,
+          templateName,
+          templateCode,
+          templateCategoryId,
+          categoryCode: keyword,
+          categoryName: 'E2E模板业务场景',
+          remark: 'E2E由流程生成模板',
+        },
+      });
+      expect(createTemplateResponse.status()).toBe(200);
+      const createTemplateBody = await createTemplateResponse.json();
+      expectApiSuccess(createTemplateBody, '流程生成模板失败');
+      const templateId = createTemplateBody.data;
+
+      const singleImportKey = `${templateCode}_single`;
+      const singleImportResponse = await request.post(api(`/workflow/templates/create-definition`), {
+        headers,
+        data: {
+          templateId,
+          categoryId,
+          targetTenantId: '1',
+          orgId: '1',
+          definitionName: `${templateName}单个导入`,
+          definitionKey: singleImportKey,
+          remark: 'E2E模板单个导入',
+        },
+      });
+      expect(singleImportResponse.status()).toBe(200);
+      const singleImportBody = await singleImportResponse.json();
+      expectApiSuccess(singleImportBody, '模板单个导入流程失败');
+
+      const importedDetailResponse = await request.get(api(`/workflow/definitions/detail?id=${singleImportBody.data}`), {
+        headers,
+      });
+      expect(importedDetailResponse.status()).toBe(200);
+      const importedDetailBody = await importedDetailResponse.json();
+      expectApiSuccess(importedDetailBody, '查询模板导入流程失败');
+      expect(importedDetailBody.data.sourceTemplateId).toBe(templateId);
+      expect(importedDetailBody.data.sourceTemplateCode).toBe(templateCode);
+      expect(importedDetailBody.data.orgId).toBe('1');
+
+      const batchImportResponse = await request.post(api(`/workflow/templates/import`), {
+        headers,
+        data: {
+          categoryId,
+          targetTenantId: '1',
+          orgId: '1',
+          templateCategoryId,
+        },
+      });
+      expect(batchImportResponse.status()).toBe(200);
+      const batchImportBody = await batchImportResponse.json();
+      expectApiSuccess(batchImportBody, '按模板分类批量导入失败');
+      expect(batchImportBody.data.definitionIds).toHaveLength(1);
+
+      const duplicateImportResponse = await request.post(api(`/workflow/templates/import`), {
+        headers,
+        data: {
+          categoryId,
+          targetTenantId: '1',
+          orgId: '1',
+          templateCategoryId,
+        },
+      });
+      expect(duplicateImportResponse.status()).toBe(200);
+      const duplicateImportBody = await duplicateImportResponse.json();
+      expect(duplicateImportBody.success).toBeFalsy();
+      expect(duplicateImportBody.msg).toContain('同编码流程');
+      expect(duplicateImportBody.data.errors?.[0]?.templateCode).toBe(templateCode);
+    } finally {
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+      await cleanupWorkflowTemplates(request, token, keyword).catch(() => undefined);
+    }
+  });
+
   test('平台管理员可从发起流程页面提交已发布流程并在我的发起回显', async ({ page, request }) => {
     const unique = Date.now();
     const keyword = `e2e_workflow_start_${unique}`;
-    const groupName = `E2E发起分组${unique}`;
-    const groupCode = keyword;
+    const categoryName = `E2E发起分类${unique}`;
+    const categoryCode = keyword;
     const definitionName = `E2E请假流程${unique}`;
     const definitionKey = `e2e_leave_${unique}`;
     const token = await loginToken(request, platformTenant);
@@ -1281,24 +1570,24 @@ test.describe('工作流配置真实接口闭环', () => {
     try {
       await cleanupWorkflow(request, token, keyword);
 
-      const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
         headers,
         data: {
-          groupName,
-          groupCode,
+          categoryName,
+          categoryCode,
           sort: 97,
           status: 1,
           remark: 'E2E发起流程验证数据',
         },
       });
-      expect(createGroupResponse.status()).toBe(200);
-      const createGroupBody = await createGroupResponse.json();
-      expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+      expect(createCategoryResponse.status()).toBe(200);
+      const createCategoryBody = await createCategoryResponse.json();
+      expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
 
-      const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+      const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
         headers,
         data: {
-          groupId: createGroupBody.data,
+          categoryId: createCategoryBody.data,
           definitionName,
           definitionKey,
           designerJson: designerJson(unique),
@@ -1312,7 +1601,7 @@ test.describe('工作流配置真实接口闭环', () => {
       const createDefinitionBody = await createDefinitionResponse.json();
       expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
 
-      const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+      const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
         headers,
       });
       expect(deployResponse.status()).toBe(200);
@@ -1365,8 +1654,8 @@ test.describe('工作流配置真实接口闭环', () => {
     test.setTimeout(90_000);
     const unique = Date.now();
     const keyword = `e2e_workflow_runtime_form_${unique}`;
-    const groupName = `E2E表单组件分组${unique}`;
-    const groupCode = keyword;
+    const categoryName = `E2E表单组件分类${unique}`;
+    const categoryCode = keyword;
     const definitionName = `E2E费用报销流程${unique}`;
     const definitionKey = `e2e_runtime_form_${unique}`;
     const token = await loginToken(request, platformTenant);
@@ -1376,24 +1665,24 @@ test.describe('工作流配置真实接口闭环', () => {
     try {
       await cleanupWorkflow(request, token, keyword);
 
-      const createGroupResponse = await request.post('http://localhost:5555/workflow/groups', {
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
         headers,
         data: {
-          groupName,
-          groupCode,
+          categoryName,
+          categoryCode,
           sort: 96,
           status: 1,
           remark: 'E2E动态表单组件渲染验证数据',
         },
       });
-      expect(createGroupResponse.status()).toBe(200);
-      const createGroupBody = await createGroupResponse.json();
-      expect(createGroupBody.success || createGroupBody.code === 200).toBeTruthy();
+      expect(createCategoryResponse.status()).toBe(200);
+      const createCategoryBody = await createCategoryResponse.json();
+      expect(createCategoryBody.success || createCategoryBody.code === 200).toBeTruthy();
 
-      const createDefinitionResponse = await request.post('http://localhost:5555/workflow/definitions', {
+      const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
         headers,
         data: {
-          groupId: createGroupBody.data,
+          categoryId: createCategoryBody.data,
           definitionName,
           definitionKey,
           designerJson: designerJson(unique),
@@ -1407,7 +1696,7 @@ test.describe('工作流配置真实接口闭环', () => {
       const createDefinitionBody = await createDefinitionResponse.json();
       expect(createDefinitionBody.success || createDefinitionBody.code === 200).toBeTruthy();
 
-      const deployResponse = await request.post(`http://localhost:5555/workflow/definitions/deploy?id=${createDefinitionBody.data}`, {
+      const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${createDefinitionBody.data}`), {
         headers,
       });
       expect(deployResponse.status()).toBe(200);
@@ -1825,7 +2114,7 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(String(financeProgress.currentTaskDefinitionKeys)).toContain(`finance_review_${unique}`);
 
       const financeTask = await findTodoTask(request, token, businessKey, '财务复核');
-      const financeDetailResponse = await request.get('http://localhost:5555/workflow/tasks/detail', {
+      const financeDetailResponse = await request.get(api(`/workflow/tasks/detail`), {
         headers: { Authorization: `Bearer ${token}` },
         params: { taskId: financeTask.id },
       });

@@ -1,15 +1,16 @@
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 export interface PostVO {
-  id?: number;
+  id?: ApiId;
   postName: string;
   postCode: string;
   postSort?: number;
   postStatus?: string;
   remark?: string;
-  tenantId?: number;
-  createTime?: string | number[];
-  updateTime?: string | number[];
+  tenantId?: ApiId;
+  createTime?: string;
+  updateTime?: string;
 }
 
 export interface PostQuery {
@@ -44,10 +45,10 @@ export const postApi = {
     return get<BackendPageResult<PostVO>>('/post/page', { params: toBackendQuery(params) })
       .then((data) => toPageResult(data, params));
   },
-  detail: (id: number) => get<PostVO>('/post/detail', { params: { id } }),
+  detail: (id: ApiId) => get<PostVO>('/post/detail', { params: { id } }),
   create: (data: PostVO) => post<void>('/post', toBackendPost(data)),
   update: (data: PostVO) => put<void>('/post', toBackendPost(data)),
-  delete: (id: number) => del<void>('/post', { params: { id } }),
+  delete: (id: ApiId) => del<void>('/post', { params: { id } }),
 };
 
 function toBackendQuery(params?: PostQuery) {

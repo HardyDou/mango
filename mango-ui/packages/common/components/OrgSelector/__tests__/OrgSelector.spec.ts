@@ -50,7 +50,7 @@ vi.mock('element-plus', () => ({
         return [];
       },
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      setCheckedKeys(_keys: number[]) {},
+      setCheckedKeys(_keys: string[]) {},
     },
   },
   ElButton: {
@@ -84,27 +84,27 @@ vi.mock('vue-i18n', () => ({
 vi.mock('@/api/admin/org', () => ({
   getOrgTree: vi.fn().mockResolvedValue([
     {
-      id: 1,
+      id: '1',
       name: '总公司',
-      parentId: 0,
+      parentId: '0',
       sort: 1,
       children: [
         {
-          id: 2,
+          id: '2',
           name: '技术部',
-          parentId: 1,
+          parentId: '1',
           sort: 1,
           children: [
             {
-              id: 5,
+              id: '5',
               name: '前端组',
-              parentId: 2,
+              parentId: '2',
               sort: 1,
             },
             {
-              id: 6,
+              id: '6',
               name: '后端组',
-              parentId: 2,
+              parentId: '2',
               sort: 2,
             },
           ],
@@ -118,9 +118,9 @@ describe('OrgSelector Component', () => {
   describe('OrgNode Structure', () => {
     it('should have correct org node properties', () => {
       const orgNode = {
-        id: 1,
+        id: '1',
         name: '总公司',
-        parentId: 0,
+        parentId: '0',
         sort: 1,
         children: [],
       };
@@ -128,26 +128,26 @@ describe('OrgSelector Component', () => {
       expect(orgNode).toHaveProperty('id');
       expect(orgNode).toHaveProperty('name');
       expect(orgNode).toHaveProperty('parentId');
-      expect(orgNode.id).toBe(1);
+      expect(orgNode.id).toBe('1');
       expect(orgNode.name).toBe('总公司');
-      expect(orgNode.parentId).toBe(0);
+      expect(orgNode.parentId).toBe('0');
     });
 
     it('should support nested children structure', () => {
       const org = {
-        id: 1,
+        id: '1',
         name: '总公司',
-        parentId: 0,
+        parentId: '0',
         children: [
           {
-            id: 2,
+            id: '2',
             name: '技术部',
-            parentId: 1,
+            parentId: '1',
             children: [
               {
-                id: 5,
+                id: '5',
                 name: '前端组',
-                parentId: 2,
+                parentId: '2',
               },
             ],
           },
@@ -161,16 +161,16 @@ describe('OrgSelector Component', () => {
 
   describe('ModelValue Binding', () => {
     it('should handle empty array modelValue', () => {
-      const modelValue: number[] = [];
+      const modelValue: string[] = [];
       const fileList = modelValue ? modelValue : [];
       expect(fileList).toEqual([]);
     });
 
     it('should handle valid org ID list modelValue', () => {
-      const modelValue = [1, 2, 5];
+      const modelValue = ['1', '2', '5'];
       const fileList = modelValue ? modelValue : [];
       expect(fileList).toHaveLength(3);
-      expect(fileList[0]).toBe(1);
+      expect(fileList[0]).toBe('1');
     });
 
     it('should return empty array for undefined modelValue', () => {
@@ -195,16 +195,16 @@ describe('OrgSelector Component', () => {
   describe('Max Selection', () => {
     it('should respect max selection limit', () => {
       const max = 3;
-      const selected = [1, 2, 3, 4, 5];
+      const selected = ['1', '2', '3', '4', '5'];
       const finalValue = selected.slice(0, max);
 
       expect(finalValue).toHaveLength(3);
-      expect(finalValue).toEqual([1, 2, 3]);
+      expect(finalValue).toEqual(['1', '2', '3']);
     });
 
     it('should allow unlimited when max is 0', () => {
       const max = 0;
-      const selected = [1, 2, 3, 4, 5];
+      const selected = ['1', '2', '3', '4', '5'];
       const finalValue = max > 0 ? selected.slice(0, max) : selected;
 
       expect(finalValue).toHaveLength(5);
@@ -213,13 +213,13 @@ describe('OrgSelector Component', () => {
 
   describe('Tag Name Resolution', () => {
     it('should resolve org names from IDs', () => {
-      const nodes = new Map<number, { name: string }>([
-        [1, { name: '总公司' }],
-        [2, { name: '技术部' }],
-        [5, { name: '前端组' }],
+      const nodes = new Map<string, { name: string }>([
+        ['1', { name: '总公司' }],
+        ['2', { name: '技术部' }],
+        ['5', { name: '前端组' }],
       ]);
 
-      const selectedIds = [1, 2, 5];
+      const selectedIds = ['1', '2', '5'];
       const names = selectedIds.map((id) => nodes.get(id)?.name).filter(Boolean);
 
       expect(names).toEqual(['总公司', '技术部', '前端组']);
@@ -251,13 +251,13 @@ describe('OrgSelector Component', () => {
 
   describe('Selection Operations', () => {
     it('should clear selection', () => {
-      let modelValue = [1, 2, 5];
+      let modelValue = ['1', '2', '5'];
       modelValue = [];
       expect(modelValue).toEqual([]);
     });
 
     it('should remove single tag', () => {
-      let modelValue = [1, 2, 5];
+      let modelValue = ['1', '2', '5'];
       const nameToRemove = '技术部';
       const idToRemove = 2;
       modelValue = modelValue.filter((id) => id !== idToRemove);

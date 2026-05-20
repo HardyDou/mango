@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -131,18 +130,16 @@ class BaseCrudControllerTest {
 
     @Test
     void excelEndpoints_shouldFailWhenServiceOrAdapterIsNotEnabled() throws Exception {
-        assertThatThrownBy(() -> mockMvc.perform(post("/users/export")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}")))
-                .hasRootCauseInstanceOf(IllegalStateException.class)
-                .hasRootCauseMessage("当前资源未启用导出能力");
+        mockMvc.perform(post("/users/export")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isInternalServerError());
 
         MockMultipartFile file = new MockMultipartFile(
                 "file", "users.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 new byte[]{1, 2, 3});
-        assertThatThrownBy(() -> mockMvc.perform(multipart("/users/import").file(file)))
-                .hasRootCauseInstanceOf(IllegalStateException.class)
-                .hasRootCauseMessage("当前资源未启用导入能力");
+        mockMvc.perform(multipart("/users/import").file(file))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test

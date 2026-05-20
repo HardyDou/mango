@@ -255,7 +255,7 @@
           >
             <el-option
               label="根节点"
-              :value="0"
+              value="0"
             />
             <el-option
               v-for="item in flatOrgOptions"
@@ -347,6 +347,7 @@
 <script setup lang="ts" name="SystemOrg">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import type { ApiId } from '@mango/api-schema';
 import { orgApi, type SysOrg } from '../../api/org';
 
 const orgTypeOptions = [
@@ -373,7 +374,7 @@ const treeRenderKey = ref(0);
 
 const form = reactive<Partial<SysOrg>>({
   id: undefined,
-  pid: 0,
+  pid: '0',
   orgName: '',
   orgCode: '',
   orgType: 3,
@@ -402,7 +403,7 @@ function orgTypeLabel(type?: number) {
 async function loadTree() {
   treeLoading.value = true;
   try {
-    treeData.value = await orgApi.tree({ parentId: 0, type: query.type, includeDisabled: true });
+    treeData.value = await orgApi.tree({ parentId: '0', type: query.type, includeDisabled: true });
     if (currentOrg.value) {
       const latest = findInTree(treeData.value, currentOrg.value.id);
       if (latest) {
@@ -429,7 +430,7 @@ function collapseAll() {
   treeRenderKey.value += 1;
 }
 
-async function loadChildren(parentId: number) {
+async function loadChildren(parentId: ApiId) {
   childrenLoading.value = true;
   try {
     childrenData.value = await orgApi.children(parentId);
@@ -449,7 +450,7 @@ async function handleNodeClick(row: SysOrg) {
 
 function resetForm() {
   form.id = undefined;
-  form.pid = 0;
+  form.pid = '0';
   form.orgName = '';
   form.orgCode = '';
   form.orgType = 3;
@@ -508,7 +509,7 @@ function handleDelete(row: SysOrg) {
 }
 
 function isRootOrg(row: Partial<SysOrg>) {
-  return Number(row.pid ?? 0) === 0;
+  return String(row.pid ?? '0') === '0';
 }
 
 function nextOrgType(type?: number) {
@@ -525,7 +526,7 @@ function flattenTree(items: SysOrg[], level = 0): Array<SysOrg & { label: string
   });
 }
 
-function findInTree(items: SysOrg[], id: number): SysOrg | undefined {
+function findInTree(items: SysOrg[], id: ApiId): SysOrg | undefined {
   for (const item of items) {
     if (item.id === id) return item;
     const child = findInTree(item.children || [], id);

@@ -266,6 +266,7 @@
 <script setup lang="ts" name="SystemRole">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TreeInstance } from 'element-plus';
+import type { ApiId } from '@mango/api-schema';
 import DictTag from '@mango/common/components/DictTag/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
 import { formatDate } from '@mango/common/utils/formatTime';
@@ -509,9 +510,9 @@ async function handleAssignSubmit() {
   if (!currentRole.value?.roleId || !menuTreeRef.value) return;
   assignSubmitLoading.value = true;
   try {
-    const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as number[];
-    const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys() as number[];
-    const menuIds = Array.from(new Set([...checkedKeys, ...halfCheckedKeys].map(Number)));
+    const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as ApiId[];
+    const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys() as ApiId[];
+    const menuIds = Array.from(new Set([...checkedKeys, ...halfCheckedKeys].map(String)));
     await roleApi.assignMenus(currentRole.value.roleId, menuIds);
     ElMessage.success('分配成功');
     assignDialogVisible.value = false;

@@ -73,7 +73,7 @@ class RoleServiceImplTest {
                 menuMapper,
                 menuService,
                 subjectAuthorityService);
-        setTenantId("1");
+        setSecurityContext("1");
     }
 
     @AfterEach
@@ -143,7 +143,7 @@ class RoleServiceImplTest {
     @Test
     @DisplayName("create should not set tenantId manually")
     void create_doesNotSetTenantIdManually() {
-        setTenantId("123");
+        setSecurityContext("123");
         RoleCommand po = createRoleCommand(null, "admin", "Admin", 1);
         when(roleMapper.insert(any(Role.class))).thenAnswer(invocation -> {
             Role role = invocation.getArgument(0);
@@ -156,8 +156,17 @@ class RoleServiceImplTest {
         verify(roleMapper).insert(any(Role.class));
     }
 
-    private void setTenantId(String tenantId) {
-        MangoContextHolder.set(MangoContextSnapshot.request(null, null, tenantId, null, null));
+    private void setSecurityContext(String tenantId) {
+        MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
+                1L,
+                1001L,
+                tenantId,
+                "admin",
+                "INTERNAL",
+                "INTERNAL_USER",
+                "INTERNAL_ORG",
+                1L,
+                "internal-admin"));
     }
 
     @Test

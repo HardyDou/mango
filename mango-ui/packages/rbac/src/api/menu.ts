@@ -1,4 +1,5 @@
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 import type { MangoMenuPageType } from '@mango/app-runtime';
 
 /**
@@ -38,10 +39,10 @@ export interface MenuMeta {
  * 菜单VO
  */
 export interface SysMenuVO {
-  menuId: string | number;
+  menuId: ApiId;
   appCode?: string;
   moduleCode?: string;
-  parentId: string | number;
+  parentId: ApiId;
   menuType: MenuTypeEnum;
   menuName: string;
   menuCode: string;
@@ -74,13 +75,13 @@ export interface MenuQuery {
   moduleCode?: string;
   fmt?: MenuFormat;
   type?: number;
-  parentId?: number;
+  parentId?: ApiId;
   menuName?: string;
   status?: number;
 }
 
 export interface MenuDetailQuery {
-  menuId: string | number;
+  menuId: ApiId;
 }
 
 type MenuPayload = Pick<
@@ -112,7 +113,7 @@ function toBackendPayload(data: Partial<SysMenuVO> & { appCode?: string }): Part
     menuId: data.menuId,
     appCode: data.appCode,
     moduleCode: data.moduleCode,
-    parentId: data.parentId ?? 0,
+    parentId: data.parentId ?? '0',
     menuType: data.menuType,
     menuName: data.menuName,
     menuCode: data.menuCode,
@@ -166,7 +167,7 @@ export const menuApi = {
   /**
    * 查询菜单详情
    */
-  getMenuDetail: (menuId: string | number) =>
+  getMenuDetail: (menuId: ApiId) =>
     get<SysMenuVO>('/authorization/menus/detail', { params: { menuId } }),
 
   /**
@@ -184,6 +185,6 @@ export const menuApi = {
   /**
    * 删除菜单
    */
-  deleteMenu: (menuId: string | number) =>
+  deleteMenu: (menuId: ApiId) =>
     del('/authorization/menus', { params: { menuId } }),
 };

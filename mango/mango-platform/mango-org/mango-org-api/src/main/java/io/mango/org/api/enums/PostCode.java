@@ -25,6 +25,10 @@ public enum PostCode implements BizCode {
     ORG_ROOT_DISABLE_FORBIDDEN(400, "根组织不能禁用"),
     ORG_PARENT_SELF_FORBIDDEN(400, "上级组织不能选择自己"),
     ORG_PARENT_DESCENDANT_FORBIDDEN(400, "上级组织不能选择自己的下级"),
+    ORG_MEMBER_NOT_FOUND(404, "组织成员不存在"),
+    ORG_MEMBER_EXISTS(400, "成员已加入该组织岗位"),
+    ORG_MEMBER_RELATION_NOT_FOUND(404, "组织成员关系不存在"),
+    ORG_MEMBER_PRIMARY_REQUIRED(400, "成员至少需要保留一个主组织"),
     POST_NOT_FOUND(404, "岗位不存在"),
     POST_ID_REQUIRED(400, "岗位ID不能为空");
 

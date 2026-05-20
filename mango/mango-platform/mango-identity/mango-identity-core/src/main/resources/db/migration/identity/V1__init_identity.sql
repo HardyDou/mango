@@ -87,14 +87,16 @@ CREATE TABLE IF NOT EXISTS `tenant_member_org` (
   `org_id` bigint NOT NULL COMMENT '组织ID',
   `post_id` bigint DEFAULT NULL COMMENT '岗位ID',
   `primary_flag` tinyint NOT NULL DEFAULT '0' COMMENT '是否主组织岗位: 0-否, 1-是',
+  `leader_flag` tinyint NOT NULL DEFAULT '0' COMMENT '是否组织主管: 0-否, 1-是',
   `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_tenant_member_org_member_org_post` (`tenant_id`,`member_id`,`org_id`,`post_id`),
+  UNIQUE KEY `uk_tenant_member_org_member_org` (`tenant_id`,`member_id`,`org_id`),
   KEY `idx_tenant_member_org_member` (`member_id`),
-  KEY `idx_tenant_member_org_org` (`org_id`)
+  KEY `idx_tenant_member_org_org` (`org_id`),
+  KEY `idx_tenant_member_org_leader` (`tenant_id`,`org_id`,`leader_flag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='租户成员组织岗位关系表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -111,4 +113,3 @@ UNLOCK TABLES;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-

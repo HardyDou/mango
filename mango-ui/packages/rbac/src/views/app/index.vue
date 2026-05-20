@@ -650,7 +650,7 @@ const styleIsolationOptions = [
 const moduleOptions = [
   { label: '授权权限模块', value: 'mango-authorization', sort: 1 },
   { label: '系统基础模块', value: 'mango-system', sort: 2 },
-  { label: '协同流程模块', value: 'mango-workflow', sort: 3 },
+  { label: '审批中心模块', value: 'mango-workflow', sort: 3 },
 ];
 
 const actorTypeByRealm: Record<string, string> = {
@@ -983,17 +983,9 @@ function handleDelete(row: AuthorizationApp) {
   }).catch(() => {});
 }
 
-function formatTime(value?: string | number[]) {
+function formatTime(value?: string) {
   if (!value) return '';
-  if (Array.isArray(value)) {
-    const [year, month, day, hour = 0, minute = 0, second = 0] = value;
-    return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
-  }
   return value;
-}
-
-function pad(value: number) {
-  return String(value).padStart(2, '0');
 }
 
 onMounted(() => {

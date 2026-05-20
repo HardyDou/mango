@@ -6,24 +6,23 @@ import type {
   MangoModuleRuntimeStrategy,
   MangoStyleIsolation,
 } from '@mango/app-runtime';
-
-type BackendId = string | number;
+import type { ApiId } from '@mango/api-schema';
 
 export interface AppLoginContext {
-  contextId?: BackendId;
-  appId?: BackendId;
+  contextId?: ApiId;
+  appId?: ApiId;
   appCode?: string;
   realm: string;
   actorType: string;
   defaultFlag: number;
   status: number;
   sort?: number;
-  createTime?: string | number[];
-  updateTime?: string | number[];
+  createTime?: string;
+  updateTime?: string;
 }
 
 export interface AuthorizationApp {
-  appId?: BackendId;
+  appId?: ApiId;
   appCode: string;
   appName: string;
   appType?: MangoFrontendAppType;
@@ -41,27 +40,27 @@ export interface AuthorizationApp {
   sort?: number;
   status: number;
   remark?: string;
-  createTime?: string | number[];
-  updateTime?: string | number[];
+  createTime?: string;
+  updateTime?: string;
 }
 
 export interface AppModuleBinding {
-  bindingId?: BackendId;
+  bindingId?: ApiId;
   appCode: string;
   moduleCode: string;
   moduleName?: string;
   status: number;
   sort?: number;
-  createTime?: string | number[];
-  updateTime?: string | number[];
+  createTime?: string;
+  updateTime?: string;
 }
 
 export interface AppModuleRuntimeStrategy extends MangoModuleRuntimeStrategy {
-  strategyId?: BackendId;
+  strategyId?: ApiId;
 }
 
 interface AppLoginContextPayload {
-  contextId?: BackendId;
+  contextId?: ApiId;
   realm: string;
   actorType: string;
   defaultFlag: number;
@@ -70,7 +69,7 @@ interface AppLoginContextPayload {
 }
 
 interface AuthorizationAppPayload {
-  appId?: BackendId;
+  appId?: ApiId;
   appCode: string;
   appName: string;
   appType?: MangoFrontendAppType;
@@ -94,24 +93,24 @@ export const appApi = {
   list: () => get<AuthorizationApp[]>('/authorization/apps'),
   runtime: () => get<AuthorizationApp[]>('/authorization/apps/runtime'),
   runtimeDetail: (appCode: string) => get<AuthorizationApp>(`/authorization/apps/runtime/detail/${appCode}`),
-  detail: (appId: BackendId) => get<AuthorizationApp>('/authorization/apps/detail', { params: { appId } }),
-  create: (data: AuthorizationApp) => post<number>('/authorization/apps', toBackend(data)),
+  detail: (appId: ApiId) => get<AuthorizationApp>('/authorization/apps/detail', { params: { appId } }),
+  create: (data: AuthorizationApp) => post<ApiId>('/authorization/apps', toBackend(data)),
   update: (data: AuthorizationApp) => put<boolean>('/authorization/apps', toBackend(data)),
-  delete: (appId: BackendId) => del<boolean>('/authorization/apps', { params: { appId } }),
+  delete: (appId: ApiId) => del<boolean>('/authorization/apps', { params: { appId } }),
 };
 
 export const appModuleApi = {
   list: (params: { appCode?: string; status?: number } = {}) =>
     get<AppModuleBinding[]>('/authorization/app-modules', { params }),
-  save: (data: AppModuleBinding) => post<number>('/authorization/app-modules', data),
+  save: (data: AppModuleBinding) => post<ApiId>('/authorization/app-modules', data),
   disable: (appCode: string, moduleCode: string) =>
     del<boolean>('/authorization/app-modules', { params: { appCode, moduleCode } }),
   syncMenus: (appCode: string, moduleCode: string) =>
-    post<number>('/authorization/app-modules/sync-menus', undefined, { params: { appCode, moduleCode } }),
+    post<ApiId>('/authorization/app-modules/sync-menus', undefined, { params: { appCode, moduleCode } }),
   listRuntimeStrategies: (params: { appCode?: string; deployProfile?: string } = {}) =>
     get<AppModuleRuntimeStrategy[]>('/authorization/app-modules/runtime-strategies', { params }),
   saveRuntimeStrategy: (data: AppModuleRuntimeStrategy) =>
-    post<number>('/authorization/app-modules/runtime-strategies', {
+    post<ApiId>('/authorization/app-modules/runtime-strategies', {
       ...data,
       pageType: data.pageType as MangoMenuPageType,
     }),

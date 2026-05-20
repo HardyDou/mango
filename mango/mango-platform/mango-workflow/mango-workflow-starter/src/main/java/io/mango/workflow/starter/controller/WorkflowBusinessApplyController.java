@@ -31,7 +31,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/workflow/business-applies")
 @RequiredArgsConstructor
-@Tag(name = "协同办公业务申请中心", description = "业务申请与流程实例关系、进度、历史查询接口")
+@Tag(name = "审批中心业务申请", description = "业务申请与流程实例关系、进度、历史查询接口")
 public class WorkflowBusinessApplyController {
 
     private final IWorkflowBusinessApplyService workflowBusinessApplyService;

@@ -80,7 +80,7 @@ const taskMode = computed(() => {
 
 const title = computed(() => ({
   todo: '我的待办',
-  initiated: '我的发起',
+  initiated: '我的申请',
   done: '我的已办',
   copied: '抄送给我',
 }[taskMode.value]));

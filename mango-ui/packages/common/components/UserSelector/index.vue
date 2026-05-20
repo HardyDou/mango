@@ -150,6 +150,7 @@ import { getOrgTree } from '../../api/org';
 import { get } from '../../utils/request';
 import type { OrgNode } from '../OrgSelector/types';
 import type { UserSelectorEmits, UserSelectorExpose, UserSelectorOption, UserSelectorProps } from './types';
+import type { ApiId } from '@mango/api-schema';
 
 interface BackendPageResult<T> {
   records?: T[];
@@ -157,7 +158,7 @@ interface BackendPageResult<T> {
 }
 
 type UserOption = UserSelectorOption & {
-  orgId?: number;
+  orgId?: ApiId;
 };
 
 const props = withDefaults(defineProps<UserSelectorProps>(), {
@@ -179,7 +180,7 @@ const orgLoading = ref(false);
 const keyword = ref('');
 const options = ref<UserOption[]>([]);
 const orgOptions = ref<OrgNode[]>([]);
-const selectedOrgId = ref<number | undefined>();
+const selectedOrgId = ref<ApiId | undefined>();
 const tempSelectedValues = ref<string[]>([]);
 
 const mode = computed(() => props.mode || 'select');
@@ -242,7 +243,7 @@ async function ensureOrgLoaded() {
   }
   orgLoading.value = true;
   try {
-    orgOptions.value = await getOrgTree({ parentId: 0 });
+    orgOptions.value = await getOrgTree({ parentId: '0' });
   } finally {
     orgLoading.value = false;
   }
@@ -262,7 +263,7 @@ function toUserOption(item: any): UserOption | undefined {
     username,
     avatar: item.avatar ? String(item.avatar) : undefined,
     meta: username ? `@${username}` : '用户',
-    orgId: item.primaryOrgId === undefined || item.primaryOrgId === null ? undefined : Number(item.primaryOrgId),
+    orgId: item.primaryOrgId === undefined || item.primaryOrgId === null ? undefined : String(item.primaryOrgId),
   };
 }
 

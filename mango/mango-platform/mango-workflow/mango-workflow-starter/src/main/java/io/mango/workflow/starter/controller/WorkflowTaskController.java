@@ -25,12 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 协同办公任务接口。
+ * 审批中心任务接口。
  */
 @RestController
 @RequestMapping("/workflow/tasks")
 @RequiredArgsConstructor
-@Tag(name = "协同办公任务", description = "我的待办、我的发起、我的已办、抄送给我任务查询接口")
+@Tag(name = "审批中心任务", description = "我的待办、我的发起、我的已办、抄送给我任务查询接口")
 public class WorkflowTaskController {
 
     private final IWorkflowTaskRuntimeService workflowTaskRuntimeService;

@@ -2,6 +2,7 @@ package io.mango.identity.core.service.impl;
 
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.core.mapper.IdentityUserMapper;
+import io.mango.identity.core.mapper.TenantMemberOrgMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,7 @@ class IdentityUserServiceImplTest {
         IdentityUserServiceImpl service = new IdentityUserServiceImpl(
                 mapper,
                 mock(TenantMemberMapper.class),
+                mock(TenantMemberOrgMapper.class),
                 mock(SubjectRoleBindingMapper.class),
                 mock(PasswordEncoder.class));
         var profile = service.getUserInfo("admin");
@@ -64,6 +66,7 @@ class IdentityUserServiceImplTest {
         IdentityUserServiceImpl service = new IdentityUserServiceImpl(
                 mapper,
                 mock(TenantMemberMapper.class),
+                mock(TenantMemberOrgMapper.class),
                 mock(SubjectRoleBindingMapper.class),
                 mock(PasswordEncoder.class));
 

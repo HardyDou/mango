@@ -6,14 +6,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 流程分组分页查询。
+ * 流程分类分页查询。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "流程分组分页查询")
-public class WorkflowGroupPageQuery extends PageQuery {
+@Schema(description = "流程分类分页查询")
+public class WorkflowCategoryPageQuery extends PageQuery {
 
-    @Schema(description = "关键字，支持按分组名称或编码模糊查询")
+    @Schema(description = "关键字，支持按分类名称或编码模糊查询")
     private String keyword;
 
     @Schema(description = "状态：0-停用，1-启用")

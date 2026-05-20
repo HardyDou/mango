@@ -4,10 +4,13 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.org.api.SysOrgApi;
+import io.mango.org.api.command.AddOrgMemberCommand;
 import io.mango.org.api.command.CreateOrgCommand;
+import io.mango.org.api.command.UpdateOrgMemberCommand;
 import io.mango.org.api.command.UpdateOrgCommand;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
+import io.mango.org.api.vo.OrgMemberVO;
 import io.mango.org.core.service.ISysOrgService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -117,5 +120,52 @@ public class SysOrgController implements SysOrgApi {
             @RequestParam Long id) {
         orgService.delete(id);
         return R.ok();
+    }
+
+    @GetMapping("/{orgId}/members")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:list")
+    @Operation(summary = "获取组织成员", description = "权限接口。查询组织成员、岗位、主组织与部门负责人信息")
+    public R<List<OrgMemberVO>> members(
+            @Parameter(description = "组织ID")
+            @PathVariable Long orgId) {
+        return R.ok(orgService.members(orgId));
+    }
+
+    @PostMapping("/{orgId}/members")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
+    @Operation(summary = "添加组织成员", description = "权限接口。将机构成员加入组织并设置岗位")
+    public R<Void> addMember(
+            @Parameter(description = "组织ID")
+            @PathVariable Long orgId,
+            @Valid @RequestBody AddOrgMemberCommand command) {
+        orgService.addMember(orgId, command);
+        return R.ok();
+    }
+
+    @PutMapping("/members")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
+    @Operation(summary = "修改组织成员关系", description = "权限接口。调整组织成员岗位或主组织")
+    public R<Void> updateMember(@Valid @RequestBody UpdateOrgMemberCommand command) {
+        orgService.updateMember(command);
+        return R.ok();
+    }
+
+    @DeleteMapping("/members")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
+    @Operation(summary = "移除组织成员", description = "权限接口。从组织中移除成员关系")
+    public R<Void> removeMember(
+            @Parameter(description = "组织成员关系ID")
+            @RequestParam Long relationId) {
+        orgService.removeMember(relationId);
+        return R.ok();
+    }
+
+    @GetMapping("/leader/{orgId}")
+    @ApiAccess(mode = ApiResourceAccessMode.LOGIN)
+    @Operation(summary = "获取组织负责人", description = "登录接口。按组织ID查询持有部门负责人岗位的成员用户ID")
+    public R<List<Long>> leaderUserIds(
+            @Parameter(description = "组织ID")
+            @PathVariable Long orgId) {
+        return R.ok(orgService.leaderUserIds(orgId));
     }
 }

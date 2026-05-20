@@ -100,6 +100,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getOrgTree } from '../../api/org';
 import type { OrgNode, OrgSelectorProps, OrgSelectorEmits, OrgSelectorExpose } from './types';
+import type { ApiId } from '@mango/api-schema';
 import type { ElTree } from 'element-plus';
 
 const props = withDefaults(
@@ -124,8 +125,8 @@ const dialogVisible = ref(false);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const orgOptions = ref<OrgNode[]>([]);
-const tempSelectedIds = ref<number[]>([]);
-const allNodes = ref<Map<number, OrgNode>>(new Map());
+const tempSelectedIds = ref<ApiId[]>([]);
+const allNodes = ref<Map<ApiId, OrgNode>>(new Map());
 
 const treeRef = ref<InstanceType<typeof ElTree>>();
 
@@ -166,7 +167,7 @@ const treeProps = {
 /**
  * Flatten tree to get all nodes
  */
-function flattenTree(nodes: OrgNode[], map: Map<number, OrgNode>) {
+function flattenTree(nodes: OrgNode[], map: Map<ApiId, OrgNode>) {
   nodes.forEach((node) => {
     map.set(node.id, node);
     if (node.children && node.children.length > 0) {
@@ -183,7 +184,7 @@ async function loadOrgTree() {
   error.value = null;
 
   try {
-    const data = await getOrgTree({ parentId: 0 });
+    const data = await getOrgTree({ parentId: '0' });
     orgOptions.value = data || [];
     allNodes.value.clear();
     flattenTree(orgOptions.value, allNodes.value);
@@ -209,7 +210,7 @@ function closeDialog() {
 
 function confirmSelection() {
   const checkedKeys = treeRef.value?.getCheckedKeys() || [];
-  tempSelectedIds.value = checkedKeys as number[];
+  tempSelectedIds.value = checkedKeys.map(String);
 
   let finalValue = tempSelectedIds.value;
   if (props.max > 0 && finalValue.length > props.max) {
@@ -222,8 +223,8 @@ function confirmSelection() {
   closeDialog();
 }
 
-function handleTreeCheck(_node: OrgNode, checked: { checkedKeys: number[]; halfCheckedKeys: number[] }) {
-  let checkedKeys = checked.checkedKeys;
+function handleTreeCheck(_node: OrgNode, checked: { checkedKeys: Array<string | number>; halfCheckedKeys: Array<string | number> }) {
+  let checkedKeys = checked.checkedKeys.map(String);
 
   if (!props.multiple && checkedKeys.length > 1) {
     checkedKeys = [checkedKeys[checkedKeys.length - 1]];
@@ -256,7 +257,7 @@ function handleRemoveTag(name: string) {
   }
 }
 
-function getValue(): number[] {
+function getValue(): ApiId[] {
   return currentSelectedIds.value;
 }
 

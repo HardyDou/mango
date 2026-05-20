@@ -6,11 +6,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 协同办公任务分页查询。
+ * 审批中心任务分页查询。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "协同办公任务分页查询")
+@Schema(description = "审批中心任务分页查询")
 public class WorkflowTaskPageQuery extends PageQuery {
 
     @Schema(description = "关键字，支持按流程名称、任务名称搜索")

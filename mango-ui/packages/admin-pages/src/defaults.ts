@@ -70,6 +70,8 @@ export function registerDefaultAdminPages() {
       moduleCode: 'mango-workflow',
       pages: {
         'system/workflow-definition/index': () => import('@mango/workflow/src/views/workflow-definition/index.vue'),
+        'workflow/template/index': () => import('@mango/workflow/src/views/workflow-template/index.vue'),
+        'workflow-template/index': () => import('@mango/workflow/src/views/workflow-template/index.vue'),
         'workflow/task/todo/index': () => import('@mango/workflow/src/views/task-list/index.vue'),
         'workflow/task/initiated/index': () => import('@mango/workflow/src/views/task-list/index.vue'),
         'workflow/task/done/index': () => import('@mango/workflow/src/views/task-list/index.vue'),

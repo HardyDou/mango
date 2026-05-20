@@ -24,10 +24,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Boot Web -->
+        <!-- Web 基础能力：统一 Long/Java Time 序列化、异常处理、上下文过滤器 -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-infra-web-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- 关系型持久化能力 -->
@@ -46,6 +47,12 @@
         <dependency>
             <groupId>io.mango</groupId>
             <artifactId>mango-system-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-identity-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 

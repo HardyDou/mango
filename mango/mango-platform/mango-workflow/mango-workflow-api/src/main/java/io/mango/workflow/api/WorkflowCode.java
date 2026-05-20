@@ -11,11 +11,17 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum WorkflowCode implements BizCode {
 
-    /** 流程分组不存在。 */
-    GROUP_NOT_FOUND(3601, "流程分组不存在"),
+    /** 流程分类不存在。 */
+    CATEGORY_NOT_FOUND(3601, "流程分类不存在"),
 
-    /** 流程分组参数非法。 */
-    GROUP_INVALID(3602, "流程分组参数非法"),
+    /** 流程分类参数非法。 */
+    CATEGORY_INVALID(3602, "流程分类参数非法"),
+
+    /** 流程模板分类不存在。 */
+    TEMPLATE_CATEGORY_NOT_FOUND(3603, "流程模板分类不存在"),
+
+    /** 流程模板分类参数非法。 */
+    TEMPLATE_CATEGORY_INVALID(3604, "流程模板分类参数非法"),
 
     /** 流程定义不存在。 */
     DEFINITION_NOT_FOUND(3610, "流程定义不存在"),
@@ -25,6 +31,9 @@ public enum WorkflowCode implements BizCode {
 
     /** 流程定义编码重复。 */
     DEFINITION_KEY_DUPLICATED(3612, "流程定义编码已存在"),
+
+    /** 流程模板导入失败。 */
+    TEMPLATE_IMPORT_FAILED(3616, "流程模板导入失败"),
 
     /** 流程定义状态非法。 */
     DEFINITION_STATUS_INVALID(3613, "流程定义状态非法"),

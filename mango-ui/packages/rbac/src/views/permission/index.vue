@@ -254,10 +254,11 @@
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import Pagination from '@mango/common/components/Pagination/index.vue';
+import type { ApiId } from '@mango/api-schema';
 
 // ==================== 类型定义 ====================
 interface SysPermission {
-  id?: number;
+  id?: ApiId;
   permissionName: string;
   permissionCode: string;
   permissionType: number;

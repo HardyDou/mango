@@ -75,7 +75,7 @@ test.describe('用户菜单导航 E2E', () => {
       '日志管理',
     ]);
     expect(menuBody.data[1]).toMatchObject({
-      menuName: '协同办公',
+      menuName: '审批中心',
       path: '/workflow',
     });
     for (const menu of collectVisibleMenus(menuBody.data)) {
@@ -96,19 +96,22 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '角色管理');
     await expectMenuIcon(page, '菜单管理');
 
-    await page.getByText('协同办公', { exact: true }).click();
-    await expectMenuIcon(page, '任务管理');
-    await expandMenuGroup(page, '任务管理');
+    await page.getByText('审批中心', { exact: true }).click();
+    await expectMenuIcon(page, '流程办理');
+    await expandMenuGroup(page, '流程办理');
+    await expectMenuIcon(page, '发起流程');
     await expectMenuIcon(page, '我的待办');
-    await expectMenuIcon(page, '我的发起');
+    await expectMenuIcon(page, '我的申请');
     await expectMenuIcon(page, '我的已办');
     await expectMenuIcon(page, '抄送给我');
-    await expectMenuIcon(page, '发起流程');
     await expectMenuIcon(page, '流程管理');
+    await expandMenuGroup(page, '流程管理');
+    await expectMenuIcon(page, '流程模板');
+    await expectMenuIcon(page, '流程定义');
     await expectMenuIcon(page, '业务示例');
   });
 
-  test('A 公司登录后只渲染机构授权范围内的系统管理与协同办公导航', async ({ page }) => {
+  test('A 公司登录后只渲染机构授权范围内的系统管理与审批中心导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return response.status() === 200
@@ -126,7 +129,7 @@ test.describe('用户菜单导航 E2E', () => {
       path: '/system',
     });
     expect(menuBody.data[1]).toMatchObject({
-      menuName: '协同办公',
+      menuName: '审批中心',
       path: '/workflow',
     });
     expect(menuBody.data[0].children.map((item: { menuName: string }) => item.menuName)).toEqual([
@@ -134,8 +137,7 @@ test.describe('用户菜单导航 E2E', () => {
       '日志管理',
     ]);
     expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
-      '任务管理',
-      '发起流程',
+      '流程办理',
       '流程管理',
       '业务示例',
     ]);
@@ -145,7 +147,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     await expectMenuIcon(page, '权限管理');
     await expectMenuIcon(page, '日志管理');
-    await expectMenuIcon(page, '协同办公');
+    await expectMenuIcon(page, '审批中心');
     await expect(page.getByText('应用管理')).toHaveCount(0);
   });
 });

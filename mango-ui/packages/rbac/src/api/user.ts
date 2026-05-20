@@ -1,4 +1,5 @@
 import { del, get, post, put } from '@mango/common/utils/request';
+import type { ApiId } from '@mango/api-schema';
 
 export interface UserQuery {
   pageNum?: number;
@@ -11,12 +12,13 @@ export interface UserQuery {
   realm?: string;
   actorType?: string;
   partyType?: string;
-  partyId?: number;
+  partyId?: ApiId;
+  orgId?: ApiId;
 }
 
 export interface IdentityUserVO {
-  userId?: number;
-  memberId?: number;
+  userId?: ApiId;
+  memberId?: ApiId;
   memberName?: string;
   memberType?: string;
   username: string;
@@ -25,16 +27,25 @@ export interface IdentityUserVO {
   realm?: string;
   actorType?: string;
   partyType?: string;
-  partyId?: number;
+  partyId?: ApiId;
   email?: string;
   phone?: string;
   avatar?: string;
   status?: number;
+  memberStatus?: number;
+  primaryOrgId?: ApiId;
+  orgRelationId?: ApiId;
+  orgId?: ApiId;
+  postId?: ApiId;
+  postName?: string;
+  postCode?: string;
+  primaryOrgFlag?: boolean;
+  orgLeaderFlag?: boolean;
   tenantId?: string;
-  lastLoginTime?: string | number[];
+  lastLoginTime?: string;
   remark?: string;
-  createTime?: string | number[];
-  updateTime?: string | number[];
+  createTime?: string;
+  updateTime?: string;
 }
 
 export interface PageResult<T> {
@@ -69,12 +80,12 @@ export const userApi = {
     return get<BackendPageResult<IdentityUserVO>>('/identity/users/page', { params: toBackendQuery(params) })
       .then((data) => toPageResult(data, params));
   },
-  detail: (userId: number) => get<IdentityUserVO>('/identity/users/detail', { params: { userId } }),
-  create: (data: IdentityUserVO) => post<number>('/identity/users', toCreateCommand(data)),
+  detail: (userId: ApiId) => get<IdentityUserVO>('/identity/users/detail', { params: { userId } }),
+  create: (data: IdentityUserVO) => post<ApiId>('/identity/users', toCreateCommand(data)),
   update: (data: IdentityUserVO) => put<boolean>('/identity/users', toUpdateCommand(data)),
-  delete: (userId: number) => del<boolean>('/identity/users', { params: { userId } }),
-  updateStatus: (userId: number, status: number) => put<boolean>('/identity/users/status', { userId, status }),
-  resetPassword: (userId: number, password: string) => put<boolean>('/identity/users/password/reset', { userId, password }),
+  delete: (userId: ApiId) => del<boolean>('/identity/users', { params: { userId } }),
+  updateStatus: (userId: ApiId, status: number) => put<boolean>('/identity/users/status', { userId, status }),
+  resetPassword: (userId: ApiId, password: string) => put<boolean>('/identity/users/password/reset', { userId, password }),
 };
 
 function toBackendQuery(params?: UserQuery) {
@@ -90,6 +101,7 @@ function toBackendQuery(params?: UserQuery) {
     actorType: params?.actorType,
     partyType: params?.partyType,
     partyId: params?.partyId,
+    orgId: params?.orgId,
   };
 }
 

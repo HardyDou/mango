@@ -6,8 +6,8 @@
   >
     <aside class="workflow-standalone__aside">
       <div class="workflow-standalone__brand">
-        <strong>Workflow</strong>
-        <span>协同办公</span>
+        <strong>Approval</strong>
+        <span>审批中心</span>
       </div>
       <el-scrollbar>
         <el-menu
@@ -29,7 +29,7 @@
     >
       <header class="workflow-standalone__header">
         <div>
-          <h1>{{ activeMenu?.menuName || 'Workflow 协同办公' }}</h1>
+          <h1>{{ activeMenu?.menuName || '审批中心' }}</h1>
           <p>{{ activeMenu?.path || 'mango-workflow' }}</p>
         </div>
       </header>
@@ -75,12 +75,12 @@ const debugShell = computed(() => route.query.debugShell === '1' || sessionStora
 const activeMenu = computed(() => findMenuByPath(menus.value, route.path) || (route.path === '/' ? firstPageMenu(menus.value[0]) : undefined));
 const emptyDescription = computed(() => {
   if (loading.value) {
-    return '正在加载 Workflow 页面';
+    return '正在加载审批中心页面';
   }
   if (route.path !== '/' && route.path !== '/home') {
-    return `当前路径不属于 Workflow 子应用：${route.path}`;
+    return `当前路径不属于审批中心子应用：${route.path}`;
   }
-  return '请选择 Workflow 菜单';
+  return '请选择审批中心菜单';
 });
 
 const WorkflowMenuNode = defineComponent({

@@ -139,15 +139,15 @@ test.describe.serial('Shell runtime composition', () => {
     await expectRemoteResource(page, new URL(rbacEntry).host);
     await expectBusinessSmoke(page, 'rbac');
 
-    await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
-    await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
+    await page.getByRole('button', { name: /审批中心/ }).click({ force: true });
+    await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-workflow',
       runtimeCode: 'mango-admin-workflow-app',
       pageType: 'MICRO_ROUTE',
       entryIncludes: new URL(workflowEntry).host,
     });
-    await expect(page.locator('main')).toContainText('需要当前用户处理的流程任务');
+    await expect(page.locator('main')).toContainText('发起流程');
     await expectRemoteResource(page, new URL(workflowEntry).host);
     await expectBusinessSmoke(page, 'workflow');
 
@@ -175,14 +175,14 @@ test.describe.serial('Shell runtime composition', () => {
     await expect(page.getByText('新增套餐')).toBeVisible();
     await expectBusinessSmoke(page, 'rbac');
 
-    await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
-    await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
+    await page.getByRole('button', { name: /审批中心/ }).click({ force: true });
+    await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-workflow',
       runtimeCode: 'mango-admin-workflow-local',
       pageType: 'LOCAL_ROUTE',
     });
-    await expect(page.locator('main')).toContainText('需要当前用户处理的流程任务');
+    await expect(page.locator('main')).toContainText('发起流程');
     await expectBusinessSmoke(page, 'workflow');
 
     const remoteResources = await remoteRuntimeResources(page);
@@ -219,8 +219,8 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(missingEntryHybridConfig);
     await login(page);
 
-    await page.getByRole('button', { name: /协同办公/ }).click({ force: true });
-    await page.waitForURL('**/#/workflow/task/todo', { timeout: 10000 });
+    await page.getByRole('button', { name: /审批中心/ }).click({ force: true });
+    await page.waitForURL('**/#/workflow/start-process', { timeout: 10000 });
     if (failClosedRuntimeConfig) {
       await expect(page.getByText('运行配置加载失败')).toBeVisible();
       await expect(page.locator('main')).not.toContainText('新增套餐');
@@ -367,7 +367,7 @@ async function expectBusinessSmoke(page: Page, module: 'rbac' | 'workflow') {
     runtimeCode: await currentRuntimeCode(page),
     pageType: await currentPageType(page),
   });
-  await expect(page.locator('main')).toContainText('我的发起');
+  await expect(page.locator('main')).toContainText('我的申请');
   await expect(page.locator('main')).toContainText('当前用户发起的流程实例');
 
   await page.goto('/#/workflow/task/done');

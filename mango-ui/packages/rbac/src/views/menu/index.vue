@@ -508,7 +508,7 @@ const pageTypeOptions = [
 const moduleOptions = [
   { label: '授权权限模块', value: 'mango-authorization' },
   { label: '系统基础模块', value: 'mango-system' },
-  { label: '协同流程模块', value: 'mango-workflow' },
+  { label: '审批中心模块', value: 'mango-workflow' },
 ];
 
 function getMenuTypeTagType(type?: number) {
@@ -616,7 +616,7 @@ const formRef = ref<FormInstance>();
 const form = reactive<SysMenuVO & { groupCode?: string }>({
   menuId: undefined,
   moduleCode: 'mango-system',
-  parentId: 0,
+  parentId: '0',
   menuType: 2,
   menuName: '',
   menuCode: '',
@@ -648,7 +648,7 @@ const menuTree = computed(() => {
 });
 
 const menuTreeSelect = computed(() => {
-  return [{ menuId: 0, menuName: '顶级', children: buildTree(tableData.value) }];
+  return [{ menuId: '0', menuName: '顶级', children: buildTree(tableData.value) }];
 });
 
 function normalizeMenuId(id: string | number | undefined | null) {
@@ -717,7 +717,7 @@ function handleReset() {
 function handleAdd() {
   form.menuId = undefined;
   form.moduleCode = query.moduleCode || 'mango-system';
-  form.parentId = 0;
+  form.parentId = '0';
   form.menuType = 2;
   form.menuName = '';
   form.menuCode = '';

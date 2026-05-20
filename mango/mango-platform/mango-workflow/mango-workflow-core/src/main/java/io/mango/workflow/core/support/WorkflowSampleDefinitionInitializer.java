@@ -10,9 +10,9 @@ import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowGroup;
+import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
-import io.mango.workflow.core.mapper.WorkflowGroupMapper;
+import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
     private static final Long SYSTEM_USER_ID = 1L;
 
     private final WorkflowSampleProperties properties;
-    private final WorkflowGroupMapper groupMapper;
+    private final WorkflowCategoryMapper categoryMapper;
     private final WorkflowDefinitionMapper definitionMapper;
     private final IWorkflowDefinitionService definitionService;
     private final RepositoryService repositoryService;
@@ -58,42 +58,42 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         try {
             MangoContextHolder.set(previous.withSecurity(SYSTEM_USER_ID, String.valueOf(properties.getTenantId()),
                     "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", properties.getTenantId(), "internal-admin"));
-            Long groupId = ensureGroup();
+            Long categoryId = ensureCategory();
             for (SampleDefinition sample : samples()) {
-                ensureDefinition(groupId, sample);
+                ensureDefinition(categoryId, sample);
             }
         } finally {
             MangoContextHolder.set(previous);
         }
     }
 
-    private Long ensureGroup() {
-        WorkflowGroup group = groupMapper.selectOne(new LambdaQueryWrapper<WorkflowGroup>()
-                .eq(WorkflowGroup::getTenantId, properties.getTenantId())
-                .eq(WorkflowGroup::getGroupCode, properties.getGroupCode())
+    private Long ensureCategory() {
+        WorkflowCategory category = categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowCategory>()
+                .eq(WorkflowCategory::getTenantId, properties.getTenantId())
+                .eq(WorkflowCategory::getCategoryCode, properties.getCategoryCode())
                 .last("LIMIT 1"));
-        if (group != null) {
-            return group.getId();
+        if (category != null) {
+            return category.getId();
         }
         LocalDateTime now = LocalDateTime.now();
-        WorkflowGroup created = new WorkflowGroup();
+        WorkflowCategory created = new WorkflowCategory();
         created.setTenantId(properties.getTenantId());
-        created.setGroupName(properties.getGroupName());
-        created.setGroupCode(properties.getGroupCode());
+        created.setCategoryName(properties.getCategoryName());
+        created.setCategoryCode(properties.getCategoryCode());
         created.setSort(10);
         created.setStatus(1);
-        created.setRemark("系统内置通用示例流程分组");
+        created.setRemark("系统内置通用示例流程分类");
         created.setCreatedBy(SYSTEM_USER_ID);
         created.setUpdatedBy(SYSTEM_USER_ID);
         created.setCreatedTime(now);
         created.setCreatedAt(now);
         created.setUpdatedTime(now);
         created.setUpdatedAt(now);
-        groupMapper.insert(created);
+        categoryMapper.insert(created);
         return created.getId();
     }
 
-    private void ensureDefinition(Long groupId, SampleDefinition sample) {
+    private void ensureDefinition(Long categoryId, SampleDefinition sample) {
         WorkflowDefinition definition = definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinition>()
                 .eq(WorkflowDefinition::getTenantId, properties.getTenantId())
                 .eq(WorkflowDefinition::getDefinitionKey, sample.definitionKey())
@@ -103,7 +103,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
             return;
         }
         Long definitionId = definition == null
-                ? createDefinition(groupId, sample)
+                ? createDefinition(categoryId, sample)
                 : needsRefresh ? updateDefinition(definition, sample) : definition.getId();
         R<?> deployResult = definitionService.deploy(definitionId);
         if (!deployResult.isSuccess()) {
@@ -190,9 +190,10 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         }
     }
 
-    private Long createDefinition(Long groupId, SampleDefinition sample) {
+    private Long createDefinition(Long categoryId, SampleDefinition sample) {
         SaveWorkflowDefinitionCommand command = new SaveWorkflowDefinitionCommand();
-        command.setGroupId(groupId);
+        command.setCategoryId(categoryId);
+        command.setOrgId(1L);
         command.setAdminUsers(List.of("admin"));
         command.setIcon(sample.icon());
         command.setDefinitionName(sample.definitionName());
@@ -212,7 +213,8 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
     private Long updateDefinition(WorkflowDefinition definition, SampleDefinition sample) {
         SaveWorkflowDefinitionCommand command = new SaveWorkflowDefinitionCommand();
         command.setId(definition.getId());
-        command.setGroupId(definition.getGroupId());
+        command.setCategoryId(definition.getCategoryId());
+        command.setOrgId(definition.getOrgId());
         command.setAdminUsers(List.of("admin"));
         command.setIcon(sample.icon());
         command.setDefinitionName(sample.definitionName());
