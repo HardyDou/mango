@@ -67,11 +67,13 @@ class WorkflowNodeActionConfigResolverTest {
     }
 
     @Test
-    void resolve_shouldDisableUnsupportedActionWhenConfiguredEnabled() {
+    void resolve_shouldEnableRuntimeActionWhenConfiguredEnabled() {
         WorkflowApprovalNodeConfig config = new WorkflowApprovalNodeConfig();
         WorkflowNodeActionConfig transfer = new WorkflowNodeActionConfig();
         transfer.setEnabled(true);
         transfer.setLabel("转交他人处理");
+        transfer.setDisabled(true);
+        transfer.setTooltip("当前节点暂不允许转办");
         config.setActions(Map.of("transfer", transfer));
 
         Map<String, WorkflowNodeActionConfigVO> actions = WorkflowNodeActionConfigResolver.resolve(config);
@@ -80,6 +82,6 @@ class WorkflowNodeActionConfigResolverTest {
                 .returns(true, WorkflowNodeActionConfigVO::getEnabled)
                 .returns(true, WorkflowNodeActionConfigVO::getDisabled)
                 .returns("转交他人处理", WorkflowNodeActionConfigVO::getLabel)
-                .returns("当前后端未提供转办接口", WorkflowNodeActionConfigVO::getTooltip);
+                .returns("当前节点暂不允许转办", WorkflowNodeActionConfigVO::getTooltip);
     }
 }

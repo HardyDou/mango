@@ -69,12 +69,26 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     @Override
     public R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query) {
         WorkflowDefinitionPageQuery resolved = query == null ? new WorkflowDefinitionPageQuery() : query;
+        if (Boolean.TRUE.equals(resolved.getPublishedOnly())) {
+            return publishedPage(resolved);
+        }
         IPage<WorkflowDefinition> page = mapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 wrapper(resolved));
         Map<Long, String> categoryNames = categoryNames(page.getRecords());
         List<WorkflowDefinitionVO> records = page.getRecords().stream()
                 .map(item -> toVO(item, categoryNames.get(item.getCategoryId())))
+                .toList();
+        return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
+    }
+
+    private R<PageResult<WorkflowDefinitionVO>> publishedPage(WorkflowDefinitionPageQuery query) {
+        IPage<WorkflowDefinition> page = mapper.selectPage(
+                new Page<>(query.getPage(), query.getSize()),
+                publishedWrapper(query));
+        Map<Long, String> categoryNames = categoryNames(page.getRecords());
+        List<WorkflowDefinitionVO> records = page.getRecords().stream()
+                .map(entity -> publishedSnapshotVO(entity, categoryNames.get(entity.getCategoryId())))
                 .toList();
         return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
     }
@@ -307,6 +321,21 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                 .orderByDesc(WorkflowDefinition::getUpdatedTime);
     }
 
+    private LambdaQueryWrapper<WorkflowDefinition> publishedWrapper(WorkflowDefinitionPageQuery query) {
+        String keyword = trimToNull(query.getKeyword());
+        return new LambdaQueryWrapper<WorkflowDefinition>()
+                .and(StringUtils.hasText(keyword), nested -> nested
+                        .like(WorkflowDefinition::getDefinitionName, keyword)
+                        .or()
+                        .like(WorkflowDefinition::getDefinitionKey, keyword))
+                .eq(query.getCategoryId() != null, WorkflowDefinition::getCategoryId, query.getCategoryId())
+                .eq(query.getOrgId() != null, WorkflowDefinition::getOrgId, query.getOrgId())
+                .eq(WorkflowDefinition::getStatus, WorkflowDefinitionStatus.PUBLISHED.name())
+                .isNotNull(WorkflowDefinition::getPublishedVersionNo)
+                .isNotNull(WorkflowDefinition::getProcessDefinitionId)
+                .orderByDesc(WorkflowDefinition::getLastDeployTime);
+    }
+
     private WorkflowDefinition selectRequired(Long id) {
         Require.notNull(id, WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
         WorkflowDefinition entity = mapper.selectById(id);
@@ -398,6 +427,36 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setRemark(entity.getRemark());
         vo.setCreatedTime(entity.getCreatedTime());
         vo.setUpdatedTime(entity.getUpdatedTime());
+        return vo;
+    }
+
+    private WorkflowDefinitionVO publishedSnapshotVO(WorkflowDefinition entity, String categoryName) {
+        WorkflowDefinitionVersion version = latestSuccessfulVersion(entity.getId());
+        Require.notNull(version, WorkflowCode.VERSION_NOT_FOUND.getCode(), "已发布流程缺少发布版本快照");
+        WorkflowDefinitionVO vo = new WorkflowDefinitionVO();
+        vo.setId(entity.getId());
+        vo.setCategoryId(version.getCategoryId());
+        vo.setCategoryName(categoryName);
+        vo.setOrgId(version.getOrgId());
+        vo.setAdminUsers(parseStringList(version.getAdminUsers()));
+        vo.setIcon(version.getIcon());
+        vo.setDefinitionName(version.getDefinitionName());
+        vo.setDefinitionKey(version.getDefinitionKey());
+        vo.setDeploymentId(version.getDeploymentId());
+        vo.setProcessDefinitionId(version.getProcessDefinitionId());
+        vo.setProcessDefinitionVersion(version.getProcessDefinitionVersion());
+        vo.setPublishedVersionNo(version.getVersionNo());
+        vo.setDesignerJson(version.getDesignerJson());
+        vo.setBpmnXml(version.getBpmnXml());
+        vo.setFormCode(version.getFormCode());
+        vo.setFormJson(version.getFormJson());
+        vo.setStatus(WorkflowDefinitionStatus.PUBLISHED.name());
+        vo.setHasUnpublishedChanges(false);
+        vo.setUnpublishedChangeReasons(List.of());
+        vo.setLastDeployTime(version.getPublishTime());
+        vo.setRemark(version.getRemark());
+        vo.setCreatedTime(entity.getCreatedTime());
+        vo.setUpdatedTime(version.getPublishTime());
         return vo;
     }
 

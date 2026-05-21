@@ -21,23 +21,17 @@ public final class WorkflowNodeActionConfigResolver {
                 ? Map.of()
                 : config.getActions();
         Map<String, WorkflowNodeActionConfigVO> result = new LinkedHashMap<>();
-        result.put("save", nodeAction("暂存", false, false, false, 10, configured.get("save"), true,
-                "当前后端未提供暂存接口"));
-        result.put("transfer", nodeAction("转办", false, false, false, 20, configured.get("transfer"), true,
-                "当前后端未提供转办接口"));
-        result.put("addSign", nodeAction("加签", false, false, false, 30, configured.get("addSign"), true,
-                "当前后端未提供加签接口"));
-        result.put("reject", nodeAction("驳回", true, true, true, 40, configured.get("reject"), false,
-                null));
-        result.put("complete", nodeAction("通过", true, false, false, 50, configured.get("complete"), false,
-                null));
+        result.put("save", nodeAction("暂存", false, false, false, 10, configured.get("save")));
+        result.put("transfer", nodeAction("转办", false, false, false, 20, configured.get("transfer")));
+        result.put("addSign", nodeAction("加签", false, false, false, 30, configured.get("addSign")));
+        result.put("reject", nodeAction("驳回", true, true, true, 40, configured.get("reject")));
+        result.put("complete", nodeAction("通过", true, false, false, 50, configured.get("complete")));
         return result;
     }
 
     private static WorkflowNodeActionConfigVO nodeAction(String defaultLabel, boolean defaultEnabled,
                                                         boolean defaultRequireComment, boolean defaultDanger,
-                                                        int defaultOrder, WorkflowNodeActionConfig configured,
-                                                        boolean unsupported, String unsupportedTooltip) {
+                                                        int defaultOrder, WorkflowNodeActionConfig configured) {
         WorkflowNodeActionConfigVO vo = new WorkflowNodeActionConfigVO();
         boolean enabled = configured == null || configured.getEnabled() == null ? defaultEnabled : configured.getEnabled();
         vo.setEnabled(enabled);
@@ -50,8 +44,8 @@ public final class WorkflowNodeActionConfigResolver {
                 : "确认" + vo.getLabel() + "当前任务？");
         vo.setDanger(configured == null || configured.getDanger() == null ? defaultDanger : configured.getDanger());
         vo.setOrder(configured == null || configured.getOrder() == null ? defaultOrder : configured.getOrder());
-        vo.setDisabled(unsupported && enabled);
-        vo.setTooltip(unsupported && enabled ? unsupportedTooltip : null);
+        vo.setDisabled(configured != null && Boolean.TRUE.equals(configured.getDisabled()));
+        vo.setTooltip(StringUtils.hasText(configured == null ? null : configured.getTooltip()) ? configured.getTooltip() : null);
         return vo;
     }
 }

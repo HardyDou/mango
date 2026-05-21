@@ -78,6 +78,7 @@ export function registerDefaultAdminPages() {
     {
       moduleCode: 'mango-workflow',
       pages: {
+        'workflow/definition/index': () => import('@mango/workflow/src/views/workflow-definition/index.vue'),
         'system/workflow-definition/index': () => import('@mango/workflow/src/views/workflow-definition/index.vue'),
         'workflow/template/index': () => import('@mango/workflow/src/views/workflow-template/index.vue'),
         'workflow-template/index': () => import('@mango/workflow/src/views/workflow-template/index.vue'),

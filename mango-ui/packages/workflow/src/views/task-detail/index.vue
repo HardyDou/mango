@@ -64,11 +64,18 @@
               :context="businessContext"
             />
             <RuntimeFormRenderer
-              v-else-if="runtimeFields.length"
+              v-else-if="shouldRenderDynamicForm && runtimeFields.length"
               :fields="runtimeFields"
               :model="detail.variables"
               :readonly="readonlyMode"
-              :permissions="detail.formPermissions"
+              :permissions="effectiveFormPermissions"
+            />
+            <el-alert
+              v-else-if="isCustomRenderMode"
+              title="当前流程配置为自定义业务表单，但未找到匹配的审批组件。"
+              type="warning"
+              :closable="false"
+              show-icon
             />
             <el-descriptions v-else :column="1" border>
               <el-descriptions-item label="流程变量">
@@ -116,12 +123,17 @@
           </div>
         </main>
 
-        <aside class="record-panel">
+        <aside v-if="showRecordPanel" class="record-panel">
           <div class="record-header">
-            <h3>审批记录</h3>
+            <h3>{{ customRecordPanelComponent ? '审批信息' : '审批记录' }}</h3>
             <span>{{ detail.records.length }} 条</span>
           </div>
-          <el-timeline v-if="detail.records.length" class="record-timeline">
+          <component
+            :is="customRecordPanelComponent"
+            v-if="customRecordPanelComponent && businessContext"
+            :context="businessContext"
+          />
+          <el-timeline v-else-if="detail.records.length" class="record-timeline">
             <el-timeline-item
               v-for="record in detail.records"
               :key="record.id || `${record.action}-${record.createdTime}`"
@@ -137,13 +149,43 @@
         </aside>
       </div>
     </el-card>
+
+    <el-dialog
+      v-model="selectorDialog.visible"
+      :title="selectorDialog.action === 'transfer' ? '选择转办人员' : '选择加签人员'"
+      width="520px"
+      append-to-body
+      destroy-on-close
+      @closed="cancelUserSelection"
+    >
+      <UserSelector
+        v-if="selectorDialog.action === 'transfer'"
+        v-model="selectorDialog.targetUserId"
+        mode="dialog"
+        placeholder="请选择目标办理人"
+        title="选择转办人员"
+      />
+      <UserSelector
+        v-else
+        v-model="selectorDialog.targetUserIds"
+        mode="dialog"
+        multiple
+        placeholder="请选择加签人"
+        title="选择加签人员"
+      />
+      <template #footer>
+        <el-button @click="cancelUserSelection">取消</el-button>
+        <el-button type="primary" @click="confirmUserSelection">确认</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { UserSelector } from '@mango/common';
 import { workflowApi, type WorkflowBusinessApply, type WorkflowProcessDetail, type WorkflowTaskActionKey, type WorkflowTaskDetail } from '../../api/workflow';
 import {
   applyIdOf,
@@ -162,6 +204,7 @@ import {
   normalizeWorkflowNodeActions,
   resolveVisibleWorkflowActions,
 } from '../../components/taskActions';
+import { parseWorkflowFormConfig } from '../../workflowFormConfig';
 
 const route = useRoute();
 const router = useRouter();
@@ -175,6 +218,12 @@ const runtimeFields = ref<RuntimeFormField[]>([]);
 const unsupportedFields = ref<Array<{ label: string; type: string }>>([]);
 const actionForm = ref({
   comment: '',
+});
+const selectorDialog = ref({
+  visible: false,
+  action: '' as 'transfer' | 'addSign' | '',
+  targetUserId: '',
+  targetUserIds: [] as string[],
 });
 
 const readonlyMode = computed(() => route.query.mode === 'view' || !route.query.taskId);
@@ -202,23 +251,62 @@ const currentTaskDefinitionKey = computed(() =>
 );
 const renderConfig = computed(() => detail.value?.renderConfig);
 const businessType = computed(() => renderConfig.value?.businessType || businessApply.value?.businessType || businessTypeOf(detail.value?.variables));
-const renderMode = computed(() => renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM');
+const formConfig = computed(() => parseWorkflowFormConfig(detail.value?.formJson));
+const renderMode = computed(() => {
+  if (formConfig.value.mode === 'CUSTOM_PAGE') {
+    return 'CUSTOM_PAGE';
+  }
+  return renderConfig.value?.renderMode || businessApply.value?.renderMode || 'DYNAMIC_FORM';
+});
 const approvePageKey = computed(() =>
-  String(renderConfig.value?.nodeExtension?.approvePageKey || renderConfig.value?.approvePageKey || '').trim(),
+  String(renderConfig.value?.nodeExtension?.approvePageKey || renderConfig.value?.approvePageKey || formConfig.value.customConfig.approvePageKey || '').trim(),
 );
 const businessRegistration = computed(() => renderMode.value === 'CUSTOM_PAGE'
   ? resolveBusinessApprovalRegistration(approvePageKey.value)
   : null);
 const businessComponent = computed(() => businessRegistration.value?.component || null);
+const recordPanelMode = computed(() => businessRegistration.value?.recordPanelMode || 'DEFAULT');
+const customRecordPanelComponent = computed(() => recordPanelMode.value === 'CUSTOM'
+  ? businessRegistration.value?.recordPanelComponent || null
+  : null);
+const showRecordPanel = computed(() => recordPanelMode.value !== 'HIDDEN');
+const isCustomRenderMode = computed(() => renderMode.value === 'CUSTOM_PAGE');
+const shouldRenderDynamicForm = computed(() => !isCustomRenderMode.value);
+const effectiveFormPermissions = computed(() => {
+  const permissions = { ...(detail.value?.formPermissions || {}) };
+  if (readonlyMode.value) {
+    return permissions;
+  }
+  fillDefaultApprovalPermissions(runtimeFields.value, permissions);
+  return permissions;
+});
 const commentMode = computed(() => businessRegistration.value?.commentMode || 'ACTION_BAR');
 const showActionCommentInput = computed(() => commentMode.value === 'ACTION_BAR');
 const visibleNodeActions = computed(() => {
   const overrides = businessContext.value && businessRegistration.value?.getActionOverrides
     ? businessRegistration.value.getActionOverrides(businessContext.value)
     : {};
-  return resolveVisibleWorkflowActions(normalizedNodeActions.value, overrides);
+  const task = detail.value?.task;
+  const candidateOverrides = {
+    ...overrides,
+    claim: {
+      ...(overrides.claim || {}),
+      visible: !readonlyMode.value && Boolean(task?.id) && Boolean(task?.claimable),
+      label: overrides.claim?.label || '认领',
+    },
+    unclaim: {
+      ...(overrides.unclaim || {}),
+      visible: !readonlyMode.value && Boolean(task?.id) && Boolean(task?.unclaimable),
+      label: overrides.unclaim?.label || '释放',
+    },
+  };
+  return resolveVisibleWorkflowActions(normalizedNodeActions.value, candidateOverrides);
 });
-const normalizedNodeActions = computed(() => normalizeWorkflowNodeActions(renderConfig.value?.nodeActions));
+const normalizedNodeActions = computed(() => ({
+  ...normalizeWorkflowNodeActions(renderConfig.value?.nodeActions),
+  claim: { enabled: true, label: '认领', order: 5 },
+  unclaim: { enabled: true, label: '释放', order: 6 },
+}));
 const businessContext = computed<BusinessApprovalContext | null>(() => {
   if (!detail.value || !businessType.value) {
     return null;
@@ -236,12 +324,19 @@ const businessContext = computed<BusinessApprovalContext | null>(() => {
     readonly: readonlyMode.value,
     variables,
     permissions: renderConfig.value?.businessPermissions || businessPermissionsOf(variables, currentTaskDefinitionKey.value),
+    records: detail.value.records || [],
   };
 });
 
 async function loadDetail() {
   loading.value = true;
   try {
+    taskDetail.value = null;
+    processDetail.value = null;
+    businessApply.value = null;
+    runtimeFields.value = [];
+    unsupportedFields.value = [];
+    actionForm.value.comment = '';
     const taskId = String(route.query.taskId || '');
     const processInstanceId = String(route.query.processInstanceId || '');
     if (taskId) {
@@ -265,7 +360,7 @@ async function loadDetail() {
 
 async function loadBusinessApply() {
   const processInstanceId = detail.value?.process.processInstanceId;
-  if (!processInstanceId) {
+  if (!processInstanceId || renderMode.value !== 'CUSTOM_PAGE') {
     businessApply.value = null;
     return;
   }
@@ -287,10 +382,6 @@ async function submitAction(action: WorkflowTaskActionKey) {
     if (actionConfig?.tooltip) ElMessage.warning(actionConfig.tooltip);
     return;
   }
-  if (action !== 'complete' && action !== 'reject') {
-    ElMessage.warning(actionConfig.tooltip || '当前动作暂未支持');
-    return;
-  }
   const actionName = actionConfig.label || defaultWorkflowActionLabel(action);
   const comment = collectActionComment(action);
   if (isWorkflowCommentRequired(actionConfig, comment)) {
@@ -305,7 +396,11 @@ async function submitAction(action: WorkflowTaskActionKey) {
     ElMessage.warning(error instanceof Error ? error.message : '请检查审批信息');
     return;
   }
-  await ElMessageBox.confirm(actionConfig.confirmText || `确认${actionName}当前任务？`, `审批${actionName}`, { type: action === 'complete' ? 'warning' : 'error' });
+  const extraPayload = await collectExtraActionPayload(action);
+  if (extraPayload === false) {
+    return;
+  }
+  await ElMessageBox.confirm(actionConfig.confirmText || `确认${actionName}当前任务？`, `审批${actionName}`, { type: action === 'reject' ? 'error' : 'warning' });
   submitting.value = true;
   submittingAction.value = action;
   try {
@@ -314,25 +409,124 @@ async function submitAction(action: WorkflowTaskActionKey) {
     }
     const variables = editableFormVariables(action);
     let result: unknown;
-    if (action === 'complete') {
-      result = await workflowApi.completeTask({ taskId, comment, variables });
-    } else {
-      result = await workflowApi.rejectTask({ taskId, comment, variables });
-    }
+    result = await executeTaskAction(action, taskId, comment, variables, extraPayload);
     if (businessRegistration.value?.afterAction && businessContext.value) {
       await businessRegistration.value.afterAction(businessContext.value, action, result);
     }
-    ElMessage.success(`审批已${actionName}`);
-    await router.push('/workflow/task/done');
+    ElMessage.success(action === 'save' ? '暂存成功' : `审批已${actionName}`);
+    if (action === 'save') {
+      await loadDetail();
+    } else {
+      await router.push(action === 'claim' || action === 'unclaim' ? '/workflow/task/todo' : '/workflow/task/done');
+    }
   } finally {
     submitting.value = false;
     submittingAction.value = '';
   }
 }
 
+async function collectExtraActionPayload(action: WorkflowTaskActionKey) {
+  if (action === 'transfer') {
+    const targetUserId = await pickTransferUser();
+    return targetUserId ? { targetUserId } : false;
+  }
+  if (action === 'addSign') {
+    const targetUserIds = await pickAddSignUsers();
+    return targetUserIds.length ? { targetUserIds } : false;
+  }
+  return {};
+}
+
+function pickTransferUser(): Promise<string | false> {
+  return pickUsers('transfer');
+}
+
+async function pickAddSignUsers(): Promise<string[]> {
+  const result = await pickUsers('addSign');
+  return Array.isArray(result) ? result : [];
+}
+
+function pickUsers(action: 'transfer'): Promise<string | false>;
+function pickUsers(action: 'addSign'): Promise<string[] | false>;
+function pickUsers(action: 'transfer' | 'addSign') {
+  selectorDialog.value = {
+    visible: true,
+    action,
+    targetUserId: '',
+    targetUserIds: [],
+  };
+  return new Promise<string | string[] | false>((resolve) => {
+    pendingUserResolve = resolve;
+  });
+}
+
+let pendingUserResolve: ((value: string | string[] | false) => void) | null = null;
+
+function cancelUserSelection() {
+  if (!pendingUserResolve) {
+    return;
+  }
+  selectorDialog.value.visible = false;
+  pendingUserResolve?.(false);
+  pendingUserResolve = null;
+}
+
+function confirmUserSelection() {
+  if (selectorDialog.value.action === 'transfer') {
+    const target = selectorDialog.value.targetUserId.trim();
+    if (!target) {
+      ElMessage.warning('请选择目标办理人');
+      return;
+    }
+    selectorDialog.value.visible = false;
+    pendingUserResolve?.(target);
+    pendingUserResolve = null;
+    return;
+  }
+  const targets = selectorDialog.value.targetUserIds.map(item => item.trim()).filter(Boolean);
+  if (!targets.length) {
+    ElMessage.warning('请选择加签人');
+    return;
+  }
+  selectorDialog.value.visible = false;
+  pendingUserResolve?.(targets);
+  pendingUserResolve = null;
+}
+
+async function executeTaskAction(
+  action: WorkflowTaskActionKey,
+  taskId: string,
+  comment: string,
+  variables: Record<string, any>,
+  extraPayload: any,
+) {
+  if (action === 'complete') {
+    return workflowApi.completeTask({ taskId, comment, variables });
+  }
+  if (action === 'reject') {
+    return workflowApi.rejectTask({ taskId, comment, variables });
+  }
+  if (action === 'save') {
+    return workflowApi.saveTask({ taskId, comment, variables });
+  }
+  if (action === 'transfer') {
+    return workflowApi.transferTask({ taskId, comment, targetUserId: extraPayload.targetUserId });
+  }
+  if (action === 'addSign') {
+    return workflowApi.addSignTask({ taskId, comment, targetUserIds: extraPayload.targetUserIds });
+  }
+  if (action === 'claim') {
+    return workflowApi.claimTask(taskId);
+  }
+  if (action === 'unclaim') {
+    return workflowApi.unclaimTask(taskId);
+  }
+  throw new Error(`Unsupported workflow action: ${action}`);
+}
+
 function editableFormVariables(action: WorkflowTaskActionKey) {
   const current = detail.value?.variables || {};
-  const permissions = detail.value?.formPermissions || {};
+  const permissions = effectiveFormPermissions.value;
   const values = runtimeFields.value.reduce<Record<string, any>>((result, field) => {
     if (permissions[field.key] === 'EDITABLE') {
       result[field.key] = current[field.key];
@@ -343,6 +537,20 @@ function editableFormVariables(action: WorkflowTaskActionKey) {
     ...values,
     ...collectBusinessApprovalVariables(businessRegistration.value, businessContext.value, action),
   };
+}
+
+function fillDefaultApprovalPermissions(fields: RuntimeFormField[], permissions: Record<string, string>) {
+  fields.forEach((field) => {
+    if (field.children?.length) {
+      fillDefaultApprovalPermissions(field.children, permissions);
+    }
+    if (!field.key || field.key.startsWith('__runtime_')) {
+      return;
+    }
+    if (!permissions[field.key]) {
+      permissions[field.key] = 'READONLY';
+    }
+  });
 }
 
 function collectActionComment(action: WorkflowTaskActionKey) {
@@ -381,7 +589,11 @@ function latestTaskName() {
   return String([...records].reverse().find(record => record.taskName)?.taskName || '');
 }
 
-onMounted(loadDetail);
+watch(
+  () => [route.query.taskId, route.query.processInstanceId, route.query.mode],
+  loadDetail,
+  { immediate: true },
+);
 </script>
 
 <style scoped>

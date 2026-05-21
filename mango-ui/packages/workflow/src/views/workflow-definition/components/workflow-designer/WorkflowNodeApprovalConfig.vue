@@ -165,7 +165,24 @@
             class="approval-radio-column"
             @change="value => $emit('update-config', { approvalMode: value })"
           >
-            <el-radio label="COUNTERSIGN">会签，需要所有审批人同意</el-radio>
+            <el-radio label="COUNTERSIGN">
+              <span class="countersign-radio-content">
+                <span>会签</span>
+                <template v-if="config.approvalMode === 'COUNTERSIGN'">
+                  <el-input-number
+                    :model-value="config.passRatio ?? 100"
+                    :min="1"
+                    :max="100"
+                    :step="5"
+                    :precision="0"
+                    controls-position="right"
+                    size="small"
+                    @change="value => $emit('update-config', { passRatio: Number(value || 100) })"
+                  />
+                  <span class="countersign-radio-tip">% 通过后节点通过</span>
+                </template>
+              </span>
+            </el-radio>
             <el-radio label="OR_SIGN">或签，一名审批人同意即可</el-radio>
             <el-radio label="SEQUENTIAL">依次审批，按顺序处理</el-radio>
           </el-radio-group>
@@ -288,6 +305,25 @@ defineEmits<{
 .approval-radio-column {
   display: grid;
   gap: 5px;
+}
+
+.countersign-radio-content {
+  display: inline-grid;
+  grid-template-columns: auto 82px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.countersign-radio-content :deep(.el-input-number) {
+  width: 82px;
+}
+
+.countersign-radio-tip {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .approval-radio-grid :deep(.el-radio),

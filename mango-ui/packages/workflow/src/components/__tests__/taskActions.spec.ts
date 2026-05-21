@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   isWorkflowCommentRequired,
   normalizeWorkflowNodeActions,
@@ -11,8 +10,10 @@ describe('workflow task actions', () => {
 
     expect(actions.complete).toMatchObject({ enabled: true, label: '通过', requireComment: false });
     expect(actions.reject).toMatchObject({ enabled: true, label: '驳回', requireComment: true, danger: true });
-    expect(actions.save).toMatchObject({ enabled: false, label: '暂存', disabled: true });
-    expect(actions.transfer.tooltip).toContain('转办接口');
+    expect(actions.save).toMatchObject({ enabled: false, label: '暂存' });
+    expect(actions.transfer).toMatchObject({ enabled: false, label: '转办' });
+    expect(actions.claim).toMatchObject({ enabled: false, label: '认领' });
+    expect(actions.read).toMatchObject({ enabled: false, label: '已阅' });
   });
 
   it('uses backend labels and business overrides without adding unauthorized actions', () => {

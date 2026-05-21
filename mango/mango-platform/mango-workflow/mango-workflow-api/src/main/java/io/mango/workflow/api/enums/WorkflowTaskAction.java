@@ -11,8 +11,14 @@ import lombok.Getter;
 public enum WorkflowTaskAction {
 
     START("发起"),
+    SAVE("暂存"),
     COMPLETE("通过"),
     REJECT("驳回"),
+    TRANSFER("转办"),
+    ADD_SIGN("加签"),
+    CLAIM("认领"),
+    UNCLAIM("释放"),
+    READ("已阅"),
     AUTO_COMPLETE("自动通过"),
     AUTO_REJECT("自动驳回"),
     AUTO_END("自动结束"),

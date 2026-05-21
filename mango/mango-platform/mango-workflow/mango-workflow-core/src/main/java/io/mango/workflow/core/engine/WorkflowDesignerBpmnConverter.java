@@ -212,8 +212,17 @@ public class WorkflowDesignerBpmnConverter {
         loop.setSequential(config.getApprovalMode() == WorkflowApprovalMode.SEQUENTIAL);
         if (config.getApprovalMode() == WorkflowApprovalMode.OR_SIGN) {
             loop.setCompletionCondition("${nrOfCompletedInstances >= 1}");
+        } else if (config.getApprovalMode() == WorkflowApprovalMode.COUNTERSIGN) {
+            loop.setCompletionCondition("${nrOfCompletedInstances >= mangoWorkflowApprovalThreshold.requiredApprovals(nrOfInstances, " + passRatio(config) + ")}");
         }
         task.setLoopCharacteristics(loop);
+    }
+
+    private int passRatio(WorkflowApprovalNodeConfig config) {
+        if (config == null || config.getPassRatio() == null) {
+            return 100;
+        }
+        return Math.max(1, Math.min(100, config.getPassRatio()));
     }
 
     private boolean shouldUseMultiInstance(WorkflowApprovalNodeConfig config, List<String> users) {
@@ -258,8 +267,19 @@ public class WorkflowDesignerBpmnConverter {
         if (StringUtils.hasText(text(properties, "initiatorSelectMultiple"))) {
             config.setInitiatorSelectMultiple(Boolean.parseBoolean(text(properties, "initiatorSelectMultiple")));
         }
+        if (StringUtils.hasText(text(properties, "passRatio"))) {
+            config.setPassRatio(parseInteger(text(properties, "passRatio"), config.getPassRatio()));
+        }
         config.setFormPermissions(formPermissions(properties.get("formPermissions"), config.getFormPermissions()));
         config.setEventNotify(eventNotify(properties.get("eventNotify"), config.getEventNotify()));
+    }
+
+    private Integer parseInteger(String value, Integer fallback) {
+        try {
+            return Integer.valueOf(value);
+        } catch (RuntimeException ignored) {
+            return fallback;
+        }
     }
 
     private WorkflowApprovalNodeConfig readApprovalConfig(Object value) {

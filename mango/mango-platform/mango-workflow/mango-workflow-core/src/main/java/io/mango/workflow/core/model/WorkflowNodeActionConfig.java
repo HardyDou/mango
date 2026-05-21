@@ -14,4 +14,6 @@ public class WorkflowNodeActionConfig {
     private String confirmText;
     private Boolean danger;
     private Integer order;
+    private Boolean disabled;
+    private String tooltip;
 }

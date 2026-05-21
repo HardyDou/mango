@@ -42,6 +42,12 @@ public class WorkflowTaskVO {
     @Schema(description = "办理人")
     private String assigneeName;
 
+    @Schema(description = "当前用户是否可认领")
+    private Boolean claimable;
+
+    @Schema(description = "当前用户是否可释放")
+    private Boolean unclaimable;
+
     @Schema(description = "状态")
     private String status;
 

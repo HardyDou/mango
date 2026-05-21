@@ -15,4 +15,7 @@ public class WorkflowTaskPageQuery extends PageQuery {
 
     @Schema(description = "关键字，支持按流程名称、任务名称搜索")
     private String keyword;
+
+    @Schema(description = "待办类型：ASSIGNED=待处理，CLAIMABLE=待领取，ALL=全部")
+    private String todoType;
 }

@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from 'vitest';
 import {
   collectBusinessApprovalComment,
   collectBusinessApprovalVariables,
@@ -73,6 +72,19 @@ describe('contract seal approval registration', () => {
       sealKeeperOpinion: 'EDITABLE',
     }), 'complete')).rejects.toThrow('实际用印份数不能小于 0');
   });
+
+  it('validates required business form opinion before submitting approval', async () => {
+    registerWorkflowBusinessExampleComponents();
+    const registration = resolveBusinessApprovalRegistration('workflow.contractSeal.approve.manager');
+    const context = contractContext({
+      managerOpinion: '   ',
+    }, {
+      managerOpinion: 'EDITABLE',
+    });
+
+    expect(collectBusinessApprovalComment(registration, context, 'complete')).toBe('');
+    await expect(registration?.validateBeforeAction?.(context, 'complete')).rejects.toThrow('请填写审批意见');
+  });
 });
 
 function contractContext(
@@ -91,5 +103,6 @@ function contractContext(
     readonly: false,
     variables,
     permissions,
+    records: [],
   };
 }

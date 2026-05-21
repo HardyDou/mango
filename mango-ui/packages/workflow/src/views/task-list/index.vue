@@ -8,6 +8,16 @@
         </div>
       </template>
 
+      <el-tabs
+        v-if="taskMode === 'todo'"
+        v-model="todoTab"
+        class="todo-tabs"
+        @tab-change="handleTodoTabChange"
+      >
+        <el-tab-pane label="待处理" name="assigned" />
+        <el-tab-pane label="待领取" name="claimable" />
+      </el-tabs>
+
       <el-form :inline="true" class="search-form">
         <el-form-item label="关键词">
           <el-input v-model="query.keyword" placeholder="搜索流程/任务名称" clearable @keyup.enter="loadData" />
@@ -33,9 +43,15 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column prop="startTime" label="发起时间" width="180" />
         <el-table-column prop="endTime" label="完成时间" width="180" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="taskMode === 'todo'" type="primary" link @click="openTask(row)">处理</el-button>
+            <template v-if="taskMode === 'todo'">
+              <el-button type="primary" link @click="openTask(row)">
+                {{ row.claimable ? '详情' : '处理' }}
+              </el-button>
+              <el-button v-if="row.claimable" type="primary" link @click="claimTask(row)">领取</el-button>
+            </template>
+            <el-button v-else-if="taskMode === 'copied' && row.status !== '已阅'" type="primary" link @click="readCopied(row)">已阅</el-button>
             <el-button v-else type="primary" link @click="openTask(row)">查看</el-button>
           </template>
         </el-table-column>
@@ -58,6 +74,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { workflowApi, type WorkflowTask } from '../../api/workflow';
 
 const route = useRoute();
@@ -65,6 +82,7 @@ const router = useRouter();
 const loading = ref(false);
 const tableData = ref<WorkflowTask[]>([]);
 const total = ref(0);
+const todoTab = ref<'assigned' | 'claimable'>('assigned');
 const query = ref({
   pageNum: 1,
   pageSize: 10,
@@ -86,11 +104,13 @@ const title = computed(() => ({
 }[taskMode.value]));
 
 const description = computed(() => ({
-  todo: '需要当前用户处理的流程任务',
+  todo: todoTab.value === 'claimable' ? '候选待领取任务，认领后进入待处理' : '已经分配给当前用户的流程任务',
   initiated: '当前用户发起的流程实例',
   done: '当前用户已经处理完成的流程任务',
   copied: '流程抄送通知与待阅事项',
 }[taskMode.value]));
+
+const todoType = computed(() => (todoTab.value === 'claimable' ? 'CLAIMABLE' : 'ASSIGNED'));
 
 async function loadData() {
   loading.value = true;
@@ -111,7 +131,10 @@ async function loadData() {
       done: workflowApi.doneTasks,
       copied: workflowApi.copiedTasks,
     };
-    const result = await apiMap[taskMode.value as 'todo' | 'done' | 'copied'](query.value);
+    const params = taskMode.value === 'todo'
+      ? { ...query.value, todoType: todoType.value }
+      : query.value;
+    const result = await apiMap[taskMode.value as 'todo' | 'done' | 'copied'](params);
     tableData.value = result.list;
     total.value = result.total;
   } finally {
@@ -121,6 +144,11 @@ async function loadData() {
 
 function resetQuery() {
   query.value.keyword = '';
+  query.value.pageNum = 1;
+  loadData();
+}
+
+function handleTodoTabChange() {
   query.value.pageNum = 1;
   loadData();
 }
@@ -141,6 +169,22 @@ function openTask(row: WorkflowTask) {
   });
 }
 
+async function claimTask(row: WorkflowTask) {
+  if (!row.id) {
+    return;
+  }
+  await ElMessageBox.confirm('确认领取当前任务？', '领取任务', { type: 'warning' });
+  await workflowApi.claimTask(row.id);
+  ElMessage.success('领取成功');
+  await loadData();
+}
+
+async function readCopied(row: WorkflowTask) {
+  await workflowApi.readCopiedTask(row.id);
+  ElMessage.success('已标记为已阅');
+  await loadData();
+}
+
 onMounted(loadData);
 </script>
 
@@ -158,6 +202,10 @@ onMounted(loadData);
 
 .search-form {
   margin-bottom: 16px;
+}
+
+.todo-tabs {
+  margin-bottom: 12px;
 }
 
 .pagination {

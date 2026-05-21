@@ -274,7 +274,7 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         applyCommand.setProcessDefinitionId(definition.getId());
         applyCommand.setProcessDefinitionKey(definition.getDefinitionKey());
         applyCommand.setRenderMode(command.getRenderMode() == null
-                ? WorkflowApplyRenderMode.DYNAMIC_FORM
+                ? resolveRenderMode(definition)
                 : command.getRenderMode());
         applyCommand.setApplyPageKey(trim(command.getApplyPageKey()));
         applyCommand.setApprovePageKey(trim(command.getApprovePageKey()));
@@ -375,6 +375,35 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
     private String statusLabel(String status, boolean running) {
         return WorkflowInstanceStatus.labelOf(status,
                 running ? WorkflowInstanceStatus.RUNNING : WorkflowInstanceStatus.COMPLETED);
+    }
+
+    private WorkflowApplyRenderMode resolveRenderMode(WorkflowDefinition definition) {
+        Map<String, Object> formConfig = parseMap(definition == null ? null : definition.getFormJson());
+        String mode = formConfig == null ? null : trim(String.valueOf(formConfig.getOrDefault("mode", "")));
+        return "CUSTOM".equalsIgnoreCase(mode) || "CUSTOM_PAGE".equalsIgnoreCase(mode)
+                ? WorkflowApplyRenderMode.CUSTOM_PAGE
+                : WorkflowApplyRenderMode.DYNAMIC_FORM;
+    }
+
+    private Map<String, Object> parseMap(String json) {
+        if (!StringUtils.hasText(json)) {
+            return Map.of();
+        }
+        try {
+            Object value = objectMapper.readValue(json, Object.class);
+            if (!(value instanceof Map<?, ?> raw)) {
+                return Map.of();
+            }
+            Map<String, Object> result = new HashMap<>();
+            raw.forEach((key, item) -> {
+                if (key != null) {
+                    result.put(String.valueOf(key), item);
+                }
+            });
+            return result;
+        } catch (JsonProcessingException e) {
+            return Map.of();
+        }
     }
 
     private String toJson(Object value) {

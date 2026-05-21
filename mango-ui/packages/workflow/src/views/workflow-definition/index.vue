@@ -318,8 +318,8 @@
                       <template v-else-if="selectedNode.nodeType === 'EXCLUSIVE_BRANCH'">
                           <WorkflowNodeConditionConfig
                             :node="selectedNode"
-                            :categories="conditionGroups"
-                            :variable-categories="workflowVariableGroups"
+                            :groups="conditionGroups"
+                            :variable-groups="workflowVariableGroups"
                             :mode="conditionEditMode(selectedNode)"
                             :user-options="approvalUserOptions"
                             :role-options="approvalRoleOptions"

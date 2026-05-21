@@ -28,6 +28,7 @@ public class WorkflowApprovalNodeConfig {
     private String expression;
     private String expressionName;
     private WorkflowApprovalMode approvalMode = WorkflowApprovalMode.COUNTERSIGN;
+    private Integer passRatio = 100;
     private WorkflowEmptyAssigneeStrategy emptyAssigneeStrategy = WorkflowEmptyAssigneeStrategy.TO_ADMIN;
     private List<String> emptyAssigneeUserIds = new ArrayList<>();
     private WorkflowRejectStrategy rejectStrategy = WorkflowRejectStrategy.END_PROCESS;

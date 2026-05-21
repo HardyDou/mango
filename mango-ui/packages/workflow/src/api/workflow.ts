@@ -11,7 +11,7 @@ export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowId = string;
-export type WorkflowTaskActionKey = 'complete' | 'reject' | 'save' | 'transfer' | 'addSign';
+export type WorkflowTaskActionKey = 'complete' | 'reject' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -45,6 +45,7 @@ export interface WorkflowApprovalNodeConfig {
   expression?: string;
   expressionName?: string;
   approvalMode: WorkflowApprovalMode;
+  passRatio?: number;
   emptyAssigneeStrategy: WorkflowEmptyAssigneeStrategy;
   emptyAssigneeUserIds?: string[];
   rejectStrategy: WorkflowRejectStrategy;
@@ -107,9 +108,11 @@ export interface WorkflowPageQuery {
   categoryId?: WorkflowId | '';
   orgId?: WorkflowId | '';
   status?: string;
+  publishedOnly?: boolean;
   categoryCode?: string;
   bpmnType?: string;
   executionType?: string;
+  todoType?: 'ASSIGNED' | 'CLAIMABLE' | 'ALL';
 }
 
 export interface WorkflowTemplateCategory {
@@ -263,6 +266,8 @@ export interface WorkflowTask {
   processDefinitionId?: string;
   initiatorName?: string;
   assigneeName?: string;
+  claimable?: boolean;
+  unclaimable?: boolean;
   status: string;
   createTime?: string;
   endTime?: string;
@@ -427,6 +432,22 @@ export interface WorkflowTaskActionCommand {
   variables?: Record<string, any>;
 }
 
+export interface WorkflowTaskTransferCommand {
+  taskId: string;
+  targetUserId: string;
+  comment?: string;
+}
+
+export interface WorkflowTaskAddSignCommand {
+  taskId: string;
+  targetUserIds: string[];
+  comment?: string;
+}
+
+export interface WorkflowCopiedReadCommand {
+  copiedTaskId: WorkflowId;
+}
+
 export const workflowApi = {
   categoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/categories/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeCategory, params)),
@@ -483,6 +504,12 @@ export const workflowApi = {
     .then(normalizeTaskDetail),
   completeTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/complete', data),
   rejectTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/reject', data),
+  saveTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/save', data),
+  transferTask: (data: WorkflowTaskTransferCommand) => post<boolean>('/workflow/tasks/transfer', data),
+  addSignTask: (data: WorkflowTaskAddSignCommand) => post<boolean>('/workflow/tasks/add-sign', data),
+  claimTask: (taskId: string) => post<boolean>('/workflow/tasks/claim', { taskId }),
+  unclaimTask: (taskId: string) => post<boolean>('/workflow/tasks/unclaim', { taskId }),
+  readCopiedTask: (copiedTaskId: WorkflowId) => post<boolean>('/workflow/tasks/copied/read', { copiedTaskId }),
 
   startProcess: (data: StartWorkflowProcessCommand) => post<WorkflowProcessInstance>('/workflow/processes/start', data)
     .then(normalizeProcessInstance),
@@ -630,6 +657,7 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
     orgIds: [],
     formUserFieldType: 'USER',
     approvalMode: 'COUNTERSIGN',
+    passRatio: 100,
     emptyAssigneeStrategy: 'TO_ADMIN',
     emptyAssigneeUserIds: [],
     rejectStrategy: 'END_PROCESS',
@@ -654,6 +682,9 @@ export function defaultNodeActions(): Record<WorkflowTaskActionKey, WorkflowNode
     addSign: { enabled: false, label: '加签', requireComment: false, order: 30 },
     reject: { enabled: true, label: '驳回', requireComment: true, danger: true, order: 40 },
     complete: { enabled: true, label: '通过', requireComment: false, order: 50 },
+    claim: { enabled: false, label: '认领', requireComment: false, order: 5 },
+    unclaim: { enabled: false, label: '释放', requireComment: false, order: 6 },
+    read: { enabled: false, label: '已阅', requireComment: false, order: 60 },
   };
 }
 
@@ -874,6 +905,8 @@ function normalizeTask(item: any): WorkflowTask {
     processDefinitionId: item?.processDefinitionId,
     initiatorName: item?.initiatorName,
     assigneeName: item?.assigneeName,
+    claimable: Boolean(item?.claimable),
+    unclaimable: Boolean(item?.unclaimable),
     status: item?.status || '-',
     createTime: normalizeDateTime(item?.createTime),
     endTime: normalizeDateTime(item?.endTime),

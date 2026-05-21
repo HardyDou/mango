@@ -17,11 +17,14 @@ export interface WorkflowResolvedAction extends WorkflowNodeActionConfig {
 }
 
 export const WORKFLOW_ACTION_DEFAULTS: Record<WorkflowTaskActionKey, WorkflowNodeActionConfig> = {
-  save: { enabled: false, label: '暂存', order: 10, disabled: true, tooltip: '当前后端未提供暂存接口' },
-  transfer: { enabled: false, label: '转办', order: 20, disabled: true, tooltip: '当前后端未提供转办接口' },
-  addSign: { enabled: false, label: '加签', order: 30, disabled: true, tooltip: '当前后端未提供加签接口' },
+  save: { enabled: false, label: '暂存', order: 10 },
+  transfer: { enabled: false, label: '转办', order: 20 },
+  addSign: { enabled: false, label: '加签', order: 30 },
   reject: { enabled: true, label: '驳回', requireComment: true, danger: true, order: 40 },
   complete: { enabled: true, label: '通过', requireComment: false, order: 50 },
+  claim: { enabled: false, label: '认领', requireComment: false, order: 5 },
+  unclaim: { enabled: false, label: '释放', requireComment: false, order: 6 },
+  read: { enabled: false, label: '已阅', requireComment: false, order: 60 },
 };
 
 export function defaultWorkflowActionLabel(action: WorkflowTaskActionKey) {

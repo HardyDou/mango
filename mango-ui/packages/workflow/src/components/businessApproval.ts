@@ -1,8 +1,9 @@
 import type { Component } from 'vue';
-import type { WorkflowTaskActionKey } from '../api/workflow';
+import type { WorkflowTaskActionKey, WorkflowTaskRecord } from '../api/workflow';
 
 export type BusinessPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowCommentMode = 'ACTION_BAR' | 'BUSINESS_FORM' | 'NONE';
+export type WorkflowRecordPanelMode = 'DEFAULT' | 'HIDDEN' | 'CUSTOM';
 
 export interface BusinessApprovalContext {
   businessType: string;
@@ -16,10 +17,13 @@ export interface BusinessApprovalContext {
   readonly: boolean;
   variables: Record<string, any>;
   permissions: Record<string, BusinessPermission>;
+  records: WorkflowTaskRecord[];
 }
 
 export interface BusinessApprovalRegistration {
   component: Component;
+  recordPanelMode?: WorkflowRecordPanelMode;
+  recordPanelComponent?: Component;
   collectVariables?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => Record<string, any>;
   commentMode?: WorkflowCommentMode;
   collectComment?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => string | undefined;

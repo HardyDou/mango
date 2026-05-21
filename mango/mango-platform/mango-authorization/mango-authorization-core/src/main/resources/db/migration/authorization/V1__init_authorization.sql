@@ -801,7 +801,7 @@ SET `icon` = CASE `menu_code`
     WHEN 'workflow:start-process' THEN 'Promotion'
     WHEN 'workflow:manage' THEN 'Operation'
     WHEN 'workflow:template' THEN 'CollectionTag'
-    WHEN 'system:workflow' THEN 'Files'
+    WHEN 'workflow:definition' THEN 'Files'
     WHEN 'workflow:business-form' THEN 'Document'
     ELSE `icon`
   END,
@@ -817,7 +817,7 @@ WHERE `menu_code` IN (
   'workflow:start-process',
   'workflow:manage',
   'workflow:template',
-  'system:workflow',
+  'workflow:definition',
   'workflow:business-form'
 );
 

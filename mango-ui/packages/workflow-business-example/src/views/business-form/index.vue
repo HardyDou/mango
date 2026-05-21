@@ -789,7 +789,7 @@ async function loadData() {
   loading.value = true;
   try {
     const [definitionsResult, expenseApplyResult, sealApplyResult] = await Promise.all([
-      workflowApi.definitionsPage({ pageNum: 1, pageSize: 100, status: 'PUBLISHED' }),
+      workflowApi.definitionsPage({ pageNum: 1, pageSize: 100, status: 'PUBLISHED', publishedOnly: true }),
       workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: expenseBusiness.businessType, latestOnly: true }),
       workflowApi.businessAppliesPage({ pageNum: 1, pageSize: 100, businessType: sealBusiness.businessType, latestOnly: true }),
     ]);

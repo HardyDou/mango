@@ -37,14 +37,14 @@ public class WorkflowCategoryController {
     private final IWorkflowCategoryService workflowCategoryService;
 
     @GetMapping("/page")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:list")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:list")
     @Operation(summary = "分页查询流程分类", description = "权限接口。分页查询流程分类配置")
     public R<PageResult<WorkflowCategoryVO>> page(@ParameterObject WorkflowCategoryPageQuery query) {
         return workflowCategoryService.page(query);
     }
 
     @GetMapping("/list")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:list")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:list")
     @Operation(summary = "查询流程分类选项", description = "权限接口。查询流程分类轻量列表，用于流程定义筛选和表单选择")
     public R<List<WorkflowCategoryVO>> list(
             @Parameter(description = "状态：0-停用，1-启用")
@@ -53,7 +53,7 @@ public class WorkflowCategoryController {
     }
 
     @GetMapping("/detail")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:query")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
     @Operation(summary = "获取流程分类详情", description = "权限接口。按流程分类ID查询详情")
     public R<WorkflowCategoryVO> get(
             @Parameter(description = "流程分类ID", required = true)
@@ -62,7 +62,7 @@ public class WorkflowCategoryController {
     }
 
     @PostMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:add")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:add")
     @Operation(summary = "新增流程分类", description = "权限接口。创建流程分类")
     public R<String> create(
             @Parameter(description = "保存流程分类命令", required = true)
@@ -71,7 +71,7 @@ public class WorkflowCategoryController {
     }
 
     @PutMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:edit")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:edit")
     @Operation(summary = "修改流程分类", description = "权限接口。更新流程分类")
     public R<Boolean> update(
             @Parameter(description = "保存流程分类命令", required = true)
@@ -80,7 +80,7 @@ public class WorkflowCategoryController {
     }
 
     @DeleteMapping
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:workflow:delete")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:delete")
     @Operation(summary = "删除流程分类", description = "权限接口。删除未被流程定义引用的流程分类")
     public R<Boolean> delete(
             @Parameter(description = "流程分类ID", required = true)

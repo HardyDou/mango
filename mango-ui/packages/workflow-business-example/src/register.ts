@@ -122,6 +122,10 @@ function collectContractSealComment(context: BusinessApprovalContext) {
 }
 
 async function validateContractSealAction(context: BusinessApprovalContext, action: WorkflowTaskActionKey) {
+  const comment = collectContractSealComment(context);
+  if ((action === 'complete' || action === 'reject') && comment !== undefined && !String(comment).trim()) {
+    throw new Error('请填写审批意见');
+  }
   if (action === 'complete' && context.permissions.sealKeeperOpinion === 'EDITABLE'
     && Number(context.variables.approvedSealCount ?? -1) < 0) {
     throw new Error('实际用印份数不能小于 0');
