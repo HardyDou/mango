@@ -60,6 +60,11 @@ public class MangoRealtimeProperties {
     private Presence presence = new Presence();
 
     /**
+     * Reliable realtime dispatch settings backed by infra-kv outbox.
+     */
+    private Outbox outbox = new Outbox();
+
+    /**
      * Client-to-server inbound message settings.
      */
     private Inbound inbound = new Inbound();
@@ -339,6 +344,65 @@ public class MangoRealtimeProperties {
 
         public long getTtlSeconds() {
             return ttlSeconds <= 0 ? 120L : ttlSeconds;
+        }
+    }
+
+    @Data
+    public static class Outbox {
+
+        /**
+         * Enables reliable realtime publishing through infra-kv outbox.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Worker id used when claiming outbox messages.
+         */
+        private String workerId;
+
+        /**
+         * Claim batch size.
+         */
+        private int batchSize = 50;
+
+        /**
+         * Initial dispatcher delay in milliseconds.
+         */
+        private long initialDelayMillis = 1000L;
+
+        /**
+         * Fixed dispatcher delay in milliseconds.
+         */
+        private long fixedDelayMillis = 500L;
+
+        /**
+         * Maximum dispatch attempts before continuing delayed retries.
+         */
+        private int maxAttempts = 5;
+
+        /**
+         * Base retry backoff in milliseconds.
+         */
+        private long retryBackoffMillis = 1000L;
+
+        public int getBatchSize() {
+            return batchSize <= 0 ? 50 : batchSize;
+        }
+
+        public long getInitialDelayMillis() {
+            return Math.max(0L, initialDelayMillis);
+        }
+
+        public long getFixedDelayMillis() {
+            return fixedDelayMillis <= 0 ? 500L : fixedDelayMillis;
+        }
+
+        public int getMaxAttempts() {
+            return maxAttempts <= 0 ? 5 : maxAttempts;
+        }
+
+        public long getRetryBackoffMillis() {
+            return retryBackoffMillis <= 0 ? 1000L : retryBackoffMillis;
         }
     }
 

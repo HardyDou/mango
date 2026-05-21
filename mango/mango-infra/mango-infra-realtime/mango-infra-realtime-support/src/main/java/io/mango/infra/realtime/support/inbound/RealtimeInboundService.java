@@ -5,6 +5,7 @@ import org.springframework.beans.factory.ListableBeanFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +35,11 @@ public class RealtimeInboundService implements IRealtimeInboundService {
         if (message == null) {
             return;
         }
-        List<RealtimeInboundListenerInvoker> listeners = listenersByType().getOrDefault(message.type(), List.of());
+        List<RealtimeInboundListenerInvoker> listeners = listenerKeys(message)
+                .map(key -> listenersByType().getOrDefault(key, List.of()))
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
         if (listeners.isEmpty()) {
             handleUnknownType(message);
             return;
@@ -73,6 +78,10 @@ public class RealtimeInboundService implements IRealtimeInboundService {
             }
         }
         return listeners;
+    }
+
+    private Stream<String> listenerKeys(RealtimeInboundMessage message) {
+        return Stream.of(message.eventKey(), message.type()).distinct();
     }
 
     private void handleUnknownType(RealtimeInboundMessage message) {

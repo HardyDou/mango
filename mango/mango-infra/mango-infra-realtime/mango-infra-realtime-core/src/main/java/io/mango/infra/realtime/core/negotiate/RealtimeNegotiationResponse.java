@@ -7,5 +7,12 @@ import java.util.List;
  */
 public record RealtimeNegotiationResponse(
         String recommended,
-        List<RealtimeTransportCapability> transports) {
+        List<RealtimeTransportCapability> transports,
+        List<String> order,
+        String connectionTicket,
+        Long ticketExpiresAt) {
+
+    public RealtimeNegotiationResponse(String recommended, List<RealtimeTransportCapability> transports) {
+        this(recommended, transports, List.of(), null, null);
+    }
 }

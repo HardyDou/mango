@@ -10,4 +10,9 @@ public class NoopRealtimeOutboundForwardService implements IRealtimeOutboundForw
     @Override
     public void forward(Collection<RealtimePresence> presences, RealtimeOutboundMessage message) {
     }
+
+    @Override
+    public boolean isNoop() {
+        return true;
+    }
 }

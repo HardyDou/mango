@@ -38,7 +38,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         AccessResult result = accessService.check(
                 request.getMethod().name(),
                 path,
-                request.getHeaders().getFirst(AccessConstants.TOKEN_HEADER),
+                resolveTokenCredential(request),
                 resolveRemoteAddress(request));
 
         if (result.status() == AccessResult.Status.FORBIDDEN) {
@@ -54,6 +54,26 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         ServerHttpRequest mutatedRequest = writePrincipalHeaders(request, result.principal());
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private String resolveTokenCredential(ServerHttpRequest request) {
+        String authHeader = request.getHeaders().getFirst(AccessConstants.TOKEN_HEADER);
+        if (authHeader != null && !authHeader.isBlank()) {
+            return authHeader;
+        }
+        String queryToken = request.getQueryParams().getFirst("token");
+        if (queryToken != null && !queryToken.isBlank()) {
+            String trimmed = queryToken.trim();
+            return trimmed.startsWith("Bearer ") ? trimmed : "Bearer " + trimmed;
+        }
+        String token = request.getCookies().getFirst("MANGO_TOKEN") == null
+                ? null
+                : request.getCookies().getFirst("MANGO_TOKEN").getValue();
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        String trimmed = token.trim();
+        return trimmed.startsWith("Bearer ") ? trimmed : "Bearer " + trimmed;
     }
 
     @Override

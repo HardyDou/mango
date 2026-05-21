@@ -19,8 +19,28 @@ public class PollingProtocolAdapter implements RealtimeProtocolSender {
     }
 
     @Override
+    public boolean acceptsUnregisteredTargets() {
+        return true;
+    }
+
+    @Override
     public void sendToUser(Long userId, RealtimeOutboundMessage envelope) {
         pollingService.publishToUser(userId, envelope);
+    }
+
+    @Override
+    public void sendToClient(String tenantId, String clientId, RealtimeOutboundMessage envelope) {
+        pollingService.publishToClient(tenantId, clientId, envelope);
+    }
+
+    @Override
+    public void sendToConnection(String connectionId, RealtimeOutboundMessage envelope) {
+        pollingService.publishToConnection(connectionId, envelope);
+    }
+
+    @Override
+    public void sendToGroup(String tenantId, String groupId, RealtimeOutboundMessage envelope) {
+        pollingService.publishToGroup(tenantId, groupId, envelope);
     }
 
     @Override

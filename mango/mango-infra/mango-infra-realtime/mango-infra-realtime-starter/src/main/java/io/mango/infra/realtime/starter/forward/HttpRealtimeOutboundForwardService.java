@@ -26,6 +26,7 @@ public class HttpRealtimeOutboundForwardService implements IRealtimeOutboundForw
             } catch (RestClientException e) {
                 log.warn("Failed to forward realtime outbound message {} to service {}",
                         message.id(), presence.serviceName(), e);
+                throw e;
             }
         }
     }

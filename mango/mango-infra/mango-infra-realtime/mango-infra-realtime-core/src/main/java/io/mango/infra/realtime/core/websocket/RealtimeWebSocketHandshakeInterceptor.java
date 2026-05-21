@@ -16,6 +16,8 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
     public static final String TENANT_ID_ATTR = "tenantId";
     public static final String AUTHORIZED_ATTR = "authorized";
     public static final String USER_ID_ATTR = "userId";
+    public static final String CLIENT_ID_ATTR = "clientId";
+    public static final String PROFILE_ATTR = "profile";
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
@@ -27,38 +29,69 @@ public class RealtimeWebSocketHandshakeInterceptor implements HandshakeIntercept
 
         String tenantId = firstText(
                 servletRequest.getServletRequest().getHeader(RealtimeHeaders.TENANT_ID),
-                servletRequest.getServletRequest().getParameter("tenantId"));
-        String userId = servletRequest.getServletRequest().getParameter("userId");
+                attributeText(servletRequest, "tenantId"),
+                servletRequest.getServletRequest().getParameter("tenantId"),
+                "default");
+        Long userId = firstLong(
+                servletRequest.getServletRequest().getHeader(RealtimeHeaders.USER_ID),
+                attributeText(servletRequest, "userId"),
+                servletRequest.getServletRequest().getParameter("userId"));
+        String clientId = firstText(
+                servletRequest.getServletRequest().getHeader(RealtimeHeaders.CLIENT_ID),
+                servletRequest.getServletRequest().getParameter("clientId"));
 
         attributes.put(TENANT_ID_ATTR, tenantId == null || tenantId.isBlank() ? "default" : tenantId);
         attributes.put(AUTHORIZED_ATTR, true);
-        if (userId != null && !userId.isBlank()) {
-            Long resolvedUserId = parseUserId(userId);
-            if (resolvedUserId == null) {
-                log.warn("WebSocket handshake rejected: invalid userId parameter");
-                return false;
-            }
-            attributes.put(USER_ID_ATTR, resolvedUserId);
+        attributes.put(PROFILE_ATTR, Map.of());
+        if (userId != null) {
+            attributes.put(USER_ID_ATTR, userId);
+        }
+        if (clientId != null) {
+            attributes.put(CLIENT_ID_ATTR, clientId);
         }
         return true;
     }
 
-    private Long parseUserId(String userId) {
-        try {
-            return Long.parseLong(userId);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private String firstText(String preferred, String fallback) {
-        if (preferred != null && !preferred.isBlank()) {
-            return preferred;
-        }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback;
+    private String firstText(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
         }
         return null;
+    }
+
+    private String attributeText(ServletServerHttpRequest request, String name) {
+        Object value = request.getServletRequest().getAttribute(name);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private Long firstLong(Object... values) {
+        for (Object value : values) {
+            Long parsed = parseLong(value);
+            if (parsed != null) {
+                return parsed;
+            }
+        }
+        return null;
+    }
+
+    private Long parseLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        String text = String.valueOf(value);
+        if (text.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     @Override

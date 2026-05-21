@@ -58,6 +58,9 @@ mango:
         - /favicon.ico
         - /v3/api-docs
         - /v3/api-docs/**
+        - /realtime/transports/websocket
+        - /realtime/transports/sse
+        - /realtime/transports/probe/**
   access:
     ip-whitelist:
       enabled: true
