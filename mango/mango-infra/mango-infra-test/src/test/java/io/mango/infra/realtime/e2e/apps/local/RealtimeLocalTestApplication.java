@@ -1,6 +1,6 @@
 package io.mango.infra.realtime.e2e.apps.local;
 
-import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
+import io.mango.infra.kv.api.IKvStore;
 import io.mango.infra.realtime.e2e.support.SharedRealtimePresence;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 public class RealtimeLocalTestApplication {
 
     @Bean
-    IRealtimePresenceService realtimePresenceService() {
+    IKvStore realtimeTestKvStore() {
         return SharedRealtimePresence.get();
     }
 }

@@ -10,6 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +42,14 @@ public class AuthFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         String path = request.getRequestURI();
+        if (isRealtimeTicketPath(path) && hasText(request.getParameter("rtTicket"))) {
+            chain.doFilter(request, response);
+            return;
+        }
         AccessResult result = accessService.check(
                 request.getMethod(),
                 path,
-                request.getHeader(AccessConstants.TOKEN_HEADER),
+                resolveTokenCredential(request),
                 request.getRemoteAddr());
 
         if (result.status() == AccessResult.Status.FORBIDDEN) {
@@ -59,6 +64,41 @@ public class AuthFilter implements Filter {
             writePrincipal(request, result.principal());
         }
         chain.doFilter(request, response);
+    }
+
+    private String resolveTokenCredential(HttpServletRequest request) {
+        String authHeader = request.getHeader(AccessConstants.TOKEN_HEADER);
+        if (authHeader != null && !authHeader.isBlank()) {
+            return authHeader;
+        }
+        String queryToken = request.getParameter("token");
+        if (queryToken != null && !queryToken.isBlank()) {
+            String trimmed = queryToken.trim();
+            return trimmed.startsWith("Bearer ") ? trimmed : "Bearer " + trimmed;
+        }
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if ("MANGO_TOKEN".equals(cookie.getName())) {
+                String value = cookie.getValue();
+                if (value == null || value.isBlank()) {
+                    return null;
+                }
+                String trimmed = value.trim();
+                return trimmed.startsWith("Bearer ") ? trimmed : "Bearer " + trimmed;
+            }
+        }
+        return null;
+    }
+
+    private boolean isRealtimeTicketPath(String path) {
+        return path.startsWith("/realtime/transports/probe/");
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private void writePrincipal(HttpServletRequest request, AccessPrincipal principal) {

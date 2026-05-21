@@ -32,6 +32,7 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
     private final String prefix;
     private final long ttlSeconds;
     private final ConcurrentHashMap<String, RealtimePresence> localPresences = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Map<String, String>> localGroups = new ConcurrentHashMap<>();
     private final ScheduledExecutorService refresher;
 
     public KvRealtimePresenceService(IKvStore kvStore,
@@ -71,7 +72,9 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
         if (presence == null) {
             presence = read(sessionKey(sessionId));
         }
+        Map<String, String> groups = localGroups.remove(sessionId);
         deletePresence(sessionId, presence);
+        deleteGroups(sessionId, groups);
     }
 
     @Override
@@ -88,8 +91,58 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
     }
 
     @Override
+    public Collection<RealtimePresence> findByClient(String tenantId, String clientId) {
+        if (clientId == null || clientId.isBlank()) {
+            return List.of();
+        }
+        return findByIndex(clientIndexKey(tenantId, clientId));
+    }
+
+    @Override
+    public Collection<RealtimePresence> findByConnection(String connectionId) {
+        RealtimePresence presence = connectionId == null ? null : read(sessionKey(connectionId));
+        return presence == null ? List.of() : List.of(presence);
+    }
+
+    @Override
+    public Collection<RealtimePresence> findByGroup(String tenantId, String groupId) {
+        if (groupId == null || groupId.isBlank()) {
+            return List.of();
+        }
+        return findByIndex(groupIndexKey(tenantId, groupId));
+    }
+
+    @Override
     public Collection<RealtimePresence> findAll() {
         return findByIndex(allIndexKey());
+    }
+
+    @Override
+    public void joinGroup(String sessionId, String tenantId, String groupId) {
+        if (sessionId == null || sessionId.isBlank() || groupId == null || groupId.isBlank()) {
+            return;
+        }
+        String resolvedTenantId = normalizeTenantId(tenantId);
+        String resolvedGroupId = groupId.trim();
+        localGroups.computeIfAbsent(sessionId, key -> new ConcurrentHashMap<>()).put(resolvedGroupId, resolvedTenantId);
+        writeGroup(sessionId, resolvedTenantId, resolvedGroupId);
+    }
+
+    @Override
+    public void leaveGroup(String sessionId, String tenantId, String groupId) {
+        if (sessionId == null || groupId == null || groupId.isBlank()) {
+            return;
+        }
+        String resolvedTenantId = normalizeTenantId(tenantId);
+        String resolvedGroupId = groupId.trim();
+        Map<String, String> groups = localGroups.get(sessionId);
+        if (groups != null) {
+            groups.remove(resolvedGroupId);
+            if (groups.isEmpty()) {
+                localGroups.remove(sessionId, groups);
+            }
+        }
+        sortedSet.remove(groupIndexKey(resolvedTenantId, resolvedGroupId), sessionId);
     }
 
     @Override
@@ -100,6 +153,12 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
     private void refreshLocalPresences() {
         for (RealtimePresence presence : localPresences.values()) {
             writePresence(presence);
+        }
+        for (Map.Entry<String, Map<String, String>> entry : localGroups.entrySet()) {
+            String sessionId = entry.getKey();
+            for (Map.Entry<String, String> group : entry.getValue().entrySet()) {
+                writeGroup(sessionId, group.getValue(), group.getKey());
+            }
         }
     }
 
@@ -125,6 +184,9 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
             sortedSet.add(tenantIndexKey(presence.tenantId()), presence.sessionId(), expireAtMillis, ttlSeconds);
             if (presence.userId() != null) {
                 sortedSet.add(userIndexKey(presence.userId()), presence.sessionId(), expireAtMillis, ttlSeconds);
+            }
+            if (presence.clientId() != null && !presence.clientId().isBlank()) {
+                sortedSet.add(clientIndexKey(presence.tenantId(), presence.clientId()), presence.sessionId(), expireAtMillis, ttlSeconds);
             }
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize realtime presence", e);
@@ -154,6 +216,21 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
         if (presence.userId() != null) {
             sortedSet.remove(userIndexKey(presence.userId()), sessionId);
         }
+        if (presence.clientId() != null && !presence.clientId().isBlank()) {
+            sortedSet.remove(clientIndexKey(presence.tenantId(), presence.clientId()), sessionId);
+        }
+    }
+
+    private void writeGroup(String sessionId, String tenantId, String groupId) {
+        long expireAtMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ttlSeconds);
+        sortedSet.add(groupIndexKey(tenantId, groupId), sessionId, expireAtMillis, ttlSeconds);
+    }
+
+    private void deleteGroups(String sessionId, Map<String, String> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return;
+        }
+        groups.forEach((groupId, tenantId) -> sortedSet.remove(groupIndexKey(tenantId, groupId), sessionId));
     }
 
     private String sessionKey(String sessionId) {
@@ -170,6 +247,14 @@ public class KvRealtimePresenceService implements IRealtimePresenceService, Auto
 
     private String tenantIndexKey(String tenantId) {
         return prefix + ":index:tenant:" + normalizeTenantId(tenantId);
+    }
+
+    private String clientIndexKey(String tenantId, String clientId) {
+        return prefix + ":index:client:" + normalizeTenantId(tenantId) + ":" + clientId.trim();
+    }
+
+    private String groupIndexKey(String tenantId, String groupId) {
+        return prefix + ":index:group:" + normalizeTenantId(tenantId) + ":" + groupId.trim();
     }
 
     private String normalizeTenantId(String tenantId) {

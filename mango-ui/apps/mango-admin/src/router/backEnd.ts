@@ -68,15 +68,6 @@ export async function initBackEndControlRoutes(): Promise<void> {
       if (import.meta.env.DEV) console.log('[backEnd] Cleared Layout children');
     }
 
-    // 添加通配符路由捕获未匹配的路由，等动态路由加载完成后再处理
-    // 这解决刷新页面时动态路由未加载导致的白屏问题
-    router.addRoute('Layout', {
-      path: ':pathMatch(.*)*',
-      name: 'LayoutNotFound',
-      component: () => import('@/views/error/404.vue'),
-      meta: { title: '404', isHide: true },
-    });
-
     if (import.meta.env.DEV) console.log('[backEnd] tabBarRoutes:', tabBarRoutes.map(r => ({ path: r.path, name: r.name })));
 
     tabBarRoutes.forEach((route) => {
@@ -95,6 +86,15 @@ export async function initBackEndControlRoutes(): Promise<void> {
         };
         router.addRoute('Layout', parentRoute);
       }
+    });
+
+    // 添加通配符路由捕获未匹配的路由，等动态路由加载完成后再处理。
+    // 必须在业务路由之后注册，避免动态子路由被 LayoutNotFound 先匹配。
+    router.addRoute('Layout', {
+      path: ':pathMatch(.*)*',
+      name: 'LayoutNotFound',
+      component: () => import('@/views/error/404.vue'),
+      meta: { title: '404', isHide: true },
     });
 
     if (import.meta.env.DEV) console.log('[backEnd] Final routes:', router.getRoutes().map(r => ({ path: r.path, name: r.name, children: r.children?.map(c => c.path) })));

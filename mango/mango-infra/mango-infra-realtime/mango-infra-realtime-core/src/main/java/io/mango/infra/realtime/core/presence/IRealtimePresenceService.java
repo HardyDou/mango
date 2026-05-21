@@ -12,5 +12,17 @@ public interface IRealtimePresenceService {
 
     Collection<RealtimePresence> findByTenant(String tenantId);
 
+    Collection<RealtimePresence> findByClient(String tenantId, String clientId);
+
+    Collection<RealtimePresence> findByConnection(String connectionId);
+
+    Collection<RealtimePresence> findByGroup(String tenantId, String groupId);
+
     Collection<RealtimePresence> findAll();
+
+    default void joinGroup(String sessionId, String tenantId, String groupId) {
+    }
+
+    default void leaveGroup(String sessionId, String tenantId, String groupId) {
+    }
 }

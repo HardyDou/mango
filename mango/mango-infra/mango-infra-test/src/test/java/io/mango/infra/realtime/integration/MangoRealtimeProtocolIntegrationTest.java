@@ -1,9 +1,13 @@
 package io.mango.infra.realtime.integration;
 
-import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.api.annotation.RealtimeInboundMessageListener;
+import io.mango.infra.realtime.api.dto.RealtimeContext;
+import io.mango.infra.realtime.api.dto.RealtimeEvent;
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimePayload;
+import io.mango.infra.realtime.api.dto.RealtimeSource;
 import io.mango.infra.realtime.core.polling.RealtimePollingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         properties = {
                 "spring.autoconfigure.exclude="
                         + "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration,"
-                        + "io.mango.infra.kv.starter.KvStoreAutoConfiguration,"
                         + "io.mango.infra.persistence.starter.PersistenceAutoConfiguration,"
-                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration",
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration",
+                "mango.kv.store.type=memory",
+                "mango.infra.realtime.outbox.enabled=false",
                 "mango.infra.realtime.inbound.enabled=true"
         })
 class MangoRealtimeProtocolIntegrationTest {
@@ -64,14 +70,15 @@ class MangoRealtimeProtocolIntegrationTest {
         String connectedPayload = receivedMessages.poll(5, TimeUnit.SECONDS);
         assertNotNull(connectedPayload);
         assertTrue(connectedPayload.contains("WebSocket connected"));
-        assertTrue(connectedPayload.contains("\"type\":\"connected\""));
+        assertTrue(connectedPayload.contains("\"domain\":\"system\""));
+        assertTrue(connectedPayload.contains("\"name\":\"connection.connected\""));
 
         realtimeApi.publishToUser(1001L, "message", "ws-user-message");
 
         String pushedPayload = receivedMessages.poll(5, TimeUnit.SECONDS);
         assertNotNull(pushedPayload);
         assertTrue(pushedPayload.contains("ws-user-message"));
-        assertTrue(pushedPayload.contains("\"type\":\"message\""));
+        assertTrue(pushedPayload.contains("\"name\":\"message\""));
 
         session.close();
     }
@@ -96,14 +103,15 @@ class MangoRealtimeProtocolIntegrationTest {
             String connectedPayload = receivedEvents.poll(5, TimeUnit.SECONDS);
             assertNotNull(connectedPayload);
             assertTrue(connectedPayload.contains("SSE connected"));
-            assertTrue(connectedPayload.contains("\"type\":\"connected\""));
+            assertTrue(connectedPayload.contains("\"domain\":\"system\""));
+            assertTrue(connectedPayload.contains("\"name\":\"connection.connected\""));
 
             realtimeApi.publishToUser(2002L, "message", "sse-user-message");
 
             String pushedPayload = receivedEvents.poll(5, TimeUnit.SECONDS);
             assertNotNull(pushedPayload);
             assertTrue(pushedPayload.contains("sse-user-message"));
-            assertTrue(pushedPayload.contains("\"type\":\"message\""));
+            assertTrue(pushedPayload.contains("\"name\":\"message\""));
         } finally {
             subscription.dispose();
         }
@@ -137,7 +145,7 @@ class MangoRealtimeProtocolIntegrationTest {
 
         assertNotNull(payload);
         assertTrue(payload.contains("polling-http-message"));
-        assertTrue(payload.contains("\"type\":\"message\""));
+        assertTrue(payload.contains("\"name\":\"message\""));
     }
 
     @Test
@@ -166,13 +174,13 @@ class MangoRealtimeProtocolIntegrationTest {
                 .post()
                 .uri("http://localhost:" + port + "/realtime/messages/inbound/sse?userId=4001&sessionId=sse-1")
                 .header("TENANT-ID", "tenant-sse")
-                .bodyValue(new RealtimeInboundMessage("sse-in-1", "task.cancel", "from-sse", null, null, null, null, null))
+                .bodyValue(inbound("sse-in-1", "from-sse"))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block(Duration.ofSeconds(5));
 
         assertNotNull(payload);
-        assertTrue(payload.contains("\"type\":\"accepted\""));
+        assertTrue(payload.contains("\"name\":\"message.accepted\""));
         assertEquals("tenant-sse:4001:sse-1:from-sse", recordingInboundListener.events().poll(5, TimeUnit.SECONDS));
     }
 
@@ -184,14 +192,30 @@ class MangoRealtimeProtocolIntegrationTest {
                 .post()
                 .uri("http://localhost:" + port + "/realtime/messages/inbound/polling?userId=4002&sessionId=poll-1")
                 .header("TENANT-ID", "tenant-poll")
-                .bodyValue(new RealtimeInboundMessage("poll-in-1", "task.cancel", "from-poll", null, null, null, null, null))
+                .bodyValue(inbound("poll-in-1", "from-poll"))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block(Duration.ofSeconds(5));
 
         assertNotNull(payload);
-        assertTrue(payload.contains("\"type\":\"accepted\""));
+        assertTrue(payload.contains("\"name\":\"message.accepted\""));
         assertEquals("tenant-poll:4002:poll-1:from-poll", recordingInboundListener.events().poll(5, TimeUnit.SECONDS));
+    }
+
+    private RealtimeInboundMessage inbound(String id, String content) {
+        return new RealtimeInboundMessage(
+                id,
+                "1.0",
+                RealtimeEvent.of("task", "cancel"),
+                new RealtimeSource("web", "test-client", null),
+                RealtimeContext.of(null, null),
+                null,
+                null,
+                RealtimePayload.text(content),
+                null,
+                null,
+                null,
+                null);
     }
 
     @Test

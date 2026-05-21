@@ -4,25 +4,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.mango.infra.kv.api.IKvSortedSet;
 import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.api.IOutboxPublisher;
+import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.realtime.api.RealtimeApi;
 import io.mango.infra.realtime.core.inbound.forward.IRealtimeInboundForwardService;
 import io.mango.infra.realtime.core.inbound.forward.ProtocolRealtimeInboundForwarder;
 import io.mango.infra.realtime.core.inbound.forward.RealtimeInboundForwardServices;
 import io.mango.infra.realtime.core.inbound.receiver.IRealtimeInboundReceiverService;
 import io.mango.infra.realtime.core.inbound.receiver.InMemoryRealtimeInboundReceiverService;
+import io.mango.infra.realtime.core.negotiate.RealtimeConnectionTicketService;
 import io.mango.infra.realtime.core.negotiate.RealtimeTransportCapability;
 import io.mango.infra.realtime.core.outbound.IRealtimeOutboundForwardService;
 import io.mango.infra.realtime.core.outbound.IRealtimePublishService;
+import io.mango.infra.realtime.core.outbound.IRealtimeReliablePublishService;
 import io.mango.infra.realtime.core.outbound.RealtimeProtocolSender;
 import io.mango.infra.realtime.core.outbound.RealtimePublishService;
 import io.mango.infra.realtime.core.polling.InMemoryRealtimePollingService;
 import io.mango.infra.realtime.core.polling.PollingProtocolAdapter;
 import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
-import io.mango.infra.realtime.core.presence.InMemoryRealtimePresenceService;
 import io.mango.infra.realtime.core.presence.RealtimeNode;
 import io.mango.infra.realtime.core.session.InMemoryRealtimeSubscriptionManager;
 import io.mango.infra.realtime.core.session.RealtimeSubscriptionManager;
 import io.mango.infra.realtime.core.sse.SseProtocolAdapter;
+import io.mango.infra.realtime.core.websocket.ProbeWebSocketHandler;
 import io.mango.infra.realtime.starter.controller.PollingRealtimeController;
 import io.mango.infra.realtime.starter.controller.RealtimeApiController;
 import io.mango.infra.realtime.starter.controller.RealtimeInboundReceiverController;
@@ -31,6 +35,8 @@ import io.mango.infra.realtime.starter.controller.RealtimeOutboundController;
 import io.mango.infra.realtime.starter.controller.SseRealtimeController;
 import io.mango.infra.realtime.starter.forward.HttpRealtimeOutboundForwardService;
 import io.mango.infra.realtime.starter.forward.RemoteRealtimeInboundForwardService;
+import io.mango.infra.realtime.starter.outbox.RealtimeOutboxDispatcher;
+import io.mango.infra.realtime.starter.outbox.RealtimeOutboxPublisher;
 import io.mango.infra.realtime.starter.presence.KvRealtimePresenceService;
 import io.mango.infra.realtime.core.websocket.RealtimeWebSocketConfiguration;
 import io.mango.infra.realtime.core.websocket.RealtimeWebSocketHandler;
@@ -40,9 +46,11 @@ import io.mango.infra.realtime.support.inbound.RealtimeInboundService;
 import io.mango.infra.realtime.support.inbound.RealtimeInboundUnknownTypePolicy;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -61,6 +69,10 @@ import java.util.List;
 @EnableWebSocket
 @EnableConfigurationProperties(MangoRealtimeProperties.class)
 @Conditional(RealtimeConditions.Enabled.class)
+@AutoConfigureAfter(name = {
+        "io.mango.infra.kv.starter.KvStoreAutoConfiguration",
+        "io.mango.infra.kv.starter.OutboxAutoConfiguration"
+})
 public class MangoRealtimeAutoConfiguration {
 
     @Bean
@@ -91,8 +103,8 @@ public class MangoRealtimeAutoConfiguration {
     @Bean
     @ConditionalOnBean(IRealtimePublishService.class)
     @Conditional(RealtimeConditions.RemoteEndpointEnabled.class)
-    public RealtimeApi realtimeApi(IRealtimePublishService realtimePublishService) {
-        return new RealtimeApiController(realtimePublishService);
+    public RealtimeApi realtimeApi(IRealtimeReliablePublishService reliablePublishService) {
+        return new RealtimeApiController(reliablePublishService);
     }
 
     @Bean
@@ -166,7 +178,45 @@ public class MangoRealtimeAutoConfiguration {
                     presence.getPrefix(),
                     presence.getTtlSeconds());
         }
-        return new InMemoryRealtimePresenceService();
+        throw new IllegalStateException("Realtime presence requires infra-kv IKvStore with IKvSortedSet support");
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public IRealtimeReliablePublishService realtimeReliablePublishService(
+            ObjectProvider<IOutboxPublisher> outboxPublisherProvider,
+            IRealtimePublishService realtimePublishService,
+            ObjectMapper objectMapper,
+            MangoRealtimeProperties properties) {
+        IOutboxPublisher outboxPublisher = outboxPublisherProvider.getIfAvailable();
+        if (properties.getOutbox().isEnabled() && outboxPublisher != null) {
+            return new RealtimeOutboxPublisher(outboxPublisher, objectMapper);
+        }
+        return realtimePublishService::publish;
+    }
+
+    @Bean
+    @ConditionalOnBean({IOutboxStore.class, IRealtimePublishService.class})
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.infra.realtime.outbox", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public RealtimeOutboxDispatcher realtimeOutboxDispatcher(IOutboxStore outboxStore,
+                                                             IRealtimePublishService realtimePublishService,
+                                                             ObjectMapper objectMapper,
+                                                             MangoRealtimeProperties properties,
+                                                             RealtimeNode realtimeNode) {
+        MangoRealtimeProperties.Outbox outbox = properties.getOutbox();
+        String workerId = firstText(outbox.getWorkerId(),
+                realtimeNode.serviceName() + "-" + realtimeNode.instanceId());
+        return new RealtimeOutboxDispatcher(
+                outboxStore,
+                realtimePublishService,
+                objectMapper,
+                workerId,
+                outbox.getBatchSize(),
+                outbox.getMaxAttempts(),
+                outbox.getRetryBackoffMillis(),
+                outbox.getInitialDelayMillis(),
+                outbox.getFixedDelayMillis());
     }
 
     @Bean
@@ -209,14 +259,25 @@ public class MangoRealtimeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ProtocolRealtimeInboundForwarder protocolRealtimeInboundForwarder(IRealtimeInboundForwardService inboundForwardService) {
-        return new ProtocolRealtimeInboundForwarder(inboundForwardService);
+    public ProtocolRealtimeInboundForwarder protocolRealtimeInboundForwarder(
+            IRealtimeInboundForwardService inboundForwardService,
+            ObjectProvider<IRealtimePublishService> realtimePublishServiceProvider) {
+        return new ProtocolRealtimeInboundForwarder(
+                inboundForwardService,
+                realtimePublishServiceProvider::getIfAvailable);
     }
 
     @Bean
     @Conditional(RealtimeConditions.NegotiateEnabled.class)
-    public RealtimeNegotiationController realtimeNegotiationController(MangoRealtimeProperties properties) {
-        return new RealtimeNegotiationController(transportCapabilities(properties));
+    public RealtimeNegotiationController realtimeNegotiationController(MangoRealtimeProperties properties,
+                                                                       RealtimeConnectionTicketService ticketService) {
+        return new RealtimeNegotiationController(transportCapabilities(properties), ticketService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RealtimeConnectionTicketService realtimeConnectionTicketService() {
+        return new RealtimeConnectionTicketService();
     }
 
     @Bean
@@ -251,8 +312,10 @@ public class MangoRealtimeAutoConfiguration {
     @Bean
     @ConditionalOnBean(SseProtocolAdapter.class)
     public SseRealtimeController sseRealtimeController(SseProtocolAdapter sseProtocolAdapter,
-                                                       ProtocolRealtimeInboundForwarder inboundForwarder) {
-        return new SseRealtimeController(sseProtocolAdapter, inboundForwarder);
+                                                       ProtocolRealtimeInboundForwarder inboundForwarder,
+                                                       RealtimeConnectionTicketService ticketService,
+                                                       RealtimeSubscriptionManager subscriptionManager) {
+        return new SseRealtimeController(sseProtocolAdapter, inboundForwarder, ticketService, subscriptionManager);
     }
 
     @Bean
@@ -264,14 +327,22 @@ public class MangoRealtimeAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(RealtimeWebSocketHandshakeInterceptor.class)
+    public ProbeWebSocketHandler probeWebSocketHandler() {
+        return new ProbeWebSocketHandler();
+    }
+
+    @Bean
+    @ConditionalOnBean(RealtimeWebSocketHandshakeInterceptor.class)
     public RealtimeWebSocketHandler realtimeWebSocketHandler(RealtimeSubscriptionManager subscriptionManager,
                                                              ObjectMapper objectMapper,
                                                              IRealtimeInboundForwardService inboundForwardService,
+                                                             ProtocolRealtimeInboundForwarder inboundForwarder,
                                                              MangoRealtimeProperties properties) {
         return new RealtimeWebSocketHandler(
                 subscriptionManager,
                 objectMapper,
                 inboundForwardService,
+                inboundForwarder,
                 properties.getInbound().getMaxPayloadBytes());
     }
 
@@ -279,12 +350,15 @@ public class MangoRealtimeAutoConfiguration {
     @ConditionalOnBean({RealtimeWebSocketHandler.class, RealtimeWebSocketHandshakeInterceptor.class})
     public RealtimeWebSocketConfiguration realtimeWebSocketConfiguration(
             RealtimeWebSocketHandler webSocketHandler,
+            ProbeWebSocketHandler probeWebSocketHandler,
             RealtimeWebSocketHandshakeInterceptor handshakeInterceptor,
             MangoRealtimeProperties properties) {
         return new RealtimeWebSocketConfiguration(
                 webSocketHandler,
+                probeWebSocketHandler,
                 handshakeInterceptor,
                 properties.getWebsocket().getEndpoint(),
+                "/realtime/transports/probe/websocket",
                 properties.getWebsocket().getAllowedOrigins());
     }
 

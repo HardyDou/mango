@@ -7,8 +7,10 @@ import io.mango.access.core.config.AccessProperties;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.api.SecurityPrincipal;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -77,6 +79,7 @@ public class AuthSecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(authorize -> {
+                    authorize.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();
                     RequestMatcher[] permitPathMatchers = permitPathMatchers();
                     if (permitPathMatchers.length > 0) {
                         authorize.requestMatchers(permitPathMatchers).permitAll();
@@ -128,9 +131,8 @@ public class AuthSecurityConfig {
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
-            String authHeader = request.getHeader(AuthConstant.TOKEN_HEADER);
-            if (authHeader != null && authHeader.startsWith(ITokenProvider.BEARER_PREFIX)) {
-                String token = authHeader.substring(ITokenProvider.BEARER_PREFIX.length());
+            String token = resolveAccessToken(request);
+            if (token != null) {
                 if (tokenService.validateToken(token)
                         && !isRevoked(token)
                         && ITokenProvider.TOKEN_TYPE_ACCESS.equals(tokenService.getTokenType(token))) {
@@ -179,6 +181,37 @@ public class AuthSecurityConfig {
             } finally {
                 SecurityContextHolder.clearContext();
             }
+        }
+
+        private String resolveAccessToken(HttpServletRequest request) {
+            String authHeader = request.getHeader(AuthConstant.TOKEN_HEADER);
+            if (authHeader != null && authHeader.startsWith(ITokenProvider.BEARER_PREFIX)) {
+                return authHeader.substring(ITokenProvider.BEARER_PREFIX.length());
+            }
+            String queryToken = request.getParameter("token");
+            if (queryToken != null && !queryToken.isBlank()) {
+                String trimmed = queryToken.trim();
+                return trimmed.startsWith(ITokenProvider.BEARER_PREFIX)
+                        ? trimmed.substring(ITokenProvider.BEARER_PREFIX.length())
+                        : trimmed;
+            }
+            Cookie[] cookies = request.getCookies();
+            if (cookies == null) {
+                return null;
+            }
+            for (Cookie cookie : cookies) {
+                if ("MANGO_TOKEN".equals(cookie.getName())) {
+                    String value = cookie.getValue();
+                    if (value == null || value.isBlank()) {
+                        return null;
+                    }
+                    String trimmed = value.trim();
+                    return trimmed.startsWith(ITokenProvider.BEARER_PREFIX)
+                            ? trimmed.substring(ITokenProvider.BEARER_PREFIX.length())
+                            : trimmed;
+                }
+            }
+            return null;
         }
 
         private Long resolveLongClaim(String token, String claimName) {

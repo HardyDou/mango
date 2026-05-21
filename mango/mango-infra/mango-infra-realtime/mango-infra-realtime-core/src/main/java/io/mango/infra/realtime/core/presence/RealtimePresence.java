@@ -9,6 +9,7 @@ public record RealtimePresence(
         String sessionId,
         String tenantId,
         Long userId,
+        String clientId,
         String protocol,
         String instanceId,
         String serviceName,
@@ -26,12 +27,14 @@ public record RealtimePresence(
     public static RealtimePresence of(String sessionId,
                                       String tenantId,
                                       Long userId,
+                                      String clientId,
                                       String protocol,
                                       RealtimeNode node) {
         return new RealtimePresence(
                 sessionId,
                 tenantId,
                 userId,
+                clientId,
                 protocol,
                 node.instanceId(),
                 node.serviceName(),

@@ -50,6 +50,26 @@ public class WebSocketRealtimeSession implements RealtimeSession {
     }
 
     @Override
+    public String clientId() {
+        Object clientId = session.getAttributes().get(RealtimeWebSocketHandshakeInterceptor.CLIENT_ID_ATTR);
+        return clientId == null ? null : clientId.toString();
+    }
+
+    public Map<String, Object> profile() {
+        Object profile = session.getAttributes().get(RealtimeWebSocketHandshakeInterceptor.PROFILE_ATTR);
+        if (!(profile instanceof Map<?, ?> source)) {
+            return Map.of();
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> {
+            if (key != null && value != null) {
+                result.put(key.toString(), value);
+            }
+        });
+        return result;
+    }
+
+    @Override
     public boolean isOpen() {
         return session.isOpen();
     }
@@ -57,7 +77,7 @@ public class WebSocketRealtimeSession implements RealtimeSession {
     @Override
     public void send(RealtimeOutboundMessage envelope) {
         try {
-            String payload = objectMapper.writeValueAsString(toPayload(envelope));
+            String payload = objectMapper.writeValueAsString(envelope);
             synchronized (session) {
                 if (session.isOpen()) {
                     session.sendMessage(new TextMessage(payload));
@@ -66,17 +86,5 @@ public class WebSocketRealtimeSession implements RealtimeSession {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to send WebSocket message", e);
         }
-    }
-
-    private Map<String, Object> toPayload(RealtimeOutboundMessage envelope) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("id", envelope.id());
-        payload.put("type", envelope.type());
-        payload.put("content", envelope.content());
-        payload.put("tenantId", envelope.tenantId());
-        payload.put("userId", envelope.userId());
-        payload.put("headers", envelope.headers());
-        payload.put("createdAt", envelope.createdAt() == null ? null : envelope.createdAt().toString());
-        return payload;
     }
 }

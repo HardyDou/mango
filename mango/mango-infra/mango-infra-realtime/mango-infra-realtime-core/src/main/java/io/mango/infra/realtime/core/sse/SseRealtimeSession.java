@@ -13,6 +13,7 @@ public final class SseRealtimeSession implements RealtimeSession {
     private final String id;
     private final String tenantId;
     private final Long userId;
+    private final String clientId;
     private final SseEmitter emitter;
     private final Runnable closeCallback;
     private final AtomicBoolean open = new AtomicBoolean(true);
@@ -20,11 +21,13 @@ public final class SseRealtimeSession implements RealtimeSession {
     public SseRealtimeSession(String id,
                               String tenantId,
                               Long userId,
+                              String clientId,
                               SseEmitter emitter,
                               Runnable closeCallback) {
         this.id = id;
         this.tenantId = tenantId;
         this.userId = userId;
+        this.clientId = clientId;
         this.emitter = emitter;
         this.closeCallback = closeCallback == null ? () -> { } : closeCallback;
         registerLifecycleCallbacks();
@@ -33,6 +36,10 @@ public final class SseRealtimeSession implements RealtimeSession {
     @Override
     public String id() {
         return id;
+    }
+
+    public SseEmitter emitter() {
+        return emitter;
     }
 
     @Override
@@ -48,6 +55,11 @@ public final class SseRealtimeSession implements RealtimeSession {
     @Override
     public Long userId() {
         return userId;
+    }
+
+    @Override
+    public String clientId() {
+        return clientId;
     }
 
     @Override

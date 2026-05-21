@@ -16,6 +16,7 @@ export * from './utils/menuTree';
 export * from './utils/iconConfig';
 export * from './utils/message';
 export * from './utils/tagsView';
+export * from './utils/realtime';
 
 export * from './hooks/useTitle';
 export * from './api/upload';

@@ -27,7 +27,7 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
         this.timeoutMillis = timeoutMillis <= 0 ? DEFAULT_TIMEOUT_MILLIS : timeoutMillis;
     }
 
-    public SseEmitter createEmitter(String tenantId, Long userId) {
+    public SseRealtimeSession createSession(String tenantId, Long userId, String clientId) {
         SseEmitter emitter = createSseEmitter();
         String sessionId = UUID.randomUUID().toString();
         String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
@@ -41,12 +41,16 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
             }
         };
 
-        SseRealtimeSession session = new SseRealtimeSession(sessionId, resolvedTenantId, userId, emitter, closeCallback);
+        SseRealtimeSession session = new SseRealtimeSession(sessionId, resolvedTenantId, userId, clientId, emitter, closeCallback);
         subscriptionManager.subscribe(session);
 
         log.info("SSE session created for tenant: {}, total connections: {}",
                 resolvedTenantId, subscriptionManager.countByTenant(resolvedTenantId));
-        return emitter;
+        return session;
+    }
+
+    public SseEmitter createEmitter(String tenantId, Long userId, String clientId) {
+        return createSession(tenantId, userId, clientId).emitter();
     }
 
     protected SseEmitter createSseEmitter() {
@@ -62,6 +66,31 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
     public void sendToUser(Long userId, RealtimeOutboundMessage envelope) {
         subscriptionManager.findByUser(userId).stream()
                 .filter(session -> protocol().equals(session.protocol()))
+                .filter(session -> !isSourceSession(session, envelope))
+                .forEach(session -> session.send(envelope));
+    }
+
+    @Override
+    public void sendToClient(String tenantId, String clientId, RealtimeOutboundMessage envelope) {
+        subscriptionManager.findByClient(tenantId, clientId).stream()
+                .filter(session -> protocol().equals(session.protocol()))
+                .filter(session -> !isSourceSession(session, envelope))
+                .forEach(session -> session.send(envelope));
+    }
+
+    @Override
+    public void sendToConnection(String connectionId, RealtimeOutboundMessage envelope) {
+        subscriptionManager.findByConnection(connectionId).stream()
+                .filter(session -> protocol().equals(session.protocol()))
+                .filter(session -> !isSourceSession(session, envelope))
+                .forEach(session -> session.send(envelope));
+    }
+
+    @Override
+    public void sendToGroup(String tenantId, String groupId, RealtimeOutboundMessage envelope) {
+        subscriptionManager.findByGroup(tenantId, groupId).stream()
+                .filter(session -> protocol().equals(session.protocol()))
+                .filter(session -> !isSourceSession(session, envelope))
                 .forEach(session -> session.send(envelope));
     }
 
@@ -69,6 +98,7 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
     public void sendToTenant(String tenantId, RealtimeOutboundMessage envelope) {
         subscriptionManager.findByTenant(tenantId).stream()
                 .filter(session -> protocol().equals(session.protocol()))
+                .filter(session -> !isSourceSession(session, envelope))
                 .forEach(session -> session.send(envelope));
     }
 
@@ -76,6 +106,14 @@ public class SseProtocolAdapter implements RealtimeProtocolSender {
     public void broadcast(RealtimeOutboundMessage envelope) {
         subscriptionManager.findAll().stream()
                 .filter(session -> protocol().equals(session.protocol()))
+                .filter(session -> !isSourceSession(session, envelope))
                 .forEach(session -> session.send(envelope));
+    }
+
+    private boolean isSourceSession(io.mango.infra.realtime.core.session.RealtimeSession session,
+                                    RealtimeOutboundMessage envelope) {
+        return envelope.source() != null
+                && envelope.source().sessionId() != null
+                && envelope.source().sessionId().equals(session.id());
     }
 }

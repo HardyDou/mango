@@ -1,20 +1,20 @@
 package io.mango.infra.realtime.e2e.support;
 
-import io.mango.infra.realtime.core.presence.IRealtimePresenceService;
-import io.mango.infra.realtime.core.presence.InMemoryRealtimePresenceService;
+import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.core.memory.MemoryKvStore;
 
 public final class SharedRealtimePresence {
 
-    private static IRealtimePresenceService presenceService = new InMemoryRealtimePresenceService();
+    private static IKvStore kvStore = new MemoryKvStore();
 
     private SharedRealtimePresence() {
     }
 
     public static synchronized void reset() {
-        presenceService = new InMemoryRealtimePresenceService();
+        kvStore = new MemoryKvStore();
     }
 
-    public static synchronized IRealtimePresenceService get() {
-        return presenceService;
+    public static synchronized IKvStore get() {
+        return kvStore;
     }
 }
