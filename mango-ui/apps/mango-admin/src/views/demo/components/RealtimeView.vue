@@ -177,7 +177,7 @@
                     class="member-row"
                     :class="{ 'is-offline': !member.online }"
                   >
-                    <div class="member-avatar">{{ member.avatar }}</div>
+                    <div class="member-avatar" :class="member.avatarTone">{{ member.avatar }}</div>
                     <div class="member-info">
                       <div class="member-name">
                         <strong>{{ member.name }}</strong>
@@ -206,7 +206,7 @@
                     class="message-row"
                     :class="message.direction === 'out' ? 'is-out' : 'is-in'"
                   >
-                    <div class="message-avatar">{{ message.avatar }}</div>
+                    <div class="message-avatar" :class="message.avatarTone">{{ message.avatar }}</div>
                     <button class="message-bubble" type="button" @click="openRawMessage(message.raw)">
                       <span class="message-meta">{{ message.sender }} · {{ message.time }}</span>
                       <span class="message-content">{{ message.content }}</span>
@@ -359,6 +359,7 @@ type ChatMessage = {
   direction: ChatDirection;
   sender: string;
   avatar: string;
+  avatarTone: string;
   content: string;
   time: string;
   raw: RealtimeMessage;
@@ -370,6 +371,7 @@ type RoomMember = {
   name: string;
   department: string;
   avatar: string;
+  avatarTone: string;
   online: boolean;
   lastSeenAt: number;
 };
@@ -687,11 +689,13 @@ async function publishServerMessage() {
 function toChatMessage(message: RealtimeMessage, direction: ChatDirection): ChatMessage {
   const metadata = message.metadata || {};
   const sender = String(metadata.senderName || (direction === 'out' ? profile.name : '服务器'));
+  const avatarSeed = String(metadata.senderClientId || message.source?.clientId || metadata.senderUserId || message.context?.userId || sender);
   return {
     localId: message.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     direction,
     sender,
     avatar: firstDisplayChar(sender, direction === 'out' ? '我' : '服'),
+    avatarTone: avatarToneClass(avatarSeed),
     content: getPayloadText(message),
     time: formatTime(Date.now()),
     raw: message,
@@ -758,7 +762,8 @@ function rememberMemberFromMessage(message: RealtimeMessage, online: boolean) {
     userId: metadata.senderUserId || message.context?.userId,
     name: String(metadata.senderName || '成员'),
     department: String(metadata.department || ''),
-    avatar: String(metadata.senderName || '成员').slice(0, 1) || '员',
+    avatar: firstDisplayChar(metadata.senderName || '成员', '员'),
+    avatarTone: avatarToneClass(clientId),
     online,
     lastSeenAt: Date.now(),
   });
@@ -790,7 +795,8 @@ function memberFromMessage(message: RealtimeMessage): RoomMember | null {
     userId: member.userId,
     name,
     department: String(member.department || ''),
-    avatar: String(member.avatar || name.slice(0, 1) || '员'),
+    avatar: firstDisplayChar(member.avatar || name, '员'),
+    avatarTone: avatarToneClass(clientId || member.userId || name),
     online: member.online !== false,
     lastSeenAt: Number(member.lastSeenAt || Date.now()),
   };
@@ -802,10 +808,20 @@ function currentRoomMember(online: boolean): RoomMember {
     userId: profile.userId,
     name: profile.name || '我',
     department: profile.department,
-    avatar: (profile.name || '我').slice(0, 1),
+    avatar: firstDisplayChar(profile.name || '我', '我'),
+    avatarTone: avatarToneClass(profile.clientId || profile.userId || profile.name),
     online,
     lastSeenAt: Date.now(),
   };
+}
+
+function avatarToneClass(seed: unknown) {
+  const text = String(seed || 'default');
+  let hash = 0;
+  for (const char of text) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return `avatar-tone-${hash % 8}`;
 }
 
 function upsertRoomMember(member: RoomMember) {
@@ -1564,8 +1580,8 @@ const CodeBlock = defineComponent({
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--el-color-primary-light-8);
-  color: var(--el-color-primary);
+  background: #e8f3ff;
+  color: #155bd4;
   font-size: 13px;
   font-weight: 700;
 }
@@ -1673,20 +1689,53 @@ const CodeBlock = defineComponent({
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--el-color-info-light-8);
-  color: var(--el-text-color-primary);
+  background: #e8f3ff;
+  color: #155bd4;
   font-size: 12px;
   font-weight: 700;
 }
 
-.message-row.is-out .message-avatar {
-  background: var(--el-color-primary);
-  color: var(--el-color-white);
-}
+.member-avatar,
+.message-avatar {
+  &.avatar-tone-0 {
+    background: #e8f3ff;
+    color: #155bd4;
+  }
 
-.message-row.is-in .message-avatar {
-  background: var(--el-color-success-light-8);
-  color: var(--el-color-success);
+  &.avatar-tone-1 {
+    background: #e8fbf2;
+    color: #0d7a52;
+  }
+
+  &.avatar-tone-2 {
+    background: #fff3db;
+    color: #a65f00;
+  }
+
+  &.avatar-tone-3 {
+    background: #f1e8ff;
+    color: #6d3fc8;
+  }
+
+  &.avatar-tone-4 {
+    background: #ffe9ef;
+    color: #b4234b;
+  }
+
+  &.avatar-tone-5 {
+    background: #e7f8fb;
+    color: #087184;
+  }
+
+  &.avatar-tone-6 {
+    background: #f4f0e8;
+    color: #70512c;
+  }
+
+  &.avatar-tone-7 {
+    background: #eef2ff;
+    color: #3d4fb5;
+  }
 }
 
 .message-bubble {
