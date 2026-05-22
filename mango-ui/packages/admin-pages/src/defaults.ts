@@ -65,6 +65,15 @@ export function registerDefaultAdminPages() {
         'system/route/index': () => import('@mango/system/src/views/route/index.vue'),
         'system/public-path/index': () => import('@mango/system/src/views/public-path/index.vue'),
         'system/area/index': () => import('@mango/system/src/views/area/index.vue'),
+        'debug/capabilities/template': () => import('@mango/system/src/views/platform-capabilities/template/index.vue'),
+      },
+    },
+    {
+      moduleCode: 'mango-template',
+      pages: {
+        'system/template/index': () => import('@mango/system/src/views/template/index.vue'),
+        'template/templates/index': () => import('@mango/system/src/views/template/index.vue'),
+        'template/categories/index': () => import('@mango/system/src/views/template/categories/index.vue'),
       },
     },
     {

@@ -64,6 +64,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -208,6 +209,53 @@ public class FileServiceImpl implements IFileService {
                 .map(item -> upload(item, purpose, accessLevel, bizType, bizId, bizMeta, directoryId).getData())
                 .collect(Collectors.toList());
         return R.ok(result);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileRecordVO> saveGenerated(byte[] content,
+                                         String fileName,
+                                         String contentType,
+                                         String purpose,
+                                         String bizType,
+                                         String bizId) {
+        Require.notNull(content, FileCode.FILE_EMPTY);
+        Long tenantId = requireTenantId();
+        Long userId = MangoContextHolder.userId();
+        String originalFilename = normalizeFileName(fileName);
+        String fileExt = fileExt(originalFilename);
+        FileSettingsVO settings = settingsService.current();
+        validateExtension(fileExt, settings);
+        validateContentType(contentType, settings);
+        FileStorageConfig storageConfig = activeStorageConfig();
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String hash = HexFormat.of().formatHex(digest.digest(content));
+            String objectName = generateObjectName(storageConfig, tenantId, 0L, originalFilename, fileExt, hash, settings);
+            fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, contentType);
+            FileObjectEntity fileObject = createFileObject(tenantId, storageConfig, objectName, hash, (long) content.length, contentType, 0L);
+            createHashMapping(tenantId, storageConfig, hash, (long) content.length, fileObject, settings);
+            FileRecord entity = createFileRecord(tenantId,
+                    userId,
+                    fileObject,
+                    originalFilename,
+                    fileExt,
+                    (long) content.length,
+                    contentType,
+                    hash,
+                    purpose,
+                    FileAccessLevel.PRIVATE.name(),
+                    bizType,
+                    bizId,
+                    null,
+                    0L,
+                    settings);
+            fileRecordMapper.insert(entity);
+            incrementObjectRefCount(fileObject.getId());
+            return R.ok(toVO(entity));
+        } catch (Exception e) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
     }
 
     @Override

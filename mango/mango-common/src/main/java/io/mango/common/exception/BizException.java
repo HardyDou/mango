@@ -21,6 +21,11 @@ public class BizException extends RuntimeException {
         this.code = code;
     }
 
+    public BizException(int code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
+
     public BizException(String message) {
         this(CommonCode.BAD_REQUEST.getCode(), message);
     }

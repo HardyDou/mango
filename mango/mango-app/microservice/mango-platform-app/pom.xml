@@ -79,6 +79,14 @@
             <groupId>io.mango</groupId>
             <artifactId>mango-workflow-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-file-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-template-starter</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.mango</groupId>

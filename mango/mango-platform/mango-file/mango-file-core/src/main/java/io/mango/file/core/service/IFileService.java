@@ -27,6 +27,13 @@ public interface IFileService {
 
     R<FileRecordVO> save(SaveFileCommand command);
 
+    R<FileRecordVO> saveGenerated(byte[] content,
+                                  String fileName,
+                                  String contentType,
+                                  String purpose,
+                                  String bizType,
+                                  String bizId);
+
     R<PageResult<FileRecordVO>> page(FileRecordPageQuery query);
 
     R<FileRecordVO> get(Long id);
