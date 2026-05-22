@@ -1,6 +1,7 @@
 <template>
   <div class="workflow-approval-config">
     <div class="approval-drawer-section first">
+        <div class="approval-section-title">审批人</div>
         <el-radio-group
           :model-value="config.assigneeType"
           class="approval-radio-grid assignee-grid"
@@ -146,75 +147,90 @@
         </div>
     </div>
 
-    <div v-if="config.assigneeType === 'INITIATOR_SELECT'" class="approval-drawer-section">
-        <div class="approval-section-title">选择方式</div>
-        <el-radio-group
-          :model-value="config.initiatorSelectMultiple ? 'MULTI' : 'SINGLE'"
-          class="approval-radio-row"
-          @change="value => $emit('update-config', { initiatorSelectMultiple: value === 'MULTI' })"
-        >
-          <el-radio label="SINGLE">单选</el-radio>
-          <el-radio label="MULTI">多选</el-radio>
-        </el-radio-group>
-    </div>
-
-    <div v-if="showModeConfig" class="approval-drawer-section">
-        <div class="approval-section-title">多人审批时采用的审批方式</div>
-        <el-radio-group
-          :model-value="config.approvalMode"
-          class="approval-radio-column"
-          @change="value => $emit('update-config', { approvalMode: value })"
-        >
-          <el-radio label="COUNTERSIGN">会签(需要所有审批人同意)</el-radio>
-          <el-radio label="OR_SIGN">或签(一名审批人同意即可)</el-radio>
-          <el-radio label="SEQUENTIAL">依次审批(按顺序依次审批)</el-radio>
-        </el-radio-group>
-    </div>
-
-    <div class="approval-drawer-section">
-        <div class="approval-section-title">审批人为空时</div>
-        <el-radio-group
-          :model-value="config.emptyAssigneeStrategy"
-          class="approval-radio-grid empty-strategy-grid"
-          @change="value => $emit('update-empty-strategy', value)"
-        >
-          <el-radio label="AUTO_PASS">自动通过</el-radio>
-          <el-radio label="AUTO_REJECT">自动驳回</el-radio>
-          <el-radio label="AUTO_END">自动结束</el-radio>
-          <el-radio label="TO_ADMIN">转交给管理员</el-radio>
-          <el-radio label="TO_USER">指定人员</el-radio>
-        </el-radio-group>
-        <div v-if="config.emptyAssigneeStrategy === 'TO_USER'" class="approval-target-block">
-          <el-select
-            :model-value="config.emptyAssigneeUserIds || []"
-            class="approval-target-select"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="targetLoading.users"
-            :teleported="false"
-            placeholder="搜索用户名/姓名选择兜底成员"
-            @focus="$emit('ensure-users')"
-            @visible-change="visible => visible && $emit('ensure-users')"
-            @change="value => $emit('update-list', 'emptyAssigneeUserIds', value)"
+    <el-collapse class="approval-advanced-collapse">
+      <el-collapse-item v-if="config.assigneeType === 'INITIATOR_SELECT'" title="发起人自选" name="initiator-select">
+          <el-radio-group
+            :model-value="config.initiatorSelectMultiple ? 'MULTI' : 'SINGLE'"
+            class="approval-radio-row"
+            @change="value => $emit('update-config', { initiatorSelectMultiple: value === 'MULTI' })"
           >
-            <el-option v-for="item in userOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </div>
-    </div>
+            <el-radio label="SINGLE">单选</el-radio>
+            <el-radio label="MULTI">多选</el-radio>
+          </el-radio-group>
+      </el-collapse-item>
 
-    <div class="approval-drawer-section">
-        <div class="approval-section-title">审批被驳回</div>
-        <el-radio-group
-          :model-value="config.rejectStrategy"
-          class="approval-radio-column"
-          @change="value => $emit('update-config', { rejectStrategy: value })"
-        >
-          <el-radio label="END_PROCESS">直接结束流程</el-radio>
-          <el-radio label="BACK_TO_START">驳回到发起人</el-radio>
-        </el-radio-group>
-    </div>
+      <el-collapse-item v-if="showModeConfig" title="多人审批" name="approval-mode">
+          <el-radio-group
+            :model-value="config.approvalMode"
+            class="approval-radio-column"
+            @change="value => $emit('update-config', { approvalMode: value })"
+          >
+            <el-radio label="COUNTERSIGN">
+              <span class="countersign-radio-content">
+                <span>会签</span>
+                <template v-if="config.approvalMode === 'COUNTERSIGN'">
+                  <el-input-number
+                    :model-value="config.passRatio ?? 100"
+                    :min="1"
+                    :max="100"
+                    :step="5"
+                    :precision="0"
+                    controls-position="right"
+                    size="small"
+                    @change="value => $emit('update-config', { passRatio: Number(value || 100) })"
+                  />
+                  <span class="countersign-radio-tip">% 通过后节点通过</span>
+                </template>
+              </span>
+            </el-radio>
+            <el-radio label="OR_SIGN">或签，一名审批人同意即可</el-radio>
+            <el-radio label="SEQUENTIAL">依次审批，按顺序处理</el-radio>
+          </el-radio-group>
+      </el-collapse-item>
+
+      <el-collapse-item title="审批人为空" name="empty-assignee">
+          <el-radio-group
+            :model-value="config.emptyAssigneeStrategy"
+            class="approval-radio-grid empty-strategy-grid"
+            @change="value => $emit('update-empty-strategy', value)"
+          >
+            <el-radio label="AUTO_PASS">自动通过</el-radio>
+            <el-radio label="AUTO_REJECT">自动驳回</el-radio>
+            <el-radio label="AUTO_END">自动结束</el-radio>
+            <el-radio label="TO_ADMIN">转交管理员</el-radio>
+            <el-radio label="TO_USER">指定人员</el-radio>
+          </el-radio-group>
+          <div v-if="config.emptyAssigneeStrategy === 'TO_USER'" class="approval-target-block">
+            <el-select
+              :model-value="config.emptyAssigneeUserIds || []"
+              class="approval-target-select"
+              multiple
+              filterable
+              collapse-tags
+              collapse-tags-tooltip
+              :loading="targetLoading.users"
+              :teleported="false"
+              placeholder="搜索用户名/姓名选择兜底成员"
+              @focus="$emit('ensure-users')"
+              @visible-change="visible => visible && $emit('ensure-users')"
+              @change="value => $emit('update-list', 'emptyAssigneeUserIds', value)"
+            >
+              <el-option v-for="item in userOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </div>
+      </el-collapse-item>
+
+      <el-collapse-item title="驳回策略" name="reject-strategy">
+          <el-radio-group
+            :model-value="config.rejectStrategy"
+            class="approval-radio-column"
+            @change="value => $emit('update-config', { rejectStrategy: value })"
+          >
+            <el-radio label="END_PROCESS">直接结束流程</el-radio>
+            <el-radio label="BACK_TO_START">驳回到发起人</el-radio>
+          </el-radio-group>
+      </el-collapse-item>
+    </el-collapse>
 
   </div>
 </template>
@@ -253,7 +269,7 @@ defineEmits<{
 }
 
 .approval-drawer-section {
-  padding: 16px 0;
+  padding: 8px 0;
   border-top: 1px solid var(--el-border-color-light);
 }
 
@@ -263,7 +279,7 @@ defineEmits<{
 }
 
 .approval-section-title {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 700;
@@ -272,7 +288,7 @@ defineEmits<{
 .approval-radio-grid {
   display: grid;
   width: 100%;
-  gap: 8px;
+  gap: 5px;
 }
 
 .assignee-grid,
@@ -283,12 +299,31 @@ defineEmits<{
 .approval-radio-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 5px;
 }
 
 .approval-radio-column {
   display: grid;
-  gap: 8px;
+  gap: 5px;
+}
+
+.countersign-radio-content {
+  display: inline-grid;
+  grid-template-columns: auto 82px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.countersign-radio-content :deep(.el-input-number) {
+  width: 82px;
+}
+
+.countersign-radio-tip {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 .approval-radio-grid :deep(.el-radio),
@@ -296,15 +331,15 @@ defineEmits<{
 .approval-radio-column :deep(.el-radio) {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 30px;
   height: auto;
   margin-right: 0;
-  padding: 8px 10px;
+  padding: 5px 7px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--el-bg-color);
   color: var(--el-text-color-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -317,12 +352,12 @@ defineEmits<{
 }
 
 .approval-target-block {
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .leader-org-select,
 .form-field-type-row {
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .approval-target-block :deep(.el-select-dropdown),
@@ -332,6 +367,22 @@ defineEmits<{
 
 .drawer-form {
   padding: 4px 0;
+}
+
+.approval-advanced-collapse {
+  margin-top: 6px;
+  border-top: 1px solid var(--el-border-color-light);
+}
+
+.approval-advanced-collapse :deep(.el-collapse-item__header) {
+  height: 32px;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.approval-advanced-collapse :deep(.el-collapse-item__content) {
+  padding-bottom: 8px;
 }
 
 </style>

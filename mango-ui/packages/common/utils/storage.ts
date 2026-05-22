@@ -46,15 +46,38 @@ export const Session = {
     return null;
   },
 
-  setToken(token: string): void {
+  setToken(token: string, options?: { refreshToken?: string; expiresIn?: number; expiresAt?: number }): void {
     // Also store in sessionStorage for frontend auth checks (httpOnly Cookie can't be read by JS)
     // The httpOnly Cookie is for backend authentication
     sessionStorage.setItem('MANGO_TOKEN', token);
     document.cookie = `MANGO_TOKEN=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
+    if (options?.refreshToken) {
+      sessionStorage.setItem('MANGO_REFRESH_TOKEN', options.refreshToken);
+    }
+    const expiresAt = options?.expiresAt
+      || (options?.expiresIn ? Date.now() + options.expiresIn * 1000 : undefined);
+    if (expiresAt) {
+      sessionStorage.setItem('MANGO_TOKEN_EXPIRES_AT', String(expiresAt));
+    }
+  },
+
+  getRefreshToken(): string | null {
+    return sessionStorage.getItem('MANGO_REFRESH_TOKEN');
+  },
+
+  getTokenExpiresAt(): number | null {
+    const value = sessionStorage.getItem('MANGO_TOKEN_EXPIRES_AT');
+    if (!value) {
+      return null;
+    }
+    const timestamp = Number(value);
+    return Number.isFinite(timestamp) ? timestamp : null;
   },
 
   clearToken(): void {
     sessionStorage.removeItem('MANGO_TOKEN');
+    sessionStorage.removeItem('MANGO_REFRESH_TOKEN');
+    sessionStorage.removeItem('MANGO_TOKEN_EXPIRES_AT');
     // Clear httpOnly Cookie by setting expired
     document.cookie = 'MANGO_TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
   },

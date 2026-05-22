@@ -2,12 +2,14 @@ package io.mango.captcha.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.captcha.api.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.BehaviorCaptchaVerifyResult;
 import io.mango.captcha.api.dto.CaptchaResponse;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.core.service.ICaptchaService;
 import io.mango.common.result.R;
+import io.mango.common.result.Require;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -104,9 +106,7 @@ public class CaptchaController {
     @Operation(summary = "校验验证码", description = "校验验证码是否正确")
     public R<Boolean> verify(@Valid @RequestBody CaptchaVerifyRequest request) {
         boolean result = captchaService.verify(request);
-        if (!result) {
-            return R.fail(400, "验证码校验失败");
-        }
+        Require.isTrue(result, CaptchaCode.CAPTCHA_INVALID);
         return R.ok(true);
     }
 }

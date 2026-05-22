@@ -1,9 +1,12 @@
 package io.mango.auth.starter.web.anti;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.anti.AppSecretProvider;
 import io.mango.auth.core.anti.IdempotencyGuard;
 import io.mango.auth.core.anti.ReplayGuard;
 import io.mango.auth.core.anti.SignatureValidator;
+import io.mango.common.result.R;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,6 +45,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
     private final IdempotencyGuard idempotencyGuard;
     private final SignatureValidator signatureValidator;
     private final AppSecretProvider appSecretProvider;
+    private final ObjectMapper objectMapper;
 
     /**
      * 本地密钥缓存：appKey -> secret。
@@ -65,14 +69,12 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
                 long now = System.currentTimeMillis();
                 if (Math.abs(now - timestamp) > MAX_TIMESTAMP_DIFF_MS) {
                     log.warn("Request timestamp expired: timestamp={}, now={}", timestamp, now);
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    response.getWriter().write("{\"code\":401,\"msg\":\"Request expired\"}");
+                    writeError(response, HttpStatus.UNAUTHORIZED.value(), AuthCode.REQUEST_EXPIRED);
                     return false;
                 }
             } catch (NumberFormatException e) {
                 log.warn("Invalid timestamp header: {}", timestampStr);
-                response.setStatus(HttpStatus.BAD_REQUEST.value());
-                response.getWriter().write("{\"code\":400,\"msg\":\"Invalid timestamp\"}");
+                writeError(response, HttpStatus.BAD_REQUEST.value(), AuthCode.REQUEST_TIMESTAMP_INVALID);
                 return false;
             }
         }
@@ -82,8 +84,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
         if (nonce != null && !nonce.isBlank()) {
             if (!replayGuard.tryAcquire(nonce)) {
                 log.warn("Replay request rejected: nonce={}", nonce);
-                response.setStatus(HttpStatus.CONFLICT.value());
-                response.getWriter().write("{\"code\":409,\"msg\":\"Duplicate request\"}");
+                writeError(response, HttpStatus.CONFLICT.value(), AuthCode.DUPLICATE_REQUEST);
                 return false;
             }
         }
@@ -118,8 +119,7 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
                 timestampStr != null ? timestampStr : "", body, sign);
             if (!valid) {
                 log.warn("Signature validation failed: appKey={}", appKey);
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                response.getWriter().write("{\"code\":401,\"msg\":\"Invalid signature\"}");
+                writeError(response, HttpStatus.UNAUTHORIZED.value(), AuthCode.REQUEST_SIGNATURE_INVALID);
                 return false;
             }
         }
@@ -129,10 +129,16 @@ public class AntiReplayInterceptor implements HandlerInterceptor {
 
     private String getSecretByAppKey(String appKey) {
         if (appKey == null || appKey.isBlank()) {
-            throw new IllegalArgumentException("appKey cannot be null or blank");
+            return "";
         }
         // 优先检查本地缓存。
         return secretCache.computeIfAbsent(appKey, this::loadSecret);
+    }
+
+    private void writeError(HttpServletResponse response, int httpStatus, AuthCode code) throws java.io.IOException {
+        response.setStatus(httpStatus);
+        response.setContentType("application/json");
+        response.getWriter().write(objectMapper.writeValueAsString(R.fail(code)));
     }
 
     private String loadSecret(String appKey) {

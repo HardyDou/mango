@@ -28,10 +28,12 @@ public class WorkflowApprovalNodeConfig {
     private String expression;
     private String expressionName;
     private WorkflowApprovalMode approvalMode = WorkflowApprovalMode.COUNTERSIGN;
+    private Integer passRatio = 100;
     private WorkflowEmptyAssigneeStrategy emptyAssigneeStrategy = WorkflowEmptyAssigneeStrategy.TO_ADMIN;
     private List<String> emptyAssigneeUserIds = new ArrayList<>();
     private WorkflowRejectStrategy rejectStrategy = WorkflowRejectStrategy.END_PROCESS;
     private Map<String, WorkflowFormPermission> formPermissions = new LinkedHashMap<>();
+    private Map<String, WorkflowNodeActionConfig> actions = new LinkedHashMap<>();
     private Map<String, Object> extension = new LinkedHashMap<>();
     private WorkflowEventNotifyConfig eventNotify = new WorkflowEventNotifyConfig();
     private boolean initiatorSelectMultiple;

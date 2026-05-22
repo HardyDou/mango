@@ -36,7 +36,40 @@ public enum AuthCode implements BizCode {
     ACCOUNT_DISABLED(1407, "账号已停用"),
 
     /** 当前账号没有可登录机构。 */
-    LOGIN_INSTITUTION_EMPTY(1408, "当前账号没有可登录机构");
+    LOGIN_INSTITUTION_EMPTY(1408, "当前账号没有可登录机构"),
+
+    /** 登录尝试过于频繁。 */
+    LOGIN_ATTEMPT_LOCKED(1429, "登录尝试次数过多"),
+
+    /** 刷新令牌无效或已过期。 */
+    REFRESH_TOKEN_INVALID(1410, "登录已过期，请重新登录"),
+
+    /** 当前访问令牌无效或已过期。 */
+    ACCESS_TOKEN_INVALID(1411, "未登录或登录已过期"),
+
+    /** 当前登录用户不存在。 */
+    CURRENT_USER_NOT_FOUND(1412, "当前用户不存在"),
+
+    /** 验证码服务不可用。 */
+    CAPTCHA_SERVICE_UNAVAILABLE(1503, "验证码服务不可用"),
+
+    /** 请求缺少验证码。 */
+    CAPTCHA_REQUIRED(1428, "请先完成验证码"),
+
+    /** 验证码校验失败。 */
+    CAPTCHA_INVALID(1409, "验证码校验失败"),
+
+    /** 防重放请求已过期。 */
+    REQUEST_EXPIRED(1413, "请求已过期"),
+
+    /** 防重放时间戳非法。 */
+    REQUEST_TIMESTAMP_INVALID(1414, "请求时间戳非法"),
+
+    /** 重复请求。 */
+    DUPLICATE_REQUEST(1415, "重复请求"),
+
+    /** 请求签名非法。 */
+    REQUEST_SIGNATURE_INVALID(1416, "请求签名非法");
 
     private final int code;
     private final String message;

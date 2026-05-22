@@ -1,5 +1,7 @@
 package io.mango.auth.starter.web.anti;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.anti.IdempotencyGuard;
 import io.mango.auth.core.anti.ReplayGuard;
 import io.mango.auth.core.anti.SignatureValidator;
@@ -52,7 +54,9 @@ class AntiReplayInterceptorTest {
 
         assertFalse(passed);
         assertEquals(401, response.getStatus());
-        assertEquals("{\"code\":401,\"msg\":\"Invalid signature\"}", response.getContentAsString());
+        assertEquals("{\"code\":" + AuthCode.REQUEST_SIGNATURE_INVALID.getCode()
+                + ",\"success\":false,\"msg\":\"" + AuthCode.REQUEST_SIGNATURE_INVALID.getMessage()
+                + "\",\"data\":null}", response.getContentAsString());
     }
 
     @Test
@@ -85,7 +89,8 @@ class AntiReplayInterceptorTest {
                 mock(ReplayGuard.class),
                 mock(IdempotencyGuard.class),
                 new SignatureValidator(),
-                new ConfiguredAppSecretProvider(properties));
+                new ConfiguredAppSecretProvider(properties),
+                new ObjectMapper());
     }
 
     private MockHttpServletRequest signedRequest(String appKey, String timestamp, String body, String sign) {

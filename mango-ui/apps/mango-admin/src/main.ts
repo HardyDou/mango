@@ -43,6 +43,9 @@ app.config.errorHandler = (err, instance, info) => {
   console.error('Vue 错误:', err);
   console.error('组件:', instance);
   console.error('错误信息:', info);
+  if (err && typeof err === 'object' && 'response' in err) {
+    return;
+  }
   mangoMessage.error('系统错误，请刷新页面');
 };
 

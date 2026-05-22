@@ -1,6 +1,9 @@
 import type { Component } from 'vue';
+import type { WorkflowTaskActionKey, WorkflowTaskRecord } from '../api/workflow';
 
 export type BusinessPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
+export type WorkflowCommentMode = 'ACTION_BAR' | 'BUSINESS_FORM' | 'NONE';
+export type WorkflowRecordPanelMode = 'DEFAULT' | 'HIDDEN' | 'CUSTOM';
 
 export interface BusinessApprovalContext {
   businessType: string;
@@ -14,13 +17,25 @@ export interface BusinessApprovalContext {
   readonly: boolean;
   variables: Record<string, any>;
   permissions: Record<string, BusinessPermission>;
+  records: WorkflowTaskRecord[];
 }
 
 export interface BusinessApprovalRegistration {
   component: Component;
-  collectVariables?: (context: BusinessApprovalContext) => Record<string, any>;
-  commentMode?: 'ACTION_BAR' | 'BUSINESS_FORM';
-  collectComment?: (context: BusinessApprovalContext) => string | undefined;
+  recordPanelMode?: WorkflowRecordPanelMode;
+  recordPanelComponent?: Component;
+  collectVariables?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => Record<string, any>;
+  commentMode?: WorkflowCommentMode;
+  collectComment?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => string | undefined;
+  validateBeforeAction?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => Promise<void>;
+  beforeAction?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey) => Promise<void>;
+  afterAction?: (context: BusinessApprovalContext, action: WorkflowTaskActionKey, result: unknown) => Promise<void>;
+  getActionOverrides?: (context: BusinessApprovalContext) => Partial<Record<WorkflowTaskActionKey, {
+    visible?: boolean;
+    disabled?: boolean;
+    label?: string;
+    tooltip?: string;
+  }>>;
 }
 
 const businessApprovalRegistrations = new Map<string, BusinessApprovalRegistration>();
@@ -70,20 +85,22 @@ export function businessPermissionsOf(
 export function collectBusinessApprovalVariables(
   registration: BusinessApprovalRegistration | null | undefined,
   context: BusinessApprovalContext | null | undefined,
+  action: WorkflowTaskActionKey,
 ): Record<string, any> {
   if (!registration?.collectVariables || !context) {
     return {};
   }
-  return registration.collectVariables(context);
+  return registration.collectVariables(context, action);
 }
 
 export function collectBusinessApprovalComment(
   registration: BusinessApprovalRegistration | null | undefined,
   context: BusinessApprovalContext | null | undefined,
+  action: WorkflowTaskActionKey,
   fallbackComment = '',
 ): string {
   if (registration?.collectComment && context) {
-    return String(registration.collectComment(context) || '').trim();
+    return String(registration.collectComment(context, action) || '').trim();
   }
   return fallbackComment;
 }

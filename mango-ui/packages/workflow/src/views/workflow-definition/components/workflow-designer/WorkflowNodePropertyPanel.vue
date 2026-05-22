@@ -8,7 +8,7 @@
           </span>
           <div>
             <strong>{{ title }}</strong>
-            <el-tag effect="plain" size="small">{{ typeLabel }}</el-tag>
+            <span class="node-panel-type">{{ typeLabel }}</span>
           </div>
         </div>
         <el-button :icon="Close" aria-label="关闭节点配置" circle text @click="$emit('close')" />
@@ -57,42 +57,50 @@ defineEmits<{
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 16px 14px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .node-panel-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .node-panel-heading strong {
   display: block;
-  margin-bottom: 4px;
   color: var(--el-text-color-primary);
   font-size: 15px;
   font-weight: 700;
+  line-height: 20px;
+}
+
+.node-panel-type {
+  display: block;
+  margin-top: 1px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .node-panel-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
   background: var(--el-color-primary-light-9);
   color: var(--el-color-primary);
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .node-panel-body {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: 12px;
 }
 
 .node-panel-slide-enter-active,

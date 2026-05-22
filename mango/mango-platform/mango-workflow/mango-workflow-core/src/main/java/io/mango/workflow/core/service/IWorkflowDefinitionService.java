@@ -30,6 +30,8 @@ public interface IWorkflowDefinitionService {
 
     R<Boolean> updateStatus(UpdateWorkflowDefinitionStatusCommand command);
 
+    R<Boolean> discardDraft(Long id);
+
     R<WorkflowDeployVO> deploy(Long id);
 
     R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query);

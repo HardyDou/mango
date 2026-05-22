@@ -128,7 +128,7 @@ import { ElMessage, type FormInstance } from 'element-plus';
 import { Bell, Box, Cloudy, Connection, DocumentChecked, ForkSpoon, Share, User } from '@element-plus/icons-vue';
 import { parseDesignerJson, workflowApi, type WorkflowDefinition, type WorkflowDesignerNode, type WorkflowUserOption } from '../../api/workflow';
 import { fileApi, fileRuntimeUrl, normalizeFileId } from '@mango/file';
-import { customApplyRouteOf } from '../../workflowFormConfig';
+import { customApplyRouteOf, parseWorkflowFormConfig } from '../../workflowFormConfig';
 import RuntimeFormRenderer from '../../components/RuntimeFormRenderer.vue';
 import { createDefaultVariables, parseRuntimeForm, type RuntimeFormField } from '../../components/runtimeForm';
 
@@ -140,7 +140,7 @@ const tableData = ref<WorkflowDefinition[]>([]);
 const workflowIconUrlMap = ref<Record<string, string>>({});
 const selectedDefinition = ref<WorkflowDefinition | null>(null);
 const startFormRef = ref<FormInstance>();
-const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED' });
+const query = ref({ pageNum: 1, pageSize: 50, keyword: '', status: 'PUBLISHED', publishedOnly: true });
 const startForm = ref({
   variablesJson: '{}',
 });
@@ -271,11 +271,14 @@ async function submitStart() {
   }
   submitting.value = true;
   try {
+    const formConfig = parseWorkflowFormConfig(selectedDefinition.value.formJson);
     const instance = await workflowApi.startProcess({
       definitionId: selectedDefinition.value.id,
       businessType: String(formVariables.value.businessType || selectedDefinition.value.definitionKey || ''),
       businessKey: String(formVariables.value.businessKey || formVariables.value.code || formVariables.value.applyCode || ''),
-      renderMode: 'DYNAMIC_FORM',
+      renderMode: formConfig.mode,
+      applyPageKey: formConfig.customConfig.applyPageKey,
+      approvePageKey: formConfig.customConfig.approvePageKey,
       variables: {
         title: formVariables.value.title || selectedDefinition.value.definitionName,
         summary: formVariables.value.summary || selectedDefinition.value.remark || selectedDefinition.value.definitionKey,

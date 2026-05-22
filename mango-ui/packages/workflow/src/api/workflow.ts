@@ -11,6 +11,7 @@ export type WorkflowEmptyAssigneeStrategy = 'AUTO_PASS' | 'AUTO_REJECT' | 'AUTO_
 export type WorkflowRejectStrategy = 'END_PROCESS' | 'BACK_TO_START';
 export type WorkflowFormPermission = 'HIDDEN' | 'READONLY' | 'EDITABLE';
 export type WorkflowId = string;
+export type WorkflowTaskActionKey = 'complete' | 'reject' | 'save' | 'transfer' | 'addSign' | 'claim' | 'unclaim' | 'read';
 
 export interface WorkflowEventNotifyConfig {
   enabled?: boolean;
@@ -20,6 +21,17 @@ export interface WorkflowEventNotifyConfig {
   method?: 'POST' | 'GET' | 'PUT' | 'DELETE';
   timeoutMillis?: number;
   payloadTemplate?: string;
+}
+
+export interface WorkflowNodeActionConfig {
+  enabled?: boolean;
+  label?: string;
+  requireComment?: boolean;
+  confirmText?: string;
+  danger?: boolean;
+  order?: number;
+  disabled?: boolean;
+  tooltip?: string;
 }
 
 export interface WorkflowApprovalNodeConfig {
@@ -33,10 +45,12 @@ export interface WorkflowApprovalNodeConfig {
   expression?: string;
   expressionName?: string;
   approvalMode: WorkflowApprovalMode;
+  passRatio?: number;
   emptyAssigneeStrategy: WorkflowEmptyAssigneeStrategy;
   emptyAssigneeUserIds?: string[];
   rejectStrategy: WorkflowRejectStrategy;
   formPermissions?: Record<string, WorkflowFormPermission>;
+  actions?: Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>;
   eventNotify?: WorkflowEventNotifyConfig;
   extension?: Record<string, any>;
   initiatorSelectMultiple?: boolean;
@@ -75,6 +89,8 @@ export interface WorkflowDefinition {
   formCode?: string;
   formJson?: string;
   status?: WorkflowStatus;
+  hasUnpublishedChanges?: boolean;
+  unpublishedChangeReasons?: string[];
   lastDeployTime?: string;
   remark?: string;
   createdTime?: string;
@@ -92,9 +108,11 @@ export interface WorkflowPageQuery {
   categoryId?: WorkflowId | '';
   orgId?: WorkflowId | '';
   status?: string;
+  publishedOnly?: boolean;
   categoryCode?: string;
   bpmnType?: string;
   executionType?: string;
+  todoType?: 'ASSIGNED' | 'CLAIMABLE' | 'ALL';
 }
 
 export interface WorkflowTemplateCategory {
@@ -199,6 +217,14 @@ export interface WorkflowDefinitionVersion {
   id: WorkflowId;
   definitionId: WorkflowId;
   versionNo: number;
+  categoryId?: WorkflowId;
+  orgId?: WorkflowId;
+  adminUsers?: string;
+  icon?: string;
+  definitionName?: string;
+  definitionKey?: string;
+  remark?: string;
+  formCode?: string;
   designerJson: string;
   formJson?: string;
   bpmnXml: string;
@@ -240,6 +266,8 @@ export interface WorkflowTask {
   processDefinitionId?: string;
   initiatorName?: string;
   assigneeName?: string;
+  claimable?: boolean;
+  unclaimable?: boolean;
   status: string;
   createTime?: string;
   endTime?: string;
@@ -375,6 +403,7 @@ export interface WorkflowRenderConfig {
   nodeExtension?: Record<string, any>;
   formPermissions?: Record<string, WorkflowFormPermission>;
   businessPermissions?: Record<string, any>;
+  nodeActions?: Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>;
 }
 
 export interface WorkflowTaskDetail {
@@ -403,6 +432,22 @@ export interface WorkflowTaskActionCommand {
   variables?: Record<string, any>;
 }
 
+export interface WorkflowTaskTransferCommand {
+  taskId: string;
+  targetUserId: string;
+  comment?: string;
+}
+
+export interface WorkflowTaskAddSignCommand {
+  taskId: string;
+  targetUserIds: string[];
+  comment?: string;
+}
+
+export interface WorkflowCopiedReadCommand {
+  copiedTaskId: WorkflowId;
+}
+
 export const workflowApi = {
   categoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/categories/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeCategory, params)),
@@ -420,6 +465,7 @@ export const workflowApi = {
   updateDefinition: (data: WorkflowDefinition) => put<boolean>('/workflow/definitions', toDefinitionCommand(data, true)),
   deleteDefinition: (id: WorkflowId) => del<boolean>('/workflow/definitions', { params: { id } }),
   updateDefinitionStatus: (id: WorkflowId, status: WorkflowStatus) => put<boolean>('/workflow/definitions/status', { id, status }),
+  discardDefinitionDraft: (id: WorkflowId) => post<boolean>('/workflow/definitions/discard-draft', undefined, { params: { id } }),
   deployDefinition: (id: WorkflowId) => post<any>('/workflow/definitions/deploy', undefined, { params: { id } }),
   definitionVersions: (definitionId: WorkflowId) => get<WorkflowDefinitionVersion[]>('/workflow/definitions/versions', { params: { definitionId } })
     .then(list => Array.isArray(list) ? list.map(normalizeVersion) : []),
@@ -458,6 +504,12 @@ export const workflowApi = {
     .then(normalizeTaskDetail),
   completeTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/complete', data),
   rejectTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/reject', data),
+  saveTask: (data: WorkflowTaskActionCommand) => post<boolean>('/workflow/tasks/save', data),
+  transferTask: (data: WorkflowTaskTransferCommand) => post<boolean>('/workflow/tasks/transfer', data),
+  addSignTask: (data: WorkflowTaskAddSignCommand) => post<boolean>('/workflow/tasks/add-sign', data),
+  claimTask: (taskId: string) => post<boolean>('/workflow/tasks/claim', { taskId }),
+  unclaimTask: (taskId: string) => post<boolean>('/workflow/tasks/unclaim', { taskId }),
+  readCopiedTask: (copiedTaskId: WorkflowId) => post<boolean>('/workflow/tasks/copied/read', { copiedTaskId }),
 
   startProcess: (data: StartWorkflowProcessCommand) => post<WorkflowProcessInstance>('/workflow/processes/start', data)
     .then(normalizeProcessInstance),
@@ -539,6 +591,24 @@ export function workflowStatusType(value?: string) {
   return workflowStatusOptions.find(item => item.value === value)?.type || 'info';
 }
 
+export function workflowPublishStatusLabel(value?: string) {
+  const labels: Record<string, string> = {
+    PUBLISHING: '发布中',
+    SUCCESS: '成功',
+    FAILED: '失败',
+  };
+  return value ? labels[value] || value : '-';
+}
+
+export function workflowPublishStatusType(value?: string) {
+  const types: Record<string, 'info' | 'success' | 'warning' | 'danger'> = {
+    PUBLISHING: 'warning',
+    SUCCESS: 'success',
+    FAILED: 'danger',
+  };
+  return value ? types[value] || 'info' : 'info';
+}
+
 export function defaultBpmnXml(processKey = 'sample_process', processName = '示例流程') {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -587,10 +657,12 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
     orgIds: [],
     formUserFieldType: 'USER',
     approvalMode: 'COUNTERSIGN',
+    passRatio: 100,
     emptyAssigneeStrategy: 'TO_ADMIN',
     emptyAssigneeUserIds: [],
     rejectStrategy: 'END_PROCESS',
     formPermissions: {},
+    actions: defaultNodeActions(),
     eventNotify: {
       enabled: false,
       type: 'HTTP',
@@ -600,6 +672,19 @@ export function defaultApprovalConfig(): WorkflowApprovalNodeConfig {
     extension: {},
     initiatorSelectMultiple: false,
     orgLeaderUseInitiatorOrg: true,
+  };
+}
+
+export function defaultNodeActions(): Record<WorkflowTaskActionKey, WorkflowNodeActionConfig> {
+  return {
+    save: { enabled: false, label: '暂存', requireComment: false, order: 10 },
+    transfer: { enabled: false, label: '转办', requireComment: false, order: 20 },
+    addSign: { enabled: false, label: '加签', requireComment: false, order: 30 },
+    reject: { enabled: true, label: '驳回', requireComment: true, danger: true, order: 40 },
+    complete: { enabled: true, label: '通过', requireComment: false, order: 50 },
+    claim: { enabled: false, label: '认领', requireComment: false, order: 5 },
+    unclaim: { enabled: false, label: '释放', requireComment: false, order: 6 },
+    read: { enabled: false, label: '已阅', requireComment: false, order: 60 },
   };
 }
 
@@ -820,6 +905,8 @@ function normalizeTask(item: any): WorkflowTask {
     processDefinitionId: item?.processDefinitionId,
     initiatorName: item?.initiatorName,
     assigneeName: item?.assigneeName,
+    claimable: Boolean(item?.claimable),
+    unclaimable: Boolean(item?.unclaimable),
     status: item?.status || '-',
     createTime: normalizeDateTime(item?.createTime),
     endTime: normalizeDateTime(item?.endTime),
@@ -912,6 +999,7 @@ function normalizeRenderConfig(item: any): WorkflowRenderConfig | undefined {
     formPermissions: normalizeVariables(item?.formPermissions) as Record<string, WorkflowFormPermission>,
     nodeExtension: normalizeVariables(item?.nodeExtension),
     businessPermissions: normalizeVariables(item?.businessPermissions),
+    nodeActions: normalizeVariables(item?.nodeActions) as Record<WorkflowTaskActionKey, WorkflowNodeActionConfig>,
   };
 }
 

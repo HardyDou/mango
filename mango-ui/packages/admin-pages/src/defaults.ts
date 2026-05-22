@@ -21,6 +21,7 @@ export function registerDefaultAdminPages() {
     'demo/components/RealtimeView': () => import('../../../apps/mango-admin/src/views/demo/components/RealtimeView.vue'),
     'demo/components/ChinaAreaView': () => import('../../../apps/mango-admin/src/views/demo/components/ChinaAreaView.vue'),
     'demo/components/OrgSelectorView': () => import('../../../apps/mango-admin/src/views/demo/components/OrgSelectorView.vue'),
+    'demo/components/WorkflowComponentsView': () => import('../../../apps/mango-admin/src/views/demo/components/WorkflowComponentsView.vue'),
     'demo/components/CaptchaView': () => import('../../../apps/mango-admin/src/views/demo/components/CaptchaView.vue'),
   };
   const devComponentPages = import.meta.env.DEV ? DEV_COMPONENT_DEMO_PAGES.reduce<Record<string, MangoPageLoader>>((pages, page) => {
@@ -77,6 +78,7 @@ export function registerDefaultAdminPages() {
     {
       moduleCode: 'mango-workflow',
       pages: {
+        'workflow/definition/index': () => import('@mango/workflow/src/views/workflow-definition/index.vue'),
         'system/workflow-definition/index': () => import('@mango/workflow/src/views/workflow-definition/index.vue'),
         'workflow/template/index': () => import('@mango/workflow/src/views/workflow-template/index.vue'),
         'workflow-template/index': () => import('@mango/workflow/src/views/workflow-template/index.vue'),

@@ -100,6 +100,12 @@
               <EditableTextarea field="purpose" :editable="fieldEditable('purpose')" placeholder="请输入用印事由和背景说明" />
             </td>
           </tr>
+          <tr v-if="sectionVisible('managerOpinion')">
+            <th>部门负责人意见</th>
+            <td colspan="3">
+              <EditableTextarea field="managerOpinion" :editable="fieldEditable('managerOpinion')" placeholder="请输入部门负责人审批意见" />
+            </td>
+          </tr>
           <tr v-if="sectionVisible('legalOpinion')">
             <th>法务意见</th>
             <td colspan="3">
@@ -147,7 +153,28 @@ const props = defineProps<{
   context: BusinessApprovalContext;
 }>();
 
-const snapshot = computed(() => props.context.variables || {});
+const snapshot = computed(() => ({
+  ...(props.context.variables || {}),
+  ...approvalOpinionsFromRecords.value,
+}));
+
+const approvalOpinionFieldByNode: Record<string, string> = {
+  dept_manager_approve: 'managerOpinion',
+  legal_review: 'legalOpinion',
+  finance_review: 'financeOpinion',
+  seal_keeper: 'sealKeeperOpinion',
+};
+
+const approvalOpinionsFromRecords = computed(() => {
+  return (props.context.records || []).reduce<Record<string, string>>((result, record) => {
+    const field = approvalOpinionFieldByNode[String(record.taskDefinitionKey || '')];
+    const comment = String(record.comment || '').trim();
+    if (field && comment && !String(props.context.variables[field] || '').trim()) {
+      result[field] = comment;
+    }
+    return result;
+  }, {});
+});
 
 const contractAmount = computed({
   get: () => Number(props.context.variables.contractAmount || 0),
@@ -193,7 +220,7 @@ const EditableCell = defineComponent({
           props.context.variables[cellProps.field] = value;
         },
       })
-      : h('span', String(props.context.variables[cellProps.field] || '-'));
+      : h('span', String(snapshot.value[cellProps.field] || '-'));
   },
 });
 
@@ -215,7 +242,7 @@ const EditableTextarea = defineComponent({
           props.context.variables[cellProps.field] = value;
         },
       })
-      : h('span', { class: 'multiline-text' }, String(props.context.variables[cellProps.field] || '-'));
+      : h('span', { class: 'multiline-text' }, String(snapshot.value[cellProps.field] || '-'));
   },
 });
 

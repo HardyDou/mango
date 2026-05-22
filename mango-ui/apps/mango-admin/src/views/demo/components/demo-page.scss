@@ -182,6 +182,22 @@
   }
 }
 
+.component-doc-page {
+  .el-table {
+    font-size: 14px;
+  }
+
+  .el-table .cell {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .el-table__header .cell {
+    color: var(--el-text-color-primary);
+    font-weight: 600;
+  }
+}
+
 .demo-block {
   width: 100%;
   overflow: hidden;

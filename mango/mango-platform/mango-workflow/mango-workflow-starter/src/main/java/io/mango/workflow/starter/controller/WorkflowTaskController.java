@@ -4,8 +4,13 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.workflow.api.command.AddSignWorkflowTaskCommand;
+import io.mango.workflow.api.command.ClaimWorkflowTaskCommand;
 import io.mango.workflow.api.command.CompleteWorkflowTaskCommand;
+import io.mango.workflow.api.command.ReadWorkflowCopiedTaskCommand;
 import io.mango.workflow.api.command.RejectWorkflowTaskCommand;
+import io.mango.workflow.api.command.SaveWorkflowTaskDraftCommand;
+import io.mango.workflow.api.command.TransferWorkflowTaskCommand;
 import io.mango.workflow.api.query.WorkflowTaskPageQuery;
 import io.mango.workflow.api.vo.WorkflowTaskDetailVO;
 import io.mango.workflow.api.vo.WorkflowTaskVO;
@@ -78,16 +83,53 @@ public class WorkflowTaskController {
         return workflowTaskRuntimeService.reject(command);
     }
 
+    @PostMapping("/save")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:save")
+    @Operation(summary = "暂存审批任务")
+    public R<Boolean> save(@Valid @RequestBody SaveWorkflowTaskDraftCommand command) {
+        return workflowTaskRuntimeService.saveDraft(command);
+    }
+
+    @PostMapping("/transfer")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:transfer")
+    @Operation(summary = "转办审批任务")
+    public R<Boolean> transfer(@Valid @RequestBody TransferWorkflowTaskCommand command) {
+        return workflowTaskRuntimeService.transfer(command);
+    }
+
+    @PostMapping("/add-sign")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:add-sign")
+    @Operation(summary = "加签审批任务")
+    public R<Boolean> addSign(@Valid @RequestBody AddSignWorkflowTaskCommand command) {
+        return workflowTaskRuntimeService.addSign(command);
+    }
+
+    @PostMapping("/claim")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:claim")
+    @Operation(summary = "认领候选任务")
+    public R<Boolean> claim(@Valid @RequestBody ClaimWorkflowTaskCommand command) {
+        return workflowTaskRuntimeService.claim(command);
+    }
+
+    @PostMapping("/unclaim")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:unclaim")
+    @Operation(summary = "释放候选任务")
+    public R<Boolean> unclaim(@Valid @RequestBody ClaimWorkflowTaskCommand command) {
+        return workflowTaskRuntimeService.unclaim(command);
+    }
+
     @GetMapping("/copied")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:list")
     @Operation(summary = "查询抄送给我")
     public R<PageResult<WorkflowTaskVO>> copied(@ParameterObject WorkflowTaskPageQuery query) {
-        return emptyPage(query);
+        return workflowTaskRuntimeService.copied(query);
     }
 
-    private R<PageResult<WorkflowTaskVO>> emptyPage(WorkflowTaskPageQuery query) {
-        WorkflowTaskPageQuery resolved = resolve(query);
-        return R.ok(PageResult.of(List.of(), 0, resolved.getPage(), resolved.getSize()));
+    @PostMapping("/copied/read")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:task:read-copied")
+    @Operation(summary = "标记抄送已阅")
+    public R<Boolean> readCopied(@Valid @RequestBody ReadWorkflowCopiedTaskCommand command) {
+        return workflowTaskRuntimeService.readCopied(command);
     }
 
     private WorkflowTaskPageQuery resolve(WorkflowTaskPageQuery query) {

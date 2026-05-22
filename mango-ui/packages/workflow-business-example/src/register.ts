@@ -1,4 +1,5 @@
 import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
+import type { WorkflowTaskActionKey } from '@mango/workflow/src/api/workflow';
 import { registerBusinessApplyComponents } from '@mango/workflow/src/components/businessApply';
 import { registerBusinessApprovalComponents } from '@mango/workflow/src/components/businessApproval';
 import WorkflowBusinessFormView from './views/business-form/index.vue';
@@ -29,30 +30,35 @@ export function registerWorkflowBusinessExampleComponents() {
       component: DocumentTableApprovalDetail,
       collectVariables: collectContractSealVariables,
       collectComment: collectContractSealComment,
+      validateBeforeAction: validateContractSealAction,
       commentMode: 'BUSINESS_FORM',
     },
     'workflow.contractSeal.approve.manager': {
       component: DocumentTableApprovalDetail,
       collectVariables: collectContractSealVariables,
       collectComment: collectContractSealComment,
+      validateBeforeAction: validateContractSealAction,
       commentMode: 'BUSINESS_FORM',
     },
     'workflow.contractSeal.approve.legal': {
       component: DocumentTableApprovalDetail,
       collectVariables: collectContractSealVariables,
       collectComment: collectContractSealComment,
+      validateBeforeAction: validateContractSealAction,
       commentMode: 'BUSINESS_FORM',
     },
     'workflow.contractSeal.approve.finance': {
       component: DocumentTableApprovalDetail,
       collectVariables: collectContractSealVariables,
       collectComment: collectContractSealComment,
+      validateBeforeAction: validateContractSealAction,
       commentMode: 'BUSINESS_FORM',
     },
     'workflow.contractSeal.approve.sealKeeper': {
       component: DocumentTableApprovalDetail,
       collectVariables: collectContractSealVariables,
       collectComment: collectContractSealComment,
+      validateBeforeAction: validateContractSealAction,
       commentMode: 'BUSINESS_FORM',
     },
     'workflow.expense.approve': {
@@ -83,6 +89,9 @@ function collectExpenseVariables(context: BusinessApprovalContext) {
 
 function collectContractSealVariables(context: BusinessApprovalContext) {
   const result: Record<string, any> = {};
+  if (context.permissions.managerOpinion === 'EDITABLE') {
+    result.managerOpinion = context.variables.managerOpinion;
+  }
   if (context.permissions.legalOpinion === 'EDITABLE') {
     result.legalOpinion = context.variables.legalOpinion;
   }
@@ -97,6 +106,9 @@ function collectContractSealVariables(context: BusinessApprovalContext) {
 }
 
 function collectContractSealComment(context: BusinessApprovalContext) {
+  if (context.permissions.managerOpinion === 'EDITABLE') {
+    return context.variables.managerOpinion;
+  }
   if (context.permissions.legalOpinion === 'EDITABLE') {
     return context.variables.legalOpinion;
   }
@@ -107,4 +119,15 @@ function collectContractSealComment(context: BusinessApprovalContext) {
     return context.variables.sealKeeperOpinion;
   }
   return undefined;
+}
+
+async function validateContractSealAction(context: BusinessApprovalContext, action: WorkflowTaskActionKey) {
+  const comment = collectContractSealComment(context);
+  if ((action === 'complete' || action === 'reject') && comment !== undefined && !String(comment).trim()) {
+    throw new Error('请填写审批意见');
+  }
+  if (action === 'complete' && context.permissions.sealKeeperOpinion === 'EDITABLE'
+    && Number(context.variables.approvedSealCount ?? -1) < 0) {
+    throw new Error('实际用印份数不能小于 0');
+  }
 }

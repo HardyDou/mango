@@ -1,5 +1,6 @@
 package io.mango.auth.starter.web.interceptor;
 
+import io.mango.auth.api.AuthCode;
 import io.mango.auth.api.spi.CaptchaConfigService;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
@@ -59,7 +60,8 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         // 失败次数过多时锁定。
         if (isLockedOut(ip)) {
             log.warn("IP locked out due to too many captcha failures: ip={}", ip);
-            sendError(response, HttpStatus.TOO_MANY_REQUESTS.value(), "Too many failed attempts, please try again later");
+            sendError(response, HttpStatus.TOO_MANY_REQUESTS.value(), AuthCode.LOGIN_ATTEMPT_LOCKED.getCode(),
+                    "登录尝试次数过多，请稍后再试");
             return false;
         }
 
@@ -70,7 +72,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         // 未携带验证码请求头。
         if (captchaKey == null || captchaKey.isBlank()) {
             log.info("Captcha required but headers missing: path={}, ip={}", path, ip);
-            sendError(response, 428, "Captcha Required");
+            sendError(response, 428, AuthCode.CAPTCHA_REQUIRED.getCode(), AuthCode.CAPTCHA_REQUIRED.getMessage());
             return false;
         }
 
@@ -85,7 +87,7 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         if (!verified) {
             incrementFailedAttempts(ip);
             log.warn("Captcha verification failed: ip={}, path={}", ip, path);
-            sendError(response, HttpStatus.BAD_REQUEST.value(), "Invalid captcha");
+            sendError(response, HttpStatus.BAD_REQUEST.value(), AuthCode.CAPTCHA_INVALID.getCode(), AuthCode.CAPTCHA_INVALID.getMessage());
             return false;
         }
 
@@ -105,10 +107,10 @@ public class CaptchaInterceptor implements HandlerInterceptor {
         log.info("Captcha failure count: ip={}, count={}", ip, failures);
     }
 
-    private void sendError(HttpServletResponse response, int status, String message) throws Exception {
+    private void sendError(HttpServletResponse response, int status, int code, String message) throws Exception {
         response.setStatus(status);
         response.setContentType("application/json");
-        R<?> r = R.fail(message);
+        R<?> r = R.fail(code, message);
         response.getWriter().write(objectMapper.writeValueAsString(r));
     }
 

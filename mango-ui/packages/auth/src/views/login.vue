@@ -299,7 +299,10 @@ const handleLogin = async () => {
         partyId: userInfo.partyId ?? res.partyId ?? loginData.partyId,
         appCode: userInfo.appCode ?? res.appCode ?? loginData.appCode,
       };
-      Session.setToken(token);
+      Session.setToken(token, {
+        refreshToken: res.refreshToken,
+        expiresIn: Number(res.expiresIn) || undefined,
+      });
       userInfoStore.setUserInfos(normalizedUserInfo);
       if (normalizedUserInfo.tenantId) {
         Session.set('tenantId', normalizedUserInfo.tenantId);
