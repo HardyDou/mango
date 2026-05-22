@@ -112,6 +112,8 @@ mango:
           enabled: true
         guarantee:
           enabled: true
+        calendar:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region

@@ -76,6 +76,12 @@ export function registerDefaultAdminPages() {
       },
     },
     {
+      moduleCode: 'mango-calendar',
+      pages: {
+        'data/calendar/index': () => import('@mango/calendar').then(m => m.CalendarView),
+      },
+    },
+    {
       moduleCode: 'mango-workflow',
       pages: {
         'workflow/definition/index': () => import('@mango/workflow/src/views/workflow-definition/index.vue'),

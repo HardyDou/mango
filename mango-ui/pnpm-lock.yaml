@@ -26,6 +26,9 @@ importers:
       '@mango/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@mango/calendar':
+        specifier: workspace:*
+        version: link:../../packages/calendar
       '@mango/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -375,6 +378,9 @@ importers:
       '@mango/auth':
         specifier: workspace:*
         version: link:../auth
+      '@mango/calendar':
+        specifier: workspace:*
+        version: link:../calendar
       '@mango/common':
         specifier: workspace:*
         version: link:../common
@@ -438,6 +444,24 @@ importers:
       vue-router:
         specifier: ^4.1.6
         version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+
+  packages/calendar:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/api-schema':
+        specifier: workspace:*
+        version: link:../api-schema
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../common
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
 
   packages/common:
     dependencies:

@@ -26,6 +26,7 @@
         <module>mango-file</module>
         <module>mango-workflow</module>
         <module>mango-guarantee</module>
+        <module>mango-calendar</module>
         <module>mango-org</module>
         <module>mango-system</module>
     </modules>

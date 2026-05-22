@@ -651,6 +651,7 @@ const moduleOptions = [
   { label: '授权权限模块', value: 'mango-authorization', sort: 1 },
   { label: '系统基础模块', value: 'mango-system', sort: 2 },
   { label: '审批中心模块', value: 'mango-workflow', sort: 3 },
+  { label: '工作日历模块', value: 'mango-calendar', sort: 4 },
 ];
 
 const actorTypeByRealm: Record<string, string> = {
@@ -849,6 +850,9 @@ function handleStrategyTypeChange(row: AppModuleRuntimeStrategy) {
 function defaultMicroRuntime(moduleCode: string) {
   if (moduleCode === 'mango-authorization') {
     return 'mango-admin-rbac-app';
+  }
+  if (moduleCode === 'mango-calendar') {
+    return 'mango-admin-platform-app';
   }
   return 'mango-admin-local';
 }
