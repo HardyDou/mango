@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../mango-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mango-calendar</artifactId>
+    <packaging>pom</packaging>
+    <description>Mango Calendar Module</description>
+
+    <modules>
+        <module>mango-calendar-api</module>
+        <module>mango-calendar-core</module>
+        <module>mango-calendar-starter</module>
+        <module>mango-calendar-starter-remote</module>
+    </modules>
+</project>

@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "dependencies": {
     "@mango/auth": "workspace:*",
+    "@mango/calendar": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/file": "workspace:*",
     "@mango/rbac": "workspace:*",
