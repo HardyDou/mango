@@ -52,6 +52,9 @@ export function installShellApp(app: VueApp) {
     console.error('[mango-shell] Vue error:', err);
     console.error('[mango-shell] component:', instance);
     console.error('[mango-shell] info:', info);
+    if (err && typeof err === 'object' && 'response' in err) {
+      return;
+    }
     mangoMessage.error('系统错误，请刷新页面');
   };
 }

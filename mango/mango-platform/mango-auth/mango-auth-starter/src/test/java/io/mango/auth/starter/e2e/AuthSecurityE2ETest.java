@@ -2,6 +2,7 @@ package io.mango.auth.starter.e2e;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.auth.api.AuthCode;
 import io.mango.auth.api.spi.LoginTenantProvider;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.authorization.api.AuthorizationQuery;
@@ -107,8 +108,8 @@ class AuthSecurityE2ETest {
     }
 
     @Test
-    @DisplayName("login with wrong password should return 401")
-    void loginWithWrongPasswordShouldReturn401() throws Exception {
+    @DisplayName("login with wrong password should return auth business code")
+    void loginWithWrongPasswordShouldReturnAuthBusinessCode() throws Exception {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -120,7 +121,24 @@ class AuthSecurityE2ETest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value(401));
+                .andExpect(jsonPath("$.code").value(AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID.getCode()))
+                .andExpect(jsonPath("$.msg").value(AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID.getMessage()));
+    }
+
+    @Test
+    @DisplayName("refresh with invalid token should return refresh business code")
+    void refreshWithInvalidTokenShouldReturnRefreshBusinessCode() throws Exception {
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "refreshToken": "invalid-refresh-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(AuthCode.REFRESH_TOKEN_INVALID.getCode()))
+                .andExpect(jsonPath("$.msg").value(AuthCode.REFRESH_TOKEN_INVALID.getMessage()));
     }
 
     @Test
@@ -248,6 +266,8 @@ class AuthSecurityE2ETest {
                     user.setUsername("admin");
                     user.setNickname("Administrator");
                     user.setStatus(1);
+                    user.setPartyType("INTERNAL_ORG");
+                    user.setPartyId(1L);
                     return user;
                 }
             };
@@ -271,6 +291,7 @@ class AuthSecurityE2ETest {
                     tenant.setTenantId("1");
                     tenant.setTenantCode("default");
                     tenant.setTenantName("芒果集团");
+                    tenant.setMemberId(1L);
                     return tenant;
                 }
             };
@@ -280,7 +301,8 @@ class AuthSecurityE2ETest {
         AuthorizationManager<RequestAuthorizationContext> apiResourceAuthorizationManager(
                 IAuthorizationProvider authorizationProvider) {
             return (authenticationSupplier, context) -> {
-                if ("/auth/login".equals(context.getRequest().getRequestURI())) {
+                String requestUri = context.getRequest().getRequestURI();
+                if ("/auth/login".equals(requestUri) || "/auth/refresh".equals(requestUri)) {
                     return new AuthorizationDecision(true);
                 }
                 var authentication = authenticationSupplier.get();

@@ -7,6 +7,7 @@ import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
+import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
 import io.mango.authorization.api.AuthorizationQuery;
@@ -16,6 +17,8 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.captcha.api.CaptchaApi;
 import io.mango.captcha.api.dto.CaptchaSendRequest;
+import io.mango.common.exception.BizException;
+import io.mango.common.result.Require;
 import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
@@ -159,32 +162,21 @@ public class AuthController {
         if (loginAttemptTracker.isLockedOut(loginKey)) {
             long remainingMinutes = loginAttemptTracker.getRemainingLockoutMinutes(loginKey);
             log.warn("Login attempt blocked for {} - locked out for {} more minutes", loginKey, remainingMinutes);
-            return R.fail(429, "登录尝试次数过多，请在 " + remainingMinutes + " 分钟后重试");
+            return R.fail(AuthCode.LOGIN_ATTEMPT_LOCKED.getCode(), "登录尝试次数过多，请在 " + remainingMinutes + " 分钟后重试");
         }
 
         try {
             LoginVO loginResponse = authService.login(loginCommand);
-            if (loginResponse == null) {
-                throw new SecurityException("Invalid username or password");
-            }
             loginAttemptTracker.clearAttempts(loginKey);
             return R.ok(loginResponse);
-        } catch (SecurityException e) {
+        } catch (BizException e) {
             loginAttemptTracker.recordFailedAttempt(loginKey);
-            return R.fail(401, e.getMessage());
+            return R.fail(e.getCode(), e.getMessage());
         }
     }
 
     private R<LoginVO> refreshToken(RefreshTokenCommand command) {
-        try {
-            LoginVO response = authService.refreshToken(command.getRefreshToken());
-            if (response == null) {
-                throw new SecurityException("Invalid or expired refresh token");
-            }
-            return R.ok(response);
-        } catch (SecurityException e) {
-            return R.fail(401, e.getMessage());
-        }
+        return R.ok(authService.refreshToken(command.getRefreshToken()));
     }
 
     @PostMapping("/refresh")
@@ -229,13 +221,9 @@ public class AuthController {
             @RequestHeader(value = "Authorization", required = false) String token) {
         String resolvedToken = stripBearer(token);
         Long userId = tokenProvider.getUserId(resolvedToken);
-        if (userId == null) {
-            return R.fail(401, "未登录");
-        }
+        Require.notNull(userId, AuthCode.ACCESS_TOKEN_INVALID);
         IdentityUserInfo userInfo = identityUserApi.getUserInfoById(userId).getData();
-        if (userInfo == null) {
-            return R.fail(404, "用户不存在");
-        }
+        Require.notNull(userInfo, AuthCode.CURRENT_USER_NOT_FOUND);
         LoginVO vo = new LoginVO();
         vo.setUserId(userInfo.getUserId());
         vo.setMemberId(parseLong(tokenProvider.getClaim(resolvedToken, "memberId")));
@@ -253,9 +241,7 @@ public class AuthController {
         vo.setTenantName(tokenProvider.getClaim(resolvedToken, "tenantName"));
         vo.setAppCode(appCode);
         Long memberId = vo.getMemberId();
-        if (memberId == null) {
-            return R.fail(401, "令牌缺少租户成员身份");
-        }
+        Require.notNull(memberId, AuthCode.INSTITUTION_MEMBER_REQUIRED);
         var snapshot = authorizationProvider.load(AuthorizationQuery.member(memberId)
                 .withTenantId(tenantId)
                 .withSystemCode(appCode)
@@ -272,9 +258,7 @@ public class AuthController {
     @Operation(summary = "发送登录验证码", description = "公开接口。发送短信或邮件验证码，用于登录、注册、找回密码等业务场景")
     public R<String> sendCaptcha(@Valid @RequestBody CaptchaSendRequest request) {
         CaptchaApi captchaApi = captchaApiProvider.getIfAvailable();
-        if (captchaApi == null) {
-            return R.fail(503, "验证码服务不可用");
-        }
+        Require.notNull(captchaApi, AuthCode.CAPTCHA_SERVICE_UNAVAILABLE);
         return R.ok(captchaApi.send(request));
     }
 

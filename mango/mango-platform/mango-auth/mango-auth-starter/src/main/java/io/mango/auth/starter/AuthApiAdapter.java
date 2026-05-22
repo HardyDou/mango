@@ -1,5 +1,6 @@
 package io.mango.auth.starter;
 
+import io.mango.auth.api.AuthCode;
 import io.mango.auth.api.AuthApi;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LogoutCommand;
@@ -7,6 +8,7 @@ import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.core.service.IAuthService;
+import io.mango.common.result.Require;
 import io.mango.common.result.R;
 import lombok.RequiredArgsConstructor;
 
@@ -23,18 +25,14 @@ public class AuthApiAdapter implements AuthApi {
     @Override
     public R<LoginVO> login(LoginCommand loginCommand) {
         LoginVO response = authService.login(loginCommand);
-        if (response == null) {
-            return R.fail(401, "Invalid username or password");
-        }
+        Require.notNull(response, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
         return R.ok(response);
     }
 
     @Override
     public R<LoginVO> refreshToken(RefreshTokenCommand command) {
         LoginVO response = authService.refreshToken(command.getRefreshToken());
-        if (response == null) {
-            return R.fail(401, "Invalid or expired refresh token");
-        }
+        Require.notNull(response, AuthCode.REFRESH_TOKEN_INVALID);
         return R.ok(response);
     }
 

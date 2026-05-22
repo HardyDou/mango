@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
-import io.mango.common.exception.BizException;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.workflow.api.WorkflowCode;
@@ -1164,7 +1163,7 @@ public class WorkflowTaskRuntimeServiceImpl implements IWorkflowTaskRuntimeServi
         try {
             model = repositoryService.getBpmnModel(task.getProcessDefinitionId());
         } catch (FlowableObjectNotFoundException e) {
-            throw new BizException(WorkflowCode.TASK_INVALID.getCode(), "当前任务引用的流程定义不存在，请清理测试脏数据后重试");
+            return Require.fail(WorkflowCode.TASK_INVALID.getCode(), "当前任务引用的流程定义不存在，请清理测试脏数据后重试");
         }
         if (model == null) {
             return null;

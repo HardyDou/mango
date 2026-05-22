@@ -59,22 +59,14 @@ public class AuthServiceImpl implements IAuthService {
         String username = command.getUsername();
         // 1. 校验账号。
         AuthUserInfo user = authUserProvider.getByUsernameForAuth(username, command.getRealm());
-        if (user == null) {
-            log.warn("Login failed: user not found - {}", username);
-            return null;
-        }
+        Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
 
         // 2. 校验密码。
-        if (!passwordEncoder.matches(command.getPassword(), user.getPassword())) {
-            log.warn("Login failed: invalid password for user - {}", username);
-            return null;
-        }
+        Require.isTrue(passwordEncoder.matches(command.getPassword(), user.getPassword()),
+                AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
 
         // 3. 校验用户状态。
-        if (user.getStatus() != 1) {
-            log.warn("Login failed: user is disabled - {}", username);
-            return null;
-        }
+        Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
 
         // 4. 生成令牌。
         IdentityContext identityContext = resolveIdentityContext(user, command);
@@ -115,28 +107,21 @@ public class AuthServiceImpl implements IAuthService {
         }
         if (isRevoked(oldRefreshToken)) {
             log.warn("Refresh token has been revoked");
-            return null;
+            return Require.fail(AuthCode.REFRESH_TOKEN_INVALID);
         }
 
         // 1. 校验并刷新令牌。
         ITokenProvider.TokenPair tokenPair = tokenService.refresh(oldRefreshToken);
-        if (tokenPair == null) {
-            log.warn("Refresh token is invalid or expired");
-            return null;
-        }
+        Require.notNull(tokenPair, AuthCode.REFRESH_TOKEN_INVALID);
 
         // 2. 从旧刷新令牌中读取用户 ID，此时旧令牌仍处于有效状态。
         Long userId = tokenService.getUserId(oldRefreshToken);
-        if (userId == null) {
-            return null;
-        }
+        Require.notNull(userId, AuthCode.REFRESH_TOKEN_INVALID);
 
         // 3. 加载用户。
         AuthUserInfo user = authUserProvider.getByIdForAuth(userId);
-        if (user == null || user.getStatus() != 1) {
-            log.warn("User not found or disabled during refresh: {}", userId);
-            return null;
-        }
+        Require.notNull(user, AuthCode.REFRESH_TOKEN_INVALID);
+        Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
 
         IdentityContext identityContext = resolveIdentityContext(user, oldRefreshToken);
         // 4. 构造响应。

@@ -419,6 +419,10 @@ async function submitAction(action: WorkflowTaskActionKey) {
     } else {
       await router.push(action === 'claim' || action === 'unclaim' ? '/workflow/task/todo' : '/workflow/task/done');
     }
+  } catch (error) {
+    if (!isKnownRequestError(error)) {
+      ElMessage.error(error instanceof Error ? error.message : `${actionName}失败`);
+    }
   } finally {
     submitting.value = false;
     submittingAction.value = '';
@@ -558,6 +562,10 @@ function collectActionComment(action: WorkflowTaskActionKey) {
     return '';
   }
   return collectBusinessApprovalComment(businessRegistration.value, businessContext.value, action, actionForm.value.comment);
+}
+
+function isKnownRequestError(error: unknown) {
+  return Boolean(error && typeof error === 'object' && 'response' in error);
 }
 
 function backToList() {

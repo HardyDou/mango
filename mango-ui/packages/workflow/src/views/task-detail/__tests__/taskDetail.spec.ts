@@ -7,6 +7,7 @@ const routeQuery = reactive<Record<string, any>>({ taskId: 'task-1' });
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   messageWarning: vi.fn(),
+  messageError: vi.fn(),
 }));
 
 vi.mock('vue-router', () => ({
@@ -20,6 +21,7 @@ vi.mock('element-plus', async () => {
     ...actual,
     ElMessage: {
       warning: mocks.messageWarning,
+      error: mocks.messageError,
       success: vi.fn(),
     },
     ElMessageBox: {
@@ -50,8 +52,11 @@ vi.mock('../../../api/workflow', async () => {
     workflowApi: {
       taskDetail: vi.fn(),
       businessApplyByProcessInstance: vi.fn(),
+      completeTask: vi.fn(() => Promise.resolve(true)),
       transferTask: vi.fn(() => Promise.resolve(true)),
       addSignTask: vi.fn(() => Promise.resolve(true)),
+      claimTask: vi.fn(() => Promise.resolve(true)),
+      unclaimTask: vi.fn(() => Promise.resolve(true)),
     },
   };
 });
@@ -259,7 +264,7 @@ describe('workflow task detail', () => {
         { type: 'textarea', field: 'reason', title: '说明' },
       ]),
       variables: {
-        title: 'WFTEST_20260521 认领验证 823838',
+        title: '候选任务详情示例',
         reason: '认领节点只读验证',
       },
       formPermissions: {},
@@ -268,7 +273,7 @@ describe('workflow task detail', () => {
 
     const { el, unmount } = await mountTaskDetail();
 
-    expect(el.textContent).toContain('WFTEST_20260521 认领验证 823838');
+    expect(el.textContent).toContain('候选任务详情示例');
     expect(el.textContent).toContain('认领节点只读验证');
     expect(el.querySelectorAll('.readonly-value')).toHaveLength(2);
     expect(el.querySelectorAll('textarea')).toHaveLength(1);

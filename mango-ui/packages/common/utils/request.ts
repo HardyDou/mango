@@ -15,6 +15,12 @@ export interface RequestConfig extends AxiosRequestConfig {
   retry?: number;
   /** 是否返回原始响应，适用于文件下载等非业务包裹响应 */
   rawResponse?: boolean;
+  /** 是否跳过 refresh token 续期 */
+  skipRefreshToken?: boolean;
+  /** 是否静默处理错误提示 */
+  silentError?: boolean;
+  /** 内部标记：当前请求是否已经重试过 */
+  _retry?: boolean;
 }
 
 export interface ResponseResult<T = any> {
@@ -49,6 +55,9 @@ let requestCount = 0;
 // 401 重定向保护标志
 let isRedirecting = false;
 let unauthorizedHandler: UnauthorizedHandler | null = null;
+let refreshPromise: Promise<string | null> | null = null;
+const REFRESH_BEFORE_EXPIRE_MS = 5 * 60 * 1000;
+const AUTH_EXPIRED_CODES = new Set([401, 1410, 1411]);
 
 function resolveApiBaseUrl(): string {
   const wujieRuntime = typeof window !== 'undefined'
@@ -84,6 +93,68 @@ async function handleUnauthorized(message?: string): Promise<void> {
   } finally {
     isRedirecting = false;
   }
+}
+
+function shouldRefreshToken(config: RequestConfig): boolean {
+  if (config.ignoreToken || config.skipRefreshToken) {
+    return false;
+  }
+  const refreshToken = Session.getRefreshToken?.();
+  if (!refreshToken) {
+    return false;
+  }
+  const expiresAt = Session.getTokenExpiresAt?.();
+  return !expiresAt || expiresAt - Date.now() <= REFRESH_BEFORE_EXPIRE_MS;
+}
+
+function persistLoginSession(data: any): string | null {
+  const token = data?.accessToken || data?.token;
+  if (!token) {
+    return null;
+  }
+  Session.setToken(token, {
+    refreshToken: data?.refreshToken || Session.getRefreshToken?.() || undefined,
+    expiresIn: Number(data?.expiresIn) || undefined,
+  });
+  const userInfo = Session.get('userInfo') || {};
+  const mergedUserInfo = {
+    ...userInfo,
+    ...data,
+    tenantId: data?.tenantId ?? userInfo.tenantId,
+    tenantCode: data?.tenantCode ?? userInfo.tenantCode,
+    tenantName: data?.tenantName ?? userInfo.tenantName,
+    realm: data?.realm ?? userInfo.realm,
+    actorType: data?.actorType ?? userInfo.actorType,
+    partyType: data?.partyType ?? userInfo.partyType,
+    partyId: data?.partyId ?? userInfo.partyId,
+    appCode: data?.appCode ?? userInfo.appCode,
+  };
+  Session.set('userInfo', mergedUserInfo);
+  if (mergedUserInfo.tenantId) {
+    Session.set('tenantId', mergedUserInfo.tenantId);
+  }
+  return token;
+}
+
+function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+  const refreshToken = Session.getRefreshToken?.();
+  if (!refreshToken) {
+    return Promise.resolve(null);
+  }
+  refreshPromise = service.post('/auth/refresh', { refreshToken }, {
+    ignoreToken: true,
+    skipRefreshToken: true,
+    silentError: true,
+  } as RequestConfig)
+    .then((data: any) => persistLoginSession(data))
+    .catch(() => null)
+    .finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
 }
 
 /**
@@ -140,6 +211,14 @@ service.interceptors.request.use(
   async (config: RequestConfig) => {
     showLoading();
 
+    if (shouldRefreshToken(config)) {
+      const refreshedToken = await refreshAccessToken();
+      if (refreshedToken) {
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${refreshedToken}`;
+      }
+    }
+
     // 添加 Token
     if (!config.ignoreToken) {
       handleToken(config);
@@ -160,7 +239,7 @@ service.interceptors.request.use(
  * 响应拦截器
  */
 service.interceptors.response.use(
-  (response: AxiosResponse<ResponseResult>) => {
+  async (response: AxiosResponse<ResponseResult>) => {
     hideLoading();
 
     const config = response.config as RequestConfig;
@@ -177,29 +256,48 @@ service.interceptors.response.use(
     }
 
     // token 过期
-    if (code === 401) {
+    if (isAuthExpiredCode(code)) {
+      if (!config._retry && !config.skipRefreshToken && Session.getRefreshToken?.()) {
+        config._retry = true;
+        const refreshedToken = await refreshAccessToken();
+        if (refreshedToken) {
+          config.headers = config.headers || {};
+          config.headers['Authorization'] = `Bearer ${refreshedToken}`;
+          return service(config);
+        }
+      }
       void handleUnauthorized(message || '登录已过期，请重新登录');
-      return Promise.reject(new Error(message || '登录已过期'));
+      return Promise.reject(createRequestError(message || '登录已过期', code, response));
     }
 
     // 其他错误
     const errorMessage = resolveBusinessErrorMessage(code, message);
-    mangoMessage.error(errorMessage);
-    return Promise.reject(new Error(errorMessage));
+    if (!config.silentError) {
+      mangoMessage.error(errorMessage);
+    }
+    return Promise.reject(createRequestError(errorMessage, code, response));
   },
-  (error) => {
+  async (error) => {
     hideLoading();
 
     // 处理 HTTP 错误
+    const config = (error.config || {}) as RequestConfig;
     const status = error.response?.status;
     const responseData = error.response?.data;
     const message = resolveHttpErrorMessage(status, responseData, error.message);
 
     if (status === 401) {
+      if (!config._retry && !config.skipRefreshToken && Session.getRefreshToken?.()) {
+        config._retry = true;
+        const refreshedToken = await refreshAccessToken();
+        if (refreshedToken) {
+          config.headers = config.headers || {};
+          config.headers['Authorization'] = `Bearer ${refreshedToken}`;
+          return service(config);
+        }
+      }
       void handleUnauthorized('登录已过期，请重新登录');
-    } else if (status === 403) {
-      mangoMessage.error(message);
-    } else {
+    } else if (!config.silentError) {
       mangoMessage.error(message);
     }
 
@@ -241,10 +339,11 @@ function resolveBusinessErrorMessage(code: number, message?: string): string {
   if (message) {
     return message;
   }
-  if (code === 500) {
-    return '系统异常';
-  }
-  return '请求失败';
+  return errorCodeMessage[code] || '请求失败';
+}
+
+function isAuthExpiredCode(code?: number): boolean {
+  return typeof code === 'number' && AUTH_EXPIRED_CODES.has(code);
 }
 
 export function resolveHttpErrorMessage(
@@ -258,15 +357,16 @@ export function resolveHttpErrorMessage(
   if (responseMessage) {
     return String(responseMessage);
   }
-  if (status === 500) {
-    return '系统异常';
-  }
-  if (status === 502) {
-    return '网关错误';
-  }
   return (status ? errorCodeMessage[status] : undefined)
     || fallbackMessage
     || '网络错误';
+}
+
+function createRequestError(message: string, code?: number, response?: AxiosResponse): RequestError & Error {
+  const error = new Error(message) as RequestError & Error;
+  error.code = code;
+  error.response = response;
+  return error;
 }
 
 /**
