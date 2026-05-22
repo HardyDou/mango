@@ -22,6 +22,7 @@ export function registerDefaultAdminPages() {
     'demo/components/WebsocketView': () => import('../../../apps/mango-admin/src/views/demo/components/WebsocketView.vue'),
     'demo/components/ChinaAreaView': () => import('../../../apps/mango-admin/src/views/demo/components/ChinaAreaView.vue'),
     'demo/components/OrgSelectorView': () => import('../../../apps/mango-admin/src/views/demo/components/OrgSelectorView.vue'),
+    'demo/components/WorkflowComponentsView': () => import('../../../apps/mango-admin/src/views/demo/components/WorkflowComponentsView.vue'),
     'demo/components/CaptchaView': () => import('../../../apps/mango-admin/src/views/demo/components/CaptchaView.vue'),
   };
   const devComponentPages = import.meta.env.DEV ? DEV_COMPONENT_DEMO_PAGES.reduce<Record<string, MangoPageLoader>>((pages, page) => {

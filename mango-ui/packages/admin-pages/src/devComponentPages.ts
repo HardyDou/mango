@@ -48,13 +48,22 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     sort: 4,
   },
   {
+    menuId: 'shell-components-workflow',
+    menuName: '工作流组件',
+    menuCode: 'shell:components:workflow',
+    path: '/components/workflow',
+    component: 'demo/components/WorkflowComponentsView',
+    icon: 'Stamp',
+    sort: 5,
+  },
+  {
     menuId: 'shell-components-captcha',
     menuName: '验证码',
     menuCode: 'shell:components:captcha',
     path: '/components/captcha',
     component: 'demo/components/CaptchaView',
     icon: 'Key',
-    sort: 5,
+    sort: 6,
   },
   {
     menuId: 'shell-components-charts',
@@ -63,7 +72,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     path: '/components/charts',
     component: 'demo/components/ChartsView',
     icon: 'TrendCharts',
-    sort: 6,
+    sort: 7,
   },
   {
     menuId: 'shell-components-directive',
@@ -72,7 +81,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     path: '/components/directive',
     component: 'demo/components/DirectiveView',
     icon: 'Pointer',
-    sort: 7,
+    sort: 8,
   },
   {
     menuId: 'shell-components-china-area',
@@ -81,7 +90,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     path: '/components/china-area',
     component: 'demo/components/ChinaAreaView',
     icon: 'MapLocation',
-    sort: 8,
+    sort: 9,
   },
   {
     menuId: 'shell-components-chat',
@@ -90,7 +99,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     path: '/components/chat',
     component: 'demo/components/ChatView',
     icon: 'ChatDotRound',
-    sort: 9,
+    sort: 10,
   },
   {
     menuId: 'shell-components-websocket',
@@ -99,7 +108,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     path: '/components/websocket',
     component: 'demo/components/WebsocketView',
     icon: 'Connection',
-    sort: 10,
+    sort: 11,
   },
   {
     menuId: 'shell-components-sse',
@@ -108,6 +117,6 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     path: '/components/sse',
     component: 'demo/components/SSEView',
     icon: 'Connection',
-    sort: 11,
+    sort: 12,
   },
 ];
