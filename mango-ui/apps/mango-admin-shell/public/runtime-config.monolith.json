@@ -12,6 +12,10 @@
     "mango-workflow": {
       "mode": "local",
       "runtimeCode": "mango-admin-workflow-local"
+    },
+    "mango-template": {
+      "mode": "local",
+      "runtimeCode": "mango-admin-template-local"
     }
   }
 }

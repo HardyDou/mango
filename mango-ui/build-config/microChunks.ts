@@ -38,6 +38,9 @@ export function mangoMicroManualChunks(id: string) {
   if (id.includes('/packages/system/')) {
     return 'mango-system';
   }
+  if (id.includes('/packages/template/')) {
+    return 'mango-template';
+  }
   if (id.includes('/packages/workflow/')) {
     return 'mango-workflow';
   }

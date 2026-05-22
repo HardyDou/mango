@@ -14,6 +14,11 @@
       "mode": "micro",
       "runtimeCode": "mango-admin-workflow-app",
       "entry": "http://c.mango.io:5182/"
+    },
+    "mango-template": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-template-app",
+      "entry": "http://d.mango.io:5183/"
     }
   }
 }

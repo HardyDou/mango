@@ -20,6 +20,14 @@
       "timeoutMs": 15000,
       "preload": true,
       "alive": false
+    },
+    "mango-template": {
+      "mode": "micro",
+      "runtimeCode": "mango-admin-template-app",
+      "entry": "https://template.mango.io/",
+      "timeoutMs": 15000,
+      "preload": false,
+      "alive": false
     }
   }
 }

@@ -47,6 +47,8 @@
         <module>mango-infra-ip-location</module>
         <!-- Log (Logback configuration, multi-env support, audit annotations) -->
         <module>mango-infra-log</module>
+        <!-- Tools (local document/image/archive utilities, no external middleware) -->
+        <module>mango-infra-tools</module>
         <!-- Test (Unified test module for all infrastructure components) -->
         <module>mango-infra-test</module>
     </modules>

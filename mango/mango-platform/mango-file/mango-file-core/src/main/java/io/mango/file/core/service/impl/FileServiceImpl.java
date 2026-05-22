@@ -64,6 +64,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -208,6 +209,60 @@ public class FileServiceImpl implements IFileService {
                 .map(item -> upload(item, purpose, accessLevel, bizType, bizId, bizMeta, directoryId).getData())
                 .collect(Collectors.toList());
         return R.ok(result);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileRecordVO> saveGenerated(byte[] content,
+                                         String fileName,
+                                         String contentType,
+                                         String purpose,
+                                         String bizType,
+                                         String bizId) {
+        Require.notNull(content, FileCode.FILE_EMPTY);
+        Long tenantId = requireTenantId();
+        Long userId = MangoContextHolder.userId();
+        String originalFilename = normalizeFileName(fileName);
+        String fileExt = fileExt(originalFilename);
+        FileSettingsVO settings = settingsService.current();
+        validateExtension(fileExt, settings);
+        validateContentType(contentType, settings);
+        FileStorageConfig storageConfig = activeStorageConfig();
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String hash = HexFormat.of().formatHex(digest.digest(content));
+            Long fileSize = (long) content.length;
+            FileObjectEntity fileObject = findInstantUploadObject(tenantId, storageConfig, hash, fileSize, settings);
+            if (fileObject == null) {
+                fileObject = findCompletedObject(storageConfig, hash, fileSize);
+            }
+            if (fileObject == null) {
+                String objectName = generateObjectName(storageConfig, tenantId, 0L, originalFilename, fileExt, hash, settings);
+                fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, contentType);
+                fileObject = createFileObject(tenantId, storageConfig, objectName, hash, fileSize, contentType, 0L);
+                createHashMapping(tenantId, storageConfig, hash, fileSize, fileObject, settings);
+            }
+            FileRecord entity = createFileRecord(tenantId,
+                    userId,
+                    fileObject,
+                    originalFilename,
+                    fileExt,
+                    fileSize,
+                    contentType,
+                    hash,
+                    purpose,
+                    FileAccessLevel.PRIVATE.name(),
+                    bizType,
+                    bizId,
+                    null,
+                    0L,
+                    settings);
+            fileRecordMapper.insert(entity);
+            incrementObjectRefCount(fileObject.getId());
+            return R.ok(toVO(entity));
+        } catch (Exception e) {
+            return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
     }
 
     @Override
@@ -513,7 +568,7 @@ public class FileServiceImpl implements IFileService {
         if (!Boolean.TRUE.equals(query.getIncludeArchived())) {
             wrapper.eq(FileRecord::getArchived, 0);
         }
-        wrapper.orderByDesc(FileRecord::getCreatedTime);
+        wrapper.orderByDesc(FileRecord::getId);
         return wrapper;
     }
 
@@ -1074,6 +1129,21 @@ public class FileServiceImpl implements IFileService {
             return null;
         }
         return fileObject;
+    }
+
+    private FileObjectEntity findCompletedObject(FileStorageConfig storageConfig,
+                                                 String hash,
+                                                 Long fileSize) {
+        if (!StringUtils.hasText(hash) || fileSize == null) {
+            return null;
+        }
+        return fileObjectMapper.selectOne(new LambdaQueryWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
+                .eq(FileObjectEntity::getBucketName, storageConfig.getBucketName())
+                .eq(FileObjectEntity::getFileHash, hash)
+                .eq(FileObjectEntity::getFileSize, fileSize)
+                .eq(FileObjectEntity::getStatus, FileObjectStatus.COMPLETED.value())
+                .last("LIMIT 1"));
     }
 
     private FileObjectEntity createFileObject(Long tenantId,

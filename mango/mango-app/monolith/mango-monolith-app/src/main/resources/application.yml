@@ -104,6 +104,8 @@ mango:
           enabled: true
         file:
           enabled: true
+        template:
+          enabled: true
         workflow:
           enabled: true
         kv:

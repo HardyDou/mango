@@ -68,6 +68,16 @@ export function registerDefaultAdminPages() {
       },
     },
     {
+      moduleCode: 'mango-template',
+      pages: {
+        'system/template/index': () => import('@mango/template/src/views/templates/index.vue'),
+        'template/templates/index': () => import('@mango/template/src/views/templates/index.vue'),
+        'template/categories/index': () => import('@mango/template/src/views/categories/index.vue'),
+        'template/render-records/index': () => import('@mango/template/src/views/render-records/index.vue'),
+        'debug/capabilities/template': () => import('@mango/template/src/views/platform-capabilities/template/index.vue'),
+      },
+    },
+    {
       moduleCode: 'mango-file',
       pages: {
         'file/files/index': () => import('@mango/file').then(m => m.FileView),
