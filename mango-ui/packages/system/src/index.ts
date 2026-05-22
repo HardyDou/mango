@@ -6,9 +6,6 @@ export { default as ConfigView } from './views/config/index.vue';
 export { default as RouteView } from './views/route/index.vue';
 export { default as PublicPathView } from './views/public-path/index.vue';
 export { default as AreaView } from './views/area/index.vue';
-export { default as TemplateView } from './views/template/index.vue';
-export { default as TemplateCategoryView } from './views/template/categories/index.vue';
-export { default as TemplateServiceGuideView } from './views/platform-capabilities/template/index.vue';
 
 export * from './api/area';
 export * from './api/dict';
@@ -18,4 +15,3 @@ export * from './api/config';
 export * from './api/route';
 export * from './api/publicPath';
 export * from './api/param';
-export * from './api/template';

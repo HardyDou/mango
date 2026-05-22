@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { mangoMicroManualChunks } from '../../build-config/microChunks';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
-const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io'];
+const DEV_ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io', 'd.mango.io'];
 
 function validateProxyTarget(target: string): string {
   const url = new URL(target);

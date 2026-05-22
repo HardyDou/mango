@@ -231,16 +231,23 @@ public class FileServiceImpl implements IFileService {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             String hash = HexFormat.of().formatHex(digest.digest(content));
-            String objectName = generateObjectName(storageConfig, tenantId, 0L, originalFilename, fileExt, hash, settings);
-            fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, contentType);
-            FileObjectEntity fileObject = createFileObject(tenantId, storageConfig, objectName, hash, (long) content.length, contentType, 0L);
-            createHashMapping(tenantId, storageConfig, hash, (long) content.length, fileObject, settings);
+            Long fileSize = (long) content.length;
+            FileObjectEntity fileObject = findInstantUploadObject(tenantId, storageConfig, hash, fileSize, settings);
+            if (fileObject == null) {
+                fileObject = findCompletedObject(storageConfig, hash, fileSize);
+            }
+            if (fileObject == null) {
+                String objectName = generateObjectName(storageConfig, tenantId, 0L, originalFilename, fileExt, hash, settings);
+                fileStorageRouter.putObject(storageConfig, objectName, new ByteArrayInputStream(content), content.length, contentType);
+                fileObject = createFileObject(tenantId, storageConfig, objectName, hash, fileSize, contentType, 0L);
+                createHashMapping(tenantId, storageConfig, hash, fileSize, fileObject, settings);
+            }
             FileRecord entity = createFileRecord(tenantId,
                     userId,
                     fileObject,
                     originalFilename,
                     fileExt,
-                    (long) content.length,
+                    fileSize,
                     contentType,
                     hash,
                     purpose,
@@ -561,7 +568,7 @@ public class FileServiceImpl implements IFileService {
         if (!Boolean.TRUE.equals(query.getIncludeArchived())) {
             wrapper.eq(FileRecord::getArchived, 0);
         }
-        wrapper.orderByDesc(FileRecord::getCreatedTime);
+        wrapper.orderByDesc(FileRecord::getId);
         return wrapper;
     }
 
@@ -1122,6 +1129,21 @@ public class FileServiceImpl implements IFileService {
             return null;
         }
         return fileObject;
+    }
+
+    private FileObjectEntity findCompletedObject(FileStorageConfig storageConfig,
+                                                 String hash,
+                                                 Long fileSize) {
+        if (!StringUtils.hasText(hash) || fileSize == null) {
+            return null;
+        }
+        return fileObjectMapper.selectOne(new LambdaQueryWrapper<FileObjectEntity>()
+                .eq(FileObjectEntity::getStorageConfigId, normalizedStorageConfigId(storageConfig))
+                .eq(FileObjectEntity::getBucketName, storageConfig.getBucketName())
+                .eq(FileObjectEntity::getFileHash, hash)
+                .eq(FileObjectEntity::getFileSize, fileSize)
+                .eq(FileObjectEntity::getStatus, FileObjectStatus.COMPLETED.value())
+                .last("LIMIT 1"));
     }
 
     private FileObjectEntity createFileObject(Long tenantId,

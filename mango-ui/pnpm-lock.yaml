@@ -324,6 +324,49 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
+  apps/mango-admin-template-app:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: workspace:*
+        version: link:../../packages/admin-pages
+      '@mango/app-runtime':
+        specifier: workspace:*
+        version: link:../../packages/app-runtime
+      '@mango/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mango/template':
+        specifier: workspace:*
+        version: link:../../packages/template
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: ^2.0.33
+        version: 2.3.1(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+
   apps/mango-admin-workflow-app:
     dependencies:
       '@element-plus/icons-vue':
@@ -387,6 +430,9 @@ importers:
       '@mango/system':
         specifier: workspace:*
         version: link:../system
+      '@mango/template':
+        specifier: workspace:*
+        version: link:../template
       '@mango/workflow':
         specifier: workspace:*
         version: link:../workflow
@@ -577,6 +623,27 @@ importers:
       form-create-designer:
         specifier: 3.2.11-oem
         version: 3.2.11-oem(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+
+  packages/template:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../file
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.9.3)
