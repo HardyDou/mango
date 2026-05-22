@@ -14,13 +14,18 @@ import java.util.List;
 public class RealtimeWebSocketConfiguration implements WebSocketConfigurer {
 
     private final RealtimeWebSocketHandler webSocketHandler;
+    private final ProbeWebSocketHandler probeWebSocketHandler;
     private final RealtimeWebSocketHandshakeInterceptor handshakeInterceptor;
     private final String endpoint;
+    private final String probeEndpoint;
     private final List<String> allowedOrigins;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(webSocketHandler, endpoint)
+                .addInterceptors(handshakeInterceptor)
+                .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
+        registry.addHandler(probeWebSocketHandler, probeEndpoint)
                 .addInterceptors(handshakeInterceptor)
                 .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
     }

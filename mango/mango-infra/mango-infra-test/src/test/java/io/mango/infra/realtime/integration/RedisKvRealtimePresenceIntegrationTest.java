@@ -3,8 +3,10 @@ package io.mango.infra.realtime.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.mango.infra.kv.api.IKvStore;
+import io.mango.infra.kv.core.memory.MemoryKvStore;
 import io.mango.infra.kv.core.redis.RedisKvStore;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeTarget;
 import io.mango.infra.realtime.core.outbound.IRealtimeOutboundForwardService;
 import io.mango.infra.realtime.core.outbound.RealtimeProtocolSender;
 import io.mango.infra.realtime.core.outbound.RealtimePublishService;
@@ -79,12 +81,14 @@ class RedisKvRealtimePresenceIntegrationTest {
                     "session-a",
                     "tenant-a",
                     1001L,
+                    "client-a",
                     "websocket",
                     new RealtimeNode("node-a", "svc-a", "/", "/_realtime/messages/outbound"));
             RealtimePresence sseB = RealtimePresence.of(
                     "session-b",
                     "tenant-a",
                     1002L,
+                    "client-b",
                     "sse",
                     new RealtimeNode("node-b", "svc-b", "/app", "/_realtime/messages/outbound"));
 
@@ -122,6 +126,7 @@ class RedisKvRealtimePresenceIntegrationTest {
                     "session-refresh",
                     "tenant-refresh",
                     3001L,
+                    "client-refresh",
                     "websocket",
                     new RealtimeNode("node-refresh", "svc-refresh", "/", "/_realtime/messages/outbound"));
 
@@ -147,12 +152,14 @@ class RedisKvRealtimePresenceIntegrationTest {
                     "session-local",
                     "tenant-a",
                     2001L,
+                    "client-local",
                     "websocket",
                     localNode);
             RealtimePresence remotePresence = RealtimePresence.of(
                     "session-remote",
                     "tenant-a",
                     2001L,
+                    "client-remote",
                     "sse",
                     new RealtimeNode("node-remote", "svc-remote", "/rt", "/_realtime/messages/outbound"));
 
@@ -172,10 +179,105 @@ class RedisKvRealtimePresenceIntegrationTest {
 
             assertThat(protocolSender.userMessages)
                     .extracting(RealtimeOutboundMessage::type)
-                    .containsExactly("task.done");
+                    .containsExactly("done");
             assertThat(forwardService.forwardedMessages)
                     .extracting(RealtimeOutboundMessage::type)
-                    .containsExactly("task.done");
+                    .containsExactly("done");
+            assertThat(forwardService.forwardedPresences)
+                    .extracting(RealtimePresence::instanceId)
+                    .containsExactly("node-remote");
+        }
+    }
+
+    @Test
+    void groupPresence_refreshesGroupIndexAndCleansItOnOffline() throws Exception {
+        try (MemoryKvStore memoryKvStore = new MemoryKvStore();
+             KvRealtimePresenceService presenceService = new KvRealtimePresenceService(
+                     memoryKvStore,
+                     memoryKvStore,
+                     objectMapper,
+                     KEY_PREFIX + ":memory",
+                     9)) {
+            RealtimePresence presence = RealtimePresence.of(
+                    "session-group",
+                    "tenant-group",
+                    4001L,
+                    "client-group",
+                    "websocket",
+                    new RealtimeNode("node-group", "svc-group", "/", "/_realtime/messages/outbound"));
+
+            presenceService.online(presence);
+            presenceService.joinGroup("session-group", "tenant-group", "room-001");
+
+            Thread.sleep(Duration.ofSeconds(6).toMillis());
+
+            assertThat(presenceService.findByGroup("tenant-group", "room-001"))
+                    .extracting(RealtimePresence::sessionId)
+                    .containsExactly("session-group");
+
+            presenceService.offline("session-group");
+
+            assertThat(presenceService.findByGroup("tenant-group", "room-001")).isEmpty();
+        }
+    }
+
+    @Test
+    void publish_usesGroupPresenceToForwardOnlyRemoteGroupMembers() throws Exception {
+        try (KvRealtimePresenceService presenceService = new KvRealtimePresenceService(
+                kvStore,
+                (RedisKvStore) kvStore,
+                objectMapper,
+                KEY_PREFIX,
+                30)) {
+            RealtimeNode localNode = new RealtimeNode("node-local", "svc-local", "/", "/_realtime/messages/outbound");
+            RealtimePresence localPresence = RealtimePresence.of(
+                    "session-local-group",
+                    "tenant-a",
+                    2001L,
+                    "client-local",
+                    "websocket",
+                    localNode);
+            RealtimePresence remotePresence = RealtimePresence.of(
+                    "session-remote-group",
+                    "tenant-a",
+                    2002L,
+                    "client-remote",
+                    "sse",
+                    new RealtimeNode("node-remote", "svc-remote", "/rt", "/_realtime/messages/outbound"));
+
+            presenceService.online(localPresence);
+            presenceService.online(remotePresence);
+            presenceService.joinGroup("session-local-group", "tenant-a", "room-001");
+            presenceService.joinGroup("session-remote-group", "tenant-a", "room-001");
+
+            RecordingProtocolSender protocolSender = new RecordingProtocolSender();
+            RecordingOutboundForwardService forwardService = new RecordingOutboundForwardService();
+            RealtimePublishService publishService = new RealtimePublishService(
+                    List.of(protocolSender),
+                    presenceService,
+                    forwardService,
+                    localNode);
+
+            RealtimeOutboundMessage message = new RealtimeOutboundMessage(
+                    null,
+                    "1.0",
+                    null,
+                    null,
+                    io.mango.infra.realtime.api.dto.RealtimeContext.of("tenant-a", null),
+                    RealtimeTarget.group("room-001"),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null);
+            publishService.publish(message);
+
+            assertThat(protocolSender.groupMessages)
+                    .extracting(RealtimeOutboundMessage::resolvedTarget)
+                    .extracting(RealtimeTarget::id)
+                    .containsExactly("room-001");
             assertThat(forwardService.forwardedPresences)
                     .extracting(RealtimePresence::instanceId)
                     .containsExactly("node-remote");
@@ -185,6 +287,7 @@ class RedisKvRealtimePresenceIntegrationTest {
     private static final class RecordingProtocolSender implements RealtimeProtocolSender {
 
         private final List<RealtimeOutboundMessage> userMessages = new ArrayList<>();
+        private final List<RealtimeOutboundMessage> groupMessages = new ArrayList<>();
 
         @Override
         public String protocol() {
@@ -194,6 +297,19 @@ class RedisKvRealtimePresenceIntegrationTest {
         @Override
         public void sendToUser(Long userId, RealtimeOutboundMessage envelope) {
             userMessages.add(envelope);
+        }
+
+        @Override
+        public void sendToClient(String tenantId, String clientId, RealtimeOutboundMessage envelope) {
+        }
+
+        @Override
+        public void sendToConnection(String connectionId, RealtimeOutboundMessage envelope) {
+        }
+
+        @Override
+        public void sendToGroup(String tenantId, String groupId, RealtimeOutboundMessage envelope) {
+            groupMessages.add(envelope);
         }
 
         @Override

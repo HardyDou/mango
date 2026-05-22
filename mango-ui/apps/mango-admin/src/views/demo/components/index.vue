@@ -37,11 +37,10 @@
 
     <section id="realtime" class="doc-section">
       <h2>实时通信</h2>
-      <p>AI 对话、WebSocket 和 SSE 用于在线交互、消息推送和服务端通知。</p>
+      <p>AI 对话和实时通信用于在线交互、消息推送和服务端通知。</p>
       <div class="component-grid">
         <ComponentEntry title="AI 对话组件" desc="浮动对话、推荐问题、会话 ID 和流式返回。" path="/components/chat" />
-        <ComponentEntry title="WebSocket 客户端" desc="认证参数、心跳、重连和消息发送。" path="/components/websocket" />
-        <ComponentEntry title="服务端推送 (SSE)" desc="服务端单向推送、重连和消息通知。" path="/components/sse" />
+        <ComponentEntry title="实时通信" desc="Auto 协商、WebSocket、SSE、Ajax、心跳、重连和消息发送。" path="/components/realtime" />
       </div>
     </section>
   </DemoDocLayout>

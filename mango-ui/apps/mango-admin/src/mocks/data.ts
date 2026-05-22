@@ -312,6 +312,7 @@ export const mockMenus: SysMenuVO[] = [
         sort: 1,
         status: 1,
         visible: 1,
+
         children: [
           { menuId: 313, parentId: 31, menuType: 1, menuName: '文件上传', menuCode: 'components:upload', path: '/components/upload', component: 'demo/components/UploadView', icon: 'Upload', sort: 1, status: 1, visible: 1, children: [] },
           { menuId: 311, parentId: 31, menuType: 1, menuName: '富文本编辑器', menuCode: 'components:editor', path: '/components/editor', component: 'demo/components/EditorView', icon: 'Edit', sort: 2, status: 1, visible: 1, children: [] },
@@ -322,9 +323,9 @@ export const mockMenus: SysMenuVO[] = [
           { menuId: 315, parentId: 31, menuType: 1, menuName: '功能指令', menuCode: 'components:directive', path: '/components/directive', component: 'demo/components/DirectiveView', icon: 'Pointer', sort: 7, status: 1, visible: 1, children: [] },
           { menuId: 319, parentId: 31, menuType: 1, menuName: '省市区选择器', menuCode: 'components:china-area', path: '/components/china-area', component: 'demo/components/ChinaAreaView', icon: 'MapLocation', sort: 8, status: 1, visible: 1, children: [] },
           { menuId: 316, parentId: 31, menuType: 1, menuName: 'AI 对话', menuCode: 'components:chat', path: '/components/chat', component: 'demo/components/ChatView', icon: 'ChatDotRound', sort: 9, status: 1, visible: 1, children: [] },
-          { menuId: 318, parentId: 31, menuType: 1, menuName: 'WebSocket', menuCode: 'components:websocket', path: '/components/websocket', component: 'demo/components/WebsocketView', icon: 'Connection', sort: 10, status: 1, visible: 1, children: [] },
-          { menuId: 317, parentId: 31, menuType: 1, menuName: '服务端推送', menuCode: 'components:sse', path: '/components/sse', component: 'demo/components/SSEView', icon: 'Connection', sort: 11, status: 1, visible: 1, children: [] },
+          { menuId: 318, parentId: 31, menuType: 1, menuName: '实时通信', menuCode: 'components:realtime', path: '/components/realtime', component: 'demo/components/RealtimeView', icon: 'Connection', sort: 10, status: 1, visible: 1, children: [] },
         ],
+
       },
     ],
   },

@@ -15,6 +15,10 @@ public interface RealtimeSession {
 
     Long userId();
 
+    default String clientId() {
+        return null;
+    }
+
     boolean isOpen();
 
     void send(RealtimeOutboundMessage envelope);

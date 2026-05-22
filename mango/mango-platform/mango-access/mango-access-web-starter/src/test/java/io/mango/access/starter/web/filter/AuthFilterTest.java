@@ -14,6 +14,7 @@ import io.mango.authorization.api.vo.ApiResourceRegisterResultVO;
 import io.mango.common.result.R;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.authorization.api.ITokenProvider;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,23 @@ class AuthFilterTest {
         assertEquals("admin", MangoContextHolder.principalName());
         assertEquals("tenant-a", MangoContextHolder.tenantId());
         assertEquals("internal-admin", MangoContextHolder.appCode());
+    }
+
+    @Test
+    @DisplayName("LOGIN 资源 Cookie Token 合法时应放行并写入请求与 MangoContext")
+    void doFilter_shouldPassLoginAndWriteContextWhenCookieTokenValid() throws Exception {
+        apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/profile");
+        request.setCookies(new Cookie("MANGO_TOKEN", "valid-token"));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        newFilter().doFilter(request, response, new MockFilterChain());
+
+        assertEquals(200, response.getStatus());
+        assertEquals(1001L, request.getAttribute("userId"));
+        assertEquals("admin", request.getAttribute("username"));
+        assertEquals("tenant-a", request.getAttribute("tenantId"));
+        assertEquals(1001L, MangoContextHolder.userId());
     }
 
     @Test

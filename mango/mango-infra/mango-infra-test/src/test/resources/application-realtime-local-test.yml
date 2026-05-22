@@ -2,13 +2,18 @@ spring:
   autoconfigure:
     exclude:
       - io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration
-      - io.mango.infra.kv.starter.KvStoreAutoConfiguration
       - io.mango.infra.persistence.starter.PersistenceAutoConfiguration
       - io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
 
 mango:
+  kv:
+    store:
+      type: memory
   infra:
     realtime:
+      outbox:
+        enabled: false
       inbound:
         enabled: true
         mode: local_remote

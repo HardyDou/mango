@@ -4,6 +4,7 @@ import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
@@ -55,6 +56,19 @@ class AuthSecurityConfigTest {
         mockMvc.perform(get("/secure/me").header("Authorization", "Bearer ok-token"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("99:hardy"));
+    }
+
+    @Test
+    @DisplayName("valid cookie token should populate spring security context")
+    void validCookieTokenShouldPopulateSpringSecurityContext() throws Exception {
+        Mockito.when(tokenService.validateToken("cookie-token")).thenReturn(true);
+        Mockito.when(tokenService.getTokenType("cookie-token")).thenReturn(ITokenProvider.TOKEN_TYPE_ACCESS);
+        Mockito.when(tokenService.getUserId("cookie-token")).thenReturn(101L);
+        Mockito.when(tokenService.getUsername("cookie-token")).thenReturn("cookie-user");
+
+        mockMvc.perform(get("/secure/me").cookie(new Cookie("MANGO_TOKEN", "cookie-token")))
+                .andExpect(status().isOk())
+                .andExpect(content().string("101:cookie-user"));
     }
 
     @Test

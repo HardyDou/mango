@@ -27,8 +27,9 @@ class RealtimePresenceAutoConfigurationTest {
     }
 
     @Test
-    void realtimePresenceService_fallsBackToMemoryWithoutKvStore() {
-        contextRunner.run(context -> assertThat(context.getBean(IRealtimePresenceService.class))
-                .isNotInstanceOf(KvRealtimePresenceService.class));
+    void realtimePresenceService_failsWithoutKvStore() {
+        contextRunner.run(context -> assertThat(context.getStartupFailure())
+                .hasRootCauseInstanceOf(IllegalStateException.class)
+                .hasStackTraceContaining("Realtime presence requires infra-kv"));
     }
 }

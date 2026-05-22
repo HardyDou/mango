@@ -45,6 +45,11 @@ public class KvOutboxStore implements IOutboxStore {
 
     @Override
     public List<OutboxMessage> claim(String workerId, int batchSize, Instant now) {
+        return claim(workerId, null, batchSize, now);
+    }
+
+    @Override
+    public List<OutboxMessage> claim(String workerId, String eventType, int batchSize, Instant now) {
         validateWorker(workerId);
         if (batchSize <= 0) {
             return List.of();
@@ -60,6 +65,9 @@ public class KvOutboxStore implements IOutboxStore {
                     continue;
                 }
                 if (message.getNextAttemptAt() != null && message.getNextAttemptAt().isAfter(now)) {
+                    continue;
+                }
+                if (eventType != null && !eventType.equals(message.getEventType())) {
                     continue;
                 }
                 OutboxMessage locked = message.toBuilder()

@@ -20,6 +20,9 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
 
     private final ConcurrentHashMap<String, Queue<RealtimeOutboundMessage>> queues = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<String>> tenantSubscribers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, Set<String>> userSubscribers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<String>> clientSubscribers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<String>> groupSubscribers = new ConcurrentHashMap<>();
     private final Set<String> subscribers = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<String, Queue<PollingWaiter>> waiters = new ConcurrentHashMap<>();
     private final int defaultMaxSize;
@@ -33,18 +36,36 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
     }
 
     public void register(String subscriberId, String tenantId) {
+        register(subscriberId, tenantId, null, null);
+    }
+
+    public void register(String subscriberId, String tenantId, String clientId) {
+        register(subscriberId, tenantId, null, clientId);
+    }
+
+    public void register(String subscriberId, String tenantId, Long userId, String clientId) {
         if (subscriberId == null || subscriberId.isBlank()) {
             return;
         }
         subscribers.add(subscriberId);
-        if (tenantId != null && !tenantId.isBlank()) {
-            tenantSubscribers.computeIfAbsent(tenantId, key -> ConcurrentHashMap.newKeySet()).add(subscriberId);
+        String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        tenantSubscribers.computeIfAbsent(resolvedTenantId, key -> ConcurrentHashMap.newKeySet()).add(subscriberId);
+        if (userId != null) {
+            userSubscribers.computeIfAbsent(userId, key -> ConcurrentHashMap.newKeySet()).add(subscriberId);
+            drainAliasQueue(userSubscriberId(userId), subscriberId);
+        }
+        if (clientId != null && !clientId.isBlank()) {
+            clientSubscribers.computeIfAbsent(clientKey(resolvedTenantId, clientId), key -> ConcurrentHashMap.newKeySet()).add(subscriberId);
+            drainAliasQueue(clientSubscriberId(clientId), subscriberId);
         }
     }
 
     @Override
     public void append(String subscriberId, RealtimeOutboundMessage envelope) {
         if (subscriberId == null || subscriberId.isBlank() || envelope == null) {
+            return;
+        }
+        if (isSourceSubscriber(subscriberId, envelope)) {
             return;
         }
         queues.computeIfAbsent(subscriberId, key -> new ConcurrentLinkedQueue<>()).offer(envelope);
@@ -97,7 +118,30 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         if (userId == null) {
             return;
         }
-        append(userSubscriberId(userId), envelope);
+        Set<String> subscriberIds = userSubscribers.get(userId);
+        if (subscriberIds == null || subscriberIds.isEmpty()) {
+            append(userSubscriberId(userId), envelope);
+            return;
+        }
+        publishToSubscribers(subscriberIds, envelope);
+    }
+
+    public void publishToClient(String tenantId, String clientId, RealtimeOutboundMessage envelope) {
+        if (clientId == null || clientId.isBlank()) {
+            return;
+        }
+        publishToSubscribers(clientSubscribers.getOrDefault(clientKey(tenantId, clientId), Set.of()), envelope);
+    }
+
+    public void publishToConnection(String connectionId, RealtimeOutboundMessage envelope) {
+        append(connectionId, envelope);
+    }
+
+    public void publishToGroup(String tenantId, String groupId, RealtimeOutboundMessage envelope) {
+        if (groupId == null || groupId.isBlank()) {
+            return;
+        }
+        publishToSubscribers(groupSubscribers.getOrDefault(groupKey(tenantId, groupId), Set.of()), envelope);
     }
 
     public void publishToTenant(String tenantId, RealtimeOutboundMessage envelope) {
@@ -111,8 +155,34 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
         publishToSubscribers(subscribers, envelope);
     }
 
+    public void subscribeGroup(String subscriberId, String tenantId, String groupId) {
+        if (subscriberId == null || subscriberId.isBlank() || groupId == null || groupId.isBlank()) {
+            return;
+        }
+        groupSubscribers.computeIfAbsent(groupKey(tenantId, groupId), key -> ConcurrentHashMap.newKeySet()).add(subscriberId);
+    }
+
+    public void unsubscribeGroup(String subscriberId, String tenantId, String groupId) {
+        if (subscriberId == null || groupId == null || groupId.isBlank()) {
+            return;
+        }
+        String key = groupKey(tenantId, groupId);
+        Set<String> subscriberIds = groupSubscribers.get(key);
+        if (subscriberIds == null) {
+            return;
+        }
+        subscriberIds.remove(subscriberId);
+        if (subscriberIds.isEmpty()) {
+            groupSubscribers.remove(key, subscriberIds);
+        }
+    }
+
     public static String userSubscriberId(Long userId) {
         return "user:" + userId;
+    }
+
+    public static String clientSubscriberId(String clientId) {
+        return "client:" + clientId;
     }
 
     private void publishToSubscribers(Collection<String> subscriberIds, RealtimeOutboundMessage envelope) {
@@ -120,6 +190,27 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
             return;
         }
         subscriberIds.forEach(subscriberId -> append(subscriberId, envelope));
+    }
+
+    private void drainAliasQueue(String aliasSubscriberId, String subscriberId) {
+        if (aliasSubscriberId == null || aliasSubscriberId.equals(subscriberId)) {
+            return;
+        }
+        Queue<RealtimeOutboundMessage> aliasQueue = queues.remove(aliasSubscriberId);
+        if (aliasQueue == null || aliasQueue.isEmpty()) {
+            return;
+        }
+        RealtimeOutboundMessage message;
+        while ((message = aliasQueue.poll()) != null) {
+            append(subscriberId, message);
+        }
+    }
+
+    private boolean isSourceSubscriber(String subscriberId, RealtimeOutboundMessage envelope) {
+        if (envelope.source() == null || envelope.source().clientId() == null || envelope.source().clientId().isBlank()) {
+            return false;
+        }
+        return clientSubscriberId(envelope.source().clientId()).equals(subscriberId);
     }
 
     private void completeWaitingPoll(String subscriberId) {
@@ -152,5 +243,15 @@ public class InMemoryRealtimePollingService implements RealtimePollingService {
     }
 
     private record PollingWaiter(DeferredResult<List<RealtimeOutboundMessage>> result, int maxSize) {
+    }
+
+    private String clientKey(String tenantId, String clientId) {
+        String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        return resolvedTenantId + ":" + clientId.trim();
+    }
+
+    private String groupKey(String tenantId, String groupId) {
+        String resolvedTenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
+        return resolvedTenantId + ":" + groupId.trim();
     }
 }

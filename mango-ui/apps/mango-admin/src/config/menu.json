@@ -120,22 +120,13 @@
             "component": "demo/components/ChatView"
           },
           {
-            "path": "/components/websocket",
-            "name": "DemoWebsocket",
+            "path": "/components/realtime",
+            "name": "DemoRealtime",
             "meta": {
-              "title": "WebSocket",
+              "title": "实时通信",
               "icon": "Connection"
             },
-            "component": "demo/components/WebsocketView"
-          },
-          {
-            "path": "/components/sse",
-            "name": "DemoSSE",
-            "meta": {
-              "title": "服务端推送",
-              "icon": "Connection"
-            },
-            "component": "demo/components/SSEView"
+            "component": "demo/components/RealtimeView"
           }
         ]
       }

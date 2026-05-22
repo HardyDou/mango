@@ -8,4 +8,8 @@ import java.util.Collection;
 public interface IRealtimeOutboundForwardService {
 
     void forward(Collection<RealtimePresence> presences, RealtimeOutboundMessage message);
+
+    default boolean isNoop() {
+        return false;
+    }
 }

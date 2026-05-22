@@ -91,4 +91,51 @@ class OutboxAutoConfigurationTest {
                     assertThat(retried.get(0).getErrorMessage()).isEqualTo("temporary failure");
                 });
     }
+
+    @Test
+    void outboxStore_shouldClaimByEventTypeWithoutLockingOtherMessages() {
+        runner.withPropertyValues(
+                        "mango.kv.capability.enabled=true",
+                        "mango.kv.capability.outbox=true")
+                .run(context -> {
+                    IOutboxStore store = context.getBean(IOutboxStore.class);
+                    OutboxMessage realtimeMessage = OutboxMessage.builder()
+                            .eventType("realtime.message.dispatch")
+                            .businessType("realtime")
+                            .businessKey("RT-1")
+                            .aggregateId("USER:1001")
+                            .occurredAt(Instant.parse("2026-05-16T02:00:00Z"))
+                            .build();
+                    OutboxMessage workflowMessage = OutboxMessage.builder()
+                            .eventType("workflow.process.completed")
+                            .businessType("workflow")
+                            .businessKey("EXP-3")
+                            .aggregateId("PROC-3")
+                            .occurredAt(Instant.parse("2026-05-16T02:00:01Z"))
+                            .build();
+
+                    store.enqueue(realtimeMessage);
+                    store.enqueue(workflowMessage);
+
+                    var realtimeClaimed = store.claim(
+                            "realtime-worker",
+                            "realtime.message.dispatch",
+                            10,
+                            Instant.parse("2026-05-16T02:01:00Z"));
+                    assertThat(realtimeClaimed)
+                            .hasSize(1)
+                            .first()
+                            .extracting(OutboxMessage::getMessageId)
+                            .isEqualTo(realtimeMessage.getMessageId());
+
+                    store.ack(realtimeMessage.getMessageId(), "realtime-worker", Instant.parse("2026-05-16T02:02:00Z"));
+
+                    var remaining = store.claim("workflow-worker", 10, Instant.parse("2026-05-16T02:03:00Z"));
+                    assertThat(remaining)
+                            .hasSize(1)
+                            .first()
+                            .extracting(OutboxMessage::getMessageId)
+                            .isEqualTo(workflowMessage.getMessageId());
+                });
+    }
 }

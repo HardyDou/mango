@@ -1,6 +1,10 @@
 package io.mango.infra.realtime.e2e;
 
 import io.mango.infra.realtime.api.dto.RealtimeInboundMessage;
+import io.mango.infra.realtime.api.dto.RealtimeContext;
+import io.mango.infra.realtime.api.dto.RealtimeEvent;
+import io.mango.infra.realtime.api.dto.RealtimePayload;
+import io.mango.infra.realtime.api.dto.RealtimeSource;
 import io.mango.infra.realtime.core.inbound.receiver.IRealtimeInboundReceiverService;
 import io.mango.infra.realtime.e2e.apps.local.listener.LocalPrimaryInboundListener;
 import io.mango.infra.realtime.e2e.apps.local.listener.extra.LocalExtraInboundListener;
@@ -78,8 +82,9 @@ class MangoRealtimeInboundMultiServiceE2ETest {
         try {
             assertNotNull(websocketMessages.poll(5, TimeUnit.SECONDS));
 
-            session.sendMessage(new TextMessage(
-                    "{\"id\":\"m1\",\"type\":\"task.cancel\",\"content\":\"from-ws\"}"));
+            session.sendMessage(new TextMessage("""
+                    {"id":"m1","version":"1.0","event":{"domain":"task","name":"cancel"},"payload":{"type":"text","text":"from-ws"}}
+                    """));
 
             assertEquals("local-primary:from-ws", LocalPrimaryInboundListener.EVENTS.poll(5, TimeUnit.SECONDS));
             assertEquals("local-extra:from-ws", LocalExtraInboundListener.EVENTS.poll(5, TimeUnit.SECONDS));
@@ -90,8 +95,19 @@ class MangoRealtimeInboundMultiServiceE2ETest {
     }
 
     private void postRemoteInbound(String content) {
-        RealtimeInboundMessage message =
-                new RealtimeInboundMessage("r1", "task.cancel", content, "tenant-a", 1001L, "s1", null, null);
+        RealtimeInboundMessage message = new RealtimeInboundMessage(
+                "r1",
+                "1.0",
+                RealtimeEvent.of("task", "cancel"),
+                new RealtimeSource("server", null, "s1"),
+                RealtimeContext.of("tenant-a", 1001L),
+                null,
+                null,
+                RealtimePayload.text(content),
+                null,
+                null,
+                null,
+                null);
         WebClient.create()
                 .post()
                 .uri("http://localhost:" + remotePort + "/_realtime/messages/inbound")
