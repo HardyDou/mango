@@ -149,6 +149,32 @@ class ConvertAutoConfigurationTest {
     }
 
     @Test
+    void convert_whenAsposeDisabled_stillRegistersNonAsposeConverters() {
+        contextRunner
+                .withPropertyValues("mango.fileproc.aspose.enabled=false")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).doesNotHaveBean(AsposeWordToPdfConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(AsposeExcelToPdfConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(AsposeSlideToPdfConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(AsposePdfToImageConvertProvider.class);
+                    assertThat(context).doesNotHaveBean(AsposeImagingConvertProvider.class);
+                    assertThat(context).hasSingleBean(HtmlToTextConverter.class);
+                    assertThat(context).hasSingleBean(OfficeToPdfConvertProvider.class);
+                    assertThat(context).hasSingleBean(PdfToImageConvertProvider.class);
+                    assertThat(context).hasSingleBean(TiffToPdfConvertProvider.class);
+                    assertThat(context).hasSingleBean(ConvertApi.class);
+
+                    ConvertApi service = context.getBean(ConvertApi.class);
+                    assertThat(service.canConvert(ConvertFormat.HTML, ConvertFormat.TEXT)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.DOCX, ConvertFormat.PDF)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.PDF, ConvertFormat.PNG)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.TIFF, ConvertFormat.PDF)).isTrue();
+                    assertThat(service.canConvert(ConvertFormat.PNG, ConvertFormat.JPEG)).isFalse();
+                });
+    }
+
+    @Test
     void userProvidedBeans_winOverAutoConfiguration() {
         contextRunner
                 .withUserConfiguration(OverrideConfiguration.class)

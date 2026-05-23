@@ -9,6 +9,7 @@ import io.mango.infra.fileproc.render.command.MergePdfCommand;
 import io.mango.infra.fileproc.render.command.RenderCommand;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 import io.mango.infra.fileproc.render.service.DefaultRenderApi;
+import io.mango.infra.fileproc.render.service.RenderToolException;
 import io.mango.infra.fileproc.render.vo.PdfCompressionResultVO;
 import io.mango.infra.fileproc.render.vo.PdfOperationResultVO;
 import io.mango.infra.fileproc.render.vo.RenderFormatPairVO;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RenderAutoConfigurationTest {
 
@@ -56,6 +58,35 @@ class RenderAutoConfigurationTest {
                     assertThat(context).hasSingleBean(RenderApi.class);
                     assertThat(context.getBean(RenderApi.class).canRender(RenderFormat.HTML, RenderFormat.TEXT))
                             .isTrue();
+                });
+    }
+
+    @Test
+    void whenAsposeDisabledAndPdfOperationsDisabledStillRegistersNonPdfRendering() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.fileproc.aspose.enabled=false",
+                        "mango.fileproc.render.pdf-operations-enabled=false")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(RenderApi.class);
+
+                    RenderApi renderApi = context.getBean(RenderApi.class);
+                    assertThat(renderApi.canRender(RenderFormat.HTML, RenderFormat.TEXT)).isTrue();
+
+                    RenderResultVO result = renderApi.render(RenderCommand.builder()
+                            .sourceFormat(RenderFormat.HTML)
+                            .targetFormat(RenderFormat.TEXT)
+                            .inputStream(new ByteArrayInputStream("<p>Hello&nbsp;Mango</p>"
+                                    .getBytes(StandardCharsets.UTF_8)))
+                            .build());
+                    assertThat(new String(result.content(), StandardCharsets.UTF_8)).isEqualTo("Hello Mango");
+
+                    assertThatThrownBy(() -> renderApi.mergePdf(new MergePdfCommand("merged.pdf", List.of(
+                            new io.mango.infra.fileproc.render.vo.PdfSourceVO("a.pdf",
+                                    new ByteArrayInputStream(new byte[0]))), false, false)))
+                            .isInstanceOf(RenderToolException.class)
+                            .hasMessage("PDF 合并能力未配置");
                 });
     }
 

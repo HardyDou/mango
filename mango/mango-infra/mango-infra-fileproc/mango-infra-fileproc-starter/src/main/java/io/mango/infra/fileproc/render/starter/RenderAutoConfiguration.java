@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 
 import java.util.List;
@@ -88,13 +89,13 @@ public class RenderAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RenderApi renderApi(RenderRegistry registry,
-            AsposeLicenseApi licenseApi,
+            ObjectProvider<AsposeLicenseApi> licenseApiProvider,
             @Value("${mango.fileproc.render.pdf-operations-enabled:true}") boolean pdfOperationsEnabled) {
-        return new DefaultRenderApi(registry, pdfRenderApi(licenseApi, pdfOperationsEnabled));
+        return new DefaultRenderApi(registry, pdfRenderApi(licenseApiProvider.getIfAvailable(), pdfOperationsEnabled));
     }
 
     private RenderApi pdfRenderApi(AsposeLicenseApi licenseApi, boolean pdfOperationsEnabled) {
-        if (!pdfOperationsEnabled) {
+        if (!pdfOperationsEnabled || licenseApi == null) {
             return new UnsupportedRenderService();
         }
         return new AsposePdfRenderApi(licenseApi);

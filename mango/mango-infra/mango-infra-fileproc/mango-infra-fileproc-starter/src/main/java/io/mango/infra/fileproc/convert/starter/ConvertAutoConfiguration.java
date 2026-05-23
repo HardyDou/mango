@@ -17,6 +17,7 @@ import io.mango.infra.fileproc.convert.convert.PdfToImageConvertProvider;
 import io.mango.infra.fileproc.convert.convert.SameFormatConverter;
 import io.mango.infra.fileproc.convert.convert.TiffToPdfConvertProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -50,6 +51,7 @@ public class ConvertAutoConfiguration {
 
     @Bean
     @Order(10)
+    @ConditionalOnBean(AsposeLicenseApi.class)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "aspose-word-to-pdf-enabled",
             havingValue = "true", matchIfMissing = true)
@@ -59,6 +61,7 @@ public class ConvertAutoConfiguration {
 
     @Bean
     @Order(11)
+    @ConditionalOnBean(AsposeLicenseApi.class)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "aspose-excel-to-pdf-enabled",
             havingValue = "true", matchIfMissing = true)
@@ -68,6 +71,7 @@ public class ConvertAutoConfiguration {
 
     @Bean
     @Order(12)
+    @ConditionalOnBean(AsposeLicenseApi.class)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "aspose-slide-to-pdf-enabled",
             havingValue = "true", matchIfMissing = true)
@@ -77,6 +81,7 @@ public class ConvertAutoConfiguration {
 
     @Bean
     @Order(13)
+    @ConditionalOnBean(AsposeLicenseApi.class)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "aspose-pdf-to-image-enabled",
             havingValue = "true", matchIfMissing = true)
@@ -86,6 +91,7 @@ public class ConvertAutoConfiguration {
 
     @Bean
     @Order(14)
+    @ConditionalOnBean(AsposeLicenseApi.class)
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "mango.fileproc.convert", name = "aspose-imaging-enabled",
             havingValue = "true", matchIfMissing = true)
