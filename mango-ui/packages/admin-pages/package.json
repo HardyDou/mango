@@ -4,10 +4,12 @@
   "private": true,
   "main": "src/index.ts",
   "dependencies": {
+    "@mango/api-schema": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/calendar": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/file": "workspace:*",
+    "@mango/numgen": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",
     "@mango/workflow": "workspace:*",

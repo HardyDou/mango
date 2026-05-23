@@ -76,6 +76,13 @@ export function registerDefaultAdminPages() {
       },
     },
     {
+      moduleCode: 'mango-numgen',
+      pages: {
+        'platform/numgen/index': () => import('@mango/numgen').then(m => m.NumgenView),
+        'numgen/index': () => import('@mango/numgen').then(m => m.NumgenView),
+      },
+    },
+    {
       moduleCode: 'mango-calendar',
       pages: {
         'data/calendar/index': () => import('@mango/calendar').then(m => m.CalendarView),
