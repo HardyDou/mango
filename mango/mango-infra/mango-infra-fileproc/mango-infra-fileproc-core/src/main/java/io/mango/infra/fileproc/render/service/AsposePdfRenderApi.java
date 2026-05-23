@@ -31,7 +31,10 @@ import io.mango.infra.fileproc.render.vo.RenderResultVO;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -77,7 +80,7 @@ public class AsposePdfRenderApi implements RenderApi {
         Require.notEmpty(command.sources(), "PDF 合并输入不能为空");
         ensureSupportedLocale();
         applyLicense();
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        try (OutputStream outputStream = outputStream(command.targetPath())) {
             Document output = new Document();
             try {
                 output.getPages().delete();
@@ -91,7 +94,8 @@ public class AsposePdfRenderApi implements RenderApi {
                 }
                 output.save(outputStream);
                 return new PdfOperationResultVO(resolvePdfFileName(command.fileName(), "merged.pdf"),
-                        outputStream.toByteArray());
+                        content(command.targetPath(), outputStream),
+                        command.targetPath());
             } finally {
                 close(output);
             }
@@ -106,7 +110,7 @@ public class AsposePdfRenderApi implements RenderApi {
         Require.notBlank(command.watermarkText(), "PDF 水印文本不能为空");
         ensureSupportedLocale();
         applyLicense();
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        try (OutputStream outputStream = outputStream(command.targetPath())) {
             Document document = new Document(command.inputStream());
             try {
                 TextStamp stamp = watermark(command.watermarkText());
@@ -115,7 +119,8 @@ public class AsposePdfRenderApi implements RenderApi {
                 }
                 document.save(outputStream);
                 return new PdfOperationResultVO(resolvePdfFileName(command.fileName(), "watermarked.pdf"),
-                        outputStream.toByteArray());
+                        content(command.targetPath(), outputStream),
+                        command.targetPath());
             } finally {
                 close(document);
             }
@@ -130,9 +135,10 @@ public class AsposePdfRenderApi implements RenderApi {
         ensureSupportedLocale();
         applyLicense();
         try {
-            byte[] compressed = compress(readAllBytes(command.inputStream()), command);
+            byte[] compressed = compress(command.inputStream(), command, command.targetPath());
             return new PdfOperationResultVO(resolvePdfFileName(command.fileName(), "compressed.pdf"),
-                    compressed);
+                    compressed,
+                    command.targetPath());
         } catch (Exception ex) {
             throw new RenderToolException("Aspose PDF 压缩失败", ex);
         }
@@ -147,15 +153,17 @@ public class AsposePdfRenderApi implements RenderApi {
             byte[] source = readAllBytes(command.inputStream());
             TargetCompressionSettings settings = targetSettings(command);
             if (source.length <= command.targetSizeBytes()) {
+                writeTargetIfNeeded(command.targetPath(), source);
                 return new PdfCompressionResultVO(resolvePdfFileName(command.fileName(), "compressed.pdf"),
-                        source,
+                        command.targetPath() == null ? source : new byte[0],
                         source.length,
                         source.length,
                         command.targetSizeBytes(),
                         true,
                         settings.preferredQuality(),
                         settings.preferredResolution(),
-                        0);
+                        0,
+                        command.targetPath());
             }
 
             byte[] bestContent = source;
@@ -175,34 +183,51 @@ public class AsposePdfRenderApi implements RenderApi {
                     bestResolution = resolution;
                 }
                 if (compressed.length <= command.targetSizeBytes()) {
+                    writeTargetIfNeeded(command.targetPath(), compressed);
                     return new PdfCompressionResultVO(resolvePdfFileName(command.fileName(), "compressed.pdf"),
-                            compressed,
+                            command.targetPath() == null ? compressed : new byte[0],
                             source.length,
                             compressed.length,
                             command.targetSizeBytes(),
                             true,
                             quality,
                             resolution,
-                            actualIterations);
+                            actualIterations,
+                            command.targetPath());
                 }
             }
 
             if (settings.strictTarget()) {
                 throw new RenderToolException("PDF 压缩后仍超过目标大小");
             }
+            writeTargetIfNeeded(command.targetPath(), bestContent);
             return new PdfCompressionResultVO(resolvePdfFileName(command.fileName(), "compressed.pdf"),
-                    bestContent,
+                    command.targetPath() == null ? bestContent : new byte[0],
                     source.length,
                     bestContent.length,
                     command.targetSizeBytes(),
                     false,
                     bestQuality,
                     bestResolution,
-                    actualIterations);
+                    actualIterations,
+                    command.targetPath());
         } catch (RenderToolException ex) {
             throw ex;
         } catch (Exception ex) {
             throw new RenderToolException("Aspose PDF 目标压缩失败", ex);
+        }
+    }
+
+    private byte[] compress(java.io.InputStream inputStream, CompressPdfCommand command, Path targetPath) throws IOException {
+        try (OutputStream outputStream = outputStream(targetPath)) {
+            Document document = new Document(inputStream);
+            try {
+                document.optimizeResources(optimizationOptions(command));
+                document.save(outputStream);
+                return content(targetPath, outputStream);
+            } finally {
+                close(document);
+            }
         }
     }
 
@@ -222,6 +247,8 @@ public class AsposePdfRenderApi implements RenderApi {
     private CompressPdfCommand targetCommand(CompressPdfToTargetCommand command, int quality, int resolution) {
         return new CompressPdfCommand(command.fileName(),
                 new ByteArrayInputStream(new byte[0]),
+                null,
+                null,
                 command.initialPreset() == null ? PdfCompressionPreset.HIGH : command.initialPreset(),
                 true,
                 true,
@@ -402,6 +429,35 @@ public class AsposePdfRenderApi implements RenderApi {
     private byte[] readAllBytes(java.io.InputStream inputStream) throws IOException {
         try (inputStream) {
             return inputStream.readAllBytes();
+        }
+    }
+
+    private OutputStream outputStream(Path targetPath) throws IOException {
+        if (targetPath != null) {
+            createParent(targetPath);
+            return Files.newOutputStream(targetPath);
+        }
+        return new ByteArrayOutputStream();
+    }
+
+    private byte[] content(Path targetPath, OutputStream outputStream) {
+        if (targetPath != null) {
+            return new byte[0];
+        }
+        return ((ByteArrayOutputStream) outputStream).toByteArray();
+    }
+
+    private void writeTargetIfNeeded(Path targetPath, byte[] content) throws IOException {
+        if (targetPath == null) {
+            return;
+        }
+        createParent(targetPath);
+        Files.write(targetPath, content);
+    }
+
+    private void createParent(Path path) throws IOException {
+        if (path != null && path.getParent() != null) {
+            Files.createDirectories(path.getParent());
         }
     }
 

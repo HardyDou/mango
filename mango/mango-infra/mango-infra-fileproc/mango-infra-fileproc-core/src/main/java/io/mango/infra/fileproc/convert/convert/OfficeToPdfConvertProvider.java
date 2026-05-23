@@ -41,7 +41,7 @@ public class OfficeToPdfConvertProvider implements IConvertProvider {
         Path workDir = ConvertTempFiles.createWorkDir();
         try {
             Path inputFile = ConvertTempFiles.writeInput(workDir, command);
-            Path outputFile = ConvertTempFiles.output(workDir, ConvertFormat.PDF);
+            Path outputFile = ConvertTempFiles.output(workDir, command, ConvertFormat.PDF);
             LocalConverter.builder()
                     .officeManager(officeManagerHolder.officeManager())
                     .loadProperties(loadProperties(command))
@@ -54,7 +54,8 @@ public class OfficeToPdfConvertProvider implements IConvertProvider {
                     .format(ConvertFormat.PDF)
                     .fileName(ConvertFileNames.resolve(command.fileName(), ConvertFormat.PDF))
                     .contentType(ConvertFormat.PDF.contentType())
-                    .content(ConvertTempFiles.read(outputFile))
+                    .content(ConvertTempFiles.readIfNeeded(command, outputFile))
+                    .outputPath(command.targetPath())
                     .build();
         } catch (Exception ex) {
             throw new ConvertToolException("Office 转 PDF 失败", ex);

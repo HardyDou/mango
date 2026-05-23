@@ -5,13 +5,18 @@ import io.mango.infra.fileproc.render.enums.PdfCompressionImageEncoding;
 import io.mango.infra.fileproc.render.enums.PdfCompressionImageVersion;
 import io.mango.infra.fileproc.render.enums.PdfCompressionPreset;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * PDF 压缩命令。
  *
  * @param fileName 输出文件名。
  * @param inputStream PDF 输入流。
+ * @param sourcePath PDF 源文件路径。
+ * @param targetPath PDF 输出文件路径。
  * @param preset 压缩预设。
  * @param compressObjects 是否压缩 PDF 对象。
  * @param linkDuplicateStreams 是否链接重复流。
@@ -31,6 +36,8 @@ import java.io.InputStream;
 public record CompressPdfCommand(
         String fileName,
         InputStream inputStream,
+        Path sourcePath,
+        Path targetPath,
         PdfCompressionPreset preset,
         Boolean compressObjects,
         Boolean linkDuplicateStreams,
@@ -48,7 +55,7 @@ public record CompressPdfCommand(
         Boolean removePrivateInfo) {
 
     public CompressPdfCommand {
-        Require.notNull(inputStream, "PDF 输入流不能为空");
+        Require.isTrue(inputStream != null || sourcePath != null, "PDF 输入流或源文件路径不能为空");
         if (imageQuality != null) {
             Require.isTrue(imageQuality >= 1 && imageQuality <= 100, "PDF 图片质量必须在 1-100 之间");
         }
@@ -58,7 +65,47 @@ public record CompressPdfCommand(
     }
 
     public static CompressPdfCommand defaults(String fileName, InputStream inputStream) {
-        return new CompressPdfCommand(fileName, inputStream, PdfCompressionPreset.DEFAULT,
+        return new CompressPdfCommand(fileName, inputStream, null, null, PdfCompressionPreset.DEFAULT,
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    public CompressPdfCommand(
+            String fileName,
+            InputStream inputStream,
+            PdfCompressionPreset preset,
+            Boolean compressObjects,
+            Boolean linkDuplicateStreams,
+            Boolean allowReusePageContent,
+            Boolean removeUnusedStreams,
+            Boolean removeUnusedObjects,
+            Boolean compressImages,
+            Boolean resizeImages,
+            Integer imageQuality,
+            Integer maxResolution,
+            PdfCompressionImageEncoding imageEncoding,
+            PdfCompressionImageVersion imageVersion,
+            Boolean unembedFonts,
+            Boolean subsetFonts,
+            Boolean removePrivateInfo) {
+        this(fileName, inputStream, null, null, preset, compressObjects, linkDuplicateStreams, allowReusePageContent,
+                removeUnusedStreams, removeUnusedObjects, compressImages, resizeImages, imageQuality, maxResolution,
+                imageEncoding, imageVersion, unembedFonts, subsetFonts, removePrivateInfo);
+    }
+
+    public static CompressPdfCommand defaults(Path sourcePath, Path targetPath) {
+        return new CompressPdfCommand(null, null, sourcePath, targetPath, PdfCompressionPreset.DEFAULT,
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    @Override
+    public InputStream inputStream() {
+        if (inputStream != null) {
+            return inputStream;
+        }
+        try {
+            return Files.newInputStream(sourcePath);
+        } catch (IOException ex) {
+            throw new IllegalStateException("打开 PDF 源文件失败: " + sourcePath, ex);
+        }
     }
 }

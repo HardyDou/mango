@@ -45,7 +45,7 @@ public class TemplateRenderManager {
         if (TemplateOutputFormat.PDF == payload.outputFormat() || TemplateOutputFormat.OFD == payload.outputFormat()) {
             TemplateOutputFormat intermediate = intermediateFormat(payload.sourceFormat());
             ConvertResultVO converted = convert(rendered, intermediate, payload.outputFormat());
-            return new TemplateRenderOutput(null, converted.content(), converted.fileName(), converted.contentType());
+            return output(converted);
         }
         throw new BizException(TemplateCode.TEMPLATE_FORMAT_UNSUPPORTED.getCode(),
                 TemplateCode.TEMPLATE_FORMAT_UNSUPPORTED.getMessage());
@@ -80,6 +80,14 @@ public class TemplateRenderManager {
 
     private TemplateRenderOutput output(RenderResultVO result) {
         if (result.format() == RenderFormat.TEXT || result.format() == RenderFormat.HTML) {
+            return new TemplateRenderOutput(new String(result.content(), StandardCharsets.UTF_8),
+                    null, result.fileName(), result.contentType());
+        }
+        return new TemplateRenderOutput(null, result.content(), result.fileName(), result.contentType());
+    }
+
+    private TemplateRenderOutput output(ConvertResultVO result) {
+        if (result.format() == ConvertFormat.TEXT || result.format() == ConvertFormat.HTML) {
             return new TemplateRenderOutput(new String(result.content(), StandardCharsets.UTF_8),
                     null, result.fileName(), result.contentType());
         }

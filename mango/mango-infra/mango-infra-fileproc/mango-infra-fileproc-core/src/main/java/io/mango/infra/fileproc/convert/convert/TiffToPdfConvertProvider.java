@@ -16,6 +16,8 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -42,7 +44,7 @@ public class TiffToPdfConvertProvider implements IConvertProvider {
                 throw new ConvertToolException("TIFF 文件没有可转换页面");
             }
             try (PDDocument document = new PDDocument();
-                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                 OutputStream outputStream = outputStream(command)) {
                 for (BufferedImage image : images) {
                     appendPage(document, processImage(image));
                 }
@@ -51,7 +53,8 @@ public class TiffToPdfConvertProvider implements IConvertProvider {
                         .format(ConvertFormat.PDF)
                         .fileName(ConvertFileNames.resolve(command.fileName(), ConvertFormat.PDF))
                         .contentType(ConvertFormat.PDF.contentType())
-                        .content(outputStream.toByteArray())
+                        .content(content(command, outputStream))
+                        .outputPath(command.targetPath())
                         .build();
             }
         } catch (Exception ex) {
@@ -59,6 +62,21 @@ public class TiffToPdfConvertProvider implements IConvertProvider {
         } finally {
             ConvertTempFiles.deleteQuietly(workDir);
         }
+    }
+
+    private OutputStream outputStream(ConvertCommand command) throws java.io.IOException {
+        if (command.hasTargetPath()) {
+            ConvertTempFiles.createParent(command.targetPath());
+            return Files.newOutputStream(command.targetPath());
+        }
+        return new ByteArrayOutputStream();
+    }
+
+    private byte[] content(ConvertCommand command, OutputStream outputStream) {
+        if (command.hasTargetPath()) {
+            return new byte[0];
+        }
+        return ((ByteArrayOutputStream) outputStream).toByteArray();
     }
 
     private void appendPage(PDDocument document, BufferedImage image) throws java.io.IOException {

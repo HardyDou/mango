@@ -3,7 +3,10 @@ package io.mango.infra.fileproc.convert.command;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +24,10 @@ public final class ConvertCommand {
 
     private final InputStream inputStream;
 
+    private final Path sourcePath;
+
+    private final Path targetPath;
+
     private final String fileName;
 
     private final Map<String, Object> options;
@@ -28,10 +35,12 @@ public final class ConvertCommand {
     private ConvertCommand(Builder builder) {
         Require.notNull(builder.sourceFormat, "源格式不能为空");
         Require.notNull(builder.targetFormat, "目标格式不能为空");
-        Require.notNull(builder.inputStream, "转换输入流不能为空");
+        Require.isTrue(builder.inputStream != null || builder.sourcePath != null, "转换输入流或源文件路径不能为空");
         this.sourceFormat = builder.sourceFormat;
         this.targetFormat = builder.targetFormat;
         this.inputStream = builder.inputStream;
+        this.sourcePath = builder.sourcePath;
+        this.targetPath = builder.targetPath;
         this.fileName = builder.fileName;
         this.options = Collections.unmodifiableMap(new HashMap<>(builder.options));
     }
@@ -45,6 +54,37 @@ public final class ConvertCommand {
     }
 
     public InputStream inputStream() {
+        if (inputStream != null) {
+            return inputStream;
+        }
+        try {
+            return Files.newInputStream(sourcePath);
+        } catch (IOException ex) {
+            throw new IllegalStateException("打开转换源文件失败: " + sourcePath, ex);
+        }
+    }
+
+    public Path sourcePath() {
+        return sourcePath;
+    }
+
+    public Path targetPath() {
+        return targetPath;
+    }
+
+    public boolean hasInputStream() {
+        return inputStream != null;
+    }
+
+    public boolean hasSourcePath() {
+        return sourcePath != null;
+    }
+
+    public boolean hasTargetPath() {
+        return targetPath != null;
+    }
+
+    public InputStream rawInputStream() {
         return inputStream;
     }
 
@@ -68,6 +108,10 @@ public final class ConvertCommand {
 
         private InputStream inputStream;
 
+        private Path sourcePath;
+
+        private Path targetPath;
+
         private String fileName;
 
         private final Map<String, Object> options = new HashMap<>();
@@ -87,6 +131,26 @@ public final class ConvertCommand {
 
         public Builder inputStream(InputStream inputStream) {
             this.inputStream = inputStream;
+            return this;
+        }
+
+        public Builder sourcePath(Path sourcePath) {
+            this.sourcePath = sourcePath;
+            return this;
+        }
+
+        public Builder sourcePath(String sourcePath) {
+            this.sourcePath = sourcePath == null || sourcePath.isBlank() ? null : Path.of(sourcePath);
+            return this;
+        }
+
+        public Builder targetPath(Path targetPath) {
+            this.targetPath = targetPath;
+            return this;
+        }
+
+        public Builder targetPath(String targetPath) {
+            this.targetPath = targetPath == null || targetPath.isBlank() ? null : Path.of(targetPath);
             return this;
         }
 

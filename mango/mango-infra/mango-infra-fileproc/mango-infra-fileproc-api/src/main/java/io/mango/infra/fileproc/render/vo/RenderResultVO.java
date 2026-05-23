@@ -3,6 +3,7 @@ package io.mango.infra.fileproc.render.vo;
 import io.mango.common.result.Require;
 import io.mango.infra.fileproc.render.enums.RenderFormat;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -18,12 +19,15 @@ public final class RenderResultVO {
 
     private final byte[] content;
 
+    private final Path outputPath;
+
     private RenderResultVO(Builder builder) {
         Require.notNull(builder.format, "渲染结果格式不能为空");
         this.format = builder.format;
         this.fileName = builder.fileName;
         this.contentType = builder.contentType == null ? builder.format.contentType() : builder.contentType;
         this.content = builder.content == null ? new byte[0] : Arrays.copyOf(builder.content, builder.content.length);
+        this.outputPath = builder.outputPath;
     }
 
     public RenderFormat format() {
@@ -42,6 +46,14 @@ public final class RenderResultVO {
         return Arrays.copyOf(content, content.length);
     }
 
+    public Path outputPath() {
+        return outputPath;
+    }
+
+    public boolean hasOutputPath() {
+        return outputPath != null;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -55,6 +67,8 @@ public final class RenderResultVO {
         private String contentType;
 
         private byte[] content;
+
+        private Path outputPath;
 
         private Builder() {
         }
@@ -76,6 +90,16 @@ public final class RenderResultVO {
 
         public Builder content(byte[] content) {
             this.content = content == null ? null : Arrays.copyOf(content, content.length);
+            return this;
+        }
+
+        public Builder outputPath(Path outputPath) {
+            this.outputPath = outputPath;
+            return this;
+        }
+
+        public Builder outputPath(String outputPath) {
+            this.outputPath = outputPath == null || outputPath.isBlank() ? null : Path.of(outputPath);
             return this;
         }
 

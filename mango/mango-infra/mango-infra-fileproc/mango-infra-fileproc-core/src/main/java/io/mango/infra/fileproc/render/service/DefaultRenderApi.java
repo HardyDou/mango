@@ -13,6 +13,8 @@ import io.mango.infra.fileproc.render.vo.PdfOperationResultVO;
 import io.mango.infra.fileproc.render.vo.RenderFormatPairVO;
 import io.mango.infra.fileproc.render.vo.RenderResultVO;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,17 +48,18 @@ public class DefaultRenderApi implements RenderApi {
     public RenderResultVO render(RenderCommand command) {
         Require.notNull(command, "渲染命令不能为空");
         if (command.sourceFormat() == command.targetFormat()) {
-            return registry.providers().stream()
+            RenderResultVO result = registry.providers().stream()
                     .filter(provider -> !(provider instanceof SameFormatRenderProvider))
                     .filter(provider -> provider.supports(command.sourceFormat(), command.targetFormat()))
                     .findFirst()
                     .orElseGet(SameFormatRenderProvider::new)
                     .render(command);
+            return complete(command, result);
         }
         IRenderProvider provider = registry.findProvider(command.sourceFormat(), command.targetFormat())
                 .orElseThrow(() -> new RenderToolException(
                         "不支持的文档渲染：" + command.sourceFormat() + " -> " + command.targetFormat()));
-        return provider.render(command);
+        return complete(command, provider.render(command));
     }
 
     @Override
@@ -102,5 +105,29 @@ public class DefaultRenderApi implements RenderApi {
     @Override
     public PdfCompressionResultVO compressPdfToTarget(CompressPdfToTargetCommand command) {
         return pdfRenderApi.compressPdfToTarget(command);
+    }
+
+    private RenderResultVO complete(RenderCommand command, RenderResultVO result) {
+        if (!command.hasTargetPath() || result.hasOutputPath()) {
+            return result;
+        }
+        try {
+            createParent(command.targetPath());
+            Files.write(command.targetPath(), result.content());
+            return RenderResultVO.builder()
+                    .format(result.format())
+                    .fileName(result.fileName())
+                    .contentType(result.contentType())
+                    .outputPath(command.targetPath())
+                    .build();
+        } catch (IOException ex) {
+            throw new RenderToolException("写入渲染目标文件失败", ex);
+        }
+    }
+
+    private void createParent(java.nio.file.Path path) throws IOException {
+        if (path != null && path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
     }
 }

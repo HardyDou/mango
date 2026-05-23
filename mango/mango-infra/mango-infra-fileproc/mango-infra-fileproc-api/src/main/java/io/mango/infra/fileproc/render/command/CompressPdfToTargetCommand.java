@@ -5,13 +5,18 @@ import io.mango.infra.fileproc.render.enums.PdfCompressionImageEncoding;
 import io.mango.infra.fileproc.render.enums.PdfCompressionImageVersion;
 import io.mango.infra.fileproc.render.enums.PdfCompressionPreset;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * PDF 目标大小压缩命令。
  *
  * @param fileName 输出文件名。
  * @param inputStream PDF 输入流。
+ * @param sourcePath PDF 源文件路径。
+ * @param targetPath PDF 输出文件路径。
  * @param targetSizeBytes 目标大小，单位字节。
  * @param initialPreset 初始压缩预设。
  * @param preferredImageQuality 首次尝试图片质量，范围 1-100。
@@ -26,6 +31,8 @@ import java.io.InputStream;
 public record CompressPdfToTargetCommand(
         String fileName,
         InputStream inputStream,
+        Path sourcePath,
+        Path targetPath,
         long targetSizeBytes,
         PdfCompressionPreset initialPreset,
         Integer preferredImageQuality,
@@ -38,7 +45,7 @@ public record CompressPdfToTargetCommand(
         Boolean strictTarget) {
 
     public CompressPdfToTargetCommand {
-        Require.notNull(inputStream, "PDF 输入流不能为空");
+        Require.isTrue(inputStream != null || sourcePath != null, "PDF 输入流或源文件路径不能为空");
         Require.isTrue(targetSizeBytes > 0, "PDF 目标大小必须大于 0");
         validateQuality(preferredImageQuality, "PDF 首次图片质量必须在 1-100 之间");
         validateQuality(minImageQuality, "PDF 最低图片质量必须在 1-100 之间");
@@ -66,6 +73,35 @@ public record CompressPdfToTargetCommand(
     private static void validateResolution(Integer resolution, String message) {
         if (resolution != null) {
             Require.isTrue(resolution > 0, message);
+        }
+    }
+
+    public CompressPdfToTargetCommand(
+            String fileName,
+            InputStream inputStream,
+            long targetSizeBytes,
+            PdfCompressionPreset initialPreset,
+            Integer preferredImageQuality,
+            Integer minImageQuality,
+            Integer preferredResolution,
+            Integer minResolution,
+            PdfCompressionImageEncoding imageEncoding,
+            PdfCompressionImageVersion imageVersion,
+            Integer maxIterations,
+            Boolean strictTarget) {
+        this(fileName, inputStream, null, null, targetSizeBytes, initialPreset, preferredImageQuality, minImageQuality,
+                preferredResolution, minResolution, imageEncoding, imageVersion, maxIterations, strictTarget);
+    }
+
+    @Override
+    public InputStream inputStream() {
+        if (inputStream != null) {
+            return inputStream;
+        }
+        try {
+            return Files.newInputStream(sourcePath);
+        } catch (IOException ex) {
+            throw new IllegalStateException("打开 PDF 源文件失败: " + sourcePath, ex);
         }
     }
 }

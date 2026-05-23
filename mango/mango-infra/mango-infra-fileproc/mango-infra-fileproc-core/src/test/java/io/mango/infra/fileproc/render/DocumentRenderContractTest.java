@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +52,7 @@ class DocumentRenderContractTest {
                 .targetFormat(RenderFormat.TEXT)
                 .build())
                 .isInstanceOf(BizException.class)
-                .hasMessage("渲染输入流不能为空");
+                .hasMessage("渲染输入流或源文件路径不能为空");
     }
 
     @Test
@@ -84,6 +86,25 @@ class DocumentRenderContractTest {
         assertThat(result.fileName()).isEqualTo("contract.docx");
         assertThat(result.contentType()).isEqualTo(RenderFormat.DOCX.contentType());
         assertThat(result.content()).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    void sameFormatRenderSupportsFilePathInputAndOutput() throws Exception {
+        DefaultRenderApi renderApi = newRenderApi();
+        Path source = Files.createTempFile("mango-render-source-", ".txt");
+        Path target = Files.createTempFile("mango-render-target-", ".txt");
+        Files.writeString(source, "path content", StandardCharsets.UTF_8);
+
+        RenderResultVO result = renderApi.render(RenderCommand.builder()
+                .sourceFormat(RenderFormat.TEXT)
+                .targetFormat(RenderFormat.TEXT)
+                .sourcePath(source)
+                .targetPath(target)
+                .build());
+
+        assertThat(result.outputPath()).isEqualTo(target);
+        assertThat(result.content()).isEmpty();
+        assertThat(Files.readString(target, StandardCharsets.UTF_8)).isEqualTo("path content");
     }
 
     @Test

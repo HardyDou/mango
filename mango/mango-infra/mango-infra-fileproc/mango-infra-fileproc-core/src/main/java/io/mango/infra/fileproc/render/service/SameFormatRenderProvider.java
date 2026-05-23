@@ -6,6 +6,8 @@ import io.mango.infra.fileproc.render.enums.RenderFormat;
 import io.mango.infra.fileproc.render.vo.RenderResultVO;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 /**
  * 同格式直通复制渲染器。
@@ -21,6 +23,16 @@ public class SameFormatRenderProvider implements IRenderProvider {
     public RenderResultVO render(RenderCommand command) {
         Require.notNull(command, "渲染命令不能为空");
         try {
+            if (command.hasTargetPath()) {
+                createParent(command.targetPath());
+                Files.copy(command.inputStream(), command.targetPath(), StandardCopyOption.REPLACE_EXISTING);
+                return RenderResultVO.builder()
+                        .format(command.targetFormat())
+                        .fileName(resolveFileName(command))
+                        .contentType(command.targetFormat().contentType())
+                        .outputPath(command.targetPath())
+                        .build();
+            }
             return RenderResultVO.builder()
                     .format(command.targetFormat())
                     .fileName(resolveFileName(command))
@@ -42,5 +54,11 @@ public class SameFormatRenderProvider implements IRenderProvider {
             return fileName;
         }
         return fileName + extension;
+    }
+
+    private void createParent(java.nio.file.Path path) throws IOException {
+        if (path != null && path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
     }
 }

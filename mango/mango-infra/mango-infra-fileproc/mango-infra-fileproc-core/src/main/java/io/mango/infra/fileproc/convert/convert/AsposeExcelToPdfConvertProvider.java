@@ -12,6 +12,8 @@ import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 import io.mango.infra.fileproc.convert.vo.ConvertResultVO;
 
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 
 /**
  * 基于 Aspose.Cells 的 Excel 转 PDF 转换器。
@@ -54,7 +56,7 @@ public class AsposeExcelToPdfConvertProvider implements IConvertProvider {
     public ConvertResultVO convert(ConvertCommand command) {
         Require.notNull(command, "转换命令不能为空");
         applyLicense();
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        try (OutputStream outputStream = outputStream(command)) {
             Workbook workbook = new Workbook(command.inputStream(), loadOptions(command));
             try {
                 workbook.calculateFormula();
@@ -66,11 +68,27 @@ public class AsposeExcelToPdfConvertProvider implements IConvertProvider {
                     .format(ConvertFormat.PDF)
                     .fileName(ConvertFileNames.resolve(command.fileName(), ConvertFormat.PDF))
                     .contentType(ConvertFormat.PDF.contentType())
-                    .content(outputStream.toByteArray())
+                    .content(content(command, outputStream))
+                    .outputPath(command.targetPath())
                     .build();
         } catch (Exception ex) {
             throw new ConvertToolException("Aspose Excel 转 PDF 失败", ex);
         }
+    }
+
+    private OutputStream outputStream(ConvertCommand command) throws java.io.IOException {
+        if (command.hasTargetPath()) {
+            ConvertTempFiles.createParent(command.targetPath());
+            return Files.newOutputStream(command.targetPath());
+        }
+        return new ByteArrayOutputStream();
+    }
+
+    private byte[] content(ConvertCommand command, OutputStream outputStream) {
+        if (command.hasTargetPath()) {
+            return new byte[0];
+        }
+        return ((ByteArrayOutputStream) outputStream).toByteArray();
     }
 
     private LoadOptions loadOptions(ConvertCommand command) {

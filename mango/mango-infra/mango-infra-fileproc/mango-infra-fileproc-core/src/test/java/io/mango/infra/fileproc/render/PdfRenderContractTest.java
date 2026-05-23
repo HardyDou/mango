@@ -59,15 +59,15 @@ class PdfRenderContractTest {
     void pdfSourceAndWatermarkRequestRejectNullInputStream() {
         assertThatThrownBy(() -> new PdfSourceVO("demo.pdf", null))
                 .isInstanceOf(BizException.class)
-                .hasMessage("PDF 输入源不能为空");
+                .hasMessage("PDF 输入流或源文件路径不能为空");
 
         assertThatThrownBy(() -> new AddPdfWatermarkCommand("demo.pdf", null, "watermark"))
                 .isInstanceOf(BizException.class)
-                .hasMessage("PDF 输入流不能为空");
+                .hasMessage("PDF 输入流或源文件路径不能为空");
 
         assertThatThrownBy(() -> CompressPdfCommand.defaults("demo.pdf", null))
                 .isInstanceOf(BizException.class)
-                .hasMessage("PDF 输入流不能为空");
+                .hasMessage("PDF 输入流或源文件路径不能为空");
     }
 
     @Test
