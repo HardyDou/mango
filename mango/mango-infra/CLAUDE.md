@@ -1,5 +1,22 @@
 # Mango Infra - 基础设施模块规范
 
+@../../mango-pmo/rules/backend/10-dev-flow.md
+@../../mango-pmo/rules/backend/01-code.md
+@../../mango-pmo/rules/backend/05-module.md
+@../../mango-pmo/rules/backend/08-test.md
+
+进入 `mango-infra` 后，先按 `../../AGENTS.md` 执行 PMO preflight：
+
+```bash
+node ../../mango-pmo/tools/pmo-preflight.mjs \
+  --role dev \
+  --phase develop \
+  --task "<用户任务>" \
+  --paths "mango/mango-infra/**"
+```
+
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。
+
 ## 模块定位
 
 `mango-infra` 是 Mango 脚手架的基础设施模块，**职责是集成第三方中间件、基础组件和服务**，以 Starter 形式提供开箱即用的能力。

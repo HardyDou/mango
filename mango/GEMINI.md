@@ -1,9 +1,20 @@
-# Mango Backend Context
+# Mango 后端 Gemini 入口
 
-为了避免规范在多个文件中重复定义导致冲突，本目录下的 Gemini CLI 规范采用引用方式管理。
+@../mango-pmo/rules/backend/10-dev-flow.md
+@../mango-pmo/rules/backend/01-code.md
+@../mango-pmo/rules/backend/05-module.md
+@../mango-pmo/rules/backend/08-test.md
 
-在执行后端开发任务前，你必须读取并遵守以下核心文档：
+进入 `mango` 后端子项目后，先按 `../AGENTS.md` 执行 PMO preflight。
 
-1. **后端顶层约束**：读取当前目录下的 `CLAUDE.md`。
-2. **专项研发规范**：读取 `../mango-pmo/rules/backend/` 或本目录 `.claude/rules/` 下的代码、命名、API、数据库和安全等相关规范。
-3. **架构文档**：参阅 `../mango-docs/mango-architecture-design.md`。
+推荐命令：
+
+```bash
+node ../mango-pmo/tools/pmo-preflight.mjs \
+  --role dev \
+  --phase develop \
+  --task "<用户任务>" \
+  --paths "mango/**"
+```
+
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。

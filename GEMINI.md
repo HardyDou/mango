@@ -1,13 +1,34 @@
-# Mango Project Context (Gemini CLI Entry)
+# Mango Gemini 入口
 
-为了避免信息重复和维护成本，本项目的核心规范、架构约束以及 AI Agent 工作流均采用统一的中心化管理。
-在处理当前工作区的任何任务时，你必须（MUST）主动读取并严格遵守以下文件中的指导：
+@./mango-pmo/rules/00-dev-flow.md
+@./mango-pmo/agents/01-pm-agent.md
+@./mango-pmo/agents/02-tech-lead-agent.md
+@./mango-pmo/agents/03-dev-agent.md
+@./mango-pmo/agents/04-qa-agent.md
+@./mango-pmo/agents/05-pmo-agent.md
 
-## 1. 全局研发流程与角色
-- **项目顶层约束**：读取根目录的 `CLAUDE.md` 和 `README.md`。
-- **Agent 工作流**：读取 `mango-pmo/rules/00-dev-flow.md` 了解全局研发流程，以及 `mango-pmo/agents/` 下对应的角色定义。
-- **架构总览**：读取 `mango-docs/mango-architecture-design.md`。
+## 1. 唯一规范源
 
-## 2. 子系统专属规范
-- **Java 后端 (mango/)**：进入该目录前，必须读取 `mango/CLAUDE.md` 及 `mango/.claude/rules/` 下的详细规范。
-- **Vue 前端 (mango-ui/)**：进入该目录前，必须读取 `mango-ui/CLAUDE.md` 和 `mango-ui/README.md`，并遵守 `mango-pmo/rules/frontend/` 的 Monorepo 约束。
+- `mango-pmo` 是唯一长期规范源。
+- `mango-docs` 只放设计文档、Sprint 计划、交付记录和历史设计，不作为规范源。
+- 本文件只做 Gemini 入口，不复制长期规则正文。
+
+## 2. 开工前强制步骤
+
+开始实质分析、计划或改文件前，必须执行 PMO preflight：
+
+```bash
+node mango-pmo/tools/pmo-preflight.mjs \
+  --role <pm|tech-lead|dev|qa|pmo> \
+  --phase <requirement|design|develop|verify|release|governance> \
+  --task "<用户任务>" \
+  --paths "<可能影响的路径，逗号分隔>"
+```
+
+然后读取输出中 `Must read` 的每一个文件原文。
+
+## 3. 子项目入口
+
+- 后端：进入 `mango/` 时遵守 `mango/AGENTS.md` 和 `mango/GEMINI.md`。
+- 前端：进入 `mango-ui/` 时遵守 `mango-ui/AGENTS.md` 和 `mango-ui/GEMINI.md`。
+- PMO：进入 `mango-pmo/` 时遵守 `mango-pmo/AGENTS.md`。
