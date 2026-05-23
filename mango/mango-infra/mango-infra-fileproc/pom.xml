@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango-infra</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mango-infra-fileproc</artifactId>
+    <packaging>pom</packaging>
+    <name>Mango Infra File Processing</name>
+    <description>Local file processing capabilities for documents, images, PDFs and archives</description>
+
+    <modules>
+        <module>mango-infra-fileproc-api</module>
+        <module>mango-infra-fileproc-core</module>
+        <module>mango-infra-fileproc-starter</module>
+    </modules>
+
+</project>

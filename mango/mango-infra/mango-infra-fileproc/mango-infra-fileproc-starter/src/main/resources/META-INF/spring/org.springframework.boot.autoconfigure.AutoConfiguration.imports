@@ -1,0 +1,3 @@
+io.mango.infra.fileproc.aspose.starter.AsposeAutoConfiguration
+io.mango.infra.fileproc.convert.starter.ConvertAutoConfiguration
+io.mango.infra.fileproc.render.starter.RenderAutoConfiguration
