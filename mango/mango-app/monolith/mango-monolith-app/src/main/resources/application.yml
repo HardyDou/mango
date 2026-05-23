@@ -116,6 +116,8 @@ mango:
           enabled: true
         calendar:
           enabled: true
+        numgen:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region
@@ -229,6 +231,8 @@ springdoc:
         url: /v3/api-docs/mango-biz-notification
       - name: mango-file
         url: /v3/api-docs/mango-file
+      - name: mango-numgen
+        url: /v3/api-docs/mango-numgen
       - name: mango-guarantee
         url: /v3/api-docs/mango-guarantee
       - name: mango-infra-realtime

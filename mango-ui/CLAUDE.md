@@ -1,6 +1,23 @@
-# Mango UI 协作说明
+# Mango UI Claude 入口
 
-本文件是 `mango-ui` 的项目级协作入口。进入这个子项目后，默认以这里的约束作为前端开发基线。
+@../mango-pmo/rules/frontend/05-dev-flow.md
+@../mango-pmo/rules/frontend/01-vue-code.md
+@../mango-pmo/rules/frontend/06-monorepo-architecture.md
+@../mango-pmo/rules/frontend/04-test.md
+
+本文件是 `mango-ui` 的项目级协作入口。进入这个子项目后，先按 `../AGENTS.md` 执行 PMO preflight。
+
+推荐命令：
+
+```bash
+node ../mango-pmo/tools/pmo-preflight.mjs \
+  --role dev \
+  --phase develop \
+  --task "<用户任务>" \
+  --paths "mango-ui/**"
+```
+
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。
 
 ## 项目定位
 
@@ -92,7 +109,7 @@ npx playwright test
 
 ## 参考文档
 
-- `@mango-pmo/rules/00-dev-flow.md`
-- `@mango-pmo/rules/frontend/01-vue-code.md`
-- `@mango-pmo/rules/frontend/06-monorepo-architecture.md`
-- `@mango-ui/README.md`
+- `../mango-pmo/rules/00-dev-flow.md`
+- `../mango-pmo/rules/frontend/01-vue-code.md`
+- `../mango-pmo/rules/frontend/06-monorepo-architecture.md`
+- `README.md`

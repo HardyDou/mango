@@ -3,7 +3,7 @@
 ## 1. 适用范围
 
 - 本文件只约束后端开发。
-- 通用流程以 [00-dev-flow.md](/Users/hardy/Work/mango/mango-pmo/rules/00-dev-flow.md) 为准。
+- 通用流程以 [00-dev-flow.md](../00-dev-flow.md) 为准。
 
 ## 2. 开发前
 

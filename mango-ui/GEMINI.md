@@ -1,9 +1,20 @@
-# Mango Frontend Context
+# Mango UI Gemini 入口
 
-为了避免规范在多个文件中重复定义导致冲突，本目录下的 Gemini CLI 规范采用引用方式管理。
+@../mango-pmo/rules/frontend/05-dev-flow.md
+@../mango-pmo/rules/frontend/01-vue-code.md
+@../mango-pmo/rules/frontend/06-monorepo-architecture.md
+@../mango-pmo/rules/frontend/04-test.md
 
-在执行前端开发、重构或调试任务前，你必须读取并严格遵守以下核心文档：
+进入 `mango-ui` 前端子项目后，先按 `../AGENTS.md` 执行 PMO preflight。
 
-1. **前端顶层约束**：读取当前目录下的 `CLAUDE.md`（定义了边界、组件归属和依赖方向规则）。
-2. **项目细节与验收**：读取当前目录下的 `README.md`（定义了命令、构建和 Playwright 测试要求）。
-3. **前端架构规则**：读取 `../mango-pmo/rules/frontend/` 目录下的 Monorepo 和代码规范文件。
+推荐命令：
+
+```bash
+node ../mango-pmo/tools/pmo-preflight.mjs \
+  --role dev \
+  --phase develop \
+  --task "<用户任务>" \
+  --paths "mango-ui/**"
+```
+
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。

@@ -1,5 +1,22 @@
 # Mango Platform - 平台能力模块规范
 
+@../../mango-pmo/rules/backend/10-dev-flow.md
+@../../mango-pmo/rules/backend/01-code.md
+@../../mango-pmo/rules/backend/05-module.md
+@../../mango-pmo/rules/backend/08-test.md
+
+进入 `mango-platform` 后，先按 `../../AGENTS.md` 执行 PMO preflight：
+
+```bash
+node ../../mango-pmo/tools/pmo-preflight.mjs \
+  --role dev \
+  --phase develop \
+  --task "<用户任务>" \
+  --paths "mango/mango-platform/**"
+```
+
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。
+
 ## 模块定位
 
 `mango-platform` 是 Mango 脚手架的**平台能力模块**，定位介于基础设施层（infra）和业务模块（biz）之间。

@@ -76,7 +76,7 @@ test.describe('日历管理 E2E', () => {
     const visibleMenus = collectVisibleMenuNames(menuBody.data || []);
     expect(visibleMenus).toContain('数据管理');
     expect(visibleMenus).toContain('日历管理');
-    expect(visibleMenus).toContain('发号器管理');
+    expect(visibleMenus).toContain('编号规则');
     expect(visibleMenus).toContain('支付管理');
 
     await page.getByRole('button', { name: '数据管理' }).click();
