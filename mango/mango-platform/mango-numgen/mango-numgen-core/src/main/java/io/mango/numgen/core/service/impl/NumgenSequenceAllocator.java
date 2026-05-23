@@ -20,24 +20,25 @@ public class NumgenSequenceAllocator {
     private final ObjectProvider<ILocker> lockerProvider;
     private final NumgenKvProperties kvProperties;
 
-    public Segment allocate(String genKey, Integer ruleVersion, Long tenantId, int count) {
+    public Segment allocate(String genKey, Integer ruleVersion, String scopeKey, Long tenantId, int count) {
+        String resolvedScopeKey = scopeKey == null || scopeKey.isBlank() ? "GLOBAL" : scopeKey;
         ILocker locker = lockerProvider.getIfAvailable();
         if (locker == null) {
-            return allocateWithOptimisticLock(genKey, ruleVersion, tenantId, count);
+            return allocateWithOptimisticLock(genKey, ruleVersion, resolvedScopeKey, tenantId, count);
         }
-        String lockKey = "numgen:sequence:" + tenantId + ":" + genKey + ":" + ruleVersion;
+        String lockKey = "numgen:sequence:" + tenantId + ":" + genKey + ":" + resolvedScopeKey;
         Require.isTrue(locker.tryLock(lockKey, kvProperties.getAllocationLockTtlSeconds()), 409, "编号序列分配繁忙，请重试");
         try {
-            return allocateWithOptimisticLock(genKey, ruleVersion, tenantId, count);
+            return allocateWithOptimisticLock(genKey, ruleVersion, resolvedScopeKey, tenantId, count);
         } finally {
             locker.unlock(lockKey);
         }
     }
 
-    private Segment allocateWithOptimisticLock(String genKey, Integer ruleVersion, Long tenantId, int count) {
-        ensureSequence(genKey, ruleVersion, tenantId);
+    private Segment allocateWithOptimisticLock(String genKey, Integer ruleVersion, String scopeKey, Long tenantId, int count) {
+        ensureSequence(genKey, ruleVersion, scopeKey, tenantId);
         for (int i = 0; i < MAX_RETRY; i++) {
-            NumgenSequence sequence = sequenceMapper.selectByRule(genKey, ruleVersion, tenantId);
+            NumgenSequence sequence = sequenceMapper.selectByScope(genKey, scopeKey, tenantId);
             long start = sequence.getCurrentValue() + 1;
             long end = sequence.getCurrentValue() + count;
             int updated = sequenceMapper.allocateSegment(sequence.getId(), sequence.getVersion(), count);
@@ -48,11 +49,12 @@ public class NumgenSequenceAllocator {
         return Require.fail(409, "编号序列分配冲突，请重试");
     }
 
-    private void ensureSequence(String genKey, Integer ruleVersion, Long tenantId) {
+    private void ensureSequence(String genKey, Integer ruleVersion, String scopeKey, Long tenantId) {
         NumgenSequence sequence = new NumgenSequence();
         sequence.setId(IdWorker.getId());
         sequence.setGenKey(genKey);
         sequence.setRuleVersion(ruleVersion);
+        sequence.setScopeKey(scopeKey);
         sequence.setCurrentValue(0L);
         sequence.setTenantId(tenantId);
         sequenceMapper.insertIgnore(sequence);

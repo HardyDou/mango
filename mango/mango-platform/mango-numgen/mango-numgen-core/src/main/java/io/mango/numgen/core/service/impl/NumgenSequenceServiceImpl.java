@@ -37,6 +37,7 @@ public class NumgenSequenceServiceImpl implements INumgenSequenceService {
         return new LambdaQueryWrapper<NumgenSequence>()
                 .eq(query.getGenKey() != null && !query.getGenKey().isBlank(), NumgenSequence::getGenKey, query.getGenKey())
                 .eq(query.getRuleVersion() != null, NumgenSequence::getRuleVersion, query.getRuleVersion())
+                .eq(query.getScopeKey() != null && !query.getScopeKey().isBlank(), NumgenSequence::getScopeKey, query.getScopeKey())
                 .eq(NumgenSequence::getTenantId, currentTenantId())
                 .orderByDesc(NumgenSequence::getUpdateTime);
     }
@@ -46,6 +47,7 @@ public class NumgenSequenceServiceImpl implements INumgenSequenceService {
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
         vo.setRuleVersion(entity.getRuleVersion());
+        vo.setScopeKey(entity.getScopeKey());
         vo.setCurrentValue(entity.getCurrentValue());
         vo.setVersion(entity.getVersion());
         vo.setCreateTime(entity.getCreateTime());

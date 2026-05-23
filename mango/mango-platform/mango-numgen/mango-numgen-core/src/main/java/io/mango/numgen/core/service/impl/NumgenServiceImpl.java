@@ -60,9 +60,11 @@ public class NumgenServiceImpl implements INumgenService {
         NumgenRuleValidationVO validation = ruleRenderer.validate(rule, segments);
         Require.isTrue(validation.isValid(), String.join("；", validation.getErrors()));
         Map<String, Object> params = command.getParams();
+        String scopeKey = ruleRenderer.sequenceScopeKey(segments, params);
         NumgenSequenceAllocator.Segment sequenceSegment = sequenceAllocator.allocate(
                 rule.getGenKey(),
                 rule.getVersion(),
+                scopeKey,
                 tenantId,
                 command.getCount());
 
@@ -97,6 +99,7 @@ public class NumgenServiceImpl implements INumgenService {
             segment.setDateFormat(segmentCommand.getDateFormat());
             segment.setSeqWidth(segmentCommand.getSeqWidth());
             segment.setPadChar(segmentCommand.getPadChar());
+            segment.setSequenceScope(segmentCommand.getSequenceScope());
             return segment;
         }).collect(java.util.stream.Collectors.toList());
         return ruleRenderer.validate(rule, segments);

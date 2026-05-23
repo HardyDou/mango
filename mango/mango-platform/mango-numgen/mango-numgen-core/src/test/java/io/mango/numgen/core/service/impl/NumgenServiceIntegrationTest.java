@@ -2,6 +2,7 @@ package io.mango.numgen.core.service.impl;
 
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.numgen.api.command.NumgenNextCommand;
 import io.mango.numgen.api.command.NumgenPublishCommand;
 import io.mango.numgen.api.command.SaveNumgenGeneratorCommand;
 import io.mango.numgen.api.command.SaveNumgenRuleSegmentCommand;
@@ -10,6 +11,7 @@ import io.mango.numgen.api.vo.NumgenGeneratorVO;
 import io.mango.numgen.core.service.INumgenGeneratorService;
 import io.mango.numgen.core.service.INumgenRuleService;
 import io.mango.numgen.core.service.INumgenSegmentService;
+import io.mango.numgen.core.service.INumgenService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,6 +62,9 @@ class NumgenServiceIntegrationTest {
 
     @Autowired
     private INumgenSegmentService segmentService;
+
+    @Autowired
+    private INumgenService numgenService;
 
     @Autowired
     private NumgenSequenceAllocator sequenceAllocator;
@@ -123,6 +128,21 @@ class NumgenServiceIntegrationTest {
     }
 
     @Test
+    void updateGenerator_rejectsGenKeyRename() {
+        seedPublishedAndDraftRules();
+
+        SaveNumgenGeneratorCommand command = new SaveNumgenGeneratorCommand();
+        command.setId(1L);
+        command.setGenKey("ORDER_NO_NEW");
+        command.setGenName("订单号规则新版");
+        command.setStatus(1);
+
+        assertThatThrownBy(() -> generatorService.updateGenerator(command))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("业务 Key 不允许修改");
+    }
+
+    @Test
     void publishedRuleSegmentsCannotBeChanged() {
         seedPublishedAndDraftRules();
 
@@ -143,8 +163,33 @@ class NumgenServiceIntegrationTest {
     }
 
     @Test
+    void updateSegment_checksCurrentOwnerRuleAndRejectsRuleReassignment() {
+        seedPublishedAndDraftRules();
+
+        SaveNumgenRuleSegmentCommand command = new SaveNumgenRuleSegmentCommand();
+        command.setId(1001L);
+        command.setRuleId(102L);
+        command.setSortOrder(1);
+        command.setSegmentType("TEXT");
+        command.setSegmentName("固定前缀");
+        command.setLiteralValue("XX");
+
+        assertThatThrownBy(() -> segmentService.updateSegment(command))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("只有草稿版本可以修改片段");
+
+        assertThat(stringValue("numgen_rule_segment", "literal_value", "id = 1001")).isEqualTo("SO");
+        assertThat(longValue("numgen_rule_segment", "rule_id", "id = 1001")).isEqualTo(101L);
+    }
+
+    @Test
     void publishHistoricalVersion_clonesItAsNextActiveVersionAndKeepsSequenceHistory() {
         seedPublishedAndDraftRules();
+        NumgenNextCommand next = new NumgenNextCommand();
+        next.setGenKey("ORDER_NO");
+        assertThat(numgenService.nextValue(next)).isEqualTo("SO0001");
+        assertThat(numgenService.nextValue(next)).isEqualTo("SO0002");
+
         NumgenPublishCommand publishDraft = new NumgenPublishCommand();
         publishDraft.setGenKey("ORDER_NO");
         assertThat(ruleService.publishRule(publishDraft).getData()).isTrue();
@@ -165,19 +210,41 @@ class NumgenServiceIntegrationTest {
         NumgenGeneratorVO afterRollback = firstGenerator();
         assertThat(afterRollback.getCurrentRuleVersion()).isEqualTo(3);
         assertThat(afterRollback.getHasUnpublishedChanges()).isFalse();
+        assertThat(numgenService.nextValue(next)).isEqualTo("SO0003");
+        assertThat(longValue("numgen_sequence", "current_value", "gen_key = 'ORDER_NO' AND scope_key = 'GLOBAL'"))
+                .isEqualTo(3L);
     }
 
     @Test
     void sequenceAllocator_usesRealSequenceTable() {
-        NumgenSequenceAllocator.Segment first = sequenceAllocator.allocate("ORDER_NO", 2, 1L, 3);
-        NumgenSequenceAllocator.Segment second = sequenceAllocator.allocate("ORDER_NO", 2, 1L, 2);
+        NumgenSequenceAllocator.Segment first = sequenceAllocator.allocate("ORDER_NO", 2, "GLOBAL", 1L, 3);
+        NumgenSequenceAllocator.Segment second = sequenceAllocator.allocate("ORDER_NO", 2, "GLOBAL", 1L, 2);
 
         assertThat(first.start()).isEqualTo(1L);
         assertThat(first.end()).isEqualTo(3L);
         assertThat(second.start()).isEqualTo(4L);
         assertThat(second.end()).isEqualTo(5L);
-        assertThat(longValue("numgen_sequence", "current_value", "gen_key = 'ORDER_NO' AND rule_version = 2"))
+        assertThat(longValue("numgen_sequence", "current_value", "gen_key = 'ORDER_NO' AND scope_key = 'GLOBAL'"))
                 .isEqualTo(5L);
+    }
+
+    @Test
+    void sequenceScope_isDerivedFromMarkedSegments() {
+        seedScopedRule();
+        NumgenNextCommand next = new NumgenNextCommand();
+        next.setGenKey("ORDER_NO");
+        next.setParams(java.util.Map.of("orgCode", "A1"));
+
+        assertThat(numgenService.nextValue(next)).isEqualTo("SO20260523A10001");
+        assertThat(numgenService.nextValue(next)).isEqualTo("SO20260523A10002");
+
+        next.setParams(java.util.Map.of("orgCode", "B2"));
+        assertThat(numgenService.nextValue(next)).isEqualTo("SO20260523B20001");
+
+        assertThat(longValue("numgen_sequence", "current_value", "gen_key = 'ORDER_NO' AND scope_key LIKE '%A1%'"))
+                .isEqualTo(2L);
+        assertThat(longValue("numgen_sequence", "current_value", "gen_key = 'ORDER_NO' AND scope_key LIKE '%B2%'"))
+                .isEqualTo(1L);
     }
 
     private NumgenGeneratorVO firstGenerator() {
@@ -200,12 +267,36 @@ class NumgenServiceIntegrationTest {
                 """);
         jdbcTemplate.update("""
                 INSERT INTO numgen_rule_segment
-                (id, rule_id, sort_order, segment_type, segment_name, literal_value, seq_width, pad_char, tenant_id)
+                (id, rule_id, sort_order, segment_type, segment_name, literal_value, seq_width, pad_char, sequence_scope, tenant_id)
                 VALUES
-                (1001, 101, 1, 'TEXT', '固定前缀', 'SO', NULL, '0', 1),
-                (1002, 101, 2, 'SEQ', '流水', NULL, 4, '0', 1),
-                (2001, 102, 1, 'TEXT', '固定前缀', 'SO', NULL, '0', 1),
-                (2002, 102, 2, 'SEQ', '流水', NULL, 4, '0', 1)
+                (1001, 101, 1, 'TEXT', '固定前缀', 'SO', NULL, '0', 0, 1),
+                (1002, 101, 2, 'SEQ', '流水', NULL, 4, '0', 0, 1),
+                (2001, 102, 1, 'TEXT', '固定前缀', 'SO', NULL, '0', 0, 1),
+                (2002, 102, 2, 'SEQ', '流水', NULL, 4, '0', 0, 1)
+                """);
+    }
+
+    private void seedScopedRule() {
+        jdbcTemplate.update("""
+                INSERT INTO numgen_generator
+                (id, gen_key, gen_name, status, current_rule_version, current_publish_status, tenant_id, del_flag)
+                VALUES
+                (1, 'ORDER_NO', '订单号规则', 1, 1, 1, 1, 0)
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO numgen_rule
+                (id, gen_key, rule_name, version, status, publish_status, version_state, tenant_id, del_flag)
+                VALUES
+                (101, 'ORDER_NO', '默认规则', 1, 1, 1, 'ACTIVE', 1, 0)
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO numgen_rule_segment
+                (id, rule_id, sort_order, segment_type, segment_name, literal_value, variable_key, date_format, seq_width, pad_char, sequence_scope, tenant_id)
+                VALUES
+                (1001, 101, 1, 'TEXT', '固定前缀', 'SO', NULL, NULL, NULL, '0', 0, 1),
+                (1002, 101, 2, 'TEXT', '测试日期', '20260523', NULL, NULL, NULL, '0', 1, 1),
+                (1003, 101, 3, 'PARAM', '组织', NULL, 'orgCode', NULL, NULL, '0', 1, 1),
+                (1004, 101, 4, 'SEQ', '流水', NULL, NULL, NULL, 4, '0', 0, 1)
                 """);
     }
 
@@ -263,6 +354,7 @@ class NumgenServiceIntegrationTest {
                     date_format VARCHAR(64),
                     seq_width INT,
                     pad_char VARCHAR(1) DEFAULT '0',
+                    sequence_scope TINYINT NOT NULL DEFAULT 0,
                     tenant_id BIGINT NOT NULL DEFAULT 0,
                     create_by VARCHAR(64),
                     update_by VARCHAR(64),
@@ -276,6 +368,7 @@ class NumgenServiceIntegrationTest {
                     id BIGINT NOT NULL,
                     gen_key VARCHAR(128) NOT NULL,
                     rule_version INT NOT NULL DEFAULT 1,
+                    scope_key VARCHAR(256) NOT NULL DEFAULT 'GLOBAL',
                     current_value BIGINT NOT NULL DEFAULT 0,
                     version INT NOT NULL DEFAULT 0,
                     tenant_id BIGINT NOT NULL DEFAULT 0,
@@ -284,7 +377,7 @@ class NumgenServiceIntegrationTest {
                     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    UNIQUE KEY uk_numgen_sequence_tenant_rule (tenant_id, gen_key, rule_version)
+                    UNIQUE KEY uk_numgen_sequence_tenant_scope (tenant_id, gen_key, scope_key)
                 )
                 """);
     }

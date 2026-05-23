@@ -262,6 +262,7 @@ public class NumgenRuleServiceImpl implements INumgenRuleService {
             clonedSegment.setDateFormat(sourceSegment.getDateFormat());
             clonedSegment.setSeqWidth(sourceSegment.getSeqWidth());
             clonedSegment.setPadChar(sourceSegment.getPadChar());
+            clonedSegment.setSequenceScope(sourceSegment.getSequenceScope());
             clonedSegment.setTenantId(source.getTenantId());
             clonedSegment.setCreateTime(now);
             clonedSegment.setUpdateTime(now);

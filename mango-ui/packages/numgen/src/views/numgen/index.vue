@@ -222,7 +222,10 @@
                 @drop="onSegmentDrop(segment)"
               >
                 <strong>{{ segmentPreview(segment) }}</strong>
-                <small>{{ segmentTitle(segment) }}</small>
+                <small>
+                  {{ segmentTitle(segment) }}
+                  <em v-if="segment.sequenceScope === 1">分组</em>
+                </small>
               </div>
               <button class="segment-add" type="button" @click="openSegmentPropertyDialog()">
                 <el-icon><Plus /></el-icon>
@@ -295,6 +298,19 @@
           <el-select v-model="segmentForm.variableKey" filterable placeholder="选择参数" @change="handleSegmentParamChange">
             <el-option v-for="item in businessParamOptions" :key="item.key" :label="item.label" :value="item.key" />
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="segmentForm.segmentType !== 'SEQ'" label="流水分组">
+          <div class="scope-toggle-row">
+            <el-switch
+              v-model="segmentForm.sequenceScope"
+              :active-value="1"
+              :inactive-value="0"
+              active-text="参与"
+              inactive-text="不参与"
+              inline-prompt
+            />
+            <span>{{ sequenceScopeHint }}</span>
+          </div>
         </el-form-item>
         <template v-if="segmentForm.segmentType === 'SEQ'">
           <el-form-item label="流水位数" prop="seqWidth">
@@ -449,6 +465,7 @@ const segmentForm = reactive<EditableSegment>({
   dateFormat: 'yyyyMMdd',
   seqWidth: 6,
   padChar: '0',
+  sequenceScope: 0,
 });
 
 const previewForm = reactive({ count: 1 });
@@ -473,6 +490,11 @@ const dialogFormatPreview = computed(() => normalizedDialogSegments()
 const dialogExamplePreview = computed(() => normalizedDialogSegments()
   .map(segment => segmentExample(segment))
   .join(''));
+const sequenceScopeHint = computed(() => {
+  if (segmentForm.segmentType === 'DATE') return '按日期重置流水';
+  if (segmentForm.segmentType === 'PARAM') return '按参数值隔离流水';
+  return '按该片段值隔离流水';
+});
 const generatorRules: FormRules = {
   genKey: [{ required: true, message: '请输入业务Key', trigger: 'blur' }],
   genName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
@@ -810,6 +832,7 @@ function chooseSegmentType(type: SegmentEditorType) {
     segmentForm.literalValue = '';
     segmentForm.variableKey = '';
     segmentForm.dateFormat = '';
+    segmentForm.sequenceScope = 0;
   }
 }
 
@@ -828,6 +851,7 @@ async function loadDialogSegments(row?: NumgenVersion, clone = false) {
         id: clone ? undefined : item.id,
         ruleId: clone ? undefined : item.ruleId,
         segmentType: inferEditorSegmentType(item),
+        sequenceScope: item.segmentType === 'SEQ' ? 0 : item.sequenceScope || 0,
         clientKey: clone ? `clone-${item.id}-${Date.now()}` : `saved-${item.id}`,
       }));
     inferBusinessParamsFromSegments();
@@ -1000,6 +1024,7 @@ function newSegmentDraft(): EditableSegment {
     dateFormat: 'yyyyMMdd',
     seqWidth: 6,
     padChar: '0',
+    sequenceScope: 0,
   };
 }
 
@@ -1020,6 +1045,7 @@ function segmentKey(segment: EditableSegment) {
 
 function stripEditableSegment(segment: EditableSegment): NumgenSegment {
   const { clientKey, ...payload } = segment;
+  payload.sequenceScope = payload.segmentType === 'SEQ' ? 0 : payload.sequenceScope || 0;
   return payload;
 }
 
@@ -1280,6 +1306,16 @@ function segmentTypeLabel(type: SegmentEditorType) {
   white-space: nowrap;
 }
 
+.segment-chip small em {
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning-dark-2);
+  font-style: normal;
+  font-size: 11px;
+}
+
 .segment-chip strong {
   font-size: 15px;
   min-width: 0;
@@ -1459,6 +1495,19 @@ function segmentTypeLabel(type: SegmentEditorType) {
   background: var(--el-color-primary);
   color: var(--el-color-white);
   font-weight: 600;
+}
+
+.scope-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.scope-toggle-row span {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .dialog-strip {

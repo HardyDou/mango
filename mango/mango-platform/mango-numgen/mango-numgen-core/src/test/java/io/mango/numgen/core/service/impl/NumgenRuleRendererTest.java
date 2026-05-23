@@ -85,6 +85,30 @@ class NumgenRuleRendererTest {
         assertThat(value).isEqualTo("SOA1-SALE");
     }
 
+    @Test
+    void sequenceScopeKey_usesMarkedNonSequenceSegments() {
+        List<NumgenRuleSegment> segments = List.of(
+                scopedSegment(1, "DATE", null, null, "yyyyMMdd", null, null, 1),
+                scopedSegment(2, "PARAM", null, "orgCode", null, null, null, 1),
+                scopedSegment(3, "SEQ", null, null, null, 4, "0", 1)
+        );
+
+        String scopeKey = renderer.sequenceScopeKey(segments, Map.of("orgCode", "A1"));
+
+        assertThat(scopeKey).endsWith("|2:A1");
+        assertThat(scopeKey).doesNotContain("0000");
+    }
+
+    @Test
+    void sequenceScopeKey_defaultsToGlobalWhenNoSegmentIsMarked() {
+        List<NumgenRuleSegment> segments = List.of(
+                segment(1, "TEXT", "SO", null, null, null, null),
+                segment(2, "SEQ", null, null, null, 4, "0")
+        );
+
+        assertThat(renderer.sequenceScopeKey(segments, Map.of())).isEqualTo("GLOBAL");
+    }
+
     private NumgenRule rule() {
         NumgenRule rule = new NumgenRule();
         rule.setGenKey("ORDER_NO");
@@ -94,6 +118,10 @@ class NumgenRuleRendererTest {
     }
 
     private NumgenRuleSegment segment(int sortOrder, String type, String literalValue, String variableKey, String dateFormat, Integer seqWidth, String padChar) {
+        return scopedSegment(sortOrder, type, literalValue, variableKey, dateFormat, seqWidth, padChar, 0);
+    }
+
+    private NumgenRuleSegment scopedSegment(int sortOrder, String type, String literalValue, String variableKey, String dateFormat, Integer seqWidth, String padChar, Integer sequenceScope) {
         NumgenRuleSegment segment = new NumgenRuleSegment();
         segment.setSortOrder(sortOrder);
         segment.setSegmentType(type);
@@ -103,6 +131,7 @@ class NumgenRuleRendererTest {
         segment.setDateFormat(dateFormat);
         segment.setSeqWidth(seqWidth);
         segment.setPadChar(padChar);
+        segment.setSequenceScope(sequenceScope);
         return segment;
     }
 }

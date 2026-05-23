@@ -42,6 +42,9 @@ public class NumgenRuleSegmentVO implements Serializable {
     @Schema(description = "补齐字符")
     private String padChar;
 
+    @Schema(description = "是否参与流水分组：0-否，1-是")
+    private Integer sequenceScope;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

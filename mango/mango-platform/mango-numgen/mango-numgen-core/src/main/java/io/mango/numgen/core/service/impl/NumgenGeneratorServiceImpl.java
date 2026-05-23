@@ -65,9 +65,7 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         Require.notNull(command.getId(), "编号生成器 ID 不能为空");
         validate(command, true);
         NumgenGenerator entity = selectRequired(command.getId());
-        if (!entity.getGenKey().equals(command.getGenKey().trim())) {
-            Require.isTrue(generatorMapper.selectByKey(command.getGenKey().trim(), entity.getTenantId()) == null, "业务 Key 已存在");
-        }
+        Require.isTrue(entity.getGenKey().equals(command.getGenKey().trim()), "业务 Key 不允许修改");
         copy(command, entity);
         return R.ok(generatorMapper.updateById(entity) > 0);
     }

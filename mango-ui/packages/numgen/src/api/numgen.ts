@@ -71,6 +71,7 @@ export interface NumgenRuleSegment {
   dateFormat?: string;
   seqWidth?: number;
   padChar?: string;
+  sequenceScope?: number;
 }
 
 export type NumgenSegment = NumgenRuleSegment;
@@ -216,6 +217,7 @@ function toBackendSegmentPayload(data: NumgenRuleSegment): NumgenRuleSegment {
     dateFormat: data.dateFormat,
     seqWidth: data.seqWidth,
     padChar: data.padChar,
+    sequenceScope: data.segmentType === 'SEQ' ? 0 : data.sequenceScope,
   };
 }
 

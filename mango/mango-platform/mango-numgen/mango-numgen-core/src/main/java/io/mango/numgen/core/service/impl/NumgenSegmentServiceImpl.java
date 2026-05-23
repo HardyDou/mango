@@ -70,8 +70,9 @@ public class NumgenSegmentServiceImpl implements INumgenSegmentService {
         Require.notNull(command.getId(), "编号规则片段 ID 不能为空");
         validate(command, true);
         NumgenRuleSegment entity = selectRequired(command.getId());
-        NumgenRule rule = selectRuleRequired(command.getRuleId());
+        NumgenRule rule = selectRuleRequired(entity.getRuleId());
         requireEditableRule(rule);
+        Require.isTrue(entity.getRuleId().equals(command.getRuleId()), "片段所属规则不能修改");
         copy(command, entity);
         return R.ok(segmentMapper.updateById(entity) > 0);
     }
@@ -94,6 +95,7 @@ public class NumgenSegmentServiceImpl implements INumgenSegmentService {
         Require.notBlank(command.getSegmentType(), "片段类型不能为空");
         Require.isTrue(SUPPORTED_TYPES.contains(command.getSegmentType()), "不支持的片段类型：" + command.getSegmentType());
         Require.notBlank(command.getSegmentName(), "片段名称不能为空");
+        Require.isTrue(!"SEQ".equals(command.getSegmentType()) || !Integer.valueOf(1).equals(command.getSequenceScope()), "流水片段不能参与流水分组");
         switch (command.getSegmentType()) {
             case "TEXT" -> Require.notBlank(command.getLiteralValue(), "字符串不能为空");
             case "EXPR" -> Require.notBlank(command.getLiteralValue(), "表达式不能为空");
@@ -135,6 +137,7 @@ public class NumgenSegmentServiceImpl implements INumgenSegmentService {
         entity.setDateFormat(NumgenContextSupport.trimToNull(command.getDateFormat()));
         entity.setSeqWidth(command.getSeqWidth());
         entity.setPadChar(NumgenContextSupport.trimToNull(command.getPadChar()) == null ? "0" : command.getPadChar().trim());
+        entity.setSequenceScope("SEQ".equals(command.getSegmentType()) ? 0 : (Integer.valueOf(1).equals(command.getSequenceScope()) ? 1 : 0));
     }
 
     private NumgenRuleSegmentVO toVO(NumgenRuleSegment entity) {
@@ -149,6 +152,7 @@ public class NumgenSegmentServiceImpl implements INumgenSegmentService {
         vo.setDateFormat(entity.getDateFormat());
         vo.setSeqWidth(entity.getSeqWidth());
         vo.setPadChar(entity.getPadChar());
+        vo.setSequenceScope(entity.getSequenceScope());
         vo.setCreateTime(entity.getCreateTime());
         vo.setUpdateTime(entity.getUpdateTime());
         return vo;

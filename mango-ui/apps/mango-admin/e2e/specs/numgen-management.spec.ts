@@ -108,6 +108,60 @@ async function versions(page: Page, headers: Record<string, string>, genKey: str
 }
 
 test.describe('编号规则管理 E2E', () => {
+  test('新增规则时可在片段上配置流水分组', async ({ page }) => {
+    await login(page);
+    const stamp = Date.now();
+    const genKey = `E2E_SCOPE_${stamp}`;
+    const genName = `E2E 分组 ${stamp}`;
+    const segmentPayloads: any[] = [];
+
+    page.on('request', (request) => {
+      if (request.url().includes('/api/numgen/segments') && request.method() === 'POST') {
+        segmentPayloads.push(request.postDataJSON());
+      }
+    });
+
+    await page.goto('/#/data/numgen');
+    await expect(page.getByRole('heading', { name: '编号规则' })).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: '新增规则' }).click();
+    await expect(page.getByRole('dialog', { name: '新增生成器' })).toBeVisible();
+    await page.getByLabel('业务Key').fill(genKey);
+    await page.getByLabel('名称').fill(genName);
+    await page.getByRole('tab', { name: /规则配置/ }).click();
+
+    await page.getByRole('button', { name: '添加片段' }).click();
+    const segmentDialog = page.getByRole('dialog', { name: '片段属性' });
+    await segmentDialog.getByLabel('片段名称').fill('前缀');
+    await segmentDialog.getByRole('textbox', { name: '字符串' }).fill('SO');
+    await page.getByRole('button', { name: '保存片段' }).click();
+
+    await page.getByRole('button', { name: '添加片段' }).click();
+    await segmentDialog.getByLabel('片段名称').fill('日期');
+    await segmentDialog.getByRole('radio', { name: '时间' }).click();
+    await segmentDialog.locator('.scope-toggle-row').getByText('不参与').click();
+    await page.getByRole('button', { name: '保存片段' }).click();
+    await expect(page.locator('.segment-chip', { hasText: '日期' })).toContainText('分组');
+
+    await page.getByRole('button', { name: '添加片段' }).click();
+    await segmentDialog.getByLabel('片段名称').fill('流水');
+    await segmentDialog.getByRole('radio', { name: '自增流水' }).click();
+    await page.getByRole('button', { name: '保存片段' }).click();
+
+    const saveResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/numgen/segments') &&
+      response.request().method() === 'POST' &&
+      response.status() === 200
+    );
+    await page.getByRole('dialog', { name: '新增生成器' }).getByRole('button', { name: '保存' }).click();
+    await saveResponsePromise;
+    await expect(page.locator('.el-message__content', { hasText: '生成器已保存' }).last()).toBeVisible({ timeout: 10000 });
+
+    expect(segmentPayloads).toEqual(expect.arrayContaining([
+      expect.objectContaining({ segmentType: 'DATE', sequenceScope: 1 }),
+      expect.objectContaining({ segmentType: 'SEQ', sequenceScope: 0 }),
+    ]));
+  });
+
   test('历史版本列表可查看并切换为新的生效版本', async ({ page }) => {
     await login(page);
     const headers = await apiHeaders(page);

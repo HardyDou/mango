@@ -15,19 +15,19 @@ public interface NumgenSequenceMapper extends BaseMapper<NumgenSequence> {
             SELECT *
             FROM numgen_sequence
             WHERE gen_key = #{genKey}
-              AND rule_version = #{ruleVersion}
+              AND scope_key = #{scopeKey}
               AND tenant_id = #{tenantId}
             LIMIT 1
             """)
-    NumgenSequence selectByRule(@Param("genKey") String genKey,
-                                @Param("ruleVersion") Integer ruleVersion,
-                                @Param("tenantId") Long tenantId);
+    NumgenSequence selectByScope(@Param("genKey") String genKey,
+                                 @Param("scopeKey") String scopeKey,
+                                 @Param("tenantId") Long tenantId);
 
     @Insert("""
             INSERT IGNORE INTO numgen_sequence
-            (id, gen_key, rule_version, current_value, version, tenant_id, create_time, update_time)
+            (id, gen_key, rule_version, scope_key, current_value, version, tenant_id, create_time, update_time)
             VALUES
-            (#{id}, #{genKey}, #{ruleVersion}, #{currentValue}, 0, #{tenantId}, NOW(), NOW())
+            (#{id}, #{genKey}, #{ruleVersion}, #{scopeKey}, #{currentValue}, 0, #{tenantId}, NOW(), NOW())
             """)
     int insertIgnore(NumgenSequence sequence);
 

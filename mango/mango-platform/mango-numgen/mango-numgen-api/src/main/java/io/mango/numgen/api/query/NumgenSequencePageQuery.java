@@ -18,4 +18,7 @@ public class NumgenSequencePageQuery extends PageQuery {
 
     @Schema(description = "规则版本")
     private Integer ruleVersion;
+
+    @Schema(description = "流水分组键")
+    private String scopeKey;
 }

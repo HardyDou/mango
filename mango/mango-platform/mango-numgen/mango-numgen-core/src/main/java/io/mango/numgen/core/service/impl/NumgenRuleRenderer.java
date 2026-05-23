@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class NumgenRuleRenderer {
@@ -72,6 +73,19 @@ public class NumgenRuleRenderer {
         return builder.toString();
     }
 
+    public String sequenceScopeKey(List<NumgenRuleSegment> segments, Map<String, Object> params) {
+        List<NumgenRuleSegment> scopeSegments = sorted(segments).stream()
+                .filter(segment -> Integer.valueOf(1).equals(segment.getSequenceScope()))
+                .filter(segment -> !"SEQ".equals(segment.getSegmentType()))
+                .collect(Collectors.toList());
+        if (scopeSegments.isEmpty()) {
+            return "GLOBAL";
+        }
+        return scopeSegments.stream()
+                .map(segment -> segment.getSortOrder() + ":" + renderSegment(segment, params, 0L))
+                .collect(Collectors.joining("|"));
+    }
+
     private void validateSegment(NumgenRuleSegment segment, List<String> errors) {
         if (segment == null) {
             errors.add("编号片段不能为空");
@@ -105,6 +119,9 @@ public class NumgenRuleRenderer {
             case "SEQ" -> {
                 if (segment.getSeqWidth() == null || segment.getSeqWidth() <= 0) {
                     errors.add(segmentName(segment) + " 流水位数必须大于0");
+                }
+                if (Integer.valueOf(1).equals(segment.getSequenceScope())) {
+                    errors.add(segmentName(segment) + " 流水片段不能参与流水分组");
                 }
             }
             default -> errors.add("不支持的片段类型：" + segment.getSegmentType());

@@ -24,6 +24,9 @@ public class NumgenSequenceVO implements Serializable {
     @Schema(description = "规则版本")
     private Integer ruleVersion;
 
+    @Schema(description = "流水分组键")
+    private String scopeKey;
+
     @Schema(description = "当前序列值")
     private Long currentValue;
 

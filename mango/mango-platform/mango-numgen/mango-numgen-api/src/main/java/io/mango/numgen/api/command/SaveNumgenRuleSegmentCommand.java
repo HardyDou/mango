@@ -60,4 +60,7 @@ public class SaveNumgenRuleSegmentCommand implements Serializable {
     @Size(max = 1, message = "补齐字符只能是单个字符")
     @Schema(description = "补齐字符")
     private String padChar;
+
+    @Schema(description = "是否参与流水分组：0-否，1-是")
+    private Integer sequenceScope;
 }

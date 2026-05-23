@@ -20,6 +20,8 @@ public class NumgenSequence {
 
     private Integer ruleVersion;
 
+    private String scopeKey;
+
     private Long currentValue;
 
     private Integer version;

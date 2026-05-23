@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `numgen_rule_segment` (
   `date_format` varchar(64) DEFAULT NULL COMMENT '日期格式',
   `seq_width` int DEFAULT NULL COMMENT '流水位数',
   `pad_char` varchar(1) DEFAULT '0' COMMENT '补齐字符',
+  `sequence_scope` tinyint NOT NULL DEFAULT '0' COMMENT '是否参与流水分组：0-否，1-是',
   `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT '租户ID',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建人',
   `update_by` varchar(64) DEFAULT NULL COMMENT '更新人',
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS `numgen_sequence` (
   `id` bigint NOT NULL COMMENT '主键',
   `gen_key` varchar(128) NOT NULL COMMENT '业务Key',
   `rule_version` int NOT NULL DEFAULT '1' COMMENT '规则版本',
+  `scope_key` varchar(256) NOT NULL DEFAULT 'GLOBAL' COMMENT '流水分组键',
   `current_value` bigint NOT NULL DEFAULT '0' COMMENT '当前序列值',
   `version` int NOT NULL DEFAULT '0' COMMENT '乐观锁版本',
   `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT '租户ID',
@@ -65,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `numgen_sequence` (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_numgen_sequence_tenant_rule` (`tenant_id`, `gen_key`, `rule_version`)
+  UNIQUE KEY `uk_numgen_sequence_tenant_scope` (`tenant_id`, `gen_key`, `scope_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编号生成序列';
 
 CREATE TABLE IF NOT EXISTS `numgen_history` (

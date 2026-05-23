@@ -34,6 +34,8 @@ public class NumgenRuleSegment {
 
     private String padChar;
 
+    private Integer sequenceScope;
+
     private Long tenantId;
 
     @TableField(fill = FieldFill.INSERT)
