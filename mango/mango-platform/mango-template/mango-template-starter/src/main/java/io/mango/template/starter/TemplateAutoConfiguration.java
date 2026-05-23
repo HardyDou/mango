@@ -1,10 +1,11 @@
 package io.mango.template.starter;
 
-import io.mango.infra.tools.doc.DocumentToolService;
-import io.mango.infra.tools.doc.starter.DocumentToolsAutoConfiguration;
-import io.mango.template.api.enums.TemplateSourceFormat;
+import io.mango.infra.fileproc.convert.ConvertApi;
+import io.mango.infra.fileproc.convert.starter.ConvertAutoConfiguration;
+import io.mango.infra.fileproc.render.RenderApi;
+import io.mango.infra.fileproc.render.starter.RenderAutoConfiguration;
 import io.mango.template.core.mapper.TemplateMapper;
-import io.mango.template.core.render.*;
+import io.mango.template.core.render.TemplateRenderManager;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -14,13 +15,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
  * 模板服务自动配置。
  */
-@AutoConfiguration(after = DocumentToolsAutoConfiguration.class)
+@AutoConfiguration(after = {RenderAutoConfiguration.class, ConvertAutoConfiguration.class})
 @ConditionalOnClass(TemplateMapper.class)
 @ConditionalOnProperty(prefix = "mango.template", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan("io.mango.template.core.mapper")
@@ -36,41 +36,9 @@ public class TemplateAutoConfiguration {
     private static final int RENDER_EXECUTOR_AWAIT_SECONDS = 30;
 
     @Bean
-    @ConditionalOnMissingBean
-    public PlaceholderTemplateEngine placeholderTemplateEngine() {
-        return new PlaceholderTemplateEngine();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public FreemarkerTemplateEngine freemarkerTemplateEngine() {
-        return new FreemarkerTemplateEngine();
-    }
-
-    @Bean
-    public TemplateRenderer textTemplateRenderer(FreemarkerTemplateEngine freemarkerEngine) {
-        return new TextTemplateRenderer(freemarkerEngine);
-    }
-
-    @Bean
-    public TemplateRenderer htmlTemplateRenderer(FreemarkerTemplateEngine freemarkerEngine) {
-        return new HtmlTemplateRenderer(freemarkerEngine);
-    }
-
-    @Bean
-    public TemplateRenderer docxTemplateRenderer(PlaceholderTemplateEngine engine) {
-        return new DocxTemplateRenderer(engine);
-    }
-
-    @Bean
-    public TemplateRenderer xlsxTemplateRenderer(PlaceholderTemplateEngine engine) {
-        return new BinaryTemplateRenderer(engine, TemplateSourceFormat.XLSX);
-    }
-
-    @Bean
-    public TemplateRenderManager templateRenderManager(List<TemplateRenderer> renderers,
-                                                       DocumentToolService documentToolService) {
-        return new TemplateRenderManager(renderers, documentToolService);
+    public TemplateRenderManager templateRenderManager(RenderApi renderApi,
+                                                       ConvertApi convertApi) {
+        return new TemplateRenderManager(renderApi, convertApi);
     }
 
     @Bean

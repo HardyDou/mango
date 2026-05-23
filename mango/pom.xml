@@ -30,11 +30,20 @@
         <commons-io.version>2.15.1</commons-io.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <plexus-utils.version>4.0.3</plexus-utils.version>
+        <jodconverter.version>4.4.11</jodconverter.version>
+        <aspose-words.version>24.12</aspose-words.version>
+        <aspose-cells.version>22.6</aspose-cells.version>
+        <aspose-slides.version>21.8</aspose-slides.version>
+        <aspose-pdf.version>21.7</aspose-pdf.version>
+        <aspose-imaging.version>25.10</aspose-imaging.version>
+        <pdfbox.version>3.0.6</pdfbox.version>
+        <commons-imaging.version>1.0.0-alpha6</commons-imaging.version>
         <springdoc-openapi.version>2.8.9</springdoc-openapi.version>
         <knife4j.version>4.5.0</knife4j.version>
         <swagger-annotations.version>2.2.30</swagger-annotations.version>
         <ip2region.version>2.7.0</ip2region.version>
         <flowable.version>7.0.0</flowable.version>
+        <poi.version>5.2.5</poi.version>
         <poi-tl.version>1.12.0</poi-tl.version>
     </properties>
 
@@ -405,16 +414,6 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-infra-tools-doc-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-infra-tools-doc-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
                 <artifactId>mango-authorization-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -542,6 +541,58 @@
                 <version>${commons-fileupload.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jodconverter</groupId>
+                <artifactId>jodconverter-local</artifactId>
+                <version>${jodconverter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aspose</groupId>
+                <artifactId>aspose-words</artifactId>
+                <version>${aspose-words.version}</version>
+                <classifier>jdk17</classifier>
+            </dependency>
+            <dependency>
+                <groupId>com.aspose</groupId>
+                <artifactId>aspose-cells</artifactId>
+                <version>${aspose-cells.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aspose</groupId>
+                <artifactId>aspose-slides</artifactId>
+                <version>${aspose-slides.version}</version>
+                <classifier>jdk16</classifier>
+            </dependency>
+            <dependency>
+                <groupId>com.aspose</groupId>
+                <artifactId>aspose-pdf</artifactId>
+                <version>${aspose-pdf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aspose</groupId>
+                <artifactId>aspose-imaging</artifactId>
+                <version>${aspose-imaging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox-tools</artifactId>
+                <version>${pdfbox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-imaging</artifactId>
+                <version>${commons-imaging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-utils</artifactId>
                 <version>${plexus-utils.version}</version>
@@ -586,8 +637,36 @@
                 <artifactId>poi-tl</artifactId>
                 <version>${poi-tl.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-fileproc-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-fileproc-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-fileproc-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>aspose-maven-repository</id>
+            <url>https://repository.aspose.com/repo</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <!-- ==================== 插件管理 ==================== -->
     <build>
