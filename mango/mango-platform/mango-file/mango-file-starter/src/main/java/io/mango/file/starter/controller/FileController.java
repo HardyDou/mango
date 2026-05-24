@@ -9,11 +9,11 @@ import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
+import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileUploadInitVO;
 import io.mango.file.api.vo.FileUploadPartSignVO;
-import io.mango.file.core.service.FileDownload;
 import io.mango.file.core.service.IFileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +35,7 @@ import java.util.List;
 /**
  * 文件管理接口。
  */
-@RestController
+@RestController("mangoFileController")
 @RequestMapping("/file/files")
 @RequiredArgsConstructor
 @Tag(name = "文件管理", description = "文件上传、下载、预览元数据、记录查询与归档接口")
@@ -116,7 +116,7 @@ public class FileController {
     public ResponseEntity<org.springframework.core.io.InputStreamResource> download(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
-        FileDownload download = fileService.download(id);
+        FileDownloadVO download = fileService.download(id);
         String filename = UriUtils.encode(download.fileName(), StandardCharsets.UTF_8);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(filename, StandardCharsets.UTF_8)

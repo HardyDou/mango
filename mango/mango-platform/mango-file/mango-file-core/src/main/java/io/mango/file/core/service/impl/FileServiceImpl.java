@@ -24,6 +24,7 @@ import io.mango.file.api.enums.FileRecordStatus;
 import io.mango.file.api.enums.FileUploadMode;
 import io.mango.file.api.enums.FileUploadSessionStatus;
 import io.mango.file.api.query.FileRecordPageQuery;
+import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileSettingsVO;
@@ -42,7 +43,6 @@ import io.mango.file.core.mapper.FileObjectMapper;
 import io.mango.file.core.mapper.FileRecordMapper;
 import io.mango.file.core.mapper.FileUploadPartMapper;
 import io.mango.file.core.mapper.FileUploadSessionMapper;
-import io.mango.file.core.service.FileDownload;
 import io.mango.file.core.service.IFileDirectoryService;
 import io.mango.file.core.service.IFileService;
 import io.mango.file.core.service.IFileSettingsService;
@@ -298,12 +298,12 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
-    public FileDownload download(Long id) {
+    public FileDownloadVO download(Long id) {
         FileRecord record = selectVisible(id);
         StoredObject storedObject = resolveStoredObject(record);
         FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());
         String contentType = StringUtils.hasText(record.getContentType()) ? record.getContentType() : object.contentType();
-        return new FileDownload(object.inputStream(), record.getFileName(), contentType, object.contentLength());
+        return new FileDownloadVO(object.inputStream(), record.getFileName(), contentType, object.contentLength());
     }
 
     @Override

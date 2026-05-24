@@ -20,6 +20,7 @@
     <modules>
         <module>mango-gateway-app</module>
         <module>mango-platform-app</module>
+        <module>mango-file-preview-app</module>
         <module>mango-business-app</module>
     </modules>
 </project>

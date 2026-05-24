@@ -17,5 +17,6 @@
         <module>mango-file-api</module>
         <module>mango-file-core</module>
         <module>mango-file-starter</module>
+        <module>mango-file-starter-remote</module>
     </modules>
 </project>

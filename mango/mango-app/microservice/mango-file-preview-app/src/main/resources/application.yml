@@ -1,0 +1,21 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: mango-file-preview-app
+
+mango:
+  file:
+    enabled: true
+  file-preview:
+    enabled: true
+    engine-path: /onlinePreview
+    source-path: /file-preview/sources
+    source-token-expire-seconds: 600
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  packages-to-scan: io.mango

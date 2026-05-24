@@ -13,8 +13,9 @@
     <description>Mango Scaffold - AI-Native Java Development Framework</description>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.5.14</spring-boot.version>
@@ -27,7 +28,7 @@
         <bouncycastle.version>1.84</bouncycastle.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-compress.version>1.28.0</commons-compress.version>
-        <commons-io.version>2.15.1</commons-io.version>
+        <commons-io.version>2.16.1</commons-io.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <plexus-utils.version>4.0.3</plexus-utils.version>
         <jodconverter.version>4.4.11</jodconverter.version>
@@ -279,6 +280,31 @@
             <dependency>
                 <groupId>io.mango</groupId>
                 <artifactId>mango-file-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-preview-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-preview-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-preview-engine</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-file-preview-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -679,6 +705,7 @@
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
+                        <release>${maven.compiler.release}</release>
                         <encoding>${project.build.sourceEncoding}</encoding>
                         <parameters>true</parameters>
                     </configuration>

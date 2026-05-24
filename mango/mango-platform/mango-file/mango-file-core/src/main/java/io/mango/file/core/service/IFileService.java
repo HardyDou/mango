@@ -8,6 +8,7 @@ import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
+import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.api.vo.FileUploadInitVO;
@@ -40,7 +41,7 @@ public interface IFileService {
 
     R<FilePreviewVO> preview(Long id);
 
-    FileDownload download(Long id);
+    FileDownloadVO download(Long id);
 
     R<Boolean> archive(FileArchiveCommand command);
 

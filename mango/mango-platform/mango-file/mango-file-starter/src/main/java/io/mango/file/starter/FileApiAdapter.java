@@ -5,6 +5,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
+import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
 import io.mango.file.api.vo.FileRecordVO;
 import io.mango.file.core.service.IFileService;
@@ -33,6 +34,11 @@ public class FileApiAdapter implements FileApi {
     @Override
     public R<FilePreviewVO> preview(Long id) {
         return fileService.preview(id);
+    }
+
+    @Override
+    public FileDownloadVO download(Long id) {
+        return fileService.download(id);
     }
 
     @Override

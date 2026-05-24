@@ -25,6 +25,7 @@
         <module>mango-biz-notification</module>
         <module>mango-template</module>
         <module>mango-file</module>
+        <module>mango-file-preview</module>
         <module>mango-workflow</module>
         <module>mango-guarantee</module>
         <module>mango-calendar</module>
