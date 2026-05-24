@@ -30,6 +30,10 @@ async function expectMenuIcon(page: import('@playwright/test').Page, name: strin
   await expect(menuItem.locator('.el-icon svg, img').first(), `${name} 必须渲染菜单图标`).toBeVisible();
 }
 
+async function openTopMenu(page: import('@playwright/test').Page, name: string) {
+  await page.getByRole('button', { name }).evaluate((button: HTMLButtonElement) => button.click());
+}
+
 async function loginPage(
   page: import('@playwright/test').Page,
   tenantName = '芒果集团',
@@ -61,7 +65,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(2);
+    expect(menuBody.data).toHaveLength(3);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
@@ -78,11 +82,21 @@ test.describe('用户菜单导航 E2E', () => {
       menuName: '审批中心',
       path: '/workflow',
     });
+    expect(menuBody.data[2]).toMatchObject({
+      menuName: '平台能力',
+      path: '/data',
+    });
+    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '日历管理',
+      '编号规则',
+      '文件管理',
+      '模板管理',
+    ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
     }
 
-    await expect(page.getByText('系统管理', { exact: true }).first()).toBeVisible();
+    await openTopMenu(page, '系统管理');
     await expectMenuIcon(page, '权限管理');
     await expectMenuIcon(page, '应用管理');
     await expectMenuIcon(page, '字典管理');
@@ -96,7 +110,7 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '角色管理');
     await expectMenuIcon(page, '菜单管理');
 
-    await page.getByText('审批中心', { exact: true }).click();
+    await openTopMenu(page, '审批中心');
     await expectMenuIcon(page, '流程办理');
     await expandMenuGroup(page, '流程办理');
     await expectMenuIcon(page, '发起流程');
@@ -109,9 +123,22 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '流程模板');
     await expectMenuIcon(page, '流程定义');
     await expectMenuIcon(page, '业务示例');
+
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '日历管理');
+    await expectMenuIcon(page, '编号规则');
+    await expectMenuIcon(page, '文件管理');
+    await expandMenuGroup(page, '文件管理');
+    await expectMenuIcon(page, '存储配置');
+    await expectMenuIcon(page, '文件配置');
+    await expectMenuIcon(page, '模板管理');
+    await expandMenuGroup(page, '模板管理');
+    await expectMenuIcon(page, '模板分类');
+    await expectMenuIcon(page, '模板列表');
+    await expectMenuIcon(page, '渲染记录');
   });
 
-  test('A 公司登录后只渲染机构授权范围内的系统管理与审批中心导航', async ({ page }) => {
+  test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return response.status() === 200
@@ -123,7 +150,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(2);
+    expect(menuBody.data).toHaveLength(3);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
@@ -132,22 +159,45 @@ test.describe('用户菜单导航 E2E', () => {
       menuName: '审批中心',
       path: '/workflow',
     });
+    expect(menuBody.data[2]).toMatchObject({
+      menuName: '平台能力',
+      path: '/data',
+    });
     expect(menuBody.data[0].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '权限管理',
       '日志管理',
     ]);
     expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
       '流程办理',
-      '流程管理',
       '业务示例',
+    ]);
+    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '日历管理',
+      '编号规则',
+      '模板管理',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
     }
 
+    await openTopMenu(page, '系统管理');
     await expectMenuIcon(page, '权限管理');
     await expectMenuIcon(page, '日志管理');
+
+    await openTopMenu(page, '审批中心');
+    await expectMenuIcon(page, '流程办理');
     await expectMenuIcon(page, '审批中心');
+
+    await openTopMenu(page, '平台能力');
+    await expectMenuIcon(page, '日历管理');
+    await expectMenuIcon(page, '编号规则');
+    await expectMenuIcon(page, '模板管理');
+    await expandMenuGroup(page, '模板管理');
+    await expectMenuIcon(page, '模板分类');
+    await expectMenuIcon(page, '模板列表');
+    await expectMenuIcon(page, '渲染记录');
+
     await expect(page.getByText('应用管理')).toHaveCount(0);
+    await expect(page.getByText('文件管理')).toHaveCount(0);
   });
 });

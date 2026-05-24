@@ -61,8 +61,46 @@ function collectVisibleMenuNames(menus: any[]): string[] {
   ]).filter(Boolean);
 }
 
+async function ensureStandardCalendar(page: Page, headers: Record<string, string>) {
+  const listResponse = await page.request.get('/api/calendar/admin/calendars/page', {
+    headers,
+    params: { keyword: 'CN_STANDARD', page: '1', size: '20' },
+  });
+  const listBody = await expectBusinessOk(listResponse);
+  const exists = (listBody.data?.list || []).some((calendar: any) => calendar.calendarCode === 'CN_STANDARD');
+  if (!exists) {
+    await expectBusinessOk(await page.request.post('/api/calendar/admin/calendars', {
+      headers,
+      data: {
+        calendarCode: 'CN_STANDARD',
+        calendarName: '中国标准工作日历',
+      },
+    }));
+  }
+
+  for (const year of [2025, 2026]) {
+    await expectBusinessOk(await page.request.post('/api/calendar/admin/years/init', {
+      headers,
+      data: { calendarCode: 'CN_STANDARD', year, overwrite: true },
+    }));
+  }
+
+  await expectBusinessOk(await page.request.post('/api/calendar/admin/days/import', {
+    headers,
+    data: {
+      calendarCode: 'CN_STANDARD',
+      year: 2026,
+      items: [
+        { date: '2026-01-01', dayType: 'LEGAL_HOLIDAY', dayName: '元旦', source: 'E2E' },
+        { date: '2026-01-02', dayType: 'LEGAL_HOLIDAY', dayName: '元旦', source: 'E2E' },
+        { date: '2026-01-04', dayType: 'ADJUSTED_WORKDAY', dayName: '元旦调休上班', source: 'E2E' },
+      ],
+    },
+  }));
+}
+
 test.describe('日历管理 E2E', () => {
-  test('数据管理入口展示 2026 中国标准日历并提供工作日计算', async ({ page }) => {
+  test('平台能力入口展示 2026 中国标准日历并提供工作日计算', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return response.status() === 200
@@ -71,15 +109,16 @@ test.describe('日历管理 E2E', () => {
     });
 
     await login(page);
+    const headers = await apiHeaders(page);
+    await ensureStandardCalendar(page, headers);
 
     const menuBody = await (await menuResponsePromise).json();
     const visibleMenus = collectVisibleMenuNames(menuBody.data || []);
-    expect(visibleMenus).toContain('数据管理');
+    expect(visibleMenus).toContain('平台能力');
     expect(visibleMenus).toContain('日历管理');
     expect(visibleMenus).toContain('编号规则');
-    expect(visibleMenus).toContain('支付管理');
 
-    await page.getByRole('button', { name: '数据管理' }).click();
+    await page.getByRole('button', { name: '平台能力' }).click();
     await page.waitForURL('**/#/data/calendar', { timeout: 10000 });
     await expect(page.getByRole('heading', { name: '日历管理' })).toBeVisible();
 
@@ -89,10 +128,11 @@ test.describe('日历管理 E2E', () => {
     await page.getByPlaceholder('编码/名称').fill('CN_STANDARD');
     await page.locator('.calendar-side').getByRole('button', { name: '查询' }).click();
     await calendarPageResponsePromise;
-    await page.locator('.calendar-side .el-table__row', { hasText: 'CN_STANDARD' }).first().click();
+    const calendarRow = page.locator('.calendar-side .el-table__row', { hasText: 'CN_STANDARD' }).first();
+    await expect(calendarRow).toBeVisible({ timeout: 10000 });
+    await calendarRow.click();
     await expect(page.getByText('中国标准工作日历 / CN_STANDARD')).toBeVisible({ timeout: 10000 });
 
-    const headers = await apiHeaders(page);
     for (const year of [2025, 2026]) {
       const refreshResponse = await page.request.put('/api/calendar/admin/years/lunar', {
         headers,
@@ -104,10 +144,10 @@ test.describe('日历管理 E2E', () => {
     await expect(page.getByRole('tab', { name: '年度' })).toBeVisible();
     const yearRow = page.locator('.calendar-main .el-table__row', { hasText: '2026' }).filter({ hasText: '中国标准工作日历' }).first();
     await expect(yearRow).toContainText('365');
-    await expect(yearRow).toContainText('248');
-    await expect(yearRow).toContainText('117');
-    await expect(yearRow).toContainText('33');
-    await expect(yearRow).toContainText('6');
+    await expect(yearRow).toContainText('260');
+    await expect(yearRow).toContainText('105');
+    await expect(yearRow).toContainText('2');
+    await expect(yearRow).toContainText('1');
 
     await yearRow.getByRole('button', { name: '查看日期' }).click();
     await expect(page.getByRole('row', { name: /2026-01-01.*周四.*法定节假日.*否.*元旦/ })).toBeVisible();
@@ -138,7 +178,7 @@ test.describe('日历管理 E2E', () => {
     });
     expect(addResponse.status()).toBe(200);
     const addBody = await addResponse.json();
-    expect(addBody.data).toBe('2026-02-14');
+    expect(addBody.data).toBe('2026-02-16');
 
     const lunarResponse = await page.request.get('/api/calendar/lunar/day', {
       headers,

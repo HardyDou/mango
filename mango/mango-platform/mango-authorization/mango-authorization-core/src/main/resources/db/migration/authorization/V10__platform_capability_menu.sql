@@ -25,7 +25,7 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `module_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
 VALUES
-(2700,1,'internal-admin','mango-calendar',0,1,'数据管理','data','/data','DataAnalysis',NULL,4,1,1,0,0,'/data/calendar',NULL,NULL,NULL,NOW(),NOW(),'工作日历管理入口',0,NULL,NOW(),NULL,NOW()),
+(2700,1,'internal-admin','mango-calendar',0,1,'平台能力','data','/data','DataAnalysis',NULL,4,1,1,0,0,'/data/calendar',NULL,NULL,NULL,NOW(),NOW(),'工作日历管理入口',0,NULL,NOW(),NULL,NOW()),
 (2701,1,'internal-admin','mango-calendar',2700,2,'日历管理','data:calendar','/data/calendar','Calendar','@/views/data/calendar/index.vue',1,1,1,0,0,NULL,'calendar:admin:list',NULL,NULL,NOW(),NOW(),'日历、年度日期和工作日计算管理',0,NULL,NOW(),NULL,NOW()),
 (270101,1,'internal-admin','mango-calendar',2701,3,'日历查询','calendar:admin:list',NULL,NULL,NULL,1,1,0,0,0,NULL,'calendar:admin:list',NULL,NULL,NOW(),NOW(),'日历查询权限',0,NULL,NOW(),NULL,NOW())
 ON DUPLICATE KEY UPDATE

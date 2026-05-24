@@ -43,6 +43,10 @@ async function login(page: Page) {
   await page.waitForURL('**/#/home', { timeout: 10000 });
 }
 
+async function openTopMenu(page: Page, name: string) {
+  await page.getByRole('button', { name }).evaluate((button: HTMLButtonElement) => button.click());
+}
+
 async function openTemplatePage(page: Page, path: string, marker: string) {
   await page.goto(`/#${path}`);
   await expect(page).toHaveURL(new RegExp(`#${path}$`));
@@ -77,7 +81,7 @@ async function setCodeMirrorValue(page: Page, root: ReturnType<Page['locator']>,
   await expect(editor.locator('.CodeMirror-code')).toContainText(value.split('\n')[0]);
 }
 
-test.describe('模板中心 E2E', () => {
+test.describe('模板管理 E2E', () => {
   test('分类、模板列表、版本发布/设为生效和渲染记录流程可用', async ({ page, request }) => {
     const unique = Date.now();
     const keyword = `E2E_TPL_${unique}`;
@@ -92,7 +96,8 @@ test.describe('模板中心 E2E', () => {
     await cleanupTemplateData(request, token, keyword);
 
     await login(page);
-    await expect(page.getByText('模板中心', { exact: true })).toBeVisible({ timeout: 10000 });
+    await openTopMenu(page, '平台能力');
+    await expect(page.getByText('模板管理', { exact: true })).toBeVisible({ timeout: 10000 });
 
     await openTemplatePage(page, '/template/categories', '分类编码');
     await page.locator('.action-toolbar').getByRole('button', { name: '新增分类' }).click();
@@ -121,10 +126,8 @@ test.describe('模板中心 E2E', () => {
     await page.getByRole('row', { name: new RegExp(templateCode) }).getByRole('button', { name: '编辑' }).click();
     await expect(templatePage).toBeVisible({ timeout: 10000 });
     await expect(templatePage.getByPlaceholder('如 合同到期提醒')).toHaveValue(templateName, { timeout: 10000 });
-    await templatePage.getByRole('tab', { name: '内容' }).click();
     await setCodeMirrorValue(page, templatePage, v1Content);
-    await templatePage.getByRole('tab', { name: '变量' }).click();
-    await templatePage.getByRole('button', { name: '提取建议' }).click();
+    await templatePage.getByRole('button', { name: '提取变量' }).click();
     await expect(templatePage.getByRole('row', { name: /customer\.name/ })).toBeVisible({ timeout: 10000 });
     await expect(templatePage.getByRole('row', { name: /amount/ })).toBeVisible({ timeout: 10000 });
     await templatePage.getByRole('button', { name: '发布', exact: true }).click();
@@ -134,7 +137,6 @@ test.describe('模板中心 E2E', () => {
 
     await page.getByRole('row', { name: new RegExp(templateCode) }).getByRole('button', { name: '编辑' }).click();
     await expect(templatePage.getByText('历史版本')).toHaveCount(0);
-    await templatePage.getByRole('tab', { name: '内容' }).click();
     await setCodeMirrorValue(page, templatePage, v2Content);
     await templatePage.getByRole('button', { name: '保存', exact: true }).click();
     await expect(page.getByText('保存成功，修改未同步')).toBeVisible({ timeout: 10000 });
