@@ -31,7 +31,7 @@
         <!-- Redisson client bean for Redis-backed KV store -->
         <dependency>
             <groupId>org.redisson</groupId>
-            <artifactId>redisson-spring-boot-starter</artifactId>
+            <artifactId>redisson</artifactId>
         </dependency>
         <!-- Infra DB (for DataSource/JdbcTemplate beans) -->
         <dependency>

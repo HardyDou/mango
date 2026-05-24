@@ -91,14 +91,14 @@ public class NotificationController {
     public R<Boolean> markRead(
             @Parameter(description = "消息ID")
             @RequestParam Long id) {
-        return notificationService.markRead(id);
+        return notificationService.markReadForUser(id, currentUserId());
     }
 
     @PostMapping("/read/batch")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "message:edit")
     @Operation(summary = "批量标记消息已读", description = "权限接口。按消息ID集合批量标记消息为已读")
     public R<Boolean> markReadBatch(@RequestBody @Valid MarkNotificationReadBatchCommand command) {
-        return R.ok(notificationService.markReadBatch(command.getIds()));
+        return R.ok(notificationService.markReadBatchForUser(command.getIds(), currentUserId()));
     }
 
     @PostMapping("/delete")
@@ -107,7 +107,7 @@ public class NotificationController {
     public R<Boolean> delete(
             @Parameter(description = "消息ID")
             @RequestParam Long id) {
-        return R.ok(notificationService.delete(id));
+        return R.ok(notificationService.deleteForUser(id, currentUserId()));
     }
 
     private Long currentUserId() {

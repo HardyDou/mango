@@ -93,6 +93,17 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
+    public R<Boolean> markReadForUser(Long messageId, Long userId) {
+        SysNotification entity = new SysNotification();
+        entity.setReadStatus(1);
+        entity.setReadTime(java.time.LocalDateTime.now());
+        return R.ok(messageMapper.update(entity,
+                new LambdaQueryWrapper<SysNotification>()
+                        .eq(SysNotification::getId, messageId)
+                        .eq(SysNotification::getUserId, userId)) > 0);
+    }
+
+    @Override
     public PageResult<SysNotificationVO> pageByUser(Long userId, int page, int size, Boolean unreadOnly) {
         LambdaQueryWrapper<SysNotification> wrapper = new LambdaQueryWrapper<>();
         if (userId != null) {
@@ -112,7 +123,8 @@ public class NotificationServiceImpl implements INotificationService {
 
     @Override
     public SysNotificationVO get(Long id) {
-        return convertToVO(messageMapper.selectById(id));
+        SysNotification entity = messageMapper.selectById(id);
+        return entity == null ? null : convertToVO(entity);
     }
 
     @Override
@@ -138,8 +150,29 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
+    public boolean markReadBatchForUser(List<Long> ids, Long userId) {
+        if (ids == null || ids.isEmpty()) {
+            return true;
+        }
+        SysNotification entity = new SysNotification();
+        entity.setReadStatus(1);
+        entity.setReadTime(java.time.LocalDateTime.now());
+        return messageMapper.update(entity,
+                new LambdaQueryWrapper<SysNotification>()
+                        .in(SysNotification::getId, ids)
+                        .eq(SysNotification::getUserId, userId)) > 0;
+    }
+
+    @Override
     public boolean delete(Long id) {
         return messageMapper.deleteById(id) > 0;
+    }
+
+    @Override
+    public boolean deleteForUser(Long id, Long userId) {
+        return messageMapper.delete(new LambdaQueryWrapper<SysNotification>()
+                .eq(SysNotification::getId, id)
+                .eq(SysNotification::getUserId, userId)) > 0;
     }
 
     private SysNotificationVO convertToVO(SysNotification entity) {

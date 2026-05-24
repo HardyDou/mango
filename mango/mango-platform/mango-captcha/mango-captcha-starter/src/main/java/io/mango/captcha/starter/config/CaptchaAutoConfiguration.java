@@ -89,18 +89,12 @@ public class CaptchaAutoConfiguration {
         );
     }
 
-    /**
-     * 默认短信供应商（仅打印日志，实际需配置第三方短信服务）
-     */
     @Bean
     @ConditionalOnMissingBean(SmsProvider.class)
     public SmsProvider defaultSmsProvider() {
         return new DefaultSmsProvider();
     }
 
-    /**
-     * 默认邮件供应商（仅打印日志，实际需配置SMTP服务）
-     */
     @Bean
     @ConditionalOnMissingBean(EmailProvider.class)
     public EmailProvider defaultEmailProvider() {
