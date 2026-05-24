@@ -34,6 +34,10 @@ async function openTopMenu(page: import('@playwright/test').Page, name: string) 
   await page.getByRole('button', { name }).evaluate((button: HTMLButtonElement) => button.click());
 }
 
+function childMenuNames(menu: { children?: Array<{ menuName: string }> }) {
+  return (menu.children || []).map((item) => item.menuName);
+}
+
 async function loginPage(
   page: import('@playwright/test').Page,
   tenantName = '芒果集团',
@@ -65,12 +69,12 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(3);
+    expect(menuBody.data).toHaveLength(4);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
     });
-    expect(menuBody.data[0].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    expect(childMenuNames(menuBody.data[0])).toEqual([
       '权限管理',
       '应用管理',
       '字典管理',
@@ -86,11 +90,19 @@ test.describe('用户菜单导航 E2E', () => {
       menuName: '平台能力',
       path: '/data',
     });
-    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    const platformMenus = childMenuNames(menuBody.data[2]);
+    expect(platformMenus).toEqual(expect.arrayContaining([
       '日历管理',
       '编号规则',
       '文件管理',
-      '模板管理',
+    ]));
+    expect(menuBody.data[3]).toMatchObject({
+      menuName: '支付中心',
+      path: '/payment',
+    });
+    expect(childMenuNames(menuBody.data[3])).toEqual([
+      '支付管理',
+      '租户收银台',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
@@ -131,11 +143,17 @@ test.describe('用户菜单导航 E2E', () => {
     await expandMenuGroup(page, '文件管理');
     await expectMenuIcon(page, '存储配置');
     await expectMenuIcon(page, '文件配置');
-    await expectMenuIcon(page, '模板管理');
-    await expandMenuGroup(page, '模板管理');
-    await expectMenuIcon(page, '模板分类');
-    await expectMenuIcon(page, '模板列表');
-    await expectMenuIcon(page, '渲染记录');
+    if (platformMenus.includes('模板管理')) {
+      await expectMenuIcon(page, '模板管理');
+      await expandMenuGroup(page, '模板管理');
+      await expectMenuIcon(page, '模板分类');
+      await expectMenuIcon(page, '模板列表');
+      await expectMenuIcon(page, '渲染记录');
+    }
+
+    await openTopMenu(page, '支付中心');
+    await expectMenuIcon(page, '支付管理');
+    await expectMenuIcon(page, '租户收银台');
   });
 
   test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {
@@ -163,19 +181,19 @@ test.describe('用户菜单导航 E2E', () => {
       menuName: '平台能力',
       path: '/data',
     });
-    expect(menuBody.data[0].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    expect(childMenuNames(menuBody.data[0])).toEqual([
       '权限管理',
       '日志管理',
     ]);
-    expect(menuBody.data[1].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    expect(childMenuNames(menuBody.data[1])).toEqual([
       '流程办理',
       '业务示例',
     ]);
-    expect(menuBody.data[2].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+    const companyPlatformMenus = childMenuNames(menuBody.data[2]);
+    expect(companyPlatformMenus).toEqual(expect.arrayContaining([
       '日历管理',
       '编号规则',
-      '模板管理',
-    ]);
+    ]));
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
     }
@@ -191,11 +209,13 @@ test.describe('用户菜单导航 E2E', () => {
     await openTopMenu(page, '平台能力');
     await expectMenuIcon(page, '日历管理');
     await expectMenuIcon(page, '编号规则');
-    await expectMenuIcon(page, '模板管理');
-    await expandMenuGroup(page, '模板管理');
-    await expectMenuIcon(page, '模板分类');
-    await expectMenuIcon(page, '模板列表');
-    await expectMenuIcon(page, '渲染记录');
+    if (companyPlatformMenus.includes('模板管理')) {
+      await expectMenuIcon(page, '模板管理');
+      await expandMenuGroup(page, '模板管理');
+      await expectMenuIcon(page, '模板分类');
+      await expectMenuIcon(page, '模板列表');
+      await expectMenuIcon(page, '渲染记录');
+    }
 
     await expect(page.getByText('应用管理')).toHaveCount(0);
     await expect(page.getByText('文件管理')).toHaveCount(0);

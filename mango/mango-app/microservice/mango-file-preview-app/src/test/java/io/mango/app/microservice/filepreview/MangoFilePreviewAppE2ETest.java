@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.FileApi;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
 import io.mango.file.api.command.FileArchiveCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -130,6 +131,11 @@ class MangoFilePreviewAppE2ETest {
 
         @Override
         public R<FilePreviewVO> preview(Long id) {
+            throw unsupported();
+        }
+
+        @Override
+        public R<FileRecordVO> saveGenerated(SaveGeneratedFileCommand command) {
             throw unsupported();
         }
 

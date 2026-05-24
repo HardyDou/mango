@@ -6,6 +6,7 @@ import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -34,6 +35,8 @@ public interface IFileService {
                                   String purpose,
                                   String bizType,
                                   String bizId);
+
+    R<FileRecordVO> saveGenerated(SaveGeneratedFileCommand command);
 
     R<PageResult<FileRecordVO>> page(FileRecordPageQuery query);
 

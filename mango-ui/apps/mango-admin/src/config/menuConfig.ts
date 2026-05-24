@@ -43,20 +43,6 @@ function createDevelopMenu(): MenuItem {
           component: componentsMap[page.component] as NonNullable<RouteRecordRaw['component']>,
         })),
       },
-      {
-        path: '/develop/capabilities',
-        name: 'PlatformCapabilities',
-        meta: { title: '平台能力介绍', icon: 'Collection' },
-        redirect: '/debug/capabilities/template',
-        children: [
-          {
-            path: '/debug/capabilities/template',
-            name: 'TemplateServiceGuide',
-            meta: { title: '模板服务', icon: 'Document' },
-            component: componentsMap['debug/capabilities/template'] as NonNullable<RouteRecordRaw['component']>,
-          },
-        ],
-      },
     ],
   };
 }

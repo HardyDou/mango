@@ -8,6 +8,7 @@ import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -99,6 +100,29 @@ public class FileController {
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
         return fileService.get(id);
+    }
+
+    @PostMapping(path = "/generated", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "保存系统生成文件")
+    @Operation(summary = "保存系统生成文件", description = "内部接口。保存系统生成内容并创建当前机构下的文件记录")
+    public R<FileRecordVO> saveGenerated(
+            @Parameter(description = "文件", required = true)
+            @RequestPart("file") MultipartFile file,
+            @Parameter(description = "文件用途，例如 template-render")
+            @RequestParam(required = false) String purpose,
+            @Parameter(description = "业务类型")
+            @RequestParam(required = false) String bizType,
+            @Parameter(description = "业务ID")
+            @RequestParam(required = false) String bizId) throws java.io.IOException {
+        SaveGeneratedFileCommand command = new SaveGeneratedFileCommand();
+        command.setInputStream(file.getInputStream());
+        command.setFileName(file.getOriginalFilename());
+        command.setFileSize(file.getSize());
+        command.setContentType(file.getContentType());
+        command.setPurpose(purpose);
+        command.setBizType(bizType);
+        command.setBizId(bizId);
+        return fileService.saveGenerated(command);
     }
 
     @GetMapping("/preview")

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../mango-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mango-payment</artifactId>
+    <packaging>pom</packaging>
+    <description>Mango Payment Module</description>
+
+    <modules>
+        <module>mango-payment-api</module>
+        <module>mango-payment-channel-spi</module>
+        <module>mango-payment-channel-sandbox</module>
+        <module>mango-payment-core</module>
+        <module>mango-payment-starter</module>
+        <module>mango-payment-starter-remote</module>
+    </modules>
+</project>

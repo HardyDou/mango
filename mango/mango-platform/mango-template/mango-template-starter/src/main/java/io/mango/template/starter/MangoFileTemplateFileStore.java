@@ -1,14 +1,17 @@
 package io.mango.template.starter;
 
 import io.mango.common.result.R;
+import io.mango.file.api.FileApi;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
+import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FileRecordVO;
-import io.mango.file.core.service.FileDownload;
-import io.mango.file.core.service.IFileService;
 import io.mango.template.api.TemplateCode;
 import io.mango.template.core.service.ITemplateFileStore;
 import io.mango.template.core.service.TemplateStoredFile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.io.ByteArrayInputStream;
 
 /**
  * 基于 mango-file 本地能力的模板文件适配器。
@@ -17,11 +20,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MangoFileTemplateFileStore implements ITemplateFileStore {
 
-    private final IFileService fileService;
+    private final FileApi fileApi;
 
     @Override
     public Long save(byte[] content, String fileName, String contentType, String purpose, String bizType, String bizId) {
-        R<FileRecordVO> result = fileService.saveGenerated(content, fileName, contentType, purpose, bizType, bizId);
+        SaveGeneratedFileCommand command = new SaveGeneratedFileCommand();
+        command.setInputStream(new ByteArrayInputStream(content));
+        command.setFileName(fileName);
+        command.setFileSize((long) content.length);
+        command.setContentType(contentType);
+        command.setPurpose(purpose);
+        command.setBizType(bizType);
+        command.setBizId(bizId);
+        R<FileRecordVO> result = fileApi.saveGenerated(command);
         if (!result.isSuccess() || result.getData() == null) {
             throw new io.mango.common.exception.BizException(
                     TemplateCode.TEMPLATE_RENDER_FAILED.getCode(),
@@ -32,7 +43,7 @@ public class MangoFileTemplateFileStore implements ITemplateFileStore {
 
     @Override
     public TemplateStoredFile read(Long fileId) {
-        FileDownload download = fileService.download(fileId);
+        FileDownloadVO download = fileApi.download(fileId);
         return new TemplateStoredFile(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
     }
 }

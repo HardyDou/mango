@@ -70,11 +70,11 @@ export function registerDefaultAdminPages() {
     {
       moduleCode: 'mango-template',
       pages: {
-        'system/template/index': () => import('@mango/template/src/views/templates/index.vue'),
-        'template/templates/index': () => import('@mango/template/src/views/templates/index.vue'),
-        'template/categories/index': () => import('@mango/template/src/views/categories/index.vue'),
-        'template/render-records/index': () => import('@mango/template/src/views/render-records/index.vue'),
-        'debug/capabilities/template': () => import('@mango/template/src/views/platform-capabilities/template/index.vue'),
+        'system/template/index': () => import('@mango/template').then(m => m.TemplateListView),
+        'template/templates/index': () => import('@mango/template').then(m => m.TemplateListView),
+        'template/categories/index': () => import('@mango/template').then(m => m.TemplateCategoryView),
+        'template/render-records/index': () => import('@mango/template').then(m => m.TemplateRenderRecordsView),
+        'debug/capabilities/template': () => import('@mango/template').then(m => m.TemplateServiceGuideView),
       },
     },
     {
@@ -96,6 +96,14 @@ export function registerDefaultAdminPages() {
       moduleCode: 'mango-calendar',
       pages: {
         'data/calendar/index': () => import('@mango/calendar').then(m => m.CalendarView),
+      },
+    },
+    {
+      moduleCode: 'mango-payment',
+      pages: {
+        'data/payment/index': () => import('@mango/payment').then(m => m.PaymentView),
+        'payment/management/index': () => import('@mango/payment').then(m => m.PaymentView),
+        'payment/cashier/index': () => import('@mango/payment').then(m => m.PaymentCashierView),
       },
     },
     {

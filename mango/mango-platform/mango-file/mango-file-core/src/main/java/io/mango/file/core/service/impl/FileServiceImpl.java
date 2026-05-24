@@ -13,6 +13,7 @@ import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
@@ -262,6 +263,24 @@ public class FileServiceImpl implements IFileService {
             return R.ok(toVO(entity));
         } catch (Exception e) {
             return Require.fail(FileCode.FILE_STORE_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<FileRecordVO> saveGenerated(SaveGeneratedFileCommand command) {
+        Require.notNull(command, FileCode.FILE_EMPTY);
+        Require.notNull(command.getInputStream(), FileCode.FILE_EMPTY);
+        try {
+            byte[] content = command.getInputStream().readAllBytes();
+            return saveGenerated(content,
+                    command.getFileName(),
+                    command.getContentType(),
+                    command.getPurpose(),
+                    command.getBizType(),
+                    command.getBizId());
+        } catch (IOException e) {
+            return Require.fail(FileCode.FILE_READ_FAILED);
         }
     }
 

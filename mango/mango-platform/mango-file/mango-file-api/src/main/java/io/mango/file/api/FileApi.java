@@ -4,6 +4,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -30,6 +31,9 @@ public interface FileApi {
 
     /** 查询文件预览元数据。 */
     R<FilePreviewVO> preview(Long id);
+
+    /** 保存系统生成文件。 */
+    R<FileRecordVO> saveGenerated(SaveGeneratedFileCommand command);
 
     /** 下载文件内容。 */
     FileDownloadVO download(Long id);

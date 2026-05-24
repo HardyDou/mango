@@ -30,6 +30,7 @@
         <module>mango-guarantee</module>
         <module>mango-calendar</module>
         <module>mango-numgen</module>
+        <module>mango-payment</module>
         <module>mango-org</module>
         <module>mango-system</module>
     </modules>

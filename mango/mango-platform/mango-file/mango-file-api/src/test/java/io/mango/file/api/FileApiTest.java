@@ -3,6 +3,7 @@ package io.mango.file.api;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveGeneratedFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -60,6 +61,11 @@ class FileApiTest {
 
         @Override
         public R<FilePreviewVO> preview(Long id) {
+            throw unsupported();
+        }
+
+        @Override
+        public R<FileRecordVO> saveGenerated(SaveGeneratedFileCommand command) {
             throw unsupported();
         }
 

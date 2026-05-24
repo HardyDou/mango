@@ -87,6 +87,10 @@
             <groupId>io.mango</groupId>
             <artifactId>mango-template-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-payment-starter</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.mango</groupId>
