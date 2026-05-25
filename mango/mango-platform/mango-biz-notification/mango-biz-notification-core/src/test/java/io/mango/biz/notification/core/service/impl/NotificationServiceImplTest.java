@@ -130,6 +130,53 @@ class NotificationServiceImplTest {
     }
 
     @Test
+    @DisplayName("get should return null when message does not exist")
+    void get_nonExistingMessage_returnsNull() {
+        when(messageMapper.selectById(999L)).thenReturn(null);
+
+        SysNotificationVO result = messageService.get(999L);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("markReadForUser should update only current user's message")
+    void markReadForUser_existingMessage_updatesWithUserScope() {
+        when(messageMapper.update(any(SysNotification.class), any(LambdaQueryWrapper.class))).thenReturn(1);
+
+        R<Boolean> result = messageService.markReadForUser(1L, 100L);
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData());
+        verify(messageMapper).update(any(SysNotification.class), any(LambdaQueryWrapper.class));
+        verify(messageMapper, never()).selectById(anyLong());
+        verify(messageMapper, never()).updateById(any(SysNotification.class));
+    }
+
+    @Test
+    @DisplayName("markReadForUser should return false when message belongs to another user")
+    void markReadForUser_otherUserMessage_returnsFalse() {
+        when(messageMapper.update(any(SysNotification.class), any(LambdaQueryWrapper.class))).thenReturn(0);
+
+        R<Boolean> result = messageService.markReadForUser(1L, 100L);
+
+        assertTrue(result.isSuccess());
+        assertFalse(result.getData());
+    }
+
+    @Test
+    @DisplayName("deleteForUser should delete only current user's message")
+    void deleteForUser_existingMessage_deletesWithUserScope() {
+        when(messageMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
+
+        boolean result = messageService.deleteForUser(1L, 100L);
+
+        assertTrue(result);
+        verify(messageMapper).delete(any(LambdaQueryWrapper.class));
+        verify(messageMapper, never()).deleteById(anyLong());
+    }
+
+    @Test
     @DisplayName("NotificationServiceImpl implements NotificationApi")
     void implementsNotificationApi() {
         assertTrue(messageService instanceof NotificationApi);

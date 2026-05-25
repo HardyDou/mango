@@ -3,6 +3,7 @@ package io.mango.file.api;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -47,6 +48,11 @@ class FileApiTest {
     }
 
     private static class StubFileApi implements FileApi {
+
+        @Override
+        public R<FileRecordVO> save(SaveFileCommand command) {
+            throw unsupported();
+        }
 
         @Override
         public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {

@@ -142,9 +142,8 @@ public class InternalCallFilter implements Filter {
         // 准备校验签名。
         String sharedSecret = sharedSecret();
         if (!StringUtils.hasText(sharedSecret)) {
-            // 未配置密钥时跳过签名校验，通常只用于开发环境。
-            log.warn("No internal call secret configured, skipping signature verification");
-            chain.doFilter(request, response);
+            log.error("No internal call secret configured, rejecting internal request");
+            sendForbidden(response, "Internal call secret is not configured");
             return;
         }
 

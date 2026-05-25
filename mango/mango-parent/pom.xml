@@ -257,6 +257,7 @@
                         <rulesets>
                             <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
                         </rulesets>
+                        <targetJdk>17</targetJdk>
                         <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                         <failOnViolation>false</failOnViolation>
                         <printFailingErrors>true</printFailingErrors>

@@ -25,13 +25,16 @@ public class MangoFileTemplateFileStore implements ITemplateFileStore {
     @Override
     public Long save(byte[] content, String fileName, String contentType, String purpose, String bizType, String bizId) {
         SaveFileCommand command = new SaveFileCommand();
-        command.setInputStream(new ByteArrayInputStream(content));
+        if (content != null) {
+            command.setInputStream(new ByteArrayInputStream(content));
+            command.setFileSize((long) content.length);
+        }
         command.setFileName(fileName);
-        command.setFileSize((long) content.length);
         command.setContentType(contentType);
         command.setPurpose(purpose);
         command.setBizType(bizType);
         command.setBizId(bizId);
+        command.setDirectoryId(0L);
         R<FileRecordVO> result = fileApi.save(command);
         if (!result.isSuccess() || result.getData() == null) {
             throw new io.mango.common.exception.BizException(

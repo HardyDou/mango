@@ -264,6 +264,26 @@ class CaptchaServiceImplTest {
     }
 
     @Test
+    void sendSms_providerReturnsFalse_returnsNullAndDoesNotSave() {
+        when(smsProvider.send(anyString(), any(), any())).thenReturn(false);
+
+        String key = captchaService.sendSms("13800138000", "LOGIN", 300);
+
+        assertNull(key);
+        verify(kvStore, never()).set(anyString(), anyString(), anyLong());
+    }
+
+    @Test
+    void sendEmail_providerReturnsFalse_returnsNullAndDoesNotSave() {
+        when(emailProvider.send(anyString(), any(), any())).thenReturn(false);
+
+        String key = captchaService.sendEmail("test@example.com", "REGISTER", 300);
+
+        assertNull(key);
+        verify(kvStore, never()).set(anyString(), anyString(), anyLong());
+    }
+
+    @Test
     void send_withSmsType_generatesCodeAndSaves() {
         when(smsProvider.send(anyString(), any(), any())).thenReturn(true);
         CaptchaSendRequest request = new CaptchaSendRequest();

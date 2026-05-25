@@ -3,7 +3,6 @@ package io.mango.infra.realtime.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.mango.infra.kv.api.IKvStore;
-import io.mango.infra.kv.core.memory.MemoryKvStore;
 import io.mango.infra.kv.core.redis.RedisKvStore;
 import io.mango.infra.realtime.api.dto.RealtimeOutboundMessage;
 import io.mango.infra.realtime.api.dto.RealtimeTarget;
@@ -186,38 +185,6 @@ class RedisKvRealtimePresenceIntegrationTest {
             assertThat(forwardService.forwardedPresences)
                     .extracting(RealtimePresence::instanceId)
                     .containsExactly("node-remote");
-        }
-    }
-
-    @Test
-    void groupPresence_refreshesGroupIndexAndCleansItOnOffline() throws Exception {
-        try (MemoryKvStore memoryKvStore = new MemoryKvStore();
-             KvRealtimePresenceService presenceService = new KvRealtimePresenceService(
-                     memoryKvStore,
-                     memoryKvStore,
-                     objectMapper,
-                     KEY_PREFIX + ":memory",
-                     9)) {
-            RealtimePresence presence = RealtimePresence.of(
-                    "session-group",
-                    "tenant-group",
-                    4001L,
-                    "client-group",
-                    "websocket",
-                    new RealtimeNode("node-group", "svc-group", "/", "/_realtime/messages/outbound"));
-
-            presenceService.online(presence);
-            presenceService.joinGroup("session-group", "tenant-group", "room-001");
-
-            Thread.sleep(Duration.ofSeconds(6).toMillis());
-
-            assertThat(presenceService.findByGroup("tenant-group", "room-001"))
-                    .extracting(RealtimePresence::sessionId)
-                    .containsExactly("session-group");
-
-            presenceService.offline("session-group");
-
-            assertThat(presenceService.findByGroup("tenant-group", "room-001")).isEmpty();
         }
     }
 

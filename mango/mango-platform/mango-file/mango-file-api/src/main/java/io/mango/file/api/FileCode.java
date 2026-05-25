@@ -1,14 +1,10 @@
 package io.mango.file.api;
 
 import io.mango.common.result.BizCode;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 /**
  * 文件模块业务码。
  */
-@Getter
-@AllArgsConstructor
 public enum FileCode implements BizCode {
 
     /** 文件不存在。 */
@@ -94,4 +90,19 @@ public enum FileCode implements BizCode {
 
     private final int code;
     private final String message;
+
+    FileCode(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    @Override
+    public int getCode() {
+        return code;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
 }

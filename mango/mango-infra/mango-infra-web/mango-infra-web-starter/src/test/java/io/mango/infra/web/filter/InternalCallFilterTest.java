@@ -51,8 +51,8 @@ class InternalCallFilterTest {
     }
 
     @Test
-    @DisplayName("internal path with internal header should pass in dev mode without secret")
-    void internalPathWithHeaderShouldPassWithoutSecret() throws Exception {
+    @DisplayName("internal path with internal header should be rejected without secret")
+    void internalPathWithHeaderShouldBeRejectedWithoutSecret() throws Exception {
         InternalCallFilter filter = newFilter(List.of("/internal/**"));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/internal/config");
         request.addHeader("X-Internal-Call", "true");
@@ -61,8 +61,8 @@ class InternalCallFilterTest {
 
         filter.doFilter(request, response, chain(invoked));
 
-        assertTrue(invoked.get());
-        assertEquals(200, response.getStatus());
+        assertFalse(invoked.get());
+        assertEquals(403, response.getStatus());
     }
 
     @Test

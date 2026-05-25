@@ -182,14 +182,14 @@ public class CaptchaServiceImpl implements ICaptchaService {
         String code = generateCode(smsCodeLength);
         String key = KEY_PREFIX + "sms:" + bizCode + ":" + mobile;
 
-        kvStore.set(key, code, expire);
         log.info("短信验证码已生成: mobile={}, bizCode={}, code={}", mobile, bizCode, code);
 
-        // 如果配置了短信供应商，发送短信
-        if (!smsProviders.isEmpty()) {
-            smsProviders.get(0).send(mobile, null, code);
+        if (smsProviders.isEmpty() || !smsProviders.get(0).send(mobile, null, code)) {
+            log.warn("短信验证码发送失败: mobile={}, bizCode={}", mobile, bizCode);
+            return null;
         }
 
+        kvStore.set(key, code, expire);
         return key;
     }
 
@@ -198,14 +198,14 @@ public class CaptchaServiceImpl implements ICaptchaService {
         String code = generateCode(emailCodeLength);
         String key = KEY_PREFIX + "email:" + bizCode + ":" + email;
 
-        kvStore.set(key, code, expire);
         log.info("邮件验证码已生成: email={}, bizCode={}, code={}", email, bizCode, code);
 
-        // 如果配置了邮件供应商，发送邮件
-        if (!emailProviders.isEmpty()) {
-            emailProviders.get(0).send(email, "验证码", "您的验证码是：" + code);
+        if (emailProviders.isEmpty() || !emailProviders.get(0).send(email, "验证码", "您的验证码是：" + code)) {
+            log.warn("邮件验证码发送失败: email={}, bizCode={}", email, bizCode);
+            return null;
         }
 
+        kvStore.set(key, code, expire);
         return key;
     }
 
@@ -219,16 +219,19 @@ public class CaptchaServiceImpl implements ICaptchaService {
         String code = generateCode(type == CaptchaType.SMS ? smsCodeLength : emailCodeLength);
         String key = KEY_PREFIX + businessType + ":" + target;
 
-        kvStore.set(key, code, expire);
         log.info("验证码已生成: type={}, target={}, businessType={}", type, target, businessType);
 
-        // 发送通知
-        if (type == CaptchaType.SMS && !smsProviders.isEmpty()) {
-            smsProviders.get(0).send(target, null, code);
-        } else if (type == CaptchaType.EMAIL && !emailProviders.isEmpty()) {
-            emailProviders.get(0).send(target, "验证码", "您的验证码是：" + code);
+        boolean sent = switch (type) {
+            case SMS -> !smsProviders.isEmpty() && smsProviders.get(0).send(target, null, code);
+            case EMAIL -> !emailProviders.isEmpty() && emailProviders.get(0).send(target, "验证码", "您的验证码是：" + code);
+            default -> false;
+        };
+        if (!sent) {
+            log.warn("验证码发送失败: type={}, target={}, businessType={}", type, target, businessType);
+            return null;
         }
 
+        kvStore.set(key, code, expire);
         return key;
     }
 

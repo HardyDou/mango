@@ -23,6 +23,11 @@ public class FileApiAdapter implements FileApi {
     private final IFileService fileService;
 
     @Override
+    public R<FileRecordVO> save(SaveFileCommand command) {
+        return fileService.save(command);
+    }
+
+    @Override
     public R<PageResult<FileRecordVO>> page(FileRecordPageQuery query) {
         return fileService.page(query);
     }

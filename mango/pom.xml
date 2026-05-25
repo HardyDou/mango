@@ -472,7 +472,7 @@
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
-                <artifactId>redisson-spring-boot-starter</artifactId>
+                <artifactId>redisson</artifactId>
                 <version>3.27.0</version>
             </dependency>
             <dependency>
@@ -735,6 +735,7 @@
                         <rulesets>
                             <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
                         </rulesets>
+                        <targetJdk>17</targetJdk>
                         <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                         <failOnViolation>false</failOnViolation>
                         <printFailingErrors>true</printFailingErrors>
@@ -781,6 +782,7 @@
                     <rulesets>
                         <ruleset>${maven.multiModuleProjectDirectory}/mango-tools/mango-maven-plugin/src/main/resources/rulesets/java/pmd-p3c.xml</ruleset>
                     </rulesets>
+                    <targetJdk>17</targetJdk>
                     <sourceEncoding>${project.build.sourceEncoding}</sourceEncoding>
                     <failOnViolation>false</failOnViolation>
                     <printFailingErrors>true</printFailingErrors>
