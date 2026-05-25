@@ -9,11 +9,12 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -65,9 +66,18 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
+    public Optional<String> presignedGetUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return publicGetUrl(config, objectName, fileName);
+    }
+
+    @Override
     public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
-        if (!StringUtils.hasText(config.getPublicEndpoint()) || !StringUtils.hasText(objectName)) {
+        if (!StringUtils.hasText(objectName)) {
             return Optional.empty();
+        }
+        if (!StringUtils.hasText(config.getPublicEndpoint()) || !StringUtils.hasText(objectName)) {
+            String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
+            return Optional.of(localObjectUrl(bucket, objectName));
         }
         String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
         String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
@@ -90,5 +100,15 @@ public class LocalFileStorage implements FileStorage {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private String localObjectUrl(String bucket, String objectName) {
+        String path = properties.getLocal().getPublicPath();
+        String prefix = StringUtils.hasText(path) ? path.trim() : "/api/file/local-objects";
+        prefix = StringUtils.trimTrailingCharacter(prefix, '/');
+        if (!prefix.startsWith("/")) {
+            prefix = "/" + prefix;
+        }
+        return prefix + "/" + encode(bucket) + "/" + encodeObjectName(objectName);
     }
 }

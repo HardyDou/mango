@@ -98,7 +98,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
     }
 
     public FilePreviewLinkVO createEnginePreviewByToken(String token) {
-        PreviewToken previewToken = consumePreviewToken(token);
+        PreviewToken previewToken = readPreviewToken(token);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(previewToken.context());
@@ -144,12 +144,12 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
                 .toUriString();
     }
 
-    private PreviewToken consumePreviewToken(String token) {
+    private PreviewToken readPreviewToken(String token) {
         Require.notBlank(token, FilePreviewCode.PREVIEW_TOKEN_INVALID);
         String tokenKey = ENTRY_TOKEN_PREFIX + token;
         PreviewToken previewToken = readToken(tokenKey);
-        tokenStore.remove(tokenKey);
         if (isExpired(previewToken)) {
+            tokenStore.remove(tokenKey);
             throw tokenInvalid();
         }
         return previewToken;

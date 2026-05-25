@@ -14,8 +14,10 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.Ordered;
 
 import java.util.List;
 
@@ -61,5 +63,14 @@ public class FileAutoConfiguration {
     @Bean
     public FileStorageRouter fileStorageRouter(List<FileStorage> storages) {
         return new FileStorageRouter(storages);
+    }
+
+    @Bean
+    public FilterRegistrationBean<LocalFileObjectFrameOptionsFilter> localFileObjectFrameOptionsFilter() {
+        FilterRegistrationBean<LocalFileObjectFrameOptionsFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new LocalFileObjectFrameOptionsFilter());
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        registration.addUrlPatterns("/*");
+        return registration;
     }
 }

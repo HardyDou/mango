@@ -20,5 +20,5 @@ public class FilePreviewProperties {
     private String sourcePath = "/file-preview/sources";
 
     /** 源文件临时访问令牌有效期，单位秒。 */
-    private long sourceTokenExpireSeconds = 600L;
+    private long sourceTokenExpireSeconds = 86_400L;
 }

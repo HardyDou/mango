@@ -33,9 +33,11 @@ class FilePreviewServiceImplTest {
 
         var preview = service.createPreview(100L);
         var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+        var refreshedEnginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
 
         assertThat(preview.getPreviewUrl()).startsWith("/file-preview/files/preview-entry?token=");
         assertThat(enginePreview.getPreviewUrl()).startsWith("/onlinePreview?url=");
+        assertThat(refreshedEnginePreview.getPreviewUrl()).startsWith("/onlinePreview?url=");
     }
 
     private FilePreviewServiceImpl service() {

@@ -39,6 +39,9 @@ public class FileProperties {
 
         /** 本地存储根目录。 */
         private String rootPath = "./data/files";
+
+        /** 本地对象客户端访问路径。 */
+        private String publicPath = "/api/file/local-objects";
     }
 
     @Data

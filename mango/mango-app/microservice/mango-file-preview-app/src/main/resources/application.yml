@@ -12,7 +12,7 @@ mango:
     enabled: true
     engine-path: /onlinePreview
     source-path: /file-preview/sources
-    source-token-expire-seconds: 600
+    source-token-expire-seconds: 86400
 
 springdoc:
   api-docs:

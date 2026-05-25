@@ -4,10 +4,12 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.file.api.FileApi;
 import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -39,7 +41,7 @@ import java.util.List;
 @RequestMapping("/file/files")
 @RequiredArgsConstructor
 @Tag(name = "文件管理", description = "文件上传、下载、预览元数据、记录查询与归档接口")
-public class FileController {
+public class FileController implements FileApi {
 
     private final IFileService fileService;
 
@@ -88,6 +90,7 @@ public class FileController {
     @GetMapping("/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:list")
     @Operation(summary = "分页查询文件记录", description = "权限接口。按当前登录机构查询文件记录")
+    @Override
     public R<PageResult<FileRecordVO>> page(@ParameterObject FileRecordPageQuery query) {
         return fileService.page(query);
     }
@@ -95,6 +98,7 @@ public class FileController {
     @GetMapping("/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
     @Operation(summary = "获取文件详情", description = "权限接口。按文件ID查询文件记录详情")
+    @Override
     public R<FileRecordVO> get(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
@@ -104,16 +108,32 @@ public class FileController {
     @GetMapping("/preview")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:query")
     @Operation(summary = "获取文件预览元数据", description = "权限接口。返回文件名、类型、大小、预览地址和下载地址")
+    @Override
     public R<FilePreviewVO> preview(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
         return fileService.preview(id);
     }
 
+    @Override
+    public R<FileRecordVO> save(SaveFileCommand command) {
+        return fileService.save(command);
+    }
+
+    @Override
+    public FileDownloadVO download(Long id) {
+        return fileService.download(id);
+    }
+
+    @Override
+    public R<Boolean> archive(FileArchiveCommand command) {
+        return fileService.archive(command);
+    }
+
     @GetMapping("/download")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:download")
     @Operation(summary = "下载文件", description = "权限接口。按文件ID下载当前机构文件")
-    public ResponseEntity<org.springframework.core.io.InputStreamResource> download(
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadResponse(
             @Parameter(description = "文件ID", required = true)
             @RequestParam Long id) {
         FileDownloadVO download = fileService.download(id);
