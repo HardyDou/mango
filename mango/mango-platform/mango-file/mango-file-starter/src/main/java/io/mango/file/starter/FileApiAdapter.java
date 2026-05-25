@@ -48,6 +48,11 @@ public class FileApiAdapter implements FileApi {
     }
 
     @Override
+    public R<FileRecordVO> save(SaveFileCommand command) {
+        return fileService.save(command);
+    }
+
+    @Override
     public R<Boolean> archive(FileArchiveCommand command) {
         return fileService.archive(command);
     }

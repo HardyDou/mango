@@ -23,6 +23,9 @@ public class FilePreviewLinkVO implements Serializable {
     @Schema(description = "预览页面地址")
     private String previewUrl;
 
+    @Schema(description = "预览入口临时令牌")
+    private String previewToken;
+
     @Schema(description = "源文件临时访问地址有效期，单位秒")
     private Long expireSeconds;
 }

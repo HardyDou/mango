@@ -10,7 +10,7 @@
         <el-button v-auth="downloadPermission" link type="primary" @click="openDownload">
           下载
         </el-button>
-        <el-button v-if="externalPreviewUrl" link type="primary" @click="openExternalPreview">
+        <el-button v-if="documentPreviewUrl" link type="primary" @click="openExternalPreview">
           新窗口预览
         </el-button>
       </div>
@@ -42,9 +42,9 @@
           controls
         />
         <iframe
-          v-else-if="externalPreviewUrl"
+          v-else-if="documentPreviewUrl"
           class="preview-frame"
-          :src="externalPreviewUrl"
+          :src="documentPreviewUrl"
           title="文件预览"
         />
         <div v-else class="preview-placeholder">
@@ -90,6 +90,7 @@ const props = defineProps<{
 const loading = ref(false);
 const loadedPreview = ref<FilePreview | null>(null);
 const inlinePreviewUrl = ref('');
+const externalPreviewUrl = ref('');
 
 const preview = computed(() => props.preview || loadedPreview.value);
 const resolvedFileId = computed(() => normalizeFileId(props.file || props.fileId));
@@ -118,14 +119,17 @@ const isAudio = computed(() => {
 });
 
 const extension = computed(() => preview.value?.fileExt?.toLowerCase() || fileExtension(preview.value?.fileName));
-const externalPreviewUrl = computed(() => {
+const documentPreviewUrl = computed(() => {
   const item = preview.value;
+  if (!item || isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
+  if (externalPreviewUrl.value) return externalPreviewUrl.value;
+  if (isDefaultPreviewProviderUrl(item.previewUrl)) return '';
+  if (item.previewUrl) return item.previewUrl;
   const providerUrl = props.previewProviderUrl || import.meta.env.VITE_FILE_PREVIEW_PROVIDER_URL;
-  if (!item || !providerUrl || isImage.value || isPdf.value || isVideo.value || isAudio.value) return '';
-  if (!needsExternalPreview(extension.value, item.contentType)) return '';
+  if (!providerUrl) return '';
   const url = new URL(providerUrl, window.location.origin);
-  url.searchParams.set('url', absoluteUrl(item.directDownloadUrl || item.directPreviewUrl || item.downloadUrl || item.previewUrl));
-  url.searchParams.set('name', item.fileName);
+  url.searchParams.set('fileId', String(item.id));
+  url.searchParams.set('fileName', item.fileName);
   return url.toString();
 });
 
@@ -134,11 +138,11 @@ const previewModeLabel = computed(() => {
   if (isPdf.value) return 'PDF 预览';
   if (isVideo.value) return '视频预览';
   if (isAudio.value) return '音频预览';
-  if (externalPreviewUrl.value) return '文档预览服务';
+  if (documentPreviewUrl.value) return '文档预览服务';
   return '下载查看';
 });
 
-const previewModeTag = computed(() => externalPreviewUrl.value ? 'success' : 'info');
+const previewModeTag = computed(() => documentPreviewUrl.value ? 'success' : 'info');
 const downloadPermission = computed(() => props.downloadPermission || 'file:files:download');
 
 async function loadPreview() {
@@ -156,11 +160,16 @@ async function loadPreview() {
 
 async function loadInlinePreview() {
   inlinePreviewUrl.value = '';
+  externalPreviewUrl.value = '';
   const item = preview.value;
-  if (!item || !(isImage.value || isPdf.value || isVideo.value || isAudio.value)) {
+  if (!item) {
     return;
   }
-  inlinePreviewUrl.value = item.directPreviewUrl || item.previewUrl || fileApi.downloadUrl(item.id);
+  if (!isImage.value && !isPdf.value && !isVideo.value && !isAudio.value) {
+    externalPreviewUrl.value = await resolveExternalPreviewUrl(item);
+    return;
+  }
+  inlinePreviewUrl.value = item.directPreviewUrl || item.directDownloadUrl || item.downloadUrl || fileApi.downloadUrl(item.id);
 }
 
 async function openDownload() {
@@ -168,8 +177,45 @@ async function openDownload() {
   if (item) await downloadFileRecord(item);
 }
 
-function openExternalPreview() {
-  if (externalPreviewUrl.value) window.open(externalPreviewUrl.value, '_blank', 'noopener,noreferrer');
+async function openExternalPreview() {
+  const item = preview.value;
+  if (!item || !documentPreviewUrl.value) return;
+
+  const target = window.open('about:blank', '_blank');
+  const url = isDefaultPreviewProviderUrl(item.previewUrl)
+    ? await resolveExternalPreviewUrl(item)
+    : documentPreviewUrl.value;
+  if (!url) {
+    target?.close();
+    return;
+  }
+  if (target) {
+    target.opener = null;
+    target.location.href = url;
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+async function resolveExternalPreviewUrl(item: FilePreview) {
+  if (isDefaultPreviewProviderUrl(item.previewUrl)) {
+    const link = await fileApi.previewLink(item.id);
+    return link.previewUrl || item.previewUrl;
+  }
+  return item.previewUrl || '';
+}
+
+function isDefaultPreviewProviderUrl(value?: string) {
+  if (!value) return false;
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.pathname === '/api/file-preview/files/preview'
+      || url.pathname === '/file-preview/files/preview'
+      || url.pathname === '/api/file-preview/files/preview-entry'
+      || url.pathname === '/file-preview/files/preview-entry';
+  } catch {
+    return value.startsWith('/api/file-preview/files/preview') || value.startsWith('/file-preview/files/preview');
+  }
 }
 
 function formatFileSize(size?: number) {
@@ -182,22 +228,6 @@ function formatFileSize(size?: number) {
 function fileExtension(fileName?: string): string {
   if (!fileName || !fileName.includes('.')) return '';
   return fileName.slice(fileName.lastIndexOf('.') + 1).toLowerCase();
-}
-
-function needsExternalPreview(ext?: string, contentType?: string): boolean {
-  const externalExtensions = props.previewExternalExtensions && props.previewExternalExtensions.length > 0
-    ? props.previewExternalExtensions
-    : [
-      'doc', 'docx', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx',
-      'odt', 'ods', 'odp', 'ofd', 'wps', 'et', 'dps',
-      'csv', 'txt', 'zip', 'rar', '7z', 'eml', 'msg',
-    ];
-  if (ext && externalExtensions.map(item => item.toLowerCase()).includes(ext.toLowerCase())) return true;
-  return Boolean(contentType?.includes('officedocument') || contentType?.includes('msword'));
-}
-
-function absoluteUrl(value: string): string {
-  return new URL(value, window.location.origin).toString();
 }
 
 watch(() => [resolvedFileId.value, props.preview], loadPreview);

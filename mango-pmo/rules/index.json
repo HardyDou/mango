@@ -4,6 +4,10 @@
     {
       "path": "rules/00-dev-flow.md",
       "reason": "全局研发流程"
+    },
+    {
+      "path": "rules/01-delivery-contract.md",
+      "reason": "交付契约与设计说明规则"
     }
   ],
   "rules": {
@@ -26,6 +30,10 @@
     "agent.pmo": {
       "path": "agents/05-pmo-agent.md",
       "reason": "规范治理角色"
+    },
+    "process.deliveryContract": {
+      "path": "rules/01-delivery-contract.md",
+      "reason": "交付契约与设计说明规则"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -127,6 +135,11 @@
       "paths": ["mango-docs/**"],
       "keywords": ["需求", "PRD", "Sprint", "验收标准"],
       "include": ["agent.pm", "product.prd", "product.sprint"]
+    },
+    "deliveryContract": {
+      "paths": ["mango-docs/designs/**"],
+      "keywords": ["交付契约", "设计文档", "设计说明书", "基于设计", "按设计", "按照设计", "交付台账", "delivery-ledger", "delivery-contract"],
+      "include": ["process.deliveryContract"]
     },
     "versioning": {
       "paths": [],

@@ -113,6 +113,9 @@ class DictServiceImplTest {
     @Test
     @DisplayName("deleteType should delete type")
     void deleteType_existingType_deletesType() {
+        DictType type = createDictType(1L, "type1", "Type 1");
+        when(dictTypeMapper.selectById(1L)).thenReturn(type);
+        when(dictDataMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
         when(dictTypeMapper.deleteById(1L)).thenReturn(1);
 
         R<Boolean> result = dictService.deleteType(1L);

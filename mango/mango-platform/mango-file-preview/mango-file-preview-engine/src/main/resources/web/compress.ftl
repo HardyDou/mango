@@ -878,9 +878,18 @@
         treeSummaryEl.textContent = "共 " + stats.folders + " 个目录，" + stats.files + " 个文件。";
     }
 
+    function gatewayBaseUrl() {
+        var path = window.location.pathname || "";
+        if (path === "/api" || path.indexOf("/api/") === 0) {
+            return window.location.origin + "/api/";
+        }
+        return '${baseUrl}';
+    }
+
     function buildPreviewUrl(treeNode) {
-        var path = '${baseUrl}' + treeNode.id + "?kkCompressfileKey=" + '${fileTree}' + "&kkCompressfilepath=" + encodeURIComponent(treeNode.id) + "&fullfilename=" + encodeURIComponent(treeNode.name);
-        var previewUrl = "${baseUrl}onlinePreview?url=" + encodeURIComponent(Base64.encode(path));
+        var baseUrl = gatewayBaseUrl();
+        var path = baseUrl + treeNode.id + "?kkCompressfileKey=" + '${fileTree}' + "&kkCompressfilepath=" + encodeURIComponent(treeNode.id) + "&fullfilename=" + encodeURIComponent(treeNode.name);
+        var previewUrl = baseUrl + "onlinePreview?url=" + encodeURIComponent(Base64.encode(path));
         if (isNotEmpty(keyword)) {
             previewUrl += "&watermarkTxt=" + encodeURIComponent(keyword);
         }

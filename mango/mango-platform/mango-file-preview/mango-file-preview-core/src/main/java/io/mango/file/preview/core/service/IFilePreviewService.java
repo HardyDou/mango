@@ -25,6 +25,14 @@ public interface IFilePreviewService {
     FilePreviewLinkVO createEnginePreview(Long fileId);
 
     /**
+     * 按预览入口令牌创建预览引擎入口。
+     *
+     * @param token 预览入口令牌。
+     * @return 预览引擎入口信息。
+     */
+    FilePreviewLinkVO createEnginePreviewByToken(String token);
+
+    /**
      * 打开预览源文件。
      *
      * @param token 源文件访问令牌。

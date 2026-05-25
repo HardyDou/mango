@@ -13,11 +13,6 @@
     <name>Mango KV (Key-Value Storage)</name>
     <description>KV abstraction layer - Memory/Redis/JDBC store and optional capability beans</description>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-    </properties>
-
     <modules>
         <module>mango-infra-kv-api</module>
         <module>mango-infra-kv-core</module>

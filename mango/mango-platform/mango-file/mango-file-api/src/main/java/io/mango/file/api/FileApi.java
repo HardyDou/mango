@@ -23,14 +23,6 @@ import java.util.Map;
  */
 public interface FileApi {
 
-    /**
-     * 保存内部生成文件。
-     *
-     * @param command 保存命令。
-     * @return 文件记录。
-     */
-    R<FileRecordVO> save(SaveFileCommand command);
-
     /** 分页查询文件记录。 */
     R<PageResult<FileRecordVO>> page(FileRecordPageQuery query);
 
@@ -42,6 +34,11 @@ public interface FileApi {
 
     /** 下载文件内容。 */
     FileDownloadVO download(Long id);
+
+    /** 保存内部生成的文件内容。 */
+    default R<FileRecordVO> save(SaveFileCommand command) {
+        throw new UnsupportedOperationException("当前文件 API 实现不支持保存文件");
+    }
 
     /**
      * 下载文件到指定目录。

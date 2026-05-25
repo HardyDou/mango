@@ -4,6 +4,7 @@ import cn.keking.config.ConfigConstants;
 import cn.keking.utils.WebUtils;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.Map;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * @author chenjh
@@ -50,7 +54,9 @@ public class TrustHostFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         String url = WebUtils.getSourceUrl(request);
         String host = WebUtils.getHost(url);
-        if (isNotTrustHost(host) || !WebUtils.isValidUrl(url)) {
+        boolean validUrl = StringUtils.hasText(url) && WebUtils.isValidUrl(url);
+        boolean internalCompressEntryUrl = validUrl && isInternalCompressEntryUrl(url);
+        if (!validUrl || (!internalCompressEntryUrl && isNotTrustHost(host))) {
             String currentHost = host == null ? "UNKNOWN" : host;
             if (response instanceof HttpServletResponse httpServletResponse) {
                 httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -64,6 +70,33 @@ public class TrustHostFilter implements Filter {
             response.getWriter().close();
         } else {
             chain.doFilter(request, response);
+        }
+    }
+
+    public boolean isInternalCompressEntryUrl(String url) {
+        if (!StringUtils.hasText(url) || !WebUtils.isValidUrl(url)) {
+            return false;
+        }
+        try {
+            UriComponents components = UriComponentsBuilder.fromUriString(url).build();
+            String path = components.getPath();
+            if (!StringUtils.hasText(path)) {
+                return false;
+            }
+            String compressFileKey = components.getQueryParams().getFirst("kkCompressfileKey");
+            String compressFilePath = components.getQueryParams().getFirst("kkCompressfilepath");
+            String fullFileName = components.getQueryParams().getFirst("fullfilename");
+            if (!StringUtils.hasText(compressFileKey)
+                    || !StringUtils.hasText(compressFilePath)
+                    || !StringUtils.hasText(fullFileName)) {
+                return false;
+            }
+            String decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
+            String decodedCompressFilePath = URLDecoder.decode(compressFilePath, StandardCharsets.UTF_8);
+            return decodedCompressFilePath.startsWith(compressFileKey + "/")
+                    && decodedPath.endsWith("/" + decodedCompressFilePath);
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 

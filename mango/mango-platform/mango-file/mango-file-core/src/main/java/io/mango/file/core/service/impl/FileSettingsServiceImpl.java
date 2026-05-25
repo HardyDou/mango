@@ -140,7 +140,8 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         entity.setAccessMode(FileAccessMode.of(command.getAccessMode()).name());
         entity.setAccessTokenExpireSeconds(command.getAccessTokenExpireSeconds() == null
                 ? defaults.getAccessTokenExpireSeconds() : command.getAccessTokenExpireSeconds());
-        entity.setPreviewProviderUrl(trimToNull(command.getPreviewProviderUrl()));
+        entity.setPreviewProviderUrl(StringUtils.hasText(command.getPreviewProviderUrl())
+                ? command.getPreviewProviderUrl().trim() : defaults.getPreviewProviderUrl());
         entity.setPreviewExpireSeconds(command.getPreviewExpireSeconds() == null
                 ? defaults.getPreviewExpireSeconds() : command.getPreviewExpireSeconds());
         entity.setPreviewExternalExtensions(joinExtensions(command.getPreviewExternalExtensions()));
@@ -173,7 +174,8 @@ public class FileSettingsServiceImpl implements IFileSettingsService {
         vo.setPublicReadRequiresToken(Integer.valueOf(1).equals(entity.getPublicReadRequiresToken()));
         vo.setAccessMode(FileAccessMode.of(entity.getAccessMode()).name());
         vo.setAccessTokenExpireSeconds(entity.getAccessTokenExpireSeconds());
-        vo.setPreviewProviderUrl(entity.getPreviewProviderUrl());
+        vo.setPreviewProviderUrl(StringUtils.hasText(entity.getPreviewProviderUrl())
+                ? entity.getPreviewProviderUrl() : defaultVO(entity.getTenantId()).getPreviewProviderUrl());
         vo.setPreviewExpireSeconds(entity.getPreviewExpireSeconds());
         vo.setPreviewExternalExtensions(splitExtensions(entity.getPreviewExternalExtensions()));
         vo.setArchiveRetainEnabled(!Integer.valueOf(0).equals(entity.getArchiveRetainEnabled()));

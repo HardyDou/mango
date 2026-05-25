@@ -89,4 +89,21 @@ public class TrustHostFilterTests {
         assert !trustHostFilter.isNotTrustHost("internal.example.com");
         assert trustHostFilter.isNotTrustHost("8.8.8.8");
     }
+
+    @Test
+    void shouldAllowInternalCompressEntryUrl() {
+        String url = "http://127.0.0.1:5173/api/mango-preview-e2e.zip_/mango-preview-zip-entry.txt"
+                + "?kkCompressfileKey=mango-preview-e2e.zip_"
+                + "&kkCompressfilepath=mango-preview-e2e.zip_%2Fmango-preview-zip-entry.txt"
+                + "&fullfilename=mango-preview-zip-entry.txt";
+
+        assert trustHostFilter.isInternalCompressEntryUrl(url);
+    }
+
+    @Test
+    void shouldRejectPlainLocalhostUrlAsInternalCompressEntryUrl() {
+        String url = "http://127.0.0.1:5173/api/file-preview/files/download/1";
+
+        assert !trustHostFilter.isInternalCompressEntryUrl(url);
+    }
 }

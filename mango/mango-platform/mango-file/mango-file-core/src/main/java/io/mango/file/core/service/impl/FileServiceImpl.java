@@ -640,20 +640,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     private boolean isPreviewable(FileRecord record) {
-        String contentType = record.getContentType();
-        if (StringUtils.hasText(contentType) && (contentType.startsWith("image/")
-                || contentType.startsWith("text/")
-                || contentType.startsWith("video/")
-                || contentType.startsWith("audio/")
-                || "application/pdf".equalsIgnoreCase(contentType))) {
-            return true;
-        }
-        String ext = record.getFileExt();
-        if (!StringUtils.hasText(ext)) {
-            return false;
-        }
-        return settingsService.current().getPreviewExternalExtensions().stream()
-                .anyMatch(item -> item.equalsIgnoreCase(ext));
+        return record != null && record.getId() != null;
     }
 
     private void fillDirectAccess(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
@@ -662,6 +649,7 @@ public class FileServiceImpl implements IFileService {
         vo.setPreviewUrl(fallbackUrl);
         vo.setDownloadUrl(fallbackUrl);
         if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
+            fillConfiguredPreviewUrl(vo, record, settings);
             return;
         }
         StoredObject storedObject = resolveStoredObject(record);
@@ -680,6 +668,7 @@ public class FileServiceImpl implements IFileService {
                         vo.setDownloadUrl(url);
                         vo.setDirectDownloadUrl(url);
                     });
+            fillConfiguredPreviewUrl(vo, record, settings);
             return;
         }
         long previewExpireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
@@ -700,6 +689,20 @@ public class FileServiceImpl implements IFileService {
                     vo.setDirectDownloadUrl(url);
                     vo.setDirectDownloadExpireSeconds(downloadExpireSeconds);
                 });
+        fillConfiguredPreviewUrl(vo, record, settings);
+    }
+
+    private void fillConfiguredPreviewUrl(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
+        if (!requiresPreviewProvider(record, settings)) {
+            return;
+        }
+        long expireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
+        String sourceUrl = StringUtils.hasText(vo.getDirectDownloadUrl()) ? vo.getDirectDownloadUrl() : vo.getDownloadUrl();
+        vo.setPreviewUrl(FilePreviewUrlBuilder.build(settings.getPreviewProviderUrl(), record, sourceUrl, expireSeconds));
+    }
+
+    private boolean requiresPreviewProvider(FileRecord record, FileSettingsVO settings) {
+        return record != null && settings != null && StringUtils.hasText(settings.getPreviewProviderUrl());
     }
 
     private void fillDirectAccess(FileRecordVO vo, FileRecord record, FileSettingsVO settings) {
