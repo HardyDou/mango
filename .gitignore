@@ -94,6 +94,7 @@ temp/
 
 # ============ Runtime Upload Data ============
 **/data/files/
+**/server/src/main/file/
 
 # ============ Large SQL Data (China Area Division) ============
 **/mango-area/sql/*.sql
