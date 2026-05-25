@@ -13,7 +13,9 @@ import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.OfficeUtils;
 import cn.keking.utils.WebUtils;
 import cn.keking.web.filter.BaseUrlFilter;
+import org.jodconverter.core.office.InstalledOfficeManagerHolder;
 import org.jodconverter.core.office.OfficeException;
+import org.jodconverter.core.office.OfficeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -54,6 +56,10 @@ public class OfficeFilePreviewImpl implements FilePreview {
 
     @Override
     public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+        if (!isOfficeManagerAvailable()) {
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "Office预览组件不可用，请安装并启用 LibreOffice/OpenOffice 后重试");
+        }
+
         // 预览Type，参数传了就取参数的，没传取系统默认
         String officePreviewType = fileAttribute.getOfficePreviewType();
         boolean userToken = fileAttribute.getUsePasswordCache();
@@ -134,6 +140,11 @@ public class OfficeFilePreviewImpl implements FilePreview {
         // 处理普通Office转PDF预览
         return handleRegularOfficePreview(model, fileAttribute, fileName, forceUpdatedCache, cacheName, outFilePath,
                 isHtmlView, userToken, filePassword);
+    }
+
+    private boolean isOfficeManagerAvailable() {
+        OfficeManager officeManager = InstalledOfficeManagerHolder.getInstance();
+        return officeManager != null && officeManager.isRunning();
     }
 
     /**

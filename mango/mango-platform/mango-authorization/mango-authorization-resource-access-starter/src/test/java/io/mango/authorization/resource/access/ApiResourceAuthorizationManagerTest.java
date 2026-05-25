@@ -79,7 +79,7 @@ class ApiResourceAuthorizationManagerTest {
 
     private UsernamePasswordAuthenticationToken authentication() {
         return UsernamePasswordAuthenticationToken.authenticated(
-                new SecurityPrincipal(1L, null, "tester"),
+                new SecurityPrincipal(1L, 1001L, null, "tester", null, null, null, null, null),
                 "token",
                 AuthorityUtils.NO_AUTHORITIES);
     }

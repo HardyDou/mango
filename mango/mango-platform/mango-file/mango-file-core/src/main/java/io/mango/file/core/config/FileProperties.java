@@ -79,13 +79,13 @@ public class FileProperties {
     @Data
     public static class Preview {
 
-        /** 文档预览服务地址。 */
-        private String providerUrl;
+        /** 文档预览服务地址。支持绝对地址、相对地址和 {fileId}/{fileUrl}/{fileName}/{expireSeconds} 占位符。 */
+        private String providerUrl = "/file-preview/files/preview";
 
         /** 文档预览访问有效期，单位秒。 */
         private long expireSeconds = 600L;
 
-        /** 可交由文档预览服务处理的扩展名。 */
+        /** 可交由文档预览服务处理的扩展名。为空表示所有文件都可进入预览服务。 */
         private List<String> externalExtensions = List.of(
                 "doc", "docx", "xls", "xlsx", "xlsm", "ppt", "pptx",
                 "odt", "ods", "odp", "ofd", "wps", "et", "dps",

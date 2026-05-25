@@ -102,7 +102,7 @@ mango:
       token-enabled: false
       token-expire-seconds: 600
     preview:
-      provider-url:
+      provider-url: /file-preview/files/preview
       expire-seconds: 600
       external-extensions:
         - doc
@@ -160,7 +160,7 @@ mango:
 - 默认行为：默认访问级别、重名处理策略、是否按目录隔离重名、对象命名策略。
 - 命名与去重：按目录或机构范围处理重名；支持拒绝、自动重命名、允许重复；秒传按 SHA-256 复用底层对象。
 - 直传访问：是否启用浏览器直传、直传签名有效期、限时访问令牌、公开读取是否仍强制签名。启用限时访问令牌后，MinIO/S3 文件预览接口会返回预签名 GET URL，浏览器直接访问对象存储，避免大文件流量经过业务系统。
-- 预览策略：外部文档预览服务地址、预览有效期、交给外部预览服务的扩展名。
+- 预览策略：外部文档预览服务地址、预览有效期、交给外部预览服务的扩展名。预览服务地址支持 `http://...` 绝对地址和 `/...` 相对地址；没有占位符时文件服务会自动追加 `fileId`、`fileName`、`expireSeconds` 参数；只有没有文件 ID 或地址模板显式使用 `{fileUrl}` 时才传 `fileUrl`。也支持在地址中显式使用 `{fileId}`、`{fileUrl}`、`{fileName}`、`{expireSeconds}` 占位符。
 - 归档保留：是否保留归档记录、保留天数、归档时是否物理删除对象。
 
 上传校验以后端策略为准，前端只做提前提示。高频上传路径读取的是按机构缓存的策略，策略保存后会清理对应机构缓存。
@@ -250,11 +250,11 @@ mango-file -> mango-document 生成预览派生文件
 文件中心前端预览分两层：
 
 - 浏览器内置预览：`image/*`、`video/*`、`audio/*`、`application/pdf`。
-- 外部文档预览服务：Office、ODF、OFD、WPS、压缩包、邮件等复杂格式。
+- 外部文档预览服务：其它所有文件统一进入预览服务，服务能解析则展示，不能解析则由预览服务给出不支持页面。
 
 复杂文档预览不在文件服务内直接转换。推荐后续由 `mango-document` 提供 Office 转 PDF、缩略图或外部预览适配能力，`mango-file` 只负责权限校验、预览入口和派生文件管理。`ONLYOFFICE Docs` 更适合在线 Office 编辑和协同，应作为 `mango-document` 的可选 provider，而不是上传组件或文件服务核心逻辑。
 
-前端优先使用“文件中心 / 文件配置”中的文档预览服务入口，例如 kkFileView 的 `onlinePreview` 地址；`VITE_FILE_PREVIEW_PROVIDER_URL` 只作为本地兜底。业务组件只依赖 `FilePreviewPanel`，不直接依赖具体预览服务。
+前端优先使用 `mango-file` 预览接口返回的 `previewUrl`。文件配置中的文档预览服务入口默认是 `/file-preview/files/preview`，即按 `fileId` 交给 `mango-file-preview` 预览；也可以配置为支持 `fileUrl` 的绝对地址或相对地址。无占位符时默认追加 `fileId`、`fileName`、`expireSeconds`；`fileUrl` 只在无 `fileId` 或预览地址模板显式使用 `{fileUrl}` 时传递。`VITE_FILE_PREVIEW_PROVIDER_URL` 只作为本地兜底。业务组件只依赖 `FilePreviewPanel`，不直接依赖具体预览服务。
 
 注意：外部预览服务通常需要从服务端拉取原文件，不能直接使用需要 `Authorization` 请求头的 `/api/file/files/download`。MinIO/S3 文件会优先把预签名下载 URL 交给 kkFileView 或 ONLYOFFICE；不支持直链的存储再回退到登录态下载接口。
 

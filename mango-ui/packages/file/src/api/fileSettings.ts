@@ -61,7 +61,7 @@ export const defaultFileSettings: FileSettings = {
   publicReadRequiresToken: false,
   accessMode: 'PROXY',
   accessTokenExpireSeconds: 600,
-  previewProviderUrl: '',
+  previewProviderUrl: '/file-preview/files/preview',
   previewExpireSeconds: 600,
   previewExternalExtensions: [
     'doc', 'docx', 'xls', 'xlsx', 'xlsm', 'ppt', 'pptx',
@@ -130,7 +130,7 @@ function fromBackendSettings(item: any): FileSettings {
     publicReadRequiresToken: Boolean(item?.publicReadRequiresToken),
     accessMode: item?.accessMode === 'DIRECT' ? 'DIRECT' : 'PROXY',
     accessTokenExpireSeconds: Number(item?.accessTokenExpireSeconds ?? defaultFileSettings.accessTokenExpireSeconds),
-    previewProviderUrl: item?.previewProviderUrl || '',
+    previewProviderUrl: item?.previewProviderUrl || defaultFileSettings.previewProviderUrl,
     previewExpireSeconds: Number(item?.previewExpireSeconds ?? defaultFileSettings.previewExpireSeconds),
     previewExternalExtensions: normalizeArray(item?.previewExternalExtensions),
     archiveRetainEnabled: item?.archiveRetainEnabled !== false,

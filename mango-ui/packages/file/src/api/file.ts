@@ -60,6 +60,14 @@ export interface FilePreview {
   directDownloadExpireSeconds?: number;
 }
 
+export interface FilePreviewLink {
+  fileId: FileId;
+  fileName: string;
+  previewUrl: string;
+  previewToken?: string;
+  expireSeconds?: number;
+}
+
 export interface FileQuery {
   pageNum?: number;
   pageSize?: number;
@@ -135,6 +143,12 @@ export const fileApi = {
     directDownloadUrl: normalizeApiUrl(item.directDownloadUrl),
     directPreviewExpireSeconds: Number(item.directPreviewExpireSeconds ?? 0),
     directDownloadExpireSeconds: Number(item.directDownloadExpireSeconds ?? 0),
+  })),
+  previewLink: (fileId: FileId) => get<FilePreviewLink>('/file-preview/files/preview-link', { params: { fileId } }).then((item: any) => ({
+    ...item,
+    fileId: normalizeId(item.fileId),
+    previewUrl: normalizeApiUrl(item.previewUrl),
+    expireSeconds: Number(item.expireSeconds ?? 0),
   })),
   upload: (file: File, params?: FileUploadParams, options?: FileUploadOptions) => uploadSmart(file, params, options),
   uploadBatch: (files: File[], params?: FileUploadParams, options?: FileUploadOptions) => {

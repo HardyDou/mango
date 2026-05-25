@@ -4,6 +4,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -33,6 +34,11 @@ public interface FileApi {
 
     /** 下载文件内容。 */
     FileDownloadVO download(Long id);
+
+    /** 保存内部生成的文件内容。 */
+    default R<FileRecordVO> save(SaveFileCommand command) {
+        throw new UnsupportedOperationException("当前文件 API 实现不支持保存文件");
+    }
 
     /**
      * 下载文件到指定目录。

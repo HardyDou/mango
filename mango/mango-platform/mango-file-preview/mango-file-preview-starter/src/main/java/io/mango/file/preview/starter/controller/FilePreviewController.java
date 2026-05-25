@@ -59,6 +59,16 @@ public class FilePreviewController implements FilePreviewApi {
         return new ModelAndView("forward:" + link.getPreviewUrl());
     }
 
+    @GetMapping("/files/preview-entry")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "文件预览临时入口")
+    @Operation(summary = "跳转临时文件预览页", description = "公开接口。使用已鉴权接口签发的短期令牌跳转到在线预览页面")
+    public ModelAndView redirectPreviewEntry(
+            @Parameter(description = "预览入口临时令牌", required = true)
+            @RequestParam String token) {
+        FilePreviewLinkVO link = filePreviewService.createEnginePreviewByToken(token);
+        return new ModelAndView("forward:" + link.getPreviewUrl());
+    }
+
     @GetMapping("/sources/{token}")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "读取预览源文件")
     @Operation(summary = "读取预览源文件", description = "临时令牌接口。仅供预览引擎在有效期内读取源文件")

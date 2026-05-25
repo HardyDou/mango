@@ -18,6 +18,7 @@ public class FilePreviewSecurityCustomizer implements WebSecurityCustomizer {
             "/picturesPreview/**",
             "/getCorsFile",
             "/getCorsFile/**",
+            "/file-preview/files/preview-entry",
             "/file-preview/sources/**",
             "/pdfjs/**",
             "/js/**",

@@ -103,8 +103,8 @@ test.describe('文件管理联调', () => {
     await page.getByLabel('文档预览服务').fill('');
     await page.getByRole('spinbutton', { name: /预览有效期/ }).fill('600');
     await page.getByLabel('外部预览类型').fill('');
-    await page.getByLabel('外部预览类型').pressSequentially('doc, docx, xls, xlsx, ppt, pptx, ofd');
-    await expect(page.getByLabel('外部预览类型')).toHaveValue('doc, docx, xls, xlsx, ppt, pptx, ofd');
+    await page.getByLabel('外部预览类型').pressSequentially(realisticAllowedExtensions);
+    await expect(page.getByLabel('外部预览类型')).toHaveValue(realisticAllowedExtensions);
     const saveResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/file/settings')
       && response.request().method() === 'PUT'
@@ -122,7 +122,7 @@ test.describe('文件管理联调', () => {
     expect(persistedBody.data.allowedExtensions).toEqual(realisticAllowedExtensions.split(', '));
     expect(persistedBody.data.blockedExtensions).toEqual(['exe', 'bat', 'cmd', 'sh', 'jar']);
     expect(persistedBody.data.blockedContentTypes).toEqual(['application/x-msdownload', 'application/x-sh']);
-    expect(persistedBody.data.previewExternalExtensions).toEqual(['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'ofd']);
+    expect(persistedBody.data.previewExternalExtensions).toEqual(realisticAllowedExtensions.split(', '));
     expect(persistedBody.data.accessMode).toBe('DIRECT');
 
     await expect(page.locator('.el-message--error')).toHaveCount(0);

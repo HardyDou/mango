@@ -236,9 +236,12 @@
           <el-form-item label="文档预览服务">
             <el-input
               v-model="form.previewProviderUrl"
-              placeholder="如 http://127.0.0.1:8012/onlinePreview"
+              placeholder="默认 /file-preview/files/preview，也可填 http://... 或 /xxx/preview"
               clearable
             />
+            <div class="form-tip">
+              支持绝对地址、相对地址；无占位符时默认追加 fileId、fileName、expireSeconds 参数。也可使用 {fileId}、{fileUrl}、{fileName}、{expireSeconds}。
+            </div>
           </el-form-item>
           <el-row :gutter="20">
             <el-col :xs="24" :md="12">
@@ -261,6 +264,9 @@
               :rows="3"
               placeholder="如 doc,docx,xls,xlsx,ppt,pptx,odt,ods,ofd"
             />
+            <div class="form-tip">
+              兼容历史配置。文件管理预览入口会对所有文件开放，具体渲染能力由预览服务决定。
+            </div>
           </el-form-item>
         </section>
 
@@ -446,6 +452,13 @@ onMounted(loadSettings);
 .unit-text {
   margin-left: 8px;
   color: var(--el-text-color-secondary);
+}
+
+.form-tip {
+  margin-top: 6px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .limit-alert {

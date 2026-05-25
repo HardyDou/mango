@@ -48,8 +48,13 @@ test.describe('登录页面 E2E 测试', () => {
   });
 
   test('Loading 状态显示', async ({ page }) => {
+    let releaseLogin: () => void = () => undefined;
+    const loginPending = new Promise<void>((resolve) => {
+      releaseLogin = resolve;
+    });
+
     await page.route('**/api/auth/login', async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await loginPending;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -79,7 +84,8 @@ test.describe('登录页面 E2E 测试', () => {
 
     // 按钮应该显示 loading 状态
     await expect(page.locator('.login-btn')).toHaveClass(/is-loading/);
-    await page.waitForURL('**/#/home', { timeout: 10000 });
+    releaseLogin();
+    await expect(page.locator('.login-btn')).not.toHaveClass(/is-loading/);
   });
 
   test('错误消息显示', async ({ page }) => {
@@ -91,6 +97,6 @@ test.describe('登录页面 E2E 测试', () => {
     await page.click('button:has-text("登 录")');
 
     // 应该显示错误消息
-    await expect(page.locator('text=/登录失败|用户名或密码错误/')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('用户名或密码错误').first()).toBeVisible({ timeout: 3000 });
   });
 });

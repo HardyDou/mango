@@ -56,15 +56,12 @@
           />
         </el-form-item>
         <el-form-item label="访问级别">
-          <el-select
+          <DictSelect
             v-model="query.accessLevel"
-            placeholder="请选择"
+            dict-type="file_access_level"
+            placeholder="全部级别"
             clearable
-          >
-            <el-option label="机构私有" value="PRIVATE" />
-            <el-option label="公开读取" value="PUBLIC_READ" />
-            <el-option label="内部文件" value="INTERNAL" />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item>
           <el-checkbox v-model="query.includeArchived">
@@ -125,9 +122,12 @@
           width="110"
         >
           <template #default="{ row }">
-            <el-tag size="small" :type="accessLevelType(row.accessLevel)">
-              {{ accessLevelLabel(row.accessLevel) }}
-            </el-tag>
+            <DictTag
+              dict-code="file_access_level"
+              :value="row.accessLevel"
+              :type="accessLevelType(row.accessLevel)"
+              size="small"
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -236,6 +236,7 @@
       width="840px"
     >
       <FilePreviewPanel
+        :file-id="preview?.id"
         :preview="preview"
         :preview-provider-url="settings.previewProviderUrl"
         :preview-external-extensions="settings.previewExternalExtensions"
@@ -267,7 +268,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Pagination } from '@mango/common';
+import { DictSelect, DictTag, Pagination } from '@mango/common';
 import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
 import { fileDirectoryApi, rootDirectory, type FileDirectory } from '../../api/fileDirectory';
 import { defaultFileSettings, fileSettingsApi, formatBytes, type FileSettings } from '../../api/fileSettings';
@@ -457,12 +458,6 @@ function handleArchive(row: FileRecord) {
     ElMessage.success('归档成功');
     loadData();
   }).catch(() => {});
-}
-
-function accessLevelLabel(value?: string) {
-  if (value === 'PUBLIC_READ') return '公开读取';
-  if (value === 'INTERNAL') return '内部文件';
-  return '机构私有';
 }
 
 function accessLevelType(value?: string) {
