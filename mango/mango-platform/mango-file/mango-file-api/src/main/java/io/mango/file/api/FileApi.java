@@ -4,6 +4,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
 import io.mango.file.api.vo.FilePreviewVO;
@@ -21,6 +22,14 @@ import java.util.Map;
  * 文件能力 API 契约。
  */
 public interface FileApi {
+
+    /**
+     * 保存内部生成文件。
+     *
+     * @param command 保存命令。
+     * @return 文件记录。
+     */
+    R<FileRecordVO> save(SaveFileCommand command);
 
     /** 分页查询文件记录。 */
     R<PageResult<FileRecordVO>> page(FileRecordPageQuery query);

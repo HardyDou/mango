@@ -12,6 +12,12 @@ const platformTenant: LoginTenant = {
   tenantName: '芒果集团',
 };
 
+const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:5555';
+
+function api(path: string) {
+  return `${apiBaseURL}${path}`;
+}
+
 const companyATenant: LoginTenant = {
   tenantId: '2',
   tenantCode: 'company_a',
@@ -19,7 +25,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(api('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -54,7 +60,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 
 async function listMenus(request: APIRequestContext, token: string, menuName: string) {
   const response = await request.get(
-    `http://localhost:5555/authorization/menus?appCode=internal-admin&fmt=list&menuName=${encodeURIComponent(menuName)}`,
+    api(`/authorization/menus?appCode=internal-admin&fmt=list&menuName=${encodeURIComponent(menuName)}`),
     { headers: { Authorization: `Bearer ${token}` } }
   );
   expect(response.status()).toBe(200);
@@ -69,7 +75,7 @@ async function cleanupMenus(request: APIRequestContext, token: string, menuName:
     .filter((item: any) => item.menuName === menuName)
     .sort((a: any, b: any) => Number(b.menuId) - Number(a.menuId));
   for (const menu of sorted) {
-    await request.delete(`http://localhost:5555/authorization/menus?menuId=${menu.menuId}`, {
+    await request.delete(api(`/authorization/menus?menuId=${menu.menuId}`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
@@ -78,6 +84,10 @@ async function cleanupMenus(request: APIRequestContext, token: string, menuName:
 async function expectNoAuthError(page: Page) {
   await expect(page.locator('.el-message--error')).toHaveCount(0);
   await expect(page.locator('text=/401|403|未授权|没有权限|拒绝访问|加载失败|登录已过期|请重新登录/')).toHaveCount(0);
+}
+
+async function openTopMenu(page: Page, name: string) {
+  await page.getByRole('button', { name }).evaluate((button: HTMLButtonElement) => button.click());
 }
 
 test.describe('T9 菜单管理页面真实接口闭环', () => {
@@ -178,12 +188,12 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
   test('A 公司不可见菜单管理入口，维护接口返回 403', async ({ page, request }) => {
     const companyToken = await loginToken(request, companyATenant);
 
-    const listResponse = await request.get('http://localhost:5555/authorization/menus?appCode=internal-admin&fmt=list', {
+    const listResponse = await request.get(api('/authorization/menus?appCode=internal-admin&fmt=list'), {
       headers: { Authorization: `Bearer ${companyToken}` },
     });
     expect(listResponse.status()).toBe(403);
 
-    const createResponse = await request.post('http://localhost:5555/authorization/menus', {
+    const createResponse = await request.post(api('/authorization/menus'), {
       headers: { Authorization: `Bearer ${companyToken}` },
       data: {
         appCode: 'internal-admin',
@@ -200,6 +210,7 @@ test.describe('T9 菜单管理页面真实接口闭环', () => {
     expect(createResponse.status()).toBe(403);
 
     await loginPage(page, companyATenant);
+    await openTopMenu(page, '系统管理');
     await expect(page.getByText('权限管理').first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('菜单管理')).toHaveCount(0);
     await expectNoAuthError(page);
