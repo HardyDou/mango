@@ -5,9 +5,9 @@
 @../mango-pmo/rules/frontend/06-monorepo-architecture.md
 @../mango-pmo/rules/frontend/04-test.md
 
-本文件是 `mango-ui` 的项目级协作入口。进入这个子项目后，先按 `../AGENTS.md` 执行 PMO preflight。
+本文件是 `mango-ui` 的项目级协作入口。进入这个子项目后，先按 `../AGENTS.md` 判断是否需要执行 PMO preflight。
 
-推荐命令：
+需要执行 preflight 时，推荐命令：
 
 ```bash
 node ../mango-pmo/tools/pmo-preflight.mjs \
@@ -17,7 +17,7 @@ node ../mango-pmo/tools/pmo-preflight.mjs \
   --paths "mango-ui/**"
 ```
 
-读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。简单问答、只读定位和快速查看不需要 preflight。
 
 ## 项目定位
 

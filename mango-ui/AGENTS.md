@@ -1,6 +1,6 @@
 # Mango UI Agent 入口
 
-进入 `mango-ui` 前端子项目后，仍以根目录 `AGENTS.md` 的 PMO preflight 为第一入口。
+进入 `mango-ui` 前端子项目后，仍以根目录 `AGENTS.md` 的 PMO preflight 触发规则为第一入口；简单问答、只读定位和快速查看不触发。
 
 ## 1. 推荐 preflight
 

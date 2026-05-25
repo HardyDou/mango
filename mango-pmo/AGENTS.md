@@ -1,8 +1,10 @@
 # Mango PMO Agent 入口
 
-进入 `mango-pmo` 后，所有任务都按规范治理处理。
+进入 `mango-pmo` 后，涉及规范、流程、Agent 入口或 PMO 资产变更的任务按规范治理处理；简单问答、只读定位和快速查看不触发。
 
 ## 1. 推荐 preflight
+
+需要执行 preflight 时使用：
 
 ```bash
 node tools/pmo-preflight.mjs \

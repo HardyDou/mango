@@ -5,7 +5,7 @@
 @../../mango-pmo/rules/backend/05-module.md
 @../../mango-pmo/rules/backend/08-test.md
 
-进入 `mango-infra` 后，先按 `../../AGENTS.md` 执行 PMO preflight：
+进入 `mango-infra` 后，先按 `../../AGENTS.md` 判断是否需要执行 PMO preflight。需要执行时使用：
 
 ```bash
 node ../../mango-pmo/tools/pmo-preflight.mjs \
@@ -15,7 +15,7 @@ node ../../mango-pmo/tools/pmo-preflight.mjs \
   --paths "mango/mango-infra/**"
 ```
 
-读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。
+读取 preflight 输出中 `Must read` 的每一个文件原文后，再开始设计、编码或验证。简单问答、只读定位和快速查看不需要 preflight。
 
 ## 模块定位
 
