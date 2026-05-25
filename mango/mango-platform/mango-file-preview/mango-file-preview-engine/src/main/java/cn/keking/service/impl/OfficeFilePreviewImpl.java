@@ -57,7 +57,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
     @Override
     public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
         if (!isOfficeManagerAvailable()) {
-            return otherFilePreview.notSupportedFile(model, fileAttribute, "Office预览组件不可用，请安装并启用 LibreOffice/OpenOffice 后重试");
+            return otherFilePreview.notSupportedFile(model, fileAttribute, "Mango 文件预览暂未启用 Office 转换能力，请下载文件查看，或联系管理员启用文档转换服务");
         }
 
         // 预览Type，参数传了就取参数的，没传取系统默认
