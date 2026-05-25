@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,10 +47,40 @@ class FilePreviewMessageTests {
         assertFalse(template.contains("知识星球"));
     }
 
+    @Test
+    void supportResources_useMangoSupportMessage() throws IOException {
+        String contactPage = readResource("/web/main/contact.ftl");
+        String banner = readResource("/banner.txt");
+        String startupShell = readSourceFile("src/main/bin/startup.sh");
+        String startupBat = readSourceFile("src/main/bin/startup.bat");
+
+        assertTrue(contactPage.contains("Mango 文件预览技术支持"));
+        assertTrue(banner.contains("Mango File Preview"));
+        assertTrue(startupShell.contains("Mango project documentation"));
+        assertTrue(startupBat.contains("Mango project documentation"));
+
+        assertNoThirdPartySupportMessage(contactPage);
+        assertNoThirdPartySupportMessage(banner);
+        assertNoThirdPartySupportMessage(startupShell);
+        assertNoThirdPartySupportMessage(startupBat);
+    }
+
     private String readResource(String resourcePath) throws IOException {
         try (InputStream inputStream = getClass().getResourceAsStream(resourcePath)) {
             assertNotNull(inputStream);
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private String readSourceFile(String filePath) throws IOException {
+        return Files.readString(Path.of(filePath), StandardCharsets.UTF_8);
+    }
+
+    private void assertNoThirdPartySupportMessage(String content) {
+        assertFalse(content.contains("kk开源社区"));
+        assertFalse(content.contains("知识星球"));
+        assertFalse(content.contains("zsxq"));
+        assertFalse(content.contains("09ZHSXbsQ"));
+        assertFalse(content.contains("48844125114258"));
     }
 }
