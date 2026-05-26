@@ -53,6 +53,7 @@ public class CheckMojo extends AbstractMojo {
     private static final String DOC_TEST_RULES = "test-rules.md";
     private static final String DOC_PERSISTENCE_RULES = "persistence-rules.md";
     private static final String DOC_STATIC_ANALYSIS = "auto-check-mapping.md";
+    private static final String MANGO_GROUP_ID_PREFIX = "io.mango";
     private static final String PATH_VARIABLE_ANNOTATION = "@Path" + "Variable";
     private static final String CHECKSTYLE_REPORT = "checkstyle-result.xml";
     private static final String PMD_REPORT = "pmd.xml";
@@ -867,7 +868,7 @@ public class CheckMojo extends AbstractMojo {
                     issues.add(issue);
                     continue;
                 }
-                if (!"io.mango".equals(depGroupId)) {
+                if (!isMangoGroupId(depGroupId)) {
                     continue;
                 }
 
@@ -1025,8 +1026,8 @@ public class CheckMojo extends AbstractMojo {
                 return;
             }
             List<String> dependencies = extractDependencies(content);
-            boolean dependsWebApi = hasDependency(dependencies, "io.mango", "mango-infra-web-api");
-            boolean dependsWebStarter = hasDependency(dependencies, "io.mango", "mango-infra-web-starter");
+            boolean dependsWebApi = hasMangoDependency(dependencies, "mango-infra-web-api");
+            boolean dependsWebStarter = hasMangoDependency(dependencies, "mango-infra-web-starter");
             boolean dependsSpringWebStarter = hasDependency(dependencies,
                     "org.springframework.boot", "spring-boot-starter-web");
 
@@ -1062,6 +1063,21 @@ public class CheckMojo extends AbstractMojo {
             }
         }
         return false;
+    }
+
+    private boolean hasMangoDependency(List<String> dependencyBlocks, String artifactId) {
+        for (String dependencyBlock : dependencyBlocks) {
+            if (artifactId.equals(extractArtifactIdFromDep(dependencyBlock))
+                    && isMangoGroupId(extractGroupIdFromDep(dependencyBlock))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isMangoGroupId(String groupId) {
+        return MANGO_GROUP_ID_PREFIX.equals(groupId)
+                || (groupId != null && groupId.startsWith(MANGO_GROUP_ID_PREFIX + "."));
     }
 
     private boolean isRefactoredWebScope(Path pomFile, String artifactId) {

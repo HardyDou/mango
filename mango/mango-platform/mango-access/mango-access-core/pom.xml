@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.access</groupId>
         <artifactId>mango-access</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -20,13 +20,13 @@
     <dependencies>
         <!-- Mango 授权与安全 API -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Mango 通用返回模型 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
             <version>${project.version}</version>
         </dependency>

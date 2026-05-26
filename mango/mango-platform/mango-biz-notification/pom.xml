@@ -9,6 +9,8 @@
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+
+    <groupId>io.mango.platform.biz.notification</groupId>
     <artifactId>mango-biz-notification</artifactId>
     <packaging>pom</packaging>
     <name>Mango Biz Notification</name>

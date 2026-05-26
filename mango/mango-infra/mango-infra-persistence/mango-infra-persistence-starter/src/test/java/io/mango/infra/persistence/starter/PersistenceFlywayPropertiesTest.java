@@ -2,9 +2,6 @@ package io.mango.infra.persistence.starter;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PersistenceFlywayPropertiesTest {
@@ -29,14 +26,14 @@ class PersistenceFlywayPropertiesTest {
     }
 
     @Test
-    void baselineOnMigrate_shouldDefaultToFalse() {
+    void baselineOnMigrate_shouldDefaultToTrue() {
         PersistenceFlywayProperties props = new PersistenceFlywayProperties();
 
         PersistenceFlywayProperties.ModuleConfig i18nConfig = new PersistenceFlywayProperties.ModuleConfig();
         i18nConfig.setEnabled(true);
         props.getModules().put("i18n", i18nConfig);
 
-        assertThat(props.getModules().get("i18n").isBaselineOnMigrate()).isFalse();
+        assertThat(props.getModules().get("i18n").isBaselineOnMigrate()).isTrue();
     }
 
     @Test
@@ -66,7 +63,23 @@ class PersistenceFlywayPropertiesTest {
     @Test
     void moduleConfig_baselineOnMigrate_canBeSet() {
         PersistenceFlywayProperties.ModuleConfig config = new PersistenceFlywayProperties.ModuleConfig();
-        config.setBaselineOnMigrate(true);
-        assertThat(config.isBaselineOnMigrate()).isTrue();
+        config.setBaselineOnMigrate(false);
+        assertThat(config.isBaselineOnMigrate()).isFalse();
+    }
+
+    @Test
+    void moduleConfig_shouldAcceptHistoryTableAndDatasource() {
+        PersistenceFlywayProperties.ModuleConfig config = new PersistenceFlywayProperties.ModuleConfig();
+        config.setHistoryTable("flyway_schema_history_identity");
+        config.getDatasource().setUrl("jdbc:mysql://127.0.0.1:3306/mango_identity");
+        config.getDatasource().setUsername("root");
+        config.getDatasource().setPassword("secret");
+        config.getDatasource().setDriverClassName("com.mysql.cj.jdbc.Driver");
+
+        assertThat(config.getHistoryTable()).isEqualTo("flyway_schema_history_identity");
+        assertThat(config.getDatasource().getUrl()).isEqualTo("jdbc:mysql://127.0.0.1:3306/mango_identity");
+        assertThat(config.getDatasource().getUsername()).isEqualTo("root");
+        assertThat(config.getDatasource().getPassword()).isEqualTo("secret");
+        assertThat(config.getDatasource().getDriverClassName()).isEqualTo("com.mysql.cj.jdbc.Driver");
     }
 }

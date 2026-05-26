@@ -11,6 +11,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
+    <groupId>io.mango.extension.ai</groupId>
+
     <artifactId>mango-ai</artifactId>
     <packaging>pom</packaging>
 

@@ -5,10 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.infra</groupId>
         <artifactId>mango-infra</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
+
+    <groupId>io.mango.infra.doc</groupId>
 
     <artifactId>mango-infra-doc-starter</artifactId>
     <packaging>jar</packaging>
@@ -43,13 +45,13 @@
 
         <!-- Mango Common -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
         <!-- @ApiAccess marker for API access classification -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>

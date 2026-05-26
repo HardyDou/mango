@@ -11,6 +11,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
+    <groupId>io.mango.platform.identity</groupId>
+
     <artifactId>mango-identity</artifactId>
     <packaging>pom</packaging>
 

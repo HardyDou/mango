@@ -94,13 +94,14 @@ public class GenModuleMojo extends AbstractMojo {
     private void createPom(Path moduleDir, String name) throws IOException {
         String lowerName = name.toLowerCase();
         String capName = capitalize(name);
+        String groupId = "io.mango." + lowerName.replace('-', '.');
         String content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n" +
                 "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
                 "         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\n" +
                 "    <modelVersion>4.0.0</modelVersion>\n" +
                 "\n" +
-                "    <groupId>io.mango</groupId>\n" +
+                "    <groupId>" + groupId + "</groupId>\n" +
                 "    <artifactId>mango-" + lowerName + "</artifactId>\n" +
                 "    <version>1.0.0-SNAPSHOT</version>\n" +
                 "    <packaging>pom</packaging>\n" +

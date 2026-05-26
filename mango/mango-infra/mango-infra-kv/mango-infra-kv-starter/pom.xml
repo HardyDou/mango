@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.infra.kv</groupId>
         <artifactId>mango-infra-kv</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -14,13 +14,13 @@
     <dependencies>
         <!-- KV API -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.kv</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- KV Core (implementations) -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.kv</groupId>
             <artifactId>mango-infra-kv-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -35,7 +35,7 @@
         </dependency>
         <!-- Infra DB (for DataSource/JdbcTemplate beans) -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.persistence</groupId>
             <artifactId>mango-infra-persistence-starter</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -5,11 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.app</groupId>
         <artifactId>mango-app</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <groupId>io.mango.app.monolith</groupId>
 
     <artifactId>mango-app-monolith</artifactId>
     <packaging>pom</packaging>

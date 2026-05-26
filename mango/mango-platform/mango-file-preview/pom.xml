@@ -10,6 +10,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
+    <groupId>io.mango.platform.file.preview</groupId>
+
     <artifactId>mango-file-preview</artifactId>
     <packaging>pom</packaging>
     <name>Mango File Preview</name>
