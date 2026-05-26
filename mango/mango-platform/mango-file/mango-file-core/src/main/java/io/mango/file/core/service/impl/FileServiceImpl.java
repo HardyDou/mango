@@ -13,6 +13,7 @@ import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.enums.FileAccessLevel;
 import io.mango.file.api.enums.FileAccessMode;
@@ -81,6 +82,7 @@ import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -299,6 +301,11 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     public FileDownloadVO download(Long id) {
+        return downloadForService(id);
+    }
+
+    @Override
+    public FileDownloadVO downloadForService(Long id) {
         FileRecord record = selectVisible(id);
         StoredObject storedObject = resolveStoredObject(record);
         FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());
@@ -323,6 +330,36 @@ public class FileServiceImpl implements IFileService {
             removePhysicalObjectIfUnreferenced(record);
         }
         return R.ok(updated);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<Boolean> delete(FileDeleteCommand command) {
+        Require.notNull(command, FileCode.FILE_STATUS_INVALID);
+        Require.notEmpty(command.getIds(), FileCode.FILE_NOT_FOUND);
+        List<Long> ids = command.getIds().stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Require.notEmpty(ids, FileCode.FILE_NOT_FOUND);
+        List<FileRecord> records = selectVisible(ids);
+        Require.isTrue(records.size() == ids.size(), FileCode.FILE_NOT_FOUND);
+        LocalDateTime now = LocalDateTime.now();
+        Long userId = MangoContextHolder.userId();
+        for (FileRecord record : records) {
+            record.setStatus(FileRecordStatus.DELETED.value());
+            record.setArchived(1);
+            record.setUpdatedBy(userId);
+            record.setUpdatedTime(now);
+            fileRecordMapper.updateById(record);
+            if (record.getObjectId() != null) {
+                decrementObjectRefCount(record.getObjectId());
+            }
+        }
+        if (Boolean.TRUE.equals(settingsService.current().getPhysicalDeleteEnabled())) {
+            records.forEach(this::removePhysicalObjectIfUnreferenced);
+        }
+        return R.ok(true);
     }
 
     @Override
@@ -583,8 +620,18 @@ public class FileServiceImpl implements IFileService {
         FileRecord record = fileRecordMapper.selectOne(tenantVisibleWrapper().eq(FileRecord::getId, id).last("LIMIT 1"));
         Require.notNull(record, FileCode.FILE_NOT_FOUND);
         Require.isFalse(FileRecordStatus.ARCHIVED.value() == record.getStatus()
+                || FileRecordStatus.DELETED.value() == record.getStatus()
                 || Integer.valueOf(1).equals(record.getArchived()), FileCode.FILE_NOT_FOUND);
         return record;
+    }
+
+    private List<FileRecord> selectVisible(List<Long> ids) {
+        List<FileRecord> records = fileRecordMapper.selectList(tenantVisibleWrapper()
+                .in(FileRecord::getId, ids)
+                .eq(FileRecord::getArchived, 0)
+                .eq(FileRecord::getStatus, FileRecordStatus.COMPLETED.value()));
+        Require.notEmpty(records, FileCode.FILE_NOT_FOUND);
+        return records;
     }
 
     private void validateUpload(FileInput input) {

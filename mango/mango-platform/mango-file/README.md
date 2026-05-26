@@ -258,11 +258,11 @@ mango-file -> mango-document 生成预览派生文件
 
 注意：外部预览服务通常需要从服务端拉取原文件，不能直接使用需要 `Authorization` 请求头的 `/api/file/files/download`。MinIO/S3 文件会优先把预签名下载 URL 交给 kkFileView 或 ONLYOFFICE；不支持直链的存储再回退到登录态下载接口。
 
-保函、合同、审批场景建议支持的重点格式：
+合同、审批、票据等业务场景建议支持的重点格式：
 
 - 图片：`jpg`、`jpeg`、`png`、`gif`、`webp`。
 - 视频/音频：`mp4`、`mov`、`mp3`、`wav`，用于现场材料或沟通留痕。
-- PDF / OFD：电子保函、发票、签章文件和监管版式文件。
+- PDF / OFD：合同、发票、签章文件和监管版式文件。
 - Office / WPS：`doc`、`docx`、`xls`、`xlsx`、`ppt`、`pptx`、`wps`、`et`、`dps`。
 - ODF：`odt`、`ods`、`odp`。
 - 文本与数据：`txt`、`csv`。
@@ -315,7 +315,7 @@ mango-file -> mango-document 生成预览派生文件
 
 文件中心页面按钮级权限：
 
-- 文件管理：`file:files:upload`、`file:files:query`、`file:files:download`、`file:files:archive`。
+- 文件管理：`file:files:upload`、`file:files:query`、`file:files:download`、`file:files:archive`、`file:files:delete`。
 - 目录管理：`file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete`。
 - 存储配置：`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:test`、`file:storage-configs:active`。
 - 文件配置：`file:settings:query`、`file:settings:edit`。

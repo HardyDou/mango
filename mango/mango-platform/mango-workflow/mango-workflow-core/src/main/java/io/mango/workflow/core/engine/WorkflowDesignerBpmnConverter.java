@@ -113,12 +113,7 @@ public class WorkflowDesignerBpmnConverter {
             case "EXCLUSIVE_GATEWAY" -> appendExclusiveGateway(process, sourceId, node, index);
             case "PARALLEL_GATEWAY" -> appendParallelGateway(process, sourceId, node, index);
             case "CC", "SERVICE" -> appendServiceTask(process, sourceId, node, index);
-            default -> {
-                if (node.resolvedNodeType().startsWith("GUARANTEE_")) {
-                    yield appendGuaranteeNode(process, sourceId, node, index);
-                }
-                yield appendUserTask(process, sourceId, node, index);
-            }
+            default -> appendUserTask(process, sourceId, node, index);
         };
     }
 
@@ -423,13 +418,6 @@ public class WorkflowDesignerBpmnConverter {
         return appendNode(process, taskId, node.getChildNode(), index);
     }
 
-    private String appendGuaranteeNode(Process process, String sourceId, WorkflowDesignerNode node, AtomicInteger index) {
-        if ("GUARANTEE_BANK_SUBMIT".equals(node.resolvedNodeType()) || "GUARANTEE_ARCHIVE".equals(node.resolvedNodeType())) {
-            return appendServiceTask(process, sourceId, node, index);
-        }
-        return appendUserTask(process, sourceId, node, index);
-    }
-
     private String appendExclusiveGateway(Process process, String sourceId, WorkflowDesignerNode node, AtomicInteger index) {
         String gatewayId = nodeId(node, "exclusiveGateway" + index.getAndIncrement());
         String mergeId = gatewayId + "_merge";
@@ -507,8 +495,6 @@ public class WorkflowDesignerBpmnConverter {
         }
         return switch (node.resolvedNodeType()) {
             case "CC" -> "EVENT_PUBLISH";
-            case "GUARANTEE_BANK_SUBMIT" -> "REMOTE_SERVICE";
-            case "GUARANTEE_ARCHIVE" -> "EVENT_PUBLISH";
             default -> "NONE";
         };
     }

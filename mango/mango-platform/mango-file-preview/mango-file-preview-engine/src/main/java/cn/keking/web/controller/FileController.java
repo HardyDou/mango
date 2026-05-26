@@ -3,6 +3,7 @@ package cn.keking.web.controller;
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileType;
 import cn.keking.model.ReturnResponse;
+import cn.keking.service.CompressFileEntryService;
 import cn.keking.utils.CaptchaUtil;
 import cn.keking.utils.DateUtils;
 import cn.keking.utils.KkFileUtils;
@@ -24,6 +25,7 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,6 +47,7 @@ import static cn.keking.utils.CaptchaUtil.CAPTCHA_GENERATE_TIME;
 public class FileController {
 
     private final Logger logger = LoggerFactory.getLogger(FileController.class);
+    private final CompressFileEntryService compressFileEntryService;
 
     private final String fileDir = ConfigConstants.getFileDir();
     private final String demoDir = "demo";
@@ -59,6 +62,10 @@ public class FileController {
     private static final String DEFAULT_ORDER = "desc";
     private static final boolean ENABLE_PERFORMANCE_LOG = true;
     private static final int PERFORMANCE_LOG_THRESHOLD = 1000; // 超过1000个文件记录性能日志
+
+    public FileController(CompressFileEntryService compressFileEntryService) {
+        this.compressFileEntryService = compressFileEntryService;
+    }
 
     // 内部类，用于高效存储文件信息
     private static class FileInfoWrapper implements Comparable<FileInfoWrapper> {
@@ -750,6 +757,28 @@ public class FileController {
             return ReturnResponse.failure("不允许访问的路径:");
         }
         return RarUtils.getTree(fileUrl);
+    }
+
+    @GetMapping("/compressed-file")
+    public void compressedFile(@RequestParam("kkCompressfileKey") String compressFileKey,
+                               @RequestParam("kkCompressfilepath") String compressFilePath,
+                               @RequestParam(value = "fullfilename", required = false) String fullFileName,
+                               HttpServletResponse response) throws IOException {
+        try {
+            Path entryPath = compressFileEntryService.resolveEntryPath(compressFileKey, compressFilePath);
+            String contentType = compressFileEntryService.contentType(fullFileName, compressFilePath);
+            if (contentType != null) {
+                response.setContentType(contentType);
+            }
+            response.setHeader("Cache-Control", "private, max-age=86400");
+            try (InputStream inputStream = Files.newInputStream(entryPath)) {
+                StreamUtils.copy(inputStream, response.getOutputStream());
+            }
+        } catch (FileNotFoundException e) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "压缩包内文件不存在");
+        } catch (IllegalArgumentException | SecurityException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "压缩包内文件路径不合法");
+        }
     }
 
     private boolean existsFile(String fileName, String path) {

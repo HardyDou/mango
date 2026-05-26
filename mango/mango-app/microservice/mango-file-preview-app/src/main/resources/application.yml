@@ -6,6 +6,12 @@ spring:
     name: mango-file-preview-app
 
 mango:
+  kv:
+    store:
+      type: jdbc
+    capability:
+      enabled: true
+      token-store: true
   file:
     enabled: true
   file-preview:

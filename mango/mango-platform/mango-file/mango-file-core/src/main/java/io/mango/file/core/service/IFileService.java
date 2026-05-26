@@ -6,6 +6,7 @@ import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -43,7 +44,11 @@ public interface IFileService {
 
     FileDownloadVO download(Long id);
 
+    FileDownloadVO downloadForService(Long id);
+
     R<Boolean> archive(FileArchiveCommand command);
+
+    R<Boolean> delete(FileDeleteCommand command);
 
     R<FileUploadInitVO> createUploadSession(CreateFileUploadSessionCommand command);
 

@@ -92,9 +92,13 @@ public class TrustHostFilter implements Filter {
                 return false;
             }
             String decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
+            String decodedCompressFileKey = URLDecoder.decode(compressFileKey, StandardCharsets.UTF_8);
             String decodedCompressFilePath = URLDecoder.decode(compressFilePath, StandardCharsets.UTF_8);
-            return decodedCompressFilePath.startsWith(compressFileKey + "/")
-                    && decodedPath.endsWith("/" + decodedCompressFilePath);
+            if (!decodedCompressFilePath.startsWith(decodedCompressFileKey + "/")) {
+                return false;
+            }
+            return decodedPath.endsWith("/compressed-file")
+                    || decodedPath.endsWith("/" + decodedCompressFilePath);
         } catch (IllegalArgumentException e) {
             return false;
         }

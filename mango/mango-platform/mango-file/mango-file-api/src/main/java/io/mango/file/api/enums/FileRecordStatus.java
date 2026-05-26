@@ -15,7 +15,10 @@ public enum FileRecordStatus {
     FAILED(2),
 
     /** 已归档。 */
-    ARCHIVED(9);
+    ARCHIVED(9),
+
+    /** 已删除。 */
+    DELETED(10);
 
     private final int value;
 

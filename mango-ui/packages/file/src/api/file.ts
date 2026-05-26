@@ -161,6 +161,7 @@ export const fileApi = {
     }).then(items => (items || []).map(fromBackendFileRecord));
   },
   archive: (id: FileId, reason?: string) => del<boolean>('/file/files', { params: { id, reason } }),
+  delete: (ids: FileId[]) => post<boolean>('/file/files/delete', { ids }),
   createUploadSession: (command: CreateFileUploadSessionCommand) => post<FileUploadInit>('/file/files/uploads', normalizeUploadSessionCommand(command) as any)
     .then(fromBackendUploadInit),
   createUploadPartSign: (sessionId: FileId, partNumber: number, partSize?: number) => post<FileUploadPartSign>(

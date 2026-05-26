@@ -48,7 +48,15 @@
 <script type="text/javascript">
     var url = '${finalUrl}';
     var kkagent = '${kkagent}';
-    var baseUrl = '${baseUrl}'.endsWith('/') ? '${baseUrl}' : '${baseUrl}' + '/';
+    var serverBaseUrl = '${baseUrl}'.endsWith('/') ? '${baseUrl}' : '${baseUrl}' + '/';
+    function gatewayBaseUrl() {
+        var path = window.location.pathname || "";
+        if (path === "/api" || path.indexOf("/api/") === 0) {
+            return window.location.origin + "/api/";
+        }
+        return serverBaseUrl;
+    }
+    var baseUrl = gatewayBaseUrl();
     if (kkagent === 'true' || !url.startsWith(baseUrl)) {
         url = baseUrl + 'getCorsFile?urlPath=' + encodeURIComponent(Base64.encode(url)) + "&key=${kkkey}";
     }

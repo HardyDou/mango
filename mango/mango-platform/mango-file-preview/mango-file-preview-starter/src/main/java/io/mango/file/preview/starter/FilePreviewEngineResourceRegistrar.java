@@ -26,6 +26,8 @@ public class FilePreviewEngineResourceRegistrar implements ApplicationRunner {
                 publicGet("/onlinePreview", "在线预览页面"),
                 publicGet("/picturesPreview", "图片预览页面"),
                 publicGet("/getCorsFile", "读取跨域预览文件"),
+                publicGet("/directory", "压缩包目录读取接口"),
+                publicGet("/compressed-file", "读取压缩包内文件"),
                 publicGet("/file-preview/files/preview-entry", "文件预览临时入口"),
                 publicGet("/pdfjs/**", "PDF 预览静态资源"),
                 publicGet("/js/**", "预览脚本资源"),

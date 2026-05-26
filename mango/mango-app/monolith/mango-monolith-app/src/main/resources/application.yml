@@ -88,7 +88,10 @@ mango:
     sm4-iv:
   kv:
     store:
-      type: memory
+      type: jdbc
+    capability:
+      enabled: true
+      token-store: true
   persistence:
     flyway:
       modules:
@@ -111,8 +114,6 @@ mango:
         kv:
           enabled: true
         notification:
-          enabled: true
-        guarantee:
           enabled: true
         calendar:
           enabled: true
@@ -233,8 +234,6 @@ springdoc:
         url: /v3/api-docs/mango-file
       - name: mango-numgen
         url: /v3/api-docs/mango-numgen
-      - name: mango-guarantee
-        url: /v3/api-docs/mango-guarantee
       - name: mango-infra-realtime
         url: /v3/api-docs/mango-infra-realtime
   api-docs:

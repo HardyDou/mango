@@ -31,7 +31,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 文件预览自动配置。
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = "io.mango.auth.starter.AuthAutoConfiguration")
+@AutoConfigureAfter(name = {
+        "io.mango.auth.starter.AuthAutoConfiguration",
+        "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration"
+})
 @ConditionalOnClass(IFilePreviewService.class)
 @ConditionalOnProperty(prefix = "mango.file-preview", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(FilePreviewProperties.class)
@@ -87,6 +90,17 @@ public class FilePreviewAutoConfiguration {
         FilterRegistrationBean<FilePreviewFrameOptionsFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new FilePreviewFrameOptionsFilter());
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        registration.addUrlPatterns("/*");
+        return registration;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(FilePreviewStandaloneUiBlockFilter.class)
+    public FilterRegistrationBean<FilePreviewStandaloneUiBlockFilter> filePreviewStandaloneUiBlockFilter(
+            FilePreviewProperties properties) {
+        FilterRegistrationBean<FilePreviewStandaloneUiBlockFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new FilePreviewStandaloneUiBlockFilter(properties));
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         registration.addUrlPatterns("/*");
         return registration;
     }

@@ -4,6 +4,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -32,8 +33,13 @@ public interface FileApi {
     /** 查询文件预览元数据。 */
     R<FilePreviewVO> preview(Long id);
 
-    /** 下载文件内容。 */
+    /** 通过对外下载语义读取文件内容。 */
     FileDownloadVO download(Long id);
+
+    /** 通过服务内语义读取文件内容。 */
+    default FileDownloadVO downloadForService(Long id) {
+        return download(id);
+    }
 
     /** 保存内部生成的文件内容。 */
     default R<FileRecordVO> save(SaveFileCommand command) {
@@ -48,7 +54,7 @@ public interface FileApi {
      * @return 实际落盘路径。
      */
     default Path downloadTo(Long id, Path directory) {
-        FileDownloadVO download = download(id);
+        FileDownloadVO download = downloadForService(id);
         return writeToDirectory(download, directory);
     }
 
@@ -72,6 +78,11 @@ public interface FileApi {
 
     /** 归档文件记录。 */
     R<Boolean> archive(FileArchiveCommand command);
+
+    /** 删除文件记录。 */
+    default R<Boolean> delete(FileDeleteCommand command) {
+        throw new UnsupportedOperationException("当前文件 API 实现不支持删除文件");
+    }
 
     private Path writeToDirectory(FileDownloadVO download, Path directory) {
         if (download == null || download.inputStream() == null) {

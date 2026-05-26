@@ -180,7 +180,15 @@ test.describe('文件管理联调', () => {
     const previewResponse = await previewResponsePromise;
     const previewBody = await previewResponse.json();
     expect(previewBody.success || previewBody.code === 200).toBeTruthy();
-    await expect(page.getByRole('dialog', { name: '文件预览' })).toBeVisible();
+    const previewDialog = page.getByRole('dialog', { name: new RegExp(fileName) });
+    await expect(previewDialog).toBeVisible();
+    await expect(previewDialog.getByText(fileName).first()).toBeVisible();
+    await expect(previewDialog.getByRole('button', { name: '新窗口预览' })).toBeVisible();
+    await expect(previewDialog.getByRole('button', { name: '下载' })).toBeVisible();
+    await expect(previewDialog.getByRole('button', { name: '关闭' })).toBeVisible();
+    await expect(previewDialog.getByText('文件大小')).toHaveCount(0);
+    await expect(previewDialog.getByText('内容类型')).toHaveCount(0);
+    await expect(previewDialog.getByText('扩展名')).toHaveCount(0);
     await page.keyboard.press('Escape');
 
     const downloadUrl = previewBody.data?.directDownloadUrl || previewBody.data?.downloadUrl;
@@ -229,7 +237,79 @@ test.describe('文件管理联调', () => {
     unlinkSync(filePath);
   });
 
-  test('上传 PNG 图片后优先使用 MinIO 直链预览', async ({ page, request }) => {
+  test('文件支持单个删除和批量删除', async ({ page }) => {
+    await login(page);
+
+    await page.goto('/#/file/files');
+    await expect(page.getByText('文件管理').first()).toBeVisible({ timeout: 10000 });
+
+    const firstPath = join(tmpdir(), `mango-file-e2e-delete-${Date.now()}-a.txt`);
+    const secondPath = join(tmpdir(), `mango-file-e2e-delete-${Date.now()}-b.txt`);
+    const thirdPath = join(tmpdir(), `mango-file-e2e-delete-${Date.now()}-c.txt`);
+    writeFileSync(firstPath, `mango delete e2e a ${Date.now()}`);
+    writeFileSync(secondPath, `mango delete e2e b ${Date.now()}`);
+    writeFileSync(thirdPath, `mango delete e2e c ${Date.now()}`);
+
+    async function uploadOne(filePath: string) {
+      const uploadResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/file/files')
+        && response.request().method() === 'POST'
+        && response.status() === 200
+      );
+      await page.setInputFiles('input[type="file"]', filePath);
+      const uploadResponse = await uploadResponsePromise;
+      const uploadBody = await uploadResponse.json();
+      expect(uploadBody.success || uploadBody.code === 200).toBeTruthy();
+      await expect(page.locator('.el-message__content', { hasText: '上传成功' }).last()).toBeVisible({ timeout: 10000 });
+      return uploadBody.data.fileName as string;
+    }
+
+    const firstName = await uploadOne(firstPath);
+    const secondName = await uploadOne(secondPath);
+    const thirdName = await uploadOne(thirdPath);
+    await expect(page.getByText(firstName).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(secondName).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(thirdName).first()).toBeVisible({ timeout: 10000 });
+
+    const firstRow = page.locator('.el-table__body-wrapper tr', { hasText: firstName }).first();
+    const singleDeleteResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/file/files/delete')
+      && response.request().method() === 'POST'
+      && response.status() === 200
+    );
+    await firstRow.getByRole('button', { name: '删除' }).click();
+    await page.getByRole('button', { name: '确定' }).last().click();
+    const singleDeleteResponse = await singleDeleteResponsePromise;
+    const singleDeleteBody = await singleDeleteResponse.json();
+    expect(singleDeleteBody.success || singleDeleteBody.code === 200).toBeTruthy();
+    await expect(page.getByText('删除成功')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-table__body-wrapper tr', { hasText: firstName })).toHaveCount(0);
+
+    for (const name of [secondName, thirdName]) {
+      const row = page.locator('.el-table__body-wrapper tr', { hasText: name }).first();
+      await row.locator('.el-checkbox__input').click();
+    }
+    const batchDeleteResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/file/files/delete')
+      && response.request().method() === 'POST'
+      && response.status() === 200
+    );
+    await page.getByRole('button', { name: '批量删除' }).click();
+    await page.getByRole('button', { name: '确定' }).last().click();
+    const batchDeleteResponse = await batchDeleteResponsePromise;
+    const batchDeleteBody = await batchDeleteResponse.json();
+    expect(batchDeleteBody.success || batchDeleteBody.code === 200).toBeTruthy();
+    await expect(page.getByText('批量删除成功')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.el-table__body-wrapper tr', { hasText: secondName })).toHaveCount(0);
+    await expect(page.locator('.el-table__body-wrapper tr', { hasText: thirdName })).toHaveCount(0);
+
+    await expect(page.locator('.el-message--error')).toHaveCount(0);
+    unlinkSync(firstPath);
+    unlinkSync(secondPath);
+    unlinkSync(thirdPath);
+  });
+
+  test('上传 PNG 图片后使用当前存储访问地址预览', async ({ page, request }) => {
     await routeMinioDirectAccess(page, request);
     await login(page);
 
@@ -264,8 +344,10 @@ test.describe('文件管理联调', () => {
     const previewResponse = await previewResponsePromise;
     const previewBody = await previewResponse.json();
     expect(previewBody.success || previewBody.code === 200).toBeTruthy();
-    expect(previewBody.data?.directPreviewUrl).toContain('http://file.mango.io:9000/');
-    expect(previewBody.data?.directDownloadUrl).toContain('http://file.mango.io:9000/');
+    expect(previewBody.data?.directPreviewUrl).toBeTruthy();
+    expect(previewBody.data?.directDownloadUrl).toBeTruthy();
+    expect(String(previewBody.data.directPreviewUrl)).toMatch(/^(http:\/\/file\.mango\.io:9000\/|\/api\/file\/local-objects\/)/);
+    expect(String(previewBody.data.directDownloadUrl)).toMatch(/^(http:\/\/file\.mango\.io:9000\/|\/api\/file\/local-objects\/)/);
     expect(previewBody.data?.directAccess).toBeTruthy();
 
     const previewImage = page.locator('.preview-image .el-image__inner').first();

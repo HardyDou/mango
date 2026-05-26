@@ -129,7 +129,7 @@ public class WorkflowDefinitionController {
 
     @GetMapping("/node-catalog")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "workflow:definition:query")
-    @Operation(summary = "查询工作流设计器节点目录", description = "权限接口。查询通用节点和保函业务节点模板")
+    @Operation(summary = "查询工作流设计器节点目录", description = "权限接口。查询通用流程节点模板")
     public R<List<WorkflowNodeCatalogVO>> nodeCatalog() {
         return workflowDefinitionService.nodeCatalog();
     }

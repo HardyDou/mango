@@ -9,6 +9,7 @@ import io.mango.file.api.command.CompleteFileUploadPartCommand;
 import io.mango.file.api.command.CreateFileUploadPartSignCommand;
 import io.mango.file.api.command.CreateFileUploadSessionCommand;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -126,8 +127,18 @@ public class FileController implements FileApi {
     }
 
     @Override
+    public FileDownloadVO downloadForService(Long id) {
+        return fileService.downloadForService(id);
+    }
+
+    @Override
     public R<Boolean> archive(FileArchiveCommand command) {
         return fileService.archive(command);
+    }
+
+    @Override
+    public R<Boolean> delete(FileDeleteCommand command) {
+        return fileService.delete(command);
     }
 
     @GetMapping("/download")
@@ -176,6 +187,13 @@ public class FileController implements FileApi {
         FileArchiveCommand resolved = command == null ? new FileArchiveCommand() : command;
         resolved.setId(id);
         return fileService.archive(resolved);
+    }
+
+    @PostMapping("/delete")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "file:files:delete")
+    @Operation(summary = "删除文件", description = "权限接口。删除一个或多个文件记录，是否删除底层对象由文件配置的物理删除策略决定")
+    public R<Boolean> deleteByCommand(@Valid @RequestBody FileDeleteCommand command) {
+        return fileService.delete(command);
     }
 
     @PostMapping("/uploads")

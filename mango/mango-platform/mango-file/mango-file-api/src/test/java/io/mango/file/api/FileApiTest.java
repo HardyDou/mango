@@ -71,6 +71,11 @@ class FileApiTest {
 
         @Override
         public FileDownloadVO download(Long id) {
+            throw unsupported();
+        }
+
+        @Override
+        public FileDownloadVO downloadForService(Long id) {
             byte[] content = ("file-" + id).getBytes(StandardCharsets.UTF_8);
             return new FileDownloadVO(new ByteArrayInputStream(content), "../demo.txt", "text/plain", content.length);
         }

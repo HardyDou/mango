@@ -3,14 +3,14 @@
     <el-skeleton v-if="loading" :rows="4" animated />
     <el-empty v-else-if="!preview" description="暂无文件" />
     <template v-else>
-      <div class="preview-actions">
+      <div v-if="showActions" class="preview-actions">
         <el-tag size="small" :type="previewModeTag">
           {{ previewModeLabel }}
         </el-tag>
         <el-button v-auth="downloadPermission" link type="primary" @click="openDownload">
           下载
         </el-button>
-        <el-button v-if="documentPreviewUrl" link type="primary" @click="openExternalPreview">
+        <el-button v-if="canOpenInNewWindow" link type="primary" @click="openPreviewInNewWindow">
           新窗口预览
         </el-button>
       </div>
@@ -53,21 +53,6 @@
           <div class="preview-tip">当前类型需要接入文档预览服务，可下载后查看</div>
         </div>
       </div>
-
-      <el-descriptions :column="1" border class="file-meta">
-        <el-descriptions-item label="文件名">
-          {{ preview.fileName }}
-        </el-descriptions-item>
-        <el-descriptions-item label="文件大小">
-          {{ formatFileSize(preview.fileSize) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="内容类型">
-          {{ preview.contentType || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="扩展名">
-          {{ preview.fileExt || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
     </template>
   </div>
 </template>
@@ -78,13 +63,25 @@ import { Document } from '@element-plus/icons-vue';
 import { downloadFileRecord, fileApi, normalizeFileId, type FilePreview, type FileReference } from '../api/file';
 import type { ApiId } from '@mango/api-schema';
 
-const props = defineProps<{
+type PreviewActionsState = {
+  canDownload: boolean;
+  canOpenInNewWindow: boolean;
+};
+
+const props = withDefaults(defineProps<{
   fileId?: ApiId | `mango-file:${string}` | null;
   file?: FileReference;
   preview?: FilePreview | null;
   previewProviderUrl?: string;
   previewExternalExtensions?: string[];
   downloadPermission?: string;
+  showActions?: boolean;
+}>(), {
+  showActions: true,
+});
+
+const emit = defineEmits<{
+  (event: 'actions-change', value: PreviewActionsState): void;
 }>();
 
 const loading = ref(false);
@@ -144,6 +141,9 @@ const previewModeLabel = computed(() => {
 
 const previewModeTag = computed(() => documentPreviewUrl.value ? 'success' : 'info');
 const downloadPermission = computed(() => props.downloadPermission || 'file:files:download');
+const previewTargetUrl = computed(() => inlinePreviewUrl.value || documentPreviewUrl.value);
+const canOpenInNewWindow = computed(() => Boolean(previewTargetUrl.value));
+const canDownload = computed(() => Boolean(preview.value?.id));
 
 async function loadPreview() {
   if (props.preview || !resolvedFileId.value) {
@@ -177,14 +177,14 @@ async function openDownload() {
   if (item) await downloadFileRecord(item);
 }
 
-async function openExternalPreview() {
+async function openPreviewInNewWindow() {
   const item = preview.value;
-  if (!item || !documentPreviewUrl.value) return;
+  if (!item || !previewTargetUrl.value) return;
 
   const target = window.open('about:blank', '_blank');
-  const url = isDefaultPreviewProviderUrl(item.previewUrl)
+  const url = documentPreviewUrl.value && isDefaultPreviewProviderUrl(item.previewUrl)
     ? await resolveExternalPreviewUrl(item)
-    : documentPreviewUrl.value;
+    : previewTargetUrl.value;
   if (!url) {
     target?.close();
     return;
@@ -218,13 +218,6 @@ function isDefaultPreviewProviderUrl(value?: string) {
   }
 }
 
-function formatFileSize(size?: number) {
-  const value = Number(size || 0);
-  if (value >= 1024 * 1024) return `${(value / 1024 / 1024).toFixed(2)} MB`;
-  if (value >= 1024) return `${(value / 1024).toFixed(2)} KB`;
-  return `${value} B`;
-}
-
 function fileExtension(fileName?: string): string {
   if (!fileName || !fileName.includes('.')) return '';
   return fileName.slice(fileName.lastIndexOf('.') + 1).toLowerCase();
@@ -232,9 +225,20 @@ function fileExtension(fileName?: string): string {
 
 watch(() => [resolvedFileId.value, props.preview], loadPreview);
 watch(preview, loadInlinePreview, { immediate: true });
+watch(() => [canDownload.value, canOpenInNewWindow.value], () => {
+  emit('actions-change', {
+    canDownload: canDownload.value,
+    canOpenInNewWindow: canOpenInNewWindow.value,
+  });
+}, { immediate: true });
 onMounted(loadPreview);
 onBeforeUnmount(() => {
   inlinePreviewUrl.value = '';
+});
+
+defineExpose({
+  openDownload,
+  openPreviewInNewWindow,
 });
 </script>
 
@@ -312,9 +316,5 @@ onBeforeUnmount(() => {
 
 .preview-tip {
   font-size: 13px;
-}
-
-.file-meta {
-  width: 100%;
 }
 </style>

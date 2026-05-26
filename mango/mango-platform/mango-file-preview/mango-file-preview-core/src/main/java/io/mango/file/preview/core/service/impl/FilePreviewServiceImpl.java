@@ -90,7 +90,7 @@ public class FilePreviewServiceImpl implements IFilePreviewService {
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
             MangoContextHolder.set(sourceToken.context());
-            FileDownloadVO download = fileApi.download(sourceToken.fileId());
+            FileDownloadVO download = fileApi.downloadForService(sourceToken.fileId());
             return new FilePreviewSource(download.inputStream(), download.fileName(), download.contentType(), download.contentLength());
         } finally {
             MangoContextHolder.set(previous);

@@ -344,21 +344,6 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-guarantee-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-guarantee-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-guarantee-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
                 <artifactId>mango-org-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -469,11 +454,6 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>druid-spring-boot-3-starter</artifactId>
                 <version>1.2.20</version>
-            </dependency>
-            <dependency>
-                <groupId>org.redisson</groupId>
-                <artifactId>redisson</artifactId>
-                <version>3.27.0</version>
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
