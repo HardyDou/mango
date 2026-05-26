@@ -27,7 +27,6 @@
         <module>mango-file</module>
         <module>mango-file-preview</module>
         <module>mango-workflow</module>
-        <module>mango-guarantee</module>
         <module>mango-calendar</module>
         <module>mango-numgen</module>
         <module>mango-org</module>

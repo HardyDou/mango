@@ -344,21 +344,6 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-guarantee-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-guarantee-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
-                <artifactId>mango-guarantee-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.mango</groupId>
                 <artifactId>mango-org-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
