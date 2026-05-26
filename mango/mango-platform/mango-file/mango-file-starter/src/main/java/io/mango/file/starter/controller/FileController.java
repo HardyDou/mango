@@ -126,6 +126,11 @@ public class FileController implements FileApi {
     }
 
     @Override
+    public FileDownloadVO downloadForService(Long id) {
+        return fileService.downloadForService(id);
+    }
+
+    @Override
     public R<Boolean> archive(FileArchiveCommand command) {
         return fileService.archive(command);
     }

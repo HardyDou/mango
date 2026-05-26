@@ -88,7 +88,10 @@ mango:
     sm4-iv:
   kv:
     store:
-      type: memory
+      type: jdbc
+    capability:
+      enabled: true
+      token-store: true
   persistence:
     flyway:
       modules:

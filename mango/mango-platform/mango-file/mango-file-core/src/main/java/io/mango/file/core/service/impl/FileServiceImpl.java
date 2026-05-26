@@ -299,6 +299,11 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     public FileDownloadVO download(Long id) {
+        return downloadForService(id);
+    }
+
+    @Override
+    public FileDownloadVO downloadForService(Long id) {
         FileRecord record = selectVisible(id);
         StoredObject storedObject = resolveStoredObject(record);
         FileObject object = fileStorageRouter.getObject(storedObject.storageConfig(), storedObject.objectName());

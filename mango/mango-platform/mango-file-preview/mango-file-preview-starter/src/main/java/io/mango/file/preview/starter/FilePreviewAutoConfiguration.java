@@ -31,7 +31,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 文件预览自动配置。
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = "io.mango.auth.starter.AuthAutoConfiguration")
+@AutoConfigureAfter(name = {
+        "io.mango.auth.starter.AuthAutoConfiguration",
+        "io.mango.infra.kv.starter.KvCapabilityAutoConfiguration"
+})
 @ConditionalOnClass(IFilePreviewService.class)
 @ConditionalOnProperty(prefix = "mango.file-preview", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(FilePreviewProperties.class)

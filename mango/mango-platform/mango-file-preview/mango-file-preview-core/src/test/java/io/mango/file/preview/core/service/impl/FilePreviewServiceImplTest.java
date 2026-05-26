@@ -40,6 +40,24 @@ class FilePreviewServiceImplTest {
         assertThat(refreshedEnginePreview.getPreviewUrl()).startsWith("/onlinePreview?url=");
     }
 
+    @Test
+    void openSource_使用服务内下载读取源文件() {
+        FilePreviewServiceImpl service = service();
+        MangoContextHolder.set(MangoContextSnapshot.empty().withTenantId("1"));
+
+        var preview = service.createPreview(100L);
+        var enginePreview = service.createEnginePreviewByToken(preview.getPreviewToken());
+        String token = enginePreview.getPreviewUrl().substring(enginePreview.getPreviewUrl().indexOf("url=") + 4);
+        token = java.net.URLDecoder.decode(token, java.nio.charset.StandardCharsets.UTF_8);
+        String sourceUrl = new String(java.util.Base64.getDecoder().decode(token), java.nio.charset.StandardCharsets.UTF_8);
+        String sourceToken = sourceUrl.substring(sourceUrl.lastIndexOf('/') + 1, sourceUrl.indexOf('?'));
+
+        var source = service.openSource(sourceToken);
+
+        assertThat(source.fileName()).isEqualTo("demo.pptx");
+        assertThat(source.contentLength()).isEqualTo(1L);
+    }
+
     private FilePreviewServiceImpl service() {
         FilePreviewProperties properties = new FilePreviewProperties();
         return new FilePreviewServiceImpl(new StubFileApi(), properties, new StubTokenStore(),
@@ -88,6 +106,11 @@ class FilePreviewServiceImplTest {
 
         @Override
         public FileDownloadVO download(Long id) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public FileDownloadVO downloadForService(Long id) {
             return new FileDownloadVO(new ByteArrayInputStream(new byte[]{1}), "demo.pptx",
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation", 1L);
         }

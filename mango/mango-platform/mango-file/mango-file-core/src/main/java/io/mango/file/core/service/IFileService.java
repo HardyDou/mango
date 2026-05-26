@@ -43,6 +43,8 @@ public interface IFileService {
 
     FileDownloadVO download(Long id);
 
+    FileDownloadVO downloadForService(Long id);
+
     R<Boolean> archive(FileArchiveCommand command);
 
     R<FileUploadInitVO> createUploadSession(CreateFileUploadSessionCommand command);

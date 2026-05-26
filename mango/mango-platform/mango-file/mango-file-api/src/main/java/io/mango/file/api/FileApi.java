@@ -32,8 +32,13 @@ public interface FileApi {
     /** 查询文件预览元数据。 */
     R<FilePreviewVO> preview(Long id);
 
-    /** 下载文件内容。 */
+    /** 通过对外下载语义读取文件内容。 */
     FileDownloadVO download(Long id);
+
+    /** 通过服务内语义读取文件内容。 */
+    default FileDownloadVO downloadForService(Long id) {
+        return download(id);
+    }
 
     /** 保存内部生成的文件内容。 */
     default R<FileRecordVO> save(SaveFileCommand command) {
@@ -48,7 +53,7 @@ public interface FileApi {
      * @return 实际落盘路径。
      */
     default Path downloadTo(Long id, Path directory) {
-        FileDownloadVO download = download(id);
+        FileDownloadVO download = downloadForService(id);
         return writeToDirectory(download, directory);
     }
 

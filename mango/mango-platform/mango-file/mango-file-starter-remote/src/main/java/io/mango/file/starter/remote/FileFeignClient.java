@@ -69,6 +69,11 @@ public interface FileFeignClient extends FileApi {
         return FileRemoteDownloadConverter.toFileDownload(downloadResponse(id));
     }
 
+    @Override
+    default FileDownloadVO downloadForService(Long id) {
+        return download(id);
+    }
+
     @GetMapping("/download")
     ResponseEntity<byte[]> downloadResponse(@RequestParam("id") Long id);
 
