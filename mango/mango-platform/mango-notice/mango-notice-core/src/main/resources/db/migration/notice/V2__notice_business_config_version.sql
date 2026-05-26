@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `notice_business_config_version` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `business_type_id` bigint NOT NULL COMMENT '业务类型 ID',
+  `biz_type` varchar(64) NOT NULL COMMENT '业务类型编码快照',
+  `params_schema` text DEFAULT NULL COMMENT '参数 schema JSON',
+  `default_priority` varchar(32) NOT NULL DEFAULT 'NORMAL' COMMENT '默认优先级',
+  `idempotent_strategy` varchar(64) DEFAULT NULL COMMENT '幂等策略',
+  `version` int NOT NULL DEFAULT 1 COMMENT '版本号',
+  `version_status` varchar(32) NOT NULL DEFAULT 'DRAFT' COMMENT '版本状态',
+  `publish_time` datetime DEFAULT NULL COMMENT '发布时间',
+  `publish_by` bigint DEFAULT NULL COMMENT '发布人 ID',
+  `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notice_biz_config_version` (`tenant_id`, `biz_type`, `version`),
+  KEY `idx_notice_biz_config_status` (`tenant_id`, `biz_type`, `version_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='通知业务发布配置版本表';

@@ -1,0 +1,572 @@
+import { expect, test } from '@playwright/test';
+
+async function login(page: import('@playwright/test').Page) {
+  await page.goto('/#/login');
+  await page.fill('input[placeholder="用户名"]', 'admin');
+  await page.fill('input[placeholder="密码"]', 'admin123');
+  await page.locator('.login-btn').click();
+  await page.waitForURL('**/#/home', { timeout: 10000 });
+}
+
+function ok(data: unknown) {
+  return JSON.stringify({ code: 200, success: true, data });
+}
+
+test.describe('通知中心 E2E', () => {
+  test('登录后可以访问完整通知菜单、消息入口和站内信主流程', async ({ page }) => {
+    const businessTypes = [
+      {
+        id: '1',
+        bizType: 'WORKFLOW_APPROVED',
+        bizName: '审批通过通知',
+        bizGroup: 'WORKFLOW',
+        enabled: true,
+        defaultPriority: 'NORMAL',
+        paramsSchema: JSON.stringify({
+          type: 'object',
+          properties: {
+            applyNo: { type: 'string', title: '申请单号', description: '审批单号' },
+          },
+          required: ['applyNo'],
+        }),
+      },
+    ];
+    const templates: Record<string, Array<Record<string, unknown>>> = {
+      '1': [
+        {
+          id: '11',
+          businessTypeId: '1',
+          bizType: 'WORKFLOW_APPROVED',
+          channelType: 'SITE',
+          templateName: '站内信模板',
+          titleTemplate: '审批通过',
+          contentTemplate: '审批单 {{applyNo}} 已通过',
+          version: 1,
+          versionStatus: 'ACTIVE',
+          enabled: true,
+        },
+        {
+          id: '12',
+          businessTypeId: '1',
+          bizType: 'WORKFLOW_APPROVED',
+          channelType: 'SMS',
+          templateName: '短信模板',
+          titleTemplate: '审批通过',
+          contentTemplate: '审批单 ${applyNo} 已通过',
+          channelTemplateId: 'SMS_10001',
+          variableMapping: JSON.stringify({ applyNo: 'thing1' }),
+          version: 1,
+          versionStatus: 'ACTIVE',
+          enabled: true,
+        },
+      ],
+    };
+    const businessConfigVersions: Record<string, Array<Record<string, unknown>>> = {
+      '1': [
+        {
+          id: '101',
+          businessTypeId: '1',
+          bizType: 'WORKFLOW_APPROVED',
+          paramsSchema: businessTypes[0].paramsSchema,
+          defaultPriority: 'NORMAL',
+          idempotentStrategy: 'bizId',
+          version: 1,
+          versionStatus: 'ACTIVE',
+        },
+      ],
+    };
+    const messages = [
+      {
+        id: '1001',
+        title: '测试站内信',
+        content: '这是一条站内信内容',
+        userId: '1',
+        priority: 'NORMAL',
+        readStatus: 'UNREAD',
+        bizType: 'WORKFLOW_APPROVED',
+        bizId: 'WF-1',
+        createTime: '2026-05-25 17:10:00',
+      },
+    ];
+    const realtimeMessage = {
+      id: '2002',
+      title: '实时站内信',
+      content: '这是一条实时推送消息',
+      userId: '1',
+      priority: 'NORMAL',
+      readStatus: 'UNREAD',
+      bizType: 'SYSTEM_NOTICE',
+      bizId: 'RT-1',
+      createTime: '2026-05-26 12:00:00',
+    };
+    let unreadCountOverride: number | undefined;
+    const channelConfigs = [
+      { id: '1', channelType: 'EMAIL', providerCode: 'SMTP', configName: '默认邮箱', enabled: true, priority: 0 },
+    ];
+    const sendRecords = [
+      { id: '1', taskId: '1', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-1', channelType: 'SITE', requestId: 'NR001', status: 'SUCCESS', renderedTitle: '测试站内信', renderedContent: '这是一条站内信内容', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-1","channelType":"SITE"}', responseSnapshot: '{"status":"SENT"}', providerMessageId: 'site-1001', retryCount: 0 },
+      { id: '2', taskId: '2', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-FAIL', channelType: 'SMS', requestId: 'NR_FAIL', status: 'FAILED', renderedTitle: '短信失败', renderedContent: '短信发送失败', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-FAIL","channelType":"SMS"}', responseSnapshot: '{"status":"FAILED"}', providerMessageId: 'sms-2001', failCode: 'PROVIDER_ERROR', failReason: '模板错误', retryCount: 3 },
+    ];
+
+    await page.addInitScript(() => {
+      type NoticeTestWindow = Window & {
+        __noticeAudioPlayCount: number;
+        __noticeDesktopNotifications: Array<{ title: string; body?: string }>;
+      };
+      const target = window as NoticeTestWindow;
+      target.__noticeAudioPlayCount = 0;
+      target.__noticeDesktopNotifications = [];
+
+      class FakeAudio {
+        constructor(public src: string) {}
+
+        play() {
+          target.__noticeAudioPlayCount += 1;
+          return Promise.resolve();
+        }
+      }
+
+      class FakeNotification {
+        static permission = 'default';
+
+        onclick?: () => void;
+
+        constructor(public title: string, public options?: NotificationOptions) {
+          target.__noticeDesktopNotifications.push({ title, body: options?.body });
+        }
+
+        static requestPermission() {
+          FakeNotification.permission = 'granted';
+          return Promise.resolve('granted');
+        }
+      }
+
+      Object.defineProperty(window, 'Audio', { value: FakeAudio, configurable: true });
+      Object.defineProperty(window, 'Notification', { value: FakeNotification, configurable: true });
+    });
+
+    await page.route('**/api/system/tenant/login-options**', async (route) => {
+ await route.fulfill({ status:200, contentType: 'application/json', body: ok([{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]) });
+ });
+ await page.route('**/api/auth/login-institutions', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok([{ tenantId: '1', tenantCode: 'mango', tenantName: '芒果集团' }]) });
+    });
+    await page.route('**/api/auth/login', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok({
+          token: 'notice-e2e-token',
+          userInfo: {
+            userId: '1',
+            username: 'admin',
+            nickname: 'Admin',
+            tenantId: '1',
+            tenantCode: 'mango',
+            tenantName: '芒果集团',
+            appCode: 'internal-admin',
+            roles: ['admin'],
+            permissions: [
+              'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish',
+              'notice:channel:view', 'notice:channel:create', 'notice:task:view', 'notice:record:view',
+              'notice:site:view', 'notice:site:edit', 'notice:site:delete', 'notice:setting:view',
+            ],
+          },
+        }),
+      });
+    });
+
+    await page.route('**/api/authorization/menus/user**', async (route) => {
+      const child = (menuId: string, menuName: string, path: string, component: string) => ({
+        menuId,
+        parentId: '2900',
+        menuType: 2,
+        menuName,
+        menuCode: path.replace('/notice/', 'notice:'),
+        path,
+        icon: 'Message',
+        component,
+        moduleCode: 'mango-notice',
+        pageType: 'LOCAL_ROUTE',
+        visible: 1,
+        status: 1,
+        children: [],
+      });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: ok([
+          {
+            menuId: '2900',
+            parentId: '0',
+            menuType: 1,
+            menuName: '通知中心',
+            menuCode: 'notice',
+            path: '/notice',
+            icon: 'Bell',
+            redirect: '/notice/message-definition',
+            moduleCode: 'mango-notice',
+            pageType: 'LOCAL_ROUTE',
+            visible: 1,
+            status: 1,
+            children: [
+              child('2901', '消息配置', '/notice/message-definition', '@/views/notice/message-definition/index.vue'),
+              child('2902', '渠道配置', '/notice/channel', '@/views/notice/channel/index.vue'),
+              child('2903', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
+              child('2904', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
+              child('2905', '失败重试', '/notice/retry', '@/views/notice/retry/index.vue'),
+              child('2906', '站内消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
+            ],
+          },
+        ]),
+      });
+    });
+
+    await page.route('**/api/notice/business-types**', async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (url.pathname.includes('/channel-templates')) {
+        const parts = url.pathname.split('/');
+        const businessTypeId = parts[parts.indexOf('business-types') + 1];
+        const channelType = parts[parts.indexOf('channel-templates') + 1];
+        if (request.method() === 'GET') {
+          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(templates[businessTypeId] || []) });
+          return;
+        }
+        if (request.method() === 'PUT') {
+          const body = request.postDataJSON();
+          const saved = {
+            id: `${businessTypeId}-${channelType}-${Date.now()}`,
+            businessTypeId,
+            bizType: businessTypes.find(item => item.id === businessTypeId)?.bizType,
+            version: 2,
+            versionStatus: 'DRAFT',
+            enabled: true,
+            ...body,
+          };
+          templates[businessTypeId] = [...(templates[businessTypeId] || []), saved];
+          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(saved) });
+          return;
+        }
+        if (url.pathname.endsWith('/publish')) {
+          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+          return;
+        }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+        return;
+      }
+      if (url.pathname.includes('/config-versions')) {
+        const parts = url.pathname.split('/');
+        const businessTypeId = parts[parts.indexOf('business-types') + 1];
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(businessConfigVersions[businessTypeId] || []) });
+        return;
+      }
+      if (url.pathname.includes('/config-draft')) {
+        const parts = url.pathname.split('/');
+        const businessTypeId = parts[parts.indexOf('business-types') + 1];
+        if (request.method() === 'PUT') {
+          const body = request.postDataJSON();
+          const existing = businessConfigVersions[businessTypeId] || [];
+          const draft = existing.find(item => item.versionStatus === 'DRAFT') || {
+            id: `${businessTypeId}-config-draft`,
+            businessTypeId,
+            bizType: businessTypes.find(item => item.id === businessTypeId)?.bizType,
+            version: existing.length + 1,
+            versionStatus: 'DRAFT',
+          };
+          Object.assign(draft, body, { versionStatus: 'DRAFT' });
+          businessConfigVersions[businessTypeId] = [...existing.filter(item => item.id !== draft.id), draft];
+          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(draft) });
+          return;
+        }
+        if (request.method() === 'POST' && url.pathname.endsWith('/publish')) {
+          const versions = businessConfigVersions[businessTypeId] || [];
+          versions.forEach((item) => {
+            if (item.versionStatus === 'ACTIVE') item.versionStatus = 'HISTORY';
+            if (item.versionStatus === 'DRAFT') {
+              item.versionStatus = 'ACTIVE';
+              const business = businessTypes.find(type => type.id === businessTypeId);
+              if (business) {
+                business.paramsSchema = String(item.paramsSchema || '');
+                business.defaultPriority = String(item.defaultPriority || 'NORMAL');
+                business.idempotentStrategy = String(item.idempotentStrategy || '');
+              }
+            }
+          });
+          await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+          return;
+        }
+      }
+      if (request.method() === 'GET') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: businessTypes, total: businessTypes.length, page: 1, size: 10 }) });
+        return;
+      }
+      if (request.method() === 'POST') {
+        const body = request.postDataJSON();
+        const created = {
+          id: String(businessTypes.length + 1),
+          enabled: true,
+          defaultPriority: 'NORMAL',
+          ...body,
+        };
+        businessTypes.unshift(created);
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(created) });
+        return;
+      }
+      if (request.method() === 'PUT') {
+        const body = request.postDataJSON();
+        const id = url.pathname.split('/').pop();
+        const index = businessTypes.findIndex(item => item.id === id);
+        if (index >= 0) {
+          businessTypes[index] = { ...businessTypes[index], ...body };
+        }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(businessTypes[index]) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+    });
+    await page.route('**/api/notice/channels**', async (route) => {
+      if (route.request().method() === 'POST') {
+        const body = route.request().postDataJSON();
+        const created = { id: String(channelConfigs.length + 1), ...body };
+        channelConfigs.unshift(created);
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(created) });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: channelConfigs, total: channelConfigs.length, page: 1, size: 10 }) });
+    });
+    await page.route('**/api/notice/tasks**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: [{ id: '1', taskCode: 'NT001', bizType: 'WORKFLOW_APPROVED', status: 'SUCCESS', totalCount: 1, successCount: 1, failCount: 0 }], total: 1, page: 1, size: 10 }) });
+    });
+    await page.route('**/api/notice/records**', async (route) => {
+      const url = new URL(route.request().url());
+      const status = url.searchParams.get('status');
+      const list = status ? sendRecords.filter(item => item.status === status) : sendRecords;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list, total: list.length, page: 1, size: 10 }) });
+    });
+    await page.route('**/api/notice/settings**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ soundEnabled: true, desktopEnabled: true, maxRetry: 3, retentionDays: 180 }) });
+    });
+    await page.route('**/api/notice/site/messages', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ successCount: 1, failCount: 0 }) });
+    });
+    await page.route('**/api/notice/site/my/unread-count**', async (route) => {
+      const count = unreadCountOverride ?? messages.filter(item => item.readStatus === 'UNREAD').length;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ count }) });
+    });
+    await page.route('**/api/notice/site/my/messages**', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: messages, total: messages.length, page: 1, size: 10 }) });
+        return;
+      }
+      await route.continue();
+    });
+    await page.route('**/api/notice/site/my/messages/1001', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(messages[0]) });
+    });
+    await page.route('**/api/notice/site/my/messages/2002', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(realtimeMessage) });
+    });
+    await page.route('**/api/notice/site/my/messages/2002/read', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+    });
+    await page.route('**/api/notice/site/my/messages/1001/read', async (route) => {
+      messages[0].readStatus = 'READ';
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+    });
+    await page.route('**/api/notice/site/my/messages/read-batch', async (route) => {
+      const body = route.request().postDataJSON();
+      messages.forEach((item) => {
+        if (body.ids.includes(item.id)) {
+          item.readStatus = 'READ';
+        }
+      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+    });
+    await page.route('**/api/notice/site/my/messages/1001/delete', async (route) => {
+      messages.splice(0, 1);
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+    });
+    await page.route('**/api/notice/site/my/messages/read-all', async (route) => {
+      messages.forEach(item => { item.readStatus = 'READ'; });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+    });
+
+    await login(page);
+    const noticeBell = page.locator('.notice-bell');
+    await expect(page.getByLabel('消息提醒')).toBeVisible();
+    await expect(noticeBell.locator('.el-badge__content')).toHaveText('1');
+    unreadCountOverride = 2;
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('mango-notice-message', {
+        detail: { messageId: '2002', title: '实时站内信' },
+      }));
+    });
+    await expect(noticeBell.locator('.el-badge__content')).toHaveText('2');
+    await expect(page.getByText('您有新消息了')).toBeVisible();
+    await expect(page.getByText('实时站内信')).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeAudioPlayCount?: number }).__noticeAudioPlayCount ?? 0)).toBeGreaterThan(0);
+    await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications?.length ?? 0)).toBe(1);
+    unreadCountOverride = undefined;
+    await page.locator('.el-notification').click();
+    const realtimeDetailDialog = page.getByRole('dialog', { name: '站内信详情' });
+    await expect(realtimeDetailDialog).toBeVisible();
+    await expect(realtimeDetailDialog.getByText('这是一条实时推送消息')).toBeVisible();
+    await expect(realtimeDetailDialog.getByText('RT-1')).toBeVisible();
+    await realtimeDetailDialog.locator('.el-dialog__headerbtn').click();
+    await expect(realtimeDetailDialog).toBeHidden();
+    await page.getByLabel('消息提醒').click();
+    await expect(page.getByText('测试站内信')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('button', { name: '通知中心' }).click();
+    await page.getByRole('menuitem', { name: '消息配置' }).click();
+    await expect(page.getByText('WORKFLOW_APPROVED', { exact: true })).toBeVisible();
+
+    await page.locator('.notice-page-header').getByRole('button', { name: '新增' }).click();
+    const createDialog = page.getByRole('dialog', { name: '新增' });
+    await expect(createDialog).toBeVisible();
+    await expect(createDialog.locator('.business-create-section')).toHaveCount(1);
+    await expect(createDialog).not.toContainText('默认优先级');
+    await expect(createDialog).not.toContainText('幂等策略');
+    await createDialog.locator('.el-form-item', { hasText: '业务域' }).locator('.el-select__wrapper').click();
+    await page.locator('.el-select-dropdown__item:visible', { hasText: 'WORKFLOW' }).click();
+    await createDialog.locator('input[placeholder="guarantee.issue_success"]').fill('order.shipped');
+    await createDialog.locator('input[placeholder="出函成功"]').fill('订单发货通知');
+    await createDialog.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送站内信和短信');
+    await createDialog.getByRole('button', { name: '保存' }).click();
+    await expect(createDialog).toBeHidden();
+    await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
+
+    await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '编辑' }).click();
+    const editDialog = page.getByRole('dialog', { name: '编辑消息配置' });
+    await expect(editDialog).toBeVisible();
+    const bizTypeInput = editDialog.locator('input[disabled]').first();
+    await expect(bizTypeInput).toHaveValue('order.shipped');
+    await expect(bizTypeInput).toBeDisabled();
+    await editDialog.getByRole('button', { name: '取消' }).click();
+    await expect(editDialog).toBeHidden();
+
+    await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '配置' }).click();
+    const configPage = page.locator('.definition-config-page');
+    await expect(configPage.getByText('基础信息')).toBeVisible();
+    await expect(configPage.getByText('order.shipped', { exact: true })).toBeVisible();
+    await expect(configPage.getByText('参数设置')).toBeVisible();
+    await expect(configPage.getByText('消息类型', { exact: true })).toBeVisible();
+    await expect(configPage.getByText('模板配置 - 站内信')).toBeVisible();
+    await configPage.locator('input[placeholder="orderNo"]').fill('orderNo');
+    await configPage.locator('input[placeholder="订单号"]').fill('订单号');
+    await configPage.locator('.message-type-tabs .el-tabs__item', { hasText: '短信' }).click();
+    await expect(page.getByText('模板配置 - 短信')).toBeVisible();
+    await expect(configPage.locator('.template-disabled-alert')).toBeVisible();
+    await configPage.locator('.template-enabled-item .el-switch').click();
+    await expect(configPage.locator('.template-disabled-alert')).toBeHidden();
+    await configPage.locator('input[placeholder="订单 {{orderNo}} 已发货"]').fill('订单 {{orderNo}} 已发货');
+    await configPage.locator('textarea[placeholder="请输入短信内容，例如：订单 {{orderNo}} 已发货"]').fill('订单 {{orderNo}} 已发货');
+    await expect(page.getByText('订单号：{{orderNo}}')).toBeVisible();
+    await page.getByRole('button', { name: '保存草稿' }).click();
+    await page.getByRole('button', { name: '发布新版本' }).click();
+    await expect(page.getByText('已发布新版本')).toBeVisible();
+    await page.getByRole('button', { name: '返回' }).click();
+    await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
+
+    await page.getByRole('menuitem', { name: '渠道配置' }).click();
+    await expect(page.getByText('默认邮箱')).toBeVisible();
+    const saveSmsChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
+    await page.getByRole('button', { name: '新增渠道' }).click();
+    const channelDialog = page.getByRole('dialog', { name: '新增渠道配置' });
+    await expect(channelDialog).toBeVisible();
+    await channelDialog.locator('.el-select__wrapper').first().click();
+    await page.locator('.el-select-dropdown__item:visible', { hasText: '短信' }).click();
+    await channelDialog.getByLabel('渠道名称').fill('阿里云短信');
+    await channelDialog.getByLabel('AccessKey').fill('ak-test');
+    await channelDialog.getByLabel('Secret').fill('sk-test');
+    await channelDialog.getByLabel('签名').fill('芒果云');
+    await channelDialog.getByLabel('接入地址').fill('dysmsapi.aliyuncs.com');
+    await channelDialog.getByLabel('通知地址').fill('https://example.com/sms/callback');
+    await channelDialog.getByRole('button', { name: '保存' }).click();
+    const smsChannelRequest = await saveSmsChannel;
+    const smsChannelBody = smsChannelRequest.postDataJSON();
+    expect(smsChannelBody.channelType).toBe('SMS');
+    expect(smsChannelBody.providerCode).toBe('ALIYUN_SMS');
+    expect(JSON.parse(smsChannelBody.configJson)).toEqual({
+      accessKeyId: 'ak-test',
+      accessKeySecret: 'sk-test',
+      signName: '芒果云',
+      templatePlatform: '阿里云短信',
+      endpoint: 'dysmsapi.aliyuncs.com',
+      callbackUrl: 'https://example.com/sms/callback',
+    });
+    await expect(channelDialog).toBeHidden();
+    await expect(page.locator('tr', { hasText: '阿里云短信' }).getByText('短信', { exact: true })).toBeVisible();
+    const saveEmailChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
+    await page.getByRole('button', { name: '新增渠道' }).click();
+    const emailChannelDialog = page.getByRole('dialog', { name: '新增渠道配置' });
+    await expect(emailChannelDialog).toBeVisible();
+    await emailChannelDialog.getByLabel('渠道名称').fill('默认邮件账号');
+    await emailChannelDialog.getByLabel('SMTP').fill('smtp.example.com');
+    await emailChannelDialog.getByLabel('端口').fill('465');
+    await emailChannelDialog.getByLabel('账号').fill('notice@example.com');
+    await emailChannelDialog.getByLabel('密码').fill('secret');
+    await emailChannelDialog.getByLabel('发件人').fill('notice@example.com');
+    await emailChannelDialog.getByRole('button', { name: '保存' }).click();
+    const emailChannelRequest = await saveEmailChannel;
+    const emailChannelBody = emailChannelRequest.postDataJSON();
+    expect(emailChannelBody.channelType).toBe('EMAIL');
+    expect(JSON.parse(emailChannelBody.configJson)).toEqual({
+      host: 'smtp.example.com',
+      port: 465,
+      username: 'notice@example.com',
+      password: 'secret',
+      from: 'notice@example.com',
+      ssl: true,
+    });
+    await expect(emailChannelDialog).toBeHidden();
+    await expect(page.getByText('默认邮件账号')).toBeVisible();
+    await page.getByRole('menuitem', { name: '失败重试' }).click();
+    const retryRow = page.locator('tr', { hasText: 'WF-FAIL' });
+    await expect(retryRow.getByText('PROVIDER_ERROR')).toBeVisible();
+    await expect(retryRow.getByText('模板错误')).toBeVisible();
+    await page.getByRole('menuitem', { name: '发送记录' }).click();
+    const recordRow = page.locator('tr', { hasText: 'NR001' });
+    await expect(recordRow.getByText('SITE', { exact: true })).toBeVisible();
+    await expect(recordRow.getByText('WORKFLOW_APPROVED', { exact: true })).toBeVisible();
+    await expect(recordRow.getByText('WF-1', { exact: true })).toBeVisible();
+    await expect(recordRow.getByText('NR001')).toBeVisible();
+    await expect(recordRow.getByText('{"status":"SENT"}')).toBeVisible();
+    await page.getByRole('menuitem', { name: '接收设置' }).click();
+    await expect(page.getByText('提示音')).toBeVisible();
+
+    await page.goto('/#/notice/site-message');
+    await expect(page.getByText('站内消息').first()).toBeVisible();
+    await expect(page.getByLabel('我的消息').getByText('测试站内信')).toBeVisible();
+    await expect(page.getByLabel('我的消息').getByText('WF-1', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: '发送站内信' }).click();
+    const sendSiteRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/site/messages'));
+    await page.getByLabel('接收用户ID').fill('1001');
+    await page.getByLabel('业务类型').fill('SYSTEM_NOTICE');
+    await page.getByLabel('业务ID').fill('BIZ-1001');
+    await page.getByLabel('标题').fill('后台站内信');
+    await page.getByLabel('内容').fill('后台发送内容');
+    await page.getByRole('button', { name: '发送' }).click();
+    const sendSiteBody = (await sendSiteRequest).postDataJSON();
+    expect(sendSiteBody.channelTypes).toEqual(['SITE']);
+    expect(sendSiteBody.userId).toBe('1001');
+    expect(sendSiteBody.title).toBe('后台站内信');
+    await expect(page.getByLabel('我的消息').getByText('测试站内信')).toBeVisible();
+    await expect(page.getByLabel('我的消息').getByText('未读', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '详情' }).click();
+    const siteDetailDialog = page.getByRole('dialog', { name: '站内信详情' });
+    await expect(siteDetailDialog.getByText('这是一条站内信内容')).toBeVisible();
+    await expect(siteDetailDialog.getByText('WF-1', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: '已读', exact: true }).click();
+    await expect(page.getByText('已读', { exact: true })).toBeVisible();
+    await page.locator('tr', { hasText: '测试站内信' }).locator('.el-checkbox__input').click();
+    await page.getByRole('button', { name: '批量已读' }).click();
+    await page.getByRole('button', { name: '全部已读' }).click();
+    await page.getByRole('button', { name: '删除' }).click();
+    await page.getByRole('button', { name: 'OK' }).click();
+    await expect(page.getByText('No Data')).toBeVisible();
+  });
+});

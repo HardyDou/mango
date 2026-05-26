@@ -31,7 +31,7 @@ node ../../mango-pmo/tools/pmo-preflight.mjs \
 | `mango-org` | 组织架构（部门/岗位） |
 | `mango-system` | 系统配置/字典/参数/区域/国际化 |
 | `mango-captcha` | 验证码 |
-| `mango-biz-notification` | 消息中心 |
+| `mango-notice` | 通知中心 / 站内信 |
 
 ## 设计原则
 

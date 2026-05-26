@@ -23,7 +23,15 @@
 - 公共组件禁止直接依赖基座 store、router、菜单、启动逻辑。
 - 公共组件需要的数据和行为通过 `props`、`emits`、回调传入。
 
-## 3.1 组件示例规则
+## 3.1 页面布局规则
+
+- 页面布局必须优先使用 Element Plus 官方标准布局和组件用法，参考 `https://element-plus.org/zh-CN/`。
+- 栅格布局使用 `el-row`、`el-col` 和 24 分栏体系；需要间距、对齐或响应式时使用 `gutter`、`justify`、`align`、`xs/sm/md/lg/xl` 等标准属性。
+- 表单页面使用 `el-form`、`el-form-item`、`label-width`、`el-row`、`el-col` 组织字段；禁止用零散 `div` 拼接表单布局。
+- 列表、详情、弹窗、抽屉等后台页面优先使用 Element Plus 的 `el-table`、`el-descriptions`、`el-dialog`、`el-drawer`、`el-card` 等标准结构。
+- 禁止在业务页面自创非标准布局体系、随意嵌套卡片、用大段临时 CSS 修正本可由 Element Plus 标准布局解决的问题。
+
+## 3.2 组件示例规则
 
 - 组件库示例页必须使用 Element Plus 文档风格。
 - 每个常见用法都必须是独立示例，示例下方提供可展开/收起的代码。

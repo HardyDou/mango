@@ -9,6 +9,7 @@
     "@mango/calendar": "workspace:*",
     "@mango/common": "workspace:*",
     "@mango/file": "workspace:*",
+    "@mango/notice": "workspace:*",
     "@mango/numgen": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",

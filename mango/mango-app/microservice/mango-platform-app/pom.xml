@@ -73,7 +73,7 @@
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>
-            <artifactId>mango-biz-notification-starter</artifactId>
+            <artifactId>mango-notice-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango</groupId>

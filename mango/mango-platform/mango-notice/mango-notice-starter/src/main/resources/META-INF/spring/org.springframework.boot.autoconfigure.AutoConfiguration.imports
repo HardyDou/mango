@@ -1,0 +1,2 @@
+io.mango.notice.starter.NoticeAutoConfiguration
+io.mango.notice.starter.NoticeOutboxAutoConfiguration

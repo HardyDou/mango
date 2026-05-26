@@ -71,6 +71,7 @@
       <el-icon :size="20">
         <FullScreen />
       </el-icon>
+      <NoticeBell />
       <Settings />
       <User />
     </div>
@@ -86,6 +87,7 @@ import { useRoutesList } from '@/stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
+import { NoticeBell } from '@mango/notice';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));

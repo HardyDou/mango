@@ -46,6 +46,8 @@
         <flowable.version>7.0.0</flowable.version>
         <poi.version>5.2.5</poi.version>
         <poi-tl.version>1.12.0</poi-tl.version>
+        <hutool.version>5.8.38</hutool.version>
+        <sensitive-word.version>0.21.0</sensitive-word.version>
     </properties>
 
     <modules>
@@ -239,6 +241,21 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
+                <artifactId>mango-infra-sensitive-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-sensitive-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-infra-sensitive-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
                 <artifactId>mango-system-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -254,17 +271,32 @@
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-biz-notification-api</artifactId>
+                <artifactId>mango-notice-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-biz-notification-core</artifactId>
+                <artifactId>mango-notice-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.mango</groupId>
-                <artifactId>mango-biz-notification-starter</artifactId>
+                <artifactId>mango-notice-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-notice-channel-site</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-notice-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-notice-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -637,6 +669,16 @@
                 <groupId>org.lionsoul</groupId>
                 <artifactId>ip2region</artifactId>
                 <version>${ip2region.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.houbb</groupId>
+                <artifactId>sensitive-word</artifactId>
+                <version>${sensitive-word.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.flowable</groupId>

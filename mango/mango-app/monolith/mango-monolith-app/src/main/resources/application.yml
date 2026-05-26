@@ -92,6 +92,7 @@ mango:
     capability:
       enabled: true
       token-store: true
+      outbox: true
   persistence:
     flyway:
       modules:
@@ -118,6 +119,8 @@ mango:
         calendar:
           enabled: true
         numgen:
+          enabled: true
+        notice:
           enabled: true
   ip-location:
     enabled: true
@@ -228,8 +231,8 @@ springdoc:
         url: /v3/api-docs/mango-org
       - name: mango-system
         url: /v3/api-docs/mango-system
-      - name: mango-biz-notification
-        url: /v3/api-docs/mango-biz-notification
+      - name: mango-notice
+        url: /v3/api-docs/mango-notice
       - name: mango-file
         url: /v3/api-docs/mango-file
       - name: mango-numgen

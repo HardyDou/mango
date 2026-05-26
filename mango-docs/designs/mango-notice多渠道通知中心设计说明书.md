@@ -1,1159 +1,1442 @@
-# mango-notice 多渠道通知中心设计说明书
+# mango-notice 通知中心设计方案
 
-## 1. 目标
+文档状态：待审阅
+基线日期：2026-05-26
+设计口径：通知中心是统一消息编排中心，不是短信系统。
 
-建设 `mango-notice` 多渠道通知中心，用于统一承接站内信、短信、邮件、微信公众号、企业微信、钉钉等通知能力。系统通过通知任务、通知模板、接收人规则、渠道配置、渠道适配、发送记录和站内消息状态，为业务模块提供标准化通知创建、投递、查询、重试和审计能力。
+## 1. 系统定位
 
-本设计将现有 `mango-biz-notification` 定位为 `mango-notice` 的站内信雏形，并规划更名与模块重构。重构后，`mango-notice` 负责通知业务编排，`mango-notice-channel-*` 负责单渠道发送适配，`mango-infra-realtime` 继续只承担在线实时协议投递。
+通知中心负责把业务事件转成可配置、可追踪、可重试的多渠道消息。
 
-系统不承载短信、邮件、微信等三方平台的账号体系，不替代营销系统，不做客户画像，不做复杂活动编排，不做 IM 聊天，不做可靠消息队列，不把基础通信协议实现写回业务通知域。
+核心职责：
 
-## 2. 设计范围
+- 业务消息定义。
+- 多渠道消息发送。
+- 模板渲染。
+- 用户接收控制。
+- 发送记录。
+- 失败重试。
+- 平台运行监控。
 
-### 2.1 本期支持
+系统不按短信、邮件、微信拆业务模型。短信、邮件、站内信、微信公众号、企业微信、钉钉、飞书、Webhook 都是同一条业务消息的投递渠道。
 
-| 分类 | 范围 |
-|---|---|
-| 模块重命名 | `mango-biz-notification` 更名为 `mango-notice`，包名从 `io.mango.biz.notification` 收敛到 `io.mango.notice` |
-| 站内信 | 保留并升级现有消息中心能力，支持站内消息创建、列表、详情、未读数、已读、批量已读、删除、实时在线提醒 |
-| 多渠道模型 | 建立通知任务、模板、渠道、接收人、发送记录、渠道结果、重试记录模型 |
-| 渠道 SPI | 建立 `NoticeChannelSender` 扩展点，渠道模块通过 SPI 注册发送能力 |
-| 渠道模块 | 规划 `mango-notice-channel-site`、`mango-notice-channel-sms`、`mango-notice-channel-email`、`mango-notice-channel-wechat-official` |
-| 管理后台 | 规划通知概览、通知任务、通知模板、渠道配置、发送记录、站内信、接收人规则、通知设置 |
-| API | 提供业务侧发通知 API、管理侧任务/模板/配置/记录 API、用户侧站内信 API |
-| 数据库 | 使用 Flyway 新增 `notice` 模块 migration，按通知域建表 |
-| 验证 | 设计 service、channel SPI、发送状态机、站内信链路、前端页面和 E2E 验证范围 |
+## 2. 目标
 
-### 2.2 本期不支持
+建设 `mango-notice` 统一消息编排中心。业务系统发送消息时只关心 `bizCode`、业务单号、参数和接收人，通知中心根据消息定义、渠道配置、接收设置和模板版本完成发送、记录、失败重试和监控。
 
-| 场景 | 说明 |
-|---|---|
-| 复杂营销编排 | 不做活动、人群画像、A/B 测试、触达旅程 |
-| IM 聊天 | 不做双向会话、群聊、历史聊天、在线状态业务模型 |
-| 可靠 MQ 平台 | 不建设通用消息队列，通知任务可使用 DB 状态机和后续 MQ 扩展 |
-| 三方平台账号体系 | 不管理微信公众号粉丝、邮箱账号、短信平台子账号的完整生命周期 |
-| 内容风控平台 | 不做敏感词审核、反垃圾策略、内容审批流；只预留审批/审核状态 |
-| 供应商全量接入 | 短信、邮件、微信先定义渠道抽象和配置模型，具体供应商按 Sprint 接入 |
-| 财务计费 | 不做短信余额、邮件费用、通道账单和费用结算 |
-| 设计规范复制 | 本文只记录本系统设计，不复制 `mango-pmo` 长期规范 |
-
-## 3. 现状判断
-
-现有模块：`mango/mango-platform/mango-biz-notification`。
-
-| 项 | 当前状态 |
-|---|---|
-| 模块结构 | 已有 `api`、`core`、`starter`，无 `starter-remote` |
-| API 路径 | 当前 Controller 使用 `/message` |
-| 业务能力 | 单用户发送、广播、用户列表、详情、未读数、标记已读、批量已读、删除 |
-| 数据表 | `sys_notification` 存储站内消息标题、内容、接收用户、优先级、已读状态 |
-| 实时能力 | `NotificationServiceImpl` 依赖 `RealtimeApi`，发送时 `publishToUser`，广播时 `broadcast` |
-| 前端 | `mango-ui/apps/mango-admin/src/api/admin/message.ts` 已有 API 封装，完整页面需要补齐 |
-| 测试 | `NotificationServiceImplTest` 覆盖发送、广播、列表、已读、删除用户限定等基础行为 |
-| 命名债务 | `SysNotificationPo`、`SysNotification`、`message` 命名与新规范不一致，需要迁移 |
-
-现状结论：当前模块可作为站内信能力的基础，但不能直接承载短信、邮件、微信公众号等多渠道通知。需要先建立 `mango-notice` 统一业务域，再把站内信实现收敛为 `site` 渠道。
-
-## 4. 能力定位
-
-### 4.1 `mango-notice` 负责
-
-| 能力 | 说明 |
-|---|---|
-| 通知任务 | 接收业务通知请求，生成任务，维护任务状态、发送策略和触发时间 |
-| 通知模板 | 管理模板编码、模板变量、渠道内容、版本、启停状态 |
-| 接收人解析 | 支持按用户 ID、部门、角色、岗位、标签或外部接收人标识圈选接收人 |
-| 渠道编排 | 根据任务、模板、接收人和渠道策略生成每个接收人的每个渠道发送记录 |
-| 渠道调用 | 调用 `NoticeChannelSender` 执行单渠道发送 |
-| 发送记录 | 记录每次发送状态、请求摘要、响应摘要、失败原因、重试次数 |
-| 站内信状态 | 管理站内消息已读、未读、删除、详情、未读数 |
-| 管理后台 | 提供任务、模板、渠道配置、发送记录、站内信和设置管理 |
-| 审计 | 记录人工重试、取消、撤回、配置变更等操作 |
-
-### 4.2 `mango-notice-channel-*` 负责
-
-| 模块 | 责任 | 不负责 |
-|---|---|---|
-| `mango-notice-channel-site` | 写入站内信、触发实时在线提醒 | 通知任务编排、接收人策略 |
-| `mango-notice-channel-sms` | 调用短信供应商发送短信，解析供应商结果 | 模板选择、业务状态推进 |
-| `mango-notice-channel-email` | 调用 SMTP 或邮件服务发送邮件 | 附件文件长期存储、业务权限 |
-| `mango-notice-channel-wechat-official` | 调用微信公众号模板消息或订阅消息接口 | 粉丝全生命周期管理、公众号运营 |
-| `mango-notice-channel-wecom` | 调用企业微信工作通知或机器人接口 | 组织架构主数据维护 |
-| `mango-notice-channel-dingtalk` | 调用钉钉工作通知或机器人接口 | 钉钉通讯录主数据维护 |
-
-### 4.3 其它模块负责
-
-| 模块 | 责任 |
-|---|---|
-| `mango-infra-realtime` | SSE/WebSocket/HTTP Polling 在线协议投递，只传输在线消息 |
-| `mango-infra-kv` | token、限流、幂等、临时缓存、微信 access_token 缓存等 KV 能力 |
-| `mango-infra-lock` | 分布式重试、任务扫描、发送抢占的锁能力 |
-| `mango-file` | 通知附件的文件 ID、预览和下载能力 |
-| `mango-authorization` | 当前用户、权限码、角色、部门等安全上下文 |
-| `mango-org` | 接收人规则需要组织、部门、岗位时提供组织事实 |
-
-## 5. 命名与模块结构
-
-### 5.1 后端模块结构
+一句话目标：
 
 ```text
-mango/mango-platform/mango-notice/
-├── mango-notice-api
-├── mango-notice-core
-├── mango-notice-support
-├── mango-notice-starter
-├── mango-notice-starter-remote
-├── mango-notice-channel-site
-├── mango-notice-channel-sms
-├── mango-notice-channel-email
-├── mango-notice-channel-wechat-official
-├── mango-notice-channel-wecom
-└── mango-notice-channel-dingtalk
+业务事件 -> 消息定义 -> 参数渲染 -> 渠道发送 -> 接收控制 -> 发送记录 -> 失败重试
 ```
 
-| 子模块 | 职责 |
+## 3. 交付契约
+
+| 项 | 内容 |
 |---|---|
-| `mango-notice-api` | 对业务模块暴露通知任务、模板渲染、发送请求、站内信查询等契约 |
-| `mango-notice-core` | 通知任务、模板、接收人、发送记录、状态机、重试和查询实现 |
-| `mango-notice-support` | 本域内部 SPI、模板渲染、渠道上下文、签名工具、渠道结果模型 |
-| `mango-notice-starter` | 本地 Controller、自动配置、模块信息声明 |
-| `mango-notice-starter-remote` | Feign 远程适配，继承 `NoticeApi` |
-| `mango-notice-channel-site` | 站内信渠道实现，依赖 realtime API |
-| `mango-notice-channel-sms` | 短信渠道实现 |
-| `mango-notice-channel-email` | 邮件渠道实现 |
-| `mango-notice-channel-wechat-official` | 微信公众号渠道实现 |
-| `mango-notice-channel-wecom` | 企业微信渠道实现 |
-| `mango-notice-channel-dingtalk` | 钉钉渠道实现 |
+| 目标 | 重新基线化通知中心产品、菜单、领域模型、接口、数据和验收口径 |
+| 范围 | 消息定义、通知渠道、接收设置、发送记录、失败重试、系统监控、用户侧站内消息入口 |
+| 不做 | IM 聊天、营销旅程、费用结算、三方账号生命周期管理、内容风控平台、通用 MQ 平台 |
+| 设计输入 | 用户提供的《通知中心设计方案》、现有 `mango-notice` 实现、Mango PMO 规范 |
+| 交付物 | 设计文档、Sprint 计划、交付台账；用户审阅通过后再进入代码调整 |
+| 验收方式 | 文档审阅、交付台账 plan 检查；实施后再执行后端、前端、E2E 和台账 verify |
+| 风险与限制 | 当前代码和菜单仍按旧口径实现，需要在实施阶段迁移命名、路由、权限、数据和页面结构 |
 
-### 5.2 命名决策
+## 4. 核心设计思想
 
-| 决策 | 说明 |
-|---|---|
-| 主模块使用 `mango-notice` | 通知中心业务域更短、更清晰，避免 `biz` 前缀扩大历史命名债务 |
-| 渠道模块使用 `mango-notice-channel-*` | 明确渠道是通知域内部扩展，不是独立业务域 |
-| 站内信渠道使用 `site` | `sys` 表示系统类型，不表示渠道；站内信是渠道，应使用 `site` |
-| 微信公众号使用 `wechat-official` | 与企业微信、微信小程序、微信支付区分 |
-| API 使用 `NoticeApi` | 对外表达通知能力，不使用 `NotificationManager`、`Dispatcher` 等内部词 |
-| 入参使用 `Command` | 新增 API 不再使用 `PO` 命名 |
-| 返回使用 `VO` | Controller 和 API 不返回 Entity |
+一个业务消息对应：
 
-### 5.3 从旧模块迁移
+- 一套参数定义。
+- 多个发送渠道。
+- 多套渠道模板。
+- 一个统一发送流程。
+- 一套发送记录和失败重试机制。
 
-| 旧资产 | 新资产 | 处理方式 |
-|---|---|---|
-| `mango-biz-notification` | `mango-notice` | 模块更名，不长期保留旧模块 |
-| `io.mango.biz.notification` | `io.mango.notice` | 包名迁移 |
-| `/message/*` | `/notice/*`、`/notice/site/*` | 新接口使用新路径；如需兼容，另行确认兼容期限 |
-| `sys_notification` | `notice_site_message` | 站内信表迁移为通知域表 |
-| `SysNotificationPo` | `CreateNoticeCommand` / `SendNoticeCommand` | 按用途拆分 Command |
-| `NotificationApi` | `NoticeApi` | 对外通知能力契约 |
-| `NotificationController` | `NoticeController`、`NoticeSiteMessageController` | 管理/API 与站内信用户侧接口拆开 |
-| `NotificationServiceImpl` | `NoticeTaskService`、`NoticeSendService`、`SiteNoticeChannelSender` | 编排与渠道发送拆分 |
-
-## 6. 总体架构
-
-```mermaid
-graph TD
-    Biz[业务模块] --> NoticeApi[NoticeApi]
-    Admin[管理后台] --> NoticeAdmin[通知中心管理 API]
-    User[用户端/管理端个人消息] --> SiteApi[站内信 API]
-
-    NoticeApi --> Core[notice-core 任务与编排]
-    NoticeAdmin --> Core
-    SiteApi --> SiteQuery[站内信查询服务]
-
-    Core --> Template[模板服务]
-    Core --> Recipient[接收人解析]
-    Core --> Route[渠道路由]
-    Core --> Record[发送记录]
-
-    Route --> ChannelSpi[NoticeChannelSender SPI]
-    ChannelSpi --> Site[mango-notice-channel-site]
-    ChannelSpi --> Sms[mango-notice-channel-sms]
-    ChannelSpi --> Email[mango-notice-channel-email]
-    ChannelSpi --> Wechat[mango-notice-channel-wechat-official]
-
-    Site --> SiteStore[(notice_site_message)]
-    Site --> Realtime[mango-infra-realtime]
-    Sms --> SmsVendor[短信供应商]
-    Email --> MailServer[SMTP/邮件服务]
-    Wechat --> WechatApi[微信公众号 API]
-
-    Core --> DB[(notice tables)]
-    Core --> KV[mango-infra-kv]
-    Core --> Lock[mango-infra-lock]
-    Recipient --> Auth[mango-authorization]
-    Recipient --> Org[mango-org]
-```
-
-## 7. 依赖方向
-
-### 7.1 后端依赖
+示例：
 
 ```text
-mango-app
-  -> mango-notice-starter 或 mango-notice-starter-remote
-
-mango-notice-starter
-  -> mango-notice-api
-  -> mango-notice-core
-  -> mango-infra-web-starter
-
-mango-notice-core
-  -> mango-notice-api
-  -> mango-notice-support
-  -> mango-authorization-api
-  -> mango-org-api
-  -> mango-file-api（可选）
-  -> mango-infra-kv-api（可选）
-  -> mango-infra-lock-api（可选）
-
-mango-notice-channel-site
-  -> mango-notice-support
-  -> mango-infra-realtime-api
-
-mango-notice-channel-sms/email/wechat-official
-  -> mango-notice-support
-  -> 外部 SDK 或 HTTP Client
+guarantee.issue_success
+├── 参数：guaranteeNo、projectName、amount、userName、mobile
+├── 站内信模板
+├── 短信模板
+├── 邮件模板
+└── 微信公众号模板
 ```
 
-禁止依赖：
+业务模块调用发送接口时，不直接拼短信内容，也不直接选择供应商账号。业务模块只传业务事实，通知中心按配置完成后续动作。
 
-1. `channel-*` 反向依赖 `mango-notice-core`。
-2. `mango-notice-api` 依赖 `core`、`starter`、`channel-*`。
-3. `mango-notice-core` 直接依赖短信、邮件、微信具体 SDK。
-4. `mango-infra-realtime` 依赖 `mango-notice`。
-5. Mapper 跨域 join 组织、用户、权限等其它模块表。
-
-### 7.2 前端依赖
+## 5. 核心流程
 
 ```text
-apps/mango-admin
-  -> packages/notice
-  -> packages/common
-  -> packages/api-schema
-
-packages/notice
-  -> packages/common
-  -> packages/api-schema
+发送消息（bizCode）
+↓
+查消息定义（bizCode + 生效版本）
+↓
+获取开启渠道
+↓
+检查发送条件（消息启用、渠道启用、接收设置允许、有接收地址）
+↓
+渲染模板
+↓
+逐渠道发送
+↓
+记录发送结果
+↓
+失败进入重试池
+↓
+监控统计发送量、成功率、失败率和队列堆积
 ```
 
-前端建议新增 `mango-ui/packages/notice`，承载通知中心页面、API 封装、路由注册和领域类型。`apps/mango-admin` 只负责菜单聚合和宿主装配，不长期保留通知中心页面第二实现。
+发送流程要求：
 
-## 8. 管理平台菜单规划
+1. `bizCode` 是业务消息唯一编码。
+2. 生效版本决定运行时参数、渠道状态、模板内容、变量映射和发送策略。
+3. 用户接收设置在发送前生效；用户关闭的渠道不生成发送记录，或生成已取消记录，具体由实施方案统一。
+4. 渲染内容、发送参数、渠道响应、失败原因和耗时必须可追踪。
+5. 外部渠道失败必须进入失败重试，不允许只记录失败后结束。
+
+## 6. 菜单规划
 
 一级菜单：`通知中心`。
 
-| 一级菜单 | 二级菜单 | 页面类型 | 说明 | 权限码建议 |
-|---|---|---|---|---|
-| 通知中心 | 通知概览 | 汇总页 | 展示发送量、成功率、失败数、渠道分布、近期异常 | `notice:overview:view` |
-| 通知中心 | 通知任务 | 列表页 + 详情页 | 创建、查询、取消、重试通知任务 | `notice:task:view/create/cancel/retry` |
-| 通知中心 | 通知模板 | 列表页 + 编辑页 + 版本页 | 管理模板编码、变量、渠道内容、启停和版本 | `notice:template:view/create/edit/delete/publish` |
-| 通知中心 | 渠道配置 | 列表页 + 编辑页 | 管理站内信、短信、邮件、微信公众号等渠道账号与启停 | `notice:channel:view/create/edit/enable` |
-| 通知中心 | 发送记录 | 列表页 + 详情页 | 查询接收人维度、渠道维度发送结果和失败原因 | `notice:record:view/retry` |
-| 通知中心 | 站内信 | 列表页 + 详情页 | 管理站内消息、公告、置顶、撤回、已读未读统计 | `notice:site:view/create/revoke/delete` |
-| 通知中心 | 接收人规则 | 列表页 + 编辑页 | 管理按用户、部门、角色、岗位、标签圈选规则 | `notice:recipient:view/create/edit/delete` |
-| 通知中心 | 通知设置 | 表单页 | 管理默认渠道、频控、重试、保留周期、免打扰策略 | `notice:setting:view/edit` |
+最终菜单：
 
-菜单边界：
-
-1. 不把“短信 / 邮件 / 微信公众号 / 站内信”都做成一级菜单。
-2. 渠道是配置和发送维度，业务操作入口是任务、模板、记录。
-3. 站内信单独成二级菜单，因为它兼具渠道和用户消息中心状态管理。
-4. 后台菜单应由后端菜单数据登记，前端消费后端菜单并映射页面组件。
-
-## 9. 业务流程
-
-### 9.1 业务模块发送通知
-
-```mermaid
-sequenceDiagram
-    participant Biz as 业务模块
-    participant Api as NoticeApi
-    participant Core as NoticeSendService
-    participant Tpl as NoticeTemplateService
-    participant Rec as RecipientResolver
-    participant Ch as ChannelRouter
-    participant Sender as NoticeChannelSender
-    participant DB as MySQL
-
-    Biz->>Api: send(SendNoticeCommand)
-    Api->>Core: 创建通知任务
-    Core->>Tpl: 加载模板并渲染变量
-    Core->>Rec: 解析接收人
-    Core->>Ch: 计算渠道策略
-    Core->>DB: 写任务、接收人、发送记录
-    loop 每个接收人 + 渠道
-        Core->>Sender: send(ChannelSendCommand)
-        Sender-->>Core: ChannelSendResult
-        Core->>DB: 更新发送状态
-    end
-    Core-->>Biz: NoticeSendResultVO
+```text
+通知中心
+├── 消息定义
+├── 通知渠道
+├── 接收设置
+├── 发送记录
+├── 失败重试
+└── 系统监控
 ```
 
-### 9.2 站内信发送
+菜单原则：
 
-```mermaid
-sequenceDiagram
-    participant Core as NoticeCore
-    participant Site as SiteNoticeChannelSender
-    participant DB as notice_site_message
-    participant RT as RealtimeApi
-    participant User as 在线用户
+- `消息定义` 是核心菜单，承载业务消息、参数、渠道启停和模板配置。
+- `通知渠道` 管理系统可用的渠道账号、供应商和发送能力。
+- `接收设置` 管理用户是否接收某类消息。
+- `发送记录` 记录所有发送历史。
+- `失败重试` 独立处理失败消息。
+- `系统监控` 监控渠道状态、队列堆积和发送统计。
+- 站内信、短信、邮件、微信不是后台一级菜单；它们是渠道类型。
+- 右上角小铃铛和用户侧消息列表属于用户消息入口，不作为后台配置一级菜单。
 
-    Core->>Site: send(site command)
-    Site->>DB: 写站内消息
-    Site->>RT: publishToUser(userId, notice, payload)
-    RT-->>User: SSE/WebSocket/Polling 在线提醒
-    Site-->>Core: success(siteMessageId)
+## 7. 菜单详细设计
+
+### 7.1 消息定义
+
+定位：定义什么业务消息、使用哪些参数、开启哪些渠道、每个渠道发送什么内容。
+
+业务域分类：
+
+- 消息定义左侧显示业务域分类，右侧显示当前分类下的消息定义列表。
+- 支持新增、编辑、停用、启用和删除业务域分类。
+- 分类编码创建后不可修改。
+- 已被消息定义引用的分类不能删除，只能停用。
+- 停用分类后，历史消息仍可查看；新增消息定义不能再选择该分类。
+- 消息归属业务域变更会影响接收设置和统计口径，必须保存为草稿并发布后生效。
+
+业务域分类字段：
+
+| 字段 | 说明 |
+|---|---|
+| 分类名称 | 保函、基础、订单等 |
+| 分类编码 | `guarantee`、`basic` |
+| 描述 | 分类用途说明 |
+| 消息数量 | 当前分类下消息定义数量 |
+| 状态 | 启用、停用 |
+| 排序 | 左侧展示顺序 |
+| 更新时间 | 最后更新时间 |
+| 操作 | 编辑、启用/停用、删除 |
+
+列表字段：
+
+| 字段 | 说明 |
+|---|---|
+| 业务域 | 基础、保函、订单、财务、风控、营销、系统 |
+| 消息编码 | 全局唯一编码，例如 `guarantee.issue_success` |
+| 消息名称 | 出函成功、退款成功等 |
+| 开启渠道 | 站内信、短信、邮件、微信公众号等 |
+| 启用状态 | 开启、关闭 |
+| 同步状态 | 已同步、待发布；待发布时提示已保存但未发布的变更原因 |
+| 生效版本 | 当前生效配置版本，例如 `V3`；未发布时显示未发布 |
+| 最后发布 | 最近一次发布成功时间 |
+| 更新时间 | 最后更新时间 |
+| 操作 | 详情、编辑、发布、更多 |
+
+推荐编码：
+
+```text
+basic.login_code
+basic.reset_password
+guarantee.issue_success
+guarantee.issue_fail
+guarantee.refund_success
 ```
 
-### 9.3 失败重试
+编辑页结构：
 
-1. 首次发送失败时，发送记录进入 `FAILED` 或 `RETRY_WAITING`。
-2. 重试任务扫描可重试记录，按 `next_retry_time` 和 `retry_count` 抢占执行。
-3. 每次重试写入 `notice_retry_log`。
-4. 超过最大重试次数后进入 `FINAL_FAILED`。
-5. 管理后台允许对失败记录人工重试，但必须记录操作者和原因。
+```text
+基础信息
+├── 业务域
+├── 消息编码
+├── 消息名称
+├── 描述
+├── 启用状态
+└── 是否允许用户关闭
 
-## 10. 领域模型
+参数定义
+├── 参数名
+├── 参数说明
+├── 示例值
+└── 是否必填
 
-### 10.1 核心对象
+渠道配置
+├── 站内信
+├── 短信
+├── 邮件
+├── 微信公众号
+├── 企业微信
+├── 钉钉
+├── 飞书
+└── Webhook
+```
+
+参数定义示例：
+
+| 参数名 | 参数说明 | 示例值 | 是否必填 |
+|---|---|---|---|
+| `guaranteeNo` | 保函编号 | `BH20260001` | 是 |
+| `projectName` | 项目名称 | `某某项目` | 是 |
+| `amount` | 金额 | `100000.00` | 是 |
+| `userName` | 用户姓名 | `张三` | 否 |
+| `mobile` | 手机号 | `13800000000` | 否 |
+
+渠道卡片示例：
+
+```text
+站内信
+[√] 启用
+
+标题模板：
+您的保函已出函成功
+
+内容模板：
+保函编号：${guaranteeNo}
+项目名称：${projectName}
+```
+
+```text
+短信
+[√] 启用
+
+短信模板：
+您的保函 ${guaranteeNo} 已出函成功
+
+第三方模板 ID：
+SMS_001
+
+变量映射：
+guaranteeNo -> guarantee_no
+```
+
+```text
+邮件
+[ ] 启用
+
+邮件标题：
+保函出函成功通知
+
+邮件内容：
+...
+```
+
+```text
+微信公众号
+[√] 启用
+
+模板 ID：
+xxxxx
+
+模板内容：
+...
+```
+
+版本控制：
+
+- 消息编码创建后不可修改。
+- 只要修改消息定义信息，都必须先形成草稿，再发布后生效。
+- 需要发布的变更包括基础信息、描述、启用状态、是否允许用户关闭、参数定义、渠道启停、模板内容、第三方模板 ID、变量映射和默认发送策略。
+- 列表通过同步状态区分已同步和待发布，待发布记录不能被误认为线上已生效。
+- 消息名称如果进入用户可见内容，应通过渠道模板表达，而不是依赖名称字段。
+- 发送记录必须保存实际使用的版本号和渲染快照。
+
+### 7.2 通知渠道
+
+定位：管理真正执行发送的通道账号和供应商接入。消息定义决定发哪些渠道类型，通知渠道决定 AUTO 模式下具体使用哪个通道。
+
+支持渠道：
+
+```text
+站内信
+短信
+邮件
+微信公众号
+企业微信
+钉钉
+飞书
+Webhook
+```
+
+通用字段：
+
+| 字段 | 说明 |
+|---|---|
+| 渠道类型 | SITE、SMS、EMAIL、WECHAT_OFFICIAL、WECOM、DINGTALK、FEISHU、WEBHOOK |
+| 渠道名称 | 业务可识别名称，例如“阿里云短信”、“腾讯云短信”、“默认企业邮箱” |
+| 供应商 | 阿里云、腾讯云、自定义 SMTP、阿里云邮件推送、腾讯云邮件推送、企业微信等 |
+| 权重 | AUTO 模式下权重轮换使用，必须大于 0 |
+| 启用状态 | 开启、关闭 |
+| 配置状态 | 已配置、未完整 |
+| 最近发送状态 | 正常、异常 |
+| 最近发送时间 | 最近一次发送时间 |
+| 限流配置 | 每秒、每分钟、每日限制 |
+| 超时配置 | 连接超时、读取超时 |
+| 失败重试 | 当前通道失败后最多尝试 3 次 |
+| 并发限制 | 单渠道并发发送上限 |
+
+核心规则：
+
+1. 每个渠道类型允许配置多个具体通道。
+2. 不设置默认通道。
+3. 消息定义的渠道选择默认是 `AUTO`。
+4. 消息定义可在高级配置中绑定具体通道；绑定后不参与 AUTO 权重轮换。
+5. AUTO 模式下，系统按渠道类型查询启用且配置完整的通道，并按权重轮换选择。
+6. 没有可用通道时，发送记录失败，失败码为 `CHANNEL_UNAVAILABLE`。
+7. 当前通道发送失败后，先在同一通道最多尝试 3 次。
+8. 3 次仍失败时，切换同渠道类型下的下一个可用通道。
+9. 所有可用通道均失败后，进入失败重试。
+10. 第一版不做按业务域、按优先级、按地区、按成本的复杂路由策略，只做权重轮换和失败切换。
+
+短信配置必须参考阿里云、腾讯云短信服务对接要求，并直接完成阿里云和腾讯云接入：
+
+| 字段 | 阿里云短信 | 腾讯云短信 |
+|---|---|---|
+| 供应商 | `ALIYUN_SMS` | `TENCENT_SMS` |
+| 访问密钥 | AccessKey ID | SecretId |
+| 访问密钥 Secret | AccessKey Secret | SecretKey |
+| Region | RegionId | Region |
+| Endpoint | `dysmsapi.aliyuncs.com` | `sms.tencentcloudapi.com` |
+| 应用 ID | 不需要 | SmsSdkAppId |
+| 签名 | SignName | SignName |
+| 模板标识 | TemplateCode | TemplateId |
+| 扩展字段 | SmsUpExtendCode | ExtendCode、SessionContext |
+
+邮件配置：
+
+邮件供应商不是 SMTP；SMTP 是自定义 SMTP 供应商下的配置项。
+
+| 供应商 | 说明 |
+|---|---|
+| `CUSTOM_SMTP` | 自定义 SMTP，企业邮箱或自建 SMTP |
+| `ALIYUN_DM` | 阿里云邮件推送 |
+| `TENCENT_SES` | 腾讯云邮件推送 |
+| `SENDCLOUD` | SendCloud |
+| `MAILGUN` | Mailgun |
+| `OTHER` | 其他邮件服务 |
+
+自定义 SMTP 配置：
+
+| 字段 | 说明 |
+|---|---|
+| SMTP 主机 | `smtp.example.com` |
+| SMTP 端口 | `465`、`587` |
+| 安全协议 | SSL、TLS、STARTTLS、NONE |
+| 账号 | SMTP 用户名 |
+| 密码 | SMTP 密码 |
+| 发件人邮箱 | `notice@example.com` |
+| 发件人名称 | 例如“芒果通知中心” |
+
+微信公众号配置：
+
+```text
+AppId
+Secret
+模板配置
+Token
+EncodingAESKey
+```
+
+企业微信、钉钉、飞书和 Webhook 配置按各自官方接入参数建结构化表单。
+
+配置保存：
+
+- 页面按渠道类型展示不同表单。
+- 底层仍保存 JSON 配置，便于扩展供应商字段。
+- 敏感字段必须输出脱敏。
+- 内部发送调用必须使用原始配置，不使用脱敏后的展示值。
+- 存储加密是否启用由安全方案单独确认；本设计先明确字段敏感性和输出边界。
+
+失败码：
+
+| 失败码 | 说明 |
+|---|---|
+| `CHANNEL_UNAVAILABLE` | 没有可用通道 |
+| `CHANNEL_DISABLED` | 指定通道已停用 |
+| `CHANNEL_CONFIG_INVALID` | 通道配置不完整 |
+| `TEMPLATE_INVALID` | 模板 ID、模板内容或变量映射错误 |
+| `RECIPIENT_INVALID` | 接收地址无效 |
+| `PROVIDER_REJECTED` | 供应商明确拒绝 |
+| `PROVIDER_TIMEOUT` | 供应商超时 |
+| `PROVIDER_ERROR` | 供应商返回失败 |
+| `RATE_LIMITED` | 通道限流 |
+| `SEND_EXCEPTION` | 本地发送异常 |
+
+### 7.3 接收设置
+
+定位：控制用户是否接收某类消息。
+
+支持维度：
+
+```text
+全局关闭
+├── 关闭所有短信
+└── 关闭所有邮件
+
+业务域关闭
+├── 关闭保函短信
+└── 关闭基础邮件
+
+单消息关闭
+└── 关闭“出函成功”短信
+```
+
+用户端设置：
+
+```text
+短信通知
+邮件通知
+公众号通知
+企业微信通知
+钉钉通知
+飞书通知
+```
+
+后台能力：
+
+- 查询用户接收设置。
+- 按业务域配置默认接收策略。
+- 按消息定义配置是否允许用户关闭。
+- 管理端可查看某个用户为什么没有收到某条消息。
+
+发送前检查顺序：
+
+1. 消息定义是否启用。
+2. 渠道模板是否启用。
+3. 通知渠道是否启用。
+4. 用户接收设置是否允许。
+5. 接收人是否具备该渠道地址。
+6. 限流、免打扰和发送窗口是否允许。
+
+### 7.4 发送记录
+
+定位：记录所有消息发送历史。
+
+列表字段：
+
+| 字段 | 说明 |
+|---|---|
+| 消息名称 | 出函成功 |
+| 消息编码 | `guarantee.issue_success` |
+| 业务单号 | 保函编号、订单号等 |
+| 渠道 | 短信、邮件、站内信等 |
+| 接收人 | 手机号、邮箱、用户 ID、openid |
+| 发送状态 | 待发送、发送中、成功、失败、已取消 |
+| 发送时间 | 时间 |
+
+详情支持查看：
+
+```text
+渲染内容
+发送参数
+渠道响应
+失败原因
+耗时
+模板版本
+渠道配置快照
+重试历史
+```
+
+敏感信息要求：
+
+- 页面展示的请求、响应、渠道配置快照必须脱敏。
+- 内部重试和发送逻辑使用原始快照。
+- 日志不得输出密码、Secret、Token、AccessKey、Webhook 地址等敏感值。
+
+### 7.5 失败重试
+
+定位：独立管理发送失败消息。
+
+功能：
+
+```text
+自动重试
+手动重试
+批量重试
+忽略失败
+查看失败原因
+查看重试历史
+```
+
+列表字段：
+
+| 字段 | 说明 |
+|---|---|
+| 消息名称 | 出函成功 |
+| 消息编码 | `guarantee.issue_success` |
+| 渠道 | 短信 |
+| 失败原因 | 模板错误、供应商限流、网络超时等 |
+| 失败次数 | 3 |
+| 下次重试时间 | 时间 |
+| 最后失败时间 | 时间 |
+
+状态：
+
+```text
+等待重试
+重试中
+重试成功
+重试失败
+已忽略
+达到上限
+```
+
+### 7.6 系统监控
+
+定位：监控通知平台运行状态。
+
+渠道状态：
+
+```text
+短信是否正常
+邮件是否正常
+公众号是否正常
+企业微信是否正常
+钉钉是否正常
+飞书是否正常
+Webhook 是否正常
+```
+
+队列监控：
+
+```text
+待发送数量
+失败数量
+消费速度
+消息堆积
+最老待处理时间
+```
+
+统计分析：
+
+```text
+发送量
+成功率
+失败率
+渠道占比
+业务占比
+业务域占比
+平均耗时
+P95 耗时
+```
+
+系统监控只展示平台运行状态，不替代发送记录和失败重试。
+
+## 8. 推荐领域模型
+
+```text
+业务域
+  └── 消息定义
+        ├── 参数定义
+        ├── 渠道配置
+        ├── 模板内容
+        └── 用户接收控制
+```
+
+核心对象：
 
 | 对象 | 说明 |
 |---|---|
-| `NoticeTask` | 一次业务通知请求或后台创建通知任务 |
-| `NoticeTemplate` | 通知模板主信息，包含模板编码、名称、业务类型、状态 |
-| `NoticeTemplateChannel` | 模板在不同渠道下的标题、内容、三方模板 ID、变量映射 |
-| `NoticeRecipient` | 任务接收人，记录用户 ID、手机号、邮箱、openid、外部联系方式快照 |
-| `NoticeSendRecord` | 某个接收人在某个渠道的一次发送记录 |
-| `NoticeChannelConfig` | 渠道账号配置、供应商、签名、启停、限流参数 |
-| `NoticeSiteMessage` | 站内信消息实体，支持已读、删除、撤回、置顶 |
-| `NoticeRetryLog` | 发送失败重试记录 |
-| `NoticeCallbackLog` | 三方渠道异步回调记录 |
-| `NoticeRecipientRule` | 接收人圈选规则 |
-| `NoticeSetting` | 默认渠道、重试、保留周期、免打扰等设置 |
-
-### 10.2 状态枚举
-
-| 枚举 | 值 |
-|---|---|
-| `NoticeTaskStatus` | `DRAFT`、`WAITING`、`SENDING`、`PARTIAL_SUCCESS`、`SUCCESS`、`FAILED`、`CANCELED` |
-| `NoticeSendStatus` | `PENDING`、`SENDING`、`SUCCESS`、`FAILED`、`RETRY_WAITING`、`FINAL_FAILED`、`CANCELED` |
-| `NoticeChannelType` | `SITE`、`SMS`、`EMAIL`、`WECHAT_OFFICIAL`、`WECOM`、`DINGTALK` |
-| `NoticeTemplateStatus` | `DRAFT`、`ENABLED`、`DISABLED`、`ARCHIVED` |
-| `NoticeReadStatus` | `UNREAD`、`READ` |
-| `NoticeDeleteStatus` | `NORMAL`、`DELETED` |
-| `NoticePriority` | `LOW`、`NORMAL`、`HIGH`、`URGENT` |
-
-## 11. 数据库设计
-
-Migration 路径：`mango-notice-core/src/main/resources/db/migration/notice/V1__init_notice.sql`。
-
-### 11.1 `notice_task`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `task_code` | varchar(64) | 任务编码，唯一 |
-| `biz_type` | varchar(64) | 业务类型 |
-| `biz_id` | varchar(128) | 业务对象 ID |
-| `idempotent_key` | varchar(128) | 幂等键 |
-| `template_code` | varchar(128) | 模板编码 |
-| `title` | varchar(200) | 通知标题快照 |
-| `content_summary` | varchar(500) | 内容摘要 |
-| `channel_types` | varchar(255) | 渠道集合快照 |
-| `send_mode` | varchar(32) | `IMMEDIATE` / `SCHEDULED` |
-| `scheduled_time` | datetime | 定时发送时间 |
-| `status` | varchar(32) | 任务状态 |
-| `total_count` | int | 总发送数 |
-| `success_count` | int | 成功数 |
-| `fail_count` | int | 失败数 |
-| `created_by` | bigint | 创建人 |
-| `created_at` | datetime | 创建时间 |
-| `updated_by` | bigint | 更新人 |
-| `updated_at` | datetime | 更新时间 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-索引：
-
-- `uk_notice_task_code(task_code)`
-- `uk_notice_task_idempotent(tenant_id, idempotent_key)`
-- `idx_notice_task_biz(tenant_id, biz_type, biz_id)`
-- `idx_notice_task_status(tenant_id, status, scheduled_time)`
-
-### 11.2 `notice_template`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `template_code` | varchar(128) | 模板编码 |
-| `template_name` | varchar(128) | 模板名称 |
-| `biz_type` | varchar(64) | 业务类型 |
-| `version` | int | 版本号 |
-| `status` | varchar(32) | 状态 |
-| `variables_schema` | text | 变量定义 JSON |
-| `remark` | varchar(500) | 备注 |
-| `created_by` / `created_at` / `updated_by` / `updated_at` | - | 审计字段 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-索引：
-
-- `uk_notice_template_version(tenant_id, template_code, version)`
-- `idx_notice_template_status(tenant_id, status)`
-
-### 11.3 `notice_template_channel`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `template_id` | bigint | 模板 ID |
-| `channel_type` | varchar(32) | 渠道类型 |
-| `channel_template_id` | varchar(128) | 三方模板 ID |
-| `title_template` | varchar(200) | 标题模板 |
-| `content_template` | text | 内容模板 |
-| `variable_mapping` | text | 渠道变量映射 JSON |
-| `enabled` | tinyint | 是否启用 |
-| `created_at` / `updated_at` | - | 审计字段 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-索引：
-
-- `uk_notice_template_channel(tenant_id, template_id, channel_type)`
-
-### 11.4 `notice_recipient`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `task_id` | bigint | 任务 ID |
-| `user_id` | bigint | 用户 ID |
-| `recipient_name` | varchar(128) | 接收人名称快照 |
-| `mobile` | varchar(32) | 手机号快照 |
-| `email` | varchar(128) | 邮箱快照 |
-| `wechat_openid` | varchar(128) | 微信 openid 快照 |
-| `external_id` | varchar(128) | 外部联系人标识 |
-| `created_at` | datetime | 创建时间 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-索引：
-
-- `idx_notice_recipient_task(task_id)`
-- `idx_notice_recipient_user(tenant_id, user_id)`
-
-### 11.5 `notice_send_record`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `task_id` | bigint | 任务 ID |
-| `recipient_id` | bigint | 接收人 ID |
-| `channel_type` | varchar(32) | 渠道类型 |
-| `channel_config_id` | bigint | 渠道配置 ID |
-| `request_id` | varchar(128) | 请求流水号 |
-| `provider_message_id` | varchar(128) | 供应商消息 ID |
-| `status` | varchar(32) | 发送状态 |
-| `title` | varchar(200) | 渲染后标题 |
-| `content_snapshot` | text | 渲染后内容快照 |
-| `request_snapshot` | text | 请求摘要 JSON，不存密钥 |
-| `response_snapshot` | text | 响应摘要 JSON，不存敏感信息 |
-| `fail_code` | varchar(64) | 失败码 |
-| `fail_reason` | varchar(500) | 失败原因 |
-| `retry_count` | int | 已重试次数 |
-| `next_retry_time` | datetime | 下次重试时间 |
-| `sent_at` | datetime | 发送时间 |
-| `created_at` / `updated_at` | - | 审计字段 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-索引：
-
-- `uk_notice_send_request(tenant_id, request_id)`
-- `idx_notice_send_task(task_id)`
-- `idx_notice_send_status(tenant_id, status, next_retry_time)`
-- `idx_notice_send_recipient(tenant_id, recipient_id, channel_type)`
-
-### 11.6 `notice_channel_config`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `channel_type` | varchar(32) | 渠道类型 |
-| `provider_code` | varchar(64) | 供应商编码 |
-| `config_name` | varchar(128) | 配置名称 |
-| `config_json` | text | 加密后的配置 JSON 或密文引用 |
-| `enabled` | tinyint | 是否启用 |
-| `priority` | int | 优先级 |
-| `rate_limit_config` | text | 频控配置 JSON |
-| `created_by` / `created_at` / `updated_by` / `updated_at` | - | 审计字段 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-约束：敏感配置不得明文保存；日志不得输出密钥、token、证书、密码。
-
-### 11.7 `notice_site_message`
-
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 主键 |
-| `task_id` | bigint | 来源任务 ID |
-| `send_record_id` | bigint | 来源发送记录 ID |
-| `user_id` | bigint | 接收用户 ID |
-| `title` | varchar(200) | 标题 |
-| `content` | text | 内容 |
-| `priority` | varchar(32) | 优先级 |
-| `read_status` | varchar(32) | 已读状态 |
-| `read_time` | datetime | 阅读时间 |
-| `delete_status` | varchar(32) | 删除状态 |
-| `revoke_status` | tinyint | 是否撤回 |
-| `top_status` | tinyint | 是否置顶 |
-| `biz_type` | varchar(64) | 业务类型 |
-| `biz_id` | varchar(128) | 业务对象 ID |
-| `created_at` / `updated_at` | - | 审计字段 |
-| `tenant_id` | varchar(64) | 租户标识 |
-
-索引：
-
-- `idx_notice_site_user(tenant_id, user_id, delete_status, created_at)`
-- `idx_notice_site_unread(tenant_id, user_id, read_status)`
-- `idx_notice_site_task(task_id)`
-
-### 11.8 其它表
-
-| 表 | 用途 |
-|---|---|
-| `notice_retry_log` | 记录每次自动或人工重试 |
-| `notice_callback_log` | 记录供应商异步回调 |
-| `notice_recipient_rule` | 管理接收人规则 |
-| `notice_setting` | 管理通知中心设置 |
-| `notice_audit_log` | 记录人工操作审计 |
-
-## 12. API 设计
-
-### 12.1 对业务模块 API
-
-`mango-notice-api` 暴露 `NoticeApi`。
-
-| 方法 | 入参 | 返回 | 说明 |
-|---|---|---|---|
-| `send` | `SendNoticeCommand` | `R<NoticeSendResultVO>` | 按模板或直接内容发送通知 |
-| `createTask` | `CreateNoticeTaskCommand` | `R<NoticeTaskVO>` | 创建通知任务，可定时发送 |
-| `cancelTask` | `CancelNoticeTaskCommand` | `R<Boolean>` | 取消未发送任务 |
-| `getTask` | `Long taskId` | `R<NoticeTaskVO>` | 查询任务详情 |
-| `listSiteMessages` | `NoticeSiteMessagePageQuery` | `R<PageResult<NoticeSiteMessageVO>>` | 查询当前用户站内信 |
-| `unreadCount` | `NoticeUnreadCountQuery` | `R<NoticeUnreadCountVO>` | 查询未读数 |
-| `markSiteMessageRead` | `MarkNoticeReadCommand` | `R<Boolean>` | 标记已读 |
-
-`SendNoticeCommand` 核心字段：
-
-| 字段 | 说明 |
-|---|---|
-| `idempotentKey` | 幂等键 |
-| `bizType` | 业务类型 |
-| `bizId` | 业务对象 ID |
-| `templateCode` | 模板编码 |
-| `templateVariables` | 模板变量 |
-| `channelTypes` | 目标渠道；为空时按模板默认渠道 |
-| `recipients` | 直接接收人列表 |
-| `recipientRuleCode` | 接收人规则编码 |
-| `sendMode` | 立即或定时 |
-| `scheduledTime` | 定时发送时间 |
-| `priority` | 优先级 |
-
-### 12.2 管理后台 HTTP API
-
-根路径建议：`/notice`。
-
-| 路径 | 方法 | 说明 |
-|---|---|---|
-| `/notice/overview` | GET | 通知概览 |
-| `/notice/tasks` | GET | 分页查询通知任务 |
-| `/notice/tasks` | POST | 创建通知任务 |
-| `/notice/tasks/{id}` | GET | 任务详情 |
-| `/notice/tasks/{id}/cancel` | POST | 取消任务 |
-| `/notice/tasks/{id}/retry` | POST | 重试任务失败记录 |
-| `/notice/templates` | GET | 查询模板 |
-| `/notice/templates` | POST | 创建模板 |
-| `/notice/templates/{id}` | PUT | 更新模板 |
-| `/notice/templates/{id}/enable` | POST | 启用模板 |
-| `/notice/templates/{id}/disable` | POST | 停用模板 |
-| `/notice/channels` | GET | 查询渠道配置 |
-| `/notice/channels` | POST | 新增渠道配置 |
-| `/notice/channels/{id}` | PUT | 更新渠道配置 |
-| `/notice/records` | GET | 查询发送记录 |
-| `/notice/records/{id}` | GET | 发送记录详情 |
-| `/notice/records/{id}/retry` | POST | 重试单条发送记录 |
-| `/notice/site/messages` | GET | 管理端查询站内信 |
-| `/notice/site/messages` | POST | 创建站内信/公告 |
-| `/notice/site/messages/{id}/revoke` | POST | 撤回站内信 |
-| `/notice/recipient-rules` | GET/POST/PUT/DELETE | 接收人规则管理 |
-| `/notice/settings` | GET/PUT | 通知设置 |
-
-### 12.3 用户侧站内信 API
-
-| 路径 | 方法 | 说明 |
-|---|---|---|
-| `/notice/site/my/messages` | GET | 当前用户站内信分页 |
-| `/notice/site/my/messages/{id}` | GET | 当前用户站内信详情 |
-| `/notice/site/my/unread-count` | GET | 当前用户未读数 |
-| `/notice/site/my/messages/{id}/read` | POST | 标记单条已读 |
-| `/notice/site/my/messages/read-batch` | POST | 批量已读 |
-| `/notice/site/my/messages/{id}/delete` | POST | 删除单条 |
-
-用户侧接口必须用当前安全上下文限定 `user_id`，禁止通过请求参数传入用户 ID 后直接操作他人消息。
-
-## 13. 渠道 SPI 设计
-
-### 13.1 扩展点
-
-```java
-public interface NoticeChannelSender {
-    NoticeChannelType channelType();
-
-    ChannelSendResult send(ChannelSendCommand command);
-}
-```
-
-`ChannelSendCommand` 包含：
-
-| 字段 | 说明 |
-|---|---|
-| `taskId` | 任务 ID |
-| `sendRecordId` | 发送记录 ID |
-| `recipient` | 接收人快照 |
-| `title` | 渲染后标题 |
-| `content` | 渲染后内容 |
-| `template` | 渠道模板信息 |
-| `channelConfig` | 渠道配置摘要或解密后的运行时配置 |
-| `variables` | 变量 |
-| `attachments` | 附件文件 ID 列表 |
-
-`ChannelSendResult` 包含：
-
-| 字段 | 说明 |
-|---|---|
-| `success` | 是否成功 |
-| `providerMessageId` | 供应商消息 ID |
-| `failCode` | 失败码 |
-| `failReason` | 失败原因 |
-| `retryable` | 是否可重试 |
-| `responseSnapshot` | 响应摘要 |
-
-### 13.2 渠道实现要求
-
-| 要求 | 说明 |
-|---|---|
-| 单一职责 | 每个 sender 只负责一个渠道发送 |
-| 不编排任务 | 不创建任务、不解析接收人、不决定渠道策略 |
-| 不吞异常 | 明确异常转成失败结果或继续抛出 |
-| 不记录敏感信息 | 请求/响应摘要必须脱敏 |
-| 幂等 | 同一 `sendRecordId` 重试应可识别重复请求 |
-| 可禁用 | 渠道配置停用后不得发送 |
-
-## 14. 技术栈
-
-### 14.1 后端基础栈
-
-| 类型 | 技术 |
-|---|---|
-| 语言 | Java 17+ |
-| 框架 | Spring Boot 3.x |
-| Web | Spring MVC |
-| ORM | MyBatis-Plus |
-| Migration | Flyway |
-| 数据库 | MySQL |
-| JSON | Jackson |
-| 校验 | Jakarta Validation |
-| API 文档 | Springdoc OpenAPI |
-| 测试 | JUnit 5、Mockito、Spring Boot Test |
-
-### 14.2 Mango 内部依赖
-
-| 能力 | 依赖 |
-|---|---|
-| 实时站内信提醒 | `mango-infra-realtime-api` |
-| Web 基础设施 | `mango-infra-web-starter` |
-| 当前用户 | `mango-authorization-api` |
-| 接收人组织事实 | `mango-org-api` |
-| 文件附件 | `mango-file-api` |
-| KV 缓存与频控 | `mango-infra-kv` |
-| 分布式锁 | `mango-infra-lock` |
-| 远程适配 | `mango-infra-feign-starter` |
-
-### 14.3 渠道依赖
-
-| 渠道 | 依赖建议 |
-|---|---|
-| 站内信 | `mango-infra-realtime-api` |
-| 短信 | HTTP Client 或供应商 SDK；供应商实现不得进入 core |
-| 邮件 | Spring Mail / Jakarta Mail |
-| 微信公众号 | 微信公众号 HTTP API，access_token 用 KV 缓存 |
-| 企业微信 | 企业微信 API，access_token 用 KV 缓存 |
-| 钉钉 | 钉钉 API 或机器人 webhook |
-
-### 14.4 前端技术栈
-
-| 类型 | 技术 |
-|---|---|
-| 框架 | Vue 3 |
-| 语言 | TypeScript |
-| 构建 | Vite |
-| UI | Element Plus |
-| 请求 | `@mango/common` request |
-| 包归属 | `mango-ui/packages/notice` |
-| E2E | Playwright |
-
-## 14.5 异步、削峰与调度技术选型
-
-### 14.5.1 决策
-
-`mango-notice` 的异步发送、削峰、失败重试和定时触发统一优先使用 `mango-infra-kv` 的 Outbox 能力承载，不在第一阶段直接绑定 PowerJob、XXL-Job、Kafka 或 RabbitMQ。
-
-原因：
-
-1. Outbox 已支持 `memory / redis / jdbc` 三种 store。
-2. `memory` 适合单机开发和轻量部署。
-3. `redis` 或 `jdbc` 适合集群和分布式部署。
-4. `IOutboxStore` 已提供 `enqueue / claim / ack / nack` 生命周期，满足通知发送 worker 的抢占、确认和失败重试。
-5. `nack` 支持 `nextAttemptAt`，可直接表达延迟重试和定时发送的下一次可处理时间。
-
-### 14.5.2 notice 使用方式
-
-| 场景 | Outbox 用法 |
-|---|---|
-| 立即发送 | 写 `notice_task` 后发布 `OutboxMessage(eventType=notice.send.requested)`，`nextAttemptAt=now` |
-| 定时发送 | 写 `notice_task` 后发布 outbox，`nextAttemptAt=scheduledTime` |
-| 削峰 | worker 每次 `claim(batchSize)`，按配置批量处理 |
-| 失败重试 | 发送失败时 `nack(messageId, workerId, error, nextRetryTime, now)` |
-| 最终失败 | 超过最大重试次数后 ack outbox，并把 `notice_send_record` 标记为 `FINAL_FAILED` |
-| 人工重试 | 管理后台重新发布 outbox，关联原发送记录 |
-
-Outbox 消息建议：
-
-| 字段 | 值 |
-|---|---|
-| `eventType` | `notice.task.dispatch` / `notice.record.send` |
-| `businessType` | 通知业务类型，例如 `SYSTEM_NOTICE`、`ORDER_REMINDER` |
-| `businessKey` | `taskCode` 或 `sendRecordId` |
-| `aggregateId` | `notice_task.id` |
-| `payload` | 只放 `taskId`、`sendRecordId`、`channelType` 等最小处理信息 |
-| `headers` | 租户、操作者、链路 ID、来源模块 |
-
-### 14.5.3 部署模式
-
-| 部署模式 | KV store | worker 方式 | 说明 |
-|---|---|---|---|
-| 单机开发 | `memory` | 本进程定时 polling | 无外部依赖，进程重启会丢失未处理 outbox，只用于开发 |
-| 单机生产轻量版 | `jdbc` | 本进程定时 polling | 依赖数据库持久化，部署简单 |
-| 集群生产 | `redis` 或 `jdbc` | 多实例 worker 竞争 `claim` | 通过 Outbox claim 避免重复处理 |
-| 高吞吐扩展 | MQ 适配 | Outbox 到 MQ bridge | 后续扩展，不作为第一阶段必需项 |
-
-### 14.5.4 与 PowerJob / XXL-Job 的关系
-
-第一阶段不直接集成 PowerJob。Mango 当前已有 `mango-infra-job` 的 XXL-Job 依赖引入，因此如需外部调度平台，优先通过 `mango-infra-job` 抽象接入，而不是让 `mango-notice-core` 直接依赖 PowerJob 或 XXL-Job。
-
-调度分层：
-
-| 层次 | 责任 |
-|---|---|
-| `mango-notice-core` | 只表达任务状态、发送记录、重试策略和 worker 处理逻辑 |
-| `mango-infra-kv outbox` | 承载待处理消息、延迟处理、claim、ack、nack |
-| `mango-notice-starter` | 装配轻量 polling worker，支持单机和集群 |
-| `mango-infra-job` | 未来如需平台化调度，提供 XXL-Job 等调度触发适配 |
-
-结论：通知中心默认使用 Outbox + 轻量 worker；PowerJob 不作为默认依赖。若未来确认需要统一分布式调度平台，应先完善 `mango-infra-job` 的抽象，再由 `notice-starter` 可选接入。
-
-## 15. 安全与权限
-
-| 场景 | 决策 |
-|---|---|
-| 管理后台 | 每个菜单和操作配置权限码 |
-| 用户站内信 | 只能操作当前用户消息 |
-| 渠道配置 | 密钥、token、证书、密码必须加密或引用密文，不明文入库 |
-| 日志 | 不输出手机号全量、邮箱全量、openid、token、密钥、证书 |
-| 发送记录 | 请求/响应只存脱敏摘要 |
-| 接收人 | 手机号、邮箱、openid 按最小必要存快照 |
-| 回调 | 三方回调必须验签或校验来源 |
-| 幂等 | 业务请求必须支持 `idempotentKey` |
-| 租户 | 任务、模板、配置、记录、站内信表都带 `tenant_id` |
-
-## 16. 失败模式与补偿
-
-| 失败模式 | 处理 |
-|---|---|
-| 模板不存在 | 任务创建失败，返回明确业务错误 |
-| 模板变量缺失 | 任务创建失败或模板渲染失败，记录失败原因 |
-| 接收人为空 | 任务进入失败或取消，不生成发送记录 |
-| 渠道未配置 | 对应渠道记录失败，可由管理后台补配置后重试 |
-| 三方发送超时 | 记录 `RETRY_WAITING`，按策略重试 |
-| 三方返回明确失败 | 按 `retryable` 判断是否重试 |
-| 站内信写库成功但 realtime 失败 | 站内信发送视为成功，实时提醒失败只记录告警，不影响离线消息 |
-| 重复请求 | 按 `tenant_id + idempotent_key` 返回原任务结果 |
-| 定时任务并发扫描 | 使用状态抢占或分布式锁防止重复发送 |
-| 回调重复 | 按供应商消息 ID 和状态机幂等处理 |
-
-## 17. 前端页面设计
-
-### 17.1 页面归属
-
-新增 `mango-ui/packages/notice`：
+| `NoticeMessageDefinition` | 消息定义，表达业务消息语义 |
+| `NoticeMessageDefinitionVersion` | 消息定义生效版本，承载参数、渠道启停、模板和运行时策略 |
+| `NoticeChannelTemplate` | 某消息在某渠道上的模板内容 |
+| `NoticeChannelConfig` | 通知渠道账号、供应商和通用发送配置 |
+| `NoticeReceiveSetting` | 用户、业务域、消息、渠道维度的接收控制 |
+| `NoticeSendTask` | 一次业务消息发送任务，后台不作为一级菜单展示 |
+| `NoticeSendRecord` | 某接收人某渠道的一次发送结果 |
+| `NoticeRetryRecord` | 失败重试池中的记录 |
+| `NoticeSiteMessage` | 用户可见站内信 |
+| `NoticeMonitorMetric` | 平台监控指标 |
+
+推荐业务域：
 
 ```text
-packages/notice/
-├── api
-├── routes
-├── views
-│   ├── overview
-│   ├── task
-│   ├── template
-│   ├── channel
-│   ├── record
-│   ├── site-message
-│   ├── recipient-rule
-│   └── setting
-├── components
-└── types
+基础
+保函
+订单
+财务
+风控
+营销
+系统
 ```
 
-### 17.2 页面能力
+## 9. 数据设计
 
-| 页面 | 主要能力 |
+新增或调整表：
+
+| 表 | 说明 |
 |---|---|
-| 通知概览 | 指标卡、趋势、渠道分布、失败 TOP、近期异常 |
-| 通知任务 | 列表、创建、详情、取消、重试、按状态筛选 |
-| 通知模板 | 列表、创建、编辑、渠道内容编辑、变量配置、启停、版本查看 |
-| 渠道配置 | 列表、创建、编辑、启停、测试发送、敏感字段脱敏展示 |
-| 发送记录 | 列表、详情、失败原因、请求/响应摘要、人工重试 |
-| 站内信 | 列表、详情、公告创建、撤回、置顶、删除、已读统计 |
-| 接收人规则 | 规则列表、创建、编辑、预览接收人数 |
-| 通知设置 | 默认渠道、重试、频控、保留周期、免打扰 |
+| `notice_message_definition` | 消息定义主表 |
+| `notice_message_definition_version` | 消息定义版本表 |
+| `notice_message_channel_template` | 版本内的渠道模板配置 |
+| `notice_channel_config` | 通知渠道配置 |
+| `notice_receive_setting` | 接收设置 |
+| `notice_send_task` | 发送任务 |
+| `notice_send_record` | 发送记录 |
+| `notice_retry_record` | 失败重试记录 |
+| `notice_retry_log` | 重试日志 |
+| `notice_site_message` | 用户站内消息 |
+| `notice_callback_log` | 三方回调日志 |
+| `notice_monitor_metric` | 监控指标快照 |
+| `notice_audit_log` | 管理端操作审计 |
 
-## 18. 实施计划
+兼容迁移建议：
 
-### Sprint 01：模块更名与站内信收口
-
-| 项 | 内容 |
+| 旧概念 | 新概念 |
 |---|---|
-| 目标 | 将 `mango-biz-notification` 重构为 `mango-notice`，站内信能力收敛到 `channel-site` |
-| 后端 | 新建模块结构、迁移包名、迁移 API 命名、建 `notice_site_message` |
-| 前端 | 新建通知中心菜单、站内信列表/详情/未读数页面 |
-| 测试 | 站内信发送、列表、详情、已读、删除、实时提醒 mock 协作者测试 |
-| 完成标准 | 老命名不再作为长期实现；站内信主链路可用 |
+| 业务通知配置、通知模板 | 消息定义 |
+| 业务类型编码 | 消息编码 |
+| 通知计划 | 内部发送任务，不作为一级菜单 |
+| 通知偏好 | 接收设置 |
+| 消息中心后台菜单 | 用户侧小铃铛和站内消息入口 |
+| 发送记录 | 发送记录 |
+| Outbox 失败记录 | 失败重试 |
 
-### Sprint 02：通知任务、模板、发送记录
+实施阶段不得直接修改已执行的历史 migration；需要新增 migration 做结构调整和菜单迁移。
 
-| 项 | 内容 |
-|---|---|
-| 目标 | 建立通知中心业务编排能力 |
-| 后端 | `notice_task`、`notice_template`、`notice_template_channel`、`notice_recipient`、`notice_send_record` |
-| 前端 | 通知任务、通知模板、发送记录页面 |
-| 测试 | 模板渲染、任务创建、接收人展开、发送记录状态机、幂等 |
-| 完成标准 | 业务模块可通过 `NoticeApi.send` 生成任务和记录 |
+## 10. API 设计
 
-### Sprint 03：渠道 SPI 与站内信渠道实现
+业务发送：
 
-| 项 | 内容 |
-|---|---|
-| 目标 | 建立 `NoticeChannelSender` SPI 并完成 site 渠道 |
-| 后端 | `mango-notice-support`、`mango-notice-channel-site`、渠道路由 |
-| 前端 | 渠道配置页面支持站内信配置 |
-| 测试 | SPI 注册、渠道禁用、站内信 sender、realtime 失败降级 |
-| 完成标准 | core 不直接依赖 realtime，站内信通过渠道 SPI 完成 |
-
-### Sprint 04：短信 / 邮件 / 微信公众号渠道
-
-| 项 | 内容 |
-|---|---|
-| 目标 | 接入外部渠道的最小可用发送能力 |
-| 后端 | sms、email、wechat-official channel 模块和配置模型 |
-| 前端 | 渠道配置表单、测试发送、发送结果展示 |
-| 测试 | 各渠道 sender 单测、配置校验、失败重试、脱敏检查 |
-| 完成标准 | 三类外部渠道可按配置发送，失败可追踪 |
-
-### Sprint 05：可靠性、重试、统计和治理
-
-| 项 | 内容 |
-|---|---|
-| 目标 | 补齐生产可用能力 |
-| 后端 | 自动重试、回调记录、审计日志、概览统计、保留周期清理 |
-| 前端 | 概览、设置、审计、失败记录处理 |
-| 测试 | 并发扫描、重试幂等、权限、E2E |
-| 完成标准 | 通知中心具备可观测、可补偿、可运维能力 |
-
-## 19. 交付台账
-
-| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
-|---|---|---|---|---|---|---|---|
-| NOTICE-DES-001 | 用户要求 | 设计多渠道通知中心 | 主模块命名 `mango-notice` | 本设计文档 | 文档审阅 | DONE | 本文 |
-| NOTICE-DES-002 | 用户要求 | 从 `mango-biz-notification` 更名 | 旧模块迁移到 `mango-notice`，不长期双实现 | 迁移设计 | 文档审阅 | DONE | 第 5.3 节 |
-| NOTICE-DES-003 | 用户要求 | 支持站内信、短信、微信、邮件等渠道 | 渠道统一 `mango-notice-channel-*` | 渠道规划 | 文档审阅 | DONE | 第 4.2、5.1 节 |
-| NOTICE-DES-004 | 用户要求 | 管理平台菜单规划 | 一级菜单“通知中心”，二级菜单按业务入口组织 | 菜单表 | 文档审阅 | DONE | 第 8 节 |
-| NOTICE-DES-005 | 用户要求 | 明确依赖技术栈 | 按后端、Mango 内部、渠道、前端分层 | 技术栈表 | 文档审阅 | DONE | 第 14 节 |
-| NOTICE-DES-006 | PMO 设计要求 | 明确模块边界 | `core` 编排，`channel-*` 发送，infra 只做协议 | 边界说明 | 文档审阅 | DONE | 第 4、7 节 |
-| NOTICE-DES-007 | PMO 设计要求 | 明确接口变化 | 新增 `NoticeApi` 和 `/notice/*` API | API 设计 | 文档审阅 | DONE | 第 12 节 |
-| NOTICE-DES-008 | PMO 设计要求 | 明确数据变化 | 新增 notice 系列表，旧 `sys_notification` 迁移 | 数据库设计 | 文档审阅 | DONE | 第 11 节 |
-| NOTICE-DES-009 | PMO 设计要求 | 明确测试范围 | 按 service、SPI、channel、前端、E2E 分层验证 | 测试策略 | 文档审阅 | DONE | 第 20 节 |
-| NOTICE-DES-010 | 架构设计要求 | 输出 ADR | 记录命名、渠道 SPI、站内信边界、Outbox 调度等决策 | ADR | 文档审阅 | DONE | 第 21 节 |
-| NOTICE-DES-011 | 用户补充 | 异步发送、削峰、定时发送简单高效，支持单机/集群/分布式 | 默认使用 `mango-infra-kv` Outbox + 轻量 worker，不直接绑定 PowerJob | 异步调度设计 | 文档审阅 | DONE | 第 14.5、21 节 |
-
-## 20. 测试策略
-
-### 20.1 后端测试
-
-| 层次 | 范围 |
-|---|---|
-| 单元测试 | 模板渲染、渠道路由、状态机、重试策略、脱敏工具 |
-| 集成测试 | 任务创建、接收人展开、发送记录写入、站内信写库、用户限定查询 |
-| 渠道测试 | 每个 `NoticeChannelSender` 覆盖成功、失败、可重试、不可重试、配置缺失 |
-| API 测试 | 管理端权限、用户侧站内信只能访问当前用户、参数校验 |
-| 数据测试 | migration 可执行、唯一索引、幂等、状态查询索引 |
-
-### 20.2 前端测试
-
-| 层次 | 范围 |
-|---|---|
-| 单元测试 | API mapping、表单校验、状态枚举转换 |
-| 组件测试 | 模板编辑器、渠道配置表单、发送记录详情 |
-| E2E | 创建模板、创建任务、查看发送记录、站内信已读、失败记录重试 |
-| 边界 | 空列表、加载失败、权限不足、敏感字段脱敏 |
-
-### 20.3 验证命令
-
-后端按改动范围执行：
-
-```bash
-cd mango
-mvn -pl mango-platform/mango-notice -am test
-mvn -pl mango-platform/mango-notice -am verify
-mvn mango:check -Drule=all
-```
-
-前端按改动范围执行：
-
-```bash
-cd mango-ui
-pnpm test
-pnpm build
-cd apps/mango-admin
-pnpm playwright test
-```
-
-设计文档交付检查：
-
-```bash
-node mango-pmo/tools/delivery-contract-check.mjs \
-  --design mango-docs/designs/mango-notice多渠道通知中心设计说明书.md \
-  --ledger mango-docs/designs/mango-notice多渠道通知中心设计说明书.md \
-  --mode verify
-```
-
-## 21. ADR
-
-### ADR-001：主模块命名为 `mango-notice`
-
-#### Status
-
-Accepted
-
-#### Context
-
-现有 `mango-biz-notification` 名称较长，且当前实现只覆盖站内信。新需求需要承载站内信、短信、邮件、微信公众号等多渠道通知中心。
-
-#### Decision
-
-将主模块命名为 `mango-notice`，作为通知业务域统一入口。
-
-#### Alternatives Considered
-
-- `mango-biz-notification`：保留历史名称，但过长且继续扩大旧命名债务。
-- `mango-message`：容易与 MQ、IM、聊天消息混淆。
-- `mango-notification`：语义准确但较长，和旧模块差异不明显。
-
-#### Consequences
-
-- Positive：名称短，适合菜单、包名、模块名统一表达。
-- Negative：需要迁移旧路径、包名、表名和前端 API。
-
-#### Trade-offs
-
-优先选择长期领域语义和可维护性，接受一次性迁移成本。
-
-### ADR-002：渠道模块统一命名为 `mango-notice-channel-*`
-
-#### Status
-
-Accepted
-
-#### Context
-
-通知中心需要支持站内信、短信、邮件、微信公众号等多渠道。渠道实现需要独立扩展，但不能成为独立业务编排中心。
-
-#### Decision
-
-渠道模块统一使用 `mango-notice-channel-site/sms/email/wechat-official/...`。
-
-#### Alternatives Considered
-
-- `mango-notice-sms`：短，但无法明确这是渠道实现。
-- `mango-sms`：会变成独立短信平台，边界过大。
-- `mango-notice-channel-sys`：`sys` 是通知类型，不是渠道。
-
-#### Consequences
-
-- Positive：渠道边界清晰，扩展一致。
-- Negative：模块数量会增加，需要 starter 聚合管理。
-
-#### Trade-offs
-
-优先选择扩展边界清晰，接受多模块管理成本。
-
-### ADR-003：站内信渠道命名为 `site`
-
-#### Status
-
-Accepted
-
-#### Context
-
-站内信兼具渠道和消息中心状态管理。曾考虑 `sys`，但系统通知只是通知类型，不代表渠道。
-
-#### Decision
-
-使用 `mango-notice-channel-site` 表示站内信渠道。
-
-#### Alternatives Considered
-
-- `sys`：误导为系统通知类型。
-- `inbox`：偏用户收件箱，不能表达后台公告和实时提醒。
-- `message-center`：模块名过长。
-
-#### Consequences
-
-- Positive：短，表达站内渠道，和 SMS/Email 并列。
-- Negative：需要在文档和 UI 中解释“站内信 = site channel”。
-
-#### Trade-offs
-
-优先保持模块名简洁稳定。
-
-### ADR-004：通知编排放 `core`，渠道发送放 `channel-*`
-
-#### Status
-
-Accepted
-
-#### Context
-
-如果在 core 直接接入短信、邮件、微信 SDK，会导致核心业务域被供应商细节污染，后续扩展困难。
-
-#### Decision
-
-`mango-notice-core` 只负责任务、模板、接收人、状态机和记录；渠道发送通过 `NoticeChannelSender` SPI 扩展。
-
-#### Alternatives Considered
-
-- core 直接调用所有渠道 SDK：实现快，但耦合高。
-- 每个渠道独立完整业务模块：扩展清晰，但编排重复。
-
-#### Consequences
-
-- Positive：核心稳定，渠道可插拔。
-- Negative：需要设计 SPI 和渠道注册机制。
-
-#### Trade-offs
-
-优先选择长期可扩展性，接受 SPI 设计成本。
-
-### ADR-005：`mango-infra-realtime` 不承载站内信业务
-
-#### Status
-
-Accepted
-
-#### Context
-
-现有实时基础设施负责 SSE/WebSocket/Polling 在线投递。站内信需要持久化、已读未读、删除和业务状态。
-
-#### Decision
-
-站内信模型放 `mango-notice-channel-site` / `mango-notice-core`，`mango-infra-realtime` 只做在线协议投递。
-
-#### Alternatives Considered
-
-- 把站内信放 realtime：短期方便，但 infra 会承载业务状态。
-- 不使用 realtime：站内信可用但缺少在线提醒。
-
-#### Consequences
-
-- Positive：infra 和业务通知边界清晰。
-- Negative：站内信发送需要同时处理持久化和实时提醒两个结果。
-
-#### Trade-offs
-
-站内信写库成功是业务成功，实时提醒失败只作为在线提醒失败记录。
-
-### ADR-006：异步发送、削峰和定时触发默认使用 `mango-infra-kv` Outbox
-
-#### Status
-
-Accepted
-
-#### Context
-
-通知中心需要同时支持简单单机部署、集群部署、定时发送、失败重试和批量削峰。项目已有 `mango-infra-kv` Outbox，支持 `memory / redis / jdbc` store，并提供 `enqueue / claim / ack / nack` 生命周期。仓内已有 `mango-infra-job` 对 XXL-Job 的依赖引入，但通知中心不应直接绑定某个调度平台。
-
-#### Decision
-
-默认使用 `mango-infra-kv` Outbox + `notice-starter` 轻量 worker 承载异步发送、削峰、失败重试和定时触发。第一阶段不直接依赖 PowerJob，也不在 `notice-core` 直接依赖 XXL-Job。未来如需平台化调度，通过 `mango-infra-job` 抽象接入。
-
-#### Alternatives Considered
-
-- 直接接入 PowerJob：分布式调度能力完整，但新增平台依赖和运维成本。
-- 直接使用 XXL-Job：项目已有依赖基础，但会让通知业务绑定具体调度实现。
-- 直接引入 MQ：吞吐和削峰能力强，但第一阶段运维复杂度高。
-- 纯同步发送：最简单，但无法支撑批量通知、失败重试和定时发送。
-
-#### Consequences
-
-- Positive：单机用 memory，轻量生产用 jdbc，集群用 redis/jdbc，部署弹性好。
-- Positive：Outbox `claim` 支持多 worker 竞争处理，适合简单集群。
-- Positive：Outbox `nack(nextAttemptAt)` 可表达失败重试和延迟发送。
-- Negative：极高吞吐场景不如专用 MQ，需要后续 bridge 扩展。
-- Negative：memory store 不适合生产可靠投递。
-
-#### Trade-offs
-
-优先选择简单、高效、可单机也可集群的内建能力；把 PowerJob、XXL-Job、MQ 作为可选扩展而不是通知中心默认前置依赖。
-
-## 22. 风险与限制
-
-| 风险 | 影响 | 缓解 |
+| 能力 | 路径 | 方法 |
 |---|---|---|
-| 旧接口路径迁移影响前端 | 消息中心功能短期不可用 | Sprint 01 同步前后端路径，必要兼容需用户确认期限 |
-| 外部渠道供应商差异大 | 配置和结果模型复杂 | 用 `provider_code` + SPI 隔离供应商差异 |
-| 敏感配置泄露 | 安全风险 | 配置加密、日志脱敏、权限限制 |
-| 批量发送压力 | DB、Outbox store 和三方 API 压力 | Outbox batch claim、频控、分批、redis/jdbc store、后续 MQ bridge 扩展 |
-| 微信 access_token 失效 | 微信渠道发送失败 | KV 缓存 + 过期刷新 + 失败重试 |
-| 站内信实时提醒失败 | 在线用户收不到即时提醒 | 持久化站内信成功即保底，实时失败记录告警 |
-| 接收人规则跨模块复杂 | 依赖组织和权限事实 | 通过 API 获取，不跨域 join |
-| 模板变量错误 | 发送失败 | 模板发布前校验变量 schema，发送前校验必填变量 |
+| 发送业务消息 | `/notice/send` | POST |
 
-## 23. 验收标准
+管理端：
 
-1. 文档明确 `mango-notice` 的目标、范围、不做范围和现状迁移策略。
-2. 文档明确 `mango-notice` 与 `mango-notice-channel-*`、`mango-infra-realtime`、`mango-infra-kv`、`mango-authorization` 的边界。
-3. 文档明确管理平台菜单和权限码规划。
-4. 文档明确后端模块结构、前端包归属、API 路径、数据表、状态枚举和 SPI。
-5. 文档明确从 `mango-biz-notification` 到 `mango-notice` 的迁移映射。
-6. 文档明确分 Sprint 实施计划，不用 MVP 替代完整范围。
-7. 文档明确异步发送、削峰、定时发送默认使用 `mango-infra-kv` Outbox，支持单机、轻量生产和集群部署。
-8. 文档包含 ADR、风险、测试策略和交付台账。
+| 菜单 | 路径 | 方法 |
+|---|---|---|
+| 消息定义 | `/notice/message-definitions`、`/notice/message-definitions/{id}` | GET/POST/PUT |
+| 消息定义版本 | `/notice/message-definitions/{id}/versions`、`/publish` | GET/POST |
+| 通知渠道 | `/notice/channels`、`/notice/channels/{id}` | GET/POST/PUT |
+| 渠道测试 | `/notice/channels/{id}/test-send` | POST |
+| 接收设置 | `/notice/receive-settings` | GET/PUT |
+| 发送记录 | `/notice/send-records`、`/notice/send-records/{id}` | GET |
+| 失败重试 | `/notice/retry-records`、`/retry`、`/ignore` | GET/POST |
+| 系统监控 | `/notice/monitor/summary`、`/notice/monitor/channels`、`/notice/monitor/queues` | GET |
 
-## 24. PMO 加载记录
+用户侧：
 
-本设计实际加载：
+| 能力 | 路径 | 方法 |
+|---|---|---|
+| 我的站内消息 | `/notice/site/my/messages` | GET |
+| 我的站内消息详情 | `/notice/site/my/messages/{id}` | GET |
+| 我的未读数 | `/notice/site/my/unread-count` | GET |
+| 标记已读 | `/notice/site/my/messages/{id}/read` | POST |
+| 批量已读 | `/notice/site/my/messages/read-batch` | POST |
+| 全部已读 | `/notice/site/my/messages/read-all` | POST |
+| 删除站内消息 | `/notice/site/my/messages/{id}/delete` | POST |
+
+发送入参核心字段：
+
+| 字段 | 说明 |
+|---|---|
+| `bizCode` | 消息编码 |
+| `bizId` | 业务对象 ID |
+| `params` | 业务参数 |
+| `recipients` | 接收人列表 |
+| `channelTypes` | 可选，本次发送渠道覆盖 |
+| `sendMode` | 立即或定时 |
+| `scheduledTime` | 定时发送时间 |
+| `idempotentKey` | 幂等键 |
+
+## 11. 模块边界
+
+| 模块 | 职责 |
+|---|---|
+| `mango-notice-api` | API 契约、Command、Query、VO、枚举 |
+| `mango-notice-core` | 消息定义、发送编排、记录、重试、接收设置、监控聚合 |
+| `mango-notice-support` | 渠道 sender SPI、模板渲染、公共支持 |
+| `mango-notice-starter` | 本地装配、Controller、模块声明 |
+| `mango-notice-starter-remote` | 远程调用适配 |
+| `mango-notice-channel-*` | 具体渠道实现 |
+| `mango-infra-realtime` | 在线投递基础设施，不持久化业务消息 |
+| `mango-infra-kv` | 缓存、幂等、限流、重试调度所需基础能力 |
+| `mango-infra-sensitive` | 输出脱敏能力 |
+
+边界要求：
+
+- `mango-infra-realtime` 不承担消息定义、发送记录、未读数和离线消息职责。
+- 渠道 sender 不访问业务表，只接收渲染后的发送命令和原始渠道配置。
+- 管理端 API 只返回 VO，不暴露 Entity。
+- 敏感字段展示脱敏，内部发送可读取原始配置。
+
+## 12. 前端设计
+
+菜单路由：
+
+| 菜单 | 路由 | 页面 |
+|---|---|---|
+| 消息定义 | `/notice/message-definition` | 消息定义列表和编辑 |
+| 通知渠道 | `/notice/channel` | 渠道配置 |
+| 接收设置 | `/notice/receive-setting` | 用户和业务维度接收控制 |
+| 发送记录 | `/notice/send-record` | 发送历史 |
+| 失败重试 | `/notice/retry` | 失败池和重试操作 |
+| 系统监控 | `/notice/monitor` | 渠道、队列、统计监控 |
+
+前端包结构：
+
+```text
+mango-ui/packages/notice/
+├── api
+├── components
+│   ├── NoticeBell
+│   ├── NoticeDetailDialog
+│   ├── channel-forms
+│   ├── template-editor
+│   └── metric-widgets
+├── realtime
+├── types
+└── views
+    ├── message-definition
+    ├── channel
+    ├── receive-setting
+    ├── send-record
+    ├── retry
+    └── monitor
+```
+
+交互要求：
+
+- 消息定义新增和编辑使用上下结构，不做单个大 JSON 输入框。
+- 参数定义使用结构化表单，支持参数名、参数说明、示例值、是否必填。
+- 渠道模板按渠道卡片展示，底层可保存 JSON。
+- 通知渠道按渠道类型展示不同表单。
+- 发送记录详情中的 JSON 内容只作为结果查看，不作为主要配置入口。
+- 右上角小铃铛保持无背景图标风格，与其他顶部图标一致。
+
+## 13. UI 交互与布局规范
+
+本节是后续前端实现的约束。页面不允许为了赶进度临时拼接、卡片套卡片、字段无分组、按钮散落或用大 JSON 输入框替代结构化表单。
+
+### 13.1 通用页面布局
+
+所有后台页面采用同一布局骨架：
+
+```text
+页面标题区
+├── 标题
+├── 必要的主操作按钮
+└── 可选的状态说明
+
+筛选区
+├── 常用筛选项
+└── 查询、重置
+
+内容区
+├── 表格 / 结构化列表 / 监控指标
+└── 分页 / 批量操作
+
+弹窗或抽屉
+├── 表单
+├── 校验反馈
+└── 取消、保存、发布等操作
+```
+
+布局要求：
+
+- 页面左、上边距必须与 Mango 后台其他标准页面一致。
+- 页面内容区域不再额外包一层大卡片；只有表格、表单块、监控指标和重复列表项可以使用局部容器。
+- 筛选区字段最多两行；字段过多时折叠高级筛选。
+- 主按钮固定在标题区右侧，表格行内只放当前行操作。
+- 弹窗宽度按内容控制，不能让字段挤压或换行错乱。
+- 表单使用清晰分组，上下结构优先；复杂配置使用步骤条、Tab 或折叠面板。
+- 字段标签统一中文，能让业务人员看懂；不展示数据库字段名。
+- 所有 JSON 内容默认只读格式化展示；配置入口必须是结构化表单。
+- 表格列过多时使用详情抽屉承载次要信息，列表保留核心识别字段和状态。
+- 空态、加载态、错误态必须明确，不允许页面空白。
+
+### 13.2 消息定义交互
+
+列表页：
+
+```text
+标题区：消息定义 + 新增消息定义
+筛选区：关键字、业务域、生命周期、同步状态、渠道类型
+表格列：消息名称、消息编码、业务域、生命周期、同步状态、开启渠道、生效版本、最后发布、更新时间、操作
+行操作：详情、编辑、发布、更多
+```
+
+列表布局参考工作流流程定义列表：
+
+```text
+左侧：可选业务域分类列表
+右侧：消息定义列表面板
+  ├── 面板标题：当前业务域名称
+  ├── 面板说明：消息保存后先形成草稿，发布后才用于线上发送
+  ├── 右上角主操作：新增消息定义
+  ├── 筛选区：关键字、生命周期、同步状态、渠道类型、查询、重置
+  ├── 表格区：核心字段 + 操作
+  └── 分页区：页码、每页条数
+```
+
+消息定义页面 ASCII 布局：
+
+```text
++----------------------------------------------------------------------------------+
+| 消息定义                                                        [新增消息定义]     |
+| 消息保存后先形成草稿，发布后才用于线上发送。                                      |
++----------------------+-----------------------------------------------------------+
+| 业务域               | 关键字 [ 消息名称/编码________________ ]  生命周期 [全部 v] |
+| + 新增分类           | 同步状态 [全部 v]  渠道类型 [全部 v]   [查询] [重置]       |
+|----------------------|-----------------------------------------------------------|
+| 全部消息             |                                                           |
+| 基础                 |  消息名称 | 消息编码 | 业务域 | 生命周期 | 同步状态 | ...  |
+| 保函        ...      |  出函成功 | guarantee.issue_success | 保函 | 启用 | 待发布 | |
+| 订单        ...      |  登录验证码 | basic.login_code | 基础 | 启用 | 已同步 |     |
+| 财务        ...      |                                                           |
+| 系统        ...      |  操作：详情 | 编辑 | 发布 | 更多                              |
+|                      |                                                           |
+|                      |                                      < 1 2 3 ... >        |
++----------------------+-----------------------------------------------------------+
+```
+
+业务域分类弹窗 ASCII 布局：
+
+```text
++--------------------------------------+
+| 新增业务域分类                       |
++--------------------------------------+
+| 分类名称 *  [ 保函________________ ]  |
+| 分类编码 *  [ guarantee___________ ]  |  创建后不可修改
+| 描述        [ ____________________ ]  |
+| 排序        [ 10__________________ ]  |
+| 状态        (o) 启用  ( ) 停用        |
++--------------------------------------+
+|                         [取消] [保存] |
++--------------------------------------+
+```
+
+消息定义编辑页 ASCII 布局：
+
+```text
++----------------------------------------------------------------------------------+
+| 编辑消息定义：出函成功通知                                      [保存草稿] [发布] |
++----------------------------------------------------------------------------------+
+| 步骤：  1 基础信息  ->  2 参数定义  ->  3 渠道配置  ->  4 预览与发布             |
++----------------------------------------------------------------------------------+
+| 基础信息                                                                         |
+| 业务域 *     [ 保函 v ]            消息编码 *  [ guarantee.issue_success ]        |
+| 消息名称 *   [ 出函成功通知______________________________ ]                       |
+| 描述         [ __________________________________________________________ ]       |
+| 生命周期     (o) 启用  ( ) 停用     允许用户关闭  [开关]                          |
++----------------------------------------------------------------------------------+
+| 底部操作：                                                        [取消] [下一步] |
++----------------------------------------------------------------------------------+
+```
+
+消息定义参数定义 ASCII 布局：
+
+```text
++----------------------------------------------------------------------------------+
+| 参数定义                                                        [添加参数]        |
++----------------------------------------------------------------------------------+
+| 参数名              | 参数说明       | 示例值          | 必填 | 操作              |
+| guaranteeNo         | 保函编号       | BH20260001      | 是   | 删除              |
+| projectName         | 项目名称       | 某某项目        | 是   | 删除              |
+| amount              | 金额           | 100000.00       | 是   | 删除              |
++----------------------------------------------------------------------------------+
+| 底部操作：                                             [上一步] [保存草稿] [下一步] |
++----------------------------------------------------------------------------------+
+```
+
+消息定义渠道配置 ASCII 布局：
+
+```text
++----------------------------------------------------------------------------------+
+| 渠道配置                                                                         |
++----------------------------------------------------------------------------------+
+| [站内信]                                                                         |
+| 启用 [开关]   通道选择 [AUTO v]                                                  |
+| 标题模板 [ 您的保函已出函成功____________________________ ]                       |
+| 内容模板 [ 保函编号：${guaranteeNo}  项目名称：${projectName}________ ]           |
+| 预览：您的保函已出函成功 / 保函编号：BH20260001                                  |
++----------------------------------------------------------------------------------+
+| [短信]                                                                           |
+| 启用 [开关]   通道选择 [AUTO v]                                                  |
+| 短信模板 [ 您的保函 ${guaranteeNo} 已出函成功___________________ ]                |
+| 第三方模板 ID [ SMS_001________ ]                                                 |
+| 变量映射                                                                         |
+| 系统参数 [ guaranteeNo v ] -> 三方变量 [ guarantee_no________ ]  [添加]           |
++----------------------------------------------------------------------------------+
+| 底部操作：                                             [上一步] [保存草稿] [下一步] |
++----------------------------------------------------------------------------------+
+```
+
+消息定义详情抽屉 ASCII 布局：
+
+```text
+                                      +---------------------------------------------+
+                                      | 消息定义详情                         [关闭] |
+                                      +---------------------------------------------+
+                                      | 基础信息                                    |
+                                      | 消息编码：guarantee.issue_success           |
+                                      | 消息名称：出函成功通知                      |
+                                      | 同步状态：待发布                            |
+                                      | 生效版本：V3                                |
+                                      +---------------------------------------------+
+                                      | 参数定义                                    |
+                                      | guaranteeNo / 保函编号 / 必填               |
+                                      | projectName / 项目名称 / 必填               |
+                                      +---------------------------------------------+
+                                      | 渠道模板                                    |
+                                      | 站内信：启用 / AUTO                         |
+                                      | 短信：启用 / AUTO / SMS_001                 |
+                                      +---------------------------------------------+
+                                      | 历史版本                                    |
+                                      | V3  2026-05-26  已发布                      |
+                                      | V2  2026-05-20  历史                        |
+                                      +---------------------------------------------+
+```
+
+同步状态展示：
+
+- `已同步`：草稿内容与当前生效版本一致。
+- `待发布`：存在已保存但未发布的修改；鼠标悬停显示变更原因，例如基础信息、参数定义、渠道模板。
+- 未发布的新消息定义生效版本显示 `未发布`，发布后显示版本号。
+
+新增和编辑采用上下结构，不使用一个大表单平铺到底。
+
+推荐交互：
+
+```text
+第一步：基础信息
+├── 业务域
+├── 消息编码
+├── 消息名称
+├── 描述
+├── 启用状态
+└── 是否允许用户关闭
+
+第二步：参数定义
+├── 参数表格
+│   ├── 参数名
+│   ├── 参数说明
+│   ├── 示例值
+│   └── 是否必填
+└── 添加参数、删除参数、排序
+
+第三步：渠道配置
+├── 站内信卡片
+├── 短信卡片
+├── 邮件卡片
+├── 微信公众号卡片
+├── 企业微信卡片
+├── 钉钉卡片
+├── 飞书卡片
+└── Webhook 卡片
+
+第四步：预览与发布
+├── 参数示例
+├── 各渠道渲染预览
+└── 保存草稿、发布版本
+```
+
+渠道卡片布局：
+
+```text
+卡片头：渠道名称 + 启用开关 + 状态标签
+主体：该渠道专属字段
+底部：预览、保存草稿
+```
+
+交互规则：
+
+- 新增消息定义时，第一步保存后才能进入参数和渠道配置。
+- 消息编码创建后不可编辑。
+- 编辑入口同时包含基础信息、参数定义和渠道配置，不再单独提供“配置渠道”操作。
+- 详情入口只读展示基础信息、当前生效版本、待发布变更、参数定义、渠道模板和历史版本。
+- 任意保存动作只保存草稿，不直接影响线上发送。
+- 参数被渠道模板引用时，删除参数必须提示影响的渠道模板。
+- 参数定义支持表格形式编辑，不把 JSON 作为默认输入。
+- 渠道模板中的变量选择必须来自参数定义，不让用户手写不存在的变量。
+- 模板编辑区域旁边提供实时预览；预览使用示例值渲染。
+- 发布前必须校验基础信息、必填参数、启用渠道模板和第三方模板 ID。
+- 发布后生成新版本，历史版本只读查看。
+- 若存在待发布变更，列表必须显示待发布；发布成功后变为已同步。
+- 更多菜单包含历史版本、撤回修改、启用/停用、删除。
+- 取消编辑时如果有未保存变更，需要二次确认。
+
+### 13.3 通知渠道交互
+
+列表页：
+
+```text
+标题区：通知渠道 + 新增通知渠道
+筛选区：渠道类型、渠道名称、供应商、启用状态、配置状态、最近发送状态
+表格列：渠道类型、渠道名称、供应商、权重、启用状态、配置状态、最近发送状态、最近发送时间、更新时间、操作
+行操作：详情、编辑、启用/停用
+```
+
+页面采用传统后台布局，不做创新式看板：
+
+```text
+标题区
+├── 标题：通知渠道
+└── 主按钮：新增通知渠道
+
+筛选区
+├── 渠道类型
+├── 供应商
+├── 启用状态
+├── 配置状态
+├── 最近发送状态
+└── 查询、重置
+
+表格区
+├── 固定高度表格
+├── 行内操作
+└── 分页
+
+详情 / 编辑抽屉
+├── 基础信息
+├── 供应商配置
+├── 发送策略
+└── 最近发送记录
+```
+
+通知渠道页面 ASCII 布局：
+
+```text
++----------------------------------------------------------------------------------+
+| 通知渠道                                                        [新增通知渠道]     |
++----------------------------------------------------------------------------------+
+| 渠道类型 [全部 v]  供应商 [全部 v]  启用状态 [全部 v]  配置状态 [全部 v]          |
+| 最近发送状态 [全部 v]                                      [查询] [重置]          |
++----------------------------------------------------------------------------------+
+| 渠道类型 | 渠道名称       | 供应商       | 权重 | 启用 | 配置状态 | 最近状态 | 操作 |
+| 短信     | 阿里云短信     | 阿里云短信   | 80   | 启用 | 已配置   | 正常     |详情 编辑 停用|
+| 短信     | 腾讯云短信     | 腾讯云短信   | 20   | 启用 | 已配置   | 异常     |详情 编辑 停用|
+| 邮件     | 默认企业邮箱   | 自定义 SMTP  | 100  | 启用 | 已配置   | 正常     |详情 编辑 停用|
++----------------------------------------------------------------------------------+
+|                                                                  < 1 2 3 ... >   |
++----------------------------------------------------------------------------------+
+```
+
+通知渠道新增/编辑抽屉 ASCII 布局：
+
+```text
+                                      +---------------------------------------------+
+                                      | 新增通知渠道                         [关闭] |
+                                      +---------------------------------------------+
+                                      | 基础信息                                    |
+                                      | 渠道类型 * [ 短信 v ]                       |
+                                      | 供应商   * [ 阿里云短信 v ]                 |
+                                      | 渠道名称 * [ 阿里云短信________________ ]   |
+                                      | 权重     * [ 80________ ]                   |
+                                      | 启用状态   [开关]                           |
+                                      +---------------------------------------------+
+                                      | 供应商配置                                  |
+                                      | AccessKey ID     [ ____________________ ]   |
+                                      | AccessKey Secret [ ******************** ]   |
+                                      | Region           [ cn-hangzhou________ ]    |
+                                      | Endpoint         [ dysmsapi.aliyuncs.com ]  |
+                                      | 短信签名         [ 芒果通知____________ ]   |
+                                      | 模板 Code        [ SMS_001____________ ]    |
+                                      +---------------------------------------------+
+                                      | 发送策略                                    |
+                                      | 超时时间      [ 5000 ] ms                   |
+                                      | 当前通道重试  [ 3 ] 次                      |
+                                      | 并发限制      [ 10 ]                        |
+                                      +---------------------------------------------+
+                                      |                         [取消] [保存]       |
+                                      +---------------------------------------------+
+```
+
+通知渠道详情抽屉 ASCII 布局：
+
+```text
+                                      +---------------------------------------------+
+                                      | 通知渠道详情                         [编辑] |
+                                      +---------------------------------------------+
+                                      | 基础信息                                    |
+                                      | 渠道类型：短信                              |
+                                      | 渠道名称：阿里云短信                        |
+                                      | 供应商：阿里云短信                          |
+                                      | 权重：80                                    |
+                                      | 启用状态：启用                              |
+                                      | 配置状态：已配置                            |
+                                      +---------------------------------------------+
+                                      | 配置摘要                                    |
+                                      | AccessKey ID：LTAI********                  |
+                                      | AccessKey Secret：******                    |
+                                      | Region：cn-hangzhou                         |
+                                      | Endpoint：dysmsapi.aliyuncs.com             |
+                                      +---------------------------------------------+
+                                      | 最近发送状态                                |
+                                      | 最近状态：正常                              |
+                                      | 最近发送时间：2026-05-26 15:20:00           |
+                                      | 最近失败原因：-                             |
+                                      +---------------------------------------------+
+                                      | 最近发送记录                                |
+                                      | 2026-05-26 15:20:00  成功  guarantee.xxx    |
+                                      | 2026-05-26 15:18:00  失败  PROVIDER_TIMEOUT |
+                                      +---------------------------------------------+
+```
+
+新增和编辑交互：
+
+```text
+基础信息
+├── 渠道类型
+├── 渠道名称
+├── 供应商
+├── 权重
+└── 启用状态
+
+渠道专属配置
+├── 短信-阿里云：AccessKey ID、AccessKey Secret、Region、Endpoint、签名、模板 Code、上行扩展码
+├── 短信-腾讯云：SecretId、SecretKey、Region、Endpoint、SmsSdkAppId、签名、模板 ID、扩展码、SessionContext
+├── 邮件-自定义 SMTP：SMTP 主机、端口、安全协议、账号、密码、发件人邮箱、发件人名称
+├── 微信公众号：AppId、Secret、Token、EncodingAESKey
+├── 企业微信：CorpId、AgentId、Secret、Webhook
+├── 钉钉：AgentId、AppKey、AppSecret、Webhook
+├── 飞书：AppId、AppSecret、Webhook
+└── Webhook：URL、请求方法、鉴权方式、Header 配置
+
+通用发送配置
+├── 限流配置
+├── 超时配置
+├── 当前通道重试次数，第一版固定为 3 次
+└── 并发限制
+```
+
+新增过程：
+
+1. 点击 `新增通知渠道`。
+2. 选择渠道类型。
+3. 选择供应商。
+4. 填写渠道名称和权重。
+5. 填写该供应商对应的结构化配置表单。
+6. 设置启用状态。
+7. 保存。
+8. 保存成功后刷新列表；启用且配置完整的通道可参与 AUTO 权重轮换。
+
+编辑过程：
+
+1. 点击列表行 `编辑`。
+2. 打开右侧抽屉或标准弹窗。
+3. 可修改渠道名称、权重、启用状态、供应商配置、限流、超时、并发限制。
+4. 不建议修改渠道类型和供应商；需要更换供应商时新增通道。
+5. 敏感字段不回显明文；未填写新值时保存应保留原值。
+6. 保存后立即影响后续发送，历史发送记录保留当时快照。
+
+详情过程：
+
+1. 点击列表行 `详情`。
+2. 右侧抽屉只读展示基础信息、供应商配置摘要、发送策略、最近发送状态、最近失败原因和最近发送记录。
+3. 敏感字段统一脱敏展示。
+4. 详情内不提供编辑输入框，只提供跳转编辑操作。
+
+启用和停用：
+
+1. 启用后，配置完整的通道可参与 AUTO 权重轮换，也可被消息定义指定。
+2. 停用后，通道不参与 AUTO。
+3. 若消息定义指定了该通道，停用前必须提示影响范围。
+4. 指定通道已停用时，发送失败码为 `CHANNEL_DISABLED`。
+
+AUTO 发送过程：
+
+```text
+消息定义启用某渠道类型
+↓
+若消息定义指定具体通道，使用指定通道
+↓
+若未指定，进入 AUTO
+↓
+查询该渠道类型下启用且配置完整的通道
+↓
+按权重轮换选择一个通道
+↓
+当前通道发送失败后最多尝试 3 次
+↓
+仍失败则切换下一个可用通道
+↓
+全部通道失败后进入失败重试
+```
+
+交互规则：
+
+- 选择渠道类型后动态切换表单，不显示无关字段。
+- 选择供应商后动态切换供应商配置字段。
+- 敏感字段编辑时可输入新值；详情和列表展示必须脱敏。
+- 已保存的敏感字段不回显明文，未修改时保存应保留原值。
+- 权重必须大于 0。
+- 没有启用且配置完整的通道时，发送失败码为 `CHANNEL_UNAVAILABLE`。
+- 限流、超时、失败重试使用数字输入、选择器和开关，不让用户手写 JSON。
+
+### 13.4 接收设置交互
+
+页面结构：
+
+```text
+标题区：接收设置
+分段控制：全局设置 / 业务域设置 / 单消息设置 / 用户设置
+内容区：对应设置表格或表单
+```
+
+全局设置：
+
+- 展示短信、邮件、公众号、企业微信、钉钉、飞书等渠道开关。
+- 修改后保存全局默认策略。
+
+业务域设置：
+
+- 筛选业务域。
+- 表格展示业务域、渠道、默认接收状态、更新时间。
+- 支持批量开启和关闭。
+
+单消息设置：
+
+- 选择业务域和消息定义。
+- 展示该消息支持的渠道。
+- 只能配置消息定义允许用户关闭的渠道。
+
+用户设置：
+
+- 管理端可按用户查询接收设置。
+- 用户端只展示自己可配置的渠道和消息。
+
+交互规则：
+
+- 修改设置必须展示影响范围，例如“将影响保函域所有短信通知”。
+- 关闭渠道时如存在强制通知，需要提示该消息不可关闭。
+- 保存后发送流程立即按新设置判断。
+
+### 13.5 发送记录交互
+
+列表页：
+
+```text
+标题区：发送记录
+筛选区：消息编码、业务单号、渠道、接收人、发送状态、时间范围
+表格列：消息名称、业务单号、渠道、接收人、发送状态、发送时间、耗时、操作
+行操作：详情、重试
+```
+
+详情抽屉：
+
+```text
+基础信息
+├── 消息编码
+├── 消息名称
+├── 业务单号
+├── 接收人
+├── 渠道
+└── 状态
+
+渲染内容
+├── 标题
+└── 内容
+
+发送参数
+└── 格式化只读 JSON，敏感字段脱敏
+
+渠道响应
+└── 格式化只读 JSON，敏感字段脱敏
+
+失败信息
+├── 失败原因
+├── 错误码
+└── 耗时
+
+重试历史
+└── 重试时间、结果、失败原因
+```
+
+交互规则：
+
+- 列表不展示大段内容，避免表格错乱。
+- 详情使用抽屉而不是超长弹窗。
+- 失败记录提供进入失败重试页面的链接。
+- 请求、响应、快照只读展示，不允许在发送记录中编辑。
+
+### 13.6 失败重试交互
+
+列表页：
+
+```text
+标题区：失败重试 + 批量重试 + 批量忽略
+筛选区：消息编码、渠道、失败原因、失败次数、状态、最后失败时间
+表格列：消息名称、渠道、失败原因、失败次数、下次重试时间、最后失败时间、状态、操作
+行操作：重试、忽略、详情
+```
+
+详情抽屉：
+
+- 展示关联发送记录。
+- 展示失败原因、错误码、渠道响应。
+- 展示每次重试时间、结果和操作人。
+
+交互规则：
+
+- 批量重试前必须二次确认。
+- 忽略失败必须填写原因。
+- 达到上限的记录允许人工重试或忽略。
+- 正在重试中的记录禁用重复操作。
+
+### 13.7 系统监控交互
+
+页面结构：
+
+```text
+标题区：系统监控 + 时间范围选择
+指标区：发送量、成功率、失败率、待发送、失败数、平均耗时
+渠道状态区：各渠道健康状态
+队列监控区：堆积、消费速度、最老待处理时间
+统计分析区：渠道占比、业务域占比、趋势图
+异常列表区：最近失败和异常渠道
+```
+
+交互规则：
+
+- 监控页面以扫描为主，减少表单输入。
+- 指标卡片只展示关键数字，不堆长文案。
+- 异常状态必须有明确颜色和可点击入口。
+- 点击失败数量跳转到失败重试并带筛选条件。
+- 点击渠道异常跳转到通知渠道详情。
+
+### 13.8 用户站内消息入口交互
+
+右上角小铃铛：
+
+- 使用无背景铃铛图标，与顶部其他图标同风格。
+- 未读数使用角标。
+- 点击后展示最近消息列表。
+- 列表项展示标题、业务类型、时间和未读状态。
+- 点击消息打开详情。
+- 提供“全部已读”和“查看全部”入口。
+
+用户站内消息列表：
+
+- 筛选未读、业务域、消息类型、时间。
+- 支持详情、单条已读、批量已读、全部已读、删除。
+- 用户只能操作自己的消息。
+
+## 14. 权限设计
+
+| 菜单 | 权限码 |
+|---|---|
+| 消息定义 | `notice:message-definition:view/create/edit/publish/enable/delete/test` |
+| 通知渠道 | `notice:channel:view/create/edit/enable/test` |
+| 接收设置 | `notice:receive-setting:view/edit` |
+| 发送记录 | `notice:send-record:view/export` |
+| 失败重试 | `notice:retry:view/retry/ignore` |
+| 系统监控 | `notice:monitor:view` |
+| 用户站内消息 | `notice:site:view/read/delete` |
+
+菜单必须由后端入库菜单提供，前端只做页面映射，不做临时逃逸菜单。
+
+## 15. 验收标准
+
+文档审阅验收：
+
+1. 菜单规划只包含消息定义、通知渠道、接收设置、发送记录、失败重试、系统监控。
+2. 明确通知中心定位为统一消息编排中心。
+3. 明确站内信、短信、邮件、微信等是渠道类型，不是一级菜单。
+4. 明确消息定义是核心入口。
+5. 明确接收设置控制用户是否接收某类消息。
+6. 明确发送记录和失败重试独立管理。
+7. 明确系统监控负责渠道、队列和统计。
+8. 明确接口、数据、前端页面、权限和测试范围。
+9. 明确每个菜单的交互过程、页面结构、表单分组、详情查看、空态、错误态和操作反馈。
+10. 明确 UI 布局必须清晰、对齐、结构化，不允许乱布局、卡片套卡片、字段无分组或用大 JSON 输入框替代表单。
+
+实施验收：
+
+1. 后端菜单入库和前端页面映射使用新版菜单。
+2. 旧菜单名称不再展示给用户。
+3. 消息定义可完成基础信息、参数定义和渠道模板配置。
+4. 通知渠道表单按渠道类型结构化展示。
+5. 接收设置可按全局、业务域、单消息维度控制渠道。
+6. 发送记录可查看渲染内容、发送参数、渠道响应、失败原因和耗时。
+7. 失败重试支持自动重试、手动重试、批量重试、忽略失败。
+8. 系统监控可展示渠道状态、待发送数量、失败数量、发送量、成功率、失败率。
+9. 右上角小铃铛可展示用户未读站内消息。
+10. 所有页面左、上边距与 Mango 后台标准页面一致。
+11. 所有页面有清晰标题区、筛选区、内容区和操作区。
+12. 所有新增和编辑表单按业务含义分组，不出现字段无序堆叠。
+13. 所有复杂详情使用抽屉或分组详情，不把大段 JSON 直接塞进表格。
+14. 所有页面具备加载态、空态、错误态和保存反馈。
+15. 后端、前端、E2E 和交付台账验证通过。
+
+## 16. 测试范围
+
+后端：
+
+- 消息定义版本发布。
+- 参数校验。
+- 渠道启停。
+- 接收设置过滤。
+- 模板渲染。
+- 发送记录状态机。
+- 失败重试状态机。
+- 渠道配置脱敏输出和内部原始配置读取。
+- 系统监控聚合。
+
+前端：
+
+- 六个后台菜单可访问。
+- 消息定义新增、编辑、发布。
+- 参数定义结构化编辑。
+- 渠道卡片配置。
+- 通知渠道不同类型表单。
+- 接收设置保存。
+- 发送记录详情。
+- 失败重试操作。
+- 系统监控展示。
+- 小铃铛未读消息入口。
+
+E2E：
+
+- 管理员登录后能看到新版菜单。
+- 新增消息定义并配置站内信和短信模板。
+- 配置短信渠道。
+- 发送一条业务消息。
+- 查看发送记录。
+- 失败记录可进入重试池。
+- 用户侧能看到站内消息和未读数。
+
+## 17. PMO 加载记录
+
+本次文档重写已加载：
 
 - `mango-pmo/rules/00-dev-flow.md`
 - `mango-pmo/rules/01-delivery-contract.md`
-- `mango-pmo/agents/02-tech-lead-agent.md`
+- `mango-pmo/agents/01-pm-agent.md`
+- `mango-pmo/rules/product/01-prd-template.md`
+- `mango-pmo/rules/product/02-sprint.md`
 - `mango-pmo/rules/backend/10-dev-flow.md`
 - `mango-pmo/rules/backend/01-code.md`
 - `mango-pmo/rules/backend/02-naming.md`
@@ -1165,6 +1448,3 @@ Accepted
 - `mango-pmo/rules/frontend/01-vue-code.md`
 - `mango-pmo/rules/frontend/06-monorepo-architecture.md`
 - `mango-pmo/rules/frontend/04-test.md`
-- `mango-pmo/agents/01-pm-agent.md`
-- `mango-pmo/rules/product/01-prd-template.md`
-- `mango-pmo/rules/product/02-sprint.md`

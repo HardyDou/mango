@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.mango</groupId>
+        <artifactId>mango</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>mango-notice</artifactId>
+    <packaging>pom</packaging>
+    <name>Mango Notice</name>
+    <description>Mango Notice Module - multi-channel notice center</description>
+    <modules>
+        <module>mango-notice-api</module>
+        <module>mango-notice-support</module>
+        <module>mango-notice-core</module>
+        <module>mango-notice-channel-site</module>
+        <module>mango-notice-channel-sms</module>
+        <module>mango-notice-channel-email</module>
+        <module>mango-notice-channel-wechat-official</module>
+        <module>mango-notice-channel-wecom</module>
+        <module>mango-notice-channel-dingtalk</module>
+        <module>mango-notice-starter</module>
+        <module>mango-notice-starter-remote</module>
+    </modules>
+</project>

@@ -35,6 +35,9 @@ importers:
       '@mango/file':
         specifier: workspace:*
         version: link:../../packages/file
+      '@mango/notice':
+        specifier: workspace:*
+        version: link:../../packages/notice
       '@mango/numgen':
         specifier: workspace:*
         version: link:../../packages/numgen
@@ -436,6 +439,9 @@ importers:
       '@mango/file':
         specifier: workspace:*
         version: link:../file
+      '@mango/notice':
+        specifier: workspace:*
+        version: link:../notice
       '@mango/numgen':
         specifier: workspace:*
         version: link:../numgen
@@ -592,6 +598,21 @@ importers:
         version: link:../api-schema
 
   packages/file:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/common':
+        specifier: workspace:*
+        version: link:../common
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+
+  packages/notice:
     dependencies:
       '@element-plus/icons-vue':
         specifier: ^2.0.10

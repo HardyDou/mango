@@ -45,6 +45,8 @@
         <module>mango-infra-module</module>
         <!-- IP location resolving (ip2region/noop abstraction) -->
         <module>mango-infra-ip-location</module>
+        <!-- Sensitive data masking and sensitive words integration -->
+        <module>mango-infra-sensitive</module>
         <!-- Log (Logback configuration, multi-env support, audit annotations) -->
         <module>mango-infra-log</module>
         <!-- File processing (local document/image/archive utilities, no external middleware) -->
