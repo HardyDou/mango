@@ -15,6 +15,33 @@
 
 ## 启动
 
+推荐从仓库根目录使用统一环境文件启动：
+
+```bash
+scripts/dev-env.sh .env.development backend
+```
+
+前后端一起启动：
+
+```bash
+scripts/dev-env.sh .env.development all
+```
+
+`.env.development` 统一配置本地端口和数据库：
+
+```text
+MANGO_BACKEND_PORT=5555
+MANGO_DB_URL=jdbc:mysql://127.0.0.1:3306/mango?...
+MANGO_DB_USERNAME=root
+MANGO_DB_PASSWORD=
+VITE_PORT=7777
+VITE_ADMIN_PROXY_PATH=http://127.0.0.1:5555
+```
+
+后端 `application.yml` 只提供默认值，实际联调优先使用 `.env.development`。
+
+也可以直接启动 Maven：
+
 ```bash
 mvn -pl :mango-monolith-app -am spring-boot:run
 ```

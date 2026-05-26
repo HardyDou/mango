@@ -1,12 +1,10 @@
 <template>
   <div class="notice-business-config-page">
     <el-card v-if="pageMode === 'LIST'" shadow="never" class="business-main page-card">
-      <template #header>
-        <div class="notice-page-header">
-          <span>消息配置</span>
-          <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
-        </div>
-      </template>
+      <div class="list-page-header">
+        <h1>消息配置</h1>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
+      </div>
       <div class="definition-layout">
         <aside class="domain-panel">
           <div class="domain-panel-head">
@@ -1303,12 +1301,24 @@ onMounted(() => {
   min-height: calc(100vh - 136px);
 }
 
-.notice-page-header,
+.list-page-header,
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.list-page-header {
+  margin-bottom: 16px;
+}
+
+.list-page-header h1 {
+  margin: 0;
+  color: var(--el-text-color-primary);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 32px;
 }
 
 .page-header {
