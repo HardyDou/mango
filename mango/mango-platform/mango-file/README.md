@@ -315,7 +315,7 @@ mango-file -> mango-document 生成预览派生文件
 
 文件中心页面按钮级权限：
 
-- 文件管理：`file:files:upload`、`file:files:query`、`file:files:download`、`file:files:archive`。
+- 文件管理：`file:files:upload`、`file:files:query`、`file:files:download`、`file:files:archive`、`file:files:delete`。
 - 目录管理：`file:directories:list`、`file:directories:add`、`file:directories:edit`、`file:directories:delete`。
 - 存储配置：`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:test`、`file:storage-configs:active`。
 - 文件配置：`file:settings:query`、`file:settings:edit`。

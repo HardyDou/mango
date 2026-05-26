@@ -19,6 +19,8 @@ mvnw.cmd
 # ============ Gradle ============
 .gradle/
 **/build/
+!mango/mango-platform/mango-file-preview/mango-file-preview-engine/src/main/resources/static/pdfjs/build/
+!mango/mango-platform/mango-file-preview/mango-file-preview-engine/src/main/resources/static/pdfjs/build/*.mjs
 
 # ============ Node / Frontend ============
 **/node_modules/
@@ -93,6 +95,7 @@ temp/
 .playwright-cli/
 
 # ============ Runtime Upload Data ============
+.runtime/
 **/data/files/
 **/server/src/main/file/
 

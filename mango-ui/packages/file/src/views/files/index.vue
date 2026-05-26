@@ -91,6 +91,14 @@
             button-text="上传文件"
             @success="handleUploadSuccess"
           />
+          <el-button
+            v-auth="'file:files:delete'"
+            type="danger"
+            :disabled="!selectedRows.length"
+            @click="handleBatchDelete"
+          >
+            批量删除
+          </el-button>
         </div>
       </div>
 
@@ -98,7 +106,14 @@
         v-loading="loading"
         :data="tableData"
         stripe
+        row-key="id"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column
+          type="selection"
+          width="48"
+          :selectable="isSelectableFile"
+        />
         <el-table-column
           prop="fileName"
           label="文件名"
@@ -198,7 +213,7 @@
         />
         <el-table-column
           label="操作"
-          width="190"
+          width="230"
           fixed="right"
         >
           <template #default="{ row }">
@@ -218,6 +233,16 @@
             >
               归档
             </el-button>
+            <el-button
+              v-auth="'file:files:delete'"
+              v-if="row.archived !== 1"
+              link
+              type="danger"
+              size="small"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -232,14 +257,55 @@
 
     <el-dialog
       v-model="previewVisible"
-      title="文件预览"
+      :title="previewDialogTitle"
       width="840px"
+      class="file-preview-dialog"
     >
+      <template #header>
+        <div class="preview-dialog-header">
+          <span class="preview-dialog-title">{{ previewDialogTitle }}</span>
+          <div class="preview-dialog-actions">
+            <el-tooltip content="新窗口预览" placement="bottom">
+              <el-button
+                text
+                circle
+                :icon="Position"
+                :disabled="!previewActions.canOpenInNewWindow"
+                aria-label="新窗口预览"
+                @click="handleOpenPreviewWindow"
+              />
+            </el-tooltip>
+            <el-tooltip content="下载" placement="bottom">
+              <el-button
+                v-auth="'file:files:download'"
+                text
+                circle
+                :icon="Download"
+                :disabled="!previewActions.canDownload"
+                aria-label="下载"
+                @click="handlePreviewDownload"
+              />
+            </el-tooltip>
+            <el-tooltip content="关闭" placement="bottom">
+              <el-button
+                text
+                circle
+                :icon="Close"
+                aria-label="关闭"
+                @click="previewVisible = false"
+              />
+            </el-tooltip>
+          </div>
+        </div>
+      </template>
       <FilePreviewPanel
+        ref="previewPanelRef"
         :file-id="preview?.id"
         :preview="preview"
         :preview-provider-url="settings.previewProviderUrl"
         :preview-external-extensions="settings.previewExternalExtensions"
+        :show-actions="false"
+        @actions-change="handlePreviewActionsChange"
       />
     </el-dialog>
 
@@ -268,6 +334,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Close, Download, Position } from '@element-plus/icons-vue';
 import { DictSelect, DictTag, Pagination } from '@mango/common';
 import { downloadFileRecord, fileApi, type FilePreview, type FileQuery, type FileRecord } from '../../api/file';
 import { fileDirectoryApi, rootDirectory, type FileDirectory } from '../../api/fileDirectory';
@@ -280,9 +347,15 @@ const directoryLoading = ref(false);
 const directorySaving = ref(false);
 const tableData = ref<FileRecord[]>([]);
 const total = ref(0);
+const selectedRows = ref<FileRecord[]>([]);
 const previewVisible = ref(false);
 const directoryDialogVisible = ref(false);
 const preview = ref<FilePreview | null>(null);
+const previewPanelRef = ref<InstanceType<typeof FilePreviewPanel>>();
+const previewActions = reactive({
+  canDownload: false,
+  canOpenInNewWindow: false,
+});
 const settings = reactive<FileSettings>({ ...defaultFileSettings });
 const directoryTree = ref<FileDirectory[]>([{ ...rootDirectory }]);
 const selectedDirectoryId = ref('0');
@@ -308,6 +381,7 @@ const currentDirectoryName = computed(() => {
 });
 const uploadSize = computed(() => `${Math.floor(settings.maxSize / 1024 / 1024)}MB`);
 const uploadFormats = computed(() => settings.allowedExtensions.length ? settings.allowedExtensions : undefined);
+const previewDialogTitle = computed(() => preview.value?.fileName || '文件预览');
 
 async function loadData() {
   loading.value = true;
@@ -315,6 +389,7 @@ async function loadData() {
     const result = await fileApi.page(query);
     tableData.value = result.list;
     total.value = result.total;
+    selectedRows.value = [];
   } finally {
     loading.value = false;
   }
@@ -357,6 +432,14 @@ function handleReset() {
 function handleUploadSuccess() {
   ElMessage.success('上传成功');
   loadData();
+}
+
+function handleSelectionChange(rows: FileRecord[]) {
+  selectedRows.value = rows;
+}
+
+function isSelectableFile(row: FileRecord) {
+  return row.archived !== 1;
 }
 
 function handleDirectoryClick(data: FileDirectory) {
@@ -441,11 +524,26 @@ async function handleDeleteDirectory() {
 
 async function handlePreview(row: FileRecord) {
   preview.value = await fileApi.preview(row.id);
+  previewActions.canDownload = Boolean(preview.value?.id);
+  previewActions.canOpenInNewWindow = false;
   previewVisible.value = true;
 }
 
 async function handleDownload(row: FileRecord) {
   await downloadFileRecord(row);
+}
+
+function handlePreviewActionsChange(value: { canDownload: boolean; canOpenInNewWindow: boolean }) {
+  previewActions.canDownload = value.canDownload;
+  previewActions.canOpenInNewWindow = value.canOpenInNewWindow;
+}
+
+function handlePreviewDownload() {
+  previewPanelRef.value?.openDownload();
+}
+
+function handleOpenPreviewWindow() {
+  previewPanelRef.value?.openPreviewInNewWindow();
 }
 
 function handleArchive(row: FileRecord) {
@@ -458,6 +556,30 @@ function handleArchive(row: FileRecord) {
     ElMessage.success('归档成功');
     loadData();
   }).catch(() => {});
+}
+
+async function handleDelete(row: FileRecord) {
+  await ElMessageBox.confirm(`确认删除文件“${row.fileName}”？删除后将不再出现在文件列表中。`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  });
+  await fileApi.delete([row.id]);
+  ElMessage.success('删除成功');
+  await loadData();
+}
+
+async function handleBatchDelete() {
+  const ids = selectedRows.value.map(row => row.id);
+  if (!ids.length) return;
+  await ElMessageBox.confirm(`确认删除选中的 ${ids.length} 个文件？删除后将不再出现在文件列表中。`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  });
+  await fileApi.delete(ids);
+  ElMessage.success('批量删除成功');
+  await loadData();
 }
 
 function accessLevelType(value?: string) {
@@ -578,6 +700,39 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--el-font-family);
+}
+
+.preview-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.preview-dialog-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.preview-dialog-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+:deep(.file-preview-dialog .el-dialog__headerbtn) {
+  display: none;
+}
+
+:deep(.file-preview-dialog .el-dialog__header) {
+  padding-right: var(--el-dialog-padding-primary);
 }
 
 @media (max-width: 960px) {

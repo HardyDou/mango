@@ -94,6 +94,17 @@ public class FilePreviewAutoConfiguration {
         return registration;
     }
 
+    @Bean
+    @ConditionalOnMissingBean(FilePreviewStandaloneUiBlockFilter.class)
+    public FilterRegistrationBean<FilePreviewStandaloneUiBlockFilter> filePreviewStandaloneUiBlockFilter(
+            FilePreviewProperties properties) {
+        FilterRegistrationBean<FilePreviewStandaloneUiBlockFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new FilePreviewStandaloneUiBlockFilter(properties));
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
+        registration.addUrlPatterns("/*");
+        return registration;
+    }
+
     private static class MemoryPreviewTokenStore implements ITokenStore {
 
         private final Clock clock;

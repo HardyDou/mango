@@ -22,6 +22,7 @@ public class FilePreviewFrameOptionsFilter extends OncePerRequestFilter {
             "/onlinePreview",
             "/picturesPreview",
             "/getCorsFile",
+            "/compressed-file",
             "/_decompression",
             "/pdfjs/",
             "/js/",

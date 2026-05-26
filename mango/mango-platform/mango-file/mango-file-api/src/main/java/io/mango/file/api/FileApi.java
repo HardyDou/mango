@@ -4,6 +4,7 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.file.api.command.FileArchiveCommand;
+import io.mango.file.api.command.FileDeleteCommand;
 import io.mango.file.api.command.SaveFileCommand;
 import io.mango.file.api.query.FileRecordPageQuery;
 import io.mango.file.api.vo.FileDownloadVO;
@@ -77,6 +78,11 @@ public interface FileApi {
 
     /** 归档文件记录。 */
     R<Boolean> archive(FileArchiveCommand command);
+
+    /** 删除文件记录。 */
+    default R<Boolean> delete(FileDeleteCommand command) {
+        throw new UnsupportedOperationException("当前文件 API 实现不支持删除文件");
+    }
 
     private Path writeToDirectory(FileDownloadVO download, Path directory) {
         if (download == null || download.inputStream() == null) {

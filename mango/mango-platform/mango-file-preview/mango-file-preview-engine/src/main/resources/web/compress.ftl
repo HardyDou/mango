@@ -31,7 +31,7 @@
             --radius-xl: 28px;
             --radius-lg: 20px;
             --radius-md: 14px;
-            --sidebar-width: 320px;
+            --sidebar-width: clamp(240px, 28vw, 320px);
             --sidebar-collapsed-width: 68px;
         }
 
@@ -65,10 +65,11 @@
 
         .workspace {
             display: grid;
-            grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+            grid-template-columns: minmax(240px, var(--sidebar-width)) minmax(0, 1fr);
             gap: 0;
             flex: 1;
             min-height: 100vh;
+            min-width: 0;
             border: 1px solid var(--line);
             border-radius: 0;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 247, 251, 0.98));
@@ -84,6 +85,7 @@
         .panel {
             display: flex;
             flex-direction: column;
+            min-width: 0;
             min-height: 0;
             border: 0;
             border-radius: 0;
@@ -94,6 +96,7 @@
         }
 
         .tree-panel {
+            min-width: 0;
             border-right: 1px solid var(--line);
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(248, 250, 252, 0.92));
         }
@@ -253,6 +256,7 @@
         .tree-shell {
             flex: 1;
             min-height: 240px;
+            min-width: 0;
             padding: 10px 8px;
             border: 1px solid var(--line);
             border-radius: var(--radius-lg);
@@ -286,6 +290,10 @@
 
         .hidden {
             display: none !important;
+        }
+
+        .preview-panel.is-compact .panel-header {
+            display: none;
         }
 
         .spinner {
@@ -413,6 +421,7 @@
         #treeDemo {
             margin-top: 0;
             width: 100%;
+            min-width: 0;
             color: var(--text);
         }
 
@@ -545,7 +554,7 @@
             }
         }
 
-        @media (max-width: 1080px) {
+        @media (max-width: 720px) {
             .workspace {
                 grid-template-columns: 1fr;
             }
@@ -582,9 +591,7 @@
             .preview-frame {
                 min-height: 460px;
             }
-        }
 
-        @media (max-width: 720px) {
             .compress-shell {
                 padding: 0;
             }
@@ -620,7 +627,7 @@
         <aside class="panel tree-panel">
             <div class="panel-header">
                 <div class="tree-header-main">
-                    <h2 class="panel-title">压缩包目录</h2>
+                    <h2 class="panel-title">目录</h2>
                 </div>
                 <div class="tree-header-actions">
                     <span id="treeStatus" class="status-pill is-loading">目录加载中</span>
@@ -664,7 +671,7 @@
             <div class="panel-header">
                 <div>
                     <div class="preview-title-row">
-                        <h2 class="panel-title">kkFileView</h2>
+                        <h2 class="panel-title">FileView</h2>
                         <p id="previewFile" class="preview-file">未选择文件</p>
                     </div>
                 </div>
@@ -736,6 +743,7 @@
     var previewFrameWrapEl = document.getElementById("previewFrameWrap");
     var previewFrameEl = document.getElementById("previewFrame");
     var previewLoadingEl = document.getElementById("previewLoading");
+    var previewPanelEl = document.querySelector(".preview-panel");
 
     function isNotEmpty(value) {
         return value !== null && value !== undefined && value !== "" && value !== 0 && !(value instanceof Array && value.length === 0) && !isNaN(value);
@@ -807,6 +815,10 @@
             return "";
         }
         return name.substring(name.lastIndexOf(".") + 1).toLowerCase();
+    }
+
+    function isPdfFile(name) {
+        return getFileExtension(name) === "pdf";
     }
 
     function getFileTypeMeta(name) {
@@ -888,7 +900,7 @@
 
     function buildPreviewUrl(treeNode) {
         var baseUrl = gatewayBaseUrl();
-        var path = baseUrl + treeNode.id + "?kkCompressfileKey=" + '${fileTree}' + "&kkCompressfilepath=" + encodeURIComponent(treeNode.id) + "&fullfilename=" + encodeURIComponent(treeNode.name);
+        var path = baseUrl + "compressed-file?kkCompressfileKey=" + encodeURIComponent('${fileTree}') + "&kkCompressfilepath=" + encodeURIComponent(treeNode.id) + "&fullfilename=" + encodeURIComponent(treeNode.name);
         var previewUrl = baseUrl + "onlinePreview?url=" + encodeURIComponent(Base64.encode(path));
         if (isNotEmpty(keyword)) {
             previewUrl += "&watermarkTxt=" + encodeURIComponent(keyword);
@@ -898,6 +910,7 @@
     }
 
     function showPreviewPlaceholder() {
+        previewPanelEl.classList.remove("is-compact");
         previewPlaceholderEl.classList.remove("hidden");
         previewFrameWrapEl.classList.add("hidden");
         previewLoadingEl.classList.add("hidden");
@@ -908,6 +921,7 @@
     }
 
     function loadPreview(treeNode) {
+        previewPanelEl.classList.toggle("is-compact", !isPdfFile(treeNode.name));
         previewPlaceholderEl.classList.add("hidden");
         previewFrameWrapEl.classList.remove("hidden");
         previewLoadingEl.classList.remove("hidden");

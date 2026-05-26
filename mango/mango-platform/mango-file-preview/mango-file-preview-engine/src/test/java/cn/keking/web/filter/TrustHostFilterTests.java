@@ -4,6 +4,9 @@ import cn.keking.config.ConfigConstants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class TrustHostFilterTests {
 
     private final TrustHostFilter trustHostFilter = new TrustHostFilter();
@@ -19,9 +22,9 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*");
         ConfigConstants.setNotTrustHostValue("192.168.*");
 
-        assert trustHostFilter.isNotTrustHost("192.168.1.10");
-        assert !trustHostFilter.isNotTrustHost("8.8.8.8");
-        assert !trustHostFilter.isNotTrustHost("192.168.evil.com");
+        assertTrue(trustHostFilter.isNotTrustHost("192.168.1.10"));
+        assertFalse(trustHostFilter.isNotTrustHost("8.8.8.8"));
+        assertFalse(trustHostFilter.isNotTrustHost("192.168.evil.com"));
     }
 
     @Test
@@ -29,10 +32,10 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*");
         ConfigConstants.setNotTrustHostValue("10.0.0.0/8");
 
-        assert trustHostFilter.isNotTrustHost("10.1.2.3");
-        assert !trustHostFilter.isNotTrustHost("11.1.2.3");
+        assertTrue(trustHostFilter.isNotTrustHost("10.1.2.3"));
+        assertFalse(trustHostFilter.isNotTrustHost("11.1.2.3"));
         // Ensure hostnames are not matched by CIDR-based not-trust rules (no DNS resolution)
-        assert !trustHostFilter.isNotTrustHost("localhost");
+        assertFalse(trustHostFilter.isNotTrustHost("localhost"));
     }
 
     @Test
@@ -40,8 +43,8 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*");
         ConfigConstants.setNotTrustHostValue("200.0.0.0/8");
 
-        assert trustHostFilter.isNotTrustHost("200.1.2.3");
-        assert !trustHostFilter.isNotTrustHost("199.1.2.3");
+        assertTrue(trustHostFilter.isNotTrustHost("200.1.2.3"));
+        assertFalse(trustHostFilter.isNotTrustHost("199.1.2.3"));
     }
 
     @Test
@@ -49,8 +52,8 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*");
         ConfigConstants.setNotTrustHostValue("255.255.255.255/32");
 
-        assert trustHostFilter.isNotTrustHost("255.255.255.255");
-        assert !trustHostFilter.isNotTrustHost("255.255.255.254");
+        assertTrue(trustHostFilter.isNotTrustHost("255.255.255.255"));
+        assertFalse(trustHostFilter.isNotTrustHost("255.255.255.254"));
     }
 
     @Test
@@ -58,8 +61,8 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*");
         ConfigConstants.setNotTrustHostValue("default");
 
-        assert trustHostFilter.isNotTrustHost(null);
-        assert trustHostFilter.isNotTrustHost(" ");
+        assertTrue(trustHostFilter.isNotTrustHost(null));
+        assertTrue(trustHostFilter.isNotTrustHost(" "));
     }
 
     @Test
@@ -67,8 +70,8 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*.trusted.com");
         ConfigConstants.setNotTrustHostValue("default");
 
-        assert !trustHostFilter.isNotTrustHost("api.trusted.com");
-        assert trustHostFilter.isNotTrustHost("api.evil.com");
+        assertFalse(trustHostFilter.isNotTrustHost("api.trusted.com"));
+        assertTrue(trustHostFilter.isNotTrustHost("api.evil.com"));
     }
 
     @Test
@@ -76,9 +79,9 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("*");
         ConfigConstants.setNotTrustHostValue("127.0.0.1,10.*");
 
-        assert trustHostFilter.isNotTrustHost("127.0.0.1");
-        assert trustHostFilter.isNotTrustHost("10.1.2.3");
-        assert !trustHostFilter.isNotTrustHost("8.8.8.8");
+        assertTrue(trustHostFilter.isNotTrustHost("127.0.0.1"));
+        assertTrue(trustHostFilter.isNotTrustHost("10.1.2.3"));
+        assertFalse(trustHostFilter.isNotTrustHost("8.8.8.8"));
     }
 
     @Test
@@ -86,8 +89,8 @@ public class TrustHostFilterTests {
         ConfigConstants.setTrustHostValue("internal.example.com");
         ConfigConstants.setNotTrustHostValue("127.0.0.1");
 
-        assert !trustHostFilter.isNotTrustHost("internal.example.com");
-        assert trustHostFilter.isNotTrustHost("8.8.8.8");
+        assertFalse(trustHostFilter.isNotTrustHost("internal.example.com"));
+        assertTrue(trustHostFilter.isNotTrustHost("8.8.8.8"));
     }
 
     @Test
@@ -97,13 +100,33 @@ public class TrustHostFilterTests {
                 + "&kkCompressfilepath=mango-preview-e2e.zip_%2Fmango-preview-zip-entry.txt"
                 + "&fullfilename=mango-preview-zip-entry.txt";
 
-        assert trustHostFilter.isInternalCompressEntryUrl(url);
+        assertTrue(trustHostFilter.isInternalCompressEntryUrl(url));
+    }
+
+    @Test
+    void shouldAllowInternalCompressedFileEndpointUrl() {
+        String url = "http://127.0.0.1:5173/api/compressed-file"
+                + "?kkCompressfileKey=mango-preview-e2e.zip_"
+                + "&kkCompressfilepath=mango-preview-e2e.zip_%2Fsample.pdf"
+                + "&fullfilename=sample.pdf";
+
+        assertTrue(trustHostFilter.isInternalCompressEntryUrl(url));
+    }
+
+    @Test
+    void shouldAllowInternalCompressedFileEndpointUrlWithEncodedChineseZipName() {
+        String url = "http://127.0.0.1:5581/api/compressed-file"
+                + "?kkCompressfileKey=%E5%BD%92%E6%A1%A3.zip_"
+                + "&kkCompressfilepath=%E5%BD%92%E6%A1%A3.zip_%2FwKgoC2C5dB6AYzBLAA0nUxSwXjw727.pdf"
+                + "&fullfilename=wKgoC2C5dB6AYzBLAA0nUxSwXjw727.pdf";
+
+        assertTrue(trustHostFilter.isInternalCompressEntryUrl(url));
     }
 
     @Test
     void shouldRejectPlainLocalhostUrlAsInternalCompressEntryUrl() {
         String url = "http://127.0.0.1:5173/api/file-preview/files/download/1";
 
-        assert !trustHostFilter.isInternalCompressEntryUrl(url);
+        assertFalse(trustHostFilter.isInternalCompressEntryUrl(url));
     }
 }
