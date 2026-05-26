@@ -51,6 +51,41 @@ public class PersistenceFlywayProperties {
          * 是否对当前模块启用基线迁移。
          * 适用于数据库已有表结构、Flyway 需要从指定基线开始接管的场景。
          */
-        private boolean baselineOnMigrate = false;
+        private boolean baselineOnMigrate = true;
+
+        /**
+         * 当前模块 Flyway history table。
+         * 未配置时使用 flyway_schema_history_{module}。
+         */
+        private String historyTable;
+
+        /**
+         * 当前模块独立迁移数据源。
+         * 未配置时使用应用主数据源。
+         */
+        private DataSourceConfig datasource = new DataSourceConfig();
+    }
+
+    @Data
+    public static class DataSourceConfig {
+        /**
+         * JDBC URL。配置后当前模块迁移使用独立数据库。
+         */
+        private String url;
+
+        /**
+         * JDBC 驱动类名。
+         */
+        private String driverClassName;
+
+        /**
+         * 数据库用户名。
+         */
+        private String username;
+
+        /**
+         * 数据库密码。
+         */
+        private String password;
     }
 }

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.biz.notification</groupId>
         <artifactId>mango-biz-notification</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -12,26 +12,26 @@
     <name>Mango Biz Notification Starter</name>
     <dependencies>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.biz.notification</groupId>
             <artifactId>mango-biz-notification-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.realtime</groupId>
             <artifactId>mango-infra-realtime-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.feign</groupId>
             <artifactId>mango-infra-feign-starter</artifactId>
             <version>${project.version}</version>
         </dependency>

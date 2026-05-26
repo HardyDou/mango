@@ -9,6 +9,8 @@
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+
+    <groupId>io.mango.platform.template</groupId>
     <artifactId>mango-template</artifactId>
     <packaging>pom</packaging>
     <name>Mango Template</name>

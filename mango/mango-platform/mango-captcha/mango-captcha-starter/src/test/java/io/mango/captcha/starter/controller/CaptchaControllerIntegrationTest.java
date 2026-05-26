@@ -1,9 +1,11 @@
 package io.mango.captcha.starter.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.captcha.api.CaptchaCode;
 import io.mango.captcha.api.constant.CaptchaType;
 import io.mango.captcha.api.dto.CaptchaVerifyRequest;
 import io.mango.captcha.starter.config.CaptchaAutoConfiguration;
+import io.mango.infra.web.starter.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
@@ -28,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = CaptchaAutoConfiguration.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({TestConfig.class, RedisAutoConfiguration.class, DataSourceAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class, WebMvcAutoConfiguration.class})
+@Import({TestConfig.class, GlobalExceptionHandler.class, RedisAutoConfiguration.class, DataSourceAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class, WebMvcAutoConfiguration.class})
 class CaptchaControllerIntegrationTest {
 
     @Autowired
@@ -133,7 +135,7 @@ class CaptchaControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value(400));
+                .andExpect(jsonPath("$.code").value(CaptchaCode.CAPTCHA_INVALID.getCode()));
     }
 
     @Test

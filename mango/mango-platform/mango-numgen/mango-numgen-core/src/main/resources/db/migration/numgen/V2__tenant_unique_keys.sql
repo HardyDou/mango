@@ -1,3 +1,0 @@
--- Tenant-aware keys are created directly by V1 for fresh numgen installs.
--- This migration is intentionally kept as a compatibility placeholder so
--- Flyway version history stays stable without reapplying obsolete key changes.

@@ -5,10 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.infra</groupId>
         <artifactId>mango-infra</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
+
+    <groupId>io.mango.infra.feign</groupId>
 
     <artifactId>mango-infra-feign-starter</artifactId>
     <packaging>jar</packaging>
@@ -37,27 +39,27 @@
 
         <!-- Mango Common -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
         <!-- Mango 运行时上下文能力 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango token propagation contract -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 模块信息 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.module</groupId>
             <artifactId>mango-infra-module-api</artifactId>
             <version>${project.version}</version>
         </dependency>

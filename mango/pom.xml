@@ -98,353 +98,353 @@
 
             <!-- Mango Modules -->
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.common</groupId>
                 <artifactId>mango-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.identity</groupId>
                 <artifactId>mango-identity-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.identity</groupId>
                 <artifactId>mango-identity-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-resource-sync-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-resource-access-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.access</groupId>
                 <artifactId>mango-access-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.access</groupId>
                 <artifactId>mango-access-web-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.access</groupId>
                 <artifactId>mango-access-gateway-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.identity</groupId>
                 <artifactId>mango-identity-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.identity</groupId>
                 <artifactId>mango-identity-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.auth</groupId>
                 <artifactId>mango-auth-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.auth</groupId>
                 <artifactId>mango-auth-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.kv</groupId>
                 <artifactId>mango-infra-kv-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.kv</groupId>
                 <artifactId>mango-infra-kv-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.kv</groupId>
                 <artifactId>mango-infra-kv-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.event</groupId>
                 <artifactId>mango-infra-event-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.event</groupId>
                 <artifactId>mango-infra-event-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.event</groupId>
                 <artifactId>mango-infra-event-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.ip.location</groupId>
                 <artifactId>mango-infra-ip-location-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.ip.location</groupId>
                 <artifactId>mango-infra-ip-location-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.ip.location</groupId>
                 <artifactId>mango-infra-ip-location-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.module</groupId>
                 <artifactId>mango-infra-module-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.module</groupId>
                 <artifactId>mango-infra-module-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.module</groupId>
                 <artifactId>mango-infra-module-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.system</groupId>
                 <artifactId>mango-system-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.system</groupId>
                 <artifactId>mango-system-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.system</groupId>
                 <artifactId>mango-system-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.biz.notification</groupId>
                 <artifactId>mango-biz-notification-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.biz.notification</groupId>
                 <artifactId>mango-biz-notification-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.biz.notification</groupId>
                 <artifactId>mango-biz-notification-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file</groupId>
                 <artifactId>mango-file-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file</groupId>
                 <artifactId>mango-file-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file</groupId>
                 <artifactId>mango-file-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file</groupId>
                 <artifactId>mango-file-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file.preview</groupId>
                 <artifactId>mango-file-preview-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file.preview</groupId>
                 <artifactId>mango-file-preview-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file.preview</groupId>
                 <artifactId>mango-file-preview-engine</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.file.preview</groupId>
                 <artifactId>mango-file-preview-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.template</groupId>
                 <artifactId>mango-template-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.template</groupId>
                 <artifactId>mango-template-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.template</groupId>
                 <artifactId>mango-template-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.template</groupId>
                 <artifactId>mango-template-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.workflow</groupId>
                 <artifactId>mango-workflow-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.workflow</groupId>
                 <artifactId>mango-workflow-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.workflow</groupId>
                 <artifactId>mango-workflow-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.org</groupId>
                 <artifactId>mango-org-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.org</groupId>
                 <artifactId>mango-org-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.realtime</groupId>
                 <artifactId>mango-infra-realtime-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.realtime</groupId>
                 <artifactId>mango-infra-realtime-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.realtime</groupId>
                 <artifactId>mango-infra-realtime-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.realtime</groupId>
                 <artifactId>mango-infra-realtime-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.realtime</groupId>
                 <artifactId>mango-infra-realtime-starter-remote</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.extension.ai</groupId>
                 <artifactId>mango-ai-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.extension.ai</groupId>
                 <artifactId>mango-ai-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.extension.ai</groupId>
                 <artifactId>mango-ai-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- Infra Starters -->
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.web</groupId>
                 <artifactId>mango-infra-web-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.web</groupId>
                 <artifactId>mango-infra-web-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.persistence</groupId>
                 <artifactId>mango-infra-persistence-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.persistence</groupId>
                 <artifactId>mango-infra-persistence-web-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.feign</groupId>
                 <artifactId>mango-infra-feign-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.doc</groupId>
                 <artifactId>mango-infra-doc-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.authorization</groupId>
                 <artifactId>mango-authorization-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.captcha</groupId>
                 <artifactId>mango-captcha-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.captcha</groupId>
                 <artifactId>mango-captcha-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.platform.captcha</groupId>
                 <artifactId>mango-captcha-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.log</groupId>
                 <artifactId>mango-infra-log-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -649,17 +649,17 @@
                 <version>${poi-tl.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.fileproc</groupId>
                 <artifactId>mango-infra-fileproc-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.fileproc</groupId>
                 <artifactId>mango-infra-fileproc-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.infra.fileproc</groupId>
                 <artifactId>mango-infra-fileproc-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -743,7 +743,7 @@
                 </plugin>
                 <!-- Mango Maven Plugin -->
                 <plugin>
-                    <groupId>io.mango</groupId>
+                    <groupId>io.mango.tools.maven.plugin</groupId>
                     <artifactId>mango-maven-plugin</artifactId>
                     <version>${project.version}</version>
                 </plugin>
@@ -782,7 +782,7 @@
             </plugin>
             <!-- Mango Maven Plugin (for CLI: mvn mango:check) -->
             <plugin>
-                <groupId>io.mango</groupId>
+                <groupId>io.mango.tools.maven.plugin</groupId>
                 <artifactId>mango-maven-plugin</artifactId>
             </plugin>
             <plugin>

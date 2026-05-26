@@ -98,6 +98,46 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
+    void customHistoryTable_shouldBeUsedByModuleInitializer() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.history-table=flyway_history_custom_test"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_history_custom_test")).isTrue();
+                    assertThat(tableExists(jdbcTemplate, "flyway_schema_history_persistence_test")).isFalse();
+                });
+    }
+
+    @Test
+    void moduleDatasource_shouldRunMigrationAgainstIndependentDatabase() {
+        String moduleUrl = "jdbc:h2:mem:module_flyway_independent;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.datasource.url=" + moduleUrl,
+                        "mango.persistence.flyway.modules.persistence-test.datasource.username=sa",
+                        "mango.persistence.flyway.modules.persistence-test.datasource.password=",
+                        "mango.persistence.flyway.modules.persistence-test.datasource.driver-class-name=org.h2.Driver"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate defaultJdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(defaultJdbcTemplate, "persistence_flyway_user")).isFalse();
+
+                    JdbcTemplate moduleJdbcTemplate = new JdbcTemplate(h2DataSource(moduleUrl));
+                    assertThat(tableExists(moduleJdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(moduleJdbcTemplate, "flyway_schema_history_persistence_test")).isTrue();
+                });
+    }
+
+    @Test
     void flywayMigrationInitializer_shouldBeCreated() {
         contextRunner
                 .withPropertyValues("mango.persistence.flyway.enabled=true")
@@ -133,11 +173,8 @@ class PersistenceFlywayAutoConfigurationTest {
     static class H2DataSourceConfig {
         @Bean
         DataSource dataSource() throws Exception {
-            org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
-            ds.setURL("jdbc:h2:mem:" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
-            ds.setUser("sa");
-            ds.setPassword("");
-            return ds;
+            return h2DataSource("jdbc:h2:mem:" + System.nanoTime()
+                    + ";MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
         }
     }
 
@@ -158,5 +195,13 @@ class PersistenceFlywayAutoConfigurationTest {
                 Integer.class,
                 tableName);
         return count != null && count > 0;
+    }
+
+    private static DataSource h2DataSource(String url) {
+        org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
+        ds.setURL(url);
+        ds.setUser("sa");
+        ds.setPassword("");
+        return ds;
     }
 }
