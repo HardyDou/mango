@@ -184,13 +184,26 @@ function resetQuery() {
 
 function workflowIconImageUrl(item: WorkflowDefinition) {
   const icon = item.icon || '';
-  if (isImageUrl(icon)) return icon;
+  if (isDirectImageUrl(icon)) return icon;
   const fileId = normalizeFileId(icon);
   return fileId ? workflowIconUrlMap.value[String(fileId)] || '' : '';
 }
 
-function isImageUrl(value?: string) {
-  return Boolean(value && (/^(https?:|data:|blob:)/.test(value) || value.startsWith('/')));
+function isDirectImageUrl(value?: string) {
+  const text = value?.trim();
+  if (!text) return false;
+  if (/^(data:|blob:)/i.test(text)) return true;
+  if (isProtectedFileUrl(text)) return false;
+  return /^(https?:)?\/\//i.test(text) || text.startsWith('/');
+}
+
+function isProtectedFileUrl(value: string) {
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.pathname.startsWith('/api/file/') || url.pathname.startsWith('/file/');
+  } catch {
+    return value.startsWith('/api/file/') || value.startsWith('/file/');
+  }
 }
 
 async function hydrateWorkflowIconUrls() {

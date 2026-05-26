@@ -7,7 +7,7 @@ import type { ApiId } from '@mango/api-schema';
 
 export type FileId = ApiId;
 export type FileBizMeta = Record<string, unknown> | string;
-export type FileReference = FileId | `mango-file:${string}` | FileRecord | FilePreview | null | undefined;
+export type FileReference = FileId | number | `mango-file:${string}` | FileRecord | FilePreview | null | undefined;
 
 export interface FileRecord {
   id: FileId;
@@ -198,17 +198,28 @@ export const fileApi = {
 
 export function normalizeFileId(value?: FileReference): FileId {
   if (!value) return '';
+  if (typeof value === 'number') {
+    return isValidFileId(value) ? String(value) : '';
+  }
   if (typeof value !== 'string') {
-    return normalizeId(value.id);
+    return normalizeFileId(value.id);
   }
   const text = value.trim();
   if (!text || isFileAccessUrl(text)) return '';
-  return text.startsWith('mango-file:') ? normalizeId(text.slice('mango-file:'.length)) : normalizeId(text);
+  const rawId = text.startsWith('mango-file:')
+    ? text.slice('mango-file:'.length).trim()
+    : text;
+  return isValidFileId(rawId) ? rawId : '';
 }
 
 export function fileToken(id?: FileId): string {
-  const normalized = normalizeId(id);
+  const normalized = normalizeFileId(id);
   return normalized ? `mango-file:${normalized}` : '';
+}
+
+export function isValidFileId(value?: unknown): value is FileId {
+  if (value === undefined || value === null) return false;
+  return /^[1-9]\d*$/.test(String(value).trim());
 }
 
 export function fileRuntimeUrl(record?: Partial<FileRecord | FilePreview> | null): string {
