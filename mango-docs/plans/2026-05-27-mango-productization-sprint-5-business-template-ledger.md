@@ -1,0 +1,12 @@
+# Mango 产品化 Issue #26 Sprint 5 业务模块模板与双模式拓扑交付台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| S5-001 | Issue #26 #9 | 提供 business template 业务模块模板 | 新增仓内孵化模板 `mango-business-template`，后续 Initializr 消费 | `mango-business-template/README.md` | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/README.md` |
+| S5-002 | Issue #26 #9 | 后端模板包含 `api/core/starter/starter-remote` | 后端按 Mango 模块分层生成 Maven 多模块模板 | `mango-business-template/backend/modules/{{moduleKebab}}` | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/backend/modules/{{moduleKebab}}/pom.xml` |
+| S5-003 | Issue #26 #8 | 固化标准响应契约 `R<T>` | API 模板返回 `R<{{aggregatePascal}}VO>` 和分页结果 | `{{modulePascal}}Api.java` | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java` |
+| S5-004 | Issue #26 #5/#6/#7 | 模板包含菜单、权限和资源同步扩展规范 | starter 模板提供 `META-INF/mango/resource-manifest.json` 和 `module.properties` | resource manifest 模板 | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json` |
+| S5-005 | Issue #26 #11/#13 | 前端模板包含 API client、types 和 page registry | 前端拆成 `{{moduleKebab}}-api` 与 `{{moduleKebab}}`，页面注册使用 `registerModulePages` | frontend packages 模板 | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/frontend/packages/{{moduleKebab}}/src/index.ts` |
+| S5-006 | Issue #26 #10 | 提供 monolith 和 microservice 两种拓扑模板 | 以 README 方式说明本地 starter 和 starter-remote 依赖边界 | `topologies/monolith`、`topologies/microservice` | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/topologies/monolith/README.md` |
+| S5-007 | 业务项目评审方案 | 业务项目需继承 PMO 入口和 CODEOWNERS | 模板提供业务 `AGENTS.md` 和 `.github/CODEOWNERS` | `AGENTS.md`、`.github/CODEOWNERS` | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/AGENTS.md` |
+| S5-008 | 交付契约规则 | 模板需包含契约文档和台账模板 | 在 `business-docs/plans` 提供业务交付契约与台账模板 | `example-contract.md`、`example-ledger.md` | `node mango-business-template/scripts/check-template.mjs` | DONE | `mango-business-template/business-docs/plans/example-contract.md` |

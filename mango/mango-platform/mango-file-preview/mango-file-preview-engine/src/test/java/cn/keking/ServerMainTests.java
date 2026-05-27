@@ -14,4 +14,9 @@ class ServerMainTests {
 	void standaloneServerProperties_mapEnginePortToSpringBootServerPort() {
 		assertEquals("${mango.file-preview.engine.port:8012}", ServerMain.standaloneServerProperties().get("server.port"));
 	}
+
+	@Test
+	void standaloneServerProperties_loadEngineNamedConfigOnlyForStandaloneMode() {
+		assertEquals("mango-file-preview-engine", ServerMain.standaloneServerProperties().get("spring.config.name"));
+	}
 }

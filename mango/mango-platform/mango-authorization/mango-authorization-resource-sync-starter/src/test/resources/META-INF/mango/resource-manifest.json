@@ -1,0 +1,29 @@
+{
+  "appCode": "internal-admin",
+  "moduleCode": "guarantee",
+  "moduleName": "保函模块",
+  "menus": [
+    {
+      "menuType": 1,
+      "menuName": "保函管理",
+      "menuCode": "guarantee",
+      "path": "/guarantee",
+      "children": [
+        {
+          "menuType": 2,
+          "menuName": "保函列表",
+          "menuCode": "guarantee:letter:list",
+          "path": "/guarantee/letters",
+          "component": "guarantee/letter/index",
+          "permissions": ["guarantee:letter:create"],
+          "permissionItems": [
+            {
+              "permissionCode": "guarantee:letter:create",
+              "permissionName": "新增保函"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

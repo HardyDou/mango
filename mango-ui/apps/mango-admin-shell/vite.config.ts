@@ -22,9 +22,25 @@ export default defineConfig((mode: ConfigEnv) => {
     base: env.VITE_PUBLIC_PATH || '/',
     plugins: [vue()],
     resolve: {
-      alias: {
-        '@': resolve(__dirname, './src'),
-      },
+      alias: [
+        { find: '@', replacement: resolve(__dirname, './src') },
+        { find: /^@mango\/common\/(.*)$/, replacement: `${resolve(__dirname, '../../packages/common')}/$1` },
+        { find: '@mango/common', replacement: resolve(__dirname, '../../packages/common/index.ts') },
+        { find: '@mango/admin-pages/core', replacement: resolve(__dirname, '../../packages/admin-pages/src/core.ts') },
+        { find: '@mango/admin-pages/defaults', replacement: resolve(__dirname, '../../packages/admin-pages/src/defaults.ts') },
+        { find: '@mango/admin-pages/dev-component-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/devComponentPages.ts') },
+        { find: '@mango/admin-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/index.ts') },
+        { find: '@mango/app-runtime', replacement: resolve(__dirname, '../../packages/app-runtime/src/index.ts') },
+        { find: '@mango/auth', replacement: resolve(__dirname, '../../packages/auth/src/index.ts') },
+        { find: '@mango/rbac', replacement: resolve(__dirname, '../../packages/rbac/src/index.ts') },
+        { find: '@mango/system', replacement: resolve(__dirname, '../../packages/system/src/index.ts') },
+        { find: '@mango/workflow', replacement: resolve(__dirname, '../../packages/workflow/src/index.ts') },
+        { find: '@mango/workflow-business-example', replacement: resolve(__dirname, '../../packages/workflow-business-example/src/index.ts') },
+        { find: '@mango/template', replacement: resolve(__dirname, '../../packages/template/src/index.ts') },
+        { find: '@mango/file', replacement: resolve(__dirname, '../../packages/file/src/index.ts') },
+        { find: '@mango/calendar', replacement: resolve(__dirname, '../../packages/calendar/src/index.ts') },
+        { find: '@mango/numgen', replacement: resolve(__dirname, '../../packages/numgen/src/index.ts') },
+      ],
     },
     server: {
       host: env.VITE_HOST || '0.0.0.0',

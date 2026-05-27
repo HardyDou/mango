@@ -70,6 +70,10 @@ export function registerUnauthorizedHandler(handler: UnauthorizedHandler): void 
   unauthorizedHandler = handler;
 }
 
+export function setRequestBaseUrl(baseURL: string): void {
+  service.defaults.baseURL = baseURL;
+}
+
 async function redirectToLogin(): Promise<void> {
   if (unauthorizedHandler) {
     await unauthorizedHandler();

@@ -37,17 +37,22 @@ public class PdfViewerCompatibilityTests {
 
     @Test
     void shouldPreferPdfForOfficePreviewByDefault() throws IOException {
-        String properties = readResource("/application.properties");
+        String properties = readResource("/mango-file-preview-engine.properties");
 
         assertTrue(properties.contains("office.preview.type = ${KK_OFFICE_PREVIEW_TYPE:pdf}"));
     }
 
     @Test
     void shouldNotOverrideHostServerPortFromEmbeddedEngineConfig() throws IOException {
-        String properties = readResource("/application.properties");
+        String properties = readResource("/mango-file-preview-engine.properties");
 
         assertTrue(properties.contains("mango.file-preview.engine.port = ${MANGO_FILE_PREVIEW_ENGINE_PORT:${KK_SERVER_PORT:8012}}"));
         assertTrue(properties.lines().noneMatch(line -> line.trim().startsWith("server.port")));
+    }
+
+    @Test
+    void shouldNotShipSpringBootDefaultApplicationProperties() {
+        assertTrue(getClass().getResource("/application.properties") == null);
     }
 
     private String readResource(String resourcePath) throws IOException {
