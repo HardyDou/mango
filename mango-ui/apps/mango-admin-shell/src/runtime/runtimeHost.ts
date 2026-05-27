@@ -16,7 +16,7 @@ import {
   MangoRuntimeConfigError,
   type MangoRuntimeAppConfig,
 } from '@mango/app-runtime';
-import { getPageLoader } from '@mango/admin-pages/src/core';
+import { getPageLoader } from '@mango/admin-pages/core';
 import { useThemeStore } from '@/stores/theme';
 import { useLayoutStore } from '@/stores/layout';
 import { usePreferencesStore } from '@/stores/preferences';
@@ -233,8 +233,12 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
 
   function ensureDefaultPages() {
     if (!defaultPagesPromise) {
-      defaultPagesPromise = import('@mango/admin-pages/src/defaults').then(({ registerDefaultAdminPages }) => {
-        registerDefaultAdminPages();
+      defaultPagesPromise = import('@mango/admin-pages/defaults').then(({ registerDefaultAdminPages }) => {
+        registerDefaultAdminPages({
+          shellPages: {
+            notFound: () => import('../views/error/404.vue'),
+          },
+        });
       });
     }
     return defaultPagesPromise;

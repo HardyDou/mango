@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { computed, defineComponent, h } from 'vue';
 import { ElInput } from 'element-plus';
-import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
+import type { BusinessApprovalContext } from '@mango/workflow';
 
 const props = defineProps<{
   context: BusinessApprovalContext;

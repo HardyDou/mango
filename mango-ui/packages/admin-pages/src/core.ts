@@ -5,6 +5,11 @@ export type MangoPageRegistry = {
   pages: Record<string, MangoPageLoader>;
 };
 
+export type MangoShellPageLoaders = {
+  home?: MangoPageLoader;
+  notFound?: MangoPageLoader;
+};
+
 const pageLoaders = new Map<string, MangoPageLoader>();
 const moduleByPage = new Map<string, string>();
 
@@ -29,6 +34,23 @@ export function registerPage(moduleCode: string, component: string, loader: Mang
   const normalized = normalizeComponentPath(component);
   pageLoaders.set(`${moduleCode}:${normalized}`, loader);
   moduleByPage.set(normalized, moduleCode);
+}
+
+export function registerShellPages(loaders: MangoShellPageLoaders) {
+  const pages: Record<string, MangoPageLoader> = {};
+  if (loaders.home) {
+    pages['home/index'] = loaders.home;
+  }
+  if (loaders.notFound) {
+    pages['error/404'] = loaders.notFound;
+    pages['error/not-found'] = loaders.notFound;
+  }
+  if (Object.keys(pages).length > 0) {
+    registerModulePages({
+      moduleCode: 'mango-shell',
+      pages,
+    });
+  }
 }
 
 export function getPageLoader(moduleCode?: string, component?: string) {

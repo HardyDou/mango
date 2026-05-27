@@ -15,11 +15,7 @@ export function registerShellLocalApps() {
     appCode: 'internal-admin',
     name: '内部管理后台本地入口',
     async mount(container) {
-      const [{ default: AppView }, { default: MenuView }, { default: RoleView }] = await Promise.all([
-        import('@mango/rbac/src/views/app/index.vue'),
-        import('@mango/rbac/src/views/menu/index.vue'),
-        import('@mango/rbac/src/views/role/index.vue'),
-      ]);
+      const { AppView, MenuView, RoleView } = await import('@mango/rbac');
       const LocalWorkbench = {
         components: { AppView, MenuView, RoleView },
         template: `
