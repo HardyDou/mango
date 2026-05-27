@@ -122,6 +122,10 @@ test.describe('通知中心 E2E', () => {
       { id: '1', taskId: '1', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-1', channelType: 'SITE', requestId: 'NR001', status: 'SUCCESS', renderedTitle: '测试系统消息', renderedContent: '这是一条系统消息内容', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-1","channelType":"SITE"}', responseSnapshot: '{"status":"SENT"}', providerMessageId: 'site-1001', retryCount: 0 },
       { id: '2', taskId: '2', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-FAIL', channelType: 'SMS', requestId: 'NR_FAIL', status: 'FAILED', renderedTitle: '短信失败', renderedContent: '短信发送失败', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-FAIL","channelType":"SMS"}', responseSnapshot: '{"status":"FAILED"}', providerMessageId: 'sms-2001', failCode: 'PROVIDER_ERROR', failReason: '模板错误', retryCount: 3 },
     ];
+    const identityUsers = [
+      { userId: '1001', username: 'admin', nickname: '管理员', phone: '13800000000', email: 'admin@example.com', status: 1 },
+      { userId: '1002', username: 'operator', nickname: '操作员', phone: '', email: 'operator@example.com', status: 1 },
+    ];
 
     await page.addInitScript(() => {
       type NoticeTestWindow = Window & {
@@ -399,6 +403,14 @@ test.describe('通知中心 E2E', () => {
     await page.route('**/api/notice/send', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ successCount: 0, failCount: 0 }) });
     });
+    await page.route('**/api/identity/users/page**', async (route) => {
+      const url = new URL(route.request().url());
+      const keyword = url.searchParams.get('keyword') || '';
+      const list = keyword
+        ? identityUsers.filter(item => [item.username, item.nickname, item.phone, item.email].some(value => value.includes(keyword)))
+        : identityUsers;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list, total: list.length, page: 1, size: 20 }) });
+    });
     await page.route('**/api/notice/settings**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ soundEnabled: true, desktopEnabled: true, maxRetry: 3, retentionDays: 180 }) });
     });
@@ -531,22 +543,22 @@ test.describe('通知中心 E2E', () => {
 
     await page.getByRole('menuitem', { name: '发送消息' }).click();
     await expect(page.getByRole('heading', { name: '发送消息' })).toBeVisible();
-    await page.locator('.el-form-item', { hasText: '业务消息' }).locator('.el-select__wrapper').click();
+    await page.locator('.el-form-item', { hasText: '消息模板' }).locator('.el-select__wrapper').click();
     await page.locator('.el-select-dropdown__item:visible', { hasText: '审批通过通知' }).click();
     await expect(page.getByLabel('申请单号')).toBeVisible();
-    await page.getByLabel('业务单号').fill('WF-MANUAL-1');
-    await page.getByRole('textbox', { name: '用户ID', exact: true }).fill('1001');
-    await page.getByLabel('手机号').fill('13800000000');
     await page.getByLabel('申请单号').fill('APPLY-20260527');
-    await page.locator('.el-checkbox', { hasText: '系统消息' }).click();
+    await page.locator('.el-form-item', { hasText: '接收用户' }).locator('.el-select__wrapper').click();
+    await page.keyboard.type('admin');
+    await page.locator('.el-select-dropdown__item:visible', { hasText: '管理员' }).click();
     const sendNoticeRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/send'));
     await page.getByRole('button', { name: '发送' }).click();
     const sendNoticeBody = (await sendNoticeRequest).postDataJSON();
     expect(sendNoticeBody.bizType).toBe('WORKFLOW_APPROVED');
-    expect(sendNoticeBody.bizId).toBe('WF-MANUAL-1');
     expect(sendNoticeBody.params).toEqual({ applyNo: 'APPLY-20260527' });
-    expect(sendNoticeBody.recipients[0]).toMatchObject({ userId: '1001', mobile: '13800000000' });
-    expect(sendNoticeBody.channelTypes).toEqual(['SITE']);
+    expect(sendNoticeBody.userIds).toEqual(['1001']);
+    expect(sendNoticeBody).not.toHaveProperty('bizId');
+    expect(sendNoticeBody).not.toHaveProperty('recipients');
+    expect(sendNoticeBody).not.toHaveProperty('channelTypes');
 
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
     await expect(page.getByText('默认系统消息通道')).toBeVisible();

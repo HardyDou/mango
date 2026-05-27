@@ -76,6 +76,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango</groupId>
+            <artifactId>mango-identity-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>

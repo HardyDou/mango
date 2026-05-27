@@ -158,7 +158,8 @@ class NoticeServiceTest {
  mock(NoticeSettingMapper.class),
  List.of(sender),
  new ObjectMapper(),
- outboxStore);
+ outboxStore,
+ null);
  }
 
  @Test
@@ -452,7 +453,10 @@ class NoticeServiceTest {
  SendNoticeCommand command = new SendNoticeCommand();
  command.setBizType("TEST_NOTICE");
  command.setBizId("SO-1001");
- command.setUserId(1L);
+ NoticeRecipientCommand recipient = new NoticeRecipientCommand();
+ recipient.setUserId(1L);
+ recipient.setMobile("13800000000");
+ command.setRecipients(List.of(recipient));
  command.setParams(Map.of("orderNo", "SO-1001", "carrier", "顺丰"));
 
  noticeService.send(command);
@@ -482,6 +486,7 @@ class NoticeServiceTest {
  assertTrue(siteRecord.getRequestSnapshot().contains("\"channelType\":\"SITE\""));
  assertTrue(siteRecord.getRequestSnapshot().contains("\"bizId\":\"SO-1001\""));
  assertTrue(siteRecord.getRequestSnapshot().contains("\"recipientId\":100"));
+ assertTaskTotalCount(2, "SITE,SMS");
  }
 
  @Test
@@ -498,6 +503,7 @@ class NoticeServiceTest {
  assertEquals(0, result.getFailCount());
  verify(outboxStore).enqueue(any(OutboxMessage.class));
  verify(sendRecordMapper, never()).selectList(any());
+ assertTaskTotalCount(1, "SITE");
  }
 
  @Test
@@ -520,6 +526,7 @@ class NoticeServiceTest {
  assertEquals(scheduledTime.atZone(ZoneId.systemDefault()).toInstant(),
  captor.getValue().getNextAttemptAt());
  verify(sendRecordMapper, never()).selectList(any());
+ assertTaskTotalCount(1, "SITE");
  }
 
  @Test
@@ -553,6 +560,34 @@ class NoticeServiceTest {
  when(channelTemplateMapper.selectList(any())).thenReturn(List.of(disabledSite, activeSms));
  SendNoticeCommand command = new SendNoticeCommand();
  command.setBizType("TEST_NOTICE");
+ NoticeRecipientCommand recipient = new NoticeRecipientCommand();
+ recipient.setUserId(1L);
+ recipient.setMobile("13800000000");
+ command.setRecipients(List.of(recipient));
+ command.setParams(Map.of("orderNo", "SO-1001"));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper, times(2)).insert(captor.capture());
+ List<NoticeSendRecordEntity> records = captor.getAllValues();
+ NoticeSendRecordEntity smsRecord = records.stream()
+ .filter(record -> record.getChannelType() == SMS)
+ .findFirst()
+ .orElseThrow();
+ assertEquals("短信 SO-1001", smsRecord.getRenderedTitle());
+ assertTrue(records.stream().anyMatch(record -> record.getChannelType() == SITE));
+ assertTaskTotalCount(2, "SMS,SITE");
+ }
+
+ @Test
+ void send_configuredSmsWithoutMobile_sendsSiteFallbackOnly() {
+ NoticeBusinessChannelTemplateEntity smsTemplate = template(11L, SMS,
+ "短信 {{orderNo}}", "短信订单 {{orderNo}}");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(smsTemplate));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
  command.setUserId(1L);
  command.setParams(Map.of("orderNo", "SO-1001"));
 
@@ -560,12 +595,26 @@ class NoticeServiceTest {
 
  ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
  verify(sendRecordMapper).insert(captor.capture());
- assertEquals(SMS, captor.getValue().getChannelType());
- assertEquals("短信 SO-1001", captor.getValue().getRenderedTitle());
+ assertEquals(SITE, captor.getValue().getChannelType());
+ assertTaskTotalCount(1, "SITE");
  }
 
  @Test
- void send_noEnabledTemplateWithoutDirectContent_throwsUnconfiguredError() {
+ void send_withoutReceiver_throwsReceiverRequired() {
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(template(10L, SITE, "标题", "内容")));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+
+ RuntimeException error = assertThrows(RuntimeException.class, () -> noticeService.send(command));
+
+ assertEquals("接收用户不能为空", error.getMessage());
+ verify(taskMapper, never()).insert(any(NoticeTaskEntity.class));
+ verify(sendRecordMapper, never()).insert(any(NoticeSendRecordEntity.class));
+ }
+
+ @Test
+ void send_noEnabledTemplateWithBusinessType_sendsSiteFallback() {
  NoticeBusinessChannelTemplateEntity disabledSite = template(10L, SITE,
  "系统消息 {{orderNo}}", "订单 {{orderNo}}");
  disabledSite.setEnabled(false);
@@ -577,10 +626,13 @@ class NoticeServiceTest {
  command.setUserId(1L);
  command.setParams(Map.of("orderNo", "SO-1001"));
 
- IllegalStateException error = assertThrows(IllegalStateException.class, () -> noticeService.send(command));
+ noticeService.send(command);
 
- assertEquals("业务类型未配置启用渠道模板", error.getMessage());
- verify(sendRecordMapper, never()).insert(any(NoticeSendRecordEntity.class));
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper).insert(captor.capture());
+ assertEquals(SITE, captor.getValue().getChannelType());
+ assertEquals("测试通知", captor.getValue().getRenderedTitle());
+ assertTaskTotalCount(1, "SITE");
  }
 
  @Test
@@ -612,7 +664,8 @@ class NoticeServiceTest {
  mock(NoticeSettingMapper.class),
  List.of(emailSender),
  new ObjectMapper(),
- outboxStore);
+ outboxStore,
+ null);
  NoticeTaskEntity task = new NoticeTaskEntity();
  task.setId(1L);
  task.setBizType("TEST_NOTICE");
@@ -1057,7 +1110,8 @@ class NoticeServiceTest {
  mock(NoticeSettingMapper.class),
  List.of(sender),
  new ObjectMapper(),
- outboxStore);
+ outboxStore,
+ null);
  }
 
  private void assertTaskFinalStatus(NoticeTaskStatus status, int successCount, int failCount) {
@@ -1072,5 +1126,13 @@ class NoticeServiceTest {
 
  private void assertSendRecordStatusUpdates(NoticeSendStatus... statuses) {
  assertEquals(List.of(statuses), sendRecordStatusUpdates);
+ }
+
+ private void assertTaskTotalCount(int totalCount, String channelTypes) {
+ ArgumentCaptor<NoticeTaskEntity> captor = ArgumentCaptor.forClass(NoticeTaskEntity.class);
+ verify(taskMapper).updateById(captor.capture());
+ NoticeTaskEntity task = captor.getValue();
+ assertEquals(totalCount, task.getTotalCount());
+ assertEquals(channelTypes, task.getChannelTypes());
  }
 }

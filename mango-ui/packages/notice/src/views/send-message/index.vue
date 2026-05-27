@@ -3,22 +3,22 @@
     <div class="page-header">
       <div>
         <h1>发送消息</h1>
-        <p>人工触发业务消息发送</p>
       </div>
+      <el-button type="primary" :loading="sending" @click="submit">发送</el-button>
     </div>
 
     <el-card v-loading="loading" shadow="never">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="108px" class="send-form">
         <section class="form-section">
-          <div class="section-title">基础信息</div>
+          <div class="section-title">消息类型</div>
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
-              <el-form-item label="业务消息" prop="businessTypeId">
+              <el-form-item label="消息模板" prop="businessTypeId">
                 <el-select
                   v-model="form.businessTypeId"
                   filterable
                   clearable
-                  placeholder="请选择业务消息"
+                  placeholder="请选择消息模板"
                   class="full-width"
                   @change="handleBusinessChange"
                 >
@@ -31,31 +31,11 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="业务单号" prop="bizId">
-                <el-input v-model="form.bizId" placeholder="请输入业务单号" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="优先级" prop="priority">
-                <el-select v-model="form.priority" class="full-width">
-                  <el-option label="低" value="LOW" />
-                  <el-option label="普通" value="NORMAL" />
-                  <el-option label="高" value="HIGH" />
-                  <el-option label="紧急" value="URGENT" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="幂等键">
-                <el-input v-model="form.idempotentKey" placeholder="可选" clearable />
-              </el-form-item>
-            </el-col>
             <el-col :span="24" v-if="selectedBusiness">
-              <el-form-item label="当前配置">
+              <el-form-item label="模板配置">
                 <div class="business-summary">
                   <el-tag effect="plain">{{ selectedBusiness.bizGroup || '未分类' }}</el-tag>
-                  <span>{{ selectedBusiness.bizType }}</span>
+                  <span>{{ selectedBusiness.bizName }}</span>
                   <span>生效版本：{{ selectedBusiness.activeVersion || '-' }}</span>
                   <span>启用渠道：{{ enabledChannelText(selectedBusiness.enabledChannels) }}</span>
                 </div>
@@ -65,88 +45,68 @@
         </section>
 
         <section class="form-section">
-          <div class="section-title">接收对象</div>
+          <div class="section-title">自定义字段</div>
+          <el-empty v-if="paramFields.length === 0" description="当前消息模板未配置自定义字段" />
           <el-row :gutter="16">
-            <el-col :xs="24" :md="12">
-              <el-form-item label="用户ID">
-                <el-input v-model="recipient.userId" placeholder="系统消息接收用户" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="接收人">
-                <el-input v-model="recipient.recipientName" placeholder="接收人名称" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="手机号">
-                <el-input v-model="recipient.mobile" placeholder="短信接收手机号" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="邮箱">
-                <el-input v-model="recipient.email" placeholder="邮件接收邮箱" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="微信OpenId">
-                <el-input v-model="recipient.wechatOpenid" placeholder="公众号接收人" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="企微用户ID">
-                <el-input v-model="recipient.wecomUserId" placeholder="企业微信接收人" clearable />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :md="12">
-              <el-form-item label="钉钉用户ID">
-                <el-input v-model="recipient.dingtalkUserId" placeholder="钉钉接收人" clearable />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </section>
-
-        <section class="form-section">
-          <div class="section-title">发送渠道</div>
-          <el-form-item label="指定渠道">
-            <el-checkbox-group v-model="form.channelTypes">
-              <el-checkbox v-for="item in channelOptions" :key="item.value" :label="item.value">
-                {{ item.label }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
-        </section>
-
-        <section class="form-section">
-          <div class="section-title">业务参数</div>
-          <el-empty v-if="paramFields.length === 0" description="当前业务消息未配置参数" />
-          <el-row v-else :gutter="16">
             <el-col v-for="field in paramFields" :key="field.name" :xs="24" :md="12">
-              <el-form-item :label="field.label" :required="field.required">
+              <el-form-item :label="field.label" :prop="`params.${field.name}`" :required="field.required">
                 <el-input-number
                   v-if="field.type === 'number'"
-                  v-model="paramValues[field.name]"
+                  v-model="form.params[field.name]"
                   class="full-width"
                   :placeholder="field.placeholder"
                   controls-position="right"
                 />
-                <el-switch v-else-if="field.type === 'boolean'" v-model="paramValues[field.name]" />
+                <el-switch v-else-if="field.type === 'boolean'" v-model="form.params[field.name]" />
                 <el-date-picker
                   v-else-if="field.type === 'datetime'"
-                  v-model="paramValues[field.name]"
+                  v-model="form.params[field.name]"
                   class="full-width"
                   type="datetime"
                   value-format="YYYY-MM-DD HH:mm:ss"
                   placeholder="请选择时间"
                 />
-                <el-input v-else v-model="paramValues[field.name]" :placeholder="field.placeholder" clearable />
+                <el-input v-else v-model="form.params[field.name]" :placeholder="field.placeholder" clearable />
               </el-form-item>
             </el-col>
           </el-row>
         </section>
 
+        <section class="form-section">
+          <div class="section-title">系统用户</div>
+          <el-form-item label="接收用户" prop="userIds">
+            <el-select
+              v-model="form.userIds"
+              multiple
+              filterable
+              remote
+              reserve-keyword
+              collapse-tags
+              collapse-tags-tooltip
+              class="full-width"
+              placeholder="请输入用户名、姓名、手机号或邮箱搜索"
+              :remote-method="searchUsers"
+              :loading="userLoading"
+            >
+              <el-option
+                v-for="user in userOptions"
+                :key="user.userId"
+                :label="userLabel(user)"
+                :value="String(user.userId)"
+              >
+                <div class="user-option">
+                  <span>{{ user.nickname || user.username }}</span>
+                  <span>{{ user.username }}</span>
+                  <span>{{ user.phone || '-' }}</span>
+                  <span>{{ user.email || '-' }}</span>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </section>
+
         <div class="form-actions">
           <el-button @click="resetForm">重置</el-button>
-          <el-button type="primary" :loading="sending" @click="submit">发送</el-button>
         </div>
       </el-form>
     </el-card>
@@ -157,8 +117,9 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
+import { getIdentityUsers, type NoticeIdentityUser } from '../../api/notice';
 import { getBusinessTypes, sendNotice } from '../../api/notice';
-import type { NoticeBusinessType, NoticeChannelType, NoticePriority, NoticeRecipientCommand } from '../../types/notice';
+import type { NoticeBusinessType, NoticeChannelType } from '../../types/notice';
 
 type ParamFieldType = 'string' | 'number' | 'boolean' | 'datetime';
 
@@ -190,34 +151,29 @@ type ParamValue = string | number | boolean | undefined;
 const formRef = ref<FormInstance>();
 const loading = ref(false);
 const sending = ref(false);
+const userLoading = ref(false);
 const businessTypes = ref<NoticeBusinessType[]>([]);
-const paramValues = reactive<Record<string, ParamValue>>({});
-const recipient = reactive<NoticeRecipientCommand>({
-  userId: '',
-  recipientName: '',
-  mobile: '',
-  email: '',
-  wechatOpenid: '',
-  wecomUserId: '',
-  dingtalkUserId: '',
-});
+const userOptions = ref<NoticeIdentityUser[]>([]);
 const form = reactive<{
   businessTypeId: string;
-  bizId: string;
-  priority: NoticePriority;
-  idempotentKey: string;
-  channelTypes: NoticeChannelType[];
+  params: Record<string, ParamValue>;
+  userIds: string[];
 }>({
   businessTypeId: '',
-  bizId: '',
-  priority: 'NORMAL',
-  idempotentKey: '',
-  channelTypes: [],
+  params: {},
+  userIds: [],
 });
 
-const rules: FormRules = {
-  businessTypeId: [{ required: true, message: '请选择业务消息', trigger: 'change' }],
-};
+const rules = computed<FormRules>(() => ({
+  businessTypeId: [{ required: true, message: '请选择消息模板', trigger: 'change' }],
+  userIds: [{ required: true, type: 'array', min: 1, message: '请选择系统用户', trigger: 'change' }],
+  ...paramFields.value.reduce<FormRules>((result, field) => {
+    if (field.required) {
+      result[`params.${field.name}`] = [{ required: true, message: `请填写${field.label}`, trigger: 'blur' }];
+    }
+    return result;
+  }, {}),
+}));
 
 const channelOptions: Array<{ label: string; value: NoticeChannelType }> = [
   { label: '系统消息', value: 'SITE' },
@@ -243,11 +199,22 @@ async function loadBusinessTypes() {
 }
 
 function handleBusinessChange() {
-  Object.keys(paramValues).forEach(key => delete paramValues[key]);
+  Object.keys(form.params).forEach(key => delete form.params[key]);
   paramFields.value.forEach((field) => {
-    paramValues[field.name] = field.type === 'boolean' ? false : undefined;
+    form.params[field.name] = field.type === 'boolean' ? false : undefined;
   });
-  form.channelTypes = [];
+  formRef.value?.clearValidate();
+}
+
+async function searchUsers(keyword: string) {
+  userLoading.value = true;
+  try {
+    const query = keyword.trim();
+    const result = await getIdentityUsers(query, { pageNum: 1, pageSize: 20, status: 1 });
+    userOptions.value = result.list || [];
+  } finally {
+    userLoading.value = false;
+  }
 }
 
 function parseParamFields(schemaText?: string): ParamField[] {
@@ -316,7 +283,7 @@ function paramFieldType(property: JsonSchemaProperty): ParamFieldType {
 
 function buildParams() {
   return paramFields.value.reduce<Record<string, unknown>>((result, field) => {
-    const value = paramValues[field.name];
+    const value = form.params[field.name];
     if (value !== undefined && value !== '') {
       result[field.name] = value;
     }
@@ -324,22 +291,9 @@ function buildParams() {
   }, {});
 }
 
-function normalizeRecipient(): NoticeRecipientCommand {
-  return Object.entries(recipient).reduce<NoticeRecipientCommand>((result, [key, value]) => {
-    if (value !== undefined && String(value).trim()) {
-      result[key as keyof NoticeRecipientCommand] = String(value).trim();
-    }
-    return result;
-  }, {});
-}
-
-function hasRecipient(value: NoticeRecipientCommand) {
-  return Boolean(value.userId || value.mobile || value.email || value.wechatOpenid || value.wecomUserId || value.dingtalkUserId || value.externalId);
-}
-
 function validateParams() {
   const missing = paramFields.value.find((field) => {
-    const value = paramValues[field.name];
+    const value = form.params[field.name];
     return field.required && (value === undefined || value === '');
   });
   if (missing) {
@@ -358,21 +312,16 @@ async function submit() {
   if (!validateParams()) {
     return;
   }
-  const normalizedRecipient = normalizeRecipient();
-  if (!hasRecipient(normalizedRecipient)) {
-    ElMessage.error('请至少填写一个接收对象');
+  if (form.userIds.length === 0) {
+    ElMessage.error('请选择系统用户');
     return;
   }
   sending.value = true;
   try {
     const result = await sendNotice({
       bizType: selectedBusiness.value.bizType,
-      bizId: form.bizId || undefined,
       params: buildParams(),
-      recipients: [normalizedRecipient],
-      channelTypes: form.channelTypes.length > 0 ? form.channelTypes : undefined,
-      priority: form.priority,
-      idempotentKey: form.idempotentKey || undefined,
+      userIds: form.userIds,
     });
     const hasImmediateResult = result.successCount > 0 || result.failCount > 0;
     ElMessage.success(hasImmediateResult ? `发送已提交，成功 ${result.successCount} 条，失败 ${result.failCount} 条` : '发送任务已提交，可在发送记录查看结果');
@@ -383,15 +332,13 @@ async function submit() {
 
 function resetForm() {
   form.businessTypeId = '';
-  form.bizId = '';
-  form.priority = 'NORMAL';
-  form.idempotentKey = '';
-  form.channelTypes = [];
-  Object.keys(recipient).forEach((key) => {
-    recipient[key as keyof NoticeRecipientCommand] = '';
-  });
-  Object.keys(paramValues).forEach(key => delete paramValues[key]);
+  form.userIds = [];
+  Object.keys(form.params).forEach(key => delete form.params[key]);
   formRef.value?.clearValidate();
+}
+
+function userLabel(user: NoticeIdentityUser) {
+  return [user.nickname || user.username, user.username, user.phone, user.email].filter(Boolean).join(' / ');
 }
 
 function enabledChannelText(value?: string) {
@@ -405,7 +352,10 @@ function channelLabel(value: string) {
   return channelOptions.find(item => item.value === value)?.label || value;
 }
 
-onMounted(loadBusinessTypes);
+onMounted(() => {
+  loadBusinessTypes();
+  searchUsers('');
+});
 </script>
 
 <style scoped>
@@ -463,6 +413,17 @@ onMounted(loadBusinessTypes);
   flex-wrap: wrap;
   gap: 10px 14px;
   color: var(--el-text-color-regular);
+}
+
+.user-option {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) minmax(110px, 1fr) minmax(150px, 1.4fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.user-option span:not(:first-child) {
+  color: var(--el-text-color-secondary);
 }
 
 .form-actions {

@@ -11,7 +11,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -222,19 +224,29 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
                                                            double maxScore,
                                                            int limit,
                                                            LocalDateTime currentTime) {
+        ScoreRangeSql scoreRangeSql = scoreRangeSql(minScore, maxScore);
+        List<Object> args = new ArrayList<>();
+        args.add(likePrefix(keyPrefix));
+        args.add(currentTime);
+        args.addAll(scoreRangeSql.args());
         return jdbcTemplate.query(
-            sqlSelectSortedSetMembersByScore(limit),
+            sqlSelectSortedSetMembersByScore(scoreRangeSql.whereSql(), limit),
             (rs, rowNum) -> sortedSetMemberFromKey(keyPrefix, rs.getString("kv_key")),
-            likePrefix(keyPrefix), currentTime, minScore, maxScore);
+            args.toArray());
     }
 
     private long deleteSortedSetMembersByScore(String keyPrefix,
                                                double minScore,
                                                double maxScore,
                                                LocalDateTime currentTime) {
+        ScoreRangeSql scoreRangeSql = scoreRangeSql(minScore, maxScore);
+        List<Object> args = new ArrayList<>();
+        args.add(likePrefix(keyPrefix));
+        args.add(currentTime);
+        args.addAll(scoreRangeSql.args());
         return jdbcTemplate.update(
-            sqlDeleteSortedSetMembersByScore(),
-            likePrefix(keyPrefix), currentTime, minScore, maxScore);
+            sqlDeleteSortedSetMembersByScore(scoreRangeSql.whereSql()),
+            args.toArray());
     }
 
     private LocalDateTime now() {
@@ -274,19 +286,36 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         return "SELECT COUNT(*) FROM " + tableName + SQL_ACTIVE_PREFIX_WHERE;
     }
 
-    private String sqlSelectSortedSetMembersByScore(int limit) {
+    private String sqlSelectSortedSetMembersByScore(String scoreWhereSql, int limit) {
         String limitSql = limit > 0 ? " LIMIT " + limit : "";
         return "SELECT kv_key FROM " + tableName
             + SQL_ACTIVE_PREFIX_WHERE
-            + " AND " + SQL_DECIMAL_SCORE + " BETWEEN ? AND ?"
+            + scoreWhereSql
             + " ORDER BY " + SQL_DECIMAL_SCORE + " ASC, kv_key ASC"
             + limitSql;
     }
 
-    private String sqlDeleteSortedSetMembersByScore() {
+    private String sqlDeleteSortedSetMembersByScore(String scoreWhereSql) {
         return "DELETE FROM " + tableName
             + SQL_ACTIVE_PREFIX_WHERE
-            + " AND " + SQL_DECIMAL_SCORE + " BETWEEN ? AND ?";
+            + scoreWhereSql;
+    }
+
+    private ScoreRangeSql scoreRangeSql(double minScore, double maxScore) {
+        Require.isTrue(!Double.isNaN(minScore), "minScore cannot be NaN");
+        Require.isTrue(!Double.isNaN(maxScore), "maxScore cannot be NaN");
+        Require.isTrue(minScore <= maxScore, "minScore cannot be greater than maxScore");
+        StringBuilder whereSql = new StringBuilder();
+        List<Object> args = new ArrayList<>();
+        if (minScore != Double.NEGATIVE_INFINITY) {
+            whereSql.append(" AND ").append(SQL_DECIMAL_SCORE).append(" >= ?");
+            args.add(minScore);
+        }
+        if (maxScore != Double.POSITIVE_INFINITY) {
+            whereSql.append(" AND ").append(SQL_DECIMAL_SCORE).append(" <= ?");
+            args.add(maxScore);
+        }
+        return new ScoreRangeSql(whereSql.toString(), args);
     }
 
     private long nextId() {
@@ -301,5 +330,8 @@ public class JdbcKvStore implements IKvStore, IKvSortedSet {
         Require.isTrue(TABLE_NAME_PATTERN.matcher(candidate).matches(),
                 "tableName must match [A-Za-z_][A-Za-z0-9_]*");
         return candidate;
+    }
+
+    private record ScoreRangeSql(String whereSql, List<Object> args) {
     }
 }

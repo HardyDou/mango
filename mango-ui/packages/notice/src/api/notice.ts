@@ -23,6 +23,32 @@ export function sendSiteNotice(data: NoticeSendCommand) {
   return post<NoticeSendResult>('/notice/site/messages', { channelTypes: ['SITE'], ...data });
 }
 
+export interface NoticeIdentityUser {
+  userId?: string;
+  username: string;
+  nickname?: string;
+  phone?: string;
+  email?: string;
+  status?: number;
+}
+
+export function getIdentityUsers(keyword: string, params?: { pageNum?: number; pageSize?: number; status?: number }) {
+  return get<PageResult<NoticeIdentityUser>>('/identity/users/page', {
+    params: {
+      page: params?.pageNum,
+      size: params?.pageSize,
+      status: params?.status,
+      keyword: keyword || undefined,
+    },
+  }).then((data) => ({
+    list: data.list || (data as unknown as { records?: NoticeIdentityUser[] }).records || [],
+    total: data.total,
+    page: data.page,
+    size: data.size,
+    pages: data.pages,
+  }));
+}
+
 export function getBusinessTypes(params?: Record<string, unknown>) {
   return get<PageResult<NoticeBusinessType>>('/notice/business-types', { params });
 }

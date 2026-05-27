@@ -5,8 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.Require;
+import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.kv.api.IOutboxStore;
+import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
@@ -117,19 +120,31 @@ public class NoticeService implements INoticeService {
  private final List<NoticeChannelSender> channelSenders;
  private final ObjectMapper objectMapper;
  private final IOutboxStore outboxStore;
+ private final IdentityUserApi identityUserApi;
 
  @Override
+ @Transactional(rollbackFor = Exception.class)
  public NoticeSendResultVO send(SendNoticeCommand command) {
  NoticeBusinessTypeEntity businessType = findBusinessType(command.getBizType());
  List<NoticeBusinessChannelTemplateEntity> templates = resolveTemplates(command, businessType);
  List<NoticeRecipientCommand> recipients = resolveRecipients(command);
+ Require.isTrue(!recipients.isEmpty(), "接收用户不能为空");
  NoticeTaskEntity task = createTask(command, templates, recipients);
+ int totalCount = 0;
+ Set<NoticeChannelType> actualChannels = new LinkedHashSet<>();
  for (NoticeRecipientCommand recipientCommand : recipients) {
  NoticeRecipientEntity recipient = createRecipient(task.getId(), recipientCommand);
  for (NoticeBusinessChannelTemplateEntity template : templates) {
+ if (!canSendToRecipient(template.getChannelType(), recipient)) {
+ continue;
+ }
  createSendRecord(task, recipient, template, command);
+ totalCount++;
+ actualChannels.add(template.getChannelType());
  }
  }
+ Require.isTrue(totalCount > 0, "没有可发送的通知记录");
+ updateTaskTotalCount(task, totalCount, actualChannels);
  outboxStore.enqueue(NoticeOutboxMessageMapper.toOutboxMessage(task.getId(), nextAttemptAt(task)));
  return new NoticeSendResultVO(0, 0);
  }
@@ -844,13 +859,33 @@ public class NoticeService implements INoticeService {
  if (!requested.isEmpty()) {
  templates = templates.stream().filter(template -> requested.contains(template.getChannelType())).toList();
  }
- if (!templates.isEmpty()) {
- return templates;
+ if (!templates.isEmpty() || businessType.getId() != null) {
+ return ensureSiteTemplate(command, businessType, templates);
  }
  if (StringUtils.hasText(command.getTitle()) || StringUtils.hasText(command.getContent())) {
  return directTemplates(command, businessType, requested);
  }
  throw new IllegalStateException("业务类型未配置启用渠道模板");
+ }
+
+ private List<NoticeBusinessChannelTemplateEntity> ensureSiteTemplate(SendNoticeCommand command,
+ NoticeBusinessTypeEntity businessType, List<NoticeBusinessChannelTemplateEntity> templates) {
+ boolean hasSite = templates.stream().anyMatch(template -> template.getChannelType() == NoticeChannelType.SITE);
+ if (hasSite) {
+ return templates;
+ }
+ NoticeBusinessChannelTemplateEntity template = new NoticeBusinessChannelTemplateEntity();
+ template.setBizType(command.getBizType());
+ template.setBusinessTypeId(businessType.getId());
+ template.setChannelType(NoticeChannelType.SITE);
+ template.setTitleTemplate(businessType.getBizName());
+ template.setContentTemplate(StringUtils.hasText(command.getContent()) ? command.getContent() : businessType.getBizName());
+ template.setVersion(1);
+ template.setVersionStatus(NoticeTemplateVersionStatus.ACTIVE);
+ template.setEnabled(true);
+ List<NoticeBusinessChannelTemplateEntity> result = new ArrayList<>(templates);
+ result.add(template);
+ return result;
  }
 
  private Set<NoticeChannelType> requestedChannels(SendNoticeCommand command) {
@@ -885,9 +920,34 @@ public class NoticeService implements INoticeService {
  receiverIds(command).forEach(userId -> {
  NoticeRecipientCommand recipient = new NoticeRecipientCommand();
  recipient.setUserId(userId);
+ enrichRecipientFromUser(recipient);
  recipients.add(recipient);
  });
  return recipients;
+ }
+
+ private void enrichRecipientFromUser(NoticeRecipientCommand recipient) {
+ if (recipient.getUserId() == null || identityUserApi == null) {
+ return;
+ }
+ R<IdentityUserInfo> response = identityUserApi.getUserInfoById(recipient.getUserId());
+ if (response == null || !response.isSuccess() || response.getData() == null) {
+ return;
+ }
+ IdentityUserInfo user = response.getData();
+ if (!StringUtils.hasText(recipient.getRecipientName())) {
+ recipient.setRecipientName(firstText(user.getNickname(), user.getUsername()));
+ }
+ if (!StringUtils.hasText(recipient.getMobile())) {
+ recipient.setMobile(user.getPhone());
+ }
+ if (!StringUtils.hasText(recipient.getEmail())) {
+ recipient.setEmail(user.getEmail());
+ }
+ }
+
+ private String firstText(String first, String second) {
+ return StringUtils.hasText(first) ? first : second;
  }
 
  private NoticeTaskEntity createTask(SendNoticeCommand command, List<NoticeBusinessChannelTemplateEntity> templates,
@@ -902,11 +962,20 @@ public class NoticeService implements INoticeService {
  task.setSendMode(command.getSendMode() == null ? NoticeSendMode.IMMEDIATE : command.getSendMode());
  task.setScheduledTime(command.getScheduledTime());
  task.setStatus(task.getSendMode() == NoticeSendMode.SCHEDULED ? NoticeTaskStatus.WAITING : NoticeTaskStatus.SENDING);
- task.setTotalCount(recipients.size() * templates.size());
+ task.setTotalCount(0);
  task.setSuccessCount(0);
  task.setFailCount(0);
  taskMapper.insert(task);
  return task;
+ }
+
+ private void updateTaskTotalCount(NoticeTaskEntity task, int totalCount, Set<NoticeChannelType> actualChannels) {
+ task.setTotalCount(totalCount);
+ task.setChannelTypes(actualChannels.stream()
+ .map(Enum::name)
+ .distinct()
+ .collect(Collectors.joining(",")));
+ taskMapper.updateById(task);
  }
 
  private Instant nextAttemptAt(NoticeTaskEntity task) {
@@ -937,6 +1006,17 @@ public class NoticeService implements INoticeService {
  recipient.setExternalId(command.getExternalId());
  recipientMapper.insert(recipient);
  return recipient;
+ }
+
+ private boolean canSendToRecipient(NoticeChannelType channelType, NoticeRecipientEntity recipient) {
+ return switch (channelType) {
+ case SITE -> recipient.getUserId() != null;
+ case SMS -> StringUtils.hasText(recipient.getMobile());
+ case EMAIL -> StringUtils.hasText(recipient.getEmail());
+ case WECHAT_OFFICIAL -> StringUtils.hasText(recipient.getWechatOpenid());
+ case WECOM -> StringUtils.hasText(recipient.getWecomUserId());
+ case DINGTALK -> StringUtils.hasText(recipient.getDingtalkUserId());
+ };
  }
 
  private NoticeSendRecordEntity createSendRecord(NoticeTaskEntity task, NoticeRecipientEntity recipient,

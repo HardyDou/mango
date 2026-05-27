@@ -26,6 +26,23 @@ class KvSortedSetTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#sortedSets")
+    void rangeByScore_supportsUnboundedScore(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
+        try (fixture) {
+            IKvSortedSet sortedSet = fixture.sortedSet();
+            String key = fixture.key("outbox:pending");
+
+            sortedSet.add(key, "m3", 30, 60);
+            sortedSet.add(key, "m1", 10, 60);
+            sortedSet.add(key, "m2", 20, 60);
+
+            assertThat(sortedSet.rangeByScore(key, Double.NEGATIVE_INFINITY, 20, 0)).containsExactly("m1", "m2");
+            assertThat(sortedSet.rangeByScore(key, 20, Double.POSITIVE_INFINITY, 0)).containsExactly("m2", "m3");
+            assertThat(sortedSet.rangeByScore(key, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, 2)).containsExactly("m1", "m2");
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("io.mango.infra.kv.core.KvStoreTestFixtures#sortedSets")
     void add_updatesMemberScore(String name, KvStoreTestFixtures.StoreFixture fixture) throws Exception {
         try (fixture) {
             IKvSortedSet sortedSet = fixture.sortedSet();
