@@ -1,6 +1,7 @@
 package io.mango.authorization.api;
 
 import io.mango.authorization.api.command.AppModuleCommand;
+import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.vo.AppModuleVO;
 import io.mango.authorization.api.vo.FrontendModuleRuntimeStrategyVO;
@@ -20,6 +21,8 @@ public interface AppModuleApi {
     R<Boolean> disable(String appCode, String moduleCode);
 
     R<Integer> syncMenus(String appCode, String moduleCode);
+
+    R<Integer> registerResourceManifest(AppModuleResourceManifestCommand command);
 
     R<List<FrontendModuleRuntimeStrategyVO>> listRuntimeStrategies(String appCode, String deployProfile);
 

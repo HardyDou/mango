@@ -1,0 +1,20 @@
+{
+  "name": "create-mango-business",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "create-mango-business": "./src/index.mjs",
+    "mango-business": "./src/index.mjs"
+  },
+  "scripts": {
+    "test": "node scripts/check-cli.mjs"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  }
+}

@@ -1,0 +1,10 @@
+# Mango Productization Issue #26 Sprint 4 Admin Shell Ledger
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| S4-001 | Issue #26 #2 #12 | 发布可复用前端壳 `@mango/admin-shell` | 新增 npm 包 `@mango/admin-shell`，提供 shell 创建入口 | `mango-ui/packages/admin-shell/package.json` | `pnpm -F @mango/admin-shell build` | DONE | `mango-ui/packages/admin-shell/package.json` |
+| S4-002 | Issue #26 #12 | 提供 admin app 配置入口 | 导出 `createMangoAdminApp(options)`，支持 mountTarget、apiBaseUrl、title、login、modules、localApps、runtimeConfigUrl | `mango-ui/packages/admin-shell/src/index.ts` | `pnpm -F @mango/admin-shell test` | DONE | `mango-ui/packages/admin-shell/src/index.ts` |
+| S4-003 | Issue #26 #2 #13 | shell 包必须包含 router、layout、stores、menuLoader、theme、runtime 约定 | 将现有 shell app 私有实现下沉到 `packages/admin-shell/src`，包内使用相对引用，不依赖 app 别名 | `mango-ui/packages/admin-shell/src` | `pnpm -F @mango/admin-shell build` | DONE | `mango-ui/packages/admin-shell/src` |
+| S4-004 | Issue #26 #2 | shell app 不再作为业务项目复制源 | `apps/mango-admin-shell` 改为薄启动应用，依赖 `@mango/admin-shell` | `mango-ui/apps/mango-admin-shell/src/main.ts` | `pnpm -F mango-admin-shell build` | DONE | `mango-ui/apps/mango-admin-shell/src/main.ts` |
+| S4-005 | PMO / 前端 Monorepo 规范 | 公共包不得依赖 `apps/*` 或 app 私有路径 | 增加包边界测试，检查导出、package 依赖和源码 import | `mango-ui/packages/admin-shell/src/__tests__/adminShellBoundary.spec.ts` | `pnpm -F @mango/admin-shell test` | DONE | `mango-ui/packages/admin-shell/src/__tests__/adminShellBoundary.spec.ts` |
+| S4-006 | PMO / Sprint 规范 | Sprint 4 必须有计划、验收和台账 | 新增 Sprint 4 设计说明和交付台账 | `mango-docs/plans/2026-05-27-mango-productization-sprint-4-admin-shell.md` | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-27-mango-productization-sprint-4-admin-shell.md --ledger mango-docs/plans/2026-05-27-mango-productization-sprint-4-admin-shell-ledger.md --mode verify --require "@mango/admin-shell,createMangoAdminApp,router,layout,stores"` | DONE | `mango-docs/plans/2026-05-27-mango-productization-sprint-4-admin-shell-ledger.md` |

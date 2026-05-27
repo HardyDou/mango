@@ -2,6 +2,7 @@ package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.authorization.api.command.AppModuleCommand;
+import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.api.vo.AppModuleVO;
 import io.mango.authorization.core.entity.AuthorizationAppModule;
 import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
@@ -10,13 +11,16 @@ import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
 import io.mango.authorization.core.service.IAppModuleService;
+import io.mango.common.result.Require;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 逻辑应用集成模块服务实现。
@@ -88,6 +92,179 @@ public class AppModuleServiceImpl implements IAppModuleService {
         return menus.size();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer registerResourceManifest(AppModuleResourceManifestCommand command) {
+        Require.notNull(command, "资源清单不能为空");
+        Require.notBlank(command.getAppCode(), "应用编码不能为空");
+        Require.notBlank(command.getModuleCode(), "模块编码不能为空");
+        AppModuleCommand moduleCommand = toModuleCommand(command);
+        save(moduleCommand);
+        if (command.getMenus() == null || command.getMenus().isEmpty()) {
+            return 0;
+        }
+        ManifestContext context = new ManifestContext(command);
+        for (AppModuleResourceManifestCommand.Menu menu : command.getMenus()) {
+            context.increment(upsertManifestMenu(context, menu, 0L));
+        }
+        return context.count();
+    }
+
+    private AppModuleCommand toModuleCommand(AppModuleResourceManifestCommand command) {
+        AppModuleCommand moduleCommand = new AppModuleCommand();
+        moduleCommand.setAppCode(command.getAppCode());
+        moduleCommand.setModuleCode(command.getModuleCode());
+        moduleCommand.setModuleName(command.getModuleName());
+        moduleCommand.setStatus(command.getStatus());
+        moduleCommand.setSort(command.getSort());
+        return moduleCommand;
+    }
+
+    private int upsertManifestMenu(
+            ManifestContext context,
+            AppModuleResourceManifestCommand.Menu item,
+            Long parentId) {
+        if (item == null) {
+            return 0;
+        }
+        Require.notBlank(item.getMenuName(), "菜单名称不能为空");
+        Require.notBlank(item.getMenuCode(), "菜单编码不能为空");
+        Menu menu = findMenu(context.appCode(), context.moduleCode(), item.getMenuCode());
+        LocalDateTime now = LocalDateTime.now();
+        if (menu == null) {
+            menu = new Menu();
+            menu.setAppCode(context.appCode());
+            menu.setModuleCode(context.moduleCode());
+            menu.setMenuCode(item.getMenuCode());
+            menu.setCreateTime(now);
+        }
+        fillManifestMenu(menu, item, parentId, context);
+        menu.setUpdateTime(now);
+        if (menu.getMenuId() == null) {
+            menuMapper.insert(menu);
+        } else {
+            menuMapper.updateById(menu);
+        }
+        saveRuntimeConfig(menu, item.getPageType(), item.getExternalUrl());
+        int changed = 1;
+        changed += upsertPermissionMenus(context, item, menu.getMenuId());
+        if (item.getChildren() != null) {
+            for (AppModuleResourceManifestCommand.Menu child : item.getChildren()) {
+                changed += upsertManifestMenu(context, child, menu.getMenuId());
+            }
+        }
+        return changed;
+    }
+
+    private void fillManifestMenu(
+            Menu menu,
+            AppModuleResourceManifestCommand.Menu item,
+            Long parentId,
+            ManifestContext context) {
+        menu.setTenantId(1L);
+        menu.setAppCode(context.appCode());
+        menu.setModuleCode(context.moduleCode());
+        menu.setParentId(parentId == null ? 0L : parentId);
+        menu.setMenuType(item.getMenuType() == null ? 2 : item.getMenuType());
+        menu.setMenuName(item.getMenuName());
+        menu.setPath(item.getPath());
+        menu.setIcon(item.getIcon());
+        menu.setSort(item.getSort() == null ? 0 : item.getSort());
+        menu.setStatus(item.getStatus() == null ? 1 : item.getStatus());
+        menu.setVisible(item.getVisible() == null ? 1 : item.getVisible());
+        menu.setComponent(item.getComponent());
+        menu.setKeepAlive(item.getKeepAlive() == null ? 0 : item.getKeepAlive());
+        menu.setEmbedded(item.getEmbedded() == null ? 0 : item.getEmbedded());
+        menu.setRedirect(item.getRedirect());
+        menu.setPermissions(joinPermissions(item.getPermissions()));
+        menu.setRemark(item.getRemark());
+        menu.setDelFlag(0);
+    }
+
+    private int upsertPermissionMenus(
+            ManifestContext context,
+            AppModuleResourceManifestCommand.Menu item,
+            Long parentId) {
+        if (item.getPermissionItems() == null || item.getPermissionItems().isEmpty()) {
+            return 0;
+        }
+        int changed = 0;
+        for (AppModuleResourceManifestCommand.Permission permission : item.getPermissionItems()) {
+            if (permission == null) {
+                continue;
+            }
+            Require.notBlank(permission.getPermissionCode(), "权限编码不能为空");
+            Require.notBlank(permission.getPermissionName(), "权限名称不能为空");
+            Menu menu = findMenu(context.appCode(), context.moduleCode(), permission.getPermissionCode());
+            LocalDateTime now = LocalDateTime.now();
+            if (menu == null) {
+                menu = new Menu();
+                menu.setAppCode(context.appCode());
+                menu.setModuleCode(context.moduleCode());
+                menu.setMenuCode(permission.getPermissionCode());
+                menu.setCreateTime(now);
+            }
+            fillPermissionMenu(menu, permission, parentId, context);
+            menu.setUpdateTime(now);
+            if (menu.getMenuId() == null) {
+                menuMapper.insert(menu);
+            } else {
+                menuMapper.updateById(menu);
+            }
+            ensureMenuRuntimeConfig(menu);
+            changed++;
+        }
+        return changed;
+    }
+
+    private void fillPermissionMenu(
+            Menu menu,
+            AppModuleResourceManifestCommand.Permission permission,
+            Long parentId,
+            ManifestContext context) {
+        menu.setTenantId(1L);
+        menu.setAppCode(context.appCode());
+        menu.setModuleCode(context.moduleCode());
+        menu.setParentId(parentId == null ? 0L : parentId);
+        menu.setMenuType(3);
+        menu.setMenuName(permission.getPermissionName());
+        menu.setPath(null);
+        menu.setIcon(null);
+        menu.setSort(permission.getSort() == null ? 0 : permission.getSort());
+        menu.setStatus(permission.getStatus() == null ? 1 : permission.getStatus());
+        menu.setVisible(0);
+        menu.setComponent(null);
+        menu.setKeepAlive(0);
+        menu.setEmbedded(0);
+        menu.setRedirect(null);
+        menu.setPermissions(permission.getPermissionCode());
+        menu.setRemark(permission.getRemark());
+        menu.setDelFlag(0);
+    }
+
+    private Menu findMenu(String appCode, String moduleCode, String menuCode) {
+        if (!StringUtils.hasText(appCode) || !StringUtils.hasText(moduleCode) || !StringUtils.hasText(menuCode)) {
+            return null;
+        }
+        return menuMapper.selectOne(new LambdaQueryWrapper<Menu>()
+                .eq(Menu::getAppCode, appCode)
+                .eq(Menu::getModuleCode, moduleCode)
+                .eq(Menu::getMenuCode, menuCode)
+                .last("LIMIT 1"));
+    }
+
+    private String joinPermissions(List<String> permissions) {
+        if (permissions == null || permissions.isEmpty()) {
+            return null;
+        }
+        List<String> values = permissions.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .collect(Collectors.toCollection(ArrayList::new));
+        return values.isEmpty() ? null : String.join(",", values);
+    }
+
     private AuthorizationAppModule find(String appCode, String moduleCode) {
         if (!StringUtils.hasText(appCode) || !StringUtils.hasText(moduleCode)) {
             return null;
@@ -106,6 +283,10 @@ public class AppModuleServiceImpl implements IAppModuleService {
     }
 
     private void ensureMenuRuntimeConfig(Menu menu) {
+        saveRuntimeConfig(menu, defaultPageType(menu), null);
+    }
+
+    private void saveRuntimeConfig(Menu menu, String pageType, String externalUrl) {
         FrontendMenuRuntimeConfig config = menuRuntimeConfigMapper.selectOne(
                 new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
                         .eq(FrontendMenuRuntimeConfig::getMenuId, menu.getMenuId())
@@ -117,8 +298,8 @@ public class AppModuleServiceImpl implements IAppModuleService {
             config.setCreateTime(now);
         }
         config.setAppCode(menu.getAppCode());
-        config.setPageType(defaultPageType(menu));
-        config.setExternalUrl(null);
+        config.setPageType(StringUtils.hasText(pageType) ? pageType : defaultPageType(menu));
+        config.setExternalUrl(externalUrl);
         config.setUpdateTime(now);
         if (config.getConfigId() == null) {
             menuRuntimeConfigMapper.insert(config);
@@ -148,5 +329,33 @@ public class AppModuleServiceImpl implements IAppModuleService {
         vo.setCreateTime(binding.getCreateTime());
         vo.setUpdateTime(binding.getUpdateTime());
         return vo;
+    }
+
+    private static final class ManifestContext {
+
+        private final String appCode;
+        private final String moduleCode;
+        private int count;
+
+        private ManifestContext(AppModuleResourceManifestCommand command) {
+            this.appCode = command.getAppCode();
+            this.moduleCode = command.getModuleCode();
+        }
+
+        private String appCode() {
+            return appCode;
+        }
+
+        private String moduleCode() {
+            return moduleCode;
+        }
+
+        private void increment(int value) {
+            count += value;
+        }
+
+        private int count() {
+            return count;
+        }
     }
 }

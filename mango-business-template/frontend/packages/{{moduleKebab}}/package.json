@@ -1,0 +1,17 @@
+{
+  "name": "@{{projectKebab}}/{{moduleKebab}}",
+  "version": "{{projectVersion}}",
+  "private": false,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@{{projectKebab}}/{{moduleKebab}}-api": "{{projectVersion}}",
+    "@mango/admin-pages": "^1.0.0",
+    "@mango/common": "^1.0.0",
+    "element-plus": "^2.5.5"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.1.6"
+  }
+}

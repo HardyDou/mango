@@ -1,0 +1,9 @@
+# Mango Productization Issue #26 Sprint 2 Resource Manifest Ledger
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|----|------|------|----------|--------|----------|------|----------|
+| S2-01 | Issue #26 | 业务模块提供标准菜单/权限/资源同步扩展规范 | 新增 jar 内 resource manifest 契约，菜单和按钮权限统一声明 | `mango-authorization-api` manifest command | Maven test and README format check | DONE | `mango/mango-platform/mango-authorization/mango-authorization-api/src/main/java/io/mango/authorization/api/command/AppModuleResourceManifestCommand.java` |
+| S2-02 | Issue #26 | 后端可同步业务模块菜单和权限 | 本地 authorization core 按 `appCode + moduleCode + menuCode` upsert `authorization_menu`，按钮权限写 `menuType=3` | `AppModuleServiceImpl.registerResourceManifest` | `AppModuleServiceImplTest` | DONE | `mango/mango-platform/mango-authorization/mango-authorization-core/src/test/java/io/mango/authorization/core/service/impl/AppModuleServiceImplTest.java` |
+| S2-03 | Issue #26 | 外部业务 App 可通过依赖发布物料完成注册 | resource-sync starter 自动加载 classpath manifest，远程 AppModule Feign 调用 authorization 服务 | `AppModuleResourceManifestSyncRunner`, `AppModuleFeignClient` | `AppModuleResourceManifestSyncRunnerTest` and Maven test | DONE | `mango/mango-platform/mango-authorization/mango-authorization-resource-sync-starter/src/test/java/io/mango/authorization/resource/sync/AppModuleResourceManifestSyncRunnerTest.java` |
+| S2-04 | Issue #26 | 同步能力必须可控，避免启动写库不可预期 | 增加 `enabled`、`mode=read/write`、`locations` 配置，read 模式只解析不写入 | `AppModuleResourceManifestSyncProperties` | `AppModuleResourceManifestSyncRunnerTest` | DONE | `mango/mango-platform/mango-authorization/mango-authorization-resource-sync-starter/src/main/java/io/mango/authorization/resource/sync/AppModuleResourceManifestSyncProperties.java` |
+| S2-05 | Issue #26 | 形成可落地规范供业务模板使用 | README 记录 manifest 路径、字段和示例 | `mango-authorization/README.md` | Manual doc review and ledger check | DONE | `mango/mango-platform/mango-authorization/README.md` |

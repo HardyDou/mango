@@ -283,6 +283,9 @@ importers:
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
+      '@mango/admin-shell':
+        specifier: workspace:*
+        version: link:../../packages/admin-shell
       '@mango/app-runtime':
         specifier: workspace:*
         version: link:../../packages/app-runtime
@@ -452,6 +455,52 @@ importers:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.9.3)
 
+  packages/admin-shell:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: 1.0.0
+        version: 1.0.0(typescript@5.9.3)
+      '@mango/app-runtime':
+        specifier: 1.0.0
+        version: 1.0.0(vue@3.5.13(typescript@5.9.3))
+      '@mango/auth':
+        specifier: 1.0.0
+        version: 1.0.0(typescript@5.9.3)
+      '@mango/common':
+        specifier: 1.0.0
+        version: 1.0.0(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      '@mango/rbac':
+        specifier: 1.0.0
+        version: 1.0.0(typescript@5.9.3)
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: 2.0.32
+        version: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(sass@1.58.3)(terser@5.46.1)
+
   packages/api-schema:
     dependencies:
       typescript:
@@ -584,6 +633,8 @@ importers:
       '@mango/api-schema':
         specifier: 1.0.0
         version: 1.0.0
+
+  packages/create-mango-business: {}
 
   packages/file:
     dependencies:
@@ -1225,6 +1276,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@mango/admin-pages@1.0.0':
+    resolution: {integrity: sha512-ZWnxblw4YfoofqgNfvzG9lAktA568yoh7zWfTu5D2CLj65ogXH7LEC5vLa4BqLcaIYeTzrIuadgPYu0toAP8Fw==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/admin-pages/-/admin-pages-1.0.0.tgz}
+
   '@mango/api-schema@1.0.0':
     resolution: {integrity: sha512-pNiarqo1KIwB6XwnZ+ZUGZdR10r/XizytkDcmexx35JN66uuODzaQOROuL49e1CD5UAw8Ssm9exFcM97yPDoMA==, tarball: http://nexus.inner.yunxinbaokeji.com/repository/npm-group/@mango/api-schema/-/api-schema-1.0.0.tgz}
 
@@ -1299,6 +1353,10 @@ packages:
 
   '@open-draft/until@2.1.0':
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
+
+  '@pkgjs/parseargs@0.11.0':
+    resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
+    engines: {node: '>=14'}
 
   '@playwright/test@1.59.1':
     resolution: {integrity: sha512-PG6q63nQg5c9rIi4/Z5lR5IVF7yU5MqmKaPOe0HSc0O2cX1fPi96sUQu5j7eo4gKCkB2AnNGoWt7y4/Xx3Kcqg==}
@@ -4316,6 +4374,25 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@mango/admin-pages@1.0.0(typescript@5.9.3)':
+    dependencies:
+      '@mango/api-schema': 1.0.0
+      '@mango/auth': 1.0.0(typescript@5.9.3)
+      '@mango/calendar': 1.0.0(typescript@5.9.3)
+      '@mango/common': 1.0.0(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      '@mango/file': 1.0.0(typescript@5.9.3)
+      '@mango/numgen': 1.0.0(typescript@5.9.3)
+      '@mango/rbac': 1.0.0(typescript@5.9.3)
+      '@mango/system': 1.0.0(typescript@5.9.3)
+      '@mango/template': 1.0.0(typescript@5.9.3)
+      '@mango/workflow': 1.0.0(typescript@5.9.3)
+      '@mango/workflow-business-example': 1.0.0(typescript@5.9.3)
+      vue: 3.5.13(typescript@5.9.3)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - debug
+      - typescript
+
   '@mango/api-schema@1.0.0':
     dependencies:
       typescript: 5.9.3
@@ -4533,6 +4610,9 @@ snapshots:
       outvariant: 1.4.3
 
   '@open-draft/until@2.1.0': {}
+
+  '@pkgjs/parseargs@0.11.0':
+    optional: true
 
   '@playwright/test@1.59.1':
     dependencies:
@@ -6098,6 +6178,8 @@ snapshots:
   jackspeak@3.4.3:
     dependencies:
       '@isaacs/cliui': 8.0.2
+    optionalDependencies:
+      '@pkgjs/parseargs': 0.11.0
 
   jiti@1.21.7: {}
 

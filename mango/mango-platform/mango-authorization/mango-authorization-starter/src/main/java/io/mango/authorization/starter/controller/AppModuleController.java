@@ -3,6 +3,7 @@ package io.mango.authorization.starter.controller;
 import io.mango.authorization.api.AppModuleApi;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.command.AppModuleCommand;
+import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.api.command.FrontendModuleRuntimeStrategyCommand;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.authorization.api.vo.AppModuleVO;
@@ -74,6 +75,14 @@ public class AppModuleController implements AppModuleApi {
             @Parameter(description = "应用编码") @RequestParam String appCode,
             @Parameter(description = "模块编码") @RequestParam String moduleCode) {
         return R.ok(appModuleService.syncMenus(appCode, moduleCode));
+    }
+
+    @Override
+    @PostMapping("/resource-manifests/register")
+    @Operation(summary = "注册应用模块资源清单")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:menu:edit")
+    public R<Integer> registerResourceManifest(@Valid @RequestBody AppModuleResourceManifestCommand command) {
+        return R.ok(appModuleService.registerResourceManifest(command));
     }
 
     @Override

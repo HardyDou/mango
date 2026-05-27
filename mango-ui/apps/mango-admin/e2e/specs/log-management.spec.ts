@@ -58,8 +58,8 @@ async function getJson(request: APIRequestContext, token: string, path: string) 
   return { response, body };
 }
 
-async function listRoutes(request: APIRequestContext, token: string) {
-  const response = await request.get('http://localhost:5555/system/route/list', {
+async function listConfigs(request: APIRequestContext, token: string) {
+  const response = await request.get('http://localhost:5555/system/config/list', {
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
@@ -67,25 +67,26 @@ async function listRoutes(request: APIRequestContext, token: string) {
   return body.data || [];
 }
 
-async function cleanupRoute(request: APIRequestContext, token: string, routeName: string) {
-  const routes = await listRoutes(request, token);
-  for (const route of routes.filter((item: any) => item.routeName === routeName)) {
-    await request.delete(`http://localhost:5555/system/route?id=${route.id}`, {
+async function cleanupConfig(request: APIRequestContext, token: string, configKey: string) {
+  const configs = await listConfigs(request, token);
+  for (const config of configs.filter((item: any) => item.configKey === configKey)) {
+    await request.delete(`http://localhost:5555/system/config?id=${config.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 }
 
-async function createRoute(request: APIRequestContext, token: string, routeName: string) {
-  const response = await request.post('http://localhost:5555/system/route', {
+async function createConfig(request: APIRequestContext, token: string, configKey: string) {
+  const response = await request.post('http://localhost:5555/system/config', {
     headers: { Authorization: `Bearer ${token}`, 'X-Forwarded-For': '8.8.4.4' },
     data: {
-      routeName,
-      routeType: 1,
-      routePath: `/e2e/log/${Date.now()}`,
-      routeDesc: 'E2E 审计日志触发路由',
+      configKey,
+      configValue: 'enabled',
+      configName: 'E2E 审计配置',
+      type: 'SYSTEM',
       sort: 999,
       status: 1,
+      remark: 'E2E 审计日志触发配置',
     },
   });
   expect(response.status()).toBe(200);
@@ -94,8 +95,8 @@ async function createRoute(request: APIRequestContext, token: string, routeName:
   return body.data as number | string;
 }
 
-async function deleteRoute(request: APIRequestContext, token: string, routeId: number | string) {
-  const response = await request.delete(`http://localhost:5555/system/route?id=${routeId}`, {
+async function deleteConfig(request: APIRequestContext, token: string, configId: number | string) {
+  const response = await request.delete(`http://localhost:5555/system/config?id=${configId}`, {
     headers: { Authorization: `Bearer ${token}`, 'X-Forwarded-For': '8.8.4.4' },
   });
   expect(response.status()).toBe(200);
@@ -119,7 +120,7 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
     );
     expect(listResponse.status()).toBe(200);
     expect(listBody.success || listBody.code === 200).toBeTruthy();
-    expect(listBody.data.total).toBeGreaterThan(0);
+    expect(Number(listBody.data.total)).toBeGreaterThan(0);
     expect(listBody.data.list.some((item: any) => item.username === 'admin' && item.tenantId === '1')).toBeTruthy();
     expect(listBody.data.list[0].location).toBeTruthy();
 
@@ -147,7 +148,7 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
     const pageStatResponse = await statResponsePromise;
     const pageListBody = await pageListResponse.json();
     const pageStatBody = await pageStatResponse.json();
-    expect(pageListBody.data.total).toBeGreaterThan(0);
+    expect(Number(pageListBody.data.total)).toBeGreaterThan(0);
     expect(Number(pageStatBody.data.totalCount)).toBeGreaterThan(0);
     await expect(page.getByText('登录日志').first()).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.el-table__row', { hasText: 'admin' }).first()).toBeVisible({ timeout: 10000 });
@@ -155,32 +156,32 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
   });
 
   test('维护接口写入操作日志，操作日志页面使用后端分页查询', async ({ page, request }) => {
-    const routeName = `E2E审计路由${Date.now()}`;
+    const configKey = `e2e.audit.config.${Date.now()}`;
     const platformToken = await loginToken(request, platformTenant);
-    let routeId: number | string | undefined;
+    let configId: number | string | undefined;
 
     try {
-      await cleanupRoute(request, platformToken, routeName);
-      routeId = await createRoute(request, platformToken, routeName);
-      await deleteRoute(request, platformToken, routeId);
-      routeId = undefined;
+      await cleanupConfig(request, platformToken, configKey);
+      configId = await createConfig(request, platformToken, configKey);
+      await deleteConfig(request, platformToken, configId);
+      configId = undefined;
 
       const { response: operationResponse, body: operationBody } = await getJson(
         request,
         platformToken,
-        '/system/log/operation/list?page=1&size=10&keyword=%E7%B3%BB%E7%BB%9F%E8%B7%AF%E7%94%B1',
+        '/system/log/operation/list?page=1&size=10&keyword=%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AE',
       );
       expect(operationResponse.status()).toBe(200);
       expect(operationBody.success || operationBody.code === 200).toBeTruthy();
-      const createLog = operationBody.data.list.find((item: any) => item.operation === '新增系统路由');
-      const deleteLog = operationBody.data.list.find((item: any) => item.operation === '删除系统路由');
+      const createLog = operationBody.data.list.find((item: any) => item.operation === '新增系统配置');
+      const deleteLog = operationBody.data.list.find((item: any) => item.operation === '删除系统配置');
       expect(createLog).toBeTruthy();
       expect(deleteLog).toBeTruthy();
       expect(createLog.method).toBe('POST');
-      expect(createLog.handlerMethod).toContain('SysRouteController.create');
+      expect(createLog.handlerMethod).toContain('SysConfigController.create');
       expect(createLog.location).toBeTruthy();
       expect(deleteLog.method).toBe('DELETE');
-      expect(deleteLog.handlerMethod).toContain('SysRouteController.delete');
+      expect(deleteLog.handlerMethod).toContain('SysConfigController.delete');
       expect(deleteLog.location).toBeTruthy();
 
       await loginPage(page, platformTenant);
@@ -192,23 +193,23 @@ test.describe('T14 审计日志真实写入与查询闭环', () => {
       await listResponsePromise;
       await expect(page.getByText('操作日志').first()).toBeVisible({ timeout: 10000 });
 
-      await page.getByLabel('关键词').fill('系统路由');
+      await page.getByLabel('关键词').fill('系统配置');
       const searchResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/system/log/operation/list') &&
-        response.url().includes('%E7%B3%BB%E7%BB%9F%E8%B7%AF%E7%94%B1') &&
+        response.url().includes('%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AE') &&
         response.status() === 200
       );
       await page.getByRole('button', { name: '查询' }).click();
       const searchResponse = await searchResponsePromise;
       const searchBody = await searchResponse.json();
-      expect(searchBody.data.total).toBeGreaterThan(0);
-      await expect(page.locator('.el-table__row', { hasText: '系统路由' }).first()).toBeVisible({ timeout: 10000 });
+      expect(Number(searchBody.data.total)).toBeGreaterThan(0);
+      await expect(page.locator('.el-table__row', { hasText: '系统配置' }).first()).toBeVisible({ timeout: 10000 });
       await expectNoAuthError(page);
     } finally {
-      if (routeId !== undefined) {
-        await deleteRoute(request, platformToken, routeId).catch(() => undefined);
+      if (configId !== undefined) {
+        await deleteConfig(request, platformToken, configId).catch(() => undefined);
       }
-      await cleanupRoute(request, platformToken, routeName).catch(() => undefined);
+      await cleanupConfig(request, platformToken, configKey).catch(() => undefined);
     }
   });
 

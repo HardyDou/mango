@@ -49,6 +49,7 @@
     </properties>
 
     <modules>
+        <module>mango-admin-starter</module>
         <module>mango-app</module>
         <module>mango-common</module>
         <module>mango-infra</module>
@@ -108,6 +109,11 @@
             </dependency>
 
             <!-- Mango Modules -->
+            <dependency>
+                <groupId>io.mango</groupId>
+                <artifactId>mango-admin-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.mango.common</groupId>
                 <artifactId>mango-common</artifactId>
@@ -351,6 +357,16 @@
             <dependency>
                 <groupId>io.mango.platform.workflow</groupId>
                 <artifactId>mango-workflow-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.calendar</groupId>
+                <artifactId>mango-calendar-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.numgen</groupId>
+                <artifactId>mango-numgen-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

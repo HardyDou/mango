@@ -1,7 +1,7 @@
 import { registerModulePages, registerShellPages, type MangoPageRegistry, type MangoShellPageLoaders } from './core';
-import { registerWorkflowBusinessExampleComponents } from '@mango/workflow-business-example';
 
 let registered = false;
+const loadWorkflowBusinessExample = () => import('@mango/workflow-business-example');
 
 export type RegisterDefaultAdminPagesOptions = {
   shellPages?: MangoShellPageLoaders;
@@ -13,7 +13,8 @@ export function registerDefaultAdminPages(options: RegisterDefaultAdminPagesOpti
     return;
   }
   registered = true;
-  registerWorkflowBusinessExampleComponents();
+  void loadWorkflowBusinessExample()
+    .then(m => m.registerWorkflowBusinessExampleComponents());
   registerShellPages(options.shellPages || {});
 
   const registries: MangoPageRegistry[] = [
@@ -91,7 +92,7 @@ export function registerDefaultAdminPages(options: RegisterDefaultAdminPagesOpti
         'workflow/task/detail/index': () => import('@mango/workflow').then(m => m.WorkflowTaskDetailView),
         'workflow/start-process/index': () => import('@mango/workflow').then(m => m.WorkflowStartProcessView),
         'workflow/custom-apply/index': () => import('@mango/workflow').then(m => m.WorkflowCustomApplyView),
-        'workflow/business-form/index': () => import('@mango/workflow-business-example').then(m => m.WorkflowBusinessFormView),
+        'workflow/business-form/index': () => loadWorkflowBusinessExample().then(m => m.WorkflowBusinessFormView),
       },
     },
   ];

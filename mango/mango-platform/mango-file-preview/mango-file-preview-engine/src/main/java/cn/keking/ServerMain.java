@@ -11,6 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.StopWatch;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
@@ -37,7 +38,10 @@ public class ServerMain {
     }
 
     static Map<String, Object> standaloneServerProperties() {
-        return Map.of("server.port", "${mango.file-preview.engine.port:8012}");
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("spring.config.name", "mango-file-preview-engine");
+        properties.put("server.port", "${mango.file-preview.engine.port:8012}");
+        return properties;
     }
 
 }

@@ -2,10 +2,26 @@ import { expect, test } from '@playwright/test';
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/#/login');
+  const accountTenantsResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  );
   await page.fill('input[placeholder="用户名"]', 'admin');
   await page.fill('input[placeholder="密码"]', 'admin123');
-  await page.click('button:has-text("登 录")');
+  await page.locator('input[placeholder="密码"]').blur();
+  await accountTenantsResponsePromise;
+  await page.locator('.tenant-select').click();
+  await page.getByRole('option', { name: /芒果集团/ }).click();
+
+  const menuResponsePromise = page.waitForResponse((response) => {
+    const url = response.url();
+    return response.status() === 200
+      && url.includes('/api/authorization/menus/user')
+      && url.includes('fmt=tree');
+  });
+  await page.locator('.login-btn').click();
   await page.waitForURL('**/#/home', { timeout: 10000 });
+  await menuResponsePromise;
+  await expect(page.getByRole('button', { name: '系统管理' })).toBeVisible({ timeout: 10000 });
 }
 
 const pages = [
@@ -17,10 +33,9 @@ const pages = [
   { path: '/system/app', title: '应用管理', api: '/api/authorization/apps', labels: ['内部管理后台', 'internal-admin', '启用'] },
   { path: '/system/menu', title: '菜单管理', api: '/api/authorization/menus', labels: ['目录', '菜单'] },
   { path: '/system/menu-package', title: '套餐管理', api: '/api/authorization/menu-packages', labels: ['套餐名称', '授权菜单数'] },
-  { path: '/system/dict', title: '字典类型', api: '/api/system/dict/type/list', labels: ['用户性别', '启用'] },
+  { path: '/system/dict', title: '新增类型', api: '/api/system/dict/type/list', labels: ['用户性别', '启用'] },
   { path: '/system/config', title: '系统配置', api: '/api/system/config/list', labels: ['系统参数'] },
   { path: '/system/area', title: '行政区划', api: '/api/system/area/children', labels: ['当前层级', '北京市'] },
-  { path: '/system/route', title: '路由管理', api: '/api/system/route/list', labels: ['新增路由', '路由路径'] },
   { path: '/system/login-log', title: '登录日志', api: '/api/system/log/login/list', labels: [] },
   { path: '/system/operation-log', title: '操作日志', api: '/api/system/log/operation/list', labels: [] },
 ];
