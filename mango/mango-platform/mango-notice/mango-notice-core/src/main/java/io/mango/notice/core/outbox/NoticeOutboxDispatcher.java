@@ -1,10 +1,14 @@
 package io.mango.notice.core.outbox;
 
 import io.mango.common.result.Require;
+import io.mango.infra.context.core.MangoContextHeaders;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.infra.kv.api.IOutboxDispatcher;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.notice.core.service.INoticeService;
+import org.springframework.util.StringUtils;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -61,8 +65,10 @@ public class NoticeOutboxDispatcher implements IOutboxDispatcher {
                 clock.instant());
         int handled = 0;
         for (OutboxMessage message : messages) {
+            MangoContextSnapshot originalContext = MangoContextHolder.get();
             try {
                 Long taskId = taskId(message);
+                applyTaskContext(message, taskId);
                 noticeService.executeTask(taskId);
                 Instant now = clock.instant();
                 if (noticeService.hasRetryWaitingRecords(taskId) && message.getAttemptCount() < maxAttempts) {
@@ -84,6 +90,7 @@ public class NoticeOutboxDispatcher implements IOutboxDispatcher {
                 if (message.getAttemptCount() >= maxAttempts) {
                     Long parsedTaskId = taskIdOrNull(message);
                     if (parsedTaskId != null) {
+                        applyTaskContext(message, parsedTaskId);
                         noticeService.finalizeRetryWaitingRecords(parsedTaskId, ex.getMessage());
                     }
                     outboxStore.ack(message.getMessageId(), workerId, now);
@@ -96,6 +103,8 @@ public class NoticeOutboxDispatcher implements IOutboxDispatcher {
                             now.plusSeconds(retryDelaySeconds),
                             now);
                 }
+            } finally {
+                MangoContextHolder.set(originalContext);
             }
         }
         return handled;
@@ -122,6 +131,32 @@ public class NoticeOutboxDispatcher implements IOutboxDispatcher {
                 return Long.valueOf(value);
             } catch (NumberFormatException ex) {
                 return null;
+            }
+        }
+        return null;
+    }
+
+    private void applyTaskContext(OutboxMessage message, Long taskId) {
+        String tenantId = tenantId(message);
+        if (!StringUtils.hasText(tenantId) && taskId != null) {
+            tenantId = noticeService.findTaskTenantId(taskId);
+        }
+        if (StringUtils.hasText(tenantId)) {
+            MangoContextHolder.set(MangoContextHolder.get().withTenantId(tenantId));
+        }
+    }
+
+    private String tenantId(OutboxMessage message) {
+        if (message.getHeaders() == null || message.getHeaders().isEmpty()) {
+            return null;
+        }
+        String tenantId = message.getHeaders().get(MangoContextHeaders.TENANT_ID);
+        if (StringUtils.hasText(tenantId)) {
+            return tenantId;
+        }
+        for (var entry : message.getHeaders().entrySet()) {
+            if (MangoContextHeaders.TENANT_ID.equalsIgnoreCase(entry.getKey())) {
+                return entry.getValue();
             }
         }
         return null;

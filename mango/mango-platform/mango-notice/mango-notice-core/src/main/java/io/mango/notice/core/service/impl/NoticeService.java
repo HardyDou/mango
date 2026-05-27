@@ -9,10 +9,13 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.enums.IdentityUserTargetType;
+import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
+import io.mango.notice.api.command.NoticeRecipientTargetCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
@@ -102,7 +105,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class NoticeService implements INoticeService {
 
- private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\{\\{\\s*([a-zA-Z0-9_]+)\\s*}}");
+ private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\{\\{\\s*([^{}]+?)\\s*}}|\\$\\{\\s*([^}]+?)\\s*}");
  private static final int MAX_CHANNEL_ATTEMPTS = 3;
  private static final String MASKED_VALUE = "***";
  private static final String SITE_INTERNAL_PROVIDER = "INTERNAL";
@@ -150,6 +153,12 @@ public class NoticeService implements INoticeService {
  }
 
  @Override
+ public String findTaskTenantId(Long taskId) {
+ Require.notNull(taskId, "通知任务 ID 不能为空");
+ return taskMapper.selectTenantIdById(taskId);
+ }
+
+ @Override
  public int executeTask(Long taskId) {
  NoticeTaskEntity task = taskMapper.selectById(taskId);
  if (task == null || task.getStatus() == NoticeTaskStatus.CANCELED) {
@@ -165,8 +174,14 @@ public class NoticeService implements INoticeService {
  int successCount = 0;
  int failCount = 0;
  int retryWaitingCount = 0;
+ int claimedCount = 0;
  for (NoticeSendRecordEntity record : records) {
- if (record.getStatus() == NoticeSendStatus.RETRY_WAITING) {
+ boolean retryWaiting = record.getStatus() == NoticeSendStatus.RETRY_WAITING;
+ if (!claimSendRecord(record)) {
+ continue;
+ }
+ claimedCount++;
+ if (retryWaiting) {
  retryWaitingCount++;
  }
  NoticeRecipientEntity recipient = recipientMapper.selectById(record.getRecipientId());
@@ -179,6 +194,9 @@ public class NoticeService implements INoticeService {
  } else {
  failCount++;
  }
+ }
+ if (!records.isEmpty() && claimedCount == 0) {
+ return 0;
  }
  int totalSuccessCount = previousSuccessCount + successCount;
  int totalFailCount = Math.max(0, previousFailCount - retryWaitingCount) + failCount;
@@ -269,7 +287,6 @@ public class NoticeService implements INoticeService {
  entity.setBizGroup(command.getBizGroup());
  entity.setDescription(command.getDescription());
  businessTypeMapper.updateById(entity);
- saveBusinessConfigDraft(entity.getId(), draftCommand(entity));
  return toBusinessTypeVO(entity);
  }
 
@@ -563,7 +580,7 @@ public class NoticeService implements INoticeService {
  }
  wrapper.orderByDesc(NoticeTaskEntity::getCreatedAt);
  Page<NoticeTaskEntity> result = taskMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
- return PageResult.of(result.getRecords().stream().map(NoticeTaskConvert::toVO).toList(), result.getTotal(), result.getCurrent(), result.getSize());
+ return PageResult.of(result.getRecords().stream().map(this::toTaskVO).toList(), result.getTotal(), result.getCurrent(), result.getSize());
  }
 
  @Override
@@ -692,6 +709,18 @@ public class NoticeService implements INoticeService {
  boolean pending = draft != null || hasDraftTemplate;
  vo.setSyncStatus(pending ? NoticeSyncStatus.PENDING_PUBLISH : NoticeSyncStatus.SYNCED);
  vo.setSyncReason(pending ? "存在未发布草稿，修改发布后才生效" : "当前配置已发布生效");
+ return vo;
+ }
+
+ private NoticeTaskVO toTaskVO(NoticeTaskEntity entity) {
+ NoticeTaskVO vo = NoticeTaskConvert.toVO(entity);
+ NoticeBusinessTypeEntity businessType = businessTypeMapper.selectOne(new LambdaQueryWrapper<NoticeBusinessTypeEntity>()
+ .eq(NoticeBusinessTypeEntity::getBizType, entity.getBizType())
+ .last("limit 1"));
+ if (businessType != null) {
+ vo.setBizGroup(businessType.getBizGroup());
+ vo.setBizName(businessType.getBizName());
+ }
  return vo;
  }
 
@@ -913,17 +942,67 @@ public class NoticeService implements INoticeService {
  }
 
  private List<NoticeRecipientCommand> resolveRecipients(SendNoticeCommand command) {
- List<NoticeRecipientCommand> recipients = new ArrayList<>();
+ Map<Long, NoticeRecipientCommand> userRecipients = new LinkedHashMap<>();
+ List<NoticeRecipientCommand> externalRecipients = new ArrayList<>();
  if (command.getRecipients() != null) {
- recipients.addAll(command.getRecipients());
+ for (NoticeRecipientCommand recipient : command.getRecipients()) {
+ if (recipient.getUserId() == null) {
+ externalRecipients.add(recipient);
+ } else {
+ enrichRecipientFromUser(recipient);
+ userRecipients.putIfAbsent(recipient.getUserId(), recipient);
+ }
+ }
  }
  receiverIds(command).forEach(userId -> {
  NoticeRecipientCommand recipient = new NoticeRecipientCommand();
  recipient.setUserId(userId);
  enrichRecipientFromUser(recipient);
- recipients.add(recipient);
+ userRecipients.putIfAbsent(userId, recipient);
  });
+ resolveRecipientTargets(command).forEach(recipient ->
+ userRecipients.putIfAbsent(recipient.getUserId(), recipient));
+ List<NoticeRecipientCommand> recipients = new ArrayList<>(externalRecipients);
+ recipients.addAll(userRecipients.values());
  return recipients;
+ }
+
+ private List<NoticeRecipientCommand> resolveRecipientTargets(SendNoticeCommand command) {
+ if (command.getRecipientTargets() == null || command.getRecipientTargets().isEmpty() || identityUserApi == null) {
+ return List.of();
+ }
+ return command.getRecipientTargets().stream()
+ .filter(target -> target.getTargetType() != null && target.getTargetId() != null)
+ .flatMap(target -> listUsersByTarget(target).stream())
+ .collect(Collectors.toMap(NoticeRecipientCommand::getUserId, Function.identity(), (left, right) -> left,
+ LinkedHashMap::new))
+ .values()
+ .stream()
+ .toList();
+ }
+
+ private List<NoticeRecipientCommand> listUsersByTarget(NoticeRecipientTargetCommand target) {
+ IdentityUserTargetQuery query = new IdentityUserTargetQuery();
+ query.setTargetType(IdentityUserTargetType.valueOf(target.getTargetType().name()));
+ query.setTargetId(target.getTargetId());
+ query.setStatus(1);
+ R<List<IdentityUserInfo>> response = identityUserApi.listUserInfosByTarget(query);
+ if (response == null || !response.isSuccess() || response.getData() == null) {
+ return List.of();
+ }
+ return response.getData().stream()
+ .filter(user -> user.getUserId() != null)
+ .map(this::toRecipient)
+ .toList();
+ }
+
+ private NoticeRecipientCommand toRecipient(IdentityUserInfo user) {
+ NoticeRecipientCommand recipient = new NoticeRecipientCommand();
+ recipient.setUserId(user.getUserId());
+ recipient.setRecipientName(firstText(user.getNickname(), user.getUsername()));
+ recipient.setMobile(user.getPhone());
+ recipient.setEmail(user.getEmail());
+ return recipient;
  }
 
  private void enrichRecipientFromUser(NoticeRecipientCommand recipient) {
@@ -958,6 +1037,7 @@ public class NoticeService implements INoticeService {
  task.setBizId(command.getBizId());
  task.setIdempotentKey(command.getIdempotentKey());
  task.setParamsSnapshot(toJson(taskParams(command)));
+ task.setRecipientTargetsSnapshot(toJson(recipientTargetsSnapshot(command)));
  task.setChannelTypes(templates.stream().map(template -> template.getChannelType().name()).distinct().collect(Collectors.joining(",")));
  task.setSendMode(command.getSendMode() == null ? NoticeSendMode.IMMEDIATE : command.getSendMode());
  task.setScheduledTime(command.getScheduledTime());
@@ -993,6 +1073,30 @@ public class NoticeService implements INoticeService {
  return params;
  }
 
+ private List<NoticeRecipientTargetCommand> recipientTargetsSnapshot(SendNoticeCommand command) {
+ List<NoticeRecipientTargetCommand> targets = new ArrayList<>();
+ if (command.getRecipientTargets() != null) {
+ targets.addAll(command.getRecipientTargets());
+ }
+ if (command.getUserId() != null) {
+ NoticeRecipientTargetCommand target = new NoticeRecipientTargetCommand();
+ target.setTargetType(io.mango.notice.api.enums.NoticeRecipientTargetType.USER);
+ target.setTargetId(command.getUserId());
+ targets.add(target);
+ }
+ if (command.getUserIds() != null) {
+ command.getUserIds().stream()
+ .filter(userId -> userId != null && !userId.equals(command.getUserId()))
+ .forEach(userId -> {
+ NoticeRecipientTargetCommand target = new NoticeRecipientTargetCommand();
+ target.setTargetType(io.mango.notice.api.enums.NoticeRecipientTargetType.USER);
+ target.setTargetId(userId);
+ targets.add(target);
+ });
+ }
+ return targets;
+ }
+
  private NoticeRecipientEntity createRecipient(Long taskId, NoticeRecipientCommand command) {
  NoticeRecipientEntity recipient = new NoticeRecipientEntity();
  recipient.setTaskId(taskId);
@@ -1021,6 +1125,7 @@ public class NoticeService implements INoticeService {
 
  private NoticeSendRecordEntity createSendRecord(NoticeTaskEntity task, NoticeRecipientEntity recipient,
  NoticeBusinessChannelTemplateEntity template, SendNoticeCommand command) {
+ Map<String, Object> params = taskParams(command);
  NoticeSendRecordEntity record = new NoticeSendRecordEntity();
  record.setTaskId(task.getId());
  record.setRecipientId(recipient.getId());
@@ -1031,16 +1136,16 @@ public class NoticeService implements INoticeService {
  record.setChannelType(template.getChannelType());
  record.setRequestId("NR" + UUID.randomUUID().toString().replace("-", ""));
  record.setStatus(NoticeSendStatus.PENDING);
- record.setRenderedTitle(render(template.getTitleTemplate(), command.getParams()));
- record.setRenderedContent(render(template.getContentTemplate(), command.getParams()));
- record.setRequestSnapshot(toJson(sendRecordRequestSnapshot(task, recipient, template, command)));
+ record.setRenderedTitle(render(template.getTitleTemplate(), params));
+ record.setRenderedContent(render(template.getContentTemplate(), params));
+ record.setRequestSnapshot(toJson(sendRecordRequestSnapshot(task, recipient, template, params)));
  record.setRetryCount(0);
  sendRecordMapper.insert(record);
  return record;
  }
 
  private Map<String, Object> sendRecordRequestSnapshot(NoticeTaskEntity task, NoticeRecipientEntity recipient,
- NoticeBusinessChannelTemplateEntity template, SendNoticeCommand command) {
+ NoticeBusinessChannelTemplateEntity template, Map<String, Object> params) {
  Map<String, Object> snapshot = new LinkedHashMap<>();
  snapshot.put("bizType", task.getBizType());
  snapshot.put("bizId", task.getBizId());
@@ -1050,14 +1155,12 @@ public class NoticeService implements INoticeService {
  snapshot.put("channelType", template.getChannelType().name());
  snapshot.put("businessChannelTemplateId", template.getId());
  snapshot.put("templateVersion", template.getVersion());
- snapshot.put("params", command.getParams() == null ? Collections.emptyMap() : command.getParams());
+ snapshot.put("params", params == null ? Collections.emptyMap() : params);
  return snapshot;
  }
 
  private ChannelSendResult sendRecord(NoticeSendRecordEntity record, NoticeRecipientEntity recipient,
  NoticeBusinessChannelTemplateEntity template, NoticeTaskEntity task) {
- record.setStatus(NoticeSendStatus.SENDING);
- sendRecordMapper.updateById(record);
  NoticeChannelSender sender = senderMap().get(template.getChannelType());
  ChannelSendResult result;
  if (sender == null) {
@@ -1079,6 +1182,18 @@ public class NoticeService implements INoticeService {
  record.setSentAt(LocalDateTime.now());
  sendRecordMapper.updateById(record);
  return result;
+ }
+
+ private boolean claimSendRecord(NoticeSendRecordEntity record) {
+ NoticeSendRecordEntity update = new NoticeSendRecordEntity();
+ update.setStatus(NoticeSendStatus.SENDING);
+ int updated = sendRecordMapper.update(update, new LambdaQueryWrapper<NoticeSendRecordEntity>()
+ .eq(NoticeSendRecordEntity::getId, record.getId())
+ .in(NoticeSendRecordEntity::getStatus, List.of(NoticeSendStatus.PENDING, NoticeSendStatus.RETRY_WAITING)));
+ if (updated > 0) {
+ record.setStatus(NoticeSendStatus.SENDING);
+ }
+ return updated > 0;
  }
 
  private ChannelSendResult sendWithRoute(NoticeChannelSender sender, NoticeTaskEntity task, NoticeSendRecordEntity record,
@@ -1295,7 +1410,8 @@ public class NoticeService implements INoticeService {
  Matcher matcher = TEMPLATE_VARIABLE.matcher(template);
  StringBuffer buffer = new StringBuffer();
  while (matcher.find()) {
- Object value = params.get(matcher.group(1));
+ String variableName = matcher.group(1) == null ? matcher.group(2) : matcher.group(1);
+ Object value = params.get(variableName.trim());
  matcher.appendReplacement(buffer, Matcher.quoteReplacement(value == null ? "" : String.valueOf(value)));
  }
  matcher.appendTail(buffer);

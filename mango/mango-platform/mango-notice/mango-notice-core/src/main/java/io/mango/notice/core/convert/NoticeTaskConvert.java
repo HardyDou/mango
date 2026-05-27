@@ -14,6 +14,8 @@ public final class NoticeTaskConvert {
  vo.setTaskCode(entity.getTaskCode());
  vo.setBizType(entity.getBizType());
  vo.setBizId(entity.getBizId());
+ vo.setParamsSnapshot(entity.getParamsSnapshot());
+ vo.setRecipientTargetsSnapshot(entity.getRecipientTargetsSnapshot());
  vo.setChannelTypes(entity.getChannelTypes());
  vo.setStatus(entity.getStatus());
  vo.setTotalCount(entity.getTotalCount());

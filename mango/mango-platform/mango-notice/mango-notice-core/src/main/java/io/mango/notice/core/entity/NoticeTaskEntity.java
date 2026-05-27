@@ -28,6 +28,8 @@ public class NoticeTaskEntity {
 
     private String paramsSnapshot;
 
+    private String recipientTargetsSnapshot;
+
     private String channelTypes;
 
     private NoticeSendMode sendMode;

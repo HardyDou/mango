@@ -32,6 +32,8 @@ public interface INoticeService {
 
  NoticeSendResultVO send(SendNoticeCommand command);
 
+ String findTaskTenantId(Long taskId);
+
  int executeTask(Long taskId);
 
  boolean hasRetryWaitingRecords(Long taskId);

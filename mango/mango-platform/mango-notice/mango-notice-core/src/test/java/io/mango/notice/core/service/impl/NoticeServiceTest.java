@@ -3,19 +3,25 @@ package io.mango.notice.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mango.common.result.R;
 import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
+import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
+import io.mango.notice.api.command.NoticeRecipientTargetCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
+import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
+import io.mango.notice.api.enums.NoticeRecipientTargetType;
 import io.mango.notice.api.enums.NoticeSendStatus;
 import io.mango.notice.api.enums.NoticeSendMode;
 import io.mango.notice.api.enums.NoticeTaskStatus;
@@ -62,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -80,6 +87,7 @@ class NoticeServiceTest {
  private NoticeBusinessTypeMapper businessTypeMapper;
  private NoticeBusinessConfigVersionMapper businessConfigVersionMapper;
  private NoticeChannelConfigMapper channelConfigMapper;
+ private IdentityUserApi identityUserApi;
  private IOutboxStore outboxStore;
  private List<NoticeTaskStatus> taskStatusUpdates;
  private List<NoticeSendStatus> sendRecordStatusUpdates;
@@ -105,6 +113,7 @@ class NoticeServiceTest {
  channelConfigMapper = mock(NoticeChannelConfigMapper.class);
  businessTypeMapper = mock(NoticeBusinessTypeMapper.class);
  businessConfigVersionMapper = mock(NoticeBusinessConfigVersionMapper.class);
+ identityUserApi = mock(IdentityUserApi.class);
  outboxStore = mock(IOutboxStore.class);
  taskStatusUpdates = new ArrayList<>();
  sendRecordStatusUpdates = new ArrayList<>();
@@ -146,6 +155,11 @@ class NoticeServiceTest {
  sendRecordStatusUpdates.add(record.getStatus());
  return 1;
  }).when(sendRecordMapper).updateById(any(NoticeSendRecordEntity.class));
+ doAnswer(invocation -> {
+ NoticeSendRecordEntity record = invocation.getArgument(0);
+ sendRecordStatusUpdates.add(record.getStatus());
+ return 1;
+ }).when(sendRecordMapper).update(any(NoticeSendRecordEntity.class), any(LambdaQueryWrapper.class));
  noticeService = new NoticeService(
  messageMapper,
  businessTypeMapper,
@@ -159,7 +173,29 @@ class NoticeServiceTest {
  List.of(sender),
  new ObjectMapper(),
  outboxStore,
- null);
+ identityUserApi);
+ }
+
+ @Test
+ void updateBusinessType_updatesBaseInfoWithoutSavingConfigDraft() {
+ NoticeBusinessTypeEntity businessType = businessType();
+ businessType.setBizGroup("基础");
+ businessType.setDescription("旧说明");
+ businessType.setParamsSchema("{\"type\":\"object\",\"properties\":{\"username\":{\"type\":\"string\"}}}");
+ when(businessTypeMapper.selectById(1L)).thenReturn(businessType);
+ UpdateNoticeBusinessTypeCommand command = new UpdateNoticeBusinessTypeCommand();
+ command.setBizName("登录提醒");
+ command.setBizGroup("系统");
+ command.setDescription("新说明");
+
+ var result = noticeService.updateBusinessType(1L, command);
+
+ assertEquals("登录提醒", result.getBizName());
+ assertEquals("系统", result.getBizGroup());
+ assertEquals("新说明", result.getDescription());
+ verify(businessTypeMapper).updateById(businessType);
+ verify(businessConfigVersionMapper, never()).insert(any(NoticeBusinessConfigVersionEntity.class));
+ verify(businessConfigVersionMapper, never()).updateById(any(NoticeBusinessConfigVersionEntity.class));
  }
 
  @Test
@@ -490,6 +526,125 @@ class NoticeServiceTest {
  }
 
  @Test
+ void send_activeChannelTemplates_supportsDollarVariableSyntax() {
+ NoticeBusinessTypeEntity businessType = businessType();
+ NoticeBusinessChannelTemplateEntity siteTemplate = template(10L, SITE,
+ "验证码 ${code}", "验证码 ${code}，${expireMinutes} 分钟内有效");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType);
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(siteTemplate));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+ command.setUserId(1L);
+ command.setParams(Map.of("code", "839216", "expireMinutes", "5"));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper).insert(captor.capture());
+ NoticeSendRecordEntity record = captor.getValue();
+ assertEquals("验证码 839216", record.getRenderedTitle());
+ assertEquals("验证码 839216，5 分钟内有效", record.getRenderedContent());
+ }
+
+ @Test
+ void send_activeChannelTemplates_rendersDatetimeParamBySchemaName() {
+ NoticeBusinessTypeEntity businessType = businessType();
+ NoticeBusinessChannelTemplateEntity siteTemplate = template(10L, SITE,
+ "申请 {{applyNo}}", "申请 {{applyNo}} 于 ${occurredAt} 发生");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType);
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(siteTemplate));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+ command.setUserId(1L);
+ command.setParams(Map.of("applyNo", "APPLY-20260527", "occurredAt", "2026-05-27 10:30:00"));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper).insert(captor.capture());
+ NoticeSendRecordEntity record = captor.getValue();
+ assertEquals("申请 APPLY-20260527", record.getRenderedTitle());
+ assertEquals("申请 APPLY-20260527 于 2026-05-27 10:30:00 发生", record.getRenderedContent());
+ assertTrue(record.getRequestSnapshot().contains("\"occurredAt\":\"2026-05-27 10:30:00\""));
+ }
+
+ @Test
+ void send_activeChannelTemplates_rendersChineseParamName() {
+ NoticeBusinessTypeEntity businessType = businessType();
+ NoticeBusinessChannelTemplateEntity siteTemplate = template(10L, SITE,
+ "地区 {{地区}}", "系统消息地区：${地区}");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType);
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(siteTemplate));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+ command.setUserId(1L);
+ command.setParams(Map.of("地区", "华东"));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper).insert(captor.capture());
+ NoticeSendRecordEntity record = captor.getValue();
+ assertEquals("地区 华东", record.getRenderedTitle());
+ assertEquals("系统消息地区：华东", record.getRenderedContent());
+ }
+
+ @Test
+ void send_attachmentParams_rendersRecordsFromPersistedTaskParams() {
+ NoticeBusinessTypeEntity businessType = businessType();
+ NoticeBusinessChannelTemplateEntity siteTemplate = template(10L, SITE,
+ "订单 {{orderNo}}", "订单 {{orderNo}} 附件 {{attachments}}");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType);
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(siteTemplate));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+ command.setUserId(1L);
+ command.setParams(Map.of("orderNo", "SO-1001"));
+ command.setAttachmentFileIds(List.of(10L, 20L));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper).insert(captor.capture());
+ NoticeSendRecordEntity record = captor.getValue();
+ assertEquals("订单 SO-1001", record.getRenderedTitle());
+ assertEquals("订单 SO-1001 附件 [10, 20]", record.getRenderedContent());
+ assertTrue(record.getRequestSnapshot().contains("\"attachments\":[10,20]"));
+ }
+
+ @Test
+ void send_recipientTargets_resolvesUsersAndDeduplicatesRecipients() {
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(template(10L, SITE, "标题", "内容")));
+ when(identityUserApi.listUserInfosByTarget(argThat(query ->
+ query != null && query.getTargetType().name().equals("ORG") && Long.valueOf(200L).equals(query.getTargetId()))))
+ .thenReturn(R.ok(List.of(identityUser(1L, "admin"), identityUser(2L, "operator"))));
+ when(identityUserApi.listUserInfosByTarget(argThat(query ->
+ query != null && query.getTargetType().name().equals("ROLE") && Long.valueOf(300L).equals(query.getTargetId()))))
+ .thenReturn(R.ok(List.of(identityUser(2L, "operator"))));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+ NoticeRecipientTargetCommand orgTarget = new NoticeRecipientTargetCommand();
+ orgTarget.setTargetType(NoticeRecipientTargetType.ORG);
+ orgTarget.setTargetId(200L);
+ NoticeRecipientTargetCommand roleTarget = new NoticeRecipientTargetCommand();
+ roleTarget.setTargetType(NoticeRecipientTargetType.ROLE);
+ roleTarget.setTargetId(300L);
+ command.setRecipientTargets(List.of(orgTarget, roleTarget));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeRecipientEntity> captor = ArgumentCaptor.forClass(NoticeRecipientEntity.class);
+ verify(recipientMapper, times(2)).insert(captor.capture());
+ assertEquals(List.of(1L, 2L), captor.getAllValues().stream().map(NoticeRecipientEntity::getUserId).toList());
+ ArgumentCaptor<NoticeTaskEntity> taskCaptor = ArgumentCaptor.forClass(NoticeTaskEntity.class);
+ verify(taskMapper).insert(taskCaptor.capture());
+ assertTrue(taskCaptor.getValue().getRecipientTargetsSnapshot().contains("\"targetType\":\"ORG\""));
+ assertTrue(taskCaptor.getValue().getRecipientTargetsSnapshot().contains("\"targetType\":\"ROLE\""));
+ assertTaskTotalCount(2, "SITE");
+ }
+
+ @Test
  void send_immediateTask_enqueuesOutboxWithoutInlineExecution() {
  when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
  when(channelTemplateMapper.selectList(any())).thenReturn(List.of(template(10L, SITE, "标题", "内容")));
@@ -665,7 +820,7 @@ class NoticeServiceTest {
  List.of(emailSender),
  new ObjectMapper(),
  outboxStore,
- null);
+ identityUserApi);
  NoticeTaskEntity task = new NoticeTaskEntity();
  task.setId(1L);
  task.setBizType("TEST_NOTICE");
@@ -687,6 +842,36 @@ class NoticeServiceTest {
  assertEquals("<p>订单 SO-1001 已发货</p>", sentCommand.get().getContent());
  assertEquals(List.of(1001L, 1002L), sentCommand.get().getAttachmentFileIds());
  assertEquals("{\"status\":\"SENT\"}", record.getResponseSnapshot());
+ }
+
+ @Test
+ void executeTask_whenTaskAlreadySent_doesNotSendAgain() {
+ NoticeTaskEntity task = task(1L);
+ task.setSuccessCount(2);
+ task.setFailCount(0);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of());
+
+ int result = noticeService.executeTask(1L);
+
+ assertEquals(0, result);
+ assertTaskFinalStatus(NoticeTaskStatus.SUCCESS, 2, 0);
+ verify(recipientMapper, never()).selectById(anyLong());
+ }
+
+ @Test
+ void executeTask_whenRecordAlreadyClaimed_doesNotSendAgain() {
+ NoticeTaskEntity task = task(1L);
+ NoticeSendRecordEntity record = record(20L, 1L, 100L);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of(record));
+ when(sendRecordMapper.update(any(NoticeSendRecordEntity.class), any(LambdaQueryWrapper.class))).thenReturn(0);
+
+ int result = noticeService.executeTask(1L);
+
+ assertEquals(0, result);
+ verify(taskMapper, times(1)).updateById(task);
+ verify(recipientMapper, never()).selectById(anyLong());
  }
 
  @Test
@@ -1086,6 +1271,17 @@ class NoticeServiceTest {
  return record;
  }
 
+ private IdentityUserInfo identityUser(Long userId, String username) {
+ IdentityUserInfo user = new IdentityUserInfo();
+ user.setUserId(userId);
+ user.setUsername(username);
+ user.setNickname(username + "昵称");
+ user.setPhone("1380000000" + userId);
+ user.setEmail(username + "@example.com");
+ user.setStatus(1);
+ return user;
+ }
+
  private NoticeService serviceWithSender(java.util.function.Function<ChannelSendCommand, ChannelSendResult> senderFunction) {
  NoticeChannelSender sender = new NoticeChannelSender() {
  @Override
@@ -1111,7 +1307,7 @@ class NoticeServiceTest {
  List.of(sender),
  new ObjectMapper(),
  outboxStore,
- null);
+ identityUserApi);
  }
 
  private void assertTaskFinalStatus(NoticeTaskStatus status, int successCount, int failCount) {

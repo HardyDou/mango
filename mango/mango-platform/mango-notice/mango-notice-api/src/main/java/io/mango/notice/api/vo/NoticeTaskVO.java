@@ -22,8 +22,20 @@ public class NoticeTaskVO implements Serializable {
     @Schema(description = "业务类型")
     private String bizType;
 
+    @Schema(description = "业务域")
+    private String bizGroup;
+
+    @Schema(description = "消息模板名称")
+    private String bizName;
+
     @Schema(description = "业务对象ID")
     private String bizId;
+
+    @Schema(description = "业务参数快照 JSON")
+    private String paramsSnapshot;
+
+    @Schema(description = "接收目标快照 JSON")
+    private String recipientTargetsSnapshot;
 
     @Schema(description = "渠道集合")
     private String channelTypes;

@@ -36,6 +36,10 @@ public class SendNoticeCommand implements Serializable {
     @Valid
     private List<NoticeRecipientCommand> recipients;
 
+    @Schema(description = "接收目标列表，支持用户、部门、岗位、角色")
+    @Valid
+    private List<NoticeRecipientTargetCommand> recipientTargets;
+
     @Schema(description = "接收用户ID，兼容单用户快捷发送")
     private Long userId;
 
