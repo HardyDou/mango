@@ -391,34 +391,103 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailVisible" title="渠道详情" width="680px" class="channel-detail-dialog" destroy-on-close>
+    <el-dialog v-model="detailVisible" title="渠道详情" width="760px" class="channel-dialog" destroy-on-close>
       <template v-if="current">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="渠道类型">{{ channelLabel(current.channelType) }}</el-descriptions-item>
-          <el-descriptions-item label="通道名称">{{ current.configName }}</el-descriptions-item>
-          <el-descriptions-item label="接入平台">{{ providerLabel(current.channelType, current.providerCode) }}</el-descriptions-item>
-          <el-descriptions-item label="权重">{{ current.weight }}</el-descriptions-item>
-          <el-descriptions-item label="启用状态">{{ current.enabled ? '启用' : '停用' }}</el-descriptions-item>
-          <el-descriptions-item label="配置状态">{{ current.configStatus === 'COMPLETE' ? '完整' : '未完成' }}</el-descriptions-item>
-          <el-descriptions-item label="最近发送">{{ sendStatusLabel(current.lastSendStatus) }}</el-descriptions-item>
-          <el-descriptions-item label="最近发送时间">{{ current.lastSendTime || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="最近失败码">{{ current.lastFailureCode || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="最近失败原因">{{ current.lastFailureReason || '-' }}</el-descriptions-item>
-        </el-descriptions>
+        <el-form label-width="92px" class="channel-form channel-detail-form">
+          <section class="form-section">
+            <div class="section-title">基础信息</div>
+            <el-row :gutter="16">
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="渠道类型">
+                  <el-input :model-value="channelLabel(current.channelType)" readonly />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="接入平台">
+                  <el-input :model-value="providerLabel(current.channelType, current.providerCode)" readonly />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="通道名称">
+                  <el-input :model-value="current.configName || '-'" readonly />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="权重">
+                  <el-input :model-value="String(current.weight ?? '-')" readonly />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="启用">
+                  <el-switch :model-value="current.enabled" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="配置状态">
+                  <el-tag :type="current.configStatus === 'COMPLETE' ? 'success' : 'warning'">
+                    {{ current.configStatus === 'COMPLETE' ? '完整' : '未完成' }}
+                  </el-tag>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="最近发送">
+                  <el-tag :type="sendStatusTag(current.lastSendStatus)">{{ sendStatusLabel(current.lastSendStatus) }}</el-tag>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="发送时间">
+                  <el-input :model-value="current.lastSendTime || '-'" readonly />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="失败码">
+                  <el-input :model-value="current.lastFailureCode || '-'" readonly />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="失败原因">
+                  <el-input :model-value="current.lastFailureReason || '-'" readonly />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
 
-        <div class="detail-section-title">渠道配置</div>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item v-for="item in detailRateLimitItems(current)" :key="item.key" :label="item.label">
-            {{ item.value }}
-          </el-descriptions-item>
-        </el-descriptions>
+          <section class="form-section">
+            <div class="section-title">渠道配置</div>
+            <el-row :gutter="16">
+              <el-col v-for="item in detailRateLimitItems(current)" :key="item.key" :xs="24" :sm="8">
+                <el-form-item :label="item.label">
+                  <el-input :model-value="item.value" readonly />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
 
-        <div class="detail-section-title">渠道参数</div>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item v-for="item in detailConfigItems(current)" :key="item.key" :label="item.label">
-            {{ item.value }}
-          </el-descriptions-item>
-        </el-descriptions>
+          <section class="form-section">
+            <div class="section-title">渠道参数</div>
+            <el-tabs model-value="FORM" class="stable-tabs channel-config-tabs">
+              <el-tab-pane label="表单形式" name="FORM">
+                <el-row :gutter="16">
+                  <el-col v-for="item in detailConfigItems(current)" :key="item.key" :xs="24" :sm="12">
+                    <el-form-item :label="item.label">
+                      <el-input :model-value="item.value" readonly />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </el-tab-pane>
+              <el-tab-pane label="JSON 形式" name="JSON">
+                <el-input
+                  :model-value="formatJson(current.configJson)"
+                  class="json-editor"
+                  type="textarea"
+                  :rows="12"
+                  readonly
+                  spellcheck="false"
+                />
+              </el-tab-pane>
+            </el-tabs>
+          </section>
+        </el-form>
       </template>
       <template #footer>
         <el-button type="primary" @click="detailVisible = false">关闭</el-button>
@@ -931,11 +1000,9 @@ onMounted(load);
   margin-left: 12px;
 }
 
-.detail-section-title {
-  margin: 18px 0 10px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
+.channel-detail-form :deep(.el-input__wrapper),
+.channel-detail-form :deep(.el-textarea__inner) {
+  background-color: var(--el-fill-color-lighter);
 }
 
 @media (max-width: 768px) {

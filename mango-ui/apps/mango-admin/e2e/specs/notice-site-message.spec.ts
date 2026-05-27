@@ -528,6 +528,15 @@ test.describe('通知中心 E2E', () => {
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
     await expect(page.getByText('默认系统消息通道')).toBeVisible();
     await expect(page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '删除' })).toBeDisabled();
+    await page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '详情' }).click();
+    const siteChannelDetailDialog = page.getByRole('dialog', { name: '渠道详情' });
+    await expect(siteChannelDetailDialog.getByText('基础信息')).toBeVisible();
+    await expect(siteChannelDetailDialog.getByText('渠道配置')).toBeVisible();
+    await expect(siteChannelDetailDialog.getByText('渠道参数')).toBeVisible();
+    await expect(siteChannelDetailDialog.getByRole('tab', { name: '表单形式' })).toBeVisible();
+    await expect(siteChannelDetailDialog.getByRole('tab', { name: 'JSON 形式' })).toBeVisible();
+    await expect(siteChannelDetailDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
+    await siteChannelDetailDialog.getByRole('button', { name: '关闭' }).click();
     await page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '编辑' }).click();
     const siteChannelDialog = page.getByRole('dialog', { name: '编辑渠道' });
     await expect(siteChannelDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
