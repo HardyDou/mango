@@ -168,7 +168,7 @@ test.describe('通知中心 E2E', () => {
             roles: ['admin'],
             permissions: [
               'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish',
-              'notice:channel:view', 'notice:channel:create', 'notice:task:view', 'notice:record:view',
+              'notice:channel:view', 'notice:channel:create', 'notice:channel:delete', 'notice:task:view', 'notice:record:view',
               'notice:site:view', 'notice:site:edit', 'notice:site:delete', 'notice:setting:view',
             ],
           },
@@ -326,11 +326,20 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
     });
     await page.route('**/api/notice/channels**', async (route) => {
-      if (route.request().method() === 'POST') {
-        const body = route.request().postDataJSON();
+      const request = route.request();
+      if (request.method() === 'POST') {
+        const body = request.postDataJSON();
         const created = { id: String(channelConfigs.length + 1), ...body };
         channelConfigs.unshift(created);
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(created) });
+        return;
+      }
+      if (request.method() === 'DELETE') {
+        const url = new URL(request.url());
+        const id = url.searchParams.get('id');
+        const index = channelConfigs.findIndex(item => item.id === id);
+        if (index >= 0) channelConfigs.splice(index, 1);
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
         return;
       }
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: channelConfigs, total: channelConfigs.length, page: 1, size: 10 }) });
@@ -423,48 +432,42 @@ test.describe('通知中心 E2E', () => {
     await page.getByRole('menuitem', { name: '消息配置' }).click();
     await expect(page.getByText('WORKFLOW_APPROVED', { exact: true })).toBeVisible();
 
-    await page.locator('.notice-page-header').getByRole('button', { name: '新增' }).click();
-    const createDialog = page.getByRole('dialog', { name: '新增' });
-    await expect(createDialog).toBeVisible();
-    await expect(createDialog.locator('.business-create-section')).toHaveCount(1);
-    await expect(createDialog).not.toContainText('默认优先级');
-    await expect(createDialog).not.toContainText('幂等策略');
-    await createDialog.locator('.el-form-item', { hasText: '业务域' }).locator('.el-select__wrapper').click();
+    await page.locator('.definition-main .list-toolbar').getByRole('button', { name: '新增' }).click();
+    const maintainPage = page.locator('.notice-business-config-page');
+    await expect(maintainPage.getByRole('heading', { name: '消息配置维护' })).toBeVisible();
+    await expect(maintainPage).not.toContainText('默认优先级');
+    await expect(maintainPage).not.toContainText('幂等策略');
+    await maintainPage.locator('.el-form-item', { hasText: '业务域' }).locator('.el-select__wrapper').click();
     await page.locator('.el-select-dropdown__item:visible', { hasText: 'WORKFLOW' }).click();
-    await createDialog.locator('input[placeholder="guarantee.issue_success"]').fill('order.shipped');
-    await createDialog.locator('input[placeholder="出函成功"]').fill('订单发货通知');
-    await createDialog.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送系统消息和短信');
-    await createDialog.getByRole('button', { name: '保存' }).click();
-    await expect(createDialog).toBeHidden();
+    await maintainPage.locator('input[placeholder="guarantee.issue_success"]').fill('order.shipped');
+    await maintainPage.locator('input[placeholder="出函成功"]').fill('订单发货通知');
+    await maintainPage.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送系统消息和短信');
+    await maintainPage.getByRole('button', { name: '保存' }).click();
     await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
+    await maintainPage.getByRole('button', { name: '返回' }).click();
+    await expect(page.locator('tr', { hasText: 'order.shipped' })).toBeVisible();
 
     await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '编辑' }).click();
-    const editDialog = page.getByRole('dialog', { name: '编辑消息配置' });
-    await expect(editDialog).toBeVisible();
-    const bizTypeInput = editDialog.locator('input[disabled]').first();
+    await expect(maintainPage.getByRole('heading', { name: '消息配置维护' })).toBeVisible();
+    const bizTypeInput = maintainPage.locator('input[disabled]').first();
     await expect(bizTypeInput).toHaveValue('order.shipped');
     await expect(bizTypeInput).toBeDisabled();
-    await editDialog.getByRole('button', { name: '取消' }).click();
-    await expect(editDialog).toBeHidden();
 
-    await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '配置' }).click();
-    const configPage = page.locator('.definition-config-page');
+    const configPage = maintainPage;
     await expect(configPage.getByText('基础信息')).toBeVisible();
     await expect(configPage.getByText('order.shipped', { exact: true })).toBeVisible();
     await expect(configPage.getByText('参数设置')).toBeVisible();
     await expect(configPage.getByText('消息类型', { exact: true })).toBeVisible();
-    await expect(configPage.getByText('系统消息')).toBeVisible();
+    await expect(configPage.getByRole('tab', { name: '系统消息' })).toBeVisible();
     await configPage.locator('input[placeholder="orderNo"]').fill('orderNo');
     await configPage.locator('input[placeholder="订单号"]').fill('订单号');
     await configPage.locator('.message-type-tabs .el-tabs__item', { hasText: '短信' }).click();
-    await expect(page.getByText('短信')).toBeVisible();
-    await expect(configPage.locator('.template-disabled-alert')).toBeVisible();
+    await expect(configPage.getByRole('tab', { name: '短信' })).toBeVisible();
     await configPage.locator('.template-enabled-item .el-switch').click();
-    await expect(configPage.locator('.template-disabled-alert')).toBeHidden();
-    await configPage.locator('input[placeholder="订单 {{orderNo}} 已发货"]').fill('订单 {{orderNo}} 已发货');
+    await expect(configPage.locator('.template-enabled-item').getByText('启用', { exact: true })).toBeVisible();
     await configPage.locator('textarea[placeholder="请输入短信内容，例如：订单 {{orderNo}} 已发货"]').fill('订单 {{orderNo}} 已发货');
     await expect(page.getByText('订单号：{{orderNo}}')).toBeVisible();
-    await page.getByRole('button', { name: '保存草稿' }).click();
+    await page.getByRole('button', { name: '保存', exact: true }).click();
     await page.getByRole('button', { name: '发布新版本' }).click();
     await expect(page.getByText('已发布新版本')).toBeVisible();
     await page.getByRole('button', { name: '返回' }).click();
@@ -499,6 +502,12 @@ test.describe('通知中心 E2E', () => {
     });
     await expect(channelDialog).toBeHidden();
     await expect(page.locator('tr', { hasText: '阿里云短信' }).getByText('短信', { exact: true })).toBeVisible();
+    const deleteSmsChannel = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/channels'));
+    await page.locator('tr', { hasText: '阿里云短信' }).getByLabel('删除渠道').click();
+    await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
+    const deleteSmsChannelRequest = await deleteSmsChannel;
+    expect(new URL(deleteSmsChannelRequest.url()).searchParams.get('id')).toBe('2');
+    await expect(page.getByText('阿里云短信')).toHaveCount(0);
     const saveEmailChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
     await page.getByRole('button', { name: '新增' }).click();
     const emailChannelDialog = page.getByRole('dialog', { name: '新增渠道' });
@@ -548,7 +557,7 @@ test.describe('通知中心 E2E', () => {
     await expect(page.getByText('提示音')).toBeVisible();
 
     await page.goto('/#/notice/site-message');
-    await expect(page.getByText('系统消息').first()).toBeVisible();
+    await expect(page.locator('.notice-site-message-page__header').getByText('系统消息')).toBeVisible();
     await expect(page.getByLabel('我的消息').getByText('测试系统消息')).toBeVisible();
     await expect(page.getByLabel('我的消息').getByText('WF-1', { exact: true })).toBeVisible();
     await page.getByRole('tab', { name: '发送系统消息' }).click();

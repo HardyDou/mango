@@ -55,10 +55,20 @@
         </el-table-column>
         <el-table-column prop="lastSendTime" label="最近发送时间" width="170" />
         <el-table-column prop="updatedAt" label="更新时间" width="170" />
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="170" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-tooltip v-if="!isBuiltinSiteChannel(row)" content="删除" placement="top">
+              <el-button
+                class="table-icon-button"
+                text
+                type="danger"
+                :icon="Delete"
+                aria-label="删除渠道"
+                @click="removeChannel(row)"
+              />
+            </el-tooltip>
           </template>
         </el-table-column>
       </el-table>
@@ -101,6 +111,27 @@
             <el-col :xs="24" :sm="12">
               <el-form-item label="启用">
                 <el-switch v-model="form.enabled" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title">渠道配置</div>
+          <el-row :gutter="16">
+            <el-col :xs="24" :sm="8">
+              <el-form-item label="每分钟">
+                <el-input-number v-model="rateLimit.maxPerMinute" :min="0" class="number-control" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="8">
+              <el-form-item label="超时秒数">
+                <el-input-number v-model="rateLimit.timeoutSeconds" :min="1" class="number-control" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="8">
+              <el-form-item label="并发限制">
+                <el-input-number v-model="rateLimit.concurrentLimit" :min="0" class="number-control" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -343,27 +374,6 @@
             </el-tab-pane>
           </el-tabs>
         </section>
-
-        <section class="form-section">
-          <div class="section-title">通用配置</div>
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="8">
-              <el-form-item label="每分钟">
-                <el-input-number v-model="rateLimit.maxPerMinute" :min="0" class="number-control" />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :sm="8">
-              <el-form-item label="超时秒数">
-                <el-input-number v-model="rateLimit.timeoutSeconds" :min="1" class="number-control" />
-              </el-form-item>
-            </el-col>
-            <el-col :xs="24" :sm="8">
-              <el-form-item label="并发限制">
-                <el-input-number v-model="rateLimit.concurrentLimit" :min="0" class="number-control" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </section>
       </el-form>
       <template #footer>
         <el-button @click="visible = false">取消</el-button>
@@ -371,7 +381,7 @@
       </template>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" title="渠道详情" size="560px">
+    <el-dialog v-model="detailVisible" title="渠道详情" width="680px" class="channel-detail-dialog" destroy-on-close>
       <template v-if="current">
         <el-descriptions :column="1" border>
           <el-descriptions-item label="渠道类型">{{ channelLabel(current.channelType) }}</el-descriptions-item>
@@ -386,21 +396,32 @@
           <el-descriptions-item label="最近失败原因">{{ current.lastFailureReason || '-' }}</el-descriptions-item>
         </el-descriptions>
 
-        <div class="detail-section-title">渠道参数</div>
-        <el-input :model-value="formatJson(current.configJson)" type="textarea" :rows="10" readonly spellcheck="false" />
+        <div class="detail-section-title">渠道配置</div>
+        <el-descriptions :column="3" border>
+          <el-descriptions-item v-for="item in detailRateLimitItems(current)" :key="item.key" :label="item.label">
+            {{ item.value }}
+          </el-descriptions-item>
+        </el-descriptions>
 
-        <div class="detail-section-title">通用配置</div>
-        <el-input :model-value="formatJson(current.rateLimitConfig)" type="textarea" :rows="6" readonly spellcheck="false" />
+        <div class="detail-section-title">渠道参数</div>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item v-for="item in detailConfigItems(current)" :key="item.key" :label="item.label">
+            {{ item.value }}
+          </el-descriptions-item>
+        </el-descriptions>
       </template>
-    </el-drawer>
+      <template #footer>
+        <el-button type="primary" @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
-import { getChannelConfigs, saveChannelConfig } from '../../api/notice';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Delete, Plus } from '@element-plus/icons-vue';
+import { deleteChannelConfig, getChannelConfigs, saveChannelConfig } from '../../api/notice';
 import type { NoticeChannelConfig, NoticeChannelSendHealthStatus, NoticeChannelType } from '../../types/notice';
 
 type ConfigEditMode = 'FORM' | 'JSON';
@@ -490,6 +511,27 @@ function openDetail(row: NoticeChannelConfig) {
   detailVisible.value = true;
 }
 
+function detailConfigItems(row: NoticeChannelConfig) {
+  const config = fromJson(row.configJson);
+  return configFieldLabels(row.channelType, row.providerCode).map(item => ({
+    ...item,
+    value: displayConfigValue(config[item.key]),
+  }));
+}
+
+function detailRateLimitItems(row: NoticeChannelConfig) {
+  const config = { ...defaultRateLimit(), ...fromJson(row.rateLimitConfig) };
+  return [
+    { key: 'maxPerMinute', label: '每分钟', value: displayConfigValue(config.maxPerMinute) },
+    { key: 'timeoutSeconds', label: '超时秒数', value: displayConfigValue(config.timeoutSeconds) },
+    { key: 'concurrentLimit', label: '并发限制', value: displayConfigValue(config.concurrentLimit) },
+  ];
+}
+
+function isBuiltinSiteChannel(row: NoticeChannelConfig) {
+  return row.channelType === 'SITE' && row.providerCode === 'INTERNAL';
+}
+
 function handleChannelTypeChange() {
   const channelType = form.channelType || 'EMAIL';
   form.providerCode = providerOptions(channelType)[0]?.value;
@@ -552,6 +594,85 @@ function defaultEmailConfig(providerCode?: string): ChannelConfigForm {
     };
   }
   return { host: '', port: 465, username: '', password: '', from: '', ssl: true };
+}
+
+function configFieldLabels(channelType: NoticeChannelType, providerCode?: string) {
+  const normalizedProvider = normalizeProviderCode(channelType, providerCode);
+  if (channelType === 'SITE') {
+    return [
+      { key: 'senderName', label: '默认发送人' },
+      { key: 'retentionDays', label: '保留天数' },
+      { key: 'realtimeEnabled', label: '实时推送' },
+      { key: 'popupEnabled', label: '弹窗提醒' },
+      { key: 'soundEnabled', label: '声音提醒' },
+      { key: 'desktopNotificationEnabled', label: '桌面提醒' },
+      { key: 'unreadCountEnabled', label: '未读计数' },
+    ];
+  }
+  if (channelType === 'SMS') {
+    return [
+      { key: 'accessKeyId', label: 'AccessKey' },
+      { key: 'accessKeySecret', label: 'Secret' },
+      { key: 'signName', label: '短信签名' },
+      { key: 'templatePlatform', label: '模板平台' },
+      { key: 'endpoint', label: '接入地址' },
+      { key: 'callbackUrl', label: '通知地址' },
+    ];
+  }
+  if (channelType === 'EMAIL' && normalizedProvider === 'ALIYUN_DM') {
+    return [
+      { key: 'accessKeyId', label: 'AccessKey' },
+      { key: 'accessKeySecret', label: 'Secret' },
+      { key: 'regionId', label: '区域' },
+      { key: 'endpoint', label: 'Endpoint' },
+      { key: 'accountName', label: '发信地址' },
+      { key: 'addressType', label: '地址类型' },
+      { key: 'fromAlias', label: '发信别名' },
+      { key: 'replyToAddress', label: '回信地址' },
+    ];
+  }
+  if (channelType === 'EMAIL') {
+    return [
+      { key: 'host', label: 'SMTP' },
+      { key: 'port', label: '端口' },
+      { key: 'username', label: '账号' },
+      { key: 'password', label: '密码' },
+      { key: 'from', label: '发件人' },
+      { key: 'ssl', label: 'SSL' },
+    ];
+  }
+  if (channelType === 'WECHAT_OFFICIAL') return [{ key: 'appId', label: 'AppId' }, { key: 'appSecret', label: 'Secret' }];
+  if (channelType === 'WECOM') {
+    return [
+      { key: 'corpId', label: '企业ID' },
+      { key: 'agentId', label: 'AgentId' },
+      { key: 'secret', label: 'Secret' },
+      { key: 'webhookUrl', label: 'Webhook' },
+    ];
+  }
+  return [
+    { key: 'appKey', label: '应用Key' },
+    { key: 'appSecret', label: '应用Secret' },
+    { key: 'agentId', label: 'AgentId' },
+    { key: 'webhookUrl', label: 'Webhook' },
+  ];
+}
+
+function displayConfigValue(value: unknown) {
+  if (value === true) return '是';
+  if (value === false) return '否';
+  if (value === undefined || value === null || value === '') return '-';
+  return String(value);
+}
+
+function fromJson(value?: string): Record<string, unknown> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 function providerOptions(channelType: NoticeChannelType) {
@@ -666,6 +787,17 @@ async function save() {
   await load();
 }
 
+async function removeChannel(row: NoticeChannelConfig) {
+  await ElMessageBox.confirm(`确认删除通道「${row.configName}」？`, '删除渠道', {
+    type: 'warning',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+  });
+  await deleteChannelConfig(String(row.id));
+  ElMessage.success('删除成功');
+  await load();
+}
+
 onMounted(load);
 </script>
 
@@ -735,6 +867,14 @@ onMounted(load);
 
 .json-editor :deep(.el-textarea__inner) {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.table-icon-button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .detail-section-title {

@@ -1,4 +1,4 @@
-import { get, post, put } from '@mango/common';
+import { del, get, post, put } from '@mango/common';
 import type {
   NoticeBusinessConfigVersion,
   NoticeBusinessType,
@@ -71,6 +71,10 @@ export function saveChannelConfig(data: Partial<NoticeChannelConfig>) {
   return post<NoticeChannelConfig>('/notice/channels', data);
 }
 
+export function deleteChannelConfig(id: string) {
+  return del<boolean>('/notice/channels', { params: { id } });
+}
+
 export function getNoticeTasks(params?: Record<string, unknown>) {
   return get<PageResult<NoticeTask>>('/notice/tasks', { params });
 }
@@ -130,6 +134,7 @@ export const noticeApi = {
   publishChannelTemplate,
   getChannelConfigs,
   saveChannelConfig,
+  deleteChannelConfig,
   getNoticeTasks,
   getSendRecords,
   getMySiteMessages,

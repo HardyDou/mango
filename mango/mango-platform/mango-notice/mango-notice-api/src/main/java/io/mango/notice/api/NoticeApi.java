@@ -66,6 +66,8 @@ public interface NoticeApi {
 
     R<NoticeChannelConfigVO> saveChannelConfig(@Valid SaveNoticeChannelConfigCommand command);
 
+    R<Boolean> deleteChannelConfig(Long id);
+
     R<PageResult<NoticeTaskVO>> listTasks(NoticeTaskPageQuery query);
 
     R<PageResult<NoticeSendRecordVO>> listSendRecords(NoticeSendRecordPageQuery query);

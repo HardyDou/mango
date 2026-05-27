@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -287,6 +288,41 @@ class NoticeServiceTest {
  ArgumentCaptor<NoticeChannelConfigEntity> captor = ArgumentCaptor.forClass(NoticeChannelConfigEntity.class);
  verify(channelConfigMapper).insert(captor.capture());
  assertEquals(NoticeChannelConfigStatus.COMPLETE, captor.getValue().getConfigStatus());
+ }
+
+ @Test
+ void deleteChannelConfig_regularConfig_deletesWhenUnused() {
+ when(channelConfigMapper.selectById(30L)).thenReturn(channelConfig(30L, SMS));
+ when(channelTemplateMapper.selectCount(any())).thenReturn(0L);
+ when(channelConfigMapper.deleteById(30L)).thenReturn(1);
+
+ boolean result = noticeService.deleteChannelConfig(30L);
+
+ assertTrue(result);
+ verify(channelTemplateMapper).selectCount(any());
+ verify(channelConfigMapper).deleteById(30L);
+ }
+
+ @Test
+ void deleteChannelConfig_builtinSiteConfig_throwsException() {
+ NoticeChannelConfigEntity entity = channelConfig(31L, SITE);
+ entity.setProviderCode("INTERNAL");
+ when(channelConfigMapper.selectById(31L)).thenReturn(entity);
+
+ assertThrows(RuntimeException.class, () -> noticeService.deleteChannelConfig(31L));
+
+ verify(channelTemplateMapper, never()).selectCount(any());
+ verify(channelConfigMapper, never()).deleteById(anyLong());
+ }
+
+ @Test
+ void deleteChannelConfig_referencedConfig_throwsException() {
+ when(channelConfigMapper.selectById(32L)).thenReturn(channelConfig(32L, EMAIL));
+ when(channelTemplateMapper.selectCount(any())).thenReturn(1L);
+
+ assertThrows(RuntimeException.class, () -> noticeService.deleteChannelConfig(32L));
+
+ verify(channelConfigMapper, never()).deleteById(anyLong());
  }
 
  @Test

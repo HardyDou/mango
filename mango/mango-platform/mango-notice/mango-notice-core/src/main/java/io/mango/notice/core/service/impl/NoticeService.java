@@ -102,6 +102,7 @@ public class NoticeService implements INoticeService {
  private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\{\\{\\s*([a-zA-Z0-9_]+)\\s*}}");
  private static final int MAX_CHANNEL_ATTEMPTS = 3;
  private static final String MASKED_VALUE = "***";
+ private static final String SITE_INTERNAL_PROVIDER = "INTERNAL";
  private static final Set<String> SENSITIVE_CONFIG_KEYS = Set.of("secret", "password", "token", "key", "appSecret",
  "accessKey", "accessKeySecret", "secretKey", "smtpPassword");
  private final NoticeSiteMessageMapper messageMapper;
@@ -475,6 +476,22 @@ public class NoticeService implements INoticeService {
  channelConfigMapper.updateById(entity);
  }
  return NoticeChannelConfigConvert.toVO(entity);
+ }
+
+ @Override
+ public boolean deleteChannelConfig(Long id) {
+ Require.notNull(id, "渠道配置ID不能为空");
+ NoticeChannelConfigEntity entity = channelConfigMapper.selectById(id);
+ Require.notNull(entity, "渠道配置不存在");
+ Require.isFalse(isBuiltinSiteChannel(entity), "系统消息内置通道不允许删除");
+ Long templateCount = channelTemplateMapper.selectCount(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
+ .eq(NoticeBusinessChannelTemplateEntity::getChannelConfigId, id));
+ Require.isTrue(templateCount == null || templateCount == 0, "渠道已被消息配置引用，不能删除");
+ return channelConfigMapper.deleteById(id) > 0;
+ }
+
+ private boolean isBuiltinSiteChannel(NoticeChannelConfigEntity entity) {
+ return entity.getChannelType() == NoticeChannelType.SITE && SITE_INTERNAL_PROVIDER.equals(entity.getProviderCode());
  }
 
  private String mergeMaskedConfigJson(String originalJson, String submittedJson) {

@@ -39,11 +39,13 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -189,6 +191,14 @@ public class NoticeController implements NoticeApi {
  @Operation(summary = "保存渠道配置", description = "保存短信、邮件、微信、企微、钉钉等渠道配置")
  public R<NoticeChannelConfigVO> saveChannelConfig(@RequestBody @Valid SaveNoticeChannelConfigCommand command) {
  return R.ok(noticeService.saveChannelConfig(command));
+ }
+
+ @Override
+ @DeleteMapping("/channels")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:delete")
+ @Operation(summary = "删除渠道配置", description = "删除未被消息模板引用且非系统内置的渠道配置")
+ public R<Boolean> deleteChannelConfig(@Parameter(description = "渠道配置ID", required = true) @RequestParam Long id) {
+ return R.ok(noticeService.deleteChannelConfig(id));
  }
 
  @Override

@@ -67,6 +67,8 @@ public interface INoticeService {
 
  NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command);
 
+ boolean deleteChannelConfig(Long id);
+
  PageResult<NoticeTaskVO> listTasks(NoticeTaskPageQuery query);
 
  PageResult<NoticeSendRecordVO> listSendRecords(NoticeSendRecordPageQuery query);
