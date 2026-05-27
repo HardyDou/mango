@@ -101,6 +101,9 @@ public class NoticeService implements INoticeService {
 
  private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\{\\{\\s*([a-zA-Z0-9_]+)\\s*}}");
  private static final int MAX_CHANNEL_ATTEMPTS = 3;
+ private static final String MASKED_VALUE = "***";
+ private static final Set<String> SENSITIVE_CONFIG_KEYS = Set.of("secret", "password", "token", "key", "appSecret",
+ "accessKey", "accessKeySecret", "secretKey", "smtpPassword");
  private final NoticeSiteMessageMapper messageMapper;
  private final NoticeBusinessTypeMapper businessTypeMapper;
  private final NoticeBusinessConfigVersionMapper businessConfigVersionMapper;
@@ -456,11 +459,12 @@ public class NoticeService implements INoticeService {
  entity.setChannelType(command.getChannelType());
  entity.setProviderCode(command.getProviderCode());
  entity.setConfigName(command.getConfigName());
- entity.setConfigJson(command.getConfigJson());
+ String configJson = mergeMaskedConfigJson(entity.getConfigJson(), command.getConfigJson());
+ entity.setConfigJson(configJson);
  entity.setEnabled(command.getEnabled());
  entity.setPriority(command.getPriority());
  entity.setWeight(command.getWeight() == null || command.getWeight() <= 0 ? 100 : command.getWeight());
- entity.setConfigStatus(resolveConfigStatus(command.getChannelType(), command.getConfigJson()));
+ entity.setConfigStatus(resolveConfigStatus(command.getChannelType(), configJson));
  if (entity.getLastSendStatus() == null) {
  entity.setLastSendStatus(NoticeChannelSendHealthStatus.NONE);
  }
@@ -471,6 +475,29 @@ public class NoticeService implements INoticeService {
  channelConfigMapper.updateById(entity);
  }
  return NoticeChannelConfigConvert.toVO(entity);
+ }
+
+ private String mergeMaskedConfigJson(String originalJson, String submittedJson) {
+ Map<String, Object> submitted = new LinkedHashMap<>(fromJson(submittedJson));
+ if (submitted.isEmpty()) {
+ return submittedJson;
+ }
+ Map<String, Object> original = fromJson(originalJson);
+ if (original.isEmpty()) {
+ return submittedJson;
+ }
+ submitted.replaceAll((key, value) -> shouldKeepOriginalConfigValue(key, value) && original.containsKey(key)
+ ? original.get(key) : value);
+ return toJson(submitted);
+ }
+
+ private boolean shouldKeepOriginalConfigValue(String key, Object value) {
+ return isSensitiveConfigKey(key) && (value == null || MASKED_VALUE.equals(String.valueOf(value)));
+ }
+
+ private boolean isSensitiveConfigKey(String key) {
+ return SENSITIVE_CONFIG_KEYS.stream().anyMatch(secretKey -> secretKey.equalsIgnoreCase(key)
+ || key.toLowerCase().contains(secretKey.toLowerCase()));
  }
 
  @Override

@@ -8,6 +8,7 @@ import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
+import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
@@ -226,6 +227,30 @@ class NoticeServiceTest {
  assertEquals(Boolean.FALSE, result.getEnabled());
  verify(channelTemplateMapper).updateById(draft);
  verify(channelTemplateMapper, never()).insert(any(NoticeBusinessChannelTemplateEntity.class));
+ }
+
+ @Test
+ void saveChannelConfig_existingMaskedSecret_keepsOriginalSecret() {
+ NoticeChannelConfigEntity existing = channelConfig(20L, EMAIL);
+ existing.setConfigJson("{\"host\":\"smtp.old.com\",\"username\":\"notice@example.com\",\"password\":\"origin-secret\",\"from\":\"notice@example.com\",\"ssl\":true}");
+ when(channelConfigMapper.selectById(20L)).thenReturn(existing);
+ SaveNoticeChannelConfigCommand command = new SaveNoticeChannelConfigCommand();
+ command.setId(20L);
+ command.setChannelType(EMAIL);
+ command.setProviderCode("CUSTOM_SMTP");
+ command.setConfigName("默认邮件账号");
+ command.setEnabled(Boolean.TRUE);
+ command.setWeight(100);
+ command.setPriority(0);
+ command.setConfigJson("{\"host\":\"smtp.new.com\",\"username\":\"notice@example.com\",\"password\":\"***\",\"from\":\"notice@example.com\",\"ssl\":true}");
+
+ noticeService.saveChannelConfig(command);
+
+ ArgumentCaptor<NoticeChannelConfigEntity> captor = ArgumentCaptor.forClass(NoticeChannelConfigEntity.class);
+ verify(channelConfigMapper).updateById(captor.capture());
+ assertTrue(captor.getValue().getConfigJson().contains("\"password\":\"origin-secret\""));
+ assertTrue(captor.getValue().getConfigJson().contains("\"host\":\"smtp.new.com\""));
+ assertEquals(NoticeChannelConfigStatus.COMPLETE, captor.getValue().getConfigStatus());
  }
 
  @Test

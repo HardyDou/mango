@@ -1,36 +1,38 @@
 <template>
   <div class="notice-channel-page">
-    <el-card shadow="never">
+    <el-card shadow="never" class="page-card">
       <template #header>
-        <div class="notice-page-header">
+        <div class="page-card__header">
           <span>渠道配置</span>
-          <el-button type="primary" @click="openCreate">新增渠道</el-button>
         </div>
       </template>
 
-      <el-form :inline="true" :model="query" class="notice-filter">
-        <el-form-item label="渠道类型">
-          <el-select v-model="query.channelType" clearable placeholder="全部" class="filter-control">
-            <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
-            <el-option label="启用" :value="true" />
-            <el-option label="停用" :value="false" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="load">查询</el-button>
-        </el-form-item>
-      </el-form>
+      <div class="list-toolbar">
+        <el-form :inline="true" :model="query" class="notice-filter">
+          <el-form-item label="渠道类型">
+            <el-select v-model="query.channelType" clearable placeholder="全部" class="filter-control">
+              <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="启用状态">
+            <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
+              <el-option label="启用" :value="true" />
+              <el-option label="停用" :value="false" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="load">查询</el-button>
+          </el-form-item>
+        </el-form>
+        <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
+      </div>
 
       <el-table :data="configs" border stripe v-loading="loading">
-        <el-table-column label="渠道类型" width="130">
+        <el-table-column label="渠道类型" width="120">
           <template #default="{ row }">{{ channelLabel(row.channelType) }}</template>
         </el-table-column>
-        <el-table-column prop="configName" label="渠道名称" min-width="170" />
-        <el-table-column label="供应商" width="140">
+        <el-table-column prop="configName" label="通道名称" min-width="170" show-overflow-tooltip />
+        <el-table-column label="接入平台" width="140">
           <template #default="{ row }">{{ providerLabel(row.channelType, row.providerCode) }}</template>
         </el-table-column>
         <el-table-column prop="weight" label="权重" width="90" />
@@ -46,16 +48,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="最近发送状态" width="130">
+        <el-table-column label="最近发送" width="110">
           <template #default="{ row }">
-            <el-tag :type="sendStatusTag(row.lastSendStatus)">
-              {{ sendStatusLabel(row.lastSendStatus) }}
-            </el-tag>
+            <el-tag :type="sendStatusTag(row.lastSendStatus)">{{ sendStatusLabel(row.lastSendStatus) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="lastSendTime" label="最近发送时间" width="170" />
         <el-table-column prop="updatedAt" label="更新时间" width="170" />
-        <el-table-column label="操作" width="170" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
@@ -64,93 +64,219 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="visible" :title="dialogTitle" width="860px">
-      <el-form :model="form" label-width="112px">
-        <el-divider content-position="left">基础信息</el-divider>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="渠道类型">
-              <el-select v-model="form.channelType" class="form-control" @change="handleChannelTypeChange">
-                <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="供应商">
-              <el-select v-model="form.providerCode" class="form-control" @change="resetChannelConfig">
-                <el-option
-                  v-for="item in providerOptions(form.channelType || 'EMAIL')"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="渠道名称"><el-input v-model="form.configName" /></el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="权重"><el-input-number v-model="form.weight" :min="1" :max="1000" /></el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="启用"><el-switch v-model="form.enabled" /></el-form-item>
-          </el-col>
-        </el-row>
+    <el-dialog v-model="visible" :title="dialogTitle" width="760px" class="channel-dialog" destroy-on-close>
+      <el-form :model="form" label-width="92px" class="channel-form">
+        <section class="form-section">
+          <div class="section-title">基础信息</div>
+          <el-row :gutter="16">
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="渠道类型" required>
+                <el-select v-model="form.channelType" class="form-control" @change="handleChannelTypeChange">
+                  <el-option v-for="item in channels" :key="item" :label="channelLabel(item)" :value="item" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="接入平台" required>
+                <el-select v-model="form.providerCode" class="form-control" @change="resetChannelConfig">
+                  <el-option
+                    v-for="item in providerOptions(form.channelType || 'EMAIL')"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="通道名称" required>
+                <el-input v-model="form.configName" placeholder="例如：阿里云短信主通道" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="权重" required>
+                <el-input-number v-model="form.weight" :min="1" :max="1000" class="number-control" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="启用">
+                <el-switch v-model="form.enabled" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
 
-        <el-divider content-position="left">渠道参数</el-divider>
-        <template v-if="form.channelType === 'SITE'">
-          <el-alert title="站内信使用系统内置投递能力，无需配置供应商账号。" type="info" :closable="false" show-icon />
-        </template>
-        <template v-else-if="form.channelType === 'SMS'">
-          <el-row :gutter="16">
-            <el-col :span="12"><el-form-item label="AccessKey"><el-input v-model="channelConfig.accessKeyId" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="Secret"><el-input v-model="channelConfig.accessKeySecret" show-password /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="签名"><el-input v-model="channelConfig.signName" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="模板平台"><el-input v-model="channelConfig.templatePlatform" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="接入地址"><el-input v-model="channelConfig.endpoint" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="通知地址"><el-input v-model="channelConfig.callbackUrl" /></el-form-item></el-col>
-          </el-row>
-        </template>
-        <template v-else-if="form.channelType === 'EMAIL'">
-          <el-row :gutter="16">
-            <el-col :span="12"><el-form-item label="SMTP"><el-input v-model="channelConfig.host" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="端口"><el-input-number v-model="channelConfig.port" :min="1" :max="65535" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="账号"><el-input v-model="channelConfig.username" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="密码"><el-input v-model="channelConfig.password" show-password /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="发件人"><el-input v-model="channelConfig.from" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="SSL"><el-switch v-model="channelConfig.ssl" /></el-form-item></el-col>
-          </el-row>
-        </template>
-        <template v-else-if="form.channelType === 'WECHAT_OFFICIAL'">
-          <el-row :gutter="16">
-            <el-col :span="12"><el-form-item label="AppId"><el-input v-model="channelConfig.appId" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="Secret"><el-input v-model="channelConfig.appSecret" show-password /></el-form-item></el-col>
-          </el-row>
-        </template>
-        <template v-else-if="form.channelType === 'WECOM'">
-          <el-row :gutter="16">
-            <el-col :span="12"><el-form-item label="企业 ID"><el-input v-model="channelConfig.corpId" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="AgentId"><el-input v-model="channelConfig.agentId" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="Secret"><el-input v-model="channelConfig.secret" show-password /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="Webhook"><el-input v-model="channelConfig.webhookUrl" /></el-form-item></el-col>
-          </el-row>
-        </template>
-        <template v-else>
-          <el-row :gutter="16">
-            <el-col :span="12"><el-form-item label="应用 Key"><el-input v-model="channelConfig.appKey" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="应用 Secret"><el-input v-model="channelConfig.appSecret" show-password /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="AgentId"><el-input v-model="channelConfig.agentId" /></el-form-item></el-col>
-            <el-col :span="12"><el-form-item label="Webhook"><el-input v-model="channelConfig.webhookUrl" /></el-form-item></el-col>
-          </el-row>
-        </template>
+        <section class="form-section">
+          <div class="section-title">渠道参数</div>
+          <el-tabs v-model="configEditMode" class="stable-tabs channel-config-tabs" @tab-change="handleConfigModeChange">
+            <el-tab-pane label="表单形式" name="FORM">
+              <template v-if="form.channelType === 'SITE'">
+                <el-alert title="站内信使用系统内置投递能力，无需配置第三方账号。" type="info" :closable="false" show-icon />
+              </template>
+              <template v-else-if="form.channelType === 'SMS'">
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="AccessKey" required>
+                      <el-input v-model="channelConfig.accessKeyId" autocomplete="off" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Secret" required>
+                      <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="短信签名" required>
+                      <el-input v-model="channelConfig.signName" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="模板平台">
+                      <el-input v-model="channelConfig.templatePlatform" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="接入地址">
+                      <el-input v-model="channelConfig.endpoint" placeholder="dysmsapi.aliyuncs.com" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="通知地址">
+                      <el-input v-model="channelConfig.callbackUrl" placeholder="回调地址" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+              <template v-else-if="form.channelType === 'EMAIL'">
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="SMTP" required>
+                      <el-input v-model="channelConfig.host" placeholder="smtp.example.com" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="端口" required>
+                      <el-input-number v-model="channelConfig.port" :min="1" :max="65535" class="number-control" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="账号" required>
+                      <el-input v-model="channelConfig.username" autocomplete="off" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="密码" required>
+                      <el-input v-model="channelConfig.password" show-password autocomplete="new-password" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="发件人" required>
+                      <el-input v-model="channelConfig.from" placeholder="notice@example.com" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="SSL">
+                      <el-switch v-model="channelConfig.ssl" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+              <template v-else-if="form.channelType === 'WECHAT_OFFICIAL'">
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="AppId" required>
+                      <el-input v-model="channelConfig.appId" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Secret" required>
+                      <el-input v-model="channelConfig.appSecret" show-password autocomplete="new-password" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+              <template v-else-if="form.channelType === 'WECOM'">
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="企业ID">
+                      <el-input v-model="channelConfig.corpId" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="AgentId">
+                      <el-input v-model="channelConfig.agentId" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Secret">
+                      <el-input v-model="channelConfig.secret" show-password autocomplete="new-password" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Webhook">
+                      <el-input v-model="channelConfig.webhookUrl" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+              <template v-else>
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="应用Key">
+                      <el-input v-model="channelConfig.appKey" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="应用Secret">
+                      <el-input v-model="channelConfig.appSecret" show-password autocomplete="new-password" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="AgentId">
+                      <el-input v-model="channelConfig.agentId" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Webhook">
+                      <el-input v-model="channelConfig.webhookUrl" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+            </el-tab-pane>
+            <el-tab-pane label="JSON 形式" name="JSON">
+              <el-input
+                v-model="configJsonText"
+                class="json-editor"
+                type="textarea"
+                :rows="12"
+                spellcheck="false"
+                placeholder="{&quot;host&quot;:&quot;smtp.example.com&quot;}"
+              />
+            </el-tab-pane>
+          </el-tabs>
+        </section>
 
-        <el-divider content-position="left">通用配置</el-divider>
-        <el-row :gutter="16">
-          <el-col :span="8"><el-form-item label="每分钟"><el-input-number v-model="rateLimit.maxPerMinute" :min="0" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="超时秒数"><el-input-number v-model="rateLimit.timeoutSeconds" :min="1" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="并发限制"><el-input-number v-model="rateLimit.concurrentLimit" :min="0" /></el-form-item></el-col>
-        </el-row>
+        <section class="form-section">
+          <div class="section-title">通用配置</div>
+          <el-row :gutter="16">
+            <el-col :xs="24" :sm="8">
+              <el-form-item label="每分钟">
+                <el-input-number v-model="rateLimit.maxPerMinute" :min="0" class="number-control" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="8">
+              <el-form-item label="超时秒数">
+                <el-input-number v-model="rateLimit.timeoutSeconds" :min="1" class="number-control" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="8">
+              <el-form-item label="并发限制">
+                <el-input-number v-model="rateLimit.concurrentLimit" :min="0" class="number-control" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
       </el-form>
       <template #footer>
         <el-button @click="visible = false">取消</el-button>
@@ -158,15 +284,27 @@
       </template>
     </el-dialog>
 
-    <el-drawer v-model="detailVisible" title="渠道详情" size="520px">
-      <el-descriptions v-if="current" :column="1" border>
-        <el-descriptions-item label="渠道类型">{{ channelLabel(current.channelType) }}</el-descriptions-item>
-        <el-descriptions-item label="渠道名称">{{ current.configName }}</el-descriptions-item>
-        <el-descriptions-item label="供应商">{{ providerLabel(current.channelType, current.providerCode) }}</el-descriptions-item>
-        <el-descriptions-item label="权重">{{ current.weight }}</el-descriptions-item>
-        <el-descriptions-item label="配置状态">{{ current.configStatus === 'COMPLETE' ? '完整' : '未完成' }}</el-descriptions-item>
-        <el-descriptions-item label="最近失败">{{ current.lastFailureReason || '-' }}</el-descriptions-item>
-      </el-descriptions>
+    <el-drawer v-model="detailVisible" title="渠道详情" size="560px">
+      <template v-if="current">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="渠道类型">{{ channelLabel(current.channelType) }}</el-descriptions-item>
+          <el-descriptions-item label="通道名称">{{ current.configName }}</el-descriptions-item>
+          <el-descriptions-item label="接入平台">{{ providerLabel(current.channelType, current.providerCode) }}</el-descriptions-item>
+          <el-descriptions-item label="权重">{{ current.weight }}</el-descriptions-item>
+          <el-descriptions-item label="启用状态">{{ current.enabled ? '启用' : '停用' }}</el-descriptions-item>
+          <el-descriptions-item label="配置状态">{{ current.configStatus === 'COMPLETE' ? '完整' : '未完成' }}</el-descriptions-item>
+          <el-descriptions-item label="最近发送">{{ sendStatusLabel(current.lastSendStatus) }}</el-descriptions-item>
+          <el-descriptions-item label="最近发送时间">{{ current.lastSendTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="最近失败码">{{ current.lastFailureCode || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="最近失败原因">{{ current.lastFailureReason || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div class="detail-section-title">渠道参数</div>
+        <el-input :model-value="formatJson(current.configJson)" type="textarea" :rows="10" readonly spellcheck="false" />
+
+        <div class="detail-section-title">通用配置</div>
+        <el-input :model-value="formatJson(current.rateLimitConfig)" type="textarea" :rows="6" readonly spellcheck="false" />
+      </template>
     </el-drawer>
   </div>
 </template>
@@ -174,9 +312,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
 import { getChannelConfigs, saveChannelConfig } from '../../api/notice';
 import type { NoticeChannelConfig, NoticeChannelSendHealthStatus, NoticeChannelType } from '../../types/notice';
 
+type ConfigEditMode = 'FORM' | 'JSON';
 type ChannelConfigValue = string | number | boolean | undefined;
 type ChannelConfigForm = Record<string, ChannelConfigValue>;
 
@@ -211,14 +351,16 @@ const providers: Record<NoticeChannelType, Array<{ label: string; value: string 
 const loading = ref(false);
 const visible = ref(false);
 const detailVisible = ref(false);
+const configEditMode = ref<ConfigEditMode>('FORM');
 const configs = ref<NoticeChannelConfig[]>([]);
 const current = ref<NoticeChannelConfig>();
 const query = reactive<{ channelType?: NoticeChannelType; enabled?: boolean }>({});
-const form = reactive<Partial<NoticeChannelConfig>>({ channelType: 'EMAIL', providerCode: 'CUSTOM_SMTP', enabled: true, weight: 100, priority: 0 });
+const form = reactive<Partial<NoticeChannelConfig>>({});
 const channelConfig = reactive<ChannelConfigForm>({});
 const rateLimit = reactive({ maxPerMinute: 0, timeoutSeconds: 10, concurrentLimit: 0 });
+const configJsonText = ref('{}');
 
-const dialogTitle = computed(() => (form.id ? '编辑渠道配置' : '新增渠道配置'));
+const dialogTitle = computed(() => (form.id ? '编辑渠道' : '新增渠道'));
 const configJsonPreview = computed(() => JSON.stringify(compactObject(channelConfig), null, 2));
 const rateLimitJsonPreview = computed(() => JSON.stringify(compactObject(rateLimit), null, 2));
 
@@ -233,15 +375,29 @@ async function load() {
 }
 
 function openCreate() {
-  Object.assign(form, { id: undefined, channelType: 'EMAIL', providerCode: 'CUSTOM_SMTP', configName: '', enabled: true, weight: 100, priority: 0 });
+  Object.assign(form, {
+    id: undefined,
+    channelType: 'EMAIL',
+    providerCode: 'CUSTOM_SMTP',
+    configName: '',
+    enabled: true,
+    weight: 100,
+    priority: 0,
+  });
+  resetRateLimit();
   resetChannelConfig();
+  configEditMode.value = 'FORM';
   visible.value = true;
 }
 
 function openEdit(row: NoticeChannelConfig) {
   Object.assign(form, row);
-  parseConfig(row.configJson, channelConfig);
-  parseConfig(row.rateLimitConfig, rateLimit);
+  resetChannelConfig();
+  parseConfig(row.configJson, channelConfig, defaultConfig(row.channelType));
+  resetRateLimit();
+  parseConfig(row.rateLimitConfig, rateLimit, defaultRateLimit());
+  configJsonText.value = configJsonPreview.value;
+  configEditMode.value = 'FORM';
   visible.value = true;
 }
 
@@ -259,11 +415,29 @@ function handleChannelTypeChange() {
 function resetChannelConfig() {
   Object.keys(channelConfig).forEach(key => delete channelConfig[key]);
   Object.assign(channelConfig, defaultConfig(form.channelType || 'EMAIL'));
+  configJsonText.value = configJsonPreview.value;
+}
+
+function resetRateLimit() {
+  Object.assign(rateLimit, defaultRateLimit());
+}
+
+function defaultRateLimit() {
+  return { maxPerMinute: 0, timeoutSeconds: 10, concurrentLimit: 0 };
 }
 
 function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
   if (channelType === 'SITE') return {};
-  if (channelType === 'SMS') return { accessKeyId: '', accessKeySecret: '', signName: '', templatePlatform: providerLabel('SMS', form.providerCode), endpoint: '', callbackUrl: '' };
+  if (channelType === 'SMS') {
+    return {
+      accessKeyId: '',
+      accessKeySecret: '',
+      signName: '',
+      templatePlatform: providerLabel('SMS', form.providerCode),
+      endpoint: '',
+      callbackUrl: '',
+    };
+  }
   if (channelType === 'EMAIL') return { host: '', port: 465, username: '', password: '', from: '', ssl: true };
   if (channelType === 'WECHAT_OFFICIAL') return { appId: '', appSecret: '' };
   if (channelType === 'WECOM') return { corpId: '', agentId: '', secret: '', webhookUrl: '' };
@@ -278,13 +452,27 @@ function compactObject(source: Record<string, ChannelConfigValue>) {
   return Object.fromEntries(Object.entries(source).filter(([, value]) => value !== '' && value !== undefined));
 }
 
-function parseConfig(value: string | undefined, target: Record<string, ChannelConfigValue>) {
+function parseConfig(value: string | undefined, target: Record<string, ChannelConfigValue>, defaults: Record<string, ChannelConfigValue>) {
   Object.keys(target).forEach(key => delete target[key]);
+  Object.assign(target, defaults);
   if (!value) return;
   try {
     Object.assign(target, JSON.parse(value));
   } catch {
-    Object.assign(target, {});
+    ElMessage.warning('配置 JSON 解析失败，已使用默认配置');
+  }
+}
+
+function handleConfigModeChange(tabName: string | number) {
+  if (tabName === 'JSON') {
+    configJsonText.value = configJsonPreview.value;
+    return;
+  }
+  try {
+    parseConfig(configJsonText.value, channelConfig, defaultConfig(form.channelType || 'EMAIL'));
+  } catch {
+    ElMessage.error('JSON 格式错误，请修正后再切换');
+    configEditMode.value = 'JSON';
   }
 }
 
@@ -308,10 +496,51 @@ function sendStatusTag(status?: NoticeChannelSendHealthStatus) {
   return 'info';
 }
 
+function formatJson(value?: string) {
+  if (!value) return '{}';
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
+function validateForm() {
+  if (!form.channelType) {
+    ElMessage.warning('请选择渠道类型');
+    return false;
+  }
+  if (!form.providerCode) {
+    ElMessage.warning('请选择接入平台');
+    return false;
+  }
+  if (!form.configName?.trim()) {
+    ElMessage.warning('请输入通道名称');
+    return false;
+  }
+  return true;
+}
+
+function resolveConfigJson() {
+  if (configEditMode.value === 'JSON') {
+    try {
+      const parsed = JSON.parse(configJsonText.value || '{}');
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      ElMessage.error('渠道参数 JSON 格式错误');
+      return undefined;
+    }
+  }
+  return configJsonPreview.value;
+}
+
 async function save() {
+  if (!validateForm()) return;
+  const configJson = resolveConfigJson();
+  if (configJson === undefined) return;
   await saveChannelConfig({
     ...form,
-    configJson: configJsonPreview.value,
+    configJson,
     rateLimitConfig: rateLimitJsonPreview.value,
   });
   ElMessage.success('已保存');
@@ -323,9 +552,87 @@ onMounted(load);
 </script>
 
 <style scoped>
-.notice-channel-page { padding: 0; }
-.notice-page-header { display: flex; align-items: center; justify-content: space-between; }
-.notice-filter { margin-bottom: 12px; }
-.filter-control { width: 160px; }
-.form-control { width: 100%; }
+.notice-channel-page {
+  padding: 0;
+}
+
+.page-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.notice-filter {
+  flex: 1;
+}
+
+.notice-filter :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.filter-control {
+  width: 160px;
+}
+
+.channel-form {
+  max-height: 66vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.form-section + .form-section {
+  margin-top: 18px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.form-control,
+.number-control {
+  width: 100%;
+}
+
+.stable-tabs :deep(.el-tabs__content) {
+  min-height: 280px;
+}
+
+.channel-config-tabs :deep(.el-form-item:last-child) {
+  margin-bottom: 18px;
+}
+
+.json-editor :deep(.el-textarea__inner) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.detail-section-title {
+  margin: 18px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+@media (max-width: 768px) {
+  .list-toolbar {
+    display: block;
+  }
+
+  .list-toolbar > .el-button {
+    margin-top: 12px;
+  }
+}
 </style>
