@@ -17,7 +17,7 @@
         <jodconverter.version>4.4.11</jodconverter.version>
         <poi.version>5.2.5</poi.version>
         <xdocreport.version>1.0.6</xdocreport.version>
-        <aspose-cad.version>25.10</aspose-cad.version>
+        <aspose-cad.version>20.3</aspose-cad.version>
         <pdfbox.version>3.0.6</pdfbox.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2-imageio.version>3.0.4</jbig2-imageio.version>

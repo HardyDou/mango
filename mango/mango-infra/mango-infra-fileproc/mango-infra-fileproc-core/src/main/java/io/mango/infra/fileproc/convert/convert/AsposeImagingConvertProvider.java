@@ -16,6 +16,8 @@ import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 import io.mango.infra.fileproc.convert.vo.ConvertResultVO;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * 基于 Aspose.Imaging 的图片格式转换器。
@@ -82,11 +84,28 @@ public class AsposeImagingConvertProvider implements IConvertProvider {
             return new TiffOptions(TiffExpectedFormat.TiffLzwRgb);
         }
         PdfOptions options = new PdfOptions();
-        options.setUseOriginalImageSize(true);
+        useOriginalImageSizeIfSupported(options);
         PdfCoreOptions coreOptions = new PdfCoreOptions();
         coreOptions.setJpegQuality(intOption(command, ConvertOptionKeys.QUALITY, 90));
         options.setPdfCoreOptions(coreOptions);
         return options;
+    }
+
+    private void useOriginalImageSizeIfSupported(PdfOptions options) {
+        Method method = Arrays.stream(PdfOptions.class.getMethods())
+                .filter(candidate -> "setUseOriginalImageSize".equals(candidate.getName()))
+                .filter(candidate -> candidate.getParameterCount() == 1)
+                .filter(candidate -> candidate.getParameterTypes()[0] == boolean.class)
+                .findFirst()
+                .orElse(null);
+        if (method == null) {
+            return;
+        }
+        try {
+            method.invoke(options, true);
+        } catch (ReflectiveOperationException ex) {
+            throw new ConvertToolException("设置 Aspose.Imaging PDF 原始尺寸失败", ex);
+        }
     }
 
     private void applyLicense() {
