@@ -35,6 +35,10 @@ export function updateBusinessType(id: string, data: Partial<NoticeBusinessType>
   return put<NoticeBusinessType>(`/notice/business-types/${id}`, data);
 }
 
+export function deleteBusinessType(id: string) {
+  return del<boolean>(`/notice/business-types/${id}`);
+}
+
 export function getBusinessConfigVersions(businessTypeId: string) {
   return get<NoticeBusinessConfigVersion[]>(`/notice/business-types/${businessTypeId}/config-versions`);
 }
@@ -63,8 +67,8 @@ export function publishChannelTemplate(businessTypeId: string, channelType: Noti
   return post<boolean>(`/notice/business-types/${businessTypeId}/channel-templates/${channelType}/publish`);
 }
 
-export function getChannelConfigs(params?: Record<string, unknown>) {
-  return get<PageResult<NoticeChannelConfig>>('/notice/channels', { params });
+export function getChannelConfigs(params?: Record<string, unknown>, options?: { silentError?: boolean }) {
+  return get<PageResult<NoticeChannelConfig>>('/notice/channels', { params, silentError: options?.silentError });
 }
 
 export function saveChannelConfig(data: Partial<NoticeChannelConfig>) {
@@ -125,6 +129,7 @@ export const noticeApi = {
   getBusinessTypes,
   createBusinessType,
   updateBusinessType,
+  deleteBusinessType,
   getBusinessConfigVersions,
   saveBusinessConfigDraft,
   publishBusinessConfigDraft,

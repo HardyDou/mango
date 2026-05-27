@@ -1,11 +1,9 @@
 <template>
   <div class="notice-channel-page">
-    <el-card shadow="never" class="page-card">
-      <template #header>
-        <div class="page-card__header">
-          <span>渠道配置</span>
-        </div>
-      </template>
+    <el-card shadow="never" class="channel-main page-card">
+      <div class="list-page-header">
+        <h1>渠道配置</h1>
+      </div>
 
       <div class="list-toolbar">
         <el-form :inline="true" :model="query" class="notice-filter">
@@ -167,6 +165,16 @@
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="声音提醒">
                       <el-switch v-model="channelConfig.soundEnabled" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col v-if="channelConfig.soundEnabled" :xs="24" :sm="24">
+                    <el-form-item label="播报内容">
+                      <el-input
+                        v-model="channelConfig.soundText"
+                        maxlength="80"
+                        show-word-limit
+                        placeholder="例如：您有新的系统消息，请及时查看"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
@@ -560,6 +568,7 @@ function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
       realtimeEnabled: true,
       popupEnabled: true,
       soundEnabled: true,
+      soundText: '您有新的系统消息，请及时查看',
       desktopNotificationEnabled: true,
       unreadCountEnabled: true,
     };
@@ -605,6 +614,7 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
       { key: 'realtimeEnabled', label: '实时推送' },
       { key: 'popupEnabled', label: '弹窗提醒' },
       { key: 'soundEnabled', label: '声音提醒' },
+      { key: 'soundText', label: '播报内容' },
       { key: 'desktopNotificationEnabled', label: '桌面提醒' },
       { key: 'unreadCountEnabled', label: '未读计数' },
     ];
@@ -788,14 +798,22 @@ async function save() {
 }
 
 async function removeChannel(row: NoticeChannelConfig) {
-  await ElMessageBox.confirm(`确认删除通道「${row.configName}」？`, '删除渠道', {
-    type: 'warning',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-  });
-  await deleteChannelConfig(String(row.id));
-  ElMessage.success('删除成功');
-  await load();
+  try {
+    await ElMessageBox.confirm(`确认删除通道「${row.configName}」？`, '删除渠道', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+  } catch {
+    return;
+  }
+  try {
+    await deleteChannelConfig(String(row.id));
+    ElMessage.success('删除成功');
+    await load();
+  } catch {
+    // request 层已经展示接口错误，这里避免再触发 Vue 全局系统错误。
+  }
 }
 
 onMounted(load);
@@ -803,25 +821,58 @@ onMounted(load);
 
 <style scoped>
 .notice-channel-page {
+  display: flex;
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
   padding: 0;
 }
 
-.page-card__header {
+.channel-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.channel-main :deep(.el-card__body) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+}
+
+.page-card {
+  min-height: calc(100vh - 136px);
+}
+
+.list-page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.list-page-header h1 {
+  margin: 0;
+  color: var(--el-text-color-primary);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 32px;
 }
 
 .list-toolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 .notice-filter {
   flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
 }
 
 .notice-filter :deep(.el-form-item) {
@@ -838,18 +889,22 @@ onMounted(load);
   padding-right: 8px;
 }
 
-.form-section + .form-section {
-  margin-top: 18px;
+.form-section {
+  margin-bottom: 16px;
+  padding: 16px 16px 2px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  background: var(--el-bg-color);
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  min-height: 32px;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
-  font-size: 14px;
-  font-weight: 600;
   color: var(--el-text-color-primary);
+  font-weight: 650;
 }
 
 .form-control,
@@ -870,11 +925,9 @@ onMounted(load);
 }
 
 .table-icon-button {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  margin-left: 6px;
-  vertical-align: middle;
 }
 
 .detail-section-title {

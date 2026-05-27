@@ -29,6 +29,19 @@ export function playNoticeSound() {
   void audio.play().catch(() => undefined);
 }
 
+export function speakNoticeText(text?: string) {
+  const content = text?.trim();
+  if (!content || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(content);
+  utterance.lang = 'zh-CN';
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+}
+
 export function createNoticeRealtime(handler: NoticeRealtimeHandler) {
   const listener = (event: Event) => {
     const detail = (event as CustomEvent<NoticeRealtimeEvent>).detail;

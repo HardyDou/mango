@@ -44,6 +44,8 @@ public interface INoticeService {
 
  NoticeBusinessTypeVO updateBusinessType(Long id, UpdateNoticeBusinessTypeCommand command);
 
+ boolean deleteBusinessType(Long id);
+
  boolean enableBusinessType(Long id);
 
  boolean disableBusinessType(Long id);

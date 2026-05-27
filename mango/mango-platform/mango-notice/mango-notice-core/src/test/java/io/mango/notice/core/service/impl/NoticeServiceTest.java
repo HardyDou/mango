@@ -291,6 +291,34 @@ class NoticeServiceTest {
  }
 
  @Test
+ void deleteBusinessType_withoutRunningTask_deletesDefinitionVersionsAndTemplates() {
+ when(businessTypeMapper.selectById(1L)).thenReturn(businessType());
+ when(taskMapper.selectCount(any())).thenReturn(0L);
+ when(channelTemplateMapper.delete(any())).thenReturn(2);
+ when(businessConfigVersionMapper.delete(any())).thenReturn(1);
+ when(businessTypeMapper.deleteById(1L)).thenReturn(1);
+
+ boolean result = noticeService.deleteBusinessType(1L);
+
+ assertTrue(result);
+ verify(channelTemplateMapper).delete(any());
+ verify(businessConfigVersionMapper).delete(any());
+ verify(businessTypeMapper).deleteById(1L);
+ }
+
+ @Test
+ void deleteBusinessType_withRunningTask_throwsException() {
+ when(businessTypeMapper.selectById(1L)).thenReturn(businessType());
+ when(taskMapper.selectCount(any())).thenReturn(1L);
+
+ assertThrows(RuntimeException.class, () -> noticeService.deleteBusinessType(1L));
+
+ verify(channelTemplateMapper, never()).delete(any());
+ verify(businessConfigVersionMapper, never()).delete(any());
+ verify(businessTypeMapper, never()).deleteById(anyLong());
+ }
+
+ @Test
  void deleteChannelConfig_regularConfig_deletesWhenUnused() {
  when(channelConfigMapper.selectById(30L)).thenReturn(channelConfig(30L, SMS));
  when(channelTemplateMapper.selectCount(any())).thenReturn(0L);

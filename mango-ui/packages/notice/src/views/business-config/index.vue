@@ -64,12 +64,13 @@
             </el-table-column>
             <el-table-column prop="lastPublishTime" label="最后发布" width="170" />
             <el-table-column prop="updatedAt" label="更新时间" width="170" />
-            <el-table-column label="操作" width="250" fixed="right">
+            <el-table-column label="操作" width="280" fixed="right">
               <template #default="{ row }">
                 <el-button link type="primary" @click="openDetail(row)">详情</el-button>
                 <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
                 <el-button link type="primary" @click="openHistory(row)">历史版本</el-button>
                 <el-button link type="success" @click="quickPublish(row)">发布</el-button>
+                <el-button link type="danger" @click="removeBusinessType(row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -497,12 +498,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Plus } from '@element-plus/icons-vue';
 import { Editor } from '@mango/common';
 import {
   activateBusinessConfigVersion,
   createBusinessType,
+  deleteBusinessType,
   getBusinessConfigVersions,
   getBusinessTypes,
   getChannelConfigs,
@@ -1088,6 +1090,25 @@ async function quickPublish(row: NoticeBusinessType) {
     .map(item => publishChannelTemplate(row.id, item.channelType)));
   ElMessage.success('已发布');
   await loadBusinessTypes();
+}
+
+async function removeBusinessType(row: NoticeBusinessType) {
+  try {
+    await ElMessageBox.confirm(`确认删除消息配置「${row.bizName || row.bizType}」？删除后将移除参数、版本和渠道模板配置。`, '删除消息配置', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+  } catch {
+    return;
+  }
+  try {
+    await deleteBusinessType(row.id);
+    ElMessage.success('删除成功');
+    await loadBusinessTypes();
+  } catch {
+    // request 层已经展示接口错误，这里避免再触发 Vue 全局系统错误。
+  }
 }
 
 async function saveMaintenance() {

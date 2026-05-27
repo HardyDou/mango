@@ -103,6 +103,14 @@ public class NoticeController implements NoticeApi {
  }
 
  @Override
+ @DeleteMapping("/business-types/{id}")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:delete")
+ @Operation(summary = "删除业务消息配置", description = "删除业务消息定义、配置版本和渠道模板；存在待发送或发送中任务时不允许删除")
+ public R<Boolean> deleteBusinessType(@Parameter(description = "业务消息配置ID", required = true) @PathVariable Long id) {
+ return R.ok(noticeService.deleteBusinessType(id));
+ }
+
+ @Override
  @PostMapping("/business-types/{id}/enable")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:business:enable")
  @Operation(summary = "启用业务通知配置", description = "启用业务类型")

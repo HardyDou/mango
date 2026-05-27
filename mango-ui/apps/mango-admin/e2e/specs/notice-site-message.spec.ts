@@ -101,6 +101,21 @@ test.describe('通知中心 E2E', () => {
     };
     let unreadCountOverride: number | undefined;
     const channelConfigs = [
+      {
+        id: '270501',
+        channelType: 'SITE',
+        providerCode: 'INTERNAL',
+        configName: '默认系统消息通道',
+        configJson: JSON.stringify({
+          soundEnabled: true,
+          soundText: '您有新的系统消息，请及时查看',
+          popupEnabled: true,
+          desktopNotificationEnabled: true,
+        }),
+        enabled: true,
+        priority: 0,
+        weight: 100,
+      },
       { id: '1', channelType: 'EMAIL', providerCode: 'CUSTOM_SMTP', configName: '默认邮箱', enabled: true, priority: 0 },
     ];
     const sendRecords = [
@@ -111,10 +126,12 @@ test.describe('通知中心 E2E', () => {
     await page.addInitScript(() => {
       type NoticeTestWindow = Window & {
         __noticeAudioPlayCount: number;
+        __noticeSpokenTexts: string[];
         __noticeDesktopNotifications: Array<{ title: string; body?: string }>;
       };
       const target = window as NoticeTestWindow;
       target.__noticeAudioPlayCount = 0;
+      target.__noticeSpokenTexts = [];
       target.__noticeDesktopNotifications = [];
 
       class FakeAudio {
@@ -141,8 +158,24 @@ test.describe('通知中心 E2E', () => {
         }
       }
 
+      class FakeSpeechSynthesisUtterance {
+        lang = '';
+        rate = 0;
+        pitch = 0;
+
+        constructor(public text: string) {}
+      }
+
       Object.defineProperty(window, 'Audio', { value: FakeAudio, configurable: true });
       Object.defineProperty(window, 'Notification', { value: FakeNotification, configurable: true });
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: FakeSpeechSynthesisUtterance, configurable: true });
+      Object.defineProperty(window, 'speechSynthesis', {
+        value: {
+          cancel: () => undefined,
+          speak: (utterance: FakeSpeechSynthesisUtterance) => target.__noticeSpokenTexts.push(utterance.text),
+        },
+        configurable: true,
+      });
     });
 
     await page.route('**/api/system/tenant/login-options**', async (route) => {
@@ -167,7 +200,7 @@ test.describe('通知中心 E2E', () => {
             appCode: 'internal-admin',
             roles: ['admin'],
             permissions: [
-              'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish',
+              'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish', 'notice:business:delete',
               'notice:channel:view', 'notice:channel:create', 'notice:channel:delete', 'notice:task:view', 'notice:record:view',
               'notice:site:view', 'notice:site:edit', 'notice:site:delete', 'notice:setting:view',
             ],
@@ -323,6 +356,15 @@ test.describe('通知中心 E2E', () => {
         await route.fulfill({ status: 200, contentType: 'application/json', body: ok(businessTypes[index]) });
         return;
       }
+      if (request.method() === 'DELETE') {
+        const id = url.pathname.split('/').pop();
+        const index = businessTypes.findIndex(item => item.id === id);
+        if (index >= 0) businessTypes.splice(index, 1);
+        delete businessConfigVersions[String(id)];
+        delete templates[String(id)];
+        await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
+        return;
+      }
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok(true) });
     });
     await page.route('**/api/notice/channels**', async (route) => {
@@ -414,7 +456,7 @@ test.describe('通知中心 E2E', () => {
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('2');
     await expect(page.getByText('您有新消息了')).toBeVisible();
     await expect(page.getByText('实时系统消息')).toBeVisible();
-    await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeAudioPlayCount?: number }).__noticeAudioPlayCount ?? 0)).toBeGreaterThan(0);
+    await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeSpokenTexts?: string[] }).__noticeSpokenTexts?.[0] || '')).toBe('您有新的系统消息，请及时查看');
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications?.length ?? 0)).toBe(1);
     unreadCountOverride = undefined;
     await page.locator('.el-notification').click();
@@ -472,8 +514,23 @@ test.describe('通知中心 E2E', () => {
     await expect(page.getByText('已发布新版本')).toBeVisible();
     await page.getByRole('button', { name: '返回' }).click();
     await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
+    await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '删除' }).click();
+    await page.locator('.el-message-box').getByRole('button', { name: '取消' }).click();
+    await expect(page.getByText('系统错误，请刷新页面')).toHaveCount(0);
+    await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
+    const deleteBusiness = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/business-types/'));
+    await page.locator('tr', { hasText: 'order.shipped' }).getByRole('button', { name: '删除' }).click();
+    await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
+    const deleteBusinessRequest = await deleteBusiness;
+    expect(deleteBusinessRequest.url()).toContain('/api/notice/business-types/2');
+    await expect(page.getByText('order.shipped', { exact: true })).toHaveCount(0);
 
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
+    await expect(page.getByText('默认系统消息通道')).toBeVisible();
+    await page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '编辑' }).click();
+    const siteChannelDialog = page.getByRole('dialog', { name: '编辑渠道' });
+    await expect(siteChannelDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
+    await siteChannelDialog.getByRole('button', { name: '取消' }).click();
     await expect(page.getByText('默认邮箱')).toBeVisible();
     const saveSmsChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
     await page.getByRole('button', { name: '新增' }).click();
@@ -490,6 +547,7 @@ test.describe('通知中心 E2E', () => {
     await channelDialog.getByRole('button', { name: '保存' }).click();
     const smsChannelRequest = await saveSmsChannel;
     const smsChannelBody = smsChannelRequest.postDataJSON();
+    const smsChannelId = String(channelConfigs.find(item => item.configName === '阿里云短信')?.id || '');
     expect(smsChannelBody.channelType).toBe('SMS');
     expect(smsChannelBody.providerCode).toBe('ALIYUN_SMS');
     expect(JSON.parse(smsChannelBody.configJson)).toEqual({
@@ -506,7 +564,7 @@ test.describe('通知中心 E2E', () => {
     await page.locator('tr', { hasText: '阿里云短信' }).getByLabel('删除渠道').click();
     await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
     const deleteSmsChannelRequest = await deleteSmsChannel;
-    expect(new URL(deleteSmsChannelRequest.url()).searchParams.get('id')).toBe('2');
+    expect(new URL(deleteSmsChannelRequest.url()).searchParams.get('id')).toBe(smsChannelId);
     await expect(page.getByText('阿里云短信')).toHaveCount(0);
     const saveEmailChannel = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/channels'));
     await page.getByRole('button', { name: '新增' }).click();

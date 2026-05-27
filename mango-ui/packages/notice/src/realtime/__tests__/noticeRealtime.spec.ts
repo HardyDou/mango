@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice } from '../noticeRealtime';
+import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../noticeRealtime';
 import type { NoticeSiteMessage } from '../../types/notice';
 
 const message: NoticeSiteMessage = {
@@ -63,6 +63,31 @@ describe('noticeRealtime', () => {
     await Promise.resolve();
 
     expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it('speakNoticeText 使用浏览器语音 API 播报自定义内容', () => {
+    const cancel = vi.fn();
+    const speak = vi.fn();
+    class FakeSpeechSynthesisUtterance {
+      lang = '';
+      rate = 0;
+      pitch = 0;
+
+      constructor(public text: string) {}
+    }
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeSpeechSynthesisUtterance);
+    Object.defineProperty(window, 'speechSynthesis', {
+      configurable: true,
+      value: { cancel, speak },
+    });
+
+    speakNoticeText(' 您有新的系统消息 ');
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledTimes(1);
+    const utterance = speak.mock.calls[0][0] as FakeSpeechSynthesisUtterance;
+    expect(utterance.text).toBe('您有新的系统消息');
+    expect(utterance.lang).toBe('zh-CN');
   });
 
   it('createNoticeRealtime 订阅并可解除系统消息 realtime 事件', () => {

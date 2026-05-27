@@ -9,6 +9,7 @@ const apiMock = vi.hoisted(() => ({
   getMySiteMessageDetail: vi.fn(),
   markAllMySiteMessagesRead: vi.fn(),
   markMySiteMessageRead: vi.fn(),
+  getChannelConfigs: vi.fn(),
 }));
 
 const realtimeMock = vi.hoisted(() => ({
@@ -21,6 +22,7 @@ const realtimeMock = vi.hoisted(() => ({
   playNoticeSound: vi.fn(),
   requestDesktopPermission: vi.fn(),
   showDesktopNotice: vi.fn(),
+  speakNoticeText: vi.fn(),
 }));
 
 const notificationMock = vi.hoisted(() => ({
@@ -85,6 +87,26 @@ describe('NoticeBell', () => {
     apiMock.getMySiteMessageDetail.mockResolvedValue(testMessage);
     apiMock.markAllMySiteMessagesRead.mockResolvedValue(true);
     apiMock.markMySiteMessageRead.mockResolvedValue(true);
+    apiMock.getChannelConfigs.mockResolvedValue({
+      list: [{
+        id: '270501',
+        channelType: 'SITE',
+        providerCode: 'INTERNAL',
+        configName: '默认系统消息通道',
+        configJson: JSON.stringify({
+          soundEnabled: true,
+          soundText: '您有新的系统消息，请及时查看',
+          popupEnabled: true,
+          desktopNotificationEnabled: true,
+        }),
+        enabled: true,
+        priority: 0,
+        weight: 100,
+      }],
+      total: 1,
+      page: 1,
+      size: 20,
+    });
   });
 
   it('mounted 后拉取并显示未读数量', async () => {
@@ -112,7 +134,37 @@ describe('NoticeBell', () => {
     expect(apiMock.getMyUnreadCount).toHaveBeenCalledTimes(2);
     expect(apiMock.getMySiteMessageDetail).toHaveBeenCalledWith('1002');
     expect(wrapper.get('[data-test="badge-count"]').text()).toBe('2');
-    expect(realtimeMock.playNoticeSound).toHaveBeenCalledTimes(1);
+    expect(realtimeMock.speakNoticeText).toHaveBeenCalledWith('您有新的系统消息，请及时查看');
+    wrapper.unmount();
+  });
+
+  it('系统消息通道关闭声音提醒时不执行 TTS 播报', async () => {
+    apiMock.getMyUnreadCount
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 2 });
+    apiMock.getChannelConfigs.mockResolvedValue({
+      list: [{
+        id: '270501',
+        channelType: 'SITE',
+        providerCode: 'INTERNAL',
+        configName: '默认系统消息通道',
+        configJson: JSON.stringify({ soundEnabled: false, popupEnabled: true, desktopNotificationEnabled: true }),
+        enabled: true,
+        priority: 0,
+        weight: 100,
+      }],
+      total: 1,
+      page: 1,
+      size: 20,
+    });
+
+    const wrapper = mountNoticeBell();
+    await flushPromises();
+    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批' });
+    await flushPromises();
+
+    expect(realtimeMock.speakNoticeText).not.toHaveBeenCalled();
+    expect(notificationMock.ElNotification).toHaveBeenCalledTimes(1);
     wrapper.unmount();
   });
 

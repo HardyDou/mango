@@ -42,6 +42,8 @@ public interface NoticeApi {
 
     R<NoticeBusinessTypeVO> updateBusinessType(Long id, @Valid UpdateNoticeBusinessTypeCommand command);
 
+    R<Boolean> deleteBusinessType(Long id);
+
     R<Boolean> enableBusinessType(Long id);
 
     R<Boolean> disableBusinessType(Long id);

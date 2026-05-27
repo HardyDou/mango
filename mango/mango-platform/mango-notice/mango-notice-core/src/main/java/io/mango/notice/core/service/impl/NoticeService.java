@@ -259,6 +259,23 @@ public class NoticeService implements INoticeService {
  }
 
  @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean deleteBusinessType(Long id) {
+ Require.notNull(id, "业务类型 ID 不能为空");
+ NoticeBusinessTypeEntity businessType = businessTypeMapper.selectById(id);
+ Require.notNull(businessType, "业务类型不存在");
+ Long runningTaskCount = taskMapper.selectCount(new LambdaQueryWrapper<NoticeTaskEntity>()
+ .eq(NoticeTaskEntity::getBizType, businessType.getBizType())
+ .in(NoticeTaskEntity::getStatus, List.of(NoticeTaskStatus.WAITING, NoticeTaskStatus.SENDING)));
+ Require.isTrue(runningTaskCount == null || runningTaskCount == 0, "存在待发送或发送中的通知任务，不能删除");
+ channelTemplateMapper.delete(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
+ .eq(NoticeBusinessChannelTemplateEntity::getBizType, businessType.getBizType()));
+ businessConfigVersionMapper.delete(new LambdaQueryWrapper<NoticeBusinessConfigVersionEntity>()
+ .eq(NoticeBusinessConfigVersionEntity::getBizType, businessType.getBizType()));
+ return businessTypeMapper.deleteById(id) > 0;
+ }
+
+ @Override
  public boolean enableBusinessType(Long id) {
  NoticeBusinessTypeEntity entity = new NoticeBusinessTypeEntity();
  entity.setId(id);

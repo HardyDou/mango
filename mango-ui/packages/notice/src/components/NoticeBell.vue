@@ -26,10 +26,17 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { ElNotification } from 'element-plus';
 import { iconMap } from '@mango/common/utils/iconConfig';
-import { getMySiteMessageDetail, getMySiteMessages, getMyUnreadCount, markAllMySiteMessagesRead, markMySiteMessageRead } from '../api/notice';
+import { getChannelConfigs, getMySiteMessageDetail, getMySiteMessages, getMyUnreadCount, markAllMySiteMessagesRead, markMySiteMessageRead } from '../api/notice';
 import NoticeDetailDialog from './NoticeDetailDialog.vue';
-import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice } from '../realtime/noticeRealtime';
+import { createNoticeRealtime, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../realtime/noticeRealtime';
 import type { NoticeSiteMessage } from '../types/notice';
+
+interface SiteChannelRuntimeConfig {
+ soundEnabled?: boolean;
+ soundText?: string;
+ popupEnabled?: boolean;
+ desktopNotificationEnabled?: boolean;
+}
 
 const unreadCount = ref(0);
 const messages = ref<NoticeSiteMessage[]>([]);
@@ -70,10 +77,45 @@ async function markAllRead() {
  await loadMessages();
 }
 
-function notifyNewMessage(message: NoticeSiteMessage) {
- playNoticeSound();
- ElNotification({ title: '您有新消息了', message: message.title, type: 'info', onClick: () => openDetail(message.id) });
- showDesktopNotice(message, () => openDetail(message.id));
+async function loadSiteRuntimeConfig(): Promise<SiteChannelRuntimeConfig> {
+ try {
+ const result = await getChannelConfigs({ channelType: 'SITE', enabled: true, pageSize: 20 }, { silentError: true });
+ const siteChannel = (result.list || []).find(item => item.providerCode === 'INTERNAL') || result.list?.[0];
+ return parseSiteRuntimeConfig(siteChannel?.configJson);
+ } catch {
+ return parseSiteRuntimeConfig();
+ }
+}
+
+function parseSiteRuntimeConfig(configJson?: string): SiteChannelRuntimeConfig {
+ const defaults: SiteChannelRuntimeConfig = {
+  soundEnabled: true,
+  soundText: '您有新的系统消息，请及时查看',
+  popupEnabled: true,
+  desktopNotificationEnabled: true,
+ };
+ if (!configJson) {
+  return defaults;
+ }
+ try {
+  const parsed = JSON.parse(configJson);
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? { ...defaults, ...parsed } : defaults;
+ } catch {
+  return defaults;
+ }
+}
+
+async function notifyNewMessage(message: NoticeSiteMessage) {
+ const config = await loadSiteRuntimeConfig();
+ if (config.soundEnabled !== false) {
+  speakNoticeText(config.soundText || message.title);
+ }
+ if (config.popupEnabled !== false) {
+  ElNotification({ title: '您有新消息了', message: message.title, type: 'info', onClick: () => openDetail(message.id) });
+ }
+ if (config.desktopNotificationEnabled !== false) {
+  showDesktopNotice(message, () => openDetail(message.id));
+ }
 }
 
 onMounted(() => {
@@ -83,7 +125,7 @@ onMounted(() => {
  await loadUnreadCount();
  const message = event.messageId ? await getMySiteMessageDetail(event.messageId) : undefined;
  if (message) {
- notifyNewMessage(message);
+ await notifyNewMessage(message);
  }
  });
 });
