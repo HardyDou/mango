@@ -1,7 +1,9 @@
-import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
-import type { WorkflowTaskActionKey } from '@mango/workflow/src/api/workflow';
-import { registerBusinessApplyComponents } from '@mango/workflow/src/components/businessApply';
-import { registerBusinessApprovalComponents } from '@mango/workflow/src/components/businessApproval';
+import {
+  registerBusinessApplyComponents,
+  registerBusinessApprovalComponents,
+  type BusinessApprovalContext,
+  type WorkflowTaskActionKey,
+} from '@mango/workflow';
 import WorkflowBusinessFormView from './views/business-form/index.vue';
 import DocumentTableApprovalDetail from './business-components/DocumentTableApprovalDetail.vue';
 import ExpenseApprovalDetail from './business-components/ExpenseApprovalDetail.vue';

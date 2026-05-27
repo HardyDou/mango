@@ -10,6 +10,7 @@ export { default as WorkflowApprovalTimeline } from './components/trace/Workflow
 export { default as WorkflowNodeTimeline } from './components/trace/WorkflowNodeTimeline.vue';
 
 export * from './api/workflow';
+export * from './workflowFormConfig';
 export * from './components/runtimeForm';
 export * from './components/businessApply';
 export * from './components/businessApproval';

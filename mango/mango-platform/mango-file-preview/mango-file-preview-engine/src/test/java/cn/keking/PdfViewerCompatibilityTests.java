@@ -42,6 +42,14 @@ public class PdfViewerCompatibilityTests {
         assertTrue(properties.contains("office.preview.type = ${KK_OFFICE_PREVIEW_TYPE:pdf}"));
     }
 
+    @Test
+    void shouldNotOverrideHostServerPortFromEmbeddedEngineConfig() throws IOException {
+        String properties = readResource("/application.properties");
+
+        assertTrue(properties.contains("mango.file-preview.engine.port = ${MANGO_FILE_PREVIEW_ENGINE_PORT:${KK_SERVER_PORT:8012}}"));
+        assertTrue(properties.lines().noneMatch(line -> line.trim().startsWith("server.port")));
+    }
+
     private String readResource(String resourcePath) throws IOException {
         try (InputStream inputStream = getClass().getResourceAsStream(resourcePath)) {
             assertNotNull(inputStream);

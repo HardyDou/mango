@@ -11,6 +11,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.util.StopWatch;
 
+import java.util.Map;
+
 @SpringBootApplication
 @EnableScheduling
 @ComponentScan(value = "cn.keking.*")
@@ -22,6 +24,7 @@ public class ServerMain {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         ConfigurableApplicationContext context = new SpringApplicationBuilder(ServerMain.class)
+                .properties(standaloneServerProperties())
                 .logStartupInfo(false)
                 .run(args);
         stopWatch.stop();
@@ -31,6 +34,10 @@ public class ServerMain {
         String contextPath = servlet.getContextPath();
         String urlSuffix = StringUtils.isBlank(contextPath)? String.valueOf(port):port+contextPath;
         logger.info("kkFileView 服务启动完成，耗时:{}s，演示页请访问: http://127.0.0.1:{} ", stopWatch.getTotalTimeSeconds(), urlSuffix);
+    }
+
+    static Map<String, Object> standaloneServerProperties() {
+        return Map.of("server.port", "${mango.file-preview.engine.port:8012}");
     }
 
 }

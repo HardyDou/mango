@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
+import type { BusinessApprovalContext } from '@mango/workflow';
 
 const props = defineProps<{
   context: BusinessApprovalContext;
