@@ -13,6 +13,7 @@ import io.mango.infra.fileproc.convert.enums.ConvertFormat;
 import io.mango.infra.fileproc.convert.vo.ConvertResultVO;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Locale;
 
 /**
  * 基于 Aspose.PDF 的 PDF 首页转图片转换器。
@@ -82,6 +83,7 @@ public class AsposePdfToImageConvertProvider implements IConvertProvider {
     }
 
     private void applyLicense() {
+        ensureSupportedLocale();
         byte[] licenseContent = licenseApi == null ? new byte[0] : licenseApi.licenseContent(AsposeProduct.PDF);
         if (licenseApplied || licenseContent.length == 0) {
             return;
@@ -112,5 +114,13 @@ public class AsposePdfToImageConvertProvider implements IConvertProvider {
             return Integer.parseInt(value.toString());
         }
         return defaultValue;
+    }
+
+    private void ensureSupportedLocale() {
+        Locale locale = Locale.getDefault();
+        if ("zh".equals(locale.getLanguage()) && "CN".equals(locale.getCountry()) && locale.getScript() != null
+                && !locale.getScript().isBlank()) {
+            Locale.setDefault(Locale.CHINA);
+        }
     }
 }

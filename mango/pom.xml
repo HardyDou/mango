@@ -32,11 +32,11 @@
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <plexus-utils.version>4.0.3</plexus-utils.version>
         <jodconverter.version>4.4.11</jodconverter.version>
-        <aspose-words.version>24.12</aspose-words.version>
-        <aspose-cells.version>22.6</aspose-cells.version>
-        <aspose-slides.version>21.8</aspose-slides.version>
-        <aspose-pdf.version>21.7</aspose-pdf.version>
-        <aspose-imaging.version>25.10</aspose-imaging.version>
+        <aspose-words.version>20.3</aspose-words.version>
+        <aspose-cells.version>20.3</aspose-cells.version>
+        <aspose-slides.version>20.3</aspose-slides.version>
+        <aspose-pdf.version>20.3</aspose-pdf.version>
+        <aspose-imaging.version>20.3</aspose-imaging.version>
         <pdfbox.version>3.0.6</pdfbox.version>
         <commons-imaging.version>1.0.0-alpha6</commons-imaging.version>
         <springdoc-openapi.version>2.8.9</springdoc-openapi.version>
@@ -609,6 +609,7 @@
                 <groupId>com.aspose</groupId>
                 <artifactId>aspose-imaging</artifactId>
                 <version>${aspose-imaging.version}</version>
+                <classifier>jdk16</classifier>
             </dependency>
             <dependency>
                 <groupId>org.apache.pdfbox</groupId>

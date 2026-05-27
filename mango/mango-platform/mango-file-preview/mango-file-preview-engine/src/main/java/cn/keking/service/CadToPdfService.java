@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -346,12 +348,12 @@ public class CadToPdfService {
 
     private CadRasterizationOptions createRasterizationOptions(Image cadImage) {
         RasterizationQuality quality = new RasterizationQuality();
-        RasterizationQualityValue highQuality = RasterizationQualityValue.High;
+        int highQuality = RasterizationQualityValue.High;
         quality.setArc(highQuality);
         quality.setHatch(highQuality);
         quality.setText(highQuality);
-        quality.setOle(highQuality);
-        quality.setObjectsPrecision(highQuality);
+        setQualityValueIfSupported(quality, "setOle", highQuality);
+        setQualityValueIfSupported(quality, "setObjectsPrecision", highQuality);
         quality.setTextThicknessNormalization(true);
 
         CadRasterizationOptions options = new CadRasterizationOptions();
@@ -363,9 +365,41 @@ public class CadToPdfService {
         options.setNoScaling(false);
         options.setQuality(quality);
         options.setDrawType(CadDrawTypeMode.UseObjectColor);
-        options.setExportAllLayoutContent(true);
-        options.setVisibilityMode(VisibilityMode.AsScreen);
+        invokeIfSupported(options, "setExportAllLayoutContent", new Class<?>[]{boolean.class}, true);
+        setVisibilityModeIfSupported(options);
         return options;
+    }
+
+    private void setQualityValueIfSupported(RasterizationQuality quality, String methodName, int value) {
+        invokeIfSupported(quality, methodName, new Class<?>[]{int.class}, value);
+    }
+
+    private void setVisibilityModeIfSupported(CadRasterizationOptions options) {
+        try {
+            Class<?> visibilityModeType = Class.forName("com.aspose.cad.imageoptions.VisibilityMode");
+            Object asScreen = visibilityModeType.getField("AsScreen").get(null);
+            invokeIfSupported(options, "setVisibilityMode", new Class<?>[]{visibilityModeType}, asScreen);
+        } catch (ClassNotFoundException | NoSuchFieldException ex) {
+            return;
+        } catch (IllegalAccessException ex) {
+            throw new RuntimeException("设置 CAD 可见性模式失败", ex);
+        }
+    }
+
+    private void invokeIfSupported(Object target, String methodName, Class<?>[] parameterTypes, Object... args) {
+        Method method = Arrays.stream(target.getClass().getMethods())
+                .filter(candidate -> methodName.equals(candidate.getName()))
+                .filter(candidate -> Arrays.equals(candidate.getParameterTypes(), parameterTypes))
+                .findFirst()
+                .orElse(null);
+        if (method == null) {
+            return;
+        }
+        try {
+            method.invoke(target, args);
+        } catch (ReflectiveOperationException ex) {
+            throw new RuntimeException("调用 Aspose.CAD 兼容方法失败: " + methodName, ex);
+        }
     }
 
     private SvgOptions createSvgOptions(CadRasterizationOptions rasterizationOptions) {
