@@ -5,8 +5,8 @@ import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
-const template = resolve(packageRoot, '../../../mango-business-template');
-const tempRoot = mkdtempSync(join(tmpdir(), 'mango-business-'));
+const template = resolve(packageRoot, '../../../mango-business-starter');
+const tempRoot = mkdtempSync(join(tmpdir(), 'mango-app-'));
 const projectName = 'guarantee-platform';
 
 const result = spawnSync(process.execPath, [
@@ -76,6 +76,27 @@ try {
   });
   if (templateCheck.status !== 0) {
     throw new Error(`generated project template check failed:\n${templateCheck.stdout}\n${templateCheck.stderr}`);
+  }
+
+  const baselinePreflight = spawnSync(process.execPath, [
+    'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    '--role',
+    'dev',
+    '--phase',
+    'develop',
+    '--task',
+    '新增业务模块',
+    '--paths',
+    'backend/modules/guarantee,frontend/packages/guarantee',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (baselinePreflight.status !== 0) {
+    throw new Error(`generated project baseline preflight failed:\n${baselinePreflight.stdout}\n${baselinePreflight.stderr}`);
+  }
+  if (!baselinePreflight.stdout.includes('rules/backend/03-api.md') || !baselinePreflight.stdout.includes('rules/frontend/01-vue-code.md')) {
+    throw new Error(`generated project baseline preflight did not include backend and frontend rules:\n${baselinePreflight.stdout}`);
   }
 
   console.log('Initializr CLI check passed.');

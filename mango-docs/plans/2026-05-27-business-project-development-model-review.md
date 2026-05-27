@@ -231,7 +231,7 @@ business-pmo/rules/
 Mango 提供业务模板仓库和初始化器。
 
 ```bash
-npm create mango-business@latest guarantee-platform
+npm create mango-app@latest guarantee-platform
 ```
 
 或：
@@ -377,7 +377,7 @@ C. 前后端结对使用 AI：中等复杂页面和接口。
 | Mango 框架是否以 Maven BOM 和 npm 包对外提供 | 接受 / 调整 |
 | Mango PMO 是否新增 ecosystem baseline | 接受 / 调整 |
 | 业务 PMO 是否只补充领域规则 | 接受 / 调整 |
-| `mango-business-template` 是否作为第一落地资产 | 接受 / 调整 |
+| `mango-business-starter` 是否作为第一落地资产 | 接受 / 调整 |
 | `mango init` 是否作为第二落地资产 | 接受 / 调整 |
 | 前端接口需求是否必须走契约变更 | 接受 / 调整 |
 | FE+AI 修改后端是否允许，review 责任如何约束 | 接受 / 调整 |
@@ -440,7 +440,7 @@ mango-docs/plans/2026-05-27-business-project-development-model-review-record.md
 
 交付物：
 
-- `mango-business-template`。
+- `mango-business-starter`。
 - 示例业务域。
 - `business-pmo` 和 `business-docs` 初始结构。
 - 本地启动脚本。
@@ -451,7 +451,7 @@ mango-docs/plans/2026-05-27-business-project-development-model-review-record.md
 
 交付物：
 
-- `npm create mango-business@latest`。
+- `npm create mango-app@latest`。
 - `mango init`。
 - 变量替换、能力选择、环境检查。
 

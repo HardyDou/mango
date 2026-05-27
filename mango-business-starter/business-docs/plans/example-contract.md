@@ -18,7 +18,7 @@
 
 ## 4. 设计输入
 
-- Mango PMO baseline。
+- `business-pmo/mango-baseline/` 中的 Mango PMO baseline。
 - 当前业务领域规则。
 - 本次业务需求说明。
 
