@@ -19,6 +19,7 @@ const requiredFiles = [
   'business-pmo/mango-baseline/rules/00-dev-flow.md',
   'business-pmo/mango-baseline/rules/01-delivery-contract.md',
   'business-pmo/mango-baseline/rules/02-dev-environment.md',
+  'business-pmo/mango-baseline/rules/03-ai-coding-redlines.md',
   'business-pmo/mango-baseline/rules/backend/03-api.md',
   'business-pmo/mango-baseline/rules/backend/04-db.md',
   'business-pmo/mango-baseline/rules/backend/05-module.md',
@@ -113,7 +114,7 @@ const contentChecks = [
   },
   {
     file: 'business-pmo/mango-baseline/rules/index.json',
-    patterns: ['"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
+    patterns: ['"rules/03-ai-coding-redlines.md"', '"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
   },
 ];
 

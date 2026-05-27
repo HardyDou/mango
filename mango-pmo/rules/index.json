@@ -8,6 +8,10 @@
     {
       "path": "rules/01-delivery-contract.md",
       "reason": "交付契约与设计说明规则"
+    },
+    {
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线"
     }
   ],
   "rules": {
@@ -38,6 +42,10 @@
     "process.devEnvironment": {
       "path": "rules/02-dev-environment.md",
       "reason": "开发环境与本地启动规范"
+    },
+    "process.aiCodingRedlines": {
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
