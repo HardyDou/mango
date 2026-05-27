@@ -3,7 +3,6 @@
     <el-card v-if="pageMode === 'LIST'" shadow="never" class="business-main page-card">
       <div class="list-page-header">
         <h1>消息配置</h1>
-        <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
       </div>
       <div class="definition-layout">
         <aside class="domain-panel">
@@ -17,20 +16,23 @@
           </el-menu>
         </aside>
         <main class="definition-main">
-          <el-form :inline="true" :model="query" class="notice-filter">
-            <el-form-item label="消息编码">
-              <el-input v-model="query.bizType" clearable class="filter-control" />
-            </el-form-item>
-            <el-form-item label="启用状态">
-              <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
-                <el-option label="启用" :value="true" />
-                <el-option label="停用" :value="false" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="loadBusinessTypes">查询</el-button>
-            </el-form-item>
-          </el-form>
+          <div class="list-toolbar">
+            <el-form :inline="true" :model="query" class="notice-filter">
+              <el-form-item label="消息编码">
+                <el-input v-model="query.bizType" clearable class="filter-control" />
+              </el-form-item>
+              <el-form-item label="启用状态">
+                <el-select v-model="query.enabled" clearable placeholder="全部" class="filter-control">
+                  <el-option label="启用" :value="true" />
+                  <el-option label="停用" :value="false" />
+                </el-select>
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="loadBusinessTypes">查询</el-button>
+              </el-form-item>
+            </el-form>
+            <el-button type="primary" :icon="Plus" @click="openCreate">新增</el-button>
+          </div>
           <el-table :data="businessTypes" border stripe v-loading="loading">
             <el-table-column prop="bizName" label="消息名称" min-width="150" />
             <el-table-column prop="bizType" label="消息编码" min-width="180" />
@@ -152,9 +154,18 @@
                     <el-table-column label="必填" width="72" align="center">
                       <template #default="{ row }"><el-switch v-model="row.required" /></template>
                     </el-table-column>
-                    <el-table-column width="62" align="center">
+                    <el-table-column width="56" align="center">
                       <template #default="{ $index }">
-                        <el-button link type="danger" @click="removeSchemaField($index)">删除</el-button>
+                        <el-tooltip content="删除" placement="top">
+                          <el-button
+                            class="table-icon-button"
+                            text
+                            type="danger"
+                            :icon="Delete"
+                            aria-label="删除参数"
+                            @click="removeSchemaField($index)"
+                          />
+                        </el-tooltip>
                       </template>
                     </el-table-column>
                   </el-table>
@@ -177,7 +188,7 @@
             <section class="form-section message-type-section">
               <div class="section-title">
                 <span>消息类型</span>
-                <span class="notice-muted">启用后必须配置统一内容；停用时已有配置不会丢失。</span>
+                <span class="notice-muted">启用后必须配置对应消息内容；停用时已有配置不会丢失。</span>
               </div>
               <el-tabs v-model="activeChannel" class="message-type-tabs">
                 <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
@@ -199,9 +210,14 @@
                       />
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :md="12">
-                    <el-form-item label="通道路由">
-                      <el-select v-model="templateForm.channelConfigId" class="form-control" clearable placeholder="AUTO 权重轮换">
+                  <el-col :span="24">
+                    <el-form-item label="通道">
+                      <el-select
+                        v-model="templateForm.channelConfigId"
+                        class="template-route-select"
+                        clearable
+                        placeholder="AUTO 权重轮换"
+                      >
                         <el-option label="AUTO 权重轮换" value="" />
                         <el-option
                           v-for="item in channelConfigOptions(activeChannel)"
@@ -212,23 +228,29 @@
                       </el-select>
                     </el-form-item>
                   </el-col>
-                  <el-col :xs="24" :md="12">
-                    <el-form-item label="统一标题">
-                      <el-input v-model="templateForm.titleTemplate" placeholder="订单 {{orderNo}} 已发货" />
+                  <el-col v-if="showTemplateTitle" :span="24">
+                    <el-form-item :label="templateTitleLabel">
+                      <el-input
+                        v-model="templateForm.titleTemplate"
+                        class="template-title-input"
+                        :placeholder="templateTitlePlaceholder"
+                      />
                     </el-form-item>
                   </el-col>
                   <el-col :span="24">
-                    <el-form-item label="统一内容">
+                    <el-form-item :label="templateContentLabel" class="template-content-item">
                       <Editor
                         v-if="activeChannel === 'EMAIL'"
                         v-model="templateForm.contentTemplate"
-                        height="320px"
+                        class="template-editor"
+                        height="260px"
                         mode="simple"
-                        placeholder="请输入邮件正文，支持插入变量 {{orderNo}}"
+                        :placeholder="templateContentPlaceholder"
                       />
                       <el-input
                         v-else
                         v-model="templateForm.contentTemplate"
+                        class="template-content-textarea"
                         type="textarea"
                         :rows="8"
                         :placeholder="templateContentPlaceholder"
@@ -335,9 +357,11 @@
                     {{ templateForm.enabled ? '启用' : '停用' }}
                   </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="通道路由">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
-                <el-descriptions-item label="统一标题" :span="2">{{ templateForm.titleTemplate || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="统一内容" :span="2">
+                <el-descriptions-item label="通道">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
+                <el-descriptions-item v-if="showTemplateTitle" :label="templateTitleLabel" :span="2">
+                  {{ templateForm.titleTemplate || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item :label="templateContentLabel" :span="2">
                   <div class="readonly-content">{{ templateForm.contentTemplate || '-' }}</div>
                 </el-descriptions-item>
               </el-descriptions>
@@ -455,9 +479,11 @@
                         {{ templateForm.enabled ? '启用' : '停用' }}
                       </el-tag>
                     </el-descriptions-item>
-                    <el-descriptions-item label="通道路由">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
-                    <el-descriptions-item label="统一标题" :span="2">{{ templateForm.titleTemplate || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="统一内容" :span="2">
+                    <el-descriptions-item label="通道">{{ channelRouteText(templateForm.channelConfigId) }}</el-descriptions-item>
+                    <el-descriptions-item v-if="showTemplateTitle" :label="templateTitleLabel" :span="2">
+                      {{ templateForm.titleTemplate || '-' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item :label="templateContentLabel" :span="2">
                       <div class="readonly-content">{{ templateForm.contentTemplate || '-' }}</div>
                     </el-descriptions-item>
                   </el-descriptions>
@@ -484,7 +510,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
+import { Delete, Plus } from '@element-plus/icons-vue';
 import { Editor } from '@mango/common';
 import {
   activateBusinessConfigVersion,
@@ -611,12 +637,49 @@ const currentTemplate = computed(() => {
     || templates.value.find(item => item.channelType === activeChannel.value);
 });
 const templateStatusTag = computed(() => versionStatusTag(currentTemplate.value?.versionStatus));
+const showTemplateTitle = computed(() => activeChannel.value !== 'SMS');
+const templateTitleLabel = computed(() => {
+  if (activeChannel.value === 'SITE') {
+    return '系统消息标题';
+  }
+  if (activeChannel.value === 'EMAIL') {
+    return '邮件标题';
+  }
+  return `${channelLabel(activeChannel.value)}标题`;
+});
+const templateContentLabel = computed(() => {
+  if (activeChannel.value === 'SITE') {
+    return '系统消息内容';
+  }
+  if (activeChannel.value === 'SMS') {
+    return '短信内容';
+  }
+  if (activeChannel.value === 'EMAIL') {
+    return '邮件内容';
+  }
+  return `${channelLabel(activeChannel.value)}内容`;
+});
+const templateTitlePlaceholder = computed(() => {
+  if (activeChannel.value === 'SITE') {
+    return '请输入系统消息标题，例如：订单 {{orderNo}} 已发货';
+  }
+  if (activeChannel.value === 'EMAIL') {
+    return '请输入邮件标题，例如：订单 {{orderNo}} 已发货';
+  }
+  return `请输入${channelLabel(activeChannel.value)}标题，例如：订单 {{orderNo}} 已发货`;
+});
 const templateContentPlaceholder = computed(() => {
+  if (activeChannel.value === 'SITE') {
+    return '请输入系统消息内容，支持变量 {{orderNo}}';
+  }
   if (activeChannel.value === 'WECHAT_OFFICIAL') {
-    return '请输入公众号模板内容，例如：您的订单 {{orderNo}} 已发货';
+    return '请输入微信公众号内容，例如：您的订单 {{orderNo}} 已发货';
   }
   if (activeChannel.value === 'SMS') {
     return '请输入短信内容，例如：订单 {{orderNo}} 已发货';
+  }
+  if (activeChannel.value === 'EMAIL') {
+    return '请输入邮件内容，支持变量 {{orderNo}}';
   }
   return '请输入通知内容，支持变量 {{orderNo}}';
 });
@@ -969,7 +1032,7 @@ function validateEnabledTemplates() {
   for (const channel of channels) {
     const draft = channelDrafts[channel] || templates.value.find(item => item.channelType === channel) || createEmptyTemplate(channel);
     if (draft.enabled && !draft.contentTemplate?.trim()) {
-      ElMessage.error(`${channelLabel(channel)}已启用，请填写统一内容`);
+      ElMessage.error(`${channelLabel(channel)}已启用，请填写${channelContentLabel(channel)}`);
       activeChannel.value = channel;
       applyTemplate();
       return false;
@@ -980,6 +1043,19 @@ function validateEnabledTemplates() {
 
 function variableText(name: string) {
   return `{{${name}}}`;
+}
+
+function channelContentLabel(channel: NoticeChannelType) {
+  if (channel === 'SITE') {
+    return '系统消息内容';
+  }
+  if (channel === 'SMS') {
+    return '短信内容';
+  }
+  if (channel === 'EMAIL') {
+    return '邮件内容';
+  }
+  return `${channelLabel(channel)}内容`;
 }
 
 async function copyVariable(name: string) {
@@ -1341,9 +1417,14 @@ onMounted(() => {
 
 .page-actions {
   display: inline-flex;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 12px;
+}
+
+.page-actions :deep(.el-button) {
+  margin-left: 0;
 }
 
 .definition-layout {
@@ -1382,7 +1463,7 @@ onMounted(() => {
   align-items: stretch;
 }
 
-.maintain-config-row :deep(.el-col) {
+.maintain-config-row > :deep(.el-col) {
   display: flex;
   min-width: 0;
 }
@@ -1399,15 +1480,29 @@ onMounted(() => {
 }
 
 .message-type-section {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .message-type-tabs {
   flex-shrink: 0;
 }
 
-.notice-filter {
+.list-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.notice-filter {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.notice-filter :deep(.el-form-item) {
+  margin-bottom: 0;
 }
 
 .filter-control {
@@ -1446,6 +1541,12 @@ onMounted(() => {
 
 .schema-field-table :deep(.el-table__cell) {
   padding: 5px 0;
+}
+
+.table-icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
 }
 
 .notice-schema-tabs {
@@ -1490,14 +1591,84 @@ onMounted(() => {
 .template-config-form,
 .template-readonly-descriptions {
   flex: 1;
+  width: 100%;
+}
+
+.template-config-form :deep(.el-form-item) {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.template-config-form :deep(.el-row) {
+  width: 100%;
+}
+
+.template-config-form :deep(.el-col) {
+  display: block;
+  width: 100%;
+}
+
+.template-config-form :deep(.el-form-item__content) {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-route-select {
+  width: 260px;
+  max-width: 100%;
+}
+
+.template-title-input {
+  width: 420px;
+  max-width: 100%;
+}
+
+.template-content-item {
+  width: 100%;
+}
+
+.template-content-item :deep(.el-form-item__content) {
+  width: 100%;
+  max-width: none;
+}
+
+.template-editor,
+.template-content-textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.template-editor:not(.w-e-full-screen-container) {
+  display: flex;
+  flex-direction: column;
+  height: 260px;
+  overflow: hidden;
+}
+
+.template-editor:not(.w-e-full-screen-container) :deep(.editor-toolbar) {
+  flex-shrink: 0;
+}
+
+.template-editor:not(.w-e-full-screen-container) :deep(.editor-content) {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+}
+
+.template-editor:not(.w-e-full-screen-container) :deep(.w-e-text-container),
+.template-editor:not(.w-e-full-screen-container) :deep(.w-e-scroll) {
+  height: 100% !important;
+  min-height: 100% !important;
 }
 
 .template-config-form :deep(.el-textarea__inner) {
-  min-height: 178px !important;
+  height: 260px !important;
+  min-height: 260px !important;
+  resize: vertical;
 }
 
 .readonly-content {
-  min-height: 178px;
+  min-height: 260px;
   max-height: 260px;
   overflow: auto;
   white-space: pre-wrap;
