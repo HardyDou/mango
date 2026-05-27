@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://a.mango.io:5176';
-const useExternalWebServer = process.env.PLAYWRIGHT_USE_EXTERNAL_WEBSERVER !== 'false';
+const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || process.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555';
+const useExternalWebServer = process.env.PLAYWRIGHT_USE_EXTERNAL_WEBSERVER === 'true';
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true';
 
 export default defineConfig({
   testDir: './e2e',
@@ -29,9 +31,13 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: 'pnpm run dev',
+          command: 'pnpm dev:micro',
           url: baseURL,
-          reuseExistingServer: true,
+          cwd: process.cwd(),
+          env: {
+            VITE_ADMIN_PROXY_PATH: apiBaseURL,
+          },
+          reuseExistingServer,
           timeout: 120 * 1000,
         },
       }),

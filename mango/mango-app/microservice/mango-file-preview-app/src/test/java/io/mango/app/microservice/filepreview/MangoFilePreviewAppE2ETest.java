@@ -73,10 +73,9 @@ class MangoFilePreviewAppE2ETest {
         assertThat(body.path("success").asBoolean()).isTrue();
         assertThat(body.at("/data/fileId").asText()).isEqualTo(FILE_ID.toString());
         String previewUrl = body.at("/data/previewUrl").asText();
-        assertThat(previewUrl).isEqualTo("/file-preview/files/preview?fileId=" + FILE_ID);
+        assertThat(previewUrl).startsWith("/file-preview/files/preview-entry?token=");
 
-        ResponseEntity<String> previewResponse = restTemplate.getForEntity(baseUrl()
-                + "/file-preview/files/preview?fileId=" + FILE_ID, String.class);
+        ResponseEntity<String> previewResponse = restTemplate.getForEntity(baseUrl() + previewUrl, String.class);
         assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(previewResponse.getBody()).contains(FILE_NAME);
         assertThat(previewResponse.getBody()).contains(Base64.getEncoder()

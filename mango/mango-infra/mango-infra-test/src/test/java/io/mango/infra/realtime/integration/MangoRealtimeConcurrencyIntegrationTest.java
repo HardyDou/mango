@@ -36,7 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
                 "spring.autoconfigure.exclude="
                         + "io.mango.infra.kv.starter.redis.KvRedisAutoConfiguration,"
                         + "io.mango.infra.persistence.starter.PersistenceAutoConfiguration,"
-                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration",
+                        + "io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration,"
+                        + "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration",
                 "mango.kv.store.type=memory",
                 "mango.infra.realtime.outbox.enabled=false"
         })

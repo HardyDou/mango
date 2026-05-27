@@ -129,6 +129,8 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(hybridConfig);
     await login(page);
 
+    await page.goto('/#/system/menu-package');
+    await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-authorization',
       runtimeCode: 'mango-admin-rbac-app',
@@ -167,6 +169,8 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(monolithConfig);
     await login(page);
 
+    await page.goto('/#/system/menu-package');
+    await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
     await expectRuntime(page, {
       moduleCode: 'mango-authorization',
       runtimeCode: 'mango-admin-rbac-local',
@@ -193,6 +197,8 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(brokenHybridConfig);
     await login(page);
 
+    await page.goto('/#/system/menu-package');
+    await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
     if (failClosedRuntimeConfig) {
       await expect(page.getByText('运行配置加载失败')).toBeVisible();
       await expectRuntimeDiagnostic(page, {
@@ -245,6 +251,8 @@ test.describe.serial('Shell runtime composition', () => {
     writeRuntimeConfig(invalidModeConfig);
     await login(page);
 
+    await page.goto('/#/system/menu-package');
+    await page.waitForURL('**/#/system/menu-package**', { timeout: 10000 });
     if (failClosedRuntimeConfig) {
       await expect(page.getByText('运行配置加载失败')).toBeVisible();
       const remoteResources = await remoteRuntimeResources(page);
@@ -294,8 +302,15 @@ async function login(page: Page) {
   await page.goto('/#/login');
   await page.getByPlaceholder('用户名').fill('admin');
   await page.getByPlaceholder('密码').fill('admin123');
+  const accountTenantsResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/auth/login-institutions') && response.status() === 200
+  );
+  await page.getByPlaceholder('密码').blur();
+  await accountTenantsResponsePromise;
+  await page.locator('.tenant-select').click();
+  await page.getByRole('option', { name: /芒果集团/ }).click();
   await page.getByRole('button', { name: /登\s*录/ }).click();
-  await expect(page.getByRole('button', { name: /系统管理/ })).toBeVisible();
+  await page.waitForURL('**/#/home', { timeout: 10000 });
   await expect(page.locator('.shell-runtime-content')).toBeVisible();
 }
 
