@@ -7,6 +7,7 @@ export type NoticeTemplateVersionStatus = 'DRAFT' | 'ACTIVE' | 'HISTORY';
 export type NoticeSyncStatus = 'SYNCED' | 'PENDING_PUBLISH';
 export type NoticeChannelConfigStatus = 'COMPLETE' | 'INCOMPLETE';
 export type NoticeChannelSendHealthStatus = 'NONE' | 'SUCCESS' | 'FAILED';
+export type NoticeRecipientTargetType = 'USER' | 'ORG' | 'POST' | 'ROLE';
 
 export interface NoticeSiteMessage {
   id: string;
@@ -39,12 +40,19 @@ export interface NoticeRecipientCommand {
   externalId?: string;
 }
 
+export interface NoticeRecipientTargetCommand {
+  targetType: NoticeRecipientTargetType;
+  targetId: string;
+  targetName?: string;
+}
+
 export interface NoticeSendCommand {
   bizType: string;
   bizId?: string;
   params?: Record<string, unknown>;
   channelTypes?: NoticeChannelType[];
   recipients?: NoticeRecipientCommand[];
+  recipientTargets?: NoticeRecipientTargetCommand[];
   userId?: string;
   userIds?: string[];
   title?: string;
@@ -123,7 +131,11 @@ export interface NoticeTask {
   id: string;
   taskCode: string;
   bizType: string;
+  bizGroup?: string;
+  bizName?: string;
   bizId?: string;
+  paramsSnapshot?: string;
+  recipientTargetsSnapshot?: string;
   channelTypes?: string;
   status: NoticeTaskStatus;
   totalCount: number;

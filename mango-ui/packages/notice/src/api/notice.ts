@@ -32,6 +32,29 @@ export interface NoticeIdentityUser {
   status?: number;
 }
 
+export interface NoticeOrgNode {
+  id: string;
+  orgName: string;
+  pid?: string;
+  orgCode?: string;
+  orgStatus?: string;
+  children?: NoticeOrgNode[];
+}
+
+export interface NoticePost {
+  id?: string;
+  postName: string;
+  postCode?: string;
+  postStatus?: string;
+}
+
+export interface NoticeRole {
+  roleId?: string;
+  roleName: string;
+  roleCode?: string;
+  status?: number;
+}
+
 export function getIdentityUsers(keyword: string, params?: { pageNum?: number; pageSize?: number; status?: number }) {
   return get<PageResult<NoticeIdentityUser>>('/identity/users/page', {
     params: {
@@ -47,6 +70,30 @@ export function getIdentityUsers(keyword: string, params?: { pageNum?: number; p
     size: data.size,
     pages: data.pages,
   }));
+}
+
+export function getNoticeOrgTree(params?: { parentId?: string; includeDisabled?: boolean }) {
+  return get<NoticeOrgNode[]>('/org/tree', { params });
+}
+
+export function getNoticePosts(params?: { pageNum?: number; pageSize?: number; postStatus?: string }) {
+  return get<PageResult<NoticePost>>('/post/page', {
+    params: {
+      page: params?.pageNum,
+      size: params?.pageSize,
+      postStatus: params?.postStatus,
+    },
+  }).then((data) => ({
+    list: data.list || (data as unknown as { records?: NoticePost[] }).records || [],
+    total: data.total,
+    page: data.page,
+    size: data.size,
+    pages: data.pages,
+  }));
+}
+
+export function getNoticeRoles() {
+  return get<NoticeRole[]>('/authorization/roles');
 }
 
 export function getBusinessTypes(params?: Record<string, unknown>) {
@@ -86,7 +133,16 @@ export function getChannelTemplates(businessTypeId: string) {
 }
 
 export function saveChannelTemplate(businessTypeId: string, channelType: NoticeChannelType, data: Partial<NoticeChannelTemplate>) {
-  return put<NoticeChannelTemplate>(`/notice/business-types/${businessTypeId}/channel-templates/${channelType}`, data);
+  return put<NoticeChannelTemplate>(`/notice/business-types/${businessTypeId}/channel-templates/${channelType}`, {
+    channelType,
+    templateName: data.templateName,
+    titleTemplate: data.titleTemplate,
+    contentTemplate: data.contentTemplate,
+    channelTemplateId: data.channelTemplateId,
+    variableMapping: data.variableMapping,
+    enabled: data.enabled,
+    channelConfigId: data.channelConfigId,
+  });
 }
 
 export function publishChannelTemplate(businessTypeId: string, channelType: NoticeChannelType) {
@@ -170,6 +226,10 @@ export const noticeApi = {
   getSendRecords,
   getMySiteMessages,
   getMySiteMessageDetail,
+  getIdentityUsers,
+  getNoticeOrgTree,
+  getNoticePosts,
+  getNoticeRoles,
   getNoticeSettings,
   saveNoticeSettings,
   getMyUnreadCount,

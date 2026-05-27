@@ -26,6 +26,7 @@ test.describe('通知中心 E2E', () => {
           type: 'object',
           properties: {
             applyNo: { type: 'string', title: '申请单号', description: '审批单号' },
+            occurredAt: { type: 'datetime', title: '发生时间', description: '业务发生时间' },
           },
           required: ['applyNo'],
         }),
@@ -125,6 +126,17 @@ test.describe('通知中心 E2E', () => {
     const identityUsers = [
       { userId: '1001', username: 'admin', nickname: '管理员', phone: '13800000000', email: 'admin@example.com', status: 1 },
       { userId: '1002', username: 'operator', nickname: '操作员', phone: '', email: 'operator@example.com', status: 1 },
+    ];
+    const orgTree = [
+      { id: '2001', orgName: '芒果集团', pid: '0', orgStatus: '1', children: [{ id: '2002', orgName: '技术部', pid: '2001', orgStatus: '1', children: [] }] },
+    ];
+    const posts = [
+      { id: '3001', postName: '产品经理', postCode: 'PM', postStatus: '1' },
+      { id: '3002', postName: '研发工程师', postCode: 'DEV', postStatus: '1' },
+    ];
+    const roles = [
+      { roleId: '4001', roleName: '系统管理员', roleCode: 'ADMIN', status: 1 },
+      { roleId: '4002', roleName: '业务操作员', roleCode: 'OPERATOR', status: 1 },
     ];
 
     await page.addInitScript(() => {
@@ -248,7 +260,7 @@ test.describe('通知中心 E2E', () => {
             status: 1,
             children: [
               child('2901', '消息配置', '/notice/message-definition', '@/views/notice/message-definition/index.vue'),
-              child('2902', '发送消息', '/notice/send-message', '@/views/notice/send-message/index.vue'),
+              child('2902', '发送任务', '/notice/send-message', '@/views/notice/send-message/index.vue'),
               child('2903', '渠道配置', '/notice/channel', '@/views/notice/channel/index.vue'),
               child('2904', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
               child('2905', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
@@ -392,7 +404,20 @@ test.describe('通知中心 E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: channelConfigs, total: channelConfigs.length, page: 1, size: 10 }) });
     });
     await page.route('**/api/notice/tasks**', async (route) => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: [{ id: '1', taskCode: 'NT001', bizType: 'WORKFLOW_APPROVED', status: 'SUCCESS', totalCount: 1, successCount: 1, failCount: 0 }], total: 1, page: 1, size: 10 }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: [{
+        id: '1',
+        taskCode: 'NT001',
+        bizType: 'WORKFLOW_APPROVED',
+        bizGroup: 'WORKFLOW',
+        bizName: '审批通过通知',
+        paramsSnapshot: '{"applyNo":"APPLY-001"}',
+        recipientTargetsSnapshot: '[{"targetType":"USER","targetId":"1001","targetName":"管理员"}]',
+        channelTypes: 'SITE',
+        status: 'SUCCESS',
+        totalCount: 1,
+        successCount: 1,
+        failCount: 0,
+      }], total: 1, page: 1, size: 10 }) });
     });
     await page.route('**/api/notice/records**', async (route) => {
       const url = new URL(route.request().url());
@@ -410,6 +435,15 @@ test.describe('通知中心 E2E', () => {
         ? identityUsers.filter(item => [item.username, item.nickname, item.phone, item.email].some(value => value.includes(keyword)))
         : identityUsers;
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list, total: list.length, page: 1, size: 20 }) });
+    });
+    await page.route('**/api/org/tree**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(orgTree) });
+    });
+    await page.route('**/api/post/page**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list: posts, total: posts.length, page: 1, size: 20 }) });
+    });
+    await page.route('**/api/authorization/roles', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok(roles) });
     });
     await page.route('**/api/notice/settings**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ soundEnabled: true, desktopEnabled: true, maxRetry: 3, retentionDays: 180 }) });
@@ -541,28 +575,52 @@ test.describe('通知中心 E2E', () => {
     expect(deleteBusinessRequest.url()).toContain('/api/notice/business-types/2');
     await expect(page.getByText('order.shipped', { exact: true })).toHaveCount(0);
 
-    await page.getByRole('menuitem', { name: '发送消息' }).click();
-    await expect(page.getByRole('heading', { name: '发送消息' })).toBeVisible();
-    await expect(page.locator('tr', { hasText: 'NR001' })).toBeVisible();
-    await page.getByRole('button', { name: '发送消息' }).click();
-    const sendDialog = page.getByRole('dialog', { name: '发送消息' });
+    await page.getByRole('menuitem', { name: '发送任务' }).click();
+    await expect(page.getByRole('heading', { name: '发送任务' })).toBeVisible();
+    await expect(page.locator('tr', { hasText: 'NT001' })).toBeVisible();
+    await expect(page.locator('tr', { hasText: 'NT001' })).toContainText('WORKFLOW');
+    await expect(page.locator('tr', { hasText: 'NT001' })).toContainText('审批通过通知');
+    await expect(page.locator('tr', { hasText: 'NT001' })).not.toContainText('WORKFLOW_APPROVED');
+    await expect(page.locator('tr', { hasText: 'NT001' })).not.toContainText('"applyNo":"APPLY-001"');
+    await expect(page.locator('tr', { hasText: 'NT001' })).not.toContainText('"targetType":"USER"');
+    await page.locator('tr', { hasText: 'NT001' }).getByRole('button', { name: '详情' }).click();
+    const taskDetailDialog = page.getByRole('dialog', { name: '发送详情' });
+    await expect(taskDetailDialog.getByText('WORKFLOW_APPROVED')).toBeVisible();
+    await expect(taskDetailDialog.getByText('"targetType":"USER"')).toBeVisible();
+    await taskDetailDialog.getByRole('tab', { name: '参数 JSON' }).click();
+    await expect(taskDetailDialog.getByText('"applyNo":"APPLY-001"')).toBeVisible();
+    await taskDetailDialog.locator('.el-dialog__headerbtn').click();
+    await page.getByRole('button', { name: '新增任务' }).click();
+    const sendDialog = page.getByRole('dialog', { name: '新增任务' });
     await expect(sendDialog).toBeVisible();
-    await sendDialog.locator('.el-form-item', { hasText: '接收用户' }).locator('.el-select__wrapper').click();
-    await page.keyboard.type('admin');
-    await page.locator('.el-select-dropdown__item:visible', { hasText: '管理员' }).click();
-    await sendDialog.locator('.el-form-item', { hasText: '消息模板' }).locator('.el-select__wrapper').click();
+    await sendDialog.locator('.participant-add').click();
+    const participantDialog = page.locator('.participant-dialog', { hasText: '选择对象' });
+    await expect(participantDialog).toBeVisible();
+    await participantDialog.locator('.participant-item', { hasText: '管理员' }).click();
+    await participantDialog.getByRole('tab', { name: '角色' }).click();
+    await participantDialog.locator('.participant-item', { hasText: '系统管理员' }).click();
+    await participantDialog.getByRole('button', { name: '确认' }).click();
+    await expect(sendDialog.getByText('用户：')).toBeVisible();
+    await expect(sendDialog.getByText('角色：')).toBeVisible();
+    await sendDialog.locator('.el-form-item', { hasText: '消息类型' }).locator('.el-select__wrapper').click();
     await page.locator('.el-select-dropdown__item:visible', { hasText: '审批通过通知' }).click();
     await expect(sendDialog.getByLabel('申请单号')).toBeVisible();
+    await expect(sendDialog.getByLabel('发生时间')).toBeVisible();
     await sendDialog.getByLabel('申请单号').fill('APPLY-20260527');
+    await sendDialog.getByLabel('发生时间').fill('2026-05-27 10:30:00');
     await sendDialog.getByRole('button', { name: '暂存' }).click();
     await expect(page.getByText('已暂存')).toBeVisible();
     const sendNoticeRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/send'));
     await sendDialog.getByRole('button', { name: '发送', exact: true }).click();
     const sendNoticeBody = (await sendNoticeRequest).postDataJSON();
     expect(sendNoticeBody.bizType).toBe('WORKFLOW_APPROVED');
-    expect(sendNoticeBody.params).toEqual({ applyNo: 'APPLY-20260527' });
-    expect(sendNoticeBody.userIds).toEqual(['1001']);
+    expect(sendNoticeBody.params).toEqual({ applyNo: 'APPLY-20260527', occurredAt: '2026-05-27 10:30:00' });
+    expect(sendNoticeBody.recipientTargets).toEqual([
+      { targetType: 'USER', targetId: '1001', targetName: '管理员' },
+      { targetType: 'ROLE', targetId: '4001', targetName: '系统管理员 / ADMIN' },
+    ]);
     expect(sendNoticeBody).not.toHaveProperty('bizId');
+    expect(sendNoticeBody).not.toHaveProperty('userIds');
     expect(sendNoticeBody).not.toHaveProperty('recipients');
     expect(sendNoticeBody).not.toHaveProperty('channelTypes');
     await expect(sendDialog).toBeHidden();

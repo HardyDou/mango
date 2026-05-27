@@ -554,6 +554,16 @@ interface JsonSchema {
   required?: string[];
 }
 
+interface LegacyParamSchema {
+  params?: Array<{
+    name?: unknown;
+    label?: unknown;
+    description?: unknown;
+    type?: unknown;
+    required?: unknown;
+  }>;
+}
+
 interface BusinessTypeForm {
   bizType: string;
   bizName: string;
@@ -800,7 +810,7 @@ async function loadPublishConfig(row: NoticeBusinessType) {
 function applyBusinessConfigToForm() {
   const config = businessConfigForForm.value;
   if (config) {
-    form.paramsSchema = config.paramsSchema || '';
+    form.paramsSchema = resolveBusinessConfigParamsSchema(config);
     form.defaultPriority = config.defaultPriority || 'NORMAL';
     form.idempotentStrategy = config.idempotentStrategy || '';
   }
@@ -896,6 +906,10 @@ function parseSchemaJson(value?: string) {
   }
   try {
     const parsed = JSON.parse(value) as unknown;
+    const legacySchema = normalizeLegacyParamSchema(parsed as LegacyParamSchema);
+    if (legacySchema) {
+      return legacySchema;
+    }
     if (!isJsonSchema(parsed)) {
       return undefined;
     }
@@ -903,6 +917,29 @@ function parseSchemaJson(value?: string) {
   } catch {
     return undefined;
   }
+}
+
+function normalizeLegacyParamSchema(schema: LegacyParamSchema): JsonSchema | undefined {
+  if (!Array.isArray(schema.params)) {
+    return undefined;
+  }
+  const properties: Record<string, JsonSchemaProperty> = {};
+  const required: string[] = [];
+  schema.params.forEach((item) => {
+    if (!isJsonObject(item) || typeof item.name !== 'string' || !item.name.trim()) {
+      return;
+    }
+    const name = item.name.trim();
+    properties[name] = {
+      type: typeof item.type === 'string' ? item.type : 'string',
+      title: typeof item.label === 'string' ? item.label : name,
+      description: typeof item.description === 'string' ? item.description : undefined,
+    };
+    if (item.required === true) {
+      required.push(name);
+    }
+  });
+  return { type: 'object', properties, required };
 }
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
@@ -931,6 +968,23 @@ function parseSchemaFields(value?: string): SchemaField[] {
     type: toSchemaFieldType(property),
     required: requiredFields.has(name),
   }));
+}
+
+function hasSchemaProperties(value?: string) {
+  return parseSchemaFields(value).some(item => item.name.trim());
+}
+
+function resolveBusinessConfigParamsSchema(config: NoticeBusinessConfigVersion) {
+  if (hasSchemaProperties(config.paramsSchema)) {
+    return config.paramsSchema || '';
+  }
+  if (config.versionStatus === 'DRAFT' && hasSchemaProperties(activeBusinessConfig.value?.paramsSchema)) {
+    return activeBusinessConfig.value?.paramsSchema || '';
+  }
+  if (hasSchemaProperties(currentBusinessType.value?.paramsSchema)) {
+    return currentBusinessType.value?.paramsSchema || '';
+  }
+  return config.paramsSchema || '';
 }
 
 function toSchemaFieldType(property: JsonSchemaProperty): SchemaFieldType {
@@ -1115,28 +1169,35 @@ async function saveMaintenance() {
   if (!validateBaseForm()) {
     return;
   }
-  let businessType = editingBusinessType.value;
-  if (!businessType) {
-    businessType = await createBusinessType({
-      bizType: form.bizType.trim(),
-      bizName: form.bizName.trim(),
-      bizGroup: form.bizGroup.trim(),
-      description: form.description.trim(),
-    });
-    editingBusinessType.value = businessType;
-    currentBusinessType.value = businessType;
-  } else {
-    businessType = await updateBusinessType(businessType.id, {
-      bizName: form.bizName.trim(),
-      bizGroup: form.bizGroup.trim(),
-      description: form.description.trim(),
-    });
-    editingBusinessType.value = businessType;
-    currentBusinessType.value = businessType;
+  try {
+    let businessType = editingBusinessType.value;
+    if (!businessType) {
+      businessType = await createBusinessType({
+        bizType: form.bizType.trim(),
+        bizName: form.bizName.trim(),
+        bizGroup: form.bizGroup.trim(),
+        description: form.description.trim(),
+      });
+      editingBusinessType.value = businessType;
+      currentBusinessType.value = businessType;
+    } else {
+      businessType = await updateBusinessType(businessType.id, {
+        bizName: form.bizName.trim(),
+        bizGroup: form.bizGroup.trim(),
+        description: form.description.trim(),
+      });
+      editingBusinessType.value = businessType;
+      currentBusinessType.value = businessType;
+    }
+    const saved = await persistPublishDraft(false);
+    if (!saved) {
+      return;
+    }
+    ElMessage.success('已保存');
+    await loadBusinessTypes();
+  } catch {
+    // request 层已经展示接口错误，这里避免叠加 Vue 全局系统异常。
   }
-  await persistPublishDraft(false);
-  ElMessage.success('已保存');
-  await loadBusinessTypes();
 }
 
 async function publishMaintenance() {
@@ -1151,25 +1212,30 @@ async function saveBaseIfNeeded() {
   if (!validateBaseForm()) {
     return false;
   }
-  if (!editingBusinessType.value) {
-    const created = await createBusinessType({
-      bizType: form.bizType.trim(),
+  try {
+    if (!editingBusinessType.value) {
+      const created = await createBusinessType({
+        bizType: form.bizType.trim(),
+        bizName: form.bizName.trim(),
+        bizGroup: form.bizGroup.trim(),
+        description: form.description.trim(),
+      });
+      editingBusinessType.value = created;
+      currentBusinessType.value = created;
+      return true;
+    }
+    const updated = await updateBusinessType(editingBusinessType.value.id, {
       bizName: form.bizName.trim(),
       bizGroup: form.bizGroup.trim(),
       description: form.description.trim(),
     });
-    editingBusinessType.value = created;
-    currentBusinessType.value = created;
+    editingBusinessType.value = updated;
+    currentBusinessType.value = updated;
     return true;
+  } catch {
+    // request 层已经展示接口错误，这里返回失败阻止后续发布。
+    return false;
   }
-  const updated = await updateBusinessType(editingBusinessType.value.id, {
-    bizName: form.bizName.trim(),
-    bizGroup: form.bizGroup.trim(),
-    description: form.description.trim(),
-  });
-  editingBusinessType.value = updated;
-  currentBusinessType.value = updated;
-  return true;
 }
 
 function validateBaseForm() {
@@ -1313,7 +1379,10 @@ function resolveParamsSchemaForOptions() {
   if (schemaEditMode.value === 'JSON') {
     return schemaJsonText.value;
   }
-  return paramsSchemaJson.value || currentBusinessType.value?.paramsSchema;
+  if (schemaFieldCount.value > 0) {
+    return paramsSchemaJson.value;
+  }
+  return businessConfigForForm.value?.paramsSchema || currentBusinessType.value?.paramsSchema || form.paramsSchema || paramsSchemaJson.value;
 }
 
 function versionStatusTag(status?: NoticeTemplateVersionStatus) {
