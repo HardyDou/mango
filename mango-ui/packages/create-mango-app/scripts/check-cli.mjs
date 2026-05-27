@@ -9,7 +9,7 @@ const template = resolve(packageRoot, '../../../mango-business-starter');
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-app-'));
 const projectName = 'guarantee-platform';
 
-const result = spawnSync(process.execPath, [
+const explicitTemplateResult = spawnSync(process.execPath, [
   cli,
   'init',
   projectName,
@@ -31,8 +31,8 @@ const result = spawnSync(process.execPath, [
 });
 
 try {
-  if (result.status !== 0) {
-    throw new Error(`CLI failed:\n${result.stdout}\n${result.stderr}`);
+  if (explicitTemplateResult.status !== 0) {
+    throw new Error(`CLI failed:\n${explicitTemplateResult.stdout}\n${explicitTemplateResult.stderr}`);
   }
 
   const projectRoot = join(tempRoot, projectName);
@@ -97,6 +97,30 @@ try {
   }
   if (!baselinePreflight.stdout.includes('rules/backend/03-api.md') || !baselinePreflight.stdout.includes('rules/frontend/01-vue-code.md')) {
     throw new Error(`generated project baseline preflight did not include backend and frontend rules:\n${baselinePreflight.stdout}`);
+  }
+
+  const packagedProjectName = 'packaged-platform';
+  const packagedTemplateResult = spawnSync(process.execPath, [
+    cli,
+    'init',
+    packagedProjectName,
+    '--module',
+    'packaged',
+    '--aggregate',
+    'order',
+    '--package',
+    'com.example.packaged',
+    '--force',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (packagedTemplateResult.status !== 0) {
+    throw new Error(`CLI packaged template failed:\n${packagedTemplateResult.stdout}\n${packagedTemplateResult.stderr}`);
+  }
+  const packagedProjectRoot = join(tempRoot, packagedProjectName);
+  if (!existsSync(join(packagedProjectRoot, 'business-pmo/mango-baseline/tools/pmo-preflight.mjs'))) {
+    throw new Error('packaged template did not generate Mango baseline preflight');
   }
 
   console.log('Initializr CLI check passed.');

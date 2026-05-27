@@ -38,6 +38,9 @@ function normalizePackageName(input) {
   if (input.startsWith('@')) {
     return input;
   }
+  if (input.startsWith('create-')) {
+    return input;
+  }
   return `@mango/${input.replace(/^mango-/, '')}`;
 }
 

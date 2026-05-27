@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
-const defaultTemplateRoot = resolve(repoRoot, 'mango-business-starter');
+const packagedTemplateRoot = resolve(packageRoot, 'templates/mango-business-starter');
+const repoTemplateRoot = resolve(repoRoot, 'mango-business-starter');
+const defaultTemplateRoot = existsSync(packagedTemplateRoot) ? packagedTemplateRoot : repoTemplateRoot;
 
 const usage = `
 Mango Initializr
