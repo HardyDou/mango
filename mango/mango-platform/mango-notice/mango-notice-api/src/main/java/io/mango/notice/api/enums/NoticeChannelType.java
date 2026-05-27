@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "通知渠道")
 public enum NoticeChannelType {
-    @Schema(description = "站内信")
+    @Schema(description = "系统消息")
     SITE,
 
     @Schema(description = "短信")

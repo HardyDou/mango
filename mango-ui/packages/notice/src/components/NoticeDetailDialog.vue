@@ -1,5 +1,5 @@
 <template>
- <el-dialog v-model="visible" title="站内信详情" width="560px">
+ <el-dialog v-model="visible" title="系统消息详情" width="560px">
  <el-descriptions v-if="message" :column="1" border>
  <el-descriptions-item label="标题">{{ message.title }}</el-descriptions-item>
  <el-descriptions-item label="业务类型">{{ message.bizType || '-' }}</el-descriptions-item>

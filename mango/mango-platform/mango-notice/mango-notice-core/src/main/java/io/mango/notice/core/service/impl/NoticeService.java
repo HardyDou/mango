@@ -464,7 +464,7 @@ public class NoticeService implements INoticeService {
  entity.setEnabled(command.getEnabled());
  entity.setPriority(command.getPriority());
  entity.setWeight(command.getWeight() == null || command.getWeight() <= 0 ? 100 : command.getWeight());
- entity.setConfigStatus(resolveConfigStatus(command.getChannelType(), configJson));
+ entity.setConfigStatus(resolveConfigStatus(command.getChannelType(), command.getProviderCode(), configJson));
  if (entity.getLastSendStatus() == null) {
  entity.setLastSendStatus(NoticeChannelSendHealthStatus.NONE);
  }
@@ -654,7 +654,7 @@ public class NoticeService implements INoticeService {
  return command;
  }
 
- private NoticeChannelConfigStatus resolveConfigStatus(NoticeChannelType channelType, String configJson) {
+ private NoticeChannelConfigStatus resolveConfigStatus(NoticeChannelType channelType, String providerCode, String configJson) {
  if (channelType == NoticeChannelType.SITE) {
  return NoticeChannelConfigStatus.COMPLETE;
  }
@@ -666,10 +666,7 @@ public class NoticeService implements INoticeService {
  case SMS -> hasAnyText(config, "accessKeyId", "accessKey", "secretId")
  && hasAnyText(config, "accessKeySecret", "accessSecret", "secretKey")
  && hasAnyText(config, "signName", "sign") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
- case EMAIL -> hasAnyText(config, "host", "smtpHost")
- && hasAnyText(config, "username", "account")
- && hasAnyText(config, "password", "smtpPassword")
- && hasAnyText(config, "from", "fromAddress") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
+ case EMAIL -> resolveEmailConfigStatus(providerCode, config);
  case WECHAT_OFFICIAL -> hasAnyText(config, "appId") && hasAnyText(config, "appSecret", "secret")
  ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
  case WECOM -> hasAnyText(config, "corpId")
@@ -679,6 +676,21 @@ public class NoticeService implements INoticeService {
  && hasAnyText(config, "appSecret", "webhookUrl") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
  case SITE -> NoticeChannelConfigStatus.COMPLETE;
  };
+ }
+
+ private NoticeChannelConfigStatus resolveEmailConfigStatus(String providerCode, Map<String, Object> config) {
+ if ("ALIYUN_DM".equals(providerCode)) {
+ return hasAnyText(config, "accessKeyId", "accessKey")
+ && hasAnyText(config, "accessKeySecret", "accessSecret")
+ && hasAnyText(config, "regionId", "region")
+ && hasAnyText(config, "endpoint")
+ && hasAnyText(config, "accountName", "fromAddress")
+ ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
+ }
+ return hasAnyText(config, "host", "smtpHost")
+ && hasAnyText(config, "username", "account")
+ && hasAnyText(config, "password", "smtpPassword")
+ && hasAnyText(config, "from", "fromAddress") ? NoticeChannelConfigStatus.COMPLETE : NoticeChannelConfigStatus.INCOMPLETE;
  }
 
  private boolean hasAnyText(Map<String, Object> config, String... keys) {

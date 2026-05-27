@@ -215,7 +215,7 @@ class NoticeServiceTest {
  when(businessTypeMapper.selectById(1L)).thenReturn(businessType);
  when(channelTemplateMapper.selectOne(any())).thenReturn(draft);
  SaveNoticeChannelTemplateCommand command = new SaveNoticeChannelTemplateCommand();
- command.setTemplateName("站内信草稿");
+ command.setTemplateName("系统消息草稿");
  command.setTitleTemplate("标题 {{orderNo}}");
  command.setContentTemplate("内容 {{orderNo}}");
  command.setEnabled(Boolean.FALSE);
@@ -250,6 +250,42 @@ class NoticeServiceTest {
  verify(channelConfigMapper).updateById(captor.capture());
  assertTrue(captor.getValue().getConfigJson().contains("\"password\":\"origin-secret\""));
  assertTrue(captor.getValue().getConfigJson().contains("\"host\":\"smtp.new.com\""));
+ assertEquals(NoticeChannelConfigStatus.COMPLETE, captor.getValue().getConfigStatus());
+ }
+
+ @Test
+ void saveChannelConfig_builtinSiteConfig_marksComplete() {
+ SaveNoticeChannelConfigCommand command = new SaveNoticeChannelConfigCommand();
+ command.setChannelType(SITE);
+ command.setProviderCode("INTERNAL");
+ command.setConfigName("默认系统消息通道");
+ command.setEnabled(Boolean.TRUE);
+ command.setWeight(100);
+ command.setPriority(0);
+ command.setConfigJson("{\"senderName\":\"系统通知\",\"retentionDays\":180,\"realtimeEnabled\":true}");
+
+ noticeService.saveChannelConfig(command);
+
+ ArgumentCaptor<NoticeChannelConfigEntity> captor = ArgumentCaptor.forClass(NoticeChannelConfigEntity.class);
+ verify(channelConfigMapper).insert(captor.capture());
+ assertEquals(NoticeChannelConfigStatus.COMPLETE, captor.getValue().getConfigStatus());
+ }
+
+ @Test
+ void saveChannelConfig_aliyunEmailApiConfig_marksComplete() {
+ SaveNoticeChannelConfigCommand command = new SaveNoticeChannelConfigCommand();
+ command.setChannelType(EMAIL);
+ command.setProviderCode("ALIYUN_DM");
+ command.setConfigName("阿里云邮件推送");
+ command.setEnabled(Boolean.TRUE);
+ command.setWeight(100);
+ command.setPriority(0);
+ command.setConfigJson("{\"accessKeyId\":\"ak\",\"accessKeySecret\":\"sk\",\"regionId\":\"cn-hangzhou\",\"endpoint\":\"dm.aliyuncs.com\",\"accountName\":\"notice@example.com\"}");
+
+ noticeService.saveChannelConfig(command);
+
+ ArgumentCaptor<NoticeChannelConfigEntity> captor = ArgumentCaptor.forClass(NoticeChannelConfigEntity.class);
+ verify(channelConfigMapper).insert(captor.capture());
  assertEquals(NoticeChannelConfigStatus.COMPLETE, captor.getValue().getConfigStatus());
  }
 
@@ -344,7 +380,7 @@ class NoticeServiceTest {
  void send_activeChannelTemplates_rendersSharedParamsForEachChannel() {
  NoticeBusinessTypeEntity businessType = businessType();
  NoticeBusinessChannelTemplateEntity siteTemplate = template(10L, SITE,
- "站内 {{orderNo}}", "订单 {{orderNo}} 已由 {{carrier}} 发货");
+ "系统消息 {{orderNo}}", "订单 {{orderNo}} 已由 {{carrier}} 发货");
  NoticeBusinessChannelTemplateEntity smsTemplate = template(11L, SMS,
  "短信 {{orderNo}}", "短信订单 {{orderNo}} 已由 {{carrier}} 发货");
  when(businessTypeMapper.selectOne(any())).thenReturn(businessType);
@@ -369,7 +405,7 @@ class NoticeServiceTest {
  .filter(record -> record.getChannelType() == SMS)
  .findFirst()
  .orElseThrow();
- assertEquals("站内 SO-1001", siteRecord.getRenderedTitle());
+ assertEquals("系统消息 SO-1001", siteRecord.getRenderedTitle());
  assertEquals("订单 SO-1001 已由 顺丰 发货", siteRecord.getRenderedContent());
  assertEquals("TEST_NOTICE", siteRecord.getBizType());
  assertEquals("SO-1001", siteRecord.getBizId());
@@ -445,7 +481,7 @@ class NoticeServiceTest {
  @Test
  void send_disabledChannelTemplate_isNotSelected() {
  NoticeBusinessChannelTemplateEntity disabledSite = template(10L, SITE,
- "站内 {{orderNo}}", "订单 {{orderNo}}");
+ "系统消息 {{orderNo}}", "订单 {{orderNo}}");
  disabledSite.setEnabled(false);
  NoticeBusinessChannelTemplateEntity activeSms = template(11L, SMS,
  "短信 {{orderNo}}", "短信订单 {{orderNo}}");
@@ -467,7 +503,7 @@ class NoticeServiceTest {
  @Test
  void send_noEnabledTemplateWithoutDirectContent_throwsUnconfiguredError() {
  NoticeBusinessChannelTemplateEntity disabledSite = template(10L, SITE,
- "站内 {{orderNo}}", "订单 {{orderNo}}");
+ "系统消息 {{orderNo}}", "订单 {{orderNo}}");
  disabledSite.setEnabled(false);
  when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
  when(channelTemplateMapper.selectList(any())).thenReturn(List.of(disabledSite));
@@ -760,8 +796,8 @@ class NoticeServiceTest {
 
  var result = noticeService.getSiteMessage(1L, 100L);
 
- assertEquals("测试站内信", result.getTitle());
- assertEquals("这是一条站内信内容", result.getContent());
+ assertEquals("测试系统消息", result.getTitle());
+ assertEquals("这是一条系统消息内容", result.getContent());
  assertEquals(NoticeReadStatus.UNREAD, result.getReadStatus());
  assertEquals("TEST_NOTICE", result.getBizType());
  assertEquals("BIZ-1", result.getBizId());
@@ -900,8 +936,8 @@ class NoticeServiceTest {
  entity.setTaskId(10L);
  entity.setSendRecordId(20L);
  entity.setUserId(userId);
- entity.setTitle("测试站内信");
- entity.setContent("这是一条站内信内容");
+ entity.setTitle("测试系统消息");
+ entity.setContent("这是一条系统消息内容");
  entity.setPriority(NoticePriority.NORMAL);
  entity.setReadStatus(NoticeReadStatus.UNREAD);
  entity.setDeleteStatus(NoticeDeleteStatus.NORMAL);

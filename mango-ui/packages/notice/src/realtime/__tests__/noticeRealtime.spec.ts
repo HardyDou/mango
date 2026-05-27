@@ -65,7 +65,7 @@ describe('noticeRealtime', () => {
     expect(play).toHaveBeenCalledTimes(1);
   });
 
-  it('createNoticeRealtime 订阅并可解除站内信 realtime 事件', () => {
+  it('createNoticeRealtime 订阅并可解除系统消息 realtime 事件', () => {
     const handler = vi.fn();
     const stop = createNoticeRealtime(handler);
 

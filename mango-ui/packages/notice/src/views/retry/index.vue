@@ -52,7 +52,7 @@ async function load() {
 
 function channelLabel(channel: NoticeChannelType) {
   const labels: Record<NoticeChannelType, string> = {
-    SITE: '站内信',
+    SITE: '系统消息',
     SMS: '短信',
     EMAIL: '邮件',
     WECHAT_OFFICIAL: '微信公众号',

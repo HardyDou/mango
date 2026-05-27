@@ -5,7 +5,7 @@
 
 ## 1. 背景
 
-通知中心重新定位为统一消息编排中心，不是短信系统，也不是按站内信、短信、邮件、微信拆开的渠道菜单。
+通知中心重新定位为统一消息编排中心，不是短信系统，也不是按系统消息、短信、邮件、微信拆开的渠道菜单。
 
 新版后台菜单为：
 
@@ -32,7 +32,7 @@
 - 发送记录展示所有发送历史和详情。
 - 失败重试独立管理失败消息。
 - 系统监控展示渠道状态、队列状态和发送统计。
-- 用户侧站内消息保留在右上角小铃铛和用户消息入口，不作为后台配置一级菜单。
+- 用户侧系统消息保留在右上角小铃铛和用户消息入口，不作为后台配置一级菜单。
 
 ## 3. 范围
 
@@ -51,7 +51,7 @@
 | 发送记录 | 列表、详情、渲染内容、发送参数、渠道响应、失败原因、耗时 |
 | 失败重试 | 自动重试、手动重试、批量重试、忽略失败、重试历史 |
 | 系统监控 | 渠道状态、队列堆积、发送量、成功率、失败率、渠道占比、业务占比 |
-| 用户站内消息 | 保留右上角小铃铛、未读数、详情、已读、删除能力 |
+| 用户系统消息 | 保留右上角小铃铛、未读数、详情、已读、删除能力 |
 | 安全 | 渠道敏感配置和记录快照输出脱敏，内部发送读取原始配置 |
 | 测试 | 后端服务测试、前端构建、Playwright E2E、交付台账检查 |
 
@@ -78,7 +78,7 @@
 | `mango-ui/packages/admin-pages` | notice 页面映射 |
 | `mango-ui/apps/mango-admin` | 后台菜单、右上角小铃铛、E2E |
 | `mango-infra-sensitive` | 敏感字段输出脱敏 |
-| `mango-infra-realtime` | 用户站内消息在线提醒 |
+| `mango-infra-realtime` | 用户系统消息在线提醒 |
 
 ## 5. 接口变化
 
@@ -114,17 +114,17 @@
 | 失败重试 | `/notice/retry-records`、`/notice/retry-records/{id}/retry`、`/notice/retry-records/ignore` | GET/POST |
 | 系统监控 | `/notice/monitor/summary`、`/notice/monitor/channels`、`/notice/monitor/queues` | GET |
 
-### 5.3 用户侧站内消息 API
+### 5.3 用户侧系统消息 API
 
 | 能力 | 路径 | 方法 |
 |---|---|---|
-| 我的站内消息 | `/notice/site/my/messages` | GET |
-| 我的站内消息详情 | `/notice/site/my/messages/{id}` | GET |
+| 我的系统消息 | `/notice/site/my/messages` | GET |
+| 我的系统消息详情 | `/notice/site/my/messages/{id}` | GET |
 | 我的未读数 | `/notice/site/my/unread-count` | GET |
 | 标记已读 | `/notice/site/my/messages/{id}/read` | POST |
 | 批量已读 | `/notice/site/my/messages/read-batch` | POST |
 | 全部已读 | `/notice/site/my/messages/read-all` | POST |
-| 删除站内消息 | `/notice/site/my/messages/{id}/delete` | POST |
+| 删除系统消息 | `/notice/site/my/messages/{id}/delete` | POST |
 
 ## 6. 数据变化
 
@@ -143,7 +143,7 @@
 | `notice_send_record` | 发送记录 |
 | `notice_retry_record` | 失败重试记录 |
 | `notice_retry_log` | 重试日志 |
-| `notice_site_message` | 用户站内消息 |
+| `notice_site_message` | 用户系统消息 |
 | `notice_callback_log` | 三方回调日志 |
 | `notice_monitor_metric` | 监控指标快照 |
 | `notice_audit_log` | 操作审计 |
@@ -156,7 +156,7 @@
 | 业务类型编码 | 消息编码 |
 | 通知计划 | 内部发送任务 |
 | 通知偏好 | 接收设置 |
-| 消息中心后台菜单 | 用户侧小铃铛和站内消息入口 |
+| 消息中心后台菜单 | 用户侧小铃铛和系统消息入口 |
 
 ## 7. 前端变化
 
@@ -219,7 +219,7 @@ UI 交互要求：
 | 发送记录 | `notice:send-record:view/export` |
 | 失败重试 | `notice:retry:view/retry/ignore` |
 | 系统监控 | `notice:monitor:view` |
-| 用户站内消息 | `notice:site:view/read/delete` |
+| 用户系统消息 | `notice:site:view/read/delete` |
 
 ## 9. 验证方式
 
@@ -279,7 +279,7 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 4. 接收设置影响发送决策。
 5. 发送记录和失败重试可追踪、可操作。
 6. 系统监控可展示渠道、队列和统计。
-7. 用户侧站内消息入口可用。
+7. 用户侧系统消息入口可用。
 8. 消息定义列表包含同步状态、生效版本、最后发布和更新时间；同步状态参考工作流流程定义列表展示已同步和待发布。
 9. 消息定义操作包含详情、编辑、发布、更多；编辑和配置渠道合并为编辑，不提供测试发送。
 10. 消息定义只要修改就保存为草稿，发布后才影响线上发送。

@@ -193,10 +193,6 @@
               <el-tabs v-model="activeChannel" class="message-type-tabs">
                 <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
               </el-tabs>
-              <div class="template-section-title">
-                <span>模板配置 - {{ channelLabel(activeChannel) }}</span>
-                <el-tag :type="templateStatusTag.type" effect="plain">{{ templateStatusTag.label }}</el-tag>
-              </div>
               <div class="template-config-form">
                 <el-row :gutter="16">
                   <el-col :span="24">
@@ -347,10 +343,6 @@
               <el-tabs v-model="activeChannel" class="message-type-tabs">
                 <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
               </el-tabs>
-              <div class="template-section-title">
-                <span>模板配置 - {{ channelLabel(activeChannel) }}</span>
-                <el-tag :type="templateStatusTag.type" effect="plain">{{ templateStatusTag.label }}</el-tag>
-              </div>
               <el-descriptions :column="2" border class="template-readonly-descriptions">
                 <el-descriptions-item label="是否启用">
                   <el-tag :type="templateForm.enabled ? 'success' : 'info'" effect="plain">
@@ -469,10 +461,6 @@
                   <el-tabs v-model="activeChannel" class="message-type-tabs">
                     <el-tab-pane v-for="channel in channels" :key="channel" :label="channelLabel(channel)" :name="channel" />
                   </el-tabs>
-                  <div class="template-section-title">
-                    <span>模板配置 - {{ channelLabel(activeChannel) }}</span>
-                    <el-tag :type="templateStatusTag.type" effect="plain">{{ templateStatusTag.label }}</el-tag>
-                  </div>
                   <el-descriptions :column="2" border class="template-readonly-descriptions">
                     <el-descriptions-item label="是否启用">
                       <el-tag :type="templateForm.enabled ? 'success' : 'info'" effect="plain">
@@ -576,7 +564,7 @@ interface BusinessTypeForm {
 
 const channels: NoticeChannelType[] = ['SITE', 'SMS', 'EMAIL', 'WECHAT_OFFICIAL', 'WECOM', 'DINGTALK'];
 const channelLabels: Record<NoticeChannelType, string> = {
-  SITE: '站内信',
+  SITE: '系统消息',
   SMS: '短信',
   EMAIL: '邮件',
   WECHAT_OFFICIAL: '微信公众号',
@@ -636,7 +624,6 @@ const currentTemplate = computed(() => {
     || templates.value.find(item => item.channelType === activeChannel.value && item.versionStatus === 'ACTIVE')
     || templates.value.find(item => item.channelType === activeChannel.value);
 });
-const templateStatusTag = computed(() => versionStatusTag(currentTemplate.value?.versionStatus));
 const showTemplateTitle = computed(() => activeChannel.value !== 'SMS');
 const templateTitleLabel = computed(() => {
   if (activeChannel.value === 'SITE') {

@@ -27,7 +27,7 @@ class NoticeControllerTest {
  SendNoticeCommand command = new SendNoticeCommand();
  command.setBizType("SYSTEM_NOTICE");
  command.setUserId(1001L);
- command.setTitle("后台站内信");
+ command.setTitle("后台系统消息");
  command.setContent("后台发送内容");
 
  var result = controller.sendSiteMessage(command);
@@ -38,6 +38,6 @@ class NoticeControllerTest {
  verify(noticeService).send(captor.capture());
  assertEquals(List.of(NoticeChannelType.SITE), captor.getValue().getChannelTypes());
  assertEquals(1001L, captor.getValue().getUserId());
- assertEquals("后台站内信", captor.getValue().getTitle());
+ assertEquals("后台系统消息", captor.getValue().getTitle());
  }
 }

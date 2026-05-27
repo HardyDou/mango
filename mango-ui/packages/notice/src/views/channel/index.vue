@@ -111,7 +111,44 @@
           <el-tabs v-model="configEditMode" class="stable-tabs channel-config-tabs" @tab-change="handleConfigModeChange">
             <el-tab-pane label="表单形式" name="FORM">
               <template v-if="form.channelType === 'SITE'">
-                <el-alert title="站内信使用系统内置投递能力，无需配置第三方账号。" type="info" :closable="false" show-icon />
+                <el-alert title="系统消息为系统内置通道，这里只配置投递运行参数。" type="info" :closable="false" show-icon />
+                <el-row :gutter="16" class="site-config-row">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="默认发送人">
+                      <el-input v-model="channelConfig.senderName" placeholder="系统通知" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="保留天数">
+                      <el-input-number v-model="channelConfig.retentionDays" :min="1" :max="3650" class="number-control" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="实时推送">
+                      <el-switch v-model="channelConfig.realtimeEnabled" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="弹窗提醒">
+                      <el-switch v-model="channelConfig.popupEnabled" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="声音提醒">
+                      <el-switch v-model="channelConfig.soundEnabled" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="桌面提醒">
+                      <el-switch v-model="channelConfig.desktopNotificationEnabled" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="未读计数">
+                      <el-switch v-model="channelConfig.unreadCountEnabled" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
               </template>
               <template v-else-if="form.channelType === 'SMS'">
                 <el-row :gutter="16">
@@ -147,7 +184,7 @@
                   </el-col>
                 </el-row>
               </template>
-              <template v-else-if="form.channelType === 'EMAIL'">
+              <template v-else-if="form.channelType === 'EMAIL' && form.providerCode === 'CUSTOM_SMTP'">
                 <el-row :gutter="16">
                   <el-col :xs="24" :sm="12">
                     <el-form-item label="SMTP" required>
@@ -180,6 +217,56 @@
                     </el-form-item>
                   </el-col>
                 </el-row>
+              </template>
+              <template v-else-if="form.channelType === 'EMAIL' && form.providerCode === 'ALIYUN_DM'">
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="AccessKey" required>
+                      <el-input v-model="channelConfig.accessKeyId" autocomplete="off" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Secret" required>
+                      <el-input v-model="channelConfig.accessKeySecret" show-password autocomplete="new-password" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="区域" required>
+                      <el-input v-model="channelConfig.regionId" placeholder="cn-hangzhou" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="Endpoint" required>
+                      <el-input v-model="channelConfig.endpoint" placeholder="dm.aliyuncs.com" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="发信地址" required>
+                      <el-input v-model="channelConfig.accountName" placeholder="notice@example.com" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="地址类型">
+                      <el-select v-model="channelConfig.addressType" class="form-control">
+                        <el-option label="随机账号" :value="0" />
+                        <el-option label="发信地址" :value="1" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="发信别名">
+                      <el-input v-model="channelConfig.fromAlias" placeholder="芒果通知" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="回信地址">
+                      <el-input v-model="channelConfig.replyToAddress" placeholder="reply@example.com" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+              <template v-else-if="form.channelType === 'EMAIL'">
+                <el-alert title="当前接入平台暂未提供专用表单，请使用 JSON 形式维护渠道参数。" type="warning" :closable="false" show-icon />
               </template>
               <template v-else-if="form.channelType === 'WECHAT_OFFICIAL'">
                 <el-row :gutter="16">
@@ -322,7 +409,7 @@ type ChannelConfigForm = Record<string, ChannelConfigValue>;
 
 const channels: NoticeChannelType[] = ['SITE', 'SMS', 'EMAIL', 'WECHAT_OFFICIAL', 'WECOM', 'DINGTALK'];
 const channelLabels: Record<NoticeChannelType, string> = {
-  SITE: '站内信',
+  SITE: '系统消息',
   SMS: '短信',
   EMAIL: '邮件',
   WECHAT_OFFICIAL: '微信公众号',
@@ -338,10 +425,6 @@ const providers: Record<NoticeChannelType, Array<{ label: string; value: string 
   EMAIL: [
     { label: '自建 SMTP', value: 'CUSTOM_SMTP' },
     { label: '阿里云邮件推送', value: 'ALIYUN_DM' },
-    { label: '腾讯云 SES', value: 'TENCENT_SES' },
-    { label: 'SendCloud', value: 'SENDCLOUD' },
-    { label: 'Mailgun', value: 'MAILGUN' },
-    { label: '其它', value: 'OTHER' },
   ],
   WECHAT_OFFICIAL: [{ label: '微信公众号', value: 'WECHAT_OFFICIAL' }],
   WECOM: [{ label: '企业微信', value: 'WECOM' }],
@@ -392,6 +475,7 @@ function openCreate() {
 
 function openEdit(row: NoticeChannelConfig) {
   Object.assign(form, row);
+  form.providerCode = normalizeProviderCode(row.channelType, row.providerCode);
   resetChannelConfig();
   parseConfig(row.configJson, channelConfig, defaultConfig(row.channelType));
   resetRateLimit();
@@ -427,7 +511,17 @@ function defaultRateLimit() {
 }
 
 function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
-  if (channelType === 'SITE') return {};
+  if (channelType === 'SITE') {
+    return {
+      senderName: '系统通知',
+      retentionDays: 180,
+      realtimeEnabled: true,
+      popupEnabled: true,
+      soundEnabled: true,
+      desktopNotificationEnabled: true,
+      unreadCountEnabled: true,
+    };
+  }
   if (channelType === 'SMS') {
     return {
       accessKeyId: '',
@@ -438,10 +532,26 @@ function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
       callbackUrl: '',
     };
   }
-  if (channelType === 'EMAIL') return { host: '', port: 465, username: '', password: '', from: '', ssl: true };
+  if (channelType === 'EMAIL') return defaultEmailConfig(form.providerCode);
   if (channelType === 'WECHAT_OFFICIAL') return { appId: '', appSecret: '' };
   if (channelType === 'WECOM') return { corpId: '', agentId: '', secret: '', webhookUrl: '' };
   return { appKey: '', appSecret: '', agentId: '', webhookUrl: '' };
+}
+
+function defaultEmailConfig(providerCode?: string): ChannelConfigForm {
+  if (providerCode === 'ALIYUN_DM') {
+    return {
+      accessKeyId: '',
+      accessKeySecret: '',
+      regionId: 'cn-hangzhou',
+      endpoint: 'dm.aliyuncs.com',
+      accountName: '',
+      addressType: 1,
+      fromAlias: '',
+      replyToAddress: '',
+    };
+  }
+  return { host: '', port: 465, username: '', password: '', from: '', ssl: true };
 }
 
 function providerOptions(channelType: NoticeChannelType) {
@@ -481,7 +591,15 @@ function channelLabel(channel: NoticeChannelType) {
 }
 
 function providerLabel(channelType: NoticeChannelType, providerCode?: string) {
-  return providerOptions(channelType).find(item => item.value === providerCode)?.label || providerCode || '-';
+  const normalized = normalizeProviderCode(channelType, providerCode);
+  return providerOptions(channelType).find(item => item.value === normalized)?.label || providerCode || '-';
+}
+
+function normalizeProviderCode(channelType: NoticeChannelType, providerCode?: string) {
+  if (channelType === 'EMAIL' && providerCode === 'SMTP') {
+    return 'CUSTOM_SMTP';
+  }
+  return providerCode;
 }
 
 function sendStatusLabel(status?: NoticeChannelSendHealthStatus) {

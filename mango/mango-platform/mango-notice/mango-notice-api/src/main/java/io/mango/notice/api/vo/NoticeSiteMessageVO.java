@@ -8,10 +8,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@Schema(description = "站内信视图")
+@Schema(description = "系统消息视图")
 public class NoticeSiteMessageVO {
 
-    @Schema(description = "站内信ID")
+    @Schema(description = "系统消息ID")
     private Long id;
 
     @Schema(description = "通知标题")

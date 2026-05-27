@@ -38,8 +38,8 @@ vi.mock('@mango/common/utils/iconConfig', () => ({
 
 const testMessage = {
   id: '1001',
-  title: '测试站内信',
-  content: '站内信内容',
+  title: '测试系统消息',
+  content: '系统消息内容',
   userId: '1001',
   priority: 'NORMAL',
   readStatus: 'UNREAD',
@@ -116,7 +116,7 @@ describe('NoticeBell', () => {
     wrapper.unmount();
   });
 
-  it('点击站内提醒后打开详情并标记已读', async () => {
+  it('点击系统消息提醒后打开详情并标记已读', async () => {
     const detail = { ...testMessage, id: '1002', title: '新的审批', content: '审批详情' };
     apiMock.getMyUnreadCount
       .mockResolvedValueOnce({ count: 1 })

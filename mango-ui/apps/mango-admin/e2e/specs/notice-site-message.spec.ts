@@ -13,7 +13,7 @@ function ok(data: unknown) {
 }
 
 test.describe('通知中心 E2E', () => {
-  test('登录后可以访问完整通知菜单、消息入口和站内信主流程', async ({ page }) => {
+  test('登录后可以访问完整通知菜单、消息入口和系统消息主流程', async ({ page }) => {
     const businessTypes = [
       {
         id: '1',
@@ -38,7 +38,7 @@ test.describe('通知中心 E2E', () => {
           businessTypeId: '1',
           bizType: 'WORKFLOW_APPROVED',
           channelType: 'SITE',
-          templateName: '站内信模板',
+          templateName: '系统消息模板',
           titleTemplate: '审批通过',
           contentTemplate: '审批单 {{applyNo}} 已通过',
           version: 1,
@@ -78,8 +78,8 @@ test.describe('通知中心 E2E', () => {
     const messages = [
       {
         id: '1001',
-        title: '测试站内信',
-        content: '这是一条站内信内容',
+        title: '测试系统消息',
+        content: '这是一条系统消息内容',
         userId: '1',
         priority: 'NORMAL',
         readStatus: 'UNREAD',
@@ -90,7 +90,7 @@ test.describe('通知中心 E2E', () => {
     ];
     const realtimeMessage = {
       id: '2002',
-      title: '实时站内信',
+      title: '实时系统消息',
       content: '这是一条实时推送消息',
       userId: '1',
       priority: 'NORMAL',
@@ -101,10 +101,10 @@ test.describe('通知中心 E2E', () => {
     };
     let unreadCountOverride: number | undefined;
     const channelConfigs = [
-      { id: '1', channelType: 'EMAIL', providerCode: 'SMTP', configName: '默认邮箱', enabled: true, priority: 0 },
+      { id: '1', channelType: 'EMAIL', providerCode: 'CUSTOM_SMTP', configName: '默认邮箱', enabled: true, priority: 0 },
     ];
     const sendRecords = [
-      { id: '1', taskId: '1', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-1', channelType: 'SITE', requestId: 'NR001', status: 'SUCCESS', renderedTitle: '测试站内信', renderedContent: '这是一条站内信内容', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-1","channelType":"SITE"}', responseSnapshot: '{"status":"SENT"}', providerMessageId: 'site-1001', retryCount: 0 },
+      { id: '1', taskId: '1', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-1', channelType: 'SITE', requestId: 'NR001', status: 'SUCCESS', renderedTitle: '测试系统消息', renderedContent: '这是一条系统消息内容', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-1","channelType":"SITE"}', responseSnapshot: '{"status":"SENT"}', providerMessageId: 'site-1001', retryCount: 0 },
       { id: '2', taskId: '2', recipientId: '1', bizType: 'WORKFLOW_APPROVED', bizId: 'WF-FAIL', channelType: 'SMS', requestId: 'NR_FAIL', status: 'FAILED', renderedTitle: '短信失败', renderedContent: '短信发送失败', requestSnapshot: '{"bizType":"WORKFLOW_APPROVED","bizId":"WF-FAIL","channelType":"SMS"}', responseSnapshot: '{"status":"FAILED"}', providerMessageId: 'sms-2001', failCode: 'PROVIDER_ERROR', failReason: '模板错误', retryCount: 3 },
     ];
 
@@ -215,7 +215,7 @@ test.describe('通知中心 E2E', () => {
               child('2903', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
               child('2904', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
               child('2905', '失败重试', '/notice/retry', '@/views/notice/retry/index.vue'),
-              child('2906', '站内消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
+              child('2906', '系统消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
             ],
           },
         ]),
@@ -399,24 +399,24 @@ test.describe('通知中心 E2E', () => {
     unreadCountOverride = 2;
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('mango-notice-message', {
-        detail: { messageId: '2002', title: '实时站内信' },
+        detail: { messageId: '2002', title: '实时系统消息' },
       }));
     });
     await expect(noticeBell.locator('.el-badge__content')).toHaveText('2');
     await expect(page.getByText('您有新消息了')).toBeVisible();
-    await expect(page.getByText('实时站内信')).toBeVisible();
+    await expect(page.getByText('实时系统消息')).toBeVisible();
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeAudioPlayCount?: number }).__noticeAudioPlayCount ?? 0)).toBeGreaterThan(0);
     await expect.poll(async () => page.evaluate(() => (window as Window & { __noticeDesktopNotifications?: Array<unknown> }).__noticeDesktopNotifications?.length ?? 0)).toBe(1);
     unreadCountOverride = undefined;
     await page.locator('.el-notification').click();
-    const realtimeDetailDialog = page.getByRole('dialog', { name: '站内信详情' });
+    const realtimeDetailDialog = page.getByRole('dialog', { name: '系统消息详情' });
     await expect(realtimeDetailDialog).toBeVisible();
     await expect(realtimeDetailDialog.getByText('这是一条实时推送消息')).toBeVisible();
     await expect(realtimeDetailDialog.getByText('RT-1')).toBeVisible();
     await realtimeDetailDialog.locator('.el-dialog__headerbtn').click();
     await expect(realtimeDetailDialog).toBeHidden();
     await page.getByLabel('消息提醒').click();
-    await expect(page.getByText('测试站内信')).toBeVisible();
+    await expect(page.getByText('测试系统消息')).toBeVisible();
     await page.keyboard.press('Escape');
 
     await page.getByRole('button', { name: '通知中心' }).click();
@@ -433,7 +433,7 @@ test.describe('通知中心 E2E', () => {
     await page.locator('.el-select-dropdown__item:visible', { hasText: 'WORKFLOW' }).click();
     await createDialog.locator('input[placeholder="guarantee.issue_success"]').fill('order.shipped');
     await createDialog.locator('input[placeholder="出函成功"]').fill('订单发货通知');
-    await createDialog.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送站内信和短信');
+    await createDialog.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送系统消息和短信');
     await createDialog.getByRole('button', { name: '保存' }).click();
     await expect(createDialog).toBeHidden();
     await expect(page.getByText('order.shipped', { exact: true })).toBeVisible();
@@ -453,11 +453,11 @@ test.describe('通知中心 E2E', () => {
     await expect(configPage.getByText('order.shipped', { exact: true })).toBeVisible();
     await expect(configPage.getByText('参数设置')).toBeVisible();
     await expect(configPage.getByText('消息类型', { exact: true })).toBeVisible();
-    await expect(configPage.getByText('模板配置 - 站内信')).toBeVisible();
+    await expect(configPage.getByText('系统消息')).toBeVisible();
     await configPage.locator('input[placeholder="orderNo"]').fill('orderNo');
     await configPage.locator('input[placeholder="订单号"]').fill('订单号');
     await configPage.locator('.message-type-tabs .el-tabs__item', { hasText: '短信' }).click();
-    await expect(page.getByText('模板配置 - 短信')).toBeVisible();
+    await expect(page.getByText('短信')).toBeVisible();
     await expect(configPage.locator('.template-disabled-alert')).toBeVisible();
     await configPage.locator('.template-enabled-item .el-switch').click();
     await expect(configPage.locator('.template-disabled-alert')).toBeHidden();
@@ -523,6 +523,16 @@ test.describe('通知中心 E2E', () => {
     });
     await expect(emailChannelDialog).toBeHidden();
     await expect(page.getByText('默认邮件账号')).toBeVisible();
+    await page.getByRole('button', { name: '新增' }).click();
+    const aliyunEmailDialog = page.getByRole('dialog', { name: '新增渠道' });
+    await expect(aliyunEmailDialog).toBeVisible();
+    await aliyunEmailDialog.locator('.el-form-item', { hasText: '接入平台' }).locator('.el-select__wrapper').click();
+    await page.locator('.el-select-dropdown__item:visible', { hasText: '阿里云邮件推送' }).click();
+    await expect(aliyunEmailDialog.getByLabel('AccessKey')).toBeVisible();
+    await expect(aliyunEmailDialog.getByLabel('区域')).toBeVisible();
+    await expect(aliyunEmailDialog.getByLabel('Endpoint')).toBeVisible();
+    await expect(aliyunEmailDialog.getByLabel('SMTP')).toHaveCount(0);
+    await aliyunEmailDialog.getByRole('button', { name: '取消' }).click();
     await page.getByRole('menuitem', { name: '失败重试' }).click();
     const retryRow = page.locator('tr', { hasText: 'WF-FAIL' });
     await expect(retryRow.getByText('PROVIDER_ERROR')).toBeVisible();
@@ -538,31 +548,31 @@ test.describe('通知中心 E2E', () => {
     await expect(page.getByText('提示音')).toBeVisible();
 
     await page.goto('/#/notice/site-message');
-    await expect(page.getByText('站内消息').first()).toBeVisible();
-    await expect(page.getByLabel('我的消息').getByText('测试站内信')).toBeVisible();
+    await expect(page.getByText('系统消息').first()).toBeVisible();
+    await expect(page.getByLabel('我的消息').getByText('测试系统消息')).toBeVisible();
     await expect(page.getByLabel('我的消息').getByText('WF-1', { exact: true })).toBeVisible();
-    await page.getByRole('tab', { name: '发送站内信' }).click();
+    await page.getByRole('tab', { name: '发送系统消息' }).click();
     const sendSiteRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/site/messages'));
     await page.getByLabel('接收用户ID').fill('1001');
     await page.getByLabel('业务类型').fill('SYSTEM_NOTICE');
     await page.getByLabel('业务ID').fill('BIZ-1001');
-    await page.getByLabel('标题').fill('后台站内信');
+    await page.getByLabel('标题').fill('后台系统消息');
     await page.getByLabel('内容').fill('后台发送内容');
     await page.getByRole('button', { name: '发送' }).click();
     const sendSiteBody = (await sendSiteRequest).postDataJSON();
     expect(sendSiteBody.channelTypes).toEqual(['SITE']);
     expect(sendSiteBody.userId).toBe('1001');
-    expect(sendSiteBody.title).toBe('后台站内信');
-    await expect(page.getByLabel('我的消息').getByText('测试站内信')).toBeVisible();
+    expect(sendSiteBody.title).toBe('后台系统消息');
+    await expect(page.getByLabel('我的消息').getByText('测试系统消息')).toBeVisible();
     await expect(page.getByLabel('我的消息').getByText('未读', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '详情' }).click();
-    const siteDetailDialog = page.getByRole('dialog', { name: '站内信详情' });
-    await expect(siteDetailDialog.getByText('这是一条站内信内容')).toBeVisible();
+    const siteDetailDialog = page.getByRole('dialog', { name: '系统消息详情' });
+    await expect(siteDetailDialog.getByText('这是一条系统消息内容')).toBeVisible();
     await expect(siteDetailDialog.getByText('WF-1', { exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: '已读', exact: true }).click();
     await expect(page.getByText('已读', { exact: true })).toBeVisible();
-    await page.locator('tr', { hasText: '测试站内信' }).locator('.el-checkbox__input').click();
+    await page.locator('tr', { hasText: '测试系统消息' }).locator('.el-checkbox__input').click();
     await page.getByRole('button', { name: '批量已读' }).click();
     await page.getByRole('button', { name: '全部已读' }).click();
     await page.getByRole('button', { name: '删除' }).click();

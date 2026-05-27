@@ -3,7 +3,7 @@
     <el-card shadow="never">
       <template #header>
         <div class="notice-site-message-page__header">
-          <span>站内消息</span>
+          <span>系统消息</span>
           <div class="notice-site-message-page__actions">
             <el-checkbox v-model="query.unreadOnly" @change="loadMessages">只看未读</el-checkbox>
             <el-button :disabled="selectedIds.length === 0" @click="markSelectedRead">批量已读</el-button>
@@ -50,7 +50,7 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="发送站内信" name="send">
+        <el-tab-pane label="发送系统消息" name="send">
           <el-form :model="sendForm" label-width="120px" class="notice-site-message-page__send-form">
             <el-form-item label="接收用户ID"><el-input v-model="sendForm.userId" placeholder="请输入用户ID" /></el-form-item>
             <el-form-item label="业务类型"><el-input v-model="sendForm.bizType" placeholder="例如 SYSTEM_NOTICE" /></el-form-item>
@@ -148,7 +148,7 @@ async function markAllRead() {
 }
 
 async function removeMessage(id: string) {
-  await ElMessageBox.confirm('确认删除这条站内信吗？', '删除确认', { type: 'warning' });
+  await ElMessageBox.confirm('确认删除这条系统消息吗？', '删除确认', { type: 'warning' });
   await deleteMySiteMessage(id);
   ElMessage.success('已删除');
   await loadMessages();
@@ -165,7 +165,7 @@ async function sendMessage() {
       content: sendForm.content,
       priority: 'NORMAL',
     });
-    ElMessage.success('站内信已发送');
+    ElMessage.success('系统消息已发送');
     activeTab.value = 'mine';
     await loadMessages();
   } finally {
