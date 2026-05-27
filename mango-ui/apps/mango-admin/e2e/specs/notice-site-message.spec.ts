@@ -527,6 +527,7 @@ test.describe('通知中心 E2E', () => {
 
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
     await expect(page.getByText('默认系统消息通道')).toBeVisible();
+    await expect(page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '删除' })).toBeDisabled();
     await page.locator('tr', { hasText: '默认系统消息通道' }).getByRole('button', { name: '编辑' }).click();
     const siteChannelDialog = page.getByRole('dialog', { name: '编辑渠道' });
     await expect(siteChannelDialog.getByLabel('播报内容')).toHaveValue('您有新的系统消息，请及时查看');
@@ -561,7 +562,7 @@ test.describe('通知中心 E2E', () => {
     await expect(channelDialog).toBeHidden();
     await expect(page.locator('tr', { hasText: '阿里云短信' }).getByText('短信', { exact: true })).toBeVisible();
     const deleteSmsChannel = page.waitForRequest(request => request.method() === 'DELETE' && request.url().includes('/api/notice/channels'));
-    await page.locator('tr', { hasText: '阿里云短信' }).getByLabel('删除渠道').click();
+    await page.locator('tr', { hasText: '阿里云短信' }).getByRole('button', { name: '删除' }).click();
     await page.locator('.el-message-box').getByRole('button', { name: '删除', exact: true }).click();
     const deleteSmsChannelRequest = await deleteSmsChannel;
     expect(new URL(deleteSmsChannelRequest.url()).searchParams.get('id')).toBe(smsChannelId);

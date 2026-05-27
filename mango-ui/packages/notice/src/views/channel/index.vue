@@ -57,15 +57,17 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row)">详情</el-button>
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-tooltip v-if="!isBuiltinSiteChannel(row)" content="删除" placement="top">
-              <el-button
-                class="table-icon-button"
-                text
-                type="danger"
-                :icon="Delete"
-                aria-label="删除渠道"
-                @click="removeChannel(row)"
-              />
+            <el-tooltip :disabled="!isBuiltinSiteChannel(row)" content="系统消息内置通道不允许删除" placement="top">
+              <span class="operation-button-wrap">
+                <el-button
+                  link
+                  type="danger"
+                  :disabled="isBuiltinSiteChannel(row)"
+                  @click="removeChannel(row)"
+                >
+                  删除
+                </el-button>
+              </span>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -428,7 +430,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Delete, Plus } from '@element-plus/icons-vue';
+import { Plus } from '@element-plus/icons-vue';
 import { deleteChannelConfig, getChannelConfigs, saveChannelConfig } from '../../api/notice';
 import type { NoticeChannelConfig, NoticeChannelSendHealthStatus, NoticeChannelType } from '../../types/notice';
 
@@ -924,10 +926,9 @@ onMounted(load);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
-.table-icon-button {
-  width: 28px;
-  height: 28px;
-  padding: 0;
+.operation-button-wrap {
+  display: inline-flex;
+  margin-left: 12px;
 }
 
 .detail-section-title {
