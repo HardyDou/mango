@@ -1,7 +1,7 @@
 {
   "name": "@mango/auth",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
   "dependencies": {
     "vue": "3.5.13",
@@ -11,5 +11,8 @@
     "@element-plus/icons-vue": "^2.0.10",
     "@mango/common": "workspace:*",
     "@mango/api-schema": "workspace:*"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }

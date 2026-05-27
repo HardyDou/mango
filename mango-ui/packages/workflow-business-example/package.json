@@ -1,12 +1,15 @@
 {
   "name": "@mango/workflow-business-example",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
   "dependencies": {
     "@mango/workflow": "workspace:*",
     "element-plus": "2.5.5",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@mango/admin-pages",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
   "dependencies": {
     "@mango/api-schema": "workspace:*",
@@ -16,5 +16,8 @@
     "@mango/workflow": "workspace:*",
     "@mango/workflow-business-example": "workspace:*",
     "vue": "3.5.13"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }

@@ -58,6 +58,17 @@
         <module>mango-tools</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>maven-releases</id>
+            <url>http://nexus.inner.yunxinbaokeji.com/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>maven-snapshots</id>
+            <url>http://nexus.inner.yunxinbaokeji.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <!-- ==================== 依赖管理 ==================== -->
     <dependencyManagement>
         <dependencies>

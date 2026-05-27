@@ -1,7 +1,7 @@
 {
   "name": "@mango/numgen",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
@@ -9,5 +9,8 @@
     "@mango/common": "workspace:*",
     "element-plus": "2.5.5",
     "vue": "3.5.13"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }
