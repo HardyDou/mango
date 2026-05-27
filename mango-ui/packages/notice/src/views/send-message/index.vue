@@ -1,79 +1,45 @@
 <template>
   <div class="notice-send-message-page">
     <div class="page-header">
-      <div>
-        <h1>发送消息</h1>
+      <h1>发送消息</h1>
+      <div class="page-actions">
+        <el-button :loading="recordLoading" @click="loadRecords">刷新</el-button>
+        <el-button type="primary" @click="openSendDialog">发送消息</el-button>
       </div>
-      <el-button type="primary" :loading="sending" @click="submit">发送</el-button>
     </div>
 
-    <el-card v-loading="loading" shadow="never">
+    <el-card shadow="never">
+      <el-table :data="records" border stripe v-loading="recordLoading">
+        <el-table-column prop="taskId" label="任务ID" width="120" show-overflow-tooltip />
+        <el-table-column prop="bizType" label="消息类型" min-width="180" show-overflow-tooltip />
+        <el-table-column label="渠道" width="120">
+          <template #default="{ row }">{{ channelLabel(row.channelType) }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTag(row.status)">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="renderedTitle" label="发送标题" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="renderedContent" label="发送内容" min-width="260" show-overflow-tooltip />
+        <el-table-column prop="recipientId" label="接收人" width="120" show-overflow-tooltip />
+        <el-table-column prop="requestId" label="请求流水号" width="180" show-overflow-tooltip />
+        <el-table-column prop="failReason" label="失败原因" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="sentAt" label="发送时间" width="170" show-overflow-tooltip />
+      </el-table>
+    </el-card>
+
+    <el-dialog
+      v-model="sendDialogVisible"
+      title="发送消息"
+      width="720px"
+      destroy-on-close
+      class="send-message-dialog"
+      @closed="resetForm"
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="108px" class="send-form">
         <section class="form-section">
-          <div class="section-title">消息类型</div>
-          <el-row :gutter="16">
-            <el-col :xs="24" :md="12">
-              <el-form-item label="消息模板" prop="businessTypeId">
-                <el-select
-                  v-model="form.businessTypeId"
-                  filterable
-                  clearable
-                  placeholder="请选择消息模板"
-                  class="full-width"
-                  @change="handleBusinessChange"
-                >
-                  <el-option
-                    v-for="item in businessOptions"
-                    :key="item.id"
-                    :label="`${item.bizName}（${item.bizType}）`"
-                    :value="item.id"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" v-if="selectedBusiness">
-              <el-form-item label="模板配置">
-                <div class="business-summary">
-                  <el-tag effect="plain">{{ selectedBusiness.bizGroup || '未分类' }}</el-tag>
-                  <span>{{ selectedBusiness.bizName }}</span>
-                  <span>生效版本：{{ selectedBusiness.activeVersion || '-' }}</span>
-                  <span>启用渠道：{{ enabledChannelText(selectedBusiness.enabledChannels) }}</span>
-                </div>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </section>
-
-        <section class="form-section">
-          <div class="section-title">自定义字段</div>
-          <el-empty v-if="paramFields.length === 0" description="当前消息模板未配置自定义字段" />
-          <el-row :gutter="16">
-            <el-col v-for="field in paramFields" :key="field.name" :xs="24" :md="12">
-              <el-form-item :label="field.label" :prop="`params.${field.name}`" :required="field.required">
-                <el-input-number
-                  v-if="field.type === 'number'"
-                  v-model="form.params[field.name]"
-                  class="full-width"
-                  :placeholder="field.placeholder"
-                  controls-position="right"
-                />
-                <el-switch v-else-if="field.type === 'boolean'" v-model="form.params[field.name]" />
-                <el-date-picker
-                  v-else-if="field.type === 'datetime'"
-                  v-model="form.params[field.name]"
-                  class="full-width"
-                  type="datetime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  placeholder="请选择时间"
-                />
-                <el-input v-else v-model="form.params[field.name]" :placeholder="field.placeholder" clearable />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </section>
-
-        <section class="form-section">
-          <div class="section-title">系统用户</div>
+          <div class="section-title">发送给</div>
           <el-form-item label="接收用户" prop="userIds">
             <el-select
               v-model="form.userIds"
@@ -105,11 +71,72 @@
           </el-form-item>
         </section>
 
-        <div class="form-actions">
-          <el-button @click="resetForm">重置</el-button>
-        </div>
+        <section class="form-section">
+          <div class="section-title">消息模板</div>
+          <el-form-item label="消息模板" prop="businessTypeId">
+            <el-select
+              v-model="form.businessTypeId"
+              filterable
+              clearable
+              placeholder="请选择消息模板"
+              class="full-width"
+              @change="handleBusinessChange"
+            >
+              <el-option
+                v-for="item in businessOptions"
+                :key="item.id"
+                :label="`${item.bizName}（${item.bizType}）`"
+                :value="item.id"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item v-if="selectedBusiness" label="模板配置">
+            <div class="business-summary">
+              <el-tag effect="plain">{{ selectedBusiness.bizGroup || '未分类' }}</el-tag>
+              <span>{{ selectedBusiness.bizName }}</span>
+              <span>生效版本：{{ selectedBusiness.activeVersion || '-' }}</span>
+              <span>启用渠道：{{ enabledChannelText(selectedBusiness.enabledChannels) }}</span>
+            </div>
+          </el-form-item>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title">自定义字段</div>
+          <el-empty v-if="paramFields.length === 0" description="选择消息模板后显示需要填写的字段" />
+          <el-row v-else :gutter="16">
+            <el-col v-for="field in paramFields" :key="field.name" :xs="24" :sm="12">
+              <el-form-item :label="field.label" :prop="`params.${field.name}`" :required="field.required">
+                <el-input-number
+                  v-if="field.type === 'number'"
+                  v-model="form.params[field.name]"
+                  class="full-width"
+                  :placeholder="field.placeholder"
+                  controls-position="right"
+                />
+                <el-switch v-else-if="field.type === 'boolean'" v-model="form.params[field.name]" />
+                <el-date-picker
+                  v-else-if="field.type === 'datetime'"
+                  v-model="form.params[field.name]"
+                  class="full-width"
+                  type="datetime"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+                  placeholder="请选择时间"
+                />
+                <el-input v-else v-model="form.params[field.name]" :placeholder="field.placeholder" clearable />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
       </el-form>
-    </el-card>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="saveDraft">暂存</el-button>
+          <el-button type="primary" :loading="sending" @click="submit">发送</el-button>
+          <el-button @click="sendDialogVisible = false">取消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -117,11 +144,11 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
-import { getIdentityUsers, type NoticeIdentityUser } from '../../api/notice';
-import { getBusinessTypes, sendNotice } from '../../api/notice';
-import type { NoticeBusinessType, NoticeChannelType } from '../../types/notice';
+import { getBusinessTypes, getIdentityUsers, getSendRecords, sendNotice, type NoticeIdentityUser } from '../../api/notice';
+import type { NoticeBusinessType, NoticeChannelType, NoticeSendRecord, NoticeSendStatus } from '../../types/notice';
 
 type ParamFieldType = 'string' | 'number' | 'boolean' | 'datetime';
+type ParamValue = string | number | boolean | undefined;
 
 interface JsonSchemaProperty {
   type?: string;
@@ -146,12 +173,15 @@ interface ParamField {
   placeholder: string;
 }
 
-type ParamValue = string | number | boolean | undefined;
+const DRAFT_KEY = 'mango.notice.send-message.draft';
 
 const formRef = ref<FormInstance>();
-const loading = ref(false);
+const recordLoading = ref(false);
+const businessLoading = ref(false);
 const sending = ref(false);
 const userLoading = ref(false);
+const sendDialogVisible = ref(false);
+const records = ref<NoticeSendRecord[]>([]);
 const businessTypes = ref<NoticeBusinessType[]>([]);
 const userOptions = ref<NoticeIdentityUser[]>([]);
 const form = reactive<{
@@ -165,8 +195,8 @@ const form = reactive<{
 });
 
 const rules = computed<FormRules>(() => ({
+  userIds: [{ required: true, type: 'array', min: 1, message: '请选择接收用户', trigger: 'change' }],
   businessTypeId: [{ required: true, message: '请选择消息模板', trigger: 'change' }],
-  userIds: [{ required: true, type: 'array', min: 1, message: '请选择系统用户', trigger: 'change' }],
   ...paramFields.value.reduce<FormRules>((result, field) => {
     if (field.required) {
       result[`params.${field.name}`] = [{ required: true, message: `请填写${field.label}`, trigger: 'blur' }];
@@ -188,14 +218,33 @@ const businessOptions = computed(() => businessTypes.value.filter(item => item.e
 const selectedBusiness = computed(() => businessOptions.value.find(item => item.id === form.businessTypeId));
 const paramFields = computed(() => parseParamFields(selectedBusiness.value?.paramsSchema));
 
+async function loadRecords() {
+  recordLoading.value = true;
+  try {
+    const result = await getSendRecords({ pageNum: 1, pageSize: 50 });
+    records.value = result.list || [];
+  } finally {
+    recordLoading.value = false;
+  }
+}
+
 async function loadBusinessTypes() {
-  loading.value = true;
+  businessLoading.value = true;
   try {
     const result = await getBusinessTypes({ enabled: true, pageNum: 1, pageSize: 200 });
     businessTypes.value = result.list || [];
   } finally {
-    loading.value = false;
+    businessLoading.value = false;
   }
+}
+
+async function openSendDialog() {
+  sendDialogVisible.value = true;
+  if (businessTypes.value.length === 0) {
+    await loadBusinessTypes();
+  }
+  searchUsers('');
+  restoreDraft();
 }
 
 function handleBusinessChange() {
@@ -214,6 +263,31 @@ async function searchUsers(keyword: string) {
     userOptions.value = result.list || [];
   } finally {
     userLoading.value = false;
+  }
+}
+
+function saveDraft() {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify({
+    businessTypeId: form.businessTypeId,
+    params: form.params,
+    userIds: form.userIds,
+  }));
+  ElMessage.success('已暂存');
+}
+
+function restoreDraft() {
+  const raw = localStorage.getItem(DRAFT_KEY);
+  if (!raw) {
+    return;
+  }
+  try {
+    const draft = JSON.parse(raw) as { businessTypeId?: string; params?: Record<string, ParamValue>; userIds?: string[] };
+    form.businessTypeId = draft.businessTypeId || '';
+    form.userIds = Array.isArray(draft.userIds) ? draft.userIds : [];
+    Object.keys(form.params).forEach(key => delete form.params[key]);
+    Object.assign(form.params, isRecord(draft.params) ? draft.params : {});
+  } catch {
+    localStorage.removeItem(DRAFT_KEY);
   }
 }
 
@@ -306,14 +380,14 @@ function validateParams() {
 async function submit() {
   await formRef.value?.validate();
   if (!selectedBusiness.value) {
-    ElMessage.error('请选择业务消息');
+    ElMessage.error('请选择消息模板');
     return;
   }
   if (!validateParams()) {
     return;
   }
   if (form.userIds.length === 0) {
-    ElMessage.error('请选择系统用户');
+    ElMessage.error('请选择接收用户');
     return;
   }
   sending.value = true;
@@ -324,7 +398,10 @@ async function submit() {
       userIds: form.userIds,
     });
     const hasImmediateResult = result.successCount > 0 || result.failCount > 0;
-    ElMessage.success(hasImmediateResult ? `发送已提交，成功 ${result.successCount} 条，失败 ${result.failCount} 条` : '发送任务已提交，可在发送记录查看结果');
+    ElMessage.success(hasImmediateResult ? `发送已提交，成功 ${result.successCount} 条，失败 ${result.failCount} 条` : '发送任务已提交，可在发送列表查看结果');
+    localStorage.removeItem(DRAFT_KEY);
+    sendDialogVisible.value = false;
+    await loadRecords();
   } finally {
     sending.value = false;
   }
@@ -352,9 +429,29 @@ function channelLabel(value: string) {
   return channelOptions.find(item => item.value === value)?.label || value;
 }
 
+function statusLabel(status: NoticeSendStatus) {
+  const labels: Record<NoticeSendStatus, string> = {
+    PENDING: '待发送',
+    SENDING: '发送中',
+    SUCCESS: '成功',
+    FAILED: '失败',
+    RETRY_WAITING: '等待重试',
+    FINAL_FAILED: '最终失败',
+    CANCELED: '已取消',
+  };
+  return labels[status] || status;
+}
+
+function statusTag(status: NoticeSendStatus) {
+  if (status === 'SUCCESS') return 'success';
+  if (status === 'FAILED' || status === 'FINAL_FAILED') return 'danger';
+  if (status === 'RETRY_WAITING') return 'warning';
+  return 'info';
+}
+
 onMounted(() => {
+  loadRecords();
   loadBusinessTypes();
-  searchUsers('');
 });
 </script>
 
@@ -377,24 +474,26 @@ onMounted(() => {
   color: var(--el-text-color-primary);
 }
 
-.page-header p {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
+.page-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .send-form {
-  max-width: 1120px;
+  max-height: 62vh;
+  padding-right: 6px;
+  overflow-y: auto;
 }
 
 .form-section {
-  padding-bottom: 18px;
-  margin-bottom: 18px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .form-section:last-of-type {
   margin-bottom: 0;
+  border-bottom: 0;
 }
 
 .section-title {
@@ -426,16 +525,9 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-.form-actions {
+.dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 18px;
-}
-
-@media (max-width: 768px) {
-  .send-form {
-    max-width: none;
-  }
 }
 </style>

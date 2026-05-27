@@ -543,15 +543,21 @@ test.describe('通知中心 E2E', () => {
 
     await page.getByRole('menuitem', { name: '发送消息' }).click();
     await expect(page.getByRole('heading', { name: '发送消息' })).toBeVisible();
-    await page.locator('.el-form-item', { hasText: '消息模板' }).locator('.el-select__wrapper').click();
-    await page.locator('.el-select-dropdown__item:visible', { hasText: '审批通过通知' }).click();
-    await expect(page.getByLabel('申请单号')).toBeVisible();
-    await page.getByLabel('申请单号').fill('APPLY-20260527');
-    await page.locator('.el-form-item', { hasText: '接收用户' }).locator('.el-select__wrapper').click();
+    await expect(page.locator('tr', { hasText: 'NR001' })).toBeVisible();
+    await page.getByRole('button', { name: '发送消息' }).click();
+    const sendDialog = page.getByRole('dialog', { name: '发送消息' });
+    await expect(sendDialog).toBeVisible();
+    await sendDialog.locator('.el-form-item', { hasText: '接收用户' }).locator('.el-select__wrapper').click();
     await page.keyboard.type('admin');
     await page.locator('.el-select-dropdown__item:visible', { hasText: '管理员' }).click();
+    await sendDialog.locator('.el-form-item', { hasText: '消息模板' }).locator('.el-select__wrapper').click();
+    await page.locator('.el-select-dropdown__item:visible', { hasText: '审批通过通知' }).click();
+    await expect(sendDialog.getByLabel('申请单号')).toBeVisible();
+    await sendDialog.getByLabel('申请单号').fill('APPLY-20260527');
+    await sendDialog.getByRole('button', { name: '暂存' }).click();
+    await expect(page.getByText('已暂存')).toBeVisible();
     const sendNoticeRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/send'));
-    await page.getByRole('button', { name: '发送' }).click();
+    await sendDialog.getByRole('button', { name: '发送', exact: true }).click();
     const sendNoticeBody = (await sendNoticeRequest).postDataJSON();
     expect(sendNoticeBody.bizType).toBe('WORKFLOW_APPROVED');
     expect(sendNoticeBody.params).toEqual({ applyNo: 'APPLY-20260527' });
@@ -559,6 +565,7 @@ test.describe('通知中心 E2E', () => {
     expect(sendNoticeBody).not.toHaveProperty('bizId');
     expect(sendNoticeBody).not.toHaveProperty('recipients');
     expect(sendNoticeBody).not.toHaveProperty('channelTypes');
+    await expect(sendDialog).toBeHidden();
 
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
     await expect(page.getByText('默认系统消息通道')).toBeVisible();
