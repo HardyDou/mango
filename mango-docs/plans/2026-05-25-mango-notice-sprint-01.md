@@ -12,6 +12,7 @@
 ```text
 通知中心
 ├── 消息定义
+├── 发送消息
 ├── 通知渠道
 ├── 接收设置
 ├── 发送记录
@@ -27,6 +28,7 @@
 
 - 后台菜单、路由、权限、页面名称按新版六菜单收敛。
 - 消息定义成为核心入口，承载业务消息、参数、渠道启停和模板配置。
+- 发送消息提供管理端人工触发入口，按已启用消息定义填写接收对象和必要参数后提交发送。
 - 通知渠道按渠道类型使用结构化配置表单，底层保存 JSON。
 - 接收设置支持用户是否接收某类消息。
 - 发送记录展示所有发送历史和详情。
@@ -45,6 +47,7 @@
 | 菜单权限 | 后端入库菜单改为消息定义、通知渠道、接收设置、发送记录、失败重试、系统监控 |
 | 前端路由 | `packages/notice` 按新版六个页面重组页面和标题 |
 | 消息定义 | 业务消息基础信息、参数定义、渠道模板、渠道启停、版本发布 |
+| 发送消息 | 选择业务消息、填写接收对象和参数、调用统一发送接口提交任务 |
 | 通知渠道 | SITE/SMS/EMAIL/WECHAT_OFFICIAL/WECOM/DINGTALK/FEISHU/WEBHOOK 配置表单 |
 | 短信接入 | 短信渠道配置参考阿里云、腾讯云对接参数，并接入阿里云、腾讯云 sender |
 | 接收设置 | 全局、业务域、单消息维度的用户接收控制 |
@@ -107,6 +110,7 @@
 |---|---|---|
 | 消息定义 | `/notice/message-definitions`、`/notice/message-definitions/{id}` | GET/POST/PUT |
 | 消息定义版本 | `/notice/message-definitions/{id}/versions`、`/notice/message-definitions/{id}/versions/{versionId}/publish` | GET/POST |
+| 发送消息 | `/notice/send` | POST |
 | 通知渠道 | `/notice/channels`、`/notice/channels/{id}` | GET/POST/PUT |
 | 渠道测试 | `/notice/channels/{id}/test-send` | POST |
 | 接收设置 | `/notice/receive-settings` | GET/PUT |

@@ -1,5 +1,6 @@
 export { default as NoticeBusinessConfigView } from './views/business-config/index.vue';
 export { default as NoticeMessageDefinitionView } from './views/business-config/index.vue';
+export { default as NoticeSendMessageView } from './views/send-message/index.vue';
 export { default as NoticeChannelView } from './views/channel/index.vue';
 export { default as NoticeTaskView } from './views/task/index.vue';
 export { default as NoticeRecordView } from './views/record/index.vue';

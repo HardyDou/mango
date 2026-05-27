@@ -90,6 +90,7 @@ export function registerDefaultAdminPages() {
       pages: {
         'notice/business-config/index': () => import('@mango/notice').then(m => m.NoticeBusinessConfigView),
         'notice/message-definition/index': () => import('@mango/notice').then(m => m.NoticeMessageDefinitionView),
+        'notice/send-message/index': () => import('@mango/notice').then(m => m.NoticeSendMessageView),
         'notice/channel/index': () => import('@mango/notice').then(m => m.NoticeChannelView),
         'notice/task/index': () => import('@mango/notice').then(m => m.NoticeTaskView),
         'notice/record/index': () => import('@mango/notice').then(m => m.NoticeRecordView),

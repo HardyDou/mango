@@ -201,7 +201,7 @@ test.describe('通知中心 E2E', () => {
             roles: ['admin'],
             permissions: [
               'notice:business:view', 'notice:business:create', 'notice:business:edit', 'notice:business:publish', 'notice:business:delete',
-              'notice:channel:view', 'notice:channel:create', 'notice:channel:delete', 'notice:task:view', 'notice:record:view',
+              'notice:channel:view', 'notice:channel:create', 'notice:channel:delete', 'notice:task:create', 'notice:task:view', 'notice:record:view',
               'notice:site:view', 'notice:site:edit', 'notice:site:delete', 'notice:setting:view',
             ],
           },
@@ -244,11 +244,12 @@ test.describe('通知中心 E2E', () => {
             status: 1,
             children: [
               child('2901', '消息配置', '/notice/message-definition', '@/views/notice/message-definition/index.vue'),
-              child('2902', '渠道配置', '/notice/channel', '@/views/notice/channel/index.vue'),
-              child('2903', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
-              child('2904', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
-              child('2905', '失败重试', '/notice/retry', '@/views/notice/retry/index.vue'),
-              child('2906', '系统消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
+              child('2902', '发送消息', '/notice/send-message', '@/views/notice/send-message/index.vue'),
+              child('2903', '渠道配置', '/notice/channel', '@/views/notice/channel/index.vue'),
+              child('2904', '接收设置', '/notice/receive-setting', '@/views/notice/receive-setting/index.vue'),
+              child('2905', '发送记录', '/notice/record', '@/views/notice/record/index.vue'),
+              child('2906', '失败重试', '/notice/retry', '@/views/notice/retry/index.vue'),
+              child('2907', '系统消息', '/notice/site-message', '@/views/notice/site-message/index.vue'),
             ],
           },
         ]),
@@ -395,6 +396,9 @@ test.describe('通知中心 E2E', () => {
       const list = status ? sendRecords.filter(item => item.status === status) : sendRecords;
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ list, total: list.length, page: 1, size: 10 }) });
     });
+    await page.route('**/api/notice/send', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ successCount: 0, failCount: 0 }) });
+    });
     await page.route('**/api/notice/settings**', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: ok({ soundEnabled: true, desktopEnabled: true, maxRetry: 3, retentionDays: 180 }) });
     });
@@ -524,6 +528,25 @@ test.describe('通知中心 E2E', () => {
     const deleteBusinessRequest = await deleteBusiness;
     expect(deleteBusinessRequest.url()).toContain('/api/notice/business-types/2');
     await expect(page.getByText('order.shipped', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('menuitem', { name: '发送消息' }).click();
+    await expect(page.getByRole('heading', { name: '发送消息' })).toBeVisible();
+    await page.locator('.el-form-item', { hasText: '业务消息' }).locator('.el-select__wrapper').click();
+    await page.locator('.el-select-dropdown__item:visible', { hasText: '审批通过通知' }).click();
+    await expect(page.getByLabel('申请单号')).toBeVisible();
+    await page.getByLabel('业务单号').fill('WF-MANUAL-1');
+    await page.getByRole('textbox', { name: '用户ID', exact: true }).fill('1001');
+    await page.getByLabel('手机号').fill('13800000000');
+    await page.getByLabel('申请单号').fill('APPLY-20260527');
+    await page.locator('.el-checkbox', { hasText: '系统消息' }).click();
+    const sendNoticeRequest = page.waitForRequest(request => request.method() === 'POST' && request.url().includes('/api/notice/send'));
+    await page.getByRole('button', { name: '发送' }).click();
+    const sendNoticeBody = (await sendNoticeRequest).postDataJSON();
+    expect(sendNoticeBody.bizType).toBe('WORKFLOW_APPROVED');
+    expect(sendNoticeBody.bizId).toBe('WF-MANUAL-1');
+    expect(sendNoticeBody.params).toEqual({ applyNo: 'APPLY-20260527' });
+    expect(sendNoticeBody.recipients[0]).toMatchObject({ userId: '1001', mobile: '13800000000' });
+    expect(sendNoticeBody.channelTypes).toEqual(['SITE']);
 
     await page.getByRole('menuitem', { name: '渠道配置' }).click();
     await expect(page.getByText('默认系统消息通道')).toBeVisible();
