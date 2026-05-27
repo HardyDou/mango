@@ -83,7 +83,7 @@ Mango 产品化能力按四层组织：
 
 产品化入口
   Mango Initializr
-  business template
+  business starter
   mango add module/page/api/contract
 
 可复用框架资产
@@ -247,7 +247,7 @@ Mango 产品化能力按四层组织：
 
 交付物：
 
-- `npm create mango-business@latest`。
+- `npm create mango-app@latest`。
 - `mango init <project>`。
 - 项目名、包名、端口、数据库、部署模式、模块选择、Nexus 配置、worktree 规范、启动脚本。
 - 可选业务模块模板。

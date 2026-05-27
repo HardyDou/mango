@@ -6,14 +6,14 @@ import { fileURLToPath } from 'node:url';
 const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
-const defaultTemplateRoot = resolve(repoRoot, 'mango-business-template');
+const defaultTemplateRoot = resolve(repoRoot, 'mango-business-starter');
 
 const usage = `
-Mango Business Initializr
+Mango Initializr
 
 Usage:
-  npm create mango-business@latest <project> -- [options]
-  mango-business init <project> [options]
+  npm create mango-app@latest <project> -- [options]
+  mango init <project> [options]
 
 Options:
   --module <name>       Business module name, default: project name
@@ -22,7 +22,7 @@ Options:
   --group-id <name>     Maven groupId, default: same as --package
   --version <version>   Project version, default: 1.0.0-SNAPSHOT
   --topology <mode>     monolith or microservice, default: monolith
-  --template <path>     Template directory, default: mango-business-template
+  --template <path>     Starter directory, default: mango-business-starter
   --force               Overwrite existing target directory
   --help                Show help
 `;

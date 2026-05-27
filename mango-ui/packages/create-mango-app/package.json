@@ -1,11 +1,11 @@
 {
-  "name": "create-mango-business",
+  "name": "create-mango-app",
   "version": "1.0.0",
   "private": false,
   "type": "module",
   "bin": {
-    "create-mango-business": "./src/index.mjs",
-    "mango-business": "./src/index.mjs"
+    "create-mango-app": "./src/index.mjs",
+    "mango": "./src/index.mjs"
   },
   "scripts": {
     "test": "node scripts/check-cli.mjs"

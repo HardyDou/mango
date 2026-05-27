@@ -634,7 +634,7 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
 
-  packages/create-mango-business: {}
+  packages/create-mango-app: {}
 
   packages/file:
     dependencies:
