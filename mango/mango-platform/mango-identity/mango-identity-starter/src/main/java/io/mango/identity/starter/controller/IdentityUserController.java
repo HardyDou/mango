@@ -8,6 +8,7 @@ import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 机构成员账号控制器。
@@ -117,6 +120,13 @@ public class IdentityUserController implements IdentityUserApi {
             @Parameter(description = "用户ID")
             @RequestParam("userId") Long userId) {
         return R.ok(identityUserService.getUserInfoById(userId));
+    }
+
+    @Override
+    @GetMapping("/user/info/targets")
+    @Operation(summary = "按接收目标解析用户资料", description = "内部接口。按用户、部门、岗位或角色解析当前租户内可接收通知的身份用户资料")
+    public R<List<IdentityUserInfo>> listUserInfosByTarget(@ParameterObject @Valid IdentityUserTargetQuery query) {
+        return R.ok(identityUserService.listUserInfosByTarget(query));
     }
 
 }
