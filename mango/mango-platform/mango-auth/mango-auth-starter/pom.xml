@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.auth</groupId>
         <artifactId>mango-auth</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -19,21 +19,21 @@
     <dependencies>
         <!-- Mango 认证核心实现 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.auth</groupId>
             <artifactId>mango-auth-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 基础 Web Starter，提供 Spring Web 与请求上下文 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 通用能力 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
@@ -45,49 +45,49 @@
 
         <!-- Mango 基础上下文，用于异步登录上下文传递 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango KV 存储 API，用于分布式登录失败追踪 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.kv</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango IP 归属地解析 API，用于登录审计日志 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.ip.location</groupId>
             <artifactId>mango-infra-ip-location-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 验证码 API，用于 CaptchaInterceptor -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.captcha</groupId>
             <artifactId>mango-captcha-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 授权 Starter -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 边界访问配置，用于复用 IP 白名单规则 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.access</groupId>
             <artifactId>mango-access-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 系统 API，用于可选记录登录审计日志 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.system</groupId>
             <artifactId>mango-system-api</artifactId>
             <version>${project.version}</version>
         </dependency>

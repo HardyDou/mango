@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.io.Resource;
@@ -80,16 +81,21 @@ public class PersistenceFlywayAutoConfiguration {
             }
             try {
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
-                    Flyway.configure()
-                            .dataSource(dataSource)
-                            .locations(module.location())
-                            .table(HISTORY_TABLE_PREFIX + sanitizeModuleName(module.name()))
-                            .baselineOnMigrate(true)
-                            .baselineVersion("0")
-                            .validateOnMigrate(true)
-                            .outOfOrder(false)
-                            .load()
-                            .migrate();
+                    DataSource moduleDataSource = resolveDataSource(dataSource, module.config());
+                    try {
+                        Flyway.configure()
+                                .dataSource(moduleDataSource)
+                                .locations(module.location())
+                                .table(resolveHistoryTable(module))
+                                .baselineOnMigrate(module.config().isBaselineOnMigrate())
+                                .baselineVersion("0")
+                                .validateOnMigrate(true)
+                                .outOfOrder(false)
+                                .load()
+                                .migrate();
+                    } finally {
+                        closeModuleDataSource(dataSource, moduleDataSource);
+                    }
                 }
             } catch (Exception e) {
                 throw new IllegalStateException("Mango Flyway module migration failed", e);
@@ -104,7 +110,8 @@ public class PersistenceFlywayAutoConfiguration {
                 if (config == null || config.isEnabled()) {
                     migrations.add(new ModuleMigration(
                             module,
-                            MIGRATION_LOCATION_PREFIX + module));
+                            MIGRATION_LOCATION_PREFIX + module,
+                            config == null ? new PersistenceFlywayProperties.ModuleConfig() : config));
                 }
             });
             return migrations;
@@ -113,7 +120,10 @@ public class PersistenceFlywayAutoConfiguration {
         Set<String> modules = discoverMigrationModules();
         List<ModuleMigration> migrations = new ArrayList<>();
         for (String module : modules) {
-            migrations.add(new ModuleMigration(module, MIGRATION_LOCATION_PREFIX + module));
+            migrations.add(new ModuleMigration(
+                    module,
+                    MIGRATION_LOCATION_PREFIX + module,
+                    new PersistenceFlywayProperties.ModuleConfig()));
         }
         return migrations;
     }
@@ -143,6 +153,39 @@ public class PersistenceFlywayAutoConfiguration {
         return moduleName.replaceAll("[^A-Za-z0-9_]", "_");
     }
 
-    private record ModuleMigration(String name, String location) {
+    private String resolveHistoryTable(ModuleMigration module) {
+        if (StringUtils.hasText(module.config().getHistoryTable())) {
+            return module.config().getHistoryTable();
+        }
+        return HISTORY_TABLE_PREFIX + sanitizeModuleName(module.name());
+    }
+
+    private DataSource resolveDataSource(DataSource defaultDataSource,
+                                         PersistenceFlywayProperties.ModuleConfig config) {
+        PersistenceFlywayProperties.DataSourceConfig datasource = config.getDatasource();
+        if (datasource == null || !StringUtils.hasText(datasource.getUrl())) {
+            return defaultDataSource;
+        }
+
+        DataSourceBuilder<?> builder = DataSourceBuilder.create()
+                .url(datasource.getUrl())
+                .username(datasource.getUsername())
+                .password(datasource.getPassword());
+        if (StringUtils.hasText(datasource.getDriverClassName())) {
+            builder.driverClassName(datasource.getDriverClassName());
+        }
+        return builder.build();
+    }
+
+    private void closeModuleDataSource(DataSource defaultDataSource, DataSource moduleDataSource) throws Exception {
+        if (moduleDataSource == defaultDataSource || !(moduleDataSource instanceof AutoCloseable closeable)) {
+            return;
+        }
+        closeable.close();
+    }
+
+    private record ModuleMigration(String name,
+                                   String location,
+                                   PersistenceFlywayProperties.ModuleConfig config) {
     }
 }

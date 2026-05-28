@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.app.microservice</groupId>
         <artifactId>mango-app-microservice</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -19,15 +19,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.module</groupId>
             <artifactId>mango-infra-module-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.access</groupId>
             <artifactId>mango-access-gateway-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-resource-sync-starter</artifactId>
         </dependency>
         <dependency>

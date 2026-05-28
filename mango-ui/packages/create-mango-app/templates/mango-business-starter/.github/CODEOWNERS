@@ -1,0 +1,6 @@
+/backend/ @backend-team
+/frontend/ @frontend-team
+/business-pmo/ @tech-lead @pmo
+/business-docs/ @pm @tech-lead @qa
+/topologies/ @tech-lead @devops
+/scripts/ @platform-team

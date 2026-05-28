@@ -1,7 +1,7 @@
 {
   "name": "@mango/app-runtime",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
@@ -13,5 +13,8 @@
   },
   "peerDependencies": {
     "vue": "3.5.13"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }

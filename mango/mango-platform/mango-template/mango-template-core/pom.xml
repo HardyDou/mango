@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.template</groupId>
         <artifactId>mango-template</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -12,12 +12,12 @@
     <name>Mango Template Core</name>
     <dependencies>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.template</groupId>
             <artifactId>mango-template-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -30,12 +30,12 @@
             <artifactId>mybatis-plus-jsqlparser</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.fileproc</groupId>
             <artifactId>mango-infra-fileproc-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
         <dependency>

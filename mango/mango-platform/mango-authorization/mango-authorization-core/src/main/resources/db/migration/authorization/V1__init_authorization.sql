@@ -1,3 +1,9 @@
+-- Baseline migration for module: authorization
+-- Squashed from 15 migration files before first shared release.
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V1__init_authorization.sql
+-- -----------------------------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -903,16 +909,7 @@ INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `packag
 (126041002,1,1,2604102,97),
 (126041003,1,1,2604103,98),
 (126041004,1,1,2604104,99),
-(126041005,1,1,2604105,100),
-(22604,1,2,2604,17),
-(22600401,1,2,260401,18),
-(22600402,1,2,260402,19),
-(226041000,1,2,2604100,27),
-(226041001,1,2,2604101,28),
-(226041002,1,2,2604102,29),
-(226041003,1,2,2604103,30),
-(226041004,1,2,2604104,31),
-(226041005,1,2,2604105,32);
+(126041005,1,1,2604105,100);
 
 INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
 (526401,1,1,260401,NOW(),NULL,NOW(),NULL,NOW()),
@@ -922,31 +919,7 @@ INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `men
 (5264102,1,1,2604102,NOW(),NULL,NOW(),NULL,NOW()),
 (5264103,1,1,2604103,NOW(),NULL,NOW(),NULL,NOW()),
 (5264104,1,1,2604104,NOW(),NULL,NOW(),NULL,NOW()),
-(5264105,1,1,2604105,NOW(),NULL,NOW(),NULL,NOW()),
-(626401,1,2,260401,NOW(),NULL,NOW(),NULL,NOW()),
-(626402,1,2,260402,NOW(),NULL,NOW(),NULL,NOW()),
-(6264100,1,2,2604100,NOW(),NULL,NOW(),NULL,NOW()),
-(6264101,1,2,2604101,NOW(),NULL,NOW(),NULL,NOW()),
-(6264102,1,2,2604102,NOW(),NULL,NOW(),NULL,NOW()),
-(6264103,1,2,2604103,NOW(),NULL,NOW(),NULL,NOW()),
-(6264104,1,2,2604104,NOW(),NULL,NOW(),NULL,NOW()),
-(6264105,1,2,2604105,NOW(),NULL,NOW(),NULL,NOW()),
-(726401,1,3,260401,NOW(),NULL,NOW(),NULL,NOW()),
-(726402,1,3,260402,NOW(),NULL,NOW(),NULL,NOW()),
-(7264100,1,3,2604100,NOW(),NULL,NOW(),NULL,NOW()),
-(7264101,1,3,2604101,NOW(),NULL,NOW(),NULL,NOW()),
-(7264102,1,3,2604102,NOW(),NULL,NOW(),NULL,NOW()),
-(7264103,1,3,2604103,NOW(),NULL,NOW(),NULL,NOW()),
-(7264104,1,3,2604104,NOW(),NULL,NOW(),NULL,NOW()),
-(7264105,1,3,2604105,NOW(),NULL,NOW(),NULL,NOW()),
-(826401,1,4,260401,NOW(),NULL,NOW(),NULL,NOW()),
-(826402,1,4,260402,NOW(),NULL,NOW(),NULL,NOW()),
-(8264100,1,4,2604100,NOW(),NULL,NOW(),NULL,NOW()),
-(8264101,1,4,2604101,NOW(),NULL,NOW(),NULL,NOW()),
-(8264102,1,4,2604102,NOW(),NULL,NOW(),NULL,NOW()),
-(8264103,1,4,2604103,NOW(),NULL,NOW(),NULL,NOW()),
-(8264104,1,4,2604104,NOW(),NULL,NOW(),NULL,NOW()),
-(8264105,1,4,2604105,NOW(),NULL,NOW(),NULL,NOW());
+(5264105,1,1,2604105,NOW(),NULL,NOW(),NULL,NOW());
 
 
 -- -----------------------------------------------------------------------------
@@ -972,11 +945,965 @@ ON DUPLICATE KEY UPDATE
 `updated_at` = NOW();
 
 INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
-(126041006,1,1,2604106,101),
-(226041006,1,2,2604106,33);
+(126041006,1,1,2604106,101);
 
 INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
-(5264106,1,1,2604106,NOW(),NULL,NOW(),NULL,NOW()),
-(6264106,1,2,2604106,NOW(),NULL,NOW(),NULL,NOW()),
-(7264106,1,3,2604106,NOW(),NULL,NOW(),NULL,NOW()),
-(8264106,1,4,2604106,NOW(),NULL,NOW(),NULL,NOW());
+(5264106,1,1,2604106,NOW(),NULL,NOW(),NULL,NOW());
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V6__template_center_menu.sql
+-- -----------------------------------------------------------------------------
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(29,1,'internal-admin',0,1,'模板中心','template','/template','DocumentCopy',NULL,4,1,1,0,0,'/template/templates',NULL,NULL,NULL,NOW(),NOW(),'模板库、变量定义与渲染能力入口',0,NULL,NOW(),NULL,NOW()),
+(2901,1,'internal-admin',29,2,'模板管理','template:template','/template/templates','Document','@/views/template/templates/index.vue',1,1,1,0,0,NULL,'template:template:list',NULL,NULL,NOW(),NOW(),'模板维护、版本发布、变量定义和预览渲染',0,NULL,NOW(),NULL,NOW()),
+(2902,1,'internal-admin',29,2,'模板分类','template:category','/template/categories','FolderOpened','@/views/template/categories/index.vue',2,1,1,0,0,NULL,'template:category:list',NULL,NULL,NOW(),NOW(),'模板分类维护',0,NULL,NOW(),NULL,NOW()),
+(290100,1,'internal-admin',2901,3,'查询模板列表','template:template:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'template:template:list',NULL,NULL,NOW(),NOW(),'模板列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(290101,1,'internal-admin',2901,3,'查询模板详情','template:template:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'template:template:query',NULL,NULL,NOW(),NOW(),'模板详情与版本查询权限',0,NULL,NOW(),NULL,NOW()),
+(290102,1,'internal-admin',2901,3,'新增模板','template:template:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'template:template:add',NULL,NULL,NOW(),NOW(),'模板新增权限',0,NULL,NOW(),NULL,NOW()),
+(290103,1,'internal-admin',2901,3,'编辑模板','template:template:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'template:template:edit',NULL,NULL,NOW(),NOW(),'模板编辑权限',0,NULL,NOW(),NULL,NOW()),
+(290104,1,'internal-admin',2901,3,'启停模板','template:template:status',NULL,NULL,NULL,4,1,0,0,0,NULL,'template:template:status',NULL,NULL,NOW(),NOW(),'模板启停权限',0,NULL,NOW(),NULL,NOW()),
+(290105,1,'internal-admin',2901,3,'发布模板版本','template:template:publish',NULL,NULL,NULL,5,1,0,0,0,NULL,'template:template:publish',NULL,NULL,NOW(),NOW(),'模板版本发布权限',0,NULL,NOW(),NULL,NOW()),
+(290106,1,'internal-admin',2901,3,'提取模板变量','template:template:extract-variable',NULL,NULL,NULL,6,1,0,0,0,NULL,'template:template:extract-variable',NULL,NULL,NOW(),NOW(),'模板占位变量提取权限',0,NULL,NOW(),NULL,NOW()),
+(290107,1,'internal-admin',2901,3,'渲染模板','template:template:render',NULL,NULL,NULL,7,1,0,0,0,NULL,'template:template:render',NULL,NULL,NOW(),NOW(),'模板预览和正式渲染权限',0,NULL,NOW(),NULL,NOW()),
+(290108,1,'internal-admin',2901,3,'查询渲染记录','template:render-record:list',NULL,NULL,NULL,8,1,0,0,0,NULL,'template:render-record:list',NULL,NULL,NOW(),NOW(),'模板渲染记录查询权限',0,NULL,NOW(),NULL,NOW()),
+(290200,1,'internal-admin',2902,3,'查询模板分类列表','template:category:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'template:category:list',NULL,NULL,NOW(),NOW(),'模板分类列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(290201,1,'internal-admin',2902,3,'查询模板分类详情','template:category:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'template:category:query',NULL,NULL,NOW(),NOW(),'模板分类详情查询权限',0,NULL,NOW(),NULL,NOW()),
+(290202,1,'internal-admin',2902,3,'新增模板分类','template:category:add',NULL,NULL,NULL,2,1,0,0,0,NULL,'template:category:add',NULL,NULL,NOW(),NOW(),'模板分类新增权限',0,NULL,NOW(),NULL,NOW()),
+(290203,1,'internal-admin',2902,3,'编辑模板分类','template:category:edit',NULL,NULL,NULL,3,1,0,0,0,NULL,'template:category:edit',NULL,NULL,NOW(),NOW(),'模板分类编辑权限',0,NULL,NOW(),NULL,NOW()),
+(290204,1,'internal-admin',2902,3,'启停模板分类','template:category:status',NULL,NULL,NULL,4,1,0,0,0,NULL,'template:category:status',NULL,NULL,NOW(),NOW(),'模板分类启停权限',0,NULL,NOW(),NULL,NOW()),
+(290205,1,'internal-admin',2902,3,'删除模板分类','template:category:delete',NULL,NULL,NULL,5,1,0,0,0,NULL,'template:category:delete',NULL,NULL,NOW(),NOW(),'模板分类删除权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+`parent_id` = VALUES(`parent_id`),
+`menu_type` = VALUES(`menu_type`),
+`menu_name` = VALUES(`menu_name`),
+`menu_code` = VALUES(`menu_code`),
+`path` = VALUES(`path`),
+`icon` = VALUES(`icon`),
+`component` = VALUES(`component`),
+`sort` = VALUES(`sort`),
+`status` = VALUES(`status`),
+`visible` = VALUES(`visible`),
+`redirect` = VALUES(`redirect`),
+`permissions` = VALUES(`permissions`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`);
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(1097,1,1,29,97),
+(1098,1,1,2901,98),
+(1099,1,1,2902,99),
+(1100,1,1,290100,100),
+(1101,1,1,290101,101),
+(1102,1,1,290102,102),
+(1103,1,1,290103,103),
+(1104,1,1,290104,104),
+(1105,1,1,290105,105),
+(1106,1,1,290106,106),
+(1107,1,1,290107,107),
+(1108,1,1,290108,108),
+(1109,1,1,290200,109),
+(1110,1,1,290201,110),
+(1111,1,1,290202,111),
+(1112,1,1,290203,112),
+(1113,1,1,290204,113),
+(1114,1,1,290205,114);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 500000 + (`role`.`id` * 10000) + `item`.`menu_id`, `role`.`tenant_id`, `role`.`id`, `item`.`menu_id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_role` `role`
+JOIN `authorization_menu_package_item` `item` ON `item`.`package_id` = 1
+WHERE `role`.`app_code` = 'internal-admin'
+  AND `role`.`role_code` = 'ROLE_ADMIN'
+  AND `item`.`menu_id` IN (29, 2901, 2902, 290100, 290101, 290102, 290103, 290104, 290105, 290106, 290107, 290108, 290200, 290201, 290202, 290203, 290204, 290205);
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V7__template_menu_order.sql
+-- -----------------------------------------------------------------------------
+UPDATE `authorization_menu`
+SET `sort` = 5,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 29
+  AND `menu_code` = 'template';
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V8__template_menu_restructure.sql
+-- -----------------------------------------------------------------------------
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (4, 'internal-admin', 'mango-template', '模板中心模块', 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-template',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` IN (29, 2901, 2902, 290100, 290101, 290102, 290103, 290104, 290105, 290106, 290107, 290108, 290200, 290201, 290202, 290203, 290204, 290205);
+
+UPDATE `authorization_menu`
+SET `menu_name` = '模板列表',
+    `path` = '/template/templates',
+    `component` = '@/views/template/templates/index.vue',
+    `sort` = 2,
+    `remark` = '模板主数据、版本发布、历史版本启用和预览渲染',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 2901
+  AND `menu_code` = 'template:template';
+
+UPDATE `authorization_menu`
+SET `sort` = 1,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 2902
+  AND `menu_code` = 'template:category';
+
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `module_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(2903,1,'internal-admin','mango-template',29,2,'渲染记录','template:render-record','/template/render-records','Tickets','@/views/template/render-records/index.vue',3,1,1,0,0,NULL,'template:render-record:list',NULL,NULL,NOW(),NOW(),'模板同步和异步渲染记录查询',0,NULL,NOW(),NULL,NOW()),
+(290300,1,'internal-admin','mango-template',2903,3,'查询渲染记录','template:render-record:list',NULL,NULL,NULL,0,1,0,0,0,NULL,'template:render-record:list',NULL,NULL,NOW(),NOW(),'模板渲染记录列表查询权限',0,NULL,NOW(),NULL,NOW()),
+(290301,1,'internal-admin','mango-template',2903,3,'查询渲染详情','template:render-record:query',NULL,NULL,NULL,1,1,0,0,0,NULL,'template:render-record:query',NULL,NULL,NOW(),NOW(),'模板渲染记录详情查询权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+`module_code` = VALUES(`module_code`),
+`parent_id` = VALUES(`parent_id`),
+`menu_type` = VALUES(`menu_type`),
+`menu_name` = VALUES(`menu_name`),
+`menu_code` = VALUES(`menu_code`),
+`path` = VALUES(`path`),
+`icon` = VALUES(`icon`),
+`component` = VALUES(`component`),
+`sort` = VALUES(`sort`),
+`status` = VALUES(`status`),
+`visible` = VALUES(`visible`),
+`permissions` = VALUES(`permissions`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`);
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(1115,1,1,2903,115),
+(1116,1,1,290300,116),
+(1117,1,1,290301,117);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 500000 + (`role`.`id` * 10000) + `item`.`menu_id`, `role`.`tenant_id`, `role`.`id`, `item`.`menu_id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_role` `role`
+JOIN `authorization_menu_package_item` `item` ON `item`.`package_id` = 1
+WHERE `role`.`app_code` = 'internal-admin'
+  AND `role`.`role_code` = 'ROLE_ADMIN'
+  AND `item`.`menu_id` IN (2903, 290300, 290301);
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V9__template_menu_authorization_fix.sql
+-- -----------------------------------------------------------------------------
+SET @template_module_id := (
+  SELECT `id`
+  FROM `authorization_app_module`
+  WHERE `app_code` = 'internal-admin'
+    AND `module_code` = 'mango-template'
+  LIMIT 1
+);
+
+SET @template_module_id := COALESCE(@template_module_id, (
+  SELECT COALESCE(MAX(`id`), 0) + 1
+  FROM `authorization_app_module`
+));
+
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (@template_module_id, 'internal-admin', 'mango-template', '模板中心模块', 1, 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+SET @template_menu_item_base := (
+  SELECT COALESCE(MAX(`id`), 1000)
+  FROM `authorization_menu_package_item`
+);
+
+INSERT INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`)
+SELECT @template_menu_item_base := @template_menu_item_base + 1,
+       `menu`.`tenant_id`,
+       1,
+       `menu`.`id`,
+       120 + `seq`.`sort_no`
+FROM (
+  SELECT 29 AS `menu_id`, 0 AS `sort_no` UNION ALL
+  SELECT 2902, 1 UNION ALL
+  SELECT 2901, 2 UNION ALL
+  SELECT 2903, 3 UNION ALL
+  SELECT 290200, 4 UNION ALL
+  SELECT 290201, 5 UNION ALL
+  SELECT 290202, 6 UNION ALL
+  SELECT 290203, 7 UNION ALL
+  SELECT 290204, 8 UNION ALL
+  SELECT 290205, 9 UNION ALL
+  SELECT 290100, 10 UNION ALL
+  SELECT 290101, 11 UNION ALL
+  SELECT 290102, 12 UNION ALL
+  SELECT 290103, 13 UNION ALL
+  SELECT 290104, 14 UNION ALL
+  SELECT 290105, 15 UNION ALL
+  SELECT 290106, 16 UNION ALL
+  SELECT 290107, 17 UNION ALL
+  SELECT 290108, 18 UNION ALL
+  SELECT 290300, 19 UNION ALL
+  SELECT 290301, 20
+) `seq`
+JOIN `authorization_menu` `menu` ON `menu`.`id` = `seq`.`menu_id`
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM `authorization_menu_package_item` `item`
+  WHERE `item`.`tenant_id` = `menu`.`tenant_id`
+    AND `item`.`package_id` = 1
+    AND `item`.`menu_id` = `menu`.`id`
+);
+
+SET @template_role_menu_base := (
+  SELECT COALESCE(MAX(`id`), 9000)
+  FROM `authorization_role_menu`
+);
+
+INSERT INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT @template_role_menu_base := @template_role_menu_base + 1,
+       `role`.`tenant_id`,
+       `role`.`id`,
+       `menu`.`id`,
+       NOW(),
+       NULL,
+       NOW(),
+       NULL,
+       NOW()
+FROM `authorization_role` `role`
+JOIN `authorization_menu` `menu`
+  ON `menu`.`app_code` = `role`.`app_code`
+ AND `menu`.`menu_code` LIKE 'template%'
+WHERE `role`.`app_code` = 'internal-admin'
+  AND `role`.`role_code` = 'ROLE_ADMIN'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `authorization_role_menu` `role_menu`
+    WHERE `role_menu`.`role_id` = `role`.`id`
+      AND `role_menu`.`menu_id` = `menu`.`id`
+  );
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V10__platform_capability_menu.sql
+-- -----------------------------------------------------------------------------
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (4, 'internal-admin', 'mango-calendar', '工作日历模块', 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `app_code` = VALUES(`app_code`),
+  `module_code` = VALUES(`module_code`),
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+INSERT INTO `frontend_module_runtime_strategy`
+  (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (4, 'internal-admin', 'mango-calendar', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (14, 'internal-admin', 'mango-calendar', 'hybrid', 'LOCAL_ROUTE', 'mango-admin-local', 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (24, 'internal-admin', 'mango-calendar', 'micro', 'LOCAL_ROUTE', 'mango-admin-local', 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `page_type` = VALUES(`page_type`),
+  `runtime_code` = VALUES(`runtime_code`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `module_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(2700,1,'internal-admin','mango-calendar',0,1,'平台能力','data','/data','DataAnalysis',NULL,4,1,1,0,0,'/data/calendar',NULL,NULL,NULL,NOW(),NOW(),'工作日历管理入口',0,NULL,NOW(),NULL,NOW()),
+(2701,1,'internal-admin','mango-calendar',2700,2,'日历管理','data:calendar','/data/calendar','Calendar','@/views/data/calendar/index.vue',1,1,1,0,0,NULL,'calendar:admin:list',NULL,NULL,NOW(),NOW(),'日历、年度日期和工作日计算管理',0,NULL,NOW(),NULL,NOW()),
+(270101,1,'internal-admin','mango-calendar',2701,3,'日历查询','calendar:admin:list',NULL,NULL,NULL,1,1,0,0,0,NULL,'calendar:admin:list',NULL,NULL,NOW(),NOW(),'日历查询权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+`module_code` = VALUES(`module_code`),
+`parent_id` = VALUES(`parent_id`),
+`menu_type` = VALUES(`menu_type`),
+`menu_name` = VALUES(`menu_name`),
+`menu_code` = VALUES(`menu_code`),
+`path` = VALUES(`path`),
+`icon` = VALUES(`icon`),
+`component` = VALUES(`component`),
+`sort` = VALUES(`sort`),
+`status` = VALUES(`status`),
+`visible` = VALUES(`visible`),
+`redirect` = VALUES(`redirect`),
+`permissions` = VALUES(`permissions`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`),
+`update_time` = NOW(),
+`updated_at` = NOW();
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+(12700,1,1,2700,40),
+(12701,1,1,2701,41),
+(1270101,1,1,270101,44),
+(22700,1,2,2700,40),
+(22701,1,2,2701,41),
+(2270101,1,2,270101,44);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+(52700,1,1,2700,NOW(),NULL,NOW(),NULL,NOW()),
+(52701,1,1,2701,NOW(),NULL,NOW(),NULL,NOW()),
+(5270101,1,1,270101,NOW(),NULL,NOW(),NULL,NOW()),
+(62700,1,2,2700,NOW(),NULL,NOW(),NULL,NOW()),
+(62701,1,2,2701,NOW(),NULL,NOW(),NULL,NOW()),
+(6270101,1,2,270101,NOW(),NULL,NOW(),NULL,NOW()),
+(72700,1,3,2700,NOW(),NULL,NOW(),NULL,NOW()),
+(72701,1,3,2701,NOW(),NULL,NOW(),NULL,NOW()),
+(7270101,1,3,270101,NOW(),NULL,NOW(),NULL,NOW()),
+(82700,1,4,2700,NOW(),NULL,NOW(),NULL,NOW()),
+(82701,1,4,2701,NOW(),NULL,NOW(),NULL,NOW()),
+(8270101,1,4,270101,NOW(),NULL,NOW(),NULL,NOW());
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V13__calendar_admin_permissions.sql
+-- -----------------------------------------------------------------------------
+UPDATE `authorization_menu`
+SET `permissions` = 'calendar:admin:list',
+    `remark` = '日历、年度日期和工作日计算管理',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 2701;
+
+INSERT INTO `authorization_menu`
+(`id`, `tenant_id`, `app_code`, `module_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+(270141,1,'internal-admin','mango-calendar',2701,3,'日历查询','calendar:admin:list',NULL,NULL,NULL,41,1,0,0,0,NULL,'calendar:admin:list',NULL,NULL,NOW(),NOW(),'日历查询权限',0,NULL,NOW(),NULL,NOW()),
+(270142,1,'internal-admin','mango-calendar',2701,3,'日历新增','calendar:admin:create',NULL,NULL,NULL,42,1,0,0,0,NULL,'calendar:admin:create',NULL,NULL,NOW(),NOW(),'日历新增权限',0,NULL,NOW(),NULL,NOW()),
+(270143,1,'internal-admin','mango-calendar',2701,3,'日历编辑','calendar:admin:edit',NULL,NULL,NULL,43,1,0,0,0,NULL,'calendar:admin:edit',NULL,NULL,NOW(),NOW(),'日历编辑权限',0,NULL,NOW(),NULL,NOW()),
+(270144,1,'internal-admin','mango-calendar',2701,3,'日历状态','calendar:admin:status',NULL,NULL,NULL,44,1,0,0,0,NULL,'calendar:admin:status',NULL,NULL,NOW(),NOW(),'日历状态权限',0,NULL,NOW(),NULL,NOW()),
+(270145,1,'internal-admin','mango-calendar',2701,3,'日历删除','calendar:admin:delete',NULL,NULL,NULL,45,1,0,0,0,NULL,'calendar:admin:delete',NULL,NULL,NOW(),NOW(),'日历删除权限',0,NULL,NOW(),NULL,NOW()),
+(270151,1,'internal-admin','mango-calendar',2701,3,'年度查询','calendar:year:list',NULL,NULL,NULL,51,1,0,0,0,NULL,'calendar:year:list',NULL,NULL,NOW(),NOW(),'年度查询权限',0,NULL,NOW(),NULL,NOW()),
+(270152,1,'internal-admin','mango-calendar',2701,3,'年度初始化','calendar:year:init',NULL,NULL,NULL,52,1,0,0,0,NULL,'calendar:year:init',NULL,NULL,NOW(),NOW(),'年度初始化权限',0,NULL,NOW(),NULL,NOW()),
+(270153,1,'internal-admin','mango-calendar',2701,3,'年度启停','calendar:year:enabled',NULL,NULL,NULL,53,1,0,0,0,NULL,'calendar:year:enabled',NULL,NULL,NOW(),NOW(),'年度启停权限',0,NULL,NOW(),NULL,NOW()),
+(270154,1,'internal-admin','mango-calendar',2701,3,'年度删除','calendar:year:delete',NULL,NULL,NULL,54,1,0,0,0,NULL,'calendar:year:delete',NULL,NULL,NOW(),NOW(),'年度删除权限',0,NULL,NOW(),NULL,NOW()),
+(270161,1,'internal-admin','mango-calendar',2701,3,'日期查询','calendar:day:list',NULL,NULL,NULL,61,1,0,0,0,NULL,'calendar:day:list',NULL,NULL,NOW(),NOW(),'日期查询权限',0,NULL,NOW(),NULL,NOW()),
+(270162,1,'internal-admin','mango-calendar',2701,3,'日期编辑','calendar:day:edit',NULL,NULL,NULL,62,1,0,0,0,NULL,'calendar:day:edit',NULL,NULL,NOW(),NOW(),'日期编辑权限',0,NULL,NOW(),NULL,NOW()),
+(270163,1,'internal-admin','mango-calendar',2701,3,'日期批量设置','calendar:day:batch',NULL,NULL,NULL,63,1,0,0,0,NULL,'calendar:day:batch',NULL,NULL,NOW(),NOW(),'日期批量设置权限',0,NULL,NOW(),NULL,NOW()),
+(270164,1,'internal-admin','mango-calendar',2701,3,'日期导入','calendar:day:import',NULL,NULL,NULL,64,1,0,0,0,NULL,'calendar:day:import',NULL,NULL,NOW(),NOW(),'日期导入权限',0,NULL,NOW(),NULL,NOW()),
+(270165,1,'internal-admin','mango-calendar',2701,3,'日期删除','calendar:day:delete',NULL,NULL,NULL,65,1,0,0,0,NULL,'calendar:day:delete',NULL,NULL,NOW(),NOW(),'日期删除权限',0,NULL,NOW(),NULL,NOW()),
+(270171,1,'internal-admin','mango-calendar',2701,3,'工作日计算','calendar:calculate:query',NULL,NULL,NULL,71,1,0,0,0,NULL,'calendar:calculate:query',NULL,NULL,NOW(),NOW(),'工作日计算权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+`module_code` = VALUES(`module_code`),
+`parent_id` = VALUES(`parent_id`),
+`menu_type` = VALUES(`menu_type`),
+`menu_name` = VALUES(`menu_name`),
+`menu_code` = VALUES(`menu_code`),
+`sort` = VALUES(`sort`),
+`status` = VALUES(`status`),
+`visible` = VALUES(`visible`),
+`permissions` = VALUES(`permissions`),
+`remark` = VALUES(`remark`),
+`del_flag` = VALUES(`del_flag`),
+`update_time` = NOW(),
+`updated_at` = NOW();
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`)
+SELECT 100000 + `id`, 1, 1, `id`, `sort`
+FROM `authorization_menu`
+WHERE `parent_id` = 2701 AND `menu_type` = 3 AND `id` >= 270141;
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`)
+SELECT 200000 + `id`, 1, 2, `id`, `sort`
+FROM `authorization_menu`
+WHERE `parent_id` = 2701 AND `menu_type` = 3 AND `id` >= 270141;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 500000 + `id`, 1, 1, `id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu`
+WHERE `parent_id` = 2701 AND `menu_type` = 3 AND `id` >= 270141;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 600000 + `id`, 1, 2, `id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu`
+WHERE `parent_id` = 2701 AND `menu_type` = 3 AND `id` >= 270141;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 700000 + `id`, 1, 3, `id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu`
+WHERE `parent_id` = 2701 AND `menu_type` = 3 AND `id` >= 270141;
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT 800000 + `id`, 1, 4, `id`, NOW(), NULL, NOW(), NULL, NOW()
+FROM `authorization_menu`
+WHERE `parent_id` = 2701 AND `menu_type` = 3 AND `id` >= 270141;
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V14__numgen_capability_menu.sql
+-- -----------------------------------------------------------------------------
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (5, 'internal-admin', 'mango-numgen', '编号生成模块', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `app_code` = VALUES(`app_code`),
+  `module_code` = VALUES(`module_code`),
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+INSERT INTO `frontend_module_runtime_strategy`
+  (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (5, 'internal-admin', 'mango-numgen', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (15, 'internal-admin', 'mango-numgen', 'hybrid', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (25, 'internal-admin', 'mango-numgen', 'micro', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `page_type` = VALUES(`page_type`),
+  `runtime_code` = VALUES(`runtime_code`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+INSERT INTO `authorization_menu`
+  (`id`, `tenant_id`, `app_code`, `module_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+  (2710,1,'internal-admin','mango-numgen',2700,2,'编号规则','data:numgen','/data/numgen','Tickets','@/views/numgen/index.vue',2,1,1,0,0,NULL,'numgen:manage:list',NULL,NULL,NOW(),NOW(),'编号生成器、版本、片段和流水管理',0,NULL,NOW(),NULL,NOW()),
+  (271001,1,'internal-admin','mango-numgen',2710,3,'编号规则查询','numgen:manage:list',NULL,NULL,NULL,1,1,0,0,0,NULL,'numgen:manage:list',NULL,NULL,NOW(),NOW(),'编号规则查询权限',0,NULL,NOW(),NULL,NOW()),
+  (271002,1,'internal-admin','mango-numgen',2710,3,'编号规则维护','numgen:manage:write',NULL,NULL,NULL,2,1,0,0,0,NULL,'numgen:manage:write',NULL,NULL,NOW(),NOW(),'编号规则维护权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+  `module_code` = VALUES(`module_code`),
+  `parent_id` = VALUES(`parent_id`),
+  `menu_type` = VALUES(`menu_type`),
+  `menu_name` = VALUES(`menu_name`),
+  `menu_code` = VALUES(`menu_code`),
+  `path` = VALUES(`path`),
+  `icon` = VALUES(`icon`),
+  `component` = VALUES(`component`),
+  `sort` = VALUES(`sort`),
+  `status` = VALUES(`status`),
+  `visible` = VALUES(`visible`),
+  `redirect` = VALUES(`redirect`),
+  `permissions` = VALUES(`permissions`),
+  `remark` = VALUES(`remark`),
+  `del_flag` = VALUES(`del_flag`),
+  `update_time` = NOW(),
+  `updated_at` = NOW();
+
+INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
+  (12710,1,1,2710,42),
+  (1271001,1,1,271001,43),
+  (1271002,1,1,271002,44),
+  (22710,1,2,2710,42),
+  (2271001,1,2,271001,43),
+  (2271002,1,2,271002,44);
+
+INSERT IGNORE INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`) VALUES
+  (52710,1,1,2710,NOW(),NULL,NOW(),NULL,NOW()),
+  (5271001,1,1,271001,NOW(),NULL,NOW(),NULL,NOW()),
+  (5271002,1,1,271002,NOW(),NULL,NOW(),NULL,NOW()),
+  (62710,1,2,2710,NOW(),NULL,NOW(),NULL,NOW()),
+  (6271001,1,2,271001,NOW(),NULL,NOW(),NULL,NOW()),
+  (6271002,1,2,271002,NOW(),NULL,NOW(),NULL,NOW()),
+  (72710,1,3,2710,NOW(),NULL,NOW(),NULL,NOW()),
+  (7271001,1,3,271001,NOW(),NULL,NOW(),NULL,NOW()),
+  (7271002,1,3,271002,NOW(),NULL,NOW(),NULL,NOW()),
+  (82710,1,4,2710,NOW(),NULL,NOW(),NULL,NOW()),
+  (8271001,1,4,271001,NOW(),NULL,NOW(),NULL,NOW()),
+  (8271002,1,4,271002,NOW(),NULL,NOW(),NULL,NOW());
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V15__rename_numgen_menu_to_number_rule.sql
+-- -----------------------------------------------------------------------------
+UPDATE `authorization_menu`
+SET `menu_name` = '编号规则',
+    `remark` = '编号生成器、版本、片段和流水管理',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 2710 OR `menu_code` = 'data:numgen';
+
+UPDATE `authorization_menu`
+SET `menu_name` = '编号规则查询',
+    `remark` = '编号规则查询权限',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 271001 OR `menu_code` = 'numgen:manage:list';
+
+UPDATE `authorization_menu`
+SET `menu_name` = '编号规则维护',
+    `remark` = '编号规则维护权限',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 271002 OR `menu_code` = 'numgen:manage:write';
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V16__restore_template_app_module.sql
+-- -----------------------------------------------------------------------------
+SET @template_module_id := (
+  SELECT `id`
+  FROM `authorization_app_module`
+  WHERE `app_code` = 'internal-admin'
+    AND `module_code` = 'mango-template'
+  LIMIT 1
+);
+
+SET @template_module_id := COALESCE(@template_module_id, (
+  SELECT COALESCE(MAX(`id`), 0) + 1
+  FROM `authorization_app_module`
+));
+
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (@template_module_id, 'internal-admin', 'mango-template', '模板管理模块', 1, 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-template',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `app_code` = 'internal-admin'
+  AND (
+    `menu_code` LIKE 'template%'
+    OR `path` LIKE '/template%'
+    OR `component` LIKE '%/template/%'
+    OR `permissions` LIKE 'template:%'
+  );
+
+-- -----------------------------------------------------------------------------
+-- Baseline cleanup: remove duplicated button records introduced by pre-release
+-- migration squashing while keeping the canonical menu entry for each feature.
+-- -----------------------------------------------------------------------------
+DELETE FROM `authorization_role_menu`
+WHERE `menu_id` IN (270141, 290108);
+
+DELETE FROM `authorization_menu_package_item`
+WHERE `menu_id` IN (270141, 290108);
+
+DELETE FROM `authorization_menu`
+WHERE `id` IN (270141, 290108);
+
+INSERT INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT COALESCE((SELECT MAX(`id`) FROM `authorization_role_menu`), 9000) + ROW_NUMBER() OVER (ORDER BY `role`.`id`, `menu`.`id`),
+       `role`.`tenant_id`,
+       `role`.`id`,
+       `menu`.`id`,
+       NOW(),
+       NULL,
+       NOW(),
+       NULL,
+       NOW()
+FROM `authorization_role` `role`
+JOIN `authorization_menu` `menu`
+  ON `menu`.`app_code` = `role`.`app_code`
+ AND `menu`.`menu_code` LIKE 'template%'
+WHERE `role`.`app_code` = 'internal-admin'
+  AND `role`.`role_code` = 'ROLE_ADMIN'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `authorization_role_menu` `role_menu`
+    WHERE `role_menu`.`role_id` = `role`.`id`
+      AND `role_menu`.`menu_id` = `menu`.`id`
+  );
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V17__restore_workflow_template_menu_module.sql
+-- -----------------------------------------------------------------------------
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-workflow',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `app_code` = 'internal-admin'
+  AND `menu_code` LIKE 'workflow:template%';
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V18__platform_capability_menu_restructure.sql
+-- -----------------------------------------------------------------------------
+UPDATE `authorization_menu`
+SET `menu_name` = '平台能力',
+    `parent_id` = 0,
+    `menu_type` = 1,
+    `path` = '/data',
+    `icon` = 'DataAnalysis',
+    `sort` = 4,
+    `status` = 1,
+    `visible` = 1,
+    `redirect` = '/data/calendar',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 2700 OR `menu_code` = 'data';
+
+SET @file_module_id := (
+  SELECT `id`
+  FROM `authorization_app_module`
+  WHERE `app_code` = 'internal-admin'
+    AND `module_code` = 'mango-file'
+  LIMIT 1
+);
+
+SET @file_module_id := COALESCE(@file_module_id, (
+  SELECT COALESCE(MAX(`id`), 0) + 1
+  FROM `authorization_app_module`
+));
+
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (@file_module_id, 'internal-admin', 'mango-file', '文件管理模块', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+INSERT INTO `frontend_module_runtime_strategy`
+  (`id`, `app_code`, `module_code`, `deploy_profile`, `page_type`, `runtime_code`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (6, 'internal-admin', 'mango-file', 'monolith', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (16, 'internal-admin', 'mango-file', 'hybrid', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (26, 'internal-admin', 'mango-file', 'micro', 'LOCAL_ROUTE', 'mango-admin-local', 1, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `page_type` = VALUES(`page_type`),
+  `runtime_code` = VALUES(`runtime_code`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+UPDATE `authorization_app_module`
+SET `module_name` = '模板管理模块',
+    `update_time` = CURRENT_TIMESTAMP
+WHERE `app_code` = 'internal-admin'
+  AND `module_code` = 'mango-template';
+
+INSERT INTO `authorization_menu`
+  (`id`, `tenant_id`, `app_code`, `module_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+VALUES
+  (28,1,'internal-admin','mango-file',2700,1,'文件管理','file','/file','FolderOpened',NULL,3,1,1,0,0,'/file/files',NULL,NULL,NULL,NOW(),NOW(),'统一文件上传、管理、预览与存储配置入口',0,NULL,NOW(),NULL,NOW()),
+  (24,1,'internal-admin','mango-file',28,2,'文件配置','file:settings','/file/settings','Tools','@/views/file/settings/index.vue',3,1,1,0,0,NULL,'file:settings:query',NULL,NULL,NOW(),NOW(),'文件上传策略、访问策略、预览策略和直传策略配置',0,NULL,NOW(),NULL,NOW()),
+  (22006,1,'internal-admin','mango-file',22,3,'目录查询','file:directories:list',NULL,'FolderSearch',NULL,6,1,0,0,0,NULL,'file:directories:list',NULL,NULL,NOW(),NOW(),'文件目录树查询权限',0,NULL,NOW(),NULL,NOW()),
+  (22007,1,'internal-admin','mango-file',22,3,'目录新增','file:directories:add',NULL,'FolderPlus',NULL,7,1,0,0,0,NULL,'file:directories:add',NULL,NULL,NOW(),NOW(),'文件目录新增权限',0,NULL,NOW(),NULL,NOW()),
+  (22008,1,'internal-admin','mango-file',22,3,'目录编辑','file:directories:edit',NULL,'Edit',NULL,8,1,0,0,0,NULL,'file:directories:edit',NULL,NULL,NOW(),NOW(),'文件目录编辑权限',0,NULL,NOW(),NULL,NOW()),
+  (22009,1,'internal-admin','mango-file',22,3,'目录删除','file:directories:delete',NULL,'FolderDelete',NULL,9,1,0,0,0,NULL,'file:directories:delete',NULL,NULL,NOW(),NOW(),'文件目录删除权限',0,NULL,NOW(),NULL,NOW()),
+  (22010,1,'internal-admin','mango-file',22,3,'删除文件','file:files:delete',NULL,'Delete',NULL,10,1,0,0,0,NULL,'file:files:delete',NULL,NULL,NOW(),NOW(),'文件记录删除权限',0,NULL,NOW(),NULL,NOW()),
+  (24001,1,'internal-admin','mango-file',24,3,'查询','file:settings:query',NULL,'Search',NULL,1,1,0,0,0,NULL,'file:settings:query',NULL,NULL,NOW(),NOW(),'文件中心配置查询权限',0,NULL,NOW(),NULL,NOW()),
+  (24002,1,'internal-admin','mango-file',24,3,'编辑','file:settings:edit',NULL,'Edit',NULL,2,1,0,0,0,NULL,'file:settings:edit',NULL,NULL,NOW(),NOW(),'文件中心配置编辑权限',0,NULL,NOW(),NULL,NOW())
+ON DUPLICATE KEY UPDATE
+  `module_code` = VALUES(`module_code`),
+  `parent_id` = VALUES(`parent_id`),
+  `menu_type` = VALUES(`menu_type`),
+  `menu_name` = VALUES(`menu_name`),
+  `menu_code` = VALUES(`menu_code`),
+  `path` = VALUES(`path`),
+  `icon` = VALUES(`icon`),
+  `component` = VALUES(`component`),
+  `sort` = VALUES(`sort`),
+  `status` = VALUES(`status`),
+  `visible` = VALUES(`visible`),
+  `redirect` = VALUES(`redirect`),
+  `permissions` = VALUES(`permissions`),
+  `remark` = VALUES(`remark`),
+  `del_flag` = VALUES(`del_flag`),
+  `update_time` = NOW(),
+  `updated_at` = NOW();
+
+UPDATE `authorization_menu`
+SET `parent_id` = 28,
+    `menu_type` = 2,
+    `menu_name` = '文件管理',
+    `menu_code` = 'file:files',
+    `path` = '/file/files',
+    `icon` = 'Files',
+    `component` = '@/views/file/files/index.vue',
+    `sort` = 1,
+    `status` = 1,
+    `visible` = 1,
+    `redirect` = NULL,
+    `permissions` = 'file:files:list',
+    `remark` = '文件记录、上传下载、预览和归档管理',
+    `module_code` = 'mango-file',
+    `del_flag` = 0,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 22;
+
+UPDATE `authorization_menu`
+SET `parent_id` = 28,
+    `menu_type` = 2,
+    `menu_name` = '存储配置',
+    `menu_code` = 'file:storage-configs',
+    `path` = '/file/storage-configs',
+    `icon` = 'Setting',
+    `component` = '@/views/file/storage-configs/index.vue',
+    `sort` = 2,
+    `status` = 1,
+    `visible` = 1,
+    `redirect` = NULL,
+    `permissions` = 'file:storage-configs:list',
+    `remark` = '文件底层存储配置管理',
+    `module_code` = 'mango-file',
+    `del_flag` = 0,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 23;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-file',
+    `menu_code` = CASE `id`
+      WHEN 22001 THEN 'file:files:list'
+      WHEN 22002 THEN 'file:files:query'
+      WHEN 22003 THEN 'file:files:upload'
+      WHEN 22004 THEN 'file:files:download'
+      WHEN 22005 THEN 'file:files:archive'
+      ELSE `menu_code`
+    END,
+    `permissions` = CASE `id`
+      WHEN 22001 THEN 'file:files:list'
+      WHEN 22002 THEN 'file:files:query'
+      WHEN 22003 THEN 'file:files:upload'
+      WHEN 22004 THEN 'file:files:download'
+      WHEN 22005 THEN 'file:files:archive'
+      ELSE `permissions`
+    END,
+    `icon` = CASE `id`
+      WHEN 22001 THEN 'Search'
+      WHEN 22002 THEN 'View'
+      WHEN 22003 THEN 'Upload'
+      WHEN 22004 THEN 'Download'
+      WHEN 22005 THEN 'Delete'
+      ELSE `icon`
+    END,
+    `remark` = CASE `id`
+      WHEN 22001 THEN '文件记录列表查询权限'
+      WHEN 22002 THEN '文件详情与预览元数据查询权限'
+      WHEN 22003 THEN '文件管理上传权限'
+      WHEN 22004 THEN '文件下载权限'
+      WHEN 22005 THEN '文件归档权限'
+      ELSE `remark`
+    END,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` BETWEEN 22001 AND 22005;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-file',
+    `menu_code` = REPLACE(`menu_code`, 'system:file-storage', 'file:storage-configs'),
+    `permissions` = REPLACE(`permissions`, 'system:file-storage', 'file:storage-configs'),
+    `icon` = CASE `id`
+      WHEN 23001 THEN 'Search'
+      WHEN 23002 THEN 'View'
+      WHEN 23003 THEN 'CirclePlus'
+      WHEN 23004 THEN 'Edit'
+      WHEN 23005 THEN 'Delete'
+      WHEN 23006 THEN 'Connection'
+      WHEN 23007 THEN 'CircleCheck'
+      ELSE `icon`
+    END,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` BETWEEN 23001 AND 23007;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-file',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `app_code` = 'internal-admin'
+  AND (
+    `menu_code` = 'file'
+    OR `menu_code` LIKE 'file:%'
+    OR `path` LIKE '/file%'
+    OR `component` LIKE '%/file/%'
+    OR `permissions` LIKE 'file:%'
+  );
+
+SET @file_menu_item_base := (
+  SELECT COALESCE(MAX(`id`), 1000)
+  FROM `authorization_menu_package_item`
+);
+
+INSERT INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`)
+SELECT @file_menu_item_base := @file_menu_item_base + 1,
+       `menu`.`tenant_id`,
+       1,
+       `menu`.`id`,
+       130 + `seq`.`sort_no`
+FROM (
+  SELECT 28 AS `menu_id`, 0 AS `sort_no` UNION ALL
+  SELECT 22, 1 UNION ALL
+  SELECT 23, 2 UNION ALL
+  SELECT 24, 3 UNION ALL
+  SELECT 22001, 4 UNION ALL
+  SELECT 22002, 5 UNION ALL
+  SELECT 22003, 6 UNION ALL
+  SELECT 22004, 7 UNION ALL
+  SELECT 22005, 8 UNION ALL
+  SELECT 22006, 9 UNION ALL
+  SELECT 22007, 10 UNION ALL
+  SELECT 22008, 11 UNION ALL
+  SELECT 22009, 12 UNION ALL
+  SELECT 22010, 13 UNION ALL
+  SELECT 23001, 14 UNION ALL
+  SELECT 23002, 15 UNION ALL
+  SELECT 23003, 16 UNION ALL
+  SELECT 23004, 17 UNION ALL
+  SELECT 23005, 18 UNION ALL
+  SELECT 23006, 19 UNION ALL
+  SELECT 23007, 20 UNION ALL
+  SELECT 24001, 21 UNION ALL
+  SELECT 24002, 22
+) `seq`
+JOIN `authorization_menu` `menu` ON `menu`.`id` = `seq`.`menu_id`
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM `authorization_menu_package_item` `item`
+  WHERE `item`.`tenant_id` = `menu`.`tenant_id`
+    AND `item`.`package_id` = 1
+    AND `item`.`menu_id` = `menu`.`id`
+);
+
+SET @file_role_menu_base := (
+  SELECT COALESCE(MAX(`id`), 9000)
+  FROM `authorization_role_menu`
+);
+
+INSERT INTO `authorization_role_menu` (`id`, `tenant_id`, `role_id`, `menu_id`, `create_time`, `created_by`, `created_at`, `updated_by`, `updated_at`)
+SELECT @file_role_menu_base := @file_role_menu_base + 1,
+       `role`.`tenant_id`,
+       `role`.`id`,
+       `menu`.`id`,
+       NOW(),
+       NULL,
+       NOW(),
+       NULL,
+       NOW()
+FROM `authorization_role` `role`
+JOIN `authorization_menu` `menu`
+  ON `menu`.`app_code` = `role`.`app_code`
+WHERE `role`.`id` = 1
+  AND `role`.`app_code` = 'internal-admin'
+  AND `role`.`role_code` = 'ROLE_ADMIN'
+  AND (
+    `menu`.`id` IN (28,22,23,24,22001,22002,22003,22004,22005,22006,22007,22008,22009,22010,23001,23002,23003,23004,23005,23006,23007,24001,24002)
+    OR `menu`.`menu_code` = 'file'
+    OR `menu`.`menu_code` LIKE 'file:%'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `authorization_role_menu` `role_menu`
+    WHERE `role_menu`.`role_id` = `role`.`id`
+      AND `role_menu`.`menu_id` = `menu`.`id`
+  );
+
+INSERT IGNORE INTO `frontend_menu_runtime_config`
+  (`id`, `menu_id`, `app_code`, `page_type`, `create_time`, `update_time`)
+SELECT `menu`.`id`,
+       `menu`.`id`,
+       `menu`.`app_code`,
+       CASE
+         WHEN `menu`.`menu_type` = 3 THEN 'BUTTON'
+         WHEN `menu`.`embedded` = 1 THEN 'IFRAME'
+         ELSE 'LOCAL_ROUTE'
+       END,
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP
+FROM `authorization_menu` `menu`
+WHERE `menu`.`id` IN (28,22,23,24,22001,22002,22003,22004,22005,22006,22007,22008,22009,22010,23001,23002,23003,23004,23005,23006,23007,24001,24002);
+
+UPDATE `authorization_menu`
+SET `parent_id` = 2700,
+    `menu_name` = '模板管理',
+    `sort` = 4,
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `id` = 29 OR `menu_code` = 'template';
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V19__fix_role_menu_tenant_consistency.sql
+-- -----------------------------------------------------------------------------
+UPDATE `authorization_role_menu` `role_menu`
+JOIN `authorization_role` `role`
+  ON `role`.`id` = `role_menu`.`role_id`
+SET `role_menu`.`tenant_id` = `role`.`tenant_id`,
+    `role_menu`.`updated_at` = CURRENT_TIMESTAMP
+WHERE `role_menu`.`tenant_id` <> `role`.`tenant_id`;
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V20__remove_workflow_manage_from_tenant_package.sql
+-- -----------------------------------------------------------------------------
+DELETE `role_menu`
+FROM `authorization_role_menu` `role_menu`
+JOIN `authorization_role` `role`
+  ON `role`.`id` = `role_menu`.`role_id`
+JOIN `authorization_menu` `menu`
+  ON `menu`.`id` = `role_menu`.`menu_id`
+LEFT JOIN `authorization_menu` `parent`
+  ON `parent`.`id` = `menu`.`parent_id`
+LEFT JOIN `authorization_menu` `grand_parent`
+  ON `grand_parent`.`id` = `parent`.`parent_id`
+WHERE `role`.`id` IN (2, 3, 4)
+  AND (
+    `menu`.`id` = 2604
+    OR `parent`.`id` = 2604
+    OR `grand_parent`.`id` = 2604
+  );
+
+DELETE `package_item`
+FROM `authorization_menu_package_item` `package_item`
+JOIN `authorization_menu` `menu`
+  ON `menu`.`id` = `package_item`.`menu_id`
+LEFT JOIN `authorization_menu` `parent`
+  ON `parent`.`id` = `menu`.`parent_id`
+LEFT JOIN `authorization_menu` `grand_parent`
+  ON `grand_parent`.`id` = `parent`.`parent_id`
+WHERE `package_item`.`package_id` = 2
+  AND (
+    `menu`.`id` = 2604
+    OR `parent`.`id` = 2604
+    OR `grand_parent`.`id` = 2604
+  );
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V22__restore_template_module_after_platform_menu_restructure.sql
+-- -----------------------------------------------------------------------------
+SET @template_module_id := (
+  SELECT `id`
+  FROM `authorization_app_module`
+  WHERE `app_code` = 'internal-admin'
+    AND `module_code` = 'mango-template'
+  LIMIT 1
+);
+
+SET @template_module_id := COALESCE(@template_module_id, (
+  SELECT COALESCE(MAX(`id`), 0) + 1
+  FROM `authorization_app_module`
+));
+
+INSERT INTO `authorization_app_module`
+  (`id`, `app_code`, `module_code`, `module_name`, `status`, `sort`, `create_time`, `update_time`)
+VALUES
+  (@template_module_id, 'internal-admin', 'mango-template', '模板管理模块', 1, 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON DUPLICATE KEY UPDATE
+  `module_name` = VALUES(`module_name`),
+  `status` = VALUES(`status`),
+  `sort` = VALUES(`sort`),
+  `update_time` = CURRENT_TIMESTAMP;
+
+UPDATE `authorization_menu`
+SET `module_code` = 'mango-template',
+    `update_time` = NOW(),
+    `updated_at` = NOW()
+WHERE `app_code` = 'internal-admin'
+  AND (
+    `menu_code` LIKE 'template%'
+    OR `path` LIKE '/template%'
+    OR `component` LIKE '%/template/%'
+    OR `permissions` LIKE 'template:%'
+  );

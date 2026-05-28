@@ -18,12 +18,12 @@ import static org.mockito.Mockito.any;
 class RolePermissionAuthorityContributorTest {
 
     @Test
-    @DisplayName("supports user subject type only")
-    void supportsUserSubjectTypeOnly() {
+    @DisplayName("supports tenant member subject type only")
+    void supportsTenantMemberSubjectTypeOnly() {
         RolePermissionAuthorityContributor contributor =
                 new RolePermissionAuthorityContributor(mock(ISubjectAuthorityService.class));
 
-        assertTrue(contributor.supports(AuthorizationQuery.user(1L)));
+        assertTrue(contributor.supports(AuthorizationQuery.member(1L)));
         assertFalse(contributor.supports(new AuthorizationQuery(1L, "service", null, null)));
     }
 
@@ -35,7 +35,7 @@ class RolePermissionAuthorityContributorTest {
         when(subjectAuthorityService.listSubjectPermissions(any(AuthorizationQuery.class))).thenReturn(List.of("system:user:view"));
 
         RolePermissionAuthorityContributor contributor = new RolePermissionAuthorityContributor(subjectAuthorityService);
-        var snapshot = contributor.contribute(AuthorizationQuery.user(1L));
+        var snapshot = contributor.contribute(AuthorizationQuery.member(1L));
 
         assertEquals(List.of("ROLE_ADMIN"), snapshot.roleCodes().stream().toList());
         assertEquals(List.of("system:user:view"), snapshot.permissionCodes().stream().toList());

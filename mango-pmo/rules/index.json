@@ -8,6 +8,10 @@
     {
       "path": "rules/01-delivery-contract.md",
       "reason": "交付契约与设计说明规则"
+    },
+    {
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线"
     }
   ],
   "rules": {
@@ -34,6 +38,14 @@
     "process.deliveryContract": {
       "path": "rules/01-delivery-contract.md",
       "reason": "交付契约与设计说明规则"
+    },
+    "process.devEnvironment": {
+      "path": "rules/02-dev-environment.md",
+      "reason": "开发环境与本地启动规范"
+    },
+    "process.aiCodingRedlines": {
+      "path": "rules/03-ai-coding-redlines.md",
+      "reason": "AI 编码红线"
     },
     "backend.code": {
       "path": "rules/backend/01-code.md",
@@ -79,6 +91,14 @@
       "path": "rules/frontend/01-vue-code.md",
       "reason": "Vue 代码规范"
     },
+    "frontend.elementPlusUi": {
+      "path": "rules/frontend/02-element-plus-ui.md",
+      "reason": "Element Plus UI 规范"
+    },
+    "frontend.componentDevelopment": {
+      "path": "rules/frontend/03-component-development.md",
+      "reason": "前端组件开发规范"
+    },
     "frontend.test": {
       "path": "rules/frontend/04-test.md",
       "reason": "前端测试规范"
@@ -103,14 +123,14 @@
   "roles": {
     "pm": ["agent.pm", "product.prd"],
     "tech-lead": ["agent.techLead"],
-    "dev": ["agent.dev"],
+    "dev": ["agent.dev", "process.devEnvironment"],
     "qa": ["agent.qa"],
     "pmo": ["agent.pmo"]
   },
   "phases": {
     "requirement": ["product.prd"],
     "design": ["agent.techLead"],
-    "develop": ["agent.dev"],
+    "develop": ["agent.dev", "process.devEnvironment"],
     "verify": ["agent.qa"],
     "release": [],
     "governance": ["agent.pmo"]
@@ -123,13 +143,18 @@
     },
     "frontend": {
       "paths": ["mango-ui/**", "apps/**", "packages/**"],
-      "keywords": ["前端", "页面", "Vue", "组件", "路由", "E2E", "Playwright", "UI"],
-      "include": ["frontend.devFlow", "frontend.vue", "frontend.monorepo", "frontend.test"]
+      "keywords": ["前端", "页面", "Vue", "组件", "路由", "E2E", "Playwright", "UI", "Element Plus", "列表", "搜索", "表格", "状态", "微前端", "单体", "npm"],
+      "include": ["frontend.devFlow", "frontend.vue", "frontend.elementPlusUi", "frontend.componentDevelopment", "frontend.monorepo", "frontend.test"]
     },
     "pmo": {
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],
       "keywords": ["PMO", "规范治理", "规则治理", "Agent 入口", "Agent入口", "流程规范"],
       "include": ["agent.pmo"]
+    },
+    "devEnvironment": {
+      "paths": ["scripts/**", ".mango/**"],
+      "keywords": ["开发环境", "本地环境", "启动", "端口", "工作区", "dev-workspace", "前后端", "数据库名称"],
+      "include": ["process.devEnvironment"]
     },
     "product": {
       "paths": ["mango-docs/**"],

@@ -10,6 +10,8 @@
         <relativePath>../../mango-parent/pom.xml</relativePath>
     </parent>
 
+    <groupId>io.mango.platform.captcha</groupId>
+
     <artifactId>mango-captcha</artifactId>
     <packaging>pom</packaging>
     <description>Mango Captcha Module</description>

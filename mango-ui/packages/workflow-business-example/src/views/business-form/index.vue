@@ -548,17 +548,17 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import {
   parseDesignerJson,
+  parseWorkflowFormConfig,
   workflowApi,
+  WorkflowNodeTimeline,
+  WorkflowProgressTree,
+  type BusinessApplyContext,
+  type BusinessApprovalContext,
   type WorkflowBusinessApply,
   type WorkflowDefinition,
   type WorkflowDesignerNode,
   type WorkflowTaskRecord,
-} from '@mango/workflow/src/api/workflow';
-import { parseWorkflowFormConfig } from '@mango/workflow/src/workflowFormConfig';
-import type { BusinessApplyContext } from '@mango/workflow/src/components/businessApply';
-import type { BusinessApprovalContext } from '@mango/workflow/src/components/businessApproval';
-import WorkflowNodeTimeline from '@mango/workflow/src/components/trace/WorkflowNodeTimeline.vue';
-import WorkflowProgressTree from '@mango/workflow/src/components/trace/WorkflowProgressTree.vue';
+} from '@mango/workflow';
 import DocumentTableApprovalDetail from '../../business-components/DocumentTableApprovalDetail.vue';
 
 const props = defineProps<{

@@ -1,0 +1,21 @@
+{
+  "name": "create-mango-app",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "create-mango-app": "./src/index.mjs",
+    "mango": "./src/index.mjs"
+  },
+  "scripts": {
+    "test": "node scripts/check-cli.mjs"
+  },
+  "files": [
+    "src",
+    "templates",
+    "README.md"
+  ],
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  }
+}

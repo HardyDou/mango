@@ -9,6 +9,7 @@ spring:
       - io.mango.infra.kv.starter.KvStoreAutoConfiguration
       - io.mango.infra.persistence.starter.PersistenceAutoConfiguration
       - io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
       - io.mango.infra.realtime.starter.MangoRealtimeAutoConfiguration
 
 mango:

@@ -195,12 +195,12 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
-import ParticipantSelector from '../../../../system/src/components/ParticipantSelector/index.vue';
+import { ParticipantSelector } from '@mango/system';
 import type {
   ParticipantOrgTreeOption,
   ParticipantSelectorValue,
   ParticipantTargetOption,
-} from '../../../../system/src/components/ParticipantSelector/types';
+} from '@mango/system';
 import {
   getBusinessTypes,
   getIdentityUsers,

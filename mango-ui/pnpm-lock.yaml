@@ -286,6 +286,9 @@ importers:
       '@mango/admin-pages':
         specifier: workspace:*
         version: link:../../packages/admin-pages
+      '@mango/admin-shell':
+        specifier: workspace:*
+        version: link:../../packages/admin-shell
       '@mango/app-runtime':
         specifier: workspace:*
         version: link:../../packages/app-runtime
@@ -424,45 +427,85 @@ importers:
 
   packages/admin-pages:
     dependencies:
-      '@mango/api-schema':
-        specifier: workspace:*
-        version: link:../api-schema
       '@mango/auth':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../auth
       '@mango/calendar':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../calendar
-      '@mango/common':
-        specifier: workspace:*
-        version: link:../common
       '@mango/file':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../file
       '@mango/notice':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../notice
       '@mango/numgen':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../numgen
       '@mango/rbac':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../rbac
       '@mango/system':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../system
       '@mango/template':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../template
       '@mango/workflow':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../workflow
       '@mango/workflow-business-example':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../workflow-business-example
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.9.3)
+
+  packages/admin-shell:
+    dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.0.10
+        version: 2.3.2(vue@3.5.13(typescript@5.9.3))
+      '@mango/admin-pages':
+        specifier: 1.0.0
+        version: link:../admin-pages
+      '@mango/app-runtime':
+        specifier: 1.0.0
+        version: link:../app-runtime
+      '@mango/auth':
+        specifier: 1.0.0
+        version: link:../auth
+      '@mango/common':
+        specifier: 1.0.0
+        version: link:../common
+      '@mango/rbac':
+        specifier: 1.0.0
+        version: link:../rbac
+      element-plus:
+        specifier: 2.5.5
+        version: 2.5.5(vue@3.5.13(typescript@5.9.3))
+      pinia:
+        specifier: 2.0.32
+        version: 2.0.32(typescript@5.9.3)(vue@3.5.13(typescript@5.9.3))
+      vue:
+        specifier: 3.5.13
+        version: 3.5.13(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.1.6
+        version: 4.6.4(vue@3.5.13(typescript@5.9.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^4.0.0
+        version: 4.6.2(vite@4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1))(vue@3.5.13(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^4.3.3
+        version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(sass@1.58.3)(terser@5.46.1)
 
   packages/api-schema:
     dependencies:
@@ -488,10 +531,10 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       element-plus:
         specifier: 2.5.5
@@ -512,10 +555,10 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       element-plus:
         specifier: 2.5.5
@@ -594,8 +637,10 @@ importers:
         version: 0.18.5
     devDependencies:
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
+
+  packages/create-mango-app: {}
 
   packages/file:
     dependencies:
@@ -603,7 +648,7 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       element-plus:
         specifier: 2.5.5
@@ -618,10 +663,10 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       '@mango/system':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../system
       element-plus:
         specifier: 2.5.5
@@ -639,10 +684,10 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       element-plus:
         specifier: 2.5.5
@@ -657,13 +702,13 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
       '@mango/app-runtime':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../app-runtime
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       element-plus:
         specifier: 2.5.5
@@ -684,16 +729,16 @@ importers:
         specifier: 3.2.16
         version: 3.2.16(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       '@mango/file':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../file
       '@mango/rbac':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../rbac
       element-plus:
         specifier: 2.5.5
@@ -714,10 +759,10 @@ importers:
         specifier: ^2.0.10
         version: 2.3.2(vue@3.5.13(typescript@5.9.3))
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       '@mango/file':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../file
       element-plus:
         specifier: 2.5.5
@@ -738,13 +783,13 @@ importers:
         specifier: 3.2.16
         version: 3.2.16(vue@3.5.13(typescript@5.9.3))
       '@mango/api-schema':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../api-schema
       '@mango/common':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../common
       '@mango/file':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../file
       element-plus:
         specifier: 2.5.5
@@ -762,7 +807,7 @@ importers:
   packages/workflow-business-example:
     dependencies:
       '@mango/workflow':
-        specifier: workspace:*
+        specifier: 1.0.0
         version: link:../workflow
       element-plus:
         specifier: 2.5.5

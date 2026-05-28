@@ -10,24 +10,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
-import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
-// Import modes
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/xml/xml';
-import 'codemirror/mode/css/css';
-import 'codemirror/mode/htmlmixed/htmlmixed';
-import 'codemirror/mode/python/python';
-import 'codemirror/mode/sql/sql';
-import 'codemirror/mode/markdown/markdown';
-import 'codemirror/mode/clike/clike';
-// Import themes
 import 'codemirror/theme/material-darker.css';
 import 'codemirror/theme/material-ocean.css';
-// Import addons
-import 'codemirror/addon/edit/matchbrackets';
-import 'codemirror/addon/edit/closebrackets';
-import 'codemirror/addon/selection/active-line';
+import type CodeMirrorNamespace from 'codemirror';
 
 const props = withDefaults(
   defineProps<{
@@ -61,8 +47,9 @@ const emit = defineEmits<{
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
-let editor: CodeMirror.Editor | null = null;
+let editor: CodeMirrorNamespace.Editor | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let codeMirrorLoader: Promise<typeof CodeMirrorNamespace> | null = null;
 
 const normalizedHeight = computed(() => normalizeCssSize(props.height));
 
@@ -89,11 +76,13 @@ const getMode = (lang: string): string | object => {
 };
 
 // Initialize editor
-const initEditor = () => {
+const initEditor = async () => {
   if (!textareaRef.value) return;
   if (editor) return;
 
   textareaRef.value.value = props.modelValue || '';
+  const CodeMirror = await loadCodeMirror();
+  if (!textareaRef.value || editor) return;
 
   editor = CodeMirror.fromTextArea(textareaRef.value, {
     mode: getMode(props.language),
@@ -196,7 +185,7 @@ watch(
 
 onMounted(() => {
   nextTick(() => {
-    initEditor();
+    void initEditor();
   });
 });
 
@@ -225,6 +214,27 @@ function observeResize() {
     editor?.refresh();
   });
   resizeObserver.observe(containerRef.value);
+}
+
+async function loadCodeMirror() {
+  if (!codeMirrorLoader) {
+    codeMirrorLoader = import('codemirror').then(async (module) => {
+      const CodeMirror = module.default || module;
+      await import('codemirror/mode/javascript/javascript');
+      await import('codemirror/mode/xml/xml');
+      await import('codemirror/mode/css/css');
+      await import('codemirror/mode/htmlmixed/htmlmixed');
+      await import('codemirror/mode/python/python');
+      await import('codemirror/mode/sql/sql');
+      await import('codemirror/mode/markdown/markdown');
+      await import('codemirror/mode/clike/clike');
+      await import('codemirror/addon/edit/matchbrackets');
+      await import('codemirror/addon/edit/closebrackets');
+      await import('codemirror/addon/selection/active-line');
+      return CodeMirror;
+    });
+  }
+  return codeMirrorLoader;
 }
 </script>
 

@@ -3,7 +3,7 @@ import {
   collectBusinessApprovalVariables,
   resolveBusinessApprovalRegistration,
   type BusinessApprovalContext,
-} from '@mango/workflow/src/components/businessApproval';
+} from '@mango/workflow';
 import { registerWorkflowBusinessExampleComponents } from '../register';
 
 vi.mock('../views/business-form/index.vue', () => ({ default: {} }));

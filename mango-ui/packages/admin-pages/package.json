@@ -1,21 +1,30 @@
 {
   "name": "@mango/admin-pages",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core.ts",
+    "./defaults": "./src/defaults.ts",
+    "./dev-component-pages": "./src/devComponentPages.ts"
+  },
   "dependencies": {
-    "@mango/api-schema": "workspace:*",
-    "@mango/auth": "workspace:*",
-    "@mango/calendar": "workspace:*",
-    "@mango/common": "workspace:*",
-    "@mango/file": "workspace:*",
-    "@mango/notice": "workspace:*",
-    "@mango/numgen": "workspace:*",
-    "@mango/rbac": "workspace:*",
-    "@mango/system": "workspace:*",
-    "@mango/template": "workspace:*",
-    "@mango/workflow": "workspace:*",
-    "@mango/workflow-business-example": "workspace:*",
+    "@mango/auth": "1.0.0",
+    "@mango/calendar": "1.0.0",
+    "@mango/file": "1.0.0",
+    "@mango/notice": "1.0.0",
+    "@mango/numgen": "1.0.0",
+    "@mango/rbac": "1.0.0",
+    "@mango/system": "1.0.0",
+    "@mango/template": "1.0.0",
+    "@mango/workflow": "1.0.0",
+    "@mango/workflow-business-example": "1.0.0"
+  },
+  "peerDependencies": {
     "vue": "3.5.13"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }

@@ -19,6 +19,7 @@
  * @licend The above is the entire license notice for the
  * JavaScript code in this page
  */
+import "../web/compatibility.mjs";
 
 /**
  * pdfjsVersion = 5.4.530

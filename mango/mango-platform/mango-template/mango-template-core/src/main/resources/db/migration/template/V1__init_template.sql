@@ -1,3 +1,9 @@
+-- Baseline migration for module: template
+-- Squashed from 5 migration files before first shared release.
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V1__init_template.sql
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `template` (
   `id` bigint NOT NULL COMMENT '模板ID',
   `tenant_id` bigint NOT NULL COMMENT '机构隔离ID',
@@ -89,3 +95,40 @@ CREATE TABLE IF NOT EXISTS `template_render_record` (
   KEY `idx_template_render_status` (`tenant_id`,`status`),
   KEY `idx_template_render_biz` (`tenant_id`,`biz_type`,`biz_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='模板渲染记录表';
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V2__add_template_business_scope.sql
+-- -----------------------------------------------------------------------------
+ALTER TABLE `template`
+  ADD COLUMN `business_group` varchar(64) DEFAULT NULL COMMENT '业务组编码' AFTER `category_name`,
+  ADD COLUMN `business_type` varchar(64) DEFAULT NULL COMMENT '业务类型' AFTER `business_group`,
+  ADD COLUMN `business_key` varchar(128) DEFAULT NULL COMMENT '业务Key' AFTER `business_type`;
+
+CREATE INDEX `idx_template_business_scope`
+  ON `template` (`tenant_id`, `business_group`, `business_type`, `business_key`);
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V3__template_version_source_format.sql
+-- -----------------------------------------------------------------------------
+ALTER TABLE `template`
+  MODIFY COLUMN `source_format` varchar(32) DEFAULT NULL COMMENT '当前发布内容稿源格式: TEXT HTML DOCX XLSX';
+
+UPDATE `template_version`
+SET `source_format` = 'TEXT'
+WHERE `source_format` IS NULL OR `source_format` = '';
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V4__template_business_key_unique.sql
+-- -----------------------------------------------------------------------------
+ALTER TABLE `template`
+  ADD UNIQUE KEY `uk_template_tenant_business_key` (`tenant_id`, `business_key`);
+
+-- -----------------------------------------------------------------------------
+-- Squashed from: V5__template_draft_publish_state.sql
+-- -----------------------------------------------------------------------------
+ALTER TABLE `template`
+  ADD COLUMN `draft_source_format` varchar(32) DEFAULT NULL COMMENT '未发布草稿源格式: TEXT HTML DOCX XLSX' AFTER `current_version_no`,
+  ADD COLUMN `draft_content` longtext DEFAULT NULL COMMENT '未发布草稿文本或HTML内容' AFTER `draft_source_format`,
+  ADD COLUMN `draft_source_file_id` bigint DEFAULT NULL COMMENT '未发布草稿文档模板源文件ID' AFTER `draft_content`,
+  ADD COLUMN `draft_variable_schema` json DEFAULT NULL COMMENT '未发布草稿变量定义' AFTER `draft_source_file_id`,
+  ADD COLUMN `has_unpublished_changes` tinyint NOT NULL DEFAULT '0' COMMENT '是否存在未发布变更: 0-否 1-是' AFTER `draft_variable_schema`;

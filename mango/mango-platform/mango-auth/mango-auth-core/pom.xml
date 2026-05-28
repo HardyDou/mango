@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.auth</groupId>
         <artifactId>mango-auth</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -19,26 +19,26 @@
     <dependencies>
         <!-- Mango 认证 API 契约 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.auth</groupId>
             <artifactId>mango-auth-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.identity</groupId>
             <artifactId>mango-identity-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 通用能力 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
@@ -71,14 +71,14 @@
 
         <!-- Mango KV 存储 API，用于安全防护服务 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.kv</groupId>
             <artifactId>mango-infra-kv-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 基础上下文能力，用于登录期按租户加载授权快照 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-core</artifactId>
             <version>${project.version}</version>
         </dependency>

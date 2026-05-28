@@ -9,7 +9,8 @@
     "build": "pnpm -r build",
     "build:micro": "pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "publish:pkg": "node ./scripts/publish-package.mjs"
   },
   "devDependencies": {
     "typescript": "^5.3.3",

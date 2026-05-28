@@ -1,0 +1,11 @@
+# 前端组件开发规范治理交付台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| FCOMP-001 | 用户要求 | 追加前端组件开发规范 | 新增 `rules/frontend/03-component-development.md` | `mango-pmo/rules/frontend/03-component-development.md` | 人工检查规范内容覆盖组件职责、拆分、包边界、API、样式、测试 | DONE | `mango-pmo/rules/frontend/03-component-development.md` |
+| FCOMP-002 | 用户要求 | Mango 是开发脚手架，组件必须遵守 Mango 特性 | 规范明确单体部署、微前端部署、npm 独立消费和业务复用要求 | `mango-pmo/rules/frontend/03-component-development.md` | 人工检查规范内容覆盖 Mango 单体、微前端、npm 独立消费和业务复用 | DONE | `mango-pmo/rules/frontend/03-component-development.md` |
+| FCOMP-003 | 用户要求 | 组件会发布到私有或公开 npm 仓库，必须保证独立组件使用时的可用性和可靠性 | 规范新增 npm 发布要求和独立消费要求，覆盖 peer 依赖、exports、types、构建产物、样式、资源、降级、版本和迁移说明 | `mango-pmo/rules/frontend/03-component-development.md` | 人工检查规范内容覆盖 npm 发布与独立消费可用性、可靠性要求 | DONE | `mango-pmo/rules/frontend/03-component-development.md` |
+| FCOMP-004 | PMO 规范源规则 | 长期规范必须收口到 `mango-pmo`，业务模板只携带 baseline 快照 | 更新 `mango-pmo` 后同步业务 starter 和 create-mango-app baseline | 三处规范文件和 `rules/index.json` | 检查三处 index 均包含 `frontend.componentDevelopment`，三处均有组件规范文件 | DONE | `mango-pmo/rules/index.json`、`mango-business-starter/.../rules/index.json`、`mango-ui/.../rules/index.json` |
+| FCOMP-005 | PMO 验证要求 | 新规范必须能通过 preflight 被前端组件任务加载 | 前端 bundle 接入 `frontend.componentDevelopment` | `rules/index.json` | `pmo-preflight` 输出包含 `rules/frontend/03-component-development.md` | DONE | `node mango-pmo/tools/pmo-preflight.mjs --role dev --phase develop --task "新增前端公共组件" --paths "mango-ui/packages/common/src/components/example/index.vue"` |
+| FCOMP-006 | 模板要求 | 业务 starter 和 create-mango-app 模板必须携带组件规范 | 更新模板 requiredFiles 和 contentChecks | `mango-business-starter/scripts/check-template.mjs`、`mango-ui/.../scripts/check-template.mjs` | 模板检查和 CLI 检查通过 | DONE | `node mango-business-starter/scripts/check-template.mjs`、`node mango-ui/packages/create-mango-app/templates/mango-business-starter/scripts/check-template.mjs`、`node mango-ui/packages/create-mango-app/scripts/check-cli.mjs` |
+| FCOMP-007 | PMO 要求 | 本次治理必须有计划、台账和验证记录 | 新增治理计划和交付台账 | 计划和台账 | `delivery-contract-check` verify 通过 | DONE | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-28-frontend-component-standards-governance-plan.md --ledger mango-docs/plans/2026-05-28-frontend-component-standards-governance-ledger.md --mode verify` |

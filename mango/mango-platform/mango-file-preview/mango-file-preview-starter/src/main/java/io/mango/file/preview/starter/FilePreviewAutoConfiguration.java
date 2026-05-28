@@ -14,6 +14,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @ConditionalOnClass(IFilePreviewService.class)
 @ConditionalOnProperty(prefix = "mango.file-preview", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(FilePreviewProperties.class)
+@PropertySource(value = "classpath:/mango-file-preview-engine.properties", ignoreResourceNotFound = true)
 @ComponentScan({
         "io.mango.file.preview.core",
         "io.mango.file.preview.starter",

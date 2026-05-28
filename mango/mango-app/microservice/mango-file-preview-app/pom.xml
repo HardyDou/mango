@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.app.microservice</groupId>
         <artifactId>mango-app-microservice</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -19,35 +19,35 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.module</groupId>
             <artifactId>mango-infra-module-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.kv</groupId>
             <artifactId>mango-infra-kv-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-resource-access-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.file</groupId>
             <artifactId>mango-file-starter-remote</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.file.preview</groupId>
             <artifactId>mango-file-preview-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.doc</groupId>
             <artifactId>mango-infra-doc-starter</artifactId>
         </dependency>
         <dependency>

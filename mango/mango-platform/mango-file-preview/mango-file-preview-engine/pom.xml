@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.file.preview</groupId>
         <artifactId>mango-file-preview</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -17,7 +17,7 @@
         <jodconverter.version>4.4.11</jodconverter.version>
         <poi.version>5.2.5</poi.version>
         <xdocreport.version>1.0.6</xdocreport.version>
-        <aspose-cad.version>25.10</aspose-cad.version>
+        <aspose-cad.version>20.3</aspose-cad.version>
         <pdfbox.version>3.0.6</pdfbox.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
         <jbig2-imageio.version>3.0.4</jbig2-imageio.version>

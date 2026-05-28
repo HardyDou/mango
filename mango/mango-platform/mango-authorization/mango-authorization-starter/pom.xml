@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.mango</groupId>
+        <groupId>io.mango.platform.authorization</groupId>
         <artifactId>mango-authorization</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -19,34 +19,34 @@
     <dependencies>
         <!-- Mango 授权核心实现 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 通用能力 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
 
         <!-- Mango 授权与安全 API -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 基础安全 Starter，提供自动配置的 ITokenProvider 实现 -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-support</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Mango 基础 Web Starter，用于 IInternalPathProvider -->
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
