@@ -20,12 +20,20 @@ const requiredFiles = [
   'business-pmo/mango-baseline/rules/01-delivery-contract.md',
   'business-pmo/mango-baseline/rules/02-dev-environment.md',
   'business-pmo/mango-baseline/rules/03-ai-coding-redlines.md',
+  'business-pmo/mango-baseline/rules/backend/01-code.md',
+  'business-pmo/mango-baseline/rules/backend/02-naming.md',
   'business-pmo/mango-baseline/rules/backend/03-api.md',
   'business-pmo/mango-baseline/rules/backend/04-db.md',
   'business-pmo/mango-baseline/rules/backend/05-module.md',
+  'business-pmo/mango-baseline/rules/backend/06-security.md',
+  'business-pmo/mango-baseline/rules/backend/07-persistence.md',
   'business-pmo/mango-baseline/rules/backend/08-test.md',
+  'business-pmo/mango-baseline/rules/backend/09-versioning.md',
+  'business-pmo/mango-baseline/rules/backend/10-dev-flow.md',
   'business-pmo/mango-baseline/rules/frontend/01-vue-code.md',
+  'business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md',
   'business-pmo/mango-baseline/rules/frontend/04-test.md',
+  'business-pmo/mango-baseline/rules/frontend/05-dev-flow.md',
   'business-pmo/mango-baseline/rules/frontend/06-monorepo-architecture.md',
   'business-pmo/mango-baseline/rules/product/01-prd-template.md',
   'business-pmo/mango-baseline/rules/product/02-sprint.md',
@@ -114,7 +122,15 @@ const contentChecks = [
   },
   {
     file: 'business-pmo/mango-baseline/rules/index.json',
-    patterns: ['"rules/03-ai-coding-redlines.md"', '"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
+    patterns: ['"rules/03-ai-coding-redlines.md"', '"frontend.elementPlusUi"', '"rules/frontend/02-element-plus-ui.md"', '"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
+  },
+  {
+    file: 'business-pmo/mango-baseline/rules/backend/10-dev-flow.md',
+    patterns: ['必须先拆解需求并提取', '字典和枚举', '数据模型', '设计模式'],
+  },
+  {
+    file: 'business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md',
+    patterns: ['Element Plus UI 规范', '选择组件必须优先支持单选', '必须支持输入检索', '业务状态统一使用 `ElTag`'],
   },
 ];
 
