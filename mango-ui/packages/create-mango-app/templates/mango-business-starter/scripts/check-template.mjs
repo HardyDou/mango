@@ -32,6 +32,7 @@ const requiredFiles = [
   'business-pmo/mango-baseline/rules/backend/10-dev-flow.md',
   'business-pmo/mango-baseline/rules/frontend/01-vue-code.md',
   'business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md',
+  'business-pmo/mango-baseline/rules/frontend/03-component-development.md',
   'business-pmo/mango-baseline/rules/frontend/04-test.md',
   'business-pmo/mango-baseline/rules/frontend/05-dev-flow.md',
   'business-pmo/mango-baseline/rules/frontend/06-monorepo-architecture.md',
@@ -122,7 +123,7 @@ const contentChecks = [
   },
   {
     file: 'business-pmo/mango-baseline/rules/index.json',
-    patterns: ['"rules/03-ai-coding-redlines.md"', '"frontend.elementPlusUi"', '"rules/frontend/02-element-plus-ui.md"', '"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
+    patterns: ['"rules/03-ai-coding-redlines.md"', '"frontend.elementPlusUi"', '"frontend.componentDevelopment"', '"rules/frontend/02-element-plus-ui.md"', '"rules/frontend/03-component-development.md"', '"backend/**"', '"frontend/**"', '"business-docs/**"', '"business-pmo/**"'],
   },
   {
     file: 'business-pmo/mango-baseline/rules/backend/10-dev-flow.md',
@@ -131,6 +132,10 @@ const contentChecks = [
   {
     file: 'business-pmo/mango-baseline/rules/frontend/02-element-plus-ui.md',
     patterns: ['Element Plus UI 规范', '选择组件必须优先支持单选', '必须支持输入检索', '业务状态统一使用 `ElTag`'],
+  },
+  {
+    file: 'business-pmo/mango-baseline/rules/frontend/03-component-development.md',
+    patterns: ['前端组件开发规范', '单体部署', '微前端部署', 'npm 独立消费', '独立消费要求', '组件包禁止依赖 `apps/*`'],
   },
 ];
 

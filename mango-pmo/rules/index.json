@@ -95,6 +95,10 @@
       "path": "rules/frontend/02-element-plus-ui.md",
       "reason": "Element Plus UI 规范"
     },
+    "frontend.componentDevelopment": {
+      "path": "rules/frontend/03-component-development.md",
+      "reason": "前端组件开发规范"
+    },
     "frontend.test": {
       "path": "rules/frontend/04-test.md",
       "reason": "前端测试规范"
@@ -139,8 +143,8 @@
     },
     "frontend": {
       "paths": ["mango-ui/**", "apps/**", "packages/**"],
-      "keywords": ["前端", "页面", "Vue", "组件", "路由", "E2E", "Playwright", "UI", "Element Plus", "列表", "搜索", "表格", "状态"],
-      "include": ["frontend.devFlow", "frontend.vue", "frontend.elementPlusUi", "frontend.monorepo", "frontend.test"]
+      "keywords": ["前端", "页面", "Vue", "组件", "路由", "E2E", "Playwright", "UI", "Element Plus", "列表", "搜索", "表格", "状态", "微前端", "单体", "npm"],
+      "include": ["frontend.devFlow", "frontend.vue", "frontend.elementPlusUi", "frontend.componentDevelopment", "frontend.monorepo", "frontend.test"]
     },
     "pmo": {
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],
