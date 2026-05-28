@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.system.api.command.SavePersonalConfigCommand;
 import io.mango.system.api.query.PersonalConfigQuery;
 import io.mango.system.api.vo.PersonalConfigVO;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public interface PersonalConfigApi {
      * @param query 查询条件。
      * @return 当前用户配置列表。
      */
-    R<List<PersonalConfigVO>> list(PersonalConfigQuery query);
+    R<List<PersonalConfigVO>> list(@Valid PersonalConfigQuery query);
 
     /**
      * 查询当前用户单个配置。
@@ -26,7 +27,7 @@ public interface PersonalConfigApi {
      * @param query 查询条件。
      * @return 当前用户配置。
      */
-    R<PersonalConfigVO> getValue(PersonalConfigQuery query);
+    R<PersonalConfigVO> getValue(@Valid PersonalConfigQuery query);
 
     /**
      * 保存当前用户个人配置。
@@ -34,7 +35,7 @@ public interface PersonalConfigApi {
      * @param command 保存命令。
      * @return 保存后的配置。
      */
-    R<PersonalConfigVO> save(SavePersonalConfigCommand command);
+    R<PersonalConfigVO> save(@Valid SavePersonalConfigCommand command);
 
     /**
      * 删除当前用户个人配置。
@@ -42,5 +43,5 @@ public interface PersonalConfigApi {
      * @param query 删除条件。
      * @return 是否删除成功。
      */
-    R<Boolean> delete(PersonalConfigQuery query);
+    R<Boolean> delete(@Valid PersonalConfigQuery query);
 }

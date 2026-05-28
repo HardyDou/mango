@@ -1,6 +1,6 @@
 import { createRealtimeClient } from '@mango/common';
 import type { RealtimeClient, RealtimeMessage, RealtimeOptions } from '@mango/common';
-import type { NoticeSiteMessage } from '../types/notice';
+import type { NoticeSiteMessage, NoticeSoundType } from '../types/notice';
 
 export interface NoticeRealtimeEvent {
   messageId: string;
@@ -15,6 +15,8 @@ export interface NoticeRealtimeOptions {
   realtimeOptions?: RealtimeOptions;
 }
 
+const activeDesktopNotifications: Notification[] = [];
+
 export function requestDesktopPermission() {
   if (!('Notification' in window) || Notification.permission !== 'default') {
     return;
@@ -24,15 +26,51 @@ export function requestDesktopPermission() {
 
 export function showDesktopNotice(message: NoticeSiteMessage, onClick: () => void) {
   if (!('Notification' in window) || Notification.permission !== 'granted') {
-    return;
+    return false;
   }
-  const notification = new Notification('您有新消息了', { body: message.title });
-  notification.onclick = onClick;
+  const notification = new Notification(message.title || '您有新消息了', {
+    body: message.content || message.bizName || message.bizType || '',
+    tag: message.id,
+    requireInteraction: false,
+    silent: false,
+  });
+  activeDesktopNotifications.push(notification);
+  notification.onclick = () => {
+    window.focus();
+    onClick();
+    notification.close();
+  };
+  notification.onclose = () => {
+    const index = activeDesktopNotifications.indexOf(notification);
+    if (index >= 0) {
+      activeDesktopNotifications.splice(index, 1);
+    }
+  };
+  window.setTimeout(() => notification.close(), 8000);
+  return true;
 }
 
-export function playNoticeSound() {
-  const audio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=');
-  void audio.play().catch(() => undefined);
+export function playNoticeSound(soundType: NoticeSoundType = 'IM') {
+  if (soundType === 'NONE') {
+    return;
+  }
+  const audioContext = new AudioContext();
+  const now = audioContext.currentTime;
+  const steps = soundPattern(soundType);
+  steps.forEach(step => {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(step.frequency, now + step.start);
+    gain.gain.setValueAtTime(0.0001, now + step.start);
+    gain.gain.exponentialRampToValueAtTime(step.volume, now + step.start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + step.start + step.duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(now + step.start);
+    oscillator.stop(now + step.start + step.duration + 0.02);
+  });
+  window.setTimeout(() => void audioContext.close().catch(() => undefined), 900);
 }
 
 export function speakNoticeText(text?: string) {
@@ -46,6 +84,22 @@ export function speakNoticeText(text?: string) {
   utterance.rate = 1;
   utterance.pitch = 1;
   window.speechSynthesis.speak(utterance);
+}
+
+function soundPattern(soundType: NoticeSoundType) {
+  if (soundType === 'SOFT') {
+    return [{ start: 0, duration: 0.18, frequency: 660, volume: 0.06 }];
+  }
+  if (soundType === 'DOUBLE') {
+    return [
+      { start: 0, duration: 0.12, frequency: 740, volume: 0.07 },
+      { start: 0.16, duration: 0.12, frequency: 920, volume: 0.07 },
+    ];
+  }
+  return [
+    { start: 0, duration: 0.1, frequency: 880, volume: 0.08 },
+    { start: 0.11, duration: 0.14, frequency: 1175, volume: 0.08 },
+  ];
 }
 
 export function createNoticeRealtime(handler: NoticeRealtimeHandler, options: NoticeRealtimeOptions = {}) {

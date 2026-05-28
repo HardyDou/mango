@@ -37,7 +37,7 @@ import { iconMap } from '@mango/common/utils/iconConfig';
 import type { RealtimeOptions } from '@mango/common';
 import { getMySiteMessageDetail, getMySiteMessages, getMyUnreadCount, markAllMySiteMessagesRead, markMySiteMessageRead } from '../api/notice';
 import NoticeDetailDialog from '../components/NoticeDetailDialog.vue';
-import { createNoticeRealtime, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../realtime/noticeRealtime';
+import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../realtime/noticeRealtime';
 import type { NoticeSiteMessage } from '../types/notice';
 import type { NoticeClientBellRuntimeConfig } from './types';
 
@@ -116,7 +116,9 @@ function openReceiveSetting() {
 
 function defaultRuntimeConfig(): NoticeClientBellRuntimeConfig {
  return {
+  reminderMode: 'SOUND',
   voiceText: '您有新的系统消息，请及时查看',
+  soundType: 'IM',
   popupEnabled: true,
   popupPlacement: 'top-right',
   desktopNotificationEnabled: true,
@@ -141,6 +143,14 @@ function voiceText(config: NoticeClientBellRuntimeConfig, message: NoticeSiteMes
  return config.voiceText || config.soundText || message.title;
 }
 
+function soundType(config: NoticeClientBellRuntimeConfig) {
+ return config.soundType || 'IM';
+}
+
+function reminderMode(config: NoticeClientBellRuntimeConfig) {
+ return config.reminderMode || 'SOUND';
+}
+
 function bizDisplayName(message: NoticeSiteMessage) {
  return message.bizGroup || message.bizName || message.bizType || '通用消息';
 }
@@ -160,7 +170,11 @@ async function notifyNewMessage(message: NoticeSiteMessage) {
  emit('message-received', message);
  const config = await resolveRuntimeConfig();
  if (voiceEnabled(config)) {
-  speakNoticeText(voiceText(config, message));
+  if (reminderMode(config) === 'VOICE') {
+   speakNoticeText(voiceText(config, message));
+  } else {
+   playNoticeSound(soundType(config));
+  }
  }
  if (config.popupEnabled !== false) {
   ElNotification({

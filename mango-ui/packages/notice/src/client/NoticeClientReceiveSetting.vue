@@ -2,6 +2,139 @@
   <div class="notice-receive-setting-page">
     <el-card shadow="never" class="notice-section">
       <el-tabs v-model="activeTab" class="notice-receive-tabs">
+        <el-tab-pane label="提醒设置" name="reminder">
+          <el-form
+            :model="reminderSetting"
+            label-width="120px"
+            class="notice-reminder-form"
+            v-loading="loading.reminder"
+          >
+            <div class="notice-reminder-group">
+              <div class="notice-reminder-group__title">弹窗提示</div>
+              <el-row :gutter="24">
+                <el-col :xs="24" :md="12">
+                  <el-form-item label="弹窗提示">
+                    <el-switch
+                      v-model="reminderSetting.popupEnabled"
+                      active-text="开启"
+                      inactive-text="关闭"
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="24" :md="12">
+                  <el-form-item label="弹窗位置">
+                    <el-radio-group
+                      v-model="reminderSetting.popupPlacement"
+                      :disabled="!reminderSetting.popupEnabled"
+                    >
+                      <el-radio-button label="top-right">右上</el-radio-button>
+                      <el-radio-button label="bottom-right">右下</el-radio-button>
+                    </el-radio-group>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <div class="notice-reminder-group">
+              <div class="notice-reminder-group__title">声音提醒</div>
+              <el-row :gutter="24">
+                <el-col :xs="24" :md="12">
+                  <el-form-item label="声音提醒">
+                    <el-switch
+                      v-model="reminderSetting.voiceEnabled"
+                      active-text="开启"
+                      inactive-text="关闭"
+                    />
+                  </el-form-item>
+                  <el-form-item label="提醒方式">
+                    <el-radio-group
+                      v-model="reminderSetting.reminderMode"
+                      :disabled="!reminderSetting.voiceEnabled"
+                    >
+                      <el-radio-button label="SOUND">提示音</el-radio-button>
+                      <el-radio-button label="VOICE">语音播报</el-radio-button>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item
+                    v-if="reminderSetting.reminderMode === 'SOUND'"
+                    label="提示音"
+                  >
+                    <el-select
+                      v-model="reminderSetting.soundType"
+                      class="notice-form-control"
+                      :disabled="!reminderSetting.voiceEnabled"
+                    >
+                      <el-option label="清脆提示音" value="IM" />
+                      <el-option label="柔和提示音" value="SOFT" />
+                      <el-option label="双音提示音" value="DOUBLE" />
+                      <el-option label="无提示音" value="NONE" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item
+                    v-if="reminderSetting.reminderMode === 'VOICE'"
+                    label="提示内容"
+                  >
+                    <el-input
+                      v-model="reminderSetting.voiceText"
+                      :disabled="!reminderSetting.voiceEnabled"
+                      maxlength="80"
+                      show-word-limit
+                      placeholder="请输入语音播报内容"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <div class="notice-reminder-group">
+              <div class="notice-reminder-group__title">桌面提示</div>
+              <el-row :gutter="24">
+                <el-col :xs="24" :md="12">
+                  <el-form-item label="桌面提示">
+                    <div class="notice-desktop-setting">
+                      <el-switch
+                        v-model="reminderSetting.desktopNotificationEnabled"
+                        active-text="开启"
+                        inactive-text="关闭"
+                      />
+                      <el-tag :type="desktopPermissionTagType" effect="plain">
+                        {{ desktopPermissionText }}
+                      </el-tag>
+                      <el-button
+                        v-if="desktopPermission === 'default'"
+                        link
+                        type="primary"
+                        @click="requestDesktopNoticePermission"
+                      >
+                        授权
+                      </el-button>
+                    </div>
+                  </el-form-item>
+                </el-col>
+                <el-col v-if="desktopPermission === 'denied'" :xs="24">
+                  <el-alert
+                    title="浏览器已阻止桌面提示，请在地址栏左侧站点设置中允许通知。"
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                  />
+                </el-col>
+              </el-row>
+            </div>
+
+            <el-form-item class="notice-reminder-actions">
+              <el-button
+                type="primary"
+                :loading="reminderSaving"
+                @click="saveReminder"
+              >
+                保存
+              </el-button>
+              <el-button @click="testReminderSetting">测试提醒</el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
         <el-tab-pane label="账号" name="accounts">
           <el-table :data="accountRows" border stripe v-loading="loading.accounts">
             <el-table-column prop="label" label="账号类型" width="150" />
@@ -84,78 +217,6 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
-
-        <el-tab-pane label="提醒设置" name="reminder">
-          <el-form
-            :model="reminderSetting"
-            label-width="120px"
-            class="notice-reminder-form"
-            v-loading="loading.reminder"
-          >
-            <el-row :gutter="24">
-              <el-col :xs="24" :md="12">
-                <el-form-item label="弹窗提示">
-                  <el-switch
-                    v-model="reminderSetting.popupEnabled"
-                    active-text="开启"
-                    inactive-text="关闭"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :md="12">
-                <el-form-item label="弹窗位置">
-                  <el-radio-group
-                    v-model="reminderSetting.popupPlacement"
-                    :disabled="!reminderSetting.popupEnabled"
-                  >
-                    <el-radio-button label="top-right">右上</el-radio-button>
-                    <el-radio-button label="bottom-right">右下</el-radio-button>
-                  </el-radio-group>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :md="12">
-                <el-form-item label="语音提示">
-                  <el-switch
-                    v-model="reminderSetting.voiceEnabled"
-                    active-text="开启"
-                    inactive-text="关闭"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :md="12">
-                <el-form-item label="桌面通知">
-                  <el-switch
-                    v-model="reminderSetting.desktopNotificationEnabled"
-                    active-text="开启"
-                    inactive-text="关闭"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :md="16">
-                <el-form-item label="提示内容">
-                  <el-input
-                    v-model="reminderSetting.voiceText"
-                    :disabled="!reminderSetting.voiceEnabled"
-                    maxlength="80"
-                    show-word-limit
-                    placeholder="请输入语音播报内容"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24">
-                <el-form-item>
-                  <el-button
-                    type="primary"
-                    :loading="reminderSaving"
-                    @click="saveReminder"
-                  >
-                    保存
-                  </el-button>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
-        </el-tab-pane>
       </el-tabs>
     </el-card>
 
@@ -193,7 +254,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus';
 import {
   disableRecipientAccount,
   getBusinessTypes,
@@ -205,6 +266,7 @@ import {
   saveNoticeReminderSetting,
   saveRecipientAccount,
 } from '../api/notice';
+import { playNoticeSound, showDesktopNotice, speakNoticeText } from '../realtime/noticeRealtime';
 import type {
   NoticeBusinessType,
   NoticeChannelType,
@@ -214,6 +276,7 @@ import type {
   NoticeRecipientAccount,
   NoticeRecipientAccountStatus,
   NoticeRecipientAccountType,
+  NoticeSiteMessage,
 } from '../types/notice';
 
 type AccountRow = {
@@ -251,7 +314,7 @@ const preferenceChannels: Array<{ value: NoticeChannelType; label: string }> = [
   { value: 'DINGTALK', label: '钉钉' },
 ];
 
-const activeTab = ref('accounts');
+const activeTab = ref('reminder');
 const loading = reactive({ accounts: false, preferences: false, businessTypes: false, reminder: false });
 const accounts = ref<NoticeRecipientAccount[]>([]);
 const preferences = ref<NoticeReceivePreference[]>([]);
@@ -259,6 +322,7 @@ const businessTypes = ref<NoticeBusinessType[]>([]);
 const bizKeyword = ref('');
 const reminderSaving = ref(false);
 const reminderSetting = reactive<NoticeReminderSetting>(normalizeNoticeReminderSetting());
+const desktopPermission = ref<NotificationPermission | 'unsupported'>('unsupported');
 const accountDialog = reactive({
   visible: false,
   saving: false,
@@ -294,6 +358,26 @@ const filteredBusinessTypes = computed(() => {
 const accountDialogTitle = computed(() => {
   const label = accountTypeText(accountDialog.form.accountType);
   return `${accountDialog.form.id ? '修改' : '绑定'}${label}`;
+});
+
+const desktopPermissionText = computed(() => {
+  const textMap: Record<typeof desktopPermission.value, string> = {
+    granted: '已授权',
+    default: '未授权',
+    denied: '已阻止',
+    unsupported: '不支持',
+  };
+  return textMap[desktopPermission.value];
+});
+
+const desktopPermissionTagType = computed(() => {
+  const typeMap: Record<typeof desktopPermission.value, 'success' | 'warning' | 'danger' | 'info'> = {
+    granted: 'success',
+    default: 'warning',
+    denied: 'danger',
+    unsupported: 'info',
+  };
+  return typeMap[desktopPermission.value];
 });
 
 const allVisibleRowsEnabled = computed(() => {
@@ -449,6 +533,94 @@ async function saveReminder() {
   }
 }
 
+function testReminderSetting() {
+  const setting = normalizeNoticeReminderSetting(reminderSetting);
+  Object.assign(reminderSetting, setting);
+  const now = new Date().toLocaleString('zh-CN', { hour12: false });
+  const message: NoticeSiteMessage = {
+    id: `notice-reminder-test-${Date.now()}`,
+    title: '提醒设置测试',
+    content: `这是一条本地测试消息，用于验证浏览器内弹窗、语音提示和 Chrome 桌面提示。测试时间：${now}`,
+    userId: 'current',
+    priority: 'NORMAL',
+    readStatus: 'UNREAD',
+    bizGroup: '系统',
+    bizName: '提醒设置',
+    bizType: 'notice.reminder_test',
+    createTime: now,
+  };
+  if (setting.popupEnabled) {
+    try {
+      ElNotification({
+        title: message.title,
+        message: message.content,
+        type: 'info',
+        position: setting.popupPlacement,
+        duration: 5000,
+      });
+    } catch {
+      ElMessage.warning('浏览器内弹窗触发失败');
+    }
+  }
+  if (setting.voiceEnabled) {
+    try {
+      if (setting.reminderMode === 'VOICE') {
+        speakNoticeText(setting.voiceText || message.title);
+      } else {
+        playNoticeSound(setting.soundType);
+      }
+    } catch {
+      ElMessage.warning('声音提醒触发失败');
+    }
+  }
+  testDesktopNotification(message);
+  ElMessage.success('已触发本地提醒测试');
+}
+
+async function testDesktopNotification(message: NoticeSiteMessage) {
+  refreshDesktopPermission();
+  const setting = normalizeNoticeReminderSetting(reminderSetting);
+  if (!setting.desktopNotificationEnabled) {
+    return;
+  }
+  if (!('Notification' in window)) {
+    desktopPermission.value = 'unsupported';
+    ElMessage.warning('当前浏览器不支持桌面提示');
+    return;
+  }
+  if (desktopPermission.value === 'default') {
+    await requestDesktopNoticePermission();
+  }
+  if (desktopPermission.value === 'granted') {
+    try {
+      showDesktopNotice(message, () => undefined);
+    } catch {
+      ElMessage.warning('桌面提示触发失败');
+    }
+  } else if (desktopPermission.value === 'denied') {
+    ElMessage.warning('桌面提示已被浏览器阻止，请在站点设置中允许通知');
+  }
+}
+
+function refreshDesktopPermission() {
+  desktopPermission.value = 'Notification' in window ? Notification.permission : 'unsupported';
+}
+
+async function requestDesktopNoticePermission() {
+  if (!('Notification' in window)) {
+    desktopPermission.value = 'unsupported';
+    ElMessage.warning('当前浏览器不支持桌面提示');
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  desktopPermission.value = permission;
+  if (permission === 'granted') {
+    ElMessage.success('桌面提示已授权');
+  } else if (permission === 'denied') {
+    ElMessage.warning('桌面提示已被浏览器阻止');
+  }
+}
+
 async function disableAccount(row: NoticeRecipientAccount) {
   await ElMessageBox.confirm('确认解绑该账号吗？', '解绑确认', { type: 'warning' });
   await disableRecipientAccount(row.id);
@@ -509,6 +681,7 @@ function upsertPreference(preference: NoticeReceivePreference) {
 }
 
 onMounted(() => {
+  refreshDesktopPermission();
   void loadAccounts();
   void loadPreferences();
   void loadBusinessTypes();
@@ -543,6 +716,37 @@ onMounted(() => {
 .notice-reminder-form {
   max-width: 960px;
   padding-top: 4px;
+}
+
+.notice-reminder-group {
+  padding: 4px 0 10px;
+}
+
+.notice-reminder-group + .notice-reminder-group {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.notice-reminder-group__title {
+  margin-bottom: 14px;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.notice-reminder-actions {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.notice-desktop-setting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 </style>

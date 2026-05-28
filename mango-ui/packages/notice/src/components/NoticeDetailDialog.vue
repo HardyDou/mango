@@ -1,5 +1,5 @@
 <template>
- <el-dialog v-model="visible" :title="message?.title || '消息详情'" width="520px" class="notice-detail-dialog">
+ <el-dialog v-model="visible" :title="message?.title || '消息详情'" width="560px" class="notice-detail-dialog">
  <div v-if="message" class="notice-detail">
  <div class="notice-detail__content">{{ message.content || '-' }}</div>
  <div class="notice-detail__time">{{ message.createTime || '-' }}</div>
@@ -31,19 +31,26 @@ const visible = computed({
 
 <style scoped>
 .notice-detail {
- min-height: 120px;
+ display: flex;
+ flex-direction: column;
+ min-height: 220px;
+ max-height: 420px;
 }
 
 .notice-detail__content {
+ flex: 1;
+ overflow-y: auto;
+ padding-right: 4px;
  white-space: pre-wrap;
  word-break: break-word;
  color: var(--el-text-color-primary);
- font-size: 14px;
+ font-size: 15px;
  line-height: 1.8;
 }
 
 .notice-detail__time {
- margin-top: 20px;
+ flex: 0 0 auto;
+ margin-top: 16px;
  color: var(--el-text-color-secondary);
  font-size: 13px;
  line-height: 1.4;

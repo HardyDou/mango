@@ -72,12 +72,16 @@ export interface NoticeReceivePreference {
 }
 
 export type NoticePopupPlacement = 'top-right' | 'bottom-right';
+export type NoticeReminderMode = 'SOUND' | 'VOICE';
+export type NoticeSoundType = 'IM' | 'SOFT' | 'DOUBLE' | 'NONE';
 
 export interface NoticeReminderSetting {
   popupEnabled: boolean;
   popupPlacement: NoticePopupPlacement;
   voiceEnabled: boolean;
+  reminderMode: NoticeReminderMode;
   voiceText: string;
+  soundType: NoticeSoundType;
   desktopNotificationEnabled: boolean;
 }
 

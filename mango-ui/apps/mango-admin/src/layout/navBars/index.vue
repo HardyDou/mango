@@ -165,7 +165,9 @@ const goNoticeReceiveSetting = () => {
 async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
   const defaults: NoticeClientBellRuntimeConfig = {
     voiceEnabled: true,
+    reminderMode: 'SOUND',
     voiceText: '您有新的系统消息，请及时查看',
+    soundType: 'IM',
     popupEnabled: true,
     popupPlacement: 'top-right',
     desktopNotificationEnabled: true,

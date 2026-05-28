@@ -32,7 +32,9 @@ export const defaultNoticeReminderSetting: NoticeReminderSetting = {
   popupEnabled: true,
   popupPlacement: 'top-right',
   voiceEnabled: true,
+  reminderMode: 'SOUND',
   voiceText: '您有新的系统消息，请及时查看',
+  soundType: 'IM',
   desktopNotificationEnabled: true,
 };
 
@@ -293,6 +295,7 @@ export function normalizeNoticeReminderSetting(value?: unknown): NoticeReminderS
     soundEnabled?: boolean;
     soundText?: string;
   };
+  const soundTypes = new Set(['IM', 'SOFT', 'DOUBLE', 'NONE']);
   return {
     popupEnabled: typeof record.popupEnabled === 'boolean' ? record.popupEnabled : defaultNoticeReminderSetting.popupEnabled,
     popupPlacement: record.popupPlacement === 'bottom-right' ? 'bottom-right' : 'top-right',
@@ -301,11 +304,15 @@ export function normalizeNoticeReminderSetting(value?: unknown): NoticeReminderS
       : typeof record.soundEnabled === 'boolean'
         ? record.soundEnabled
         : defaultNoticeReminderSetting.voiceEnabled,
+    reminderMode: record.reminderMode === 'VOICE' ? 'VOICE' : 'SOUND',
     voiceText: typeof record.voiceText === 'string' && record.voiceText.trim()
       ? record.voiceText
       : typeof record.soundText === 'string' && record.soundText.trim()
         ? record.soundText
         : defaultNoticeReminderSetting.voiceText,
+    soundType: typeof record.soundType === 'string' && soundTypes.has(record.soundType)
+      ? record.soundType
+      : defaultNoticeReminderSetting.soundType,
     desktopNotificationEnabled: typeof record.desktopNotificationEnabled === 'boolean'
       ? record.desktopNotificationEnabled
       : defaultNoticeReminderSetting.desktopNotificationEnabled,
