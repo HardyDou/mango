@@ -10,6 +10,10 @@ export { default as NoticeReceiveSettingView } from './views/receive-setting/ind
 export { default as NoticeRetryView } from './views/retry/index.vue';
 export { default as NoticeBell } from './components/NoticeBell.vue';
 export { default as NoticeDetailDialog } from './components/NoticeDetailDialog.vue';
+export { default as NoticeClientBell } from './client/NoticeClientBell.vue';
+export { default as NoticeClientMessageCenter } from './client/NoticeClientMessageCenter.vue';
+export { default as NoticeClientReceiveSetting } from './client/NoticeClientReceiveSetting.vue';
+export * from './client/types';
 export * from './api/notice';
 export * from './types/notice';
 export * from './realtime/noticeRealtime';

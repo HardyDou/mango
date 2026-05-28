@@ -2,6 +2,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNoticeRealtime, playNoticeSound, requestDesktopPermission, showDesktopNotice, speakNoticeText } from '../noticeRealtime';
 import type { NoticeSiteMessage } from '../../types/notice';
 
+const realtimeMock = vi.hoisted(() => ({
+  subscribeHandler: undefined as ((message: unknown) => void) | undefined,
+  disconnect: vi.fn(),
+  createRealtimeClient: vi.fn(() => ({
+    subscribe: vi.fn((_type: string, handler: (message: unknown) => void) => {
+      realtimeMock.subscribeHandler = handler;
+      return vi.fn();
+    }),
+    disconnect: realtimeMock.disconnect,
+  })),
+}));
+
+vi.mock('@mango/common', async importOriginal => ({
+  ...(await importOriginal<typeof import('@mango/common')>()),
+  createRealtimeClient: realtimeMock.createRealtimeClient,
+}));
+
 const message: NoticeSiteMessage = {
   id: '1001',
   title: '新的审批消息',
@@ -15,6 +32,9 @@ describe('noticeRealtime', () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    realtimeMock.subscribeHandler = undefined;
+    realtimeMock.disconnect.mockClear();
+    realtimeMock.createRealtimeClient.mockClear();
   });
 
   it('requestDesktopPermission 仅在默认权限时申请桌面通知权限', () => {
@@ -104,5 +124,30 @@ describe('noticeRealtime', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith({ messageId: '1001', title: '新的审批消息' });
+  });
+
+  it('createNoticeRealtime 将调用方 realtime 配置透传并解析文本 payload', async () => {
+    const handler = vi.fn();
+    const stop = createNoticeRealtime(handler, {
+      realtimeOptions: {
+        identity: { tenantId: '1', userId: 1 },
+        mode: 'polling',
+      },
+    });
+
+    realtimeMock.subscribeHandler?.({
+      event: { domain: 'default', name: 'notice' },
+      payload: { type: 'text', text: '{"messageId":"2001","title":"实时消息"}' },
+    });
+    await Promise.resolve();
+    stop();
+
+    expect(realtimeMock.createRealtimeClient).toHaveBeenCalledWith({
+      identity: { tenantId: '1', userId: 1 },
+      mode: 'polling',
+      autoConnect: true,
+    });
+    expect(handler).toHaveBeenCalledWith({ messageId: '2001', title: '实时消息', bizType: undefined, contentPreview: undefined });
+    expect(realtimeMock.disconnect).toHaveBeenCalledWith('notice-bell-destroyed');
   });
 });

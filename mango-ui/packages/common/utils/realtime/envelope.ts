@@ -103,7 +103,7 @@ export function normalizeMessageKind(message: RealtimeMessage): RealtimeMessageK
   const bareEventName = message.event?.name || message.type || '';
   if (eventName === 'system.heartbeat.ping' || bareEventName === 'heartbeat.ping' || eventName === 'ping' || message.type === 'HEART') return REALTIME_MESSAGE_KIND.HEART;
   if (eventName === 'system.heartbeat.pong' || bareEventName === 'heartbeat.pong' || eventName === 'pong' || message.type === 'PONG') return REALTIME_MESSAGE_KIND.PONG;
-  if (eventName === 'system.connection.connected' || bareEventName === 'connection.connected' || eventName === 'notice' || message.type === 'NOTICE') return REALTIME_MESSAGE_KIND.NOTICE;
+  if (eventName === 'system.connection.connected' || bareEventName === 'connection.connected' || message.type === 'NOTICE') return REALTIME_MESSAGE_KIND.NOTICE;
   if (eventName.endsWith('.accepted') || eventName === 'ack' || message.type === 'ACK') return REALTIME_MESSAGE_KIND.ACK;
   if (eventName === 'error' || eventName.endsWith('.error') || message.type === 'ERROR' || message.status?.state === 'ERROR') return REALTIME_MESSAGE_KIND.ERROR;
   return undefined;

@@ -1,3 +1,5 @@
+import { createRealtimeClient } from '@mango/common';
+import type { RealtimeClient, RealtimeMessage, RealtimeOptions } from '@mango/common';
 import type { NoticeSiteMessage } from '../types/notice';
 
 export interface NoticeRealtimeEvent {
@@ -7,7 +9,11 @@ export interface NoticeRealtimeEvent {
   contentPreview?: string;
 }
 
-export type NoticeRealtimeHandler = (event: NoticeRealtimeEvent) => void;
+export type NoticeRealtimeHandler = (event: NoticeRealtimeEvent) => void | Promise<void>;
+
+export interface NoticeRealtimeOptions {
+  realtimeOptions?: RealtimeOptions;
+}
 
 export function requestDesktopPermission() {
   if (!('Notification' in window) || Notification.permission !== 'default') {
@@ -42,13 +48,71 @@ export function speakNoticeText(text?: string) {
   window.speechSynthesis.speak(utterance);
 }
 
-export function createNoticeRealtime(handler: NoticeRealtimeHandler) {
+export function createNoticeRealtime(handler: NoticeRealtimeHandler, options: NoticeRealtimeOptions = {}) {
+  let client: RealtimeClient | undefined;
   const listener = (event: Event) => {
     const detail = (event as CustomEvent<NoticeRealtimeEvent>).detail;
     if (detail?.messageId) {
-      handler(detail);
+      notifyHandler(handler, detail);
     }
   };
   window.addEventListener('mango-notice-message', listener as EventListener);
-  return () => window.removeEventListener('mango-notice-message', listener as EventListener);
+  try {
+    client = createRealtimeClient({ ...(options.realtimeOptions || {}), autoConnect: true });
+    client.subscribe('notice', message => {
+      const event = toNoticeRealtimeEvent(message);
+      if (event?.messageId) {
+        notifyHandler(handler, event);
+      }
+    });
+  } catch {
+    client = undefined;
+  }
+  return () => {
+    window.removeEventListener('mango-notice-message', listener as EventListener);
+    client?.disconnect('notice-bell-destroyed');
+  };
+}
+
+function notifyHandler(handler: NoticeRealtimeHandler, event: NoticeRealtimeEvent) {
+  void Promise.resolve(handler(event)).catch(() => undefined);
+}
+
+function toNoticeRealtimeEvent(message: RealtimeMessage): NoticeRealtimeEvent | undefined {
+  const payload = normalizePayload(message.payload ?? message.content);
+  const messageId = payload.messageId ?? payload.id;
+  if (!messageId) {
+    return undefined;
+  }
+  return {
+    messageId: String(messageId),
+    title: String(payload.title || ''),
+    bizType: payload.bizType ? String(payload.bizType) : undefined,
+    contentPreview: payload.contentPreview ? String(payload.contentPreview) : undefined,
+  };
+}
+
+function normalizePayload(payload: unknown): Record<string, unknown> {
+  if (!payload) {
+    return {};
+  }
+  if (typeof payload === 'string') {
+    try {
+      const parsed = JSON.parse(payload);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof payload === 'object' && !Array.isArray(payload)) {
+    const record = payload as Record<string, unknown>;
+    if (typeof record.text === 'string') {
+      return normalizePayload(record.text);
+    }
+    if (typeof record.content === 'string') {
+      return normalizePayload(record.content);
+    }
+    return record;
+  }
+  return {};
 }

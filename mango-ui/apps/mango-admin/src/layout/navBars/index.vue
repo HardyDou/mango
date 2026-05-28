@@ -71,7 +71,12 @@
       <el-icon :size="20">
         <FullScreen />
       </el-icon>
-      <NoticeBell />
+      <NoticeBell
+        :load-runtime-config="loadNoticeRuntimeConfig"
+        :realtime-options="noticeRealtimeOptions"
+        @view-all="goNoticeMessages"
+        @settings="goNoticeReceiveSetting"
+      />
       <Settings />
       <User />
     </div>
@@ -87,7 +92,10 @@ import { useRoutesList } from '@/stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
-import { NoticeBell } from '@mango/notice';
+import { Session } from '@mango/common';
+import type { RealtimeOptions } from '@mango/common';
+import { NoticeBell, getChannelConfigs } from '@mango/notice';
+import type { NoticeClientBellRuntimeConfig } from '@mango/notice';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -107,6 +115,18 @@ const headerAsideExpanded = computed(() => {
     return layoutStore.isColumnsAsideOpen;
   }
   return !layoutStore.isCollapse;
+});
+
+const noticeRealtimeOptions = computed<RealtimeOptions>(() => {
+  const userInfo = Session.get('userInfo') || {};
+  const tenantId = userInfo.tenantId || Session.get('tenantId') || 'default';
+  const userId = userInfo.userId ?? userInfo.id;
+  return {
+    identity: {
+      tenantId: String(tenantId),
+      userId: userId == null ? null : userId,
+    },
+  };
 });
 
 const findTopByPath = (path: string): MangoMenuTreeNode | undefined => {
@@ -133,6 +153,34 @@ const onTopMenuClick = (item: MangoMenuTreeNode) => {
     router.push(targetPath);
   }
 };
+
+const goNoticeMessages = () => {
+  router.push('/notice/site-message');
+};
+
+const goNoticeReceiveSetting = () => {
+  router.push('/notice/receive-setting');
+};
+
+async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
+  const defaults: NoticeClientBellRuntimeConfig = {
+    soundEnabled: true,
+    soundText: '您有新的系统消息，请及时查看',
+    popupEnabled: true,
+    desktopNotificationEnabled: true,
+  };
+  try {
+    const result = await getChannelConfigs({ channelType: 'SITE', enabled: true, pageSize: 20 }, { silentError: true });
+    const siteChannel = (result.list || []).find(item => item.providerCode === 'INTERNAL') || result.list?.[0];
+    if (!siteChannel?.configJson) {
+      return defaults;
+    }
+    const parsed = JSON.parse(siteChannel.configJson);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? { ...defaults, ...parsed } : defaults;
+  } catch {
+    return defaults;
+  }
+}
 
 watch(
   () => [route.path, topMenus.value],
