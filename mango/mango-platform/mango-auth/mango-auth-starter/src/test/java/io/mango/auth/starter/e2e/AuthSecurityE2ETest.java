@@ -260,6 +260,12 @@ class AuthSecurityE2ETest {
                     return R.ok(Long.valueOf(1L).equals(userId) ? identityUser() : null);
                 }
 
+                @Override
+                public R<List<IdentityUserInfo>> listUserInfosByTarget(io.mango.identity.api.query.IdentityUserTargetQuery query) {
+                    return R.ok(query != null && Long.valueOf(1L).equals(query.getTargetId())
+                            ? List.of(identityUser()) : List.of());
+                }
+
                 private IdentityUserInfo identityUser() {
                     IdentityUserInfo user = new IdentityUserInfo();
                     user.setUserId(1L);

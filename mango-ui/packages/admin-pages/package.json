@@ -13,6 +13,7 @@
     "@mango/auth": "1.0.0",
     "@mango/calendar": "1.0.0",
     "@mango/file": "1.0.0",
+    "@mango/notice": "1.0.0",
     "@mango/numgen": "1.0.0",
     "@mango/rbac": "1.0.0",
     "@mango/system": "1.0.0",

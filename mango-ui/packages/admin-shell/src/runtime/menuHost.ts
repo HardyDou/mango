@@ -72,7 +72,7 @@ export function useMenuHost() {
       });
       menus.value = [
         createHomeRouteMenu(),
-        ...filterMenuForNav(response || []).map(toShellRouteMenu),
+        ...filterMenuForRoute(response || []).map(toShellRouteMenu),
         ...createDevRouteMenus(),
         ...createAccountRouteMenus(),
       ];
@@ -121,12 +121,12 @@ export function useMenuHost() {
   };
 }
 
-function filterMenuForNav(menus: ShellMenu[]): ShellMenu[] {
+function filterMenuForRoute(menus: ShellMenu[]): ShellMenu[] {
   return menus
-    .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON && menu.visible !== 0)
+    .filter(menu => menu.menuType !== MenuTypeEnum.BUTTON)
     .map(menu => ({
       ...menu,
-      children: menu.children ? filterMenuForNav(menu.children) : [],
+      children: menu.children ? filterMenuForRoute(menu.children) : [],
     }));
 }
 

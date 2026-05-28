@@ -15,4 +15,3 @@ Mango commit: 7bca6b8f
 ```text
 business-pmo/rules/
 ```
-

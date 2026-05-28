@@ -77,9 +77,19 @@ const getSideMenus = (items: any[], topPath?: string): any[] => {
     ? items.find(item => item.path === topPath)
     : findRouteTop(items, route.path);
   if (!activeTop) {
-    return items;
+    return filterVisibleMenus(items);
   }
-  return activeTop.children && activeTop.children.length > 0 ? activeTop.children : [activeTop];
+  const menus = activeTop.children && activeTop.children.length > 0 ? activeTop.children : [activeTop];
+  return filterVisibleMenus(menus);
+};
+
+const filterVisibleMenus = <T extends { meta?: { isHide?: boolean }; children?: T[] }>(items: T[]): T[] => {
+  return items
+    .filter(item => !item.meta?.isHide)
+    .map(item => ({
+      ...item,
+      children: item.children ? filterVisibleMenus(item.children) : item.children,
+    }));
 };
 
 watch(

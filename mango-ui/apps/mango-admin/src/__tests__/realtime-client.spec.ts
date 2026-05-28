@@ -186,4 +186,5 @@ describe('createRealtimeClient', () => {
     ]);
     client.disconnect();
   });
+
 });

@@ -1,5 +1,5 @@
 server:
-  port: 5555
+  port: ${MANGO_BACKEND_PORT:5555}
 
 spring:
   application:
@@ -13,10 +13,10 @@ spring:
       - org.redisson.spring.starter.RedissonAutoConfigurationV2
 
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/mango?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password:
+    url: ${MANGO_DB_URL:jdbc:mysql://127.0.0.1:3306/mango?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+    driver-class-name: ${MANGO_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+    username: ${MANGO_DB_USERNAME:root}
+    password: ${MANGO_DB_PASSWORD:}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
@@ -92,6 +92,7 @@ mango:
     capability:
       enabled: true
       token-store: true
+      outbox: true
   persistence:
     flyway:
       modules:
@@ -119,6 +120,8 @@ mango:
           enabled: true
         numgen:
           enabled: true
+        notice:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region
@@ -138,7 +141,7 @@ mango:
     storage-type: LOCAL
     default-bucket: local
     local:
-      root-path: ./data/files
+      root-path: ${MANGO_FILE_ROOT:./data/files}
   workflow:
     enabled: true
   authorization:
@@ -228,8 +231,8 @@ springdoc:
         url: /v3/api-docs/mango-org
       - name: mango-system
         url: /v3/api-docs/mango-system
-      - name: mango-biz-notification
-        url: /v3/api-docs/mango-biz-notification
+      - name: mango-notice
+        url: /v3/api-docs/mango-notice
       - name: mango-file
         url: /v3/api-docs/mango-file
       - name: mango-numgen

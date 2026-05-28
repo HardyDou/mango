@@ -6,9 +6,12 @@ import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
+
+import java.util.List;
 
 /**
  * 身份用户服务接口。
@@ -59,6 +62,11 @@ public interface IIdentityUserService {
      * 按用户 ID 查询身份资料。
      */
     IdentityUserInfo getUserInfoById(Long userId);
+
+    /**
+     * 按接收目标解析身份资料列表。
+     */
+    List<IdentityUserInfo> listUserInfosByTarget(IdentityUserTargetQuery query);
 
     /**
      * 按用户名查询用户实体。

@@ -39,14 +39,14 @@ export interface MenuConfigItem {
 }
 
 /**
- * 过滤菜单，移除按钮类型（menuType === 3），用于左侧导航
+ * 过滤菜单，移除按钮类型（menuType === 3）。隐藏菜单保留给路由注册，导航由 meta.isHide 控制。
  */
-function filterMenuForNav(menus: SysMenuVO[]): SysMenuVO[] {
+function filterMenuForRoute(menus: SysMenuVO[]): SysMenuVO[] {
   return menus
     .filter(menu => menu.menuType !== 3)
     .map(menu => ({
       ...menu,
-      children: menu.children ? filterMenuForNav(menu.children) : [],
+      children: menu.children ? filterMenuForRoute(menu.children) : [],
     })) as SysMenuVO[];
 }
 
@@ -209,6 +209,7 @@ export class MenuLoader {
         permissions: menu.meta?.permissions,
         keepAlive: menu.keepAlive === 1,
         embedded: menu.embedded === 1,
+        isHide: menu.visible === 0,
         captcha: menu.meta?.captcha,
       },
       component: menu.component,
@@ -224,7 +225,7 @@ export class MenuLoader {
    */
   async loadFromBackend(): Promise<MenuItem[]> {
     const response = await menuApi.getUserMenus({ fmt: 'tree' });
-    const backendMenus = filterMenuForNav(response.menus || []);
+    const backendMenus = filterMenuForRoute(response.menus || []);
     if (!backendMenus || backendMenus.length === 0) {
       this.resetBackendCache();
       throw new Error('后端菜单数据为空');

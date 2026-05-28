@@ -24,7 +24,7 @@
         <module>mango-auth</module>
         <module>mango-identity</module>
         <module>mango-captcha</module>
-        <module>mango-biz-notification</module>
+        <module>mango-notice</module>
         <module>mango-template</module>
         <module>mango-file</module>
         <module>mango-file-preview</module>

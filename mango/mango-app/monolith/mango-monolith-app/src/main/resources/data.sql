@@ -3,7 +3,7 @@
 -- 插入测试用户，密码使用 BCrypt 加密
 -- admin=admin123, testuser=test123, disabled=123456
 INSERT INTO identity_user (username, password, nickname, realm, actor_type, party_type, party_id, email, phone, status) VALUES
-('admin', '$2a$10$Hxg9OlCM4Y9kj31WEea/tuiYXtJABkOIlXf/u/b95OQrq8Uj7qbZK', 'Administrator', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 'admin@mango.io', '13800000001', 1),
+('admin', '$2a$10$Hxg9OlCM4Y9kj31WEea/tuiYXtJABkOIlXf/u/b95OQrq8Uj7qbZK', 'Administrator', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, '1012404303@qq.com', '18701445644', 1),
 ('testuser', '$2a$10$W7isC9On/7p1Zk4NFsEJDeQZOyWfXy7U3jx7Sze9UD8wsIMvMvIja', 'Test User', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 'test@mango.io', '13800000002', 1),
 ('disabled', '$2a$10$O5tck9vWzxKWRvzVffrxYeo/vcrC2AEmi6j6uvqXoFBZ9wBCz8AQ6', 'Disabled User', 'INTERNAL', 'INTERNAL_USER', 'INTERNAL_ORG', 1, 'disabled@mango.io', '13800000003', 0);
 

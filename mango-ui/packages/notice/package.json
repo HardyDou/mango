@@ -1,0 +1,27 @@
+{
+  "name": "@mango/notice",
+  "version": "1.0.0",
+  "private": false,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
+    "./client": "./src/client.ts",
+    "./realtime": "./src/realtime.ts",
+    "./api": "./src/api/notice.ts",
+    "./types": "./src/types/notice.ts"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.0.10",
+    "@mango/common": "1.0.0",
+    "@mango/system": "1.0.0"
+  },
+  "peerDependencies": {
+    "element-plus": "2.5.5",
+    "vue": "3.5.13",
+    "vue-router": "^4.1.6"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  }
+}

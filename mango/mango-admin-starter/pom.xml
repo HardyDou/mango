@@ -92,8 +92,8 @@
             <artifactId>mango-system-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mango.platform.biz.notification</groupId>
-            <artifactId>mango-biz-notification-starter</artifactId>
+            <groupId>io.mango.platform.notice</groupId>
+            <artifactId>mango-notice-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango.platform.file</groupId>

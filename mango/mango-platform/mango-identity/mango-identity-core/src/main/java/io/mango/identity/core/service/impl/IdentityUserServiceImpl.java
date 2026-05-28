@@ -3,6 +3,7 @@ package io.mango.identity.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.common.vo.PageResult;
@@ -11,6 +12,7 @@ import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
 import io.mango.identity.api.query.IdentityUserPageQuery;
+import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.identity.core.entity.IdentityUser;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -187,6 +190,21 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     }
 
     @Override
+    public List<IdentityUserInfo> listUserInfosByTarget(IdentityUserTargetQuery query) {
+        if (query == null || query.getTargetType() == null || query.getTargetId() == null) {
+            return List.of();
+        }
+        Set<Long> userIds = switch (query.getTargetType()) {
+            case USER -> currentTenantSubjectIds(query.getStatus()).contains(query.getTargetId())
+                    ? Set.of(query.getTargetId()) : Set.of();
+            case ORG -> currentTenantOrgUserIds(query.getTargetId(), query.getStatus());
+            case POST -> currentTenantPostUserIds(query.getTargetId(), query.getStatus());
+            case ROLE -> currentTenantRoleUserIds(query.getTargetId(), query.getStatus());
+        };
+        return listIdentityUserInfos(userIds);
+    }
+
+    @Override
     public IdentityUser getByUsername(String username) {
         return getByUsername(username, DEFAULT_REALM);
     }
@@ -242,6 +260,14 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
                 .like(StringUtils.hasText(query.getNickname()), IdentityUser::getNickname, query.getNickname())
                 .like(StringUtils.hasText(query.getPhone()), IdentityUser::getPhone, query.getPhone())
                 .like(StringUtils.hasText(query.getEmail()), IdentityUser::getEmail, query.getEmail())
+                .and(StringUtils.hasText(query.getKeyword()), keyword -> keyword
+                        .like(IdentityUser::getUsername, query.getKeyword())
+                        .or()
+                        .like(IdentityUser::getNickname, query.getKeyword())
+                        .or()
+                        .like(IdentityUser::getPhone, query.getKeyword())
+                        .or()
+                        .like(IdentityUser::getEmail, query.getKeyword()))
                 .eq(StringUtils.hasText(query.getRealm()), IdentityUser::getRealm, query.getRealm())
                 .eq(StringUtils.hasText(query.getActorType()), IdentityUser::getActorType, query.getActorType())
                 .eq(StringUtils.hasText(query.getPartyType()), IdentityUser::getPartyType, query.getPartyType())
@@ -306,6 +332,74 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return tenantMemberMapper.selectList(wrapper).stream()
                 .map(TenantMember::getUserId)
                 .collect(Collectors.toSet());
+    }
+
+    private Set<Long> currentTenantPostUserIds(Long postId, Integer memberStatus) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || postId == null) {
+            return Set.of();
+        }
+        List<TenantMemberOrgEntity> relations = tenantMemberOrgMapper.selectList(
+                new LambdaQueryWrapper<TenantMemberOrgEntity>()
+                        .eq(TenantMemberOrgEntity::getTenantId, tenantId)
+                        .eq(TenantMemberOrgEntity::getPostId, postId));
+        return currentTenantRelationUserIds(relations, memberStatus);
+    }
+
+    private Set<Long> currentTenantRoleUserIds(Long roleId, Integer memberStatus) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || roleId == null) {
+            return Set.of();
+        }
+        List<SubjectRoleBinding> bindings = subjectRoleBindingMapper.selectList(
+                new LambdaQueryWrapper<SubjectRoleBinding>()
+                        .eq(SubjectRoleBinding::getTenantId, tenantId)
+                        .eq(SubjectRoleBinding::getSubjectType, AuthorizationQuery.SUBJECT_TYPE_TENANT_MEMBER)
+                        .eq(SubjectRoleBinding::getRoleId, roleId));
+        if (bindings == null || bindings.isEmpty()) {
+            return Set.of();
+        }
+        Set<Long> memberIds = bindings.stream()
+                .map(SubjectRoleBinding::getSubjectId)
+                .collect(Collectors.toSet());
+        return currentTenantMemberUserIds(memberIds, memberStatus);
+    }
+
+    private Set<Long> currentTenantRelationUserIds(List<TenantMemberOrgEntity> relations, Integer memberStatus) {
+        if (relations == null || relations.isEmpty()) {
+            return Set.of();
+        }
+        Set<Long> memberIds = relations.stream()
+                .map(TenantMemberOrgEntity::getMemberId)
+                .collect(Collectors.toSet());
+        return currentTenantMemberUserIds(memberIds, memberStatus);
+    }
+
+    private Set<Long> currentTenantMemberUserIds(Collection<Long> memberIds, Integer memberStatus) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || memberIds == null || memberIds.isEmpty()) {
+            return Set.of();
+        }
+        LambdaQueryWrapper<TenantMember> wrapper = new LambdaQueryWrapper<TenantMember>()
+                .eq(TenantMember::getTenantId, tenantId)
+                .in(TenantMember::getMemberId, memberIds)
+                .isNull(TenantMember::getLeftAt);
+        wrapper.eq(memberStatus != null, TenantMember::getStatus, memberStatus);
+        return tenantMemberMapper.selectList(wrapper).stream()
+                .map(TenantMember::getUserId)
+                .collect(Collectors.toSet());
+    }
+
+    private List<IdentityUserInfo> listIdentityUserInfos(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        return identityUserMapper.selectList(new LambdaQueryWrapper<IdentityUser>()
+                        .in(IdentityUser::getUserId, userIds)
+                        .eq(IdentityUser::getStatus, 1))
+                .stream()
+                .map(this::buildIdentityUserInfo)
+                .toList();
     }
 
     private LambdaQueryWrapper<SubjectRoleBinding> currentTenantSubjectRoleWrapper(Long subjectId) {

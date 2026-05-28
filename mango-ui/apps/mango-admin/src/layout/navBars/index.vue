@@ -71,6 +71,12 @@
       <el-icon :size="20">
         <FullScreen />
       </el-icon>
+      <NoticeBell
+        :load-runtime-config="loadNoticeRuntimeConfig"
+        :realtime-options="noticeRealtimeOptions"
+        @view-all="goNoticeMessages"
+        @settings="goNoticeReceiveSetting"
+      />
       <Settings />
       <User />
     </div>
@@ -86,6 +92,10 @@ import { useRoutesList } from '@/stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
+import { Session } from '@mango/common';
+import type { RealtimeOptions } from '@mango/common';
+import { NoticeBell, getNoticeReminderSetting } from '@mango/notice/client';
+import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -105,6 +115,18 @@ const headerAsideExpanded = computed(() => {
     return layoutStore.isColumnsAsideOpen;
   }
   return !layoutStore.isCollapse;
+});
+
+const noticeRealtimeOptions = computed<RealtimeOptions>(() => {
+  const userInfo = Session.get('userInfo') || {};
+  const tenantId = userInfo.tenantId || Session.get('tenantId') || 'default';
+  const userId = userInfo.userId ?? userInfo.id;
+  return {
+    identity: {
+      tenantId: String(tenantId),
+      userId: userId == null ? null : userId,
+    },
+  };
 });
 
 const findTopByPath = (path: string): MangoMenuTreeNode | undefined => {
@@ -131,6 +153,31 @@ const onTopMenuClick = (item: MangoMenuTreeNode) => {
     router.push(targetPath);
   }
 };
+
+const goNoticeMessages = () => {
+  router.push('/notice/site-message');
+};
+
+const goNoticeReceiveSetting = () => {
+  router.push('/notice/receive-setting');
+};
+
+async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
+  const defaults: NoticeClientBellRuntimeConfig = {
+    voiceEnabled: true,
+    reminderMode: 'SOUND',
+    voiceText: '您有新的系统消息，请及时查看',
+    soundType: 'IM',
+    popupEnabled: true,
+    popupPlacement: 'top-right',
+    desktopNotificationEnabled: true,
+  };
+  try {
+    return { ...defaults, ...(await getNoticeReminderSetting()) };
+  } catch {
+    return defaults;
+  }
+}
 
 watch(
   () => [route.path, topMenus.value],

@@ -16,6 +16,9 @@ public class IdentityUserPageQuery extends PageQuery {
     @Schema(description = "用户名，支持模糊查询")
     private String username;
 
+    @Schema(description = "关键字，匹配用户名、昵称、手机号或邮箱")
+    private String keyword;
+
     @Schema(description = "昵称，支持模糊查询")
     private String nickname;
 

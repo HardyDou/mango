@@ -72,4 +72,3 @@
 - `@mango/admin-shell` 是较大的壳包产品化工作，本次只修复当前外部消费阻断和内部源码路径依赖。
 - npm 包当前仍以源码入口发布，完整 dist/types 发布策略需要单独 Sprint 收敛。
 - Initializr、初始化数据、资源同步规范需要 PMO/Tech Lead 评审后进入后续 Sprint。
-

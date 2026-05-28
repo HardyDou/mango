@@ -225,4 +225,9 @@ defineExpose({
     }
   }
 }
+
+:global(.w-e-full-screen-container) {
+  z-index: 3000 !important;
+  background: #fff;
+}
 </style>

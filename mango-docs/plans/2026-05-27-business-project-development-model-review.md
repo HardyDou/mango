@@ -473,4 +473,3 @@ mango-docs/plans/2026-05-27-business-project-development-model-review-record.md
 - 当前方案尚未实现业务模板仓库和 CLI。
 - 单仓模式要求 CODEOWNERS、PR 规则和 worktree 流程严格执行，否则仍可能产生职责混乱。
 - FE+AI 修改后端只能在后端 owner review 下使用，不能成为绕过后端质量责任的方式。
-

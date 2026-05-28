@@ -1,9 +1,13 @@
 package io.mango.authorization.support.autoconfigure;
 
+import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.support.autoconfigure.context.SpringSecurityContextProvider;
+import io.mango.authorization.support.autoconfigure.sensitive.AuthorizationSensitiveRawAccessProvider;
 import io.mango.authorization.support.autoconfigure.web.JsonAccessDeniedHandler;
 import io.mango.authorization.support.autoconfigure.web.JsonAuthenticationEntryPoint;
+import io.mango.infra.sensitive.api.ISensitiveRawAccessProvider;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,6 +34,16 @@ public class SecurityAutoConfiguration {
     @ConditionalOnMissingBean(ISecurityContextProvider.class)
     public ISecurityContextProvider securityContextProvider() {
         return new SpringSecurityContextProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ISensitiveRawAccessProvider.class)
+    public ISensitiveRawAccessProvider sensitiveRawAccessProvider(
+            ISecurityContextProvider securityContextProvider,
+            ObjectProvider<IAuthorizationProvider> authorizationProviders) {
+        return new AuthorizationSensitiveRawAccessProvider(
+                securityContextProvider,
+                authorizationProviders::getIfAvailable);
     }
 
     @Bean

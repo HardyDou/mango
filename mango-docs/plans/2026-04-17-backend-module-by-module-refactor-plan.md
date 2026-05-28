@@ -976,7 +976,7 @@ Phase 3 开始前以此清单作为迁移输入。
 ### 和 `mango-biz-notification` 的边界
 
 - `mango-infra-realtime` 是基础设施能力，只负责连接、会话、订阅、消息投递、SSE/WebSocket 协议适配。
-- `mango-infra-realtime` 不定义业务消息模型，不负责收件人、通知状态、消息记录、站内信业务语义。
+- `mango-infra-realtime` 不定义业务消息模型，不负责收件人、通知状态、消息记录、系统消息业务语义。
 - `mango-biz-notification` 是平台业务消息/通知域，负责业务消息模型、消息存储、通知状态、业务投递规则。
 - `mango-biz-notification` 可以依赖 `mango-infra-realtime` 完成实时投递，但不能把基础通信协议实现写回业务域。
 
