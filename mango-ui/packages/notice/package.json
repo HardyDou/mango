@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": false,
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin.ts",
+    "./client": "./src/client.ts",
+    "./realtime": "./src/realtime.ts",
+    "./api": "./src/api/notice.ts",
+    "./types": "./src/types/notice.ts"
+  },
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
     "@mango/common": "1.0.0",

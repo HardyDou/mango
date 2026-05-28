@@ -94,8 +94,8 @@ import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 import { Session } from '@mango/common';
 import type { RealtimeOptions } from '@mango/common';
-import { NoticeBell, getNoticeReminderSetting } from '@mango/notice';
-import type { NoticeClientBellRuntimeConfig } from '@mango/notice';
+import { NoticeBell, getNoticeReminderSetting } from '@mango/notice/client';
+import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));

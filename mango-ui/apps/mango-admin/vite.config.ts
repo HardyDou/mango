@@ -69,6 +69,9 @@ const createManualChunks = (id: string): string | undefined => {
 
 const alias: Record<string, string> = {
   '@': pathResolve('./src/'),
+  '@mango/notice/admin': resolve(__dirname, '../../packages/notice/src/admin.ts'),
+  '@mango/notice/client': resolve(__dirname, '../../packages/notice/src/client.ts'),
+  '@mango/notice/realtime': resolve(__dirname, '../../packages/notice/src/realtime.ts'),
   'vue-i18n': 'vue-i18n/dist/vue-i18n.cjs.js',
 };
 

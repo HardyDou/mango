@@ -131,7 +131,8 @@ async function loadMessages() {
     });
     const list = result.list || [];
     messages.value = readFilter.value === 'READ' ? list.filter(item => item.readStatus === 'READ') : list;
-    total.value = result.total || messages.value.length;
+    const totalValue = Number(result.total ?? messages.value.length);
+    total.value = Number.isFinite(totalValue) ? totalValue : messages.value.length;
   } finally {
     loading.value = false;
   }
@@ -205,7 +206,7 @@ function priorityText(priority: NoticePriority) {
 }
 
 function priorityTag(priority: NoticePriority) {
-  return ({ LOW: 'info', NORMAL: '', HIGH: 'warning', URGENT: 'danger' } as Record<NoticePriority, '' | 'info' | 'warning' | 'danger'>)[priority] || '';
+  return ({ LOW: 'info', NORMAL: 'info', HIGH: 'warning', URGENT: 'danger' } as Record<NoticePriority, 'info' | 'warning' | 'danger'>)[priority] || 'info';
 }
 
 onMounted(() => {

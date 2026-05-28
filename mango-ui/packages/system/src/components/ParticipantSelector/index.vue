@@ -257,10 +257,9 @@ async function ensureUsersLoaded() {
 
 function toUserOption(item: IdentityUserRecord): ParticipantOption | undefined {
   const id = item.userId ?? item.id ?? item.memberId;
-  const value = item.username ?? id;
   const name = item.nickname || item.memberName || item.username || id;
   const username = item.username && item.username !== name ? ` / ${item.username}` : '';
-  return value === undefined ? undefined : { value: String(value), label: `${name}${username}` };
+  return id === undefined ? undefined : { value: String(id), label: `${name}${username}` };
 }
 
 function selectedGroupOf(type: ParticipantType, values: string[], options: ParticipantTargetOption[]) {
