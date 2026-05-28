@@ -96,6 +96,13 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - 资源可靠：图标、样式、worker、wasm、字体等资源必须通过包内路径或明确 peer 方案提供。
 - 安全可靠：不得在组件内保存业务 token、租户上下文或文件访问地址；敏感上下文只能由宿主显式传入。
 
+## 8.2 发布账号
+
+- 发布到 Mango Nexus npm hosted 仓库时，必须复用 Maven/Nexus 发布账号。
+- npm 发布凭据只能配置在发布机用户级 npm 配置、CI secret 或临时环境变量中。
+- 禁止把 npm token、用户名、密码或 Maven server 密码写入仓库 `.npmrc`、`package.json`、脚本或文档示例。
+- Maven/Nexus 账号轮换时，npm 发布凭据必须同步轮换。
+
 ## 9. 示例与文档
 
 - 公共组件必须提供示例和 API 文档。
