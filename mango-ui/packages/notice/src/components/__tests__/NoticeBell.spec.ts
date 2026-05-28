@@ -190,6 +190,65 @@ describe('NoticeBell', () => {
     wrapper.unmount();
   });
 
+  it('收到消息后按提醒设置显示右下弹窗并使用列表单条格式', async () => {
+    apiMock.getMyUnreadCount
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 2 });
+    const wrapper = mount(NoticeClientBell, {
+      props: {
+        runtimeConfig: {
+          voiceEnabled: true,
+          voiceText: '新的系统消息',
+          popupEnabled: true,
+          popupPlacement: 'bottom-right',
+          desktopNotificationEnabled: false,
+        },
+      },
+      global: {
+        stubs: {
+          ElPopover: {
+            emits: ['show'],
+            mounted() {
+              this.$emit('show');
+            },
+            template: '<div><slot name="reference" /><div data-test="popover-panel"><slot /></div></div>',
+          },
+          ElBadge: {
+            props: ['value', 'hidden'],
+            template: '<span class="notice-bell-test-badge"><slot /><span v-if="!hidden" data-test="badge-count">{{ value }}</span></span>',
+          },
+          ElIcon: {
+            template: '<span><slot /></span>',
+          },
+          ElButton: {
+            emits: ['click'],
+            template: '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+          },
+          ElEmpty: {
+            template: '<div />',
+          },
+          NoticeDetailDialog: {
+            props: ['modelValue', 'message'],
+            template: '<div data-test="detail-dialog" :data-visible="String(modelValue)">{{ message?.content }}</div>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+    await realtimeMock.handler?.({ messageId: '1002', title: '新的审批' });
+    await flushPromises();
+
+    const notificationOptions = notificationMock.ElNotification.mock.calls[0][0];
+    expect(realtimeMock.speakNoticeText).toHaveBeenCalledWith('新的系统消息');
+    expect(realtimeMock.showDesktopNotice).not.toHaveBeenCalled();
+    expect(notificationOptions.title).toBe('测试系统消息');
+    expect(notificationOptions.position).toBe('bottom-right');
+    expect(notificationOptions.message.children[0].children).toBe('系统消息内容');
+    expect(notificationOptions.message.children[1].children).toBe('SYSTEM_NOTICE · 2026-05-26 10:00:00');
+    wrapper.unmount();
+  });
+
   it('点击系统消息提醒后打开详情并标记已读', async () => {
     const detail = { ...testMessage, id: '1002', title: '新的审批', content: '审批详情' };
     apiMock.getMyUnreadCount

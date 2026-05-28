@@ -13,12 +13,17 @@ import io.mango.identity.api.enums.IdentityUserTargetType;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
+import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
+import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
 import io.mango.notice.api.command.NoticeRecipientTargetCommand;
+import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
+import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
+import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
@@ -29,6 +34,10 @@ import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticeFailureCode;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
+import io.mango.notice.api.enums.NoticeReceivePreferenceScopeType;
+import io.mango.notice.api.enums.NoticeRecipientAccountStatus;
+import io.mango.notice.api.enums.NoticeRecipientAccountType;
+import io.mango.notice.api.enums.NoticeSendCancelCode;
 import io.mango.notice.api.enums.NoticeSendMode;
 import io.mango.notice.api.enums.NoticeSendStatus;
 import io.mango.notice.api.enums.NoticeSyncStatus;
@@ -36,6 +45,8 @@ import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
+import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.api.query.NoticeTaskPageQuery;
@@ -43,6 +54,8 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
+import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
@@ -53,6 +66,8 @@ import io.mango.notice.core.convert.NoticeBusinessConfigVersionConvert;
 import io.mango.notice.core.convert.NoticeBusinessTypeConvert;
 import io.mango.notice.core.convert.NoticeChannelConfigConvert;
 import io.mango.notice.core.convert.NoticeChannelTemplateConvert;
+import io.mango.notice.core.convert.NoticeReceivePreferenceConvert;
+import io.mango.notice.core.convert.NoticeRecipientAccountConvert;
 import io.mango.notice.core.convert.NoticeSendRecordConvert;
 import io.mango.notice.core.convert.NoticeSiteMessageConvert;
 import io.mango.notice.core.convert.NoticeTaskConvert;
@@ -60,7 +75,9 @@ import io.mango.notice.core.entity.NoticeBusinessChannelTemplateEntity;
 import io.mango.notice.core.entity.NoticeBusinessConfigVersionEntity;
 import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
+import io.mango.notice.core.entity.NoticeReceivePreferenceEntity;
 import io.mango.notice.core.entity.NoticeRecipientEntity;
+import io.mango.notice.core.entity.NoticeRecipientAccountEntity;
 import io.mango.notice.core.entity.NoticeSendRecordEntity;
 import io.mango.notice.core.entity.NoticeSettingEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
@@ -69,6 +86,8 @@ import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessConfigVersionMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
+import io.mango.notice.core.mapper.NoticeReceivePreferenceMapper;
+import io.mango.notice.core.mapper.NoticeRecipientAccountMapper;
 import io.mango.notice.core.mapper.NoticeRecipientMapper;
 import io.mango.notice.core.mapper.NoticeSendRecordMapper;
 import io.mango.notice.core.mapper.NoticeSettingMapper;
@@ -107,6 +126,8 @@ public class NoticeService implements INoticeService {
 
  private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\{\\{\\s*([^{}]+?)\\s*}}|\\$\\{\\s*([^}]+?)\\s*}");
  private static final int MAX_CHANNEL_ATTEMPTS = 3;
+ private static final List<NoticeSendStatus> RETRY_OPERABLE_STATUSES = List.of(NoticeSendStatus.FAILED,
+ NoticeSendStatus.RETRY_WAITING, NoticeSendStatus.FINAL_FAILED);
  private static final String MASKED_VALUE = "***";
  private static final String SITE_INTERNAL_PROVIDER = "INTERNAL";
  private static final Set<String> SENSITIVE_CONFIG_KEYS = Set.of("secret", "password", "token", "key", "appSecret",
@@ -118,6 +139,8 @@ public class NoticeService implements INoticeService {
  private final NoticeChannelConfigMapper channelConfigMapper;
  private final NoticeTaskMapper taskMapper;
  private final NoticeRecipientMapper recipientMapper;
+ private final NoticeRecipientAccountMapper recipientAccountMapper;
+ private final NoticeReceivePreferenceMapper receivePreferenceMapper;
  private final NoticeSendRecordMapper sendRecordMapper;
  private final NoticeSettingMapper settingMapper;
  private final List<NoticeChannelSender> channelSenders;
@@ -138,12 +161,13 @@ public class NoticeService implements INoticeService {
  for (NoticeRecipientCommand recipientCommand : recipients) {
  NoticeRecipientEntity recipient = createRecipient(task.getId(), recipientCommand);
  for (NoticeBusinessChannelTemplateEntity template : templates) {
- if (!canSendToRecipient(template.getChannelType(), recipient)) {
- continue;
- }
- createSendRecord(task, recipient, template, command);
+ SendDecision decision = evaluateSendDecision(businessType, template, recipient);
+ createSendRecord(task, recipient, template, command, decision);
  totalCount++;
  actualChannels.add(template.getChannelType());
+ if (!decision.allowed()) {
+ continue;
+ }
  }
  }
  Require.isTrue(totalCount > 0, "没有可发送的通知记录");
@@ -171,6 +195,13 @@ public class NoticeService implements INoticeService {
  List<NoticeSendRecordEntity> records = sendRecordMapper.selectList(new LambdaQueryWrapper<NoticeSendRecordEntity>()
  .eq(NoticeSendRecordEntity::getTaskId, taskId)
  .in(NoticeSendRecordEntity::getStatus, List.of(NoticeSendStatus.PENDING, NoticeSendStatus.RETRY_WAITING)));
+ if (records.isEmpty() && hasOnlyCanceledRecords(taskId)) {
+ task.setStatus(NoticeTaskStatus.CANCELED);
+ task.setSuccessCount(0);
+ task.setFailCount(0);
+ taskMapper.updateById(task);
+ return 0;
+ }
  int successCount = 0;
  int failCount = 0;
  int retryWaitingCount = 0;
@@ -205,6 +236,15 @@ public class NoticeService implements INoticeService {
  task.setStatus(resolveTaskStatus(totalSuccessCount, totalFailCount));
  taskMapper.updateById(task);
  return successCount;
+ }
+
+ private boolean hasOnlyCanceledRecords(Long taskId) {
+ Long total = sendRecordMapper.selectCount(new LambdaQueryWrapper<NoticeSendRecordEntity>()
+ .eq(NoticeSendRecordEntity::getTaskId, taskId));
+ Long canceled = sendRecordMapper.selectCount(new LambdaQueryWrapper<NoticeSendRecordEntity>()
+ .eq(NoticeSendRecordEntity::getTaskId, taskId)
+ .eq(NoticeSendRecordEntity::getStatus, NoticeSendStatus.CANCELED));
+ return total != null && total > 0 && total.equals(canceled);
  }
 
  @Override
@@ -586,10 +626,24 @@ public class NoticeService implements INoticeService {
  @Override
  public PageResult<NoticeSendRecordVO> listSendRecords(NoticeSendRecordPageQuery query) {
  LambdaQueryWrapper<NoticeSendRecordEntity> wrapper = new LambdaQueryWrapper<>();
+ Set<String> bizTypes = sendRecordBizTypes(query);
+ if (sendRecordHasBizTypeFilter(query) && bizTypes.isEmpty()) {
+ return PageResult.of(List.of(), 0, query.getPageNum(), query.getPageSize());
+ }
+ if (!bizTypes.isEmpty()) {
+ wrapper.in(NoticeSendRecordEntity::getBizType, bizTypes);
+ }
+ Set<Long> recipientIds = sendRecordRecipientIds(query);
+ if (StringUtils.hasText(query.getRecipientKeyword()) && recipientIds.isEmpty()) {
+ return PageResult.of(List.of(), 0, query.getPageNum(), query.getPageSize());
+ }
+ if (!recipientIds.isEmpty()) {
+ wrapper.in(NoticeSendRecordEntity::getRecipientId, recipientIds);
+ }
  if (query.getTaskId() != null) {
  wrapper.eq(NoticeSendRecordEntity::getTaskId, query.getTaskId());
  }
- if (StringUtils.hasText(query.getBizType())) {
+ if (StringUtils.hasText(query.getBizType()) && bizTypes.isEmpty()) {
  wrapper.eq(NoticeSendRecordEntity::getBizType, query.getBizType());
  }
  if (StringUtils.hasText(query.getBizId())) {
@@ -601,9 +655,226 @@ public class NoticeService implements INoticeService {
  if (query.getStatus() != null) {
  wrapper.eq(NoticeSendRecordEntity::getStatus, query.getStatus());
  }
+ if (query.getStartTime() != null) {
+ wrapper.ge(NoticeSendRecordEntity::getSentAt, query.getStartTime());
+ }
+ if (query.getEndTime() != null) {
+ wrapper.le(NoticeSendRecordEntity::getSentAt, query.getEndTime());
+ }
  wrapper.orderByDesc(NoticeSendRecordEntity::getCreatedAt);
  Page<NoticeSendRecordEntity> result = sendRecordMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
- return PageResult.of(result.getRecords().stream().map(NoticeSendRecordConvert::toVO).toList(), result.getTotal(), result.getCurrent(), result.getSize());
+ return PageResult.of(toSendRecordVOs(result.getRecords()), result.getTotal(), result.getCurrent(), result.getSize());
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean retrySendRecord(Long id) {
+ Require.notNull(id, "发送记录 ID 不能为空");
+ NoticeSendRecordEntity record = sendRecordMapper.selectById(id);
+ Require.notNull(record, "发送记录不存在");
+ Require.isTrue(RETRY_OPERABLE_STATUSES.contains(record.getStatus()), "当前状态不允许重试");
+ record.setStatus(NoticeSendStatus.RETRY_WAITING);
+ record.setNextRetryTime(LocalDateTime.now());
+ sendRecordMapper.updateById(record);
+ executeTask(record.getTaskId());
+ return true;
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean retrySendRecords(RetryNoticeSendRecordsCommand command) {
+ Require.notNull(command, "批量重试参数不能为空");
+ Require.isTrue(command.getIds() != null && !command.getIds().isEmpty(), "发送记录 ID 不能为空");
+ for (Long id : command.getIds()) {
+ retrySendRecord(id);
+ }
+ return true;
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean markSendRecordManualSuccess(Long id, HandleNoticeSendRecordCommand command) {
+ return handleFailedSendRecord(id, command, NoticeSendStatus.MANUAL_SUCCESS, "人工确认成功");
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean markSendRecordsManualSuccess(HandleNoticeSendRecordsCommand command) {
+ handleFailedSendRecords(command, NoticeSendStatus.MANUAL_SUCCESS, "人工确认成功");
+ return true;
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean ignoreSendRecord(Long id, HandleNoticeSendRecordCommand command) {
+ return handleFailedSendRecord(id, command, NoticeSendStatus.IGNORED, "忽略失败");
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean ignoreSendRecords(HandleNoticeSendRecordsCommand command) {
+ handleFailedSendRecords(command, NoticeSendStatus.IGNORED, "忽略失败");
+ return true;
+ }
+
+ private void handleFailedSendRecords(HandleNoticeSendRecordsCommand command, NoticeSendStatus status,
+ String operationName) {
+ Require.notNull(command, "批量处理参数不能为空");
+ Require.isTrue(command.getIds() != null && !command.getIds().isEmpty(), "发送记录 ID 不能为空");
+ Require.notBlank(command.getReason(), "处理原因不能为空");
+ Set<Long> taskIds = new LinkedHashSet<>();
+ for (Long id : command.getIds()) {
+ NoticeSendRecordEntity record = handleFailedSendRecord(id, command.getReason(), status, operationName, false);
+ taskIds.add(record.getTaskId());
+ }
+ for (Long taskId : taskIds) {
+ refreshTaskStatus(taskId);
+ }
+ }
+
+ private boolean handleFailedSendRecord(Long id, HandleNoticeSendRecordCommand command, NoticeSendStatus status,
+ String operationName) {
+ Require.notNull(id, "发送记录 ID 不能为空");
+ Require.notNull(command, "处理参数不能为空");
+ Require.notBlank(command.getReason(), "处理原因不能为空");
+ handleFailedSendRecord(id, command.getReason(), status, operationName, true);
+ return true;
+ }
+
+ private NoticeSendRecordEntity handleFailedSendRecord(Long id, String reason, NoticeSendStatus status,
+ String operationName, boolean refreshTask) {
+ NoticeSendRecordEntity record = sendRecordMapper.selectById(id);
+ Require.notNull(record, "发送记录不存在");
+ Require.isTrue(RETRY_OPERABLE_STATUSES.contains(record.getStatus()), "当前状态不允许处理");
+ record.setStatus(status);
+ record.setFailReason(operationName + "：" + reason);
+ record.setNextRetryTime(null);
+ record.setSentAt(LocalDateTime.now());
+ sendRecordMapper.updateById(record);
+ if (refreshTask) {
+ refreshTaskStatus(record.getTaskId());
+ }
+ return record;
+ }
+
+ private void refreshTaskStatus(Long taskId) {
+ if (taskId == null) {
+ return;
+ }
+ NoticeTaskEntity task = taskMapper.selectById(taskId);
+ if (task == null || task.getStatus() == NoticeTaskStatus.CANCELED) {
+ return;
+ }
+ List<NoticeSendRecordEntity> records = sendRecordMapper.selectList(new LambdaQueryWrapper<NoticeSendRecordEntity>()
+ .eq(NoticeSendRecordEntity::getTaskId, taskId));
+ int successCount = 0;
+ int failCount = 0;
+ for (NoticeSendRecordEntity record : records) {
+ if (record.getStatus() == NoticeSendStatus.SUCCESS || record.getStatus() == NoticeSendStatus.MANUAL_SUCCESS
+ || record.getStatus() == NoticeSendStatus.IGNORED || record.getStatus() == NoticeSendStatus.CANCELED) {
+ successCount++;
+ } else if (record.getStatus() == NoticeSendStatus.FAILED || record.getStatus() == NoticeSendStatus.RETRY_WAITING
+ || record.getStatus() == NoticeSendStatus.FINAL_FAILED) {
+ failCount++;
+ }
+ }
+ task.setSuccessCount(successCount);
+ task.setFailCount(failCount);
+ task.setStatus(resolveTaskStatus(successCount, failCount));
+ taskMapper.updateById(task);
+ }
+
+ private boolean sendRecordHasBizTypeFilter(NoticeSendRecordPageQuery query) {
+ return StringUtils.hasText(query.getBizGroup()) || StringUtils.hasText(query.getMessageName());
+ }
+
+ private Set<String> sendRecordBizTypes(NoticeSendRecordPageQuery query) {
+ if (!sendRecordHasBizTypeFilter(query)) {
+ return Collections.emptySet();
+ }
+ LambdaQueryWrapper<NoticeBusinessTypeEntity> wrapper = new LambdaQueryWrapper<>();
+ if (StringUtils.hasText(query.getBizType())) {
+ wrapper.eq(NoticeBusinessTypeEntity::getBizType, query.getBizType());
+ }
+ if (StringUtils.hasText(query.getBizGroup())) {
+ wrapper.like(NoticeBusinessTypeEntity::getBizGroup, query.getBizGroup());
+ }
+ if (StringUtils.hasText(query.getMessageName())) {
+ wrapper.like(NoticeBusinessTypeEntity::getBizName, query.getMessageName());
+ }
+ return businessTypeMapper.selectList(wrapper).stream()
+ .map(NoticeBusinessTypeEntity::getBizType)
+ .filter(StringUtils::hasText)
+ .collect(Collectors.toCollection(LinkedHashSet::new));
+ }
+
+ private Set<Long> sendRecordRecipientIds(NoticeSendRecordPageQuery query) {
+ if (!StringUtils.hasText(query.getRecipientKeyword())) {
+ return Collections.emptySet();
+ }
+ String keyword = query.getRecipientKeyword();
+ LambdaQueryWrapper<NoticeRecipientEntity> wrapper = new LambdaQueryWrapper<NoticeRecipientEntity>()
+ .like(NoticeRecipientEntity::getRecipientName, keyword)
+ .or()
+ .like(NoticeRecipientEntity::getMobile, keyword)
+ .or()
+ .like(NoticeRecipientEntity::getEmail, keyword)
+ .or()
+ .like(NoticeRecipientEntity::getWechatOpenid, keyword)
+ .or()
+ .like(NoticeRecipientEntity::getWecomUserId, keyword)
+ .or()
+ .like(NoticeRecipientEntity::getDingtalkUserId, keyword);
+ return recipientMapper.selectList(wrapper).stream()
+ .map(NoticeRecipientEntity::getId)
+ .collect(Collectors.toCollection(LinkedHashSet::new));
+ }
+
+ private List<NoticeSendRecordVO> toSendRecordVOs(List<NoticeSendRecordEntity> records) {
+ if (records.isEmpty()) {
+ return Collections.emptyList();
+ }
+ Set<String> bizTypes = records.stream()
+ .map(NoticeSendRecordEntity::getBizType)
+ .filter(StringUtils::hasText)
+ .collect(Collectors.toCollection(LinkedHashSet::new));
+ Map<String, NoticeBusinessTypeEntity> businessTypeMap = bizTypes.isEmpty()
+ ? Collections.emptyMap()
+ : businessTypeMapper.selectList(new LambdaQueryWrapper<NoticeBusinessTypeEntity>()
+ .in(NoticeBusinessTypeEntity::getBizType, bizTypes)).stream()
+ .collect(Collectors.toMap(NoticeBusinessTypeEntity::getBizType, Function.identity(), (left, right) -> left));
+ Set<Long> recipientIds = records.stream()
+ .map(NoticeSendRecordEntity::getRecipientId)
+ .filter(id -> id != null)
+ .collect(Collectors.toCollection(LinkedHashSet::new));
+ Map<Long, NoticeRecipientEntity> recipientMap = recipientIds.isEmpty()
+ ? Collections.emptyMap()
+ : recipientMapper.selectList(new LambdaQueryWrapper<NoticeRecipientEntity>()
+ .in(NoticeRecipientEntity::getId, recipientIds)).stream()
+ .collect(Collectors.toMap(NoticeRecipientEntity::getId, Function.identity(), (left, right) -> left));
+ Set<Long> templateIds = records.stream()
+ .map(NoticeSendRecordEntity::getBusinessChannelTemplateId)
+ .filter(id -> id != null)
+ .collect(Collectors.toCollection(LinkedHashSet::new));
+ Map<Long, NoticeBusinessChannelTemplateEntity> templateMap = templateIds.isEmpty()
+ ? Collections.emptyMap()
+ : channelTemplateMapper.selectList(new LambdaQueryWrapper<NoticeBusinessChannelTemplateEntity>()
+ .in(NoticeBusinessChannelTemplateEntity::getId, templateIds)).stream()
+ .collect(Collectors.toMap(NoticeBusinessChannelTemplateEntity::getId, Function.identity(), (left, right) -> left));
+ Set<Long> channelConfigIds = records.stream()
+ .map(NoticeSendRecordEntity::getChannelConfigId)
+ .filter(id -> id != null)
+ .collect(Collectors.toCollection(LinkedHashSet::new));
+ Map<Long, NoticeChannelConfigEntity> channelConfigMap = channelConfigIds.isEmpty()
+ ? Collections.emptyMap()
+ : channelConfigMapper.selectList(new LambdaQueryWrapper<NoticeChannelConfigEntity>()
+ .in(NoticeChannelConfigEntity::getId, channelConfigIds)).stream()
+ .collect(Collectors.toMap(NoticeChannelConfigEntity::getId, Function.identity(), (left, right) -> left));
+ return records.stream()
+ .map(record -> NoticeSendRecordConvert.toVO(record, businessTypeMap.get(record.getBizType()),
+ recipientMap.get(record.getRecipientId()), templateMap.get(record.getBusinessChannelTemplateId()),
+ channelConfigMap.get(record.getChannelConfigId())))
+ .toList();
  }
 
  @Override
@@ -629,6 +900,119 @@ public class NoticeService implements INoticeService {
  }
 
  @Override
+ public List<NoticeRecipientAccountVO> listRecipientAccounts(Long currentUserId, NoticeRecipientAccountQuery query) {
+ Long userId = resolveTargetUserId(currentUserId, query == null ? null : query.getUserId());
+ LambdaQueryWrapper<NoticeRecipientAccountEntity> wrapper = new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
+ .eq(NoticeRecipientAccountEntity::getUserId, userId)
+ .eq(NoticeRecipientAccountEntity::getEnabled, true);
+ if (query != null && query.getAccountType() != null) {
+ wrapper.eq(NoticeRecipientAccountEntity::getAccountType, query.getAccountType());
+ }
+ wrapper.orderByDesc(NoticeRecipientAccountEntity::getDefaultAccount)
+ .orderByDesc(NoticeRecipientAccountEntity::getUpdatedAt);
+ return recipientAccountMapper.selectList(wrapper).stream()
+ .map(NoticeRecipientAccountConvert::toVO)
+ .toList();
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public NoticeRecipientAccountVO saveRecipientAccount(Long currentUserId, SaveNoticeRecipientAccountCommand command) {
+ Require.notNull(command, "接收账户不能为空");
+ Long userId = resolveTargetUserId(currentUserId, command.getUserId());
+ NoticeRecipientAccountEntity entity = command.getId() == null
+ ? new NoticeRecipientAccountEntity()
+ : recipientAccountMapper.selectById(command.getId());
+ Require.notNull(entity, "接收账户不存在");
+ entity.setUserId(userId);
+ entity.setAccountType(command.getAccountType());
+ entity.setAccountValue(command.getAccountValue());
+ entity.setDisplayName(command.getDisplayName());
+ entity.setVerifiedStatus(command.getVerifiedStatus() == null
+ ? NoticeRecipientAccountStatus.VERIFIED : command.getVerifiedStatus());
+ entity.setDefaultAccount(Boolean.TRUE.equals(command.getDefaultAccount()));
+ entity.setEnabled(true);
+ if (Boolean.TRUE.equals(entity.getDefaultAccount())) {
+ clearDefaultAccount(userId, entity.getAccountType());
+ }
+ if (entity.getId() == null) {
+ recipientAccountMapper.insert(entity);
+ } else {
+ recipientAccountMapper.updateById(entity);
+ }
+ return NoticeRecipientAccountConvert.toVO(entity);
+ }
+
+ @Override
+ public boolean disableRecipientAccount(Long currentUserId, Long id, Long userId) {
+ Require.notNull(id, "接收账户 ID 不能为空");
+ Long targetUserId = resolveTargetUserId(currentUserId, userId);
+ NoticeRecipientAccountEntity entity = new NoticeRecipientAccountEntity();
+ entity.setId(id);
+ entity.setEnabled(false);
+ entity.setVerifiedStatus(NoticeRecipientAccountStatus.DISABLED);
+ return recipientAccountMapper.update(entity, new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
+ .eq(NoticeRecipientAccountEntity::getId, id)
+ .eq(NoticeRecipientAccountEntity::getUserId, targetUserId)) > 0;
+ }
+
+ @Override
+ @Transactional(rollbackFor = Exception.class)
+ public boolean setDefaultRecipientAccount(Long currentUserId, Long id, Long userId) {
+ Require.notNull(id, "接收账户 ID 不能为空");
+ Long targetUserId = resolveTargetUserId(currentUserId, userId);
+ NoticeRecipientAccountEntity account = recipientAccountMapper.selectOne(new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
+ .eq(NoticeRecipientAccountEntity::getId, id)
+ .eq(NoticeRecipientAccountEntity::getUserId, targetUserId));
+ Require.notNull(account, "接收账户不存在");
+ clearDefaultAccount(targetUserId, account.getAccountType());
+ account.setDefaultAccount(true);
+ return recipientAccountMapper.updateById(account) > 0;
+ }
+
+ @Override
+ public List<NoticeReceivePreferenceVO> listReceivePreferences(Long currentUserId, NoticeReceivePreferenceQuery query) {
+ Long userId = resolveTargetUserId(currentUserId, query == null ? null : query.getUserId());
+ LambdaQueryWrapper<NoticeReceivePreferenceEntity> wrapper = new LambdaQueryWrapper<NoticeReceivePreferenceEntity>()
+ .eq(NoticeReceivePreferenceEntity::getUserId, userId);
+ if (query != null && query.getScopeType() != null) {
+ wrapper.eq(NoticeReceivePreferenceEntity::getScopeType, query.getScopeType());
+ }
+ if (query != null && StringUtils.hasText(query.getScopeValue())) {
+ wrapper.eq(NoticeReceivePreferenceEntity::getScopeValue, query.getScopeValue());
+ }
+ wrapper.orderByAsc(NoticeReceivePreferenceEntity::getScopeType)
+ .orderByAsc(NoticeReceivePreferenceEntity::getScopeValue)
+ .orderByAsc(NoticeReceivePreferenceEntity::getChannelType);
+ return receivePreferenceMapper.selectList(wrapper).stream()
+ .map(NoticeReceivePreferenceConvert::toVO)
+ .toList();
+ }
+
+ @Override
+ public NoticeReceivePreferenceVO saveReceivePreference(Long currentUserId, SaveNoticeReceivePreferenceCommand command) {
+ Require.notNull(command, "接收偏好不能为空");
+ Long userId = resolveTargetUserId(currentUserId, command.getUserId());
+ String scopeValue = normalizeScopeValue(command.getScopeValue());
+ NoticeReceivePreferenceEntity entity = findPreference(userId, command.getScopeType(), scopeValue, command.getChannelType());
+ if (entity == null) {
+ entity = new NoticeReceivePreferenceEntity();
+ entity.setUserId(userId);
+ entity.setScopeType(command.getScopeType());
+ entity.setScopeValue(scopeValue);
+ entity.setChannelType(command.getChannelType());
+ }
+ entity.setEnabled(command.getEnabled());
+ entity.setAccountId(command.getAccountId());
+ if (entity.getId() == null) {
+ receivePreferenceMapper.insert(entity);
+ } else {
+ receivePreferenceMapper.updateById(entity);
+ }
+ return NoticeReceivePreferenceConvert.toVO(entity);
+ }
+
+ @Override
  public PageResult<NoticeSiteMessageVO> listSiteMessages(Long userId, NoticeSiteMessagePageQuery query) {
  LambdaQueryWrapper<NoticeSiteMessageEntity> wrapper = userVisibleWrapper(userId);
  if (Boolean.TRUE.equals(query.getUnreadOnly())) {
@@ -637,18 +1021,44 @@ public class NoticeService implements INoticeService {
  if (StringUtils.hasText(query.getBizType())) {
  wrapper.eq(NoticeSiteMessageEntity::getBizType, query.getBizType());
  }
+ if (query.getPriority() != null) {
+ wrapper.eq(NoticeSiteMessageEntity::getPriority, query.getPriority());
+ }
+ if (StringUtils.hasText(query.getKeyword())) {
+ wrapper.and(item -> item.like(NoticeSiteMessageEntity::getTitle, query.getKeyword())
+ .or()
+ .like(NoticeSiteMessageEntity::getContent, query.getKeyword()));
+ }
  if (StringUtils.hasText(query.getBizId())) {
  wrapper.eq(NoticeSiteMessageEntity::getBizId, query.getBizId());
  }
+ if (query.getStartTime() != null) {
+ wrapper.ge(NoticeSiteMessageEntity::getCreatedAt, query.getStartTime());
+ }
+ if (query.getEndTime() != null) {
+ wrapper.le(NoticeSiteMessageEntity::getCreatedAt, query.getEndTime());
+ }
+ Set<String> bizTypes = null;
+ if (StringUtils.hasText(query.getBizGroup())) {
+ bizTypes = businessTypeMapper.selectList(new LambdaQueryWrapper<NoticeBusinessTypeEntity>()
+ .eq(NoticeBusinessTypeEntity::getBizGroup, query.getBizGroup()))
+ .stream()
+ .map(NoticeBusinessTypeEntity::getBizType)
+ .collect(Collectors.toSet());
+ if (bizTypes.isEmpty()) {
+ return PageResult.of(List.of(), 0, query.getPageNum(), query.getPageSize());
+ }
+ wrapper.in(NoticeSiteMessageEntity::getBizType, bizTypes);
+ }
  wrapper.orderByDesc(NoticeSiteMessageEntity::getTopStatus).orderByDesc(NoticeSiteMessageEntity::getCreatedAt);
  Page<NoticeSiteMessageEntity> result = messageMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
- return PageResult.of(result.getRecords().stream().map(NoticeSiteMessageConvert::toVO).toList(), result.getTotal(), result.getCurrent(), result.getSize());
+ return PageResult.of(result.getRecords().stream().map(this::toSiteMessageVO).toList(), result.getTotal(), result.getCurrent(), result.getSize());
  }
 
  @Override
  public NoticeSiteMessageVO getSiteMessage(Long id, Long userId) {
  NoticeSiteMessageEntity entity = messageMapper.selectOne(userVisibleWrapper(userId).eq(NoticeSiteMessageEntity::getId, id));
- return entity == null ? null : NoticeSiteMessageConvert.toVO(entity);
+ return entity == null ? null : toSiteMessageVO(entity);
  }
 
  @Override
@@ -714,6 +1124,21 @@ public class NoticeService implements INoticeService {
 
  private NoticeTaskVO toTaskVO(NoticeTaskEntity entity) {
  NoticeTaskVO vo = NoticeTaskConvert.toVO(entity);
+ NoticeBusinessTypeEntity businessType = businessTypeMapper.selectOne(new LambdaQueryWrapper<NoticeBusinessTypeEntity>()
+ .eq(NoticeBusinessTypeEntity::getBizType, entity.getBizType())
+ .last("limit 1"));
+ if (businessType != null) {
+ vo.setBizGroup(businessType.getBizGroup());
+ vo.setBizName(businessType.getBizName());
+ }
+ return vo;
+ }
+
+ private NoticeSiteMessageVO toSiteMessageVO(NoticeSiteMessageEntity entity) {
+ NoticeSiteMessageVO vo = NoticeSiteMessageConvert.toVO(entity);
+ if (entity.getBizType() == null) {
+ return vo;
+ }
  NoticeBusinessTypeEntity businessType = businessTypeMapper.selectOne(new LambdaQueryWrapper<NoticeBusinessTypeEntity>()
  .eq(NoticeBusinessTypeEntity::getBizType, entity.getBizType())
  .last("limit 1"));
@@ -1123,8 +1548,168 @@ public class NoticeService implements INoticeService {
  };
  }
 
+ private SendDecision evaluateSendDecision(NoticeBusinessTypeEntity businessType,
+ NoticeBusinessChannelTemplateEntity template, NoticeRecipientEntity recipient) {
+ if (template.getEnabled() != null && !template.getEnabled()) {
+ return SendDecision.canceled(NoticeSendCancelCode.CHANNEL_TEMPLATE_DISABLED, "渠道模板未启用");
+ }
+ if (template.getChannelType() == NoticeChannelType.SITE && !canSendToRecipient(template.getChannelType(), recipient)) {
+ return missingRecipientAccountDecision(template.getChannelType());
+ }
+ PreferenceMatch preference = effectivePreference(recipient.getUserId(), businessType, template.getChannelType());
+ if (!preference.enabled()) {
+ return SendDecision.canceled(preference.cancelCode(), preference.cancelReason());
+ }
+ AccountMatch account = applyRecipientAccount(recipient, template.getChannelType(), preference.accountId());
+ if (!account.allowed()) {
+ return SendDecision.canceled(account.cancelCode(), account.cancelReason());
+ }
+ return SendDecision.allowed(account.accountId());
+ }
+
+ private SendDecision missingRecipientAccountDecision(NoticeChannelType channelType) {
+ if (channelType == NoticeChannelType.SMS) {
+ return SendDecision.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING, "缺少已验证手机号");
+ }
+ if (channelType == NoticeChannelType.EMAIL) {
+ return SendDecision.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING, "缺少已验证邮箱");
+ }
+ return SendDecision.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING, "缺少可用接收账户");
+ }
+
+ private PreferenceMatch effectivePreference(Long userId, NoticeBusinessTypeEntity businessType, NoticeChannelType channelType) {
+ if (userId == null) {
+ return PreferenceMatch.enabled(null);
+ }
+ NoticeReceivePreferenceEntity messageChannel = findPreference(userId, NoticeReceivePreferenceScopeType.BIZ_TYPE,
+ businessType.getBizType(), channelType);
+ if (messageChannel != null) {
+ return toPreferenceMatch(messageChannel, NoticeSendCancelCode.USER_CHANNEL_DISABLED, "用户关闭该消息渠道");
+ }
+ NoticeReceivePreferenceEntity message = findPreference(userId, NoticeReceivePreferenceScopeType.BIZ_TYPE,
+ businessType.getBizType(), null);
+ if (message != null) {
+ return toPreferenceMatch(message, NoticeSendCancelCode.USER_MESSAGE_DISABLED, "用户关闭该消息");
+ }
+ NoticeReceivePreferenceEntity groupChannel = findPreference(userId, NoticeReceivePreferenceScopeType.BIZ_GROUP,
+ businessType.getBizGroup(), channelType);
+ if (groupChannel != null) {
+ return toPreferenceMatch(groupChannel, NoticeSendCancelCode.USER_CHANNEL_DISABLED, "用户关闭该业务域渠道");
+ }
+ NoticeReceivePreferenceEntity group = findPreference(userId, NoticeReceivePreferenceScopeType.BIZ_GROUP,
+ businessType.getBizGroup(), null);
+ if (group != null) {
+ return toPreferenceMatch(group, NoticeSendCancelCode.USER_BIZ_GROUP_DISABLED, "用户关闭该业务域");
+ }
+ NoticeReceivePreferenceEntity globalChannel = findPreference(userId, NoticeReceivePreferenceScopeType.GLOBAL,
+ null, channelType);
+ if (globalChannel != null) {
+ return toPreferenceMatch(globalChannel, NoticeSendCancelCode.USER_CHANNEL_DISABLED, "用户关闭该渠道");
+ }
+ NoticeReceivePreferenceEntity global = findPreference(userId, NoticeReceivePreferenceScopeType.GLOBAL, null, null);
+ if (global != null) {
+ return toPreferenceMatch(global, NoticeSendCancelCode.USER_MESSAGE_DISABLED, "用户关闭全部通知");
+ }
+ return PreferenceMatch.enabled(null);
+ }
+
+ private PreferenceMatch toPreferenceMatch(NoticeReceivePreferenceEntity preference, NoticeSendCancelCode cancelCode,
+ String cancelReason) {
+ if (Boolean.FALSE.equals(preference.getEnabled())) {
+ return PreferenceMatch.canceled(cancelCode, cancelReason);
+ }
+ return PreferenceMatch.enabled(preference.getAccountId());
+ }
+
+ private NoticeReceivePreferenceEntity findPreference(Long userId, NoticeReceivePreferenceScopeType scopeType,
+ String scopeValue, NoticeChannelType channelType) {
+ if (userId == null || scopeType == null) {
+ return null;
+ }
+ LambdaQueryWrapper<NoticeReceivePreferenceEntity> wrapper = new LambdaQueryWrapper<NoticeReceivePreferenceEntity>()
+ .eq(NoticeReceivePreferenceEntity::getUserId, userId)
+ .eq(NoticeReceivePreferenceEntity::getScopeType, scopeType)
+ .eq(NoticeReceivePreferenceEntity::getScopeValue, normalizeScopeValue(scopeValue));
+ if (channelType == null) {
+ wrapper.isNull(NoticeReceivePreferenceEntity::getChannelType);
+ } else {
+ wrapper.eq(NoticeReceivePreferenceEntity::getChannelType, channelType);
+ }
+ return receivePreferenceMapper.selectOne(wrapper);
+ }
+
+ private AccountMatch applyRecipientAccount(NoticeRecipientEntity recipient, NoticeChannelType channelType, Long accountId) {
+ if (channelType == NoticeChannelType.SITE) {
+ return AccountMatch.allowed(null);
+ }
+ NoticeRecipientAccountType accountType = accountType(channelType);
+ if (accountType == null || recipient.getUserId() == null) {
+ return canSendToRecipient(channelType, recipient)
+ ? AccountMatch.allowed(null)
+ : AccountMatch.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING, "缺少接收账户");
+ }
+ NoticeRecipientAccountEntity account = accountId == null
+ ? defaultVerifiedAccount(recipient.getUserId(), accountType)
+ : recipientAccountMapper.selectById(accountId);
+ if (account == null && canSendToRecipient(channelType, recipient)) {
+ return AccountMatch.allowed(null);
+ }
+ if (account == null) {
+ return AccountMatch.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING, "缺少接收账户");
+ }
+ if (!Boolean.TRUE.equals(account.getEnabled()) || account.getVerifiedStatus() == NoticeRecipientAccountStatus.DISABLED) {
+ return AccountMatch.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_UNVERIFIED, "接收账户不可用");
+ }
+ if (account.getVerifiedStatus() != NoticeRecipientAccountStatus.VERIFIED) {
+ return AccountMatch.canceled(NoticeSendCancelCode.RECIPIENT_ACCOUNT_UNVERIFIED, "接收账户未验证");
+ }
+ applyRecipientAccountValue(recipient, channelType, account);
+ return AccountMatch.allowed(account.getId());
+ }
+
+ private NoticeRecipientAccountEntity defaultVerifiedAccount(Long userId, NoticeRecipientAccountType accountType) {
+ List<NoticeRecipientAccountEntity> accounts = recipientAccountMapper.selectList(new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
+ .eq(NoticeRecipientAccountEntity::getUserId, userId)
+ .eq(NoticeRecipientAccountEntity::getAccountType, accountType)
+ .eq(NoticeRecipientAccountEntity::getVerifiedStatus, NoticeRecipientAccountStatus.VERIFIED)
+ .eq(NoticeRecipientAccountEntity::getEnabled, true)
+ .orderByDesc(NoticeRecipientAccountEntity::getDefaultAccount)
+ .orderByDesc(NoticeRecipientAccountEntity::getUpdatedAt));
+ if (accounts == null) {
+ return null;
+ }
+ return accounts.isEmpty() ? null : accounts.get(0);
+ }
+
+ private void applyRecipientAccountValue(NoticeRecipientEntity recipient, NoticeChannelType channelType,
+ NoticeRecipientAccountEntity account) {
+ if (channelType == NoticeChannelType.SMS) {
+ recipient.setMobile(account.getAccountValue());
+ } else if (channelType == NoticeChannelType.EMAIL) {
+ recipient.setEmail(account.getAccountValue());
+ } else if (channelType == NoticeChannelType.WECHAT_OFFICIAL) {
+ recipient.setWechatOpenid(account.getAccountValue());
+ } else if (channelType == NoticeChannelType.WECOM) {
+ recipient.setWecomUserId(account.getAccountValue());
+ } else if (channelType == NoticeChannelType.DINGTALK) {
+ recipient.setDingtalkUserId(account.getAccountValue());
+ }
+ recipientMapper.updateById(recipient);
+ }
+
+ private NoticeRecipientAccountType accountType(NoticeChannelType channelType) {
+ return switch (channelType) {
+ case SMS -> NoticeRecipientAccountType.MOBILE;
+ case EMAIL -> NoticeRecipientAccountType.EMAIL;
+ case WECHAT_OFFICIAL -> NoticeRecipientAccountType.WECHAT;
+ case WECOM -> NoticeRecipientAccountType.WECOM;
+ case DINGTALK -> NoticeRecipientAccountType.DINGTALK;
+ case SITE -> null;
+ };
+ }
+
  private NoticeSendRecordEntity createSendRecord(NoticeTaskEntity task, NoticeRecipientEntity recipient,
- NoticeBusinessChannelTemplateEntity template, SendNoticeCommand command) {
+ NoticeBusinessChannelTemplateEntity template, SendNoticeCommand command, SendDecision decision) {
  Map<String, Object> params = taskParams(command);
  NoticeSendRecordEntity record = new NoticeSendRecordEntity();
  record.setTaskId(task.getId());
@@ -1135,17 +1720,19 @@ public class NoticeService implements INoticeService {
  record.setTemplateVersion(template.getVersion());
  record.setChannelType(template.getChannelType());
  record.setRequestId("NR" + UUID.randomUUID().toString().replace("-", ""));
- record.setStatus(NoticeSendStatus.PENDING);
+ record.setStatus(decision.allowed() ? NoticeSendStatus.PENDING : NoticeSendStatus.CANCELED);
  record.setRenderedTitle(render(template.getTitleTemplate(), params));
  record.setRenderedContent(render(template.getContentTemplate(), params));
- record.setRequestSnapshot(toJson(sendRecordRequestSnapshot(task, recipient, template, params)));
+ record.setRequestSnapshot(toJson(sendRecordRequestSnapshot(task, recipient, template, params, decision)));
+ record.setFailCode(decision.cancelCode());
+ record.setFailReason(decision.cancelReason());
  record.setRetryCount(0);
  sendRecordMapper.insert(record);
  return record;
  }
 
  private Map<String, Object> sendRecordRequestSnapshot(NoticeTaskEntity task, NoticeRecipientEntity recipient,
- NoticeBusinessChannelTemplateEntity template, Map<String, Object> params) {
+ NoticeBusinessChannelTemplateEntity template, Map<String, Object> params, SendDecision decision) {
  Map<String, Object> snapshot = new LinkedHashMap<>();
  snapshot.put("bizType", task.getBizType());
  snapshot.put("bizId", task.getBizId());
@@ -1155,6 +1742,8 @@ public class NoticeService implements INoticeService {
  snapshot.put("channelType", template.getChannelType().name());
  snapshot.put("businessChannelTemplateId", template.getId());
  snapshot.put("templateVersion", template.getVersion());
+ snapshot.put("accountId", decision.accountId());
+ snapshot.put("cancelCode", decision.cancelCode());
  snapshot.put("params", params == null ? Collections.emptyMap() : params);
  return snapshot;
  }
@@ -1328,6 +1917,23 @@ public class NoticeService implements INoticeService {
  }
  }
 
+ private Long resolveTargetUserId(Long currentUserId, Long requestedUserId) {
+ return requestedUserId == null ? currentUserId : requestedUserId;
+ }
+
+ private String normalizeScopeValue(String scopeValue) {
+ return StringUtils.hasText(scopeValue) ? scopeValue : "";
+ }
+
+ private void clearDefaultAccount(Long userId, NoticeRecipientAccountType accountType) {
+ NoticeRecipientAccountEntity update = new NoticeRecipientAccountEntity();
+ update.setDefaultAccount(false);
+ recipientAccountMapper.update(update, new LambdaQueryWrapper<NoticeRecipientAccountEntity>()
+ .eq(NoticeRecipientAccountEntity::getUserId, userId)
+ .eq(NoticeRecipientAccountEntity::getAccountType, accountType)
+ .eq(NoticeRecipientAccountEntity::getDefaultAccount, true));
+ }
+
  private NoticeSettingsVO defaultSettings() {
  NoticeSettingsVO settings = new NoticeSettingsVO();
  settings.setSoundEnabled(true);
@@ -1426,6 +2032,39 @@ public class NoticeService implements INoticeService {
  return NoticeTaskStatus.PARTIAL_SUCCESS;
  }
  return NoticeTaskStatus.FAILED;
+ }
+
+ private record SendDecision(boolean allowed, Long accountId, String cancelCode, String cancelReason) {
+
+ static SendDecision allowed(Long accountId) {
+ return new SendDecision(true, accountId, null, null);
+ }
+
+ static SendDecision canceled(NoticeSendCancelCode cancelCode, String cancelReason) {
+ return new SendDecision(false, null, cancelCode.name(), cancelReason);
+ }
+ }
+
+ private record PreferenceMatch(boolean enabled, Long accountId, NoticeSendCancelCode cancelCode, String cancelReason) {
+
+ static PreferenceMatch enabled(Long accountId) {
+ return new PreferenceMatch(true, accountId, null, null);
+ }
+
+ static PreferenceMatch canceled(NoticeSendCancelCode cancelCode, String cancelReason) {
+ return new PreferenceMatch(false, null, cancelCode, cancelReason);
+ }
+ }
+
+ private record AccountMatch(boolean allowed, Long accountId, NoticeSendCancelCode cancelCode, String cancelReason) {
+
+ static AccountMatch allowed(Long accountId) {
+ return new AccountMatch(true, accountId, null, null);
+ }
+
+ static AccountMatch canceled(NoticeSendCancelCode cancelCode, String cancelReason) {
+ return new AccountMatch(false, null, cancelCode, cancelReason);
+ }
  }
 
  private Integer nextTemplateVersion(String bizType, NoticeChannelType channelType) {

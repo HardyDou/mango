@@ -94,7 +94,7 @@ import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 import { Session } from '@mango/common';
 import type { RealtimeOptions } from '@mango/common';
-import { NoticeBell, getChannelConfigs } from '@mango/notice';
+import { NoticeBell, getNoticeReminderSetting } from '@mango/notice';
 import type { NoticeClientBellRuntimeConfig } from '@mango/notice';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
@@ -164,19 +164,14 @@ const goNoticeReceiveSetting = () => {
 
 async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
   const defaults: NoticeClientBellRuntimeConfig = {
-    soundEnabled: true,
-    soundText: '您有新的系统消息，请及时查看',
+    voiceEnabled: true,
+    voiceText: '您有新的系统消息，请及时查看',
     popupEnabled: true,
+    popupPlacement: 'top-right',
     desktopNotificationEnabled: true,
   };
   try {
-    const result = await getChannelConfigs({ channelType: 'SITE', enabled: true, pageSize: 20 }, { silentError: true });
-    const siteChannel = (result.list || []).find(item => item.providerCode === 'INTERNAL') || result.list?.[0];
-    if (!siteChannel?.configJson) {
-      return defaults;
-    }
-    const parsed = JSON.parse(siteChannel.configJson);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? { ...defaults, ...parsed } : defaults;
+    return { ...defaults, ...(await getNoticeReminderSetting()) };
   } catch {
     return defaults;
   }

@@ -26,10 +26,17 @@ public class SiteNoticeChannelSender implements NoticeChannelSender {
     public ChannelSendResult send(ChannelSendCommand command) {
         Long messageId = messageWriter.write(command);
         try {
-            realtimeApi.publishToUser(command.getUserId(), "notice", "{\"id\":" + messageId + ",\"title\":\"" + command.getTitle() + "\",\"priority\":\"" + command.getPriority().name() + "\"}");
+            realtimeApi.publishToUser(command.getUserId(), "notice",
+                    "{\"messageId\":\"" + messageId + "\",\"title\":\"" + escape(command.getTitle())
+                            + "\",\"bizType\":\"" + escape(command.getBizType()) + "\",\"priority\":\""
+                            + command.getPriority().name() + "\"}");
         } catch (RuntimeException ex) {
             log.warn("Failed to publish site notice realtime message: {}", messageId, ex);
         }
         return ChannelSendResult.success(messageId);
+    }
+
+    private String escape(String value) {
+        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

@@ -7,16 +7,23 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.command.CreateNoticeBusinessTypeCommand;
+import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
+import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
+import io.mango.notice.api.command.RetryNoticeSendRecordsCommand;
 import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
+import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
+import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
 import io.mango.notice.api.query.NoticeChannelConfigPageQuery;
+import io.mango.notice.api.query.NoticeReceivePreferenceQuery;
+import io.mango.notice.api.query.NoticeRecipientAccountQuery;
 import io.mango.notice.api.query.NoticeSendRecordPageQuery;
 import io.mango.notice.api.query.NoticeSiteMessagePageQuery;
 import io.mango.notice.api.query.NoticeTaskPageQuery;
@@ -24,6 +31,8 @@ import io.mango.notice.api.vo.NoticeBusinessConfigVersionVO;
 import io.mango.notice.api.vo.NoticeBusinessTypeVO;
 import io.mango.notice.api.vo.NoticeChannelConfigVO;
 import io.mango.notice.api.vo.NoticeChannelTemplateVO;
+import io.mango.notice.api.vo.NoticeReceivePreferenceVO;
+import io.mango.notice.api.vo.NoticeRecipientAccountVO;
 import io.mango.notice.api.vo.NoticeSendRecordVO;
 import io.mango.notice.api.vo.NoticeSendResultVO;
 import io.mango.notice.api.vo.NoticeSettingsVO;
@@ -226,6 +235,57 @@ public class NoticeController implements NoticeApi {
  }
 
  @Override
+ @PostMapping("/records/{id}/retry")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
+ @Operation(summary = "重试发送记录", description = "对失败、等待重试或最终失败的发送记录立即重试")
+ public R<Boolean> retrySendRecord(@Parameter(description = "发送记录ID", required = true) @PathVariable Long id) {
+ return R.ok(noticeService.retrySendRecord(id));
+ }
+
+ @Override
+ @PostMapping("/records/retry-batch")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
+ @Operation(summary = "批量重试发送记录", description = "批量对失败、等待重试或最终失败的发送记录立即重试")
+ public R<Boolean> retrySendRecords(@RequestBody @Valid RetryNoticeSendRecordsCommand command) {
+ return R.ok(noticeService.retrySendRecords(command));
+ }
+
+ @Override
+ @PostMapping("/records/{id}/manual-success")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
+ @Operation(summary = "标记发送记录人工成功", description = "用于外部实际已成功但系统未收到成功回执的失败记录")
+ public R<Boolean> markSendRecordManualSuccess(
+ @Parameter(description = "发送记录ID", required = true) @PathVariable Long id,
+ @RequestBody @Valid HandleNoticeSendRecordCommand command) {
+ return R.ok(noticeService.markSendRecordManualSuccess(id, command));
+ }
+
+ @Override
+ @PostMapping("/records/manual-success-batch")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
+ @Operation(summary = "批量标记发送记录人工成功", description = "批量用于外部实际已成功但系统未收到成功回执的失败记录")
+ public R<Boolean> markSendRecordsManualSuccess(@RequestBody @Valid HandleNoticeSendRecordsCommand command) {
+ return R.ok(noticeService.markSendRecordsManualSuccess(command));
+ }
+
+ @Override
+ @PostMapping("/records/{id}/ignore")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
+ @Operation(summary = "忽略发送失败", description = "将失败记录标记为已忽略，不再进入失败重试池")
+ public R<Boolean> ignoreSendRecord(@Parameter(description = "发送记录ID", required = true) @PathVariable Long id,
+ @RequestBody @Valid HandleNoticeSendRecordCommand command) {
+ return R.ok(noticeService.ignoreSendRecord(id, command));
+ }
+
+ @Override
+ @PostMapping("/records/ignore-batch")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:retry:edit")
+ @Operation(summary = "批量忽略发送失败", description = "批量将失败记录标记为已忽略，不再进入失败重试池")
+ public R<Boolean> ignoreSendRecords(@RequestBody @Valid HandleNoticeSendRecordsCommand command) {
+ return R.ok(noticeService.ignoreSendRecords(command));
+ }
+
+ @Override
  @GetMapping("/settings")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:setting:view")
  @Operation(summary = "获取通知设置", description = "获取当前机构通知设置，未保存时返回默认设置")
@@ -239,6 +299,54 @@ public class NoticeController implements NoticeApi {
  @Operation(summary = "保存通知设置", description = "保存当前机构通知提示、重试和保留周期设置")
  public R<Boolean> saveSettings(@RequestBody @Valid SaveNoticeSettingsCommand command) {
  return R.ok(noticeService.saveSettings(command));
+ }
+
+ @Override
+ @GetMapping("/recipient-accounts")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:view")
+ @Operation(summary = "查询通知接收账户", description = "查询当前用户或指定用户的通知接收账户")
+ public R<List<NoticeRecipientAccountVO>> listRecipientAccounts(@ParameterObject NoticeRecipientAccountQuery query) {
+ return R.ok(noticeService.listRecipientAccounts(currentUserId(), query));
+ }
+
+ @Override
+ @PostMapping("/recipient-accounts")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
+ @Operation(summary = "保存通知接收账户", description = "新增或更新手机号、邮箱等通知接收账户")
+ public R<NoticeRecipientAccountVO> saveRecipientAccount(@RequestBody @Valid SaveNoticeRecipientAccountCommand command) {
+ return R.ok(noticeService.saveRecipientAccount(currentUserId(), command));
+ }
+
+ @Override
+ @PostMapping("/recipient-accounts/{id}/disable")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
+ @Operation(summary = "禁用通知接收账户", description = "禁用当前用户或指定用户的通知接收账户")
+ public R<Boolean> disableRecipientAccount(@PathVariable Long id, @RequestParam(required = false) Long userId) {
+ return R.ok(noticeService.disableRecipientAccount(currentUserId(), id, userId));
+ }
+
+ @Override
+ @PostMapping("/recipient-accounts/{id}/default")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
+ @Operation(summary = "设置默认通知接收账户", description = "设置同类型默认通知接收账户")
+ public R<Boolean> setDefaultRecipientAccount(@PathVariable Long id, @RequestParam(required = false) Long userId) {
+ return R.ok(noticeService.setDefaultRecipientAccount(currentUserId(), id, userId));
+ }
+
+ @Override
+ @GetMapping("/receive-preferences")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:view")
+ @Operation(summary = "查询通知接收偏好", description = "查询用户按全局、业务域或单消息维度配置的接收偏好")
+ public R<List<NoticeReceivePreferenceVO>> listReceivePreferences(@ParameterObject NoticeReceivePreferenceQuery query) {
+ return R.ok(noticeService.listReceivePreferences(currentUserId(), query));
+ }
+
+ @Override
+ @PutMapping("/receive-preferences")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:receive-setting:edit")
+ @Operation(summary = "保存通知接收偏好", description = "保存用户对业务域、单消息、渠道和接收账户的接收偏好")
+ public R<NoticeReceivePreferenceVO> saveReceivePreference(@RequestBody @Valid SaveNoticeReceivePreferenceCommand command) {
+ return R.ok(noticeService.saveReceivePreference(currentUserId(), command));
  }
 
  @Override

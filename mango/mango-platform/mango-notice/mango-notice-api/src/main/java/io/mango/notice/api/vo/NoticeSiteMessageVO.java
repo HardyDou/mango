@@ -35,6 +35,12 @@ public class NoticeSiteMessageVO {
     @Schema(description = "业务类型")
     private String bizType;
 
+    @Schema(description = "业务域")
+    private String bizGroup;
+
+    @Schema(description = "业务消息名称")
+    private String bizName;
+
     @Schema(description = "业务对象ID")
     private String bizId;
 

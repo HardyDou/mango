@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, h, onMounted, onUnmounted, ref } from 'vue';
 import { ElNotification } from 'element-plus';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import type { RealtimeOptions } from '@mango/common';
@@ -116,9 +116,9 @@ function openReceiveSetting() {
 
 function defaultRuntimeConfig(): NoticeClientBellRuntimeConfig {
  return {
-  soundEnabled: true,
-  soundText: '您有新的系统消息，请及时查看',
+  voiceText: '您有新的系统消息，请及时查看',
   popupEnabled: true,
+  popupPlacement: 'top-right',
   desktopNotificationEnabled: true,
  };
 }
@@ -133,6 +133,14 @@ async function resolveRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
  }
 }
 
+function voiceEnabled(config: NoticeClientBellRuntimeConfig) {
+ return config.voiceEnabled ?? config.soundEnabled ?? true;
+}
+
+function voiceText(config: NoticeClientBellRuntimeConfig, message: NoticeSiteMessage) {
+ return config.voiceText || config.soundText || message.title;
+}
+
 function bizDisplayName(message: NoticeSiteMessage) {
  return message.bizGroup || message.bizName || message.bizType || '通用消息';
 }
@@ -141,14 +149,27 @@ function bizAvatar(message: NoticeSiteMessage) {
  return bizDisplayName(message).trim().slice(0, 1) || '消';
 }
 
+function notificationMessage(message: NoticeSiteMessage) {
+ return h('div', { class: 'notice-notification-message' }, [
+  h('div', { class: 'notice-notification-message__summary' }, message.content || '暂无内容'),
+  h('div', { class: 'notice-notification-message__meta' }, `${bizDisplayName(message)} · ${message.createTime || '-'}`),
+ ]);
+}
+
 async function notifyNewMessage(message: NoticeSiteMessage) {
  emit('message-received', message);
  const config = await resolveRuntimeConfig();
- if (config.soundEnabled !== false) {
-  speakNoticeText(config.soundText || message.title);
+ if (voiceEnabled(config)) {
+  speakNoticeText(voiceText(config, message));
  }
  if (config.popupEnabled !== false) {
-  ElNotification({ title: '您有新消息了', message: message.title, type: 'info', onClick: () => openDetail(message.id) });
+  ElNotification({
+   title: message.title || '未命名消息',
+   message: notificationMessage(message),
+   type: 'info',
+   position: config.popupPlacement || 'top-right',
+   onClick: () => openDetail(message.id),
+  });
  }
  if (config.desktopNotificationEnabled !== false) {
   showDesktopNotice(message, () => openDetail(message.id));
@@ -266,5 +287,19 @@ defineExpose({ notifyNewMessage, loadUnreadCount });
  align-items: center;
  justify-content: space-between;
  padding-top: 10px;
+}
+
+:global(.notice-notification-message__summary) {
+ color: var(--el-text-color-regular);
+ font-size: 13px;
+ line-height: 20px;
+ word-break: break-word;
+}
+
+:global(.notice-notification-message__meta) {
+ margin-top: 6px;
+ color: var(--el-text-color-secondary);
+ font-size: 12px;
+ line-height: 18px;
 }
 </style>

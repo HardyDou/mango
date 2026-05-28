@@ -2,12 +2,24 @@ export type NoticePriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type NoticeReadStatus = 'UNREAD' | 'READ';
 export type NoticeChannelType = 'SITE' | 'SMS' | 'EMAIL' | 'WECHAT_OFFICIAL' | 'WECOM' | 'DINGTALK';
 export type NoticeTaskStatus = 'WAITING' | 'SENDING' | 'PARTIAL_SUCCESS' | 'SUCCESS' | 'FAILED' | 'CANCELED';
-export type NoticeSendStatus = 'PENDING' | 'SENDING' | 'SUCCESS' | 'FAILED' | 'RETRY_WAITING' | 'FINAL_FAILED' | 'CANCELED';
+export type NoticeSendStatus =
+  | 'PENDING'
+  | 'SENDING'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'RETRY_WAITING'
+  | 'FINAL_FAILED'
+  | 'MANUAL_SUCCESS'
+  | 'IGNORED'
+  | 'CANCELED';
 export type NoticeTemplateVersionStatus = 'DRAFT' | 'ACTIVE' | 'HISTORY';
 export type NoticeSyncStatus = 'SYNCED' | 'PENDING_PUBLISH';
 export type NoticeChannelConfigStatus = 'COMPLETE' | 'INCOMPLETE';
 export type NoticeChannelSendHealthStatus = 'NONE' | 'SUCCESS' | 'FAILED';
 export type NoticeRecipientTargetType = 'USER' | 'ORG' | 'POST' | 'ROLE';
+export type NoticeRecipientAccountType = 'MOBILE' | 'EMAIL' | 'WECHAT' | 'WECOM' | 'DINGTALK' | 'FEISHU';
+export type NoticeRecipientAccountStatus = 'UNBOUND' | 'PENDING_VERIFY' | 'VERIFIED' | 'DISABLED';
+export type NoticeReceivePreferenceScopeType = 'GLOBAL' | 'BIZ_GROUP' | 'BIZ_TYPE';
 
 export interface NoticeSiteMessage {
   id: string;
@@ -17,6 +29,8 @@ export interface NoticeSiteMessage {
   priority: NoticePriority;
   readStatus: NoticeReadStatus;
   readTime?: string;
+  bizGroup?: string;
+  bizName?: string;
   bizType?: string;
   bizId?: string;
   createTime?: string;
@@ -26,7 +40,60 @@ export interface NoticeSiteMessagePageQuery {
   pageNum?: number;
   pageSize?: number;
   unreadOnly?: boolean;
+  keyword?: string;
+  bizGroup?: string;
   bizType?: string;
+  priority?: NoticePriority;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface NoticeRecipientAccount {
+  id: string;
+  userId: string;
+  accountType: NoticeRecipientAccountType;
+  accountValue: string;
+  displayName?: string;
+  verifiedStatus: NoticeRecipientAccountStatus;
+  defaultAccount: boolean;
+  enabled: boolean;
+  updatedAt?: string;
+}
+
+export interface NoticeReceivePreference {
+  id: string;
+  userId: string;
+  scopeType: NoticeReceivePreferenceScopeType;
+  scopeValue?: string;
+  channelType?: NoticeChannelType;
+  enabled: boolean;
+  accountId?: string;
+  updatedAt?: string;
+}
+
+export type NoticePopupPlacement = 'top-right' | 'bottom-right';
+
+export interface NoticeReminderSetting {
+  popupEnabled: boolean;
+  popupPlacement: NoticePopupPlacement;
+  voiceEnabled: boolean;
+  voiceText: string;
+  desktopNotificationEnabled: boolean;
+}
+
+export interface PersonalConfig<T = string> {
+  id?: string;
+  tenantId?: string;
+  userId?: string;
+  groupCode: string;
+  bizType: string;
+  configKey: string;
+  configValue: T;
+  valueType?: string;
+  configName?: string;
+  remark?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NoticeRecipientCommand {
@@ -148,9 +215,20 @@ export interface NoticeSendRecord {
   id: string;
   taskId: string;
   recipientId: string;
+  userId?: string;
+  recipientName?: string;
+  recipientAccount?: string;
   bizType?: string;
+  bizGroup?: string;
+  bizName?: string;
+  messageName?: string;
   bizId?: string;
+  businessChannelTemplateId?: string;
+  businessChannelTemplateName?: string;
+  templateVersion?: number;
   channelType: NoticeChannelType;
+  channelConfigId?: string;
+  channelConfigName?: string;
   requestId?: string;
   status: NoticeSendStatus;
   renderedTitle?: string;

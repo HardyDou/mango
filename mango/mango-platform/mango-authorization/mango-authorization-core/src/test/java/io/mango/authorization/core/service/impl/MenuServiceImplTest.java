@@ -1,6 +1,7 @@
 package io.mango.authorization.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.vo.MenuVO;
 import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
@@ -106,6 +107,42 @@ class MenuServiceImplTest {
         List<MenuVO> result = menuService.buildMenuTree(Collections.emptyList());
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("listUserMenus should keep hidden enabled menus for route registration")
+    void listUserMenus_hiddenEnabledMenu_returnsHiddenRouteNode() {
+        Menu root = createMenu(10L, "Root", "root");
+        root.setAppCode("internal-admin");
+        root.setModuleCode("mango-notice");
+        root.setVisible(1);
+        Menu visibleMenu = createMenu(11L, "Visible", "visible");
+        visibleMenu.setAppCode("internal-admin");
+        visibleMenu.setModuleCode("mango-notice");
+        visibleMenu.setParentId(10L);
+        visibleMenu.setMenuType(2);
+        visibleMenu.setVisible(1);
+        Menu hiddenMenu = createMenu(12L, "Hidden", "hidden");
+        hiddenMenu.setAppCode("internal-admin");
+        hiddenMenu.setModuleCode("mango-notice");
+        hiddenMenu.setParentId(10L);
+        hiddenMenu.setMenuType(2);
+        hiddenMenu.setVisible(0);
+        when(menuMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(root, visibleMenu, hiddenMenu));
+        when(subjectAuthorityService.listSubjectPermissions(any(AuthorizationQuery.class))).thenReturn(List.of("*:*"));
+        when(frontendMenuRuntimeConfigMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MenuVO> result = menuService.listUserMenus(
+                "internal-admin",
+                null,
+                null,
+                AuthorizationQuery.user(1L),
+                true);
+
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).getChildren().size());
+        assertTrue(result.get(0).getChildren().stream()
+                .anyMatch(menu -> Long.valueOf(12L).equals(menu.getMenuId()) && Integer.valueOf(0).equals(menu.getVisible())));
     }
 
     @Test
@@ -225,6 +262,7 @@ class MenuServiceImplTest {
         menu.setMenuType(1);
         menu.setParentId(0L);
         menu.setStatus(1);
+        menu.setVisible(1);
         menu.setSort(1);
         return menu;
     }

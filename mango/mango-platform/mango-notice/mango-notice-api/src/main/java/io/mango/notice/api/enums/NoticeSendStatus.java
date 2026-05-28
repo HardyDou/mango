@@ -22,6 +22,12 @@ public enum NoticeSendStatus {
     @Schema(description = "最终失败")
     FINAL_FAILED,
 
+    @Schema(description = "人工成功")
+    MANUAL_SUCCESS,
+
+    @Schema(description = "已忽略")
+    IGNORED,
+
     @Schema(description = "已取消")
     CANCELED
 }

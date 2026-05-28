@@ -5,6 +5,12 @@ import type {
   NoticeChannelConfig,
   NoticeChannelTemplate,
   NoticeChannelType,
+  NoticeReceivePreference,
+  NoticeReceivePreferenceScopeType,
+  NoticeReminderSetting,
+  NoticeRecipientAccount,
+  NoticeRecipientAccountType,
+  NoticeRecipientAccountStatus,
   NoticeSendCommand,
   NoticeSendRecord,
   NoticeSendResult,
@@ -13,7 +19,22 @@ import type {
   NoticeTask,
   NoticeUnreadCount,
   PageResult,
+  PersonalConfig,
 } from '../types/notice';
+
+const NOTICE_REMINDER_CONFIG_SCOPE = {
+  groupCode: 'notice',
+  bizType: 'client_reminder',
+  configKey: 'reminder_setting',
+} as const;
+
+export const defaultNoticeReminderSetting: NoticeReminderSetting = {
+  popupEnabled: true,
+  popupPlacement: 'top-right',
+  voiceEnabled: true,
+  voiceText: '您有新的系统消息，请及时查看',
+  desktopNotificationEnabled: true,
+};
 
 export function sendNotice(data: NoticeSendCommand) {
   return post<NoticeSendResult>('/notice/send', data);
@@ -169,6 +190,30 @@ export function getSendRecords(params?: Record<string, unknown>) {
   return get<PageResult<NoticeSendRecord>>('/notice/records', { params });
 }
 
+export function retrySendRecord(id: string) {
+  return post<boolean>(`/notice/records/${id}/retry`);
+}
+
+export function retrySendRecords(ids: string[]) {
+  return post<boolean>('/notice/records/retry-batch', { ids });
+}
+
+export function markSendRecordManualSuccess(id: string, reason: string) {
+  return post<boolean>(`/notice/records/${id}/manual-success`, { reason });
+}
+
+export function markSendRecordsManualSuccess(ids: string[], reason: string) {
+  return post<boolean>('/notice/records/manual-success-batch', { ids, reason });
+}
+
+export function ignoreSendRecord(id: string, reason: string) {
+  return post<boolean>(`/notice/records/${id}/ignore`, { reason });
+}
+
+export function ignoreSendRecords(ids: string[], reason: string) {
+  return post<boolean>('/notice/records/ignore-batch', { ids, reason });
+}
+
 export function getMySiteMessages(params?: NoticeSiteMessagePageQuery) {
   return get<PageResult<NoticeSiteMessage>>('/notice/site/my/messages', { params });
 }
@@ -183,6 +228,109 @@ export function getNoticeSettings() {
 
 export function saveNoticeSettings(data: Record<string, unknown>) {
   return put<boolean>('/notice/settings', data);
+}
+
+export function getRecipientAccounts(params?: { userId?: string; accountType?: NoticeRecipientAccountType }) {
+  return get<NoticeRecipientAccount[]>('/notice/recipient-accounts', { params });
+}
+
+export function saveRecipientAccount(data: Partial<NoticeRecipientAccount> & {
+  accountType: NoticeRecipientAccountType;
+  accountValue: string;
+  verifiedStatus?: NoticeRecipientAccountStatus;
+}) {
+  return post<NoticeRecipientAccount>('/notice/recipient-accounts', data);
+}
+
+export function disableRecipientAccount(id: string, userId?: string) {
+  return post<boolean>(`/notice/recipient-accounts/${id}/disable`, undefined, { params: { userId } });
+}
+
+export function setDefaultRecipientAccount(id: string, userId?: string) {
+  return post<boolean>(`/notice/recipient-accounts/${id}/default`, undefined, { params: { userId } });
+}
+
+export function getReceivePreferences(params?: {
+  userId?: string;
+  scopeType?: NoticeReceivePreferenceScopeType;
+  scopeValue?: string;
+}) {
+  return get<NoticeReceivePreference[]>('/notice/receive-preferences', { params });
+}
+
+export function saveReceivePreference(data: Partial<NoticeReceivePreference> & {
+  scopeType: NoticeReceivePreferenceScopeType;
+  enabled: boolean;
+}) {
+  return put<NoticeReceivePreference>('/notice/receive-preferences', data);
+}
+
+export function getPersonalConfigs(params?: {
+  groupCode?: string;
+  bizType?: string;
+  configKey?: string;
+}) {
+  return get<Array<PersonalConfig<string>>>('/system/personal-configs', { params });
+}
+
+export function getPersonalConfigValue(params: {
+  groupCode: string;
+  bizType: string;
+  configKey: string;
+}) {
+  return get<PersonalConfig<string> | null>('/system/personal-configs/value', { params });
+}
+
+export function savePersonalConfig(data: PersonalConfig<string>) {
+  return post<PersonalConfig<string>>('/system/personal-configs', data);
+}
+
+export function normalizeNoticeReminderSetting(value?: unknown): NoticeReminderSetting {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ...defaultNoticeReminderSetting };
+  }
+  const record = value as Partial<NoticeReminderSetting> & {
+    soundEnabled?: boolean;
+    soundText?: string;
+  };
+  return {
+    popupEnabled: typeof record.popupEnabled === 'boolean' ? record.popupEnabled : defaultNoticeReminderSetting.popupEnabled,
+    popupPlacement: record.popupPlacement === 'bottom-right' ? 'bottom-right' : 'top-right',
+    voiceEnabled: typeof record.voiceEnabled === 'boolean'
+      ? record.voiceEnabled
+      : typeof record.soundEnabled === 'boolean'
+        ? record.soundEnabled
+        : defaultNoticeReminderSetting.voiceEnabled,
+    voiceText: typeof record.voiceText === 'string' && record.voiceText.trim()
+      ? record.voiceText
+      : typeof record.soundText === 'string' && record.soundText.trim()
+        ? record.soundText
+        : defaultNoticeReminderSetting.voiceText,
+    desktopNotificationEnabled: typeof record.desktopNotificationEnabled === 'boolean'
+      ? record.desktopNotificationEnabled
+      : defaultNoticeReminderSetting.desktopNotificationEnabled,
+  };
+}
+
+export async function getNoticeReminderSetting() {
+  const config = await getPersonalConfigValue(NOTICE_REMINDER_CONFIG_SCOPE);
+  if (!config?.configValue) {
+    return { ...defaultNoticeReminderSetting };
+  }
+  try {
+    return normalizeNoticeReminderSetting(JSON.parse(config.configValue));
+  } catch {
+    return { ...defaultNoticeReminderSetting };
+  }
+}
+
+export function saveNoticeReminderSetting(setting: NoticeReminderSetting) {
+  return savePersonalConfig({
+    ...NOTICE_REMINDER_CONFIG_SCOPE,
+    configValue: JSON.stringify(normalizeNoticeReminderSetting(setting)),
+    valueType: 'JSON',
+    configName: '通知提醒设置',
+  });
 }
 
 export function getMyUnreadCount() {
@@ -224,6 +372,12 @@ export const noticeApi = {
   deleteChannelConfig,
   getNoticeTasks,
   getSendRecords,
+  retrySendRecord,
+  retrySendRecords,
+  markSendRecordManualSuccess,
+  markSendRecordsManualSuccess,
+  ignoreSendRecord,
+  ignoreSendRecords,
   getMySiteMessages,
   getMySiteMessageDetail,
   getIdentityUsers,
@@ -232,6 +386,17 @@ export const noticeApi = {
   getNoticeRoles,
   getNoticeSettings,
   saveNoticeSettings,
+  getRecipientAccounts,
+  saveRecipientAccount,
+  disableRecipientAccount,
+  setDefaultRecipientAccount,
+  getReceivePreferences,
+  saveReceivePreference,
+  getPersonalConfigs,
+  getPersonalConfigValue,
+  savePersonalConfig,
+  getNoticeReminderSetting,
+  saveNoticeReminderSetting,
   getMyUnreadCount,
   markMySiteMessageRead,
   markMySiteMessagesRead,

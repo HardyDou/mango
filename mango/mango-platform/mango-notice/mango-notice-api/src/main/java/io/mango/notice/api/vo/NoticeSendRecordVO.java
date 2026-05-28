@@ -23,14 +23,44 @@ public class NoticeSendRecordVO implements Serializable {
     @Schema(description = "接收人ID")
     private Long recipientId;
 
+    @Schema(description = "接收用户ID")
+    private Long userId;
+
+    @Schema(description = "接收人名称")
+    private String recipientName;
+
+    @Schema(description = "接收人账号")
+    private String recipientAccount;
+
     @Schema(description = "业务类型")
     private String bizType;
+
+    @Schema(description = "业务域")
+    private String bizGroup;
+
+    @Schema(description = "消息名称")
+    private String messageName;
 
     @Schema(description = "业务对象ID")
     private String bizId;
 
+    @Schema(description = "业务渠道模板ID")
+    private Long businessChannelTemplateId;
+
+    @Schema(description = "业务渠道模板名称")
+    private String businessChannelTemplateName;
+
+    @Schema(description = "模板版本")
+    private Integer templateVersion;
+
     @Schema(description = "渠道类型")
     private NoticeChannelType channelType;
+
+    @Schema(description = "通道配置ID")
+    private Long channelConfigId;
+
+    @Schema(description = "通道名称")
+    private String channelConfigName;
 
     @Schema(description = "请求流水号")
     private String requestId;

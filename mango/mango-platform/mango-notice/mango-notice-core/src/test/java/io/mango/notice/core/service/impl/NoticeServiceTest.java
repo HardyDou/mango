@@ -8,6 +8,8 @@ import io.mango.infra.kv.api.IOutboxStore;
 import io.mango.infra.kv.api.OutboxMessage;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.notice.api.command.HandleNoticeSendRecordCommand;
+import io.mango.notice.api.command.HandleNoticeSendRecordsCommand;
 import io.mango.notice.api.command.MarkNoticeReadCommand;
 import io.mango.notice.api.command.NoticeRecipientCommand;
 import io.mango.notice.api.command.NoticeRecipientTargetCommand;
@@ -21,8 +23,10 @@ import io.mango.notice.api.enums.NoticeChannelConfigStatus;
 import io.mango.notice.api.enums.NoticeDeleteStatus;
 import io.mango.notice.api.enums.NoticePriority;
 import io.mango.notice.api.enums.NoticeReadStatus;
+import io.mango.notice.api.enums.NoticeReceivePreferenceScopeType;
 import io.mango.notice.api.enums.NoticeRecipientTargetType;
 import io.mango.notice.api.enums.NoticeSendStatus;
+import io.mango.notice.api.enums.NoticeSendCancelCode;
 import io.mango.notice.api.enums.NoticeSendMode;
 import io.mango.notice.api.enums.NoticeTaskStatus;
 import io.mango.notice.api.enums.NoticeTemplateVersionStatus;
@@ -31,6 +35,7 @@ import io.mango.notice.core.entity.NoticeBusinessChannelTemplateEntity;
 import io.mango.notice.core.entity.NoticeBusinessConfigVersionEntity;
 import io.mango.notice.core.entity.NoticeBusinessTypeEntity;
 import io.mango.notice.core.entity.NoticeChannelConfigEntity;
+import io.mango.notice.core.entity.NoticeReceivePreferenceEntity;
 import io.mango.notice.core.entity.NoticeRecipientEntity;
 import io.mango.notice.core.entity.NoticeSendRecordEntity;
 import io.mango.notice.core.entity.NoticeSiteMessageEntity;
@@ -39,6 +44,8 @@ import io.mango.notice.core.mapper.NoticeBusinessChannelTemplateMapper;
 import io.mango.notice.core.mapper.NoticeBusinessConfigVersionMapper;
 import io.mango.notice.core.mapper.NoticeBusinessTypeMapper;
 import io.mango.notice.core.mapper.NoticeChannelConfigMapper;
+import io.mango.notice.core.mapper.NoticeReceivePreferenceMapper;
+import io.mango.notice.core.mapper.NoticeRecipientAccountMapper;
 import io.mango.notice.core.mapper.NoticeRecipientMapper;
 import io.mango.notice.core.mapper.NoticeSendRecordMapper;
 import io.mango.notice.core.mapper.NoticeSettingMapper;
@@ -87,6 +94,8 @@ class NoticeServiceTest {
  private NoticeBusinessTypeMapper businessTypeMapper;
  private NoticeBusinessConfigVersionMapper businessConfigVersionMapper;
  private NoticeChannelConfigMapper channelConfigMapper;
+ private NoticeRecipientAccountMapper recipientAccountMapper;
+ private NoticeReceivePreferenceMapper receivePreferenceMapper;
  private IdentityUserApi identityUserApi;
  private IOutboxStore outboxStore;
  private List<NoticeTaskStatus> taskStatusUpdates;
@@ -111,6 +120,8 @@ class NoticeServiceTest {
  sendRecordMapper = mock(NoticeSendRecordMapper.class);
  channelTemplateMapper = mock(NoticeBusinessChannelTemplateMapper.class);
  channelConfigMapper = mock(NoticeChannelConfigMapper.class);
+ recipientAccountMapper = mock(NoticeRecipientAccountMapper.class);
+ receivePreferenceMapper = mock(NoticeReceivePreferenceMapper.class);
  businessTypeMapper = mock(NoticeBusinessTypeMapper.class);
  businessConfigVersionMapper = mock(NoticeBusinessConfigVersionMapper.class);
  identityUserApi = mock(IdentityUserApi.class);
@@ -166,9 +177,11 @@ class NoticeServiceTest {
  businessConfigVersionMapper,
  channelTemplateMapper,
  channelConfigMapper,
- taskMapper,
- recipientMapper,
- sendRecordMapper,
+	 taskMapper,
+	 recipientMapper,
+	 recipientAccountMapper,
+	 receivePreferenceMapper,
+	 sendRecordMapper,
  mock(NoticeSettingMapper.class),
  List.of(sender),
  new ObjectMapper(),
@@ -689,10 +702,25 @@ class NoticeServiceTest {
  NoticeSendRecordEntity record = record(20L, 1L, 100L);
  record.setBizType("TEST_NOTICE");
  record.setBizId("BIZ-1");
+ record.setBusinessChannelTemplateId(30L);
+ record.setTemplateVersion(2);
+ record.setChannelConfigId(40L);
  Page<NoticeSendRecordEntity> page = new Page<>(1, 10);
  page.setRecords(List.of(record));
  page.setTotal(1);
  when(sendRecordMapper.selectPage(any(), any())).thenReturn(page);
+ NoticeBusinessTypeEntity businessType = businessType();
+ businessType.setBizGroup("基础");
+ when(businessTypeMapper.selectList(any())).thenReturn(List.of(businessType));
+ NoticeRecipientEntity recipient = recipient(1L);
+ recipient.setRecipientName("管理员");
+ when(recipientMapper.selectList(any())).thenReturn(List.of(recipient));
+ NoticeBusinessChannelTemplateEntity template = template(30L, SITE, "标题", "内容");
+ template.setTemplateName("登录提醒系统消息");
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(template));
+ NoticeChannelConfigEntity channelConfig = channelConfig(40L, SITE);
+ channelConfig.setConfigName("系统消息内置通道");
+ when(channelConfigMapper.selectList(any())).thenReturn(List.of(channelConfig));
  NoticeSendRecordPageQuery query = new NoticeSendRecordPageQuery();
  query.setBizType("TEST_NOTICE");
  query.setBizId("BIZ-1");
@@ -702,6 +730,15 @@ class NoticeServiceTest {
  assertEquals(1, result.getTotal());
  assertEquals("TEST_NOTICE", result.getList().get(0).getBizType());
  assertEquals("BIZ-1", result.getList().get(0).getBizId());
+ assertEquals("基础", result.getList().get(0).getBizGroup());
+ assertEquals("测试通知", result.getList().get(0).getMessageName());
+ assertEquals("管理员", result.getList().get(0).getRecipientName());
+ assertNull(result.getList().get(0).getRecipientAccount());
+ assertEquals(30L, result.getList().get(0).getBusinessChannelTemplateId());
+ assertEquals("登录提醒系统消息", result.getList().get(0).getBusinessChannelTemplateName());
+ assertEquals(2, result.getList().get(0).getTemplateVersion());
+ assertEquals(40L, result.getList().get(0).getChannelConfigId());
+ assertEquals("系统消息内置通道", result.getList().get(0).getChannelConfigName());
  }
 
  @Test
@@ -736,7 +773,7 @@ class NoticeServiceTest {
  }
 
  @Test
- void send_configuredSmsWithoutMobile_sendsSiteFallbackOnly() {
+ void send_configuredSmsWithoutMobile_createsCanceledSmsRecordAndSiteFallback() {
  NoticeBusinessChannelTemplateEntity smsTemplate = template(11L, SMS,
  "短信 {{orderNo}}", "短信订单 {{orderNo}}");
  when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
@@ -749,9 +786,48 @@ class NoticeServiceTest {
  noticeService.send(command);
 
  ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
- verify(sendRecordMapper).insert(captor.capture());
- assertEquals(SITE, captor.getValue().getChannelType());
- assertTaskTotalCount(1, "SITE");
+ verify(sendRecordMapper, times(2)).insert(captor.capture());
+ List<NoticeSendRecordEntity> records = captor.getAllValues();
+ NoticeSendRecordEntity smsRecord = records.stream()
+ .filter(record -> record.getChannelType() == SMS)
+ .findFirst()
+ .orElseThrow();
+ assertEquals(NoticeSendStatus.CANCELED, smsRecord.getStatus());
+ assertEquals(NoticeSendCancelCode.RECIPIENT_ACCOUNT_MISSING.name(), smsRecord.getFailCode());
+ assertTrue(records.stream().anyMatch(record -> record.getChannelType() == SITE
+ && record.getStatus() == NoticeSendStatus.PENDING));
+ assertTaskTotalCount(2, "SMS,SITE");
+ }
+
+ @Test
+ void send_userDisabledSmsChannel_createsCanceledRecord() {
+ NoticeBusinessChannelTemplateEntity smsTemplate = template(11L, SMS,
+ "短信 {{orderNo}}", "短信订单 {{orderNo}}");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(smsTemplate));
+ NoticeReceivePreferenceEntity preference = new NoticeReceivePreferenceEntity();
+ preference.setUserId(1L);
+ preference.setScopeType(NoticeReceivePreferenceScopeType.BIZ_TYPE);
+ preference.setScopeValue("TEST_NOTICE");
+ preference.setChannelType(SMS);
+ preference.setEnabled(false);
+ when(receivePreferenceMapper.selectOne(any())).thenReturn(preference);
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType("TEST_NOTICE");
+ command.setUserId(1L);
+ command.setParams(Map.of("orderNo", "SO-1001"));
+
+ noticeService.send(command);
+
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper, times(2)).insert(captor.capture());
+ NoticeSendRecordEntity smsRecord = captor.getAllValues().stream()
+ .filter(record -> record.getChannelType() == SMS)
+ .findFirst()
+ .orElseThrow();
+ assertEquals(NoticeSendStatus.CANCELED, smsRecord.getStatus());
+ assertEquals(NoticeSendCancelCode.USER_CHANNEL_DISABLED.name(), smsRecord.getFailCode());
+ assertEquals("用户关闭该消息渠道", smsRecord.getFailReason());
  }
 
  @Test
@@ -813,9 +889,11 @@ class NoticeServiceTest {
  businessConfigVersionMapper,
  channelTemplateMapper,
  emailChannelConfigMapper,
- taskMapper,
- recipientMapper,
- sendRecordMapper,
+	 taskMapper,
+	 recipientMapper,
+	 recipientAccountMapper,
+	 receivePreferenceMapper,
+	 sendRecordMapper,
  mock(NoticeSettingMapper.class),
  List.of(emailSender),
  new ObjectMapper(),
@@ -1004,6 +1082,134 @@ class NoticeServiceTest {
  assertEquals(NoticeTaskStatus.FAILED, taskStatusUpdates.get(0));
  assertEquals(0, task.getSuccessCount());
  assertEquals(1, task.getFailCount());
+ }
+
+ @Test
+ void retrySendRecord_failedRecord_executesTaskImmediately() {
+ noticeService = serviceWithSender(command -> ChannelSendResult.providerSuccess("provider-1", "{}"));
+ NoticeTaskEntity task = task(1L);
+ NoticeSendRecordEntity record = record(20L, 1L, 100L);
+ record.setStatus(NoticeSendStatus.FAILED);
+ record.setRetryCount(1);
+ when(sendRecordMapper.selectById(20L)).thenReturn(record);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of(record));
+
+ boolean result = noticeService.retrySendRecord(20L);
+
+ assertTrue(result);
+ assertEquals(NoticeSendStatus.SUCCESS, record.getStatus());
+ assertNull(record.getNextRetryTime());
+ assertSendRecordStatusUpdates(NoticeSendStatus.RETRY_WAITING, NoticeSendStatus.SENDING, NoticeSendStatus.SUCCESS);
+ }
+
+ @Test
+ void retrySendRecord_successRecord_rejectsOperation() {
+ NoticeSendRecordEntity record = record(20L, 1L, 100L);
+ record.setStatus(NoticeSendStatus.SUCCESS);
+ when(sendRecordMapper.selectById(20L)).thenReturn(record);
+
+ assertThrows(RuntimeException.class, () -> noticeService.retrySendRecord(20L));
+
+ verify(sendRecordMapper, never()).updateById(record);
+ }
+
+ @Test
+ void markSendRecordManualSuccess_failedRecord_updatesStatusAndTaskCount() {
+ NoticeTaskEntity task = task(1L);
+ NoticeSendRecordEntity record = record(20L, 1L, 100L);
+ record.setStatus(NoticeSendStatus.FAILED);
+ HandleNoticeSendRecordCommand command = new HandleNoticeSendRecordCommand();
+ command.setReason("外部平台已确认送达");
+ when(sendRecordMapper.selectById(20L)).thenReturn(record);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of(record));
+
+ boolean result = noticeService.markSendRecordManualSuccess(20L, command);
+
+ assertTrue(result);
+ assertEquals(NoticeSendStatus.MANUAL_SUCCESS, record.getStatus());
+ assertEquals("人工确认成功：外部平台已确认送达", record.getFailReason());
+ assertEquals(NoticeTaskStatus.SUCCESS, taskStatusUpdates.get(taskStatusUpdates.size() - 1));
+ assertEquals(1, task.getSuccessCount());
+ assertEquals(0, task.getFailCount());
+ }
+
+ @Test
+ void ignoreSendRecord_finalFailedRecord_updatesStatusAndTaskCount() {
+ NoticeTaskEntity task = task(1L);
+ NoticeSendRecordEntity record = record(20L, 1L, 100L);
+ record.setStatus(NoticeSendStatus.FINAL_FAILED);
+ HandleNoticeSendRecordCommand command = new HandleNoticeSendRecordCommand();
+ command.setReason("测试数据不再处理");
+ when(sendRecordMapper.selectById(20L)).thenReturn(record);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of(record));
+
+ boolean result = noticeService.ignoreSendRecord(20L, command);
+
+ assertTrue(result);
+ assertEquals(NoticeSendStatus.IGNORED, record.getStatus());
+ assertEquals("忽略失败：测试数据不再处理", record.getFailReason());
+ assertEquals(NoticeTaskStatus.SUCCESS, taskStatusUpdates.get(taskStatusUpdates.size() - 1));
+ assertEquals(1, task.getSuccessCount());
+ assertEquals(0, task.getFailCount());
+ }
+
+ @Test
+ void markSendRecordsManualSuccess_failedRecords_updatesStatusesAndRefreshesTask() {
+ NoticeTaskEntity task = task(1L);
+ NoticeSendRecordEntity first = record(20L, 1L, 100L);
+ NoticeSendRecordEntity second = record(21L, 1L, 101L);
+ first.setStatus(NoticeSendStatus.FAILED);
+ second.setStatus(NoticeSendStatus.RETRY_WAITING);
+ HandleNoticeSendRecordsCommand command = new HandleNoticeSendRecordsCommand();
+ command.setIds(List.of(20L, 21L));
+ command.setReason("平台侧已送达");
+ when(sendRecordMapper.selectById(20L)).thenReturn(first);
+ when(sendRecordMapper.selectById(21L)).thenReturn(second);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of(first, second));
+
+ boolean result = noticeService.markSendRecordsManualSuccess(command);
+
+ assertTrue(result);
+ assertEquals(NoticeSendStatus.MANUAL_SUCCESS, first.getStatus());
+ assertEquals(NoticeSendStatus.MANUAL_SUCCESS, second.getStatus());
+ assertEquals("人工确认成功：平台侧已送达", first.getFailReason());
+ assertEquals("人工确认成功：平台侧已送达", second.getFailReason());
+ assertEquals(NoticeTaskStatus.SUCCESS, taskStatusUpdates.get(taskStatusUpdates.size() - 1));
+ assertEquals(2, task.getSuccessCount());
+ assertEquals(0, task.getFailCount());
+ verify(taskMapper, times(1)).selectById(1L);
+ }
+
+ @Test
+ void ignoreSendRecords_failedRecords_updatesStatusesAndRefreshesTask() {
+ NoticeTaskEntity task = task(1L);
+ NoticeSendRecordEntity first = record(20L, 1L, 100L);
+ NoticeSendRecordEntity second = record(21L, 1L, 101L);
+ first.setStatus(NoticeSendStatus.FAILED);
+ second.setStatus(NoticeSendStatus.FINAL_FAILED);
+ HandleNoticeSendRecordsCommand command = new HandleNoticeSendRecordsCommand();
+ command.setIds(List.of(20L, 21L));
+ command.setReason("测试失败记录");
+ when(sendRecordMapper.selectById(20L)).thenReturn(first);
+ when(sendRecordMapper.selectById(21L)).thenReturn(second);
+ when(taskMapper.selectById(1L)).thenReturn(task);
+ when(sendRecordMapper.selectList(any())).thenReturn(List.of(first, second));
+
+ boolean result = noticeService.ignoreSendRecords(command);
+
+ assertTrue(result);
+ assertEquals(NoticeSendStatus.IGNORED, first.getStatus());
+ assertEquals(NoticeSendStatus.IGNORED, second.getStatus());
+ assertEquals("忽略失败：测试失败记录", first.getFailReason());
+ assertEquals("忽略失败：测试失败记录", second.getFailReason());
+ assertEquals(NoticeTaskStatus.SUCCESS, taskStatusUpdates.get(taskStatusUpdates.size() - 1));
+ assertEquals(2, task.getSuccessCount());
+ assertEquals(0, task.getFailCount());
+ verify(taskMapper, times(1)).selectById(1L);
  }
 
  @Test
@@ -1300,9 +1506,11 @@ class NoticeServiceTest {
  businessConfigVersionMapper,
  channelTemplateMapper,
  routeChannelConfigMapper(SITE),
- taskMapper,
- recipientMapper,
- sendRecordMapper,
+	 taskMapper,
+	 recipientMapper,
+	 recipientAccountMapper,
+	 receivePreferenceMapper,
+	 sendRecordMapper,
  mock(NoticeSettingMapper.class),
  List.of(sender),
  new ObjectMapper(),

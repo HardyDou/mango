@@ -70,20 +70,20 @@ public class MenuServiceImpl implements IMenuService {
 
         String effectiveAppCode = StringUtils.hasText(appCode) ? appCode : query.systemCode();
         AuthorizationQuery scopedQuery = query.withSystemCode(effectiveAppCode);
-        List<Menu> visibleMenus = listVisibleMenus(effectiveAppCode);
-        if (visibleMenus.isEmpty()) {
+        List<Menu> enabledMenus = listEnabledMenus(effectiveAppCode);
+        if (enabledMenus.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Menu> scopedMenus;
         if (hasAllMenuAccess(scopedQuery)) {
-            scopedMenus = visibleMenus;
+            scopedMenus = enabledMenus;
         } else {
-            Set<Long> authorizedMenuIds = resolveAuthorizedMenuIds(scopedQuery, visibleMenus);
+            Set<Long> authorizedMenuIds = resolveAuthorizedMenuIds(scopedQuery, enabledMenus);
             if (authorizedMenuIds.isEmpty()) {
                 return new ArrayList<>();
             }
-            scopedMenus = visibleMenus.stream()
+            scopedMenus = enabledMenus.stream()
                     .filter(menu -> authorizedMenuIds.contains(menu.getMenuId()))
                     .collect(Collectors.toList());
         }
@@ -189,11 +189,10 @@ public class MenuServiceImpl implements IMenuService {
                 .collect(Collectors.toList());
     }
 
-    private List<Menu> listVisibleMenus(String appCode) {
+    private List<Menu> listEnabledMenus(String appCode) {
         LambdaQueryWrapper<Menu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StringUtils.hasText(appCode), Menu::getAppCode, appCode)
                 .eq(Menu::getStatus, 1)
-                .eq(Menu::getVisible, 1)
                 .orderByAsc(Menu::getSort);
         List<String> enabledModuleCodes = listEnabledModuleCodes(appCode);
         if (!enabledModuleCodes.isEmpty()) {

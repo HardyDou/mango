@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
 @Schema(description = "通知发送记录分页查询")
@@ -28,9 +29,24 @@ public class NoticeSendRecordPageQuery implements Serializable {
     @Schema(description = "业务对象ID")
     private String bizId;
 
+    @Schema(description = "业务域")
+    private String bizGroup;
+
+    @Schema(description = "消息名称")
+    private String messageName;
+
     @Schema(description = "渠道类型")
     private NoticeChannelType channelType;
 
     @Schema(description = "发送状态")
     private NoticeSendStatus status;
+
+    @Schema(description = "接收人关键字")
+    private String recipientKeyword;
+
+    @Schema(description = "发送开始时间")
+    private LocalDateTime startTime;
+
+    @Schema(description = "发送结束时间")
+    private LocalDateTime endTime;
 }
