@@ -53,12 +53,50 @@ function pathMatches(inputPath, pattern) {
     const prefix = normalizedPattern.slice(0, -3);
     return normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`);
   }
+  if (normalizedPattern.includes('*') || normalizedPattern.includes('?')) {
+    const regex = globToRegExp(normalizedPattern);
+    return regex.test(normalizedPath);
+  }
   return normalizedPath === normalizedPattern || normalizedPath.startsWith(`${normalizedPattern}/`);
+}
+
+function globToRegExp(pattern) {
+  let source = '^';
+  for (let i = 0; i < pattern.length; i += 1) {
+    const char = pattern[i];
+    const next = pattern[i + 1];
+    if (char === '*' && next === '*') {
+      const after = pattern[i + 2];
+      if (after === '/') {
+        source += '(?:.*/)?';
+        i += 2;
+      } else {
+        source += '.*';
+        i += 1;
+      }
+    } else if (char === '*') {
+      source += '[^/]*';
+    } else if (char === '?') {
+      source += '[^/]';
+    } else if ('\\^$+?.()|{}[]'.includes(char)) {
+      source += `\\${char}`;
+    } else {
+      source += char;
+    }
+  }
+  source += '$';
+  return new RegExp(source);
 }
 
 function bundleMatches(bundle, args) {
   const task = normalizeText(args.task);
   const inputPaths = splitPaths(args.paths);
+  if (Array.isArray(bundle.roles) && bundle.roles.length > 0 && !bundle.roles.includes(args.role)) {
+    return false;
+  }
+  if (Array.isArray(bundle.phases) && bundle.phases.length > 0 && !bundle.phases.includes(args.phase)) {
+    return false;
+  }
   const keywordHit = (bundle.keywords || []).some((keyword) => task.includes(normalizeText(keyword)));
   const pathHit = inputPaths.some((inputPath) => (bundle.paths || []).some((pattern) => pathMatches(inputPath, pattern)));
   return keywordHit || pathHit;
