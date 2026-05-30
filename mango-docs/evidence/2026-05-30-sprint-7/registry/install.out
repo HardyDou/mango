@@ -1,0 +1,26 @@
+Scope: all 4 workspace projects
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 20, reused 0, downloaded 7, added 0
+Progress: resolved 20, reused 0, downloaded 19, added 0
+Progress: resolved 29, reused 0, downloaded 20, added 0
+Progress: resolved 85, reused 0, downloaded 68, added 0
+Progress: resolved 204, reused 0, downloaded 140, added 0
+Progress: resolved 297, reused 0, downloaded 226, added 0
+Progress: resolved 310, reused 0, downloaded 261, added 0
+frontend/apps/registry-platform-admin    |  WARN  deprecated vue-i18n@9.14.5
+ WARN  4 deprecated subdependencies found: codemirror@6.65.7, glob@7.2.3, inflight@1.0.6, lodash.isequal@4.5.0
+Packages: +268
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 314, reused 0, downloaded 266, added 93
+Progress: resolved 314, reused 0, downloaded 267, added 265
+Progress: resolved 314, reused 0, downloaded 268, added 267
+Progress: resolved 314, reused 0, downloaded 268, added 268, done
+
+devDependencies:
++ @types/node 20.19.41 (25.9.1 is available)
++ @vitejs/plugin-vue 5.2.4 (6.0.7 is available)
++ typescript 5.9.3 (6.0.3 is available)
++ vite 5.4.21 (8.0.14 is available)
++ vue-tsc 2.2.12 (3.3.2 is available)
+
+Done in 10.4s using pnpm v10.33.0

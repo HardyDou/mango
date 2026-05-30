@@ -1,0 +1,21 @@
+# Mango Admin Runtime 产品化 Sprint 7 交付台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| S7-001 | 升级计划 Sprint 7 | 定义包版本策略 | 在 Sprint 7 设计说明中固化同批版本、禁止发布 `workspace:*`、推荐入口和 API/Admin 边界 | `mango-docs/plans/2026-05-30-release-upgrade-compat-sprint-7.md` | 文档检查、package contract check | DONE | `mango-docs/plans/2026-05-30-release-upgrade-compat-sprint-7.md`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/summary.md` |
+| S7-002 | 升级计划 Sprint 7 | 定义旧混合包兼容层和迁移期限 | 旧 `@mango/*` 作为受控过渡兼容包，API re-export 到 `@mango/*-api`，保留 `./capability` | `mango-ui/scripts/check-package-contracts.mjs` | `cd mango-ui && pnpm package:check` | DONE | `mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/legacy-compat-project.json` |
+| S7-003 | 升级计划 Sprint 7 | 定义破坏性变更检查 | 包契约检查覆盖发布导出、API 包禁止 Admin/UI 依赖、Admin 包依赖 API、默认能力引用 `*-admin` | `mango-ui/scripts/check-package-contracts.mjs` | `node --check`、`pnpm package:check` | DONE | `mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-project.json` |
+| S7-004 | 升级计划 Sprint 7 | 定义 release checklist | 在 Sprint 7 设计说明中列出 package check、package build、generated upgrade E2E、registry E2E 和发布记录字段 | Sprint 7 设计说明 | 文档检查、台账检查 | DONE | `mango-docs/plans/2026-05-30-release-upgrade-compat-sprint-7.md` |
+| S7-005 | 升级计划 Sprint 7 | 定义 changelog 和迁移文档模板 | 在 Sprint 7 设计说明中提供 Changelog 和 Migration 模板，不写入长期规范 | Sprint 7 设计说明 | 文档检查、台账检查 | DONE | `mango-docs/plans/2026-05-30-release-upgrade-compat-sprint-7.md` |
+| S7-006 | 升级计划 Sprint 7 | 定义业务项目升级 E2E | 新增 generated project upgrade E2E，同一生成项目先走旧兼容入口，再切回新推荐入口 | `mango-ui/scripts/generated-project-upgrade-e2e.mjs`、`mango-ui/package.json` | `cd mango-ui && pnpm generated-project:upgrade-e2e -- --frontend-port <port> --evidence-dir ../mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade --skip-package-build` | DONE | `mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/summary.md`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/layout-report.json`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-frontend.png` |
+| S7-007 | 升级计划 Sprint 7 | 旧 `@mango/file` 等兼容出口仍可工作 | 升级 E2E 将生成项目改为 `@mango/*/capability` 和旧 `@mango/*` 依赖后执行 install/typecheck/build | `generated-project-upgrade-e2e.mjs` | legacy install/typecheck/build | DONE | `mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/legacy-install.out`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/legacy-typecheck.out`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/legacy-build.out` |
+| S7-008 | 升级计划 Sprint 7 | 新 `@mango/file-api` / `@mango/file-admin` 推荐路径可工作 | 升级 E2E 切回 `@mango/*-admin/capability` 和 `@mango/*-admin` 依赖后执行 install/typecheck/build/E2E | `generated-project-upgrade-e2e.mjs` | recommended install/typecheck/build/browser smoke | DONE | `mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-install.out`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-typecheck.out`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-build.out`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-frontend.png` |
+| S7-009 | 用户强制要求 | 每阶段必须新特性测试、回归测试、E2E 截图识别和报告保留 | Sprint 7 evidence 保存 install/typecheck/build、registry E2E、截图、layout-report、summary 和人工截图识别结论 | `mango-docs/evidence/2026-05-30-sprint-7/` | generated upgrade E2E、registry E2E、package build/check、截图识别 | DONE | `mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/summary.md`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/layout-report.json`；`mango-docs/evidence/2026-05-30-sprint-7/generated-upgrade/recommended-frontend.png`；`mango-docs/evidence/2026-05-30-sprint-7/registry/summary.md`；`mango-docs/evidence/2026-05-30-sprint-7/registry/frontend-smoke-report.json`；`mango-docs/evidence/2026-05-30-sprint-7/registry/frontend-smoke.png` |
+| S7-010 | PMO 规范 | Sprint 7 必须有设计说明和交付台账 | 使用 PMO 台账字段记录原子项、验收和证据 | 本文件和 Sprint 7 设计文件 | delivery contract check | DONE | `mango-docs/plans/2026-05-30-release-upgrade-compat-sprint-7.md`；`mango-docs/plans/2026-05-30-release-upgrade-compat-sprint-7-ledger.md` |
+
+## 未完成不得声明完成项
+
+- 未通过旧兼容入口 install/typecheck/build，不得声明旧项目可升级。
+- 未通过新推荐入口 install/typecheck/build/E2E 截图，不得声明推荐路径可用。
+- 未通过 package contract check，不得声明兼容层不掩盖新边界违规。
+- 未通过 registry consumption E2E，不得声明发布物消费回归完成。

@@ -1,0 +1,18 @@
+5:25:49 PM [vite] http proxy error: /authorization/menus/user?fmt=tree&appCode=internal-admin
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+5:25:50 PM [vite] http proxy error: /guarantee/letters?pageNo=1&pageSize=20&name=
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+5:32:11 PM [vite] http proxy error: /authorization/menus/user?fmt=tree&appCode=internal-admin
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+5:32:12 PM [vite] http proxy error: /guarantee/letters?pageNo=1&pageSize=20&name=
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+6:01:19 PM [vite] http proxy error: /authorization/menus/user?fmt=tree&appCode=internal-admin
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+6:01:20 PM [vite] http proxy error: /guarantee/letters?pageNo=1&pageSize=20&name=
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)

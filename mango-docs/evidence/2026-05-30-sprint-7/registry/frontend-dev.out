@@ -1,0 +1,8 @@
+
+> registry-platform-admin@1.0.0-SNAPSHOT dev /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-registry-e2e-ojIhZE/registry-platform/frontend/apps/registry-platform-admin
+> vite --host 127.0.0.1 --port 5334
+
+
+  VITE v5.4.21  ready in 224 ms
+
+  ➜  Local:   http://127.0.0.1:5334/

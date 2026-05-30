@@ -1,0 +1,36 @@
+{
+  "appPackage": {
+    "name": "upgrade-platform-admin",
+    "dependencies": {
+      "@upgrade-platform/guarantee-admin": "workspace:1.0.0-SNAPSHOT",
+      "@mango/admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-admin",
+      "@mango/admin-pages": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-admin-pages",
+      "@mango/app-runtime": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-app-runtime",
+      "dayjs": "^1.11.10",
+      "element-plus": "2.14.0",
+      "pinia": "^2.3.0",
+      "vue": "^3.5.13",
+      "vue-router": "^4.1.6",
+      "@mango/auth-admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-auth-admin",
+      "@mango/rbac-admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-rbac-admin",
+      "@mango/system-admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-system-admin",
+      "@mango/workflow-admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-workflow-admin",
+      "@mango/notice-admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-notice-admin",
+      "@mango/file-admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-file-admin"
+    }
+  },
+  "imports": [
+    "@mango/admin",
+    "@upgrade-platform/guarantee-admin",
+    "./runtimeConfig",
+    "./starterMenus",
+    "@mango/auth-admin/capability",
+    "@mango/rbac-admin/capability",
+    "@mango/system-admin/capability",
+    "@mango/workflow-admin/capability",
+    "@mango/notice-admin/capability",
+    "@mango/file-admin/capability"
+  ],
+  "usesCreateMangoAdmin": true,
+  "directAdminShellImport": false
+}

@@ -1,0 +1,36 @@
+{
+  "appPackage": {
+    "name": "upgrade-platform-admin",
+    "dependencies": {
+      "@upgrade-platform/guarantee-admin": "workspace:1.0.0-SNAPSHOT",
+      "@mango/admin": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-admin",
+      "@mango/admin-pages": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-admin-pages",
+      "@mango/app-runtime": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-app-runtime",
+      "dayjs": "^1.11.10",
+      "element-plus": "2.14.0",
+      "pinia": "^2.3.0",
+      "vue": "^3.5.13",
+      "vue-router": "^4.1.6",
+      "@mango/auth": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-auth",
+      "@mango/rbac": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-rbac",
+      "@mango/system": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-system",
+      "@mango/workflow": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-workflow",
+      "@mango/notice": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-notice",
+      "@mango/file": "file:/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/staged-packages/mango-file"
+    }
+  },
+  "imports": [
+    "@mango/admin",
+    "@upgrade-platform/guarantee-admin",
+    "./runtimeConfig",
+    "./starterMenus",
+    "@mango/auth/capability",
+    "@mango/rbac/capability",
+    "@mango/system/capability",
+    "@mango/workflow/capability",
+    "@mango/notice/capability",
+    "@mango/file/capability"
+  ],
+  "usesCreateMangoAdmin": true,
+  "directAdminShellImport": false
+}

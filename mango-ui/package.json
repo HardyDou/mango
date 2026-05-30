@@ -13,6 +13,7 @@
     "admin:full-preset-e2e": "node ./scripts/admin-full-preset-e2e.mjs",
     "admin:custom-preset-e2e": "node ./scripts/admin-custom-preset-e2e.mjs",
     "package:registry-e2e": "node ./scripts/registry-consumption-e2e.mjs",
+    "generated-project:upgrade-e2e": "node ./scripts/generated-project-upgrade-e2e.mjs",
     "frontend-mode:matrix-e2e": "node ./scripts/frontend-mode-matrix-e2e.mjs",
     "business-starter:dev-start-e2e": "node ./scripts/business-starter-dev-start-e2e.mjs",
     "build:micro": "pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build",

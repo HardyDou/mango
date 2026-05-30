@@ -29,11 +29,14 @@ const tempRoot = args.keepTemp
 const registryPort = args.registryPort;
 const frontendPort = args.frontendPort;
 const registryUrl = `http://127.0.0.1:${registryPort}`;
+const registryTestVersion = `1.0.0-registry-e2e.${Date.now()}`;
 const projectName = 'registry-platform';
 const projectRoot = join(tempRoot, projectName);
 const evidenceRoot = args.evidenceDir ? resolve(args.evidenceDir) : join(tempRoot, 'evidence');
 const npmConfigPath = join(tempRoot, 'npmrc');
+const pnpmStoreDir = join(tempRoot, 'pnpm-store');
 const published = [];
+const publishPackageNames = new Set();
 const cleanupTasks = [];
 let frontendSmokeReport = null;
 
@@ -56,19 +59,26 @@ try {
   const token = createRegistryUser();
   writeNpmConfig(token);
 
-  for (const packageInfo of resolvePublishOrder()) {
+  const publishOrder = resolvePublishOrder();
+  for (const { packageJson } of publishOrder) {
+    publishPackageNames.add(packageJson.name);
+  }
+  for (const packageInfo of publishOrder) {
     publishPackage(packageInfo);
   }
   verifyRegistryViews();
 
   generateProject();
   rewriteProjectRegistryConfig();
+  rewriteProjectMangoDependencyVersions();
+  resetProjectInstallState();
   run('node', ['scripts/check-template.mjs'], { cwd: projectRoot });
   run('pnpm', ['install', '--ignore-scripts'], {
     cwd: projectRoot,
     env: {
       ...process.env,
       npm_config_userconfig: npmConfigPath,
+      npm_config_store_dir: pnpmStoreDir,
     },
     captureFile: join(evidenceRoot, 'install.out'),
   });
@@ -222,6 +232,7 @@ function writeNpmConfig(token) {
       `registry=${registryUrl}/`,
       `@mango:registry=${registryUrl}/`,
       `//${host}/:_authToken=${token}`,
+      `store-dir=${pnpmStoreDir}`,
       'strict-peer-dependencies=false',
       '',
     ].join('\n'),
@@ -273,10 +284,12 @@ function publishPackage({ packageDir, packageJson }) {
   cpSync(join(packageDir, 'dist'), join(stagingDir, 'dist'), { recursive: true });
   const publishPackageJson = {
     ...packageJson,
+    version: registryTestVersion,
     publishConfig: { registry: registryUrl },
   };
   delete publishPackageJson.scripts;
   delete publishPackageJson.devDependencies;
+  rewritePublishedInternalVersions(publishPackageJson);
   writeFileSync(join(stagingDir, 'package.json'), `${JSON.stringify(publishPackageJson, null, 2)}\n`, 'utf8');
   run('npm', [
     'publish',
@@ -284,11 +297,27 @@ function publishPackage({ packageDir, packageJson }) {
     registryUrl,
     '--access',
     'public',
+    '--tag',
+    'registry-e2e',
     '--ignore-scripts',
     '--userconfig',
     npmConfigPath,
   ], { cwd: stagingDir });
-  published.push(`${packageJson.name}@${packageJson.version}`);
+  published.push(`${packageJson.name}@${registryTestVersion}`);
+}
+
+function rewritePublishedInternalVersions(packageJson) {
+  for (const section of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
+    const dependencies = packageJson[section];
+    if (!dependencies) {
+      continue;
+    }
+    for (const dependencyName of Object.keys(dependencies)) {
+      if (publishPackageNames.has(dependencyName)) {
+        dependencies[dependencyName] = registryTestVersion;
+      }
+    }
+  }
 }
 
 function verifyRegistryViews() {
@@ -342,12 +371,93 @@ function rewriteProjectRegistryConfig() {
     [
       `registry=${registryUrl}/`,
       `@mango:registry=${registryUrl}/`,
+      `store-dir=${pnpmStoreDir}`,
       'prefer-workspace-packages=true',
       'strict-peer-dependencies=false',
       '',
     ].join('\n'),
     'utf8',
   );
+}
+
+function rewriteProjectMangoDependencyVersions() {
+  for (const file of findPackageJsonFiles(projectRoot)) {
+    const packageJson = readJson(file);
+    let changed = false;
+    for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+      const dependencies = packageJson[section];
+      if (!dependencies) {
+        continue;
+      }
+      for (const dependencyName of Object.keys(dependencies)) {
+        if (publishPackageNames.has(dependencyName)) {
+          dependencies[dependencyName] = registryTestVersion;
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      writeJson(file, packageJson);
+    }
+  }
+  writeProjectDependencySnapshot();
+}
+
+function resetProjectInstallState() {
+  rmSync(join(projectRoot, 'node_modules'), { recursive: true, force: true });
+  rmSync(join(projectRoot, 'pnpm-lock.yaml'), { force: true });
+}
+
+function writeProjectDependencySnapshot() {
+  const packageSnapshots = findPackageJsonFiles(projectRoot)
+    .map((file) => {
+      const packageJson = readJson(file);
+      return {
+        path: relative(projectRoot, file),
+        name: packageJson.name,
+        dependencies: filterMangoDependencies(packageJson.dependencies),
+        devDependencies: filterMangoDependencies(packageJson.devDependencies),
+        optionalDependencies: filterMangoDependencies(packageJson.optionalDependencies),
+        peerDependencies: filterMangoDependencies(packageJson.peerDependencies),
+      };
+    })
+    .filter((item) => Object.values(item).some((value) => value && typeof value === 'object' && Object.keys(value).length > 0));
+  writeFileSync(
+    join(evidenceRoot, 'project-registry-dependencies.json'),
+    `${JSON.stringify({
+      registry: registryUrl,
+      version: registryTestVersion,
+      packages: packageSnapshots,
+    }, null, 2)}\n`,
+    'utf8',
+  );
+}
+
+function filterMangoDependencies(dependencies) {
+  if (!dependencies) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(dependencies).filter(([name]) => name.startsWith('@mango/')),
+  );
+}
+
+function findPackageJsonFiles(root) {
+  const files = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === '.git') {
+      continue;
+    }
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...findPackageJsonFiles(path));
+      continue;
+    }
+    if (entry.name === 'package.json') {
+      files.push(path);
+    }
+  }
+  return files;
 }
 
 function assertNoInstallPeerWarnings(filePath) {
@@ -420,6 +530,45 @@ page.on('response', (response) => {
     failedResponses.push({ status: response.status(), url: response.url() });
   }
 });
+async function readRuntimeDecision() {
+  return page.evaluate(() => {
+    const content = document.querySelector('.shell-runtime-content');
+    return {
+      pageType: content?.getAttribute('data-mango-runtime-page-type') || '',
+      mode: content?.getAttribute('data-mango-runtime-mode') || '',
+      moduleCode: content?.getAttribute('data-mango-runtime-module') || '',
+      runtimeCode: content?.getAttribute('data-mango-runtime-code') || '',
+      entry: content?.getAttribute('data-mango-runtime-entry') || '',
+    };
+  }).catch(() => ({
+    pageType: '',
+    mode: '',
+    moduleCode: '',
+    runtimeCode: '',
+    entry: '',
+  }));
+}
+async function writeFailureEvidence(error) {
+  const { writeFileSync } = await import('node:fs');
+  const failureScreenshot = screenshot.replace(/\\.png$/, '-failure.png');
+  const failureReport = reportFile.replace(/\\.json$/, '-failure.json');
+  const failureHtml = reportFile.replace(/\\.json$/, '-failure.html');
+  const bodyText = await page.locator('body').innerText({ timeout: 1000 }).catch(() => '');
+  const runtimeDecision = await readRuntimeDecision();
+  await page.screenshot({ path: failureScreenshot, fullPage: true }).catch(() => undefined);
+  writeFileSync(failureHtml, await page.content().catch(() => ''), 'utf8');
+  writeFileSync(failureReport, \`\${JSON.stringify({
+    url: page.url(),
+    error: error instanceof Error ? error.message : String(error),
+    runtimeDecision,
+    bodyText: bodyText.slice(0, 3000),
+    consoleErrors,
+    failedResponses,
+    screenshot: failureScreenshot,
+    html: failureHtml,
+  }, null, 2)}\\n\`, 'utf8');
+}
+try {
 await page.goto(baseUrl, { waitUntil: 'networkidle' });
 await page.waitForURL('**/#/home', { timeout: 15000 });
 await page.waitForFunction(() => document.body.innerText.includes('首页'), undefined, { timeout: 15000 });
@@ -428,22 +577,14 @@ await page.waitForFunction(() => {
   const content = document.querySelector('.shell-runtime-content');
   return content?.getAttribute('data-mango-runtime-page-type') === 'MICRO_ROUTE';
 }, undefined, { timeout: 15000 });
-const runtimeDecision = await page.evaluate(() => {
-  const content = document.querySelector('.shell-runtime-content');
-  return {
-    pageType: content?.getAttribute('data-mango-runtime-page-type') || '',
-    mode: content?.getAttribute('data-mango-runtime-mode') || '',
-    moduleCode: content?.getAttribute('data-mango-runtime-module') || '',
-    runtimeCode: content?.getAttribute('data-mango-runtime-code') || '',
-    entry: content?.getAttribute('data-mango-runtime-entry') || '',
-  };
-});
+const runtimeDecision = await readRuntimeDecision();
 if (runtimeDecision.moduleCode !== 'guarantee' || runtimeDecision.runtimeCode !== 'registry-platform-guarantee') {
   throw new Error(\`Unexpected runtime decision: \${JSON.stringify(runtimeDecision)}\`);
 }
 await page.waitForFunction(() => {
   const text = document.body.innerText;
-  return text.includes('页面加载失败') && text.includes('Failed to load Mango micro app');
+  return text.includes('页面加载失败')
+    && (text.includes('Failed to load Mango micro app') || text.includes('Mango micro app health check failed'));
 }, undefined, { timeout: 30000 });
 const bodyText = await page.locator('body').innerText({ timeout: 15000 });
 if (!bodyText.includes('Letter管理')) {
@@ -513,7 +654,8 @@ const layoutReport = await page.evaluate((runtimeDecision) => {
       hasAsideLayout: menu.visible && menu.rect.width >= 200 && menu.rect.width <= 240,
       hasRuntimeOutlet: runtime.visible,
       hasBusinessMenu: bodyText.includes('Letter管理'),
-      hasExpectedMicroFailureState: bodyText.includes('页面加载失败') && bodyText.includes('Failed to load Mango micro app'),
+      hasExpectedMicroFailureState: bodyText.includes('页面加载失败')
+        && (bodyText.includes('Failed to load Mango micro app') || bodyText.includes('Mango micro app health check failed')),
       hasStyledMicroErrorState: runtimeEmpty.visible
         && runtimeEmpty.style.display === 'flex'
         && runtimeEmpty.style.backgroundColor === 'rgb(255, 255, 255)'
@@ -547,27 +689,39 @@ const failedLayoutChecks = Object.entries(layoutReport.checks)
 if (failedLayoutChecks.length > 0) {
   throw new Error(\`Registry frontend smoke layout checks failed: \${failedLayoutChecks.join(', ')}. Report: \${JSON.stringify(layoutReport)}\`);
 }
+function isAllowedFailedResponse(item) {
+  const url = new URL(item.url);
+  if (url.origin === 'http://127.0.0.1:5190') {
+    return true;
+  }
+  if (url.pathname === '/api/authorization/menus/user') {
+    return true;
+  }
+  if (url.pathname === '/favicon.ico') {
+    return true;
+  }
+  return false;
+}
+const hasOnlyAllowedFailedResponses = failedResponses.every(isAllowedFailedResponse);
 const unexpectedErrors = consoleErrors.filter((message) => {
   if (message === 'Failed to load resource: the server responded with a status of 404 (Not Found)') {
     return false;
   }
+  if (
+    hasOnlyAllowedFailedResponses
+    && message === 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)'
+  ) {
+    return false;
+  }
   return !message.includes('Failed to load Mango micro app')
     && !message.includes('Failed to mount Mango micro app')
+    && !message.includes('Mango micro app health check failed')
     && !message.includes('ERR_CONNECTION_REFUSED');
 });
 if (unexpectedErrors.length > 0) {
   throw new Error(\`Unexpected browser console errors:\\n\${unexpectedErrors.join('\\n')}\`);
 }
-const unexpectedResponses = failedResponses.filter((item) => {
-  const url = new URL(item.url);
-  if (url.origin === 'http://127.0.0.1:5190') {
-    return false;
-  }
-  if (url.pathname === '/favicon.ico') {
-    return false;
-  }
-  return true;
-});
+const unexpectedResponses = failedResponses.filter((item) => !isAllowedFailedResponse(item));
 if (unexpectedResponses.length > 0) {
   throw new Error(\`Unexpected failed browser responses:\\n\${unexpectedResponses.map(item => \`\${item.status} \${item.url}\`).join('\\n')}\`);
 }
@@ -575,6 +729,10 @@ await page.screenshot({ path: screenshot, fullPage: true });
 await import('node:fs').then(({ writeFileSync }) => {
   writeFileSync(reportFile, \`\${JSON.stringify(layoutReport, null, 2)}\\n\`, 'utf8');
 });
+} catch (error) {
+  await writeFailureEvidence(error);
+  throw error;
+}
 await browser.close();
 `;
 }
@@ -584,6 +742,7 @@ function writeSummary() {
     '# Mango Registry Consumption E2E',
     '',
     `- Registry: ${registryUrl}`,
+    `- Test version: ${registryTestVersion}`,
     `- Generated project: ${projectRoot}`,
     `- Published packages: ${published.length}`,
     ...published.map((item) => `  - ${item}`),
@@ -591,7 +750,7 @@ function writeSummary() {
     `- Browser page: ${frontendSmokeReport?.url || `http://127.0.0.1:${frontendPort}/#/guarantee/letters`}`,
     '- UI layout checks: admin shell, runtime outlet, business menu, expected micro app failure state, horizontal overflow',
     `- Layout result: ${frontendSmokeReport ? 'passed' : 'not recorded'}`,
-    '- Evidence: install.out, verdaccio.out, frontend-dev.out, frontend-smoke-report.json, frontend-smoke.png',
+    '- Evidence: project-registry-dependencies.json, install.out, verdaccio.out, frontend-dev.out, frontend-smoke-report.json, frontend-smoke.png',
     '',
   ].join('\n');
   writeFileSync(join(evidenceRoot, 'summary.md'), summary, 'utf8');
@@ -681,6 +840,14 @@ function ensurePlaywrightAvailable() {
 
 function readPackageJson(packageDir) {
   return JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'));
+}
+
+function readJson(file) {
+  return JSON.parse(readFileSync(file, 'utf8'));
+}
+
+function writeJson(file, value) {
+  writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
 function log(message) {

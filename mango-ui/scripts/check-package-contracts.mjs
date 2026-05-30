@@ -23,6 +23,7 @@ for (const packageDir of packageDirs) {
 }
 
 checkBuiltInApiAdminPairs();
+checkBuiltInCompatibilityLayers();
 checkAdminPagesDefaultCapabilities();
 checkCapabilityDependencyGraph();
 scanForForbiddenSourcePaths(packagesRoot);
@@ -133,6 +134,94 @@ function checkBuiltInApiAdminPairs() {
     assert(existsSync(join(apiDir, 'package.json')), `Missing built-in API package @mango/${capabilityName}-api`);
     assert(existsSync(join(adminDir, 'package.json')), `Missing built-in admin package @mango/${capabilityName}-admin`);
   }
+}
+
+function checkBuiltInCompatibilityLayers() {
+  for (const capabilityName of builtInCapabilityNames) {
+    const legacyDir = join(packagesRoot, capabilityName);
+    const apiDir = join(packagesRoot, `${capabilityName}-api`);
+    const adminDir = join(packagesRoot, `${capabilityName}-admin`);
+    const legacyPackageJson = readPackageJsonIfExists(legacyDir);
+    const apiPackageJson = readPackageJsonIfExists(apiDir);
+    const adminPackageJson = readPackageJsonIfExists(adminDir);
+    const legacyName = `@mango/${capabilityName}`;
+    const apiName = `@mango/${capabilityName}-api`;
+    const adminName = `@mango/${capabilityName}-admin`;
+
+    assert(Boolean(legacyPackageJson), `Missing transition compatibility package ${legacyName}`);
+    assert(Boolean(apiPackageJson), `Missing API package ${apiName}`);
+    assert(Boolean(adminPackageJson), `Missing admin package ${adminName}`);
+    if (!legacyPackageJson || !apiPackageJson || !adminPackageJson) {
+      continue;
+    }
+
+    assert(dependsOn(legacyPackageJson, apiName), `${legacyName} compatibility package must depend on ${apiName}`);
+    assert(dependsOn(adminPackageJson, apiName), `${adminName} must depend on ${apiName}`);
+    assert(dependsOn(adminPackageJson, legacyName), `${adminName} must depend on ${legacyName} while views remain in the compatibility package`);
+    assert(!adminPackageJson.dependencies?.['@mango/admin-pages'], `${adminName} must not depend on @mango/admin-pages directly; use peerDependencies to avoid publish cycles`);
+    assert(Boolean(adminPackageJson.peerDependencies?.['@mango/admin-pages']), `${adminName} must declare @mango/admin-pages as a peerDependency`);
+    assert(
+      legacyPackageJson.exports?.['./capability']?.import === './dist/capability.js',
+      `${legacyName} compatibility package must keep ./capability export during transition`,
+    );
+    assert(
+      legacyPackageJson.exports?.['./capability']?.types === './dist/capability.d.ts',
+      `${legacyName} compatibility package must keep ./capability types during transition`,
+    );
+    assert(
+      !(apiPackageJson.dependencies?.[legacyName] || apiPackageJson.peerDependencies?.[legacyName] || apiPackageJson.optionalDependencies?.[legacyName]),
+      `${apiName} must not depend on legacy compatibility package ${legacyName}`,
+    );
+    assert(
+      !(apiPackageJson.dependencies?.[adminName] || apiPackageJson.peerDependencies?.[adminName] || apiPackageJson.optionalDependencies?.[adminName]),
+      `${apiName} must not depend on admin package ${adminName}`,
+    );
+    checkLegacyApiReexports(legacyDir, legacyName, apiName);
+    checkAdminWrapperExports(adminDir, adminName, legacyName, apiName);
+  }
+}
+
+function readPackageJsonIfExists(packageDir) {
+  const packageJsonPath = join(packageDir, 'package.json');
+  if (!existsSync(packageJsonPath)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+}
+
+function checkLegacyApiReexports(packageDir, legacyName, apiName) {
+  const apiSourceDir = join(packageDir, 'src/api');
+  if (!existsSync(apiSourceDir)) {
+    return;
+  }
+  const apiFiles = walk(apiSourceDir).filter((filePath) => {
+    if (!filePath.endsWith('.ts')) {
+      return false;
+    }
+    if (filePath.includes('/__tests__/') || filePath.endsWith('.spec.ts') || filePath.endsWith('.test.ts')) {
+      return false;
+    }
+    return true;
+  });
+  for (const filePath of apiFiles) {
+    const source = readFileSync(filePath, 'utf8').trim();
+    const display = relative(repoRoot, filePath);
+    assert(
+      source.startsWith(`export * from '${apiName}/api/`) || source.startsWith(`export * from "${apiName}/api/`),
+      `${legacyName} compatibility API file ${display} must re-export from ${apiName}/api/*`,
+    );
+  }
+}
+
+function checkAdminWrapperExports(packageDir, adminName, legacyName, apiName) {
+  const indexPath = join(packageDir, 'src/index.ts');
+  const capabilityPath = join(packageDir, 'src/capability.ts');
+  const indexSource = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
+  const capabilitySource = existsSync(capabilityPath) ? readFileSync(capabilityPath, 'utf8') : '';
+  assert(indexSource.includes(`export * from '${apiName}'`) || indexSource.includes(`export * from "${apiName}"`), `${adminName} must re-export ${apiName} from its public entry`);
+  assert(indexSource.includes(`from '${legacyName}'`) || indexSource.includes(`from "${legacyName}"`), `${adminName} must expose legacy view namespace while views remain in ${legacyName}`);
+  assert(capabilitySource.includes(`from '${legacyName}/capability'`) || capabilitySource.includes(`from "${legacyName}/capability"`), `${adminName} capability must wrap ${legacyName}/capability during transition`);
+  assert(capabilitySource.includes(`packageName: '${adminName}'`) || capabilitySource.includes(`packageName: "${adminName}"`), `${adminName} wrapper capability must publish packageName ${adminName}`);
 }
 
 function checkAdminPagesDefaultCapabilities() {

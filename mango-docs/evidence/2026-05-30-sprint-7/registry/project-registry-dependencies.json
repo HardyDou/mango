@@ -1,0 +1,46 @@
+{
+  "registry": "http://127.0.0.1:4893",
+  "version": "1.0.0-registry-e2e.1780135059073",
+  "packages": [
+    {
+      "path": "frontend/apps/registry-platform-admin/package.json",
+      "name": "registry-platform-admin",
+      "dependencies": {
+        "@mango/admin": "1.0.0-registry-e2e.1780135059073",
+        "@mango/admin-pages": "1.0.0-registry-e2e.1780135059073",
+        "@mango/app-runtime": "1.0.0-registry-e2e.1780135059073",
+        "@mango/auth-admin": "1.0.0-registry-e2e.1780135059073",
+        "@mango/rbac-admin": "1.0.0-registry-e2e.1780135059073",
+        "@mango/system-admin": "1.0.0-registry-e2e.1780135059073",
+        "@mango/workflow-admin": "1.0.0-registry-e2e.1780135059073",
+        "@mango/notice-admin": "1.0.0-registry-e2e.1780135059073",
+        "@mango/file-admin": "1.0.0-registry-e2e.1780135059073"
+      },
+      "devDependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {}
+    },
+    {
+      "path": "frontend/packages/guarantee-admin/package.json",
+      "name": "@registry-platform/guarantee-admin",
+      "dependencies": {
+        "@mango/admin-pages": "1.0.0-registry-e2e.1780135059073",
+        "@mango/common": "1.0.0-registry-e2e.1780135059073"
+      },
+      "devDependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {}
+    },
+    {
+      "path": "frontend/packages/guarantee-api/package.json",
+      "name": "@registry-platform/guarantee-api",
+      "dependencies": {
+        "@mango/api-schema": "1.0.0-registry-e2e.1780135059073",
+        "@mango/common": "1.0.0-registry-e2e.1780135059073"
+      },
+      "devDependencies": {},
+      "optionalDependencies": {},
+      "peerDependencies": {}
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+
+> upgrade-platform@1.0.0-SNAPSHOT build /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/upgrade-platform
+> pnpm -r build
+
+Scope: 3 of 4 workspace projects
+frontend/packages/guarantee-api build$ pnpm typecheck
+frontend/packages/guarantee-api build: > @upgrade-platform/guarantee-api@1.0.0-SNAPSHOT typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/upgrade-platform/frontend/packages/guarantee-api
+frontend/packages/guarantee-api build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-api build: Done
+frontend/packages/guarantee-admin build$ pnpm typecheck
+frontend/packages/guarantee-admin build: > @upgrade-platform/guarantee-admin@1.0.0-SNAPSHOT typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/upgrade-platform/frontend/packages/guarantee-admin
+frontend/packages/guarantee-admin build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-admin build: Done
+frontend/apps/upgrade-platform-admin build$ pnpm typecheck && vite build
+frontend/apps/upgrade-platform-admin build: > upgrade-platform-admin@1.0.0-SNAPSHOT typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-generated-upgrade-e2e-CYoFmw/upgrade-platform/frontend/apps/upgrade-platform-admin
+frontend/apps/upgrade-platform-admin build: > vue-tsc --noEmit -p tsconfig.json
+frontend/apps/upgrade-platform-admin build: vite v5.4.21 building for production...
+frontend/apps/upgrade-platform-admin build: transforming...
+frontend/apps/upgrade-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (3362:0): A comment
+frontend/apps/upgrade-platform-admin build: "/* #__PURE__ */"
+frontend/apps/upgrade-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/upgrade-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (5780:22): A comment
+frontend/apps/upgrade-platform-admin build: "/* #__PURE__ */"
+frontend/apps/upgrade-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/upgrade-platform-admin build: ✓ 2740 modules transformed.
+frontend/apps/upgrade-platform-admin build: rendering chunks...
+frontend/apps/upgrade-platform-admin build: computing gzip size...
+frontend/apps/upgrade-platform-admin build: dist/index.html                                        0.41 kB │ gzip:   0.28 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/fc-icons-BjnjLEor.woff                    17.44 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-DZKw_GAG.css                         0.47 kB │ gzip:   0.21 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/icon-Byp_cd-K.css                         16.09 kB │ gzip:   4.05 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/style-CTjwcune.css                        25.02 kB │ gzip:   4.67 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-B6CIJ_09.css                       387.47 kB │ gzip:  52.64 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-DlAUqK2U.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-BffYpcM-.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-b8p_N644.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-B-KA9PqK.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-B4PAZYor.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-DSIUb6_L.js      0.21 kB │ gzip:   0.18 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/businessApply-BKzMXNZn.js                  0.22 kB │ gzip:   0.18 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue2-qU7bFVBg.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue2-BPtDNXSz.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/menuPackage-LgeYZWS1.js                    0.38 kB │ gzip:   0.20 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/formatTime-BSK6ffaY.js                     0.47 kB │ gzip:   0.26 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/codemirror-D6o2I7Uc.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/sys-Bd2WbIVR.js                            0.55 kB │ gzip:   0.29 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/404.vue-DXHpjAdv.js                        0.56 kB │ gzip:   0.42 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/org-DCKQItaC.js                            0.66 kB │ gzip:   0.34 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/role-BjzpJpWH.js                           0.67 kB │ gzip:   0.28 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BbIvSwLA.js                      0.69 kB │ gzip:   0.42 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/breadcrumb.vue-DJUOn_WO.js                 0.73 kB │ gzip:   0.47 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/iconConfig-BH8rTJBx.js                     0.74 kB │ gzip:   0.46 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-DKNZAkld.js                          0.74 kB │ gzip:   0.40 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/header.vue-BToSsCa5.js                     0.86 kB │ gzip:   0.52 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BrVr-4sI.js                      0.88 kB │ gzip:   0.53 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/post-B3zn412y.js                           0.93 kB │ gzip:   0.40 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/menu-B-gdx_EV.js                           0.98 kB │ gzip:   0.46 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/useDict-C7xGLoGV.js                        1.03 kB │ gzip:   0.56 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/businessApproval-Dsiysvqr.js               1.03 kB │ gzip:   0.49 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/tagsViewRoutes-2e2loWSK.js                 1.07 kB │ gzip:   0.60 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/subItem.vue-BYxZr6cY.js                    1.11 kB │ gzip:   0.54 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/workflowFormConfig-DV0KMwwn.js             1.12 kB │ gzip:   0.46 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/horizontal.vue-D_Yvu_ku.js                 1.16 kB │ gzip:   0.56 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-JDoMx6z1.js                          1.18 kB │ gzip:   0.53 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-D4VGgezk.js                      1.22 kB │ gzip:   0.63 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-Mh5RetAv.js                      1.26 kB │ gzip:   0.62 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/app-Bjtun88N.js                            1.49 kB │ gzip:   0.61 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/active-line-G3OTcU4L.js                    1.72 kB │ gzip:   0.85 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/user.vue-BRwp_bto.js                       1.80 kB │ gzip:   0.96 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/vertical.vue-BIYA9ilb.js                   1.88 kB │ gzip:   0.89 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BJn_1YxT.js                      1.90 kB │ gzip:   1.15 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/log-BIo5qXJH.js                            1.93 kB │ gzip:   0.79 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-Cr01w2XV.js                      2.11 kB │ gzip:   0.93 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/template-W2JGHMk4.js                       2.14 kB │ gzip:   0.70 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-NtLfrfye.js                      2.28 kB │ gzip:   0.85 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/password.vue-inr0O6LG.js                   2.83 kB │ gzip:   1.29 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/columnsAside.vue-C3ADkFZ1.js               2.89 kB │ gzip:   1.42 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-BWUIhwEr.js                          3.01 kB │ gzip:   1.47 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/aside.vue-DPMN7Q_p.js                      3.04 kB │ gzip:   1.40 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/main.vue-BxVP-sBI.js                       3.17 kB │ gzip:   1.67 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/htmlmixed-CrF_bGot.js                      3.32 kB │ gzip:   1.55 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DZKdz9vf.js                      3.34 kB │ gzip:   1.41 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/profile.vue-BZFt16uZ.js                    3.47 kB │ gzip:   1.54 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/matchbrackets-DFwSRDzL.js                  3.51 kB │ gzip:   1.60 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/tagsView.vue-BRyvnqpT.js                   3.61 kB │ gzip:   1.66 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/closebrackets-w23Z8L7g.js                  4.00 kB │ gzip:   1.72 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DU-r25NV.js                      4.20 kB │ gzip:   2.01 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BifjKxHT.js                      4.74 kB │ gzip:   2.26 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DeeF0vt7.js                      4.75 kB │ gzip:   2.12 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-ltCj0DCy.js                      4.91 kB │ gzip:   2.11 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-BI9bPdrf.js      4.99 kB │ gzip:   1.72 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/fileSettings-CRJB2im9.js                   5.22 kB │ gzip:   1.46 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/FilePreviewPanel.vue-DimlpYnZ.js           5.22 kB │ gzip:   2.23 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-qUkra6dK.js                      5.34 kB │ gzip:   3.10 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-D82Mfnnx.js                      5.91 kB │ gzip:   2.35 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-yQz228K2.js                      5.99 kB │ gzip:   2.58 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-24QXQCd7.js                      6.49 kB │ gzip:   2.57 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/xml-BGtcnwzJ.js                            6.49 kB │ gzip:   2.60 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DcL_grmo.js                      6.60 kB │ gzip:   2.57 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/menuHost-DB6l-18F.js                       6.63 kB │ gzip:   2.55 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue2-ONKxs-mu.js                     6.92 kB │ gzip:   2.87 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/python-CfWN9_B9.js                         7.07 kB │ gzip:   3.06 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CTpenV1h.js                      7.09 kB │ gzip:   2.62 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/login.vue-DhY4zWcu.js                      7.12 kB │ gzip:   2.85 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-Wh5c4GUK.js                      7.15 kB │ gzip:   2.68 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BjWMnP7A.js                      7.45 kB │ gzip:   3.08 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-B1zfoyoJ.js                      7.96 kB │ gzip:   2.66 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DPo6Ft5R.js                      8.04 kB │ gzip:   3.12 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-D_8WPSjO.js                      8.68 kB │ gzip:   3.27 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BMDKi_aY.js                      9.10 kB │ gzip:   4.09 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BSA60x5I.js                      9.21 kB │ gzip:   3.48 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-Bvg6IIN1.js                      9.51 kB │ gzip:   3.52 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CldLzabM.js                     10.60 kB │ gzip:   4.03 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-B-95iRGF.js                     11.37 kB │ gzip:   3.96 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/ShellView.vue2-D0pH9V36.js                11.69 kB │ gzip:   3.98 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CXCfIBCx.js                     11.72 kB │ gzip:   3.97 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-GIvWFvTJ.js                     12.75 kB │ gzip:   3.63 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BSy1paN9.js                     12.87 kB │ gzip:   4.87 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BugVYboz.js                     13.65 kB │ gzip:   5.31 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CLdgkJx4.js                     13.77 kB │ gzip:   4.56 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/_plugin-vue_export-helper-D8XPwjv5.js     14.68 kB │ gzip:   3.85 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DYp4FBCt.js                     14.88 kB │ gzip:   4.83 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DjRHlNlx.js                     15.26 kB │ gzip:   4.91 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CYYq98ss.js                     15.38 kB │ gzip:   5.57 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue2-CEIMlox-.js                    16.19 kB │ gzip:   5.76 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/settings.vue-C3mr4JWI.js                  17.43 kB │ gzip:   4.06 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/javascript-TisRNlRb.js                    18.42 kB │ gzip:   6.21 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/MUpload.vue-_S-VRoNy.js                   18.79 kB │ gzip:   7.19 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-Cb29gly3.js                     20.28 kB │ gzip:   6.18 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BXUunNP4.js                     20.97 kB │ gzip:   7.11 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/clike-CmqNip5Z.js                         21.51 kB │ gzip:   7.68 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-Ckbtx5Dm.js                     24.89 kB │ gzip:   8.48 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DzwAkxJv.js                     25.59 kB │ gzip:   6.48 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/css-7WTWoi7w.js                           27.81 kB │ gzip:   8.78 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/markdown-CdLn0mgc.js                      28.21 kB │ gzip:   9.05 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DbrGN34-.js                     29.22 kB │ gzip:   9.46 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-DdPOU7eD.js                     31.66 kB │ gzip:   8.91 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CCNDFsgo.js                     32.77 kB │ gzip:   9.03 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-BlP_o5vg.js                     34.66 kB │ gzip:  11.08 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/sql-DWS98W78.js                           47.92 kB │ gzip:  14.19 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-CQ-taE83.js                         58.37 kB │ gzip:  15.67 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/runtimeForm-CeweNbWV.js                   79.65 kB │ gzip:  25.09 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-1RiWx-q0.js                         81.74 kB │ gzip:  23.83 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index.vue-CYiYy2ME.js                    123.90 kB │ gzip:  36.86 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/codemirror-B3DnmGZq.js                   174.07 kB │ gzip:  58.19 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/icon-D6SLsHEf.js                       1,055.19 kB │ gzip: 327.68 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/index-Byh4o9v6.js                      1,302.71 kB │ gzip: 416.24 kB
+frontend/apps/upgrade-platform-admin build: dist/assets/style-FVSRoaYM.js                      1,970.91 kB │ gzip: 669.14 kB
+frontend/apps/upgrade-platform-admin build: ✓ built in 12.92s
+frontend/apps/upgrade-platform-admin build: (!) Some chunks are larger than 500 kB after minification. Consider:
+frontend/apps/upgrade-platform-admin build: - Using dynamic import() to code-split the application
+frontend/apps/upgrade-platform-admin build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+frontend/apps/upgrade-platform-admin build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+frontend/apps/upgrade-platform-admin build: Done

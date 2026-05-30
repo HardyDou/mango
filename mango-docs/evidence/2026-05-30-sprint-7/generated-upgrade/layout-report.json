@@ -1,0 +1,369 @@
+{
+  "url": "http://127.0.0.1:5320/#/guarantee/letters",
+  "viewport": {
+    "width": 1366,
+    "height": 900
+  },
+  "checks": {
+    "hasShellLayout": true,
+    "hasHeaderLayout": true,
+    "hasNavFlexLayout": true,
+    "hasAsideLayout": true,
+    "hasMainLayout": true,
+    "hasRuntimeOutlet": true,
+    "hasBusinessMenu": true,
+    "hasBuiltInMenu": true,
+    "hasListPage": true,
+    "hasSearch": true,
+    "hasActions": true,
+    "hasTable": true,
+    "hasPagination": true,
+    "hasExplicitApiErrorState": true,
+    "verticalOrder": true,
+    "hasNoBrokenCssLinks": true,
+    "hasAdminShellStyles": true,
+    "noHorizontalOverflow": true
+  },
+  "elements": {
+    "shell": {
+      "selector": ".layout-container",
+      "exists": true,
+      "visible": true,
+      "text": "Mango首页Guarantee Module权限与组织管理系统基础能力模板中心文件中心通知中心编号规则工作日历工作流布局配置AdminLetter管理首页Letter管理Letter名称查询重置刷新清空筛选Request failed with status code 500业务标识Letter名称暂无Letter数据Total 020/page 1 Go",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 900,
+        "top": 0,
+        "bottom": 900
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "header": {
+      "selector": ".layout-header",
+      "exists": true,
+      "visible": true,
+      "text": "Mango首页Guarantee Module权限与组织管理系统基础能力模板中心文件中心通知中心编号规则工作日历工作流布局配置Admin",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 56,
+        "top": 0,
+        "bottom": 56
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(46, 92, 246)",
+        "color": "rgb(255, 255, 255)",
+        "border": "0px none rgb(255, 255, 255)",
+        "fontSize": "14px"
+      }
+    },
+    "nav": {
+      "selector": ".layout-navbars-container",
+      "exists": true,
+      "visible": true,
+      "text": "Mango首页Guarantee Module权限与组织管理系统基础能力模板中心文件中心通知中心编号规则工作日历工作流布局配置Admin",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 56,
+        "top": 0,
+        "bottom": 56
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(46, 92, 246)",
+        "color": "rgb(255, 255, 255)",
+        "border": "0px none rgb(255, 255, 255)",
+        "fontSize": "14px"
+      }
+    },
+    "aside": {
+      "selector": ".layout-aside",
+      "exists": true,
+      "visible": true,
+      "text": "Letter管理",
+      "rect": {
+        "x": 0,
+        "y": 56,
+        "width": 220,
+        "height": 844,
+        "top": 56,
+        "bottom": 900
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "main": {
+      "selector": ".layout-main",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置刷新清空筛选Request failed with status code 500业务标识Letter名称暂无Letter数据Total 020/page 1 Go to",
+      "rect": {
+        "x": 220,
+        "y": 96,
+        "width": 1146,
+        "height": 804,
+        "top": 96,
+        "bottom": 900
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(243, 245, 248)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "runtime": {
+      "selector": ".shell-runtime-content",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置刷新清空筛选Request failed with status code 500业务标识Letter名称暂无Letter数据Total 020/page 1 Go to",
+      "rect": {
+        "x": 236,
+        "y": 112,
+        "width": 1114,
+        "height": 776,
+        "top": 112,
+        "bottom": 888
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "listPage": {
+      "selector": "[data-mango-layout=\"list-page\"]",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置刷新清空筛选Request failed with status code 500业务标识Letter名称暂无Letter数据Total 020/page 1 Go to",
+      "rect": {
+        "x": 236,
+        "y": 112,
+        "width": 1114,
+        "height": 334,
+        "top": 112,
+        "bottom": 446
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "search": {
+      "selector": "[data-mango-layout=\"search\"]",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置",
+      "rect": {
+        "x": 252,
+        "y": 128,
+        "width": 1082,
+        "height": 50,
+        "top": 128,
+        "bottom": 178
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "actions": {
+      "selector": "[data-mango-layout=\"actions\"]",
+      "exists": true,
+      "visible": true,
+      "text": "刷新清空筛选",
+      "rect": {
+        "x": 252,
+        "y": 190,
+        "width": 1082,
+        "height": 32,
+        "top": 190,
+        "bottom": 222
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "table": {
+      "selector": "[data-mango-layout=\"table\"]",
+      "exists": true,
+      "visible": true,
+      "text": "业务标识Letter名称暂无Letter数据",
+      "rect": {
+        "x": 252,
+        "y": 286,
+        "width": 1082,
+        "height": 100,
+        "top": 286,
+        "bottom": 386
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(96, 98, 102)",
+        "border": "0px none rgb(96, 98, 102)",
+        "fontSize": "14px"
+      }
+    },
+    "pagination": {
+      "selector": "[data-mango-layout=\"pagination\"]",
+      "exists": true,
+      "visible": true,
+      "text": "Total 020/page 1 Go to",
+      "rect": {
+        "x": 252,
+        "y": 398,
+        "width": 1082,
+        "height": 32,
+        "top": 398,
+        "bottom": 430
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    }
+  },
+  "css": {
+    "brokenLinks": [],
+    "styleSheets": [
+      {
+        "href": null,
+        "rules": 2605
+      },
+      {
+        "href": null,
+        "rules": 25
+      },
+      {
+        "href": null,
+        "rules": 170
+      },
+      {
+        "href": null,
+        "rules": 92
+      },
+      {
+        "href": null,
+        "rules": 28
+      },
+      {
+        "href": null,
+        "rules": 30
+      },
+      {
+        "href": null,
+        "rules": 107
+      },
+      {
+        "href": null,
+        "rules": 128
+      },
+      {
+        "href": null,
+        "rules": 149
+      },
+      {
+        "href": null,
+        "rules": 78
+      },
+      {
+        "href": null,
+        "rules": 683
+      },
+      {
+        "href": null,
+        "rules": 13
+      },
+      {
+        "href": null,
+        "rules": 40
+      },
+      {
+        "href": null,
+        "rules": 11
+      },
+      {
+        "href": null,
+        "rules": 25
+      },
+      {
+        "href": null,
+        "rules": 25
+      },
+      {
+        "href": null,
+        "rules": 8
+      },
+      {
+        "href": null,
+        "rules": 4
+      },
+      {
+        "href": null,
+        "rules": 2
+      },
+      {
+        "href": null,
+        "rules": 1
+      },
+      {
+        "href": null,
+        "rules": 5
+      },
+      {
+        "href": null,
+        "rules": 5
+      }
+    ]
+  },
+  "browser": {
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ],
+    "failedResponses": [
+      {
+        "status": 500,
+        "url": "http://127.0.0.1:5320/api/authorization/menus/user?fmt=tree&appCode=internal-admin"
+      },
+      {
+        "status": 500,
+        "url": "http://127.0.0.1:5320/api/guarantee/letters?pageNo=1&pageSize=20&name="
+      }
+    ]
+  }
+}

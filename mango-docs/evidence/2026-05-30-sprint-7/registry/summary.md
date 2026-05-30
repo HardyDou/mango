@@ -1,0 +1,55 @@
+# Mango Registry Consumption E2E
+
+- Registry: http://127.0.0.1:4893
+- Test version: 1.0.0-registry-e2e.1780135059073
+- Generated project: /var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-registry-e2e-ojIhZE/registry-platform
+- Published packages: 34
+  - @mango/api-schema@1.0.0-registry-e2e.1780135059073
+  - @mango/app-runtime@1.0.0-registry-e2e.1780135059073
+  - @mango/common@1.0.0-registry-e2e.1780135059073
+  - @mango/auth-api@1.0.0-registry-e2e.1780135059073
+  - @mango/auth@1.0.0-registry-e2e.1780135059073
+  - @mango/auth-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/calendar-api@1.0.0-registry-e2e.1780135059073
+  - @mango/calendar@1.0.0-registry-e2e.1780135059073
+  - @mango/calendar-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/file-api@1.0.0-registry-e2e.1780135059073
+  - @mango/file@1.0.0-registry-e2e.1780135059073
+  - @mango/file-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/notice-api@1.0.0-registry-e2e.1780135059073
+  - @mango/numgen-api@1.0.0-registry-e2e.1780135059073
+  - @mango/numgen@1.0.0-registry-e2e.1780135059073
+  - @mango/numgen-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/rbac-api@1.0.0-registry-e2e.1780135059073
+  - @mango/rbac@1.0.0-registry-e2e.1780135059073
+  - @mango/rbac-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/system-api@1.0.0-registry-e2e.1780135059073
+  - @mango/system@1.0.0-registry-e2e.1780135059073
+  - @mango/notice@1.0.0-registry-e2e.1780135059073
+  - @mango/notice-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/system-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/template-api@1.0.0-registry-e2e.1780135059073
+  - @mango/template@1.0.0-registry-e2e.1780135059073
+  - @mango/template-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/workflow-api@1.0.0-registry-e2e.1780135059073
+  - @mango/workflow@1.0.0-registry-e2e.1780135059073
+  - @mango/workflow-admin@1.0.0-registry-e2e.1780135059073
+  - @mango/workflow-business-example@1.0.0-registry-e2e.1780135059073
+  - @mango/admin-pages@1.0.0-registry-e2e.1780135059073
+  - @mango/admin-shell@1.0.0-registry-e2e.1780135059073
+  - @mango/admin@1.0.0-registry-e2e.1780135059073
+- Checks: package build, package contract, registry publish/view, generated project install, typecheck, build, browser smoke
+- Browser page: http://127.0.0.1:5334/#/guarantee/letters
+- UI layout checks: admin shell, runtime outlet, business menu, expected micro app failure state, horizontal overflow
+- Layout result: passed
+- Evidence: project-registry-dependencies.json, install.out, verdaccio.out, frontend-dev.out, frontend-smoke-report.json, frontend-smoke.png
+
+## Screenshot Review
+
+- Screenshot: `frontend-smoke.png`
+- Report: `frontend-smoke-report.json`
+- Result: passed
+- Review: 页面为 Mango Admin Shell 原框架；顶部蓝色主导航、Mango 标识、右侧工具区和用户区、左侧业务菜单、标签页、运行时区域均可见。
+- Menu: 顶部包含 `Guarantee Module`、`权限与组织管理`、`系统基础能力`、`模板中心`、`文件中心`、`通知中心`、`编号规则`、`工作日历`、`工作流`；左侧显示 `Letter管理`。
+- Runtime: mixed 模式业务路由决策为 `MICRO_ROUTE`，运行单元为 `registry-platform-guarantee`，未启动远端微应用时展示明确的微应用健康检查失败态。
+- Layout: 无横向溢出；错误态白色卡片、红色提示图标、蓝色重试按钮样式清晰，无文字重叠或遮挡。
