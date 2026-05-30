@@ -3,6 +3,7 @@ import { get } from '@mango/common/utils/request';
 import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages';
 import type { MangoMenuPageType } from '@mango/app-runtime';
 import type { RouteRecordRaw } from 'vue-router';
+import { getMangoAdminShellOptions, type MangoAdminShellDevCenterOptions } from '../config';
 import {
   containsMenuPath,
   findMenuByPath,
@@ -36,8 +37,16 @@ export interface ShellMenu {
   keepAlive?: number;
   embedded?: number;
   redirect?: string;
-  meta?: Record<string, any>;
+  meta?: ShellMenuMeta;
   children?: ShellMenu[];
+}
+
+export type ShellMenuSource = 'backend' | 'shell' | 'custom' | 'fallback';
+
+export interface ShellMenuMeta {
+  source?: ShellMenuSource;
+  diagnostics?: string[];
+  [key: string]: any;
 }
 
 export interface ShellRouteMenu extends RouteRecordRaw {
@@ -71,8 +80,8 @@ export function useMenuHost() {
         params: { fmt: 'tree', appCode: 'internal-admin' },
       });
       menus.value = [
-        createHomeRouteMenu(),
-        ...filterMenuForRoute(response || []).map(toShellRouteMenu),
+        withMenuSource(createHomeRouteMenu(), 'shell'),
+        ...filterMenuForRoute(response || []).map(menu => toShellRouteMenu(withMenuSource(menu, 'backend'))),
         ...createDevRouteMenus(),
         ...createAccountRouteMenus(),
       ];
@@ -206,7 +215,7 @@ function createHomeRouteMenu(): ShellRouteMenu {
 }
 
 export function createNotFoundRouteMenu(path = '/404'): ShellRouteMenu {
-  return toShellRouteMenu({
+  return toShellRouteMenu(withMenuSource({
     appCode: 'internal-admin',
     moduleCode: 'mango-shell',
     menuId: 'shell-not-found',
@@ -223,11 +232,30 @@ export function createNotFoundRouteMenu(path = '/404'): ShellRouteMenu {
     keepAlive: 0,
     pageType: 'LOCAL_ROUTE',
     children: [],
-  });
+  }, 'fallback'));
+}
+
+export function shouldShowDevCenter(options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {}) {
+  if (typeof options.visible === 'boolean') {
+    return options.visible;
+  }
+  const deployEnv = normalizeDeployEnv(options.deployEnv || import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE);
+  if (isProductionLikeEnv(deployEnv)) {
+    return false;
+  }
+  return import.meta.env.DEV || deployEnv === 'dev' || deployEnv === 'test';
+}
+
+function normalizeDeployEnv(value?: string) {
+  return (value || '').trim().toLowerCase();
+}
+
+function isProductionLikeEnv(value: string) {
+  return value === 'prod' || value === 'prd' || value === 'production';
 }
 
 function createDevRouteMenus(): ShellRouteMenu[] {
-  if (!import.meta.env.DEV) {
+  if (!shouldShowDevCenter()) {
     return [];
   }
 
@@ -245,6 +273,7 @@ function createDevRouteMenus(): ShellRouteMenu[] {
       sort: 999999,
       status: 1,
       visible: 1,
+      meta: { source: 'shell' },
       pageType: 'LOCAL_ROUTE',
       redirect: DEV_COMPONENT_DEMO_REDIRECT,
       children: [
@@ -261,6 +290,7 @@ function createDevRouteMenus(): ShellRouteMenu[] {
           sort: 1,
           status: 1,
           visible: 1,
+          meta: { source: 'shell' },
           pageType: 'LOCAL_ROUTE',
           redirect: DEV_COMPONENT_DEMO_REDIRECT,
           children: createComponentDemoMenus(),
@@ -279,10 +309,22 @@ function createComponentDemoMenus(): ShellMenu[] {
     menuType: MenuTypeEnum.MENU,
     status: 1,
     visible: 1,
+    meta: { source: 'shell' },
     keepAlive: 1,
     pageType: 'LOCAL_ROUTE',
     children: [],
   }));
+}
+
+function withMenuSource(menu: ShellMenu, source: ShellMenuSource): ShellMenu {
+  return {
+    ...menu,
+    meta: {
+      ...(menu.meta || {}),
+      source: menu.meta?.source || source,
+    },
+    children: menu.children?.map(child => withMenuSource(child, source)),
+  };
 }
 
 function createAccountRouteMenus(): ShellRouteMenu[] {
@@ -307,7 +349,7 @@ function createAccountRouteMenus(): ShellRouteMenu[] {
 }
 
 function createAccountRouteMenu(menu: Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'path' | 'component' | 'icon'>): ShellRouteMenu {
-  return toShellRouteMenu({
+  return toShellRouteMenu(withMenuSource({
     ...menu,
     appCode: 'internal-admin',
     moduleCode: 'mango-authorization',
@@ -318,7 +360,7 @@ function createAccountRouteMenu(menu: Pick<ShellMenu, 'menuId' | 'menuName' | 'm
     visible: 0,
     pageType: 'LOCAL_ROUTE',
     children: [],
-  });
+  }, 'shell'));
 }
 
 export { containsMenuPath };
@@ -336,4 +378,8 @@ export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
     return Boolean(source.externalUrl);
   }
   return source.menuType === MenuTypeEnum.MENU && Boolean(source.component || source.path);
+}
+
+export function findUnexpectedTopLevelMenus(uiTopMenus: string[], backendTopMenus: string[], allowedShellMenus: string[]) {
+  return uiTopMenus.filter(name => !backendTopMenus.includes(name) && !allowedShellMenus.includes(name));
 }

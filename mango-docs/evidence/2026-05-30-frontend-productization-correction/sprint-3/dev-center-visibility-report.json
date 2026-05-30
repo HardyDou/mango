@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-05-30T15:01:21.313Z",
+  "decision": "开发中心可配置，默认 dev/test 显示，prod/prd/production 隐藏；显式 visible 可覆盖默认值。",
+  "unitChecks": [
+    {
+      "case": "deployEnv=dev",
+      "visible": true
+    },
+    {
+      "case": "deployEnv=test",
+      "visible": true
+    },
+    {
+      "case": "deployEnv=prod",
+      "visible": false
+    },
+    {
+      "case": "deployEnv=prd",
+      "visible": false
+    },
+    {
+      "case": "deployEnv=production",
+      "visible": false
+    },
+    {
+      "case": "deployEnv=prod, visible=true",
+      "visible": true
+    },
+    {
+      "case": "deployEnv=dev, visible=false",
+      "visible": false
+    }
+  ],
+  "evidence": [
+    "pnpm -F @mango/admin-shell test",
+    "mango-ui/packages/admin-shell/src/__tests__/menuHost.spec.ts"
+  ]
+}

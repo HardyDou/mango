@@ -1,5 +1,6 @@
 import type { App as VueApp } from 'vue';
 import { createPinia } from 'pinia';
+import { createI18n } from 'vue-i18n';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { registerUnauthorizedHandler } from '@mango/common';
@@ -27,12 +28,12 @@ function installCommon(appInstance: VueApp) {
   }
   appInstance.use(ElementPlus);
   appInstance.use(createPinia());
-  appInstance.config.globalProperties.$t = (key: string) => ({
-    'login.title': 'Mango 管理平台',
-    'login.username.placeholder': '用户名',
-    'login.password.placeholder': '密码',
-    'login.btn': '登 录',
-  }[key] || key);
+  appInstance.use(createI18n({
+    legacy: false,
+    locale: 'zh-cn',
+    fallbackLocale: 'zh-cn',
+    messages: { 'zh-cn': {} },
+  }));
 }
 
 createMangoWujieVueApp({

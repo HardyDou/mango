@@ -5,11 +5,20 @@ export interface MangoAdminShellOptions {
   mountTarget?: string | Element;
   apiBaseUrl?: string;
   title?: string;
+  contentMode?: 'router-view' | 'runtime-outlet';
+  devCenter?: MangoAdminShellDevCenterOptions;
   login?: MangoAuthConfig['login'];
   modules?: MangoRuntimeConfig['modules'];
   localApps?: MangoFrontendApp[];
   runtimeConfigUrl?: string;
   runtimeConfigLoadOptions?: Partial<MangoRuntimeConfigLoadOptions>;
+}
+
+export type MangoAdminShellDeployEnv = 'dev' | 'test' | 'prod' | 'prd' | 'production' | string;
+
+export interface MangoAdminShellDevCenterOptions {
+  visible?: boolean;
+  deployEnv?: MangoAdminShellDeployEnv;
 }
 
 export const defaultMangoAdminShellOptions: Required<Pick<MangoAdminShellOptions, 'mountTarget' | 'apiBaseUrl' | 'title'>> = {
@@ -41,6 +50,10 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
         ...mangoAdminShellOptions.login?.slots,
         ...options.login?.slots,
       },
+    },
+    devCenter: {
+      ...mangoAdminShellOptions.devCenter,
+      ...options.devCenter,
     },
     modules: {
       ...mangoAdminShellOptions.modules,
