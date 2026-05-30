@@ -13,6 +13,7 @@
     "@mango/app-runtime": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/common": "workspace:*",
+    "@mango/file": "workspace:*",
     "@mango/template": "workspace:*",
     "element-plus": "2.5.5",
     "pinia": "^2.0.33",

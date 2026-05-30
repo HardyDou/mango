@@ -12,6 +12,7 @@
     "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/common": "workspace:*",
+    "@mango/file": "workspace:*",
     "@mango/workflow": "workspace:*",
     "@mango/workflow-business-example": "workspace:*",
     "@element-plus/icons-vue": "^2.0.10",

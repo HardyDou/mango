@@ -10,6 +10,7 @@
       "types": "./index.ts",
       "import": "./dist/index.js"
     },
+    "./style.css": "./dist/style.css",
     "./theme/index.css": "./theme/index.css",
     "./theme/index.scss": "./theme/index.scss",
     "./utils/*": "./utils/*.ts",

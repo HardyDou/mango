@@ -27,6 +27,7 @@ export default defineConfig((mode: ConfigEnv) => {
         { find: '@mango/admin/style.css', replacement: resolve(__dirname, '../../packages/admin/style.css') },
         { find: '@mango/admin-shell/style.css', replacement: resolve(__dirname, '../../packages/admin-shell/style.css') },
         { find: '@mango/common/theme/index.css', replacement: resolve(__dirname, '../../packages/common/theme/index.css') },
+        { find: '@mango/common/style.css', replacement: resolve(__dirname, '../../packages/common/dist/style.css') },
         { find: '@mango/auth/style.css', replacement: resolve(__dirname, '../../packages/auth/dist/style.css') },
         { find: '@mango/rbac/style.css', replacement: resolve(__dirname, '../../packages/rbac/dist/style.css') },
         { find: '@mango/system/style.css', replacement: resolve(__dirname, '../../packages/system/dist/style.css') },

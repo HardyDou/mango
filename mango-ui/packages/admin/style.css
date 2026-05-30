@@ -1,5 +1,6 @@
 @import 'element-plus/dist/index.css';
 @import '@mango/common/theme/index.css';
+@import '@mango/common/style.css';
 @import '@mango/admin-shell/style.css';
 @import '@mango/auth/style.css';
 @import '@mango/rbac/style.css';

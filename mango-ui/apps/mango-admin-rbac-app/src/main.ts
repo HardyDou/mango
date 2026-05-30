@@ -8,6 +8,8 @@ import { registerDefaultAdminPages } from '@mango/admin-pages';
 import { bindMangoRuntimeTheme, createMangoWujieVueApp } from '@mango/app-runtime/vue-micro';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
+import '@mango/common/style.css';
+import '@mango/rbac/style.css';
 import RuntimeRoot from './App.vue';
 import router from './router';
 

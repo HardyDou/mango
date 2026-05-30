@@ -365,6 +365,9 @@ importers:
       '@mango/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../../packages/file
       '@mango/template':
         specifier: workspace:*
         version: link:../../packages/template
@@ -411,6 +414,9 @@ importers:
       '@mango/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@mango/file':
+        specifier: workspace:*
+        version: link:../../packages/file
       '@mango/workflow':
         specifier: workspace:*
         version: link:../../packages/workflow
