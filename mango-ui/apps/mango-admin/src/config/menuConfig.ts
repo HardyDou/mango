@@ -1,6 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 import { MangoAdminLayout } from '@mango/admin-shell';
-import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages';
+import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
 import { componentsMap } from './componentsMap';
 
 /**

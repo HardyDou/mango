@@ -9,10 +9,11 @@
   },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}": "{{projectVersion}}",
-    "@mango/admin-shell": "^1.0.0",
-    "element-plus": "^2.5.5",
-    "pinia": "^2.3.0",
-    "vue": "^3.5.13",
+    "@mango/admin": "^1.0.0",
+    "element-plus": "2.5.5",
+    "pinia": "2.0.32",
+    "vue": "3.5.13",
+    "vue-i18n": "9.2.2",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {

@@ -6,9 +6,9 @@
 import { onBeforeMount, onUnmounted, onMounted, watch } from 'vue';
 import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
-import { Local } from '@mango/common';
-import { mittBus } from '@mango/common';
-import { useChangeColor } from '@mango/common';
+import { Local } from '@mango/common/utils/storage';
+import { mittBus } from '@mango/common/utils/mitt';
+import { useChangeColor } from '@mango/common/utils/theme';
 import LayoutMainDefaults from './main/defaults.vue';
 import LayoutMainClassic from './main/classic.vue';
 import LayoutMainTransverse from './main/transverse.vue';

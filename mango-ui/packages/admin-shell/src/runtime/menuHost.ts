@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue';
 import { get } from '@mango/common/utils/request';
-import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages';
+import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
 import type { MangoMenuPageType } from '@mango/app-runtime';
 import type { RouteRecordRaw } from 'vue-router';
 import { getMangoAdminShellOptions, type MangoAdminShellDevCenterOptions } from '../config';

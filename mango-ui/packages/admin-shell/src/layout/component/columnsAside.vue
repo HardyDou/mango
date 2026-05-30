@@ -38,7 +38,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
-import { mittBus } from '@mango/common';
+import { mittBus } from '@mango/common/utils/mitt';
 import { iconMap } from '@mango/common/utils/iconConfig';
 
 interface MenuItem {

@@ -569,8 +569,8 @@ import { storeToRefs } from 'pinia';
 import { useThemeStore } from '../../../stores/theme';
 import { useLayoutStore } from '../../../stores/layout';
 import { usePreferencesStore } from '../../../stores/preferences';
-import { useChangeColor } from '@mango/common';
-import { mittBus } from '@mango/common';
+import { mittBus } from '@mango/common/utils/mitt';
+import { useChangeColor } from '@mango/common/utils/theme';
 import { Setting, RefreshRight } from '@element-plus/icons-vue';
 
 const themeStore = useThemeStore();

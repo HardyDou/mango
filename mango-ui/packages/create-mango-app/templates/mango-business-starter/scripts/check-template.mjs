@@ -103,7 +103,7 @@ const contentChecks = [
   },
   {
     file: 'frontend/apps/{{projectKebab}}-admin/src/main.ts',
-    patterns: ["from '@mango/admin-shell'", 'createMangoAdminApp', 'register{{modulePascal}}Pages'],
+    patterns: ["from '@mango/admin'", "import '@mango/admin/style.css'", 'createMangoAdminApp', 'register{{modulePascal}}Pages'],
   },
   {
     file: 'topologies/monolith/README.md',

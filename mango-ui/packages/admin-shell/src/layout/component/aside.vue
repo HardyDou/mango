@@ -43,7 +43,8 @@ import { storeToRefs } from 'pinia';
 import { useRoutesList } from '../../stores/routesList';
 import { useLayoutStore } from '../../stores/layout';
 import { useTagsViewRoutes } from '../../stores/tagsViewRoutes';
-import { containsMenuPath, mittBus, type MangoMenuTreeNode } from '@mango/common';
+import { mittBus } from '@mango/common/utils/mitt';
+import { containsMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const Vertical = defineAsyncComponent(() => import('../navMenu/vertical.vue'));

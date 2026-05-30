@@ -1,0 +1,252 @@
+{
+  "ok": true,
+  "checkedAt": "2026-05-30T17:22:17.641Z",
+  "workspaceRoot": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863",
+  "appDir": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/app",
+  "packDir": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs",
+  "tarballs": {
+    "@mango/api-schema": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-api-schema-1.0.0.tgz",
+    "@mango/common": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-common-1.0.0.tgz",
+    "@mango/app-runtime": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-app-runtime-1.0.0.tgz",
+    "@mango/auth": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-auth-1.0.0.tgz",
+    "@mango/calendar": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-calendar-1.0.0.tgz",
+    "@mango/file": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-file-1.0.0.tgz",
+    "@mango/numgen": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-numgen-1.0.0.tgz",
+    "@mango/rbac": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-rbac-1.0.0.tgz",
+    "@mango/system": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-system-1.0.0.tgz",
+    "@mango/template": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-template-1.0.0.tgz",
+    "@mango/workflow": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-workflow-1.0.0.tgz",
+    "@mango/workflow-business-example": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-workflow-business-example-1.0.0.tgz",
+    "@mango/notice": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-notice-1.0.0.tgz",
+    "@mango/admin-pages": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-admin-pages-1.0.0.tgz",
+    "@mango/admin-shell": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-admin-shell-1.0.0.tgz",
+    "@mango/admin": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-admin-1.0.0.tgz"
+  },
+  "errors": [],
+  "commands": [
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/api-schema",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:48.865Z",
+      "stdout": "📦  @mango/api-schema@1.0.0\nTarball Contents\npackage.json\nsrc/index.ts\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-api-schema-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/common",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:49.095Z",
+      "stdout": "📦  @mango/common@1.0.0\nTarball Contents\napi/area.ts\napi/captcha.ts\napi/dict.ts\napi/org.ts\napi/upload.ts\ncomponents/Captcha/ArithmeticCaptcha.vue\ncomponents/Captcha/BehaviorCaptcha.vue\ncomponents/Captcha/BlockPuzzleCaptcha.vue\ncomponents/Captcha/CanvasSliderCaptcha.vue\ncomponents/Captcha/ClickWordCaptcha.vue\ncomponents/Captcha/EmailCaptcha.vue\ncomponents/Captcha/index.ts\ncomponents/Captcha/index.vue\ncomponents/Captcha/SmsCaptcha.vue\ncomponents/Chat/__tests__/Chat.spec.ts\ncomponents/Chat/i18n/en.ts\ncomponents/Chat/i18n/zh-cn.ts\ncomponents/Chat/index.vue\ncomponents/Chat/types.ts\ncomponents/ChinaArea/__tests__/ChinaArea.spec.ts\ncomponents/ChinaArea/i18n/en.ts\ncomponents/ChinaArea/i18n/zh-cn.ts\ncomponents/ChinaArea/index.vue\ncomponents/ChinaArea/types.ts\ncomponents/CodeEditor/__tests__/CodeEditor.spec.ts\ncomponents/CodeEditor/index.vue\ncomponents/DictSelect/index.vue\ncomponents/DictTag/index.vue\ncomponents/ECharts/__tests__/ECharts.spec.ts\ncomponents/ECharts/index.vue\ncomponents/Editor/__tests__/Editor.spec.ts\ncomponents/Editor/index.vue\ncomponents/FormCreate/__tests__/FormCreate.spec.ts\ncomponents/FormCreate/index.vue\ncomponents/FormCreate/types.ts\ncomponents/IconSelector/index.vue\ncomponents/OrgSelector/__tests__/OrgSelector.spec.ts\ncomponents/OrgSelector/i18n/en.ts\ncomponents/OrgSelector/i18n/zh-cn.ts\ncomponents/OrgSelector/index.vue\ncomponents/OrgSelector/types.ts\ncomponents/Pagination/index.vue\ncomponents/RightToolbar/index.vue\ncomponents/Sign/__tests__/Sign.spec.ts\ncomponents/Sign/i18n/en.ts\ncomponents/Sign/i18n/zh-cn.ts\ncomponents/Sign/index.vue\ncomponents/Sign/types.ts\ncomponents/SSE/__tests__/SSE.spec.ts\ncomponents/SSE/i18n/en.ts\ncomponents/SSE/i18n/zh-cn.ts\ncomponents/SSE/index.vue\ncomponents/TreeSelect/index.vue\ncomponents/UserSelector/index.vue\ncomponents/UserSelector/types.ts\ncomponents/Websocket/__tests__/Websocket.spec.ts\ncomponents/Websocket/i18n/en.ts\ncomponents/Websocket/i18n/zh-cn.ts\ncomponents/Websocket/index.vue\ndist/active-line-a9b7f9ec.js\ndist/clike-8e083577.js\ndist/closebrackets-46e59de7.js\ndist/codemirror-8454cdfa.js\ndist/css-a2bbd9ba.js\ndist/htmlmixed-6212981a.js\ndist/index.js\ndist/javascript-492aec14.js\ndist/markdown-b05f2e8c.js\ndist/matchbrackets-1a0c291f.js\ndist/python-228491f0.js\ndist/sql-0fbfbeaf.js\ndist/style.css\ndist/xml-b41bba0c.js\nhooks/__tests__/useTitle.spec.ts\nhooks/useDict.ts\nhooks/useECharts.ts\nhooks/useLocale.ts\nhooks/useTitle.ts\nindex.ts\npackage.json\ntheme/dark.scss\ntheme/element.scss\ntheme/index.css\ntheme/index.scss\ntheme/light.scss\ntheme/responsive.scss\ntypes/index.ts\nutils/__tests__/apiCrypto.spec.ts\nutils/__tests__/authFunction.spec.ts\nutils/__tests__/iconConfig.spec.ts\nutils/__tests__/menuTree.spec.ts\nutils/__tests__/message.spec.ts\nutils/__tests__/request.spec.ts\nutils/__tests__/setupCanvasMock.ts\nutils/__tests__/tagsView.spec.ts\nutils/__tests__/validate.spec.ts\nutils/apiCrypto.ts\nutils/arrayOperation.ts\nutils/authFunction.ts\nutils/captchaRequest.ts\nutils/errorCode.ts\nutils/formatTime.ts\nutils/getStyleSheets.ts\nutils/iconConfig.ts\nutils/menuTree.ts\nutils/message.ts\nutils/mitt.ts\nutils/other.ts\nutils/realtime/client.ts\nutils/realtime/envelope.ts\nutils/realtime/index.ts\nutils/realtime/types.ts\nutils/realtime/useRealtime.ts\nutils/request.ts\nutils/storage.ts\nutils/tagsView.ts\nutils/theme.ts\nutils/toolsValidate.ts\nutils/validate.ts\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-common-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/app-runtime",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:49.379Z",
+      "stdout": "📦  @mango/app-runtime@1.0.0\nTarball Contents\npackage.json\nsrc/index.spec.ts\nsrc/index.ts\nsrc/vue-micro.ts\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-app-runtime-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/auth",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:49.611Z",
+      "stdout": "📦  @mango/auth@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/index.d.ts\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-auth-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/calendar",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:49.848Z",
+      "stdout": "📦  @mango/calendar@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/calendar.ts\nsrc/index.ts\nsrc/views/calendar/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-calendar-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/file",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:50.085Z",
+      "stdout": "📦  @mango/file@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/__tests__/fileReferences.spec.ts\nsrc/api/file.ts\nsrc/api/fileDirectory.ts\nsrc/api/fileSettings.ts\nsrc/api/fileStorage.ts\nsrc/components/FilePreviewPanel.vue\nsrc/components/MUpload.vue\nsrc/index.ts\nsrc/views/files/index.vue\nsrc/views/settings/index.vue\nsrc/views/storage-configs/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-file-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/numgen",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:50.333Z",
+      "stdout": "📦  @mango/numgen@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/numgen.ts\nsrc/index.ts\nsrc/views/numgen/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-numgen-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/rbac",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:50.571Z",
+      "stdout": "📦  @mango/rbac@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/app.ts\nsrc/api/menu.ts\nsrc/api/menuPackage.ts\nsrc/api/org.ts\nsrc/api/post.ts\nsrc/api/role.ts\nsrc/api/user.ts\nsrc/index.ts\nsrc/views/app/index.vue\nsrc/views/menu-package/index.vue\nsrc/views/menu/index.vue\nsrc/views/org/index.vue\nsrc/views/permission/index.vue\nsrc/views/post/index.vue\nsrc/views/role/index.vue\nsrc/views/user/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-rbac-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/system",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:50.822Z",
+      "stdout": "📦  @mango/system@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/area.ts\nsrc/api/config.ts\nsrc/api/dict.ts\nsrc/api/log.ts\nsrc/api/param.ts\nsrc/api/publicPath.ts\nsrc/api/route.ts\nsrc/api/tenant.ts\nsrc/components/ParticipantSelector/index.vue\nsrc/components/ParticipantSelector/types.ts\nsrc/index.ts\nsrc/views/area/index.vue\nsrc/views/config/index.vue\nsrc/views/dict/index.vue\nsrc/views/login-log/index.vue\nsrc/views/operation-log/index.vue\nsrc/views/public-path/index.vue\nsrc/views/route/index.vue\nsrc/views/tenant/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-system-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/template",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:51.072Z",
+      "stdout": "📦  @mango/template@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/template.ts\nsrc/index.ts\nsrc/views/categories/index.vue\nsrc/views/platform-capabilities/template/index.vue\nsrc/views/render-records/index.vue\nsrc/views/templates/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-template-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/workflow",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:51.313Z",
+      "stdout": "📦  @mango/workflow@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/api/workflow.ts\nsrc/components/__tests__/taskActions.spec.ts\nsrc/components/businessApply.ts\nsrc/components/businessApproval.ts\nsrc/components/runtimeForm.ts\nsrc/components/RuntimeFormRenderer.vue\nsrc/components/taskActions.ts\nsrc/components/trace/WorkflowApprovalTimeline.vue\nsrc/components/trace/WorkflowNodeTimeline.vue\nsrc/components/trace/WorkflowProgressTree.vue\nsrc/index.ts\nsrc/views/custom-apply/index.vue\nsrc/views/start-process/__tests__/startProcessIcons.spec.ts\nsrc/views/start-process/index.vue\nsrc/views/task-detail/__tests__/taskDetail.spec.ts\nsrc/views/task-detail/index.vue\nsrc/views/task-list/__tests__/taskList.spec.ts\nsrc/views/task-list/index.vue\nsrc/views/workflow-definition/components/workflow-designer/__tests__/WorkflowNodeApprovalConfig.spec.ts\nsrc/views/workflow-definition/components/workflow-designer/types.ts\nsrc/views/workflow-definition/components/workflow-designer/WorkflowAddNode.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowDesignerCanvas.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeAdvancedConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeApprovalConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeCapabilityConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeCcConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeConditionConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeEventNotifyConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodePropertyPanel.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeRootConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeServiceConfig.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowNodeTree.vue\nsrc/views/workflow-definition/components/workflow-designer/WorkflowParticipantSelector.vue\nsrc/views/workflow-definition/index.vue\nsrc/views/workflow-template/index.vue\nsrc/workflowFormConfig.ts\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-workflow-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/workflow-business-example",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:51.574Z",
+      "stdout": "📦  @mango/workflow-business-example@1.0.0\nTarball Contents\ndist/index.js\ndist/style.css\npackage.json\nsrc/__tests__/contractSealApproval.spec.ts\nsrc/business-components/DocumentTableApprovalDetail.vue\nsrc/business-components/ExpenseApprovalDetail.vue\nsrc/index.ts\nsrc/register.ts\nsrc/views/business-form/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-workflow-business-example-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/notice",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:51.811Z",
+      "stdout": "📦  @mango/notice@1.0.0\nTarball Contents\ndist/admin.js\ndist/client.js\ndist/index.js\ndist/NoticeClientReceiveSetting-4c8a0bd0.js\ndist/realtime.js\ndist/style.css\npackage.json\nsrc/admin.ts\nsrc/api/notice.ts\nsrc/client.ts\nsrc/client/NoticeClientBell.vue\nsrc/client/NoticeClientMessageCenter.vue\nsrc/client/NoticeClientReceiveSetting.vue\nsrc/client/types.ts\nsrc/components/__tests__/NoticeBell.spec.ts\nsrc/components/NoticeBell.vue\nsrc/components/NoticeBizGroupSelect.vue\nsrc/components/NoticeDetailDialog.vue\nsrc/index.ts\nsrc/realtime.ts\nsrc/realtime/__tests__/commonRealtimeNotice.spec.ts\nsrc/realtime/__tests__/noticeRealtime.spec.ts\nsrc/realtime/noticeRealtime.ts\nsrc/types/notice.ts\nsrc/views/business-config/index.vue\nsrc/views/channel/index.vue\nsrc/views/receive-setting/index.vue\nsrc/views/record/index.vue\nsrc/views/retry/index.vue\nsrc/views/send-message/index.vue\nsrc/views/setting/index.vue\nsrc/views/site-message/index.vue\nsrc/views/task/index.vue\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-notice-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/admin-pages",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:52.062Z",
+      "stdout": "📦  @mango/admin-pages@1.0.0\nTarball Contents\ndist/admin-8e9a5842.js\ndist/index.js\npackage.json\nsrc/core.ts\nsrc/defaults.ts\nsrc/devComponentPages.ts\nsrc/index.ts\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-admin-pages-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/admin-shell",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:52.389Z",
+      "stdout": "📦  @mango/admin-shell@1.0.0\nTarball Contents\ndist/404-55d9284b.js\ndist/aside-3613e9f4.js\ndist/breadcrumb-bf9b5e28.js\ndist/CaptchaView-f2235c21.js\ndist/ChartsView-19f799f5.js\ndist/ChatView-c9cf7d33.js\ndist/ChinaAreaView-25e03d19.js\ndist/CodeEditorView-8d729fc9.js\ndist/columnsAside-fd39da09.js\ndist/DemoCodeBlock-40f54728.js\ndist/DemoDocLayout.vue_vue_type_style_index_0_lang-51bdbae0.js\ndist/DirectiveView-7ccec6b8.js\ndist/EditorView-95382f23.js\ndist/header-ea05414d.js\ndist/horizontal-be8e30c3.js\ndist/iconConfig-e0df1630.js\ndist/index-1f2fa61b.js\ndist/index-61a2cf0e.js\ndist/index-6fa8c21f.js\ndist/index-b2fadd56.js\ndist/index-d073cf58.js\ndist/index.js\ndist/main-ac31b4e6.js\ndist/OrgSelectorView-005de75d.js\ndist/RealtimeView-c0499cc3.js\ndist/registerDevPages-206519bb.js\ndist/settings-fb42998c.js\ndist/ShellView-cf80d3e5.js\ndist/style.css\ndist/subItem-53a8fb22.js\ndist/tagsView-180e98e3.js\ndist/UploadView-d538f52a.js\ndist/user-ea3ffd94.js\ndist/vertical-7ac69502.js\ndist/WorkflowComponentsView-dfb43053.js\npackage.json\nsrc/__tests__/adminShellBoundary.spec.ts\nsrc/__tests__/menuHost.spec.ts\nsrc/App.vue\nsrc/appBootstrap.ts\nsrc/components/ShellMenuTree.vue\nsrc/composables/useScrollbar.ts\nsrc/config.ts\nsrc/index.ts\nsrc/layout/component/aside.vue\nsrc/layout/component/columnsAside.vue\nsrc/layout/component/header.vue\nsrc/layout/component/main.vue\nsrc/layout/index.vue\nsrc/layout/logo/index.vue\nsrc/layout/main/classic.vue\nsrc/layout/main/columns.vue\nsrc/layout/main/defaults.vue\nsrc/layout/main/transverse.vue\nsrc/layout/navBars/breadcrumb/breadcrumb.vue\nsrc/layout/navBars/breadcrumb/closeFull.vue\nsrc/layout/navBars/breadcrumb/search.vue\nsrc/layout/navBars/breadcrumb/settings.vue\nsrc/layout/navBars/breadcrumb/user.vue\nsrc/layout/navBars/index.vue\nsrc/layout/navBars/tagsView/contextmenu.vue\nsrc/layout/navBars/tagsView/tagsView.vue\nsrc/layout/navBars/workspaceNav/index.vue\nsrc/layout/navMenu/horizontal.vue\nsrc/layout/navMenu/subItem.vue\nsrc/layout/navMenu/vertical.vue\nsrc/layout/routerView/iframes.vue\nsrc/layout/routerView/link.vue\nsrc/layout/routerView/parent.vue\nsrc/router.ts\nsrc/runtime/localApps.ts\nsrc/runtime/menuHost.ts\nsrc/runtime/runtimeConfig.ts\nsrc/runtime/runtimeHost.ts\nsrc/runtime/ShellRuntimeOutlet.vue\nsrc/runtime/tagNavigation.ts\nsrc/ShellView.vue\nsrc/stores/index.ts\nsrc/stores/keepAliveNames.ts\nsrc/stores/layout.ts\nsrc/stores/preferences.ts\nsrc/stores/routesList.ts\nsrc/stores/tagsViewRoutes.ts\nsrc/stores/theme.ts\nsrc/stores/userInfo.ts\nsrc/views/demo/components/CaptchaView.vue\nsrc/views/demo/components/ChartsView.vue\nsrc/views/demo/components/ChatView.vue\nsrc/views/demo/components/ChinaAreaView.vue\nsrc/views/demo/components/CodeEditorView.vue\nsrc/views/demo/components/demo-page.scss\nsrc/views/demo/components/DemoCodeBlock.vue\nsrc/views/demo/components/DemoDocLayout.vue\nsrc/views/demo/components/DirectiveView.vue\nsrc/views/demo/components/EditorView.vue\nsrc/views/demo/components/index.vue\nsrc/views/demo/components/OrgSelectorView.vue\nsrc/views/demo/components/RealtimeView.vue\nsrc/views/demo/components/UploadView.vue\nsrc/views/demo/components/WorkflowComponentsView.vue\nsrc/views/demo/registerDevPages.ts\nsrc/views/error/404.vue\nsrc/views/home/index.vue\nstyle.css\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-admin-shell-1.0.0.tgz\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "pack",
+        "--pack-destination",
+        "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-ui/packages/admin",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:52.664Z",
+      "stdout": "📦  @mango/admin@1.0.0\nTarball Contents\ndist/index.js\npackage.json\nsrc/index.d.ts\nstyle.css\nTarball Details\n/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/packs/mango-admin-1.0.0.tgz\n"
+    },
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "console.log(JSON.stringify(require(\"/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/app/package.json\"), null, 2))"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:52.895Z",
+      "stdout": "{\n  \"name\": \"mango-sprint-4-consumer\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"build\": \"vue-tsc --noEmit && vite build\"\n  },\n  \"dependencies\": {\n    \"@mango/admin\": \"0.0.0-local\",\n    \"element-plus\": \"2.5.5\",\n    \"pinia\": \"2.0.32\",\n    \"vue\": \"3.5.13\",\n    \"vue-i18n\": \"9.2.2\",\n    \"vue-router\": \"^4.1.6\"\n  },\n  \"devDependencies\": {\n    \"@vitejs/plugin-vue\": \"^5.2.1\",\n    \"typescript\": \"^5.6.3\",\n    \"vite\": \"^6.0.1\",\n    \"vue-tsc\": \"^2.1.10\"\n  }\n}\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "install",
+        "--ignore-workspace"
+      ],
+      "cwd": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/app",
+      "ok": true,
+      "startedAt": "2026-05-30T17:21:52.951Z",
+      "stdout": "Progress: resolved 1, reused 0, downloaded 0, added 0\n WARN  deprecated vue-i18n@9.2.2: v9 and v10 no longer supported. please migrate to v11. about maintenance status, see https://vue-i18n.intlify.dev/guide/maintenance.html\nProgress: resolved 20, reused 4, downloaded 16, added 0\nProgress: resolved 24, reused 8, downloaded 16, added 0\nProgress: resolved 41, reused 24, downloaded 16, added 0\nProgress: resolved 177, reused 112, downloaded 16, added 0\nProgress: resolved 252, reused 186, downloaded 16, added 0\nProgress: resolved 305, reused 240, downloaded 16, added 0\nProgress: resolved 313, reused 248, downloaded 16, added 0\n WARN  4 deprecated subdependencies found: codemirror@6.65.7, glob@7.2.3, inflight@1.0.6, lodash.isequal@4.5.0\nPackages: +265\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nProgress: resolved 314, reused 249, downloaded 16, added 131\nProgress: resolved 314, reused 249, downloaded 16, added 262\nProgress: resolved 314, reused 249, downloaded 16, added 265, done\n\ndependencies:\n+ @mango/admin 1.0.0\n+ @mango/admin-pages 1.0.0\n+ @mango/admin-shell 1.0.0\n+ @mango/api-schema 1.0.0\n+ @mango/app-runtime 1.0.0\n+ @mango/auth 1.0.0\n+ @mango/calendar 1.0.0\n+ @mango/common 1.0.0\n+ @mango/file 1.0.0\n+ @mango/notice 1.0.0\n+ @mango/numgen 1.0.0\n+ @mango/rbac 1.0.0\n+ @mango/system 1.0.0\n+ @mango/template 1.0.0\n+ @mango/workflow 1.0.0\n+ @mango/workflow-business-example 1.0.0\n+ element-plus 2.5.5 (2.14.1 is available)\n+ pinia 2.0.32 (3.0.4 is available)\n+ vue 3.5.13 (3.5.35 is available)\n+ vue-i18n 9.2.2 (11.4.4 is available) deprecated\n+ vue-router 4.6.4 (5.1.0 is available)\n\ndevDependencies:\n+ @vitejs/plugin-vue 5.2.4 (6.0.7 is available)\n+ typescript 5.9.3 (6.0.3 is available)\n+ vite 6.4.2 (8.0.14 is available)\n+ vue-tsc 2.2.12 (3.3.3 is available)\n\n╭ Warning ─────────────────────────────────────────────────────────────────────╮\n│                                                                              │\n│   Ignored build scripts: core-js-pure@3.49.0, es5-ext@0.10.64,               │\n│   esbuild@0.25.12, vue-demi@0.14.10.                                         │\n│   Run \"pnpm approve-builds\" to pick which dependencies should be allowed     │\n│   to run scripts.                                                            │\n│                                                                              │\n╰──────────────────────────────────────────────────────────────────────────────╯\nDone in 9.8s using pnpm v10.33.0\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "build"
+      ],
+      "cwd": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/app",
+      "ok": true,
+      "startedAt": "2026-05-30T17:22:02.925Z",
+      "stdout": "\n> mango-sprint-4-consumer@1.0.0 build /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-4-consumer-1780161708863/app\n> vue-tsc --noEmit && vite build\n\nvite v6.4.2 building for production...\ntransforming...\n✓ 3122 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                                                                     0.41 kB │ gzip:   0.28 kB\ndist/assets/index-B5wMnRL8.css                                                    444.34 kB │ gzip:  56.96 kB\ndist/assets/404-55d9284b-BTIVhmeS.js                                                0.58 kB │ gzip:   0.42 kB\ndist/assets/index-d073cf58-Dhr98XKu.js                                              0.69 kB │ gzip:   0.44 kB\ndist/assets/index-61a2cf0e-CrkLpZZp.js                                              0.70 kB │ gzip:   0.42 kB\ndist/assets/breadcrumb-bf9b5e28-CkDV98xI.js                                         0.73 kB │ gzip:   0.48 kB\ndist/assets/iconConfig-e0df1630-D5wHOr-L.js                                         0.74 kB │ gzip:   0.46 kB\ndist/assets/header-ea05414d-HgcZCxLe.js                                             0.79 kB │ gzip:   0.51 kB\ndist/assets/DemoCodeBlock-40f54728-B3ewHq1R.js                                      0.98 kB │ gzip:   0.67 kB\ndist/assets/subItem-53a8fb22-B2sdyvcc.js                                            1.12 kB │ gzip:   0.55 kB\ndist/assets/horizontal-be8e30c3-DsnRuca6.js                                         1.16 kB │ gzip:   0.56 kB\ndist/assets/active-line-a9b7f9ec-CQkdKhAB.js                                        1.37 kB │ gzip:   0.66 kB\ndist/assets/DemoDocLayout.vue_vue_type_style_index_0_lang-51bdbae0-C6JOs1zO.js      1.50 kB │ gzip:   0.90 kB\ndist/assets/user-ea3ffd94-BjFKu4rx.js                                               1.82 kB │ gzip:   0.94 kB\ndist/assets/vertical-7ac69502-BlsTkq20.js                                           1.90 kB │ gzip:   0.91 kB\ndist/assets/index-1f2fa61b-CvU-d2su.js                                              2.32 kB │ gzip:   0.82 kB\ndist/assets/registerDevPages-206519bb-Br0An25e.js                                   2.36 kB │ gzip:   0.81 kB\ndist/assets/columnsAside-fd39da09-B_Bnh98s.js                                       2.85 kB │ gzip:   1.40 kB\ndist/assets/tagsView-180e98e3-a5fbckS0.js                                           2.98 kB │ gzip:   1.39 kB\ndist/assets/htmlmixed-6212981a-_77aDpTO.js                                          2.98 kB │ gzip:   1.39 kB\ndist/assets/aside-3613e9f4-BNHBs7Wz.js                                              3.01 kB │ gzip:   1.41 kB\ndist/assets/matchbrackets-1a0c291f-TS88tAzZ.js                                      3.15 kB │ gzip:   1.41 kB\ndist/assets/main-ac31b4e6-BltQX4Lh.js                                               3.27 kB │ gzip:   1.68 kB\ndist/assets/closebrackets-46e59de7-CdqF7Tks.js                                      3.64 kB │ gzip:   1.54 kB\ndist/assets/xml-b41bba0c-dtwBoZcL.js                                                6.17 kB │ gzip:   2.43 kB\ndist/assets/python-228491f0-gvnuhJH3.js                                             6.71 kB │ gzip:   2.87 kB\ndist/assets/OrgSelectorView-005de75d-BoC0ceZv.js                                    7.15 kB │ gzip:   2.59 kB\ndist/assets/ChatView-c9cf7d33-CJaGUuOo.js                                           7.59 kB │ gzip:   3.00 kB\ndist/assets/defaults-Kg4Cgpv1.js                                                    7.59 kB │ gzip:   1.31 kB\ndist/assets/ChinaAreaView-25e03d19-C3322KUd.js                                      7.59 kB │ gzip:   2.60 kB\ndist/assets/EditorView-95382f23-CUTsFQ9K.js                                         8.95 kB │ gzip:   3.30 kB\ndist/assets/DirectiveView-7ccec6b8-m1GYMCqE.js                                      9.13 kB │ gzip:   3.05 kB\ndist/assets/index-b2fadd56-2fyXPzTo.js                                              9.61 kB │ gzip:   3.98 kB\ndist/assets/ChartsView-19f799f5-a6WFuiqc.js                                        10.15 kB │ gzip:   3.63 kB\ndist/assets/CodeEditorView-8d729fc9-BcC4px3T.js                                    10.57 kB │ gzip:   3.76 kB\ndist/assets/WorkflowComponentsView-dfb43053-PdhzSxTQ.js                            13.75 kB │ gzip:   5.28 kB\ndist/assets/settings-fb42998c-C3E3Iano.js                                          17.78 kB │ gzip:   4.05 kB\ndist/assets/UploadView-d538f52a-CnUw1eOH.js                                        17.82 kB │ gzip:   6.03 kB\ndist/assets/javascript-492aec14-UPUhIv21.js                                        18.08 kB │ gzip:   6.05 kB\ndist/assets/clike-8e083577-Blhzeead.js                                             21.14 kB │ gzip:   7.49 kB\ndist/assets/CaptchaView-f2235c21-DgkCAcw0.js                                       24.62 kB │ gzip:   7.18 kB\ndist/assets/css-a2bbd9ba-CJaWau09.js                                               27.48 kB │ gzip:   8.62 kB\ndist/assets/markdown-b05f2e8c-rNh0zxx-.js                                          27.86 kB │ gzip:   8.88 kB\ndist/assets/NoticeClientReceiveSetting-4c8a0bd0-B6qnxZK1.js                        29.90 kB │ gzip:   9.36 kB\ndist/assets/index-DE1E8rWP.js                                                      31.75 kB │ gzip:   9.84 kB\ndist/assets/RealtimeView-c0499cc3-DaPx_Fr5.js                                      33.68 kB │ gzip:  11.49 kB\ndist/assets/index-BeWk-_6A.js                                                      35.44 kB │ gzip:   9.41 kB\ndist/assets/sql-0fbfbeaf-NYMebSaH.js                                               47.51 kB │ gzip:  13.99 kB\ndist/assets/index-GnPzaHwf.js                                                      49.91 kB │ gzip:  14.47 kB\ndist/assets/index-B8sBi0Z2.js                                                      54.28 kB │ gzip:  13.31 kB\ndist/assets/index-D0KLBEQl.js                                                      70.01 kB │ gzip:  20.38 kB\ndist/assets/index-Cf_xNPhf.js                                                      82.49 kB │ gzip:  23.96 kB\ndist/assets/admin-B0f3rhuU.js                                                      99.77 kB │ gzip:  24.25 kB\ndist/assets/index-QHLWQoMC.js                                                     127.96 kB │ gzip:  38.67 kB\ndist/assets/index-DHeKStqn.js                                                     152.20 kB │ gzip:  43.61 kB\ndist/assets/codemirror-8454cdfa-BNcI7s6l.js                                       174.16 kB │ gzip:  58.18 kB\ndist/assets/codemirror-Cbh8zH1r.js                                                174.56 kB │ gzip:  58.43 kB\ndist/assets/index-D75_Glvj.js                                                   1,214.77 kB │ gzip: 391.73 kB\ndist/assets/index-1vMALvPJ.js                                                   1,319.27 kB │ gzip: 398.81 kB\ndist/assets/index-B6pfPQ0Z.js                                                   2,086.90 kB │ gzip: 703.83 kB\n✓ built in 11.88s\n"
+    }
+  ]
+}

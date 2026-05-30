@@ -24,6 +24,9 @@ export default defineConfig((mode: ConfigEnv) => {
     resolve: {
       alias: [
         { find: '@', replacement: resolve(__dirname, './src') },
+        { find: '@mango/admin/style.css', replacement: resolve(__dirname, '../../packages/admin/style.css') },
+        { find: '@mango/admin-shell/style.css', replacement: resolve(__dirname, '../../packages/admin-shell/style.css') },
+        { find: '@mango/auth/style.css', replacement: resolve(__dirname, '../../packages/auth/dist/style.css') },
         { find: /^@mango\/common\/(.*)$/, replacement: `${resolve(__dirname, '../../packages/common')}/$1` },
         { find: '@mango/common', replacement: resolve(__dirname, '../../packages/common/index.ts') },
         { find: '@mango/admin-pages/core', replacement: resolve(__dirname, '../../packages/admin-pages/src/core.ts') },

@@ -1,0 +1,633 @@
+{
+  "frontendUrl": "http://a.mango.io:5176",
+  "backendUrl": "http://127.0.0.1:18800",
+  "seed": "sprint-4-menu-sampling",
+  "startedAt": "2026-05-30T17:24:13.471Z",
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/menu-sampling-home-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-参数配置.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-机构管理.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-登录日志.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-审批中心-我的待办.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-审批中心-流程模板.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-审批中心-发起流程.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-平台能力-编号规则.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-平台能力-日历管理.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-平台能力-模板列表.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-通知中心-渠道配置.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-通知中心-发送记录.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-通知中心-消息配置.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "networkFailures": [],
+  "ignoredNetworkFailures": [
+    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-f4130da4&rtTicket=2iZClZDNeEAXlxVlMdoAnZc7mvWSJH605QEm0YVFkF8 net::ERR_ABORTED"
+  ],
+  "failedResponses": [],
+  "finishedAt": "2026-05-30T17:24:34.567Z",
+  "api": {
+    "health": {
+      "status": 200,
+      "body": {
+        "status": "UP",
+        "components": {
+          "db": {
+            "status": "UP",
+            "details": {
+              "database": "MySQL",
+              "validationQuery": "isValid()"
+            }
+          },
+          "discoveryComposite": {
+            "description": "Discovery Client not initialized",
+            "status": "UNKNOWN",
+            "components": {
+              "discoveryClient": {
+                "description": "Discovery Client not initialized",
+                "status": "UNKNOWN"
+              }
+            }
+          },
+          "diskSpace": {
+            "status": "UP",
+            "details": {
+              "total": 494384795648,
+              "free": 109360791552,
+              "threshold": 10485760,
+              "path": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango/mango-app/monolith/mango-monolith-app/.",
+              "exists": true
+            }
+          },
+          "ping": {
+            "status": "UP"
+          },
+          "refreshScope": {
+            "status": "UP"
+          },
+          "ssl": {
+            "status": "UP",
+            "details": {
+              "validChains": [],
+              "invalidChains": []
+            }
+          }
+        }
+      }
+    },
+    "login": {
+      "status": 200,
+      "success": true,
+      "hasAccessToken": true,
+      "tenantName": "芒果集团"
+    },
+    "backendTopMenus": [
+      "系统管理",
+      "审批中心",
+      "平台能力",
+      "通知中心"
+    ]
+  },
+  "uiTopMenus": [
+    "首页",
+    "系统管理",
+    "审批中心",
+    "平台能力",
+    "通知中心",
+    "开发中心"
+  ],
+  "sampling": [
+    {
+      "topLevelMenu": "系统管理",
+      "path": "/system",
+      "runnablePageCount": 13,
+      "sampledChildren": [
+        {
+          "topLevelMenu": "系统管理",
+          "menuId": "6",
+          "menuName": "参数配置",
+          "fullName": "参数配置",
+          "menuCode": "system:config",
+          "moduleCode": "mango-system",
+          "path": "/system/config",
+          "component": "@/views/system/config/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "system:config:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-参数配置.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/system/config",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-system",
+              "runtimeCode": "mango-admin-system-local",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": "系统参数\n系统配置\n关键词\n类型\n不限\n查询\n重置\n新增参数\n参数键\n\t\n参数值\n\t\n类型\n\t\n描述\n\t\n状态\n\t\n创建时间\n\t\n操作\nsys.index.skinName\n\t\nskin-blue\n\t\n系统参数\n\t\n皮肤名称\n\t\n启用\n\t\n\t\n编辑\n删除\n\n\nsys.account.captchaEnabled\n\t\ntrue\n\t\n应用参数\n\t\n验证码开关\n\t\n启用\n\t\n\t\n编辑\n删除\n\n\nsys.account.registerEnabled\n\t\nfalse\n\t\n应用参数\n\t\n注册开关\n\t\n启用\n\t\n\t\n编辑\n删除\n\n\nsys.login.lockCount\n\t\n5\n\t\n应用参数\n\t\n登录锁定次数\n\t\n启用\n\t\n\t\n编辑\n删除"
+          }
+        },
+        {
+          "topLevelMenu": "系统管理",
+          "menuId": "12",
+          "menuName": "机构管理",
+          "fullName": "权限管理 / 机构管理",
+          "menuCode": "system:tenant",
+          "moduleCode": "mango-system",
+          "path": "/system/tenant",
+          "component": "@/views/system/tenant/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "system:tenant:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-机构管理.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/system/tenant",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-system",
+              "runtimeCode": "mango-admin-system-local",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": "关键词\n状态\n不限\n查询\n重置\n新增机构\n机构名称\n\t\n机构编码\n\t\n机构类型\n\t\n绑定套餐\n\t\n联系人\n\t\n联系电话\n\t\n联系邮箱\n\t\n状态\n\t\n创建时间\n\t\n操作\n芒果集团\n\t\ndefault\n\t\n平台运营方\n\t\n平台管理套餐\n\t\n平台管理员\n\t\n13800000000\n\t\nadmin@mango.com\n\t\n启用\n\t\n\t\n编辑\n禁用\n冻结\n归档\n删除\n\n\nA公司\n\t\ncompany_a\n\t\n企业机构\n\t\n机构协同套餐\n\t\nA公司管理员\n\t\n13800000001\n\t\nadmin@company-a.com\n\t\n启用\n\t\n\t\n编辑\n禁用\n冻结\n归档\n删除\n\n\nB公司\n\t\ncompany_b\n\t\n企业机构\n\t\n机构协同套餐\n\t\nB公司管理员\n\t\n13800000002\n\t\nadmin@company-b.com\n\t\n启用\n\t\n\t\n编辑\n禁用\n冻结\n归档\n删除\n\n\nC公司\n\t\ncompany_c\n\t\n企业机构\n\t\n机构协同套餐\n\t\nC公司管理员\n\t\n13800000003\n\t\nadmin@company-c.com\n\t\n启用\n\t\n\t\n编辑\n禁用\n冻结\n归档\n删除\nTotal 4\n10/"
+          }
+        },
+        {
+          "topLevelMenu": "系统管理",
+          "menuId": "9",
+          "menuName": "登录日志",
+          "fullName": "日志管理 / 登录日志",
+          "menuCode": "system:log:login",
+          "moduleCode": "mango-system",
+          "path": "/system/login-log",
+          "component": "@/views/system/login-log/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "system:log:login:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-登录日志.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/system/login-log",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-system",
+              "runtimeCode": "mango-admin-system-local",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": "总登录数\n252\n成功\n252\n失败\n0\n今日登录\n50\n关键词\n状态\n请选择\n时间范围\n至\n查询\n重置\n清理日志\n用户名\n\t\nIP地址\n\t\n登录地点\n\t\n浏览器\n\t\n状态\n\t\n消息\n\t\n登录时间\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrom / 未知\n\t\n成功\n\t\n操作成功\n\t\n2026-05-31 01:24:15\n\n\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nPlaywright/1.59.1 (arm64; macOS 14.8) node/26.0 / 未知\n\t\n成功\n\t\n操作成功\n\t\n2026-05-31 01:24:14\n\n\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Headless"
+          }
+        }
+      ]
+    },
+    {
+      "topLevelMenu": "审批中心",
+      "path": "/workflow",
+      "runnablePageCount": 8,
+      "sampledChildren": [
+        {
+          "topLevelMenu": "审批中心",
+          "menuId": "260101",
+          "menuName": "我的待办",
+          "fullName": "流程办理 / 我的待办",
+          "menuCode": "workflow:task:todo",
+          "moduleCode": "mango-workflow",
+          "path": "/workflow/task/todo",
+          "component": "@/views/workflow/task-list/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "workflow:task:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-审批中心-我的待办.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/workflow/task/todo",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-workflow",
+              "runtimeCode": "mango-admin-workflow-app",
+              "pageType": "MICRO_ROUTE",
+              "entry": "http://c.mango.io:5182/"
+            },
+            "bodyTextSample": ""
+          }
+        },
+        {
+          "topLevelMenu": "审批中心",
+          "menuId": "260401",
+          "menuName": "流程模板",
+          "fullName": "流程管理 / 流程模板",
+          "menuCode": "workflow:template",
+          "moduleCode": "mango-workflow",
+          "path": "/workflow/manage/template",
+          "component": "@/views/workflow/template/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "workflow:template:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-审批中心-流程模板.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/workflow/manage/template",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-workflow",
+              "runtimeCode": "mango-admin-workflow-app",
+              "pageType": "MICRO_ROUTE",
+              "entry": "http://c.mango.io:5182/"
+            },
+            "bodyTextSample": ""
+          }
+        },
+        {
+          "topLevelMenu": "审批中心",
+          "menuId": "2602",
+          "menuName": "发起流程",
+          "fullName": "流程办理 / 发起流程",
+          "menuCode": "workflow:start-process",
+          "moduleCode": "mango-workflow",
+          "path": "/workflow/start-process",
+          "component": "@/views/workflow/start-process/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "system:workflow:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-审批中心-发起流程.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/workflow/start-process",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-workflow",
+              "runtimeCode": "mango-admin-workflow-app",
+              "pageType": "MICRO_ROUTE",
+              "entry": "http://c.mango.io:5182/"
+            },
+            "bodyTextSample": ""
+          }
+        }
+      ]
+    },
+    {
+      "topLevelMenu": "平台能力",
+      "path": "/data",
+      "runnablePageCount": 8,
+      "sampledChildren": [
+        {
+          "topLevelMenu": "平台能力",
+          "menuId": "2710",
+          "menuName": "编号规则",
+          "fullName": "编号规则",
+          "menuCode": "data:numgen",
+          "moduleCode": "mango-numgen",
+          "path": "/data/numgen",
+          "component": "@/views/numgen/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "numgen:manage:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-平台能力-编号规则.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/data/numgen",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-numgen",
+              "runtimeCode": "",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": "编号规则\n\n维护业务Key、当前生效版本和待发布规则，编辑后发布才会影响业务生成。\n\n新增规则\n关键字\n状态\n全部状态\n查询\n重置\n规则名称\n\t\n业务Key\n\t\n生效版本\n\t\n发布变更\n\t\n状态\n\t\n更新时间\n\t\n操作\nNo Data\nTotal 0\n10/page\n1\nGo to"
+          }
+        },
+        {
+          "topLevelMenu": "平台能力",
+          "menuId": "2701",
+          "menuName": "日历管理",
+          "fullName": "日历管理",
+          "menuCode": "data:calendar",
+          "moduleCode": "mango-calendar",
+          "path": "/data/calendar",
+          "component": "@/views/data/calendar/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "calendar:admin:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-平台能力-日历管理.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/data/calendar",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-calendar",
+              "runtimeCode": "",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": ""
+          }
+        },
+        {
+          "topLevelMenu": "平台能力",
+          "menuId": "2901",
+          "menuName": "模板列表",
+          "fullName": "模板管理 / 模板列表",
+          "menuCode": "template:template",
+          "moduleCode": "mango-template",
+          "path": "/template/templates",
+          "component": "@/views/template/templates/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "template:template:list",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-平台能力-模板列表.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/template/templates",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-template",
+              "runtimeCode": "mango-admin-template-app",
+              "pageType": "MICRO_ROUTE",
+              "entry": "http://d.mango.io:5183/"
+            },
+            "bodyTextSample": ""
+          }
+        }
+      ]
+    },
+    {
+      "topLevelMenu": "通知中心",
+      "path": "/notice",
+      "runnablePageCount": 6,
+      "sampledChildren": [
+        {
+          "topLevelMenu": "通知中心",
+          "menuId": "2942",
+          "menuName": "渠道配置",
+          "fullName": "渠道配置",
+          "menuCode": "notice:channel",
+          "moduleCode": "mango-notice",
+          "path": "/notice/channel",
+          "component": "@/views/notice/channel/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "notice:channel:view",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-通知中心-渠道配置.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/notice/channel",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-notice",
+              "runtimeCode": "",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": "渠道配置\n渠道类型\n全部\n启用状态\n全部\n查询\n新增\n渠道类型\n\t\n通道名称\n\t\n接入平台\n\t\n权重\n\t\n启用状态\n\t\n配置状态\n\t\n最近发送\n\t\n最近发送时间\n\t\n更新时间\n\t\n操作\n系统消息\n\t\n默认系统消息通道\n\t\n系统内置\n\t\n100\n\t\n启用\n\t\n完整\n\t\n未发送\n\t\n\t\n2026-05-30 19:37:27\n\t\n详情\n编辑\n删除"
+          }
+        },
+        {
+          "topLevelMenu": "通知中心",
+          "menuId": "2944",
+          "menuName": "发送记录",
+          "fullName": "发送记录",
+          "menuCode": "notice:record",
+          "moduleCode": "mango-notice",
+          "path": "/notice/record",
+          "component": "@/views/notice/record/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "notice:record:view",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-通知中心-发送记录.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/notice/record",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-notice",
+              "runtimeCode": "",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": "业务域\n请选择业务域\n消息名称\n渠道\n请选择渠道\n接收人\n请选择接收人\n状态\n请选择状态\n发送时间\n至\n查询\n重置\n发送记录\n刷新\n业务域\n\t\n消息名称\n\t\n标题\n\t\n内容摘要\n\t\n接收人账号名称\n\t\n状态\n\t\n发送日期\n\t\n失败原因\n\t\n操作\nNo Data"
+          }
+        },
+        {
+          "topLevelMenu": "通知中心",
+          "menuId": "2941",
+          "menuName": "消息配置",
+          "fullName": "消息配置",
+          "menuCode": "notice:message-definition",
+          "moduleCode": "mango-notice",
+          "path": "/notice/message-definition",
+          "component": "@/views/notice/message-definition/index.vue",
+          "pageType": "LOCAL_ROUTE",
+          "permissions": "notice:business:view",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-通知中心-消息配置.png",
+          "evidence": {
+            "url": "http://a.mango.io:5176/#/notice/message-definition",
+            "titleVisible": true,
+            "fullNameTailVisible": true,
+            "has404OrError": false,
+            "shell": {
+              "topbarVisible": true,
+              "asideVisible": true,
+              "tagsVisible": true,
+              "noticeBellVisible": true,
+              "settingsVisible": true,
+              "userVisible": true,
+              "activeTopMenus": [
+                "首页",
+                "系统管理",
+                "审批中心",
+                "平台能力",
+                "通知中心",
+                "开发中心"
+              ]
+            },
+            "runtime": {
+              "moduleCode": "mango-notice",
+              "runtimeCode": "",
+              "pageType": "LOCAL_ROUTE",
+              "entry": ""
+            },
+            "bodyTextSample": ""
+          }
+        }
+      ]
+    }
+  ]
+}

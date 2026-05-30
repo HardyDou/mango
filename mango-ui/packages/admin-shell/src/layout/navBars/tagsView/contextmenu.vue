@@ -35,7 +35,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
-import { isHomeTag } from '@mango/common';
+import { isHomeTag } from '@mango/common/utils/tagsView';
 
 const props = defineProps<{
   tag: any;

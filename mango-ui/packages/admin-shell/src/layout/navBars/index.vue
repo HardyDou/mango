@@ -92,8 +92,8 @@ import { useRoutesList } from '../../stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
-import { Session } from '@mango/common';
-import type { RealtimeOptions } from '@mango/common';
+import { Session } from '@mango/common/utils/storage';
+import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { NoticeBell, getNoticeReminderSetting } from '@mango/notice/client';
 import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 

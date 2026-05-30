@@ -1,0 +1,23 @@
+{
+  "name": "mango-sprint-4-consumer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "@mango/admin": "0.0.0-local",
+    "element-plus": "2.5.5",
+    "pinia": "2.0.32",
+    "vue": "3.5.13",
+    "vue-i18n": "9.2.2",
+    "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.1",
+    "vue-tsc": "^2.1.10"
+  }
+}

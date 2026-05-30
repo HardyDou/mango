@@ -3,7 +3,7 @@ import { createPinia, type Pinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createI18n, type I18n } from 'vue-i18n';
-import { mangoMessage } from '@mango/common';
+import { mangoMessage } from '@mango/common/utils/message';
 import { installMangoAuth } from '@mango/auth';
 import type { MangoAdminShellOptions } from './config';
 import { getMangoAdminShellOptions } from './config';

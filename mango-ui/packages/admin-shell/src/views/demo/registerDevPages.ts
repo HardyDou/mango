@@ -1,5 +1,6 @@
-import { DEV_COMPONENT_DEMO_PAGES, type MangoPageLoader } from '@mango/admin-pages';
+import { DEV_COMPONENT_DEMO_PAGES } from '@mango/admin-pages/dev-component-pages';
 import { registerModulePages } from '@mango/admin-pages/core';
+import type { MangoPageLoader } from '@mango/admin-pages/core';
 
 const devComponentPageLoaders: Record<string, MangoPageLoader> = {
   'demo/components/EditorView': () => import('./components/EditorView.vue'),

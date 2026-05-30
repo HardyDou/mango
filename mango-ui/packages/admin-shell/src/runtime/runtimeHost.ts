@@ -5,7 +5,6 @@ import { Session } from '@mango/common/utils/storage';
 import {
   createRuntimeEventBus,
   emitMangoRuntimeLog,
-  loadRuntimeConfig,
   preloadMicroApp,
   resolveAdapter,
   type MangoAppRuntime,
@@ -21,7 +20,7 @@ import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
 import { usePreferencesStore } from '../stores/preferences';
 import { installShellApp } from '../appBootstrap';
-import type { ShellMenu, ShellRouteMenu } from './menuHost';
+import { shouldShowDevCenter, type ShellMenu, type ShellRouteMenu } from './menuHost';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
@@ -240,7 +239,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
             notFound: () => import('../views/error/404.vue'),
           },
         });
-        if (import.meta.env.DEV) {
+        if (shouldShowDevCenter()) {
           return import('../views/demo/registerDevPages').then(m => m.registerMangoAdminShellDevPages());
         }
         return undefined;

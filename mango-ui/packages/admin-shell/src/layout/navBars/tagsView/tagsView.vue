@@ -38,7 +38,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
-import { isHomeTag } from '@mango/common';
+import { isHomeTag } from '@mango/common/utils/tagsView';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
