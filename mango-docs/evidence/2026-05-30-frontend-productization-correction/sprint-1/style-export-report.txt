@@ -1,0 +1,22 @@
+mango-ui/packages/admin-shell/package.json:6:  "exports": {
+mango-ui/packages/app-runtime/package.json:6:  "exports": {
+mango-ui/packages/admin-pages/package.json:6:  "exports": {
+mango-ui/packages/notice/package.json:6:  "exports": {
+mango-ui/packages/admin-shell/src/index.ts:5:import 'element-plus/dist/index.css';
+mango-ui/packages/admin-shell/src/index.ts:6:import '@mango/common/theme/index.scss';
+mango-ui/packages/admin-shell/src/index.ts:10:import { createMangoAdminRouter } from './router';
+mango-ui/packages/admin-shell/src/index.ts:19:export function createMangoAdminApp(options: MangoAdminShellOptions = {}): MangoAdminAppInstance {
+mango-ui/packages/admin-shell/src/index.ts:25:  const router = createMangoAdminRouter();
+mango-ui/packages/admin-shell/src/index.ts:48:export { default as MangoAdminShellView } from './ShellView.vue';
+mango-ui/packages/admin-shell/src/index.ts:49:export { createMangoAdminRouter } from './router';
+mango-ui/packages/admin-shell/src/__tests__/adminShellBoundary.spec.ts:9:  it('exports the official app creation API', () => {
+mango-ui/packages/admin-shell/src/__tests__/adminShellBoundary.spec.ts:12:    expect(indexSource).toContain('createMangoAdminApp');
+mango-ui/packages/admin-shell/src/router.ts:4:export function createMangoAdminRouter() {
+mango-ui/packages/admin-shell/src/router.ts:16:      component: () => import('./ShellView.vue'),
+mango-ui/packages/admin-shell/src/router.ts:22:      component: () => import('./ShellView.vue'),
+mango-ui/packages/admin-shell/src/router.ts:29:export const router = createMangoAdminRouter();
+mango-ui/packages/admin-shell/package.json:6:  "exports": {
+mango-ui/apps/mango-admin/tailwind.config.js:2:module.exports = {
+mango-ui/apps/mango-admin/src/main.ts:11:import 'element-plus/dist/index.css';
+mango-ui/apps/mango-admin/src/main.ts:12:import '@mango/common/theme/index.scss';
+mango-ui/apps/mango-admin/postcss.config.js:1:module.exports = {

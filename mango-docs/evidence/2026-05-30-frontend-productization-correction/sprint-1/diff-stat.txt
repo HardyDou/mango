@@ -1,0 +1,571 @@
+ .gitignore                                         |     1 +
+ .ignore                                            |    23 +
+ AGENTS.md                                          |    27 +-
+ mango-business-starter/.gitignore                  |     5 +
+ mango-business-starter/.npmrc                      |     2 +
+ mango-business-starter/README.md                   |     2 +-
+ .../apps/{{projectKebab}}-monolith-app/pom.xml     |    54 +
+ .../{{projectPascal}}MonolithApplication.java      |    15 +
+ .../src/main/resources/application.yml             |   138 +
+ .../backend/modules/{{moduleKebab}}/pom.xml        |     1 +
+ .../{{moduleKebab}}/{{moduleKebab}}-api/pom.xml    |     4 +-
+ .../{{modulePackage}}/api/{{modulePascal}}Api.java |     2 +-
+ .../{{moduleKebab}}/{{moduleKebab}}-core/pom.xml   |     4 +
+ .../core/entity/{{aggregatePascal}}Entity.java     |    16 +-
+ .../core/mapper/{{aggregatePascal}}Mapper.java     |    12 +
+ .../service/impl/{{aggregatePascal}}Service.java   |    48 +-
+ .../{{moduleKebab}}/V1__init_{{moduleKebab}}.sql   |    11 +-
+ .../{{moduleKebab}}-starter-remote/pom.xml         |     2 +-
+ .../{{moduleKebab}}-starter/pom.xml                |     2 +-
+ .../starter/{{modulePascal}}AutoConfiguration.java |     2 +
+ mango-business-starter/backend/pom.xml             |    99 +
+ .../business-docs/plans/example-contract.md        |     2 +-
+ .../business-docs/plans/example-ledger.md          |     2 +-
+ .../mango-baseline/rules/backend/07-persistence.md |     5 +
+ .../apps/{{projectKebab}}-admin/.env.example       |     5 +
+ .../apps/{{projectKebab}}-admin/package.json       |    21 +-
+ .../public/mango-runtime-config.json               |     6 +
+ .../apps/{{projectKebab}}-admin/src/main.ts        |    28 +-
+ .../{{projectKebab}}-admin/src/runtimeConfig.ts    |     8 +
+ .../{{projectKebab}}-admin/src/starterMenus.ts     |    34 +
+ .../apps/{{projectKebab}}-admin/src/vite-env.d.ts  |     1 +
+ .../apps/{{projectKebab}}-admin/tsconfig.json      |    11 +
+ .../apps/{{projectKebab}}-admin/vite.config.ts     |    42 +-
+ .../packages/{{moduleKebab}}-admin/package.json    |    30 +
+ .../src/index.ts                                   |     0
+ .../{{moduleKebab}}/{{aggregateKebab}}/index.vue   |   149 +
+ .../packages/{{moduleKebab}}-admin/tsconfig.json   |     7 +
+ .../packages/{{moduleKebab}}-api/package.json      |    12 +
+ .../packages/{{moduleKebab}}-api/tsconfig.json     |     7 +
+ .../frontend/packages/{{moduleKebab}}/package.json |    17 -
+ .../{{moduleKebab}}/{{aggregateKebab}}/index.vue   |    62 -
+ mango-business-starter/package.json                |    24 +
+ mango-business-starter/pnpm-workspace.yaml         |     3 +
+ mango-business-starter/scripts/check-template.mjs  |   217 +-
+ mango-business-starter/scripts/dev-start.sh        |   144 +
+ mango-business-starter/scripts/dev-stop.sh         |    25 +
+ .../topologies/microservice/README.md              |     2 +-
+ .../topologies/monolith/README.md                  |     4 +-
+ mango-business-starter/tsconfig.base.json          |    15 +
+ .../admin-custom-preset-browser-check.mjs          |   668 +
+ .../custom-preset/frontend-dev.out                 |     6 +
+ .../custom-preset/function-sampling-report.json    |    25 +
+ .../custom-preset/function-settings-drawer.png     |   Bin 0 -> 90954 bytes
+ .../custom-preset/function-user-dropdown.png       |   Bin 0 -> 70056 bytes
+ .../custom-preset/home-1440x960.png                |   Bin 0 -> 60116 bytes
+ .../2026-05-30-sprint-4/custom-preset/install.out  |    32 +
+ .../custom-preset/layout-report.json               | 12141 ++++++++++++++++++
+ .../custom-preset/menu-merge-report.json           |  1846 +++
+ .../custom-preset/menu-sampling-report.json        |   358 +
+ .../custom-preset/resolution-report.json           |   168 +
+ ...70\232\345\212\241\346\212\245\350\241\250.png" |   Bin 0 -> 37866 bytes
+ ...17\221\350\265\267\346\265\201\347\250\213.png" |   Bin 0 -> 53389 bytes
+ ...10\221\347\232\204\345\276\205\345\212\236.png" |   Bin 0 -> 62150 bytes
+ ...10\221\347\232\204\347\224\263\350\257\267.png" |   Bin 0 -> 64677 bytes
+ ...26\207\344\273\266\347\256\241\347\220\206.png" |   Bin 0 -> 74004 bytes
+ ...27\245\345\216\206\347\256\241\347\220\206.png" |   Bin 0 -> 83636 bytes
+ ...74\226\345\217\267\350\247\204\345\210\231.png" |   Bin 0 -> 68506 bytes
+ ...45\227\351\244\220\347\256\241\347\220\206.png" |   Bin 0 -> 68548 bytes
+ ...34\272\346\236\204\347\256\241\347\220\206.png" |   Bin 0 -> 76218 bytes
+ ...73\204\347\273\207\346\236\266\346\236\204.png" |   Bin 0 -> 136989 bytes
+ ...17\221\351\200\201\344\273\273\345\212\241.png" |   Bin 0 -> 68015 bytes
+ ...10\221\347\232\204\346\266\210\346\201\257.png" |   Bin 0 -> 73211 bytes
+ ...66\210\346\201\257\351\205\215\347\275\256.png" |   Bin 0 -> 69976 bytes
+ .../custom-preset/settings-drawer-1440x960.png     |   Bin 0 -> 90112 bytes
+ .../2026-05-30-sprint-4/custom-preset/summary.md   |     7 +
+ .../custom-preset/user-dropdown-1440x960.png       |   Bin 0 -> 68704 bytes
+ .../custom-preset/vite-build.out                   |   142 +
+ .../admin-full-preset-browser-check.mjs            |   649 +
+ .../full-preset/frontend-dev.out                   |     4 +
+ .../full-preset/function-sampling-report.json      |    25 +
+ .../full-preset/function-settings-drawer.png       |   Bin 0 -> 96152 bytes
+ .../full-preset/function-user-dropdown.png         |   Bin 0 -> 77594 bytes
+ .../full-preset/home-1440x960.png                  |   Bin 0 -> 58918 bytes
+ .../2026-05-30-sprint-4/full-preset/install.out    |    32 +
+ .../full-preset/layout-report.json                 | 11898 ++++++++++++++++++
+ .../full-preset/menu-merge-report.json             |  1839 +++
+ .../full-preset/menu-sampling-report.json          |   331 +
+ ...17\221\350\265\267\346\265\201\347\250\213.png" |   Bin 0 -> 52251 bytes
+ ...10\221\347\232\204\345\276\205\345\212\236.png" |   Bin 0 -> 60886 bytes
+ ...10\221\347\232\204\347\224\263\350\257\267.png" |   Bin 0 -> 63468 bytes
+ ...26\207\344\273\266\347\256\241\347\220\206.png" |   Bin 0 -> 73040 bytes
+ ...27\245\345\216\206\347\256\241\347\220\206.png" |   Bin 0 -> 82401 bytes
+ ...74\226\345\217\267\350\247\204\345\210\231.png" |   Bin 0 -> 67360 bytes
+ ...45\227\351\244\220\347\256\241\347\220\206.png" |   Bin 0 -> 67301 bytes
+ ...34\272\346\236\204\347\256\241\347\220\206.png" |   Bin 0 -> 74839 bytes
+ ...73\204\347\273\207\346\236\266\346\236\204.png" |   Bin 0 -> 136742 bytes
+ ...17\221\351\200\201\344\273\273\345\212\241.png" |   Bin 0 -> 66785 bytes
+ ...10\221\347\232\204\346\266\210\346\201\257.png" |   Bin 0 -> 72289 bytes
+ ...66\210\346\201\257\351\205\215\347\275\256.png" |   Bin 0 -> 68758 bytes
+ .../full-preset/settings-drawer-1440x960.png       |   Bin 0 -> 89310 bytes
+ .../2026-05-30-sprint-4/full-preset/summary.md     |     7 +
+ .../full-preset/user-dropdown-1440x960.png         |   Bin 0 -> 67417 bytes
+ .../2026-05-30-sprint-4/full-preset/vite-build.out |   140 +
+ .../full-preset-contact-sheet.png                  |   Bin 0 -> 268600 bytes
+ .../evidence/2026-05-30-sprint-4/visual-review.md  |    38 +
+ .../custom-preset/function-sampling-report.json    |    25 +
+ .../custom-preset/function-settings-drawer.png     |   Bin 0 -> 91242 bytes
+ .../custom-preset/function-user-dropdown.png       |   Bin 0 -> 70101 bytes
+ .../custom-preset/home-1440x960.png                |   Bin 0 -> 60116 bytes
+ .../custom-preset/layout-report.json               | 12172 +++++++++++++++++++
+ .../custom-preset/menu-merge-report.json           |  1846 +++
+ .../custom-preset/menu-sampling-report.json        |   384 +
+ ...70\232\345\212\241\346\212\245\350\241\250.png" |   Bin 0 -> 37971 bytes
+ ...17\221\350\265\267\346\265\201\347\250\213.png" |   Bin 0 -> 77147 bytes
+ ...10\221\347\232\204\345\276\205\345\212\236.png" |   Bin 0 -> 73268 bytes
+ ...10\221\347\232\204\347\224\263\350\257\267.png" |   Bin 0 -> 71209 bytes
+ ...26\207\344\273\266\347\256\241\347\220\206.png" |   Bin 0 -> 78650 bytes
+ ...27\245\345\216\206\347\256\241\347\220\206.png" |   Bin 0 -> 98116 bytes
+ ...74\226\345\217\267\350\247\204\345\210\231.png" |   Bin 0 -> 68369 bytes
+ ...45\227\351\244\220\347\256\241\347\220\206.png" |   Bin 0 -> 68548 bytes
+ ...34\272\346\236\204\347\256\241\347\220\206.png" |   Bin 0 -> 141926 bytes
+ ...73\204\347\273\207\346\236\266\346\236\204.png" |   Bin 0 -> 156044 bytes
+ ...17\221\351\200\201\344\273\273\345\212\241.png" |   Bin 0 -> 65336 bytes
+ ...10\221\347\232\204\346\266\210\346\201\257.png" |   Bin 0 -> 71798 bytes
+ ...66\210\346\201\257\351\205\215\347\275\256.png" |   Bin 0 -> 68296 bytes
+ .../custom-preset/settings-drawer-1440x960.png     |   Bin 0 -> 89131 bytes
+ .../2026-05-30-sprint-5/custom-preset/summary.md   |     7 +
+ .../custom-preset/user-dropdown-1440x960.png       |   Bin 0 -> 68717 bytes
+ .../full-preset/function-sampling-report.json      |    25 +
+ .../full-preset/function-settings-drawer.png       |   Bin 0 -> 96152 bytes
+ .../full-preset/function-user-dropdown.png         |   Bin 0 -> 77640 bytes
+ .../full-preset/home-1440x960.png                  |   Bin 0 -> 58918 bytes
+ .../full-preset/layout-report.json                 | 11927 ++++++++++++++++++
+ .../full-preset/menu-merge-report.json             |  1839 +++
+ .../full-preset/menu-sampling-report.json          |   355 +
+ ...17\221\350\265\267\346\265\201\347\250\213.png" |   Bin 0 -> 77606 bytes
+ ...10\221\347\232\204\345\276\205\345\212\236.png" |   Bin 0 -> 72064 bytes
+ ...10\221\347\232\204\347\224\263\350\257\267.png" |   Bin 0 -> 69937 bytes
+ ...26\207\344\273\266\347\256\241\347\220\206.png" |   Bin 0 -> 77409 bytes
+ ...27\245\345\216\206\347\256\241\347\220\206.png" |   Bin 0 -> 96868 bytes
+ ...74\226\345\217\267\350\247\204\345\210\231.png" |   Bin 0 -> 67200 bytes
+ ...45\227\351\244\220\347\256\241\347\220\206.png" |   Bin 0 -> 67301 bytes
+ ...34\272\346\236\204\347\256\241\347\220\206.png" |   Bin 0 -> 140922 bytes
+ ...73\204\347\273\207\346\236\266\346\236\204.png" |   Bin 0 -> 154824 bytes
+ ...17\221\351\200\201\344\273\273\345\212\241.png" |   Bin 0 -> 64687 bytes
+ ...10\221\347\232\204\346\266\210\346\201\257.png" |   Bin 0 -> 71057 bytes
+ ...66\210\346\201\257\351\205\215\347\275\256.png" |   Bin 0 -> 66918 bytes
+ .../full-preset/settings-drawer-1440x960.png       |   Bin 0 -> 89310 bytes
+ .../2026-05-30-sprint-5/full-preset/summary.md     |     7 +
+ .../full-preset/user-dropdown-1440x960.png         |   Bin 0 -> 67506 bytes
+ .../mode-matrix/local/build.out                    |   156 +
+ .../mode-matrix/local/frontend-mode.png            |   Bin 0 -> 47150 bytes
+ .../mode-matrix/local/layout-report.json           |   475 +
+ .../mode-matrix/local/typecheck.out                |    11 +
+ .../mode-matrix/micro/build.out                    |   166 +
+ .../mode-matrix/micro/frontend-mode.png            |   Bin 0 -> 55982 bytes
+ .../mode-matrix/micro/layout-report.json           |   499 +
+ .../mode-matrix/micro/remote-failure-report.json   |    49 +
+ .../mode-matrix/micro/remote-failure.png           |   Bin 0 -> 52901 bytes
+ .../mode-matrix/micro/typecheck.out                |    13 +
+ .../mode-matrix/mixed/build.out                    |   166 +
+ .../mode-matrix/mixed/frontend-mode.png            |   Bin 0 -> 55909 bytes
+ .../mode-matrix/mixed/layout-report.json           |   499 +
+ .../mode-matrix/mixed/remote-failure-report.json   |    49 +
+ .../mode-matrix/mixed/remote-failure.png           |   Bin 0 -> 52626 bytes
+ .../mode-matrix/mixed/typecheck.out                |    13 +
+ .../2026-05-30-sprint-5/mode-matrix/summary.md     |    15 +
+ .../admin-custom-preset-browser-check.mjs          |   680 ++
+ .../custom-preset/frontend-dev.out                 |     6 +
+ .../custom-preset/function-sampling-report.json    |    25 +
+ .../custom-preset/function-settings-drawer.png     |   Bin 0 -> 91450 bytes
+ .../custom-preset/function-user-dropdown.png       |   Bin 0 -> 70098 bytes
+ .../custom-preset/home-1440x960.png                |   Bin 0 -> 60116 bytes
+ .../2026-05-30-sprint-6/custom-preset/install.out  |    30 +
+ .../custom-preset/layout-report.json               | 12172 +++++++++++++++++++
+ .../custom-preset/menu-merge-report.json           |  1846 +++
+ .../custom-preset/menu-sampling-report.json        |   384 +
+ .../custom-preset/resolution-report.json           |   168 +
+ ...70\232\345\212\241\346\212\245\350\241\250.png" |   Bin 0 -> 37880 bytes
+ ...17\221\350\265\267\346\265\201\347\250\213.png" |   Bin 0 -> 79665 bytes
+ ...10\221\347\232\204\345\276\205\345\212\236.png" |   Bin 0 -> 73461 bytes
+ ...10\221\347\232\204\347\224\263\350\257\267.png" |   Bin 0 -> 71229 bytes
+ ...26\207\344\273\266\347\256\241\347\220\206.png" |   Bin 0 -> 78658 bytes
+ ...27\245\345\216\206\347\256\241\347\220\206.png" |   Bin 0 -> 98116 bytes
+ ...74\226\345\217\267\350\247\204\345\210\231.png" |   Bin 0 -> 68349 bytes
+ ...45\227\351\244\220\347\256\241\347\220\206.png" |   Bin 0 -> 68548 bytes
+ ...34\272\346\236\204\347\256\241\347\220\206.png" |   Bin 0 -> 141949 bytes
+ ...73\204\347\273\207\346\236\266\346\236\204.png" |   Bin 0 -> 155909 bytes
+ ...17\221\351\200\201\344\273\273\345\212\241.png" |   Bin 0 -> 64975 bytes
+ ...10\221\347\232\204\346\266\210\346\201\257.png" |   Bin 0 -> 71797 bytes
+ ...66\210\346\201\257\351\205\215\347\275\256.png" |   Bin 0 -> 67740 bytes
+ .../custom-preset/settings-drawer-1440x960.png     |   Bin 0 -> 90038 bytes
+ .../2026-05-30-sprint-6/custom-preset/summary.md   |     7 +
+ .../custom-preset/user-dropdown-1440x960.png       |   Bin 0 -> 68448 bytes
+ .../custom-preset/vite-build.out                   |   142 +
+ .../2026-05-30-sprint-6/dev-start/api-smoke.json   |    38 +
+ .../2026-05-30-sprint-6/dev-start/auth-smoke.json  |    12 +
+ .../dev-start/dev-start-frontend.png               |   Bin 0 -> 46675 bytes
+ .../2026-05-30-sprint-6/dev-start/dev-start.out    |   162 +
+ .../2026-05-30-sprint-6/dev-start/install.out      |    21 +
+ .../dev-start/layout-report.json                   |   333 +
+ .../2026-05-30-sprint-6/dev-start/maven-test.out   |   171 +
+ .../2026-05-30-sprint-6/dev-start/summary.md       |    11 +
+ .../admin-full-preset-browser-check.mjs            |   661 +
+ .../full-preset/frontend-dev.out                   |     4 +
+ .../full-preset/function-sampling-report.json      |    25 +
+ .../full-preset/function-settings-drawer.png       |   Bin 0 -> 96152 bytes
+ .../full-preset/function-user-dropdown.png         |   Bin 0 -> 77592 bytes
+ .../full-preset/home-1440x960.png                  |   Bin 0 -> 58918 bytes
+ .../2026-05-30-sprint-6/full-preset/install.out    |    30 +
+ .../full-preset/layout-report.json                 | 11927 ++++++++++++++++++
+ .../full-preset/menu-merge-report.json             |  1839 +++
+ .../full-preset/menu-sampling-report.json          |   355 +
+ ...17\221\350\265\267\346\265\201\347\250\213.png" |   Bin 0 -> 78552 bytes
+ ...10\221\347\232\204\345\276\205\345\212\236.png" |   Bin 0 -> 72294 bytes
+ ...10\221\347\232\204\347\224\263\350\257\267.png" |   Bin 0 -> 69967 bytes
+ ...26\207\344\273\266\347\256\241\347\220\206.png" |   Bin 0 -> 77493 bytes
+ ...27\245\345\216\206\347\256\241\347\220\206.png" |   Bin 0 -> 96891 bytes
+ ...74\226\345\217\267\350\247\204\345\210\231.png" |   Bin 0 -> 67138 bytes
+ ...45\227\351\244\220\347\256\241\347\220\206.png" |   Bin 0 -> 67301 bytes
+ ...34\272\346\236\204\347\256\241\347\220\206.png" |   Bin 0 -> 140931 bytes
+ ...73\204\347\273\207\346\236\266\346\236\204.png" |   Bin 0 -> 154799 bytes
+ ...17\221\351\200\201\344\273\273\345\212\241.png" |   Bin 0 -> 63773 bytes
+ ...10\221\347\232\204\346\266\210\346\201\257.png" |   Bin 0 -> 70669 bytes
+ ...66\210\346\201\257\351\205\215\347\275\256.png" |   Bin 0 -> 66501 bytes
+ .../full-preset/settings-drawer-1440x960.png       |   Bin 0 -> 88104 bytes
+ .../2026-05-30-sprint-6/full-preset/summary.md     |     7 +
+ .../full-preset/user-dropdown-1440x960.png         |   Bin 0 -> 67506 bytes
+ .../2026-05-30-sprint-6/full-preset/vite-build.out |   142 +
+ .../mode-matrix/local/build.out                    |   154 +
+ .../mode-matrix/local/frontend-dev.err             |     6 +
+ .../mode-matrix/local/frontend-dev.out             |     8 +
+ .../mode-matrix/local/frontend-mode.png            |   Bin 0 -> 47354 bytes
+ .../mode-matrix/local/install.out                  |    21 +
+ .../mode-matrix/local/layout-report.json           |   475 +
+ .../mode-matrix/local/typecheck.out                |    11 +
+ .../mode-matrix/micro/build.out                    |   168 +
+ .../mode-matrix/micro/frontend-dev.err             |     6 +
+ .../mode-matrix/micro/frontend-dev.out             |     8 +
+ .../mode-matrix/micro/frontend-mode.png            |   Bin 0 -> 55965 bytes
+ .../mode-matrix/micro/install.out                  |    21 +
+ .../mode-matrix/micro/layout-report.json           |   499 +
+ .../mode-matrix/micro/remote-dev.out               |     8 +
+ .../mode-matrix/micro/remote-failure-report.json   |    49 +
+ .../mode-matrix/micro/remote-failure.png           |   Bin 0 -> 52914 bytes
+ .../mode-matrix/micro/typecheck.out                |    13 +
+ .../mode-matrix/mixed/build.out                    |   165 +
+ .../mode-matrix/mixed/frontend-dev.err             |     6 +
+ .../mode-matrix/mixed/frontend-dev.out             |     8 +
+ .../mode-matrix/mixed/frontend-mode.png            |   Bin 0 -> 55893 bytes
+ .../mode-matrix/mixed/install.out                  |    21 +
+ .../mode-matrix/mixed/layout-report.json           |   499 +
+ .../mode-matrix/mixed/remote-dev.out               |     9 +
+ .../mode-matrix/mixed/remote-failure-report.json   |    49 +
+ .../mode-matrix/mixed/remote-failure.png           |   Bin 0 -> 52632 bytes
+ .../mode-matrix/mixed/typecheck.out                |    13 +
+ .../2026-05-30-sprint-6/mode-matrix/summary.md     |    15 +
+ .../2026-05-30-sprint-6/visual-review/report.md    |    34 +
+ .../visual-review/sprint-6-contact-sheet.png       |   Bin 0 -> 167694 bytes
+ .../generated-upgrade/frontend-dev.err             |    18 +
+ .../generated-upgrade/frontend-dev.out             |    24 +
+ .../generated-upgrade/layout-report.json           |   369 +
+ .../generated-upgrade/legacy-build.out             |   154 +
+ .../generated-upgrade/legacy-compat-project.json   |    36 +
+ .../generated-upgrade/legacy-install.out           |    63 +
+ .../generated-upgrade/legacy-typecheck.out         |    11 +
+ .../generated-upgrade/recommended-build.out        |   155 +
+ .../generated-upgrade/recommended-frontend.png     |   Bin 0 -> 47135 bytes
+ .../generated-upgrade/recommended-install.out      |    52 +
+ .../generated-upgrade/recommended-project.json     |    36 +
+ .../generated-upgrade/recommended-typecheck.out    |    11 +
+ .../generated-upgrade/summary.md                   |    21 +
+ .../2026-05-30-sprint-7/registry/frontend-dev.err  |     3 +
+ .../2026-05-30-sprint-7/registry/frontend-dev.out  |     8 +
+ .../registry/frontend-smoke-report.json            |   265 +
+ .../registry/frontend-smoke.png                    |   Bin 0 -> 53177 bytes
+ .../2026-05-30-sprint-7/registry/install.out       |    26 +
+ .../registry/project-registry-dependencies.json    |    46 +
+ .../2026-05-30-sprint-7/registry/summary.md        |    55 +
+ .../2026-05-30-sprint-7/registry/verdaccio.out     |    19 +
+ .../2026-05-29-admin-baseline-sprint-0-ledger.md   |    12 +
+ .../plans/2026-05-29-admin-baseline-sprint-0.md    |    81 +
+ .../2026-05-29-admin-shell-api-sprint-b-ledger.md  |    10 +
+ .../plans/2026-05-29-admin-shell-api-sprint-b.md   |    68 +
+ ...lt-in-capability-composition-sprint-c-ledger.md |    11 +
+ ...-29-built-in-capability-composition-sprint-c.md |    74 +
+ ...ness-starter-backend-runtime-sprint-i-ledger.md |    13 +
+ ...29-business-starter-backend-runtime-sprint-i.md |    72 +
+ ...siness-starter-dev-start-e2e-sprint-j-ledger.md |    13 +
+ ...5-29-business-starter-dev-start-e2e-sprint-j.md |    77 +
+ ...ness-starter-init-experience-sprint-k-ledger.md |    11 +
+ ...29-business-starter-init-experience-sprint-k.md |    81 +
+ ...-29-business-starter-runtime-sprint-d-ledger.md |    12 +
+ ...2026-05-29-business-starter-runtime-sprint-d.md |    64 +
+ ...9-create-mango-app-selection-sprint-e-ledger.md |    10 +
+ ...26-05-29-create-mango-app-selection-sprint-e.md |    60 +
+ ...-29-external-consumption-e2e-sprint-f-ledger.md |    14 +
+ ...2026-05-29-external-consumption-e2e-sprint-f.md |    58 +
+ ...5-29-frontend-material-productization-ledger.md |    10 +
+ ...-05-29-frontend-material-productization-plan.md |   286 +
+ ...6-05-29-frontend-mode-matrix-sprint-l-ledger.md |    10 +
+ .../2026-05-29-frontend-mode-matrix-sprint-l.md    |    59 +
+ ...29-frontend-package-contract-sprint-a-ledger.md |    11 +
+ ...026-05-29-frontend-package-contract-sprint-a.md |    73 +
+ ...frontend-tarball-consumption-sprint-g-ledger.md |    16 +
+ ...-05-29-frontend-tarball-consumption-sprint-g.md |    61 +
+ ...-29-mango-admin-full-runtime-sprint-1-ledger.md |    19 +
+ ...2026-05-29-mango-admin-full-runtime-sprint-1.md |    90 +
+ ...ngo-admin-runtime-full-productization-ledger.md |    25 +
+ ...dmin-runtime-full-productization-peer-review.md |    45 +
+ ...mango-admin-runtime-full-productization-plan.md |   521 +
+ ...6-05-29-registry-consumption-sprint-h-ledger.md |    14 +
+ .../2026-05-29-registry-consumption-sprint-h.md    |    73 +
+ .../2026-05-30-api-admin-split-sprint-2-ledger.md  |    18 +
+ .../plans/2026-05-30-api-admin-split-sprint-2.md   |    94 +
+ ...pability-manifest-dependency-sprint-3-ledger.md |    19 +
+ ...5-30-capability-manifest-dependency-sprint-3.md |    86 +
+ ...-30-create-mango-app-starter-sprint-6-ledger.md |    18 +
+ ...2026-05-30-create-mango-app-starter-sprint-6.md |    80 +
+ ...mission-resource-integration-sprint-4-ledger.md |    19 +
+ ...enu-permission-resource-integration-sprint-4.md |    76 +
+ ...05-30-release-upgrade-compat-sprint-7-ledger.md |    21 +
+ .../2026-05-30-release-upgrade-compat-sprint-7.md  |   130 +
+ ...-deployment-mode-unification-sprint-5-ledger.md |    12 +
+ ...runtime-deployment-mode-unification-sprint-5.md |    66 +
+ mango-pmo/rules/00-dev-flow.md                     |    23 +
+ mango-pmo/rules/backend/07-persistence.md          |     5 +
+ mango-pmo/rules/frontend/04-test.md                |    23 +-
+ .../rules/frontend/07-material-productization.md   |   104 +
+ mango-pmo/rules/index.json                         |    10 +
+ mango-ui/apps/mango-admin-rbac-app/package.json    |     7 +-
+ mango-ui/apps/mango-admin-shell/package.json       |     7 +-
+ .../apps/mango-admin-template-app/package.json     |     7 +-
+ .../apps/mango-admin-workflow-app/package.json     |     7 +-
+ mango-ui/apps/mango-admin/index.html               |     2 -
+ mango-ui/apps/mango-admin/package.json             |     7 +-
+ mango-ui/package.json                              |    16 +-
+ mango-ui/packages/admin-pages/package.json         |    57 +-
+ .../admin-pages/src/__tests__/capabilities.spec.ts |   207 +
+ mango-ui/packages/admin-pages/src/core.ts          |   283 +-
+ mango-ui/packages/admin-pages/src/defaults.ts      |   135 +-
+ mango-ui/packages/admin-pages/vitest.config.ts     |    32 +
+ mango-ui/packages/admin-shell/package.json         |    52 +-
+ mango-ui/packages/admin-shell/src/ShellView.vue    |     6 +-
+ .../src/__tests__/adminShellOptions.spec.ts        |   119 +
+ .../admin-shell/src/__tests__/menuHost.spec.ts     |    60 +
+ .../admin-shell/src/__tests__/menuMerge.spec.ts    |    99 +
+ mango-ui/packages/admin-shell/src/appBootstrap.ts  |    35 +-
+ mango-ui/packages/admin-shell/src/config.ts        |   102 +-
+ mango-ui/packages/admin-shell/src/index.ts         |    15 +-
+ mango-ui/packages/admin-shell/src/router.ts        |    54 +-
+ .../admin-shell/src/runtime/ShellRuntimeOutlet.vue |    90 +-
+ .../packages/admin-shell/src/runtime/localApps.ts  |     8 +-
+ .../packages/admin-shell/src/runtime/menuHost.ts   |    87 +-
+ .../packages/admin-shell/src/runtime/menuMerge.ts  |   174 +
+ .../admin-shell/src/runtime/runtimeConfig.ts       |    62 +-
+ .../admin-shell/src/runtime/runtimeHost.ts         |   131 +-
+ .../packages/admin-shell/src/views/home/index.vue  |   191 +
+ mango-ui/packages/admin-shell/vitest.config.ts     |    46 +
+ mango-ui/packages/admin/package.json               |    53 +
+ .../admin/src/__tests__/createMangoAdmin.spec.ts   |    99 +
+ .../packages/admin/src/__tests__/presets.spec.ts   |   130 +
+ mango-ui/packages/admin/src/index.ts               |   135 +
+ mango-ui/packages/admin/src/menu.ts                |    11 +
+ mango-ui/packages/admin/src/presets.ts             |   155 +
+ mango-ui/packages/admin/src/style.css              |     1 +
+ mango-ui/packages/admin/tsconfig.json              |    18 +
+ mango-ui/packages/admin/vitest.config.ts           |    41 +
+ mango-ui/packages/api-schema/package.json          |    19 +-
+ mango-ui/packages/app-runtime/package.json         |    29 +-
+ mango-ui/packages/app-runtime/src/index.spec.ts    |    94 +-
+ mango-ui/packages/app-runtime/src/index.ts         |    80 +-
+ mango-ui/packages/app-runtime/src/vue-micro.ts     |     9 +-
+ mango-ui/packages/auth-admin/package.json          |    36 +
+ mango-ui/packages/auth-admin/src/capability.ts     |    17 +
+ mango-ui/packages/auth-admin/src/index.ts          |     3 +
+ mango-ui/packages/auth-api/package.json            |    32 +
+ mango-ui/packages/auth-api/src/api/sys.ts          |    79 +
+ mango-ui/packages/auth-api/src/index.ts            |     1 +
+ mango-ui/packages/auth/package.json                |    34 +-
+ mango-ui/packages/auth/src/api/sys.ts              |    80 +-
+ mango-ui/packages/auth/src/capability.ts           |    42 +
+ mango-ui/packages/auth/src/index.ts                |     1 +
+ mango-ui/packages/calendar-admin/package.json      |    36 +
+ mango-ui/packages/calendar-admin/src/capability.ts |    17 +
+ mango-ui/packages/calendar-admin/src/index.ts      |     3 +
+ mango-ui/packages/calendar-api/package.json        |    32 +
+ mango-ui/packages/calendar-api/src/api/calendar.ts |   352 +
+ mango-ui/packages/calendar-api/src/index.ts        |     1 +
+ mango-ui/packages/calendar/package.json            |    32 +-
+ mango-ui/packages/calendar/src/api/calendar.ts     |   353 +-
+ mango-ui/packages/calendar/src/capability.ts       |    51 +
+ mango-ui/packages/calendar/src/index.ts            |     1 +
+ mango-ui/packages/common/hooks/useECharts.ts       |    30 +-
+ mango-ui/packages/common/package.json              |   161 +-
+ mango-ui/packages/common/utils/captchaRequest.ts   |    24 +-
+ mango-ui/packages/common/utils/message.ts          |     9 +-
+ mango-ui/packages/common/utils/other.ts            |     4 +-
+ mango-ui/packages/common/utils/request.ts          |     8 +-
+ mango-ui/packages/common/utils/tagsView.ts         |     2 +-
+ mango-ui/packages/common/utils/theme.ts            |     5 +-
+ .../create-mango-app/scripts/check-cli.mjs         |   160 +-
+ mango-ui/packages/create-mango-app/src/index.mjs   |   237 +-
+ .../templates/mango-business-starter/.gitignore    |     5 +
+ .../templates/mango-business-starter/.npmrc        |     2 +
+ .../templates/mango-business-starter/README.md     |     2 +-
+ .../apps/{{projectKebab}}-monolith-app/pom.xml     |    54 +
+ .../{{projectPascal}}MonolithApplication.java      |    15 +
+ .../src/main/resources/application.yml             |   138 +
+ .../backend/modules/{{moduleKebab}}/pom.xml        |     1 +
+ .../{{moduleKebab}}/{{moduleKebab}}-api/pom.xml    |     4 +-
+ .../{{modulePackage}}/api/{{modulePascal}}Api.java |     2 +-
+ .../{{moduleKebab}}/{{moduleKebab}}-core/pom.xml   |     4 +
+ .../core/entity/{{aggregatePascal}}Entity.java     |    16 +-
+ .../core/mapper/{{aggregatePascal}}Mapper.java     |    12 +
+ .../service/impl/{{aggregatePascal}}Service.java   |    48 +-
+ .../{{moduleKebab}}/V1__init_{{moduleKebab}}.sql   |    11 +-
+ .../{{moduleKebab}}-starter-remote/pom.xml         |     2 +-
+ .../{{moduleKebab}}-starter/pom.xml                |     2 +-
+ .../starter/{{modulePascal}}AutoConfiguration.java |     2 +
+ .../mango-business-starter/backend/pom.xml         |    99 +
+ .../business-docs/plans/example-contract.md        |     2 +-
+ .../business-docs/plans/example-ledger.md          |     2 +-
+ .../mango-baseline/rules/backend/07-persistence.md |     5 +
+ .../apps/{{projectKebab}}-admin/.env.example       |     5 +
+ .../apps/{{projectKebab}}-admin/package.json       |    21 +-
+ .../public/mango-runtime-config.json               |     6 +
+ .../apps/{{projectKebab}}-admin/src/main.ts        |    28 +-
+ .../{{projectKebab}}-admin/src/runtimeConfig.ts    |     8 +
+ .../{{projectKebab}}-admin/src/starterMenus.ts     |    34 +
+ .../apps/{{projectKebab}}-admin/src/vite-env.d.ts  |     1 +
+ .../apps/{{projectKebab}}-admin/tsconfig.json      |    11 +
+ .../apps/{{projectKebab}}-admin/vite.config.ts     |    42 +-
+ .../packages/{{moduleKebab}}-admin/package.json    |    30 +
+ .../src/index.ts                                   |     0
+ .../{{moduleKebab}}/{{aggregateKebab}}/index.vue   |   149 +
+ .../packages/{{moduleKebab}}-admin/tsconfig.json   |     7 +
+ .../packages/{{moduleKebab}}-api/package.json      |    12 +
+ .../packages/{{moduleKebab}}-api/tsconfig.json     |     7 +
+ .../frontend/packages/{{moduleKebab}}/package.json |    17 -
+ .../{{moduleKebab}}/{{aggregateKebab}}/index.vue   |    62 -
+ .../templates/mango-business-starter/package.json  |    24 +
+ .../mango-business-starter/pnpm-workspace.yaml     |     3 +
+ .../scripts/check-template.mjs                     |   217 +-
+ .../mango-business-starter/scripts/dev-start.sh    |   144 +
+ .../mango-business-starter/scripts/dev-stop.sh     |    25 +
+ .../topologies/microservice/README.md              |     2 +-
+ .../topologies/monolith/README.md                  |     4 +-
+ .../mango-business-starter/tsconfig.base.json      |    15 +
+ mango-ui/packages/file-admin/package.json          |    36 +
+ mango-ui/packages/file-admin/src/capability.ts     |    17 +
+ mango-ui/packages/file-admin/src/index.ts          |     3 +
+ mango-ui/packages/file-api/package.json            |    44 +
+ mango-ui/packages/file-api/src/api/file.ts         |   504 +
+ .../packages/file-api/src/api/fileDirectory.ts     |    74 +
+ mango-ui/packages/file-api/src/api/fileSettings.ts |   202 +
+ mango-ui/packages/file-api/src/api/fileStorage.ts  |   146 +
+ mango-ui/packages/file-api/src/index.ts            |     4 +
+ mango-ui/packages/file/package.json                |    32 +-
+ mango-ui/packages/file/src/api/file.ts             |   505 +-
+ mango-ui/packages/file/src/api/fileDirectory.ts    |    75 +-
+ mango-ui/packages/file/src/api/fileSettings.ts     |   203 +-
+ mango-ui/packages/file/src/api/fileStorage.ts      |   147 +-
+ mango-ui/packages/file/src/capability.ts           |    79 +
+ mango-ui/packages/file/src/components/MUpload.vue  |    28 +-
+ .../packages/file/src/components/MUploadTypes.ts   |    22 +
+ mango-ui/packages/file/src/index.ts                |     3 +-
+ mango-ui/packages/notice-admin/package.json        |    36 +
+ mango-ui/packages/notice-admin/src/capability.ts   |    17 +
+ mango-ui/packages/notice-admin/src/index.ts        |     3 +
+ mango-ui/packages/notice-api/package.json          |    35 +
+ mango-ui/packages/notice-api/src/api/notice.ts     |   412 +
+ mango-ui/packages/notice-api/src/index.ts          |     2 +
+ mango-ui/packages/notice-api/src/types/notice.ts   |   264 +
+ mango-ui/packages/notice/package.json              |    56 +-
+ mango-ui/packages/notice/src/admin.ts              |     1 +
+ mango-ui/packages/notice/src/api/notice.ts         |   413 +-
+ mango-ui/packages/notice/src/capability.ts         |   192 +
+ mango-ui/packages/notice/src/index.ts              |     1 +
+ .../packages/notice/src/realtime/noticeRealtime.ts |     2 +-
+ mango-ui/packages/notice/src/types/notice.ts       |   265 +-
+ mango-ui/packages/numgen-admin/package.json        |    36 +
+ mango-ui/packages/numgen-admin/src/capability.ts   |    17 +
+ mango-ui/packages/numgen-admin/src/index.ts        |     3 +
+ mango-ui/packages/numgen-api/package.json          |    32 +
+ mango-ui/packages/numgen-api/src/api/numgen.ts     |   294 +
+ mango-ui/packages/numgen-api/src/index.ts          |     1 +
+ mango-ui/packages/numgen/package.json              |    32 +-
+ mango-ui/packages/numgen/src/api/numgen.ts         |   295 +-
+ mango-ui/packages/numgen/src/capability.ts         |    58 +
+ mango-ui/packages/numgen/src/index.ts              |     1 +
+ mango-ui/packages/rbac-admin/package.json          |    36 +
+ mango-ui/packages/rbac-admin/src/capability.ts     |    17 +
+ mango-ui/packages/rbac-admin/src/index.ts          |     3 +
+ mango-ui/packages/rbac-api/package.json            |    60 +
+ mango-ui/packages/rbac-api/src/api/app.ts          |   151 +
+ mango-ui/packages/rbac-api/src/api/menu.ts         |   190 +
+ mango-ui/packages/rbac-api/src/api/menuPackage.ts  |    38 +
+ mango-ui/packages/rbac-api/src/api/org.ts          |    90 +
+ mango-ui/packages/rbac-api/src/api/post.ts         |    83 +
+ mango-ui/packages/rbac-api/src/api/role.ts         |    42 +
+ mango-ui/packages/rbac-api/src/api/runtimeTypes.ts |    21 +
+ mango-ui/packages/rbac-api/src/api/user.ts         |   147 +
+ mango-ui/packages/rbac-api/src/index.ts            |     8 +
+ mango-ui/packages/rbac/package.json                |    32 +-
+ mango-ui/packages/rbac/src/api/app.ts              |   152 +-
+ mango-ui/packages/rbac/src/api/menu.ts             |   191 +-
+ mango-ui/packages/rbac/src/api/menuPackage.ts      |    39 +-
+ mango-ui/packages/rbac/src/api/org.ts              |    91 +-
+ mango-ui/packages/rbac/src/api/post.ts             |    84 +-
+ mango-ui/packages/rbac/src/api/role.ts             |    43 +-
+ mango-ui/packages/rbac/src/api/user.ts             |   148 +-
+ mango-ui/packages/rbac/src/capability.ts           |   158 +
+ mango-ui/packages/rbac/src/index.ts                |     1 +
+ mango-ui/packages/system-admin/package.json        |    36 +
+ mango-ui/packages/system-admin/src/capability.ts   |    17 +
+ mango-ui/packages/system-admin/src/index.ts        |     3 +
+ mango-ui/packages/system-api/package.json          |    60 +
+ mango-ui/packages/system-api/src/api/area.ts       |    43 +
+ mango-ui/packages/system-api/src/api/config.ts     |   107 +
+ mango-ui/packages/system-api/src/api/dict.ts       |   233 +
+ mango-ui/packages/system-api/src/api/log.ts        |   183 +
+ mango-ui/packages/system-api/src/api/param.ts      |   100 +
+ mango-ui/packages/system-api/src/api/publicPath.ts |    54 +
+ mango-ui/packages/system-api/src/api/route.ts      |    98 +
+ mango-ui/packages/system-api/src/api/tenant.ts     |   131 +
+ mango-ui/packages/system-api/src/index.ts          |     8 +
+ mango-ui/packages/system/package.json              |    32 +-
+ mango-ui/packages/system/src/api/area.ts           |    44 +-
+ mango-ui/packages/system/src/api/config.ts         |   108 +-
+ mango-ui/packages/system/src/api/dict.ts           |   234 +-
+ mango-ui/packages/system/src/api/log.ts            |   184 +-
+ mango-ui/packages/system/src/api/param.ts          |   101 +-
+ mango-ui/packages/system/src/api/publicPath.ts     |    55 +-
+ mango-ui/packages/system/src/api/route.ts          |    99 +-
+ mango-ui/packages/system/src/api/tenant.ts         |   132 +-
+ mango-ui/packages/system/src/capability.ts         |   158 +
+ mango-ui/packages/system/src/index.ts              |     1 +
+ mango-ui/packages/template-admin/package.json      |    36 +
+ mango-ui/packages/template-admin/src/capability.ts |    17 +
+ mango-ui/packages/template-admin/src/index.ts      |     3 +
+ mango-ui/packages/template-api/package.json        |    31 +
+ mango-ui/packages/template-api/src/api/template.ts |   261 +
+ mango-ui/packages/template-api/src/index.ts        |     1 +
+ mango-ui/packages/template/package.json            |    32 +-
+ mango-ui/packages/template/src/api/template.ts     |   262 +-
+ mango-ui/packages/template/src/capability.ts       |    88 +
+ mango-ui/packages/template/src/index.ts            |     1 +
+ mango-ui/packages/workflow-admin/package.json      |    36 +
+ mango-ui/packages/workflow-admin/src/capability.ts |    17 +
+ mango-ui/packages/workflow-admin/src/index.ts      |     3 +
+ mango-ui/packages/workflow-api/package.json        |    31 +
+ mango-ui/packages/workflow-api/src/api/workflow.ts |  1044 ++
+ mango-ui/packages/workflow-api/src/index.ts        |     1 +
+ .../workflow-business-example/package.json         |    23 +-
+ mango-ui/packages/workflow/package.json            |    32 +-
+ mango-ui/packages/workflow/src/api/workflow.ts     |  1045 +-
+ mango-ui/packages/workflow/src/capability.ts       |    95 +
+ mango-ui/packages/workflow/src/index.ts            |     1 +
+ mango-ui/pnpm-lock.yaml                            |   653 +-
+ mango-ui/scripts/admin-baseline-e2e.mjs            |   562 +
+ mango-ui/scripts/admin-custom-preset-e2e.mjs       |  1129 ++
+ mango-ui/scripts/admin-full-preset-e2e.mjs         |  1047 ++
+ mango-ui/scripts/api-sdk-consumer-e2e.mjs          |   585 +
+ mango-ui/scripts/build-package.mjs                 |   693 ++
+ .../scripts/business-starter-dev-start-e2e.mjs     |   814 ++
+ mango-ui/scripts/check-package-contracts.mjs       |   609 +
+ mango-ui/scripts/frontend-mode-matrix-e2e.mjs      |  1123 ++
+ mango-ui/scripts/generated-project-upgrade-e2e.mjs |   671 +
+ mango-ui/scripts/registry-consumption-e2e.mjs      |   859 ++
+ 570 files changed, 120526 insertions(+), 6135 deletions(-)

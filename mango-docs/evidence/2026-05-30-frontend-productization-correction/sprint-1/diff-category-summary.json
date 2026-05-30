@@ -1,0 +1,16 @@
+{
+  "total": 570,
+  "counts": {
+    "adminShell": 17,
+    "adminFacade": 9,
+    "splitPackages": 89,
+    "legacyPackages": 46,
+    "starterTemplates": 77,
+    "scripts": 10,
+    "oldEvidence": 156,
+    "oldPlans": 45,
+    "pmoRootConfig": 8,
+    "apps": 6,
+    "other": 107
+  }
+}
