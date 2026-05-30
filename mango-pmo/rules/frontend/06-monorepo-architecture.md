@@ -31,6 +31,8 @@
 - 公共组件依赖的 API 必须放在对应公共位置。
 - 可复用页面、组件和能力的样式必须跟随所属 package，package 通过 `./style.css` 公开样式入口。
 - 单体聚合入口只能 `@import` 各 package 样式，禁止复制或重写 package 私有样式。
+- 单体 admin 集成 package 必须通过 `packages/admin/admin-packages.json` 一处显式声明，样式聚合文件由脚本生成，禁止手工长期维护 package 样式清单。
+- 新增或移除 admin package 后必须运行样式生成校验，确保声明、依赖和 package `./style.css` 导出一致。
 - 微前端 app 必须按运行模块显式引入自身依赖的 package 样式，例如 workflow app 引入 workflow package 样式。
 - 业务项目消费 Mango package 时应通过 package 公开入口引入样式，不能依赖 `apps/*` 或仓库源码路径。
 - 开发中心和组件示例属于展示与验证承载层，只能依赖被展示组件的公开包入口和样式入口。
@@ -69,6 +71,7 @@
 - 同一能力在宿主和公共包各维护一份
 - 公共包直接引用宿主别名路径
 - 业务 package 样式只存在于单体聚合入口
+- 手工修改单体 admin 生成的 package 样式聚合文件
 - 微前端页面依赖宿主聚合样式穿透隔离容器
 - 组件运行样式依赖开发中心、示例中心或文档示例页
 - 通用组件或业务组件为了显示正常要求额外安装开发中心 package

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "checkedAt": "2026-05-30T17:21:48.798Z",
+  "checkedAt": "2026-05-30T23:46:15.194Z",
   "errors": [],
   "details": [
     {
@@ -149,6 +149,14 @@
     },
     {
       "ok": true,
+      "message": "mango-ui/packages/admin/admin-packages.json must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/generated-package-styles.css must exist"
+    },
+    {
+      "ok": true,
       "message": "mango-ui/packages/admin/style.css must exist"
     },
     {
@@ -185,11 +193,15 @@
     },
     {
       "ok": true,
-      "message": "@mango/admin/style.css must include admin-shell style entry"
+      "message": "@mango/admin/style.css must include generated package style entry"
     },
     {
       "ok": true,
-      "message": "@mango/admin/style.css must include auth style entry"
+      "message": "@mango/admin generated package styles must include admin-shell style entry"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin generated package styles must include auth style entry"
     },
     {
       "ok": true,
@@ -198,6 +210,10 @@
     {
       "ok": true,
       "message": "@mango/admin/style.css must not require consumer Sass support"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin generated package styles must not require consumer Sass support"
     },
     {
       "ok": true,

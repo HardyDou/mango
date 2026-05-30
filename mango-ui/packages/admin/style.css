@@ -1,14 +1,3 @@
 @import 'element-plus/dist/index.css';
 @import '@mango/common/theme/index.css';
-@import '@mango/common/style.css';
-@import '@mango/admin-shell/style.css';
-@import '@mango/auth/style.css';
-@import '@mango/rbac/style.css';
-@import '@mango/system/style.css';
-@import '@mango/workflow/style.css';
-@import '@mango/workflow-business-example/style.css';
-@import '@mango/file/style.css';
-@import '@mango/calendar/style.css';
-@import '@mango/numgen/style.css';
-@import '@mango/template/style.css';
-@import '@mango/notice/style.css';
+@import './generated-package-styles.css';

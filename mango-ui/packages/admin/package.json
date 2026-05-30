@@ -14,11 +14,15 @@
     "./style.css": "./style.css"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "pnpm run check:styles && vite build",
+    "check:styles": "node ../../scripts/generate-admin-package-styles.mjs --check",
+    "generate:styles": "node ../../scripts/generate-admin-package-styles.mjs"
   },
   "files": [
     "dist",
     "src/index.d.ts",
+    "admin-packages.json",
+    "generated-package-styles.css",
     "style.css",
     "package.json"
   ],

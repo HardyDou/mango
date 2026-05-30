@@ -26,6 +26,8 @@ const requiredExports = [
 const requiredFiles = [
   'mango-ui/packages/admin/src/index.ts',
   'mango-ui/packages/admin/src/index.d.ts',
+  'mango-ui/packages/admin/admin-packages.json',
+  'mango-ui/packages/admin/generated-package-styles.css',
   'mango-ui/packages/admin/style.css',
   'mango-ui/packages/admin-shell/style.css',
   'mango-ui/packages/common/theme/index.css',
@@ -80,12 +82,15 @@ for (const item of appForbiddenPatterns) {
 }
 
 const styleContent = readFileSync(join(repoRoot, 'mango-ui/packages/admin/style.css'), 'utf8');
+const generatedStyleContent = readFileSync(join(repoRoot, 'mango-ui/packages/admin/generated-package-styles.css'), 'utf8');
 const shellStyleContent = readFileSync(join(repoRoot, 'mango-ui/packages/admin-shell/style.css'), 'utf8');
 check(styleContent.includes("@import 'element-plus/dist/index.css'"), '@mango/admin/style.css must include Element Plus base style');
-check(styleContent.includes("@import '@mango/admin-shell/style.css'"), '@mango/admin/style.css must include admin-shell style entry');
-check(styleContent.includes("@import '@mango/auth/style.css'"), '@mango/admin/style.css must include auth style entry');
+check(styleContent.includes("@import './generated-package-styles.css'"), '@mango/admin/style.css must include generated package style entry');
+check(generatedStyleContent.includes("@import '@mango/admin-shell/style.css'"), '@mango/admin generated package styles must include admin-shell style entry');
+check(generatedStyleContent.includes("@import '@mango/auth/style.css'"), '@mango/admin generated package styles must include auth style entry');
 check(!styleContent.includes('dist/style.css'), '@mango/admin/style.css must not depend on ignored dist output');
 check(!styleContent.includes('.scss'), '@mango/admin/style.css must not require consumer Sass support');
+check(!generatedStyleContent.includes('.scss'), '@mango/admin generated package styles must not require consumer Sass support');
 check(shellStyleContent.includes("@import './dist/style.css'"), '@mango/admin-shell/style.css must expose built shell component styles');
 check(!shellStyleContent.includes('.scss'), '@mango/admin-shell/style.css must not require consumer Sass support');
 
