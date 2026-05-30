@@ -1,0 +1,566 @@
+{
+  "errors": [],
+  "failed": [
+    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-f841d0ca&rtTicket=FRRT92UkpFphLJ7u9BmnCnVSLDEcuu_bUCUWFM42kno net::ERR_ABORTED"
+  ],
+  "responses": [],
+  "failures": [
+    "approval-todo: bell display flex",
+    "approval-start: bell display flex",
+    "workflow-template: bell display flex",
+    "template-list: bell display flex",
+    "template-categories: bell display flex"
+  ],
+  "pages": [
+    {
+      "name": "approval-todo",
+      "path": "/workflow/task/todo",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/after-micro-approval-todo.png",
+      "url": "http://a.mango.io:5176/#/workflow/task/todo",
+      "title": "Mango Admin",
+      "bodyText": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAADsAAABUIIslek9TLzIAAAFEAAAARAAAAGA8V0m+Y21hcAAAAYgAAANUAAAIZqAamFdnbHlmAAAE3AAAONQAAG7gJElN82hlYWQAAD2wAAAALwAAADYp8WD1aGhlYQAAPeAAAAAeAAAAJAfeBH9obXR4AAA+AAAAAFEAAAH8EZEAAGxvY2EAAD5UAAABAAAAAQC4/NWebWF4cAAAP1QAAAAfAAAAIAGgAPxuYW1lAAA/dAAAAUUAAAJb1Yvg7HBvc3QAAEC8AAADaAAABYA5rFpXeJxjYGRgYOBiMGCwY2BycfMJYeDLSSzJY5BiYGGAAJA8MpsxJzM9kYEDxgPKsYBpDiBmg4gCACY7BUgAeJxjYGHRZpzAwMrAwNTJdIaBgaEfQjO+ZjBi5ACKMrAyM2AFAWmuKQwHnjk9O8zc8L+BgYH5DgOQZGBEUcQEAI/1DZB4nO3Vd3PUdRSF8WchAaUoWBAERRQLIihVFBSEmJiY0HvvhBZ6sVEGsGEX7L0XVFBARQGV93JeA//B+ebs8CrMzCfD7mRmf8vc+1ygFuho91kNdGij4n9RafW7lfb3O9Kl/f2ayji/7sZVdKBGdWpQk/brwqVLoImqV6OadaC8uvJT8V/34DpuYI9fTWYKU5nGdGYwk1nMZg5zmcd8F",
+      "bell": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1103.09375,
+          "y": 8,
+          "w": 336.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "336.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "runtime": {
+        "rect": {
+          "x": 236,
+          "y": 112,
+          "w": 1188,
+          "h": 836,
+          "right": 1424,
+          "bottom": 948,
+          "text": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAA",
+          "cls": "shell-runtime-content"
+        },
+        "dataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-workflow",
+          "mangoRuntimeCode": "mango-admin-workflow-app",
+          "mangoRuntimeEntry": "http://c.mango.io:5182/"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "approval-start",
+      "path": "/workflow/start-process",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/after-micro-approval-start.png",
+      "url": "http://a.mango.io:5176/#/workflow/start-process",
+      "title": "Mango Admin",
+      "bodyText": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAADsAAABUIIslek9TLzIAAAFEAAAARAAAAGA8V0m+Y21hcAAAAYgAAANUAAAIZqAamFdnbHlmAAAE3AAAONQAAG7gJElN82hlYWQAAD2wAAAALwAAADYp8WD1aGhlYQAAPeAAAAAeAAAAJAfeBH9obXR4AAA+AAAAAFEAAAH8EZEAAGxvY2EAAD5UAAABAAAAAQC4/NWebWF4cAAAP1QAAAAfAAAAIAGgAPxuYW1lAAA/dAAAAUUAAAJb1Yvg7HBvc3QAAEC8AAADaAAABYA5rFpXeJxjYGRgYOBiMGCwY2BycfMJYeDLSSzJY5BiYGGAAJA8MpsxJzM9kYEDxgPKsYBpDiBmg4gCACY7BUgAeJxjYGHRZpzAwMrAwNTJdIaBgaEfQjO+ZjBi5ACKMrAyM2AFAWmuKQwHnjk9O8zc8L+BgYH5DgOQZGBEUcQEAI/1DZB4nO3Vd3PUdRSF8WchAaUoWBAERRQLIihVFBSEmJiY0HvvhBZ6sVEGsGEX7L0XVFBARQGV93JeA//B+ebs8CrMzCfD7mRmf8vc+1ygFuho91kNdGij4n9RafW7lfb3O9Kl/f2ayji/7sZVdKBGdWpQk/brwqVLoImqV6OadaC8uvJT8V/34DpuYI9fTWYKU5nGdGYwk1nMZg5zmcd8F",
+      "bell": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1103.09375,
+          "y": 8,
+          "w": 336.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "336.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "runtime": {
+        "rect": {
+          "x": 236,
+          "y": 112,
+          "w": 1188,
+          "h": 836,
+          "right": 1424,
+          "bottom": 948,
+          "text": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAA",
+          "cls": "shell-runtime-content"
+        },
+        "dataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-workflow",
+          "mangoRuntimeCode": "mango-admin-workflow-app",
+          "mangoRuntimeEntry": "http://c.mango.io:5182/"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "workflow-template",
+      "path": "/workflow/manage/template",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/after-micro-workflow-template.png",
+      "url": "http://a.mango.io:5176/#/workflow/manage/template",
+      "title": "Mango Admin",
+      "bodyText": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAADsAAABUIIslek9TLzIAAAFEAAAARAAAAGA8V0m+Y21hcAAAAYgAAANUAAAIZqAamFdnbHlmAAAE3AAAONQAAG7gJElN82hlYWQAAD2wAAAALwAAADYp8WD1aGhlYQAAPeAAAAAeAAAAJAfeBH9obXR4AAA+AAAAAFEAAAH8EZEAAGxvY2EAAD5UAAABAAAAAQC4/NWebWF4cAAAP1QAAAAfAAAAIAGgAPxuYW1lAAA/dAAAAUUAAAJb1Yvg7HBvc3QAAEC8AAADaAAABYA5rFpXeJxjYGRgYOBiMGCwY2BycfMJYeDLSSzJY5BiYGGAAJA8MpsxJzM9kYEDxgPKsYBpDiBmg4gCACY7BUgAeJxjYGHRZpzAwMrAwNTJdIaBgaEfQjO+ZjBi5ACKMrAyM2AFAWmuKQwHnjk9O8zc8L+BgYH5DgOQZGBEUcQEAI/1DZB4nO3Vd3PUdRSF8WchAaUoWBAERRQLIihVFBSEmJiY0HvvhBZ6sVEGsGEX7L0XVFBARQGV93JeA//B+ebs8CrMzCfD7mRmf8vc+1ygFuho91kNdGij4n9RafW7lfb3O9Kl/f2ayji/7sZVdKBGdWpQk/brwqVLoImqV6OadaC8uvJT8V/34DpuYI9fTWYKU5nGdGYwk1nMZg5zmcd8F",
+      "bell": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1103.09375,
+          "y": 8,
+          "w": 336.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "336.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "runtime": {
+        "rect": {
+          "x": 236,
+          "y": 112,
+          "w": 1188,
+          "h": 836,
+          "right": 1424,
+          "bottom": 948,
+          "text": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAA",
+          "cls": "shell-runtime-content"
+        },
+        "dataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-workflow",
+          "mangoRuntimeCode": "mango-admin-workflow-app",
+          "mangoRuntimeEntry": "http://c.mango.io:5182/"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "template-list",
+      "path": "/template/templates",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/after-micro-template-list.png",
+      "url": "http://a.mango.io:5176/#/template/templates",
+      "title": "Mango Admin",
+      "bodyText": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAADsAAABUIIslek9TLzIAAAFEAAAARAAAAGA8V0m+Y21hcAAAAYgAAANUAAAIZqAamFdnbHlmAAAE3AAAONQAAG7gJElN82hlYWQAAD2wAAAALwAAADYp8WD1aGhlYQAAPeAAAAAeAAAAJAfeBH9obXR4AAA+AAAAAFEAAAH8EZEAAGxvY2EAAD5UAAABAAAAAQC4/NWebWF4cAAAP1QAAAAfAAAAIAGgAPxuYW1lAAA/dAAAAUUAAAJb1Yvg7HBvc3QAAEC8AAADaAAABYA5rFpXeJxjYGRgYOBiMGCwY2BycfMJYeDLSSzJY5BiYGGAAJA8MpsxJzM9kYEDxgPKsYBpDiBmg4gCACY7BUgAeJxjYGHRZpzAwMrAwNTJdIaBgaEfQjO+ZjBi5ACKMrAyM2AFAWmuKQwHnjk9O8zc8L+BgYH5DgOQZGBEUcQEAI/1DZB4nO3Vd3PUdRSF8WchAaUoWBAERRQLIihVFBSEmJiY0HvvhBZ6sVEGsGEX7L0XVFBARQGV93JeA//B+ebs8CrMzCfD7mRmf8vc+1ygFuho91kNdGij4n9RafW7lfb3O9Kl/f2ayji/7sZVdKBGdWpQk/brwqVLoImqV6OadaC8uvJT8V/34DpuYI9fTWYKU5nGdGYwk1nMZg5zmcd8F",
+      "bell": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1103.09375,
+          "y": 8,
+          "w": 336.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "336.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "runtime": {
+        "rect": {
+          "x": 236,
+          "y": 112,
+          "w": 1188,
+          "h": 836,
+          "right": 1424,
+          "bottom": 948,
+          "text": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAA",
+          "cls": "shell-runtime-content"
+        },
+        "dataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-template",
+          "mangoRuntimeCode": "mango-admin-template-app",
+          "mangoRuntimeEntry": "http://d.mango.io:5183/"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "template-categories",
+      "path": "/template/categories",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/after-micro-template-categories.png",
+      "url": "http://a.mango.io:5176/#/template/categories",
+      "title": "Mango Admin",
+      "bodyText": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAADsAAABUIIslek9TLzIAAAFEAAAARAAAAGA8V0m+Y21hcAAAAYgAAANUAAAIZqAamFdnbHlmAAAE3AAAONQAAG7gJElN82hlYWQAAD2wAAAALwAAADYp8WD1aGhlYQAAPeAAAAAeAAAAJAfeBH9obXR4AAA+AAAAAFEAAAH8EZEAAGxvY2EAAD5UAAABAAAAAQC4/NWebWF4cAAAP1QAAAAfAAAAIAGgAPxuYW1lAAA/dAAAAUUAAAJb1Yvg7HBvc3QAAEC8AAADaAAABYA5rFpXeJxjYGRgYOBiMGCwY2BycfMJYeDLSSzJY5BiYGGAAJA8MpsxJzM9kYEDxgPKsYBpDiBmg4gCACY7BUgAeJxjYGHRZpzAwMrAwNTJdIaBgaEfQjO+ZjBi5ACKMrAyM2AFAWmuKQwHnjk9O8zc8L+BgYH5DgOQZGBEUcQEAI/1DZB4nO3Vd3PUdRSF8WchAaUoWBAERRQLIihVFBSEmJiY0HvvhBZ6sVEGsGEX7L0XVFBARQGV93JeA//B+ebs8CrMzCfD7mRmf8vc+1ygFuho91kNdGij4n9RafW7lfb3O9Kl/f2ayji/7sZVdKBGdWpQk/brwqVLoImqV6OadaC8uvJT8V/34DpuYI9fTWYKU5nGdGYwk1nMZg5zmcd8F",
+      "bell": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1167.09375,
+          "y": 18,
+          "w": 20,
+          "h": 20,
+          "right": 1187.09375,
+          "bottom": 38,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "20px",
+          "height": "20px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1103.09375,
+          "y": 8,
+          "w": 336.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "336.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static",
+          "border": "0px none rgb(255, 255, 255)"
+        }
+      },
+      "runtime": {
+        "rect": {
+          "x": 236,
+          "y": 112,
+          "w": 1188,
+          "h": 836,
+          "right": 1424,
+          "bottom": 948,
+          "text": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAA",
+          "cls": "shell-runtime-content"
+        },
+        "dataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-template",
+          "mangoRuntimeCode": "mango-admin-template-app",
+          "mangoRuntimeEntry": "http://d.mango.io:5183/"
+        }
+      },
+      "actions": []
+    }
+  ]
+}

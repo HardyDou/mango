@@ -136,53 +136,53 @@ body,
   }
 }
 
-.router-view-parent.is-root > * {
+:where(.router-view-parent.is-root) > * {
   width: 100%;
 }
 
-.router-view-parent.is-root > *:first-child {
+:where(.router-view-parent.is-root) > *:first-child {
   margin-top: 0 !important;
 }
 
-.router-view-parent.is-root > * > .el-card {
+:where(.router-view-parent.is-root) > * > .el-card {
   border: 1px solid var(--mango-border-light);
   border-radius: 6px;
   box-shadow: none;
 }
 
-.router-view-parent.is-root > * > .el-card > .el-card__header,
-.router-view-parent.is-root > * > .page-header,
-.router-view-parent.is-root > * > .page-title,
-.router-view-parent.is-root > * > .card-header {
+:where(.router-view-parent.is-root) > * > .el-card > .el-card__header,
+:where(.router-view-parent.is-root) > * > .page-header,
+:where(.router-view-parent.is-root) > * > .page-title,
+:where(.router-view-parent.is-root) > * > .card-header {
   display: none;
 }
 
-.router-view-parent.is-root > * > .el-card > .el-card__body {
+:where(.router-view-parent.is-root) > * > .el-card > .el-card__body {
   padding: var(--mango-content-card-padding);
 }
 
-.router-view-parent.is-root .page-header,
-.router-view-parent.is-root .page-title,
-.router-view-parent.is-root .card-header,
-.router-view-parent.is-root .header-actions {
+:where(.router-view-parent.is-root) .page-header,
+:where(.router-view-parent.is-root) .page-title,
+:where(.router-view-parent.is-root) .card-header,
+:where(.router-view-parent.is-root) .header-actions {
   margin-top: 0;
 }
 
-.router-view-parent.is-root .el-card__body > .search-form:first-child,
-.router-view-parent.is-root .el-card__body > .filter-form:first-child,
-.router-view-parent.is-root .el-card__body > .query-form:first-child,
-.router-view-parent.is-root .el-card__body > .search-toolbar:first-child,
-.router-view-parent.is-root .el-card__body > .page-toolbar:first-child,
-.router-view-parent.is-root .el-card__body > .table-toolbar:first-child,
-.router-view-parent.is-root .el-card__body > .action-toolbar:first-child {
+:where(.router-view-parent.is-root) .el-card__body > .search-form:first-child,
+:where(.router-view-parent.is-root) .el-card__body > .filter-form:first-child,
+:where(.router-view-parent.is-root) .el-card__body > .query-form:first-child,
+:where(.router-view-parent.is-root) .el-card__body > .search-toolbar:first-child,
+:where(.router-view-parent.is-root) .el-card__body > .page-toolbar:first-child,
+:where(.router-view-parent.is-root) .el-card__body > .table-toolbar:first-child,
+:where(.router-view-parent.is-root) .el-card__body > .action-toolbar:first-child {
   margin-top: 0;
 }
 
-.router-view-parent.is-root .search-form,
-.router-view-parent.is-root .filter-form,
-.router-view-parent.is-root .query-form,
-.router-view-parent.is-root .search-toolbar,
-.router-view-parent.is-root .page-toolbar {
+:where(.router-view-parent.is-root) .search-form,
+:where(.router-view-parent.is-root) .filter-form,
+:where(.router-view-parent.is-root) .query-form,
+:where(.router-view-parent.is-root) .search-toolbar,
+:where(.router-view-parent.is-root) .page-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -192,24 +192,24 @@ body,
   border-bottom: 1px solid var(--mango-border-light);
 }
 
-.router-view-parent.is-root .search-form .el-form-item,
-.router-view-parent.is-root .filter-form .el-form-item,
-.router-view-parent.is-root .query-form .el-form-item,
-.router-view-parent.is-root .search-toolbar .el-form-item,
-.router-view-parent.is-root .page-toolbar .el-form-item {
+:where(.router-view-parent.is-root) .search-form .el-form-item,
+:where(.router-view-parent.is-root) .filter-form .el-form-item,
+:where(.router-view-parent.is-root) .query-form .el-form-item,
+:where(.router-view-parent.is-root) .search-toolbar .el-form-item,
+:where(.router-view-parent.is-root) .page-toolbar .el-form-item {
   margin-bottom: 0;
   margin-right: 0;
 }
 
-.router-view-parent.is-root .el-table {
+:where(.router-view-parent.is-root) .el-table {
   --el-table-border-color: var(--mango-border-light);
   --el-table-header-bg-color: #fbfcfe;
   --el-table-row-hover-bg-color: #f7faff;
 }
 
-.router-view-parent.is-root .table-toolbar,
-.router-view-parent.is-root .action-toolbar,
-.router-view-parent.is-root .workflow-definition-actions {
+:where(.router-view-parent.is-root) .table-toolbar,
+:where(.router-view-parent.is-root) .action-toolbar,
+:where(.router-view-parent.is-root) .workflow-definition-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -217,8 +217,8 @@ body,
   margin-bottom: 14px;
 }
 
-.router-view-parent.is-root .toolbar-left,
-.router-view-parent.is-root .toolbar-right {
+:where(.router-view-parent.is-root) .toolbar-left,
+:where(.router-view-parent.is-root) .toolbar-right {
   display: flex;
   align-items: center;
   flex-wrap: wrap;

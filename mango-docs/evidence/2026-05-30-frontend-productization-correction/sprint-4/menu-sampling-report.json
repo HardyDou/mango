@@ -2,7 +2,7 @@
   "frontendUrl": "http://a.mango.io:5176",
   "backendUrl": "http://127.0.0.1:18800",
   "seed": "sprint-4-menu-sampling",
-  "startedAt": "2026-05-30T17:24:13.471Z",
+  "startedAt": "2026-05-30T22:09:38.477Z",
   "screenshots": [
     "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/menu-sampling-home-1440x960.png",
     "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/screenshots/s4-sample-系统管理-参数配置.png",
@@ -21,11 +21,9 @@
   "pageErrors": [],
   "consoleErrors": [],
   "networkFailures": [],
-  "ignoredNetworkFailures": [
-    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-f4130da4&rtTicket=2iZClZDNeEAXlxVlMdoAnZc7mvWSJH605QEm0YVFkF8 net::ERR_ABORTED"
-  ],
+  "ignoredNetworkFailures": [],
   "failedResponses": [],
-  "finishedAt": "2026-05-30T17:24:34.567Z",
+  "finishedAt": "2026-05-30T22:09:59.578Z",
   "api": {
     "health": {
       "status": 200,
@@ -53,7 +51,7 @@
             "status": "UP",
             "details": {
               "total": 494384795648,
-              "free": 109360791552,
+              "free": 109291765760,
               "threshold": 10485760,
               "path": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango/mango-app/monolith/mango-monolith-app/.",
               "exists": true
@@ -225,7 +223,7 @@
               "pageType": "LOCAL_ROUTE",
               "entry": ""
             },
-            "bodyTextSample": "总登录数\n252\n成功\n252\n失败\n0\n今日登录\n50\n关键词\n状态\n请选择\n时间范围\n至\n查询\n重置\n清理日志\n用户名\n\t\nIP地址\n\t\n登录地点\n\t\n浏览器\n\t\n状态\n\t\n消息\n\t\n登录时间\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrom / 未知\n\t\n成功\n\t\n操作成功\n\t\n2026-05-31 01:24:15\n\n\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nPlaywright/1.59.1 (arm64; macOS 14.8) node/26.0 / 未知\n\t\n成功\n\t\n操作成功\n\t\n2026-05-31 01:24:14\n\n\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Headless"
+            "bodyTextSample": "总登录数\n257\n成功\n257\n失败\n0\n今日登录\n55\n关键词\n状态\n请选择\n时间范围\n至\n查询\n重置\n清理日志\n用户名\n\t\nIP地址\n\t\n登录地点\n\t\n浏览器\n\t\n状态\n\t\n消息\n\t\n登录时间\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrom / 未知\n\t\n成功\n\t\n操作成功\n\t\n2026-05-31 06:09:40\n\n\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nPlaywright/1.59.1 (arm64; macOS 14.8) node/26.0 / 未知\n\t\n成功\n\t\n操作成功\n\t\n2026-05-31 06:09:39\n\n\nadmin\n\t\n127.0.0.1\n\t\n未知\n\t\nMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1"
           }
         }
       ]

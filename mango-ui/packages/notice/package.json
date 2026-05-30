@@ -23,7 +23,8 @@
       "import": "./dist/realtime.js"
     },
     "./api": "./src/api/notice.ts",
-    "./types": "./src/types/notice.ts"
+    "./types": "./src/types/notice.ts",
+    "./style.css": "./dist/style.css"
   },
   "scripts": {
     "build": "vite build"

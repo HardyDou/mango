@@ -1,1 +1,3 @@
+@import '@mango/common/theme/index.css';
+@import '@mango/notice/style.css';
 @import './dist/style.css';
