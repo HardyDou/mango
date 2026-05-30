@@ -1,6 +1,6 @@
-import { computed, createApp, h, nextTick, ref, type App as VueApp, type Ref } from 'vue';
+import { computed, createApp, h, nextTick, ref, type App as VueApp, type Component, type Ref } from 'vue';
 import type { Router } from 'vue-router';
-import { del, get, post, put } from '@mango/common/utils/request';
+import { del, get, post, put, type RequestConfig } from '@mango/common/utils/request';
 import { Session } from '@mango/common/utils/storage';
 import {
   createRuntimeEventBus,
@@ -21,10 +21,13 @@ import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
 import { usePreferencesStore } from '../stores/preferences';
 import { installShellApp } from '../appBootstrap';
+import { getMangoAdminShellOptions } from '../config';
 import type { ShellMenu, ShellRouteMenu } from './menuHost';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
+let lastRuntimeDecision: RuntimeDecision | undefined;
+let lastRuntimeConfigDiagnostics: MangoRuntimeConfigDiagnostic[] = [];
 
 export interface RuntimeDecision {
   menuName?: string;
@@ -66,7 +69,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       runtimeConfig.value = defaultRuntimeConfig;
       runtimeConfigAvailable.value = false;
       activeRuntimeApp.value = undefined;
-      if (error instanceof MangoRuntimeConfigError) {
+      if (isMangoRuntimeConfigError(error)) {
         recordRuntimeConfigDiagnostics(error.diagnostics);
       }
       await mountFallback();
@@ -157,7 +160,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!isLatestMount(seq)) {
       return;
     }
-    const component = module.default || module;
+    const component = resolveLoadedComponent(module);
     mountedLocalPage = createApp({ render: () => h(component) });
     installShellApp(mountedLocalPage);
     mountedLocalPage.use(router);
@@ -185,6 +188,14 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!isLatestMount(seq)) {
       return;
     }
+    const configuredNotFound = getMangoAdminShellOptions().components?.notFound;
+    if (configuredNotFound) {
+      mountedLocalPage = createApp({ render: () => h(configuredNotFound) });
+      installShellApp(mountedLocalPage);
+      mountedLocalPage.use(router);
+      mountedLocalPage.mount(containerRef.value!);
+      return;
+    }
     const loader = getPageLoader('mango-shell', 'error/404') || getPageLoader(undefined, 'error/404');
     if (!loader) {
       mountMessage('404');
@@ -194,7 +205,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     if (!isLatestMount(seq)) {
       return;
     }
-    const component = (module as any).default || module;
+    const component = resolveLoadedComponent(module);
     mountedLocalPage = createApp({ render: () => h(component) });
     installShellApp(mountedLocalPage);
     mountedLocalPage.use(router);
@@ -310,10 +321,10 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     });
   }
 
-  function findRuntimeDiagnostics(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
+  function findRuntimeDiagnostics(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig): MangoRuntimeConfigDiagnostic[] {
     const moduleCode = menu.moduleCode;
     const runtimeCode = moduleConfig?.runtimeCode;
-    return (runtimeConfig.value.diagnostics || []).filter(item =>
+    return (runtimeConfig.value.diagnostics || []).filter((item: MangoRuntimeConfigDiagnostic) =>
       item.moduleCode === moduleCode || item.moduleCode === runtimeCode
     );
   }
@@ -353,7 +364,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
 }
 
 function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig[] {
-  return Object.entries(config.modules)
+  return Object.entries(config.modules as Record<string, MangoModuleRuntimeConfig>)
     .filter(([, module]) => module.mode === 'micro' && module.entry)
     .map(([moduleCode, module]) => ({
       appCode: module.runtimeCode || moduleCode,
@@ -370,6 +381,10 @@ function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig[] {
       preload: module.preload === true,
       alive: module.alive === true,
     }));
+}
+
+function isMangoRuntimeConfigError(error: unknown): error is MangoRuntimeConfigError {
+  return error instanceof MangoRuntimeConfigError;
 }
 
 function resolveRuntimeCode(menu: ShellMenu, moduleConfig?: MangoModuleRuntimeConfig) {
@@ -392,6 +407,17 @@ function preloadRuntimeApps(apps: MangoRuntimeAppConfig[]) {
         console.warn('[mango-runtime] preload failed', app.appCode, error);
       }
     });
+}
+
+function resolveLoadedComponent(module: unknown): Component {
+  if (isComponentModule(module)) {
+    return module.default;
+  }
+  return module as Component;
+}
+
+function isComponentModule(module: unknown): module is { default: Component } {
+  return typeof module === 'object' && module !== null && 'default' in module;
 }
 
 function normalizeMenu(menu: ShellMenu | ShellRouteMenu): ShellMenu {
@@ -452,15 +478,15 @@ function createBaseRuntime(config: MangoRuntimeAppConfig): MangoAppRuntime {
     token: Session.getToken?.() || '',
     tenantId: userInfo.tenantId,
     appCode: config.appCode,
-    apiBaseUrl: window.location.origin + '/api',
+    apiBaseUrl: resolveShellApiBaseUrl(),
     menu: undefined,
     userInfo,
     permissions: userInfo.permissions || [],
     request: {
-      get,
-      post,
-      put,
-      delete: del,
+      get: async <T = unknown>(url: string, config?: unknown) => get(url, config as RequestConfig | undefined) as Promise<T>,
+      post: async <T = unknown>(url: string, data?: unknown, config?: unknown) => post(url, data, config as RequestConfig | undefined) as Promise<T>,
+      put: async <T = unknown>(url: string, data?: unknown, config?: unknown) => put(url, data, config as RequestConfig | undefined) as Promise<T>,
+      delete: async <T = unknown>(url: string, config?: unknown) => del(url, config as RequestConfig | undefined) as Promise<T>,
     },
     eventBus: shellRuntimeEventBus,
     theme: createShellRuntimeTheme(),
@@ -542,23 +568,44 @@ function applyRuntimeMarker(container: HTMLElement, decision: RuntimeDecision) {
 }
 
 function recordRuntimeDecision(decision: RuntimeDecision) {
+  lastRuntimeDecision = decision;
   if (typeof window !== 'undefined') {
     (window as any).__MANGO_RUNTIME_DEBUG__ = decision;
   }
-  if (!import.meta.env.DEV) {
+  if (!import.meta.env.DEV && !getMangoAdminShellOptions().runtimeDebug) {
     return;
   }
   console.debug('[mango-runtime] menu decision', decision);
 }
 
 function recordRuntimeConfigDiagnostics(diagnostics?: MangoRuntimeConfigDiagnostic[]) {
+  lastRuntimeConfigDiagnostics = diagnostics || [];
   if (typeof window !== 'undefined') {
-    (window as any).__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__ = diagnostics || [];
+    (window as any).__MANGO_RUNTIME_CONFIG_DIAGNOSTICS__ = lastRuntimeConfigDiagnostics;
   }
-  if (!import.meta.env.DEV || !diagnostics?.length) {
+  if ((!import.meta.env.DEV && !getMangoAdminShellOptions().runtimeDebug) || !diagnostics?.length) {
     return;
   }
   console.warn('[mango-runtime] config diagnostics', diagnostics);
+}
+
+function resolveShellApiBaseUrl() {
+  const apiBaseUrl = getMangoAdminShellOptions().apiBaseUrl || '/api';
+  if (/^https?:\/\//.test(apiBaseUrl)) {
+    return apiBaseUrl;
+  }
+  if (typeof window === 'undefined') {
+    return apiBaseUrl;
+  }
+  return new URL(apiBaseUrl, window.location.origin).toString();
+}
+
+export function getLastShellRuntimeDecision() {
+  return lastRuntimeDecision;
+}
+
+export function getLastShellRuntimeConfigDiagnostics() {
+  return [...lastRuntimeConfigDiagnostics];
 }
 
 if (typeof window !== 'undefined' && (import.meta.env.DEV || import.meta.env.VITE_MANGO_E2E === 'true')) {

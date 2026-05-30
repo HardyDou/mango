@@ -2,29 +2,54 @@
   "name": "@mango/admin-pages",
   "version": "1.0.0",
   "private": false,
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./core": "./src/core.ts",
-    "./defaults": "./src/defaults.ts",
-    "./dev-component-pages": "./src/devComponentPages.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./defaults": {
+      "types": "./dist/defaults.d.ts",
+      "import": "./dist/defaults.js"
+    },
+    "./dev-component-pages": {
+      "types": "./dist/devComponentPages.d.ts",
+      "import": "./dist/devComponentPages.js"
+    }
   },
   "dependencies": {
-    "@mango/auth": "1.0.0",
-    "@mango/calendar": "1.0.0",
-    "@mango/file": "1.0.0",
-    "@mango/notice": "1.0.0",
-    "@mango/numgen": "1.0.0",
-    "@mango/rbac": "1.0.0",
-    "@mango/system": "1.0.0",
-    "@mango/template": "1.0.0",
-    "@mango/workflow": "1.0.0",
+    "@mango/auth-admin": "1.0.0",
+    "@mango/calendar-admin": "1.0.0",
+    "@mango/file-admin": "1.0.0",
+    "@mango/notice-admin": "1.0.0",
+    "@mango/numgen-admin": "1.0.0",
+    "@mango/rbac-admin": "1.0.0",
+    "@mango/system-admin": "1.0.0",
+    "@mango/template-admin": "1.0.0",
+    "@mango/workflow-admin": "1.0.0",
     "@mango/workflow-business-example": "1.0.0"
   },
   "peerDependencies": {
-    "vue": "3.5.13"
+    "vue": "^3.5.0"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/admin-pages",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.1"
+  },
+  "files": [
+    "dist"
+  ]
 }

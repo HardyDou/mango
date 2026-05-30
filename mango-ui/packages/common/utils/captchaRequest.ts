@@ -40,6 +40,19 @@ export interface CaptchaRequestOptions extends RequestInit {
   getCaptchaConfig?: (path: string) => CaptchaConfig | null;
 }
 
+function toMutableHeaders(headers?: HeadersInit): Record<string, string> {
+  if (!headers) {
+    return {};
+  }
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+  return { ...headers };
+}
+
 /**
  * 从菜单配置中查找验证码配置
  * @param menuItems 菜单数组
@@ -104,7 +117,8 @@ export async function captchaRequest<T>(
   // 1. 检查菜单配置是否需要验证码
   const captchaConfig = options.getCaptchaConfig?.(url) || null;
 
-  if (captchaConfig?.required && !options.headers?.[CAPTCHA_HEADERS.key]) {
+  const initialHeaders = toMutableHeaders(options.headers);
+  if (captchaConfig?.required && !initialHeaders[CAPTCHA_HEADERS.key]) {
     // 获取验证码
     const captchaApiPath = CAPTCHA_API_MAP[captchaConfig.type] || '/captcha/arithmetic';
 
@@ -133,7 +147,7 @@ export async function captchaRequest<T>(
 
       // 添加验证码Header
       options.headers = {
-        ...options.headers,
+        ...toMutableHeaders(options.headers),
         [CAPTCHA_HEADERS.key]: captchaData.data.key,
         [CAPTCHA_HEADERS.code]: userCode,
       };
@@ -151,7 +165,7 @@ export async function captchaRequest<T>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...toMutableHeaders(options.headers),
     },
   });
 
@@ -178,7 +192,7 @@ export async function captchaRequest<T>(
 
       // 添加验证码Header并重试
       options.headers = {
-        ...options.headers,
+        ...toMutableHeaders(options.headers),
         [CAPTCHA_HEADERS.key]: captchaData.data.key,
         [CAPTCHA_HEADERS.code]: userCode,
       };
@@ -211,7 +225,7 @@ export async function captchaRequest<T>(
       }
 
       options.headers = {
-        ...options.headers,
+        ...toMutableHeaders(options.headers),
         [CAPTCHA_HEADERS.key]: captchaData.data.key,
         [CAPTCHA_HEADERS.code]: userCode,
       };

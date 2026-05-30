@@ -1,11 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MangoRuntimeConfigError,
   isValidRuntimeEntry,
+  loadRuntimeConfigWithOptions,
   normalizeRuntimeConfig,
 } from './index';
 
 describe('runtime config validation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('requires an allowlist when configured for production remote entries', () => {
     expect(isValidRuntimeEntry('https://unknown.mango.io/', {
       allowHttpEntries: false,
@@ -79,5 +84,43 @@ describe('runtime config validation', () => {
 
     expect(error.name).toBe('MangoRuntimeConfigError');
     expect(error.diagnostics?.[0].field).toBe('entry');
+  });
+
+  it('falls back to defaults when non fail-closed runtime config contains invalid JSON', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<!doctype html>', {
+      status: 200,
+      headers: { 'content-type': 'text/html' },
+    })));
+
+    const config = await loadRuntimeConfigWithOptions({
+      profile: 'monolith',
+      modules: {
+        'mango-system': {
+          mode: 'local',
+          runtimeCode: 'mango-admin-system-local',
+        },
+      },
+    }, {
+      configUrl: '/runtime-config.json',
+      failClosed: false,
+    });
+
+    expect(config.profile).toBe('monolith');
+    expect(config.modules['mango-system'].mode).toBe('local');
+  });
+
+  it('throws when fail-closed runtime config contains invalid JSON', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<!doctype html>', {
+      status: 200,
+      headers: { 'content-type': 'text/html' },
+    })));
+
+    await expect(loadRuntimeConfigWithOptions({
+      profile: 'monolith',
+      modules: {},
+    }, {
+      configUrl: '/runtime-config.json',
+      failClosed: true,
+    })).rejects.toThrow(MangoRuntimeConfigError);
   });
 });

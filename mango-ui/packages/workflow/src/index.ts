@@ -9,6 +9,7 @@ export { default as WorkflowProgressTree } from './components/trace/WorkflowProg
 export { default as WorkflowApprovalTimeline } from './components/trace/WorkflowApprovalTimeline.vue';
 export { default as WorkflowNodeTimeline } from './components/trace/WorkflowNodeTimeline.vue';
 
+export * from './capability';
 export * from './api/workflow';
 export * from './workflowFormConfig';
 export * from './components/runtimeForm';

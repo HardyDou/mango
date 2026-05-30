@@ -1,0 +1,158 @@
+const systemPages = {
+  'system/dict/index': () => import('./views/dict/index.vue').then(m => m.default),
+  'system/operation-log/index': () => import('./views/operation-log/index.vue').then(m => m.default),
+  'system/login-log/index': () => import('./views/login-log/index.vue').then(m => m.default),
+  'system/tenant/index': () => import('./views/tenant/index.vue').then(m => m.default),
+  'system/config/index': () => import('./views/config/index.vue').then(m => m.default),
+  'system/route/index': () => import('./views/route/index.vue').then(m => m.default),
+  'system/public-path/index': () => import('./views/public-path/index.vue').then(m => m.default),
+  'system/area/index': () => import('./views/area/index.vue').then(m => m.default),
+};
+
+export const mangoSystemPageRegistry = {
+  moduleCode: 'mango-system',
+  pages: systemPages,
+};
+
+export const mangoSystemCapability = {
+  moduleCode: 'mango-system',
+  packageName: '@mango/system',
+  capabilityCode: 'system',
+  capabilityName: '系统基础能力',
+  requires: ['auth', 'rbac'],
+  optional: ['file'],
+  backend: {
+    moduleCode: 'mango-system',
+    menuSource: 'backend',
+    resourceManifest: 'META-INF/mango/resource-manifest.json',
+    requiredApis: ['/api/system/dict/type/list', '/api/system/config/list', '/api/system/tenant/list'],
+  },
+  pages: [
+    {
+      component: 'system/dict/index',
+      loader: systemPages['system/dict/index'],
+      menuCode: 'system:dict',
+      permissions: ['system:dict:list'],
+    },
+    {
+      component: 'system/operation-log/index',
+      loader: systemPages['system/operation-log/index'],
+      menuCode: 'system:log:operation',
+      permissions: ['system:log:operation:list'],
+    },
+    {
+      component: 'system/login-log/index',
+      loader: systemPages['system/login-log/index'],
+      menuCode: 'system:log:login',
+      permissions: ['system:log:login:list'],
+    },
+    {
+      component: 'system/tenant/index',
+      loader: systemPages['system/tenant/index'],
+      menuCode: 'system:tenant',
+      permissions: ['system:tenant:list'],
+    },
+    {
+      component: 'system/config/index',
+      loader: systemPages['system/config/index'],
+      menuCode: 'system:config',
+      permissions: ['system:config:list'],
+    },
+    {
+      component: 'system/route/index',
+      loader: systemPages['system/route/index'],
+      menuCode: 'system:route',
+      permissions: ['system:route:list'],
+    },
+    {
+      component: 'system/public-path/index',
+      loader: systemPages['system/public-path/index'],
+      menuCode: 'system:public-path',
+      permissions: ['system:public-path:list'],
+    },
+    {
+      component: 'system/area/index',
+      loader: systemPages['system/area/index'],
+      menuCode: 'system:area',
+      permissions: ['system:area:list'],
+    },
+  ],
+  menus: [
+    {
+      menuCode: 'system:dict',
+      moduleCode: 'mango-system',
+      component: 'system/dict/index',
+      permissions: ['system:dict:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:log:operation',
+      moduleCode: 'mango-system',
+      component: 'system/operation-log/index',
+      permissions: ['system:log:operation:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:log:login',
+      moduleCode: 'mango-system',
+      component: 'system/login-log/index',
+      permissions: ['system:log:login:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:tenant',
+      moduleCode: 'mango-system',
+      component: 'system/tenant/index',
+      permissions: ['system:tenant:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:config',
+      moduleCode: 'mango-system',
+      component: 'system/config/index',
+      permissions: ['system:config:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:route',
+      moduleCode: 'mango-system',
+      component: 'system/route/index',
+      permissions: ['system:route:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:public-path',
+      moduleCode: 'mango-system',
+      component: 'system/public-path/index',
+      permissions: ['system:public-path:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:area',
+      moduleCode: 'mango-system',
+      component: 'system/area/index',
+      permissions: ['system:area:list'],
+      source: 'backend',
+    },
+  ],
+  permissions: [
+    'system:dict:list',
+    'system:log:operation:list',
+    'system:log:login:list',
+    'system:tenant:list',
+    'system:config:list',
+    'system:route:list',
+    'system:public-path:list',
+    'system:area:list',
+  ],
+  styles: [],
+  runtime: {
+    modes: ['local', 'micro', 'mixed'],
+    defaultMode: 'local',
+  },
+  e2e: {
+    smoke: ['system-management-pages', 'dict-management', 'config-management'],
+    screenshots: ['system-dict', 'system-config', 'system-tenant'],
+    dataChecks: ['dict-type-list', 'config-list', 'tenant-list'],
+  },
+};

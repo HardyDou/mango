@@ -1,0 +1,36 @@
+{
+  "name": "@mango/system-admin",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./capability": {
+      "types": "./dist/capability.d.ts",
+      "import": "./dist/capability.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/system-admin"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/system-api": "1.0.0",
+    "@mango/system": "1.0.0",
+    "@mango/admin-pages": "1.0.0"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  }
+}

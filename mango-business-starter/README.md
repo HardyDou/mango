@@ -78,7 +78,7 @@ apps/{{projectKebab}}-admin
 
 - `{{moduleKebab}}-api` 导出类型和 API client。
 - `{{moduleKebab}}` 导出页面注册函数。
-- admin app 通过 `@mango/admin-shell` 启动，不复制 Mango app 源码。
+- admin app 通过 `@mango/admin` 的 full preset 启动，不复制 Mango app 源码，也不直接拼装底层 Shell。
 
 ## 5. 菜单与权限
 

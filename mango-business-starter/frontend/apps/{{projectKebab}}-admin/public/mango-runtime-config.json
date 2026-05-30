@@ -1,0 +1,6 @@
+{
+  "profile": "{{runtimeProfile}}",
+  "modules": {
+{{mangoRuntimeModulesJson}}
+  }
+}

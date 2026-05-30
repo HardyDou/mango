@@ -202,8 +202,8 @@ export function handleEmpty<T extends Record<string, unknown>>(list: T[]): T[] {
  * @param h 窗口高度
  */
 export const openWindow = (url: string, title: string, w: number, h: number): Window | null => {
-  const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : screen.left;
-  const dualScreenTop = window.screenTop !== undefined ? window.screenTop : screen.top;
+  const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+  const dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
 
   const width = window.innerWidth || document.documentElement.clientWidth || screen.width;
   const height = window.innerHeight || document.documentElement.clientHeight || screen.height;

@@ -6,15 +6,14 @@ import { ElMessage } from 'element-plus';
 
 // hex 颜色转 rgb 颜色
 export const hexToRgb = (str: string): number[] => {
-	let hexs = '';
+	let hexs: number[] = [];
 	const reg = /^#?[0-9A-Fa-f]{6}$/;
 	if (!reg.test(str)) {
 		ElMessage.warning('输入错误的hex');
 		return [];
 	}
 	str = str.replace('#', '');
-	hexs = str.match(/../g) || [];
-	for (let i = 0; i < 3; i++) hexs[i] = parseInt(hexs[i], 16);
+	hexs = (str.match(/../g) || []).map(item => parseInt(item, 16));
 	return hexs;
 };
 

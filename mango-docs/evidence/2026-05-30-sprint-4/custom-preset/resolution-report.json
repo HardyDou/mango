@@ -1,0 +1,168 @@
+{
+  "preset": "custom",
+  "selectedCodes": [
+    "system",
+    "template",
+    "file",
+    "notice",
+    "numgen",
+    "calendar",
+    "workflow"
+  ],
+  "catalogCodes": [
+    "auth",
+    "rbac",
+    "system",
+    "template",
+    "file",
+    "notice",
+    "numgen",
+    "calendar",
+    "workflow"
+  ],
+  "resolvedCodes": [
+    "auth",
+    "rbac",
+    "system",
+    "template",
+    "file",
+    "notice",
+    "numgen",
+    "calendar",
+    "workflow"
+  ],
+  "autoInstalledCodes": [
+    "auth",
+    "rbac"
+  ],
+  "nodes": [
+    {
+      "capabilityCode": "auth",
+      "packageName": "@mango/auth-admin",
+      "origin": "catalog",
+      "requiredBy": [
+        "system",
+        "rbac",
+        "template",
+        "file",
+        "notice",
+        "numgen",
+        "calendar",
+        "workflow"
+      ],
+      "requires": [],
+      "optional": [],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "rbac",
+      "packageName": "@mango/rbac-admin",
+      "origin": "catalog",
+      "requiredBy": [
+        "system",
+        "template",
+        "file",
+        "notice",
+        "numgen",
+        "calendar",
+        "workflow"
+      ],
+      "requires": [
+        "auth"
+      ],
+      "optional": [],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "system",
+      "packageName": "@mango/system-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [
+        "file"
+      ],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "template",
+      "packageName": "@mango/template-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [
+        "file"
+      ],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "file",
+      "packageName": "@mango/file-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "notice",
+      "packageName": "@mango/notice-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "numgen",
+      "packageName": "@mango/numgen-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "calendar",
+      "packageName": "@mango/calendar-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [],
+      "conflicts": []
+    },
+    {
+      "capabilityCode": "workflow",
+      "packageName": "@mango/workflow-admin",
+      "origin": "selected",
+      "requiredBy": [],
+      "requires": [
+        "auth",
+        "rbac"
+      ],
+      "optional": [
+        "template"
+      ],
+      "conflicts": []
+    }
+  ],
+  "diagnostics": []
+}

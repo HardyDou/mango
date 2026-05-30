@@ -7,13 +7,24 @@
     "dev:micro": "node ./scripts/dev-micro.mjs",
     "preview:micro": "node ./scripts/preview-micro.mjs",
     "build": "pnpm -r build",
+    "package:build": "node ./scripts/build-package.mjs",
+    "package:check": "node ./scripts/check-package-contracts.mjs",
+    "admin:baseline-e2e": "node ./scripts/admin-baseline-e2e.mjs",
+    "admin:full-preset-e2e": "node ./scripts/admin-full-preset-e2e.mjs",
+    "admin:custom-preset-e2e": "node ./scripts/admin-custom-preset-e2e.mjs",
+    "package:registry-e2e": "node ./scripts/registry-consumption-e2e.mjs",
+    "frontend-mode:matrix-e2e": "node ./scripts/frontend-mode-matrix-e2e.mjs",
+    "business-starter:dev-start-e2e": "node ./scripts/business-starter-dev-start-e2e.mjs",
     "build:micro": "pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint",
-    "publish:pkg": "node ./scripts/publish-package.mjs"
+    "publish:pkg": "node ./scripts/publish-package.mjs",
+    "api-sdk:consumer-e2e": "node ./scripts/api-sdk-consumer-e2e.mjs"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
     "typescript": "^5.3.3",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "vue-tsc": "^2.2.12"
   }
 }

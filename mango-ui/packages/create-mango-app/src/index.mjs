@@ -24,10 +24,43 @@ Options:
   --group-id <name>     Maven groupId, default: same as --package
   --version <version>   Project version, default: 1.0.0-SNAPSHOT
   --topology <mode>     monolith or microservice, default: monolith
+  --features <list>     Comma separated Mango features, default: base,system,rbac
+  --frontend-mode <mode> local, micro, or mixed, default: local
   --template <path>     Starter directory, default: mango-business-starter
   --force               Overwrite existing target directory
   --help                Show help
 `;
+
+const featureCatalog = {
+  base: [
+    { code: 'auth', packageName: '@mango/auth', capability: 'mangoAuthCapability', importPath: '@mango/auth/capability', moduleCode: 'mango-authorization' },
+    { code: 'rbac', packageName: '@mango/rbac', capability: 'mangoRbacCapability', importPath: '@mango/rbac/capability', moduleCode: 'mango-authorization' },
+  ],
+  system: [
+    { code: 'system', packageName: '@mango/system', capability: 'mangoSystemCapability', importPath: '@mango/system/capability', moduleCode: 'mango-system' },
+  ],
+  rbac: [
+    { code: 'rbac', packageName: '@mango/rbac', capability: 'mangoRbacCapability', importPath: '@mango/rbac/capability', moduleCode: 'mango-authorization' },
+  ],
+  workflow: [
+    { code: 'workflow', packageName: '@mango/workflow', capability: 'mangoWorkflowCapability', importPath: '@mango/workflow/capability', moduleCode: 'mango-workflow' },
+  ],
+  notice: [
+    { code: 'notice', packageName: '@mango/notice', capability: 'mangoNoticeCapability', importPath: '@mango/notice/capability', moduleCode: 'mango-notice' },
+  ],
+  file: [
+    { code: 'file', packageName: '@mango/file', capability: 'mangoFileCapability', importPath: '@mango/file/capability', moduleCode: 'mango-file' },
+  ],
+  template: [
+    { code: 'template', packageName: '@mango/template', capability: 'mangoTemplateCapability', importPath: '@mango/template/capability', moduleCode: 'mango-template' },
+  ],
+  numgen: [
+    { code: 'numgen', packageName: '@mango/numgen', capability: 'mangoNumgenCapability', importPath: '@mango/numgen/capability', moduleCode: 'mango-numgen' },
+  ],
+  calendar: [
+    { code: 'calendar', packageName: '@mango/calendar', capability: 'mangoCalendarCapability', importPath: '@mango/calendar/capability', moduleCode: 'mango-calendar' },
+  ],
+};
 
 function main(argv = process.argv.slice(2)) {
   const args = normalizeCreateArgs(argv);
@@ -42,6 +75,9 @@ function main(argv = process.argv.slice(2)) {
   }
   if (!['monolith', 'microservice'].includes(parsed.topology)) {
     fail(`invalid topology: ${parsed.topology}`);
+  }
+  if (!['local', 'micro', 'mixed'].includes(parsed.frontendMode)) {
+    fail(`invalid frontend mode: ${parsed.frontendMode}`);
   }
 
   const targetDir = resolve(process.cwd(), parsed.project);
@@ -78,6 +114,8 @@ function parseArgs(argv) {
     groupId: '',
     version: '1.0.0-SNAPSHOT',
     topology: 'monolith',
+    features: 'base,system,rbac',
+    frontendMode: 'local',
     template: '',
     force: false,
   };
@@ -116,6 +154,12 @@ function parseArgs(argv) {
       case '--topology':
         result.topology = next;
         break;
+      case '--features':
+        result.features = next;
+        break;
+      case '--frontend-mode':
+        result.frontendMode = next;
+        break;
       case '--template':
         result.template = next;
         break;
@@ -128,12 +172,16 @@ function parseArgs(argv) {
   result.module = toKebabCase(result.module || result.project);
   result.aggregate = toKebabCase(result.aggregate);
   result.groupId = result.groupId || result.packageName;
+  result.features = normalizeFeatures(result.features);
+  result.frontendMode = toKebabCase(result.frontendMode || 'local');
   return result;
 }
 
 function buildVariables(options) {
   const modulePackage = toPackageSegment(options.module);
   const basePackagePath = options.packageName.replaceAll('.', '/');
+  const featureEntries = resolveFeatureEntries(options.features);
+  const runtimeModules = buildRuntimeModules(options, featureEntries);
   return {
     projectKebab: options.project,
     projectPascal: toPascalCase(options.project),
@@ -152,6 +200,15 @@ function buildVariables(options) {
     groupId: options.groupId,
     projectVersion: options.version,
     topology: options.topology,
+    featuresCsv: options.features.join(','),
+    frontendMode: options.frontendMode,
+    runtimeProfile: toRuntimeProfile(options.frontendMode),
+    mangoFeatureDependencies: renderFeatureDependencies(featureEntries),
+    mangoFeatureImports: renderFeatureImports(featureEntries),
+    mangoFeatureCapabilities: renderFeatureCapabilities(featureEntries),
+    mangoRuntimeModulesTs: renderRuntimeModulesTs(runtimeModules),
+    mangoRuntimeModulesJson: renderRuntimeModulesJson(runtimeModules),
+    mangoFeatureEnv: renderFeatureEnv(options, featureEntries),
   };
 }
 
@@ -184,6 +241,13 @@ function writeMangoConfig(targetDir, variables) {
     groupId: variables.groupId,
     version: variables.projectVersion,
     topology: variables.topology,
+    features: variables.featuresCsv.split(',').filter(Boolean),
+    frontend: {
+      app: `${variables.projectKebab}-admin`,
+      defaultMode: variables.frontendMode,
+      supportedModes: ['local', 'micro', 'mixed'],
+      runtimeConfig: `frontend/apps/${variables.projectKebab}-admin/public/mango-runtime-config.json`,
+    },
   };
   writeFileSync(join(targetDir, 'mango.config.json'), `${JSON.stringify(config, null, 2)}\n`);
 }
@@ -196,9 +260,11 @@ function render(value, variables) {
 
 function isTextFile(file) {
   const name = basename(file);
-  return /\.(md|json|xml|java|ts|vue|html|sql|properties|mjs|yml|yaml|txt)$/.test(name)
+  return /\.(md|json|xml|java|ts|vue|html|sql|properties|mjs|sh|yml|yaml|txt)$/.test(name)
     || name === 'CODEOWNERS'
-    || name === 'AGENTS.md';
+    || name === 'AGENTS.md'
+    || name.endsWith('.example')
+    || name.endsWith('.imports');
 }
 
 function resolvePath(path) {
@@ -241,7 +307,148 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write('Next steps:\n');
   process.stdout.write(`  cd ${relativeTarget}\n`);
   process.stdout.write('  node scripts/check-template.mjs\n');
+  process.stdout.write('  pnpm install\n');
+  process.stdout.write('  pnpm typecheck\n');
+  process.stdout.write('  pnpm build\n');
+  process.stdout.write(`  Frontend mode: ${variables.frontendMode}; features: ${variables.featuresCsv}\n`);
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
+}
+
+function normalizeFeatures(value) {
+  const requested = (value || 'base,system,rbac')
+    .split(',')
+    .map(item => toKebabCase(item))
+    .filter(Boolean);
+  const features = requested.length ? requested : ['base'];
+  const unknown = features.filter(feature => !featureCatalog[feature]);
+  if (unknown.length) {
+    fail(`invalid features: ${unknown.join(', ')}`);
+  }
+  return [...new Set(features)];
+}
+
+function resolveFeatureEntries(features) {
+  const entries = [];
+  const seenPackages = new Set();
+  for (const feature of features) {
+    for (const entry of featureCatalog[feature]) {
+      if (seenPackages.has(entry.packageName)) {
+        continue;
+      }
+      seenPackages.add(entry.packageName);
+      entries.push(entry);
+    }
+  }
+  return entries;
+}
+
+function buildRuntimeModules(options, featureEntries) {
+  const modules = new Map();
+  modules.set(options.module, {
+    moduleCode: options.module,
+    mode: options.frontendMode === 'micro' ? 'micro' : 'local',
+    entry: `import.meta.env.VITE_${toSnakeCase(options.module).toUpperCase()}_ENTRY`,
+    runtimeCode: `${options.project}-${options.module}`,
+    appType: options.frontendMode === 'micro' ? 'MICRO_APP' : 'LOCAL',
+  });
+
+  for (const entry of featureEntries) {
+    if (!modules.has(entry.moduleCode)) {
+      const mode = options.frontendMode === 'micro' ? 'micro' : 'local';
+      modules.set(entry.moduleCode, {
+        moduleCode: entry.moduleCode,
+        mode,
+        entry: `import.meta.env.VITE_${toSnakeCase(entry.code).toUpperCase()}_ENTRY`,
+        runtimeCode: `${entry.moduleCode}-${mode}`,
+        appType: mode === 'micro' ? 'MICRO_APP' : 'LOCAL',
+      });
+    }
+  }
+
+  if (options.frontendMode === 'mixed') {
+    for (const module of modules.values()) {
+      if (module.moduleCode === options.module || module.moduleCode === 'mango-workflow' || module.moduleCode === 'mango-notice') {
+        module.mode = 'micro';
+        module.appType = 'MICRO_APP';
+        if (module.moduleCode !== options.module) {
+          module.runtimeCode = `${module.moduleCode}-micro`;
+        }
+      }
+    }
+  }
+
+  return [...modules.values()];
+}
+
+function renderFeatureDependencies(entries) {
+  return entries.map(entry => `    \"${entry.packageName}\": \"^1.0.0\"`).join(',\n');
+}
+
+function renderFeatureImports(entries) {
+  return entries.map(entry => `import { ${entry.capability} } from '${entry.importPath}';`).join('\n');
+}
+
+function renderFeatureCapabilities(entries) {
+  return entries.map(entry => `  ${entry.capability}`).join(',\n');
+}
+
+function renderRuntimeModulesTs(modules) {
+  return modules.map(module => {
+    const entryLine = module.appType === 'MICRO_APP' ? `\n      entry: ${module.entry},` : '';
+    return `    '${module.moduleCode}': {\n      mode: '${module.mode}',${entryLine}\n      runtimeCode: '${module.runtimeCode}',\n      appType: '${module.appType}',\n      framework: 'vue3',\n    }`;
+  }).join(',\n');
+}
+
+function renderRuntimeModulesJson(modules) {
+  return modules.map(module => {
+    const lines = [
+      `    \"${module.moduleCode}\": {`,
+      `      \"mode\": \"${module.mode}\",`,
+      ...(module.appType === 'MICRO_APP' ? [`      \"entry\": \"${renderRuntimeJsonEntry(module)}\",`] : []),
+      `      \"runtimeCode\": \"${module.runtimeCode}\",`,
+      `      \"appType\": \"${module.appType}\",`,
+      '      "framework": "vue3"',
+      '    }',
+    ];
+    return lines.join('\n');
+  }).join(',\n');
+}
+
+function renderFeatureEnv(options, entries) {
+  const env = [
+    `VITE_${toSnakeCase(options.module).toUpperCase()}_MODE=${resolveRuntimeModuleMode(options, options.module)}`,
+    `VITE_${toSnakeCase(options.module).toUpperCase()}_ENTRY=http://127.0.0.1:5190/`,
+  ];
+  for (const entry of entries) {
+    env.push(`VITE_${toSnakeCase(entry.code).toUpperCase()}_MODE=${resolveRuntimeModuleMode(options, entry.moduleCode)}`);
+    env.push(`VITE_${toSnakeCase(entry.code).toUpperCase()}_ENTRY=http://127.0.0.1:5190/`);
+  }
+  return [...new Set(env)].join('\n');
+}
+
+function renderRuntimeJsonEntry(module) {
+  void module;
+  return 'http://127.0.0.1:5190/';
+}
+
+function resolveRuntimeModuleMode(options, moduleCode) {
+  if (options.frontendMode === 'micro') {
+    return 'micro';
+  }
+  if (options.frontendMode === 'mixed' && (moduleCode === options.module || moduleCode === 'mango-workflow' || moduleCode === 'mango-notice')) {
+    return 'micro';
+  }
+  return 'local';
+}
+
+function toRuntimeProfile(frontendMode) {
+  if (frontendMode === 'micro') {
+    return 'micro';
+  }
+  if (frontendMode === 'mixed') {
+    return 'hybrid';
+  }
+  return 'monolith';
 }
 
 function relativeOrAbsolute(from, to) {

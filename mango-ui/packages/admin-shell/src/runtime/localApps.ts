@@ -1,5 +1,6 @@
 import { createApp, type App as VueApp } from 'vue';
 import { registerLocalApp } from '@mango/app-runtime';
+import { registerShellPages } from '@mango/admin-pages/core';
 import { installShellApp } from '../appBootstrap';
 import { getMangoAdminShellOptions } from '../config';
 
@@ -16,10 +17,15 @@ export function registerShellLocalApps() {
     registerLocalApp(app);
   }
 
+  registerShellPages({
+    home: () => import('../views/home/index.vue'),
+    notFound: () => import('../views/error/404.vue'),
+  });
+
   registerLocalApp({
     appCode: 'internal-admin',
     name: '内部管理后台本地入口',
-    async mount(container) {
+    async mount(container: HTMLElement) {
       const { AppView, MenuView, RoleView } = await import('@mango/rbac');
       const LocalWorkbench = {
         components: { AppView, MenuView, RoleView },

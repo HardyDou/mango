@@ -5,35 +5,37 @@ import {
 } from '@mango/app-runtime';
 import { getMangoAdminShellOptions } from '../config';
 
-const isProduction = import.meta.env.PROD;
-const deployEnv = (import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE || '').toLowerCase();
-const explicitDeployEnv = (import.meta.env.VITE_MANGO_DEPLOY_ENV || '').toLowerCase();
-const isPrdLike =
-  deployEnv === 'prod'
-  || deployEnv === 'prd'
-  || deployEnv === 'production'
-  || (isProduction && !explicitDeployEnv);
-const isE2E = import.meta.env.VITE_MANGO_E2E === 'true';
+const importMetaEnv = import.meta.env;
+const runtimeEnvKey = '__MANGO_IMPORT_META_ENV__';
+const globalRuntime = globalThis as typeof globalThis & {
+  [runtimeEnvKey]?: Record<string, unknown>;
+};
+
+if (!globalRuntime[runtimeEnvKey]) {
+  globalRuntime[runtimeEnvKey] = importMetaEnv as Record<string, unknown>;
+}
+
+const isE2E = readRuntimeEnvBoolean('VITE_MANGO_E2E');
 
 export const defaultRuntimeConfig: MangoRuntimeConfig = {
-  profile: (import.meta.env.VITE_MANGO_RUNTIME_PROFILE || 'monolith') as MangoRuntimeConfig['profile'],
+  profile: (readRuntimeEnvString('VITE_MANGO_RUNTIME_PROFILE') || 'monolith') as MangoRuntimeConfig['profile'],
   modules: {
     'mango-authorization': {
-      mode: (import.meta.env.VITE_MANGO_RBAC_MODE || 'local') as any,
-      entry: import.meta.env.VITE_MANGO_RBAC_ENTRY || 'http://127.0.0.1:5181/',
+      mode: (readRuntimeEnvString('VITE_MANGO_RBAC_MODE') || 'local') as any,
+      entry: readRuntimeEnvString('VITE_MANGO_RBAC_ENTRY') || 'http://127.0.0.1:5181/',
       runtimeCode: 'mango-admin-rbac-app',
       appType: 'MICRO_APP',
       framework: 'vue3',
     },
     'mango-system': {
-      mode: (import.meta.env.VITE_MANGO_SYSTEM_MODE || 'local') as any,
+      mode: (readRuntimeEnvString('VITE_MANGO_SYSTEM_MODE') || 'local') as any,
       runtimeCode: 'mango-admin-system-local',
       appType: 'LOCAL',
       framework: 'vue3',
     },
     'mango-workflow': {
-      mode: (import.meta.env.VITE_MANGO_WORKFLOW_MODE || 'local') as any,
-      entry: import.meta.env.VITE_MANGO_WORKFLOW_ENTRY || 'http://127.0.0.1:5182/',
+      mode: (readRuntimeEnvString('VITE_MANGO_WORKFLOW_MODE') || 'local') as any,
+      entry: readRuntimeEnvString('VITE_MANGO_WORKFLOW_ENTRY') || 'http://127.0.0.1:5182/',
       runtimeCode: 'mango-admin-workflow-app',
       appType: 'MICRO_APP',
       framework: 'vue3',
@@ -61,11 +63,19 @@ function splitEnvList(value?: string) {
 
 export function createShellRuntimeConfigOptions(): MangoRuntimeConfigLoadOptions {
   const options = getMangoAdminShellOptions();
-  const allowedOrigins = splitEnvList(import.meta.env.VITE_MANGO_ALLOWED_REMOTE_ORIGINS);
-  const allowedHosts = splitEnvList(import.meta.env.VITE_MANGO_ALLOWED_REMOTE_HOSTS);
-  const allowHttpEntries = import.meta.env.VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES === 'true' && (!isPrdLike || isE2E);
+  const allowedOrigins = splitEnvList(readRuntimeEnvString('VITE_MANGO_ALLOWED_REMOTE_ORIGINS'));
+  const allowedHosts = splitEnvList(readRuntimeEnvString('VITE_MANGO_ALLOWED_REMOTE_HOSTS'));
+  const currentDeployEnv = (readRuntimeEnvString('VITE_MANGO_DEPLOY_ENV') || readRuntimeEnvString('MODE')).toLowerCase();
+  const explicitCurrentDeployEnv = readRuntimeEnvString('VITE_MANGO_DEPLOY_ENV').toLowerCase();
+  const currentProduction = readRuntimeEnvBoolean('PROD');
+  const isPrdLike =
+    currentDeployEnv === 'prod'
+    || currentDeployEnv === 'prd'
+    || currentDeployEnv === 'production'
+    || (currentProduction && !explicitCurrentDeployEnv);
+  const allowHttpEntries = readRuntimeEnvBoolean('VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES') && (!isPrdLike || isE2E);
 
-  if (!isProduction) {
+  if (!currentProduction) {
     return {
       failClosed: false,
       allowHttpEntries: true,
@@ -113,4 +123,18 @@ export function createShellRuntimeConfigOptions(): MangoRuntimeConfigLoadOptions
 
 export function loadShellRuntimeConfig() {
   return loadRuntimeConfigWithOptions(resolveDefaultRuntimeConfig(), createShellRuntimeConfigOptions());
+}
+
+function getRuntimeEnv() {
+  return globalRuntime[runtimeEnvKey] || {};
+}
+
+function readRuntimeEnvString(name: string) {
+  const value = getRuntimeEnv()[name];
+  return typeof value === 'string' ? value : '';
+}
+
+function readRuntimeEnvBoolean(name: string) {
+  const value = getRuntimeEnv()[name];
+  return value === true || value === 'true';
 }

@@ -107,6 +107,10 @@
       "path": "rules/frontend/06-monorepo-architecture.md",
       "reason": "前端 Monorepo 架构规范"
     },
+    "frontend.materialProductization": {
+      "path": "rules/frontend/07-material-productization.md",
+      "reason": "前端物料产品化规范"
+    },
     "product.prd": {
       "path": "rules/product/01-prd-template.md",
       "reason": "PRD 模板规范"
@@ -196,6 +200,12 @@
       "paths": ["mango-ui/packages/**", "packages/**"],
       "keywords": ["组件开发", "公共组件", "业务组件", "选择组件", "npm", "独立消费", "私有仓库", "公开仓库", "微前端", "单体", "组件发布"],
       "include": ["frontend.componentDevelopment", "frontend.monorepo"]
+    },
+    "frontendMaterialProductization": {
+      "roles": ["tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango-ui/packages/**", "mango-ui/scripts/check-package-contracts.mjs", "mango-ui/packages/create-mango-app/**", "mango-business-starter/frontend/**"],
+      "keywords": ["前端物料", "能力包", "capability", "admin-ui", "api sdk", "api包", "admin包", "完整基座", "按需组合", "full preset", "custom preset", "菜单合并", "能力依赖"],
+      "include": ["frontend.materialProductization", "frontend.monorepo"]
     },
     "frontendTest": {
       "roles": ["dev", "qa"],

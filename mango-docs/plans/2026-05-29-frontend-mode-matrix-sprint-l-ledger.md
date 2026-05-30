@@ -1,0 +1,10 @@
+# Frontend Mode Matrix Sprint L 台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| FSL-001 | Sprint L | 部署模式矩阵必须覆盖 local、micro、mixed | 新增独立 E2E 脚本，逐一生成三种 frontend-mode 项目 | `mango-ui/scripts/frontend-mode-matrix-e2e.mjs` | `pnpm frontend-mode:matrix-e2e -- --evidence-dir /tmp/mango-sprint-l-mode-matrix-evidence` | DONE | `/tmp/mango-sprint-l-mode-matrix-evidence/summary.md` |
+| FSL-002 | 用户要求 | E2E 截图和报告必须保留 | 每个模式输出 `layout-report.json`、截图和统一 summary | `/tmp/mango-sprint-l-mode-matrix-evidence` | 检查 evidence 目录和 summary | DONE | `/tmp/mango-sprint-l-mode-matrix-evidence/local/frontend-mode.png`; `/tmp/mango-sprint-l-mode-matrix-evidence/micro/frontend-mode.png`; `/tmp/mango-sprint-l-mode-matrix-evidence/mixed/frontend-mode.png` |
+| FSL-003 | 用户要求 | 页面布局必须符合 Mango 规范 | local 检查业务列表页结构；micro/mixed 检查 shell、runtime outlet、诊断态和横向溢出 | 浏览器布局断言 | Playwright smoke | DONE | `/tmp/mango-sprint-l-mode-matrix-evidence/local/layout-report.json`; `/tmp/mango-sprint-l-mode-matrix-evidence/micro/layout-report.json`; `/tmp/mango-sprint-l-mode-matrix-evidence/mixed/layout-report.json` |
+| FSL-004 | 用户要求 | 通过依赖 Mango 发布物料快速开发 | 生成项目依赖 staged package build 产物，执行 install/typecheck/build | 临时生成项目 | E2E 命令退出码 0 | DONE | `/tmp/mango-sprint-l-mode-matrix-evidence/summary.md` |
+| FSL-005 | 用户要求 | 每阶段必须执行回归 E2E | 复跑 registry publish/install/build/browser smoke | `registry-consumption-e2e.mjs` | `pnpm package:registry-e2e -- --evidence-dir /tmp/mango-sprint-l-regression-evidence` | DONE | `/tmp/mango-sprint-l-regression-evidence/summary.md`; `/tmp/mango-sprint-l-regression-evidence/frontend-smoke-report.json`; `/tmp/mango-sprint-l-regression-evidence/frontend-smoke.png` |
+| FSL-006 | PMO | Sprint L 交付契约通过检查 | 台账记录所有可证明项 | 本文件 | `delivery-contract-check.mjs --mode verify` | DONE | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-29-frontend-mode-matrix-sprint-l.md --ledger mango-docs/plans/2026-05-29-frontend-mode-matrix-sprint-l-ledger.md --mode verify` |

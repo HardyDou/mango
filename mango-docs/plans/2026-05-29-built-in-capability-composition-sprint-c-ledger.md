@@ -1,0 +1,11 @@
+# Mango 内置能力包组合 Sprint C 台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| FPC-001 | Sprint C | 定义内置能力包组合契约 | 在 `@mango/admin-pages/core` 增加能力 manifest 类型和注册函数 | `mango-ui/packages/admin-pages/src/core.ts` | `pnpm --filter @mango/admin-pages test` | DONE | `capabilities.spec.ts` 覆盖 `registerCapabilityPages`、`registerCapabilities`，1 个测试文件 4 个用例通过 |
+| FPC-002 | Sprint C | 内置能力包公开 page registry | 各能力包导出 `mangoXxxPageRegistry`，component key 与后端菜单 component 归一化后匹配 | `mango-ui/packages/{auth,rbac,system,file,workflow,notice,template,numgen,calendar}/src/capability.ts` | `pnpm --filter @mango/admin-pages test` | DONE | 单测覆盖 `@/views/...`、`views/...`、裸 component key 归一化；9 个能力包 `pnpm package:build --filter ...` 通过 |
+| FPC-003 | Sprint C | Admin Pages 聚合能力物料 | `registerDefaultAdminPages` 改为注册能力包 manifest，不再独占散落 loader 映射 | `mango-ui/packages/admin-pages/src/defaults.ts` | `pnpm --filter @mango/admin-pages test` | DONE | 单测验证默认内置能力 summary 与选择性注册；`@mango/admin-pages` 包构建通过 |
+| FPC-004 | Sprint C | 新特性测试通过 | 单测覆盖 manifest 聚合、选择性注册、组件路径归一化和页面 loader 解析 | `mango-ui/packages/admin-pages/src/__tests__/capabilities.spec.ts` | `pnpm --filter @mango/admin-pages test` | DONE | Vitest 1 个测试文件 4 个用例通过 |
+| FPC-005 | Sprint C | 外部消费测试通过 | 临时消费方导入 `@mango/admin-pages` 与内置能力 manifest，完成类型检查和构建 | `/tmp/mango-sprint-c-capability-smoke` | `pnpm typecheck && pnpm build` | DONE | `/tmp/mango-sprint-c-capability-smoke` 中 `pnpm typecheck`、`pnpm build` 均通过，Vite 构建 3291 个模块 |
+| FPC-006 | Sprint C | 回归测试通过 | 复跑 Sprint A/B 包契约、Admin Shell 单测和核心包构建 | `mango-ui/packages/*/dist` | `pnpm package:check`、`pnpm --filter @mango/admin-shell test`、核心包 `pnpm package:build --filter ...` | DONE | `pnpm package:check` 15 个包通过；`@mango/admin-shell` 2 个测试文件 6 个用例通过；核心包构建通过 |
+| FPC-007 | PMO | 交付台账通过检查 | 本台账记录 Sprint C 原子交付项 | `mango-docs/plans/2026-05-29-built-in-capability-composition-sprint-c-ledger.md` | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-29-built-in-capability-composition-sprint-c.md --ledger mango-docs/plans/2026-05-29-built-in-capability-composition-sprint-c-ledger.md --mode verify` | DONE | Sprint C 台账 7 项均为 DONE，delivery contract verify 通过 |

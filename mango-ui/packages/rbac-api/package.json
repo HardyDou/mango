@@ -1,0 +1,60 @@
+{
+  "name": "@mango/rbac-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/app": {
+      "types": "./dist/api/app.d.ts",
+      "import": "./dist/api/app.js"
+    },
+    "./api/menu": {
+      "types": "./dist/api/menu.d.ts",
+      "import": "./dist/api/menu.js"
+    },
+    "./api/menuPackage": {
+      "types": "./dist/api/menuPackage.d.ts",
+      "import": "./dist/api/menuPackage.js"
+    },
+    "./api/org": {
+      "types": "./dist/api/org.d.ts",
+      "import": "./dist/api/org.js"
+    },
+    "./api/post": {
+      "types": "./dist/api/post.d.ts",
+      "import": "./dist/api/post.js"
+    },
+    "./api/role": {
+      "types": "./dist/api/role.d.ts",
+      "import": "./dist/api/role.js"
+    },
+    "./api/user": {
+      "types": "./dist/api/user.d.ts",
+      "import": "./dist/api/user.js"
+    },
+    "./api/runtimeTypes": {
+      "types": "./dist/api/runtimeTypes.d.ts",
+      "import": "./dist/api/runtimeTypes.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/rbac-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0",
+    "@mango/api-schema": "1.0.0"
+  }
+}

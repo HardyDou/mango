@@ -33,5 +33,5 @@ public interface {{modulePascal}}Api {
 
     @Operation(summary = "查询{{aggregatePascal}}详情", description = "按业务标识获取{{aggregatePascal}}详情")
     @GetMapping("/{{aggregateKebab}}s/detail")
-    R<{{aggregatePascal}}VO> detail(@RequestParam @NotBlank(message = "业务标识不能为空") String id);
+    R<{{aggregatePascal}}VO> detail(@RequestParam("id") @NotBlank(message = "业务标识不能为空") String id);
 }

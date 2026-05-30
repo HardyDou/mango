@@ -4,7 +4,7 @@
  * Provides ECharts instance management with automatic resize, theme switching, and responsive configuration.
  */
 
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, nextTick, type Ref } from 'vue';
 import * as echarts from 'echarts';
 
 export interface EChartsOption {
@@ -14,20 +14,40 @@ export interface EChartsOption {
   isDark?: boolean;
 }
 
+export interface UseEChartsReturn {
+  chartInstance: Ref<EChartsPublicInstance | null>;
+  setOption: (option: echarts.EChartsOption) => void;
+  getInstance: () => EChartsPublicInstance | null;
+  resize: () => void;
+  clear: () => void;
+  dispose: () => void;
+  showLoading: (loadingOptions?: Record<string, unknown>) => void;
+  hideLoading: () => void;
+}
+
+export interface EChartsPublicInstance {
+  setOption: (option: echarts.EChartsOption) => void;
+  resize: () => void;
+  clear: () => void;
+  dispose: () => void;
+  showLoading: (loadingOptions?: Record<string, unknown>) => void;
+  hideLoading: () => void;
+}
+
 export function useECharts(
   elRef: HTMLElement | null,
   options: EChartsOption = {}
-) {
+): UseEChartsReturn {
   const { theme, autoresize = true, isDark } = options;
 
-  const chartInstance = ref<echarts.ECharts | null>(null);
+  const chartInstance = ref<EChartsPublicInstance | null>(null);
   const resolvedTheme = theme ?? (isDark ? 'dark' : 'light');
 
   // Initialize chart
   const initChart = () => {
     if (!elRef) return;
 
-    chartInstance.value = echarts.init(elRef, resolvedTheme);
+    chartInstance.value = echarts.init(elRef, resolvedTheme) as EChartsPublicInstance;
 
     // Apply autoresize
     if (autoresize) {
@@ -75,7 +95,7 @@ export function useECharts(
   };
 
   // Show loading
-  const showLoading = (loadingOptions?: echarts.LoadingOptions) => {
+  const showLoading = (loadingOptions?: Record<string, unknown>) => {
     if (chartInstance.value) {
       chartInstance.value.showLoading(loadingOptions);
     }

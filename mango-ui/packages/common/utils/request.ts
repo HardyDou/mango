@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiId } from '@mango/api-schema';
 import { Session } from './storage';
 import { mangoMessage } from './message';
@@ -184,7 +184,7 @@ function hideLoading(): void {
 /**
  * 处理 Token
  */
-function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
+function handleToken(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
   const token = Session.getToken();
   if (token) {
     config.headers = config.headers || {};
@@ -196,7 +196,7 @@ function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
 /**
  * 处理机构隔离 ID
  */
-function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
+function handleTenantId(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
   const userInfo = Session.get('userInfo');
   const tenantId = userInfo?.tenantId ?? Session.get('tenantId');
   if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
@@ -212,7 +212,7 @@ function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
  * 请求拦截器
  */
 service.interceptors.request.use(
-  async (config: RequestConfig) => {
+  async (config: InternalAxiosRequestConfig & RequestConfig) => {
     showLoading();
 
     if (shouldRefreshToken(config)) {

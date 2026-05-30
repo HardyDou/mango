@@ -1,0 +1,32 @@
+{
+  "name": "@mango/numgen-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/numgen": {
+      "types": "./dist/api/numgen.d.ts",
+      "import": "./dist/api/numgen.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/numgen-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0",
+    "@mango/api-schema": "1.0.0"
+  }
+}

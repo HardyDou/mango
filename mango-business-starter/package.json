@@ -1,0 +1,24 @@
+{
+  "name": "{{projectKebab}}",
+  "version": "{{projectVersion}}",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:template": "node scripts/check-template.mjs",
+    "backend:validate": "mvn -f backend/pom.xml validate",
+    "backend:test": "mvn -f backend/pom.xml test",
+    "dev:start": "./scripts/dev-start.sh",
+    "dev:stop": "./scripts/dev-stop.sh",
+    "dev": "pnpm --filter {{projectKebab}}-admin dev",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "preview": "pnpm --filter {{projectKebab}}-admin preview"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.25",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vue-tsc": "^2.2.12"
+  }
+}

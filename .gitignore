@@ -83,6 +83,7 @@ temp/
 
 # ============ Claude / AI Tooling ============
 .claude/
+.codegraph/
 .mango/
 *.claude.backup
 

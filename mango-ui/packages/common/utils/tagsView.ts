@@ -11,7 +11,7 @@ export function createHomeTag(): RouteRecordRaw {
       icon: 'HomeFilled',
       isAffix: true,
     },
-  };
+  } as unknown as RouteRecordRaw;
 }
 
 export function isHomeTag(tag: Pick<RouteRecordRaw, 'path'> | undefined): boolean {

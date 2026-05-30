@@ -2,7 +2,7 @@
   "name": "@mango/common",
   "version": "1.0.0",
   "private": false,
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "dependencies": {
     "axios": "^1.3.3",
     "qs": "^6.11.0",
@@ -11,7 +11,7 @@
     "js-cookie": "^3.0.1",
     "mitt": "^3.0.0",
     "echarts": "^6.0.0",
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "2.3.2",
     "@vueuse/core": "^10.4.1",
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-vue": "^5.1.12",
@@ -26,13 +26,160 @@
     "@mango/api-schema": "1.0.0"
   },
   "peerDependencies": {
-    "element-plus": "2.5.5",
-    "pinia": "2.0.32",
-    "vue": "3.5.13",
-    "vue-i18n": "9.2.2",
+    "element-plus": "2.14.0",
+    "pinia": "^2.0.0",
+    "vue": "^3.5.0",
+    "vue-i18n": "^9.2.0",
     "vue-router": "^4.1.6"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./components/DictSelect/index.vue": {
+      "types": "./dist/components/DictSelect/index.vue.d.ts",
+      "import": "./dist/components/DictSelect/index.vue.js"
+    },
+    "./components/DictTag/index.vue": {
+      "types": "./dist/components/DictTag/index.vue.d.ts",
+      "import": "./dist/components/DictTag/index.vue.js"
+    },
+    "./components/IconSelector/index.vue": {
+      "types": "./dist/components/IconSelector/index.vue.d.ts",
+      "import": "./dist/components/IconSelector/index.vue.js"
+    },
+    "./components/Pagination/index.vue": {
+      "types": "./dist/components/Pagination/index.vue.d.ts",
+      "import": "./dist/components/Pagination/index.vue.js"
+    },
+    "./api/area": {
+      "types": "./dist/api/area.d.ts",
+      "import": "./dist/api/area.js"
+    },
+    "./api/captcha": {
+      "types": "./dist/api/captcha.d.ts",
+      "import": "./dist/api/captcha.js"
+    },
+    "./api/dict": {
+      "types": "./dist/api/dict.d.ts",
+      "import": "./dist/api/dict.js"
+    },
+    "./api/org": {
+      "types": "./dist/api/org.d.ts",
+      "import": "./dist/api/org.js"
+    },
+    "./api/upload": {
+      "types": "./dist/api/upload.d.ts",
+      "import": "./dist/api/upload.js"
+    },
+    "./hooks/useDict": {
+      "types": "./dist/hooks/useDict.d.ts",
+      "import": "./dist/hooks/useDict.js"
+    },
+    "./hooks/useECharts": {
+      "types": "./dist/hooks/useECharts.d.ts",
+      "import": "./dist/hooks/useECharts.js"
+    },
+    "./hooks/useLocale": {
+      "types": "./dist/hooks/useLocale.d.ts",
+      "import": "./dist/hooks/useLocale.js"
+    },
+    "./hooks/useTitle": {
+      "types": "./dist/hooks/useTitle.d.ts",
+      "import": "./dist/hooks/useTitle.js"
+    },
+    "./theme/index": {
+      "types": "./dist/theme/index.d.ts",
+      "import": "./dist/theme/index.js"
+    },
+    "./theme/index.scss": {
+      "import": "./dist/assets/theme/index.css",
+      "style": "./dist/assets/theme/index.css"
+    },
+    "./utils/apiCrypto": {
+      "types": "./dist/utils/apiCrypto.d.ts",
+      "import": "./dist/utils/apiCrypto.js"
+    },
+    "./utils/arrayOperation": {
+      "types": "./dist/utils/arrayOperation.d.ts",
+      "import": "./dist/utils/arrayOperation.js"
+    },
+    "./utils/authFunction": {
+      "types": "./dist/utils/authFunction.d.ts",
+      "import": "./dist/utils/authFunction.js"
+    },
+    "./utils/captchaRequest": {
+      "types": "./dist/utils/captchaRequest.d.ts",
+      "import": "./dist/utils/captchaRequest.js"
+    },
+    "./utils/errorCode": {
+      "types": "./dist/utils/errorCode.d.ts",
+      "import": "./dist/utils/errorCode.js"
+    },
+    "./utils/formatTime": {
+      "types": "./dist/utils/formatTime.d.ts",
+      "import": "./dist/utils/formatTime.js"
+    },
+    "./utils/getStyleSheets": {
+      "types": "./dist/utils/getStyleSheets.d.ts",
+      "import": "./dist/utils/getStyleSheets.js"
+    },
+    "./utils/iconConfig": {
+      "types": "./dist/utils/iconConfig.d.ts",
+      "import": "./dist/utils/iconConfig.js"
+    },
+    "./utils/menuTree": {
+      "types": "./dist/utils/menuTree.d.ts",
+      "import": "./dist/utils/menuTree.js"
+    },
+    "./utils/message": {
+      "types": "./dist/utils/message.d.ts",
+      "import": "./dist/utils/message.js"
+    },
+    "./utils/mitt": {
+      "types": "./dist/utils/mitt.d.ts",
+      "import": "./dist/utils/mitt.js"
+    },
+    "./utils/other": {
+      "types": "./dist/utils/other.d.ts",
+      "import": "./dist/utils/other.js"
+    },
+    "./utils/request": {
+      "types": "./dist/utils/request.d.ts",
+      "import": "./dist/utils/request.js"
+    },
+    "./utils/storage": {
+      "types": "./dist/utils/storage.d.ts",
+      "import": "./dist/utils/storage.js"
+    },
+    "./utils/tagsView": {
+      "types": "./dist/utils/tagsView.d.ts",
+      "import": "./dist/utils/tagsView.js"
+    },
+    "./utils/theme": {
+      "types": "./dist/utils/theme.d.ts",
+      "import": "./dist/utils/theme.js"
+    },
+    "./utils/toolsValidate": {
+      "types": "./dist/utils/toolsValidate.d.ts",
+      "import": "./dist/utils/toolsValidate.js"
+    },
+    "./utils/validate": {
+      "types": "./dist/utils/validate.d.ts",
+      "import": "./dist/utils/validate.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/common"
+  },
+  "files": [
+    "dist"
+  ]
 }

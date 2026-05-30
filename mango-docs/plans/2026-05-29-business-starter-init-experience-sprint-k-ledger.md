@@ -1,0 +1,11 @@
+# Business Starter 初始化体验产品化 Sprint K 台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| FSK-001 | 用户要求 | 追加业务开发规范，使用 infra-persistence 的 MyBatis-Plus 相关能力，避免直接写 JDBC 逻辑 | 在 PMO 后端持久化规范追加硬规则，并同步 starter baseline | `mango-pmo/rules/backend/07-persistence.md`、starter baseline | 文本检查和模板检查 | DONE | `node mango-business-starter/scripts/check-template.mjs`、`node mango-ui/packages/create-mango-app/templates/mango-business-starter/scripts/check-template.mjs` |
+| FSK-002 | 用户要求 | 业务 starter 后端模板不得直接依赖 MyBatis-Plus starter 或手写 JDBC | core 模块依赖 `mango-infra-persistence-starter`，模板检查禁止 JDBC/MyBatis-Plus starter 直连 | `mango-business-starter/backend`、create-mango-app 模板 | `node scripts/check-template.mjs` | DONE | `Template check passed: 85 required files, 43 contract checks.`、`Initializr CLI check passed.` |
+| FSK-003 | 用户要求 | 业务表和实体使用 Mango 持久化基线 | 实体继承 `TenantEntity`，表结构使用 BIGINT ID、租户、审计字段 | Entity、Flyway migration | 生成项目 Maven test 和真实 API E2E | DONE | `/tmp/mango-sprint-k-dev-start-evidence/maven-test.out`、`/tmp/mango-sprint-k-dev-start-evidence/api-smoke.json` |
+| FSK-004 | 用户要求 | 页面布局符合 Mango 规范 | 业务列表页补齐搜索区、功能区、表格区、分页区、错误态和布局标记 | starter 前端业务页面 | dev-start E2E 布局断言和截图 | DONE | `/tmp/mango-sprint-k-dev-start-evidence/layout-report.json`、`/tmp/mango-sprint-k-dev-start-evidence/dev-start-frontend.png` |
+| FSK-005 | 用户要求 | E2E 截图和报告必须保留，后续可查看 | dev-start E2E 输出 `layout-report.json`、截图和 summary | `business-starter-dev-start-e2e.mjs` | `pnpm business-starter:dev-start-e2e -- --evidence-dir /tmp/mango-sprint-k-dev-start-evidence` | DONE | `/tmp/mango-sprint-k-dev-start-evidence/summary.md`、`/tmp/mango-sprint-k-dev-start-evidence/layout-report.json`、`/tmp/mango-sprint-k-dev-start-evidence/dev-start-frontend.png` |
+| FSK-006 | 用户要求 | 回归 E2E 也要保留截图和报告 | registry E2E 输出 `frontend-smoke-report.json`、截图和 summary | `registry-consumption-e2e.mjs` | `pnpm package:registry-e2e -- --evidence-dir /tmp/mango-sprint-k-regression-evidence` | DONE | `/tmp/mango-sprint-k-regression-evidence/summary.md`、`/tmp/mango-sprint-k-regression-evidence/frontend-smoke-report.json`、`/tmp/mango-sprint-k-regression-evidence/frontend-smoke.png` |
+| FSK-007 | PMO | Sprint K 交付契约通过检查 | 台账记录所有可证明项 | 本文件 | `delivery-contract-check.mjs --mode verify` | DONE | 本次交付契约检查输出 |

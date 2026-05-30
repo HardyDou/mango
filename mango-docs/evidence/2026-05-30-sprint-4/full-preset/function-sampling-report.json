@@ -1,0 +1,25 @@
+{
+  "rule": "Top-level shell functions sample 1-3 subfunctions/actions with screenshots.",
+  "records": [
+    {
+      "functionName": "user-dropdown",
+      "expectedText": "个人中心",
+      "screenshot": "function-user-dropdown.png",
+      "state": {
+        "expectedTextVisible": true,
+        "hasHorizontalOverflow": false
+      },
+      "passed": true
+    },
+    {
+      "functionName": "settings-drawer",
+      "expectedText": "布局配置",
+      "screenshot": "function-settings-drawer.png",
+      "state": {
+        "expectedTextVisible": true,
+        "hasHorizontalOverflow": false
+      },
+      "passed": true
+    }
+  ]
+}

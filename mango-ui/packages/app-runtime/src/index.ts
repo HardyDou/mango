@@ -133,6 +133,12 @@ export interface MangoModuleRuntimeConfig {
   alive?: boolean;
 }
 
+export interface MangoModuleRuntimeStrategy extends MangoModuleRuntimeConfig {
+  moduleCode?: string;
+  pageType?: MangoMenuPageType;
+  deployProfile?: MangoRuntimeProfile | string;
+}
+
 export interface MangoRuntimeConfig {
   profile: MangoRuntimeProfile;
   modules: Record<string, MangoModuleRuntimeConfig>;
@@ -320,7 +326,18 @@ export async function loadRuntimeConfigWithOptions(
     try {
       remote = await response.json();
     } catch (error) {
-      throw new MangoRuntimeConfigError('Invalid runtime-config.json: JSON parse failed', undefined, { cause: error });
+      const runtimeError = new MangoRuntimeConfigError('Invalid runtime-config.json: JSON parse failed', undefined, { cause: error });
+      if (options.failClosed) {
+        throw runtimeError;
+      }
+      const config = finalizeRuntimeConfig(normalizeRuntimeConfig(defaultConfig, options), options);
+      emitMangoRuntimeLog({
+        level: 'warn',
+        event: 'runtime-config-load',
+        message: 'Runtime config JSON parse failed, fallback to defaults',
+        detail: { configUrl, error },
+      });
+      return config;
     }
     const config = finalizeRuntimeConfig(normalizeRuntimeConfig(mergeRuntimeConfig(defaultConfig, remote), options), options);
     emitMangoRuntimeLog({

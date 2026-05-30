@@ -2,30 +2,50 @@
   "name": "@mango/admin-shell",
   "version": "1.0.0",
   "private": false,
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./runtime": "./src/runtime/runtimeHost.ts",
-    "./menu": "./src/runtime/menuHost.ts",
-    "./stores": "./src/stores/index.ts",
-    "./router": "./src/router.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/runtimeHost.d.ts",
+      "import": "./dist/runtime/runtimeHost.js"
+    },
+    "./menu": {
+      "types": "./dist/runtime/menuHost.d.ts",
+      "import": "./dist/runtime/menuHost.js"
+    },
+    "./stores": {
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js"
+    },
+    "./router": {
+      "types": "./dist/router.d.ts",
+      "import": "./dist/router.js"
+    },
+    "./style.css": {
+      "import": "./dist/style.css",
+      "style": "./dist/style.css"
+    }
   },
   "scripts": {
-    "build": "vite build",
-    "test": "vitest run"
+    "build": "node ../../scripts/build-package.mjs --filter @mango/admin-shell",
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "1.0.0",
     "@mango/app-runtime": "1.0.0",
     "@mango/auth": "1.0.0",
     "@mango/common": "1.0.0",
     "@mango/rbac": "1.0.0",
-    "element-plus": "2.5.5"
+    "element-plus": "2.14.0",
+    "dayjs": "^1.11.10"
   },
   "peerDependencies": {
-    "pinia": "2.0.32",
-    "vue": "3.5.13",
+    "pinia": "^2.0.0",
+    "vue": "^3.5.0",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
@@ -36,5 +56,11 @@
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ]
 }

@@ -1,0 +1,13 @@
+# Business Starter 后端运行骨架 Sprint I 台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| FSI-001 | Sprint I | 生成项目具备后端 Maven 根 | 新增 `backend/pom.xml` 聚合 apps 与业务 modules，并引入 Mango 后端依赖管理入口 | `mango-business-starter/backend/pom.xml` | `node mango-business-starter/scripts/check-template.mjs` | DONE | `Template check passed: 84 required files, 35 contract checks.` |
+| FSI-002 | Sprint I | 生成项目具备单体 app | 新增 `backend/apps/{{projectKebab}}-monolith-app`，装配 `mango-admin-starter` 和业务 `{{moduleKebab}}-starter` | monolith app POM、Application、application.yml | CLI 生成文件检查与 Maven validate/test | DONE | `mvn -f backend/pom.xml validate`、`mvn -f backend/pom.xml test` |
+| FSI-003 | Sprint I | 生成项目具备统一本地启动入口 | 新增 `scripts/dev-start.sh` 与 `scripts/dev-stop.sh`，读取 `.env`，启动后端与前端并记录 pid | `mango-business-starter/scripts/dev-start.sh`、`dev-stop.sh` | `bash -n scripts/dev-start.sh && bash -n scripts/dev-stop.sh` | DONE | `/tmp/mango-sprint-i-generated/sprint-i-platform/scripts/dev-start.sh` |
+| FSI-004 | Sprint I | Initializr 内置模板同步 | 将新增后端运行骨架同步到 `create-mango-app` 包内模板 | `mango-ui/packages/create-mango-app/templates/mango-business-starter` | `node mango-ui/packages/create-mango-app/scripts/check-cli.mjs` | DONE | `Initializr CLI check passed.` |
+| FSI-005 | Sprint I | 新特性验证通过 | 验证模板契约、CLI 生成、脚本语法和生成项目 Maven validate/test 入口 | 验证命令输出 | 新特性验证命令 | DONE | `node scripts/check-template.mjs`、`node packages/create-mango-app/scripts/check-cli.mjs`、`mvn -f backend/pom.xml test` |
+| FSI-006 | Sprint I | 回归测试通过后才能收尾 | 复跑 registry E2E 或关键包契约链路，确认 Sprint H 目标未回退 | `mango-ui`、`mango-business-starter` | `pnpm package:registry-e2e -- --evidence-dir /tmp/mango-sprint-i-regression-evidence` | DONE | `/tmp/mango-sprint-i-regression-evidence/summary.md` |
+| FSI-007 | Sprint I | 真实后端依赖发布状态明确 | 本 Sprint 补生成项目结构，不声明 Mango 后端 Maven 物料已发布可解析 | Maven/Nexus | 真实仓库依赖解析不作为 DONE | EXCEPTION | Mango 后端 Maven 依赖发布、settings 和 Nexus 权限未在本 Sprint 提供 |
+| FSI-008 | Sprint I | 真实登录权限 CRUD 状态明确 | 本 Sprint 不把业务骨架 service 声明为真实 CRUD 完成 | 后端 app、数据库、真实认证与权限菜单 | 真实启动和登录验收不在本 Sprint 完成 | EXCEPTION | 需后续 Sprint 接入数据库、真实 CRUD、登录、菜单权限和租户链路 |
+| FSI-009 | PMO | 交付台账通过检查 | 本台账记录 Sprint I 可证明项和例外项 | 本文件 | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-29-business-starter-backend-runtime-sprint-i.md --ledger mango-docs/plans/2026-05-29-business-starter-backend-runtime-sprint-i-ledger.md --mode verify` | DONE | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-29-business-starter-backend-runtime-sprint-i.md --ledger mango-docs/plans/2026-05-29-business-starter-backend-runtime-sprint-i-ledger.md --mode verify` |

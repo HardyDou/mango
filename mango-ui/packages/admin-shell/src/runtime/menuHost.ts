@@ -1,5 +1,5 @@
-import { computed, ref } from 'vue';
-import { get } from '@mango/common/utils/request';
+import { computed, ref, type ComputedRef, type Ref } from 'vue';
+import { get, type RequestConfig } from '@mango/common/utils/request';
 import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages';
 import type { MangoMenuPageType } from '@mango/app-runtime';
 import type { RouteRecordRaw } from 'vue-router';
@@ -10,6 +10,8 @@ import {
   resolveFirstMenu as resolveFirstMenuNode,
   type MangoMenuTreeNode,
 } from '@mango/common/utils/menuTree';
+import { getMangoAdminShellOptions } from '../config';
+import { mergeShellMenus, type ShellMenuMergeReport } from './menuMerge';
 
 export enum MenuTypeEnum {
   DIRECTORY = 1,
@@ -35,19 +37,39 @@ export interface ShellMenu {
   visible: number;
   keepAlive?: number;
   embedded?: number;
+  permissions?: string[];
   redirect?: string;
   meta?: Record<string, any>;
   children?: ShellMenu[];
 }
 
-export interface ShellRouteMenu extends RouteRecordRaw {
+export type ShellRouteMenu = RouteRecordRaw & MangoMenuTreeNode & {
   sourceMenu: ShellMenu;
   children?: ShellRouteMenu[];
-}
+};
 
 export type ShellMenuTreeNode = MangoMenuTreeNode;
 
-export function useMenuHost() {
+export interface ShellMenuHost {
+  menuLoading: Ref<boolean>;
+  menus: Ref<ShellRouteMenu[]>;
+  topMenus: ComputedRef<ShellRouteMenu[]>;
+  sideMenus: ComputedRef<ShellRouteMenu[]>;
+  activeTopPath: Ref<string>;
+  activeMenuPath: Ref<string>;
+  activeMenu: ComputedRef<ShellRouteMenu | undefined>;
+  loadMenus: () => Promise<ShellRouteMenu | undefined>;
+  selectTop: (menu: ShellRouteMenu) => ShellRouteMenu | undefined;
+  selectMenu: (path: string) => ShellRouteMenu | undefined;
+}
+
+let lastShellMenuMergeReport: ShellMenuMergeReport | undefined;
+
+export function getLastShellMenuMergeReport() {
+  return lastShellMenuMergeReport;
+}
+
+export function useMenuHost(): ShellMenuHost {
   const menuLoading = ref(false);
   const menus = ref<ShellRouteMenu[]>([]);
   const activeTopPath = ref('');
@@ -67,12 +89,24 @@ export function useMenuHost() {
   async function loadMenus() {
     menuLoading.value = true;
     try {
-      const response = await get<ShellMenu[]>('/authorization/menus/user', {
-        params: { fmt: 'tree', appCode: 'internal-admin' },
+      const options = getMangoAdminShellOptions();
+      const appCode = options.menu?.appCode || options.login?.defaults?.appCode || 'internal-admin';
+      const response = options.menu?.loader
+        ? await options.menu.loader({ appCode })
+        : await get('/authorization/menus/user', {
+          params: { fmt: 'tree', appCode },
+        } as RequestConfig) as ShellMenu[];
+      const merged = mergeShellMenus({
+        backendMenus: response || [],
+        capabilityMenus: options.menu?.capabilityMenus || [],
+        businessMenus: options.menu?.businessMenus || [],
+        permissions: options.menu?.permissions,
       });
+      lastShellMenuMergeReport = merged.report;
+      options.menu?.onMergeReport?.(merged.report);
       menus.value = [
         createHomeRouteMenu(),
-        ...filterMenuForRoute(response || []).map(toShellRouteMenu),
+        ...filterMenuForRoute(merged.menus).map(toShellRouteMenu),
         ...createDevRouteMenus(),
         ...createAccountRouteMenus(),
       ];
@@ -136,10 +170,9 @@ function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
     ...menu,
     moduleCode,
   };
-  return {
+  const route = {
     path: menu.path,
     name: menu.menuCode || menu.menuName,
-    redirect: menu.redirect,
     meta: {
       ...(menu.meta || {}),
       title: menu.menuName,
@@ -150,7 +183,11 @@ function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
     },
     sourceMenu,
     children: menu.children?.map(toShellRouteMenu),
-  };
+  } as ShellRouteMenu;
+  if (menu.redirect) {
+    route.redirect = menu.redirect;
+  }
+  return route;
 }
 
 function inferModuleCode(component?: string, path?: string) {
@@ -271,7 +308,7 @@ function createDevRouteMenus(): ShellRouteMenu[] {
 }
 
 function createComponentDemoMenus(): ShellMenu[] {
-  return DEV_COMPONENT_DEMO_PAGES.map(page => ({
+  return DEV_COMPONENT_DEMO_PAGES.map((page: Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'path' | 'component' | 'icon' | 'sort'>) => ({
     ...page,
     appCode: 'internal-admin',
     moduleCode: 'mango-shell',

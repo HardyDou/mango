@@ -2,21 +2,41 @@
   "name": "@mango/workflow",
   "version": "1.0.0",
   "private": false,
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "2.3.2",
     "@form-create/element-ui": "3.2.16",
     "@mango/file": "1.0.0",
     "@mango/api-schema": "1.0.0",
     "@mango/common": "1.0.0",
-    "form-create-designer": "3.2.11-oem"
+    "form-create-designer": "3.2.11-oem",
+    "@mango/workflow-api": "1.0.0"
   },
   "peerDependencies": {
-    "element-plus": "2.5.5",
-    "vue": "3.5.13",
+    "element-plus": "2.14.0",
+    "vue": "^3.5.0",
     "vue-router": "^4.1.6"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./capability": {
+      "types": "./dist/capability.d.ts",
+      "import": "./dist/capability.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/workflow"
+  },
+  "files": [
+    "dist"
+  ]
 }

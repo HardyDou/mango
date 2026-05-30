@@ -1,0 +1,32 @@
+{
+  "name": "@mango/auth-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/sys": {
+      "types": "./dist/api/sys.d.ts",
+      "import": "./dist/api/sys.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/auth-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0",
+    "@mango/api-schema": "1.0.0"
+  }
+}

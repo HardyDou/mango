@@ -1,6 +1,6 @@
-import { ElMessage, type MessageParams, type MessageParamsWithType } from 'element-plus';
+import { ElMessage, type MessageParams } from 'element-plus';
 
-type MessageType = NonNullable<MessageParamsWithType['type']>;
+type MessageType = 'success' | 'warning' | 'info' | 'error';
 
 const DEFAULT_WINDOW_MS = 1600;
 
@@ -24,7 +24,10 @@ function normalizeMessage(message: string | MessageParams): string {
   if (typeof message === 'string') {
     return message;
   }
-  return String(message.message || '');
+  if (typeof message === 'object' && message && 'message' in message) {
+    return String(message.message || '');
+  }
+  return '';
 }
 
 function buildKey(type: MessageType, message: string): string {

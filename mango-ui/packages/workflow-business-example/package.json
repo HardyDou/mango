@@ -2,16 +2,31 @@
   "name": "@mango/workflow-business-example",
   "version": "1.0.0",
   "private": false,
-  "main": "src/index.ts",
+  "main": "./dist/index.js",
   "dependencies": {
     "@mango/workflow": "1.0.0"
   },
   "peerDependencies": {
-    "element-plus": "2.5.5",
-    "vue": "3.5.13",
+    "element-plus": "2.14.0",
+    "vue": "^3.5.0",
     "vue-router": "^4.1.6"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
-  }
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/workflow-business-example"
+  },
+  "files": [
+    "dist"
+  ]
 }

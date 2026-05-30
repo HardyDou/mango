@@ -1,0 +1,31 @@
+{
+  "name": "@mango/template-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/template": {
+      "types": "./dist/api/template.d.ts",
+      "import": "./dist/api/template.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/template-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0"
+  }
+}

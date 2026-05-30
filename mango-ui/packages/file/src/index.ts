@@ -9,8 +9,9 @@ export type {
   UploadDisplay,
   UploadSizeRules,
   UploadValueType,
-} from './components/MUpload.vue';
+} from './components/MUploadTypes';
 
+export * from './capability';
 export * from './api/file';
 export * from './api/fileStorage';
 export * from './api/fileSettings';

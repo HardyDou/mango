@@ -19,7 +19,7 @@
             <version>{{projectVersion}}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.feign</groupId>
             <artifactId>mango-infra-feign-starter</artifactId>
         </dependency>
     </dependencies>

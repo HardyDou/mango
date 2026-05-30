@@ -1,0 +1,35 @@
+{
+  "name": "@mango/notice-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/notice": {
+      "types": "./dist/api/notice.d.ts",
+      "import": "./dist/api/notice.js"
+    },
+    "./types/notice": {
+      "types": "./dist/types/notice.d.ts",
+      "import": "./dist/types/notice.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/notice-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0"
+  }
+}

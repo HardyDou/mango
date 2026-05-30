@@ -6,6 +6,7 @@ export { default as OrgView } from './views/org/index.vue';
 export { default as PermissionView } from './views/permission/index.vue';
 export { default as AppView } from './views/app/index.vue';
 export { default as PostView } from './views/post/index.vue';
+export * from './capability';
 export * from './api/app';
 export * from './api/menu';
 export * from './api/menuPackage';

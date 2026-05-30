@@ -2,10 +2,13 @@ import type { App as VueApp } from 'vue';
 import { createPinia, type Pinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import { mangoMessage } from '@mango/common';
+import { mangoMessage } from '@mango/common/utils/message';
 import { installMangoAuth } from '@mango/auth';
 import type { MangoAdminShellOptions } from './config';
 import { getMangoAdminShellOptions } from './config';
+import { useLayoutStore } from './stores/layout';
+import { usePreferencesStore } from './stores/preferences';
+import { useThemeStore } from './stores/theme';
 
 let shellPinia: Pinia | undefined;
 
@@ -21,7 +24,9 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     app.component(key, component);
   }
   app.use(ElementPlus);
-  app.use(getShellPinia());
+  const pinia = getShellPinia();
+  app.use(pinia);
+  applyShellOptionsToStores(options);
   installMangoAuth(app, {
     login: {
       brand: {
@@ -41,9 +46,11 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     },
     profile: {
       roleLabel: '超级管理员',
+      ...options.profile,
     },
     password: {
       minLength: 6,
+      ...options.password,
     },
   });
   app.config.globalProperties.$t = (key: string) => ({
@@ -61,4 +68,28 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     }
     mangoMessage.error('系统错误，请刷新页面');
   };
+}
+
+function applyShellOptionsToStores(options: MangoAdminShellOptions) {
+  const themeStore = useThemeStore(getShellPinia());
+  const layoutStore = useLayoutStore(getShellPinia());
+  const preferencesStore = usePreferencesStore(getShellPinia());
+  const theme = options.theme;
+  const layout = options.layout;
+
+  if (theme?.primary) themeStore.primary = theme.primary;
+  if (typeof theme?.isDark === 'boolean') themeStore.isDark = theme.isDark;
+  if (theme?.topBar) themeStore.topBar = theme.topBar;
+  if (theme?.topBarColor) themeStore.topBarColor = theme.topBarColor;
+  if (theme?.menuBar) themeStore.menuBar = theme.menuBar;
+  if (theme?.menuBarColor) themeStore.menuBarColor = theme.menuBarColor;
+  if (theme?.menuBarActiveColor) themeStore.menuBarActiveColor = theme.menuBarActiveColor;
+  if (theme?.columnsMenuBar) themeStore.columnsMenuBar = theme.columnsMenuBar;
+  if (theme?.columnsMenuBarColor) themeStore.columnsMenuBarColor = theme.columnsMenuBarColor;
+  if (theme?.componentSize) preferencesStore.globalComponentSize = theme.componentSize;
+
+  if (layout?.defaultLayout) layoutStore.layout = layout.defaultLayout;
+  if (typeof layout?.showLogo === 'boolean') layoutStore.isShowLogo = layout.showLogo;
+  if (typeof layout?.showBreadcrumb === 'boolean') layoutStore.isBreadcrumb = layout.showBreadcrumb;
+  if (typeof layout?.showTagsView === 'boolean') layoutStore.isTagsview = layout.showTagsView;
 }

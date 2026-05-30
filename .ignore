@@ -1,0 +1,23 @@
+# Tool search/index ignore rules.
+# Keep generated artifacts and local tool data out of rg-style search and AI indexing.
+
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/target/
+**/build/
+**/out/
+**/coverage/
+**/.vite/
+**/.turbo/
+**/.parcel-cache/
+**/.eslintcache
+
+.codegraph/
+.mango/
+.claude/
+.playwright-cli/
+
+logs/
+tmp/
+temp/

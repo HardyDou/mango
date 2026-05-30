@@ -15,6 +15,7 @@ export type {
   ParticipantType,
 } from './components/ParticipantSelector/types';
 
+export * from './capability';
 export * from './api/area';
 export * from './api/dict';
 export * from './api/log';

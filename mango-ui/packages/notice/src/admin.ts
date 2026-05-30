@@ -8,3 +8,4 @@ export { default as NoticeSiteMessageView } from './views/site-message/index.vue
 export { default as NoticeSettingView } from './views/setting/index.vue';
 export { default as NoticeReceiveSettingView } from './views/receive-setting/index.vue';
 export { default as NoticeRetryView } from './views/retry/index.vue';
+export * from './capability';

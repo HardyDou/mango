@@ -14,8 +14,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.mango</groupId>
-            <artifactId>mango-common-api</artifactId>
+            <groupId>io.mango.common</groupId>
+            <artifactId>mango-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

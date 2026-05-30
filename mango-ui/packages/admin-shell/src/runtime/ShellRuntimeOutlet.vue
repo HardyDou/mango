@@ -27,6 +27,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
+import { getMangoAdminShellOptions } from '../config';
 import { useRuntimeHost } from './runtimeHost';
 import { containsMenuPath, createNotFoundRouteMenu, useMenuHost, type ShellRouteMenu } from './menuHost';
 import { useRoutesList } from '../stores/routesList';
@@ -54,17 +55,27 @@ const {
 } = useMenuHost();
 
 const pageLoading = computed(() => loading.value || menuLoading.value);
-const showRuntimeBadge = computed(() => import.meta.env.DEV && route.query.runtimeDebug === '1');
+const showRuntimeBadge = computed(() =>
+  getMangoAdminShellOptions().runtimeDebug || (import.meta.env.DEV && route.query.runtimeDebug === '1')
+);
 let mountingPath = '';
 let mountedFullPath = '';
 
 async function initShellRuntime() {
   try {
-    const [runtimeOk] = await Promise.all([
+    const [runtimeOk, firstMenu] = await Promise.all([
       loadRuntimeApps(),
       loadMenus(),
     ]);
     routesListStore.setRoutesList(menus.value);
+
+    if (route.path === '/' && firstMenu?.path && firstMenu.path !== '/') {
+      if (!runtimeOk) {
+        ElMessage.error('加载运行配置失败，请先登录');
+      }
+      await router.replace(firstMenu.path);
+      return;
+    }
 
     const currentMenu = selectMenu(route.path);
     const targetMenu = currentMenu || createNotFoundRouteMenu(route.path);
@@ -182,5 +193,80 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
+}
+
+:deep(.micro-runtime-empty) {
+  display: flex;
+  align-items: flex-start;
+  min-height: 260px;
+  padding: 32px;
+  border: 1px solid var(--mango-border-color);
+  border-radius: 6px;
+  background: var(--mango-bg-overlay);
+  box-shadow: var(--mango-shadow-light);
+}
+
+:deep(.micro-runtime-empty > div) {
+  position: relative;
+  max-width: 760px;
+  padding-left: 52px;
+}
+
+:deep(.micro-runtime-empty > div::before) {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+  font-size: 20px;
+  font-weight: 600;
+  content: '!';
+}
+
+:deep(.micro-runtime-empty h3) {
+  margin: 0 0 8px;
+  color: var(--mango-text-color-primary);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+:deep(.micro-runtime-empty p) {
+  margin: 0 0 6px;
+  color: var(--mango-text-color-regular);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+:deep(.micro-runtime-detail) {
+  color: var(--mango-text-color-secondary);
+}
+
+:deep(.micro-runtime-retry) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  height: 32px;
+  margin-top: 10px;
+  padding: 0 15px;
+  border: 1px solid var(--mango-color-primary);
+  border-radius: 4px;
+  background: var(--mango-color-primary);
+  color: var(--el-color-white);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+:deep(.micro-runtime-retry:hover) {
+  border-color: var(--el-color-primary-light-3);
+  background: var(--el-color-primary-light-3);
 }
 </style>

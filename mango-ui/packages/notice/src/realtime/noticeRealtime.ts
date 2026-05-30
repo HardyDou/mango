@@ -113,7 +113,7 @@ export function createNoticeRealtime(handler: NoticeRealtimeHandler, options: No
   window.addEventListener('mango-notice-message', listener as EventListener);
   try {
     client = createRealtimeClient({ ...(options.realtimeOptions || {}), autoConnect: true });
-    client.subscribe('notice', message => {
+    client.subscribe('notice', (message: RealtimeMessage) => {
       const event = toNoticeRealtimeEvent(message);
       if (event?.messageId) {
         notifyHandler(handler, event);

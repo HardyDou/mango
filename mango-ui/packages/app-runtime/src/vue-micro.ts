@@ -2,7 +2,8 @@ import { createApp, type Component, type App as VueApp } from 'vue';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import type { MangoAppRuntime, MangoRuntimeTheme } from './index';
 
-type MangoVueRoot = Component | (() => Promise<Component | { default?: Component }>);
+type MangoVueRoot = Component | MangoVueRootLoader;
+type MangoVueRootLoader = () => Promise<Component | { default?: Component }>;
 
 export interface MangoWujieVueAppOptions {
   standaloneRoot: MangoVueRoot;
@@ -95,11 +96,15 @@ export function bindMangoRuntimeTheme(runtime?: MangoAppRuntime) {
 }
 
 async function resolveRoot(root: MangoVueRoot): Promise<Component> {
-  if (typeof root !== 'function') {
+  if (!isRootLoader(root)) {
     return root;
   }
   const module = await root();
   return ('default' in Object(module) ? (module as { default?: Component }).default : module) as Component;
+}
+
+function isRootLoader(root: MangoVueRoot): root is MangoVueRootLoader {
+  return typeof root === 'function' && !('render' in root) && !('__vccOpts' in root);
 }
 
 function getWujieRuntime() {

@@ -51,7 +51,30 @@ node mango-pmo/tools/pmo-preflight.mjs \
 | 测试、E2E、验收 | `qa` | `verify` |
 | 规范、流程、Agent 入口治理 | `pmo` | `governance` |
 
-## 4. 开工回显
+## 4. 忽略目录
+
+除非用户明确要求排查依赖包、构建产物或本地工具数据，Agent 不应主动读取、搜索或索引以下目录：
+
+- `**/node_modules/`
+- `**/dist/`
+- `**/dist-ssr/`
+- `**/target/`
+- `**/build/`
+- `**/out/`
+- `**/coverage/`
+- `**/.vite/`
+- `**/.turbo/`
+- `**/.parcel-cache/`
+- `.codegraph/`
+- `.mango/`
+- `.claude/`
+- `.playwright-cli/`
+
+## 5. 任务续作
+
+正式任务在新会话、上下文压缩、用户要求继续、阶段切换或长时间中断后恢复时，按 `mango-pmo/rules/00-dev-flow.md` 的“任务续作防偏航”执行。
+
+## 6. 开工回显
 
 执行 preflight 后，开始编码或编辑前必须简短说明：
 
@@ -59,7 +82,7 @@ node mango-pmo/tools/pmo-preflight.mjs \
 - 已加载的 PMO 文件。
 - 本次预期验证方式。
 
-## 5. 交付报告
+## 7. 交付报告
 
 最终回复必须包含：
 

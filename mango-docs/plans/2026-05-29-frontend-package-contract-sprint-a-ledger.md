@@ -1,0 +1,11 @@
+# Mango 前端发布物契约收口 Sprint A 台账
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| FPA-001 | Sprint A | 新增统一包构建脚本 | 通过脚本按包名生成 Vite library 构建配置，并调用 TypeScript 生成声明文件 | `mango-ui/scripts/build-package.mjs` | `pnpm package:build --filter @mango/admin-pages`; `pnpm package:build --filter @mango/app-runtime`; `pnpm package:build --filter @mango/admin-shell`; `pnpm package:build --filter @mango/common` | DONE | 四个核心包均生成 `dist/*.js` 与 `dist/*.d.ts`，命令退出码 0 |
+| FPA-002 | Sprint A | 新增发布契约检查 | 扫描对外包入口、exports、types、workspace 依赖和 app 私有路径 | `mango-ui/scripts/check-package-contracts.mjs` | `pnpm package:check` | DONE | `Package contract check passed: 15 packages checked.` |
+| FPA-003 | Sprint A | 对外包入口指向 dist | 更新 `mango-ui/packages/*/package.json` 的 `main`、`module`、`types`、`exports` | `mango-ui/packages/*/package.json` | `pnpm package:check` | DONE | 包契约检查覆盖 15 个对外包，未发现源码入口、`workspace:*` 或 app 私有路径 |
+| FPA-004 | Sprint A | 根命令支持构建与检查 | 在 `mango-ui/package.json` 增加包构建和契约检查命令 | `mango-ui/package.json` | `pnpm package:check` | DONE | `package:build` 与 `package:check` 已执行，命令退出码 0 |
+| FPA-005 | Sprint A 阶段门禁 | 新增能力测试必须通过 | 在 `/tmp/mango-sprint-a-consumer-smoke` 建立外部 Vite/Vue 消费方，通过 `link:` 依赖消费 Mango 发布物料 | `/tmp/mango-sprint-a-consumer-smoke` | `pnpm typecheck && pnpm build` | DONE | 外部项目 `vue-tsc --noEmit` 和 `vite build` 通过，生产构建完成 `3413 modules transformed` |
+| FPA-006 | Sprint A 阶段门禁 | 回归测试必须通过 | 对 15 个对外前端包执行契约检查和构建回归 | `mango-ui/packages/*/dist` | `pnpm package:check && for pkg in @mango/admin-pages @mango/app-runtime @mango/admin-shell @mango/common @mango/auth @mango/rbac @mango/system @mango/file @mango/workflow @mango/workflow-business-example @mango/template @mango/notice @mango/numgen @mango/calendar @mango/api-schema; do pnpm package:build --filter "$pkg"; done` | DONE | 包契约检查通过，15 个对外包构建均退出码 0 |
+| FPA-007 | PMO | 交付台账通过检查 | 本台账记录 Sprint A 原子交付项 | `mango-docs/plans/2026-05-29-frontend-package-contract-sprint-a-ledger.md` | `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-29-frontend-package-contract-sprint-a.md --ledger mango-docs/plans/2026-05-29-frontend-package-contract-sprint-a-ledger.md --mode verify` | DONE | 台账检查通过，无未完成项 |

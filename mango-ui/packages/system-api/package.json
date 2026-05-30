@@ -1,0 +1,60 @@
+{
+  "name": "@mango/system-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/area": {
+      "types": "./dist/api/area.d.ts",
+      "import": "./dist/api/area.js"
+    },
+    "./api/config": {
+      "types": "./dist/api/config.d.ts",
+      "import": "./dist/api/config.js"
+    },
+    "./api/dict": {
+      "types": "./dist/api/dict.d.ts",
+      "import": "./dist/api/dict.js"
+    },
+    "./api/log": {
+      "types": "./dist/api/log.d.ts",
+      "import": "./dist/api/log.js"
+    },
+    "./api/param": {
+      "types": "./dist/api/param.d.ts",
+      "import": "./dist/api/param.js"
+    },
+    "./api/publicPath": {
+      "types": "./dist/api/publicPath.d.ts",
+      "import": "./dist/api/publicPath.js"
+    },
+    "./api/route": {
+      "types": "./dist/api/route.d.ts",
+      "import": "./dist/api/route.js"
+    },
+    "./api/tenant": {
+      "types": "./dist/api/tenant.d.ts",
+      "import": "./dist/api/tenant.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/system-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0",
+    "@mango/api-schema": "1.0.0"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "@mango/admin",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "import": "./dist/presets.js"
+    },
+    "./menu": {
+      "types": "./dist/menu.d.ts",
+      "import": "./dist/menu.js"
+    },
+    "./style.css": {
+      "import": "./dist/style.css",
+      "style": "./dist/style.css"
+    }
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/admin",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@mango/admin-pages": "1.0.0",
+    "@mango/admin-shell": "1.0.0",
+    "@mango/app-runtime": "1.0.0"
+  },
+  "peerDependencies": {
+    "pinia": "^2.0.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3",
+    "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ]
+}

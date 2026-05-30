@@ -113,31 +113,17 @@ import {
   type FileId,
 } from '../api/file';
 import { formatBytes } from '../api/fileSettings';
+import type {
+  UploadColumn,
+  UploadColumnKey,
+  UploadDisplay,
+  UploadSizeRules,
+  UploadValueType,
+} from './MUploadTypes';
 
 defineOptions({
   name: 'MUpload',
 });
-
-export type UploadDisplay = 'list' | 'thumbnail' | 'table' | 'drag';
-export type UploadValueType = 'id' | 'token' | 'record';
-export type UploadColumnKey = keyof FileRecord | `meta.${string}` | string;
-
-export interface UploadSizeRules {
-  image?: string | number;
-  video?: string | number;
-  audio?: string | number;
-  document?: string | number;
-  archive?: string | number;
-  other?: string | number;
-  [key: string]: string | number | undefined;
-}
-
-export interface UploadColumn {
-  key: UploadColumnKey;
-  label: string;
-  width?: number | string;
-  minWidth?: number | string;
-}
 
 type UploadModelValue = string | string[] | FileRecord | FileRecord[] | null | undefined;
 type InternalUploadFile = UploadUserFile & Partial<FileRecord>;

@@ -1,0 +1,44 @@
+{
+  "name": "@mango/file-api",
+  "version": "1.0.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./api/file": {
+      "types": "./dist/api/file.d.ts",
+      "import": "./dist/api/file.js"
+    },
+    "./api/fileDirectory": {
+      "types": "./dist/api/fileDirectory.d.ts",
+      "import": "./dist/api/fileDirectory.js"
+    },
+    "./api/fileSettings": {
+      "types": "./dist/api/fileSettings.d.ts",
+      "import": "./dist/api/fileSettings.js"
+    },
+    "./api/fileStorage": {
+      "types": "./dist/api/fileStorage.d.ts",
+      "import": "./dist/api/fileStorage.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs --filter @mango/file-api"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@mango/common": "1.0.0",
+    "@mango/api-schema": "1.0.0"
+  }
+}

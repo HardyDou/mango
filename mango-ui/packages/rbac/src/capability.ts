@@ -1,0 +1,158 @@
+const rbacPages = {
+  'system/menu-package/index': () => import('./views/menu-package/index.vue').then(m => m.default),
+  'system/menu/index': () => import('./views/menu/index.vue').then(m => m.default),
+  'system/role/index': () => import('./views/role/index.vue').then(m => m.default),
+  'system/user/index': () => import('./views/user/index.vue').then(m => m.default),
+  'system/org/index': () => import('./views/org/index.vue').then(m => m.default),
+  'system/post/index': () => import('./views/post/index.vue').then(m => m.default),
+  'system/app/index': () => import('./views/app/index.vue').then(m => m.default),
+  'system/permission/index': () => import('./views/permission/index.vue').then(m => m.default),
+};
+
+export const mangoRbacPageRegistry = {
+  moduleCode: 'mango-authorization',
+  pages: rbacPages,
+};
+
+export const mangoRbacCapability = {
+  moduleCode: 'mango-authorization',
+  packageName: '@mango/rbac',
+  capabilityCode: 'rbac',
+  capabilityName: '权限与组织管理',
+  requires: ['auth'],
+  optional: [],
+  backend: {
+    moduleCode: 'mango-authorization',
+    menuSource: 'backend',
+    resourceManifest: 'META-INF/mango/resource-manifest.json',
+    requiredApis: ['/api/authorization/menus/user', '/api/authorization/roles', '/api/identity/users/page'],
+  },
+  pages: [
+    {
+      component: 'system/menu-package/index',
+      loader: rbacPages['system/menu-package/index'],
+      menuCode: 'system:menu-package',
+      permissions: ['system:menu-package:list'],
+    },
+    {
+      component: 'system/menu/index',
+      loader: rbacPages['system/menu/index'],
+      menuCode: 'system:menu',
+      permissions: ['system:menu:list'],
+    },
+    {
+      component: 'system/role/index',
+      loader: rbacPages['system/role/index'],
+      menuCode: 'system:role',
+      permissions: ['system:role:list'],
+    },
+    {
+      component: 'system/user/index',
+      loader: rbacPages['system/user/index'],
+      menuCode: 'system:user',
+      permissions: ['system:user:list'],
+    },
+    {
+      component: 'system/org/index',
+      loader: rbacPages['system/org/index'],
+      menuCode: 'system:org',
+      permissions: ['system:org:list'],
+    },
+    {
+      component: 'system/post/index',
+      loader: rbacPages['system/post/index'],
+      menuCode: 'system:post',
+      permissions: ['system:post:list'],
+    },
+    {
+      component: 'system/app/index',
+      loader: rbacPages['system/app/index'],
+      menuCode: 'system:app',
+      permissions: ['authorization:app:list'],
+    },
+    {
+      component: 'system/permission/index',
+      loader: rbacPages['system/permission/index'],
+      menuCode: 'system:permission',
+      permissions: ['system:permission:list'],
+    },
+  ],
+  menus: [
+    {
+      menuCode: 'system:menu-package',
+      moduleCode: 'mango-authorization',
+      component: 'system/menu-package/index',
+      permissions: ['system:menu-package:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:menu',
+      moduleCode: 'mango-authorization',
+      component: 'system/menu/index',
+      permissions: ['system:menu:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:role',
+      moduleCode: 'mango-authorization',
+      component: 'system/role/index',
+      permissions: ['system:role:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:user',
+      moduleCode: 'mango-authorization',
+      component: 'system/user/index',
+      permissions: ['system:user:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:org',
+      moduleCode: 'mango-authorization',
+      component: 'system/org/index',
+      permissions: ['system:org:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:post',
+      moduleCode: 'mango-authorization',
+      component: 'system/post/index',
+      permissions: ['system:post:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:app',
+      moduleCode: 'mango-authorization',
+      component: 'system/app/index',
+      permissions: ['authorization:app:list'],
+      source: 'backend',
+    },
+    {
+      menuCode: 'system:permission',
+      moduleCode: 'mango-authorization',
+      component: 'system/permission/index',
+      permissions: ['system:permission:list'],
+      source: 'backend',
+    },
+  ],
+  permissions: [
+    'system:menu-package:list',
+    'system:menu:list',
+    'system:role:list',
+    'system:user:list',
+    'system:org:list',
+    'system:post:list',
+    'authorization:app:list',
+    'system:permission:list',
+  ],
+  styles: [],
+  runtime: {
+    modes: ['local', 'micro', 'mixed'],
+    defaultMode: 'local',
+  },
+  e2e: {
+    smoke: ['menu-navigation', 'system-management-pages', 'role-permission'],
+    screenshots: ['system-menu', 'system-role', 'system-user'],
+    dataChecks: ['user-menu-tree', 'role-page', 'user-page'],
+  },
+};
