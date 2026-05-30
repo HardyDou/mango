@@ -1,0 +1,38 @@
+{
+  "created": {
+    "code": 200,
+    "success": true,
+    "msg": "操作成功",
+    "data": {
+      "id": "2060637136892030977",
+      "name": "Sprint J Letter"
+    }
+  },
+  "page": {
+    "code": 200,
+    "success": true,
+    "msg": "操作成功",
+    "data": {
+      "list": [
+        {
+          "id": "2060637136892030977",
+          "name": "Sprint J Letter"
+        }
+      ],
+      "total": "1",
+      "page": "1",
+      "size": "20",
+      "pages": "1"
+    }
+  },
+  "detail": {
+    "code": 200,
+    "success": true,
+    "msg": "操作成功",
+    "data": {
+      "id": "2060637136892030977",
+      "name": "Sprint J Letter"
+    }
+  },
+  "missingStatus": 200
+}

@@ -1,0 +1,333 @@
+{
+  "url": "http://127.0.0.1:5216/#/guarantee/letters",
+  "viewport": {
+    "width": 1366,
+    "height": 900
+  },
+  "checks": {
+    "hasShellLayout": true,
+    "hasHeaderLayout": true,
+    "hasNavFlexLayout": true,
+    "hasAsideLayout": true,
+    "hasMainLayout": true,
+    "hasListPage": true,
+    "hasElementPlusForm": true,
+    "hasSearch": true,
+    "hasActions": true,
+    "hasTable": true,
+    "hasPagination": true,
+    "hasBusinessMenu": true,
+    "hasBusinessRecord": true,
+    "hasQueryButton": true,
+    "hasResetButton": true,
+    "verticalOrder": true,
+    "hasNoBrokenCssLinks": true,
+    "hasAdminShellStyles": true,
+    "noHorizontalOverflow": true
+  },
+  "elements": {
+    "shell": {
+      "selector": ".layout-container",
+      "exists": true,
+      "visible": true,
+      "text": "Mango首页Guarantee Module系统管理审批中心平台能力通知中心系统基础能力通知中心布局配置admin芒果集团Letter管理首页Letter管理Letter名称查询重置刷新清空筛选业务标识Letter名称2060637136892030977Sprint J LetterTotal 120/page 1",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 900,
+        "top": 0,
+        "bottom": 900
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "header": {
+      "selector": ".layout-header",
+      "exists": true,
+      "visible": true,
+      "text": "Mango首页Guarantee Module系统管理审批中心平台能力通知中心系统基础能力通知中心布局配置admin芒果集团",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 56,
+        "top": 0,
+        "bottom": 56
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(46, 92, 246)",
+        "color": "rgb(255, 255, 255)",
+        "border": "0px none rgb(255, 255, 255)",
+        "fontSize": "14px"
+      }
+    },
+    "nav": {
+      "selector": ".layout-navbars-container",
+      "exists": true,
+      "visible": true,
+      "text": "Mango首页Guarantee Module系统管理审批中心平台能力通知中心系统基础能力通知中心布局配置admin芒果集团",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1366,
+        "height": 56,
+        "top": 0,
+        "bottom": 56
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(46, 92, 246)",
+        "color": "rgb(255, 255, 255)",
+        "border": "0px none rgb(255, 255, 255)",
+        "fontSize": "14px"
+      }
+    },
+    "aside": {
+      "selector": ".layout-aside",
+      "exists": true,
+      "visible": true,
+      "text": "Letter管理",
+      "rect": {
+        "x": 0,
+        "y": 56,
+        "width": 220,
+        "height": 844,
+        "top": 56,
+        "bottom": 900
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "main": {
+      "selector": ".layout-main",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置刷新清空筛选业务标识Letter名称2060637136892030977Sprint J LetterTotal 120/page 1 Go to",
+      "rect": {
+        "x": 220,
+        "y": 96,
+        "width": 1146,
+        "height": 804,
+        "top": 96,
+        "bottom": 900
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgb(243, 245, 248)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "listPage": {
+      "selector": "[data-mango-layout=\"list-page\"]",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置刷新清空筛选业务标识Letter名称2060637136892030977Sprint J LetterTotal 120/page 1 Go to",
+      "rect": {
+        "x": 236,
+        "y": 112,
+        "width": 1114,
+        "height": 262,
+        "top": 112,
+        "bottom": 374
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "search": {
+      "selector": "[data-mango-layout=\"search\"]",
+      "exists": true,
+      "visible": true,
+      "text": "Letter名称查询重置",
+      "rect": {
+        "x": 252,
+        "y": 128,
+        "width": 1082,
+        "height": 50,
+        "top": 128,
+        "bottom": 178
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "actions": {
+      "selector": "[data-mango-layout=\"actions\"]",
+      "exists": true,
+      "visible": true,
+      "text": "刷新清空筛选",
+      "rect": {
+        "x": 252,
+        "y": 190,
+        "width": 1082,
+        "height": 32,
+        "top": 190,
+        "bottom": 222
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    },
+    "table": {
+      "selector": "[data-mango-layout=\"table\"]",
+      "exists": true,
+      "visible": true,
+      "text": "业务标识Letter名称2060637136892030977Sprint J Letter",
+      "rect": {
+        "x": 252,
+        "y": 234,
+        "width": 1082,
+        "height": 80,
+        "top": 234,
+        "bottom": 314
+      },
+      "style": {
+        "display": "block",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(96, 98, 102)",
+        "border": "0px none rgb(96, 98, 102)",
+        "fontSize": "14px"
+      }
+    },
+    "pagination": {
+      "selector": "[data-mango-layout=\"pagination\"]",
+      "exists": true,
+      "visible": true,
+      "text": "Total 120/page 1 Go to",
+      "rect": {
+        "x": 252,
+        "y": 326,
+        "width": 1082,
+        "height": 32,
+        "top": 326,
+        "bottom": 358
+      },
+      "style": {
+        "display": "flex",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(51, 51, 51)",
+        "border": "0px none rgb(51, 51, 51)",
+        "fontSize": "14px"
+      }
+    }
+  },
+  "css": {
+    "brokenLinks": [],
+    "styleSheets": [
+      {
+        "href": null,
+        "rules": 2605
+      },
+      {
+        "href": null,
+        "rules": 25
+      },
+      {
+        "href": null,
+        "rules": 170
+      },
+      {
+        "href": null,
+        "rules": 92
+      },
+      {
+        "href": null,
+        "rules": 28
+      },
+      {
+        "href": null,
+        "rules": 30
+      },
+      {
+        "href": null,
+        "rules": 107
+      },
+      {
+        "href": null,
+        "rules": 128
+      },
+      {
+        "href": null,
+        "rules": 149
+      },
+      {
+        "href": null,
+        "rules": 78
+      },
+      {
+        "href": null,
+        "rules": 683
+      },
+      {
+        "href": null,
+        "rules": 13
+      },
+      {
+        "href": null,
+        "rules": 40
+      },
+      {
+        "href": null,
+        "rules": 11
+      },
+      {
+        "href": null,
+        "rules": 25
+      },
+      {
+        "href": null,
+        "rules": 25
+      },
+      {
+        "href": null,
+        "rules": 8
+      },
+      {
+        "href": null,
+        "rules": 4
+      },
+      {
+        "href": null,
+        "rules": 2
+      },
+      {
+        "href": null,
+        "rules": 1
+      },
+      {
+        "href": null,
+        "rules": 5
+      },
+      {
+        "href": null,
+        "rules": 5
+      }
+    ]
+  }
+}

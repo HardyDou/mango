@@ -1,5 +1,5 @@
 {
-  "name": "@{{projectKebab}}/{{moduleKebab}}",
+  "name": "@{{projectKebab}}/{{moduleKebab}}-admin",
   "version": "{{projectVersion}}",
   "private": false,
   "type": "module",

@@ -1,0 +1,168 @@
+
+> mode-micro-platform@1.0.0 build /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-sf1njl/mode-micro-platform
+> pnpm -r build
+
+Scope: 4 of 5 workspace projects
+frontend/packages/guarantee-api build$ pnpm typecheck
+frontend/packages/guarantee-api build: > @mode-micro-platform/guarantee-api@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-sf1njl/mode-micro-platform/frontend/packages/guarantee-api
+frontend/packages/guarantee-api build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-api build: Done
+frontend/packages/guarantee-admin build$ pnpm typecheck
+frontend/packages/guarantee-admin build: > @mode-micro-platform/guarantee-admin@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-sf1njl/mode-micro-platform/frontend/packages/guarantee-admin
+frontend/packages/guarantee-admin build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-admin build: Done
+frontend/apps/mode-micro-platform-remote build$ vite build
+frontend/apps/mode-micro-platform-admin build$ pnpm typecheck && vite build
+frontend/apps/mode-micro-platform-admin build: > mode-micro-platform-admin@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-sf1njl/mode-micro-platform/frontend/apps/mode-micro-platform-admin
+frontend/apps/mode-micro-platform-admin build: > vue-tsc --noEmit -p tsconfig.json
+frontend/apps/mode-micro-platform-remote build: vite v5.4.21 building for production...
+frontend/apps/mode-micro-platform-remote build: transforming...
+frontend/apps/mode-micro-platform-remote build: ✓ 9 modules transformed.
+frontend/apps/mode-micro-platform-remote build: rendering chunks...
+frontend/apps/mode-micro-platform-remote build: computing gzip size...
+frontend/apps/mode-micro-platform-remote build: dist/index.html                  0.28 kB │ gzip:  0.21 kB
+frontend/apps/mode-micro-platform-remote build: dist/assets/index-DGVnVIqU.css   1.73 kB │ gzip:  0.65 kB
+frontend/apps/mode-micro-platform-remote build: dist/assets/index-Bs-DKn6X.js   63.37 kB │ gzip: 25.15 kB
+frontend/apps/mode-micro-platform-remote build: ✓ built in 298ms
+frontend/apps/mode-micro-platform-remote build: Done
+frontend/apps/mode-micro-platform-admin build: vite v5.4.21 building for production...
+frontend/apps/mode-micro-platform-admin build: transforming...
+frontend/apps/mode-micro-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (3362:0): A comment
+frontend/apps/mode-micro-platform-admin build: "/* #__PURE__ */"
+frontend/apps/mode-micro-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/mode-micro-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (5780:22): A comment
+frontend/apps/mode-micro-platform-admin build: "/* #__PURE__ */"
+frontend/apps/mode-micro-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/mode-micro-platform-admin build: ✓ 2740 modules transformed.
+frontend/apps/mode-micro-platform-admin build: rendering chunks...
+frontend/apps/mode-micro-platform-admin build: computing gzip size...
+frontend/apps/mode-micro-platform-admin build: dist/index.html                                        0.41 kB │ gzip:   0.28 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/fc-icons-BjnjLEor.woff                    17.44 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-CoXtgmZS.css                         0.47 kB │ gzip:   0.21 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/icon-Byp_cd-K.css                         16.09 kB │ gzip:   4.05 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/style-CTjwcune.css                        25.02 kB │ gzip:   4.67 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-B6CIJ_09.css                       387.47 kB │ gzip:  52.64 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-DlAUqK2U.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-BffYpcM-.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-b8p_N644.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-B-KA9PqK.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-B4PAZYor.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-mOA2GAMx.js      0.21 kB │ gzip:   0.18 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/businessApply-BKzMXNZn.js                  0.22 kB │ gzip:   0.18 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue2-BVwaGPL9.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue2-xSJQgvCd.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/menuPackage-D621PeYL.js                    0.38 kB │ gzip:   0.20 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/formatTime-BSK6ffaY.js                     0.47 kB │ gzip:   0.26 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/xml-TpGZvdP2.js                            0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/css-DSbT4dKm.js                            0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/codemirror-6oUvf2mu.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/javascript-B9YIZxmu.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/sys-C89A40oW.js                            0.55 kB │ gzip:   0.29 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/404.vue-CDFS55t_.js                        0.56 kB │ gzip:   0.42 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/org-C7ssyzfj.js                            0.66 kB │ gzip:   0.34 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/role-Goce0rJe.js                           0.67 kB │ gzip:   0.28 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-UgUmtpy-.js                      0.69 kB │ gzip:   0.42 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/breadcrumb.vue-CajSJItQ.js                 0.73 kB │ gzip:   0.48 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/iconConfig-BcziG20m.js                     0.74 kB │ gzip:   0.46 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-DqYfDhzO.js                          0.74 kB │ gzip:   0.40 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/header.vue-DmmnQ-G8.js                     0.86 kB │ gzip:   0.52 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-BRmaZkUs.js                      0.88 kB │ gzip:   0.54 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/post-BD-zel_D.js                           0.93 kB │ gzip:   0.39 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/menu-Bp1tze1W.js                           0.98 kB │ gzip:   0.45 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/useDict-DpuCdmc_.js                        1.03 kB │ gzip:   0.56 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/businessApproval-Dsiysvqr.js               1.03 kB │ gzip:   0.49 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/tagsViewRoutes-C_HYQMt-.js                 1.07 kB │ gzip:   0.60 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/subItem.vue-BHpKEE_r.js                    1.11 kB │ gzip:   0.54 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/workflowFormConfig-DV0KMwwn.js             1.12 kB │ gzip:   0.46 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/horizontal.vue-KvREgiuA.js                 1.16 kB │ gzip:   0.56 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-BzcpKqoD.js                          1.18 kB │ gzip:   0.53 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-sRxkwNZl.js                      1.22 kB │ gzip:   0.63 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DkFomX6z.js                      1.26 kB │ gzip:   0.62 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/app-CUPeX8vv.js                            1.49 kB │ gzip:   0.61 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/active-line-CAHSnI21.js                    1.72 kB │ gzip:   0.84 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/user.vue-DEtDQzF6.js                       1.80 kB │ gzip:   0.96 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/vertical.vue-BN06blvJ.js                   1.88 kB │ gzip:   0.89 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-Cg6IPozJ.js                      1.90 kB │ gzip:   1.15 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/log-C9cKUKQx.js                            1.93 kB │ gzip:   0.79 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-fCR3LeKI.js                      2.11 kB │ gzip:   0.93 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/template-DwN6ni4a.js                       2.14 kB │ gzip:   0.69 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-BwF6i-lb.js                      2.28 kB │ gzip:   0.85 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/password.vue-DW2cOWyH.js                   2.83 kB │ gzip:   1.29 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/columnsAside.vue-B-_mOzYW.js               2.89 kB │ gzip:   1.42 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-CKJ1W2aw.js                          3.01 kB │ gzip:   1.47 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/aside.vue-BJrDLe1A.js                      3.04 kB │ gzip:   1.40 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/main.vue-CJrvzkvQ.js                       3.17 kB │ gzip:   1.67 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/htmlmixed-BgL9wGiM.js                      3.32 kB │ gzip:   1.55 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DKzxqtoT.js                      3.34 kB │ gzip:   1.41 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/profile.vue-BGTYAH4d.js                    3.47 kB │ gzip:   1.54 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/matchbrackets-BTtt349r.js                  3.51 kB │ gzip:   1.59 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/tagsView.vue-C-_xlPdM.js                   3.61 kB │ gzip:   1.65 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/closebrackets-45uVXN0p.js                  4.00 kB │ gzip:   1.72 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-3KcHlV8K.js                      4.20 kB │ gzip:   2.01 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DojrMh7X.js                      4.74 kB │ gzip:   2.26 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-CX_JJ38A.js                      4.75 kB │ gzip:   2.12 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DBXAqQ7A.js                      4.91 kB │ gzip:   2.11 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-DUizAtyq.js      4.99 kB │ gzip:   1.72 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/fileSettings-CAxxRwo3.js                   5.22 kB │ gzip:   1.46 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/FilePreviewPanel.vue-oHhoKqC4.js           5.22 kB │ gzip:   2.23 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-Bz8RIgNv.js                      5.34 kB │ gzip:   3.10 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-B1M4aa-w.js                      5.91 kB │ gzip:   2.35 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-B0QNPV0F.js                      5.99 kB │ gzip:   2.58 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/xml-qrfjJIbB.js                            6.08 kB │ gzip:   2.37 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-BFHiDUrI.js                      6.49 kB │ gzip:   2.56 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DfzABYzs.js                      6.60 kB │ gzip:   2.57 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/menuHost-CT1dLYvw.js                       6.63 kB │ gzip:   2.55 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue2-Dz0KIYCx.js                     6.92 kB │ gzip:   2.86 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/python-Bz1SpQzi.js                         7.07 kB │ gzip:   3.06 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-x2VpKI7y.js                      7.09 kB │ gzip:   2.62 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/login.vue-mdtm1VP_.js                      7.12 kB │ gzip:   2.85 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-QWMcnIbn.js                      7.15 kB │ gzip:   2.68 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-BZ89Z5nA.js                      7.45 kB │ gzip:   3.08 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-OEVWyabe.js                      7.96 kB │ gzip:   2.66 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-B4BE9SCu.js                      8.04 kB │ gzip:   3.12 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-621d_l35.js                      8.68 kB │ gzip:   3.27 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-C1zgPNvS.js                      9.10 kB │ gzip:   4.09 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-CxobMFik.js                      9.21 kB │ gzip:   3.48 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DGyBZAH3.js                      9.51 kB │ gzip:   3.51 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-CFV8CYE-.js                     10.60 kB │ gzip:   4.02 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-Dle7tXUb.js                     11.37 kB │ gzip:   3.96 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/ShellView.vue2-BL-4RIgb.js                11.69 kB │ gzip:   3.97 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-BjHQMWcX.js                     11.72 kB │ gzip:   3.97 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DMEKUYo_.js                     12.75 kB │ gzip:   3.62 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-CwQ5DL5D.js                     12.87 kB │ gzip:   4.87 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-DdmDqZKK.js                     13.65 kB │ gzip:   5.31 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-vDtv6l-x.js                     13.77 kB │ gzip:   4.56 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/_plugin-vue_export-helper-DcbZqO-t.js     14.68 kB │ gzip:   3.85 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-CVP8dcup.js                     14.88 kB │ gzip:   4.83 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-C2bV3KIA.js                     15.26 kB │ gzip:   4.91 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-HFQJml8J.js                     15.38 kB │ gzip:   5.57 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue2-Dx-GaNAh.js                    16.19 kB │ gzip:   5.76 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/settings.vue-BpbzBJkf.js                  17.43 kB │ gzip:   4.06 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/javascript-BsOaFNRz.js                    17.99 kB │ gzip:   5.98 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/MUpload.vue-BVXus627.js                   18.79 kB │ gzip:   7.19 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-BNIaT9bl.js                     20.28 kB │ gzip:   6.18 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-Bofvw2oR.js                     20.97 kB │ gzip:   7.11 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/clike-DDB8S5Lm.js                         21.51 kB │ gzip:   7.68 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-xJ5eOx6s.js                     24.89 kB │ gzip:   8.48 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-a6yoxU-c.js                     25.59 kB │ gzip:   6.48 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/css-CnKJf0Z9.js                           27.39 kB │ gzip:   8.55 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/markdown-AlngK6LP.js                      28.21 kB │ gzip:   9.05 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-NV3SLmDO.js                     29.22 kB │ gzip:   9.46 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-4Zr28Nid.js                     31.66 kB │ gzip:   8.91 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-dXy5zXTp.js                     32.77 kB │ gzip:   9.03 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-GfoLQxbM.js                     34.75 kB │ gzip:  11.11 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/sql-Cpo2i6Na.js                           47.92 kB │ gzip:  14.19 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-CLmRzFjw.js                         58.37 kB │ gzip:  15.66 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/runtimeForm-usUbFvjE.js                   79.65 kB │ gzip:  25.09 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-BoCDqEZP.js                         81.74 kB │ gzip:  23.83 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index.vue-Cs4H_O7Q.js                    123.90 kB │ gzip:  36.86 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/codemirror-K55il1Us.js                   174.07 kB │ gzip:  58.19 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/icon-BGr0Gt_d.js                       1,055.19 kB │ gzip: 327.68 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/index-tlcgXSHC.js                      1,302.94 kB │ gzip: 416.25 kB
+frontend/apps/mode-micro-platform-admin build: dist/assets/style-VBIRkiSM.js                      1,970.91 kB │ gzip: 669.14 kB
+frontend/apps/mode-micro-platform-admin build: ✓ built in 10.56s
+frontend/apps/mode-micro-platform-admin build: (!) Some chunks are larger than 500 kB after minification. Consider:
+frontend/apps/mode-micro-platform-admin build: - Using dynamic import() to code-split the application
+frontend/apps/mode-micro-platform-admin build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+frontend/apps/mode-micro-platform-admin build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+frontend/apps/mode-micro-platform-admin build: Done

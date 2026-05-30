@@ -1,0 +1,6 @@
+4:35:42 PM [vite] http proxy error: /authorization/menus/user?fmt=tree&appCode=internal-admin
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)
+4:35:43 PM [vite] http proxy error: /authorization/menus/user?fmt=tree&appCode=internal-admin
+Error: connect ECONNREFUSED 127.0.0.1:5555
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)

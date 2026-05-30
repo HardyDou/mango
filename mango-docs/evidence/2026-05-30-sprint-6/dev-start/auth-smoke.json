@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "userId": "1",
+  "username": "admin",
+  "tenantId": "1",
+  "tenantCode": "default",
+  "roles": [
+    "ROLE_ADMIN"
+  ],
+  "permissionsCount": 168,
+  "hasAccessToken": true
+}

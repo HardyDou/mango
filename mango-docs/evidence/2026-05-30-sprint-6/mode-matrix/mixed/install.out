@@ -1,0 +1,21 @@
+Scope: all 5 workspace projects
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 21, reused 21, downloaded 0, added 0
+Progress: resolved 102, reused 101, downloaded 0, added 0
+Progress: resolved 311, reused 265, downloaded 0, added 0
+frontend/packages/guarantee-admin        |  WARN  deprecated vue-i18n@9.14.5
+ WARN  4 deprecated subdependencies found: codemirror@6.65.7, glob@7.2.3, inflight@1.0.6, lodash.isequal@4.5.0
+Packages: +269
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 315, reused 269, downloaded 0, added 210
+Progress: resolved 315, reused 269, downloaded 0, added 268
+Progress: resolved 315, reused 269, downloaded 0, added 269, done
+
+devDependencies:
++ @types/node 20.19.41 (25.9.1 is available)
++ @vitejs/plugin-vue 5.2.4 (6.0.7 is available)
++ typescript 5.9.3 (6.0.3 is available)
++ vite 5.4.21 (8.0.14 is available)
++ vue-tsc 2.2.12 (3.3.2 is available)
+
+Done in 5.5s using pnpm v10.33.0

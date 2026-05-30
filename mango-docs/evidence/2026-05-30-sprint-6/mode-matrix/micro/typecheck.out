@@ -1,0 +1,13 @@
+
+> mode-micro-platform@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-sf1njl/mode-micro-platform
+> pnpm -r typecheck
+
+Scope: 4 of 5 workspace projects
+frontend/packages/guarantee-api typecheck$ vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-api typecheck: Done
+frontend/packages/guarantee-admin typecheck$ vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-admin typecheck: Done
+frontend/apps/mode-micro-platform-admin typecheck$ vue-tsc --noEmit -p tsconfig.json
+frontend/apps/mode-micro-platform-remote typecheck$ vue-tsc --noEmit
+frontend/apps/mode-micro-platform-remote typecheck: Done
+frontend/apps/mode-micro-platform-admin typecheck: Done

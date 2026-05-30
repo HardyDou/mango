@@ -1,6 +1,6 @@
 import { createMangoAdmin } from '@mango/admin';
 import '@mango/admin/style.css';
-import { register{{modulePascal}}Pages } from '@{{projectKebab}}/{{moduleKebab}}';
+import { register{{modulePascal}}Pages } from '@{{projectKebab}}/{{moduleKebab}}-admin';
 import { starterRuntimeConfig } from './runtimeConfig';
 import { starterMenus } from './starterMenus';
 {{mangoFeatureImports}}
@@ -14,7 +14,7 @@ const enabledMangoCapabilities = [
 register{{modulePascal}}Pages();
 
 createMangoAdmin({
-  preset: 'full',
+  preset: '{{adminPreset}}',
   mountTarget: '#app',
   apiBaseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',
   title: import.meta.env.VITE_APP_TITLE || '{{projectPascal}} Admin',

@@ -28,7 +28,7 @@
 {
   "dependencies": {
     "@mango/admin": "^1.0.0",
-    "@{{projectKebab}}/{{moduleKebab}}": "{{projectVersion}}"
+    "@{{projectKebab}}/{{moduleKebab}}-admin": "{{projectVersion}}"
   }
 }
 ```

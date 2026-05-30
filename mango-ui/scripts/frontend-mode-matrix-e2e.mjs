@@ -233,6 +233,7 @@ function createRemoteMicroApp(projectRoot, projectName) {
       build: 'vite build',
     },
     dependencies: {
+      [`@${projectName}/guarantee-admin`]: 'workspace:1.0.0',
       '@vitejs/plugin-vue': '^5.2.1',
       '@vue/tsconfig': '^0.5.1',
       typescript: '^5.9.3',

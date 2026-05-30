@@ -24,6 +24,7 @@ Options:
   --group-id <name>     Maven groupId, default: same as --package
   --version <version>   Project version, default: 1.0.0-SNAPSHOT
   --topology <mode>     monolith or microservice, default: monolith
+  --preset <mode>       full, standard, minimal, or custom, default: full
   --features <list>     Comma separated Mango features, default: base,system,rbac
   --frontend-mode <mode> local, micro, or mixed, default: local
   --template <path>     Starter directory, default: mango-business-starter
@@ -33,32 +34,32 @@ Options:
 
 const featureCatalog = {
   base: [
-    { code: 'auth', packageName: '@mango/auth', capability: 'mangoAuthCapability', importPath: '@mango/auth/capability', moduleCode: 'mango-authorization' },
-    { code: 'rbac', packageName: '@mango/rbac', capability: 'mangoRbacCapability', importPath: '@mango/rbac/capability', moduleCode: 'mango-authorization' },
+    { code: 'auth', packageName: '@mango/auth-admin', capability: 'mangoAuthAdminCapability', importPath: '@mango/auth-admin/capability', moduleCode: 'mango-authorization' },
+    { code: 'rbac', packageName: '@mango/rbac-admin', capability: 'mangoRbacAdminCapability', importPath: '@mango/rbac-admin/capability', moduleCode: 'mango-authorization' },
   ],
   system: [
-    { code: 'system', packageName: '@mango/system', capability: 'mangoSystemCapability', importPath: '@mango/system/capability', moduleCode: 'mango-system' },
+    { code: 'system', packageName: '@mango/system-admin', capability: 'mangoSystemAdminCapability', importPath: '@mango/system-admin/capability', moduleCode: 'mango-system' },
   ],
   rbac: [
-    { code: 'rbac', packageName: '@mango/rbac', capability: 'mangoRbacCapability', importPath: '@mango/rbac/capability', moduleCode: 'mango-authorization' },
+    { code: 'rbac', packageName: '@mango/rbac-admin', capability: 'mangoRbacAdminCapability', importPath: '@mango/rbac-admin/capability', moduleCode: 'mango-authorization' },
   ],
   workflow: [
-    { code: 'workflow', packageName: '@mango/workflow', capability: 'mangoWorkflowCapability', importPath: '@mango/workflow/capability', moduleCode: 'mango-workflow' },
+    { code: 'workflow', packageName: '@mango/workflow-admin', capability: 'mangoWorkflowAdminCapability', importPath: '@mango/workflow-admin/capability', moduleCode: 'mango-workflow' },
   ],
   notice: [
-    { code: 'notice', packageName: '@mango/notice', capability: 'mangoNoticeCapability', importPath: '@mango/notice/capability', moduleCode: 'mango-notice' },
+    { code: 'notice', packageName: '@mango/notice-admin', capability: 'mangoNoticeAdminCapability', importPath: '@mango/notice-admin/capability', moduleCode: 'mango-notice' },
   ],
   file: [
-    { code: 'file', packageName: '@mango/file', capability: 'mangoFileCapability', importPath: '@mango/file/capability', moduleCode: 'mango-file' },
+    { code: 'file', packageName: '@mango/file-admin', capability: 'mangoFileAdminCapability', importPath: '@mango/file-admin/capability', moduleCode: 'mango-file' },
   ],
   template: [
-    { code: 'template', packageName: '@mango/template', capability: 'mangoTemplateCapability', importPath: '@mango/template/capability', moduleCode: 'mango-template' },
+    { code: 'template', packageName: '@mango/template-admin', capability: 'mangoTemplateAdminCapability', importPath: '@mango/template-admin/capability', moduleCode: 'mango-template' },
   ],
   numgen: [
-    { code: 'numgen', packageName: '@mango/numgen', capability: 'mangoNumgenCapability', importPath: '@mango/numgen/capability', moduleCode: 'mango-numgen' },
+    { code: 'numgen', packageName: '@mango/numgen-admin', capability: 'mangoNumgenAdminCapability', importPath: '@mango/numgen-admin/capability', moduleCode: 'mango-numgen' },
   ],
   calendar: [
-    { code: 'calendar', packageName: '@mango/calendar', capability: 'mangoCalendarCapability', importPath: '@mango/calendar/capability', moduleCode: 'mango-calendar' },
+    { code: 'calendar', packageName: '@mango/calendar-admin', capability: 'mangoCalendarAdminCapability', importPath: '@mango/calendar-admin/capability', moduleCode: 'mango-calendar' },
   ],
 };
 
@@ -75,6 +76,9 @@ function main(argv = process.argv.slice(2)) {
   }
   if (!['monolith', 'microservice'].includes(parsed.topology)) {
     fail(`invalid topology: ${parsed.topology}`);
+  }
+  if (!['full', 'standard', 'minimal', 'custom'].includes(parsed.preset)) {
+    fail(`invalid preset: ${parsed.preset}`);
   }
   if (!['local', 'micro', 'mixed'].includes(parsed.frontendMode)) {
     fail(`invalid frontend mode: ${parsed.frontendMode}`);
@@ -114,6 +118,7 @@ function parseArgs(argv) {
     groupId: '',
     version: '1.0.0-SNAPSHOT',
     topology: 'monolith',
+    preset: 'full',
     features: 'base,system,rbac',
     frontendMode: 'local',
     template: '',
@@ -154,6 +159,9 @@ function parseArgs(argv) {
       case '--topology':
         result.topology = next;
         break;
+      case '--preset':
+        result.preset = next;
+        break;
       case '--features':
         result.features = next;
         break;
@@ -172,6 +180,7 @@ function parseArgs(argv) {
   result.module = toKebabCase(result.module || result.project);
   result.aggregate = toKebabCase(result.aggregate);
   result.groupId = result.groupId || result.packageName;
+  result.preset = toKebabCase(result.preset || 'full');
   result.features = normalizeFeatures(result.features);
   result.frontendMode = toKebabCase(result.frontendMode || 'local');
   return result;
@@ -200,6 +209,7 @@ function buildVariables(options) {
     groupId: options.groupId,
     projectVersion: options.version,
     topology: options.topology,
+    adminPreset: options.preset,
     featuresCsv: options.features.join(','),
     frontendMode: options.frontendMode,
     runtimeProfile: toRuntimeProfile(options.frontendMode),
@@ -241,9 +251,11 @@ function writeMangoConfig(targetDir, variables) {
     groupId: variables.groupId,
     version: variables.projectVersion,
     topology: variables.topology,
+    preset: variables.adminPreset,
     features: variables.featuresCsv.split(',').filter(Boolean),
     frontend: {
       app: `${variables.projectKebab}-admin`,
+      preset: variables.adminPreset,
       defaultMode: variables.frontendMode,
       supportedModes: ['local', 'micro', 'mixed'],
       runtimeConfig: `frontend/apps/${variables.projectKebab}-admin/public/mango-runtime-config.json`,
@@ -310,7 +322,7 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write('  pnpm install\n');
   process.stdout.write('  pnpm typecheck\n');
   process.stdout.write('  pnpm build\n');
-  process.stdout.write(`  Frontend mode: ${variables.frontendMode}; features: ${variables.featuresCsv}\n`);
+  process.stdout.write(`  Admin preset: ${variables.adminPreset}; frontend mode: ${variables.frontendMode}; features: ${variables.featuresCsv}\n`);
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
 }
 

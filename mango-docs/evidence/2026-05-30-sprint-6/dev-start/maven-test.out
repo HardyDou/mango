@@ -1,0 +1,171 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] DevStartPlatform Backend                                           [pom]
+[INFO] guarantee                                                          [pom]
+[INFO] guarantee-api                                                      [jar]
+[INFO] guarantee-core                                                     [jar]
+[INFO] guarantee-starter                                                  [jar]
+[INFO] guarantee-starter-remote                                           [jar]
+[INFO] DevStartPlatform Monolith App                                      [jar]
+[INFO]
+[INFO] ---------------< com.example:dev-start-platform-backend >---------------
+[INFO] Building DevStartPlatform Backend 1.0.0-SNAPSHOT                   [1/7]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] -----------------------< com.example:guarantee >------------------------
+[INFO] Building guarantee 1.0.0-SNAPSHOT                                  [2/7]
+[INFO]   from modules/guarantee/pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] ---------------------< com.example:guarantee-api >----------------------
+[INFO] Building guarantee-api 1.0.0-SNAPSHOT                              [3/7]
+[INFO]   from modules/guarantee/guarantee-api/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ guarantee-api ---
+[INFO] skip non existing resourceDirectory /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-dev-start-e2e-c8sxac/dev-start-platform/backend/modules/guarantee/guarantee-api/src/main/resources
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ guarantee-api ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 4 source files with javac [debug release 21] to target/classes
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ guarantee-api ---
+[INFO] skip non existing resourceDirectory /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-dev-start-e2e-c8sxac/dev-start-platform/backend/modules/guarantee/guarantee-api/src/test/resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ guarantee-api ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.4:test (default-test) @ guarantee-api ---
+[INFO] No tests to run.
+[INFO]
+[INFO] ---------------------< com.example:guarantee-core >---------------------
+[INFO] Building guarantee-core 1.0.0-SNAPSHOT                             [4/7]
+[INFO]   from modules/guarantee/guarantee-core/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ guarantee-core ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ guarantee-core ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug release 21] to target/classes
+[INFO] ?????????????????????????
+  ??????????? javac ??????????
+  ???????????????? (-processor)?
+  ???????? (--processor-path, --processor-module-path)?
+  ?????????? (-proc:only, -proc:full)?
+  ??? -Xlint:-options ??????
+  ??? -proc:none ???????
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ guarantee-core ---
+[INFO] skip non existing resourceDirectory /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-dev-start-e2e-c8sxac/dev-start-platform/backend/modules/guarantee/guarantee-core/src/test/resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ guarantee-core ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.4:test (default-test) @ guarantee-core ---
+[INFO] No tests to run.
+[INFO]
+[INFO] -------------------< com.example:guarantee-starter >--------------------
+[INFO] Building guarantee-starter 1.0.0-SNAPSHOT                          [5/7]
+[INFO]   from modules/guarantee/guarantee-starter/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ guarantee-starter ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ guarantee-starter ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug release 21] to target/classes
+[INFO] ?????????????????????????
+  ??????????? javac ??????????
+  ???????????????? (-processor)?
+  ???????? (--processor-path, --processor-module-path)?
+  ?????????? (-proc:only, -proc:full)?
+  ??? -Xlint:-options ??????
+  ??? -proc:none ???????
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ guarantee-starter ---
+[INFO] skip non existing resourceDirectory /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-dev-start-e2e-c8sxac/dev-start-platform/backend/modules/guarantee/guarantee-starter/src/test/resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ guarantee-starter ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.4:test (default-test) @ guarantee-starter ---
+[INFO] No tests to run.
+[INFO]
+[INFO] ----------------< com.example:guarantee-starter-remote >----------------
+[INFO] Building guarantee-starter-remote 1.0.0-SNAPSHOT                   [6/7]
+[INFO]   from modules/guarantee/guarantee-starter-remote/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ guarantee-starter-remote ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ guarantee-starter-remote ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug release 21] to target/classes
+[INFO] ?????????????????????????
+  ??????????? javac ??????????
+  ???????????????? (-processor)?
+  ???????? (--processor-path, --processor-module-path)?
+  ?????????? (-proc:only, -proc:full)?
+  ??? -Xlint:-options ??????
+  ??? -proc:none ???????
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ guarantee-starter-remote ---
+[INFO] skip non existing resourceDirectory /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-dev-start-e2e-c8sxac/dev-start-platform/backend/modules/guarantee/guarantee-starter-remote/src/test/resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ guarantee-starter-remote ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.4:test (default-test) @ guarantee-starter-remote ---
+[INFO] No tests to run.
+[INFO]
+[INFO] ------------< com.example:dev-start-platform-monolith-app >-------------
+[INFO] Building DevStartPlatform Monolith App 1.0.0-SNAPSHOT              [7/7]
+[INFO]   from apps/dev-start-platform-monolith-app/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-graphics:jar:21 during dependency collection step for project (use -X to see details)
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ dev-start-platform-monolith-app ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ dev-start-platform-monolith-app ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug release 21] to target/classes
+[INFO] ?????????????????????????
+  ??????????? javac ??????????
+  ???????????????? (-processor)?
+  ???????? (--processor-path, --processor-module-path)?
+  ?????????? (-proc:only, -proc:full)?
+  ??? -Xlint:-options ??????
+  ??? -proc:none ???????
+[INFO]
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ dev-start-platform-monolith-app ---
+[INFO] skip non existing resourceDirectory /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-dev-start-e2e-c8sxac/dev-start-platform/backend/apps/dev-start-platform-monolith-app/src/test/resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ dev-start-platform-monolith-app ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.4:test (default-test) @ dev-start-platform-monolith-app ---
+[INFO] No tests to run.
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for DevStartPlatform Backend 1.0.0-SNAPSHOT:
+[INFO]
+[INFO] DevStartPlatform Backend ........................... SUCCESS [  0.001 s]
+[INFO] guarantee .......................................... SUCCESS [  0.000 s]
+[INFO] guarantee-api ...................................... SUCCESS [  0.764 s]
+[INFO] guarantee-core ..................................... SUCCESS [  0.482 s]
+[INFO] guarantee-starter .................................. SUCCESS [  0.263 s]
+[INFO] guarantee-starter-remote ........................... SUCCESS [  0.267 s]
+[INFO] DevStartPlatform Monolith App ...................... SUCCESS [  1.374 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.342 s
+[INFO] Finished at: 2026-05-30T16:18:51+08:00
+[INFO] ------------------------------------------------------------------------

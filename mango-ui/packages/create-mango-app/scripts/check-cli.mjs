@@ -23,6 +23,8 @@ const explicitTemplateResult = spawnSync(process.execPath, [
   'com.example',
   '--topology',
   'microservice',
+  '--preset',
+  'custom',
   '--features',
   'base,system,workflow,file',
   '--frontend-mode',
@@ -54,7 +56,7 @@ try {
     'backend/modules/guarantee/guarantee-core/src/main/java/com/example/guarantee/guarantee/core/mapper/LetterMapper.java',
     'backend/modules/guarantee/guarantee-api/src/main/java/com/example/guarantee/guarantee/api/GuaranteeApi.java',
     'backend/modules/guarantee/guarantee-starter/src/main/resources/META-INF/mango/resource-manifest.json',
-    'frontend/packages/guarantee/src/index.ts',
+    'frontend/packages/guarantee-admin/src/index.ts',
     'frontend/apps/guarantee-platform-admin/.env.example',
     'frontend/apps/guarantee-platform-admin/public/mango-runtime-config.json',
     'frontend/apps/guarantee-platform-admin/src/main.ts',
@@ -74,12 +76,14 @@ try {
 
   const config = JSON.parse(readFileSync(join(projectRoot, 'mango.config.json'), 'utf8'));
   assertEqual(config.topology, 'microservice', 'topology');
+  assertEqual(config.preset, 'custom', 'preset');
   assertEqual(config.module, 'guarantee', 'module');
   assertEqual(config.aggregate, 'letter', 'aggregate');
   assertArrayEqual(config.features, ['base', 'system', 'workflow', 'file'], 'features');
   assertEqual(config.frontend.app, 'guarantee-platform-admin', 'frontend.app');
+  assertEqual(config.frontend.preset, 'custom', 'frontend.preset');
   assertEqual(config.frontend.defaultMode, 'mixed', 'frontend.defaultMode');
-  if (!explicitTemplateResult.stdout.includes('pnpm typecheck') || !explicitTemplateResult.stdout.includes('Frontend mode: mixed; features: base,system,workflow,file')) {
+  if (!explicitTemplateResult.stdout.includes('pnpm typecheck') || !explicitTemplateResult.stdout.includes('Admin preset: custom; frontend mode: mixed; features: base,system,workflow,file')) {
     throw new Error(`CLI next steps did not include validation and selection summary:\n${explicitTemplateResult.stdout}`);
   }
 
@@ -169,18 +173,18 @@ try {
     throw new Error('remote starter auto-configuration imports were not rendered correctly');
   }
 
-  const pageRegistry = readFileSync(join(projectRoot, 'frontend/packages/guarantee/src/index.ts'), 'utf8');
+  const pageRegistry = readFileSync(join(projectRoot, 'frontend/packages/guarantee-admin/src/index.ts'), 'utf8');
   if (!pageRegistry.includes("'guarantee/letter/index'") || pageRegistry.includes('{{')) {
     throw new Error('page registry was not rendered correctly');
   }
 
-  const businessPage = readFileSync(join(projectRoot, 'frontend/packages/guarantee/src/views/guarantee/letter/index.vue'), 'utf8');
+  const businessPage = readFileSync(join(projectRoot, 'frontend/packages/guarantee-admin/src/views/guarantee/letter/index.vue'), 'utf8');
   if (!businessPage.includes('data-mango-layout="search"') || !businessPage.includes('data-mango-layout="actions"') || !businessPage.includes('data-mango-layout="table"') || !businessPage.includes('data-mango-layout="pagination"') || !businessPage.includes('el-pagination') || businessPage.includes('{{')) {
     throw new Error('business page layout template was not rendered correctly');
   }
 
   const appBootstrap = readFileSync(join(projectRoot, 'frontend/apps/guarantee-platform-admin/src/main.ts'), 'utf8');
-  if (!appBootstrap.includes("createMangoAdmin({") || !appBootstrap.includes("preset: 'full'") || !appBootstrap.includes('mangoWorkflowCapability') || !appBootstrap.includes('mangoFileCapability') || !appBootstrap.includes("allowHttpEntries: import.meta.env.DEV || import.meta.env.VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES === 'true'") || !appBootstrap.includes("allowedEntryOrigins: ['http://127.0.0.1:5190', 'http://localhost:5190']") || appBootstrap.includes('{{')) {
+  if (!appBootstrap.includes("createMangoAdmin({") || !appBootstrap.includes("preset: 'custom'") || !appBootstrap.includes("from '@guarantee-platform/guarantee-admin'") || !appBootstrap.includes('mangoWorkflowAdminCapability') || !appBootstrap.includes('mangoFileAdminCapability') || !appBootstrap.includes("allowHttpEntries: import.meta.env.DEV || import.meta.env.VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES === 'true'") || !appBootstrap.includes("allowedEntryOrigins: ['http://127.0.0.1:5190', 'http://localhost:5190']") || appBootstrap.includes('{{')) {
     throw new Error('admin app bootstrap was not rendered correctly');
   }
 
@@ -190,7 +194,7 @@ try {
   }
 
   const appPackage = readFileSync(join(projectRoot, 'frontend/apps/guarantee-platform-admin/package.json'), 'utf8');
-  if (!appPackage.includes('"@mango/workflow"') || !appPackage.includes('"@mango/file"') || appPackage.includes('"@mango/notice"') || appPackage.includes('{{')) {
+  if (!appPackage.includes('"@guarantee-platform/guarantee-admin"') || appPackage.includes('"@guarantee-platform/guarantee"') || !appPackage.includes('"@mango/workflow-admin"') || !appPackage.includes('"@mango/file-admin"') || appPackage.includes('"@mango/notice-admin"') || appPackage.includes('{{')) {
     throw new Error('feature dependencies were not rendered correctly');
   }
 
@@ -226,7 +230,7 @@ try {
     '--task',
     '新增业务模块',
     '--paths',
-    'backend/modules/guarantee,frontend/packages/guarantee',
+    'backend/modules/guarantee,frontend/packages/guarantee-admin,frontend/packages/guarantee-api',
   ], {
     cwd: projectRoot,
     encoding: 'utf8',

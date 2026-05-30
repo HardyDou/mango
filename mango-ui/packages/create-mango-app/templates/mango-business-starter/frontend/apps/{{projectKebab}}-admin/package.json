@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@{{projectKebab}}/{{moduleKebab}}": "workspace:{{projectVersion}}",
+    "@{{projectKebab}}/{{moduleKebab}}-admin": "workspace:{{projectVersion}}",
     "@mango/admin": "^1.0.0",
     "@mango/admin-pages": "^1.0.0",
     "@mango/app-runtime": "^1.0.0",

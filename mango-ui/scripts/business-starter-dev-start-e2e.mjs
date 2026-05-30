@@ -210,7 +210,7 @@ function installBackendMangoArtifacts() {
 function rewriteWorkspaceDependencies() {
   const packageFiles = [
     join(projectRoot, 'frontend/apps/dev-start-platform-admin/package.json'),
-    join(projectRoot, 'frontend/packages/guarantee/package.json'),
+    join(projectRoot, 'frontend/packages/guarantee-admin/package.json'),
     join(projectRoot, 'frontend/packages/guarantee-api/package.json'),
   ];
   const stagedPackages = stageLocalMangoPackages();

@@ -27,8 +27,8 @@
 ### 5.1 影响模块
 
 - `backend/modules/{{moduleKebab}}`
-- `frontend/packages/{{moduleKebab}}`
 - `frontend/packages/{{moduleKebab}}-api`
+- `frontend/packages/{{moduleKebab}}-admin`
 
 ### 5.2 接口变化
 

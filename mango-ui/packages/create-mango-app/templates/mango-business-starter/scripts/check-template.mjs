@@ -74,10 +74,10 @@ const requiredFiles = [
   'frontend/packages/{{moduleKebab}}-api/tsconfig.json',
   'frontend/packages/{{moduleKebab}}-api/src/api.ts',
   'frontend/packages/{{moduleKebab}}-api/src/types.ts',
-  'frontend/packages/{{moduleKebab}}/package.json',
-  'frontend/packages/{{moduleKebab}}/tsconfig.json',
-  'frontend/packages/{{moduleKebab}}/src/index.ts',
-  'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
+  'frontend/packages/{{moduleKebab}}-admin/package.json',
+  'frontend/packages/{{moduleKebab}}-admin/tsconfig.json',
+  'frontend/packages/{{moduleKebab}}-admin/src/index.ts',
+  'frontend/packages/{{moduleKebab}}-admin/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
   'frontend/apps/{{projectKebab}}-admin/.env.example',
   'frontend/apps/{{projectKebab}}-admin/package.json',
   'frontend/apps/{{projectKebab}}-admin/public/mango-runtime-config.json',
@@ -186,20 +186,20 @@ const contentChecks = [
     patterns: ['"typecheck": "vue-tsc --noEmit -p tsconfig.json"', '"build": "pnpm typecheck"', '"exports"'],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}/src/index.ts',
+    file: 'frontend/packages/{{moduleKebab}}-admin/src/index.ts',
     patterns: ["from '@mango/admin-pages/core'", 'registerModulePages', "'{{moduleKebab}}/{{aggregateKebab}}/index'"],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
+    file: 'frontend/packages/{{moduleKebab}}-admin/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
     patterns: ['page{{aggregatePascal}}', 'v-loading="loading"', '{{aggregatePascal}}名称', 'data-mango-layout="search"', 'data-mango-layout="actions"', 'data-mango-layout="table"', 'data-mango-layout="pagination"', 'el-pagination', 'empty-text="暂无{{aggregatePascal}}数据"'],
   },
   {
-    file: 'frontend/packages/{{moduleKebab}}/package.json',
+    file: 'frontend/packages/{{moduleKebab}}-admin/package.json',
     patterns: ['"typecheck": "vue-tsc --noEmit -p tsconfig.json"', '"build": "pnpm typecheck"', '"exports"'],
   },
   {
     file: 'frontend/apps/{{projectKebab}}-admin/src/main.ts',
-    patterns: ["from '@mango/admin'", "import '@mango/admin/style.css'", 'createMangoAdmin', "preset: 'full'", 'register{{modulePascal}}Pages', 'starterRuntimeConfig', 'starterMenus', 'enabledMangoCapabilities'],
+    patterns: ["from '@mango/admin'", "import '@mango/admin/style.css'", 'createMangoAdmin', "preset: '{{adminPreset}}'", "from '@{{projectKebab}}/{{moduleKebab}}-admin'", 'register{{modulePascal}}Pages', 'starterRuntimeConfig', 'starterMenus', 'enabledMangoCapabilities'],
   },
   {
     file: 'frontend/apps/{{projectKebab}}-admin/src/runtimeConfig.ts',
@@ -336,6 +336,21 @@ for (const file of packageFiles) {
   const relativePath = relative(repoRoot, file);
   if (relativePath.includes('frontend/apps/') && relativePath.endsWith('package.json')) {
     check(!content.includes('"@mango/admin-shell"'), `${relativePath} directly depends on @mango/admin-shell`);
+  }
+  if (relativePath.includes('frontend/apps/') && relativePath.endsWith('package.json')) {
+    check(content.includes('"@{{projectKebab}}/{{moduleKebab}}-admin"'), `${relativePath} must depend on business admin package`);
+    check(!content.includes('"@{{projectKebab}}/{{moduleKebab}}"'), `${relativePath} must not depend on unqualified business package`);
+  }
+  if (relativePath.includes('frontend/packages/{{moduleKebab}}-admin/package.json')) {
+    check(content.includes('"name": "@{{projectKebab}}/{{moduleKebab}}-admin"'), `${relativePath} must use -admin package name`);
+    check(content.includes('"@mango/admin-pages"'), `${relativePath} must depend on Admin page registry`);
+    check(content.includes('"element-plus"'), `${relativePath} must declare Admin UI dependency`);
+  }
+  if (relativePath.includes('frontend/packages/{{moduleKebab}}-api/package.json')) {
+    check(!content.includes('"@mango/admin"'), `${relativePath} must not depend on @mango/admin`);
+    check(!content.includes('"@mango/admin-shell"'), `${relativePath} must not depend on @mango/admin-shell`);
+    check(!content.includes('"@mango/admin-pages"'), `${relativePath} must not depend on @mango/admin-pages`);
+    check(!content.includes('"element-plus"'), `${relativePath} must not depend on Element Plus`);
   }
 }
 
