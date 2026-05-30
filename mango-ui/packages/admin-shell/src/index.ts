@@ -17,7 +17,10 @@ export interface MangoAdminAppInstance {
 }
 
 export function createMangoAdminApp(options: MangoAdminShellOptions = {}): MangoAdminAppInstance {
-  const resolvedOptions = configureMangoAdminShell(options);
+  const resolvedOptions = configureMangoAdminShell({
+    contentMode: 'runtime-outlet',
+    ...options,
+  });
   const apiBaseUrl = resolvedOptions.apiBaseUrl || '/api';
   setRequestBaseUrl(apiBaseUrl);
 
@@ -46,10 +49,14 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
 
 export { default as MangoAdminShellApp } from './App.vue';
 export { default as MangoAdminShellView } from './ShellView.vue';
+export { default as MangoAdminLayout } from './layout/index.vue';
+export { default as MangoAdminParentView } from './layout/routerView/parent.vue';
+export { registerMangoAdminShellDevPages } from './views/demo/registerDevPages';
 export { createMangoAdminRouter } from './router';
 export { getShellPinia, installShellApp } from './appBootstrap';
 export { configureMangoAdminShell, getMangoAdminShellOptions };
 export type { MangoAdminShellOptions };
+export * from './stores';
 export * from './runtime/menuHost';
 export * from './runtime/runtimeConfig';
 export * from './runtime/runtimeHost';

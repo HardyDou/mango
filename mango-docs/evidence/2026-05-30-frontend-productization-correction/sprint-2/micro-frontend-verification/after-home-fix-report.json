@@ -1,0 +1,50 @@
+{
+  "baseUrl": "http://a.mango.io:5176",
+  "startedAt": "2026-05-30T14:28:39.287Z",
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-home-after-home-fix-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-rbac-menu-package-after-home-fix-1440x960.png"
+  ],
+  "menuResponses": [
+    {
+      "url": "http://a.mango.io:5176/api/authorization/menus/user?fmt=tree&appCode=internal-admin",
+      "status": 200,
+      "body": "{\"code\":200,\"success\":true,\"msg\":\"操作成功\",\"data\":[{\"menuId\":\"1\",\"appCode\":\"internal-admin\",\"moduleCode\":\"mango-system\",\"parentId\":\"0\",\"menuType\":1,\"menuName\":\"系统管理\",\"menuCode\":\"system\",\"path\":\"/system\",\"pageType\":\"LOCAL_ROUTE\",\"component\":null,\"externalUrl\":null,\"icon\":\"Setting\",\"sort\":1,\"status\":1,\"visible\":1,\"keepAlive\":0,\"embedded\":0,\"redirect\":\"/system/menu-package\",\"permissions\":null,\"createBy\":null,\"updateBy\":null,\"createTime\":null,\"updateTime\":null,\"remark\":null,\"meta\":{\"title\":\"系统管理\",\"icon\":\"Setting\",\"isAffix\":null,\"isLink\":false,\"link\":null,\"isFrame\":false,\"frameSrc\":null,\"activeMenu\":null,\"breadcrumbHidden\":null,\"permissions\":null,\"badge\":null,\"badgeType\":null,\"dot\":null},\"children\":[{\"menuId\":\"2\",\"appCode\":\"internal-admin\",\"moduleCode\":\"mango-authorization\",\"parentId\":\"1\",\"menuType\":1,\"menuName\":\"权限管理\",\"menuCode\":\"system:permission\",\"path\":\"/system/permission\",\"pageType\":\"LOCAL_ROUTE\",\"component\":null,\"externalUrl\":null,\"icon\":\"Lock\",\"sort\":1,\"status\":1,\"visible\":1,\"keepAlive\":0,\"embedded\":0,\"redirect\":\"/system/menu-package\",\"permissions\":null,\"createBy\":null,\"updateBy\":null,\"createTime\":null,\"updateTime\":null,\"remark\":null,\"meta\":{\"title\":\"权限管理\",\"icon\":\"Lock\",\"isAffix\":null,\"isLink\":false,\"link\":null,\"isFrame\":false,\"frameSrc\":null,\"activeMenu\":null,\"breadcrumbHidden\":null,\"permissions\":null,\"badge\":null,\"badgeType\":null,\"dot\":null},\"children\":[{\"menuId\":\"25\",\"appCode\":\"internal-admin\",\"moduleCode\":\"mango-authorization\",\"parentId\":\"2\",\"menuType\":2,\"menuName\":\"套餐管理\",\"menuCode\":\"system:menu-package\",\"path\":\"/system/menu-package\",\"pageType\":\"LOCAL_ROUTE\",\"component\":\"@/views/system/menu-package/index.vue\",\"externalUrl\":null,\"icon\":\"Tickets\",\"sort\":1,\"status\":1,\"visible\":1,\"keepAlive\":0,\"embedded\":0,\"redirect\":null,\"permissions\":\"system:menu-package:list\",\"createBy\":null,\"updateBy\":null,\"createTime\":null,\"updateTime\":null,\"remark\":null,\"meta\":{\"title\":\"套餐管理\",\"icon\":\"Tickets\",\"isAffix\":null,\"isLink\":false,\"link\":null,\"isFrame\":false,\"frameSrc\":null,\"activeMenu\":null,\"breadcrumbHidden\":null,\"permissions\":null,\"badge\":null,\"badgeType\":null,\"dot\":null},\"children\":[{\"menuId\":\"25000\",\"appCode\":\"internal-admin\",\"moduleCode\":\"mango-authorization\",\"parentId\":\"25\",\"menuType\":3,\"menuName\":\"查询套餐列表\",\"menuCode\":\"system:menu-package:list\",\"path\":null,\"pageType\":\"BUTTON\",\"component\":null,\"externalUrl\":null,\"icon\":null,\"sort\":0,\"status\":1,\"visible\":0,\"keepAlive\":0,\"embedded\":0,\"redirect\":null,\"permissions\":\"system:menu-package:list\",\"createBy\":null,\"updateBy\":null,\"createTime\":null,\"updateTime\":null,\"remark\":null,\"meta\":{\"title\":\"查询套餐列表\",\"icon\":null,\"isAffix\":null,\"isLink\":false,\"link\":null,\"isFrame\":false,\"frameSrc\":null,\"activeMenu\":null,\"breadcrumbHidden\":null,\"permissions\":null,\"badge\":null,\"badgeType\":null,\"dot\":null},\"children\":null},{\"menuId\":\"25001\",\"appCode\":\"internal-admin\",\"moduleCode\":\"mango-authorization\",\"parentId\":\"25\",\"menuType\":3,\"menuName\":\"查询套餐\",\"menuCode\":\"system:menu-package:query\",\"path\":null,\"pageType\":\"BUTTON\",\"component\":null,\"exter"
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "networkFailures": [
+    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-a3211453&rtTicket=Xn-HqlRGmjP5DcEXEPjrFkCMG18jgOCfbxlkOrbaoBU net::ERR_ABORTED"
+  ],
+  "checks": {
+    "home": {
+      "url": "http://a.mango.io:5176/#/home",
+      "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n首页\n首页\n1,234\n用户总数\n5,678\n订单总数\n98.5%\n系统效率\n数据概览\n\n图表区域\n\n快捷入口\n系统设置\n用户管理\n订单管理\n数据分析",
+      "topMenus": [
+        "首页",
+        "系统管理",
+        "审批中心",
+        "平台能力",
+        "通知中心",
+        "开发中心"
+      ],
+      "sideMenus": [
+        "首页"
+      ],
+      "has404": false,
+      "hasHomeContent": true,
+      "hasNoticeBell": true,
+      "hasSettings": true,
+      "hasUser": true
+    },
+    "menuPackage": {
+      "url": "http://a.mango.io:5176/#/system/menu-package",
+      "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n权限管理\n套餐管理\n机构管理\n组织架构\n岗位管理\n成员管理\n角色管理\n菜单管理\n应用管理\n字典管理\n参数配置\n行政区划\n日志管理\n首页\n套餐管理",
+      "has404": false,
+      "hasMenuPackageText": true,
+      "hasCreatePackageText": true
+    }
+  },
+  "finishedAt": "2026-05-30T14:28:47.248Z"
+}

@@ -69,6 +69,8 @@ const createManualChunks = (id: string): string | undefined => {
 
 const alias: Record<string, string> = {
   '@': pathResolve('./src/'),
+  '@mango/file': resolve(__dirname, '../../packages/file/src/index.ts'),
+  '@mango/workflow': resolve(__dirname, '../../packages/workflow/src/index.ts'),
   '@mango/notice/admin': resolve(__dirname, '../../packages/notice/src/admin.ts'),
   '@mango/notice/client': resolve(__dirname, '../../packages/notice/src/client.ts'),
   '@mango/notice/realtime': resolve(__dirname, '../../packages/notice/src/realtime.ts'),

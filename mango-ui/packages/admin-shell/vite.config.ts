@@ -9,6 +9,9 @@ const externalPackages = [
   '@mango/app-runtime',
   '@mango/auth',
   '@mango/common',
+  '@mango/file',
+  '@mango/notice',
+  '@mango/notice/client',
   '@mango/common/utils/mitt',
   '@mango/common/utils/request',
   '@mango/common/utils/storage',
@@ -16,9 +19,11 @@ const externalPackages = [
   '@mango/common/utils/theme',
   '@mango/common/utils/menuTree',
   '@mango/rbac',
+  '@mango/workflow',
   'element-plus',
   'pinia',
   'vue',
+  'vue-i18n',
   'vue-router',
 ];
 

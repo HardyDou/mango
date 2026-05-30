@@ -1,0 +1,118 @@
+{
+  "firstLevelMenus": [
+    "系统管理",
+    "审批中心",
+    "平台能力",
+    "通知中心"
+  ],
+  "sampling": [
+    {
+      "topLevelMenu": "系统管理",
+      "path": "/system",
+      "sampledChildren": [
+        {
+          "menuName": "权限管理",
+          "path": "/system/permission",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-系统管理-权限管理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "应用管理",
+          "path": "/system/app",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-系统管理-应用管理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "字典管理",
+          "path": "/system/dict",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-系统管理-字典管理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        }
+      ]
+    },
+    {
+      "topLevelMenu": "审批中心",
+      "path": "/workflow",
+      "sampledChildren": [
+        {
+          "menuName": "流程办理",
+          "path": "/workflow/task",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-审批中心-流程办理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "流程管理",
+          "path": "/workflow/manage",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-审批中心-流程管理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "业务示例",
+          "path": "/workflow/business-form",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-审批中心-业务示例.png",
+          "titleVisible": true,
+          "errorVisible": false
+        }
+      ]
+    },
+    {
+      "topLevelMenu": "平台能力",
+      "path": "/data",
+      "sampledChildren": [
+        {
+          "menuName": "日历管理",
+          "path": "/data/calendar",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-平台能力-日历管理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "编号规则",
+          "path": "/data/numgen",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-平台能力-编号规则.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "文件管理",
+          "path": "/file",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-平台能力-文件管理.png",
+          "titleVisible": true,
+          "errorVisible": false
+        }
+      ]
+    },
+    {
+      "topLevelMenu": "通知中心",
+      "path": "/notice",
+      "sampledChildren": [
+        {
+          "menuName": "我的消息",
+          "path": "/notice/site-message",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-通知中心-我的消息.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "消息配置",
+          "path": "/notice/message-definition",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-通知中心-消息配置.png",
+          "titleVisible": true,
+          "errorVisible": false
+        },
+        {
+          "menuName": "发送任务",
+          "path": "/notice/send-message",
+          "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/screenshots/sample-通知中心-发送任务.png",
+          "titleVisible": true,
+          "errorVisible": false
+        }
+      ]
+    }
+  ]
+}

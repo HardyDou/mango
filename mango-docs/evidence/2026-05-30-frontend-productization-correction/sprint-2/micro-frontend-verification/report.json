@@ -1,0 +1,17 @@
+{
+  "base": "http://a.mango.io:5176",
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-home-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-login-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-rbac-menu-package-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-workflow-start-process-1440x960.png"
+  ],
+  "pageErrors": [
+    "Cannot read properties of null (reading '$clear')"
+  ],
+  "consoleErrors": [],
+  "networkFailures": [
+    "GET http://a.mango.io:5176/api/authorization/menu-packages?keyword=&appCode=internal-admin net::ERR_ABORTED"
+  ],
+  "finishedAt": "2026-05-30T13:37:31.605Z"
+}

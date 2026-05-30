@@ -5,6 +5,7 @@
  */
 import type { RouteRecordRaw } from 'vue-router';
 import menuJson from './menu.json';
+import { MangoAdminLayout } from '@mango/admin-shell';
 import { menuApi, type SysMenuVO } from '@/api/admin/menu';
 import { componentsMap } from './componentsMap';
 
@@ -299,7 +300,7 @@ export class MenuLoader {
       {
         path: '/',
         name: 'Layout',
-        component: () => import('@/layout/index.vue'),
+        component: MangoAdminLayout,
         redirect: '/home',
         children: menuItems.map((item) => this.menuItemToRoute(item)),
       },

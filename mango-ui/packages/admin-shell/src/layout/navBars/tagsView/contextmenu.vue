@@ -35,8 +35,6 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
-import { useRoutesList } from '../../../stores/routesList';
-import { resolveFallbackLocation, resolveTagLocation } from '../../../runtime/tagNavigation';
 import { isHomeTag } from '@mango/common';
 
 const props = defineProps<{
@@ -47,7 +45,6 @@ const emit = defineEmits(['close']);
 const route = useRoute();
 const router = useRouter();
 const storesTagsViewRoutes = useTagsViewRoutes();
-const routesListStore = useRoutesList();
 const visible = ref(true);
 const isCurrentHomeTag = computed(() => isHomeTag(props.tag));
 
@@ -59,7 +56,7 @@ watch(
 );
 
 const onRefresh = () => {
-  router.replace(resolveTagLocation(props.tag, true));
+  router.replace(props.tag.path);
   emit('close');
 };
 
@@ -71,9 +68,7 @@ const onClose = () => {
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.path !== props.tag.path);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
   if (route.path === props.tag.path && tags.length > 0) {
-    router.push(resolveTagLocation(tags[tags.length - 1]));
-  } else if (route.path === props.tag.path) {
-    router.push(resolveFallbackLocation(routesListStore.routesList, props.tag.path));
+    router.push(tags[tags.length - 1]);
   }
   emit('close');
 };
@@ -83,7 +78,7 @@ const onCloseOthers = () => {
     (t) => t.path === props.tag.path || t.meta?.isAffix
   );
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  router.push(resolveTagLocation(props.tag));
+  router.push(props.tag.path);
   emit('close');
 };
 
@@ -91,9 +86,9 @@ const onCloseAll = () => {
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.meta?.isAffix);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
   if (tags.length > 0) {
-    router.push(resolveTagLocation(tags[tags.length - 1]));
+    router.push(tags[tags.length - 1]);
   } else {
-    router.push(resolveFallbackLocation(routesListStore.routesList, route.path));
+    router.push('/home');
   }
   emit('close');
 };

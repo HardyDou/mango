@@ -20,7 +20,7 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
 import { useScrollbar } from '../../composables/useScrollbar';
-import { containsMenuPath } from '@mango/common/utils/menuTree';
+import { containsMenuPath } from '@mango/common';
 
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
 const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));

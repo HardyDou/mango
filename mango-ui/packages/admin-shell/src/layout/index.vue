@@ -6,10 +6,9 @@
 import { onBeforeMount, onUnmounted, onMounted, watch } from 'vue';
 import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
-import { Local } from '@mango/common/utils/storage';
-import { mittBus } from '@mango/common/utils/mitt';
-import { useChangeColor } from '@mango/common/utils/theme';
-import { emitShellThemeChange } from '../runtime/runtimeHost';
+import { Local } from '@mango/common';
+import { mittBus } from '@mango/common';
+import { useChangeColor } from '@mango/common';
 import LayoutMainDefaults from './main/defaults.vue';
 import LayoutMainClassic from './main/classic.vue';
 import LayoutMainTransverse from './main/transverse.vue';
@@ -54,7 +53,6 @@ const initTheme = () => {
   applyBgColor(themeStore.topBar, '--mango-bg-top-bar');
   applyBgColor(themeStore.menuBar, '--mango-bg-menu-bar');
   applyBgColor(themeStore.columnsMenuBar, '--mango-bg-columns-menu-bar');
-  emitShellThemeChange();
 };
 
 // 监听主题颜色变化
@@ -62,7 +60,6 @@ watch(
   () => themeStore.primary,
   (newPrimary) => {
     applyPrimaryColor(newPrimary);
-    emitShellThemeChange();
   }
 );
 
@@ -70,7 +67,6 @@ watch(
   () => themeStore.topBar,
   (newTopBar) => {
     applyBgColor(newTopBar, '--mango-bg-top-bar');
-    emitShellThemeChange();
   }
 );
 
@@ -79,7 +75,6 @@ watch(
   (newMenuBar) => {
     applyBgColor(newMenuBar, '--mango-bg-menu-bar');
     document.documentElement.style.setProperty('--mango-bg-menuBar-light-1', getLightColor(newMenuBar, 0.05));
-    emitShellThemeChange();
   }
 );
 
@@ -87,20 +82,7 @@ watch(
   () => themeStore.columnsMenuBar,
   (newColumnsMenuBar) => {
     applyBgColor(newColumnsMenuBar, '--mango-bg-columns-menu-bar');
-    emitShellThemeChange();
   }
-);
-
-watch(
-  () => [
-    themeStore.isDark,
-    themeStore.topBarColor,
-    themeStore.menuBarColor,
-    themeStore.menuBarActiveColor,
-    themeStore.columnsMenuBarColor,
-    layoutStore.layout,
-  ],
-  () => emitShellThemeChange()
 );
 
 // 窗口大小改变时(适配移动端) - 硬断点 1000px 保留

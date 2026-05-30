@@ -55,7 +55,7 @@ import { User, Lock, SwitchButton, ArrowDown } from '@element-plus/icons-vue';
 import { computed } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
-import { Session } from '@mango/common/utils/storage';
+import { Session } from '@mango/common';
 import { useUserInfo } from '../../../stores/userInfo';
 
 const router = useRouter();

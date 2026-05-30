@@ -71,6 +71,12 @@
       <el-icon :size="20">
         <FullScreen />
       </el-icon>
+      <NoticeBell
+        :load-runtime-config="loadNoticeRuntimeConfig"
+        :realtime-options="noticeRealtimeOptions"
+        @view-all="goNoticeMessages"
+        @settings="goNoticeReceiveSetting"
+      />
       <Settings />
       <User />
     </div>
@@ -84,8 +90,12 @@ import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
-import { containsMenuPath, resolveFirstMenu, type ShellRouteMenu } from '../../runtime/menuHost';
+import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
+import { Session } from '@mango/common';
+import type { RealtimeOptions } from '@mango/common';
+import { NoticeBell, getNoticeReminderSetting } from '@mango/notice/client';
+import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -107,16 +117,21 @@ const headerAsideExpanded = computed(() => {
   return !layoutStore.isCollapse;
 });
 
-const findTopByPath = (path: string): ShellRouteMenu | undefined => {
+const noticeRealtimeOptions = computed<RealtimeOptions>(() => {
+  const userInfo = Session.get('userInfo') || {};
+  const tenantId = userInfo.tenantId || Session.get('tenantId') || 'default';
+  const userId = userInfo.userId ?? userInfo.id;
+  return {
+    identity: {
+      tenantId: String(tenantId),
+      userId: userId == null ? null : userId,
+    },
+  };
+});
+
+const findTopByPath = (path: string): MangoMenuTreeNode | undefined => {
   return topMenus.value.find(item => containsMenuPath(item, path))
     || topMenus.value[0];
-};
-
-const resolveFirstRoute = (item: ShellRouteMenu): string => {
-  if (item.redirect && typeof item.redirect === 'string') {
-    return item.redirect;
-  }
-  return resolveFirstMenu(item)?.path || item.path;
 };
 
 const toggleCollapse = () => {
@@ -131,13 +146,38 @@ const onToggleMobileMenu = () => {
   layoutStore.toggleMobileMenu();
 };
 
-const onTopMenuClick = (item: ShellRouteMenu) => {
+const onTopMenuClick = (item: MangoMenuTreeNode) => {
   storesRoutesList.setActiveTopRoutePath(item.path);
-  const targetPath = resolveFirstRoute(item);
+  const targetPath = resolveFirstMenuPath(item);
   if (targetPath && targetPath !== route.path) {
     router.push(targetPath);
   }
 };
+
+const goNoticeMessages = () => {
+  router.push('/notice/site-message');
+};
+
+const goNoticeReceiveSetting = () => {
+  router.push('/notice/receive-setting');
+};
+
+async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
+  const defaults: NoticeClientBellRuntimeConfig = {
+    voiceEnabled: true,
+    reminderMode: 'SOUND',
+    voiceText: '您有新的系统消息，请及时查看',
+    soundType: 'IM',
+    popupEnabled: true,
+    popupPlacement: 'top-right',
+    desktopNotificationEnabled: true,
+  };
+  try {
+    return { ...defaults, ...(await getNoticeReminderSetting()) };
+  } catch {
+    return defaults;
+  }
+}
 
 watch(
   () => [route.path, topMenus.value],

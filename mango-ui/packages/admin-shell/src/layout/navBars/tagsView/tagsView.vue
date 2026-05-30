@@ -4,22 +4,23 @@
       class="tags-view-scrollbar"
       @scroll="onScroll"
     >
-      <div
+      <router-link
         v-for="tag in visitedViews"
         :key="tag.path"
+        :to="{ path: tag.path, query: tag.query }"
         :class="isActive(tag) ? 'tags-view-item active' : 'tags-view-item'"
         @contextmenu.prevent="openContextMenu($event, tag)"
-        @click="selectTag(tag)"
+        @click="refreshPage(tag)"
       >
         <span>{{ tag.meta?.title || tag.name }}</span>
         <el-icon
           v-if="!tag.meta?.isAffix"
           class="close-icon"
-          @click.stop.prevent="closeSelectedTag(tag)"
+          @click.prevent.stop="closeSelectedTag(tag)"
         >
           <Close />
         </el-icon>
-      </div>
+      </router-link>
     </el-scrollbar>
 
     <ContextMenu
@@ -37,15 +38,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
-import { useRoutesList } from '../../../stores/routesList';
-import { resolveFallbackLocation, resolveTagLocation } from '../../../runtime/tagNavigation';
 import { isHomeTag } from '@mango/common';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
 const router = useRouter();
 const storesTagsViewRoutes = useTagsViewRoutes();
-const routesListStore = useRoutesList();
 const { tagsViewRoutes } = storeToRefs(storesTagsViewRoutes);
 
 const contextMenuVisible = ref(false);
@@ -96,22 +94,13 @@ const closeSelectedTag = (tag: any) => {
     newTags.splice(idx, 1);
     storesTagsViewRoutes.setTagsViewRoutes(newTags);
     if (isActive(tag) && newTags.length > 0) {
-      router.push(resolveTagLocation(newTags[newTags.length - 1]));
-      return;
-    }
-    if (isActive(tag)) {
-      router.push(resolveFallbackLocation(routesListStore.routesList, tag.path));
+      router.push(newTags[newTags.length - 1]);
     }
   }
 };
 
-const selectTag = (tag: any) => {
-  const target = resolveTagLocation(tag, true);
-  if (route.path !== tag.path) {
-    router.push(target);
-    return;
-  }
-  router.replace({ ...target, query: { ...tag.query, _ts: Date.now() } });
+const refreshPage = (tag: any) => {
+  router.push(tag);
 };
 
 const onScroll = () => {

@@ -2,11 +2,17 @@ import { test, expect } from '@playwright/test';
 
 test.describe('布局系统 E2E 测试', () => {
   test.beforeEach(async ({ page }) => {
-    // 登录
     await page.goto('/#/login');
     await page.fill('input[placeholder="用户名"]', 'admin');
     await page.fill('input[placeholder="密码"]', 'admin123');
-    await page.click('button:has-text("登 录")');
+    const accountTenantsResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/auth/login-institutions') && response.status() === 200
+    );
+    await page.locator('input[placeholder="密码"]').blur();
+    await accountTenantsResponsePromise;
+    await page.locator('.tenant-select').click();
+    await page.getByRole('option', { name: /芒果集团/ }).click();
+    await page.locator('.login-btn').click();
     await page.waitForURL('**/#/home', { timeout: 10000 });
   });
 
@@ -26,7 +32,7 @@ test.describe('布局系统 E2E 测试', () => {
     const homeTag = page.locator('.tags-view-item.active', { hasText: '首页' });
     await expect(homeTag).toBeVisible();
     await expect(homeTag.locator('.close-icon')).toHaveCount(0);
-    await expect(page.locator('.layout-main-breadcrumb')).toBeVisible();
+    await expect(page.getByRole('button', { name: '首页' })).toBeVisible();
   });
 
   test('横向布局 (transverse)', async ({ page }) => {

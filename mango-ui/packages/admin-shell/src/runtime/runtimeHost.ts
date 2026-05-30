@@ -236,9 +236,14 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       defaultPagesPromise = import('@mango/admin-pages/defaults').then(({ registerDefaultAdminPages }) => {
         registerDefaultAdminPages({
           shellPages: {
+            home: () => import('../views/home/index.vue'),
             notFound: () => import('../views/error/404.vue'),
           },
         });
+        if (import.meta.env.DEV) {
+          return import('../views/demo/registerDevPages').then(m => m.registerMangoAdminShellDevPages());
+        }
+        return undefined;
       });
     }
     return defaultPagesPromise;

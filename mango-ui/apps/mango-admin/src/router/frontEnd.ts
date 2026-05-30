@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
+import { MangoAdminParentView } from '@mango/admin-shell';
 import { useRoutesList } from '@/stores/routesList';
 
 /**
@@ -55,14 +56,12 @@ export function getFrontEndRoutes(): RouteRecordRaw[] {
  * @description 使用 LayoutParentView 组件包裹路由
  */
 export function getTabBarRoutes(routes: RouteRecordRaw[]): RouteRecordRaw[] {
-  const parentView = () => import('@/layout/routerView/parent.vue');
-
   function normalizeRoute(route: RouteRecordRaw): RouteRecordRaw {
     const children = route.children?.map(normalizeRoute);
 
     return {
       ...route,
-      component: route.component || parentView,
+      component: route.component || MangoAdminParentView,
       children,
     };
   }

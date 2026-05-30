@@ -15,6 +15,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@mango/admin-shell": "workspace:*",
     "@mango/admin-pages": "workspace:*",
     "@mango/auth": "workspace:*",
     "@mango/calendar": "workspace:*",

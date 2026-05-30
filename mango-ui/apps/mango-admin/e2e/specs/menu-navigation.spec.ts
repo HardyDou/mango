@@ -53,7 +53,7 @@ async function loginPage(
 }
 
 test.describe('用户菜单导航 E2E', () => {
-  test('芒果集团登录后使用后端用户菜单树渲染完整系统管理导航', async ({ page }) => {
+  test('芒果集团登录后使用后端用户菜单树渲染完整管理导航', async ({ page }) => {
     const menuResponsePromise = page.waitForResponse((response) => {
       const url = response.url();
       return response.status() === 200
@@ -65,7 +65,7 @@ test.describe('用户菜单导航 E2E', () => {
 
     const menuResponse = await menuResponsePromise;
     const menuBody = await menuResponse.json();
-    expect(menuBody.data).toHaveLength(3);
+    expect(menuBody.data).toHaveLength(4);
     expect(menuBody.data[0]).toMatchObject({
       menuName: '系统管理',
       path: '/system',
@@ -77,6 +77,7 @@ test.describe('用户菜单导航 E2E', () => {
       '参数配置',
       '行政区划',
       '日志管理',
+      '全部权限',
     ]);
     expect(menuBody.data[1]).toMatchObject({
       menuName: '审批中心',
@@ -91,6 +92,19 @@ test.describe('用户菜单导航 E2E', () => {
       '编号规则',
       '文件管理',
       '模板管理',
+    ]);
+    expect(menuBody.data[3]).toMatchObject({
+      menuName: '通知中心',
+      path: '/notice',
+    });
+    expect(menuBody.data[3].children.map((item: { menuName: string }) => item.menuName)).toEqual([
+      '我的消息',
+      '消息配置',
+      '发送任务',
+      '渠道配置',
+      '发送记录',
+      '失败重试',
+      '接收设置',
     ]);
     for (const menu of collectVisibleMenus(menuBody.data)) {
       expect(menu.icon, `${menu.menuName} 必须配置菜单图标`).toBeTruthy();
@@ -136,6 +150,14 @@ test.describe('用户菜单导航 E2E', () => {
     await expectMenuIcon(page, '模板分类');
     await expectMenuIcon(page, '模板列表');
     await expectMenuIcon(page, '渲染记录');
+
+    await openTopMenu(page, '通知中心');
+    await expectMenuIcon(page, '我的消息');
+    await expectMenuIcon(page, '消息配置');
+    await expectMenuIcon(page, '发送任务');
+    await expectMenuIcon(page, '渠道配置');
+    await expectMenuIcon(page, '发送记录');
+    await expectMenuIcon(page, '失败重试');
   });
 
   test('A 公司登录后只渲染机构授权范围内的系统管理、审批中心与平台能力导航', async ({ page }) => {

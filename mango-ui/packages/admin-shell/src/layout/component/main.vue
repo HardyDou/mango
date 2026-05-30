@@ -9,7 +9,8 @@
       view-class="layout-main-scroll"
     >
       <div class="layout-main-body">
-        <ShellRuntimeOutlet />
+        <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
+        <LayoutParentView v-else />
       </div>
     </el-scrollbar>
     <el-backtop :target="setBacktopClass" />
@@ -17,8 +18,12 @@
 </template>
 
 <script setup lang="ts" name="layoutMain">
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
+import { getMangoAdminShellOptions } from '../../config';
 import ShellRuntimeOutlet from '../../runtime/ShellRuntimeOutlet.vue';
+
+const LayoutParentView = defineAsyncComponent(() => import('../routerView/parent.vue'));
+const contentMode = computed(() => getMangoAdminShellOptions().contentMode || 'router-view');
 
 const layoutMainScrollbarRef = ref();
 
