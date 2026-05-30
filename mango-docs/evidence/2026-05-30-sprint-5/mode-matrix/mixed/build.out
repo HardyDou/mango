@@ -1,0 +1,166 @@
+
+> mode-mixed-platform@1.0.0 build /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-mixed-platform
+> pnpm -r build
+
+Scope: 4 of 5 workspace projects
+frontend/apps/mode-mixed-platform-remote build$ vite build
+frontend/packages/guarantee-api build$ pnpm typecheck
+frontend/packages/guarantee-api build: > @mode-mixed-platform/guarantee-api@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-mixed-platform/frontend/packages/guarantee-api
+frontend/packages/guarantee-api build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-api build: Done
+frontend/apps/mode-mixed-platform-remote build: vite v5.4.21 building for production...
+frontend/apps/mode-mixed-platform-remote build: transforming...
+frontend/apps/mode-mixed-platform-remote build: ✓ 9 modules transformed.
+frontend/apps/mode-mixed-platform-remote build: rendering chunks...
+frontend/apps/mode-mixed-platform-remote build: computing gzip size...
+frontend/apps/mode-mixed-platform-remote build: dist/index.html                  0.28 kB │ gzip:  0.21 kB
+frontend/apps/mode-mixed-platform-remote build: dist/assets/index-DGVnVIqU.css   1.73 kB │ gzip:  0.65 kB
+frontend/apps/mode-mixed-platform-remote build: dist/assets/index-Bs-DKn6X.js   63.37 kB │ gzip: 25.15 kB
+frontend/apps/mode-mixed-platform-remote build: ✓ built in 280ms
+frontend/apps/mode-mixed-platform-remote build: Done
+frontend/packages/guarantee build$ pnpm typecheck
+frontend/packages/guarantee build: > @mode-mixed-platform/guarantee@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-mixed-platform/frontend/packages/guarantee
+frontend/packages/guarantee build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee build: Done
+frontend/apps/mode-mixed-platform-admin build$ pnpm typecheck && vite build
+frontend/apps/mode-mixed-platform-admin build: > mode-mixed-platform-admin@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-mixed-platform/frontend/apps/mode-mixed-platform-admin
+frontend/apps/mode-mixed-platform-admin build: > vue-tsc --noEmit -p tsconfig.json
+frontend/apps/mode-mixed-platform-admin build: vite v5.4.21 building for production...
+frontend/apps/mode-mixed-platform-admin build: transforming...
+frontend/apps/mode-mixed-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (3362:0): A comment
+frontend/apps/mode-mixed-platform-admin build: "/* #__PURE__ */"
+frontend/apps/mode-mixed-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/mode-mixed-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (5780:22): A comment
+frontend/apps/mode-mixed-platform-admin build: "/* #__PURE__ */"
+frontend/apps/mode-mixed-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/mode-mixed-platform-admin build: ✓ 2740 modules transformed.
+frontend/apps/mode-mixed-platform-admin build: rendering chunks...
+frontend/apps/mode-mixed-platform-admin build: computing gzip size...
+frontend/apps/mode-mixed-platform-admin build: dist/index.html                                        0.41 kB │ gzip:   0.28 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/fc-icons-BjnjLEor.woff                    17.44 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-CVPw62Ny.css                         0.47 kB │ gzip:   0.21 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/icon-Byp_cd-K.css                         16.09 kB │ gzip:   4.05 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/style-CTjwcune.css                        25.02 kB │ gzip:   4.67 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-B6CIJ_09.css                       387.47 kB │ gzip:  52.64 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-DlAUqK2U.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-BffYpcM-.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-b8p_N644.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-B-KA9PqK.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-B4PAZYor.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-Cbj7pFDf.js      0.21 kB │ gzip:   0.18 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/businessApply-BKzMXNZn.js                  0.22 kB │ gzip:   0.18 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue2-C1JlbKWs.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue2-Dg6BXMRM.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/menuPackage-Bu9txlDU.js                    0.38 kB │ gzip:   0.20 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/formatTime-BSK6ffaY.js                     0.47 kB │ gzip:   0.26 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/codemirror-CU88-O_N.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/javascript-BILxxPCP.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/sys-C7nYItkn.js                            0.55 kB │ gzip:   0.29 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/404.vue-Cvr0qo7o.js                        0.56 kB │ gzip:   0.42 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/org-JffRN_dL.js                            0.66 kB │ gzip:   0.34 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/role-DlfVxZqp.js                           0.67 kB │ gzip:   0.28 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-C1vz6K-L.js                      0.69 kB │ gzip:   0.42 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/breadcrumb.vue-YtvGEIKd.js                 0.73 kB │ gzip:   0.48 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/iconConfig-JUldR0G7.js                     0.74 kB │ gzip:   0.46 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-CWwSTH6h.js                          0.74 kB │ gzip:   0.40 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/header.vue-CoW8KWL9.js                     0.86 kB │ gzip:   0.52 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BlSpKnNH.js                      0.88 kB │ gzip:   0.54 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/post-DRFW8h_n.js                           0.93 kB │ gzip:   0.40 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/menu-BKHud9j9.js                           0.98 kB │ gzip:   0.46 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/useDict-BB6Ji5Va.js                        1.03 kB │ gzip:   0.56 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/businessApproval-Dsiysvqr.js               1.03 kB │ gzip:   0.49 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/tagsViewRoutes-DzlgeWOA.js                 1.07 kB │ gzip:   0.60 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/subItem.vue-Iz_dsEtn.js                    1.11 kB │ gzip:   0.54 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/workflowFormConfig-DV0KMwwn.js             1.12 kB │ gzip:   0.46 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/horizontal.vue-CrxkRnoS.js                 1.16 kB │ gzip:   0.56 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-BaQ9wIDT.js                          1.18 kB │ gzip:   0.53 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-5ZSJLpVp.js                      1.22 kB │ gzip:   0.63 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-B1EFgL6U.js                      1.26 kB │ gzip:   0.62 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/app-CjowyFU0.js                            1.49 kB │ gzip:   0.61 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/active-line-DnnlfumS.js                    1.72 kB │ gzip:   0.84 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/user.vue-C9UN0E7-.js                       1.80 kB │ gzip:   0.96 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/vertical.vue-BBLM2KaV.js                   1.88 kB │ gzip:   0.88 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DFrq_cch.js                      1.90 kB │ gzip:   1.15 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/log-aYlW8BDd.js                            1.93 kB │ gzip:   0.79 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-F9T9UlYi.js                      2.11 kB │ gzip:   0.93 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/template-DxVRodzz.js                       2.14 kB │ gzip:   0.70 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BPQnTpZR.js                      2.28 kB │ gzip:   0.85 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/password.vue-8NG49o4O.js                   2.83 kB │ gzip:   1.29 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/columnsAside.vue-BZwQN6i5.js               2.89 kB │ gzip:   1.42 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-D8Vafd5R.js                          3.01 kB │ gzip:   1.47 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/aside.vue-B4uRC9Rr.js                      3.04 kB │ gzip:   1.40 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/main.vue-D69g8Ydj.js                       3.17 kB │ gzip:   1.67 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/htmlmixed-CASKN7v9.js                      3.32 kB │ gzip:   1.55 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BUdX9lMx.js                      3.34 kB │ gzip:   1.41 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/profile.vue-PWpSX_aH.js                    3.47 kB │ gzip:   1.54 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/matchbrackets-CnX72EQC.js                  3.51 kB │ gzip:   1.60 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/tagsView.vue-By3sh6e3.js                   3.61 kB │ gzip:   1.66 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/closebrackets-B9SQ4kxa.js                  4.00 kB │ gzip:   1.72 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-X2S4p4qB.js                      4.20 kB │ gzip:   2.01 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-TptVwIXJ.js                      4.74 kB │ gzip:   2.26 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CMUmzty6.js                      4.75 kB │ gzip:   2.12 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BViIMwo5.js                      4.91 kB │ gzip:   2.11 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-B7xpVsne.js      4.99 kB │ gzip:   1.72 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/fileSettings-D7fP7NaJ.js                   5.22 kB │ gzip:   1.46 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/FilePreviewPanel.vue-lyxfb0Ma.js           5.22 kB │ gzip:   2.23 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-B2pwl9aR.js                      5.34 kB │ gzip:   3.10 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CfHmWtHa.js                      5.91 kB │ gzip:   2.35 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-Aue_c1xl.js                      5.99 kB │ gzip:   2.58 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-SVcaOJG8.js                      6.49 kB │ gzip:   2.56 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/xml-DTDwRl6G.js                            6.49 kB │ gzip:   2.60 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-Boqg8LDh.js                      6.60 kB │ gzip:   2.57 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/menuHost-BUYh41dQ.js                       6.63 kB │ gzip:   2.55 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue2-Bd0gjMUq.js                     6.92 kB │ gzip:   2.87 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/python-CmGoN0XG.js                         7.07 kB │ gzip:   3.06 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-lHMjt6e7.js                      7.09 kB │ gzip:   2.62 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/login.vue-BdA_YeDw.js                      7.12 kB │ gzip:   2.85 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DMedk7f_.js                      7.15 kB │ gzip:   2.68 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BCBWArvG.js                      7.45 kB │ gzip:   3.08 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DSFCpX61.js                      7.96 kB │ gzip:   2.66 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CPWVyF3T.js                      8.04 kB │ gzip:   3.12 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-D0StuF__.js                      8.68 kB │ gzip:   3.27 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-Bt0o0WPO.js                      9.10 kB │ gzip:   4.09 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-OQIRIInq.js                      9.21 kB │ gzip:   3.48 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CiBItCDV.js                      9.51 kB │ gzip:   3.52 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-p1_unR2B.js                     10.60 kB │ gzip:   4.03 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DdjDYt18.js                     11.37 kB │ gzip:   3.96 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/ShellView.vue2-D8SfcOaq.js                11.69 kB │ gzip:   3.97 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BchyKQZ-.js                     11.72 kB │ gzip:   3.97 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CKabFKfK.js                     12.75 kB │ gzip:   3.63 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CBSKU1HC.js                     12.87 kB │ gzip:   4.87 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-L-UDRvY1.js                     13.65 kB │ gzip:   5.31 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-M8dKP-xo.js                     13.77 kB │ gzip:   4.56 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/_plugin-vue_export-helper-Bh-qfOdQ.js     14.68 kB │ gzip:   3.85 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-B7jHSWDC.js                     14.88 kB │ gzip:   4.84 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DCTKUyNS.js                     15.26 kB │ gzip:   4.91 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DDlEMVXX.js                     15.38 kB │ gzip:   5.57 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue2-B6s-vPcs.js                    16.19 kB │ gzip:   5.76 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/settings.vue-B01bnseR.js                  17.43 kB │ gzip:   4.06 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/javascript-CBQxcreA.js                    17.99 kB │ gzip:   5.98 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/MUpload.vue-CiTKWvh3.js                   18.79 kB │ gzip:   7.19 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-D2ObBAgd.js                     20.28 kB │ gzip:   6.18 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-DdHBLH0h.js                     20.97 kB │ gzip:   7.11 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/clike-DLGut_rb.js                         21.51 kB │ gzip:   7.68 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-wdmK5036.js                     24.89 kB │ gzip:   8.48 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-P9QLn7_Z.js                     25.59 kB │ gzip:   6.48 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/css-BadtGHge.js                           27.81 kB │ gzip:   8.78 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/markdown-CDKb3bIm.js                      28.21 kB │ gzip:   9.05 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-BIr019eS.js                     29.22 kB │ gzip:   9.46 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-B01TsWJ1.js                     31.66 kB │ gzip:   8.91 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-B4ZuvC5V.js                     32.77 kB │ gzip:   9.03 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-B-isJL4x.js                     34.69 kB │ gzip:  11.09 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/sql-BTTWK8HY.js                           47.92 kB │ gzip:  14.19 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-sslsXAq5.js                         58.37 kB │ gzip:  15.66 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/runtimeForm-DLTesxqm.js                   79.65 kB │ gzip:  25.09 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-DsTx0Euz.js                         81.74 kB │ gzip:  23.83 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index.vue-CwghFoyG.js                    123.90 kB │ gzip:  36.86 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/codemirror-CGJC7agF.js                   174.07 kB │ gzip:  58.19 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/icon-9v9BI5vk.js                       1,055.19 kB │ gzip: 327.68 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/index-Bt5Q6qhr.js                      1,302.83 kB │ gzip: 416.28 kB
+frontend/apps/mode-mixed-platform-admin build: dist/assets/style-D3iUMi8P.js                      1,970.91 kB │ gzip: 669.14 kB
+frontend/apps/mode-mixed-platform-admin build: ✓ built in 9.98s
+frontend/apps/mode-mixed-platform-admin build: (!) Some chunks are larger than 500 kB after minification. Consider:
+frontend/apps/mode-mixed-platform-admin build: - Using dynamic import() to code-split the application
+frontend/apps/mode-mixed-platform-admin build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+frontend/apps/mode-mixed-platform-admin build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+frontend/apps/mode-mixed-platform-admin build: Done

@@ -72,6 +72,55 @@ describe('runtime config validation', () => {
     }));
   });
 
+  it('reports invalid micro health check urls as error diagnostics', () => {
+    const config = normalizeRuntimeConfig({
+      profile: 'hybrid',
+      modules: {
+        'mango-authorization': {
+          mode: 'micro',
+          runtimeCode: 'mango-admin-rbac-app',
+          entry: 'https://rbac.mango.io/',
+          healthCheckUrl: 'https://unknown.mango.io/health.json',
+        },
+      },
+    }, {
+      allowHttpEntries: false,
+      requireEntryAllowlist: true,
+      allowedEntryOrigins: ['https://rbac.mango.io'],
+    });
+
+    expect(config.diagnostics).toContainEqual(expect.objectContaining({
+      level: 'error',
+      moduleCode: 'mango-authorization',
+      field: 'healthCheckUrl',
+    }));
+  });
+
+  it('keeps version and health check metadata in normalized module config', () => {
+    const config = normalizeRuntimeConfig({
+      profile: 'hybrid',
+      modules: {
+        guarantee: {
+          mode: 'micro',
+          runtimeCode: 'guarantee-runtime',
+          entry: 'http://127.0.0.1:5190/',
+          version: '1.2.3',
+          healthCheckUrl: 'http://127.0.0.1:5190/health.json',
+        },
+      },
+    }, {
+      allowHttpEntries: true,
+      allowedEntryOrigins: ['http://127.0.0.1:5190'],
+    });
+
+    expect(config.modules.guarantee).toMatchObject({
+      appType: 'MICRO_APP',
+      version: '1.2.3',
+      healthCheckUrl: 'http://127.0.0.1:5190/health.json',
+      timeoutMs: 15000,
+    });
+  });
+
   it('exposes a typed runtime config error for fail-closed callers', () => {
     const error = new MangoRuntimeConfigError('Runtime config validation failed', [
       {

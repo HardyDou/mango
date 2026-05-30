@@ -1,0 +1,156 @@
+
+> mode-local-platform@1.0.0 build /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-local-platform
+> pnpm -r build
+
+Scope: 3 of 4 workspace projects
+frontend/packages/guarantee-api build$ pnpm typecheck
+frontend/packages/guarantee-api build: > @mode-local-platform/guarantee-api@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-local-platform/frontend/packages/guarantee-api
+frontend/packages/guarantee-api build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee-api build: Done
+frontend/packages/guarantee build$ pnpm typecheck
+frontend/packages/guarantee build: > @mode-local-platform/guarantee@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-local-platform/frontend/packages/guarantee
+frontend/packages/guarantee build: > vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee build: Done
+frontend/apps/mode-local-platform-admin build$ pnpm typecheck && vite build
+frontend/apps/mode-local-platform-admin build: > mode-local-platform-admin@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-local-platform/frontend/apps/mode-local-platform-admin
+frontend/apps/mode-local-platform-admin build: > vue-tsc --noEmit -p tsconfig.json
+frontend/apps/mode-local-platform-admin build: vite v5.4.21 building for production...
+frontend/apps/mode-local-platform-admin build: transforming...
+frontend/apps/mode-local-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (3362:0): A comment
+frontend/apps/mode-local-platform-admin build: "/* #__PURE__ */"
+frontend/apps/mode-local-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/mode-local-platform-admin build: ../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js (5780:22): A comment
+frontend/apps/mode-local-platform-admin build: "/* #__PURE__ */"
+frontend/apps/mode-local-platform-admin build: in "../../../node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.35_typescript@5.9.3_/node_modules/@vueuse/core/dist/index.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+frontend/apps/mode-local-platform-admin build: ✓ 2740 modules transformed.
+frontend/apps/mode-local-platform-admin build: rendering chunks...
+frontend/apps/mode-local-platform-admin build: computing gzip size...
+frontend/apps/mode-local-platform-admin build: dist/index.html                                        0.41 kB │ gzip:   0.28 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/fc-icons-BjnjLEor.woff                    17.44 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-Bj1H-tDH.css                         0.47 kB │ gzip:   0.21 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/icon-Byp_cd-K.css                         16.09 kB │ gzip:   4.05 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/style-CTjwcune.css                        25.02 kB │ gzip:   4.67 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-B6CIJ_09.css                       387.47 kB │ gzip:  52.64 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-DlAUqK2U.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-BffYpcM-.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-b8p_N644.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-B-KA9PqK.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-B4PAZYor.js      0.09 kB │ gzip:   0.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-C5hE_tgd.js      0.21 kB │ gzip:   0.18 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/businessApply-BKzMXNZn.js                  0.22 kB │ gzip:   0.18 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue2-Dpg7TBfR.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue2-BkH6vN06.js                     0.29 kB │ gzip:   0.23 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/menuPackage-BSk3kqfx.js                    0.38 kB │ gzip:   0.20 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/formatTime-BSK6ffaY.js                     0.47 kB │ gzip:   0.26 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/css-DFG_plYO.js                            0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/codemirror-BCzqdcjz.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/javascript-BuCtA8Dh.js                     0.50 kB │ gzip:   0.36 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/sys-CZAFvWnP.js                            0.55 kB │ gzip:   0.29 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/404.vue-YlXiHeyD.js                        0.56 kB │ gzip:   0.42 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/org-BgIZEaw-.js                            0.66 kB │ gzip:   0.34 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/role-mJdPbIKj.js                           0.67 kB │ gzip:   0.28 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-B8Xo_49I.js                      0.69 kB │ gzip:   0.42 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/breadcrumb.vue-xaUwxq81.js                 0.73 kB │ gzip:   0.48 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/iconConfig-B19nU_bv.js                     0.74 kB │ gzip:   0.46 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-BbjNpD45.js                          0.74 kB │ gzip:   0.40 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/header.vue-CIilgfR4.js                     0.86 kB │ gzip:   0.52 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-D4lhTY1X.js                      0.88 kB │ gzip:   0.54 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/post-C_Y5z1WH.js                           0.93 kB │ gzip:   0.40 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/menu-DJxfO9KM.js                           0.98 kB │ gzip:   0.46 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/useDict-BCRUPhPR.js                        1.03 kB │ gzip:   0.56 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/businessApproval-Dsiysvqr.js               1.03 kB │ gzip:   0.49 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/tagsViewRoutes-BqdW_LX8.js                 1.07 kB │ gzip:   0.60 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/subItem.vue-CMjc-rs1.js                    1.11 kB │ gzip:   0.54 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/workflowFormConfig-DV0KMwwn.js             1.12 kB │ gzip:   0.46 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/horizontal.vue-CuwFC8k2.js                 1.16 kB │ gzip:   0.56 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-Bwp7nr7O.js                          1.18 kB │ gzip:   0.53 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-VLCwNC4H.js                      1.22 kB │ gzip:   0.63 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-eS1GVWQJ.js                      1.26 kB │ gzip:   0.62 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/app-QVMlaZTz.js                            1.49 kB │ gzip:   0.61 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/active-line-T3cmJOlH.js                    1.72 kB │ gzip:   0.84 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/user.vue-D-MuQAiV.js                       1.80 kB │ gzip:   0.96 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/vertical.vue-By_EnRN_.js                   1.88 kB │ gzip:   0.88 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-Dc-HLcR6.js                      1.90 kB │ gzip:   1.15 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/log-D_IC-Dmr.js                            1.93 kB │ gzip:   0.79 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CVDS2vy4.js                      2.11 kB │ gzip:   0.94 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/template-C9p_iSIS.js                       2.14 kB │ gzip:   0.70 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-BFbvDg54.js                      2.28 kB │ gzip:   0.85 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/password.vue-dSoDhVjr.js                   2.83 kB │ gzip:   1.29 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/columnsAside.vue-Cr3AgRyX.js               2.89 kB │ gzip:   1.42 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-E1Zl3qKa.js                          3.01 kB │ gzip:   1.48 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/aside.vue-0edkIwwy.js                      3.04 kB │ gzip:   1.40 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/main.vue-DoG563TY.js                       3.17 kB │ gzip:   1.67 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/htmlmixed-BXBD1A7H.js                      3.32 kB │ gzip:   1.55 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-BZYjobiP.js                      3.34 kB │ gzip:   1.41 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/profile.vue-CjYFBWH6.js                    3.47 kB │ gzip:   1.54 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/matchbrackets-CyqlOeyf.js                  3.51 kB │ gzip:   1.59 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/tagsView.vue-Dy8RWY1w.js                   3.61 kB │ gzip:   1.65 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/closebrackets-CoQW-p0q.js                  4.00 kB │ gzip:   1.72 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-Je_6o1kT.js                      4.20 kB │ gzip:   2.01 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CyJssL--.js                      4.74 kB │ gzip:   2.26 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-DKvCPos_.js                      4.75 kB │ gzip:   2.12 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-NyZfYYyo.js                      4.91 kB │ gzip:   2.11 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-BHPrh27Z.js      4.99 kB │ gzip:   1.72 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/fileSettings-DxZTMTL5.js                   5.22 kB │ gzip:   1.46 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/FilePreviewPanel.vue-DZnjJuSc.js           5.22 kB │ gzip:   2.23 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-BmH8iUdP.js                      5.34 kB │ gzip:   3.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CYVu0Vdo.js                      5.91 kB │ gzip:   2.35 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CeqaElnC.js                      5.99 kB │ gzip:   2.58 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-B7lyV7DS.js                      6.49 kB │ gzip:   2.57 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/xml-DZ-4-Oww.js                            6.49 kB │ gzip:   2.60 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CeP403OY.js                      6.60 kB │ gzip:   2.57 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/menuHost-BqF-iyQF.js                       6.63 kB │ gzip:   2.55 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue2-kUDU_LpR.js                     6.92 kB │ gzip:   2.87 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/python-B50HYW_a.js                         7.07 kB │ gzip:   3.06 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-ClR0XQRr.js                      7.09 kB │ gzip:   2.62 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/login.vue-BnFNz0BQ.js                      7.12 kB │ gzip:   2.85 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-BJ8DPm-Q.js                      7.15 kB │ gzip:   2.68 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-7NaAKeRW.js                      7.45 kB │ gzip:   3.08 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CBhubSC4.js                      7.96 kB │ gzip:   2.66 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-D0W2FnSW.js                      8.04 kB │ gzip:   3.12 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-C_GIkmVa.js                      8.68 kB │ gzip:   3.27 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-Dns0et7z.js                      9.10 kB │ gzip:   4.09 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-DF1VGuss.js                      9.21 kB │ gzip:   3.47 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-C9AjRw8N.js                      9.51 kB │ gzip:   3.52 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CJCs7GlN.js                     10.60 kB │ gzip:   4.03 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-B311RS-d.js                     11.37 kB │ gzip:   3.96 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/ShellView.vue2-CISYfggp.js                11.69 kB │ gzip:   3.97 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-DtKq5p2Y.js                     11.72 kB │ gzip:   3.97 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CzcOp9dL.js                     12.75 kB │ gzip:   3.62 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-DxE9j3Dm.js                     12.87 kB │ gzip:   4.87 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-Dl3uO9lL.js                     13.65 kB │ gzip:   5.31 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CfwEQ4kd.js                     13.77 kB │ gzip:   4.56 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/_plugin-vue_export-helper-OYX69b6n.js     14.68 kB │ gzip:   3.85 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-BnItl66x.js                     14.88 kB │ gzip:   4.84 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-DUbjZBMU.js                     15.26 kB │ gzip:   4.91 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue--qA_VLia.js                     15.38 kB │ gzip:   5.57 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue2-gQG4ZBhC.js                    16.19 kB │ gzip:   5.76 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/settings.vue-Bi1dg7d8.js                  17.43 kB │ gzip:   4.06 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/javascript-DvpIFatr.js                    17.99 kB │ gzip:   5.98 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/MUpload.vue-CvNkF1O9.js                   18.79 kB │ gzip:   7.19 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-Cgp30YJ6.js                     20.28 kB │ gzip:   6.18 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CEdvTGAj.js                     20.97 kB │ gzip:   7.11 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/clike-DMRLjrix.js                         21.51 kB │ gzip:   7.68 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-Cu0rNIde.js                     24.89 kB │ gzip:   8.48 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-DsxFbO2c.js                     25.59 kB │ gzip:   6.47 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/css-Bj_jHFo1.js                           27.39 kB │ gzip:   8.55 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/markdown-Fleor5Za.js                      28.21 kB │ gzip:   9.05 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CM5-beMz.js                     29.22 kB │ gzip:   9.46 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-C-fIjEUI.js                     31.66 kB │ gzip:   8.91 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-jBqwO_4k.js                     32.77 kB │ gzip:   9.03 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CtZ-CaEm.js                     34.72 kB │ gzip:  11.10 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/sql-D5a5TWyi.js                           47.92 kB │ gzip:  14.19 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-ChFSWlFm.js                         58.37 kB │ gzip:  15.66 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/runtimeForm-Chu1_T4Z.js                   79.65 kB │ gzip:  25.09 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-DIQJCHUz.js                         81.74 kB │ gzip:  23.83 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index.vue-CDmcSaEI.js                    123.90 kB │ gzip:  36.86 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/codemirror-DfC_DsEO.js                   174.07 kB │ gzip:  58.19 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/icon-BJM1kTtg.js                       1,055.19 kB │ gzip: 327.68 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/index-FBCHtaK6.js                      1,302.71 kB │ gzip: 416.22 kB
+frontend/apps/mode-local-platform-admin build: dist/assets/style-CEJ-Zrxf.js                      1,970.91 kB │ gzip: 669.14 kB
+frontend/apps/mode-local-platform-admin build: ✓ built in 9.94s
+frontend/apps/mode-local-platform-admin build: (!) Some chunks are larger than 500 kB after minification. Consider:
+frontend/apps/mode-local-platform-admin build: - Using dynamic import() to code-split the application
+frontend/apps/mode-local-platform-admin build: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+frontend/apps/mode-local-platform-admin build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+frontend/apps/mode-local-platform-admin build: Done

@@ -39,6 +39,8 @@ export interface RuntimeDecision {
   runtimeMode?: string;
   runtimeCode?: string;
   entry?: string;
+  version?: string;
+  healthCheckUrl?: string;
   decidedAt: string;
 }
 
@@ -300,6 +302,8 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       details: [
         runtimeCode ? `运行单元：${runtimeCode}` : '',
         entry ? `入口地址：${entry}` : '',
+        activeRuntimeApp.value?.version ? `版本：${activeRuntimeApp.value.version}` : '',
+        activeRuntimeApp.value?.healthCheckUrl ? `健康检查：${activeRuntimeApp.value.healthCheckUrl}` : '',
       ].filter(Boolean),
       retry: retryCurrentMenu,
     });
@@ -374,6 +378,8 @@ function toRuntimeApps(config: MangoRuntimeConfig): MangoRuntimeAppConfig[] {
       entryUrl: module.entry,
       styleUrl: module.style,
       framework: module.framework || 'vue3',
+      version: module.version,
+      healthCheckUrl: module.healthCheckUrl,
       sandboxEnabled: false,
       styleIsolation: 'NONE',
       status: 1,
@@ -466,9 +472,12 @@ function renderRuntimeState(
 }
 
 function createRuntime(config: MangoRuntimeAppConfig, menu?: ShellMenu): MangoAppRuntime {
+  const menuPermissions = resolveMenuPermissions(menu);
+  const baseRuntime = createBaseRuntime(config);
   return {
-    ...createBaseRuntime(config),
+    ...baseRuntime,
     menu,
+    permissions: mergeRuntimePermissions(baseRuntime.permissions, menuPermissions),
   };
 }
 
@@ -497,8 +506,9 @@ export function createShellRuntimeTheme(): MangoRuntimeTheme {
   const themeStore = useThemeStore();
   const layoutStore = useLayoutStore();
   const preferencesStore = usePreferencesStore();
+  const primary = normalizeHexColor(themeStore.primary);
   return {
-    primary: themeStore.primary,
+    primary,
     isDark: themeStore.isDark,
     topBar: themeStore.topBar,
     topBarColor: themeStore.topBarColor,
@@ -510,13 +520,43 @@ export function createShellRuntimeTheme(): MangoRuntimeTheme {
     layout: layoutStore.layout,
     componentSize: preferencesStore.globalComponentSize,
     tokens: {
-      '--mango-color-primary': themeStore.primary,
-      '--el-color-primary': themeStore.primary,
+      '--mango-color-primary': primary,
+      '--el-color-primary': primary,
       '--mango-bg-top-bar': themeStore.topBar,
       '--mango-bg-menu-bar': themeStore.menuBar,
       '--mango-bg-columns-menu-bar': themeStore.columnsMenuBar,
     },
   };
+}
+
+function resolveMenuPermissions(menu?: ShellMenu): string[] {
+  if (!menu) {
+    return [];
+  }
+  const permissions = [
+    ...(Array.isArray(menu.permissions) ? menu.permissions : []),
+    ...(Array.isArray(menu.meta?.permissions) ? menu.meta.permissions as string[] : []),
+  ];
+  return permissions.length > 0 ? permissions : menu.menuCode ? [menu.menuCode] : [];
+}
+
+function mergeRuntimePermissions(...groups: Array<string[] | undefined>) {
+  const permissions = new Set<string>();
+  for (const group of groups) {
+    for (const permission of group || []) {
+      if (permission) {
+        permissions.add(permission);
+      }
+    }
+  }
+  return [...permissions];
+}
+
+function normalizeHexColor(color?: string) {
+  if (!color) {
+    return color;
+  }
+  return /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(color) ? color.toLowerCase() : color;
 }
 
 export function emitShellThemeChange(theme: MangoRuntimeTheme = createShellRuntimeTheme()) {
@@ -555,6 +595,8 @@ function createRuntimeDecision(
     runtimeMode: moduleConfig?.mode,
     runtimeCode: moduleConfig?.runtimeCode,
     entry: moduleConfig?.entry,
+    version: moduleConfig?.version,
+    healthCheckUrl: moduleConfig?.healthCheckUrl,
     decidedAt: new Date().toISOString(),
   };
 }
@@ -565,6 +607,8 @@ function applyRuntimeMarker(container: HTMLElement, decision: RuntimeDecision) {
   container.dataset.mangoRuntimeModule = decision.moduleCode || '';
   container.dataset.mangoRuntimeCode = decision.runtimeCode || '';
   container.dataset.mangoRuntimeEntry = decision.entry || '';
+  container.dataset.mangoRuntimeVersion = decision.version || '';
+  container.dataset.mangoRuntimeHealthCheck = decision.healthCheckUrl || '';
 }
 
 function recordRuntimeDecision(decision: RuntimeDecision) {

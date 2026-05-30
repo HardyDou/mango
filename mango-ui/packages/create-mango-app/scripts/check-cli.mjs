@@ -180,12 +180,12 @@ try {
   }
 
   const appBootstrap = readFileSync(join(projectRoot, 'frontend/apps/guarantee-platform-admin/src/main.ts'), 'utf8');
-  if (!appBootstrap.includes('registerDefaultAdminPages') || !appBootstrap.includes('mangoWorkflowCapability') || !appBootstrap.includes('mangoFileCapability') || !appBootstrap.includes("allowHttpEntries: import.meta.env.DEV || import.meta.env.VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES === 'true'") || !appBootstrap.includes("allowedEntryOrigins: ['http://127.0.0.1:5190', 'http://localhost:5190']") || appBootstrap.includes('{{')) {
+  if (!appBootstrap.includes("createMangoAdmin({") || !appBootstrap.includes("preset: 'full'") || !appBootstrap.includes('mangoWorkflowCapability') || !appBootstrap.includes('mangoFileCapability') || !appBootstrap.includes("allowHttpEntries: import.meta.env.DEV || import.meta.env.VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES === 'true'") || !appBootstrap.includes("allowedEntryOrigins: ['http://127.0.0.1:5190', 'http://localhost:5190']") || appBootstrap.includes('{{')) {
     throw new Error('admin app bootstrap was not rendered correctly');
   }
 
   const runtimeConfig = readFileSync(join(projectRoot, 'frontend/apps/guarantee-platform-admin/src/runtimeConfig.ts'), 'utf8');
-  if (!runtimeConfig.includes("'mango-workflow'") || !runtimeConfig.includes("appType: 'MICRO_APP'") || !runtimeConfig.includes("runtimeCode: 'mango-workflow-micro'") || !runtimeConfig.includes("profile: (import.meta.env.VITE_MANGO_RUNTIME_PROFILE || 'hybrid'") || runtimeConfig.includes('{{')) {
+  if (!runtimeConfig.includes("'mango-workflow'") || !runtimeConfig.includes("appType: 'MICRO_APP'") || !runtimeConfig.includes("runtimeCode: 'mango-workflow-micro'") || !runtimeConfig.includes("version: '1.0.0'") || !runtimeConfig.includes('VITE_WORKFLOW_HEALTH_CHECK_URL') || !runtimeConfig.includes("profile: (import.meta.env.VITE_MANGO_RUNTIME_PROFILE || 'hybrid'") || runtimeConfig.includes('{{')) {
     throw new Error('runtime config template was not rendered correctly');
   }
 
@@ -195,12 +195,12 @@ try {
   }
 
   const publicRuntimeConfig = readFileSync(join(projectRoot, 'frontend/apps/guarantee-platform-admin/public/mango-runtime-config.json'), 'utf8');
-  if (!publicRuntimeConfig.includes('"profile": "hybrid"') || !publicRuntimeConfig.includes('"mango-workflow"') || !publicRuntimeConfig.includes('"entry": "http://127.0.0.1:5190/"') || !publicRuntimeConfig.includes('"runtimeCode": "mango-workflow-micro"') || publicRuntimeConfig.includes('{{')) {
+  if (!publicRuntimeConfig.includes('"profile": "hybrid"') || !publicRuntimeConfig.includes('"mango-workflow"') || !publicRuntimeConfig.includes('"entry": "http://127.0.0.1:5190/"') || !publicRuntimeConfig.includes('"runtimeCode": "mango-workflow-micro"') || !publicRuntimeConfig.includes('"healthCheckUrl": "http://127.0.0.1:5190/health.json"') || publicRuntimeConfig.includes('{{')) {
     throw new Error('public runtime config was not rendered correctly');
   }
 
   const envExample = readFileSync(join(projectRoot, 'frontend/apps/guarantee-platform-admin/.env.example'), 'utf8');
-  if (!envExample.includes('VITE_APP_TITLE=GuaranteePlatform Admin') || !envExample.includes('VITE_MANGO_RUNTIME_PROFILE=hybrid') || !envExample.includes('VITE_GUARANTEE_MODE=micro') || !envExample.includes('VITE_WORKFLOW_MODE=micro') || !envExample.includes('VITE_SYSTEM_MODE=local') || !envExample.includes('VITE_WORKFLOW_ENTRY=http://127.0.0.1:5190/') || envExample.includes('{{')) {
+  if (!envExample.includes('VITE_APP_TITLE=GuaranteePlatform Admin') || !envExample.includes('VITE_MANGO_RUNTIME_PROFILE=hybrid') || !envExample.includes('VITE_GUARANTEE_MODE=micro') || !envExample.includes('VITE_WORKFLOW_MODE=micro') || !envExample.includes('VITE_SYSTEM_MODE=local') || !envExample.includes('VITE_WORKFLOW_ENTRY=http://127.0.0.1:5190/') || !envExample.includes('VITE_WORKFLOW_HEALTH_CHECK_URL=http://127.0.0.1:5190/health.json') || envExample.includes('{{')) {
     throw new Error('env example template was not rendered correctly');
   }
 

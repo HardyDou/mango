@@ -11,7 +11,11 @@ import {
   type MangoMenuTreeNode,
 } from '@mango/common/utils/menuTree';
 import { getMangoAdminShellOptions } from '../config';
-import { mergeShellMenus, type ShellMenuMergeReport } from './menuMerge';
+import {
+  createShellMenuMergeReport,
+  mergeShellMenus,
+  type ShellMenuMergeReport,
+} from './menuMerge';
 
 export enum MenuTypeEnum {
   DIRECTORY = 1,
@@ -91,16 +95,31 @@ export function useMenuHost(): ShellMenuHost {
     try {
       const options = getMangoAdminShellOptions();
       const appCode = options.menu?.appCode || options.login?.defaults?.appCode || 'internal-admin';
-      const response = options.menu?.loader
-        ? await options.menu.loader({ appCode })
-        : await get('/authorization/menus/user', {
-          params: { fmt: 'tree', appCode },
-        } as RequestConfig) as ShellMenu[];
+      const fallbackMenus = [
+        ...(options.menu?.capabilityMenus || []),
+        ...(options.menu?.businessMenus || []),
+      ];
+      let response: ShellMenu[] = [];
+      const report = createShellMenuMergeReport();
+      try {
+        response = options.menu?.loader
+          ? await options.menu.loader({ appCode })
+          : await get('/authorization/menus/user', {
+            params: { fmt: 'tree', appCode },
+            silentError: fallbackMenus.length > 0,
+          } as RequestConfig) as ShellMenu[];
+      } catch (error) {
+        if (fallbackMenus.length === 0) {
+          throw error;
+        }
+        report.diagnostics.push(resolveMenuLoadDiagnostic(error));
+      }
       const merged = mergeShellMenus({
         backendMenus: response || [],
         capabilityMenus: options.menu?.capabilityMenus || [],
         businessMenus: options.menu?.businessMenus || [],
         permissions: options.menu?.permissions,
+        report,
       });
       lastShellMenuMergeReport = merged.report;
       options.menu?.onMergeReport?.(merged.report);
@@ -162,6 +181,13 @@ function filterMenuForRoute(menus: ShellMenu[]): ShellMenu[] {
       ...menu,
       children: menu.children ? filterMenuForRoute(menu.children) : [],
     }));
+}
+
+function resolveMenuLoadDiagnostic(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return `Backend menu load failed; using capability/business menus: ${error.message}`;
+  }
+  return 'Backend menu load failed; using capability/business menus.';
 }
 
 function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {

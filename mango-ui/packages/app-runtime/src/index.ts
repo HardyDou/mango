@@ -13,6 +13,7 @@ export type MangoRuntimeLogLevel = 'info' | 'warn' | 'error';
 export type MangoRuntimeLogEventName =
   | 'runtime-config-load'
   | 'runtime-config-error'
+  | 'micro-app-health-check'
   | 'micro-app-mount'
   | 'micro-app-unmount'
   | 'micro-app-preload'
@@ -128,6 +129,8 @@ export interface MangoModuleRuntimeConfig {
   runtimeCode?: string;
   appType?: MangoFrontendAppType;
   framework?: string;
+  version?: string;
+  healthCheckUrl?: string;
   timeoutMs?: number;
   preload?: boolean;
   alive?: boolean;
@@ -410,6 +413,7 @@ export const microAppAdapter: MangoAppAdapter = {
     }
     await microAppAdapter.unmount?.(config);
     container.innerHTML = '';
+    await assertMicroAppHealth(config);
     recordMicroAppDebug(config, 'load');
     emitMangoRuntimeLog({
       level: 'info',
@@ -688,6 +692,63 @@ function validateMicroModule(
       field: 'entry',
       message: `Micro module '${moduleCode}' has invalid entry '${module.entry}'`,
     });
+  }
+  if (module.healthCheckUrl && !isValidRuntimeEntry(module.healthCheckUrl, options)) {
+    diagnostics.push({
+      level: 'error',
+      moduleCode,
+      field: 'healthCheckUrl',
+      message: `Micro module '${moduleCode}' has invalid healthCheckUrl '${module.healthCheckUrl}'`,
+    });
+  }
+}
+
+async function assertMicroAppHealth(config: MangoRuntimeAppConfig) {
+  if (!config.healthCheckUrl) {
+    return;
+  }
+  if (typeof fetch !== 'function') {
+    emitMangoRuntimeLog({
+      level: 'warn',
+      event: 'micro-app-health-check',
+      appCode: config.appCode,
+      entryUrl: config.entryUrl,
+      message: `Skip Mango micro app health check because fetch is unavailable: ${config.appCode}`,
+      detail: { healthCheckUrl: config.healthCheckUrl, version: config.version },
+    });
+    return;
+  }
+  try {
+    const response = await withTimeout(fetch(config.healthCheckUrl, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json,text/plain,*/*' },
+    }), config.timeoutMs || 15000, config);
+    if (!response.ok) {
+      throw new MangoRuntimeError(
+        `Mango micro app health check failed: ${config.appCode} (${response.status} ${response.statusText})`,
+        config
+      );
+    }
+    emitMangoRuntimeLog({
+      level: 'info',
+      event: 'micro-app-health-check',
+      appCode: config.appCode,
+      entryUrl: config.entryUrl,
+      message: `Mango micro app health check passed: ${config.appCode}`,
+      detail: { healthCheckUrl: config.healthCheckUrl, version: config.version },
+    });
+  } catch (error) {
+    emitMangoRuntimeLog({
+      level: 'error',
+      event: 'micro-app-health-check',
+      appCode: config.appCode,
+      entryUrl: config.entryUrl,
+      message: `Mango micro app health check failed: ${config.appCode}`,
+      detail: { healthCheckUrl: config.healthCheckUrl, version: config.version, error },
+    });
+    throw error instanceof MangoRuntimeError
+      ? error
+      : new MangoRuntimeError(`Mango micro app health check failed: ${config.appCode}`, config, { cause: error });
   }
 }
 

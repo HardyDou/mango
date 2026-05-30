@@ -350,6 +350,8 @@ function buildRuntimeModules(options, featureEntries) {
     entry: `import.meta.env.VITE_${toSnakeCase(options.module).toUpperCase()}_ENTRY`,
     runtimeCode: `${options.project}-${options.module}`,
     appType: options.frontendMode === 'micro' ? 'MICRO_APP' : 'LOCAL',
+    version: options.version,
+    healthCheckUrl: `import.meta.env.VITE_${toSnakeCase(options.module).toUpperCase()}_HEALTH_CHECK_URL`,
   });
 
   for (const entry of featureEntries) {
@@ -361,6 +363,8 @@ function buildRuntimeModules(options, featureEntries) {
         entry: `import.meta.env.VITE_${toSnakeCase(entry.code).toUpperCase()}_ENTRY`,
         runtimeCode: `${entry.moduleCode}-${mode}`,
         appType: mode === 'micro' ? 'MICRO_APP' : 'LOCAL',
+        version: '1.0.0',
+        healthCheckUrl: `import.meta.env.VITE_${toSnakeCase(entry.code).toUpperCase()}_HEALTH_CHECK_URL`,
       });
     }
   }
@@ -395,7 +399,8 @@ function renderFeatureCapabilities(entries) {
 function renderRuntimeModulesTs(modules) {
   return modules.map(module => {
     const entryLine = module.appType === 'MICRO_APP' ? `\n      entry: ${module.entry},` : '';
-    return `    '${module.moduleCode}': {\n      mode: '${module.mode}',${entryLine}\n      runtimeCode: '${module.runtimeCode}',\n      appType: '${module.appType}',\n      framework: 'vue3',\n    }`;
+    const healthCheckLine = module.appType === 'MICRO_APP' ? `\n      healthCheckUrl: ${module.healthCheckUrl},` : '';
+    return `    '${module.moduleCode}': {\n      mode: '${module.mode}',${entryLine}\n      runtimeCode: '${module.runtimeCode}',\n      appType: '${module.appType}',\n      framework: 'vue3',\n      version: '${module.version}',${healthCheckLine}\n    }`;
   }).join(',\n');
 }
 
@@ -407,7 +412,9 @@ function renderRuntimeModulesJson(modules) {
       ...(module.appType === 'MICRO_APP' ? [`      \"entry\": \"${renderRuntimeJsonEntry(module)}\",`] : []),
       `      \"runtimeCode\": \"${module.runtimeCode}\",`,
       `      \"appType\": \"${module.appType}\",`,
-      '      "framework": "vue3"',
+      '      "framework": "vue3",',
+      `      \"version\": \"${module.version}\"${module.appType === 'MICRO_APP' ? ',' : ''}`,
+      ...(module.appType === 'MICRO_APP' ? [`      \"healthCheckUrl\": \"${renderRuntimeJsonHealthCheck(module)}\"`] : []),
       '    }',
     ];
     return lines.join('\n');
@@ -418,10 +425,12 @@ function renderFeatureEnv(options, entries) {
   const env = [
     `VITE_${toSnakeCase(options.module).toUpperCase()}_MODE=${resolveRuntimeModuleMode(options, options.module)}`,
     `VITE_${toSnakeCase(options.module).toUpperCase()}_ENTRY=http://127.0.0.1:5190/`,
+    `VITE_${toSnakeCase(options.module).toUpperCase()}_HEALTH_CHECK_URL=http://127.0.0.1:5190/health.json`,
   ];
   for (const entry of entries) {
     env.push(`VITE_${toSnakeCase(entry.code).toUpperCase()}_MODE=${resolveRuntimeModuleMode(options, entry.moduleCode)}`);
     env.push(`VITE_${toSnakeCase(entry.code).toUpperCase()}_ENTRY=http://127.0.0.1:5190/`);
+    env.push(`VITE_${toSnakeCase(entry.code).toUpperCase()}_HEALTH_CHECK_URL=http://127.0.0.1:5190/health.json`);
   }
   return [...new Set(env)].join('\n');
 }
@@ -429,6 +438,11 @@ function renderFeatureEnv(options, entries) {
 function renderRuntimeJsonEntry(module) {
   void module;
   return 'http://127.0.0.1:5190/';
+}
+
+function renderRuntimeJsonHealthCheck(module) {
+  void module;
+  return 'http://127.0.0.1:5190/health.json';
 }
 
 function resolveRuntimeModuleMode(options, moduleCode) {

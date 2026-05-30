@@ -647,13 +647,16 @@ async function waitForRuntimeContentReady(expectedText) {
     };
     const content = document.querySelector('.shell-runtime-content');
     if (!content || !isVisible(content)) return false;
+    const hasVisibleLoading = Array.from(content.querySelectorAll('.el-loading-mask, .el-loading-spinner, .is-loading'))
+      .some(isVisible);
+    if (hasVisibleLoading) return false;
     const contentText = (content.innerText || '').trim();
     const hasRuntimeError = ['页面加载失败', '运行配置加载失败', '缺少微应用运行配置', 'The requested module', 'does not provide an export named', '404']
       .some((pattern) => contentText.includes(pattern));
     if (hasRuntimeError) return true;
     if (expected && contentText.includes(expected)) return true;
     return !expected && contentText.length > 0;
-  }, expectedText, { timeout: 15000 }).catch(() => undefined);
+  }, expectedText, { timeout: 20000 });
   await waitForNoTransientMessages();
 }
 
@@ -676,6 +679,12 @@ async function getRuntimeContentState(expectedText) {
     const contentText = (content?.innerText || '').trim();
     const forbiddenPatterns = ['页面加载失败', '运行配置加载失败', '缺少微应用运行配置', 'The requested module', 'does not provide an export named', '404'];
     const visibleRuntimeError = Array.from(content?.querySelectorAll('.micro-runtime-empty') || []).some(isVisible);
+    const visibleLoading = Array.from(content?.querySelectorAll('.el-loading-mask, .el-loading-spinner, .is-loading') || [])
+      .filter(isVisible)
+      .map((element) => ({
+        className: element.className,
+        text: (element.textContent || '').trim().slice(0, 80),
+      }));
     const visibleContentBlocks = Array.from(content?.querySelectorAll([
       '.el-card',
       '.el-table',
@@ -702,6 +711,8 @@ async function getRuntimeContentState(expectedText) {
       hasExpectedContentText: expected ? contentText.includes(expected) : contentText.length > 0,
       hasRuntimeStructure: visibleContentBlocks.length > 0,
       visibleRuntimeBlockCount: visibleContentBlocks.length,
+      hasVisibleLoading: visibleLoading.length > 0,
+      visibleLoading,
       hasRuntimeError: visibleRuntimeError || forbiddenPatterns.some((pattern) => contentText.includes(pattern)),
       hasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
     };
@@ -742,6 +753,7 @@ async function sampleMenus(menuTree) {
           && state.hasExpectedContentText
           && state.hasRuntimeStructure
           && !state.hasRuntimeError
+          && !state.hasVisibleLoading
           && !state.hasHorizontalOverflow
           && newFailedResponses.length === 0,
       });

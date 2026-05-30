@@ -1,0 +1,1839 @@
+{
+  "items": [
+    {
+      "menuCode": "system:menu-package:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu-package:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu-package:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu-package:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu-package:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu-package",
+      "path": "/system/menu-package",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:tenant:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:tenant:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:tenant:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:tenant:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:tenant:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:tenant",
+      "path": "/system/tenant",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:org:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:org:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:org:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:org:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:org:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:org",
+      "path": "/system/org",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:post:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:post:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:post:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:post:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:post:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:post",
+      "path": "/system/post",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:status",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:reset-password",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user:assign-role",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:user",
+      "path": "/system/user",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:role:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:role:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:role:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:role:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:role:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:role:assign",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:role",
+      "path": "/system/role",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu",
+      "path": "/system/menu",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:permission",
+      "path": "/system/permission",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:app:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:app:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:app:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:app:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "authorization:app:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:app",
+      "path": "/system/app",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:type:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:type:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:type:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:type:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:type:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:data:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:data:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:data:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:data:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict:data:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:dict",
+      "path": "/system/dict",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:config:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:config:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:config:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:config:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:config:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:config",
+      "path": "/system/config",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:area:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:area:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:area:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:area:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:area",
+      "path": "/system/area",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:login:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:login:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:login:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:login",
+      "path": "/system/login-log",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:operation:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:operation:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:operation:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log:operation",
+      "path": "/system/operation-log",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:log",
+      "path": "/system/log",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "*:*",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system",
+      "path": "/system",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:process:start",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:process:detail",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:business-apply:create",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:business-apply:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:business-apply:detail",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:start-process",
+      "path": "/workflow/start-process",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:todo",
+      "path": "/workflow/task/todo",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:initiated",
+      "path": "/workflow/task/initiated",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:done",
+      "path": "/workflow/task/done",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:copied",
+      "path": "/workflow/task/copied",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:detail",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:complete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:reject",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:save",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:transfer",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:add-sign",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:claim",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:unclaim",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task:read-copied",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:task",
+      "path": "/workflow/task",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:create-definition",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template:push",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:template",
+      "path": "/workflow/manage/template",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:status",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition:deploy",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:definition",
+      "path": "/workflow/manage/definition",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:manage",
+      "path": "/workflow/manage",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow:business-form",
+      "path": "/workflow/business-form",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "workflow",
+      "path": "/workflow",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:admin:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:admin:create",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:admin:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:admin:status",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:admin:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:year:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:year:init",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:year:enabled",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:year:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:day:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:day:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:day:batch",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:day:import",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:day:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "calendar:calculate:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "data:calendar",
+      "path": "/data/calendar",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "numgen:manage:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "numgen:manage:write",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "data:numgen",
+      "path": "/data/numgen",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files:upload",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files:download",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files:archive",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:directories:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:directories:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:directories:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:directories:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:files",
+      "path": "/file/files",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:test",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs:active",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:storage-configs",
+      "path": "/file/storage-configs",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:settings:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:settings:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file:settings",
+      "path": "/file/settings",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "file",
+      "path": "/file",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category:status",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:category",
+      "path": "/template/categories",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:add",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:status",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:publish",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:extract-variable",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template:render",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template",
+      "path": "/template/templates",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:render-record:list",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:render-record:query",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:render-record",
+      "path": "/template/render-records",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template",
+      "path": "/template",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "data",
+      "path": "/data",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:site:view",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:site:create",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:site:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:site:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:site-message",
+      "path": "/notice/site-message",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:business:view",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:business:create",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:business:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:business:publish",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:business:enable",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:business:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:message-definition",
+      "path": "/notice/message-definition",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:send-message:view",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:task:create",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:send-message",
+      "path": "/notice/send-message",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:channel:view",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:channel:create",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:channel:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:channel:delete",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:channel",
+      "path": "/notice/channel",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:record:view",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:record",
+      "path": "/notice/record",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:record:view",
+      "path": null,
+      "source": "backend",
+      "action": "kept",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:retry:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:retry",
+      "path": "/notice/retry",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:setting:view",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:setting:edit",
+      "path": null,
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:receive-setting",
+      "path": "/notice/receive-setting",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice",
+      "path": "/notice",
+      "source": "backend",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:menu-package",
+      "path": "/system/menu-package/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:menu",
+      "path": "/system/menu/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:role",
+      "path": "/system/role/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:user",
+      "path": "/system/user/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:org",
+      "path": "/system/org/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:post",
+      "path": "/system/post/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:app",
+      "path": "/system/app/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:permission",
+      "path": "/system/permission/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:rbac",
+      "path": "/capabilities/rbac",
+      "source": "capability",
+      "action": "filtered",
+      "reason": "empty directory"
+    },
+    {
+      "menuCode": "system:dict",
+      "path": "/system/dict/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:log:operation",
+      "path": "/system/operation-log/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:log:login",
+      "path": "/system/login-log/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:tenant",
+      "path": "/system/tenant/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:config",
+      "path": "/system/config/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "system:route",
+      "path": "/system/route/index",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:public-path",
+      "path": "/system/public-path/index",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "system:area",
+      "path": "/system/area/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:system",
+      "path": "/capabilities/system",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "template:template",
+      "path": "/template/templates/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "template:category",
+      "path": "/template/categories/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "template:render-record",
+      "path": "/template/render-records/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:template",
+      "path": "/capabilities/template",
+      "source": "capability",
+      "action": "filtered",
+      "reason": "empty directory"
+    },
+    {
+      "menuCode": "file:files",
+      "path": "/file/files/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "file:storage-configs",
+      "path": "/file/storage-configs/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "file:settings",
+      "path": "/file/settings/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:file",
+      "path": "/capabilities/file",
+      "source": "capability",
+      "action": "filtered",
+      "reason": "empty directory"
+    },
+    {
+      "menuCode": "notice:business",
+      "path": "/notice/business-config/index",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:message-definition",
+      "path": "/notice/message-definition/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:send-message",
+      "path": "/notice/send-message/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:channel",
+      "path": "/notice/channel/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:task",
+      "path": "/notice/task/index",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:record",
+      "path": "/notice/record/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:site-message",
+      "path": "/notice/site-message/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:setting",
+      "path": "/notice/setting/index",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "notice:receive-setting",
+      "path": "/notice/receive-setting/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "notice:retry",
+      "path": "/notice/retry/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:notice",
+      "path": "/capabilities/notice",
+      "source": "capability",
+      "action": "added",
+      "reason": "added to menu tree"
+    },
+    {
+      "menuCode": "data:numgen",
+      "path": "/platform/numgen/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:numgen",
+      "path": "/capabilities/numgen",
+      "source": "capability",
+      "action": "filtered",
+      "reason": "empty directory"
+    },
+    {
+      "menuCode": "data:calendar",
+      "path": "/data/calendar/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:calendar",
+      "path": "/capabilities/calendar",
+      "source": "capability",
+      "action": "filtered",
+      "reason": "empty directory"
+    },
+    {
+      "menuCode": "workflow:definition",
+      "path": "/workflow/definition/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "workflow:template",
+      "path": "/workflow/template/index",
+      "source": "capability",
+      "action": "merged",
+      "reason": "menuCode already exists; existing menu kept"
+    },
+    {
+      "menuCode": "capability:workflow",
+      "path": "/capabilities/workflow",
+      "source": "capability",
+      "action": "filtered",
+      "reason": "empty directory"
+    }
+  ],
+  "diagnostics": []
+}

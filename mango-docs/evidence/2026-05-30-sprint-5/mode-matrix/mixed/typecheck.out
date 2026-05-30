@@ -1,0 +1,13 @@
+
+> mode-mixed-platform@1.0.0 typecheck /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-mode-matrix-e2e-mHVEkG/mode-mixed-platform
+> pnpm -r typecheck
+
+Scope: 4 of 5 workspace projects
+frontend/apps/mode-mixed-platform-remote typecheck$ vue-tsc --noEmit
+frontend/packages/guarantee-api typecheck$ vue-tsc --noEmit -p tsconfig.json
+frontend/apps/mode-mixed-platform-remote typecheck: Done
+frontend/packages/guarantee-api typecheck: Done
+frontend/packages/guarantee typecheck$ vue-tsc --noEmit -p tsconfig.json
+frontend/packages/guarantee typecheck: Done
+frontend/apps/mode-mixed-platform-admin typecheck$ vue-tsc --noEmit -p tsconfig.json
+frontend/apps/mode-mixed-platform-admin typecheck: Done
