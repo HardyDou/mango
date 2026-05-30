@@ -1,0 +1,163 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 960
+  },
+  "url": "http://127.0.0.1:8490/#/home",
+  "boxes": [
+    {
+      "selector": ".layout-container",
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 960,
+      "display": "flex",
+      "color": "rgb(51, 51, 51)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-aside",
+      "visible": true,
+      "x": 0,
+      "y": 56,
+      "width": 220,
+      "height": 904,
+      "display": "flex",
+      "color": "rgb(51, 51, 51)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-navbars-container",
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 56,
+      "display": "flex",
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgb(46, 92, 246)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-main, .layout-main .el-scrollbar",
+      "visible": true,
+      "x": 220,
+      "y": 96,
+      "width": 1220,
+      "height": 864,
+      "display": "flex",
+      "color": "rgb(51, 51, 51)",
+      "backgroundColor": "rgb(243, 245, 248)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-workspace-nav",
+      "visible": true,
+      "x": 220,
+      "y": 56,
+      "width": 1220,
+      "height": 40,
+      "display": "flex",
+      "color": "rgb(51, 51, 51)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".tags-view-container",
+      "visible": true,
+      "x": 232,
+      "y": 56,
+      "width": 1196,
+      "height": 39,
+      "display": "flex",
+      "color": "rgb(51, 51, 51)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-breadcrumb-user",
+      "visible": true,
+      "x": 1255,
+      "y": 8,
+      "width": 177,
+      "height": 40,
+      "display": "flex",
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".notice-bell",
+      "visible": true,
+      "x": 1167,
+      "y": 18,
+      "width": 20,
+      "height": 20,
+      "display": "flex",
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-breadcrumb-settings",
+      "visible": true,
+      "x": 1199,
+      "y": 8,
+      "width": 44,
+      "height": 40,
+      "display": "flex",
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontSize": "14px"
+    },
+    {
+      "selector": ".layout-backtop",
+      "visible": true,
+      "x": 220,
+      "y": 56,
+      "width": 1220,
+      "height": 904,
+      "display": "flex",
+      "color": "rgb(51, 51, 51)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontSize": "14px"
+    }
+  ],
+  "topMenuTexts": [
+    "首页",
+    "系统管理",
+    "审批中心",
+    "平台能力",
+    "通知中心",
+    "开发中心"
+  ],
+  "sideMenuTexts": [
+    "首页"
+  ],
+  "noticeBellVisible": true,
+  "settingsButtonVisible": true,
+  "userText": "admin芒果集团",
+  "menuUiResponse": {
+    "status": 200,
+    "url": "http://127.0.0.1:8490/api/authorization/menus/user?fmt=tree"
+  },
+  "consoleErrors": [
+    "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.",
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+  ],
+  "pageErrors": [],
+  "networkFailures": [],
+  "userDropdownClick": {
+    "selector": ".layout-breadcrumb-user",
+    "index": 0
+  },
+  "settingsClick": {
+    "selector": ".layout-breadcrumb-settings",
+    "index": 0
+  },
+  "settingsDrawerVisible": true,
+  "settingsDrawerText": "布局配置 布局切换  默认  经典  横向  分栏  全局主题 primary 主题色深色模式组件大小默认 顶栏设置 背景颜色文字颜色背景渐变 菜单设置 背景颜色文字颜色高亮背景背景渐变 分栏设置 分栏背景分栏文字分栏渐变 界面设置 菜单折叠手风琴模式固定 Header经典分割菜单 界面显示 显示 Logo显示面包屑显示 TagsviewTagsview 图标缓存 Tagsview显示 Footer灰色模式色弱模式水印 其它设置 页面动画右侧滑入Tagsview 样式风格5点击 重置所有配置到默认状态  恢复默认 "
+}
