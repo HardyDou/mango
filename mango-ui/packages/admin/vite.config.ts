@@ -4,7 +4,15 @@ const externalPackages = [
   '@mango/admin-shell',
   '@mango/admin-pages',
   '@mango/auth',
+  '@mango/calendar/admin-pages',
   '@mango/common',
+  '@mango/file/admin-pages',
+  '@mango/notice/admin-pages',
+  '@mango/notice/admin-shell',
+  '@mango/numgen/admin-pages',
+  '@mango/template/admin-pages',
+  '@mango/workflow/admin-pages',
+  '@mango/workflow-business-example/admin-pages',
   'vue',
   'vue-router',
   'pinia',
@@ -14,12 +22,17 @@ const externalPackages = [
 export default defineConfig({
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        full: 'src/full.ts',
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: externalPackages,
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });

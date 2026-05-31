@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@mango/admin": "0.0.0-local",
+    "@mango/workflow": "0.0.0-local",
+    "@mango/workflow-business-example": "0.0.0-local",
     "element-plus": "2.5.5",
     "pinia": "2.0.32",
     "vue": "3.5.13",

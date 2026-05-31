@@ -2,14 +2,9 @@ import { defineConfig } from 'vite';
 
 const externalPackages = [
   '@mango/auth',
-  '@mango/calendar',
-  '@mango/file',
-  '@mango/numgen',
+  '@mango/common/utils/realtime/types',
   '@mango/rbac',
   '@mango/system',
-  '@mango/template',
-  '@mango/workflow',
-  '@mango/workflow-business-example',
   'vue',
 ];
 

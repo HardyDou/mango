@@ -31,7 +31,7 @@ export async function mount(container: HTMLElement, runtime: MangoAppRuntime) {
   });
   await router.push(runtime.menu?.path || '/');
   await router.isReady();
-  registerDefaultAdminPages();
+  registerDefaultAdminPages({ features: ['authorization'] });
   app.provide('mangoRuntime', runtime);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);

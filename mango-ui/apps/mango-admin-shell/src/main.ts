@@ -1,5 +1,6 @@
-import { createMangoAdminApp } from '@mango/admin-shell';
-import '@mango/admin/style.css';
+import { createMangoAdminApp } from '@mango/admin/full';
+import '@mango/admin/style-full.css';
+import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
 
 function splitEnvList(value?: string) {
   return (value || '')
@@ -12,6 +13,8 @@ createMangoAdminApp({
   mountTarget: '#app',
   apiBaseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',
   title: import.meta.env.VITE_APP_TITLE || 'Mango Admin',
+  features: 'full',
+  featureRegistrars: mangoFullAdminFeatureRegistrars,
   devCenter: {
     deployEnv: import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE,
   },

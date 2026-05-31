@@ -4,13 +4,16 @@ import {
   registerDefaultAdminPages,
 } from '@mango/admin-pages';
 import { registerMangoAdminShellDevPages } from '@mango/admin-shell/dev-pages';
+import { registerFullMangoAdminFeaturePages } from './adminFeatureRegistrars';
 
 registerDefaultAdminPages({
+  features: 'full',
   shellPages: {
     home: () => import('@/views/home/index.vue'),
     notFound: () => import('@/views/error/404.vue'),
   },
 });
+registerFullMangoAdminFeaturePages();
 
 if (import.meta.env.DEV) {
   registerMangoAdminShellDevPages();

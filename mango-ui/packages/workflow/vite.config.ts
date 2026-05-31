@@ -5,14 +5,17 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        'admin-pages': 'src/admin-pages.ts',
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: [
         '@element-plus/icons-vue',
         '@form-create/element-ui',
+        '@mango/admin-pages/core',
         '@mango/api-schema',
         '@mango/common',
         '@mango/common/utils/request',
@@ -22,6 +25,9 @@ export default defineConfig({
         'vue',
         'vue-router',
       ],
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });

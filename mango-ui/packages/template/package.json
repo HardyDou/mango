@@ -10,6 +10,10 @@
       "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
+    "./admin-pages": {
+      "types": "./src/admin-pages.ts",
+      "import": "./dist/admin-pages.js"
+    },
     "./style.css": "./dist/style.css"
   },
   "scripts": {
@@ -22,6 +26,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
+    "@mango/admin-pages": "1.0.2",
     "@mango/common": "1.0.2",
     "@mango/file": "1.0.2"
   },

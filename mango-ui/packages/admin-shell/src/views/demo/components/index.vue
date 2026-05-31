@@ -10,7 +10,12 @@
       <h2>高频表单组件</h2>
       <p>文件上传、验证码、组织选择、省市区选择是后台业务表单里使用频率最高的一组组件。</p>
       <div class="component-grid">
-        <ComponentEntry title="MUpload 文件上传" desc="附件、图片、文档和业务附件清单。" path="/components/upload" />
+        <ComponentEntry
+          v-if="fileEnabled"
+          title="MUpload 文件上传"
+          desc="附件、图片、文档和业务附件清单。"
+          path="/components/upload"
+        />
         <ComponentEntry title="验证码组件" desc="算术、滑块、短信、邮件和综合选择器。" path="/components/captcha" />
         <ComponentEntry title="组织架构选择器" desc="单选、多选、禁用和组织 ID 回显。" path="/components/org-selector" />
         <ComponentEntry title="省市区选择器" desc="三级、四级和仅显示末级模式。" path="/components/china-area" />
@@ -49,9 +54,13 @@
 <script setup lang="ts" name="ComponentDemo">
 import { defineComponent, h } from 'vue';
 import { useRouter } from 'vue-router';
+import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
+import { getMangoAdminShellOptions } from '../../../config';
 import DemoDocLayout from './DemoDocLayout.vue';
 
 const router = useRouter();
+const enabledFeatures = resolveMangoAdminFeatures(getMangoAdminShellOptions().features);
+const fileEnabled = enabledFeatures.has('file');
 
 const tocItems = [
   { id: 'common', label: '高频表单' },

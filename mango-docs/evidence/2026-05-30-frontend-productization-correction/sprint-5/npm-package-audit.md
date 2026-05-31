@@ -59,6 +59,69 @@ Sprint 5 completed:
 3. Consumer typecheck/build/runtime smoke.
 4. E2E screenshots with UI/layout inspection.
 5. Data/API checks for representative admin capability pages.
+6. Feature-selection verification for core, workflow-only and full consumers.
+7. Workflow custom apply activation verification through explicit `@mango/workflow-business-example` registration.
+
+## 5. Integration Contract
+
+Admin consumers integrate packages through one place: `createMangoAdminApp`.
+
+Core usage:
+
+```ts
+import { createMangoAdminApp } from '@mango/admin';
+import '@mango/admin/style.css';
+
+createMangoAdminApp({
+  mountTarget: '#app',
+  apiBaseUrl: '/api',
+  features: 'core',
+}).mount();
+```
+
+Selective optional usage:
+
+```ts
+import { createMangoAdminApp } from '@mango/admin';
+import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
+import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
+import '@mango/admin/style.css';
+import '@mango/workflow/style.css';
+import '@mango/workflow-business-example/style.css';
+
+createMangoAdminApp({
+  mountTarget: '#app',
+  apiBaseUrl: '/api',
+  features: ['workflow'],
+  featureRegistrars: [
+    registerMangoWorkflowAdminPages,
+    registerMangoWorkflowBusinessExampleAdminPages,
+  ],
+}).mount();
+```
+
+Full usage:
+
+```ts
+import { createMangoAdminApp } from '@mango/admin';
+import { mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
+import '@mango/admin/style-full.css';
+
+createMangoAdminApp({
+  mountTarget: '#app',
+  apiBaseUrl: '/api',
+  features: 'full',
+  featureRegistrars: mangoFullAdminFeatureRegistrars,
+}).mount();
+```
+
+Rules:
+
+- `@mango/admin/style.css` is core style only.
+- Optional package styles follow their package and must be imported by the consumer or by `@mango/admin/style-full.css`.
+- Optional package pages follow their package and must be registered through that package registrar.
+- Hidden local routes, such as `/workflow/custom-apply`, are package-owned and registered through `@mango/admin-pages`.
+- `@mango/workflow` must not secretly import `@mango/workflow-business-example`.
 
 Remaining package governance for later Sprint:
 

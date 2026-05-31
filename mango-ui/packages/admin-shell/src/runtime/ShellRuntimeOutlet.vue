@@ -25,7 +25,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
 import { useRuntimeHost } from './runtimeHost';
 import { containsMenuPath, createNotFoundRouteMenu, useMenuHost, type ShellRouteMenu } from './menuHost';
@@ -60,7 +59,7 @@ let mountedFullPath = '';
 
 async function initShellRuntime() {
   try {
-    const [runtimeOk] = await Promise.all([
+    await Promise.all([
       loadRuntimeApps(),
       loadMenus(),
     ]);
@@ -75,12 +74,8 @@ async function initShellRuntime() {
       }
       await mountShellMenu(targetMenu);
     }
-
-    if (!runtimeOk) {
-      ElMessage.error('加载运行配置失败，请先登录');
-    }
   } catch (error) {
-    ElMessage.error('加载菜单失败，请重新登录');
+    console.error('[mango-shell] failed to initialize shell runtime', error);
   }
 }
 

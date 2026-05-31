@@ -25,7 +25,6 @@
     "@form-create/element-ui": "3.2.16",
     "@mango/api-schema": "1.0.2",
     "@mango/common": "1.0.2",
-    "@mango/file": "1.0.2",
     "@mango/rbac": "1.0.2",
     "form-create-designer": "3.2.11-oem"
   },

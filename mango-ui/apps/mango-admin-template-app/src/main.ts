@@ -5,6 +5,8 @@ import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { registerUnauthorizedHandler } from '@mango/common';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
+import { registerMangoFileAdminPages } from '@mango/file/admin-pages';
+import { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 import { bindMangoRuntimeTheme, createMangoWujieVueApp } from '@mango/app-runtime/vue-micro';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
@@ -25,7 +27,9 @@ declare global {
 }
 
 function installCommon(appInstance: VueApp) {
-  registerDefaultAdminPages();
+  registerDefaultAdminPages({ features: ['template', 'file'] });
+  registerMangoFileAdminPages();
+  registerMangoTemplateAdminPages();
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     appInstance.component(key, component);
   }

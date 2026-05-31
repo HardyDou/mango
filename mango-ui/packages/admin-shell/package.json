@@ -16,6 +16,9 @@
     "./router": "./src/router.ts",
     "./home": "./src/views/home/index.vue",
     "./dev-pages": "./src/views/demo/registerDevPages.ts",
+    "./dev-base-pages": "./src/views/demo/registerBaseDevPages.ts",
+    "./dev-upload-page": "./src/views/demo/components/UploadView.vue",
+    "./dev-workflow-page": "./src/views/demo/components/WorkflowComponentsView.vue",
     "./style.css": "./style.css"
   },
   "scripts": {
@@ -34,17 +37,24 @@
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.2",
     "@mango/common": "1.0.2",
-    "@mango/file": "1.0.2",
-    "@mango/notice": "1.0.2",
     "@mango/rbac": "1.0.2",
-    "@mango/workflow": "1.0.2",
     "element-plus": "2.5.5"
   },
   "peerDependencies": {
+    "@mango/notice": "1.0.2",
+    "@mango/workflow": "1.0.2",
     "pinia": "2.0.32",
     "vue": "3.5.13",
     "vue-i18n": "9.2.2",
     "vue-router": "^4.1.6"
+  },
+  "peerDependenciesMeta": {
+    "@mango/notice": {
+      "optional": true
+    },
+    "@mango/workflow": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",

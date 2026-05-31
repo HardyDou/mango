@@ -1,5 +1,8 @@
 import type { MangoAuthConfig } from '@mango/auth';
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
+import type { MangoAdminFeatures } from '@mango/admin-pages/features';
+
+export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
 
 export interface MangoAdminShellOptions {
   mountTarget?: string | Element;
@@ -10,6 +13,8 @@ export interface MangoAdminShellOptions {
   login?: MangoAuthConfig['login'];
   modules?: MangoRuntimeConfig['modules'];
   localApps?: MangoFrontendApp[];
+  features?: MangoAdminFeatures;
+  featureRegistrars?: MangoAdminFeatureRegistrar[];
   runtimeConfigUrl?: string;
   runtimeConfigLoadOptions?: Partial<MangoRuntimeConfigLoadOptions>;
 }
@@ -59,6 +64,7 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
       ...mangoAdminShellOptions.modules,
       ...options.modules,
     },
+    featureRegistrars: options.featureRegistrars || mangoAdminShellOptions.featureRegistrars,
     runtimeConfigLoadOptions: {
       ...mangoAdminShellOptions.runtimeConfigLoadOptions,
       ...options.runtimeConfigLoadOptions,

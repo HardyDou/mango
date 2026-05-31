@@ -24,7 +24,7 @@ declare global {
 }
 
 function installCommon(appInstance: VueApp) {
-  registerDefaultAdminPages();
+  registerDefaultAdminPages({ features: ['authorization'] });
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     appInstance.component(key, component);
   }

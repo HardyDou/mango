@@ -17,6 +17,7 @@ export default defineConfig({
       '@mango/common': resolve(repoRoot, 'packages/common'),
       '@mango/file': resolve(repoRoot, 'packages/file'),
       '@mango/api-schema': resolve(repoRoot, 'packages/api-schema'),
+      '@mango/admin-pages/core': resolve(repoRoot, 'packages/admin-pages/src/core.ts'),
       vue: resolve(adminNodeModules, 'vue'),
       'vue-router': resolve(adminNodeModules, 'vue-router'),
       'element-plus': resolve(adminNodeModules, 'element-plus'),

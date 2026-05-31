@@ -4,36 +4,45 @@
 
 `DONE`
 
-Sprint 5 proved that Mango frontend materials can be consumed from Nexus by an independent business app without workspace source paths.
+Sprint 5 proved that Mango frontend packages can be consumed by an independent business app and that optional capability packages are only enabled when the app explicitly installs and registers them.
 
 ## Completed
 
-- Reframed Sprint 5 as npm/Nexus independent consumption verification.
-- Moved `mango-cli` implementation to Sprint 6/7, after package consumption is proven.
-- Recorded `mango-cli` responsibilities and credential rules.
-- Audited current frontend package metadata for entry, types, style, peer dependencies and workspace dependencies.
-- Verified a clean consumer can install packed package tarballs, run typecheck and build without workspace links.
-- Published Mango frontend package closure to Nexus as `1.0.2`.
-- Found a real independent-consumption gap: `@mango/admin` exposed an outdated hand-written type contract that did not include `devCenter.deployEnv`.
-- Fixed the `@mango/admin` public type contract and published `@mango/admin@1.0.3`.
-- Verified a clean consumer can install `@mango/admin@1.0.3` from Nexus group registry, run typecheck and build.
-- Verified a Nexus-installed consumer can run against the real backend, login, load menus and render Mango shell/pages with screenshots.
+- Audited frontend package metadata for public entry, type entry, style entry, peer dependencies and workspace dependency leakage.
+- Verified clean consumer install/build paths with packed packages and Nexus packages.
+- Published and verified `@mango/admin@1.0.3` from Nexus after fixing its public type contract.
+- Added package-level feature registration so optional modules do not leak into apps that only use core admin.
+- Added package hidden route registration for local package pages that are not visible backend menus.
+- Moved workflow custom apply route ownership into `@mango/workflow`; it now registers `/workflow/custom-apply` as a hidden `LOCAL_ROUTE`.
+- Kept workflow business example forms in `@mango/workflow-business-example`; consumer apps must explicitly import `registerMangoWorkflowBusinessExampleAdminPages`.
+- Fixed local package route mounting so a runtime-config load failure only blocks actual micro routes, not local package pages.
+- Hardened feature-selection E2E with `--strictPort`, dev-server shutdown waits and screenshot readiness waits.
+- Verified three consumer modes with screenshots:
+  - core: `@mango/admin` only.
+  - workflow-only: `@mango/admin` + `@mango/workflow` + `@mango/workflow-business-example`.
+  - full: `@mango/admin/full` aggregation.
 
 ## Current Result
 
-- `@mango/admin@1.0.3` is available from `http://nexus.inner.yunxinbaokeji.com/repository/npm-group/`.
-- Clean Nexus consumer result: `install`, `typecheck` and `build` passed.
-- Runtime E2E result: login, shell, home, development center, system management, workflow, platform capability and notice pages passed.
-- Real backend checks passed: health 200, login 200, menu API 200, backend returned 4 business top-level menus and 218 menu rows.
-- Screenshots are stored under `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/`.
+- Core consumer menus: `首页`, `系统管理`, `开发中心`.
+- Workflow-only consumer menus: `首页`, `系统管理`, `审批中心`, `开发中心`.
+- Workflow-only consumer does not show `平台能力` or `通知中心`.
+- Full consumer menus: `首页`, `系统管理`, `审批中心`, `平台能力`, `通知中心`, `开发中心`.
+- Workflow custom apply page can open `费用报销申请` and activate the `申请报销` example form from `@mango/workflow-business-example`.
+- Screenshot review confirmed the latest evidence has no login toast遮挡 and no global runtime-config error toast.
 
 ## Evidence
 
 - `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/packed-consumer-report.json`
 - `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/nexus-consumer-report.json`
 - `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/nexus-runtime-e2e-report.json`
+- `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/feature-selection-report.json`
+- `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-feature-core.png`
+- `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-feature-workflow-only.png`
+- `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-feature-full.png`
 
 ## Next
 
-1. Sprint 6 starts `mango-cli init` full preset on top of the verified Nexus npm package path.
-2. Keep credential storage outside the repository: user-level npm config or CI Secret only.
+1. Sprint 6 can start `mango-cli init` on top of the verified package-consumption path.
+2. CLI must consume the same package contract: required core/system modules by default, optional modules by explicit selection.
+3. Keep credential storage outside the repository: user-level npm config or CI Secret only.

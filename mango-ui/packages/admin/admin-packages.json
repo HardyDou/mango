@@ -20,34 +20,6 @@
     {
       "name": "@mango/system",
       "style": "@mango/system/style.css"
-    },
-    {
-      "name": "@mango/workflow",
-      "style": "@mango/workflow/style.css"
-    },
-    {
-      "name": "@mango/workflow-business-example",
-      "style": "@mango/workflow-business-example/style.css"
-    },
-    {
-      "name": "@mango/file",
-      "style": "@mango/file/style.css"
-    },
-    {
-      "name": "@mango/calendar",
-      "style": "@mango/calendar/style.css"
-    },
-    {
-      "name": "@mango/numgen",
-      "style": "@mango/numgen/style.css"
-    },
-    {
-      "name": "@mango/template",
-      "style": "@mango/template/style.css"
-    },
-    {
-      "name": "@mango/notice",
-      "style": "@mango/notice/style.css"
     }
   ]
 }

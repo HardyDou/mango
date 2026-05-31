@@ -1,27 +1,18 @@
-import { DEV_COMPONENT_DEMO_PAGES } from '@mango/admin-pages/dev-component-pages';
+import { getMangoDevComponentPages } from '@mango/admin-pages/dev-pages';
+import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
 import { registerModulePages } from '@mango/admin-pages/core';
 import type { MangoPageLoader } from '@mango/admin-pages/core';
-
-const devComponentPageLoaders: Record<string, MangoPageLoader> = {
-  'demo/components/EditorView': () => import('./components/EditorView.vue'),
-  'demo/components/CodeEditorView': () => import('./components/CodeEditorView.vue'),
-  'demo/components/UploadView': () => import('./components/UploadView.vue'),
-  'demo/components/ChartsView': () => import('./components/ChartsView.vue'),
-  'demo/components/DirectiveView': () => import('./components/DirectiveView.vue'),
-  'demo/components/ChatView': () => import('./components/ChatView.vue'),
-  'demo/components/RealtimeView': () => import('./components/RealtimeView.vue'),
-  'demo/components/ChinaAreaView': () => import('./components/ChinaAreaView.vue'),
-  'demo/components/OrgSelectorView': () => import('./components/OrgSelectorView.vue'),
-  'demo/components/WorkflowComponentsView': () => import('./components/WorkflowComponentsView.vue'),
-  'demo/components/CaptchaView': () => import('./components/CaptchaView.vue'),
-};
+import { getMangoAdminShellOptions } from '../../config';
 
 export function registerMangoAdminShellDevPages() {
+  const enabledFeatures = resolveMangoAdminFeatures(getMangoAdminShellOptions().features);
   registerModulePages({
     moduleCode: 'mango-shell',
-    pages: DEV_COMPONENT_DEMO_PAGES.reduce<Record<string, MangoPageLoader>>((pages, page) => {
-      pages[page.component] = devComponentPageLoaders[page.component];
-      return pages;
-    }, {}),
+    pages: getMangoDevComponentPages()
+      .filter(page => !page.feature || enabledFeatures.has(page.feature))
+      .reduce<Record<string, MangoPageLoader>>((pages, page) => {
+        pages[page.component] = page.loader;
+        return pages;
+      }, {}),
   });
 }

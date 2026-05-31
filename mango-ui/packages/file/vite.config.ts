@@ -5,18 +5,24 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        'admin-pages': 'src/admin-pages.ts',
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: [
         '@element-plus/icons-vue',
+        '@mango/admin-pages/core',
         '@mango/common',
         '@mango/common/utils/request',
         'element-plus',
         'vue',
       ],
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });

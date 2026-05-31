@@ -12,6 +12,9 @@
     },
     "./core": "./src/core.ts",
     "./defaults": "./src/defaults.ts",
+    "./features": "./src/features.ts",
+    "./notice": "./src/notice.ts",
+    "./dev-pages": "./src/dev-pages.ts",
     "./dev-component-pages": "./src/devComponentPages.ts"
   },
   "scripts": {
@@ -24,15 +27,9 @@
   ],
   "dependencies": {
     "@mango/auth": "1.0.2",
-    "@mango/calendar": "1.0.2",
-    "@mango/file": "1.0.2",
-    "@mango/notice": "1.0.2",
-    "@mango/numgen": "1.0.2",
+    "@mango/common": "1.0.2",
     "@mango/rbac": "1.0.2",
-    "@mango/system": "1.0.2",
-    "@mango/template": "1.0.2",
-    "@mango/workflow": "1.0.2",
-    "@mango/workflow-business-example": "1.0.2"
+    "@mango/system": "1.0.2"
   },
   "peerDependencies": {
     "vue": "3.5.13"

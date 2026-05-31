@@ -1,6 +1,3 @@
 @import '@mango/common/theme/index.css';
 @import '@mango/common/style.css';
-@import '@mango/file/style.css';
-@import '@mango/notice/style.css';
-@import '@mango/workflow/style.css';
 @import './dist/style.css';

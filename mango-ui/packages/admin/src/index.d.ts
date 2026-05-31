@@ -5,7 +5,10 @@ import type {
   MangoRuntimeConfig,
   MangoRuntimeConfigLoadOptions,
 } from '@mango/app-runtime';
+import type { MangoAdminFeatures } from '@mango/admin-pages/features';
 import type { MangoAuthConfig } from '@mango/auth';
+
+export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
 
 export interface MangoAdminAppInstance {
   app: VueApp;
@@ -30,6 +33,8 @@ export interface MangoAdminShellOptions {
   login?: MangoAuthConfig['login'];
   modules?: MangoRuntimeConfig['modules'];
   localApps?: MangoFrontendApp[];
+  features?: MangoAdminFeatures;
+  featureRegistrars?: MangoAdminFeatureRegistrar[];
   runtimeConfigUrl?: string;
   runtimeConfigLoadOptions?: Partial<MangoRuntimeConfigLoadOptions>;
 }

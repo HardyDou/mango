@@ -14,6 +14,14 @@
       "types": "./src/admin.ts",
       "import": "./dist/admin.js"
     },
+    "./admin-pages": {
+      "types": "./src/admin-pages.ts",
+      "import": "./dist/admin-pages.js"
+    },
+    "./admin-shell": {
+      "types": "./src/admin-shell.ts",
+      "import": "./dist/admin-shell.js"
+    },
     "./client": {
       "types": "./src/client.ts",
       "import": "./dist/client.js"
@@ -36,6 +44,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
+    "@mango/admin-pages": "1.0.2",
     "@mango/common": "1.0.2",
     "@mango/system": "1.0.2"
   },

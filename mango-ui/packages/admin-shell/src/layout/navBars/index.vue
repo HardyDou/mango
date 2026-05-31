@@ -71,7 +71,9 @@
       <el-icon :size="20">
         <FullScreen />
       </el-icon>
-      <NoticeBell
+      <component
+        v-if="noticeClientEnabled"
+        :is="noticeBellComponent"
         :load-runtime-config="loadNoticeRuntimeConfig"
         :realtime-options="noticeRealtimeOptions"
         @view-all="goNoticeMessages"
@@ -84,7 +86,7 @@
 </template>
 
 <script setup lang="ts" name="layoutNavBars">
-import { computed, defineAsyncComponent, watch } from 'vue';
+import { computed, defineAsyncComponent, resolveDynamicComponent, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
@@ -94,8 +96,9 @@ import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
 import { Session } from '@mango/common/utils/storage';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
-import { NoticeBell, getNoticeReminderSetting } from '@mango/notice/client';
-import type { NoticeClientBellRuntimeConfig } from '@mango/notice/client';
+import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
+import { getMangoNoticeBellProvider, type MangoNoticeBellRuntimeConfig } from '@mango/admin-pages/notice';
+import { getMangoAdminShellOptions } from '../../config';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -110,6 +113,11 @@ const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 
 const topMenus = computed(() => routesList.value.filter(item => !item.meta?.isHide));
 const showTopSystems = computed(() => layoutStore.layout === 'classic' || layoutStore.layout === 'transverse');
+const noticeBellProvider = computed(() => getMangoNoticeBellProvider());
+const noticeClientEnabled = computed(() =>
+  resolveMangoAdminFeatures(getMangoAdminShellOptions().features).has('notice') && Boolean(noticeBellProvider.value),
+);
+const noticeBellComponent = computed(() => noticeBellProvider.value?.component || resolveDynamicComponent('span'));
 const headerAsideExpanded = computed(() => {
   if (layoutStore.layout === 'columns') {
     return layoutStore.isColumnsAsideOpen;
@@ -173,7 +181,11 @@ async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig>
     desktopNotificationEnabled: true,
   };
   try {
-    return { ...defaults, ...(await getNoticeReminderSetting()) };
+    const provider = noticeBellProvider.value;
+    if (!provider) {
+      return defaults;
+    }
+    return { ...defaults, ...(await provider.getReminderSetting()) };
   } catch {
     return defaults;
   }
