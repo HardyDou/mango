@@ -1,0 +1,43 @@
+{
+  "name": "nexus-generated-full-frontend",
+  "version": "1.0.0-SNAPSHOT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.0.10",
+    "@mango/admin": "1.0.7",
+    "@mango/admin-pages": "1.0.3",
+    "@mango/admin-shell": "1.0.4",
+    "@mango/app-runtime": "1.0.2",
+    "@mango/auth": "1.0.2",
+    "@mango/calendar": "1.0.4",
+    "@mango/common": "1.0.2",
+    "@mango/file": "1.0.4",
+    "@mango/notice": "1.0.4",
+    "@mango/numgen": "1.0.4",
+    "@mango/rbac": "1.0.2",
+    "@mango/system": "1.0.2",
+    "@mango/template": "1.0.4",
+    "@mango/workflow": "1.0.4",
+    "@mango/workflow-business-example": "1.0.4",
+    "element-plus": "2.5.5",
+    "pinia": "2.0.32",
+    "vue": "3.5.13",
+    "vue-i18n": "9.2.2",
+    "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^20.19.0",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3",
+    "vue-tsc": "^2.1.10"
+  }
+}

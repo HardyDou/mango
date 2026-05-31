@@ -1,0 +1,43 @@
+{
+  "name": "{{projectKebab}}-frontend",
+  "version": "{{projectVersion}}",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "{{iconsVueVersion}}",
+    "@mango/admin": "{{mangoAdminVersion}}",
+    "@mango/admin-pages": "{{mangoAdminPagesVersion}}",
+    "@mango/admin-shell": "{{mangoAdminShellVersion}}",
+    "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
+    "@mango/auth": "{{mangoAuthVersion}}",
+    "@mango/calendar": "{{mangoCalendarVersion}}",
+    "@mango/common": "{{mangoCommonVersion}}",
+    "@mango/file": "{{mangoFileVersion}}",
+    "@mango/notice": "{{mangoNoticeVersion}}",
+    "@mango/numgen": "{{mangoNumgenVersion}}",
+    "@mango/rbac": "{{mangoRbacVersion}}",
+    "@mango/system": "{{mangoSystemVersion}}",
+    "@mango/template": "{{mangoTemplateVersion}}",
+    "@mango/workflow": "{{mangoWorkflowVersion}}",
+    "@mango/workflow-business-example": "{{mangoWorkflowBusinessExampleVersion}}",
+    "element-plus": "{{elementPlusVersion}}",
+    "pinia": "{{piniaVersion}}",
+    "vue": "{{vueVersion}}",
+    "vue-i18n": "{{vueI18nVersion}}",
+    "vue-router": "{{vueRouterVersion}}"
+  },
+  "devDependencies": {
+    "@playwright/test": "{{playwrightVersion}}",
+    "@types/node": "{{nodeTypesVersion}}",
+    "@vitejs/plugin-vue": "{{viteVueVersion}}",
+    "typescript": "{{typescriptVersion}}",
+    "vite": "{{viteVersion}}",
+    "vue-tsc": "{{vueTscVersion}}"
+  }
+}

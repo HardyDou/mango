@@ -1,0 +1,22 @@
+{
+  "name": "mango-cli",
+  "version": "1.0.6",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "mango": "src/index.mjs",
+    "mango-cli": "src/index.mjs"
+  },
+  "scripts": {
+    "test": "node scripts/check-cli.mjs"
+  },
+  "files": [
+    "src",
+    "templates",
+    "README.md",
+    "package.json"
+  ],
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  }
+}

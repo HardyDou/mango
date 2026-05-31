@@ -1,6 +1,6 @@
 {
   "name": "@mango/workflow-business-example",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -26,8 +26,8 @@
     "package.json"
   ],
   "dependencies": {
-    "@mango/admin-pages": "1.0.2",
-    "@mango/workflow": "1.0.2"
+    "@mango/admin-pages": "1.0.3",
+    "@mango/workflow": "1.0.4"
   },
   "peerDependencies": {
     "element-plus": "2.5.5",

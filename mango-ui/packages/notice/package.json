@@ -1,6 +1,6 @@
 {
   "name": "@mango/notice",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -44,7 +44,7 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
-    "@mango/admin-pages": "1.0.2",
+    "@mango/admin-pages": "1.0.3",
     "@mango/common": "1.0.2",
     "@mango/system": "1.0.2"
   },

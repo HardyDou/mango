@@ -1,0 +1,29 @@
+{
+  "project": "nexus-generated-full",
+  "preset": "full",
+  "topology": "monolith",
+  "basePackage": "com.example.nexusfull",
+  "groupId": "com.example",
+  "projectVersion": "1.0.0-SNAPSHOT",
+  "mangoBackendVersion": "1.0.0-SNAPSHOT",
+  "mangoAdminVersion": "1.0.7",
+  "mangoFrontendVersions": {
+    "@mango/admin": "1.0.7",
+    "@mango/admin-pages": "1.0.3",
+    "@mango/admin-shell": "1.0.4",
+    "@mango/app-runtime": "1.0.2",
+    "@mango/auth": "1.0.2",
+    "@mango/calendar": "1.0.4",
+    "@mango/common": "1.0.2",
+    "@mango/file": "1.0.4",
+    "@mango/notice": "1.0.4",
+    "@mango/numgen": "1.0.4",
+    "@mango/rbac": "1.0.2",
+    "@mango/system": "1.0.2",
+    "@mango/template": "1.0.4",
+    "@mango/workflow": "1.0.4",
+    "@mango/workflow-business-example": "1.0.4"
+  },
+  "npmRegistry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+  "mavenRepository": "http://nexus.inner.yunxinbaokeji.com/repository/maven-public/"
+}
