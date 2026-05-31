@@ -1,11 +1,11 @@
 {
   "pass": true,
-  "checkedAt": "2026-05-31T00:16:35.018Z",
+  "checkedAt": "2026-05-31T00:26:34.534Z",
   "baseURL": "http://a.mango.io:5176",
   "checks": [
     {
       "name": "workflow-start",
-      "url": "http://a.mango.io:5176/#/workflow/start-process?genericStyleProbe=1780186590005",
+      "url": "http://a.mango.io:5176/#/workflow/start-process?genericStyleProbe=1780187189536",
       "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-workflow-start.png",
       "shell": {
         "topbarVisible": true,
@@ -67,7 +67,7 @@
     },
     {
       "name": "template-templates",
-      "url": "http://a.mango.io:5176/#/template/templates?genericStyleProbe=1780186590005",
+      "url": "http://a.mango.io:5176/#/template/templates?genericStyleProbe=1780187189536",
       "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-template-templates.png",
       "shell": {
         "topbarVisible": true,
@@ -137,7 +137,7 @@
     },
     {
       "name": "system-menu-package",
-      "url": "http://a.mango.io:5176/#/system/menu-package?genericStyleProbe=1780186590005",
+      "url": "http://a.mango.io:5176/#/system/menu-package?genericStyleProbe=1780187189536",
       "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-system-menu-package.png",
       "shell": {
         "topbarVisible": true,
@@ -207,7 +207,7 @@
     },
     {
       "name": "dev-upload",
-      "url": "http://a.mango.io:5176/#/components/upload?genericStyleProbe=1780186590005",
+      "url": "http://a.mango.io:5176/#/components/upload?genericStyleProbe=1780187189536",
       "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-dev-upload.png",
       "shell": {
         "topbarVisible": true,

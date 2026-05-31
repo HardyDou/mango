@@ -64,6 +64,7 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - 样式必须跟随组件或页面所属 package 发布，package 应提供唯一的 `./style.css` 样式入口。
 - admin 类宿主或业务管理应用可以通过聚合入口引入各 package 的 `style.css`，但聚合入口不能成为样式的唯一来源。
 - admin 类宿主或业务管理应用的 package 样式聚合必须由本应用 package 声明文件生成，业务开发者只维护声明，不手工追加 `@import` 清单。
+- admin 类宿主或业务管理应用的 `dev` 和 `build` 命令必须自动执行样式聚合生成；手动生成命令只作为调试、修复和 CI 差异定位入口。
 - package 样式聚合必须通过通用生成工具校验消费方依赖声明和 package `./style.css` 公开导出，必须同时支持 workspace package 和已发布到 npm/Nexus 后安装到 `node_modules` 的 package。
 - 微前端 app 必须显式引入自身运行页面依赖的 package 样式，禁止依赖宿主或 shell 的聚合样式穿透隔离容器。
 - 业务项目按需消费 package 时，必须同时按 package 公开入口引入对应样式，禁止复制 Mango 页面样式或依赖仓库源码路径。

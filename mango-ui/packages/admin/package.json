@@ -14,7 +14,7 @@
     "./style.css": "./style.css"
   },
   "scripts": {
-    "build": "pnpm run check:styles && vite build",
+    "build": "pnpm run generate:styles && vite build",
     "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
     "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css"
   },

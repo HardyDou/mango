@@ -33,6 +33,7 @@
 - 单体聚合入口只能 `@import` 各 package 样式，禁止复制或重写 package 私有样式。
 - admin 类宿主或业务管理应用集成 package 必须通过本应用的 package manifest 一处显式声明，样式聚合文件由通用脚本生成，禁止手工长期维护 package 样式清单。
 - 新增或移除 admin 类 package 后必须运行样式生成校验，确保声明、消费方依赖和 package `./style.css` 导出一致。
+- admin 类宿主或业务管理应用的 `dev` 和 `build` 必须自动生成样式聚合文件，避免依赖人工预先执行生成命令。
 - package 样式生成工具必须基于消费方 `package.json` 的 Node 依赖解析，不得只依赖当前 monorepo 目录结构；同一机制必须支持 workspace package 和已发布 npm/Nexus package。
 - 微前端 app 必须按运行模块显式引入自身依赖的 package 样式，例如 workflow app 引入 workflow package 样式。
 - 业务项目消费 Mango package 时应通过 package 公开入口引入样式，不能依赖 `apps/*` 或仓库源码路径。
