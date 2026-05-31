@@ -62,8 +62,9 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - 组件不得覆盖 Element Plus 全局 class 作为自身实现。
 - 组件必须在不同容器宽度下保持可用，不能假设固定页面宽度。
 - 样式必须跟随组件或页面所属 package 发布，package 应提供唯一的 `./style.css` 样式入口。
-- 单体 admin 可以通过聚合入口引入各 package 的 `style.css`，但聚合入口不能成为样式的唯一来源。
-- 单体 admin 的 package 样式聚合必须由 admin package 声明文件生成，业务开发者只维护声明，不手工追加 `@import` 清单。
+- admin 类宿主或业务管理应用可以通过聚合入口引入各 package 的 `style.css`，但聚合入口不能成为样式的唯一来源。
+- admin 类宿主或业务管理应用的 package 样式聚合必须由本应用 package 声明文件生成，业务开发者只维护声明，不手工追加 `@import` 清单。
+- package 样式聚合必须通过通用生成工具校验消费方依赖声明和 package `./style.css` 公开导出，必须同时支持 workspace package 和已发布到 npm/Nexus 后安装到 `node_modules` 的 package。
 - 微前端 app 必须显式引入自身运行页面依赖的 package 样式，禁止依赖宿主或 shell 的聚合样式穿透隔离容器。
 - 业务项目按需消费 package 时，必须同时按 package 公开入口引入对应样式，禁止复制 Mango 页面样式或依赖仓库源码路径。
 - 开发中心、组件示例和文档示例页只能维护示例页布局样式；组件运行所需样式必须归属组件自身 package。
@@ -141,4 +142,4 @@ Mango 是业务开发脚手架，组件会被发布到私有或公开 npm 仓库
 - 禁止用宿主全局样式或 shell 样式兜底修复 package 内页面样式。
 - 禁止把组件运行样式放在开发中心、组件示例或文档示例页中。
 - 禁止把通用组件样式集中塞进开发中心 package，导致业务项目为了使用单个组件被迫依赖开发中心。
-- 禁止手工维护单体 admin 的 package 样式聚合清单而绕过生成校验。
+- 禁止手工维护 admin 类宿主或业务管理应用的 package 样式聚合清单而绕过生成校验。
