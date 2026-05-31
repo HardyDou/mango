@@ -9,6 +9,17 @@ export function registerMangoAdminShellBaseDevPages() {
   registered = true;
   registerMangoDevComponentPages([
     {
+      menuId: 'shell-components-upload',
+      menuName: '文件上传',
+      menuCode: 'shell:components:upload',
+      path: '/components/upload',
+      component: 'demo/components/UploadView',
+      icon: 'Upload',
+      sort: 1,
+      feature: 'file',
+      loader: () => import('./components/UploadView.vue'),
+    },
+    {
       menuId: 'shell-components-editor',
       menuName: '富文本编辑器',
       menuCode: 'shell:components:editor',
@@ -37,6 +48,17 @@ export function registerMangoAdminShellBaseDevPages() {
       icon: 'Management',
       sort: 4,
       loader: () => import('./components/OrgSelectorView.vue'),
+    },
+    {
+      menuId: 'shell-components-workflow',
+      menuName: '工作流组件',
+      menuCode: 'shell:components:workflow',
+      path: '/components/workflow',
+      component: 'demo/components/WorkflowComponentsView',
+      icon: 'Stamp',
+      sort: 5,
+      feature: 'workflow',
+      loader: () => import('./components/WorkflowComponentsView.vue'),
     },
     {
       menuId: 'shell-components-captcha',

@@ -21,7 +21,7 @@ import { useLayoutStore } from '../stores/layout';
 import { usePreferencesStore } from '../stores/preferences';
 import { installShellApp } from '../appBootstrap';
 import { getMangoAdminShellOptions } from '../config';
-import { shouldShowDevCenter, type ShellMenu, type ShellRouteMenu } from './menuHost';
+import { ensureDevCenterPagesRegistered, type ShellMenu, type ShellRouteMenu } from './menuHost';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
@@ -242,11 +242,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
         for (const registrar of getMangoAdminShellOptions().featureRegistrars || []) {
           await registrar();
         }
-        if (shouldShowDevCenter()) {
-          await import('../views/demo/registerBaseDevPages').then(m => m.registerMangoAdminShellBaseDevPages());
-          return import('../views/demo/registerDevPages').then(m => m.registerMangoAdminShellDevPages());
-        }
-        return undefined;
+        return ensureDevCenterPagesRegistered();
       });
     }
     return defaultPagesPromise;

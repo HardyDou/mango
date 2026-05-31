@@ -1,0 +1,41 @@
+{
+  "baseUrl": "http://127.0.0.1:7777",
+  "checkedAt": "2026-05-31T10:56:09.272Z",
+  "pages": [
+    {
+      "name": "单体-开发中心-组织架构选择器",
+      "url": "http://127.0.0.1:7777/#/components/org-selector",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/single-admin-7777-dev-org-selector-bell.png",
+      "hasOrgTitle": true,
+      "has404": false,
+      "noticeBellCount": 0,
+      "noticeBellVisible": false,
+      "noticeTriggerVisible": false,
+      "navRightText": "admin\n芒果集团",
+      "navRightBox": {
+        "x": 1135.09375,
+        "y": 8,
+        "width": 304.90625,
+        "height": 40
+      },
+      "bellBox": null,
+      "bellStyle": null,
+      "pass": false
+    },
+    {
+      "name": "单体-首页",
+      "url": "http://127.0.0.1:7777/#/home",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/single-admin-7777-home-bell.png",
+      "hasHome": true,
+      "has404": false,
+      "noticeBellVisible": false,
+      "pass": false
+    }
+  ],
+  "consoleErrors": [
+    "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.",
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+  ],
+  "requestsFailed": [],
+  "pass": false
+}

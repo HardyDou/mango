@@ -1,3 +1,4 @@
+import { shallowRef } from 'vue';
 import type { Component } from 'vue';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 
@@ -16,14 +17,14 @@ export type MangoNoticeBellProvider = {
   getReminderSetting: () => Promise<Partial<MangoNoticeBellRuntimeConfig>>;
 };
 
-let noticeBellProvider: MangoNoticeBellProvider | undefined;
+const noticeBellProvider = shallowRef<MangoNoticeBellProvider>();
 
 export function registerMangoNoticeBellProvider(provider: MangoNoticeBellProvider) {
-  noticeBellProvider = provider;
+  noticeBellProvider.value = provider;
 }
 
 export function getMangoNoticeBellProvider() {
-  return noticeBellProvider;
+  return noticeBellProvider.value;
 }
 
 export type MangoNoticeBellProps = {

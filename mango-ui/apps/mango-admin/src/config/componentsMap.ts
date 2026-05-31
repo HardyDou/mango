@@ -3,6 +3,7 @@ import {
   normalizeComponentPath,
   registerDefaultAdminPages,
 } from '@mango/admin-pages';
+import { registerMangoAdminShellBaseDevPages } from '@mango/admin-shell/dev-base-pages';
 import { registerMangoAdminShellDevPages } from '@mango/admin-shell/dev-pages';
 import { registerFullMangoAdminFeaturePages } from './adminFeatureRegistrars';
 
@@ -16,6 +17,7 @@ registerDefaultAdminPages({
 registerFullMangoAdminFeaturePages();
 
 if (import.meta.env.DEV) {
+  registerMangoAdminShellBaseDevPages();
   registerMangoAdminShellDevPages();
 }
 

@@ -85,6 +85,7 @@ export function useMenuHost() {
     menuLoading.value = true;
     try {
       await ensureFeatureRegistrars();
+      await ensureDevCenterPagesRegistered();
       const response = await get<ShellMenu[]>('/authorization/menus/user', {
         params: { fmt: 'tree', appCode: 'internal-admin' },
       });
@@ -141,6 +142,7 @@ export function useMenuHost() {
 }
 
 let featureRegistrarsPromise: Promise<void> | undefined;
+let devCenterPagesPromise: Promise<void> | undefined;
 
 function ensureFeatureRegistrars() {
   if (!featureRegistrarsPromise) {
@@ -151,6 +153,19 @@ function ensureFeatureRegistrars() {
     });
   }
   return featureRegistrarsPromise;
+}
+
+export function ensureDevCenterPagesRegistered() {
+  if (!shouldShowDevCenter()) {
+    return Promise.resolve();
+  }
+  if (!devCenterPagesPromise) {
+    devCenterPagesPromise = Promise.resolve().then(async () => {
+      await import('../views/demo/registerBaseDevPages').then(m => m.registerMangoAdminShellBaseDevPages());
+      await import('../views/demo/registerDevPages').then(m => m.registerMangoAdminShellDevPages());
+    });
+  }
+  return devCenterPagesPromise;
 }
 
 function filterMenuForRoute(menus: ShellMenu[]): ShellMenu[] {
