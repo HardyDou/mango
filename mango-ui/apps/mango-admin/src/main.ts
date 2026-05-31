@@ -8,8 +8,7 @@ import router from './router';
 import { i18n } from './i18n';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import 'element-plus/dist/index.css';
-import '@mango/common/theme/index.scss';
+import '@mango/admin/style.css';
 import { initThemeBeforeRender } from '@/utils/themeInit';
 import { registerAuthDirectives } from './directive/authDirective';
 

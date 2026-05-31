@@ -8,6 +8,7 @@ import menuJson from './menu.json';
 import { MangoAdminLayout } from '@mango/admin-shell';
 import { menuApi, type SysMenuVO } from '@/api/admin/menu';
 import { componentsMap } from './componentsMap';
+import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
 
 /**
  * 验证码配置
@@ -74,6 +75,67 @@ function createHomeMenuItem(): MenuItem {
   };
 }
 
+function createFrontendMenuConfig(): MenuConfigItem[] {
+  const baseMenus = filterDevOnlyMenus(menuJson as MenuConfigItem[]).filter(menu => menu.path !== '/develop');
+  if (!import.meta.env.DEV) {
+    return baseMenus;
+  }
+
+  return [
+    ...baseMenus,
+    {
+      path: '/develop',
+      name: 'DevelopCenter',
+      meta: {
+        title: '开发中心',
+        icon: 'Monitor',
+        devOnly: true,
+      },
+      redirect: DEV_COMPONENT_DEMO_REDIRECT,
+      children: [
+        {
+          path: '/develop/components',
+          name: 'DevelopComponents',
+          meta: {
+            title: '组件库',
+            icon: 'Box',
+          },
+          redirect: DEV_COMPONENT_DEMO_REDIRECT,
+          children: DEV_COMPONENT_DEMO_PAGES.map(page => ({
+            path: page.path,
+            name: page.menuCode,
+            meta: {
+              title: page.menuName,
+              icon: page.icon,
+            },
+            component: page.component,
+          })),
+        },
+        {
+          path: '/develop/capabilities',
+          name: 'PlatformCapabilities',
+          meta: {
+            title: '平台能力介绍',
+            icon: 'Collection',
+          },
+          redirect: '/debug/capabilities/template',
+          children: [
+            {
+              path: '/debug/capabilities/template',
+              name: 'TemplateServiceGuide',
+              meta: {
+                title: '模板服务',
+                icon: 'Document',
+              },
+              component: 'debug/capabilities/template',
+            },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
 /**
  * 菜单元数据
  */
@@ -96,6 +158,7 @@ export interface MenuItem {
   name: string;
   meta: MenuMeta;
   component?: () => Promise<any>;
+  componentPath?: string;
   redirect?: string;
   children?: MenuItem[];
 }
@@ -119,7 +182,7 @@ export class MenuLoader {
   private constructor() {
     // 初始化时加载前端配置。开发中心只在开发环境展示，不进入测试/生产菜单。
     this.homeMenuItem = createHomeMenuItem();
-    this.frontendMenuItems = this.jsonToMenuItem(filterDevOnlyMenus(menuJson as MenuConfigItem[]));
+    this.frontendMenuItems = this.jsonToMenuItem(createFrontendMenuConfig());
   }
 
   /**
@@ -159,7 +222,8 @@ export class MenuLoader {
     };
 
     if (item.component) {
-      menuItem.component = this.resolveComponent(item.component);
+      menuItem.componentPath = item.component;
+      menuItem.component = () => this.resolveComponent(item.component!)();
     }
 
     if (item.redirect) {
