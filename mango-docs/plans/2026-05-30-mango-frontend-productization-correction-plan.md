@@ -261,54 +261,60 @@ Exit criteria:
 - Style entry is sufficient for default admin rendering.
 - User acceptance recorded.
 
-### Sprint 5: Built-In Capability Package Integration
+### Sprint 5: NPM/Nexus Independent Consumption Verification
 
 Goal:
 
-- Make built-in Mango capabilities consumable as admin-bound packages without breaking full default Mango.
+- Prove Mango frontend materials can be consumed outside the monorepo through npm/Nexus package artifacts.
 
 Scope:
 
-- Review and integrate packages such as system, rbac, file, workflow and notice admin packages.
-- Keep API packages separate for non-admin use.
-- Admin packages bind to admin-shell conventions.
-- Required grouped capabilities, such as system management modules, are handled as explicit dependency groups.
+- Audit all publishable `@mango/*` frontend packages for public entry, type entry, peer dependencies, style entry and workspace-free dependencies.
+- Verify local packed packages and Nexus-installed packages through an independent consumer project.
+- Keep admin-bound packages separate from non-admin API/component packages.
+- Record Maven and npm publishing rules, using the same Nexus account system without storing credentials in the repository.
 
 Automatic verification:
 
-- Package build/typecheck for each touched `*-api` and `*-admin` package.
-- Capability registration tests.
-- Real backend E2E for representative pages.
-- Menu/function sampling screenshots for each first-level capability group.
-- Data/API checks for list, search, create/edit where applicable.
+- Package export and dependency audit.
+- `pnpm pack` or equivalent tarball consumption from a clean project.
+- Nexus npm install verification when the company intranet is available.
+- Independent consumer `install`, `typecheck`, `build` and runtime smoke test.
+- E2E screenshots for login, shell, home, development center and representative capability pages.
 
 Manual acceptance:
 
-- User reviews sampled pages and confirms layout follows Mango conventions.
-- User confirms data appears from real backend, not mock or static arrays.
-- User confirms package naming and dependency grouping are understandable.
+- User confirms the consumer project does not depend on Mango workspace source paths.
+- User confirms npm/Nexus package installation uses the expected private registry.
+- User confirms screenshots match Mango baseline and no fake shell or copied page skin was introduced.
 
 Exit criteria:
 
-- Built-in capability package integration passes real backend E2E.
+- Independent npm consumer passes install, build, runtime and screenshot validation.
+- Development center visibility remains configurable by the consumer through public package API after npm publication.
 - User acceptance recorded.
 
-### Sprint 6: create-mango-app Full Preset
+### Sprint 6: mango-cli Full Preset
 
 Goal:
 
-- Generated business project starts as usable full Mango Admin by depending on Mango materials.
+- `mango-cli` can initialize a usable full Mango project from released Maven and npm materials.
 
 Scope:
 
-- Make `create-mango-app` generate a full-preset admin app that depends on `@mango/admin`.
-- Generated app should not copy Mango shell internals.
-- Generated app should be able to add business pages/modules without rewriting the framework.
+- Provide `mango-cli init` for standard frontend/backend project initialization.
+- Support monolith and microservice empty project generation.
+- Auto-configure private Maven and npm registries without writing credentials into the generated repository.
+- Dynamically render `pom.xml`, `package.json`, `.npmrc`, `application.yml`, startup entries, directory structure and AI development baseline docs.
+- Manage framework versions from one Mango version source to avoid dependency conflicts.
+- Force required system module dependencies and support optional module selection only after Sprint 5 package consumption is verified.
 
 Automatic verification:
 
 - CLI generation test.
 - Fresh install from package artifacts.
+- Maven dependency resolution against Nexus.
+- npm dependency resolution against Nexus.
 - Typecheck and build.
 - Real backend E2E for generated full preset.
 - Screenshot comparison against Sprint 0 baseline.
@@ -324,14 +330,17 @@ Exit criteria:
 - Generated full preset is accepted as full Mango baseline.
 - User acceptance recorded.
 
-### Sprint 7: Custom Preset And Business Extension
+### Sprint 7: mango-cli Optional Modules And Business Extension
 
 Goal:
 
-- Allow business projects to depend on Mango and customize safely after full baseline is proven.
+- Allow generated business projects to select optional Mango modules and add business modules safely.
 
 Scope:
 
+- Add `mango-cli add` module dependency management for optional modules.
+- Keep system management as a required dependency group.
+- Generate business module skeletons that use Mango Maven starters and npm packages, not copied framework source.
 - Add documented custom preset configuration.
 - Add one real business sample page/module using the starter pattern.
 - Ensure custom additions are additive and do not mutate full-mode Mango menus unexpectedly.
@@ -445,4 +454,3 @@ Required files:
 - Do not accept a generated menu as full Mango menu unless backend menu equality is proven.
 - Do not accept a visual fix unless screenshot comparison passes.
 - Do not move to the next Sprint until the current Sprint has user manual acceptance.
-

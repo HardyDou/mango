@@ -1,6 +1,6 @@
 {
   "name": "@mango/app-runtime",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": false,
   "main": "src/index.ts",
   "exports": {

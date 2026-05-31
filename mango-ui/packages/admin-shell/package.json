@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-shell",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -30,14 +30,14 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
-    "@mango/admin-pages": "1.0.0",
-    "@mango/app-runtime": "1.0.0",
-    "@mango/auth": "1.0.0",
-    "@mango/common": "1.0.0",
-    "@mango/file": "1.0.0",
-    "@mango/notice": "1.0.0",
-    "@mango/rbac": "1.0.0",
-    "@mango/workflow": "1.0.0",
+    "@mango/admin-pages": "1.0.2",
+    "@mango/app-runtime": "1.0.2",
+    "@mango/auth": "1.0.2",
+    "@mango/common": "1.0.2",
+    "@mango/file": "1.0.2",
+    "@mango/notice": "1.0.2",
+    "@mango/rbac": "1.0.2",
+    "@mango/workflow": "1.0.2",
     "element-plus": "2.5.5"
   },
   "peerDependencies": {

@@ -1,0 +1,9 @@
+# Sprint 5 Delivery Ledger
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| S5-001 | correction plan Sprint 5 | 审计 Mango npm 包是否可脱离 monorepo 独立消费 | 先检查公开入口、类型入口、样式入口、peer 依赖、workspace 依赖和构建产物，不把 workspace 内可用等同于 npm 可用 | `npm-package-audit.md` | 包元数据扫描；源码内部路径扫描 | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/npm-package-audit.md` |
+| S5-002 | correction plan Sprint 5 | 用 clean consumer 验证 packed packages | 使用 `pnpm pack` 安装 `@mango/admin` 依赖闭包，不依赖 workspace link | `verify-packed-consumer.mjs`; `packed-consumer-report.json`; `consumer-app` | consumer install/typecheck/build | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/packed-consumer-report.json` |
+| S5-003 | 用户确认内网可用 | 用公司内网 Nexus 验证 npm 安装 | Maven 和 npm 共用 Nexus 账号体系；凭据只放用户级配置或 CI Secret，不提交仓库；`@mango/admin@1.0.3` 补齐 npm 消费类型契约后发布验证 | `verify-nexus-consumer.mjs`; `nexus-consumer-report.json` | `npm view` + `pnpm install --ignore-workspace` + `typecheck` + `build` from Nexus group registry | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/nexus-consumer-report.json` |
+| S5-004 | correction plan Sprint 5 | 独立 consumer E2E 截图验收 | consumer 运行后检查真实后端登录、菜单、shell、首页、开发中心和代表性能力页；开发中心由 consumer 通过公开 `devCenter.deployEnv` 配置控制 | `verify-nexus-runtime-e2e.mjs`; `nexus-runtime-e2e-report.json`; `screenshots/*` | Playwright E2E + 截图识别 + console/network/API report | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/nexus-runtime-e2e-report.json` |
+| S5-005 | 用户新增 CLI 职责 | 明确 `mango-cli` 作为后续脚手架工具职责 | CLI 依赖 Sprint 5 发布物验收结果，放入 Sprint 6/7，不提前固化未验证包 | `mango-cli-scope.md` | PMO 文档审查 | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/mango-cli-scope.md` |

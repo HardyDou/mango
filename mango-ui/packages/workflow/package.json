@@ -1,6 +1,6 @@
 {
   "name": "@mango/workflow",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -23,9 +23,9 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
     "@form-create/element-ui": "3.2.16",
-    "@mango/file": "1.0.0",
-    "@mango/api-schema": "1.0.0",
-    "@mango/common": "1.0.0",
+    "@mango/file": "1.0.2",
+    "@mango/api-schema": "1.0.2",
+    "@mango/common": "1.0.2",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {

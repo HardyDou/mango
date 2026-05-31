@@ -1,6 +1,6 @@
 {
   "name": "@mango/common",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -52,7 +52,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@mango/api-schema": "1.0.0",
+    "@mango/api-schema": "1.0.2",
     "@vitejs/plugin-vue": "^4.0.0",
     "typescript": "^5.9.3",
     "vite": "^4.3.3"
