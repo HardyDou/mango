@@ -4,7 +4,7 @@
   "description": "Mango UI - Micro Frontend Monorepo",
   "scripts": {
     "dev": "pnpm admin:styles && pnpm -F mango-admin dev",
-    "dev:micro": "node ./scripts/dev-micro.mjs",
+    "dev:micro": "pnpm admin:styles && node ./scripts/dev-micro.mjs",
     "preview:micro": "node ./scripts/preview-micro.mjs",
     "build": "pnpm admin:styles && pnpm -r build",
     "build:micro": "pnpm admin:styles && pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build",
