@@ -1,7 +1,6 @@
 import { computed, ref } from 'vue';
 import { get } from '@mango/common/utils/request';
 import { getRegisteredPageRoutes } from '@mango/admin-pages/core';
-import { getMangoDevComponentPages } from '@mango/admin-pages/dev-pages';
 import { DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
 import {
   isMangoAdminFeatureEnabled,
@@ -161,8 +160,9 @@ export function ensureDevCenterPagesRegistered() {
   }
   if (!devCenterPagesPromise) {
     devCenterPagesPromise = Promise.resolve().then(async () => {
-      await import('../views/demo/registerBaseDevPages').then(m => m.registerMangoAdminShellBaseDevPages());
-      await import('../views/demo/registerDevPages').then(m => m.registerMangoAdminShellDevPages());
+      for (const registrar of getMangoAdminShellOptions().devCenter?.registrars || []) {
+        await registrar();
+      }
     });
   }
   return devCenterPagesPromise;
@@ -391,7 +391,7 @@ function createRegisteredHiddenRouteMenus(): ShellRouteMenu[] {
 
 function createComponentDemoMenus(): ShellMenu[] {
   const enabledFeatures = resolveMangoAdminFeatures(getMangoAdminShellOptions().features);
-  return getMangoDevComponentPages()
+  return getMangoAdminShellOptions().devCenter?.pages?.()
     .filter(page => !page.feature || enabledFeatures.has(page.feature))
     .map(page => ({
       ...page,
@@ -405,7 +405,7 @@ function createComponentDemoMenus(): ShellMenu[] {
       keepAlive: 1,
       pageType: 'LOCAL_ROUTE',
       children: [],
-    }));
+    })) || [];
 }
 
 const FEATURE_MODULE_MAP = {

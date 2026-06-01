@@ -1,8 +1,20 @@
 import type { MangoAuthConfig } from '@mango/auth';
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
-import type { MangoAdminFeatures } from '@mango/admin-pages/features';
+import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
 
 export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
+export type MangoAdminDevCenterRegistrar = () => void | Promise<void>;
+
+export interface MangoAdminDevCenterPage {
+  menuId: string;
+  menuName: string;
+  menuCode: string;
+  path: string;
+  component: string;
+  icon: string;
+  sort: number;
+  feature?: MangoAdminFeatureCode;
+}
 
 export interface MangoAdminShellOptions {
   mountTarget?: string | Element;
@@ -24,6 +36,8 @@ export type MangoAdminShellDeployEnv = 'dev' | 'test' | 'prod' | 'prd' | 'produc
 export interface MangoAdminShellDevCenterOptions {
   visible?: boolean;
   deployEnv?: MangoAdminShellDeployEnv;
+  registrars?: MangoAdminDevCenterRegistrar[];
+  pages?: () => MangoAdminDevCenterPage[];
 }
 
 export const defaultMangoAdminShellOptions: Required<Pick<MangoAdminShellOptions, 'mountTarget' | 'apiBaseUrl' | 'title'>> = {
@@ -59,6 +73,8 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
     devCenter: {
       ...mangoAdminShellOptions.devCenter,
       ...options.devCenter,
+      registrars: options.devCenter?.registrars || mangoAdminShellOptions.devCenter?.registrars,
+      pages: options.devCenter?.pages || mangoAdminShellOptions.devCenter?.pages,
     },
     modules: {
       ...mangoAdminShellOptions.modules,

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-01T01:32:31.253Z",
+  "generatedAt": "2026-06-01T04:07:51.040Z",
   "baseUrl": "http://a.mango.io:5176",
-  "apiBaseUrl": "http://127.0.0.1:5555",
+  "apiBaseUrl": "http://127.0.0.1:19049",
   "modes": [
     {
       "name": "monolith",
