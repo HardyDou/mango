@@ -1,0 +1,5 @@
+/*
+ * Source-mode package style entry.
+ * Vite injects Vue SFC styles from package source modules during dev.
+ * Published package mode continues to use each package's dist/style.css export.
+ */
