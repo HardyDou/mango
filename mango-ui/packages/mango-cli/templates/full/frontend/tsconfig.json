@@ -3,7 +3,11 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -14,9 +18,45 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@mango/admin/full": ["./src/mango-admin-full.d.ts"]
+      "@mango/admin": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/admin/full": [
+        "./src/mango-admin-full.d.ts"
+      ],
+      "@mango/workflow/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/workflow-business-example/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/template/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/notice/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/notice/admin-shell": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/file/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/numgen/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ],
+      "@mango/calendar/admin-pages": [
+        "./src/mango-admin-modular.d.ts"
+      ]
     },
-    "types": ["node", "vite/client"]
+    "types": [
+      "node",
+      "vite/client"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "vite.config.ts"
+  ]
 }

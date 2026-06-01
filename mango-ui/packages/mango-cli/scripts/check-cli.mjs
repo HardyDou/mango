@@ -38,6 +38,8 @@ try {
     '.gitignore',
     'frontend/package.json',
     'frontend/src/main.ts',
+    'frontend/src/mango-admin-modular.d.ts',
+    'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
     'backend/pom.xml',
     'backend/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
@@ -193,12 +195,17 @@ try {
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow', 'custom dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow-business-example', 'custom dependencies');
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/template', 'custom dependencies');
-  assertNotIncludes(Object.keys(customPackage.dependencies), '@mango/notice', 'custom dependencies');
-  assertNotIncludes(Object.keys(customPackage.dependencies), '@mango/file', 'custom dependencies');
+  for (const dependency of ['@mango/calendar', '@mango/file', '@mango/notice', '@mango/numgen']) {
+    assertIncludes(Object.keys(customPackage.dependencies), dependency, 'admin optional peer dependencies');
+    assertEqual(customPackage.dependencies[dependency], readWorkspacePackageVersion(dependency.replace('@mango/', '')), dependency);
+  }
 
   const customMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!customMain.includes("from '@mango/admin'") || customMain.includes("from '@mango/admin/full'")) {
     throw new Error('custom frontend entry should consume modular @mango/admin entry');
+  }
+  if (!customMain.includes('const mangoFeatures = ["workflow","template"] as const;')) {
+    throw new Error('custom frontend entry should preserve literal feature types');
   }
   for (const expected of [
     "registerMangoWorkflowAdminPages",
@@ -270,6 +277,7 @@ try {
   assertEqual(addedConfig.modules.optional.join(','), 'workflow,workflow-example,template,notice', 'modules after add');
   const addedPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
   assertIncludes(Object.keys(addedPackage.dependencies), '@mango/notice', 'dependencies after add');
+  assertEqual(addedPackage.dependencies['@mango/file'], readWorkspacePackageVersion('file'), 'file peer dependency after add');
   assertEqual(addedPackage.dependencies['business-owned-package'], '1.2.3', 'business dependency after add');
   const addedMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!addedMain.includes('registerMangoNoticeAdminPages') || !addedMain.includes('registerMangoNoticeAdminShell')) {
