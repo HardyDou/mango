@@ -67,12 +67,12 @@ type UpdateUserCommand = Pick<IdentityUserVO,
 interface BackendPageResult<T> {
   records?: T[];
   list?: T[];
-  total?: number;
-  current?: number;
-  page?: number;
-  size?: number;
-  pageNum?: number;
-  pageSize?: number;
+  total?: number | string;
+  current?: number | string;
+  page?: number | string;
+  size?: number | string;
+  pageNum?: number | string;
+  pageSize?: number | string;
 }
 
 export const userApi = {
@@ -140,8 +140,13 @@ function toPageResult<T>(data?: BackendPageResult<T>, params?: UserQuery): PageR
   const list = data?.records || data?.list || [];
   return {
     list,
-    total: data?.total ?? list.length,
-    pageNum: data?.current ?? data?.page ?? data?.pageNum ?? params?.pageNum ?? 1,
-    pageSize: data?.size ?? data?.pageSize ?? params?.pageSize ?? 10,
+    total: toFiniteNumber(data?.total, list.length),
+    pageNum: toFiniteNumber(data?.current ?? data?.page ?? data?.pageNum, params?.pageNum ?? 1),
+    pageSize: toFiniteNumber(data?.size ?? data?.pageSize, params?.pageSize ?? 10),
   };
+}
+
+function toFiniteNumber(value: number | string | undefined, fallback: number): number {
+  const numberValue = Number(value ?? fallback);
+  return Number.isFinite(numberValue) ? numberValue : fallback;
 }
