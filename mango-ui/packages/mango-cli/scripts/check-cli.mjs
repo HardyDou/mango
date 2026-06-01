@@ -43,6 +43,8 @@ try {
     'backend/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
     'backend/src/main/resources/application.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
+    'business-pmo/mango-baseline/templates/acceptance-evidence.md',
     'topologies/monolith/README.md',
     'topologies/microservice/README.md',
   ];
@@ -140,6 +142,10 @@ try {
   if (!baselinePreflight.stdout.includes('rules/frontend/01-vue-code.md')) {
     throw new Error(`generated PMO preflight did not include frontend rules:\n${baselinePreflight.stdout}`);
   }
+  if (!baselinePreflight.stdout.includes('rules/frontend/04-test.md')) {
+    throw new Error(`generated PMO preflight did not include frontend test rules:\n${baselinePreflight.stdout}`);
+  }
+  assertBusinessAcceptanceBaseline(projectRoot);
 
   const customResult = spawnSync(process.execPath, [
     cli,
@@ -293,6 +299,90 @@ function assertNotIncludes(values, unexpected, field) {
 function readWorkspacePackageVersion(packageName) {
   const packageJson = JSON.parse(readFileSync(resolve(packageRoot, `../${packageName}/package.json`), 'utf8'));
   return packageJson.version;
+}
+
+function assertBusinessAcceptanceBaseline(projectRoot) {
+  const baselineRoot = join(projectRoot, 'business-pmo/mango-baseline');
+  const frontendTestRule = readFileSync(join(baselineRoot, 'rules/frontend/04-test.md'), 'utf8');
+  for (const expected of [
+    '不能只验证接口 200',
+    '业务结果断言',
+    'UI 细节断言',
+    'console error',
+    '截图或 trace/video 路径',
+    'acceptance-evidence-check.mjs',
+  ]) {
+    if (!frontendTestRule.includes(expected)) {
+      throw new Error(`generated frontend test rule missing acceptance requirement: ${expected}`);
+    }
+  }
+
+  const qaAgent = readFileSync(join(baselineRoot, 'agents/04-qa-agent.md'), 'utf8');
+  for (const expected of [
+    'frontend/04-test.md',
+    'frontend/02-element-plus-ui.md',
+    '不能只写接口 200',
+  ]) {
+    if (!qaAgent.includes(expected)) {
+      throw new Error(`generated QA agent missing acceptance requirement: ${expected}`);
+    }
+  }
+
+  const deliveryTemplate = readFileSync(join(baselineRoot, 'templates/delivery-contract.md'), 'utf8');
+  const evidenceTemplate = readFileSync(join(baselineRoot, 'templates/acceptance-evidence.md'), 'utf8');
+  for (const expected of [
+    '功能点',
+    '关键断言',
+    'UI/交互检查',
+    'console/network 结果',
+    '截图/trace/日志',
+  ]) {
+    if (!deliveryTemplate.includes(expected) || !evidenceTemplate.includes(expected)) {
+      throw new Error(`generated acceptance templates missing evidence column: ${expected}`);
+    }
+  }
+
+  const validEvidencePath = join(projectRoot, 'acceptance-valid.md');
+  writeFileSync(validEvidencePath, [
+    '# acceptance',
+    '',
+    '| 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |',
+    '|---|---|---|---|---|---|---|---|---|',
+    '| TASK-001 | /demo | 新增业务记录 | name=acceptance | 列表新增一行且详情字段回显正确 | 主按钮位置正确，表单分组和必填校验可见 | 无 console error，无资源 404，无接口 4xx/5xx | artifacts/demo.png | DONE |',
+    '',
+  ].join('\n'));
+  const evidenceCheck = spawnSync(process.execPath, [
+    'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
+    '--evidence',
+    validEvidencePath,
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (evidenceCheck.status !== 0) {
+    throw new Error(`generated acceptance evidence check failed:\n${evidenceCheck.stdout}\n${evidenceCheck.stderr}`);
+  }
+
+  const weakEvidencePath = join(projectRoot, 'acceptance-weak.md');
+  writeFileSync(weakEvidencePath, [
+    '# weak acceptance',
+    '',
+    '| 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |',
+    '|---|---|---|---|---|---|---|---|---|',
+    '| TASK-001 | /demo | 新增 | - | 接口 200 | 页面无异常 | 无报错 | 截图正常 | DONE |',
+    '',
+  ].join('\n'));
+  const weakEvidenceCheck = spawnSync(process.execPath, [
+    'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
+    '--evidence',
+    weakEvidencePath,
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (weakEvidenceCheck.status === 0 || !weakEvidenceCheck.stdout.includes('weak acceptance wording')) {
+    throw new Error(`generated acceptance evidence check should reject weak evidence:\n${weakEvidenceCheck.stdout}\n${weakEvidenceCheck.stderr}`);
+  }
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {
