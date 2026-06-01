@@ -391,6 +391,7 @@ function buildVariables(options) {
     springCloudVersion: defaultVersions.springCloud,
     npmRegistry: ensureTrailingSlash(options.npmRegistry),
     mavenRepository: ensureTrailingSlash(options.mavenRepository),
+    mangoBaselineCommit: readMangoBaselineCommit(),
   };
   return {
     ...variables,
@@ -798,6 +799,71 @@ function readPackageVersion(path, fallback) {
 
 function readMangoPackageVersion(packageName, fallback) {
   return readPackageVersion(`mango-ui/packages/${packageName}/package.json`, fallback);
+}
+
+function readMangoBaselineCommit() {
+  const gitDir = resolveGitDir();
+  if (!gitDir) {
+    return 'unknown';
+  }
+  const headPath = resolve(gitDir, 'HEAD');
+  if (!existsSync(headPath)) {
+    return 'unknown';
+  }
+  const head = readFileSync(headPath, 'utf8').trim();
+  if (!head.startsWith('ref: ')) {
+    return head.slice(0, 12) || 'unknown';
+  }
+  const ref = head.slice('ref: '.length);
+  const commonGitDir = resolveCommonGitDir(gitDir);
+  return readGitRef(gitDir, ref)
+    || readGitRef(commonGitDir, ref)
+    || readPackedGitRef(commonGitDir, ref)
+    || 'unknown';
+}
+
+function resolveGitDir() {
+  const dotGitPath = resolve(repoRoot, '.git');
+  if (!existsSync(dotGitPath)) {
+    return '';
+  }
+  const stat = statSync(dotGitPath);
+  if (stat.isDirectory()) {
+    return dotGitPath;
+  }
+  const content = readFileSync(dotGitPath, 'utf8').trim();
+  if (!content.startsWith('gitdir: ')) {
+    return '';
+  }
+  const gitDir = content.slice('gitdir: '.length).trim();
+  return isAbsolute(gitDir) ? gitDir : resolve(repoRoot, gitDir);
+}
+
+function resolveCommonGitDir(gitDir) {
+  const commonDirPath = resolve(gitDir, 'commondir');
+  if (!existsSync(commonDirPath)) {
+    return gitDir;
+  }
+  const commonDir = readFileSync(commonDirPath, 'utf8').trim();
+  return isAbsolute(commonDir) ? commonDir : resolve(gitDir, commonDir);
+}
+
+function readGitRef(gitDir, ref) {
+  const refPath = resolve(gitDir, ref);
+  if (!existsSync(refPath)) {
+    return '';
+  }
+  return readFileSync(refPath, 'utf8').trim().slice(0, 12);
+}
+
+function readPackedGitRef(gitDir, ref) {
+  const packedRefsPath = resolve(gitDir, 'packed-refs');
+  if (!existsSync(packedRefsPath)) {
+    return '';
+  }
+  const lines = readFileSync(packedRefsPath, 'utf8').split(/\r?\n/);
+  const packedLine = lines.find(line => line.endsWith(` ${ref}`));
+  return packedLine ? packedLine.split(' ')[0].slice(0, 12) : '';
 }
 
 function ensureTrailingSlash(value) {

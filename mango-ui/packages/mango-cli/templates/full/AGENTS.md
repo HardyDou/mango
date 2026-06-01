@@ -1,6 +1,6 @@
 # Mango Business Agent 入口
 
-本项目由 `mango-cli init --preset full` 生成。
+本项目由 `mango-cli init --preset {{preset}}` 生成。
 
 ## 1. 唯一规范源
 
@@ -31,3 +31,14 @@ node business-pmo/mango-baseline/tools/pmo-preflight.mjs \
 - 执行的验证命令。
 - 未验证项和风险。
 - PMO 例外说明；没有例外则写“无”。
+
+## 4. 验收证据
+
+涉及页面、接口、权限、数据或 E2E 验收时，必须填写验收证据，并执行：
+
+```bash
+node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
+  --evidence "<验收证据文件路径>"
+```
+
+禁止只用“接口 200”“页面无异常”“截图正常”声明验收通过。

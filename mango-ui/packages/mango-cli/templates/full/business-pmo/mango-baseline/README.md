@@ -5,7 +5,7 @@
 快照来源：
 
 ```text
-Mango commit: 7bca6b8f
+Mango commit: {{mangoBaselineCommit}}
 ```
 
 业务团队不得在普通业务需求中直接修改本目录。需要调整 Mango 框架规范时，应回到 Mango 仓库完成 PMO 治理，再通过升级 Mango 版本同步新的 baseline。
@@ -14,4 +14,11 @@ Mango commit: 7bca6b8f
 
 ```text
 business-pmo/rules/
+```
+
+涉及页面、接口、权限、数据或 E2E 验收时，必须使用：
+
+```bash
+node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
+  --evidence "<验收证据文件路径>"
 ```
