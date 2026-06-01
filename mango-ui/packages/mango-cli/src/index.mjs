@@ -53,6 +53,16 @@ const CORE_FRONTEND_PACKAGES = [
   { name: '@mango/system', versionKey: 'mangoSystem' },
 ];
 
+const ADMIN_OPTIONAL_PEER_PACKAGES = [
+  { name: '@mango/calendar', versionKey: 'mangoCalendar' },
+  { name: '@mango/file', versionKey: 'mangoFile' },
+  { name: '@mango/notice', versionKey: 'mangoNotice' },
+  { name: '@mango/numgen', versionKey: 'mangoNumgen' },
+  { name: '@mango/template', versionKey: 'mangoTemplate' },
+  { name: '@mango/workflow', versionKey: 'mangoWorkflow' },
+  { name: '@mango/workflow-business-example', versionKey: 'mangoWorkflowBusinessExample' },
+];
+
 const CORE_BACKEND_DEPENDENCIES = [
   { groupId: 'io.mango.common', artifactId: 'mango-common' },
   { groupId: 'io.mango.infra.module', artifactId: 'mango-infra-module-starter' },
@@ -334,9 +344,12 @@ function buildVariables(options) {
   const basePackagePath = options.packageName.replaceAll('.', '/');
   const selectedModules = resolveSelectedModules(options);
   const optionalDependencies = uniqueBy(
-    selectedModules
-      .filter(module => module.frontendPackage)
-      .map(module => ({ name: module.frontendPackage, versionKey: module.versionKey })),
+    [
+      ...ADMIN_OPTIONAL_PEER_PACKAGES,
+      ...selectedModules
+        .filter(module => module.frontendPackage)
+        .map(module => ({ name: module.frontendPackage, versionKey: module.versionKey })),
+    ],
     dependency => dependency.name,
   );
   const frontendVersions = Object.fromEntries(
@@ -640,9 +653,17 @@ function addModuleCode(result, code) {
 }
 
 function renderFrontendModuleDependencies(selectedModules) {
-  return selectedModules
-    .filter(module => module.frontendPackage)
-    .map(module => `    "${module.frontendPackage}": "${defaultVersions[module.versionKey]}",`)
+  const dependencies = uniqueBy(
+    [
+      ...ADMIN_OPTIONAL_PEER_PACKAGES,
+      ...selectedModules
+        .filter(module => module.frontendPackage)
+        .map(module => ({ name: module.frontendPackage, versionKey: module.versionKey })),
+    ],
+    dependency => dependency.name,
+  );
+  return dependencies
+    .map(dependency => `    "${dependency.name}": "${defaultVersions[dependency.versionKey]}",`)
     .join('\n');
 }
 
@@ -670,7 +691,7 @@ function renderFrontendFeaturesExpression(preset, selectedModules) {
     return "'full'";
   }
   const features = selectedModules.map(module => module.feature).filter(Boolean);
-  return JSON.stringify(features);
+  return `${JSON.stringify(features)} as const`;
 }
 
 function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
