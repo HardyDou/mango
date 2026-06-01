@@ -5,10 +5,22 @@ import type {
   MangoRuntimeConfig,
   MangoRuntimeConfigLoadOptions,
 } from '@mango/app-runtime';
-import type { MangoAdminFeatures } from '@mango/admin-pages/features';
+import type { MangoAdminFeatureCode, MangoAdminFeatures } from '@mango/admin-pages/features';
 import type { MangoAuthConfig } from '@mango/auth';
 
 export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
+export type MangoAdminDevCenterRegistrar = () => void | Promise<void>;
+
+export interface MangoAdminDevCenterPage {
+  menuId: string;
+  menuName: string;
+  menuCode: string;
+  path: string;
+  component: string;
+  icon: string;
+  sort: number;
+  feature?: MangoAdminFeatureCode;
+}
 
 export interface MangoAdminAppInstance {
   app: VueApp;
@@ -22,6 +34,8 @@ export type MangoAdminShellDeployEnv = 'dev' | 'test' | 'prod' | 'prd' | 'produc
 export interface MangoAdminShellDevCenterOptions {
   visible?: boolean;
   deployEnv?: MangoAdminShellDeployEnv;
+  registrars?: MangoAdminDevCenterRegistrar[];
+  pages?: () => MangoAdminDevCenterPage[];
 }
 
 export interface MangoAdminShellOptions {
