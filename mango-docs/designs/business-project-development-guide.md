@@ -9,7 +9,8 @@
 | 对象 | 名称 | 说明 |
 |---|---|---|
 | 业务项目 starter 资产 | `mango-business-starter` | 仓内生产起点，不是 demo |
-| 本地初始化 CLI | `create-mango-app` | 对齐 `create-vue`、`create-react-app` 的命名习惯 |
+| 官方脚手架 CLI | `mango-cli` | 通过已发布 Maven / npm 包生成业务工程 |
+| 历史本地初始化 CLI | `create-mango-app` | 仓内 starter 验证资产，不作为当前业务项目首选入口 |
 | Web 生成服务 | Mango Initializr | 对齐 Spring Initializr |
 | 生成后的业务项目 | `<business>-platform` | 例如 `guarantee-platform`、`baohan-platform` |
 | 后端框架依赖 | `mango-admin-starter` | Maven starter 依赖 |
@@ -19,27 +20,38 @@
 
 ## 3. 推荐启动方式
 
-首选 CLI：
+首选 `mango-cli`：
 
 ```bash
-npm create mango-app@latest guarantee-platform -- \
-  --module guarantee \
-  --aggregate letter \
+npm exec --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ \
+  --package mango-cli@1.0.7 -- \
+  mango-cli init guarantee-platform \
+  --preset custom \
+  --modules workflow,template,file \
   --package com.example.guarantee \
   --group-id com.example \
   --topology monolith
 ```
 
-本地仓内验证可直接执行：
+需要全量 Mango 管理端能力时使用 full preset：
 
 ```bash
-node mango-ui/packages/create-mango-app/src/index.mjs init guarantee-platform \
-  --module guarantee \
-  --aggregate letter \
+mango init guarantee-platform \
+  --preset full \
   --package com.example.guarantee \
   --group-id com.example \
-  --topology monolith \
-  --template mango-business-starter
+  --topology monolith
+```
+
+只需要必选系统能力时使用 custom preset 且不选择可选模块：
+
+```bash
+mango init guarantee-platform \
+  --preset custom \
+  --modules none \
+  --package com.example.guarantee \
+  --group-id com.example \
+  --topology monolith
 ```
 
 ## 4. 生成项目结构
@@ -57,11 +69,8 @@ guarantee-platform/
         guarantee-starter/
         guarantee-starter-remote/
   frontend/
-    apps/
-      guarantee-platform-admin/
-    packages/
-      guarantee-api/
-      guarantee/
+    src/
+    public/runtime-config.json
   business-docs/
     plans/
   business-pmo/
@@ -80,11 +89,11 @@ guarantee-platform/
 - `starter` 暴露 Controller、自动装配、资源清单和模块元数据。
 - `starter-remote` 提供远程调用 adapter。
 
-前端按 app 和 package 分层：
+前端消费 Mango 已发布 npm 包：
 
-- `frontend/apps/<project>-admin` 依赖 `@mango/admin-shell` 启动后台。
-- `frontend/packages/<module>-api` 维护类型和 API client。
-- `frontend/packages/<module>` 维护页面和 page registry。
+- full preset 使用 `@mango/admin/full` 和 `@mango/admin/style-full.css`。
+- custom preset 使用 `@mango/admin`、显式 `features` 和 `featureRegistrars`。
+- 业务自有页面和接口在生成项目内维护，不修改 Mango 包源码。
 
 ## 6. PMO 继承
 
@@ -136,7 +145,11 @@ backend/modules/<module>/<module>-starter/src/main/resources/META-INF/mango/reso
 <module>/<aggregate>/index
 ```
 
-前端页面包通过 `registerModulePages` 注册页面，后台壳通过 `@mango/admin-shell` 汇总注册结果。
+前端页面包通过 `registerModulePages` 注册页面，后台壳通过 `@mango/admin-shell` 汇总注册结果。业务项目接入已发布能力包时，按能力包文档显式启用 feature 和 registrar。
+
+组件和能力包使用方式见：
+
+- [Mango 组件与能力使用指南 ForAI](./mango-capability-usage-guide-for-ai.md)
 
 ## 9. 验证
 
@@ -149,7 +162,8 @@ node mango-business-starter/scripts/check-template.mjs
 CLI 验证：
 
 ```bash
-node mango-ui/packages/create-mango-app/scripts/check-cli.mjs
+pnpm --dir mango-ui -F mango-cli test
+node mango-ui/packages/mango-cli/scripts/check-cli.mjs
 ```
 
 生成后的业务项目还需要执行自己的 Maven、pnpm 和 E2E 验证，不能只依赖 starter 资产检查。
