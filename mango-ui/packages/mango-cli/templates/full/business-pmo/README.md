@@ -21,7 +21,24 @@ business-pmo/
 3. 阅读本文件。
 4. 阅读 `rules/` 下与业务领域相关的规则。
 
-## 3. 业务规则建议结构
+## 3. 验收证据
+
+涉及页面、接口、权限、数据或 E2E 验收时，使用 Mango baseline 模板记录证据：
+
+```text
+business-pmo/mango-baseline/templates/acceptance-evidence.md
+```
+
+交付前执行：
+
+```bash
+node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
+  --evidence "<验收证据文件路径>"
+```
+
+验收证据必须写到具体功能点、测试数据、关键断言、UI/交互检查、console/network 结果和截图/trace/日志。禁止只写“接口 200”“页面无异常”“截图正常”。
+
+## 4. 业务规则建议结构
 
 推荐业务规则结构：
 

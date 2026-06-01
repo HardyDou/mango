@@ -107,6 +107,17 @@ try {
     throw new Error('generated .npmrc contains credentials');
   }
   assertNoUnrenderedPlaceholders(projectRoot);
+  const businessAgents = readFileSync(join(projectRoot, 'AGENTS.md'), 'utf8');
+  if (!businessAgents.includes('mango-cli init --preset full')) {
+    throw new Error('generated full AGENTS.md should record full preset');
+  }
+  if (!businessAgents.includes('acceptance-evidence-check.mjs')) {
+    throw new Error('generated AGENTS.md should mention acceptance evidence check');
+  }
+  const baselineReadme = readFileSync(join(projectRoot, 'business-pmo/mango-baseline/README.md'), 'utf8');
+  if (baselineReadme.includes('7bca6b8f') || baselineReadme.includes('{{mangoBaselineCommit}}')) {
+    throw new Error('generated baseline README contains stale or unrendered commit source');
+  }
 
   const fullAddResult = spawnSync(process.execPath, [
     cli,
@@ -173,6 +184,10 @@ try {
   const customConfig = JSON.parse(readFileSync(join(customRoot, 'mango.config.json'), 'utf8'));
   assertEqual(customConfig.preset, 'custom', 'custom preset');
   assertEqual(customConfig.modules.optional.join(','), 'workflow,workflow-example,template', 'custom modules');
+  const customAgents = readFileSync(join(customRoot, 'AGENTS.md'), 'utf8');
+  if (!customAgents.includes('mango-cli init --preset custom') || customAgents.includes('mango-cli init --preset full')) {
+    throw new Error('generated custom AGENTS.md should record custom preset');
+  }
 
   const customPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow', 'custom dependencies');
