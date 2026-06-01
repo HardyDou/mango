@@ -27,7 +27,7 @@
 ```json
 {
   "dependencies": {
-    "@mango/admin": "^1.0.0",
+    "@mango/admin": "1.0.8",
     "@{{projectKebab}}/{{moduleKebab}}": "{{projectVersion}}"
   }
 }

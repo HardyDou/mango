@@ -1,6 +1,6 @@
 {
   "name": "@mango/system",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -24,8 +24,8 @@
     "@element-plus/icons-vue": "^2.0.10",
     "@form-create/element-ui": "3.2.16",
     "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.2",
-    "@mango/rbac": "1.0.2",
+    "@mango/common": "1.0.3",
+    "@mango/rbac": "1.0.3",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {

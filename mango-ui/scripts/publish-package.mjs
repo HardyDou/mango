@@ -41,6 +41,9 @@ function normalizePackageName(input) {
   if (input.startsWith('create-')) {
     return input;
   }
+  if (input === 'mango-cli') {
+    return input;
+  }
   return `@mango/${input.replace(/^mango-/, '')}`;
 }
 
