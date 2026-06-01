@@ -139,6 +139,7 @@ MANGO_FRONTEND_PORT=${frontend_port}
 MANGO_FRONTEND_HOST=127.0.0.1
 MANGO_FRONTEND_OPEN=false
 MANGO_FRONTEND_AUTO_INSTALL=true
+MANGO_FRONTEND_MODE=source
 MANGO_DB_HOST=127.0.0.1
 MANGO_DB_PORT=3306
 MANGO_DB_NAME=${db_name}
@@ -165,6 +166,7 @@ load_workspace_env() {
   : "${MANGO_FRONTEND_HOST:=127.0.0.1}"
   : "${MANGO_FRONTEND_OPEN:=false}"
   : "${MANGO_FRONTEND_AUTO_INSTALL:=true}"
+  : "${MANGO_FRONTEND_MODE:=source}"
   : "${MANGO_DB_HOST:?Missing MANGO_DB_HOST in ${ENV_FILE}}"
   : "${MANGO_DB_PORT:?Missing MANGO_DB_PORT in ${ENV_FILE}}"
   : "${MANGO_DB_NAME:?Missing MANGO_DB_NAME in ${ENV_FILE}}"
@@ -180,6 +182,7 @@ print_config() {
   echo "Env file:  ${ENV_FILE}"
   echo "Backend:   http://127.0.0.1:${MANGO_BACKEND_PORT}"
   echo "Frontend:  http://${MANGO_FRONTEND_HOST}:${MANGO_FRONTEND_PORT}"
+  echo "Frontend mode: ${MANGO_FRONTEND_MODE}"
   echo "Database:  ${MANGO_DB_HOST}:${MANGO_DB_PORT}/${MANGO_DB_NAME}"
 }
 
@@ -312,14 +315,54 @@ ensure_frontend_dependencies() {
   pnpm install --frozen-lockfile
 }
 
+validate_frontend_mode() {
+  case "${MANGO_FRONTEND_MODE}" in
+    source|package)
+      ;;
+    *)
+      echo "Invalid MANGO_FRONTEND_MODE: ${MANGO_FRONTEND_MODE}"
+      echo "Use 'source' for Mango framework development or 'package' for package-consumption validation."
+      exit 1
+      ;;
+  esac
+}
+
+require_package_artifact() {
+  local path="$1"
+  if [[ ! -f "${path}" ]]; then
+    echo "Missing package-mode artifact: ${path}"
+    echo "MANGO_FRONTEND_MODE=package validates published package outputs; build packages first or use MANGO_FRONTEND_MODE=source for framework development."
+    exit 1
+  fi
+}
+
+require_frontend_package_artifacts() {
+  if [[ "${MANGO_FRONTEND_MODE}" != "package" ]]; then
+    return
+  fi
+
+  local package
+  for package in admin admin-shell admin-pages auth rbac system calendar file notice numgen template workflow workflow-business-example common; do
+    require_package_artifact "${FRONTEND_ROOT}/packages/${package}/dist/index.js"
+  done
+
+  for package in common auth rbac system calendar file notice numgen template workflow workflow-business-example; do
+    require_package_artifact "${FRONTEND_ROOT}/packages/${package}/dist/style.css"
+  done
+}
+
 run_frontend() {
   load_workspace_env
+  validate_frontend_mode
   require_port_free "frontend" "${MANGO_FRONTEND_PORT}"
   ensure_frontend_dependencies
+  require_frontend_package_artifacts
   echo "Starting frontend on http://${MANGO_FRONTEND_HOST}:${MANGO_FRONTEND_PORT}"
   echo "Proxy target http://127.0.0.1:${MANGO_BACKEND_PORT}"
+  echo "Frontend mode ${MANGO_FRONTEND_MODE}"
   cd "${FRONTEND_ROOT}"
-  VITE_ADMIN_PROXY_PATH="http://127.0.0.1:${MANGO_BACKEND_PORT}" \
+  MANGO_FRONTEND_MODE="${MANGO_FRONTEND_MODE}" \
+    VITE_ADMIN_PROXY_PATH="http://127.0.0.1:${MANGO_BACKEND_PORT}" \
     VITE_PORT="${MANGO_FRONTEND_PORT}" \
     VITE_HOST="${MANGO_FRONTEND_HOST}" \
     VITE_OPEN="${MANGO_FRONTEND_OPEN}" \

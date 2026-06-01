@@ -1,0 +1,127 @@
+{
+  "baseURL": "http://127.0.0.1:7891",
+  "startedAt": "2026-06-01T12:27:18.393Z",
+  "pages": [
+    {
+      "name": "登录后首页",
+      "route": "/home",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/01-home-after-login.png",
+      "assertions": [
+        "登录成功跳转 /home",
+        "系统管理菜单可见"
+      ]
+    },
+    {
+      "name": "成员管理",
+      "route": "/system/user",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/02-system-user-page.png",
+      "assertions": [
+        "页面标题/核心文案「成员管理」可见",
+        "关键 UI「新增成员」可见",
+        "关键 UI「用户名」可见"
+      ]
+    },
+    {
+      "name": "角色管理",
+      "route": "/system/role",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/03-system-role-page.png",
+      "assertions": [
+        "页面标题/核心文案「角色管理」可见",
+        "关键 UI「系统角色」可见",
+        "关键 UI「启用」可见"
+      ]
+    },
+    {
+      "name": "系统配置",
+      "route": "/system/config",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/04-system-config-page.png",
+      "assertions": [
+        "页面标题/核心文案「系统配置」可见",
+        "关键 UI「系统参数」可见",
+        "关键 UI「新增参数」可见"
+      ]
+    },
+    {
+      "name": "新增类型",
+      "route": "/system/dict",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/09-system-dict-page.png",
+      "assertions": [
+        "页面标题/核心文案「新增类型」可见",
+        "关键 UI「用户性别」可见",
+        "关键 UI「新增数据」可见"
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "name": "系统配置-新增系统参数",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/05-config-create-param.png",
+      "assertions": [
+        "POST /api/system/config 成功",
+        "表格出现参数键 accept.param.1780316840681",
+        "页面显示新增成功提示"
+      ]
+    },
+    {
+      "name": "系统配置-删除系统参数",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/06-config-delete-param.png",
+      "assertions": [
+        "DELETE /api/system/config 成功",
+        "参数键 accept.param.1780316840681 已清理",
+        "页面显示删除成功提示"
+      ]
+    },
+    {
+      "name": "系统配置-新增系统配置",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/07-config-create-config.png",
+      "assertions": [
+        "POST /api/system/config 成功",
+        "表格出现配置键 accept.config.1780316840681",
+        "系统配置 Tab 新增配置可见"
+      ]
+    },
+    {
+      "name": "系统配置-删除系统配置",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/08-config-delete-config.png",
+      "assertions": [
+        "DELETE /api/system/config 成功",
+        "配置键 accept.config.1780316840681 已清理",
+        "页面显示删除成功提示"
+      ]
+    },
+    {
+      "name": "字典管理-搜索字典类型",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-dev-source-mode/mango-docs/evidence/2026-06-01-frontend-dev-source-mode-acceptance/10-dict-search-type.png",
+      "assertions": [
+        "输入搜索词“用户性别”后触发 GET /api/system/dict/type/list",
+        "搜索结果仍展示“用户性别”字典类型",
+        "当前字典和右侧数据区域保持可用"
+      ]
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>."
+    },
+    {
+      "type": "error",
+      "text": "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid prop: type check failed for prop \"total\". Expected Number with value 1, got String with value \"1\". \n  at <Index page=1 onUpdate:page=fn limit=10  ... > \n  at <ElCard class=\"layout-card\" > \n  at <Index onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > key=\"/system/user\" > \n  at <KeepAlive include= [] > \n  at <RouterView> \n  at <Parent onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > key=\"/system/user\" > \n  at <KeepAlive include= [] > \n  at <RouterView> \n  at <Parent onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > key=\"/system/user\" > \n  at <KeepAlive include= [] > \n  at <RouterView> \n  at <Parent key=1 > \n  at <AsyncComponentWrapper key=1 > \n  at <ElScrollbar ref=\"layoutMainScrollbarRef\" class=\"layout-main-scroll layout-backtop-header-fixed\" wrap-class=\"layout-main-scroll\"  ... > \n  at <ElMain class=\"layout-main\" > \n  at <Main ref=\"layoutMainRef\" > \n  at <AsyncComponentWrapper ref=\"layoutMainRef\" > \n  at <ElContainer class=\"layout-mian-height-50\" > \n  at <ElContainer class=\"layout-container\" > \n  at <Classic> \n  at <Index onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>"
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid prop: type check failed for prop \"total\". Expected Number with value 1, got String with value \"1\". \n  at <ElPagination current-page=1 onUpdate:currentPage=fn page-size=10  ... > \n  at <Index page=1 onUpdate:page=fn limit=10  ... > \n  at <ElCard class=\"layout-card\" > \n  at <Index onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > key=\"/system/user\" > \n  at <KeepAlive include= [] > \n  at <RouterView> \n  at <Parent onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > key=\"/system/user\" > \n  at <KeepAlive include= [] > \n  at <RouterView> \n  at <Parent onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > key=\"/system/user\" > \n  at <KeepAlive include= [] > \n  at <RouterView> \n  at <Parent key=1 > \n  at <AsyncComponentWrapper key=1 > \n  at <ElScrollbar ref=\"layoutMainScrollbarRef\" class=\"layout-main-scroll layout-backtop-header-fixed\" wrap-class=\"layout-main-scroll\"  ... > \n  at <ElMain class=\"layout-main\" > \n  at <Main ref=\"layoutMainRef\" > \n  at <AsyncComponentWrapper ref=\"layoutMainRef\" > \n  at <ElContainer class=\"layout-mian-height-50\" > \n  at <ElContainer class=\"layout-container\" > \n  at <Classic> \n  at <Index onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > \n  at <RouterView> \n  at <App>"
+    },
+    {
+      "type": "warning",
+      "text": "ElementPlusError: [ElPagination] Deprecated usages detected, please refer to the el-pagination documentation for more details\n    at debugWarn (http://127.0.0.1:7891/node_modules/.vite/deps/element-plus.js?v=122a386a:1015:37)\n    at Proxy.<anonymous> (http://127.0.0.1:7891/node_modules/.vite/deps/element-plus.js?v=122a386a:25696:9)\n    at renderComponentRoot (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:7769:17)\n    at ReactiveEffect.componentUpdateFn [as fn] (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:6682:26)\n    at ReactiveEffect.run (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:1789:23)\n    at updateComponent (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:6543:18)\n    at processComponent (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:6477:7)\n    at patch (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:5981:11)\n    at ReactiveEffect.componentUpdateFn [as fn] (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:6691:9)\n    at ReactiveEffect.run (http://127.0.0.1:7891/node_modules/.vite/deps/chunk-VWPLMMMQ.js?v=064c0f53:1789:23)"
+    }
+  ],
+  "failedRequests": [],
+  "apiFailures": [],
+  "finishedAt": "2026-06-01T12:27:24.780Z"
+}

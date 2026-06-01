@@ -6,6 +6,11 @@ import AutoImport from 'unplugin-auto-import/vite';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import { createStyleImportPlugin, VxeTableResolve } from 'vite-plugin-style-import';
 import viteCompression from 'vite-plugin-compression';
+import {
+  assertMangoPackageModeDist,
+  createMangoWorkspaceAliases,
+  resolveMangoFrontendMode,
+} from '../../build-config/mangoAliases';
 
 const ALLOWED_PROXY_HOSTS = ['127.0.0.1', 'localhost'];
 
@@ -67,60 +72,16 @@ const createManualChunks = (id: string): string | undefined => {
   return undefined;
 };
 
-const alias: { find: string | RegExp; replacement: string }[] = [
-  { find: '@', replacement: pathResolve('./src/') },
-  { find: '@mango/admin/style.css', replacement: resolve(__dirname, '../../packages/admin/style.css') },
-  { find: '@mango/admin-shell/style.css', replacement: resolve(__dirname, '../../packages/admin-shell/style.css') },
-  { find: '@mango/common/style.css', replacement: resolve(__dirname, '../../packages/common/dist/style.css') },
-  { find: '@mango/common/theme/index.css', replacement: resolve(__dirname, '../../packages/common/theme/index.css') },
-  { find: '@mango/auth/style.css', replacement: resolve(__dirname, '../../packages/auth/dist/style.css') },
-  { find: '@mango/rbac/style.css', replacement: resolve(__dirname, '../../packages/rbac/dist/style.css') },
-  { find: '@mango/system/style.css', replacement: resolve(__dirname, '../../packages/system/dist/style.css') },
-  { find: '@mango/workflow/style.css', replacement: resolve(__dirname, '../../packages/workflow/dist/style.css') },
-  { find: '@mango/workflow-business-example/style.css', replacement: resolve(__dirname, '../../packages/workflow-business-example/dist/style.css') },
-  { find: '@mango/file/style.css', replacement: resolve(__dirname, '../../packages/file/dist/style.css') },
-  { find: '@mango/calendar/style.css', replacement: resolve(__dirname, '../../packages/calendar/dist/style.css') },
-  { find: '@mango/numgen/style.css', replacement: resolve(__dirname, '../../packages/numgen/dist/style.css') },
-  { find: '@mango/template/style.css', replacement: resolve(__dirname, '../../packages/template/dist/style.css') },
-  { find: '@mango/notice/style.css', replacement: resolve(__dirname, '../../packages/notice/dist/style.css') },
-  { find: '@mango/admin-pages/core', replacement: resolve(__dirname, '../../packages/admin-pages/src/core.ts') },
-  { find: '@mango/admin-pages/defaults', replacement: resolve(__dirname, '../../packages/admin-pages/src/defaults.ts') },
-  { find: '@mango/admin-pages/dev-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/dev-pages.ts') },
-  { find: '@mango/admin-pages/dev-component-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/devComponentPages.ts') },
-  { find: '@mango/admin-pages/features', replacement: resolve(__dirname, '../../packages/admin-pages/src/features.ts') },
-  { find: '@mango/admin-pages/notice', replacement: resolve(__dirname, '../../packages/admin-pages/src/notice.ts') },
-  { find: '@mango/admin-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/index.ts') },
-  { find: '@mango/admin-shell/runtime', replacement: resolve(__dirname, '../../packages/admin-shell/src/runtime/runtimeHost.ts') },
-  { find: '@mango/admin-shell/menu', replacement: resolve(__dirname, '../../packages/admin-shell/src/runtime/menuHost.ts') },
-  { find: '@mango/admin-shell/stores', replacement: resolve(__dirname, '../../packages/admin-shell/src/stores/index.ts') },
-  { find: '@mango/admin-shell/router', replacement: resolve(__dirname, '../../packages/admin-shell/src/router.ts') },
-  { find: '@mango/admin-shell/home', replacement: resolve(__dirname, '../../packages/admin-shell/src/views/home/index.vue') },
-  { find: '@mango/admin-shell/dev-pages', replacement: resolve(__dirname, '../../packages/admin-shell/src/views/demo/registerDevPages.ts') },
-  { find: '@mango/admin-shell/dev-base-pages', replacement: resolve(__dirname, '../../packages/admin-shell/src/views/demo/registerBaseDevPages.ts') },
-  { find: '@mango/admin-shell/dev-upload-page', replacement: resolve(__dirname, '../../packages/admin-shell/src/views/demo/components/UploadView.vue') },
-  { find: '@mango/admin-shell/dev-workflow-page', replacement: resolve(__dirname, '../../packages/admin-shell/src/views/demo/components/WorkflowComponentsView.vue') },
-  { find: '@mango/admin-shell', replacement: resolve(__dirname, '../../packages/admin-shell/src/index.ts') },
-  { find: '@mango/calendar/admin-pages', replacement: resolve(__dirname, '../../packages/calendar/src/admin-pages.ts') },
-  { find: '@mango/file/admin-pages', replacement: resolve(__dirname, '../../packages/file/src/admin-pages.ts') },
-  { find: '@mango/notice/admin-pages', replacement: resolve(__dirname, '../../packages/notice/src/admin-pages.ts') },
-  { find: '@mango/notice/admin-shell', replacement: resolve(__dirname, '../../packages/notice/src/admin-shell.ts') },
-  { find: '@mango/numgen/admin-pages', replacement: resolve(__dirname, '../../packages/numgen/src/admin-pages.ts') },
-  { find: '@mango/template/admin-pages', replacement: resolve(__dirname, '../../packages/template/src/admin-pages.ts') },
-  { find: '@mango/workflow/admin-pages', replacement: resolve(__dirname, '../../packages/workflow/src/admin-pages.ts') },
-  { find: '@mango/workflow-business-example/admin-pages', replacement: resolve(__dirname, '../../packages/workflow-business-example/src/admin-pages.ts') },
-  { find: '@mango/file', replacement: resolve(__dirname, '../../packages/file/src/index.ts') },
-  { find: '@mango/workflow', replacement: resolve(__dirname, '../../packages/workflow/src/index.ts') },
-  { find: '@mango/notice/admin', replacement: resolve(__dirname, '../../packages/notice/src/admin.ts') },
-  { find: '@mango/notice/client', replacement: resolve(__dirname, '../../packages/notice/src/client.ts') },
-  { find: '@mango/notice/realtime', replacement: resolve(__dirname, '../../packages/notice/src/realtime.ts') },
-  { find: 'vue-i18n', replacement: 'vue-i18n/dist/vue-i18n.cjs.js' },
-];
-
 const viteConfig = defineConfig((mode: ConfigEnv) => {
+  assertMangoPackageModeDist(__dirname, { command: mode.command });
   const env = loadEnv(mode.mode, process.cwd());
   const isDev = mode.command === 'serve';
   const enableCompression = env.VITE_ENABLE_COMPRESSION === 'true';
   const proxyTarget = validateProxyTarget(env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555');
+  const alias = createMangoWorkspaceAliases({
+    appDir: __dirname,
+    appSrcAlias: pathResolve('./src/'),
+  });
 
   return {
     plugins: [
@@ -212,6 +173,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       __INTLIFY_PROD_DEVTOOLS__: JSON.stringify(false),
       __VERSION__: JSON.stringify(process.env.npm_package_version),
       __NEXT_NAME__: JSON.stringify(process.env.npm_package_name),
+      __MANGO_FRONTEND_MODE__: JSON.stringify(resolveMangoFrontendMode()),
     },
   };
 });

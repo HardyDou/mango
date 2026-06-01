@@ -3,8 +3,13 @@ import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import { resolve } from 'path';
 import { createAllowedOrigins, createPreviewCorsHeaders } from './vite.cors';
 import { mangoMicroManualChunks } from '../../build-config/microChunks';
+import {
+  assertMangoPackageModeDist,
+  createMangoWorkspaceAliases,
+} from '../../build-config/mangoAliases';
 
 export default defineConfig((mode: ConfigEnv) => {
+  assertMangoPackageModeDist(__dirname, { command: mode.command });
   const env = loadEnv(mode.mode, process.cwd());
   const proxyTarget = env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:18081';
   const allowedHosts = ['localhost', '127.0.0.1', 'a.mango.io', 'b.mango.io', 'c.mango.io'];
@@ -18,9 +23,10 @@ export default defineConfig((mode: ConfigEnv) => {
       'process.env': {},
     },
     resolve: {
-      alias: {
-        '@': resolve(__dirname, './src'),
-      },
+      alias: createMangoWorkspaceAliases({
+        appDir: __dirname,
+        appSrcAlias: resolve(__dirname, './src'),
+      }),
     },
     server: {
       host: env.VITE_HOST || '0.0.0.0',
