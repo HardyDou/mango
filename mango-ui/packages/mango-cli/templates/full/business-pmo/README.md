@@ -28,7 +28,7 @@ business-pmo/
 ```text
 business-pmo/
 └── rules/
-    └── {{moduleKebab}}/
+    └── example-module/
         ├── 01-domain.md
         ├── 02-status.md
         └── 03-acceptance.md

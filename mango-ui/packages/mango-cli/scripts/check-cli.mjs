@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -6,13 +6,14 @@ import { spawnSync } from 'node:child_process';
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
-const projectName = 'mango-full-acceptance';
+const fullProjectName = 'mango-full-acceptance';
+const customProjectName = 'mango-custom-acceptance';
 
 try {
   const result = spawnSync(process.execPath, [
     cli,
     'init',
-    projectName,
+    fullProjectName,
     '--preset',
     'full',
     '--topology',
@@ -30,7 +31,7 @@ try {
     throw new Error(`CLI failed:\n${result.stdout}\n${result.stderr}`);
   }
 
-  const projectRoot = join(tempRoot, projectName);
+  const projectRoot = join(tempRoot, fullProjectName);
   const requiredFiles = [
     'mango.config.json',
     'AGENTS.md',
@@ -56,6 +57,9 @@ try {
   assertEqual(config.preset, 'full', 'preset');
   assertEqual(config.topology, 'monolith', 'topology');
   assertEqual(config.basePackage, 'com.example.acceptance', 'basePackage');
+  assertIncludes(config.modules.optional, 'workflow', 'full optional modules');
+  assertIncludes(config.modules.optional, 'template', 'full optional modules');
+  assertIncludes(config.modules.optional, 'notice', 'full optional modules');
 
   const mainTs = readFileSync(join(projectRoot, 'frontend/src/main.ts'), 'utf8');
   if (!mainTs.includes("from '@mango/admin/full'") || !mainTs.includes("import '@mango/admin/style-full.css'")) {
@@ -100,6 +104,21 @@ try {
   if (npmrc.includes('_authToken') || npmrc.includes('password') || npmrc.includes('username')) {
     throw new Error('generated .npmrc contains credentials');
   }
+  assertNoUnrenderedPlaceholders(projectRoot);
+
+  const fullAddResult = spawnSync(process.execPath, [
+    cli,
+    'add',
+    'notice',
+    '--project-dir',
+    projectRoot,
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (fullAddResult.status === 0 || !fullAddResult.stderr.includes('full preset already includes all optional modules')) {
+    throw new Error(`add command should reject full preset:\n${fullAddResult.stdout}\n${fullAddResult.stderr}`);
+  }
 
   const baselinePreflight = spawnSync(process.execPath, [
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
@@ -122,7 +141,133 @@ try {
     throw new Error(`generated PMO preflight did not include frontend rules:\n${baselinePreflight.stdout}`);
   }
 
-  console.log('mango-cli full preset check passed.');
+  const customResult = spawnSync(process.execPath, [
+    cli,
+    'init',
+    customProjectName,
+    '--preset',
+    'custom',
+    '--modules',
+    'workflow-example,template',
+    '--topology',
+    'monolith',
+    '--package',
+    'com.example.custom',
+    '--group-id',
+    'com.example',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (customResult.status !== 0) {
+    throw new Error(`custom CLI failed:\n${customResult.stdout}\n${customResult.stderr}`);
+  }
+
+  const customRoot = join(tempRoot, customProjectName);
+  const customConfig = JSON.parse(readFileSync(join(customRoot, 'mango.config.json'), 'utf8'));
+  assertEqual(customConfig.preset, 'custom', 'custom preset');
+  assertEqual(customConfig.modules.optional.join(','), 'workflow,workflow-example,template', 'custom modules');
+
+  const customPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
+  assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow', 'custom dependencies');
+  assertIncludes(Object.keys(customPackage.dependencies), '@mango/workflow-business-example', 'custom dependencies');
+  assertIncludes(Object.keys(customPackage.dependencies), '@mango/template', 'custom dependencies');
+  assertNotIncludes(Object.keys(customPackage.dependencies), '@mango/notice', 'custom dependencies');
+  assertNotIncludes(Object.keys(customPackage.dependencies), '@mango/file', 'custom dependencies');
+
+  const customMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
+  if (!customMain.includes("from '@mango/admin'") || customMain.includes("from '@mango/admin/full'")) {
+    throw new Error('custom frontend entry should consume modular @mango/admin entry');
+  }
+  for (const expected of [
+    "registerMangoWorkflowAdminPages",
+    "registerMangoWorkflowBusinessExampleAdminPages",
+    "registerMangoTemplateAdminPages",
+  ]) {
+    if (!customMain.includes(expected)) {
+      throw new Error(`custom frontend entry missing registrar: ${expected}`);
+    }
+  }
+  if (customMain.includes('registerMangoNoticeAdminPages')) {
+    throw new Error('custom frontend entry registered unselected notice module');
+  }
+
+  const customPom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
+  if (customPom.includes('<artifactId>mango-admin-starter</artifactId>')) {
+    throw new Error('custom backend should not depend on full mango-admin-starter');
+  }
+  for (const expected of ['mango-system-starter', 'mango-workflow-starter', 'mango-template-starter']) {
+    if (!customPom.includes(`<artifactId>${expected}</artifactId>`)) {
+      throw new Error(`custom backend missing dependency: ${expected}`);
+    }
+  }
+  if (customPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
+    throw new Error('custom backend added unselected notice dependency');
+  }
+  const businessReadmePath = join(customRoot, 'README.md');
+  const businessReadmeBeforeAdd = '# business-owned readme\n';
+  writeFileSync(businessReadmePath, businessReadmeBeforeAdd);
+  const customPackageBeforeAdd = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
+  customPackageBeforeAdd.dependencies['business-owned-package'] = '1.2.3';
+  writeFileSync(join(customRoot, 'frontend/package.json'), `${JSON.stringify(customPackageBeforeAdd, null, 2)}\n`);
+  writeFileSync(
+    join(customRoot, 'frontend/src/main.ts'),
+    `${customMain}\nconsole.info('business-owned bootstrap hook');\n`,
+  );
+  writeFileSync(
+    join(customRoot, 'backend/pom.xml'),
+    customPom.replace(
+      '        <dependency>\n            <groupId>org.springframework.boot</groupId>\n            <artifactId>spring-boot-starter-actuator</artifactId>\n        </dependency>',
+      [
+        '        <dependency>',
+        '            <groupId>com.example</groupId>',
+        '            <artifactId>business-owned-starter</artifactId>',
+        '            <version>1.2.3</version>',
+        '        </dependency>',
+        '        <dependency>',
+        '            <groupId>org.springframework.boot</groupId>',
+        '            <artifactId>spring-boot-starter-actuator</artifactId>',
+        '        </dependency>',
+      ].join('\n'),
+    ),
+  );
+
+  const addResult = spawnSync(process.execPath, [
+    cli,
+    'add',
+    'notice',
+    '--project-dir',
+    customRoot,
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (addResult.status !== 0) {
+    throw new Error(`add command failed:\n${addResult.stdout}\n${addResult.stderr}`);
+  }
+  const addedConfig = JSON.parse(readFileSync(join(customRoot, 'mango.config.json'), 'utf8'));
+  assertEqual(addedConfig.modules.optional.join(','), 'workflow,workflow-example,template,notice', 'modules after add');
+  const addedPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
+  assertIncludes(Object.keys(addedPackage.dependencies), '@mango/notice', 'dependencies after add');
+  assertEqual(addedPackage.dependencies['business-owned-package'], '1.2.3', 'business dependency after add');
+  const addedMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
+  if (!addedMain.includes('registerMangoNoticeAdminPages') || !addedMain.includes('registerMangoNoticeAdminShell')) {
+    throw new Error('add command did not update notice frontend registrars');
+  }
+  if (!addedMain.includes("console.info('business-owned bootstrap hook');")) {
+    throw new Error('add command overwrote business-owned frontend entry content');
+  }
+  const addedPom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
+  if (!addedPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
+    throw new Error('add command did not update notice backend dependency');
+  }
+  if (!addedPom.includes('<artifactId>business-owned-starter</artifactId>')) {
+    throw new Error('add command overwrote business-owned backend dependency');
+  }
+  assertEqual(readFileSync(businessReadmePath, 'utf8'), businessReadmeBeforeAdd, 'business-owned file after add');
+  assertNoUnrenderedPlaceholders(customRoot);
+
+  console.log('mango-cli full/custom/add checks passed.');
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }
@@ -133,7 +278,31 @@ function assertEqual(actual, expected, field) {
   }
 }
 
+function assertIncludes(values, expected, field) {
+  if (!values.includes(expected)) {
+    throw new Error(`${field} expected to include ${expected}`);
+  }
+}
+
+function assertNotIncludes(values, unexpected, field) {
+  if (values.includes(unexpected)) {
+    throw new Error(`${field} should not include ${unexpected}`);
+  }
+}
+
 function readWorkspacePackageVersion(packageName) {
   const packageJson = JSON.parse(readFileSync(resolve(packageRoot, `../${packageName}/package.json`), 'utf8'));
   return packageJson.version;
+}
+
+function assertNoUnrenderedPlaceholders(projectRoot) {
+  const result = spawnSync('rg', ['-n', '\\{\\{', projectRoot], {
+    encoding: 'utf8',
+  });
+  if (result.status === 0) {
+    throw new Error(`generated project contains unrendered placeholders:\n${result.stdout}`);
+  }
+  if (result.status !== 1) {
+    throw new Error(`placeholder scan failed:\n${result.stdout}\n${result.stderr}`);
+  }
 }

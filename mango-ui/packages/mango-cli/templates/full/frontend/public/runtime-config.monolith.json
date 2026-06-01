@@ -1,21 +1,4 @@
 {
   "profile": "monolith",
-  "modules": {
-    "mango-authorization": {
-      "mode": "local",
-      "runtimeCode": "mango-admin-rbac-local"
-    },
-    "mango-system": {
-      "mode": "local",
-      "runtimeCode": "mango-admin-system-local"
-    },
-    "mango-workflow": {
-      "mode": "local",
-      "runtimeCode": "mango-admin-workflow-local"
-    },
-    "mango-template": {
-      "mode": "local",
-      "runtimeCode": "mango-admin-template-local"
-    }
-  }
+  "modules": {{runtimeModulesJson}}
 }

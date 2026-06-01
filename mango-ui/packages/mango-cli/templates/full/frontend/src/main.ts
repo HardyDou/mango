@@ -1,5 +1,6 @@
-import { createMangoAdminApp, mangoFullAdminFeatureRegistrars } from '@mango/admin/full';
-import '@mango/admin/style-full.css';
+// mango-cli:imports:start
+{{frontendEntryImports}}
+// mango-cli:imports:end
 
 function splitEnvList(value?: string) {
   return (value || '')
@@ -8,12 +9,17 @@ function splitEnvList(value?: string) {
     .filter(Boolean);
 }
 
+// mango-cli:features:start
+const mangoFeatures = {{frontendFeaturesExpression}};
+const mangoFeatureRegistrars = {{frontendFeatureRegistrarsExpression}};
+// mango-cli:features:end
+
 createMangoAdminApp({
   mountTarget: '#app',
   apiBaseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',
   title: import.meta.env.VITE_APP_TITLE || '{{projectPascal}}',
-  features: 'full',
-  featureRegistrars: mangoFullAdminFeatureRegistrars,
+  features: mangoFeatures,
+  featureRegistrars: mangoFeatureRegistrars,
   devCenter: {
     deployEnv: import.meta.env.VITE_MANGO_DEPLOY_ENV || import.meta.env.MODE,
   },
