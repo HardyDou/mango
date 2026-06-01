@@ -6,9 +6,10 @@ export interface DevComponentDemoPage {
   component: string;
   icon: string;
   sort: number;
+  feature?: 'file' | 'workflow';
 }
 
-export const DEV_COMPONENT_DEMO_REDIRECT = '/components/upload';
+export const DEV_COMPONENT_DEMO_REDIRECT = '/components/editor';
 
 export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
   {
@@ -19,6 +20,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     component: 'demo/components/UploadView',
     icon: 'Upload',
     sort: 1,
+    feature: 'file',
   },
   {
     menuId: 'shell-components-editor',
@@ -55,6 +57,7 @@ export const DEV_COMPONENT_DEMO_PAGES: DevComponentDemoPage[] = [
     component: 'demo/components/WorkflowComponentsView',
     icon: 'Stamp',
     sort: 5,
+    feature: 'workflow',
   },
   {
     menuId: 'shell-components-captcha',

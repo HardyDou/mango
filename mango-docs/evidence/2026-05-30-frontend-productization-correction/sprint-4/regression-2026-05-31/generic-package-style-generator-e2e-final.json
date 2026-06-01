@@ -1,0 +1,304 @@
+{
+  "pass": true,
+  "checkedAt": "2026-05-31T00:36:26.752Z",
+  "baseURL": "http://a.mango.io:5176",
+  "checks": [
+    {
+      "name": "workflow-start",
+      "url": "http://a.mango.io:5176/#/workflow/start-process?genericStyleProbe=1780187781762",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-workflow-start.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "display": "flex",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "width": 20,
+          "height": 20
+        }
+      },
+      "elements": {
+        ".workflow-launch-card": {
+          "className": "workflow-launch-card",
+          "text": "合同用印审批合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。",
+          "display": "grid",
+          "widthCss": "277.5px",
+          "padding": "14px",
+          "marginBottom": "0px",
+          "borderRadius": "8px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "gap": "12px",
+          "width": 277.5,
+          "height": 76
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "display",
+          "expected": "grid",
+          "actual": "grid",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "padding",
+          "expected": "14px",
+          "actual": "14px",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "borderRadius",
+          "expected": "8px",
+          "actual": "8px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "template-templates",
+      "url": "http://a.mango.io:5176/#/template/templates?genericStyleProbe=1780187781762",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-template-templates.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "display": "flex",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "width": 20,
+          "height": 20
+        }
+      },
+      "elements": {
+        ".template-container": {
+          "className": "template-container",
+          "text": "关键词分类全部分类格式全部格式查询重置新增模板批量删除刷新模板分类模板格式发布变更生效版本备注更新时间操作暂无模板新增模板Total 010/page 1 Go to",
+          "display": "flex",
+          "widthCss": "1188px",
+          "padding": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal",
+          "width": 1188,
+          "height": 836
+        },
+        ".template-main": {
+          "className": "el-card is-always-shadow template-main",
+          "text": "关键词分类全部分类格式全部格式查询重置新增模板批量删除刷新模板分类模板格式发布变更生效版本备注更新时间操作暂无模板新增模板Total 010/page 1 Go to",
+          "display": "flex",
+          "widthCss": "1188px",
+          "padding": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "4px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal",
+          "width": 1188,
+          "height": 836
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".template-container",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".template-main",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "system-menu-package",
+      "url": "http://a.mango.io:5176/#/system/menu-package?genericStyleProbe=1780187781762",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-system-menu-package.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "display": "flex",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "width": 20,
+          "height": 20
+        }
+      },
+      "elements": {
+        ".menu-package-container": {
+          "className": "menu-package-container",
+          "text": "关键词状态不限查询重置新增套餐套餐名称套餐编码应用状态授权菜单数备注操作平台管理套餐platform_admininternal-admin启用182平台管理员默认菜单授权套餐预览编辑删除机构协同套餐institution_collaborationinternal-admin启用59普通机构后台默认菜单授权套餐预览编辑删除套餐菜单预览",
+          "display": "block",
+          "widthCss": "1188px",
+          "padding": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal",
+          "width": 1188,
+          "height": 260
+        },
+        ".search-form": {
+          "className": "el-form el-form--default el-form--label-right el-form--inline search-form",
+          "text": "关键词状态不限查询重置",
+          "display": "block",
+          "widthCss": "1146px",
+          "padding": "0px",
+          "marginBottom": "16px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal",
+          "width": 1146,
+          "height": 50
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".menu-package-container",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".search-form",
+          "prop": "marginBottom",
+          "expected": "16px",
+          "actual": "16px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "dev-upload",
+      "url": "http://a.mango.io:5176/#/components/upload?genericStyleProbe=1780187781762",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-dev-upload.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "display": "flex",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "width": 20,
+          "height": 20
+        }
+      },
+      "elements": {
+        ".mango-file-upload": {
+          "className": "mango-file-upload is-list",
+          "text": "上传文件暂无文件",
+          "display": "inline-block",
+          "widthCss": "924px",
+          "padding": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal",
+          "width": 924,
+          "height": 96
+        },
+        ".upload-control": {
+          "className": "upload-control",
+          "text": "上传文件",
+          "display": "flex",
+          "widthCss": "924px",
+          "padding": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "justifyContent": "normal",
+          "alignItems": "flex-start",
+          "gap": "12px",
+          "width": 924,
+          "height": 42
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".mango-file-upload",
+          "prop": "display",
+          "expected": "inline-block",
+          "actual": "inline-block",
+          "pass": true
+        },
+        {
+          "selector": ".mango-file-upload",
+          "prop": "widthCssNot",
+          "expected": "auto",
+          "actual": "924px",
+          "pass": true
+        },
+        {
+          "selector": ".upload-control",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".upload-control",
+          "prop": "gap",
+          "expected": "12px",
+          "actual": "12px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "networkFailures": [],
+  "badResponses": [],
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-home.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-workflow-start.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-template-templates.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-system-menu-package.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/generic-style-final-dev-upload.png"
+  ]
+}

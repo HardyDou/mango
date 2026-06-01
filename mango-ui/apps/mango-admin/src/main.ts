@@ -3,15 +3,19 @@ import { createPinia } from 'pinia';
 import piniaPluginPersist from 'pinia-plugin-persistedstate';
 import { mangoMessage, registerUnauthorizedHandler } from '@mango/common';
 import { installMangoAuth } from '@mango/auth';
+import { configureMangoAdminShell } from '@mango/admin-shell';
 import App from './App.vue';
 import router from './router';
 import { i18n } from './i18n';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-import 'element-plus/dist/index.css';
-import '@mango/common/theme/index.scss';
+import '@mango/admin/style.css';
 import { initThemeBeforeRender } from '@/utils/themeInit';
 import { registerAuthDirectives } from './directive/authDirective';
+
+configureMangoAdminShell({
+  features: 'full',
+});
 
 // MSW Mock 支持（开发环境且启用时）
 async function enableMock() {

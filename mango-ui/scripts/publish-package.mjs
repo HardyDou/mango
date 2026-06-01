@@ -89,6 +89,15 @@ if (!found) {
 }
 
 const version = found.packageJson.version;
+if (found.packageJson.scripts?.build) {
+  console.log(`Building ${packageName} before publish`);
+  run('pnpm', ['--filter', packageName, 'build']);
+}
+if (found.packageJson.scripts?.['check:styles']) {
+  console.log(`Checking generated package styles for ${packageName}`);
+  run('pnpm', ['--filter', packageName, 'check:styles']);
+}
+
 const existing = npmView(packageName, HOSTED_REGISTRY);
 if (!dryRun && existing.status === 0 && existing.stdout.trim() === version) {
   console.error(`${packageName}@${version} already exists in npm-hosted. Bump package.json version before publishing.`);

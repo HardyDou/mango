@@ -1,0 +1,21 @@
+mango-ui/apps/mango-admin/src/router/backEnd.ts:8:import { menuLoader, type MenuItem } from '@/config/menuLoader';
+mango-ui/apps/mango-admin/src/router/backEnd.ts:22:    const menuItems = await menuLoader.loadFromBackend();
+mango-ui/apps/mango-admin/src/router/backEnd.ts:24:    if (!menuLoader.isBackendMode()) {
+mango-ui/apps/mango-admin/src/router/index.ts:9:import { menuLoader } from '@/config/menuLoader';
+mango-ui/apps/mango-admin/src/router/index.ts:95:  menuLoader.resetBackendCache();
+mango-ui/apps/mango-admin/src/router/route.ts:2:import { generateStaticRoutes } from '@/config/menuConfig';
+mango-ui/apps/mango-admin/src/router/route.ts:7: * @see src/config/menuConfig.ts - 菜单配置入口
+mango-ui/packages/admin-shell/src/runtime/menuHost.ts:70:      const response = await get<ShellMenu[]>('/authorization/menus/user', {
+mango-ui/packages/admin-shell/src/runtime/menuHost.ts:76:        ...createDevRouteMenus(),
+mango-ui/packages/admin-shell/src/runtime/menuHost.ts:229:function createDevRouteMenus(): ShellRouteMenu[] {
+mango-ui/packages/admin-shell/src/runtime/menuHost.ts:239:      menuName: '开发中心',
+mango-ui/apps/mango-admin/src/api/admin/menu.ts:91:    get<SysMenuVO[]>('/authorization/menus/user', {
+mango-ui/apps/mango-admin/src/mocks/data.ts:293:    menuName: '开发中心',
+mango-ui/apps/mango-admin/src/views/demo/components/CaptchaView.vue:417:const arithmeticForm = reactive({ title: '组件库访问申请', description: '申请开通开发中心组件库的访问权限' });
+mango-ui/apps/mango-admin/src/config/menu.json:26:      "title": "开发中心",
+mango-ui/apps/mango-admin/src/config/menuConfig.ts:31:    meta: { title: '开发中心', icon: 'Monitor' },
+mango-ui/apps/mango-admin/src/config/menuLoader.ts:119:    // 初始化时加载前端配置。开发中心只在开发环境展示，不进入测试/生产菜单。
+mango-ui/apps/mango-admin/src/config/menuLoader.ts:388:export const menuLoader = MenuLoader.getInstance();
+mango-ui/apps/mango-admin/src/config/menuLoader.ts:394:  return menuLoader.getStaticRoutes();
+mango-ui/apps/mango-admin/src/config/menuLoader.ts:401:  return menuLoader.getMenuConfig();
+mango-ui/apps/mango-admin/src/config/menuLoader.ts:408:  return menuLoader.generateBackEndRoutes();

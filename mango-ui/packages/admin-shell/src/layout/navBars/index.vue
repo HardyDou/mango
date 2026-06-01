@@ -71,6 +71,14 @@
       <el-icon :size="20">
         <FullScreen />
       </el-icon>
+      <component
+        v-if="noticeClientEnabled"
+        :is="noticeBellComponent"
+        :load-runtime-config="loadNoticeRuntimeConfig"
+        :realtime-options="noticeRealtimeOptions"
+        @view-all="goNoticeMessages"
+        @settings="goNoticeReceiveSetting"
+      />
       <Settings />
       <User />
     </div>
@@ -78,14 +86,19 @@
 </template>
 
 <script setup lang="ts" name="layoutNavBars">
-import { computed, defineAsyncComponent, watch } from 'vue';
+import { computed, defineAsyncComponent, resolveDynamicComponent, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
-import { containsMenuPath, resolveFirstMenu, type ShellRouteMenu } from '../../runtime/menuHost';
+import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
 import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
+import { Session } from '@mango/common/utils/storage';
+import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
+import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
+import { getMangoNoticeBellProvider, type MangoNoticeBellRuntimeConfig } from '@mango/admin-pages/notice';
+import { getMangoAdminShellOptions } from '../../config';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
@@ -100,6 +113,11 @@ const { routesList, activeTopRoutePath } = storeToRefs(storesRoutesList);
 
 const topMenus = computed(() => routesList.value.filter(item => !item.meta?.isHide));
 const showTopSystems = computed(() => layoutStore.layout === 'classic' || layoutStore.layout === 'transverse');
+const noticeBellProvider = computed(() => getMangoNoticeBellProvider());
+const noticeClientEnabled = computed(() =>
+  resolveMangoAdminFeatures(getMangoAdminShellOptions().features).has('notice') && Boolean(noticeBellProvider.value),
+);
+const noticeBellComponent = computed(() => noticeBellProvider.value?.component || resolveDynamicComponent('span'));
 const headerAsideExpanded = computed(() => {
   if (layoutStore.layout === 'columns') {
     return layoutStore.isColumnsAsideOpen;
@@ -107,16 +125,21 @@ const headerAsideExpanded = computed(() => {
   return !layoutStore.isCollapse;
 });
 
-const findTopByPath = (path: string): ShellRouteMenu | undefined => {
+const noticeRealtimeOptions = computed<RealtimeOptions>(() => {
+  const userInfo = Session.get('userInfo') || {};
+  const tenantId = userInfo.tenantId || Session.get('tenantId') || 'default';
+  const userId = userInfo.userId ?? userInfo.id;
+  return {
+    identity: {
+      tenantId: String(tenantId),
+      userId: userId == null ? null : userId,
+    },
+  };
+});
+
+const findTopByPath = (path: string): MangoMenuTreeNode | undefined => {
   return topMenus.value.find(item => containsMenuPath(item, path))
     || topMenus.value[0];
-};
-
-const resolveFirstRoute = (item: ShellRouteMenu): string => {
-  if (item.redirect && typeof item.redirect === 'string') {
-    return item.redirect;
-  }
-  return resolveFirstMenu(item)?.path || item.path;
 };
 
 const toggleCollapse = () => {
@@ -131,13 +154,42 @@ const onToggleMobileMenu = () => {
   layoutStore.toggleMobileMenu();
 };
 
-const onTopMenuClick = (item: ShellRouteMenu) => {
+const onTopMenuClick = (item: MangoMenuTreeNode) => {
   storesRoutesList.setActiveTopRoutePath(item.path);
-  const targetPath = resolveFirstRoute(item);
+  const targetPath = resolveFirstMenuPath(item);
   if (targetPath && targetPath !== route.path) {
     router.push(targetPath);
   }
 };
+
+const goNoticeMessages = () => {
+  router.push('/notice/site-message');
+};
+
+const goNoticeReceiveSetting = () => {
+  router.push('/notice/receive-setting');
+};
+
+async function loadNoticeRuntimeConfig(): Promise<NoticeClientBellRuntimeConfig> {
+  const defaults: NoticeClientBellRuntimeConfig = {
+    voiceEnabled: true,
+    reminderMode: 'SOUND',
+    voiceText: '您有新的系统消息，请及时查看',
+    soundType: 'IM',
+    popupEnabled: true,
+    popupPlacement: 'top-right',
+    desktopNotificationEnabled: true,
+  };
+  try {
+    const provider = noticeBellProvider.value;
+    if (!provider) {
+      return defaults;
+    }
+    return { ...defaults, ...(await provider.getReminderSetting()) };
+  } catch {
+    return defaults;
+  }
+}
 
 watch(
   () => [route.path, topMenus.value],

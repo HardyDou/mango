@@ -1,18 +1,40 @@
 {
   "name": "@mango/auth",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": false,
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "src/index.d.ts",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
-    "@mango/common": "1.0.0",
-    "@mango/api-schema": "1.0.0"
+    "@mango/common": "1.0.2",
+    "@mango/api-schema": "1.0.2"
   },
   "peerDependencies": {
     "element-plus": "2.5.5",
     "pinia": "2.0.32",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

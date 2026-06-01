@@ -2,6 +2,7 @@ package io.mango.auth.starter.config;
 
 import io.mango.authorization.api.ISecurityContextProvider;
 import io.mango.authorization.api.ITokenProvider;
+import io.mango.authorization.api.TokenContextHolder;
 import io.mango.authorization.support.autoconfigure.SecurityAutoConfiguration;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.Cookie;
@@ -72,6 +73,19 @@ class AuthSecurityConfigTest {
     }
 
     @Test
+    @DisplayName("valid cookie token should populate token context holder during request")
+    void validCookieTokenShouldPopulateTokenContextHolder() throws Exception {
+        Mockito.when(tokenService.validateToken("cookie-token")).thenReturn(true);
+        Mockito.when(tokenService.getTokenType("cookie-token")).thenReturn(ITokenProvider.TOKEN_TYPE_ACCESS);
+        Mockito.when(tokenService.getUserId("cookie-token")).thenReturn(101L);
+        Mockito.when(tokenService.getUsername("cookie-token")).thenReturn("cookie-user");
+
+        mockMvc.perform(get("/secure/token").cookie(new Cookie("MANGO_TOKEN", "cookie-token")))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Bearer cookie-token"));
+    }
+
+    @Test
     @DisplayName("valid bearer token should include tenant claim")
     void validBearerTokenShouldIncludeTenantClaim() throws Exception {
         Mockito.when(tokenService.validateToken("tenant-token")).thenReturn(true);
@@ -109,6 +123,11 @@ class AuthSecurityConfigTest {
         @GetMapping("/secure/tenant")
         String tenant() {
             return securityContextProvider.currentContext().tenantId();
+        }
+
+        @GetMapping("/secure/token")
+        String token() {
+            return TokenContextHolder.getToken();
         }
 
         @GetMapping("/auth/login")

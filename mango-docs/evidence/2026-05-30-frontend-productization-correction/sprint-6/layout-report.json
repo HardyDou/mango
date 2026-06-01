@@ -1,0 +1,48 @@
+{
+  "before": {
+    "text": "Mango Admin\n\n企业级管理平台\n\nMango 管理平台\n芒果集团\n登 录\n\n登录已过期，请重新登录",
+    "inputs": [
+      "",
+      "用户名",
+      "密码"
+    ]
+  },
+  "after": {
+    "url": "http://127.0.0.1:5186/#/home",
+    "title": "NexusGeneratedFull",
+    "text": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\nadmin\n芒果集团\n首页\n首页\n1,234\n用户总数\n5,678\n订单总数\n98.5%\n系统效率\n数据概览\n\n图表区域\n\n快捷入口\n系统设置\n用户管理\n订单管理\n数据分析\n\n登录成功",
+    "hasAside": true,
+    "menuItems": [
+      "首页"
+    ],
+    "inputs": [],
+    "buttons": [
+      "首页",
+      "系统管理",
+      "审批中心",
+      "平台能力",
+      "通知中心"
+    ]
+  },
+  "consoleMessages": [
+    {
+      "type": "warning",
+      "text": "You are running the esm-bundler build of vue-i18n. It is recommended to configure your bundler to explicitly replace feature flag globals with boolean literals to get proper tree-shaking in the final bundle."
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "type": "error",
+      "text": "[mango-shell] failed to initialize shell runtime AxiosError: Request failed with status code 401\n    at settle (http://127.0.0.1:5186/node_modules/.vite/deps/chunk-2SORDJJJ.js?v=3de63a7f:76550:13)\n    at XMLHttpRequest.onloadend (http://127.0.0.1:5186/node_modules/.vite/deps/chunk-2SORDJJJ.js?v=3de63a7f:76957:7)\n    at Axios.request (http://127.0.0.1:5186/node_modules/.vite/deps/chunk-2SORDJJJ.js?v=3de63a7f:77785:41)\n    at async p (http://127.0.0.1:5186/node_modules/.vite/deps/chunk-TURDFIOU.js?v=3de63a7f:1094:17)\n    at async Promise.all (index 1)\n    at async K (http://127.0.0.1:5186/node_modules/.vite/deps/main-61012f7e-U5EPDJWR.js?v=3de63a7f:67:9)"
+    }
+  ],
+  "pageErrors": [],
+  "failedResponses": [
+    {
+      "status": 401,
+      "url": "http://127.0.0.1:5186/api/authorization/menus/user?fmt=tree&appCode=internal-admin"
+    }
+  ]
+}

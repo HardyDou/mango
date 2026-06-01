@@ -1,15 +1,29 @@
 import type { MangoAuthConfig } from '@mango/auth';
 import type { MangoFrontendApp, MangoRuntimeConfig, MangoRuntimeConfigLoadOptions } from '@mango/app-runtime';
+import type { MangoAdminFeatures } from '@mango/admin-pages/features';
+
+export type MangoAdminFeatureRegistrar = () => void | Promise<void>;
 
 export interface MangoAdminShellOptions {
   mountTarget?: string | Element;
   apiBaseUrl?: string;
   title?: string;
+  contentMode?: 'router-view' | 'runtime-outlet';
+  devCenter?: MangoAdminShellDevCenterOptions;
   login?: MangoAuthConfig['login'];
   modules?: MangoRuntimeConfig['modules'];
   localApps?: MangoFrontendApp[];
+  features?: MangoAdminFeatures;
+  featureRegistrars?: MangoAdminFeatureRegistrar[];
   runtimeConfigUrl?: string;
   runtimeConfigLoadOptions?: Partial<MangoRuntimeConfigLoadOptions>;
+}
+
+export type MangoAdminShellDeployEnv = 'dev' | 'test' | 'prod' | 'prd' | 'production' | string;
+
+export interface MangoAdminShellDevCenterOptions {
+  visible?: boolean;
+  deployEnv?: MangoAdminShellDeployEnv;
 }
 
 export const defaultMangoAdminShellOptions: Required<Pick<MangoAdminShellOptions, 'mountTarget' | 'apiBaseUrl' | 'title'>> = {
@@ -42,10 +56,15 @@ export function configureMangoAdminShell(options: MangoAdminShellOptions = {}) {
         ...options.login?.slots,
       },
     },
+    devCenter: {
+      ...mangoAdminShellOptions.devCenter,
+      ...options.devCenter,
+    },
     modules: {
       ...mangoAdminShellOptions.modules,
       ...options.modules,
     },
+    featureRegistrars: options.featureRegistrars || mangoAdminShellOptions.featureRegistrars,
     runtimeConfigLoadOptions: {
       ...mangoAdminShellOptions.runtimeConfigLoadOptions,
       ...options.runtimeConfigLoadOptions,

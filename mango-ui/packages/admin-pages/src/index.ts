@@ -1,3 +1,5 @@
 export * from './core';
 export * from './defaults';
-export * from './devComponentPages';
+export * from './features';
+export * from './notice';
+export * from './dev-pages';

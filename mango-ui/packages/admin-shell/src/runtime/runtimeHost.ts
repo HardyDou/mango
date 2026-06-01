@@ -5,7 +5,6 @@ import { Session } from '@mango/common/utils/storage';
 import {
   createRuntimeEventBus,
   emitMangoRuntimeLog,
-  loadRuntimeConfig,
   preloadMicroApp,
   resolveAdapter,
   type MangoAppRuntime,
@@ -21,7 +20,8 @@ import { useThemeStore } from '../stores/theme';
 import { useLayoutStore } from '../stores/layout';
 import { usePreferencesStore } from '../stores/preferences';
 import { installShellApp } from '../appBootstrap';
-import type { ShellMenu, ShellRouteMenu } from './menuHost';
+import { getMangoAdminShellOptions } from '../config';
+import { ensureDevCenterPagesRegistered, type ShellMenu, type ShellRouteMenu } from './menuHost';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
@@ -69,7 +69,6 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       if (error instanceof MangoRuntimeConfigError) {
         recordRuntimeConfigDiagnostics(error.diagnostics);
       }
-      await mountFallback();
       return false;
     } finally {
       loading.value = false;
@@ -95,16 +94,15 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
       return;
     }
     container.innerHTML = '';
-    if (!runtimeConfigAvailable.value) {
-      await mountFallback();
-      return;
-    }
-
     const moduleConfig = resolveModuleConfig(sourceMenu);
     const pageType = resolvePageType(sourceMenu, moduleConfig);
     runtimeDecision.value = createRuntimeDecision(sourceMenu, moduleConfig, pageType);
     recordRuntimeDecision(runtimeDecision.value);
     applyRuntimeMarker(container, runtimeDecision.value);
+    if (!runtimeConfigAvailable.value && pageType === 'MICRO_ROUTE') {
+      await mountFallback();
+      return;
+    }
     if (pageType === 'IFRAME') {
       if (!isLatestMount(seq)) {
         return;
@@ -233,12 +231,18 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
 
   function ensureDefaultPages() {
     if (!defaultPagesPromise) {
-      defaultPagesPromise = import('@mango/admin-pages/defaults').then(({ registerDefaultAdminPages }) => {
+      defaultPagesPromise = import('@mango/admin-pages/defaults').then(async ({ registerDefaultAdminPages }) => {
         registerDefaultAdminPages({
+          features: getMangoAdminShellOptions().features,
           shellPages: {
+            home: () => import('../views/home/index.vue'),
             notFound: () => import('../views/error/404.vue'),
           },
         });
+        for (const registrar of getMangoAdminShellOptions().featureRegistrars || []) {
+          await registrar();
+        }
+        return ensureDevCenterPagesRegistered();
       });
     }
     return defaultPagesPromise;

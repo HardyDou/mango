@@ -1,0 +1,166 @@
+{
+  "frontendUrl": "http://a.mango.io:5176",
+  "startedAt": "2026-05-30T15:27:24.801Z",
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/dev-center-home-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-文件上传.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-组织架构选择器.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-省市区选择器.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-AI-对话.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-实时通信.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-验证码.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "networkFailures": [
+    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-1f108d0a&rtTicket=uBseoygXbON7ZdDa8IzLjr1t3ZuQ0n09u4lQNM9TzOk net::ERR_ABORTED"
+  ],
+  "failedResponses": [],
+  "pages": [
+    {
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-文件上传.png",
+      "evidence": {
+        "name": "文件上传",
+        "path": "/components/upload",
+        "url": "http://a.mango.io:5176/#/components/upload",
+        "titleVisible": true,
+        "has404OrError": false,
+        "shell": {
+          "topbarVisible": true,
+          "asideVisible": true,
+          "tagsVisible": true,
+          "noticeBellVisible": true,
+          "settingsVisible": true,
+          "userVisible": true
+        },
+        "runtime": {
+          "moduleCode": "mango-shell",
+          "runtimeCode": "",
+          "pageType": "LOCAL_ROUTE"
+        },
+        "bodyTextSample": ""
+      }
+    },
+    {
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-组织架构选择器.png",
+      "evidence": {
+        "name": "组织架构选择器",
+        "path": "/components/org-selector",
+        "url": "http://a.mango.io:5176/#/components/org-selector",
+        "titleVisible": true,
+        "has404OrError": false,
+        "shell": {
+          "topbarVisible": true,
+          "asideVisible": true,
+          "tagsVisible": true,
+          "noticeBellVisible": true,
+          "settingsVisible": true,
+          "userVisible": true
+        },
+        "runtime": {
+          "moduleCode": "mango-shell",
+          "runtimeCode": "",
+          "pageType": "LOCAL_ROUTE"
+        },
+        "bodyTextSample": ""
+      }
+    },
+    {
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-省市区选择器.png",
+      "evidence": {
+        "name": "省市区选择器",
+        "path": "/components/china-area",
+        "url": "http://a.mango.io:5176/#/components/china-area",
+        "titleVisible": true,
+        "has404OrError": false,
+        "shell": {
+          "topbarVisible": true,
+          "asideVisible": true,
+          "tagsVisible": true,
+          "noticeBellVisible": true,
+          "settingsVisible": true,
+          "userVisible": true
+        },
+        "runtime": {
+          "moduleCode": "mango-shell",
+          "runtimeCode": "",
+          "pageType": "LOCAL_ROUTE"
+        },
+        "bodyTextSample": ""
+      }
+    },
+    {
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-AI-对话.png",
+      "evidence": {
+        "name": "AI 对话",
+        "path": "/components/chat",
+        "url": "http://a.mango.io:5176/#/components/chat",
+        "titleVisible": true,
+        "has404OrError": false,
+        "shell": {
+          "topbarVisible": true,
+          "asideVisible": true,
+          "tagsVisible": true,
+          "noticeBellVisible": true,
+          "settingsVisible": true,
+          "userVisible": true
+        },
+        "runtime": {
+          "moduleCode": "mango-shell",
+          "runtimeCode": "",
+          "pageType": "LOCAL_ROUTE"
+        },
+        "bodyTextSample": ""
+      }
+    },
+    {
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-实时通信.png",
+      "evidence": {
+        "name": "实时通信",
+        "path": "/components/realtime",
+        "url": "http://a.mango.io:5176/#/components/realtime",
+        "titleVisible": true,
+        "has404OrError": false,
+        "shell": {
+          "topbarVisible": true,
+          "asideVisible": true,
+          "tagsVisible": true,
+          "noticeBellVisible": true,
+          "settingsVisible": true,
+          "userVisible": true
+        },
+        "runtime": {
+          "moduleCode": "mango-shell",
+          "runtimeCode": "",
+          "pageType": "LOCAL_ROUTE"
+        },
+        "bodyTextSample": ""
+      }
+    },
+    {
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/screenshots/s3-dev-center-验证码.png",
+      "evidence": {
+        "name": "验证码",
+        "path": "/components/captcha",
+        "url": "http://a.mango.io:5176/#/components/captcha",
+        "titleVisible": true,
+        "has404OrError": false,
+        "shell": {
+          "topbarVisible": true,
+          "asideVisible": true,
+          "tagsVisible": true,
+          "noticeBellVisible": true,
+          "settingsVisible": true,
+          "userVisible": true
+        },
+        "runtime": {
+          "moduleCode": "mango-shell",
+          "runtimeCode": "",
+          "pageType": "LOCAL_ROUTE"
+        },
+        "bodyTextSample": ""
+      }
+    }
+  ],
+  "finishedAt": "2026-05-30T15:27:38.051Z"
+}

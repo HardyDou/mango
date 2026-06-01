@@ -18,9 +18,20 @@ export default defineConfig((mode: ConfigEnv) => {
       'process.env': {},
     },
     resolve: {
-      alias: {
-        '@': resolve(__dirname, './src'),
-      },
+      alias: [
+        { find: '@', replacement: resolve(__dirname, './src') },
+        { find: '@mango/admin-pages/core', replacement: resolve(__dirname, '../../packages/admin-pages/src/core.ts') },
+        { find: '@mango/admin-pages/defaults', replacement: resolve(__dirname, '../../packages/admin-pages/src/defaults.ts') },
+        { find: '@mango/admin-pages/features', replacement: resolve(__dirname, '../../packages/admin-pages/src/features.ts') },
+        { find: '@mango/admin-pages/dev-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/dev-pages.ts') },
+        { find: '@mango/admin-pages/dev-component-pages', replacement: resolve(__dirname, '../../packages/admin-pages/src/devComponentPages.ts') },
+        { find: '@mango/admin-pages/notice', replacement: resolve(__dirname, '../../packages/admin-pages/src/notice.ts') },
+        { find: '@mango/workflow/admin-pages', replacement: resolve(__dirname, '../../packages/workflow/src/admin-pages.ts') },
+        { find: '@mango/workflow-business-example/admin-pages', replacement: resolve(__dirname, '../../packages/workflow-business-example/src/admin-pages.ts') },
+        { find: /^@mango\/admin-pages$/, replacement: resolve(__dirname, '../../packages/admin-pages/src/index.ts') },
+        { find: /^@mango\/workflow$/, replacement: resolve(__dirname, '../../packages/workflow/src/index.ts') },
+        { find: /^@mango\/workflow-business-example$/, replacement: resolve(__dirname, '../../packages/workflow-business-example/src/index.ts') },
+      ],
     },
     server: {
       host: env.VITE_HOST || '0.0.0.0',

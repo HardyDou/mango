@@ -1,4 +1,5 @@
-import { createMangoAdminApp } from '@mango/admin-shell';
+import { createMangoAdminApp } from '@mango/admin';
+import '@mango/admin/style.css';
 import { register{{modulePascal}}Pages } from '@{{projectKebab}}/{{moduleKebab}}';
 
 register{{modulePascal}}Pages();

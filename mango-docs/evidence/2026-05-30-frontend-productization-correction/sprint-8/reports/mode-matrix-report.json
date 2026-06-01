@@ -1,0 +1,374 @@
+{
+  "generatedAt": "2026-06-01T01:32:31.253Z",
+  "baseUrl": "http://a.mango.io:5176",
+  "apiBaseUrl": "http://127.0.0.1:5555",
+  "modes": [
+    {
+      "name": "monolith",
+      "config": {
+        "profile": "monolith",
+        "modules": {
+          "mango-authorization": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-rbac-local"
+          },
+          "mango-system": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-system-local"
+          },
+          "mango-workflow": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-workflow-local"
+          },
+          "mango-template": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-template-local"
+          }
+        }
+      },
+      "pages": [
+        {
+          "name": "rbac-menu-package",
+          "url": "http://a.mango.io:5176/#/system/menu-package",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/monolith-rbac-menu-package.png",
+          "expected": [
+            "新增套餐",
+            "套餐名称"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-authorization",
+            "runtimeCode": "mango-admin-rbac-local",
+            "pageType": "LOCAL_ROUTE",
+            "entry": ""
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "权限管理套餐管理机构管理组织架构岗位管理成员管理角色管理菜单管理",
+              "套餐管理"
+            ],
+            "buttonCount": 21,
+            "tableCount": 3,
+            "iframeCount": 0
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 权限管理 套餐管理 机构管理 组织架构 岗位管理 成员管理 角色管理 菜单管理 应用管理 字典管理 参数配置 行政区划 日志管理 首页 套餐管理 关键词 状态 不限 查询 重置 新增套餐 套餐名称 套餐编码 应用 状态 授权菜单数 备注 操作 平台管理套餐 platform_admin internal-admin 启用 182 平台管理员默认菜单授权套餐 预览 编辑 删除 机构协同套餐 institution_collaboration internal-admin 启用 59 普通机构后台默认菜单授权套餐 预览 编辑 删除 登录成功"
+        },
+        {
+          "name": "workflow-start",
+          "url": "http://a.mango.io:5176/#/workflow/start-process",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/monolith-workflow-start.png",
+          "expected": [
+            "发起流程",
+            "已发布流程"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-workflow",
+            "runtimeCode": "mango-admin-workflow-local",
+            "pageType": "LOCAL_ROUTE",
+            "entry": ""
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "流程办理发起流程我的待办我的申请我的已办抄送给我",
+              "发起流程"
+            ],
+            "buttonCount": 16,
+            "tableCount": 0,
+            "iframeCount": 0
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 流程办理 发起流程 我的待办 我的申请 我的已办 抄送给我 流程管理 业务示例 首页 套餐管理 发起流程 发起流程 已发布流程 关键词 查询 重置 通用流程 合同用印审批 合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。 费用报销审批 费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。 请假申请 通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。"
+        },
+        {
+          "name": "template-categories",
+          "url": "http://a.mango.io:5176/#/template/categories",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/monolith-template-categories.png",
+          "expected": [
+            "模板分类",
+            "新增分类"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-template",
+            "runtimeCode": "mango-admin-template-local",
+            "pageType": "LOCAL_ROUTE",
+            "entry": ""
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "模板管理模板分类模板列表渲染记录",
+              "模板分类",
+              "1"
+            ],
+            "buttonCount": 17,
+            "tableCount": 3,
+            "iframeCount": 0
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 日历管理 编号规则 文件管理 模板管理 模板分类 模板列表 渲染记录 首页 套餐管理 发起流程 模板分类 关键词 查询 重置 新增分类 分类编码 分类名称 排序 备注 更新时间 操作 暂无模板分类 新增分类 Total 0 10/page 1 Go to"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedResponses": [],
+      "pass": true
+    },
+    {
+      "name": "hybrid",
+      "config": {
+        "profile": "hybrid",
+        "modules": {
+          "mango-authorization": {
+            "mode": "micro",
+            "runtimeCode": "mango-admin-rbac-app",
+            "entry": "http://b.mango.io:5181/"
+          },
+          "mango-system": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-system-local"
+          },
+          "mango-workflow": {
+            "mode": "micro",
+            "runtimeCode": "mango-admin-workflow-app",
+            "entry": "http://c.mango.io:5182/"
+          },
+          "mango-template": {
+            "mode": "micro",
+            "runtimeCode": "mango-admin-template-app",
+            "entry": "http://d.mango.io:5183/"
+          }
+        }
+      },
+      "pages": [
+        {
+          "name": "rbac-menu-package",
+          "url": "http://a.mango.io:5176/#/system/menu-package",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/hybrid-rbac-menu-package.png",
+          "expected": [
+            "新增套餐",
+            "套餐名称"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-authorization",
+            "runtimeCode": "mango-admin-rbac-app",
+            "pageType": "MICRO_ROUTE",
+            "entry": "http://b.mango.io:5181/"
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "权限管理套餐管理机构管理组织架构岗位管理成员管理角色管理菜单管理",
+              "套餐管理"
+            ],
+            "buttonCount": 21,
+            "tableCount": 3,
+            "iframeCount": 1
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 权限管理 套餐管理 机构管理 组织架构 岗位管理 成员管理 角色管理 菜单管理 应用管理 字典管理 参数配置 行政区划 日志管理 首页 套餐管理 登录成功 关键词 状态 不限 查询 重置 新增套餐 套餐名称 套餐编码 应用 状态 授权菜单数 备注 操作 平台管理套餐 platform_admin internal-admin 启用 182 平台管理员默认菜单授权套餐 预览 编辑 删除 机构协同套餐 institution_collaboration internal-admin 启用 59 普通机构后台默认菜单授权套餐 预览 编辑 删除 html {view-transition-name: none;} Mango RBAC Micro App @charset \"UTF-8\";:root{--el-color-white:#ffffff;--el-color-black:#000000;--el-color-primary-rgb:64,158,255;--el-color-success"
+        },
+        {
+          "name": "workflow-start",
+          "url": "http://a.mango.io:5176/#/workflow/start-process",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/hybrid-workflow-start.png",
+          "expected": [
+            "发起流程",
+            "已发布流程"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-workflow",
+            "runtimeCode": "mango-admin-workflow-app",
+            "pageType": "MICRO_ROUTE",
+            "entry": "http://c.mango.io:5182/"
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "流程办理发起流程我的待办我的申请我的已办抄送给我",
+              "发起流程"
+            ],
+            "buttonCount": 16,
+            "tableCount": 0,
+            "iframeCount": 1
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 流程办理 发起流程 我的待办 我的申请 我的已办 抄送给我 流程管理 业务示例 首页 套餐管理 发起流程 发起流程 已发布流程 关键词 查询 重置 通用流程 合同用印审批 合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。 费用报销审批 费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。 请假申请 通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。 html {view-transition-name: none;} Mango 审批中心 ._fc-frame ._fc-files img{display:inline-block;height:100%;vertical-align:top;width:100%}._fc-frame ._fc-upload-btn{border:1px dashed #c0ccda;cursor:pointer}._fc-frame._fc-disabled ._fc-upload-btn,._fc-f"
+        },
+        {
+          "name": "template-categories",
+          "url": "http://a.mango.io:5176/#/template/categories",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/hybrid-template-categories.png",
+          "expected": [
+            "模板分类",
+            "新增分类"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-template",
+            "runtimeCode": "mango-admin-template-app",
+            "pageType": "MICRO_ROUTE",
+            "entry": "http://d.mango.io:5183/"
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "模板管理模板分类模板列表渲染记录",
+              "模板分类"
+            ],
+            "buttonCount": 17,
+            "tableCount": 3,
+            "iframeCount": 1
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 日历管理 编号规则 文件管理 模板管理 模板分类 模板列表 渲染记录 首页 套餐管理 发起流程 模板分类 关键词 查询 重置 新增分类 分类编码 分类名称 排序 备注 更新时间 操作 暂无模板分类 新增分类 Total 0 10/page 1 Go to html {view-transition-name: none;} Mango RBAC Micro App @charset \"UTF-8\";:root{--el-color-white:#ffffff;--el-color-black:#000000;--el-color-primary-rgb:64,158,255;--el-color-success-rgb:103,194,58;--el-color-warning-rgb:230,162,60;--el-color-danger-rgb:245,108,108;--el-color-error-rgb:245,108,108;--el-color-info-rgb:144,147"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedResponses": [],
+      "pass": true
+    },
+    {
+      "name": "mixed",
+      "config": {
+        "profile": "hybrid",
+        "modules": {
+          "mango-authorization": {
+            "mode": "micro",
+            "runtimeCode": "mango-admin-rbac-app",
+            "entry": "http://b.mango.io:5181/"
+          },
+          "mango-system": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-system-local"
+          },
+          "mango-workflow": {
+            "mode": "local",
+            "runtimeCode": "mango-admin-workflow-local"
+          },
+          "mango-template": {
+            "mode": "micro",
+            "runtimeCode": "mango-admin-template-app",
+            "entry": "http://d.mango.io:5183/"
+          }
+        }
+      },
+      "pages": [
+        {
+          "name": "rbac-menu-package",
+          "url": "http://a.mango.io:5176/#/system/menu-package",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/mixed-rbac-menu-package.png",
+          "expected": [
+            "新增套餐",
+            "套餐名称"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-authorization",
+            "runtimeCode": "mango-admin-rbac-app",
+            "pageType": "MICRO_ROUTE",
+            "entry": "http://b.mango.io:5181/"
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "权限管理套餐管理机构管理组织架构岗位管理成员管理角色管理菜单管理",
+              "套餐管理"
+            ],
+            "buttonCount": 21,
+            "tableCount": 3,
+            "iframeCount": 1
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 权限管理 套餐管理 机构管理 组织架构 岗位管理 成员管理 角色管理 菜单管理 应用管理 字典管理 参数配置 行政区划 日志管理 首页 套餐管理 登录成功 关键词 状态 不限 查询 重置 新增套餐 套餐名称 套餐编码 应用 状态 授权菜单数 备注 操作 平台管理套餐 platform_admin internal-admin 启用 182 平台管理员默认菜单授权套餐 预览 编辑 删除 机构协同套餐 institution_collaboration internal-admin 启用 59 普通机构后台默认菜单授权套餐 预览 编辑 删除 html {view-transition-name: none;} Mango RBAC Micro App @charset \"UTF-8\";:root{--el-color-white:#ffffff;--el-color-black:#000000;--el-color-primary-rgb:64,158,255;--el-color-success"
+        },
+        {
+          "name": "workflow-start",
+          "url": "http://a.mango.io:5176/#/workflow/start-process",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/mixed-workflow-start.png",
+          "expected": [
+            "发起流程",
+            "已发布流程"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-workflow",
+            "runtimeCode": "mango-admin-workflow-local",
+            "pageType": "LOCAL_ROUTE",
+            "entry": ""
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "流程办理发起流程我的待办我的申请我的已办抄送给我",
+              "发起流程"
+            ],
+            "buttonCount": 16,
+            "tableCount": 0,
+            "iframeCount": 0
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 流程办理 发起流程 我的待办 我的申请 我的已办 抄送给我 流程管理 业务示例 首页 套餐管理 发起流程 发起流程 已发布流程 关键词 查询 重置 通用流程 合同用印审批 合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。 费用报销审批 费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。 请假申请 通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。"
+        },
+        {
+          "name": "template-categories",
+          "url": "http://a.mango.io:5176/#/template/categories",
+          "screenshot": "mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-8/screenshots/mixed-template-categories.png",
+          "expected": [
+            "模板分类",
+            "新增分类"
+          ],
+          "hasExpectedText": true,
+          "hasFailureText": false,
+          "runtime": {
+            "moduleCode": "mango-template",
+            "runtimeCode": "mango-admin-template-app",
+            "pageType": "MICRO_ROUTE",
+            "entry": "http://d.mango.io:5183/"
+          },
+          "runtimeMatches": true,
+          "shell": {
+            "asideVisible": true,
+            "topbarVisible": true,
+            "activeMenus": [
+              "模板管理模板分类模板列表渲染记录",
+              "模板分类"
+            ],
+            "buttonCount": 17,
+            "tableCount": 3,
+            "iframeCount": 1
+          },
+          "visibleTextSample": "Mango 首页 系统管理 审批中心 平台能力 通知中心 开发中心 0 admin 芒果集团 日历管理 编号规则 文件管理 模板管理 模板分类 模板列表 渲染记录 首页 套餐管理 发起流程 模板分类 关键词 查询 重置 新增分类 分类编码 分类名称 排序 备注 更新时间 操作 暂无模板分类 新增分类 Total 0 10/page 1 Go to html {view-transition-name: none;} Mango RBAC Micro App @charset \"UTF-8\";:root{--el-color-white:#ffffff;--el-color-black:#000000;--el-color-primary-rgb:64,158,255;--el-color-success-rgb:103,194,58;--el-color-warning-rgb:230,162,60;--el-color-danger-rgb:245,108,108;--el-color-error-rgb:245,108,108;--el-color-info-rgb:144,147"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedResponses": [],
+      "pass": true
+    }
+  ],
+  "pass": true
+}

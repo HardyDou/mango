@@ -1,0 +1,31 @@
+{
+  "frontendUrl": "http://127.0.0.1:5186/",
+  "backendUrl": "http://127.0.0.1:5555/",
+  "health": {
+    "url": "http://127.0.0.1:5186/api/actuator/health",
+    "status": "UP"
+  },
+  "login": {
+    "url": "http://127.0.0.1:5186/api/auth/login",
+    "username": "admin",
+    "tenantCode": "default",
+    "success": true,
+    "permissions": 168
+  },
+  "menus": {
+    "url": "http://127.0.0.1:5186/api/authorization/menus/user?fmt=tree&appCode=internal-admin",
+    "withBearerToken": true,
+    "code": 200,
+    "success": true,
+    "count": 4,
+    "names": [
+      "系统管理",
+      "审批中心",
+      "平台能力",
+      "通知中心"
+    ]
+  },
+  "notes": [
+    "未登录状态访问菜单接口返回 401，登录后带 Bearer token 返回成功。"
+  ]
+}

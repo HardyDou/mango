@@ -3,6 +3,7 @@ export type MangoPageLoader = () => Promise<unknown>;
 export type MangoPageRegistry = {
   moduleCode: string;
   pages: Record<string, MangoPageLoader>;
+  routes?: MangoPageRoute[];
 };
 
 export type MangoShellPageLoaders = {
@@ -10,8 +11,20 @@ export type MangoShellPageLoaders = {
   notFound?: MangoPageLoader;
 };
 
+export type MangoPageRoute = {
+  path: string;
+  component: string;
+  menuName?: string;
+  menuCode?: string;
+  icon?: string;
+  sort?: number;
+  visible?: number;
+  keepAlive?: number;
+};
+
 const pageLoaders = new Map<string, MangoPageLoader>();
 const moduleByPage = new Map<string, string>();
+const routeRegistries = new Map<string, MangoPageRoute[]>();
 
 export function normalizeComponentPath(componentPath?: string) {
   return (componentPath || '')
@@ -28,6 +41,19 @@ export function registerModulePages(registry: MangoPageRegistry) {
     pageLoaders.set(`${registry.moduleCode}:${normalized}`, loader);
     moduleByPage.set(normalized, registry.moduleCode);
   });
+  if (registry.routes?.length) {
+    const routes = routeRegistries.get(registry.moduleCode) || [];
+    registry.routes.forEach((route) => {
+      const normalizedRoute = normalizePageRoute(route);
+      const existingIndex = routes.findIndex(item => item.path === normalizedRoute.path);
+      if (existingIndex >= 0) {
+        routes[existingIndex] = normalizedRoute;
+        return;
+      }
+      routes.push(normalizedRoute);
+    });
+    routeRegistries.set(registry.moduleCode, routes);
+  }
 }
 
 export function registerPage(moduleCode: string, component: string, loader: MangoPageLoader) {
@@ -77,9 +103,26 @@ export function resolvePageModuleCode(component?: string, path?: string) {
   return moduleByPage.get(routeAsIndex) || moduleByPage.get(normalizedRoute);
 }
 
+export function getRegisteredPageRoutes(moduleCodes?: string[]) {
+  const enabledModules = moduleCodes?.length ? new Set(moduleCodes) : undefined;
+  return Array.from(routeRegistries.entries())
+    .filter(([moduleCode]) => !enabledModules || enabledModules.has(moduleCode))
+    .flatMap(([moduleCode, routes]) => routes.map(route => ({ ...route, moduleCode })));
+}
+
 function normalizeRoutePath(path?: string) {
   return (path || '')
     .replace(/^#/, '')
     .replace(/^\//, '')
     .replace(/\/$/, '');
+}
+
+function normalizePageRoute(route: MangoPageRoute): MangoPageRoute {
+  return {
+    ...route,
+    path: route.path.startsWith('/') ? route.path : `/${route.path}`,
+    component: normalizeComponentPath(route.component),
+    visible: route.visible ?? 0,
+    keepAlive: route.keepAlive ?? 0,
+  };
 }

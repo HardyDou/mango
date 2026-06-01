@@ -1,0 +1,914 @@
+{
+  "generatedAt": "2026-05-30T23:16:32.432Z",
+  "baseUrl": "http://a.mango.io:5176",
+  "runId": 1780182992432,
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-home.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-workflow-start.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-template-templates.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-template-categories.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-rbac-menu-package.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-dev-upload.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-dev-org-selector.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-dev-workflow-components.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "networkFailures": [],
+  "ignoredNetworkFailures": [
+    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-83704a65&rtTicket=uHaSkT2lmt87ATY59pFyzibOJVOf594W6JiT9W3AgLM net::ERR_ABORTED"
+  ],
+  "failedResponses": [],
+  "checks": [
+    {
+      "name": "workflow-start",
+      "url": "http://a.mango.io:5176/#/workflow/start-process?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-workflow-start.png",
+      "rootKind": "page",
+      "expectedRuntime": "mango-admin-workflow-app",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-workflow",
+          "mangoRuntimeCode": "mango-admin-workflow-app",
+          "mangoRuntimeEntry": "http://c.mango.io:5182/",
+          "vApp": ""
+        },
+        "bodyText": ""
+      },
+      "elements": {
+        ".workflow-launch-card": {
+          "tagName": "BUTTON",
+          "className": "workflow-launch-card",
+          "text": "合同用印审批合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。",
+          "rect": {
+            "x": 257,
+            "y": 289,
+            "width": 277.5,
+            "height": 76
+          },
+          "display": "grid",
+          "width": "277.5px",
+          "maxHeight": "none",
+          "padding": "14px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "8px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(238, 242, 248)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "gap": "12px"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "display",
+          "expected": "grid",
+          "actual": "grid",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "padding",
+          "expected": "14px",
+          "actual": "14px",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "borderRadius",
+          "expected": "8px",
+          "actual": "8px",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-launch-card",
+          "prop": "backgroundColor",
+          "expected": "rgb(255, 255, 255)",
+          "actual": "rgb(255, 255, 255)",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "template-templates",
+      "url": "http://a.mango.io:5176/#/template/templates?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-template-templates.png",
+      "rootKind": "page",
+      "expectedRuntime": "mango-admin-template-app",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-template",
+          "mangoRuntimeCode": "mango-admin-template-app",
+          "mangoRuntimeEntry": "http://d.mango.io:5183/",
+          "vApp": ""
+        },
+        "bodyText": ""
+      },
+      "elements": {
+        ".template-container": {
+          "tagName": "DIV",
+          "className": "template-container",
+          "text": "关键词分类全部分类格式全部格式查询重置新增模板批量删除刷新模板分类模板格式发布变更生效版本备注更新时间操作暂无模板新增模板Total 010/page 1 Go to",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 836
+          },
+          "display": "flex",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".template-main": {
+          "tagName": "DIV",
+          "className": "el-card is-always-shadow template-main",
+          "text": "关键词分类全部分类格式全部格式查询重置新增模板批量删除刷新模板分类模板格式发布变更生效版本备注更新时间操作暂无模板新增模板Total 010/page 1 Go to",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 836
+          },
+          "display": "flex",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "4px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(238, 242, 248)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".el-pagination": {
+          "tagName": "DIV",
+          "className": "el-pagination is-background",
+          "text": "Total 010/page 1 Go to",
+          "rect": {
+            "x": 253,
+            "y": 867,
+            "width": 1154,
+            "height": 64
+          },
+          "display": "flex",
+          "width": "1154px",
+          "maxHeight": "none",
+          "padding": "16px 0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "flex-end",
+          "alignItems": "center",
+          "gap": "normal"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".template-container",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".template-main",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".template-main",
+          "prop": "borderRadius",
+          "expected": "4px",
+          "actual": "4px",
+          "pass": true
+        },
+        {
+          "selector": ".el-pagination",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".el-pagination",
+          "prop": "justifyContent",
+          "expected": "flex-end",
+          "actual": "flex-end",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "template-categories",
+      "url": "http://a.mango.io:5176/#/template/categories?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-template-categories.png",
+      "rootKind": "page",
+      "expectedRuntime": "mango-admin-template-app",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-template",
+          "mangoRuntimeCode": "mango-admin-template-app",
+          "mangoRuntimeEntry": "http://d.mango.io:5183/",
+          "vApp": ""
+        },
+        "bodyText": ""
+      },
+      "elements": {
+        ".template-container": {
+          "tagName": "DIV",
+          "className": "template-container",
+          "text": "关键词查询重置新增分类分类编码分类名称排序备注更新时间操作暂无模板分类新增分类Total 010/page 1 Go to",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 836
+          },
+          "display": "flex",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".template-main": {
+          "tagName": "DIV",
+          "className": "el-card is-always-shadow template-main",
+          "text": "关键词查询重置新增分类分类编码分类名称排序备注更新时间操作暂无模板分类新增分类Total 010/page 1 Go to",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 836
+          },
+          "display": "flex",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "4px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(238, 242, 248)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".el-pagination": {
+          "tagName": "DIV",
+          "className": "el-pagination is-background",
+          "text": "Total 010/page 1 Go to",
+          "rect": {
+            "x": 253,
+            "y": 867,
+            "width": 1154,
+            "height": 64
+          },
+          "display": "flex",
+          "width": "1154px",
+          "maxHeight": "none",
+          "padding": "16px 0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "flex-end",
+          "alignItems": "center",
+          "gap": "normal"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".template-container",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".template-main",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".el-pagination",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".el-pagination",
+          "prop": "justifyContent",
+          "expected": "flex-end",
+          "actual": "flex-end",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "rbac-menu-package",
+      "url": "http://a.mango.io:5176/#/system/menu-package?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-rbac-menu-package.png",
+      "rootKind": "page",
+      "expectedRuntime": "mango-admin-rbac-app",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "MICRO_ROUTE",
+          "mangoRuntimeMode": "micro",
+          "mangoRuntimeModule": "mango-authorization",
+          "mangoRuntimeCode": "mango-admin-rbac-app",
+          "mangoRuntimeEntry": "http://b.mango.io:5181/",
+          "vApp": ""
+        },
+        "bodyText": ""
+      },
+      "elements": {
+        ".menu-package-container": {
+          "tagName": "DIV",
+          "className": "menu-package-container",
+          "text": "关键词状态不限查询重置新增套餐套餐名称套餐编码应用状态授权菜单数备注操作平台管理套餐platform_admininternal-admin启用182平台管理员默认菜单授权套餐预览编辑删除机构协同套餐institution_collaborationinternal-admin启用59普通机构后台默认菜单授权套餐预览编辑删除套餐菜单预览",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 260
+          },
+          "display": "block",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".search-form": {
+          "tagName": "FORM",
+          "className": "el-form el-form--default el-form--label-right el-form--inline search-form",
+          "text": "关键词状态不限查询重置",
+          "rect": {
+            "x": 257,
+            "y": 133,
+            "width": 1146,
+            "height": 50
+          },
+          "display": "block",
+          "width": "1146px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px 0px 16px",
+          "marginBottom": "16px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".menu-package-container",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".search-form",
+          "prop": "marginBottom",
+          "expected": "16px",
+          "actual": "16px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "dev-upload-common-file",
+      "url": "http://a.mango.io:5176/#/components/upload?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-dev-upload.png",
+      "rootKind": "page",
+      "expectedRuntime": "",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "LOCAL_ROUTE",
+          "mangoRuntimeMode": "local",
+          "mangoRuntimeModule": "mango-shell",
+          "mangoRuntimeCode": "",
+          "mangoRuntimeEntry": "",
+          "vApp": ""
+        },
+        "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n组件库\n文件上传\n富文本编辑器\n代码编辑器\n组织架构选择器\n工作流组件\n验证码\n数据图表\n功能指令\n省市区选择器\nAI 对话\n实时通信\n首页\n发起流程\n模板列表\n模板分类\n套餐管理\n文件上传\nMUpload 文件上传\n\n统一使用文件中心 MUpload 组件，覆盖通用附件、图片、办公文档和业务附件清单。\n\n通用/默认用法\n\n默认不限制格式，选择文件后自动上传；v-model 用于表单提交，完整文件记录通过 change/success 事件获取。\n\n自动上传\n不限格式\n表单绑定\n直连预览优先\n上传文件\n暂无文件\n显示代码\n展示方式\n\ndisplay 支持 list、thumbnail、drag、table 四种展示形态；上传后点击文件优先打开文件中心返回的直连预览地址。\n\ndisplay=\"thumbnail\" 图片缩略图\n\n缩略图展示，限制图片格式和单文件大小。\n\n缩略图\n仅图片\n最多 4 个\n单文件 10MB\nv-model=\"imageRecords\"\n\n图片场景使用 value-type=\"record\"，上传成功后 imageRecords 是 FileRecord[]，包含 id、fileName、fileSize、contentType、directPreviewUrl、directDownloadUrl、bizMeta 等完整信息，适合图片回显、预览和业务附件明细。\n\n显示代码\ndisplay=\"drag\" 拖拽上传\n\n限定 Word、Excel、PDF、ODF 等常见业务文档。\n\n拖拽上传\nOffice/PDF/ODF\n返回完整记录\n文档业务场景\n拖入文件或点击上传\n显示代码\ndisplay=\"table\" 业务附件清单\n\n表格方式展示文件名、大小、上传进度、上传"
+      },
+      "elements": {
+        ".component-doc-page": {
+          "tagName": "DIV",
+          "className": "component-doc-page upload-view",
+          "text": "MUpload 文件上传统一使用文件中心 MUpload 组件，覆盖通用附件、图片、办公文档和业务附件清单。通用/默认用法默认不限制格式，选择文件后自动上传；v-model 用于表单提交，完整文件记录通过 change/success 事件获取。自动上传不限格式表单绑定直连预览优先 上传文件暂无文件显示代码<script setup lang=\"ts\"> import { ref } from '",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 5105.796875
+          },
+          "display": "block",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".mango-file-upload": {
+          "tagName": "DIV",
+          "className": "mango-file-upload is-list",
+          "text": "上传文件暂无文件",
+          "rect": {
+            "x": 286,
+            "y": 401.171875,
+            "width": 924,
+            "height": 96
+          },
+          "display": "inline-block",
+          "width": "924px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".upload-control": {
+          "tagName": "DIV",
+          "className": "upload-control",
+          "text": "上传文件",
+          "rect": {
+            "x": 286,
+            "y": 401.171875,
+            "width": 924,
+            "height": 42
+          },
+          "display": "flex",
+          "width": "924px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "flex-start",
+          "gap": "12px"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".component-doc-page",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".mango-file-upload",
+          "prop": "display",
+          "expected": "inline-block",
+          "actual": "inline-block",
+          "pass": true
+        },
+        {
+          "selector": ".mango-file-upload",
+          "prop": "width",
+          "not": "auto",
+          "actual": "924px",
+          "pass": true
+        },
+        {
+          "selector": ".upload-control",
+          "prop": "display",
+          "expected": "flex",
+          "actual": "flex",
+          "pass": true
+        },
+        {
+          "selector": ".upload-control",
+          "prop": "gap",
+          "expected": "12px",
+          "actual": "12px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "dev-org-selector-common",
+      "url": "http://a.mango.io:5176/#/components/org-selector?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-dev-org-selector.png",
+      "rootKind": "page",
+      "expectedRuntime": "",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "LOCAL_ROUTE",
+          "mangoRuntimeMode": "local",
+          "mangoRuntimeModule": "mango-shell",
+          "mangoRuntimeCode": "",
+          "mangoRuntimeEntry": "",
+          "vApp": ""
+        },
+        "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n组件库\n文件上传\n富文本编辑器\n代码编辑器\n组织架构选择器\n工作流组件\n验证码\n数据图表\n功能指令\n省市区选择器\nAI 对话\n实时通信\n首页\n发起流程\n模板列表\n模板分类\n套餐管理\n文件上传\n组织架构选择器\n组织架构选择器\n\n基于组织树的选择组件，支持单选、多选、禁用、最大选择数量和名称标签回显。\n\n单选组织\n\n默认单选，v-model 返回当前选中的组织 ID；适合表单里选择所属组织、归属部门等字段。\n\n所属组织\n请选择组织\n暂未选择\n显示代码\n多选组织\n\n设置 multiple 后，v-model 返回组织 ID 数组；max 可限制最多选择数量。\n\n参与组织\n请选择组织\n暂未选择\n显示代码\n禁用状态\n\ndisabled 用于详情页或审批只读场景，保留当前值但禁止重新选择。\n\n只读组织\n1 请选择组织\n显示代码\n支持属性\n属性名\n\t\n说明\n\t\n类型\n\t\n默认值\nv-model\n\t\n选中组织 ID；multiple=false 返回单个 ID，multiple=true 返回 ID 数组\n\t\nnumber | number[]\n\t\n[]\n\n\nmultiple\n\t\n是否多选\n\t\nboolean\n\t\nfalse\n\n\nplaceholder\n\t\n选择框占位文本，支持普通文本或 i18n key\n\t\nstring\n\t\norgSelector.placeholder\n\n\ntitle\n\t\n组织选择弹窗标题\n\t\nstring\n\t\norgSelector.title\n\n\nshowTagNames\n\t\n是否在选择框下方展示已选组织名称标签\n\t\nboolean\n\t\ntrue\n\n\nmax\n\t\n最多可选数量；0 表示不限制\n\t\nnumber\n\t\n0\n\n\ndisabled\n\t\n是否禁用\n\t\nboolean"
+      },
+      "elements": {
+        ".component-doc-page": {
+          "tagName": "DIV",
+          "className": "component-doc-page org-selector-view-container",
+          "text": "组织架构选择器基于组织树的选择组件，支持单选、多选、禁用、最大选择数量和名称标签回显。单选组织默认单选，v-model 返回当前选中的组织 ID；适合表单里选择所属组织、归属部门等字段。所属组织请选择组织暂未选择显示代码复制xxxxxxxxxx多选组织设置 multiple 后，v-model 返回组织 ID 数组；max 可限制最多选择数量。参与组织请选择组织暂未选择显示代码复制xxxxxxxx",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 1870.859375
+          },
+          "display": "block",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".org-selector": {
+          "tagName": "DIV",
+          "className": "org-selector",
+          "text": "请选择组织",
+          "rect": {
+            "x": 382,
+            "y": 361.171875,
+            "width": 404,
+            "height": 33.375
+          },
+          "display": "block",
+          "width": "404px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".component-doc-page",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".org-selector",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".org-selector",
+          "prop": "width",
+          "not": "auto",
+          "actual": "404px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    },
+    {
+      "name": "dev-workflow-components",
+      "url": "http://a.mango.io:5176/#/components/workflow?styleProbe=1780182992432",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/package-style-final-dev-workflow-components.png",
+      "rootKind": "page",
+      "expectedRuntime": "",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "noticeTrigger": {
+          "tagName": "BUTTON",
+          "className": "notice-bell__trigger",
+          "rect": {
+            "x": 1167.09375,
+            "y": 18,
+            "width": 20,
+            "height": 20
+          },
+          "display": "flex",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(255, 255, 255)",
+          "color": "rgb(255, 255, 255)",
+          "padding": "0px"
+        },
+        "userVisible": true,
+        "runtimeDataset": {
+          "v-3fa6122d": "",
+          "mangoRuntimePageType": "LOCAL_ROUTE",
+          "mangoRuntimeMode": "local",
+          "mangoRuntimeModule": "mango-shell",
+          "mangoRuntimeCode": "",
+          "mangoRuntimeEntry": "",
+          "vApp": ""
+        },
+        "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n组件库\n文件上传\n富文本编辑器\n代码编辑器\n组织架构选择器\n工作流组件\n验证码\n数据图表\n功能指令\n省市区选择器\nAI 对话\n实时通信\n首页\n发起流程\n模板列表\n模板分类\n套餐管理\n文件上传\n组织架构选择器\n工作流组件\n工作流组件\n\n工作流前端能力的统一使用入口，覆盖运行时表单、业务申请注册、业务审批注册和流程轨迹展示。\n\n运行时表单渲染\n\nRuntimeFormRenderer 接收解析后的字段配置、变量对象和字段权限，用于发起流程、审批详情和历史详情里的动态表单展示。\n\n可编辑\n只读\n字段权限优先于全局只读\n申请标题\n申请金额\n申请人\n张三\n所属部门\n平台组\n费用类型\n合同\n申请说明\n当前变量\n合同用印审批\n金额 12000\n显示代码\n业务申请组件注册\n\n自定义申请页通过 applyPageKey 注册，流程定义或模板发布后按 renderConfig 进入对应业务申请组件。\n\n1. 注册组件\n在模块初始化时注册 applyPageKey。\n2. 绑定定义\n流程定义配置 BUSINESS_FORM / CUSTOM_APPLY 等渲染信息。\n3. 发起流程\n业务组件收集 businessKey、variables 后调用发起接口。\n显示代码\n业务审批组件注册\n\n自定义审批详情通过 businessType 注册，可接管审批意见字段、右侧记录面板和动作前校验，适合合同、费用等业务模板。\n\n配置项\n\t\n含义\n\t\n典型场景\ncommentMode\n\t\n审批意见来源。ACTION_BAR 使用右侧动作栏意见；BUSINESS_FORM 由业务表单自己收集；NONE 不提交意见。\n\t\n合同用印表单内维护意见字段\n\n\nrecordPanelMode\n\t\n审批记录面板模式。DEFAULT 使"
+      },
+      "elements": {
+        ".component-doc-page": {
+          "tagName": "DIV",
+          "className": "component-doc-page workflow-components-view",
+          "text": "工作流组件工作流前端能力的统一使用入口，覆盖运行时表单、业务申请注册、业务审批注册和流程轨迹展示。运行时表单渲染RuntimeFormRenderer 接收解析后的字段配置、变量对象和字段权限，用于发起流程、审批详情和历史详情里的动态表单展示。可编辑只读字段权限优先于全局只读申请标题申请金额申请人张三所属部门平台组费用类型合同申请说明当前变量合同用印审批金额 12000显示代码复制xxxxxxxx",
+          "rect": {
+            "x": 236,
+            "y": 112,
+            "width": 1188,
+            "height": 3188.8125
+          },
+          "display": "block",
+          "width": "1188px",
+          "maxHeight": "none",
+          "padding": "0px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        },
+        ".workflow-progress-tree": {
+          "tagName": "DIV",
+          "className": "workflow-progress-tree",
+          "text": "开始发起人部门负责人审批财务会签用印抄送结束",
+          "rect": {
+            "x": 287,
+            "y": 1942.625,
+            "width": 922,
+            "height": 384
+          },
+          "display": "block",
+          "width": "922px",
+          "maxHeight": "none",
+          "padding": "12px 24px 24px",
+          "margin": "0px",
+          "marginBottom": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "0px none rgb(51, 51, 51)",
+          "color": "rgb(51, 51, 51)",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "gap": "normal"
+        }
+      },
+      "styleResults": [
+        {
+          "selector": ".component-doc-page",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-progress-tree",
+          "prop": "display",
+          "expected": "block",
+          "actual": "block",
+          "pass": true
+        },
+        {
+          "selector": ".workflow-progress-tree",
+          "prop": "padding",
+          "expected": "12px 24px 24px",
+          "actual": "12px 24px 24px",
+          "pass": true
+        }
+      ],
+      "has404OrError": false,
+      "pass": true
+    }
+  ],
+  "finishedAt": "2026-05-30T23:16:50.256Z",
+  "pass": true
+}

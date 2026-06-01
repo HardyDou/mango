@@ -1,21 +1,25 @@
 import { registerModulePages, registerShellPages, type MangoPageRegistry, type MangoShellPageLoaders } from './core';
+import {
+  isMangoAdminFeatureEnabled,
+  resolveMangoAdminFeatures,
+  resolveMangoAdminModuleFeature,
+  type MangoAdminFeatures,
+} from './features';
 
-let registered = false;
-const loadWorkflowBusinessExample = () => import('@mango/workflow-business-example');
+let shellPagesRegistered = false;
+const registeredFeatures = new Set<string>();
 
 export type RegisterDefaultAdminPagesOptions = {
   shellPages?: MangoShellPageLoaders;
   registries?: MangoPageRegistry[];
+  features?: MangoAdminFeatures;
 };
 
 export function registerDefaultAdminPages(options: RegisterDefaultAdminPagesOptions = {}) {
-  if (registered) {
-    return;
+  if (!shellPagesRegistered) {
+    shellPagesRegistered = true;
+    registerShellPages(options.shellPages || {});
   }
-  registered = true;
-  void loadWorkflowBusinessExample()
-    .then(m => m.registerWorkflowBusinessExampleComponents());
-  registerShellPages(options.shellPages || {});
 
   const registries: MangoPageRegistry[] = [
     {
@@ -46,73 +50,24 @@ export function registerDefaultAdminPages(options: RegisterDefaultAdminPagesOpti
         'system/area/index': () => import('@mango/system').then(m => m.AreaView),
       },
     },
-    {
-      moduleCode: 'mango-template',
-      pages: {
-        'system/template/index': () => import('@mango/template').then(m => m.TemplateListView),
-        'template/templates/index': () => import('@mango/template').then(m => m.TemplateListView),
-        'template/categories/index': () => import('@mango/template').then(m => m.TemplateCategoryView),
-        'template/render-records/index': () => import('@mango/template').then(m => m.TemplateRenderRecordsView),
-        'debug/capabilities/template': () => import('@mango/template').then(m => m.TemplateServiceGuideView),
-      },
-    },
-    {
-      moduleCode: 'mango-file',
-      pages: {
-        'file/files/index': () => import('@mango/file').then(m => m.FileView),
-        'file/storage-configs/index': () => import('@mango/file').then(m => m.FileStorageView),
-        'file/settings/index': () => import('@mango/file').then(m => m.FileSettingsView),
-      },
-    },
-    {
-      moduleCode: 'mango-notice',
-      pages: {
-        'notice/business-config/index': () => import('@mango/notice/admin').then(m => m.NoticeBusinessConfigView),
-        'notice/message-definition/index': () => import('@mango/notice/admin').then(m => m.NoticeMessageDefinitionView),
-        'notice/send-message/index': () => import('@mango/notice/admin').then(m => m.NoticeSendMessageView),
-        'notice/channel/index': () => import('@mango/notice/admin').then(m => m.NoticeChannelView),
-        'notice/task/index': () => import('@mango/notice/admin').then(m => m.NoticeTaskView),
-        'notice/record/index': () => import('@mango/notice/admin').then(m => m.NoticeRecordView),
-        'notice/site-message/index': () => import('@mango/notice/admin').then(m => m.NoticeSiteMessageView),
-        'notice/site/messages/index': () => import('@mango/notice/admin').then(m => m.NoticeSiteMessageView),
-        'notice/setting/index': () => import('@mango/notice/admin').then(m => m.NoticeSettingView),
-        'notice/receive-setting/index': () => import('@mango/notice/admin').then(m => m.NoticeReceiveSettingView),
-        'notice/retry/index': () => import('@mango/notice/admin').then(m => m.NoticeRetryView),
-      },
-    },
-    {
-      moduleCode: 'mango-numgen',
-      pages: {
-        'platform/numgen/index': () => import('@mango/numgen').then(m => m.NumgenView),
-        'numgen/index': () => import('@mango/numgen').then(m => m.NumgenView),
-      },
-    },
-    {
-      moduleCode: 'mango-calendar',
-      pages: {
-        'data/calendar/index': () => import('@mango/calendar').then(m => m.CalendarView),
-      },
-    },
-    {
-      moduleCode: 'mango-workflow',
-      pages: {
-        'workflow/definition/index': () => import('@mango/workflow').then(m => m.WorkflowDefinitionView),
-        'system/workflow-definition/index': () => import('@mango/workflow').then(m => m.WorkflowDefinitionView),
-        'workflow/template/index': () => import('@mango/workflow').then(m => m.WorkflowTemplateView),
-        'workflow-template/index': () => import('@mango/workflow').then(m => m.WorkflowTemplateView),
-        'workflow/task/todo/index': () => import('@mango/workflow').then(m => m.WorkflowTaskListView),
-        'workflow/task/initiated/index': () => import('@mango/workflow').then(m => m.WorkflowTaskListView),
-        'workflow/task/done/index': () => import('@mango/workflow').then(m => m.WorkflowTaskListView),
-        'workflow/task/copied/index': () => import('@mango/workflow').then(m => m.WorkflowTaskListView),
-        'workflow/task-list/index': () => import('@mango/workflow').then(m => m.WorkflowTaskListView),
-        'workflow/task/detail/index': () => import('@mango/workflow').then(m => m.WorkflowTaskDetailView),
-        'workflow/start-process/index': () => import('@mango/workflow').then(m => m.WorkflowStartProcessView),
-        'workflow/custom-apply/index': () => import('@mango/workflow').then(m => m.WorkflowCustomApplyView),
-        'workflow/business-form/index': () => loadWorkflowBusinessExample().then(m => m.WorkflowBusinessFormView),
-      },
-    },
   ];
 
-  registries.forEach(registerModulePages);
+  const enabledFeatures = resolveMangoAdminFeatures(options.features);
+  registries
+    .filter(registry =>
+      isMangoAdminFeatureEnabled(
+        enabledFeatures,
+        resolveMangoAdminModuleFeature(registry.moduleCode),
+      ),
+    )
+    .filter((registry) => {
+      const feature = resolveMangoAdminModuleFeature(registry.moduleCode) || registry.moduleCode;
+      if (registeredFeatures.has(feature)) {
+        return false;
+      }
+      registeredFeatures.add(feature);
+      return true;
+    })
+    .forEach(registerModulePages);
   (options.registries || []).forEach(registerModulePages);
 }

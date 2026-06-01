@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-05-31T10:43:41.848Z",
+  "frontendUrl": "http://a.mango.io:5176",
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-home.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-workflow-start.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-dev-upload.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-dev-org-selector.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-template-categories.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "networkFailures": [],
+  "failedResponses": [],
+  "pages": [
+    {
+      "key": "home",
+      "name": "首页",
+      "url": "http://a.mango.io:5176/#/home",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-home.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "userVisible": true
+      },
+      "runtimeDataset": {
+        "v-08f987bf": "",
+        "mangoRuntimePageType": "LOCAL_ROUTE",
+        "mangoRuntimeMode": "local",
+        "mangoRuntimeModule": "mango-shell",
+        "mangoRuntimeCode": "",
+        "mangoRuntimeEntry": "",
+        "vApp": ""
+      },
+      "errorVisible": false,
+      "expectedTextVisible": true,
+      "hasContent": true,
+      "textSample": "1,234\n用户总数\n5,678\n订单总数\n98.5%\n系统效率\n数据概览\n\n图表区域\n\n快捷入口\n系统设置\n用户管理\n订单管理\n数据分析",
+      "iframeTextSample": "",
+      "pass": true
+    },
+    {
+      "key": "workflow-start",
+      "name": "审批中心-流程发起",
+      "url": "http://a.mango.io:5176/#/workflow/start-process",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-workflow-start.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "userVisible": true
+      },
+      "runtimeDataset": {
+        "v-08f987bf": "",
+        "mangoRuntimePageType": "MICRO_ROUTE",
+        "mangoRuntimeMode": "micro",
+        "mangoRuntimeModule": "mango-workflow",
+        "mangoRuntimeCode": "mango-admin-workflow-app",
+        "mangoRuntimeEntry": "http://c.mango.io:5182/",
+        "vApp": ""
+      },
+      "errorVisible": false,
+      "expectedTextVisible": true,
+      "hasContent": true,
+      "textSample": "",
+      "iframeTextSample": "发起流程\n已发布流程\n关键词\n查询\n重置\n通用流程\n合同用印审批\n合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。\n费用报销审批\n费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。\n请假申请\n通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。",
+      "pass": true
+    },
+    {
+      "key": "dev-upload",
+      "name": "开发中心-文件上传",
+      "url": "http://a.mango.io:5176/#/components/upload",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-dev-upload.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "userVisible": true
+      },
+      "runtimeDataset": {
+        "v-08f987bf": "",
+        "mangoRuntimePageType": "LOCAL_ROUTE",
+        "mangoRuntimeMode": "local",
+        "mangoRuntimeModule": "mango-shell",
+        "mangoRuntimeCode": "",
+        "mangoRuntimeEntry": "",
+        "vApp": ""
+      },
+      "errorVisible": false,
+      "expectedTextVisible": true,
+      "hasContent": true,
+      "textSample": "",
+      "iframeTextSample": "",
+      "pass": true
+    },
+    {
+      "key": "dev-org-selector",
+      "name": "开发中心-组织架构选择器",
+      "url": "http://a.mango.io:5176/#/components/org-selector",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-dev-org-selector.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "userVisible": true
+      },
+      "runtimeDataset": {
+        "v-08f987bf": "",
+        "mangoRuntimePageType": "LOCAL_ROUTE",
+        "mangoRuntimeMode": "local",
+        "mangoRuntimeModule": "mango-shell",
+        "mangoRuntimeCode": "",
+        "mangoRuntimeEntry": "",
+        "vApp": ""
+      },
+      "errorVisible": false,
+      "expectedTextVisible": true,
+      "hasContent": true,
+      "textSample": "",
+      "iframeTextSample": "",
+      "pass": true
+    },
+    {
+      "key": "template-categories",
+      "name": "平台能力-模板分类",
+      "url": "http://a.mango.io:5176/#/template/categories",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/regression-2026-05-31/screenshots/alias-source-template-categories.png",
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "userVisible": true
+      },
+      "runtimeDataset": {
+        "v-08f987bf": "",
+        "mangoRuntimePageType": "MICRO_ROUTE",
+        "mangoRuntimeMode": "micro",
+        "mangoRuntimeModule": "mango-template",
+        "mangoRuntimeCode": "mango-admin-template-app",
+        "mangoRuntimeEntry": "http://d.mango.io:5183/",
+        "vApp": ""
+      },
+      "errorVisible": false,
+      "expectedTextVisible": true,
+      "hasContent": true,
+      "textSample": "",
+      "iframeTextSample": "关键词\n查询\n重置\n新增分类\n分类编码\n\t\n分类名称\n\t\n排序\n\t\n备注\n\t\n更新时间\n\t\n操作\n\n暂无模板分类\n\n新增分类\nTotal 0\n10/page\n1\nGo to",
+      "pass": true
+    }
+  ],
+  "finishedAt": "2026-05-31T10:44:36.815Z"
+}

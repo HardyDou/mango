@@ -1,0 +1,53 @@
+{
+  "baseUrl": "http://a.mango.io:5176",
+  "startedAt": "2026-05-30T14:46:07.077Z",
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-dev-center-upload-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-dev-center-captcha-1440x960.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-dev-center-realtime-1440x960.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "networkFailures": [
+    "GET http://a.mango.io:5176/api/realtime/transports/probe/sse?clientId=browser-c061ae0a&rtTicket=UopPvHpV2PbaOKVNHSHA9W-uoGDaYCTEMVBTFu0qv5E net::ERR_ABORTED"
+  ],
+  "checks": [
+    {
+      "name": "文件上传",
+      "url": "http://a.mango.io:5176/#/components/upload",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-dev-center-upload-1440x960.png",
+      "has404": false,
+      "hasExpectedText": true,
+      "hasShellTopbar": true,
+      "hasShellAside": true,
+      "hasTagsView": true,
+      "hasNoticeBell": true,
+      "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n组件库\n文件上传\n富文本编辑器\n代码编辑器\n组织架构选择器\n工作流组件\n验证码\n数据图表\n功能指令\n省市区选择器\nAI 对话\n实时通信\n首页\n文件上传\nMUpload 文件上传\n\n统一使用文件中心 MUpload 组件，覆盖通用附件、图片、办公文档和业务附件清单。\n\n通用/默认用法\n\n默认不限制格式，选择文件后自动上传；v-model 用于表单提交，完整文件记录通过 change/success 事件获取。\n\n自动上传\n不限格式\n表单绑定\n直连预览优先\n上传文件\n暂无文件\n显示代码\n展示方式\n\ndisplay 支持 list、thumbnail、drag、table 四种展示形态；上传后点击文件优先打开文件中心返回的直连预览地址。\n\ndisplay=\"thumbnail\" 图片缩略图\n\n缩略图展示，限制图片格式和单文件大小。\n\n缩略图\n仅图片\n最多 4 个\n单文件 10MB\nv-model=\"imageRecords\"\n\n图片场景使用 value-type=\"record\"，上传成功后 imageRecords 是 FileRecord[]，包含 id、fileName、fileSize、contentType、directPreviewUrl、directDownloadUrl、bizMeta 等完整信息，适合图片回显、预览和业务附件明细。\n\n显示代码\ndisplay=\"drag\" 拖拽上传\n\n限定 Word、Excel、PDF、ODF 等常见业务文档。\n\n拖拽上传\nOffice/PDF/ODF\n返回完整记录\n文档业务场景\n拖入文件或点击上传\n显示代码\ndisplay=\"table\" 业务附件清单\n\n表格方式展示文件名、大小、上传进度、上传时间、业务 ID 和业务自定义参数。\n\n表格清单\n自定义列\n业务 ID\nmeta 扩展字段\n上传文件\n文件名\n\t\n大小\n\t\n上传进度\n\t\n上传时间\n\t\n上传账号\n\t\n业务ID\n\t\n项目编号\n\t\n操作\n暂无文件\n显示代码\n手动上传\n\nauto=false 时先选择文件，再统一点击上传到服务器；多个小文件走批量接口，遇到大文件时自动切换分片上传链路。\n\n手动提交\n选取后不立即上传\n小文件批量接口\n大文件分片上传\n选取文件\n上传到服务器\n暂无文件\n显示代码\n插槽用法\n\ntrigger 可替换默认上传按钮；thumbnail-trigger 和 drag-trigger 可分别覆盖缩略图、拖拽形态的触发区域。\n\n自定义 trigger\n保留校验\n保留上传流程\n适合业务按钮\n选择业务附件\n暂无文件\n显示代码\n支持属性\n属性名\n\t\n说明\n\t\n类型\n\t\n默认值\nv-model\n\t\n绑定上传结果；实际结构由 valueType 和 count 决定\n\t\nstring[] | FileRecord[] | string | FileRecord\n\t\n-\n\n\nfmt\n\t\n允许格式；不传表示不限格式\n\t\nstring | string[]\n\t\n-\n\n\ncount\n\t\n文件数量限制\n\t\nnumber\n\t\n1\n\n\nsize\n\t\n单文件通用大小限制，支持 50MB / 1GB\n\t\nstring | number\n\t\n-\n\n\nsizes\n\t\n按类型设置大小限制\n\t\nUploadSizeRules\n\t\n-\n\n\ndisplay\n\t\n展示方式\n\t\nlist | thumbnail | table | drag\n\t\nlist\n\n\nauto\n\t\n是否选择后自动上传；false 时显示手动上传按钮，多文件提交走批量接口\n\t\nboolean\n\t\ntrue\n\n\ncolumns\n\t\ntable 展示列，支持 uploadProgress 和 meta.xxx\n\t\nUploadColumn[]\n\t\nfileName,fileSize,uploadProgress,createdTime\n\n\nvalueType\n\t\n控制 v-model 返回内容；需要文件名、大小、预览地址、业务元数据时使用 record\n\t\ntoken | id | record\n\t\ntoken\n\n\nbizType / bizId\n\t\n业务类型和业务 ID\n\t\nstring\n\t\n-\n\n\nbizMeta\n\t\n业务自定义参数 JSON\n\t\nRecord<string, unknown> | string\n\t\n-\n\n\ndirectoryId\n\t\n文件中心逻辑目录 ID\n\t\nstring | number\n\t\n0\nv-model 返回内容\n\n通过 value-type 控制 v-model 的返回结构。只保存附件关系用 token 或 id；需要回显文件名、大小、预览地址、业务扩展字段时"
+    },
+    {
+      "name": "验证码",
+      "url": "http://a.mango.io:5176/#/components/captcha",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-dev-center-captcha-1440x960.png",
+      "has404": false,
+      "hasExpectedText": true,
+      "hasShellTopbar": true,
+      "hasShellAside": true,
+      "hasTagsView": true,
+      "hasNoticeBell": true,
+      "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n组件库\n文件上传\n富文本编辑器\n代码编辑器\n组织架构选择器\n工作流组件\n验证码\n数据图表\n功能指令\n省市区选择器\nAI 对话\n实时通信\n首页\n文件上传\n验证码\n验证码组件\n\n统一使用 CaptchaSelector 组件。示例按登录、风险确认、换绑和找回密码等真实业务流程组织。\n\n算术验证码\n\n适合登录、表单提交等轻量校验场景；用户输入计算结果后组件触发 success，业务表单再携带 captchaKey 提交。\n\n表单提交校验\n填写业务内容和验证码，点击提交时统一校验验证码。\n申请标题\n申请说明\n提交表单\n请输入右侧验证码\n图形验证码\n请完成下方计算题\n刷新\n显示代码\n图片滑块验证码\n\n后端从真实图片库中选择背景，并从目标位置裁剪小图。前端展示背景缺口、拖动真实裁片并提交 pointJson 校验。\n\n风险操作确认\n高风险操作提交前，先通过图片滑块确认操作者行为。\n操作类型\n重置租户管理员密码\n影响范围\ntenant-prod-01\n触发式\n默认只占一行验证条，点击后展开拼图，不打断表单布局。\n向右拖动滑块填充拼图\n嵌入式\n直接展示完整拼图区域，适合安全确认页或空间充足的表单。\n拖动滑块完成拼图\n刷新\n向右拖动滑块填充拼图\n弹出式\n提交表单时自动弹出安全验证弹窗，验证通过后继续提交。\n提交表单并验证\n提交时会弹出滑块验证码\n确认执行\n拖动拼图块完成验证\n显示代码\n点选文字验证码\n\n适合风控二次确认场景；用户按提示顺序点击图片文字，组件内部提交点击坐标并完成校验。\n\n敏感配置发布\n发布生产配置前，通过点选文字确认是真人操作。\n配置项\nauth.login.policy\n发布环境\nproduction\n请依次点击：石,林,舟\n刷新\n0/3 已点击\n重选\n确认发布\n请按提示点击图片文字\n显示代码\n无感行为验证\n\n适合登录、注册和高频表单提交。用户点击验证条后，组件提交已静默采集的行为和设备特征，后端返回 score、riskLevel 和 suggestAction。\n\n登录风控校验\n先点击验证条完成无感评分，再提交登录表单。\n登录账号\n登录密码\n点击完成验证\n登录\n请先点击完成验证\n显示代码\n短信验证码\n\n适合手机号确认、登录二次校验等场景；发送接口返回 captchaKey，输入验证码后统一走 verify 接口。\n\n手机号换绑\n先校验新手机号，再提交换绑申请。\n当前手机号\n换绑原因\n更换工作手机号\n发送验证码\n提交换绑\n请先发送并校验短信验证码\n显示代码\n邮件验证码\n\n适合邮箱确认、找回密码等场景；组件内置邮箱格式校验、倒计时和验证码提交。\n\n找回密码\n通过邮箱验证码确认身份后，继续进入重置密码流程。\n登录账号\n发送验证码\n下一步\n请先发送并校验邮件验证码\n显示代码\n综合选择器\n\n不传 type 时展示组件内置的类型切换，用于调试或需要用户选择验证方式的场景。\n\n安全校验\n业务方不固定验证码类型时，交给组件选择器完成。\n当前操作需要完成一次安全校验\n算术\n图片滑块\n点选文字\n无感行为\nCanvas滑块\n短信\n邮件\n拖动滑块完成验证\n刷新\n确认提交\n请选择并完成一种验证码\n显示代码\n支持属性\n属性名\n\t\n说明\n\t\n类型\n\t\n默认值\ntype\n\t\n固定验证码类型；不传时展示综合选择器\n\t\nCaptchaType\n\t\n-\n\n\nmode\n\t\n图片滑块 / Canvas 滑块展示形态；trigger 为触发式，embedded 为嵌入式，popup 为弹出式\n\t\n'trigger' | 'embedded' | 'popup'\n\t\nembedded\n支持方法 / 事件\n名称\n\t\n说明\n\t\n参数\nsuccess\n\t\n验证码通过后触发，业务表单应保存 key 并在确认提交时携带\n\t\n(key: string, code?: string, type?: CaptchaType) => void\n\n\nrefresh\n\t\n刷新图形验证码后触发，业务表单应清空已保存的验证码结果\n\t\n() => void\n\n\nrefresh\n\t\n组件暴露方法，用于刷新当前验证码\n\t\n() => void\n返回字段\n字段\n\t\n说明\n\t\n示例\nkey\n\t\n验证码键，提交业务接口或 verify 接口时使用\n\t\ncaptcha-key\n\n\ntype\n\t\n验证码类型\n\t\nARITHMETIC / BLOCK_PUZZLE / CLICK_WORD / BEHAVIOR / SMS / EMAIL\n\n\nimage\n\t\n算术或点选文字验证码图片\n\t\ndata:image/png;base64,...\n\n\nbackgroundImage\n\t\n图片滑块背景图，已经绘制目标缺口\n\t\nd"
+    },
+    {
+      "name": "实时通信",
+      "url": "http://a.mango.io:5176/#/components/realtime",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/micro-frontend-verification/screenshots/micro-dev-center-realtime-1440x960.png",
+      "has404": false,
+      "hasExpectedText": true,
+      "hasShellTopbar": true,
+      "hasShellAside": true,
+      "hasTagsView": true,
+      "hasNoticeBell": true,
+      "bodyText": "Mango\n首页\n系统管理\n审批中心\n平台能力\n通知中心\n开发中心\n0\nadmin\n芒果集团\n组件库\n文件上传\n富文本编辑器\n代码编辑器\n组织架构选择器\n工作流组件\n验证码\n数据图表\n功能指令\n省市区选择器\nAI 对话\n实时通信\n首页\n文件上传\n验证码\n实时通信\nRealtimeClient 实时通信组件\n\n以 createRealtimeClient / useRealtime 建立稳定实时链路，业务页面只订阅消息和发送消息，不直接处理底层传输差异。\n\n聊天室业务用法\n\n登记当前用户后连接；Auto 会先协商协议，失败时按 WebSocket、SSE、Ajax Polling 自动降级。右侧只显示业务消息，点击消息查看原始 JSON。\n\n配置信息\n连接前可修改用户上下文\n链接配置\n用户信息\n链接状态\n链接模式\nAuto\nWS\nSSE\nAjax\n心跳(ms)\n超时(ms)\n最大重连\nPolling 超时\n连接\n断开\n房间成员\n0 在线 / 0 进入过\n\n连接后显示成员\n\n业务消息\n订单协作群 · GROUP\n清空\n\n连接后发送一条消息\n\n连接后可发送\n发送\n模拟服务端消息\n显示代码\n支持模式\n\nRealtimeClient 支持自动协商和固定协议两种接入方式。业务侧通常使用 Auto；只有在调试、灰度或网络策略明确时才固定为某一种协议。\n\n模式\n\t\n相关地址\n\t\n特性\nAuto\n\t\n/api/realtime/transports/negotiate\n\t\n先协商推荐协议，再按 WebSocket、SSE、Ajax Polling 顺序连接；连接失败或心跳异常时可自动降级。\n\n\nWebSocket\n\t\n/api/realtime/transports/websocket\n\t\n双向长连接，适合高频互动；业务消息通过同一连接上下行，心跳用于检测连接可用性。\n\n\nSSE\n\t\n/api/realtime/transports/sse；上行：/api/realtime/messages/inbound/sse\n\t\n服务端单向推送，浏览器兼容性好；客户端发送消息时自动转为 HTTP inbound。\n\n\nAjax Polling\n\t\n/api/realtime/transports/polling；上行：/api/realtime/messages/inbound/polling\n\t\n作为兜底协议，适合代理或网络限制场景；支持长轮询超时、批量大小和轮询间隔配置。\n提供方法\n\nRealtimeClient 是正式业务通信客户端，负责协议协商、连接维护、心跳、重连、降级和统一消息收发；页面 UI 由业务模块自行组织。\n\n方法\n\t\n说明\n\t\n典型用法\nconnect()\n\t\n协商协议并建立连接；mode=auto 时先请求 negotiate\n\t\n页面进入或用户点击连接\n\n\ndisconnect()\n\t\n主动断开连接并停止心跳、轮询、升级探测\n\t\n页面卸载或退出业务房间\n\n\nsend(envelope)\n\t\n发送 v1 envelope；WebSocket 直发，SSE/Polling 自动走 inbound HTTP\n\t\n发送聊天、审批、协作事件\n\n\ntarget\n\t\n消息 envelope 的投递目标，支持 USER、CLIENT、CONNECTION、GROUP、TENANT、BROADCAST；CLIENT 表示某个具体浏览器 Tab / 设备端\n\t\n{ type: \"GROUP\", id: roomId }\n\n\nsubscribe(eventName)\n\t\n按 event.name 订阅业务消息；心跳、连接通知、错误由客户端内部处理\n\t\nsubscribe(\"order.updated\", handler)\n\n\non(event)\n\t\n监听状态、错误、重连、协议切换、心跳等生命周期事件\n\t\non(\"reconnecting\", handler)\n\n\ngetMetrics()\n\t\n读取连接、收发、心跳、协议切换计数\n\t\n状态栏或埋点\n显示代码\n配置项\n参数\n\t\n说明\n\t\n默认值\nmode\n\t\nauto 自动协商，或固定 websocket / sse / polling\n\t\nauto\n\n\nidentity\n\t\ntenantId、userId、clientId、sessionId；连接和上行消息都会携带\n\t\n当前会话 + browser id\n\n\ntarget\n\t\n投递目标：点对点 USER、指定端 CLIENT、连接 CONNECTION、群组 GROUP、租户 TENANT、广播 BROADCAST\n\t\n由业务指定\n\n\nendpoints\n\t\n覆盖 negotiate、websocket、sse、polling、inboundSse、i"
+    }
+  ],
+  "finishedAt": "2026-05-30T14:46:17.948Z"
+}

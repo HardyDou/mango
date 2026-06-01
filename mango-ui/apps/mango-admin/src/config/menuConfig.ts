@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages';
+import { MangoAdminLayout } from '@mango/admin-shell';
+import { DEV_COMPONENT_DEMO_PAGES, DEV_COMPONENT_DEMO_REDIRECT } from '@mango/admin-pages/dev-component-pages';
 import { componentsMap } from './componentsMap';
 
 /**
@@ -112,7 +113,7 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
     {
       path: '/',
       name: 'Layout',
-      component: () => import('@/layout/index.vue'),
+      component: MangoAdminLayout,
       redirect: '/home',
       children: menuItems.map((item) => menuItemToRoute(item)),
     },

@@ -1,0 +1,355 @@
+{
+  "errors": [],
+  "failed": [],
+  "responses": [],
+  "pages": [
+    {
+      "name": "approval-todo",
+      "path": "/workflow/todo",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/before-micro-approval-todo.png",
+      "url": "http://a.mango.io:5176/#/workflow/todo",
+      "title": "Mango Admin",
+      "bodyText": "404 页面不存在 返回首页",
+      "bell": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "inline-block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgb(239, 239, 239)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(0, 0, 0)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1099.09375,
+          "y": 8,
+          "w": 340.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "340.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "approval-start",
+      "path": "/workflow/start",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/before-micro-approval-start.png",
+      "url": "http://a.mango.io:5176/#/workflow/start",
+      "title": "Mango Admin",
+      "bodyText": "404 页面不存在 返回首页",
+      "bell": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "inline-block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgb(239, 239, 239)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(0, 0, 0)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1099.09375,
+          "y": 8,
+          "w": 340.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "340.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "template-list",
+      "path": "/template/templates",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/before-micro-template-list.png",
+      "url": "http://a.mango.io:5176/#/template/templates",
+      "title": "Mango Admin",
+      "bodyText": "@font-face { font-family: fc-icon; src: url(\"data:font/woff;base64,d09GRgABAAAAAEQkAAsAAAAAhAwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAADsAAABUIIslek9TLzIAAAFEAAAARAAAAGA8V0m+Y21hcAAAAYgAAANUAAAIZqAamFdnbHlmAAAE3AAAONQAAG7gJElN82hlYWQAAD2wAAAALwAAADYp8WD1aGhlYQAAPeAAAAAeAAAAJAfeBH9obXR4AAA+AAAAAFEAAAH8EZEAAGxvY2EAAD5UAAABAAAAAQC4/NWebWF4cAAAP1QAAAAfAAAAIAGgAPxuYW1lAAA/dAAAAUUAAAJb1Yvg7HBvc3QAAEC8AAADaAAABYA5rFpXeJxjYGRgYOBiMGCwY2BycfMJYeDLSSzJY5BiYGGAAJA8MpsxJzM9kYEDxgPKsYBpDiBmg4gCACY7BUgAeJxjYGHRZpzAwMrAwNTJdIaBgaEfQjO+ZjBi5ACKMrAyM2AFAWmuKQwHnjk9O8zc8L+BgYH5DgOQZGBEUcQEAI/1DZB4nO3Vd3PUdRSF8WchAaUoWBAERRQLIihVFBSEmJiY0HvvhBZ6sVEGsGEX7L0XVFBARQGV93JeA//B+ebs8CrMzCfD7mRmf8vc+1ygFuho91kNdGij4n9RafW7lfb3O9Kl/f2ayji/7sZVdKBGdWpQk/brwqVLoImqV6OadaC8uvJT8V/34DpuYI9fTWYKU5nGdGYwk1nMZg5zmcd8F",
+      "bell": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "inline-block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgb(239, 239, 239)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(0, 0, 0)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1099.09375,
+          "y": 8,
+          "w": 340.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "340.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "actions": []
+    },
+    {
+      "name": "template-system",
+      "path": "/system/template",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-4/regression-2026-05-31/screenshots/before-micro-template-system.png",
+      "url": "http://a.mango.io:5176/#/system/template",
+      "title": "Mango Admin",
+      "bodyText": "404 页面不存在 返回首页",
+      "bell": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "",
+          "cls": "notice-bell__trigger"
+        },
+        "style": {
+          "display": "inline-block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgb(239, 239, 239)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(0, 0, 0)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "badge": {
+        "rect": {
+          "x": 1163.09375,
+          "y": 14.5,
+          "w": 24,
+          "h": 27,
+          "right": 1187.09375,
+          "bottom": 41.5,
+          "text": "0",
+          "cls": "el-badge notice-bell el-tooltip__trigger el-tooltip__trigger"
+        },
+        "style": {
+          "display": "block",
+          "justifyContent": "normal",
+          "alignItems": "normal",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "24px",
+          "height": "27px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "relative"
+        }
+      },
+      "navRight": {
+        "rect": {
+          "x": 1099.09375,
+          "y": 8,
+          "w": 340.90625,
+          "h": 40,
+          "right": 1440,
+          "bottom": 48,
+          "text": "0布局配置admin芒果集团",
+          "cls": "layout-navbars-container-right"
+        },
+        "style": {
+          "display": "flex",
+          "justifyContent": "normal",
+          "alignItems": "center",
+          "background": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "width": "340.906px",
+          "height": "40px",
+          "color": "rgb(255, 255, 255)",
+          "marginLeft": "0px",
+          "marginRight": "0px",
+          "float": "none",
+          "position": "static"
+        }
+      },
+      "actions": []
+    }
+  ]
+}

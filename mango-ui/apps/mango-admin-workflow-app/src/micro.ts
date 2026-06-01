@@ -4,8 +4,14 @@ import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import 'element-plus/dist/index.css';
 import '@mango/common/theme/index.scss';
+import '@mango/common/style.css';
+import '@mango/file/style.css';
+import '@mango/workflow/style.css';
+import '@mango/workflow-business-example/style.css';
 import type { MangoAppRuntime } from '@mango/app-runtime';
 import { registerDefaultAdminPages } from '@mango/admin-pages';
+import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
+import { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';
 import App from './App.vue';
 
 let app: VueApp | undefined;
@@ -29,7 +35,9 @@ export async function mount(container: HTMLElement, runtime: MangoAppRuntime) {
   });
   await router.push(runtime.menu?.path || '/');
   await router.isReady();
-  registerDefaultAdminPages();
+  registerDefaultAdminPages({ features: ['workflow'] });
+  registerMangoWorkflowAdminPages();
+  registerMangoWorkflowBusinessExampleAdminPages();
   app.provide('mangoRuntime', runtime);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);

@@ -1,0 +1,1615 @@
+{
+  "ok": true,
+  "checkedAt": "2026-05-31T05:38:44.500Z",
+  "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-group/",
+  "packageVersion": "1.0.3",
+  "workspaceRoot": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-5-nexus-runtime-1780205895409",
+  "appDir": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-5-nexus-runtime-1780205895409/app",
+  "frontendUrl": "http://127.0.0.1:18605",
+  "backendUrl": "http://127.0.0.1:18800",
+  "api": {
+    "health": {
+      "status": 200,
+      "body": {
+        "status": "UP",
+        "components": {
+          "db": {
+            "status": "UP",
+            "details": {
+              "database": "MySQL",
+              "validationQuery": "isValid()"
+            }
+          },
+          "discoveryComposite": {
+            "description": "Discovery Client not initialized",
+            "status": "UNKNOWN",
+            "components": {
+              "discoveryClient": {
+                "description": "Discovery Client not initialized",
+                "status": "UNKNOWN"
+              }
+            }
+          },
+          "diskSpace": {
+            "status": "UP",
+            "details": {
+              "total": 494384795648,
+              "free": 75850035200,
+              "threshold": 10485760,
+              "path": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango/mango-app/monolith/mango-monolith-app/.",
+              "exists": true
+            }
+          },
+          "ping": {
+            "status": "UP"
+          },
+          "refreshScope": {
+            "status": "UP"
+          },
+          "ssl": {
+            "status": "UP",
+            "details": {
+              "validChains": [],
+              "invalidChains": []
+            }
+          }
+        }
+      }
+    },
+    "login": {
+      "status": 200,
+      "success": true,
+      "code": 200,
+      "hasAccessToken": true,
+      "tenantName": "芒果集团"
+    },
+    "menu": {
+      "status": 200,
+      "success": true,
+      "code": 200,
+      "topLevelCount": 4,
+      "topLevelMenus": [
+        "系统管理",
+        "审批中心",
+        "平台能力",
+        "通知中心"
+      ],
+      "totalRows": 218
+    }
+  },
+  "commands": [
+    {
+      "command": "node",
+      "args": [
+        "-e",
+        "console.log(JSON.stringify(require(\"/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-5-nexus-runtime-1780205895409/app/package.json\"), null, 2))"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0",
+      "ok": true,
+      "startedAt": "2026-05-31T05:38:15.808Z",
+      "stdout": "{\n  \"name\": \"mango-sprint-5-consumer\",\n  \"version\": \"1.0.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"typecheck\": \"vue-tsc --noEmit\",\n    \"build\": \"pnpm run typecheck && vite build\"\n  },\n  \"dependencies\": {\n    \"@mango/admin\": \"0.0.0-local\",\n    \"element-plus\": \"2.5.5\",\n    \"pinia\": \"2.0.32\",\n    \"vue\": \"3.5.13\",\n    \"vue-i18n\": \"9.2.2\",\n    \"vue-router\": \"^4.1.6\"\n  },\n  \"devDependencies\": {\n    \"@vitejs/plugin-vue\": \"^5.2.1\",\n    \"typescript\": \"^5.6.3\",\n    \"vite\": \"^6.0.1\",\n    \"vue-tsc\": \"^2.1.10\"\n  }\n}\n"
+    },
+    {
+      "command": "npm",
+      "args": [
+        "view",
+        "@mango/admin",
+        "version",
+        "--registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/"
+      ],
+      "cwd": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0",
+      "ok": true,
+      "startedAt": "2026-05-31T05:38:15.885Z",
+      "stdout": "1.0.3\n"
+    },
+    {
+      "command": "pnpm",
+      "args": [
+        "install",
+        "--ignore-workspace",
+        "--registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/"
+      ],
+      "cwd": "/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-5-nexus-runtime-1780205895409/app",
+      "ok": true,
+      "startedAt": "2026-05-31T05:38:16.537Z",
+      "stdout": "Progress: resolved 1, reused 0, downloaded 0, added 0\n WARN  deprecated vue-i18n@9.2.2: v9 and v10 no longer supported. please migrate to v11. about maintenance status, see https://vue-i18n.intlify.dev/guide/maintenance.html\nProgress: resolved 8, reused 8, downloaded 0, added 0\nProgress: resolved 9, reused 8, downloaded 0, added 0\nProgress: resolved 49, reused 49, downloaded 0, added 0\nProgress: resolved 65, reused 65, downloaded 0, added 0\nProgress: resolved 88, reused 88, downloaded 0, added 0\nProgress: resolved 114, reused 114, downloaded 0, added 0\nProgress: resolved 138, reused 137, downloaded 0, added 0\nProgress: resolved 194, reused 194, downloaded 0, added 0\nProgress: resolved 292, reused 243, downloaded 0, added 0\nProgress: resolved 302, reused 252, downloaded 0, added 0\n WARN  4 deprecated subdependencies found: codemirror@6.65.7, glob@7.2.3, inflight@1.0.6, lodash.isequal@4.5.0\nPackages: +265\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nProgress: resolved 314, reused 265, downloaded 0, added 39\nProgress: resolved 314, reused 265, downloaded 0, added 216\nProgress: resolved 314, reused 265, downloaded 0, added 263\nProgress: resolved 314, reused 265, downloaded 0, added 265, done\n\ndependencies:\n+ @mango/admin 1.0.3\n+ element-plus 2.5.5 (2.14.1 is available)\n+ pinia 2.0.32 (3.0.4 is available)\n+ vue 3.5.13 (3.5.35 is available)\n+ vue-i18n 9.2.2 (11.4.4 is available) deprecated\n+ vue-router 4.6.4 (5.1.0 is available)\n\ndevDependencies:\n+ @vitejs/plugin-vue 5.2.4 (6.0.7 is available)\n+ typescript 5.9.3 (6.0.3 is available)\n+ vite 6.4.2 (8.0.14 is available)\n+ vue-tsc 2.2.12 (3.3.3 is available)\n\n╭ Warning ─────────────────────────────────────────────────────────────────────╮\n│                                                                              │\n│   Ignored build scripts: core-js-pure@3.49.0, es5-ext@0.10.64,               │\n│   esbuild@0.25.12, vue-demi@0.14.10.                                         │\n│   Run \"pnpm approve-builds\" to pick which dependencies should be allowed     │\n│   to run scripts.                                                            │\n│                                                                              │\n╰──────────────────────────────────────────────────────────────────────────────╯\nDone in 16.8s using pnpm v10.33.0\n"
+    }
+  ],
+  "checks": [
+    {
+      "name": "home-shell",
+      "url": "http://127.0.0.1:18605/#/home",
+      "menuResponse": {
+        "status": 200,
+        "url": "http://127.0.0.1:18605/api/authorization/menus/user?fmt=tree&appCode=internal-admin"
+      },
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "首页"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "dev-upload",
+      "url": "http://127.0.0.1:18605/#/components/upload",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-dev-upload.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "组件库",
+          "文件上传",
+          "富文本编辑器",
+          "代码编辑器",
+          "组织架构选择器",
+          "工作流组件",
+          "验证码",
+          "数据图表",
+          "功能指令",
+          "省市区选择器",
+          "AI 对话",
+          "实时通信"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "dev-workflow-components",
+      "url": "http://127.0.0.1:18605/#/components/workflow",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-dev-workflow-components.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "组件库",
+          "文件上传",
+          "富文本编辑器",
+          "代码编辑器",
+          "组织架构选择器",
+          "工作流组件",
+          "验证码",
+          "数据图表",
+          "功能指令",
+          "省市区选择器",
+          "AI 对话",
+          "实时通信"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-系统管理 / 权限管理 / 套餐管理",
+      "url": "http://127.0.0.1:18605/#/system/menu-package",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-系统管理-权限管理-套餐管理.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "权限管理",
+          "套餐管理",
+          "机构管理",
+          "组织架构",
+          "岗位管理",
+          "成员管理",
+          "角色管理",
+          "菜单管理",
+          "应用管理",
+          "字典管理",
+          "参数配置",
+          "行政区划",
+          "日志管理",
+          "登录日志",
+          "操作日志"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-系统管理 / 权限管理 / 机构管理",
+      "url": "http://127.0.0.1:18605/#/system/tenant",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-系统管理-权限管理-机构管理.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "权限管理",
+          "套餐管理",
+          "机构管理",
+          "组织架构",
+          "岗位管理",
+          "成员管理",
+          "角色管理",
+          "菜单管理",
+          "应用管理",
+          "字典管理",
+          "参数配置",
+          "行政区划",
+          "日志管理",
+          "登录日志",
+          "操作日志"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-审批中心 / 流程办理 / 发起流程",
+      "url": "http://127.0.0.1:18605/#/workflow/start-process",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-审批中心-流程办理-发起流程.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "流程办理",
+          "发起流程",
+          "我的待办",
+          "我的申请",
+          "我的已办",
+          "抄送给我",
+          "流程管理",
+          "流程模板",
+          "流程定义",
+          "业务示例"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-审批中心 / 流程办理 / 我的待办",
+      "url": "http://127.0.0.1:18605/#/workflow/task/todo",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-审批中心-流程办理-我的待办.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "流程办理",
+          "发起流程",
+          "我的待办",
+          "我的申请",
+          "我的已办",
+          "抄送给我",
+          "流程管理",
+          "流程模板",
+          "流程定义",
+          "业务示例"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-平台能力 / 日历管理",
+      "url": "http://127.0.0.1:18605/#/data/calendar",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-平台能力-日历管理.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "日历管理",
+          "编号规则",
+          "文件管理",
+          "文件管理",
+          "存储配置",
+          "文件配置",
+          "模板管理",
+          "模板分类",
+          "模板列表",
+          "渲染记录"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-平台能力 / 编号规则",
+      "url": "http://127.0.0.1:18605/#/data/numgen",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-平台能力-编号规则.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "日历管理",
+          "编号规则",
+          "文件管理",
+          "文件管理",
+          "存储配置",
+          "文件配置",
+          "模板管理",
+          "模板分类",
+          "模板列表",
+          "渲染记录"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-通知中心 / 我的消息",
+      "url": "http://127.0.0.1:18605/#/notice/site-message",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-通知中心-我的消息.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "我的消息",
+          "消息配置",
+          "发送任务",
+          "渠道配置",
+          "发送记录",
+          "失败重试"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "menu-通知中心 / 消息配置",
+      "url": "http://127.0.0.1:18605/#/notice/message-definition",
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-通知中心-消息配置.png",
+      "titleVisible": true,
+      "hasErrorText": false,
+      "shell": {
+        "topbarVisible": true,
+        "asideVisible": true,
+        "tagsVisible": true,
+        "noticeBellVisible": true,
+        "settingsVisible": true,
+        "userVisible": true,
+        "topMenuTexts": [
+          "首页",
+          "系统管理",
+          "审批中心",
+          "平台能力",
+          "通知中心",
+          "开发中心"
+        ],
+        "sideMenuTexts": [
+          "我的消息",
+          "消息配置",
+          "发送任务",
+          "渠道配置",
+          "发送记录",
+          "失败重试"
+        ]
+      },
+      "layout": [
+        {
+          "selector": ".layout-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 960,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-aside",
+          "visible": true,
+          "x": 0,
+          "y": 56,
+          "width": 220,
+          "height": 904,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-navbars-container",
+          "visible": true,
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 56,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(46, 92, 246)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-main",
+          "visible": true,
+          "x": 220,
+          "y": 96,
+          "width": 1220,
+          "height": 864,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgb(243, 245, 248)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".tags-view-container",
+          "visible": true,
+          "x": 232,
+          "y": 56,
+          "width": 1196,
+          "height": 39,
+          "display": "flex",
+          "color": "rgb(51, 51, 51)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".notice-bell",
+          "visible": true,
+          "x": 1167,
+          "y": 18,
+          "width": 20,
+          "height": 20,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-settings",
+          "visible": true,
+          "x": 1199,
+          "y": 8,
+          "width": 44,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        },
+        {
+          "selector": ".layout-breadcrumb-user",
+          "visible": true,
+          "x": 1255,
+          "y": 8,
+          "width": 177,
+          "height": 40,
+          "display": "flex",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px"
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "screenshots": [
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-login.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-home.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-dev-upload.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-dev-workflow-components.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-系统管理-权限管理-套餐管理.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-系统管理-权限管理-机构管理.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-审批中心-流程办理-发起流程.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-审批中心-流程办理-我的待办.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-平台能力-日历管理.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-平台能力-编号规则.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-通知中心-我的消息.png",
+    "/Users/hardy/Work/mango/.mango/worktrees/frontend-productization-correction-sprint-0/mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-5/screenshots/s5-nexus-menu-通知中心-消息配置.png"
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "networkFailures": [],
+  "badResponses": [],
+  "serverLogs": [
+    "\n> mango-sprint-5-consumer@1.0.0 dev /private/var/folders/v3/xy1sw5vj1czc1qkwhhh0g4v40000gn/T/mango-sprint-5-nexus-runtime-1780205895409/app\n> vite --host 127.0.0.1 --port 18605\n\n",
+    "\n  VITE v6.4.2  ready in 1166 ms\n\n",
+    "  ➜  Local:   http://127.0.0.1:18605/\n"
+  ]
+}

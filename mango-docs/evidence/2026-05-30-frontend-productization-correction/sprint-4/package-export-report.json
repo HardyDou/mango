@@ -1,0 +1,239 @@
+{
+  "ok": true,
+  "checkedAt": "2026-05-31T00:35:00.749Z",
+  "errors": [],
+  "details": [
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/package.json export . must be {\"types\":\"./src/index.d.ts\",\"import\":\"./dist/index.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/index.d.ts",
+          "import": "./dist/index.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/package.json export ./style.css must be \"./style.css\"",
+      "detail": {
+        "actual": "./style.css"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-shell/package.json export . must be {\"types\":\"./src/index.ts\",\"import\":\"./dist/index.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/index.ts",
+          "import": "./dist/index.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-shell/package.json export ./style.css must be \"./style.css\"",
+      "detail": {
+        "actual": "./style.css"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-shell/package.json export ./home must be \"./src/views/home/index.vue\"",
+      "detail": {
+        "actual": "./src/views/home/index.vue"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-shell/package.json export ./dev-pages must be \"./src/views/demo/registerDevPages.ts\"",
+      "detail": {
+        "actual": "./src/views/demo/registerDevPages.ts"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/auth/package.json export . must be {\"types\":\"./src/index.d.ts\",\"import\":\"./dist/index.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/index.d.ts",
+          "import": "./dist/index.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/auth/package.json export ./style.css must be \"./dist/style.css\"",
+      "detail": {
+        "actual": "./dist/style.css"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/common/package.json export . must be {\"types\":\"./index.ts\",\"import\":\"./dist/index.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./index.ts",
+          "import": "./dist/index.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/common/package.json export ./theme/index.css must be \"./theme/index.css\"",
+      "detail": {
+        "actual": "./theme/index.css"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-pages/package.json export . must be {\"types\":\"./src/index.ts\",\"import\":\"./dist/index.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/index.ts",
+          "import": "./dist/index.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-pages/package.json export ./core must be \"./src/core.ts\"",
+      "detail": {
+        "actual": "./src/core.ts"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-pages/package.json export ./defaults must be \"./src/defaults.ts\"",
+      "detail": {
+        "actual": "./src/defaults.ts"
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/notice/package.json export . must be {\"types\":\"./src/index.ts\",\"import\":\"./dist/index.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/index.ts",
+          "import": "./dist/index.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/notice/package.json export ./admin must be {\"types\":\"./src/admin.ts\",\"import\":\"./dist/admin.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/admin.ts",
+          "import": "./dist/admin.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/notice/package.json export ./client must be {\"types\":\"./src/client.ts\",\"import\":\"./dist/client.js\"}",
+      "detail": {
+        "actual": {
+          "types": "./src/client.ts",
+          "import": "./dist/client.js"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/src/index.ts must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/src/index.d.ts must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/admin-packages.json must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/generated-package-styles.css must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin/style.css must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/scripts/generate-package-styles.mjs must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/scripts/generate-admin-package-styles.mjs must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/admin-shell/style.css must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/common/theme/index.css must exist"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/create-mango-app/templates/mango-business-starter/frontend/apps/{{projectKebab}}-admin/src/main.ts must not import @mango/admin-shell"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/create-mango-app/templates/mango-business-starter/frontend/apps/{{projectKebab}}-admin/src/main.ts must not import @mango/common/theme"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/create-mango-app/templates/mango-business-starter/frontend/apps/{{projectKebab}}-admin/src/main.ts must not import element-plus/dist/index.css"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/create-mango-app/templates/mango-business-starter/frontend/apps/{{projectKebab}}-admin/src/main.ts must import @mango/admin/style.css"
+    },
+    {
+      "ok": true,
+      "message": "mango-ui/packages/create-mango-app/templates/mango-business-starter/frontend/apps/{{projectKebab}}-admin/src/main.ts must import createMangoAdminApp from @mango/admin"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin/style.css must include Element Plus base style"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin/style.css must include generated package style entry"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin generated package styles must be generated by generic style tool"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin generated package styles must include admin-shell style entry"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin generated package styles must include auth style entry"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin/style.css must not depend on ignored dist output"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin/style.css must not require consumer Sass support"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin generated package styles must not require consumer Sass support"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin-shell/style.css must expose built shell component styles"
+    },
+    {
+      "ok": true,
+      "message": "@mango/admin-shell/style.css must not require consumer Sass support"
+    }
+  ]
+}

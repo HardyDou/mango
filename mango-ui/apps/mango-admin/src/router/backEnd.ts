@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 import { router } from './index';
 import { containsMenuPath } from '@mango/common';
+import { MangoAdminLayout, MangoAdminParentView } from '@mango/admin-shell';
 import { useUserInfo } from '@/stores/userInfo';
 import { useRoutesList } from '@/stores/routesList';
 import { usePreferencesStore } from '@/stores/preferences';
@@ -54,7 +55,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
       router.addRoute({
         path: '/',
         name: 'Layout',
-        component: () => import('@/layout/index.vue'),
+        component: MangoAdminLayout,
       });
     } else {
       if (import.meta.env.DEV) console.log('[backEnd] Layout route already exists');
@@ -80,7 +81,7 @@ export async function initBackEndControlRoutes(): Promise<void> {
         const parentRoute: RouteRecordRaw = {
           path: route.path,
           name: `${route.name}__parent`,
-          component: () => import('@/layout/routerView/parent.vue'),
+          component: MangoAdminParentView,
           children: route.children,
           meta: route.meta,
         };

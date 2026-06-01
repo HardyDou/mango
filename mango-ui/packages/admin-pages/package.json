@@ -1,28 +1,42 @@
 {
   "name": "@mango/admin-pages",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "private": false,
-  "main": "src/index.ts",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
     "./core": "./src/core.ts",
     "./defaults": "./src/defaults.ts",
+    "./features": "./src/features.ts",
+    "./notice": "./src/notice.ts",
+    "./dev-pages": "./src/dev-pages.ts",
     "./dev-component-pages": "./src/devComponentPages.ts"
   },
+  "scripts": {
+    "build": "vite build"
+  },
+  "files": [
+    "dist",
+    "src",
+    "package.json"
+  ],
   "dependencies": {
-    "@mango/auth": "1.0.0",
-    "@mango/calendar": "1.0.0",
-    "@mango/file": "1.0.0",
-    "@mango/notice": "1.0.0",
-    "@mango/numgen": "1.0.0",
-    "@mango/rbac": "1.0.0",
-    "@mango/system": "1.0.0",
-    "@mango/template": "1.0.0",
-    "@mango/workflow": "1.0.0",
-    "@mango/workflow-business-example": "1.0.0"
+    "@mango/auth": "1.0.2",
+    "@mango/common": "1.0.2",
+    "@mango/rbac": "1.0.2",
+    "@mango/system": "1.0.2"
   },
   "peerDependencies": {
     "vue": "3.5.13"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

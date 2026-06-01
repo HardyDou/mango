@@ -462,10 +462,11 @@ export const microAppAdapter: MangoAppAdapter = {
     recordMicroAppDebug(config, 'before-unmount');
     const destroy = wujieDestroyers.get(config.appCode);
     if (destroy) {
-      destroy();
       wujieDestroyers.delete(config.appCode);
+      destroy();
+    } else {
+      destroyApp(config.appCode);
     }
-    destroyApp(config.appCode);
     recordMicroAppDebug(config, 'unmount');
     emitMangoRuntimeLog({
       level: 'info',

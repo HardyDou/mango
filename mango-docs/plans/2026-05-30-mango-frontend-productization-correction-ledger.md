@@ -1,0 +1,14 @@
+# Mango Frontend Productization Correction Ledger
+
+| ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
+|---|---|---|---|---|---|---|---|
+| CORR-001 | 用户要求 | 制定新的补救计划，并明确每个 Sprint 的人工验收内容 | 新增 correction plan，按 Sprint 列出目标、范围、自动验证、人工验收和退出标准 | `mango-docs/plans/2026-05-30-mango-frontend-productization-correction-plan.md` | 人工审阅计划内容；PMO 台账结构检查 | DONE | `mango-docs/plans/2026-05-30-mango-frontend-productization-correction-plan.md` |
+| CORR-002 | 用户要求 | 默认必须复用完整原 Mango Admin，不允许仿写壳 | Sprint 2 将原 `apps/mango-admin/src/layout` 迁移到 `packages/admin-shell`，`mango-admin` 通过 `@mango/admin-shell` 消费，不保留 app 内长期独立 layout | `mango-ui/packages/admin-shell/src/layout/**`；`mango-ui/apps/mango-admin/src/router/*.ts`；`mango-ui/apps/mango-admin/src/stores/*.ts` | `pnpm -F @mango/admin-shell build`；`pnpm -F @mango/admin-shell test`；`pnpm -F mango-admin build`；真实后端 E2E 截图对比；用户确认不是复制/仿写 shell | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/summary.md` |
+| CORR-003 | 用户要求 | 每个 Sprint 完成后都必须回归测试、新特性测试和截图识别 | Sprint 2 执行构建、包测试、真实后端回归 E2E、截图采集和人工截图识别；人工验收单独记录 | `sprint-2/admin-shell-checklist.md`；`sprint-2/screenshots/**`；`sprint-2/manual-acceptance.md` | 回归测试 `18 passed / 2 skipped`；截图 17 张；layout/menu/API 报告已保存；等待用户人工验收 | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-2/manual-acceptance.md` |
+| CORR-004 | 用户要求 | 菜单必须稳定，默认 full 模式不能随意增加菜单 | Sprint 3 将后端菜单设为 full/default source of truth，shell-only 菜单显式标注且仅允许 `首页`、可配置 `开发中心`，fallback 菜单可检测 | `mango-ui/packages/admin-shell/src/runtime/menuHost.ts`；`sprint-3/menu-contract-report.json`；`sprint-3/menu-sampling-report.json` | 真实后端菜单 capture 与页面菜单对比；每个一级菜单抽样 1-3 个子页；开发中心专项截图；用户人工确认 | DONE | `mango-docs/evidence/2026-05-30-frontend-productization-correction/sprint-3/manual-acceptance.md` |
+| CORR-005 | 用户要求 | 登录页和主框架样式不能靠手写新 CSS 修 | 将 style contract 设为包出口问题，`@mango/admin/style.css` 聚合样式 | correction plan Sprint 4 | package consumption E2E；登录页截图与 baseline 对比 | TODO |  |
+| CORR-006 | 用户要求 | 业务项目 init 后应得到可用 Mango，再按配置自定义 | 将 create-mango-app full preset 放到 Sprint 6，custom preset 放到 Sprint 7 | correction plan Sprint 6/7 | 生成项目真实启动、截图对比、用户体验验收 | TODO |  |
+| CORR-007 | 用户要求 | 支持单体、微前端、混合部署，但先保证基础特性稳定 | 将 deployment mode matrix 放到 Sprint 8，禁止提前扩展远程治理能力 | correction plan Sprint 8 | local/micro/mixed E2E 截图和报告；用户确认无范围扩张 | TODO |  |
+| CORR-008 | PMO 要求 | 计划必须明确不做什么，防止范围扩大 | 明确列出 gray release、remote registry、CDN governance 等 out of scope | correction plan section 3 | 人工审阅计划；后续 Sprint 按 out of scope 检查 | TODO |  |
+| CORR-009 | PMO 要求 | 历史失败分支不能作为完成证明 | 将失败分支降级为 salvage input，Sprint 1 做 KEEP/REWORK/DROP 矩阵 | correction plan Sprint 1 | salvage report 由用户确认后才能进入实现 | TODO |  |
+| CORR-010 | PMO 要求 | 每 Sprint 必须人工验收后才能进入下一阶段 | 每 Sprint 设置 manual acceptance 和 exit criteria | correction plan section 6 | 每 Sprint `manual-acceptance.md` 存档 | TODO |  |

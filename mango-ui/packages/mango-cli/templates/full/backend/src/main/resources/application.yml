@@ -1,0 +1,169 @@
+server:
+  port: ${MANGO_BACKEND_PORT:5555}
+
+spring:
+  application:
+    name: {{projectKebab}}-backend
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 1024MB
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
+  datasource:
+    url: ${MANGO_DB_URL:jdbc:mysql://127.0.0.1:3306/{{projectKebab}}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+    driver-class-name: ${MANGO_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+    username: ${MANGO_DB_USERNAME:root}
+    password: ${MANGO_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+
+mango:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:mango-secret-key-for-jwt-token-generation-must-be-at-least-256-bits}
+  auth:
+    security:
+      permit-paths:
+        - /error
+        - /swagger-ui.html
+        - /swagger-ui/**
+        - /doc.html
+        - /webjars/**
+        - /favicon.ico
+        - /v3/api-docs
+        - /v3/api-docs/**
+        - /realtime/transports/websocket
+        - /realtime/transports/sse
+        - /realtime/transports/probe/**
+  access:
+    ip-whitelist:
+      enabled: true
+      rules:
+        - path-pattern: /actuator/health
+          methods:
+            - GET
+          cidrs:
+            - 127.0.0.1/32
+            - ::1/128
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+  crypto:
+    sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
+    sm4-iv:
+  kv:
+    store:
+      type: jdbc
+    capability:
+      enabled: true
+      token-store: true
+      outbox: true
+  persistence:
+    flyway:
+      modules:
+        system:
+          enabled: true
+        authorization:
+          enabled: true
+        identity:
+          enabled: true
+        org:
+          enabled: true
+        captcha:
+          enabled: true
+        file:
+          enabled: true
+        template:
+          enabled: true
+        workflow:
+          enabled: true
+        kv:
+          enabled: true
+        notification:
+          enabled: true
+        calendar:
+          enabled: true
+        numgen:
+          enabled: true
+        notice:
+          enabled: true
+  ip-location:
+    enabled: true
+    provider: ip2region
+    fail-fast: false
+    cache:
+      enabled: true
+      maximum-size: 10000
+      ttl: 24h
+    ip2region:
+      xdb-location: file:./config/ip-location/ip2region_v4.xdb
+      vector-index-enabled: true
+      content-cache-enabled: false
+  captcha:
+    required-paths: []
+  file:
+    enabled: true
+    storage-type: LOCAL
+    default-bucket: local
+    local:
+      root-path: ${MANGO_FILE_ROOT:./data/files}
+  fileproc:
+    convert:
+      office-to-pdf-enabled: ${MANGO_OFFICE_PLUGIN_ENABLED:false}
+  workflow:
+    enabled: true
+  doc:
+    module-grouping:
+      include-default-group: false
+      include-scope-tags: false
+
+flowable:
+  database-schema-update: false
+  async-executor-activate: false
+  db-identity-used: false
+  idm:
+    enabled: false
+  eventregistry:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    io.mango: INFO
+
+office:
+  plugin:
+    enabled: ${MANGO_OFFICE_PLUGIN_ENABLED:false}
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  packages-to-scan: io.mango,{{basePackage}}

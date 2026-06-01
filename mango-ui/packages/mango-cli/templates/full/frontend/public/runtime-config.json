@@ -1,0 +1,4 @@
+{
+  "profile": "monolith",
+  "modules": {{runtimeModulesJson}}
+}

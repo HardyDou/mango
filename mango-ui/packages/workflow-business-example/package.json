@@ -1,15 +1,45 @@
 {
   "name": "@mango/workflow-business-example",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "private": false,
-  "main": "src/index.ts",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin-pages": {
+      "types": "./src/admin-pages.ts",
+      "import": "./dist/admin-pages.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run --config vitest.config.ts src/__tests__/*.spec.ts"
+  },
+  "files": [
+    "dist",
+    "src",
+    "package.json"
+  ],
   "dependencies": {
-    "@mango/workflow": "1.0.0"
+    "@mango/admin-pages": "1.0.3",
+    "@mango/workflow": "1.0.4"
   },
   "peerDependencies": {
     "element-plus": "2.5.5",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "happy-dom": "^14.12.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3",
+    "vitest": "^1.6.0"
   },
   "publishConfig": {
     "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"

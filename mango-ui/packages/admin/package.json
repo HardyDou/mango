@@ -1,0 +1,92 @@
+{
+  "name": "@mango/admin",
+  "version": "1.0.7",
+  "private": false,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./full": {
+      "types": "./src/full.d.ts",
+      "import": "./dist/full.js"
+    },
+    "./style.css": "./style.css",
+    "./style-full.css": "./style-full.css"
+  },
+  "scripts": {
+    "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build",
+    "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build",
+    "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
+    "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css"
+  },
+  "files": [
+    "dist",
+    "src/index.d.ts",
+    "src/full.d.ts",
+    "admin-packages.json",
+    "generated-package-styles.css",
+    "style-full.css",
+    "style.css",
+    "package.json"
+  ],
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.0.10",
+    "@mango/admin-pages": "1.0.3",
+    "@mango/admin-shell": "1.0.4",
+    "@mango/app-runtime": "1.0.2",
+    "@mango/auth": "1.0.2",
+    "@mango/common": "1.0.2",
+    "@mango/rbac": "1.0.2",
+    "@mango/system": "1.0.2",
+    "element-plus": "2.5.5"
+  },
+  "peerDependencies": {
+    "@mango/calendar": "1.0.4",
+    "@mango/file": "1.0.4",
+    "@mango/notice": "1.0.4",
+    "@mango/numgen": "1.0.4",
+    "@mango/template": "1.0.4",
+    "@mango/workflow": "1.0.4",
+    "@mango/workflow-business-example": "1.0.4",
+    "pinia": "2.0.32",
+    "vue": "3.5.13",
+    "vue-i18n": "9.2.2",
+    "vue-router": "^4.1.6"
+  },
+  "peerDependenciesMeta": {
+    "@mango/calendar": {
+      "optional": true
+    },
+    "@mango/file": {
+      "optional": true
+    },
+    "@mango/notice": {
+      "optional": true
+    },
+    "@mango/numgen": {
+      "optional": true
+    },
+    "@mango/template": {
+      "optional": true
+    },
+    "@mango/workflow": {
+      "optional": true
+    },
+    "@mango/workflow-business-example": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
+  }
+}
