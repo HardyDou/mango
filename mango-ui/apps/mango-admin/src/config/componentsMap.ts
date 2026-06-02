@@ -3,9 +3,16 @@ import {
   normalizeComponentPath,
   registerDefaultAdminPages,
 } from '@mango/admin-pages';
+import {
+  configureMangoAdminShell,
+} from '@mango/admin-shell';
 import { registerMangoAdminShellBaseDevPages } from '@mango/admin-shell/dev-base-pages';
 import { registerMangoAdminShellDevPages } from '@mango/admin-shell/dev-pages';
 import { registerFullMangoAdminFeaturePages } from './adminFeatureRegistrars';
+
+configureMangoAdminShell({
+  features: 'full',
+});
 
 registerDefaultAdminPages({
   features: 'full',

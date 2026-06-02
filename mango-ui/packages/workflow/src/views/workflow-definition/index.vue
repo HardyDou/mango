@@ -253,7 +253,7 @@
               <WorkflowDesignerCanvas
                 :root="designerRoot"
                 :catalog="nodeCatalog"
-                :variable-categories="workflowVariableGroups"
+                :variable-groups="workflowVariableGroups"
                 @select="selectNode"
                 @changed="syncDesignerJson"
                 @blank="clearSelectedNode"
@@ -920,11 +920,11 @@ type WorkflowBusinessComponent = FormDesignerMenuItem & {
   props: (rule?: FcRule) => any[];
 };
 
-const formDesignerMenu: FormDesignerMenu[] = [
+const formDesignerMenu = computed<FormDesignerMenu[]>(() => [
   {
     name: 'business',
     title: '业务组件',
-    list: [],
+    list: toWorkflowBusinessMenuItems(),
   },
   {
     name: 'aide',
@@ -987,7 +987,7 @@ const formDesignerMenu: FormDesignerMenu[] = [
       { name: 'fcEditor', label: '富文本', icon: 'icon-editor' },
     ],
   },
-];
+]);
 
 function createWorkflowBusinessField(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 8)}`;

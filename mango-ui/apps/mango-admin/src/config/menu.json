@@ -75,6 +75,15 @@
             "component": "demo/components/OrgSelectorView"
           },
           {
+            "path": "/components/workflow",
+            "name": "DemoWorkflowComponents",
+            "meta": {
+              "title": "工作流组件",
+              "icon": "Stamp"
+            },
+            "component": "demo/components/WorkflowComponentsView"
+          },
+          {
             "path": "/components/captcha",
             "name": "DemoCaptcha",
             "meta": {
