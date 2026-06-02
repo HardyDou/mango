@@ -216,11 +216,11 @@ function designerJson(unique: number) {
     childNode: {
       id: `risk_review_${unique}`,
       nodeName: '元丰行风控初审',
-      nodeType: 'GUARANTEE_RISK_REVIEW',
+      nodeType: 'CONTRACT_RISK_REVIEW',
       childNode: {
         id: `guarantor_approve_${unique}`,
         nodeName: '担保机构审批',
-        nodeType: 'GUARANTEE_GUARANTOR_APPROVE',
+        nodeType: 'CONTRACT_COUNTERPARTY_APPROVE',
         childNode: null,
         conditionNodes: [],
         properties: {},
@@ -1386,7 +1386,7 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.builder-form .el-select').first().click();
       await page.getByRole('option', { name: categoryName }).click();
       await page.getByPlaceholder('请输入流程名称').fill(definitionName);
-      await page.getByPlaceholder('如 guarantee_approve').fill(definitionKey);
+      await page.getByPlaceholder('如 contract_approve').fill(definitionKey);
 
       const iconPath = join(tmpdir(), `mango-workflow-icon-${unique}.png`);
       writeFileSync(iconPath, Buffer.from(
@@ -1414,7 +1414,7 @@ test.describe('工作流配置真实接口闭环', () => {
       expect(thumbnailSrc || '').not.toContain('/api/file/files/download');
 
       await page.getByRole('button', { name: '下一步' }).click();
-      await page.getByPlaceholder('如 guarantee_apply_form').fill(`form_${keyword}`);
+      await page.getByPlaceholder('如 contract_apply_form').fill(`form_${keyword}`);
 
       const saveDraftResponsePromise = page.waitForResponse((response) =>
         response.url().includes('/api/workflow/definitions')
@@ -1477,12 +1477,12 @@ test.describe('工作流配置真实接口闭环', () => {
       await page.locator('.builder-form .el-select').first().click();
       await page.getByRole('option', { name: categoryName }).click();
       await page.getByPlaceholder('请输入流程名称').fill(definitionName);
-      await page.getByPlaceholder('如 guarantee_approve').fill(definitionKey);
+      await page.getByPlaceholder('如 contract_approve').fill(definitionKey);
       await page.getByRole('button', { name: '下一步' }).click();
 
       await expect(page.getByRole('radio', { name: '内置设计器' })).toBeChecked();
       await expect(page.getByRole('radio', { name: '自定义页面' })).toBeVisible();
-      await page.getByPlaceholder('如 guarantee_apply_form').fill(`form_${keyword}`);
+      await page.getByPlaceholder('如 contract_apply_form').fill(`form_${keyword}`);
       await expect(page.locator('.workflow-form-designer')).toBeVisible();
       await expect(page.locator('.workflow-form-designer')).toContainText('辅助组件');
       await expect(page.locator('.workflow-form-designer')).toContainText('子表单组件');

@@ -13,15 +13,15 @@
 
 ## 1. 使用方式
 
-当前阶段可以把本目录复制为业务项目 starter 仓，或使用 `create-mango-app` 生成业务项目。生成后的项目应按业务命名，例如 `guarantee-platform`、`baohan-platform`，不要命名为 `mango-starter`。
+当前阶段可以把本目录复制为业务项目 starter 仓，或使用 `create-mango-app` 生成业务项目。生成后的项目应按业务命名，例如 `contract-platform`、`order-platform`，不要命名为 `mango-starter`。
 
 | 占位符 | 示例 | 说明 |
 |---|---|---|
-| `{{projectKebab}}` | `guarantee-platform` | 项目名 |
-| `{{projectPascal}}` | `GuaranteePlatform` | 项目 PascalCase 名 |
-| `{{moduleKebab}}` | `guarantee` | 业务模块名 |
-| `{{modulePackage}}` | `guarantee` | Java 包名中的模块段 |
-| `{{modulePascal}}` | `Guarantee` | Java/TS 类型模块名 |
+| `{{projectKebab}}` | `contract-platform` | 项目名 |
+| `{{projectPascal}}` | `ContractPlatform` | 项目 PascalCase 名 |
+| `{{moduleKebab}}` | `contract` | 业务模块名 |
+| `{{modulePackage}}` | `contract` | Java 包名中的模块段 |
+| `{{modulePascal}}` | `Contract` | Java/TS 类型模块名 |
 | `{{aggregateKebab}}` | `letter` | 聚合名 |
 | `{{aggregatePascal}}` | `Letter` | 聚合 PascalCase 名 |
 | `{{basePackage}}` | `com.example.business` | Java 基础包名 |

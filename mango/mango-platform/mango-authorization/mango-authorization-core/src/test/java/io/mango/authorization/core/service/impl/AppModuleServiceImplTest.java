@@ -73,17 +73,17 @@ class AppModuleServiceImplTest {
         Menu page = menus.get(1);
         Menu button = menus.get(2);
         assertEquals("internal-admin", directory.getAppCode());
-        assertEquals("guarantee", directory.getModuleCode());
+        assertEquals("contract", directory.getModuleCode());
         assertEquals(1, directory.getMenuType());
-        assertEquals("guarantee", directory.getMenuCode());
+        assertEquals("contract", directory.getMenuCode());
         assertEquals(directory.getMenuId(), page.getParentId());
         assertEquals(2, page.getMenuType());
-        assertEquals("guarantee:letter:list", page.getMenuCode());
-        assertEquals("guarantee:letter:create,guarantee:letter:delete", page.getPermissions());
+        assertEquals("contract:archive:list", page.getMenuCode());
+        assertEquals("contract:archive:create,contract:archive:delete", page.getPermissions());
         assertEquals(page.getMenuId(), button.getParentId());
         assertEquals(3, button.getMenuType());
-        assertEquals("guarantee:letter:create", button.getMenuCode());
-        assertEquals("guarantee:letter:create", button.getPermissions());
+        assertEquals("contract:archive:create", button.getMenuCode());
+        assertEquals("contract:archive:create", button.getPermissions());
         ArgumentCaptor<FrontendMenuRuntimeConfig> configCaptor =
                 ArgumentCaptor.forClass(FrontendMenuRuntimeConfig.class);
         verify(menuRuntimeConfigMapper, org.mockito.Mockito.times(3)).insert(configCaptor.capture());
@@ -109,27 +109,27 @@ class AppModuleServiceImplTest {
     private AppModuleResourceManifestCommand createManifest() {
         AppModuleResourceManifestCommand manifest = new AppModuleResourceManifestCommand();
         manifest.setAppCode("internal-admin");
-        manifest.setModuleCode("guarantee");
-        manifest.setModuleName("保函模块");
+        manifest.setModuleCode("contract");
+        manifest.setModuleName("合同模块");
 
         AppModuleResourceManifestCommand.Menu directory = new AppModuleResourceManifestCommand.Menu();
         directory.setMenuType(1);
-        directory.setMenuName("保函管理");
-        directory.setMenuCode("guarantee");
-        directory.setPath("/guarantee");
+        directory.setMenuName("合同管理");
+        directory.setMenuCode("contract");
+        directory.setPath("/contract");
         directory.setSort(10);
 
         AppModuleResourceManifestCommand.Menu page = new AppModuleResourceManifestCommand.Menu();
         page.setMenuType(2);
-        page.setMenuName("保函列表");
-        page.setMenuCode("guarantee:letter:list");
-        page.setPath("/guarantee/letters");
-        page.setComponent("guarantee/letter/index");
-        page.setPermissions(List.of("guarantee:letter:create", "guarantee:letter:delete"));
+        page.setMenuName("合同列表");
+        page.setMenuCode("contract:archive:list");
+        page.setPath("/contract/archives");
+        page.setComponent("contract/archive/index");
+        page.setPermissions(List.of("contract:archive:create", "contract:archive:delete"));
 
         AppModuleResourceManifestCommand.Permission create = new AppModuleResourceManifestCommand.Permission();
-        create.setPermissionCode("guarantee:letter:create");
-        create.setPermissionName("新增保函");
+        create.setPermissionCode("contract:archive:create");
+        create.setPermissionName("新增合同");
         page.setPermissionItems(List.of(create));
         directory.setChildren(List.of(page));
         manifest.setMenus(List.of(directory));

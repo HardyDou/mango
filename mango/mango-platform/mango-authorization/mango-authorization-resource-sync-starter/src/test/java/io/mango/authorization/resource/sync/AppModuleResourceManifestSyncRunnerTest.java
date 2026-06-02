@@ -31,7 +31,7 @@ class AppModuleResourceManifestSyncRunnerTest {
 
         assertEquals(1, manifests.size());
         assertEquals("internal-admin", manifests.get(0).getAppCode());
-        assertEquals("guarantee", manifests.get(0).getModuleCode());
+        assertEquals("contract", manifests.get(0).getModuleCode());
         assertEquals(1, manifests.get(0).getMenus().size());
     }
 
@@ -46,7 +46,7 @@ class AppModuleResourceManifestSyncRunnerTest {
         runner.run(null);
 
         assertEquals(1, appModuleApi.manifests.size());
-        assertEquals("guarantee", appModuleApi.manifests.get(0).getModuleCode());
+        assertEquals("contract", appModuleApi.manifests.get(0).getModuleCode());
     }
 
     @Test

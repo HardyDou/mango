@@ -23,7 +23,7 @@
     </el-form-item>
 
     <el-form-item v-if="node.executionType === 'REMOTE_SERVICE'" label="服务名称">
-      <el-input :model-value="valueOf('serviceName')" placeholder="guarantee-service" @input="value => update('serviceName', value)" />
+      <el-input :model-value="valueOf('serviceName')" placeholder="contract-service" @input="value => update('serviceName', value)" />
     </el-form-item>
     <el-form-item v-if="node.executionType === 'REMOTE_SERVICE'" label="操作编码">
       <el-input :model-value="valueOf('operation')" placeholder="submitBankMaterials" @input="value => update('operation', value)" />

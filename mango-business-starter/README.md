@@ -13,23 +13,23 @@
 
 ## 1. 使用方式
 
-当前阶段应使用 `mango-cli` 生成业务项目和追加企业业务模块。生成后的项目应按业务命名，例如 `guarantee-platform`、`baohan-platform`，不要命名为 `mango-starter`。
+当前阶段应使用 `mango-cli` 生成业务项目和追加企业业务模块。生成后的项目应按业务命名，例如 `contract-platform`、`order-platform`，不要命名为 `mango-starter`。
 
 | 占位符 | 示例 | 说明 |
 |---|---|---|
-| `{{projectKebab}}` | `guarantee-platform` | 项目名 |
-| `{{projectPascal}}` | `GuaranteePlatform` | 项目 PascalCase 名 |
-| `{{moduleKebab}}` | `guarantee` | 业务模块名 |
-| `{{modulePackage}}` | `guarantee` | Java 包名中的模块段 |
-| `{{modulePascal}}` | `Guarantee` | Java/TS 类型模块名 |
-| `{{moduleCamel}}` | `guarantee` | Java/TS 变量模块名 |
+| `{{projectKebab}}` | `contract-platform` | 项目名 |
+| `{{projectPascal}}` | `ContractPlatform` | 项目 PascalCase 名 |
+| `{{moduleKebab}}` | `contract` | 业务模块名 |
+| `{{modulePackage}}` | `contract` | Java 包名中的模块段 |
+| `{{modulePascal}}` | `Contract` | Java/TS 类型模块名 |
+| `{{moduleCamel}}` | `contract` | Java/TS 变量模块名 |
 | `{{moduleName}}` | `业务模块` | 菜单展示名 |
 | `{{aggregateKebab}}` | `letter` | 聚合名 |
 | `{{aggregatePascal}}` | `Letter` | 聚合 PascalCase 名 |
 | `{{aggregateCamel}}` | `letter` | Java/TS 变量聚合名 |
 | `{{basePackage}}` | `com.example.business` | Java 基础包名 |
 | `{{basePackagePath}}` | `com/example/business` | Java 基础包路径 |
-| `{{moduleKebabSnake}}` | `guarantee` | 数据库表名前缀 |
+| `{{moduleKebabSnake}}` | `contract` | 数据库表名前缀 |
 | `{{aggregateKebabSnake}}` | `letter` | 数据库表名后缀 |
 
 ## 2. 推荐结构
