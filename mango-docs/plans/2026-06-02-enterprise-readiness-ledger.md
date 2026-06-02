@@ -14,7 +14,7 @@
 | ER-010 | GitHub Issue #32 | `@mango/admin-shell` 产品级 API 与文档打磨 | 判断是否为正式推广阻塞项；阻塞部分优先处理 | 评审结论或代码/文档 | API 文档和消费示例可用于业务项目 | TODO | 待 issue #32 专项评审 |
 | ER-011 | GitHub Issue #28 | 初始化种子数据能力 | 判断业务项目独立启动是否依赖种子数据；必要项纳入推广前置 | 评审结论或代码 | 业务项目初始化后菜单、角色、租户基础数据可用 | TODO | 待 issue #28 专项评审 |
 | ER-012 | GitHub Issue #30 | Mango Initializr 服务化与 Web UI | 不作为正式推广前置，CLI 先满足企业使用 | 计划说明 | 台账标记 EXCEPTION 或后续项 | TODO | 待正式推广范围确认 |
-| ER-013 | 用户要求 | 企业业务项目全流程真实验证 | 用 `mango-cli` 生成独立业务项目并新增真实 CRUD 模块 | 验收报告和截图 | CLI、后端、前端、平台能力真实操作通过 | TODO | Sprint 2 待执行 |
+| ER-013 | 用户要求 | 企业业务项目全流程真实验证 | 用 `mango-cli` 生成独立业务项目并新增真实 CRUD 模块 | 验收报告和命令证据 | CLI 初始化、模块新增、后端构建和 PMO 激活通过；前端 build 失败项修复后才能置为 DONE | IN_PROGRESS | `mango-docs/evidence/2026-06-02-enterprise-readiness/enterprise-business-flow-report.md` |
 | ER-014 | 用户要求 | 所有模块抽查至少 3 个菜单页面、2 个真实功能 | 建立浏览器验收清单，记录截图和 UI 分析 | 验收证据 | 每模块记录页面、功能点、UI、console/network 和截图 | DONE | `mango-docs/evidence/2026-06-02-enterprise-readiness/acceptance-evidence.md` |
 | ER-015 | 用户要求 | 全仓后端测试 | 推广前执行全仓后端测试 | 测试日志 | `mvn test` 或等价全仓测试通过 | TODO | Sprint 4 待执行 |
 | ER-016 | PMO 规则 | 交付前必须检查台账 | 使用 delivery-contract-check 验证计划和台账 | 检查结果 | `node mango-pmo/tools/delivery-contract-check.mjs --design ... --ledger ... --mode verify` | IN_PROGRESS | 本轮执行 plan 模式；verify 模式待所有项收口 |

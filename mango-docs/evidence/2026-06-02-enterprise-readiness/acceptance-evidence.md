@@ -27,6 +27,7 @@
 | ER-014 | 微前端/Shell 开发中心组件页 | 文件上传组件页和工作流组件页检查 | `http://a.mango.io:5176` hybrid profile，登录后访问 `/#/components/upload`、`/#/components/workflow` | 两页分别包含上传组件和工作流组件关键标题、示例文案；无组件 404 | Shell 菜单、标签页、页面导航、组件示例布局正常；无空白、遮挡或明显错位 | `micro-readiness-report.json` 中两页 console/network 增量均为 `0` | `screenshots/micro-upload-components.png`；`screenshots/micro-workflow-components.png`；`micro-readiness-report.json` | 通过 |
 | ER-014 | 微前端/RBAC 远程子应用 | 角色页远程承载和列表操作入口检查 | hybrid profile 中 `mango-authorization` 配置为 `MICRO_ROUTE`，entry `b.mango.io:5181` | runtime 数据为 `mango-admin-rbac-app`；页面包含 `新增角色`、`角色编码`、`分配权限` | 左侧权限菜单激活；角色表格、状态标签、行操作按钮显示稳定；无空白或错位 | `micro-readiness-report.json` 中该页 console/network 增量均为 `0` | `screenshots/micro-system-role.png`；`micro-readiness-report.json` | 通过 |
 | ER-014 | 微前端/Workflow 远程子应用 | 流程定义内置设计器拖入组件 | hybrid profile 中 `mango-workflow` 配置为 `MICRO_ROUTE`，entry `c.mango.io:5182` | runtime 数据为 `mango-admin-workflow-app`；进入表单信息后拖入 `输入框`，画布和右侧配置联动 | 设计器左侧组件区、中间画布、右侧配置区完整；拖入控件后无空白、遮挡或异常弹窗 | `micro-readiness-report.json` 中 network 增量为 `0`；记录到 Wujie/Element 事件参数 warning 和 realtime WebSocket 探测 warning，未影响功能，待后续治理 | `screenshots/micro-workflow-designer-drag.png`；`micro-readiness-report.json` | 通过 |
+| ER-013 | `mango-cli` 独立业务项目 | 初始化企业项目并新增采购订单业务模块 | `contract-ops-platform`，`--preset full --topology monolith --package com.acme.contractops`；新增 `procurement/order` | `mango-cli` 自测通过；`init` 和 `module add` 成功；生成后端 api/core/starter/remote、Flyway SQL、资源清单；前端生成业务包和 API 包；无 `{{ }}`、保函/担保残留；BLOCKED 原因：企业项目前端 build 被已发布 `@mango/common/utils/message.ts` TS18048 阻断 | 菜单 manifest 的 `procurement/order/index` 与前端页面注册 key 一致；业务页有查询、新增和列表显示；但前端模板尚未提供编辑/删除/详情 UI，不能声明完整前端 CRUD | `npm install` 通过；`mvn -f backend/pom.xml -DskipTests package` 通过；`npm run dev` 可启动；`npm run typecheck` 和 `npm run build` 因 `@mango/common/utils/message.ts` TS18048 失败 | `enterprise-business-flow-report.md`；命令日志见本次任务记录 | BLOCKED |
 
 ## 4. 回归抽查记录
 
@@ -44,5 +45,5 @@
 |---|---|---|---|---|
 | 微前端 console warning | Workflow 远程子应用表单设计器交互触发 Vue `Invalid event arguments` warning；realtime WebSocket 探测有连接关闭 warning | 当前功能验收通过，但推广前应评估是否需要治理或降低噪声 | 纳入 Sprint 1/Sprint 3 warning 治理；不作为本轮阻塞 | 否 |
 | 工作流示例占位文本残留 | 微前端流程定义基础信息和表单信息中仍出现 `guarantee_approve`、`guarantee_apply_form` 占位示例 | 不是废弃保函业务模块代码，但会影响 Mango 通用框架观感和企业推广中性表达 | 后续统一改为 `contract` 或 `business` 中性示例并回归 | 否 |
-| 企业业务项目全流程仿真 | 尚未执行 `mango-cli` 独立业务仓初始化和 CRUD 模块开发 | 不能声明企业业务开发全流程就绪 | Sprint 2 执行并留存截图、命令、日志 | 否 |
+| 企业业务项目全流程仿真 | 已执行 `mango-cli` 独立业务仓初始化和 CRUD 模块开发；发现前端 build 被已发布 `@mango/common` 子路径源码导出阻断，前端 CRUD 模板也仅覆盖查询/新增 | 企业项目可初始化和后端构建，但不能作为稳定企业业务开发框架正式推广 | 修复 `@mango/common` 发布出口或业务模板导入方式；补齐前端 CRUD 骨架验收能力；重新执行 ER-013 | 否 |
 | 全仓后端测试 | 本轮尚未执行全仓 `mvn test` | 不能作为发布前最终质量结论 | Sprint 4 执行全仓测试，失败项逐项归因 | 否 |
