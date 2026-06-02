@@ -7,18 +7,18 @@ const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
 const template = resolve(packageRoot, '../../../mango-business-starter');
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-app-'));
-const projectName = 'guarantee-platform';
+const projectName = 'contract-platform';
 
 const explicitTemplateResult = spawnSync(process.execPath, [
   cli,
   'init',
   projectName,
   '--module',
-  'guarantee',
+  'contract',
   '--aggregate',
-  'letter',
+  'archive',
   '--package',
-  'com.example.guarantee',
+  'com.example.contract',
   '--group-id',
   'com.example',
   '--topology',
@@ -39,10 +39,10 @@ try {
   const requiredFiles = [
     'mango.config.json',
     'AGENTS.md',
-    'backend/modules/guarantee/guarantee-api/src/main/java/com/example/guarantee/guarantee/api/GuaranteeApi.java',
-    'backend/modules/guarantee/guarantee-starter/src/main/resources/META-INF/mango/resource-manifest.json',
-    'frontend/packages/guarantee/src/index.ts',
-    'frontend/apps/guarantee-platform-admin/src/main.ts',
+    'backend/modules/contract/contract-api/src/main/java/com/example/contract/contract/api/ContractApi.java',
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json',
+    'frontend/packages/contract/src/index.ts',
+    'frontend/apps/contract-platform-admin/src/main.ts',
     'topologies/microservice/README.md',
   ];
 
@@ -54,19 +54,23 @@ try {
 
   const config = JSON.parse(readFileSync(join(projectRoot, 'mango.config.json'), 'utf8'));
   assertEqual(config.topology, 'microservice', 'topology');
-  assertEqual(config.module, 'guarantee', 'module');
-  assertEqual(config.aggregate, 'letter', 'aggregate');
+  assertEqual(config.module, 'contract', 'module');
+  assertEqual(config.aggregate, 'archive', 'aggregate');
 
   const apiContent = readFileSync(
-    join(projectRoot, 'backend/modules/guarantee/guarantee-api/src/main/java/com/example/guarantee/guarantee/api/GuaranteeApi.java'),
+    join(projectRoot, 'backend/modules/contract/contract-api/src/main/java/com/example/contract/contract/api/ContractApi.java'),
     'utf8'
   );
-  if (!apiContent.includes('R<LetterVO>') || apiContent.includes('{{')) {
+  if (
+    !apiContent.includes('CreateArchiveCommand')
+    || !apiContent.includes('@PostMapping("/archives/create")')
+    || apiContent.includes('{{')
+  ) {
     throw new Error('API template was not rendered correctly');
   }
 
-  const pageRegistry = readFileSync(join(projectRoot, 'frontend/packages/guarantee/src/index.ts'), 'utf8');
-  if (!pageRegistry.includes("'guarantee/letter/index'") || pageRegistry.includes('{{')) {
+  const pageRegistry = readFileSync(join(projectRoot, 'frontend/packages/contract/src/index.ts'), 'utf8');
+  if (!pageRegistry.includes("'contract/archive/index'") || pageRegistry.includes('{{')) {
     throw new Error('page registry was not rendered correctly');
   }
 
@@ -87,7 +91,7 @@ try {
     '--task',
     '新增业务模块',
     '--paths',
-    'backend/modules/guarantee,frontend/packages/guarantee',
+    'backend/modules/contract,frontend/packages/contract',
   ], {
     cwd: projectRoot,
     encoding: 'utf8',

@@ -66,7 +66,7 @@
                   </el-tooltip>
                 </span>
               </template>
-              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 guarantee_approve" />
+              <el-input v-model="definitionForm.definitionKey" :disabled="Boolean(definitionForm.id)" placeholder="如 contract_approve" />
             </el-form-item>
             <el-form-item class="basic-field full" label="流程名称" prop="definitionName">
               <el-input v-model="definitionForm.definitionName" placeholder="请输入流程名称" />
@@ -101,7 +101,7 @@
             <div class="form-config-bar">
               <el-form class="form-config-form" :model="definitionForm" :rules="definitionRules" label-position="right" label-width="84px">
                 <el-form-item label="表单编码" prop="formCode">
-                  <el-input v-model="definitionForm.formCode" placeholder="如 guarantee_apply_form" />
+                  <el-input v-model="definitionForm.formCode" placeholder="如 contract_apply_form" />
                 </el-form-item>
                 <el-form-item label="表单类型" required>
                   <div class="form-type-line">
@@ -145,16 +145,16 @@
                     <div class="section-title">自定义表单页面</div>
                     <el-form class="custom-route-form" label-position="top">
                       <el-form-item label="表单提交路径">
-                        <el-input v-model="customFormConfig.submitPath" placeholder="例如：/flow/guarantee/create" @input="syncCustomWorkflowForm" />
+                        <el-input v-model="customFormConfig.submitPath" placeholder="例如：/flow/contract/create" @input="syncCustomWorkflowForm" />
                       </el-form-item>
                       <el-form-item label="表单查看路径">
-                        <el-input v-model="customFormConfig.viewPath" placeholder="例如：/flow/guarantee/detail" @input="syncCustomWorkflowForm" />
+                        <el-input v-model="customFormConfig.viewPath" placeholder="例如：/flow/contract/detail" @input="syncCustomWorkflowForm" />
                       </el-form-item>
                       <el-form-item label="申请页Key">
-                        <el-input v-model="customFormConfig.applyPageKey" placeholder="例如：workflow.guarantee.apply" @input="syncCustomWorkflowForm" />
+                        <el-input v-model="customFormConfig.applyPageKey" placeholder="例如：workflow.contract.apply" @input="syncCustomWorkflowForm" />
                       </el-form-item>
                       <el-form-item label="审批页Key">
-                        <el-input v-model="customFormConfig.approvePageKey" placeholder="例如：workflow.guarantee.approve" @input="syncCustomWorkflowForm" />
+                        <el-input v-model="customFormConfig.approvePageKey" placeholder="例如：workflow.contract.approve" @input="syncCustomWorkflowForm" />
                       </el-form-item>
                     </el-form>
                   </div>
@@ -2902,7 +2902,7 @@ function isUserTaskNode(node: WorkflowDesignerNode) {
   if (node.nodeType === 'ROOT' || node.bpmnType === 'startEvent') {
     return false;
   }
-  return node.bpmnType === 'userTask' || node.executionType === 'USER_TASK' || node.nodeType === 'APPROVAL' || node.nodeType?.startsWith('GUARANTEE_');
+  return node.bpmnType === 'userTask' || node.executionType === 'USER_TASK' || node.nodeType === 'APPROVAL';
 }
 
 function isServiceTaskNode(node: WorkflowDesignerNode) {

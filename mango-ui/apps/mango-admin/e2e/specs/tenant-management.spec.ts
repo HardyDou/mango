@@ -171,8 +171,8 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
 
   test('机构类型与绑定套餐可持久化并在页面显示', async ({ page, request }) => {
     const unique = Date.now();
-    const tenantName = `E2E担保机构${unique}`;
-    const tenantCode = `e2e_guarantee_${unique}`;
+    const tenantName = `E2E企业机构${unique}`;
+    const tenantCode = `e2e_enterprise_${unique}`;
     const platformToken = await loginToken(request, platformTenant);
 
     try {
@@ -182,7 +182,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
         data: {
           tenantName,
           tenantCode,
-          institutionType: 'GUARANTEE',
+          institutionType: 'ENTERPRISE',
           packageId: 2,
           status: 1,
           contact: 'E2E套餐管理员',
@@ -197,7 +197,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       const tenants = await listTenants(request, platformToken);
       const created = tenants.find((item: any) => item.tenantCode === tenantCode);
       expect(created).toBeTruthy();
-      expect(created.institutionType).toBe('GUARANTEE');
+      expect(created.institutionType).toBe('ENTERPRISE');
       expect(Number(created.packageId)).toBe(2);
 
       await loginPage(page, platformTenant);
@@ -211,7 +211,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
 
       const row = page.locator('.el-table__row', { hasText: tenantName }).first();
       await expect(row).toBeVisible({ timeout: 10000 });
-      await expect(row.getByText('担保机构', { exact: true })).toBeVisible();
+      await expect(row.getByText('企业机构', { exact: true })).toBeVisible();
       await expect(row.getByText('机构协同套餐', { exact: true })).toBeVisible();
       await expectNoAuthError(page);
     } finally {

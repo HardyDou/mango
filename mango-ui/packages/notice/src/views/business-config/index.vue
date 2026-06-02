@@ -113,7 +113,7 @@
             </el-col>
             <el-col :xs="24" :md="12">
               <el-form-item label="业务Key" required>
-                <el-input v-model="form.bizType" :disabled="!!editingBusinessType" placeholder="guarantee.issue_success" />
+                <el-input v-model="form.bizType" :disabled="!!editingBusinessType" placeholder="order.shipped" />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="12">

@@ -531,7 +531,7 @@ test.describe('通知中心 E2E', () => {
     await expect(maintainPage).not.toContainText('幂等策略');
     await maintainPage.locator('.el-form-item', { hasText: '业务域' }).locator('.el-select__wrapper').click();
     await page.locator('.el-select-dropdown__item:visible', { hasText: 'WORKFLOW' }).click();
-    await maintainPage.locator('input[placeholder="guarantee.issue_success"]').fill('order.shipped');
+    await maintainPage.locator('input[placeholder="order.shipped"]').fill('order.shipped');
     await maintainPage.locator('input[placeholder="出函成功"]').fill('订单发货通知');
     await maintainPage.locator('textarea[placeholder="用于说明该消息配置的业务场景"]').fill('订单发货后发送系统消息和短信');
     await maintainPage.getByRole('button', { name: '保存' }).click();
