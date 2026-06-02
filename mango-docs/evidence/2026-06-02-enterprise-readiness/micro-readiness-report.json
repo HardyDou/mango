@@ -1,0 +1,181 @@
+{
+  "baseURL": "http://a.mango.io:5176",
+  "startedAt": "2026-06-02T10:49:49.421Z",
+  "pages": [
+    {
+      "id": "ER-014",
+      "name": "micro-upload-components",
+      "path": "/#/components/upload",
+      "assertions": [
+        "MUpload 文件上传",
+        "通用/默认用法",
+        "上传文件"
+      ],
+      "missing": [],
+      "consoleCount": 0,
+      "networkCount": 0,
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/enterprise-readiness-roadmap/mango-docs/evidence/2026-06-02-enterprise-readiness/screenshots/micro-upload-components.png",
+      "result": "PASS"
+    },
+    {
+      "id": "ER-014",
+      "name": "micro-workflow-components",
+      "path": "/#/components/workflow",
+      "assertions": [
+        "工作流组件",
+        "运行时表单渲染",
+        "业务申请组件注册"
+      ],
+      "missing": [],
+      "consoleCount": 0,
+      "networkCount": 0,
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/enterprise-readiness-roadmap/mango-docs/evidence/2026-06-02-enterprise-readiness/screenshots/micro-workflow-components.png",
+      "result": "PASS"
+    },
+    {
+      "id": "ER-014",
+      "name": "micro-system-role",
+      "path": "/#/system/role",
+      "runtime": {
+        "moduleCode": "mango-authorization",
+        "runtimeCode": "mango-admin-rbac-app",
+        "pageType": "MICRO_ROUTE",
+        "entry": "http://b.mango.io:5181/"
+      },
+      "assertions": [
+        "新增角色",
+        "角色编码",
+        "分配权限"
+      ],
+      "missing": [],
+      "consoleCount": 0,
+      "networkCount": 0,
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/enterprise-readiness-roadmap/mango-docs/evidence/2026-06-02-enterprise-readiness/screenshots/micro-system-role.png",
+      "result": "PASS"
+    },
+    {
+      "id": "ER-014",
+      "name": "micro-workflow-designer-drag",
+      "path": "/#/workflow/manage/definition",
+      "runtime": {
+        "moduleCode": "mango-workflow",
+        "runtimeCode": "mango-admin-workflow-app",
+        "pageType": "MICRO_ROUTE",
+        "entry": "http://c.mango.io:5182/"
+      },
+      "assertions": [
+        "远程 workflow 子应用承载",
+        "进入表单信息",
+        "拖入输入框组件"
+      ],
+      "missing": [],
+      "consoleCount": 11,
+      "networkCount": 0,
+      "screenshot": "/Users/hardy/Work/mango/.mango/worktrees/enterprise-readiness-roadmap/mango-docs/evidence/2026-06-02-enterprise-readiness/screenshots/micro-workflow-designer-drag.png",
+      "result": "PASS"
+    }
+  ],
+  "console": [
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"click\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"mouseenter\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"focus\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"blur\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"focus\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"mouseleave\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"blur\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"click\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"focus\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "[Vue warn]: Invalid event arguments: event validation failed for event \"blur\".",
+      "location": {
+        "url": "http://c.mango.io:5182/node_modules/.vite/deps/chunk-3E4WAQBG.js?v=71d24916",
+        "lineNumber": 2415,
+        "columnNumber": 12
+      }
+    },
+    {
+      "type": "warning",
+      "text": "WebSocket connection to 'ws://a.mango.io:5176/api/realtime/transports/probe/websocket?clientId=browser-f209d074&rtTicket=jOCkYrWa6StB9NB2NOBJK7svCcuSKX27S26fEP3uRpM' failed: WebSocket is closed before the connection is established.",
+      "location": {
+        "url": "http://a.mango.io:5176/@fs/Users/hardy/Work/mango/mango-ui/packages/common/utils/realtime/client.ts",
+        "lineNumber": 298,
+        "columnNumber": 0
+      }
+    }
+  ],
+  "network": [],
+  "finishedAt": "2026-06-02T10:49:58.249Z"
+}
