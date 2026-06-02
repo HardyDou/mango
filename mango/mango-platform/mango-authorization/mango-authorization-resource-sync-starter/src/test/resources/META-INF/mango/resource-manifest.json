@@ -1,25 +1,25 @@
 {
   "appCode": "internal-admin",
-  "moduleCode": "guarantee",
-  "moduleName": "保函模块",
+  "moduleCode": "contract",
+  "moduleName": "合同模块",
   "menus": [
     {
       "menuType": 1,
-      "menuName": "保函管理",
-      "menuCode": "guarantee",
-      "path": "/guarantee",
+      "menuName": "合同管理",
+      "menuCode": "contract",
+      "path": "/contract",
       "children": [
         {
           "menuType": 2,
-          "menuName": "保函列表",
-          "menuCode": "guarantee:letter:list",
-          "path": "/guarantee/letters",
-          "component": "guarantee/letter/index",
-          "permissions": ["guarantee:letter:create"],
+          "menuName": "合同列表",
+          "menuCode": "contract:archive:list",
+          "path": "/contract/archives",
+          "component": "contract/archive/index",
+          "permissions": ["contract:archive:create"],
           "permissionItems": [
             {
-              "permissionCode": "guarantee:letter:create",
-              "permissionName": "新增保函"
+              "permissionCode": "contract:archive:create",
+              "permissionName": "新增合同"
             }
           ]
         }

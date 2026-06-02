@@ -116,10 +116,10 @@
               :count="8"
               size="100MB"
               :sizes="sizeRules"
-              biz-type="GUARANTEE_APPLICATION"
+              biz-type="CONTRACT_APPLICATION"
               :biz-id="demoBizId"
               purpose="biz-attachment"
-              :biz-meta="{ scene: 'guarantee', applicant: '示例企业', projectCode: 'PRJ-20260517' }"
+              :biz-meta="{ scene: 'contract', applicant: '示例企业', projectCode: 'PRJ-20260517' }"
               @change="handleRecordsChange"
             />
           </div>
@@ -395,7 +395,7 @@ const tableCode = `<MUpload
     { key: 'meta.projectCode', label: '项目编号' }
   ]"
   :sizes="{ image: '10MB', document: '80MB', other: '50MB' }"
-  biz-type="GUARANTEE_APPLICATION"
+  biz-type="CONTRACT_APPLICATION"
   :biz-id="bizId"
   :biz-meta="{ projectCode: 'PRJ-20260517' }"
 />`;
