@@ -219,7 +219,7 @@ function designerJson(unique: number) {
       nodeType: 'CONTRACT_RISK_REVIEW',
       childNode: {
         id: `guarantor_approve_${unique}`,
-        nodeName: '担保机构审批',
+        nodeName: '合同相对方审批',
         nodeType: 'CONTRACT_COUNTERPARTY_APPROVE',
         childNode: null,
         conditionNodes: [],
