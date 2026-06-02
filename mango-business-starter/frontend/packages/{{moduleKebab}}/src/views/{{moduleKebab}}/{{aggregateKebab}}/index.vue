@@ -9,6 +9,7 @@
         @keyup.enter="loadData"
       />
       <el-button type="primary" @click="loadData">查询</el-button>
+      <el-button @click="createRecord">新增</el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" row-key="id">
@@ -20,13 +21,17 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-import { page{{aggregatePascal}}, type {{aggregatePascal}}VO } from '@{{projectKebab}}/{{moduleKebab}}-api';
+import {
+  create{{aggregatePascal}},
+  page{{aggregatePascal}},
+  type {{aggregatePascal}}VO,
+} from '@{{projectKebab}}/{{moduleKebab}}-api';
 
 const loading = ref(false);
 const records = ref<{{aggregatePascal}}VO[]>([]);
 const query = reactive({
-  pageNo: 1,
-  pageSize: 20,
+  page: 1,
+  size: 20,
   name: '',
 });
 
@@ -34,10 +39,17 @@ async function loadData() {
   loading.value = true;
   try {
     const result = await page{{aggregatePascal}}(query);
-    records.value = result.list;
+    records.value = result.records;
   } finally {
     loading.value = false;
   }
+}
+
+async function createRecord() {
+  const name = query.name.trim() || `{{aggregatePascal}}-${Date.now()}`;
+  await create{{aggregatePascal}}({ name });
+  query.name = name;
+  await loadData();
 }
 
 onMounted(() => {

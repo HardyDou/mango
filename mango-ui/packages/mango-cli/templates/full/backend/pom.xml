@@ -7,10 +7,17 @@
     <groupId>{{groupId}}</groupId>
     <artifactId>{{projectKebab}}-backend</artifactId>
     <version>{{projectVersion}}</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <name>{{projectPascal}} Backend</name>
     <description>{{presetLabel}} Mango Admin backend consumer</description>
+
+    <modules>
+        <module>app</module>
+        <!-- mango-cli:business-modules:start -->
+{{backendBusinessModules}}
+        <!-- mango-cli:business-modules:end -->
+    </modules>
 
     <properties>
         <java.version>21</java.version>
@@ -20,6 +27,8 @@
         <spring-boot.version>{{springBootVersion}}</spring-boot.version>
         <spring-cloud.version>{{springCloudVersion}}</spring-cloud.version>
         <mango.version>{{mangoBackendVersion}}</mango.version>
+        <springdoc-openapi.version>{{springdocOpenapiVersion}}</springdoc-openapi.version>
+        <swagger-annotations.version>{{swaggerAnnotationsVersion}}</swagger-annotations.version>
     </properties>
 
     <repositories>
@@ -51,16 +60,6 @@
         </dependencies>
     </dependencyManagement>
 
-    <dependencies>
-        <!-- mango-cli:dependencies:start -->
-{{backendDependencies}}
-        <!-- mango-cli:dependencies:end -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -69,14 +68,6 @@
                 <version>{{mavenCompilerPluginVersion}}</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
-                <configuration>
-                    <mainClass>{{basePackage}}.{{projectPascal}}Application</mainClass>
                 </configuration>
             </plugin>
         </plugins>

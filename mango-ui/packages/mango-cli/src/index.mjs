@@ -7,6 +7,7 @@ const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
 const templateRoot = resolve(packageRoot, 'templates/full');
+const businessStarterRoot = resolve(repoRoot, 'mango-business-starter');
 
 const defaultVersions = {
   mangoBackend: '1.0.0-SNAPSHOT',
@@ -40,6 +41,8 @@ const defaultVersions = {
   mavenCompilerPlugin: '3.15.0',
   springBoot: '3.5.14',
   springCloud: '2025.0.1',
+  springdocOpenapi: '2.8.9',
+  swaggerAnnotations: '2.2.30',
 };
 
 const CORE_FRONTEND_PACKAGES = [
@@ -82,6 +85,24 @@ const CORE_BACKEND_DEPENDENCIES = [
   { groupId: 'io.mango.platform.org', artifactId: 'mango-org-starter' },
   { groupId: 'io.mango.platform.captcha', artifactId: 'mango-captcha-starter' },
   { groupId: 'io.mango.platform.system', artifactId: 'mango-system-starter' },
+];
+
+const BUSINESS_BACKEND_MANAGED_DEPENDENCIES = [
+  { groupId: 'io.mango.common', artifactId: 'mango-common' },
+  { groupId: 'io.mango.infra.web', artifactId: 'mango-infra-web-starter' },
+  { groupId: 'io.mango.infra.persistence', artifactId: 'mango-infra-persistence-starter' },
+  { groupId: 'io.mango.infra.persistence', artifactId: 'mango-infra-persistence-web-starter' },
+  { groupId: 'io.mango.infra.feign', artifactId: 'mango-infra-feign-starter' },
+  {
+    groupId: 'org.springdoc',
+    artifactId: 'springdoc-openapi-starter-common',
+    version: '${springdoc-openapi.version}',
+  },
+  {
+    groupId: 'io.swagger.core.v3',
+    artifactId: 'swagger-annotations',
+    version: '${swagger-annotations.version}',
+  },
 ];
 
 const OPTIONAL_MODULES = [
@@ -199,6 +220,7 @@ Usage:
   mango init <project> --preset full [options]
   mango init <project> --preset custom --modules workflow,template [options]
   mango add <module...> [options]
+  mango module add <module> --aggregate <name> [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
 
@@ -212,6 +234,8 @@ Options:
   --mango-version <value>  Mango Maven version, default: ${defaultVersions.mangoBackend}
   --npm-registry <url>     NPM registry written to project .npmrc
   --maven-repository <url> Maven repository URL written to generated pom.xml
+  --aggregate <name>       Business aggregate name for mango module add
+  --module-name <name>     Business module display name for mango module add
   --force                  Overwrite existing target directory
   --help                   Show help
 
@@ -223,6 +247,15 @@ function main(argv = process.argv.slice(2)) {
   const args = normalizeArgs(argv);
   if (args.includes('--help') || args.includes('-h')) {
     process.stdout.write(usage.trimStart());
+    return;
+  }
+
+  if (args[0] === 'module') {
+    const subCommand = args[1];
+    if (subCommand !== 'add') {
+      fail(`unknown module command: ${subCommand || ''}`);
+    }
+    addBusinessModule(args.slice(2));
     return;
   }
 
@@ -402,6 +435,8 @@ function buildVariables(options) {
     mavenCompilerPluginVersion: defaultVersions.mavenCompilerPlugin,
     springBootVersion: defaultVersions.springBoot,
     springCloudVersion: defaultVersions.springCloud,
+    springdocOpenapiVersion: defaultVersions.springdocOpenapi,
+    swaggerAnnotationsVersion: defaultVersions.swaggerAnnotations,
     npmRegistry: ensureTrailingSlash(options.npmRegistry),
     mavenRepository: ensureTrailingSlash(options.mavenRepository),
     mangoBaselineCommit: readMangoBaselineCommit(),
@@ -416,6 +451,9 @@ function buildVariables(options) {
     backendDependencies: renderBackendDependencies(options.preset, selectedModules),
     runtimeModulesJson: renderRuntimeModulesJson(selectedModules, 'local'),
     runtimeModulesMicroserviceJson: renderRuntimeModulesJson(selectedModules, 'micro'),
+    backendBusinessModules: '',
+    backendBusinessDependencies: '',
+    backendBusinessFlywayModules: '',
   };
 }
 
@@ -484,6 +522,106 @@ function addModules(argv) {
   updateBackendPom(targetDir, variables);
   writeMangoConfig(targetDir, variables);
   process.stdout.write(`Added Mango modules: ${modulesToAdd.join(', ')}\n`);
+}
+
+function addBusinessModule(argv) {
+  const options = parseBusinessModuleArgs(argv);
+  const targetDir = resolve(process.cwd(), options.projectDir);
+  const configPath = join(targetDir, 'mango.config.json');
+  if (!existsSync(configPath)) {
+    fail(`mango.config.json not found in ${targetDir}`);
+  }
+  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const moduleKebab = toKebabCase(options.module);
+  const aggregateKebab = toKebabCase(options.aggregate);
+  if (!moduleKebab) {
+    fail('missing business module name');
+  }
+  if (!aggregateKebab) {
+    fail('missing business aggregate name');
+  }
+  const moduleTarget = join(targetDir, 'backend/modules', moduleKebab);
+  if (existsSync(moduleTarget) && !options.force) {
+    fail(`business module already exists: ${moduleKebab}`);
+  }
+  const variables = {
+    ...buildVariables({
+      project: config.project || basename(targetDir),
+      preset: config.preset || 'custom',
+      topology: config.topology || 'monolith',
+      packageName: config.basePackage || 'com.example.mango',
+      groupId: config.groupId || config.basePackage || 'com.example.mango',
+      version: config.projectVersion || '1.0.0-SNAPSHOT',
+      mangoVersion: config.mangoBackendVersion || defaultVersions.mangoBackend,
+      npmRegistry: config.npmRegistry || 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
+      mavenRepository: config.mavenRepository || 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+      modules: (config.modules?.optional || []).join(','),
+    }),
+    moduleKebab,
+    modulePackage: toJavaSegment(moduleKebab),
+    modulePascal: toPascalCase(moduleKebab),
+    moduleCamel: toCamelCase(moduleKebab),
+    moduleName: options.moduleName || `${toPascalCase(moduleKebab)}模块`,
+    moduleKebabSnake: toSnakeCase(moduleKebab),
+    aggregateKebab,
+    aggregateKebabSnake: toSnakeCase(aggregateKebab),
+    aggregatePascal: toPascalCase(aggregateKebab),
+    aggregateCamel: toCamelCase(aggregateKebab),
+    backendBusinessFlywayModules: '',
+  };
+  copyTemplate(join(businessStarterRoot, 'backend/modules/{{moduleKebab}}'), moduleTarget, variables);
+  copyTemplate(join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}-api'), join(targetDir, 'frontend/packages', `${moduleKebab}-api`), variables);
+  copyTemplate(join(businessStarterRoot, 'frontend/packages/{{moduleKebab}}'), join(targetDir, 'frontend/packages', moduleKebab), variables);
+  assertNoUnrenderedPlaceholders(targetDir, [
+    `backend/modules/${moduleKebab}`,
+    `frontend/packages/${moduleKebab}-api`,
+    `frontend/packages/${moduleKebab}`,
+  ]);
+  updateBackendBusinessIntegration(targetDir, variables);
+  updateFrontendBusinessIntegration(targetDir, variables);
+  updateBusinessConfig(targetDir, config, variables);
+  process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
+}
+
+function parseBusinessModuleArgs(argv) {
+  const result = {
+    projectDir: '.',
+    module: '',
+    aggregate: '',
+    moduleName: '',
+    force: false,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--force') {
+      result.force = true;
+      continue;
+    }
+    if (['--project-dir', '--aggregate', '--module-name'].includes(arg)) {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        fail(`missing value for ${arg}`);
+      }
+      index += 1;
+      if (arg === '--project-dir') {
+        result.projectDir = next;
+      } else if (arg === '--aggregate') {
+        result.aggregate = next;
+      } else {
+        result.moduleName = next;
+      }
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      fail(`unknown option: ${arg}`);
+    }
+    if (!result.module) {
+      result.module = arg;
+      continue;
+    }
+    fail(`unexpected argument: ${arg}`);
+  }
+  return result;
 }
 
 function parseAddArgs(argv) {
@@ -573,14 +711,131 @@ function updateRuntimeConfigFiles(targetDir, variables) {
 }
 
 function updateBackendPom(targetDir, variables) {
-  const pomPath = join(targetDir, 'backend/pom.xml');
-  const content = readFileSync(pomPath, 'utf8');
-  const nextContent = replaceXmlManagedBlock(
-    replaceXmlManagedBlock(content, 'managed-dependencies', variables.backendManagedDependencies),
+  const parentPomPath = join(targetDir, 'backend/pom.xml');
+  const appPomPath = join(targetDir, 'backend/app/pom.xml');
+  const nextParentPom = replaceXmlManagedBlock(
+    readFileSync(parentPomPath, 'utf8'),
+    'managed-dependencies',
+    variables.backendManagedDependencies,
+    'backend/pom.xml',
+  );
+  const nextAppPom = replaceXmlManagedBlock(
+    readFileSync(appPomPath, 'utf8'),
     'dependencies',
     variables.backendDependencies,
+    'backend/app/pom.xml',
   );
-  writeFileSync(pomPath, nextContent);
+  writeFileSync(parentPomPath, nextParentPom);
+  writeFileSync(appPomPath, nextAppPom);
+}
+
+function updateBackendBusinessIntegration(targetDir, variables) {
+  const backendPomPath = join(targetDir, 'backend/pom.xml');
+  const appPomPath = join(targetDir, 'backend/app/pom.xml');
+  const moduleLine = `        <module>modules/${variables.moduleKebab}</module>`;
+  const dependencyXml = [
+    '        <dependency>',
+    `            <groupId>${variables.groupId}</groupId>`,
+    `            <artifactId>${variables.moduleKebab}-starter</artifactId>`,
+    `            <version>${variables.projectVersion}</version>`,
+    '        </dependency>',
+  ].join('\n');
+  writeFileSync(backendPomPath, appendManagedLine(readFileSync(backendPomPath, 'utf8'), 'business-modules', moduleLine));
+  writeFileSync(appPomPath, appendManagedLine(readFileSync(appPomPath, 'utf8'), 'business-dependencies', dependencyXml));
+  updateBackendBusinessFlywayConfig(targetDir, variables);
+}
+
+function updateBackendBusinessFlywayConfig(targetDir, variables) {
+  const applicationPath = join(targetDir, 'backend/app/src/main/resources/application.yml');
+  const flywayModuleBlock = [
+    `        ${variables.moduleKebab}:`,
+    '          enabled: true',
+  ].join('\n');
+  writeFileSync(
+    applicationPath,
+    appendYamlManagedBlock(readFileSync(applicationPath, 'utf8'), 'business-flyway-modules', flywayModuleBlock),
+  );
+}
+
+function updateFrontendBusinessIntegration(targetDir, variables) {
+  const packagePath = join(targetDir, 'frontend/package.json');
+  const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
+  packageJson.dependencies = packageJson.dependencies || {};
+  packageJson.workspaces = ensureWorkspace(packageJson.workspaces, 'packages/*');
+  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}`] = variables.projectVersion;
+  packageJson.dependencies[`@${variables.projectKebab}/${variables.moduleKebab}-api`] = variables.projectVersion;
+  writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+
+  const entryPath = join(targetDir, 'frontend/src/main.ts');
+  const content = readFileSync(entryPath, 'utf8');
+  const importLine = `import { register${variables.modulePascal}Pages } from '@${variables.projectKebab}/${variables.moduleKebab}';`;
+  const registerLine = `register${variables.modulePascal}Pages();`;
+  const withImport = content.includes(importLine)
+    ? content
+    : content.replace('// mango-cli:imports:end', `${importLine}\n// mango-cli:imports:end`);
+  const marker = '// mango-cli:business-registrars';
+  const withMarker = withImport.includes(marker)
+    ? withImport
+    : withImport.replace('createMangoAdminApp({', `${marker}\n\ncreateMangoAdminApp({`);
+  const next = withMarker.includes(registerLine)
+    ? withMarker
+    : withMarker.replace(marker, `${marker}\n${registerLine}`);
+  writeFileSync(entryPath, next);
+}
+
+function updateBusinessConfig(targetDir, config, variables) {
+  const businessModules = Array.isArray(config.businessModules) ? config.businessModules : [];
+  const nextModules = businessModules.filter(item => item.module !== variables.moduleKebab);
+  nextModules.push({
+    module: variables.moduleKebab,
+    aggregate: variables.aggregateKebab,
+    package: variables.modulePackage,
+    displayName: variables.moduleName,
+  });
+  config.businessModules = nextModules;
+  writeFileSync(join(targetDir, 'mango.config.json'), `${JSON.stringify(config, null, 2)}\n`);
+}
+
+function ensureWorkspace(workspaces, pattern) {
+  const list = Array.isArray(workspaces) ? workspaces : [];
+  return list.includes(pattern) ? list : [...list, pattern];
+}
+
+function appendManagedLine(content, name, line) {
+  const start = `<!-- mango-cli:${name}:start -->`;
+  const end = `<!-- mango-cli:${name}:end -->`;
+  const startIndex = content.indexOf(start);
+  const endIndex = content.indexOf(end);
+  if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+    fail(`managed block not found: ${name}`);
+  }
+  const block = content.slice(startIndex + start.length, endIndex);
+  if (block.includes(line)) {
+    return content;
+  }
+  const nextBlock = block.trim() ? `${block.trimEnd()}\n${line}\n` : `\n${line}\n`;
+  return `${content.slice(0, startIndex + start.length)}${nextBlock}${content.slice(endIndex)}`;
+}
+
+function appendYamlManagedBlock(content, name, block) {
+  const start = `# mango-cli:${name}:start`;
+  const end = `# mango-cli:${name}:end`;
+  const startIndex = content.indexOf(start);
+  const endIndex = content.indexOf(end);
+  if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+    fail(`managed block not found: ${name}`);
+  }
+  const startLineEnd = content.indexOf('\n', startIndex);
+  const endLineStart = content.lastIndexOf('\n', endIndex) + 1;
+  if (startLineEnd < 0 || endLineStart <= startLineEnd) {
+    fail(`invalid managed block: ${name}`);
+  }
+  const currentBlock = content.slice(startLineEnd + 1, endLineStart);
+  if (currentBlock.includes(block)) {
+    return content;
+  }
+  const nextBlock = currentBlock.trim() ? `${currentBlock.trimEnd()}\n${block}\n` : `${block}\n`;
+  return `${content.slice(0, startLineEnd + 1)}${nextBlock}${content.slice(endLineStart)}`;
 }
 
 function replaceManagedBlock(content, name, replacement) {
@@ -600,13 +855,13 @@ function replaceManagedBlock(content, name, replacement) {
   ].join('');
 }
 
-function replaceXmlManagedBlock(content, name, replacement) {
+function replaceXmlManagedBlock(content, name, replacement, fileLabel = 'backend/pom.xml') {
   const start = `<!-- mango-cli:${name}:start -->`;
   const end = `<!-- mango-cli:${name}:end -->`;
   const startIndex = content.indexOf(start);
   const endIndex = content.indexOf(end);
   if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
-    fail(`managed block not found in backend/pom.xml: ${name}`);
+    fail(`managed block not found in ${fileLabel}: ${name}`);
   }
   return [
     content.slice(0, startIndex + start.length),
@@ -707,10 +962,14 @@ function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
 
 function renderBackendManagedDependencies(preset, selectedModules) {
   if (preset === 'full') {
-    return renderDependencyXml([{ groupId: 'io.mango', artifactId: 'mango-admin-starter' }], true, 12);
+    return renderDependencyXml(
+      [{ groupId: 'io.mango', artifactId: 'mango-admin-starter' }, ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES],
+      true,
+      12,
+    );
   }
   return renderDependencyXml(
-    [...CORE_BACKEND_DEPENDENCIES, ...selectedModules.flatMap(module => module.backend || [])],
+    [...CORE_BACKEND_DEPENDENCIES, ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES, ...selectedModules.flatMap(module => module.backend || [])],
     true,
     12,
   );
@@ -735,7 +994,7 @@ function renderDependencyXml(dependencies, includeVersion, indentSize) {
       `${indent}<dependency>`,
       `${childIndent}<groupId>${dependency.groupId}</groupId>`,
       `${childIndent}<artifactId>${dependency.artifactId}</artifactId>`,
-      ...(includeVersion ? [`${childIndent}<version>${'${mango.version}'}</version>`] : []),
+      ...(includeVersion ? [`${childIndent}<version>${dependency.version || '${mango.version}'}</version>`] : []),
       `${indent}</dependency>`,
     ].join('\n'))
     .join('\n');
@@ -801,9 +1060,45 @@ function renderTemplateFileName(value, variables) {
   return rendered.endsWith('.template') ? rendered.slice(0, -'.template'.length) : rendered;
 }
 
+function assertNoUnrenderedPlaceholders(targetDir, relativePaths) {
+  for (const relativePath of relativePaths) {
+    const root = join(targetDir, relativePath);
+    for (const file of walkFiles(root)) {
+      const rel = relative(targetDir, file);
+      if (/\{\{[^}]+}}/.test(rel)) {
+        fail(`unrendered placeholder in path: ${rel}`);
+      }
+      if (!isTextFile(file)) {
+        continue;
+      }
+      const content = readFileSync(file, 'utf8');
+      const match = content.match(/\{\{[^}]+}}/);
+      if (match) {
+        fail(`unrendered placeholder ${match[0]} in ${rel}`);
+      }
+    }
+  }
+}
+
+function walkFiles(root) {
+  if (!existsSync(root)) {
+    return [];
+  }
+  const result = [];
+  for (const entry of readdirSync(root)) {
+    const fullPath = join(root, entry);
+    if (statSync(fullPath).isDirectory()) {
+      result.push(...walkFiles(fullPath));
+    } else {
+      result.push(fullPath);
+    }
+  }
+  return result;
+}
+
 function isTextFile(file) {
   const name = basename(file);
-  return /\.(md|json|xml|java|ts|vue|html|mjs|yml|yaml|txt|gitignore|npmrc|properties)$/.test(name)
+  return /\.(md|json|xml|java|ts|vue|html|mjs|yml|yaml|txt|gitignore|npmrc|properties|imports|sql)$/.test(name)
     || name.endsWith('.template')
     || name === 'CODEOWNERS'
     || name === 'AGENTS.md';
@@ -906,6 +1201,23 @@ function toPascalCase(value) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join('');
+}
+
+function toCamelCase(value) {
+  const pascal = toPascalCase(value);
+  return pascal ? pascal.charAt(0).toLowerCase() + pascal.slice(1) : '';
+}
+
+function toSnakeCase(value) {
+  return toKebabCase(value).replaceAll('-', '_');
+}
+
+function toJavaSegment(value) {
+  const segment = toCamelCase(value).replace(/[^a-zA-Z0-9_]/g, '');
+  if (!segment || !/^[a-zA-Z_]/.test(segment)) {
+    fail(`invalid Java package segment: ${value}`);
+  }
+  return segment;
 }
 
 function printNextSteps(targetDir, variables) {

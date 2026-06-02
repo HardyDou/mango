@@ -1,36 +1,33 @@
 package {{basePackage}}.{{modulePackage}}.core.service.impl;
 
-import {{basePackage}}.{{modulePackage}}.api.command.Create{{aggregatePascal}}Command;
-import {{basePackage}}.{{modulePackage}}.api.query.{{aggregatePascal}}PageQuery;
 import {{basePackage}}.{{modulePackage}}.api.vo.{{aggregatePascal}}VO;
+import {{basePackage}}.{{modulePackage}}.core.entity.{{aggregatePascal}}Entity;
+import {{basePackage}}.{{modulePackage}}.core.mapper.{{aggregatePascal}}Mapper;
 import {{basePackage}}.{{modulePackage}}.core.service.I{{aggregatePascal}}Service;
-import io.mango.common.vo.PageResult;
-import java.util.List;
+import io.mango.infra.persistence.starter.crud.MangoCrudServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
  * {{aggregatePascal}}服务实现。
  */
 @Service
-public class {{aggregatePascal}}Service implements I{{aggregatePascal}}Service {
+public class {{aggregatePascal}}Service
+        extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>
+        implements I{{aggregatePascal}}Service {
 
     @Override
-    public {{aggregatePascal}}VO create(Create{{aggregatePascal}}Command command) {
+    protected {{aggregatePascal}}VO toVO({{aggregatePascal}}Entity entity) {
+        if (entity == null) {
+            return null;
+        }
         {{aggregatePascal}}VO vo = new {{aggregatePascal}}VO();
-        vo.setId("replace-with-generated-id");
-        vo.setName(command.getName());
+        vo.setId(String.valueOf(entity.getId()));
+        vo.setName(entity.getName());
         return vo;
     }
 
     @Override
-    public PageResult<{{aggregatePascal}}VO> page({{aggregatePascal}}PageQuery query) {
-        return PageResult.of(List.of(), 0L, query.getPageNo(), query.getPageSize());
-    }
-
-    @Override
-    public {{aggregatePascal}}VO detail(String id) {
-        {{aggregatePascal}}VO vo = new {{aggregatePascal}}VO();
-        vo.setId(id);
-        return vo;
+    protected Class<{{aggregatePascal}}Entity> entityType() {
+        return {{aggregatePascal}}Entity.class;
     }
 }

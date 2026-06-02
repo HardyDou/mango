@@ -8,6 +8,7 @@
         <groupId>{{groupId}}</groupId>
         <artifactId>{{moduleKebab}}</artifactId>
         <version>{{projectVersion}}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>{{moduleKebab}}-starter-remote</artifactId>
@@ -19,7 +20,7 @@
             <version>{{projectVersion}}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.feign</groupId>
             <artifactId>mango-infra-feign-starter</artifactId>
         </dependency>
     </dependencies>

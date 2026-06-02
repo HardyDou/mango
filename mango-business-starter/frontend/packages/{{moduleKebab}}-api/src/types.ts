@@ -5,8 +5,8 @@ export interface Create{{aggregatePascal}}Command {
 }
 
 export interface {{aggregatePascal}}PageQuery {
-  pageNo: number;
-  pageSize: number;
+  page: number;
+  size: number;
   name?: string;
 }
 
@@ -16,7 +16,7 @@ export interface {{aggregatePascal}}VO {
 }
 
 export interface PageResult<T> {
-  list: T[];
+  records: T[];
   total: number;
   page: number;
   size: number;

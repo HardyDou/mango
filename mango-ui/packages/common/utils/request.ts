@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { ApiId } from '@mango/api-schema';
 import { Session } from './storage';
 import { mangoMessage } from './message';
@@ -184,11 +184,18 @@ function hideLoading(): void {
 /**
  * 处理 Token
  */
-function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
+function ensureHeaders(config: InternalAxiosRequestConfig): AxiosHeaders {
+  if (config.headers instanceof AxiosHeaders) {
+    return config.headers;
+  }
+  config.headers = new AxiosHeaders(config.headers);
+  return config.headers;
+}
+
+function handleToken(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
   const token = Session.getToken();
   if (token) {
-    config.headers = config.headers || {};
-    config.headers['Authorization'] = `Bearer ${token}`;
+    ensureHeaders(config).set('Authorization', `Bearer ${token}`);
   }
   return config;
 }
@@ -196,13 +203,13 @@ function handleToken(config: AxiosRequestConfig): AxiosRequestConfig {
 /**
  * 处理机构隔离 ID
  */
-function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
+function handleTenantId(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
   const userInfo = Session.get('userInfo');
   const tenantId = userInfo?.tenantId ?? Session.get('tenantId');
   if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
-    config.headers = config.headers || {};
-    config.headers['X-Mango-Tenant-Id'] = String(tenantId);
-    config.headers['TENANT-ID'] = String(tenantId);
+    const headers = ensureHeaders(config);
+    headers.set('X-Mango-Tenant-Id', String(tenantId));
+    headers.set('TENANT-ID', String(tenantId));
   }
   return config;
 }
@@ -212,19 +219,19 @@ function handleTenantId(config: AxiosRequestConfig): AxiosRequestConfig {
  * 请求拦截器
  */
 service.interceptors.request.use(
-  async (config: RequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
+    const requestConfig = config as InternalAxiosRequestConfig & RequestConfig;
     showLoading();
 
-    if (shouldRefreshToken(config)) {
+    if (shouldRefreshToken(requestConfig)) {
       const refreshedToken = await refreshAccessToken();
       if (refreshedToken) {
-        config.headers = config.headers || {};
-        config.headers['Authorization'] = `Bearer ${refreshedToken}`;
+        ensureHeaders(config).set('Authorization', `Bearer ${refreshedToken}`);
       }
     }
 
     // 添加 Token
-    if (!config.ignoreToken) {
+    if (!requestConfig.ignoreToken) {
       handleToken(config);
     }
 

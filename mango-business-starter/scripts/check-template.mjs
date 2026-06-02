@@ -47,10 +47,12 @@ const requiredFiles = [
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Create{{aggregatePascal}}Command.java',
+  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/command/Update{{aggregatePascal}}Command.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/vo/{{aggregatePascal}}VO.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/pom.xml',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/entity/{{aggregatePascal}}Entity.java',
+  'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/mapper/{{aggregatePascal}}Mapper.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/I{{aggregatePascal}}Service.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java',
   'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql',
@@ -75,11 +77,23 @@ const requiredFiles = [
 const contentChecks = [
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
-    patterns: ['R<{{aggregatePascal}}VO>', 'R<PageResult<{{aggregatePascal}}VO>>', '@ParameterObject', '@Validated'],
+    patterns: ['R<Object>', 'R<PersistencePageResult<?>>', '@ParameterObject', '@Validated', '/create', '/page', '/detail'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
-    patterns: ['implements {{modulePascal}}Api', 'I{{aggregatePascal}}Service', '@RequestMapping("/{{moduleKebab}}")'],
+    patterns: ['extends BaseCrudController', 'I{{aggregatePascal}}Service', '@RequestMapping("/{{moduleKebab}}/{{aggregateKebab}}s")'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/pom.xml',
+    patterns: ['io.mango.infra.web', 'mango-infra-persistence-web-starter'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/pom.xml',
+    patterns: ['io.mango.infra.feign', 'mango-infra-feign-starter'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/query/{{aggregatePascal}}PageQuery.java',
+    patterns: ['extends PageQuery', '@QueryField(type = QueryType.LIKE)'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/module.properties',
@@ -95,7 +109,15 @@ const contentChecks = [
   },
   {
     file: 'frontend/packages/{{moduleKebab}}-api/src/api.ts',
-    patterns: ["from '@mango/common/utils/request'", 'post<{{aggregatePascal}}VO>', 'get<PageResult<{{aggregatePascal}}VO>>'],
+    patterns: ["from '@mango/common/utils/request'", 'post<string>', 'get<PageResult<{{aggregatePascal}}VO>>', '`${basePath}/create`', '`${basePath}/page`'],
+  },
+  {
+    file: 'frontend/packages/{{moduleKebab}}-api/src/types.ts',
+    patterns: ['page: number', 'size: number', 'records: T[]'],
+  },
+  {
+    file: 'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
+    patterns: ['create{{aggregatePascal}}', 'records.value = result.records', 'page: 1', 'size: 20'],
   },
   {
     file: 'frontend/packages/{{moduleKebab}}/src/index.ts',
@@ -112,6 +134,14 @@ const contentChecks = [
   {
     file: 'topologies/microservice/README.md',
     patterns: ['{{moduleKebab}}-starter-remote', '调用方不得依赖 `{{moduleKebab}}-core`'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/pom.xml',
+    patterns: ['<relativePath>../../pom.xml</relativePath>'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/pom.xml',
+    patterns: ['<relativePath>../pom.xml</relativePath>', 'mango-infra-persistence-starter'],
   },
   {
     file: 'AGENTS.md',

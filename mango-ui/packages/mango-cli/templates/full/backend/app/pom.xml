@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>{{groupId}}</groupId>
+        <artifactId>{{projectKebab}}-backend</artifactId>
+        <version>{{projectVersion}}</version>
+    </parent>
+
+    <artifactId>{{projectKebab}}-app</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- mango-cli:dependencies:start -->
+{{backendDependencies}}
+        <!-- mango-cli:dependencies:end -->
+        <!-- mango-cli:business-dependencies:start -->
+{{backendBusinessDependencies}}
+        <!-- mango-cli:business-dependencies:end -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>{{basePackage}}.{{projectPascal}}Application</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
