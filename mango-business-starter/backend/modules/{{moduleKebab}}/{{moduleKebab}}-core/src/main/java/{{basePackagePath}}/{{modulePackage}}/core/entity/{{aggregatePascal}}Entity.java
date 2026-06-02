@@ -1,21 +1,15 @@
 package {{basePackage}}.{{modulePackage}}.core.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.TenantEntity;
+
 /**
  * {{aggregatePascal}}持久化实体。
  */
-public class {{aggregatePascal}}Entity {
-
-    private String id;
+@TableName("{{moduleKebabSnake}}_{{aggregateKebabSnake}}")
+public class {{aggregatePascal}}Entity extends TenantEntity {
 
     private String name;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;

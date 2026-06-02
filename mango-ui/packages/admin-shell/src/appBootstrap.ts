@@ -3,6 +3,7 @@ import { createPinia, type Pinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import { createI18n, type I18n } from 'vue-i18n';
+import { auth, authAll, auths } from '@mango/common/utils/authFunction';
 import { mangoMessage } from '@mango/common/utils/message';
 import { installMangoAuth } from '@mango/auth';
 import type { MangoAdminShellOptions } from './config';
@@ -73,6 +74,7 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);
   }
+  installAuthDirectives(app);
   app.use(ElementPlus);
   app.use(getShellPinia());
   app.use(getShellI18n());
@@ -109,4 +111,28 @@ export function installShellApp(app: VueApp, options: MangoAdminShellOptions = g
     }
     mangoMessage.error('系统错误，请刷新页面');
   };
+}
+
+function installAuthDirectives(app: VueApp) {
+  app.directive('auth', {
+    mounted(el, binding) {
+      if (!auth(binding.value)) {
+        el.parentNode?.removeChild(el);
+      }
+    },
+  });
+  app.directive('auths', {
+    mounted(el, binding) {
+      if (!auths(Array.isArray(binding.value) ? binding.value : [])) {
+        el.parentNode?.removeChild(el);
+      }
+    },
+  });
+  app.directive('auth-all', {
+    mounted(el, binding) {
+      if (!authAll(Array.isArray(binding.value) ? binding.value : [])) {
+        el.parentNode?.removeChild(el);
+      }
+    },
+  });
 }

@@ -1,60 +1,20 @@
 <template>
   <div class="home-container">
     <el-row :gutter="20">
-      <el-col :span="8">
+      <el-col
+        v-for="item in platformCards"
+        :key="item.title"
+        :span="8"
+      >
         <el-card class="stat-card">
-          <div
-            class="stat-icon stat-icon-user"
-          >
+          <div :class="['stat-icon', item.iconClass]">
             <el-icon :size="32">
-              <User />
+              <component :is="item.icon" />
             </el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">
-              1,234
-            </div>
-            <div class="stat-label">
-              用户总数
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card class="stat-card">
-          <div
-            class="stat-icon stat-icon-document"
-          >
-            <el-icon :size="32">
-              <Document />
-            </el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">
-              5,678
-            </div>
-            <div class="stat-label">
-              订单总数
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card class="stat-card">
-          <div
-            class="stat-icon stat-icon-chart"
-          >
-            <el-icon :size="32">
-              <TrendCharts />
-            </el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">
-              98.5%
-            </div>
-            <div class="stat-label">
-              系统效率
-            </div>
+            <div class="stat-value">{{ item.title }}</div>
+            <div class="stat-label">{{ item.description }}</div>
           </div>
         </el-card>
       </el-col>
@@ -67,42 +27,28 @@
       <el-col :span="16">
         <el-card>
           <template #header>
-            <span>数据概览</span>
+            <span>平台状态</span>
           </template>
           <div class="chart-container">
-            <el-empty description="图表区域" />
+            <el-empty description="请选择左侧菜单进入具体能力" />
           </div>
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card>
           <template #header>
-            <span>快捷入口</span>
+            <span>常用能力</span>
           </template>
           <div class="quick-entry">
-            <div class="quick-item">
+            <div
+              v-for="item in quickEntries"
+              :key="item.title"
+              class="quick-item"
+            >
               <el-icon :size="24">
-                <Setting />
+                <component :is="item.icon" />
               </el-icon>
-              <span>系统设置</span>
-            </div>
-            <div class="quick-item">
-              <el-icon :size="24">
-                <User />
-              </el-icon>
-              <span>用户管理</span>
-            </div>
-            <div class="quick-item">
-              <el-icon :size="24">
-                <Document />
-              </el-icon>
-              <span>订单管理</span>
-            </div>
-            <div class="quick-item">
-              <el-icon :size="24">
-                <DataLine />
-              </el-icon>
-              <span>数据分析</span>
+              <span>{{ item.title }}</span>
             </div>
           </div>
         </el-card>
@@ -112,7 +58,35 @@
 </template>
 
 <script setup lang="ts" name="MangoShellHome">
-import { DataLine, Document, Setting, TrendCharts, User } from '@element-plus/icons-vue';
+import { Calendar, Files, Menu, Operation, Setting, User } from '@element-plus/icons-vue';
+
+const platformCards = [
+  {
+    title: '权限与组织',
+    description: '用户、角色、菜单、租户基础能力',
+    icon: User,
+    iconClass: 'stat-icon-user',
+  },
+  {
+    title: '流程与协同',
+    description: '审批、任务、通知等流程能力',
+    icon: Operation,
+    iconClass: 'stat-icon-document',
+  },
+  {
+    title: '平台基础能力',
+    description: '文件、模板、编号、日历等通用能力',
+    icon: Calendar,
+    iconClass: 'stat-icon-chart',
+  },
+];
+
+const quickEntries = [
+  { title: '系统设置', icon: Setting },
+  { title: '菜单管理', icon: Menu },
+  { title: '文件中心', icon: Files },
+  { title: '工作日历', icon: Calendar },
+];
 </script>
 
 <style scoped lang="scss">

@@ -14,6 +14,8 @@ const mangoFeatures = {{frontendFeaturesExpression}};
 const mangoFeatureRegistrars = {{frontendFeatureRegistrarsExpression}};
 // mango-cli:features:end
 
+// mango-cli:business-registrars
+
 createMangoAdminApp({
   mountTarget: '#app',
   apiBaseUrl: import.meta.env.VITE_MANGO_API_BASE_URL || '/api',

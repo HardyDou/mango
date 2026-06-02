@@ -1,11 +1,11 @@
 # Mango Business Starter
 
-`mango-business-starter` 是 Mango 业务项目的生产起点，不是示例项目。后续 `npm create mango-app@latest`、`create-mango-app` 或 Mango Initializr Web 服务会基于本目录做变量替换和能力选择。
+`mango-business-starter` 是 Mango 业务项目的生产起点，不是示例项目。`mango-cli` 和后续 Mango Initializr Web 服务会基于本目录做变量替换和能力选择。
 
 命名边界：
 
 - `mango-business-starter`：业务项目 starter 资产。
-- `create-mango-app`：本地 CLI 初始化入口。
+- `mango-cli`：本地 CLI 初始化和企业业务模块生成入口。
 - `Mango Initializr`：后续 Web 生成服务。
 - `mango-admin-starter`、`mango-file-preview-starter`：Maven starter 依赖，不与业务项目 starter 混用。
 
@@ -13,7 +13,7 @@
 
 ## 1. 使用方式
 
-当前阶段可以把本目录复制为业务项目 starter 仓，或使用 `create-mango-app` 生成业务项目。生成后的项目应按业务命名，例如 `guarantee-platform`、`baohan-platform`，不要命名为 `mango-starter`。
+当前阶段应使用 `mango-cli` 生成业务项目和追加企业业务模块。生成后的项目应按业务命名，例如 `guarantee-platform`、`baohan-platform`，不要命名为 `mango-starter`。
 
 | 占位符 | 示例 | 说明 |
 |---|---|---|
@@ -22,11 +22,15 @@
 | `{{moduleKebab}}` | `guarantee` | 业务模块名 |
 | `{{modulePackage}}` | `guarantee` | Java 包名中的模块段 |
 | `{{modulePascal}}` | `Guarantee` | Java/TS 类型模块名 |
+| `{{moduleCamel}}` | `guarantee` | Java/TS 变量模块名 |
+| `{{moduleName}}` | `业务模块` | 菜单展示名 |
 | `{{aggregateKebab}}` | `letter` | 聚合名 |
 | `{{aggregatePascal}}` | `Letter` | 聚合 PascalCase 名 |
+| `{{aggregateCamel}}` | `letter` | Java/TS 变量聚合名 |
 | `{{basePackage}}` | `com.example.business` | Java 基础包名 |
 | `{{basePackagePath}}` | `com/example/business` | Java 基础包路径 |
-| `{{moduleName}}` | `业务模块` | 菜单展示名 |
+| `{{moduleKebabSnake}}` | `guarantee` | 数据库表名前缀 |
+| `{{aggregateKebabSnake}}` | `letter` | 数据库表名后缀 |
 
 ## 2. 推荐结构
 

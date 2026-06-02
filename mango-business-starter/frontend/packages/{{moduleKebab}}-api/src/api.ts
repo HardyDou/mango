@@ -9,11 +9,11 @@ import type {
 const basePath = '/{{moduleKebab}}/{{aggregateKebab}}s';
 
 export function create{{aggregatePascal}}(command: Create{{aggregatePascal}}Command) {
-  return post<{{aggregatePascal}}VO>(basePath, command);
+  return post<string>(`${basePath}/create`, command);
 }
 
 export function page{{aggregatePascal}}(query: {{aggregatePascal}}PageQuery) {
-  return get<PageResult<{{aggregatePascal}}VO>>(basePath, { params: query });
+  return get<PageResult<{{aggregatePascal}}VO>>(`${basePath}/page`, { params: query });
 }
 
 export function get{{aggregatePascal}}Detail(id: string) {

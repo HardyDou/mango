@@ -42,8 +42,9 @@ try {
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
     'backend/pom.xml',
-    'backend/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
-    'backend/src/main/resources/application.yml',
+    'backend/app/pom.xml',
+    'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
+    'backend/app/src/main/resources/application.yml',
     'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
     'business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs',
     'business-pmo/mango-baseline/templates/acceptance-evidence.md',
@@ -94,10 +95,11 @@ try {
   }
 
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
-  if (!pom.includes('<artifactId>mango-admin-starter</artifactId>') || pom.includes('{{')) {
-    throw new Error('backend pom was not rendered as Mango full backend');
+  const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
+  if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>') || pom.includes('{{') || appPom.includes('{{')) {
+    throw new Error('backend poms were not rendered as Mango full backend');
   }
-  if (pom.includes('<password>') || pom.includes('_authToken')) {
+  if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
   }
 
@@ -221,15 +223,16 @@ try {
   }
 
   const customPom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
-  if (customPom.includes('<artifactId>mango-admin-starter</artifactId>')) {
+  const customAppPom = readFileSync(join(customRoot, 'backend/app/pom.xml'), 'utf8');
+  if (customAppPom.includes('<artifactId>mango-admin-starter</artifactId>')) {
     throw new Error('custom backend should not depend on full mango-admin-starter');
   }
   for (const expected of ['mango-system-starter', 'mango-workflow-starter', 'mango-template-starter']) {
-    if (!customPom.includes(`<artifactId>${expected}</artifactId>`)) {
+    if (!customAppPom.includes(`<artifactId>${expected}</artifactId>`)) {
       throw new Error(`custom backend missing dependency: ${expected}`);
     }
   }
-  if (customPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
+  if (customAppPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
     throw new Error('custom backend added unselected notice dependency');
   }
   const businessReadmePath = join(customRoot, 'README.md');
@@ -243,8 +246,8 @@ try {
     `${customMain}\nconsole.info('business-owned bootstrap hook');\n`,
   );
   writeFileSync(
-    join(customRoot, 'backend/pom.xml'),
-    customPom.replace(
+    join(customRoot, 'backend/app/pom.xml'),
+    customAppPom.replace(
       '        <dependency>\n            <groupId>org.springframework.boot</groupId>\n            <artifactId>spring-boot-starter-actuator</artifactId>\n        </dependency>',
       [
         '        <dependency>',
@@ -286,7 +289,7 @@ try {
   if (!addedMain.includes("console.info('business-owned bootstrap hook');")) {
     throw new Error('add command overwrote business-owned frontend entry content');
   }
-  const addedPom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
+  const addedPom = readFileSync(join(customRoot, 'backend/app/pom.xml'), 'utf8');
   if (!addedPom.includes('<artifactId>mango-notice-starter</artifactId>')) {
     throw new Error('add command did not update notice backend dependency');
   }
@@ -296,7 +299,80 @@ try {
   assertEqual(readFileSync(businessReadmePath, 'utf8'), businessReadmeBeforeAdd, 'business-owned file after add');
   assertNoUnrenderedPlaceholders(customRoot);
 
-  console.log('mango-cli full/custom/add checks passed.');
+  const moduleAddResult = spawnSync(process.execPath, [
+    cli,
+    'module',
+    'add',
+    'contract',
+    '--aggregate',
+    'seal',
+    '--module-name',
+    '合同管理',
+    '--project-dir',
+    customRoot,
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (moduleAddResult.status !== 0) {
+    throw new Error(`module add command failed:\n${moduleAddResult.stdout}\n${moduleAddResult.stderr}`);
+  }
+  for (const file of [
+    'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/command/UpdateSealCommand.java',
+    'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/entity/SealEntity.java',
+    'backend/modules/contract/contract-core/src/main/java/com/example/custom/contract/core/mapper/SealMapper.java',
+    'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json',
+    'frontend/packages/contract-api/src/api.ts',
+    'frontend/packages/contract/src/index.ts',
+    'frontend/packages/contract/src/views/contract/seal/index.vue',
+  ]) {
+    if (!existsSync(join(customRoot, file))) {
+      throw new Error(`module add missing generated file: ${file}`);
+    }
+  }
+  const modulePom = readFileSync(join(customRoot, 'backend/pom.xml'), 'utf8');
+  const moduleAppPom = readFileSync(join(customRoot, 'backend/app/pom.xml'), 'utf8');
+  const moduleApplicationYml = readFileSync(join(customRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
+  if (!modulePom.includes('<module>modules/contract</module>')) {
+    throw new Error('module add did not register backend module');
+  }
+  if (!modulePom.includes('<artifactId>mango-infra-persistence-starter</artifactId>')
+    || !modulePom.includes('<artifactId>mango-infra-feign-starter</artifactId>')
+    || !modulePom.includes('<artifactId>swagger-annotations</artifactId>')) {
+    throw new Error('module add did not provide business backend dependency management');
+  }
+  if (!moduleAppPom.includes('<artifactId>contract-starter</artifactId>')) {
+    throw new Error('module add did not register app dependency');
+  }
+  if (!moduleApplicationYml.includes('        contract:\n          enabled: true')) {
+    throw new Error('module add did not enable business Flyway migration');
+  }
+  const moduleController = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-starter/src/main/java/com/example/custom/contract/starter/controller/ContractController.java'),
+    'utf8',
+  );
+  if (!moduleController.includes('extends BaseCrudController') || !moduleController.includes('@RequestMapping("/contract/seals")')) {
+    throw new Error('module add did not generate standard CRUD controller');
+  }
+  const moduleApi = readFileSync(join(customRoot, 'frontend/packages/contract-api/src/api.ts'), 'utf8');
+  if (!moduleApi.includes('`${basePath}/create`') || !moduleApi.includes('`${basePath}/page`')) {
+    throw new Error('module add did not generate standard CRUD frontend API');
+  }
+  const moduleMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
+  if (!moduleMain.includes("from '@mango-custom-acceptance/contract'") || !moduleMain.includes('registerContractPages();')) {
+    throw new Error('module add did not register frontend pages');
+  }
+  const moduleConfig = JSON.parse(readFileSync(join(customRoot, 'mango.config.json'), 'utf8'));
+  if (!Array.isArray(moduleConfig.businessModules) || moduleConfig.businessModules[0]?.module !== 'contract') {
+    throw new Error('module add did not update mango.config.json businessModules');
+  }
+  const modulePackageJson = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
+  if (!Array.isArray(modulePackageJson.workspaces) || !modulePackageJson.workspaces.includes('packages/*')) {
+    throw new Error('module add did not configure frontend workspaces');
+  }
+  assertNoUnrenderedPlaceholders(customRoot);
+
+  console.log('mango-cli full/custom/add/module checks passed.');
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

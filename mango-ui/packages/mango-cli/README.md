@@ -48,6 +48,25 @@ mango add notice --project-dir ./claim-admin
 
 Business-owned files are not rewritten by `add`.
 
+## Business Module
+
+Generate an enterprise-owned business module in an existing generated project:
+
+```bash
+mango module add contract --aggregate seal --module-name 合同管理 --project-dir ./claim-admin
+```
+
+`module add` renders the business starter backend module and frontend packages, then updates:
+
+- `backend/pom.xml`
+- `backend/app/pom.xml`
+- `backend/app/src/main/resources/application.yml`
+- `frontend/package.json`
+- `frontend/src/main.ts`
+- `mango.config.json`
+
+The generated backend module uses Mango persistence (`mango-infra-persistence-starter`) and MyBatis-Plus through the framework starter. It enables the business module Flyway migration in the generated app configuration, creates a real table, and is not a fixed-response demo.
+
 ## Registry Credentials
 
 Credentials are not written into generated files. Maven credentials stay in the user's Maven `settings.xml`; npm credentials stay in user-level npm config or CI secrets.
@@ -63,5 +82,4 @@ The CLI generates Mango consumer projects from released Maven and npm materials:
 - Mango PMO baseline documents in generated projects
 - optional Mango module selection for custom business projects
 - additive optional module integration through `mango add`
-
-This package does not generate business logic code.
+- enterprise-owned business module generation through `mango module add`

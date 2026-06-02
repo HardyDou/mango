@@ -8,6 +8,7 @@
         <groupId>{{groupId}}</groupId>
         <artifactId>{{moduleKebab}}</artifactId>
         <version>{{projectVersion}}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>{{moduleKebab}}-starter</artifactId>
@@ -24,8 +25,12 @@
             <version>{{projectVersion}}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango</groupId>
+            <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-web-starter</artifactId>
         </dependency>
     </dependencies>
 </project>

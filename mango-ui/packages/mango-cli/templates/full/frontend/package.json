@@ -3,6 +3,9 @@
   "version": "{{projectVersion}}",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "typecheck": "vue-tsc -p tsconfig.app.json --noEmit",

@@ -102,6 +102,9 @@ mango:
           enabled: true
         notice:
           enabled: true
+        # mango-cli:business-flyway-modules:start
+{{backendBusinessFlywayModules}}
+        # mango-cli:business-flyway-modules:end
   ip-location:
     enabled: true
     provider: ip2region
