@@ -10,8 +10,8 @@
 
 | 场景 | 推荐入口 | 说明 |
 | --- | --- | --- |
-| 生成全量管理端 | `mango-cli init --preset full` | 适合框架验收、内置能力全量演示、平台后台 |
-| 生成按需业务后台 | `mango-cli init --preset custom --modules ...` | 适合业务项目，只安装选择的可选能力 |
+| 生成全量管理端 | `mango init --preset full` | 适合框架验收、内置能力全量演示、平台后台；CLI npm 包为 `@mango/cli` |
+| 生成按需业务后台 | `mango init --preset custom --modules ...` | 适合业务项目，只安装选择的可选能力；CLI npm 包为 `@mango/cli` |
 | 给已有生成项目追加能力 | `mango add <module>` | 只更新 CLI 管理的集成文件 |
 | 手工接入核心后台 | `@mango/admin` + `@mango/admin/style.css` | 需要自己配置 feature 和 registrar |
 | 手工接入全量后台 | `@mango/admin/full` + `@mango/admin/style-full.css` | 全量能力聚合入口 |
@@ -33,6 +33,23 @@
 | `calendar` | `calendar` | `@mango/calendar` | `registerMangoCalendarAdminPages` | `@mango/calendar/style.css` |
 
 ## 4. CLI 用法
+
+安装 CLI：
+
+先配置 npm registry。全局安装 CLI 时使用用户级 `~/.npmrc`；项目内安装依赖时使用企业项目根目录 `.npmrc`：
+
+```ini
+registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+@mango:registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+```
+
+再安装：
+
+```bash
+npm install -g @mango/cli@1.0.16
+```
+
+包名必须使用 `@mango/cli`。不要安装未 scoped 的 `mango-cli` npm 包；`mango-cli` 只是安装后的兼容命令名之一，推荐日常使用 `mango`。
 
 全量项目：
 

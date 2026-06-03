@@ -7,17 +7,20 @@ const currentFile = fileURLToPath(import.meta.url);
 const packageRoot = resolve(dirname(currentFile), '..');
 const repoRoot = resolve(packageRoot, '../../..');
 const templateRoot = resolve(packageRoot, 'templates/full');
-const businessStarterRoot = resolve(repoRoot, 'mango-business-starter');
+const businessModuleTemplateRoot = resolve(packageRoot, 'templates/business-module');
+const businessStarterRoot = existsSync(businessModuleTemplateRoot)
+  ? businessModuleTemplateRoot
+  : resolve(repoRoot, 'mango-business-starter');
 
 const defaultVersions = {
   mangoBackend: '1.0.0-SNAPSHOT',
-  mangoAdmin: readMangoPackageVersion('admin', '1.0.9'),
+  mangoAdmin: readMangoPackageVersion('admin', '1.0.10'),
   mangoAdminPages: readMangoPackageVersion('admin-pages', '1.0.5'),
-  mangoAdminShell: readMangoPackageVersion('admin-shell', '1.0.6'),
+  mangoAdminShell: readMangoPackageVersion('admin-shell', '1.0.8'),
   mangoAppRuntime: readMangoPackageVersion('app-runtime', '1.0.2'),
   mangoAuth: readMangoPackageVersion('auth', '1.0.4'),
   mangoCalendar: readMangoPackageVersion('calendar', '1.0.6'),
-  mangoCommon: readMangoPackageVersion('common', '1.0.4'),
+  mangoCommon: readMangoPackageVersion('common', '1.0.7'),
   mangoFile: readMangoPackageVersion('file', '1.0.6'),
   mangoNotice: readMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readMangoPackageVersion('numgen', '1.0.6'),
