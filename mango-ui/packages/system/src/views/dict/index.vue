@@ -10,6 +10,7 @@
               placeholder="搜索类型名称/编码"
               clearable
               @input="handleTypeSearch"
+              @clear="handleTypeReset"
             >
               <template #prefix>
                 <el-icon><Search /></el-icon>
@@ -20,6 +21,9 @@
               @click="handleAddType"
             >
               新增类型
+            </el-button>
+            <el-button @click="handleTypeReset">
+              重置
             </el-button>
           </div>
 
@@ -400,6 +404,18 @@ async function loadTypeList() {
  * 搜索类型
  */
 function handleTypeSearch() {
+  loadTypeList();
+}
+
+/**
+ * 重置类型搜索
+ */
+function handleTypeReset() {
+  typeKeyword.value = '';
+  currentType.value = null;
+  dataQuery.typeId = undefined;
+  dataList.value = [];
+  dataTotal.value = 0;
   loadTypeList();
 }
 
