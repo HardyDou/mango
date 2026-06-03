@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -19,7 +20,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -48,7 +49,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function getJson(request: APIRequestContext, token: string, path: string) {
-  const response = await request.get(`http://localhost:5555${path}`, {
+  const response = await request.get(e2eApi(`${path}`), {
     headers: { Authorization: `Bearer ${token}` },
   });
   const body = await response.json();
@@ -82,7 +83,7 @@ test.describe('T3 平台元数据隔离复核', () => {
     const platformToken = await loginToken(request, platformTenant);
     const companyAToken = await loginToken(request, companyATenant);
 
-    const loginOptions = await request.get('http://localhost:5555/system/tenant/login-options');
+    const loginOptions = await request.get(e2eApi('/system/tenant/login-options'));
     expect(loginOptions.status()).toBe(200);
     const loginOptionsBody = await loginOptions.json();
     const tenantNames = loginOptionsBody.data.map((item: LoginTenant) => item.tenantName);

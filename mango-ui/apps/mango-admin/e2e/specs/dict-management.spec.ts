@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -19,7 +20,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -48,7 +49,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function findDictType(request: APIRequestContext, token: string, dictType: string) {
-  const response = await request.get('http://localhost:5555/system/dict/type/list', {
+  const response = await request.get(e2eApi('/system/dict/type/list'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
@@ -60,18 +61,18 @@ async function cleanupDict(request: APIRequestContext, token: string, dictType: 
   const type = await findDictType(request, token, dictType);
   if (!type) return;
 
-  const dataResponse = await request.get(`http://localhost:5555/system/dict/data/list?typeId=${type.id}`, {
+  const dataResponse = await request.get(e2eApi(`/system/dict/data/list?typeId=${type.id}`), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (dataResponse.status() === 200) {
     const dataBody = await dataResponse.json();
     for (const item of dataBody.data || []) {
-      await request.delete(`http://localhost:5555/system/dict/data?id=${item.id}`, {
+      await request.delete(e2eApi(`/system/dict/data?id=${item.id}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
   }
-  await request.delete(`http://localhost:5555/system/dict/type?id=${type.id}`, {
+  await request.delete(e2eApi(`/system/dict/type?id=${type.id}`), {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
@@ -145,7 +146,7 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
       await expectLatestMessage(page, '新增成功');
       await expect(page.locator('.el-table__row', { hasText: optionLabel })).toBeVisible({ timeout: 10000 });
 
-      const optionsResponse = await request.get(`http://localhost:5555/system/dict/data/options?typeCode=${dictCode}`, {
+      const optionsResponse = await request.get(e2eApi(`/system/dict/data/options?typeCode=${dictCode}`), {
         headers: { Authorization: `Bearer ${platformToken}` },
       });
       expect(optionsResponse.status()).toBe(200);
@@ -223,12 +224,12 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
   test('A 公司不可见字典管理入口，维护接口返回 403，选项接口可读', async ({ page, request }) => {
     const companyToken = await loginToken(request, companyATenant);
 
-    const listResponse = await request.get('http://localhost:5555/system/dict/type/list', {
+    const listResponse = await request.get(e2eApi('/system/dict/type/list'), {
       headers: { Authorization: `Bearer ${companyToken}` },
     });
     expect(listResponse.status()).toBe(403);
 
-    const createResponse = await request.post('http://localhost:5555/system/dict/type', {
+    const createResponse = await request.post(e2eApi('/system/dict/type'), {
       headers: { Authorization: `Bearer ${companyToken}` },
       data: {
         dictName: `无权字典${Date.now()}`,
@@ -238,7 +239,7 @@ test.describe('T10 字典管理页面真实接口闭环', () => {
     });
     expect(createResponse.status()).toBe(403);
 
-    const optionsResponse = await request.get('http://localhost:5555/system/dict/data/options?typeCode=sys_normal_disable', {
+    const optionsResponse = await request.get(e2eApi('/system/dict/data/options?typeCode=sys_normal_disable'), {
       headers: { Authorization: `Bearer ${companyToken}` },
     });
     expect(optionsResponse.status()).toBe(200);

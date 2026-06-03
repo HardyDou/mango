@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 test.describe('登录机构选择 E2E', () => {
   test('账号密码校验后返回当前账号可进入机构，登录页下拉随账号权限收敛', async ({ page, request }) => {
-    const optionsResponse = await request.post('http://localhost:5555/auth/login-institutions', {
+    const optionsResponse = await request.post(e2eApi('/auth/login-institutions'), {
       data: {
         username: 'admin',
         password: 'admin123',
@@ -17,7 +18,7 @@ test.describe('登录机构选择 E2E', () => {
     expect(optionsBody.data.every((item: any) => item.memberId)).toBeTruthy();
     expect(optionsBody.data.map((item: any) => item.tenantName)).toContain('芒果集团');
 
-    const invalidResponse = await request.post('http://localhost:5555/auth/login-institutions', {
+    const invalidResponse = await request.post(e2eApi('/auth/login-institutions'), {
       data: {
         username: 'admin',
         password: 'bad-password',

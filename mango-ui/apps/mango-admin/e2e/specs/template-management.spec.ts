@@ -1,9 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:5555';
+import { api as e2eApi } from '../support/api';
 
 function api(path: string) {
-  return `${apiBaseURL}${path}`;
+  return e2eApi(path);
 }
 
 function expectApiSuccess(body: any, message: string) {

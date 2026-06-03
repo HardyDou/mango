@@ -1,7 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolve } from 'node:path';
+import { resolveE2EApiBaseURL } from '../../playwright.workspace';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://a.mango.io:5176';
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || process.env.VITE_ADMIN_PROXY_PATH || 'http://127.0.0.1:5555';
+const uiRoot = resolve(__dirname, '../..');
+const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:5555' });
+const frontendURL = new URL(baseURL);
 const useExternalWebServer = process.env.PLAYWRIGHT_USE_EXTERNAL_WEBSERVER === 'true';
 const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true';
 
@@ -36,6 +40,7 @@ export default defineConfig({
           cwd: process.cwd(),
           env: {
             VITE_ADMIN_PROXY_PATH: apiBaseURL,
+            VITE_PORT: frontendURL.port,
           },
           reuseExistingServer,
           timeout: 120 * 1000,

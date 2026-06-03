@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -12,10 +13,8 @@ const platformTenant: LoginTenant = {
   tenantName: '芒果集团',
 };
 
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:5555';
-
 function api(path: string) {
-  return `${apiBaseURL}${path}`;
+  return e2eApi(path);
 }
 
 const companyATenant: LoginTenant = {

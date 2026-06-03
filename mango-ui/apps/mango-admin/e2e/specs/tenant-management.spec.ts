@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -19,7 +20,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -48,7 +49,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function listTenants(request: APIRequestContext, token: string) {
-  const response = await request.get('http://localhost:5555/system/tenant/list', {
+  const response = await request.get(e2eApi('/system/tenant/list'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
@@ -60,14 +61,14 @@ async function listTenants(request: APIRequestContext, token: string) {
 async function cleanupTenant(request: APIRequestContext, token: string, tenantCode: string) {
   const tenants = await listTenants(request, token);
   for (const tenant of tenants.filter((item: any) => item.tenantCode === tenantCode)) {
-    await request.put(`http://localhost:5555/system/tenant/status?id=${tenant.id}&status=9`, {
+    await request.put(e2eApi(`/system/tenant/status?id=${tenant.id}&status=9`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 }
 
 async function expectLoginOption(request: APIRequestContext, tenantName: string, visible: boolean) {
-  const response = await request.get('http://localhost:5555/system/tenant/login-options');
+  const response = await request.get(e2eApi('/system/tenant/login-options'));
   expect(response.status()).toBe(200);
   const body = await response.json();
   expect(body.success || body.code === 200).toBeTruthy();
@@ -80,7 +81,7 @@ async function expectLoginOption(request: APIRequestContext, tenantName: string,
 }
 
 async function expectLoginDenied(request: APIRequestContext, tenantCode: string) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -113,7 +114,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
 
     try {
       await cleanupTenant(request, platformToken, tenantCode);
-      const createResponse = await request.post('http://localhost:5555/system/tenant', {
+      const createResponse = await request.post(e2eApi('/system/tenant'), {
         headers: { Authorization: `Bearer ${platformToken}` },
         data: {
           tenantName,
@@ -135,26 +136,26 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
         tenantCode,
         tenantName,
       });
-      const beforeDisable = await request.get('http://localhost:5555/authorization/menus/user?appCode=internal-admin&fmt=tree', {
+      const beforeDisable = await request.get(e2eApi('/authorization/menus/user?appCode=internal-admin&fmt=tree'), {
         headers: { Authorization: `Bearer ${institutionToken}` },
       });
       expect(beforeDisable.status()).toBe(200);
 
-      const disableResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=0`, {
+      const disableResponse = await request.put(e2eApi(`/system/tenant/status?id=${createdId}&status=0`), {
         headers: { Authorization: `Bearer ${platformToken}` },
       });
       expect(disableResponse.status()).toBe(200);
       await expectLoginOption(request, tenantName, false);
       await expectLoginDenied(request, tenantCode);
 
-      const afterDisable = await request.get('http://localhost:5555/authorization/menus/user?appCode=internal-admin&fmt=tree', {
+      const afterDisable = await request.get(e2eApi('/authorization/menus/user?appCode=internal-admin&fmt=tree'), {
         headers: { Authorization: `Bearer ${institutionToken}` },
       });
       expect(afterDisable.status()).toBe(401);
       const afterDisableBody = await afterDisable.json();
       expect(afterDisableBody.message || afterDisableBody.msg).toContain('当前机构已禁用');
 
-      const archiveResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=9`, {
+      const archiveResponse = await request.put(e2eApi(`/system/tenant/status?id=${createdId}&status=9`), {
         headers: { Authorization: `Bearer ${platformToken}` },
       });
       expect(archiveResponse.status()).toBe(200);
@@ -162,7 +163,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       await expectLoginDenied(request, tenantCode);
     } finally {
       if (createdId) {
-        await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=9`, {
+        await request.put(e2eApi(`/system/tenant/status?id=${createdId}&status=9`), {
           headers: { Authorization: `Bearer ${platformToken}` },
         });
       }
@@ -177,7 +178,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
 
     try {
       await cleanupTenant(request, platformToken, tenantCode);
-      const createResponse = await request.post('http://localhost:5555/system/tenant', {
+      const createResponse = await request.post(e2eApi('/system/tenant'), {
         headers: { Authorization: `Bearer ${platformToken}` },
         data: {
           tenantName,
@@ -273,7 +274,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
 
       const createdTenant = (await listTenants(request, platformToken)).find((item: any) => String(item.id) === createdId);
       expect(createdTenant).toBeTruthy();
-      const updateResponse = await request.put('http://localhost:5555/system/tenant', {
+      const updateResponse = await request.put(e2eApi('/system/tenant'), {
         headers: { Authorization: `Bearer ${platformToken}` },
         data: {
           id: createdId,
@@ -300,7 +301,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       expect(updatedTenant?.contact || updatedTenant?.contactName).toBe(editedContact);
 
       const editedRow = page.locator('.el-table__row', { hasText: tenantName }).first();
-      const disableResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=0`, {
+      const disableResponse = await request.put(e2eApi(`/system/tenant/status?id=${createdId}&status=0`), {
         headers: { Authorization: `Bearer ${platformToken}` },
       });
       expect(disableResponse.status()).toBe(200);
@@ -309,7 +310,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       await expectLoginOption(request, tenantName, false);
       await expectLoginDenied(request, tenantCode);
 
-      const enableResponse = await request.put(`http://localhost:5555/system/tenant/status?id=${createdId}&status=1`, {
+      const enableResponse = await request.put(e2eApi(`/system/tenant/status?id=${createdId}&status=1`), {
         headers: { Authorization: `Bearer ${platformToken}` },
       });
       expect(enableResponse.status()).toBe(200);
@@ -323,7 +324,7 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
       await page.getByRole('button', { name: '查询' }).click();
       await refreshAfterEnablePromise;
 
-      const deleteResponse = await request.delete(`http://localhost:5555/system/tenant?id=${createdId}`, {
+      const deleteResponse = await request.delete(e2eApi(`/system/tenant?id=${createdId}`), {
         headers: { Authorization: `Bearer ${platformToken}` },
       });
       const deleteBody = await deleteResponse.json();
@@ -342,10 +343,10 @@ test.describe('T7 机构管理页面真实接口闭环', () => {
     const companyToken = await loginToken(request, companyATenant);
 
     for (const operation of [
-      request.get('http://localhost:5555/system/tenant/list', {
+      request.get(e2eApi('/system/tenant/list'), {
         headers: { Authorization: `Bearer ${companyToken}` },
       }),
-      request.post('http://localhost:5555/system/tenant', {
+      request.post(e2eApi('/system/tenant'), {
         headers: { Authorization: `Bearer ${companyToken}` },
         data: {
           tenantName: '非法机构',

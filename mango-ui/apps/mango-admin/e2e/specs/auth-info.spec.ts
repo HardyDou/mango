@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 test.describe('当前用户信息 E2E', () => {
   test('登录后可通过真实后端获取当前用户信息', async ({ page, request }) => {
-    const loginResponse = await request.post('http://localhost:5555/auth/login', {
+    const loginResponse = await request.post(e2eApi('/auth/login'), {
       data: {
         username: 'admin',
         password: 'admin123',
@@ -20,7 +21,7 @@ test.describe('当前用户信息 E2E', () => {
     const accessToken = loginBody?.data?.accessToken;
     expect(accessToken).toBeTruthy();
 
-    const infoResponse = await request.get('http://localhost:5555/auth/info', {
+    const infoResponse = await request.get(e2eApi('/auth/info'), {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

@@ -1,7 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 async function loginTokenAsPlatform(request: APIRequestContext) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -19,7 +20,7 @@ async function loginTokenAsPlatform(request: APIRequestContext) {
 }
 
 async function loginToken(request: APIRequestContext, tenantCode: string) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -40,7 +41,7 @@ async function createTenant(request: APIRequestContext, token: string) {
   const unique = Date.now();
   const tenantCode = `e2e_tenant_${unique}`;
   const tenantName = `E2E机构${unique}`;
-  const response = await request.post('http://localhost:5555/system/tenant', {
+  const response = await request.post(e2eApi('/system/tenant'), {
     headers: { Authorization: `Bearer ${token}` },
     data: {
       tenantName,
@@ -86,7 +87,7 @@ test.describe('T6 新机构初始化闭环', () => {
     expect(loginData.permissions.length).toBeGreaterThan(0);
 
     const menusResponse = await request.get(
-      'http://localhost:5555/authorization/menus/user?appCode=internal-admin&fmt=tree',
+      e2eApi('/authorization/menus/user?appCode=internal-admin&fmt=tree'),
       { headers: { Authorization: `Bearer ${loginData.accessToken}` } }
     );
     expect(menusResponse.ok()).toBeTruthy();

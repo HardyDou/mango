@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -19,7 +20,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -48,7 +49,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function createArea(request: APIRequestContext, token: string, name: string, adcode: number) {
-  const response = await request.post('http://localhost:5555/system/area', {
+  const response = await request.post(e2eApi('/system/area'), {
     headers: { Authorization: `Bearer ${token}` },
     data: {
       pid: 0,
@@ -70,7 +71,7 @@ async function createArea(request: APIRequestContext, token: string, name: strin
 }
 
 async function findArea(request: APIRequestContext, token: string, name: string) {
-  const response = await request.get('http://localhost:5555/system/area/children?parentId=0', {
+  const response = await request.get(e2eApi('/system/area/children?parentId=0'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
@@ -81,7 +82,7 @@ async function findArea(request: APIRequestContext, token: string, name: string)
 async function cleanupArea(request: APIRequestContext, token: string, name: string) {
   const area = await findArea(request, token, name);
   if (!area?.id) return;
-  await request.delete(`http://localhost:5555/system/area?id=${area.id}`, {
+  await request.delete(e2eApi(`/system/area?id=${area.id}`), {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
@@ -163,21 +164,21 @@ test.describe('T11 行政区划管理页面真实接口闭环', () => {
   test('A 公司不可见行政区划管理入口，维护接口返回 403，选择器读取可用', async ({ page, request }) => {
     const companyToken = await loginToken(request, companyATenant);
 
-    const treeResponse = await request.get('http://localhost:5555/system/area/tree?type=1', {
+    const treeResponse = await request.get(e2eApi('/system/area/tree?type=1'), {
       headers: { Authorization: `Bearer ${companyToken}` },
     });
     expect(treeResponse.status()).toBe(200);
     const treeBody = await treeResponse.json();
     expect(treeBody.data[0]).toMatchObject({ id: '1', name: '北京市' });
 
-    const childrenResponse = await request.get('http://localhost:5555/system/area/children?parentId=1', {
+    const childrenResponse = await request.get(e2eApi('/system/area/children?parentId=1'), {
       headers: { Authorization: `Bearer ${companyToken}` },
     });
     expect(childrenResponse.status()).toBe(200);
     const childrenBody = await childrenResponse.json();
     expect(childrenBody.data[0]).toMatchObject({ id: '1101', name: '北京市' });
 
-    const createResponse = await request.post('http://localhost:5555/system/area', {
+    const createResponse = await request.post(e2eApi('/system/area'), {
       headers: { Authorization: `Bearer ${companyToken}` },
       data: {
         pid: 0,
