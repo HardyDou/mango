@@ -43,6 +43,7 @@ try {
     'frontend/src/mango-admin-modular.d.ts',
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
+    'scripts/backend-dev.sh',
     'backend/pom.xml',
     'backend/app/pom.xml',
     'backend/app/src/main/java/com/example/acceptance/MangoFullAcceptanceApplication.java',
@@ -98,11 +99,20 @@ try {
 
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
+  const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
   if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>') || pom.includes('{{') || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
   }
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
+  }
+  if (!backendDevScript.includes('mvn -f backend/pom.xml -DskipTests install')
+    || !backendDevScript.includes('mvn -f backend/app/pom.xml')
+    || !backendDevScript.includes('MANGO_BACKEND_PORT')) {
+    throw new Error('generated backend dev script must install local modules before starting app');
+  }
+  if ((statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
+    throw new Error('generated backend dev script must be executable');
   }
 
   const npmrc = readFileSync(join(projectRoot, 'frontend/.npmrc'), 'utf8');

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -282,6 +282,7 @@ function main(argv = process.argv.slice(2)) {
 
   const variables = buildVariables(options);
   copyTemplate(templateRoot, targetDir, variables);
+  chmodSync(join(targetDir, 'scripts/backend-dev.sh'), 0o755);
   writeMangoConfig(targetDir, variables);
   printNextSteps(targetDir, variables);
 }
@@ -1101,7 +1102,7 @@ function walkFiles(root) {
 
 function isTextFile(file) {
   const name = basename(file);
-  return /\.(md|json|xml|java|ts|vue|html|mjs|yml|yaml|txt|gitignore|npmrc|properties|imports|sql)$/.test(name)
+  return /\.(md|json|xml|java|ts|vue|html|mjs|sh|yml|yaml|txt|gitignore|npmrc|properties|imports|sql)$/.test(name)
     || name.endsWith('.template')
     || name === 'CODEOWNERS'
     || name === 'AGENTS.md';
@@ -1230,7 +1231,7 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write(`  cd ${relativeTarget}\n`);
   process.stdout.write('  npm --prefix frontend install\n');
   process.stdout.write('  npm --prefix frontend run build\n');
-  process.stdout.write('  mvn -f backend/pom.xml -DskipTests package\n');
+  process.stdout.write('  scripts/backend-dev.sh\n');
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
 }
 
