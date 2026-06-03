@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-shell",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -22,6 +22,7 @@
     "./style.css": "./style.css"
   },
   "scripts": {
+    "prepack": "pnpm run build",
     "build": "vite build",
     "test": "vitest run"
   },
