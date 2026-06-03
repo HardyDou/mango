@@ -39,6 +39,7 @@ import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
 import { isHomeTag } from '@mango/common/utils/tagsView';
+import { resolveClosedTagFallback } from '../../../runtime/tagNavigation';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
@@ -88,14 +89,11 @@ const closeSelectedTag = (tag: any) => {
   if (isHomeTag(tag)) {
     return;
   }
-  const idx = visitedViews.value.findIndex((t) => t.path === tag.path);
-  if (idx > -1) {
-    const newTags = [...visitedViews.value];
-    newTags.splice(idx, 1);
-    storesTagsViewRoutes.setTagsViewRoutes(newTags);
-    if (isActive(tag) && newTags.length > 0) {
-      router.push(newTags[newTags.length - 1]);
-    }
+  const fallback = resolveClosedTagFallback(visitedViews.value, tag, route.path);
+  const newTags = visitedViews.value.filter((t) => t.path !== tag.path);
+  storesTagsViewRoutes.setTagsViewRoutes(newTags);
+  if (fallback) {
+    router.push(fallback);
   }
 };
 

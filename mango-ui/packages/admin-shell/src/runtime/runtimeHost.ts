@@ -22,6 +22,7 @@ import { usePreferencesStore } from '../stores/preferences';
 import { installShellApp } from '../appBootstrap';
 import { getMangoAdminShellOptions } from '../config';
 import { ensureDevCenterPagesRegistered, type ShellMenu, type ShellRouteMenu } from './menuHost';
+import { ensureFeatureRegistrars } from './featureRegistrars';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
 const shellRuntimeEventBus = createRuntimeEventBus();
@@ -239,9 +240,7 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
             notFound: () => import('../views/error/404.vue'),
           },
         });
-        for (const registrar of getMangoAdminShellOptions().featureRegistrars || []) {
-          await registrar();
-        }
+        await ensureFeatureRegistrars();
         return ensureDevCenterPagesRegistered();
       });
     }
