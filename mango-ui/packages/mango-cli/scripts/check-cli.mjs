@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -10,6 +10,8 @@ const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
 
 try {
+  assertNoWorkspacePackageJsonInTemplates();
+
   const result = spawnSync(process.execPath, [
     cli,
     'init',
@@ -494,4 +496,25 @@ function assertNoUnrenderedPlaceholders(projectRoot) {
   if (result.status !== 1) {
     throw new Error(`placeholder scan failed:\n${result.stdout}\n${result.stderr}`);
   }
+}
+
+function assertNoWorkspacePackageJsonInTemplates() {
+  const templateRoot = join(packageRoot, 'templates');
+  const packageJsonFiles = walkFiles(templateRoot).filter(file => file.endsWith('/package.json'));
+  if (packageJsonFiles.length > 0) {
+    throw new Error(`template package.json files are parsed by workspace tooling; use package.json.template instead:\n${packageJsonFiles.join('\n')}`);
+  }
+}
+
+function walkFiles(root) {
+  const result = [];
+  for (const entry of readdirSync(root)) {
+    const fullPath = join(root, entry);
+    if (statSync(fullPath).isDirectory()) {
+      result.push(...walkFiles(fullPath));
+    } else {
+      result.push(fullPath);
+    }
+  }
+  return result;
 }
