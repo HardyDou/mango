@@ -32,7 +32,7 @@ registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
 配置用户级 `~/.npmrc` 后安装 CLI：
 
 ```bash
-npm install -g @mango/cli@1.0.16
+npm install -g @mango/cli@1.0.20
 
 mango init guarantee-platform \
   --preset custom \
@@ -45,7 +45,7 @@ mango init guarantee-platform \
 一次性执行也必须指定 scoped package：
 
 ```bash
-npm exec --package @mango/cli@1.0.16 -- \
+npm exec --package @mango/cli@1.0.20 -- \
   mango init guarantee-platform \
   --preset custom \
   --modules workflow,template,file \
@@ -67,6 +67,16 @@ mango init guarantee-platform \
   --group-id com.example \
   --topology monolith
 ```
+
+full preset 后端会依赖 `mango-admin-starter` 和可选的 `mango-seed-starter`。初始化种子数据默认关闭；首次空库启动如需官方入口数据，必须显式启用并提供管理员初始密码：
+
+```bash
+MANGO_SEED_ENABLED=true \
+MANGO_SEED_ADMIN_PASSWORD='replace-with-a-strong-password' \
+scripts/backend-dev.sh
+```
+
+seed 只补齐默认租户、管理员账号、租户成员、管理员角色、成员角色绑定、租户应用绑定和官方菜单套餐授权；不会复制或掩盖缺失的菜单、组件或历史 migration 问题。重复执行保持幂等，已有管理员密码不会被覆盖，`prod`/`production` profile 下禁止弱默认密码。
 
 只需要必选系统能力时使用 custom preset 且不选择可选模块：
 

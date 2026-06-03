@@ -100,8 +100,17 @@ try {
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
-  if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>') || pom.includes('{{') || appPom.includes('{{')) {
+  if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>')
+    || !appPom.includes('<artifactId>mango-seed-starter</artifactId>')
+    || !pom.includes('<artifactId>mango-seed-starter</artifactId>')
+    || pom.includes('{{')
+    || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
+  }
+  const applicationYml = readFileSync(join(projectRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
+  if (!applicationYml.includes('enabled: ${MANGO_SEED_ENABLED:false}')
+    || !applicationYml.includes('initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}')) {
+    throw new Error('full backend application.yml must keep Mango seed disabled by default with explicit admin password');
   }
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');

@@ -27,7 +27,7 @@ Use `npm run dev` for backend integration. `VITE_ADMIN_PROXY_PATH` must point to
 
 ## Backend
 
-The backend consumes `io.mango:mango-admin-starter`.
+The backend consumes `io.mango:mango-admin-starter` and the optional `io.mango.platform.seed:mango-seed-starter`.
 
 Create the local database before first startup:
 
@@ -42,11 +42,14 @@ curl http://127.0.0.1:5555/actuator/health
 
 `scripts/backend-dev.sh` installs local backend modules before starting the app. Use this script after `mango module add`, otherwise Maven may try to resolve local business starters from the remote repository.
 
-Default local account:
+Official seed data is disabled by default. Enable it only for an empty or prepared database, and provide the initial administrator password explicitly:
 
-```text
-username: admin
-password: admin123
+```bash
+MANGO_SEED_ENABLED=true \
+MANGO_SEED_ADMIN_PASSWORD='replace-with-a-strong-password' \
+scripts/backend-dev.sh
 ```
+
+The seed runner is idempotent: repeated startup does not duplicate the default tenant, administrator, member, role, application binding or role menu grants. Existing administrator passwords are not overwritten. In `prod` or `production` profiles, weak default passwords are rejected during startup.
 
 Maven credentials must stay in user-level Maven `settings.xml`. NPM credentials must stay in user-level npm config or CI secrets.
