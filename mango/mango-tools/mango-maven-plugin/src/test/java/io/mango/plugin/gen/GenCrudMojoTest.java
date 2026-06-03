@@ -212,6 +212,30 @@ class GenCrudMojoTest {
         assertFalse(content.contains("@RequestBody"));
     }
 
+    @Test
+    void generateApi_updateSignature_matchesControllerImplementation() throws Exception {
+        // given
+        createModuleStructure();
+
+        GenCrudMojo mojo = new GenCrudMojo();
+        setField(mojo, "module", "user");
+        setField(mojo, "entity", "User");
+        setField(mojo, "table", "sys_user");
+        setField(mojo, "baseDir", tempDir.toString());
+
+        // when
+        mojo.execute();
+
+        // then
+        String apiContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-api/src/main/java/io/mango/user/api/UserApi.java"));
+        String controllerContent = Files.readString(tempDir.resolve(
+                "mango-user/mango-user-starter/src/main/java/io/mango/user/starter/controller/UserController.java"));
+        assertTrue(apiContent.contains("R<Void> update(UpdateUserCommand command);"));
+        assertFalse(apiContent.contains("R<Void> update(Long id, UpdateUserCommand command);"));
+        assertTrue(controllerContent.contains("public R<Void> update(@RequestBody UpdateUserCommand command)"));
+    }
+
     /**
      * Helper: Create minimal module directory structure
      */

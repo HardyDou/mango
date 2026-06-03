@@ -120,7 +120,7 @@ public class GenModuleMojo extends AbstractMojo {
 
     private String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
+        return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
 
     private String currentAuthor() {
