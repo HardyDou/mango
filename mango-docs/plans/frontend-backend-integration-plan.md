@@ -42,7 +42,7 @@
 | 顺序 | 页面/能力 | 当前问题 | 目标接口 | 状态 | E2E |
 |---|---|---|---|---|---|
 | 9 | 字典管理 | 前端详情/删除路径使用 `/system/dict/type/{id}`，后端是 `/detail?id=` 和 `DELETE /type?id=` | `/system/dict/type/*`、`/system/dict/data/*` | 待执行 | 字典类型/数据 CRUD |
-| 10 | 系统路由 | 排序前端传数组，后端要求对象 | `/system/route/sort` | 待执行 | 路由列表、树、排序 |
+| 10 | 系统路由 | 路由管理维护能力已下线，动态路由由菜单管理承接 | `/system/route/*` | 不处理 | 不再保留路由管理 E2E |
 | 11 | 登录日志 | 前端详情路径 `/system/log/login/{id}`，后端是 `/system/log/login/detail?id=` | `/system/log/login/*` | 待执行 | 列表、详情、统计 |
 | 12 | 操作日志 | 导出接口前端存在，后端暂缺；详情路径需对齐 | `/system/log/operation/*` | 待执行 | 列表、详情、清理 |
 | 13 | 菜单管理写操作 | 当前 `POST/PUT/DELETE /authorization/menus` 实测 401 | `/authorization/menus` | 待执行 | 菜单查询、新增、编辑、删除 |

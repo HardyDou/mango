@@ -26,7 +26,7 @@
 | T10 | 字典管理页面真实接口闭环 | 已完成 | 平台管理员可维护字典类型和字典数据；普通租户不能维护基础字典；字典选项接口作为基础选择能力可读 | 平台租户完成字典类型和字典数据新增、编辑、删除；A 公司不可见字典管理入口，维护接口 403，选项接口 200 |
 | T11 | 行政区划管理页面真实接口闭环 | 已完成 | 行政区划选择器接口登录可读；平台管理员可维护自定义区划；普通租户不能维护行政区划 | 平台租户逐级加载行政区划并完成自定义区划编辑、删除；A 公司不可见行政区划入口，维护接口 403，选择器读取 200 |
 | T12 | 系统配置页面真实接口闭环 | 已完成 | 系统配置作为平台基础元数据不参与租户过滤；平台管理员可维护系统参数/配置；普通租户不能维护参数配置 | 平台租户完成系统参数、系统配置新增、编辑、删除；A 公司不可见参数配置入口，维护接口 403 |
-| T13 | 路由管理页面真实接口闭环 | 已完成 | 路由配置作为平台运行元数据不参与租户过滤；平台管理员可维护路由配置；普通租户不能维护路由配置 | 平台租户完成路由配置新增、编辑、删除；A 公司不可见路由管理入口，维护接口 403 |
+| T13 | 路由管理页面真实接口闭环 | 已下线 | 路由管理维护能力已由菜单管理承接；`/system/route` 接口和 `sys_route_conf` 通过后续迁移下线清理 | 系统管理 E2E 不再依赖 `/system/route`；后台菜单不再出现路由管理入口 |
 | T14 | 审计日志真实写入与查询闭环 | 已完成 | 登录成功/失败写入登录日志；维护接口操作写入操作日志；日志查询按租户上下文隔离；清理权限补齐 | 登录日志、操作日志页面使用后端分页查询；E2E 覆盖登录日志、操作日志、租户隔离 |
 | T15 | 组织架构管理闭环 | 已完成 | 组织新增、编辑、删除接口可用；普通租户只能维护本租户组织；根组织不可删除、不可禁用、不可移动 | A 公司在组织架构页面完成新增下级、编辑、删除；根组织保护和权限边界通过 |
 | T16 | IP 地理位置库基础能力 | 已完成 | 新增独立 IP 归属地解析基础模块；登录日志、操作日志消费统一解析能力；解析失败不影响主流程 | 登录日志、操作日志展示 IP 归属地；页面刷新和详情展示一致 |
@@ -264,7 +264,7 @@ Failed to convert from type [java.lang.String] to type [java.time.LocalDateTime]
   - `system.V13__add_operation_log_location.sql` 已执行成功。
 - 后端直连：
   - 使用 `X-Forwarded-For: 8.8.8.8` 登录后，登录日志写入 `location=United States Google LLC US`。
-  - 使用 `X-Forwarded-For: 8.8.4.4` 新增/删除系统路由后，操作日志写入 `location=United States Atlanta Google LLC US`。
+  - 使用 `X-Forwarded-For: 8.8.4.4` 调用带操作日志的系统维护接口后，操作日志写入 `location=United States Atlanta Google LLC US`。
 - 前端 E2E：
   - `pnpm exec playwright test e2e/specs/log-management.spec.ts --project=chromium`，3 个用例通过。
   - E2E 已覆盖登录日志和操作日志 `location` 字段非空断言。
@@ -682,50 +682,16 @@ Failed to convert from type [java.lang.String] to type [java.time.LocalDateTime]
 - 前端 E2E：
   - `pnpm exec playwright test e2e/specs/config-management.spec.ts --project=chromium` 通过。
 
-## 已完成任务：T13 路由管理页面真实接口闭环
+## 下线任务：T13 路由管理页面真实接口闭环
 
-### 范围
+> 2026-06-03 已下线：路由管理维护能力与菜单管理职责重复，系统入口和动态路由统一由菜单管理维护。后续代码和 E2E 不再保留 `/system/route` 页面、接口和权限。
 
-- 路由配置维护：
-  - 列表：`GET /system/route/list`
-  - 详情：`GET /system/route/detail?id={id}`
-  - 新增：`POST /system/route`
-  - 修改：`PUT /system/route`
-  - 删除：`DELETE /system/route?id={id}`
-  - 排序：`PUT /system/route/sort`
+### 当前口径
 
-### 后端修复
-
-- `sys_route_conf` 纳入平台运行元数据边界，不参与租户行级过滤。
-- `GET /system/route/list` 支持 `@ParameterObject SysRoutePo` 查询对象，按名称、路径、类型、状态过滤。
-- `PUT /system/route/sort` 改为按命令对象 `ids` 更新排序。
-- 新增迁移 `authorization.V20__fix_route_management_menu_scope.sql`：
-  - 纠正 `V19` 复用菜单 ID `20` 的问题，将 `20` 恢复为“用户管理”。
-  - 路由管理改为菜单 ID `21`，按钮权限改为 `21001..21004`。
-  - 清理普通租户错误获得的路由管理授权。
-- 新租户授权初始化改为租户默认菜单白名单，避免把平台运行配置菜单授予普通租户。
-
-### 前端修复
-
-- 路由管理页收敛为后端真实模型：`routeName/routePath/routeType/routeDesc/sort/status`。
-- 去除前端原有父级路由、组件路径、图标、权限标识、树结构等后端不支持字段。
-- 路由类型、状态使用字典渲染，不再硬编码 label。
-- 路由 API 提交改为字段白名单，避免页面字段污染后端命令。
-
-### 通过结果
-
-- 后端构建：
-  - `mvn -pl mango-app/monolith/mango-monolith-app -am -DskipTests package` 通过。
-- Flyway：
-  - `authorization.V19__add_route_management_menu.sql` 已执行。
-  - `authorization.V20__fix_route_management_menu_scope.sql` 已执行。
-- 后端数据核验：
-  - 菜单 `20` 为“用户管理”。
-  - 菜单 `21` 为“路由管理”。
-  - 普通租户只保留用户管理授权，没有路由管理授权。
-- 前端 E2E：
-  - `pnpm exec playwright test e2e/specs/route-management.spec.ts --project=chromium` 通过。
-  - 回归 `pnpm exec playwright test e2e/specs/platform-metadata-isolation.spec.ts e2e/specs/config-management.spec.ts e2e/specs/dict-management.spec.ts e2e/specs/area-management.spec.ts e2e/specs/route-management.spec.ts --project=chromium`，10 个用例通过。
+- 不再提供独立路由管理页面。
+- 不再提供系统路由维护接口。
+- 不再保留系统路由字典、菜单权限和操作日志 E2E。
+- 系统菜单、页面入口和动态路由由菜单管理统一维护。
 
 ## 已完成任务：T14 审计日志真实写入与查询闭环
 
@@ -744,13 +710,13 @@ Failed to convert from type [java.lang.String] to type [java.time.LocalDateTime]
 ### 后端修复
 
 - 登录接口写入真实登录日志，成功和失败都记录。
-- 操作日志切面按 `@Log` 注解写入真实操作日志，覆盖系统配置、字典、路由、租户等维护接口。
+- 操作日志切面按 `@Log` 注解写入真实操作日志，覆盖系统配置、字典、租户等维护接口。
 - 日志查询改为后端分页，支持关键字、状态、用户、时间范围过滤。
 - 日志按租户归属隔离：普通租户只看本租户日志；平台租户用于平台审计，可看全量日志。
 - 清理接口改为真实删除，支持 `retentionDays` 保留天数。
 - 修正操作日志字段语义：
   - `method` 表示 HTTP Method，例如 `GET/POST/PUT/DELETE`。
-  - `handler_method` 表示 Java 处理器方法，例如 `io.mango.system.starter.controller.SysRouteController.create`。
+  - `handler_method` 表示 Java 处理器方法，例如系统配置维护接口的 controller 方法。
   - 存量误写入 `method` 的 Java 处理器方法迁移到 `handler_method`，旧 `method` 置空，避免误导。
 - 新增迁移：
   - `system.V12__add_operation_log_handler_method.sql`：新增 `handler_method`，修正存量字段语义。
@@ -775,9 +741,8 @@ Failed to convert from type [java.lang.String] to type [java.time.LocalDateTime]
 - 后端直连：
   - `GET /system/log/login/list?page=1&size=5` 返回真实登录日志。
   - `GET /system/log/login/statistics` 返回真实统计。
-  - 通过新增/删除系统路由触发 `新增系统路由`、`删除系统路由` 操作日志。
-  - 新增系统路由操作日志 `method=POST`，`handler_method=io.mango.system.starter.controller.SysRouteController.create`。
-  - 删除系统路由操作日志 `method=DELETE`，`handler_method=io.mango.system.starter.controller.SysRouteController.delete`。
+  - 通过调用带 `@Log` 注解的系统维护接口触发操作日志。
+  - 操作日志 `method` 记录 HTTP Method，`handler_method` 记录 Java 处理器方法。
   - A 公司查询登录日志和操作日志返回 200，且看不到平台租户日志。
 - 前端构建：
   - `pnpm --filter mango-admin build` 通过。
