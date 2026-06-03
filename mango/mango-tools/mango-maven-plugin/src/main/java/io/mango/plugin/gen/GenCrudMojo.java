@@ -105,10 +105,6 @@ public class GenCrudMojo extends AbstractMojo {
         }
     }
 
-    private String pkg(String path, Object... args) {
-        return String.format(path, args);
-    }
-
     private void generateController(Path dir) throws IOException {
         String entityName = toPascalCase(entity);
         String camelEntity = toCamelCase(entity);
@@ -182,7 +178,7 @@ public class GenCrudMojo extends AbstractMojo {
             "    R<PageResult<" + entityName + "VO>> page(" + entityName + "PageQuery query);\n\n" +
             "    R<" + entityName + "VO> get(Long id);\n\n" +
             "    R<Void> save(Create" + entityName + "Command command);\n\n" +
-            "    R<Void> update(Long id, Update" + entityName + "Command command);\n\n" +
+            "    R<Void> update(Update" + entityName + "Command command);\n\n" +
             "    R<Void> delete(Long id);\n" +
             "}\n";
         Files.writeString(dir.resolve(entityName + "Api.java"), content);

@@ -118,9 +118,25 @@ class GenModuleMojoTest {
 
         // when & then
         assertEquals("User", method.invoke(mojo, "user"));
-        assertEquals("USER", method.invoke(mojo, "USER"));
+        assertEquals("User", method.invoke(mojo, "USER"));
         assertEquals("Test", method.invoke(mojo, "test"));
         assertNull(method.invoke(mojo, (Object) null));
         assertEquals("", method.invoke(mojo, ""));
+    }
+
+    @Test
+    void execute_withUpperCaseName_normalizesDisplayName() throws Exception {
+        // given
+        GenModuleMojo mojo = new GenModuleMojo();
+        setField(mojo, "name", "USER");
+        setField(mojo, "baseDir", tempDir.toString());
+
+        // when
+        mojo.execute();
+
+        // then
+        String pomContent = Files.readString(tempDir.resolve("mango-user/pom.xml"));
+        assertTrue(pomContent.contains("<name>Mango User</name>"));
+        assertFalse(pomContent.contains("<name>Mango USER</name>"));
     }
 }
