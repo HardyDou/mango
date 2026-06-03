@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 async function loginAsCompanyA(page: Page) {
   await page.goto('/#/login');
@@ -11,7 +12,7 @@ async function loginAsCompanyA(page: Page) {
 }
 
 async function loginTokenAsCompanyA(request: APIRequestContext) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -30,7 +31,7 @@ async function loginTokenAsCompanyA(request: APIRequestContext) {
 
 async function cleanupUser(request: APIRequestContext, token: string, username: string) {
   const pageResponse = await request.get(
-    `http://localhost:5555/identity/users/page?page=1&size=20&username=${encodeURIComponent(username)}`,
+    e2eApi(`/identity/users/page?page=1&size=20&username=${encodeURIComponent(username)}`),
     { headers: { Authorization: `Bearer ${token}` } }
   );
   if (!pageResponse.ok()) return;
@@ -38,7 +39,7 @@ async function cleanupUser(request: APIRequestContext, token: string, username: 
   const body = await pageResponse.json();
   const records = body.data?.records || body.data?.list || [];
   for (const user of records.filter((item: any) => item.username === username)) {
-    await request.delete(`http://localhost:5555/identity/users?userId=${user.userId}`, {
+    await request.delete(e2eApi(`/identity/users?userId=${user.userId}`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

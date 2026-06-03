@@ -1,4 +1,5 @@
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 async function loginAsCompanyA(page: Page) {
   await page.goto('/#/login');
@@ -11,7 +12,7 @@ async function loginAsCompanyA(page: Page) {
 }
 
 async function loginTokenAsCompanyA(request: APIRequestContext) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -29,14 +30,14 @@ async function loginTokenAsCompanyA(request: APIRequestContext) {
 }
 
 async function cleanupRole(request: APIRequestContext, token: string, roleCode: string) {
-  const rolesResponse = await request.get('http://localhost:5555/authorization/roles', {
+  const rolesResponse = await request.get(e2eApi('/authorization/roles'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!rolesResponse.ok()) return;
   const body = await rolesResponse.json();
   const roles = body.data || [];
   for (const role of roles.filter((item: any) => item.roleCode === roleCode)) {
-    await request.delete(`http://localhost:5555/authorization/roles?id=${role.roleId}`, {
+    await request.delete(e2eApi(`/authorization/roles?id=${role.roleId}`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
@@ -126,14 +127,14 @@ test.describe('T2 角色授权闭环', () => {
     expect(assignBody.success || assignBody.code === 200).toBeTruthy();
     await expect(page.getByText('分配成功')).toBeVisible({ timeout: 10000 });
 
-    const latestRolesResponse = await request.get('http://localhost:5555/authorization/roles', {
+    const latestRolesResponse = await request.get(e2eApi('/authorization/roles'), {
       headers: { Authorization: `Bearer ${token}` },
     });
     const latestRolesBody = await latestRolesResponse.json();
     const createdRole = latestRolesBody.data.find((item: any) => item.roleCode === roleCode);
     expect(createdRole).toBeTruthy();
 
-    const invalidAssignResponse = await request.post('http://localhost:5555/authorization/roles/menus', {
+    const invalidAssignResponse = await request.post(e2eApi('/authorization/roles/menus'), {
       headers: { Authorization: `Bearer ${token}` },
       data: { roleId: createdRole.roleId, menuIds: [14] },
     });

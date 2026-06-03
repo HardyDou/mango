@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -16,10 +17,8 @@ const platformTenant: LoginTenant = {
   tenantName: '芒果集团',
 };
 
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:5555';
-
 function api(path: string) {
-  return `${apiBaseURL}${path}`;
+  return e2eApi(path);
 }
 
 async function routeMinioDirectAccess(page: Page, request: APIRequestContext) {

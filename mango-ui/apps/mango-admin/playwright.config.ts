@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import { resolve } from 'node:path';
+import { resolveE2EApiBaseURL, resolveE2EBaseURL } from '../../playwright.workspace';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:7777';
+const uiRoot = resolve(__dirname, '../..');
+const baseURL = resolveE2EBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:7777' });
+const apiBaseURL = resolveE2EApiBaseURL({ uiRoot, defaultURL: 'http://127.0.0.1:5555' });
+const frontendURL = new URL(baseURL);
 const useExternalWebServer = process.env.PLAYWRIGHT_USE_EXTERNAL_WEBSERVER === 'true';
 
 export default defineConfig({
@@ -39,6 +44,10 @@ export default defineConfig({
         webServer: {
           command: 'pnpm run dev',
           url: baseURL,
+          env: {
+            VITE_ADMIN_PROXY_PATH: apiBaseURL,
+            VITE_PORT: frontendURL.port,
+          },
           reuseExistingServer: !process.env.CI,
           timeout: 120 * 1000,
         },

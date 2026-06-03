@@ -1,7 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 async function loginTokenAsCompanyA(request: APIRequestContext) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -35,7 +36,7 @@ async function expectNoAuthError(page: Page) {
 }
 
 async function rootOrg(request: APIRequestContext, token: string) {
-  const response = await request.get('http://localhost:5555/org/tree?parentId=0&includeDisabled=true', {
+  const response = await request.get(e2eApi('/org/tree?parentId=0&includeDisabled=true'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
@@ -47,7 +48,7 @@ async function rootOrg(request: APIRequestContext, token: string) {
 
 async function cleanupOrg(request: APIRequestContext, token: string, orgCode: string) {
   const root = await rootOrg(request, token);
-  const treeResponse = await request.get(`http://localhost:5555/org/tree?parentId=${root.id}&includeDisabled=true`, {
+  const treeResponse = await request.get(e2eApi(`/org/tree?parentId=${root.id}&includeDisabled=true`), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!treeResponse.ok()) return;
@@ -58,7 +59,7 @@ async function cleanupOrg(request: APIRequestContext, token: string, orgCode: st
     const item = stack.pop();
     stack.push(...(item.children || []));
     if (item.orgCode === orgCode) {
-      await request.delete(`http://localhost:5555/org?id=${item.id}`, {
+      await request.delete(e2eApi(`/org?id=${item.id}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
@@ -76,7 +77,7 @@ test.describe('T15 组织架构管理闭环', () => {
     await cleanupOrg(request, token, orgCode);
 
     const root = await rootOrg(request, token);
-    const illegalRootResponse = await request.post('http://localhost:5555/org', {
+    const illegalRootResponse = await request.post(e2eApi('/org'), {
       headers: { Authorization: `Bearer ${token}` },
       data: {
         pid: 0,

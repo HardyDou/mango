@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -21,7 +22,7 @@ const companyATenant: LoginTenant = {
 test.describe.configure({ mode: 'serial' });
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     headers: { 'X-Forwarded-For': '8.8.8.8' },
     data: {
       username: 'admin',
@@ -51,7 +52,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function getJson(request: APIRequestContext, token: string, path: string) {
-  const response = await request.get(`http://localhost:5555${path}`, {
+  const response = await request.get(e2eApi(`${path}`), {
     headers: { Authorization: `Bearer ${token}` },
   });
   const body = await response.json();
@@ -59,7 +60,7 @@ async function getJson(request: APIRequestContext, token: string, path: string) 
 }
 
 async function listConfigs(request: APIRequestContext, token: string) {
-  const response = await request.get('http://localhost:5555/system/config/list', {
+  const response = await request.get(e2eApi('/system/config/list'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
@@ -70,14 +71,14 @@ async function listConfigs(request: APIRequestContext, token: string) {
 async function cleanupConfig(request: APIRequestContext, token: string, configKey: string) {
   const configs = await listConfigs(request, token);
   for (const config of configs.filter((item: any) => item.configKey === configKey)) {
-    await request.delete(`http://localhost:5555/system/config?id=${config.id}`, {
+    await request.delete(e2eApi(`/system/config?id=${config.id}`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
 }
 
 async function createConfig(request: APIRequestContext, token: string, configKey: string) {
-  const response = await request.post('http://localhost:5555/system/config', {
+  const response = await request.post(e2eApi('/system/config'), {
     headers: { Authorization: `Bearer ${token}`, 'X-Forwarded-For': '8.8.4.4' },
     data: {
       configKey,
@@ -96,7 +97,7 @@ async function createConfig(request: APIRequestContext, token: string, configKey
 }
 
 async function deleteConfig(request: APIRequestContext, token: string, configId: number | string) {
-  const response = await request.delete(`http://localhost:5555/system/config?id=${configId}`, {
+  const response = await request.delete(e2eApi(`/system/config?id=${configId}`), {
     headers: { Authorization: `Bearer ${token}`, 'X-Forwarded-For': '8.8.4.4' },
   });
   expect(response.status()).toBe(200);

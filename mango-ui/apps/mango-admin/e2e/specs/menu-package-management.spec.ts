@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -19,7 +20,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -53,7 +54,7 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 }
 
 async function listPackages(request: APIRequestContext, token: string, keyword?: string) {
-  const response = await request.get('http://localhost:5555/authorization/menu-packages', {
+  const response = await request.get(e2eApi('/authorization/menu-packages'), {
     headers: { Authorization: `Bearer ${token}` },
     params: {
       appCode: 'internal-admin',
@@ -67,7 +68,7 @@ async function listPackages(request: APIRequestContext, token: string, keyword?:
 }
 
 async function getPackageDetail(request: APIRequestContext, token: string, packageId: number) {
-  const response = await request.get('http://localhost:5555/authorization/menu-packages/detail', {
+  const response = await request.get(e2eApi('/authorization/menu-packages/detail'), {
     headers: { Authorization: `Bearer ${token}` },
     params: { packageId },
   });
@@ -80,7 +81,7 @@ async function getPackageDetail(request: APIRequestContext, token: string, packa
 async function cleanupPackages(request: APIRequestContext, token: string, packageCode: string) {
   const packages = await listPackages(request, token, packageCode);
   for (const item of packages.filter((row: any) => row.packageCode === packageCode)) {
-    await request.delete(`http://localhost:5555/authorization/menu-packages?packageId=${item.packageId}`, {
+    await request.delete(e2eApi(`/authorization/menu-packages?packageId=${item.packageId}`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
@@ -146,7 +147,7 @@ test.describe('套餐管理页面真实接口闭环', () => {
       const createdPackage = (await listPackages(request, token, packageCode)).find((item: any) => item.packageCode === packageCode);
       expect(createdPackage?.packageId).toBeTruthy();
       const packageDetail = await getPackageDetail(request, token, createdPackage.packageId);
-      const updateResponse = await request.put('http://localhost:5555/authorization/menu-packages', {
+      const updateResponse = await request.put(e2eApi('/authorization/menu-packages'), {
         headers: { Authorization: `Bearer ${token}` },
         data: {
           packageId: packageDetail.packageId,
@@ -173,7 +174,7 @@ test.describe('套餐管理页面真实接口闭环', () => {
       await expect(page.locator('.el-table__row', { hasText: editedPackageName })).toBeVisible({ timeout: 10000 });
 
       const editedRow = page.locator('.el-table__row', { hasText: packageCode }).first();
-      const deleteResponse = await request.delete(`http://localhost:5555/authorization/menu-packages?packageId=${createdPackage.packageId}`, {
+      const deleteResponse = await request.delete(e2eApi(`/authorization/menu-packages?packageId=${createdPackage.packageId}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(deleteResponse.status()).toBe(200);
@@ -195,7 +196,7 @@ test.describe('套餐管理页面真实接口闭环', () => {
 
   test('A 公司不可见套餐管理入口，维护接口返回 403', async ({ page, request }) => {
     const token = await loginToken(request, companyATenant);
-    const listResponse = await request.get('http://localhost:5555/authorization/menu-packages', {
+    const listResponse = await request.get(e2eApi('/authorization/menu-packages'), {
       headers: { Authorization: `Bearer ${token}` },
       params: { appCode: 'internal-admin' },
     });

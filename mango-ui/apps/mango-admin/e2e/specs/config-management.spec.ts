@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { api as e2eApi } from '../support/api';
 
 type LoginTenant = {
   tenantId: string;
@@ -19,7 +20,7 @@ const companyATenant: LoginTenant = {
 };
 
 async function loginToken(request: APIRequestContext, tenant: LoginTenant) {
-  const response = await request.post('http://localhost:5555/auth/login', {
+  const response = await request.post(e2eApi('/auth/login'), {
     data: {
       username: 'admin',
       password: 'admin123',
@@ -49,8 +50,8 @@ async function loginPage(page: Page, tenant: LoginTenant) {
 
 async function listConfigs(request: APIRequestContext, token: string, type?: string) {
   const url = type
-    ? `http://localhost:5555/system/config/list?type=${type}`
-    : 'http://localhost:5555/system/config/list';
+    ? e2eApi(`/system/config/list?type=${type}`)
+    : e2eApi('/system/config/list');
   const response = await request.get(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -62,7 +63,7 @@ async function listConfigs(request: APIRequestContext, token: string, type?: str
 async function cleanupConfig(request: APIRequestContext, token: string, key: string) {
   const configs = await listConfigs(request, token);
   for (const item of configs.filter((config: any) => config.configKey === key)) {
-    await request.delete(`http://localhost:5555/system/config?id=${item.id}`, {
+    await request.delete(e2eApi(`/system/config?id=${item.id}`), {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
@@ -202,12 +203,12 @@ test.describe('T12 系统配置页面真实接口闭环', () => {
   test('A 公司不可见参数配置入口，维护接口返回 403', async ({ page, request }) => {
     const companyToken = await loginToken(request, companyATenant);
 
-    const listResponse = await request.get('http://localhost:5555/system/config/list', {
+    const listResponse = await request.get(e2eApi('/system/config/list'), {
       headers: { Authorization: `Bearer ${companyToken}` },
     });
     expect(listResponse.status()).toBe(403);
 
-    const createResponse = await request.post('http://localhost:5555/system/config', {
+    const createResponse = await request.post(e2eApi('/system/config'), {
       headers: { Authorization: `Bearer ${companyToken}` },
       data: {
         configKey: `deny.config.${Date.now()}`,
