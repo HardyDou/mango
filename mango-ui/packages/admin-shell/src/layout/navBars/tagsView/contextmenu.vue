@@ -36,7 +36,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
 import { isHomeTag } from '@mango/common/utils/tagsView';
-import { resolveClosedTagFallback } from '../../../runtime/tagNavigation';
+import { resolveClosedTagFallback, resolveTagLocation } from '../../../runtime/tagNavigation';
 
 const props = defineProps<{
   tag: any;
@@ -57,21 +57,21 @@ watch(
 );
 
 const onRefresh = () => {
-  router.replace(props.tag.path);
+  router.replace(resolveTagLocation(props.tag, true));
   emit('close');
 };
 
-const onClose = () => {
+const onClose = async () => {
   if (isHomeTag(props.tag)) {
     emit('close');
     return;
   }
   const fallback = resolveClosedTagFallback(storesTagsViewRoutes.tagsViewRoutes, props.tag, route.path);
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.path !== props.tag.path);
-  storesTagsViewRoutes.setTagsViewRoutes(tags);
   if (fallback) {
-    router.push(fallback);
+    await router.push(fallback);
   }
+  storesTagsViewRoutes.setTagsViewRoutes(tags);
   emit('close');
 };
 
@@ -80,7 +80,7 @@ const onCloseOthers = () => {
     (t) => t.path === props.tag.path || t.meta?.isAffix
   );
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  router.push(props.tag.path);
+  router.push(resolveTagLocation(props.tag));
   emit('close');
 };
 

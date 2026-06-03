@@ -32,6 +32,9 @@ export function createMangoAdminRouter() {
     if (!Session.getToken()) {
       return '/login';
     }
+    if (to.path === '/') {
+      return '/home';
+    }
     return true;
   });
 

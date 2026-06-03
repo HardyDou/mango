@@ -12,6 +12,16 @@ describe('tag navigation', () => {
     expect(fallback).toMatchObject({ path: '/system/user' });
   });
 
+  it('does not carry route record name or meta into fallback navigation', () => {
+    const fallback = resolveClosedTagFallback([
+      { path: '/home', name: 'home', meta: { isAffix: true } },
+      { path: '/system/menu-package', name: 'system:menu-package', meta: { title: '套餐管理' } },
+      { path: '/system/tenant', name: 'system:tenant', meta: { title: '机构管理' } },
+    ] as any, { path: '/system/tenant' } as any, '/system/tenant');
+
+    expect(fallback).toEqual({ path: '/system/menu-package', query: undefined, hash: undefined, replace: false });
+  });
+
   it('falls back to home when closing the only active non-home tag', () => {
     const fallback = resolveClosedTagFallback([
       { path: '/home', meta: { isAffix: true } },
