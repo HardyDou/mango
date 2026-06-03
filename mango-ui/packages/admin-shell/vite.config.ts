@@ -32,12 +32,25 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        runtime: 'src/runtime/runtimeHost.ts',
+        menu: 'src/runtime/menuHost.ts',
+        stores: 'src/stores/index.ts',
+        router: 'src/router.ts',
+        home: 'src/views/home/index.vue',
+        'dev-pages': 'src/views/demo/registerDevPages.ts',
+        'dev-base-pages': 'src/views/demo/registerBaseDevPages.ts',
+        'dev-upload-page': 'src/views/demo/components/UploadView.vue',
+        'dev-workflow-page': 'src/views/demo/components/WorkflowComponentsView.vue',
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
     },
     rollupOptions: {
       external: externalPackages,
+      output: {
+        entryFileNames: '[name].js',
+      },
     },
   },
 });

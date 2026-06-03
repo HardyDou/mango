@@ -26,6 +26,48 @@ describe('@mango/admin-shell package boundary', () => {
     expect(dependencyRanges.some((range) => range.includes('workspace:'))).toBe(false);
   });
 
+  it('keeps published subpath imports on built files instead of source files', () => {
+    const packageJson = JSON.parse(readFile('package.json')) as {
+      exports?: Record<string, string | { import?: string; types?: string }>;
+      files?: string[];
+    };
+    const productSubpaths = ['.', './runtime', './menu', './stores', './router', './home'];
+
+    for (const subpath of productSubpaths) {
+      const entry = packageJson.exports?.[subpath];
+      const importPath = typeof entry === 'string' ? entry : entry?.import;
+      expect(importPath, subpath).toMatch(/^\.\/dist\/.+\.js$/);
+    }
+    expect(packageJson.exports?.['./style.css']).toBe('./style.css');
+    expect(packageJson.files).toContain('README.md');
+  });
+
+  it('documents admin shell product APIs and extension contracts', () => {
+    const readme = readFile('README.md');
+
+    for (const expected of [
+      'createMangoAdminApp',
+      'Feature Registrars',
+      'Runtime Modules',
+      'Menu Contract',
+      'Theme',
+      'I18n',
+      'Directives',
+      'Migration From App-Local Shell Code',
+      'Compatibility Matrix',
+    ]) {
+      expect(readme).toContain(expected);
+    }
+  });
+
+  it('keeps common dependency aligned with the released CLI material version', () => {
+    const packageJson = JSON.parse(readFile('package.json')) as {
+      dependencies?: Record<string, string>;
+    };
+
+    expect(packageJson.dependencies?.['@mango/common']).toBe('1.0.7');
+  });
+
   it('does not depend on app-private source paths', () => {
     const sourceFiles = listFiles(join(packageRoot, 'src'))
       .filter((file) => /\.(ts|vue)$/.test(file));

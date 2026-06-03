@@ -10,15 +10,42 @@
       "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
-    "./runtime": "./src/runtime/runtimeHost.ts",
-    "./menu": "./src/runtime/menuHost.ts",
-    "./stores": "./src/stores/index.ts",
-    "./router": "./src/router.ts",
-    "./home": "./src/views/home/index.vue",
-    "./dev-pages": "./src/views/demo/registerDevPages.ts",
-    "./dev-base-pages": "./src/views/demo/registerBaseDevPages.ts",
-    "./dev-upload-page": "./src/views/demo/components/UploadView.vue",
-    "./dev-workflow-page": "./src/views/demo/components/WorkflowComponentsView.vue",
+    "./runtime": {
+      "types": "./src/runtime/runtimeHost.ts",
+      "import": "./dist/runtime.js"
+    },
+    "./menu": {
+      "types": "./src/runtime/menuHost.ts",
+      "import": "./dist/menu.js"
+    },
+    "./stores": {
+      "types": "./src/stores/index.ts",
+      "import": "./dist/stores.js"
+    },
+    "./router": {
+      "types": "./src/router.ts",
+      "import": "./dist/router.js"
+    },
+    "./home": {
+      "types": "./src/views/home/index.vue",
+      "import": "./dist/home.js"
+    },
+    "./dev-pages": {
+      "types": "./src/views/demo/registerDevPages.ts",
+      "import": "./dist/dev-pages.js"
+    },
+    "./dev-base-pages": {
+      "types": "./src/views/demo/registerBaseDevPages.ts",
+      "import": "./dist/dev-base-pages.js"
+    },
+    "./dev-upload-page": {
+      "types": "./src/views/demo/components/UploadView.vue",
+      "import": "./dist/dev-upload-page.js"
+    },
+    "./dev-workflow-page": {
+      "types": "./src/views/demo/components/WorkflowComponentsView.vue",
+      "import": "./dist/dev-workflow-page.js"
+    },
     "./style.css": "./style.css"
   },
   "scripts": {
@@ -30,6 +57,7 @@
     "dist",
     "src",
     "style.css",
+    "README.md",
     "package.json"
   ],
   "dependencies": {
@@ -37,7 +65,7 @@
     "@mango/admin-pages": "1.0.5",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.4",
-    "@mango/common": "1.0.4",
+    "@mango/common": "1.0.7",
     "@mango/rbac": "1.0.4",
     "element-plus": "2.5.5",
     "@mango/file": "1.0.6",
