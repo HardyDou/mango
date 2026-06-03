@@ -9,7 +9,7 @@
 | 对象 | 名称 | 说明 |
 |---|---|---|
 | 业务项目 starter 资产 | `mango-business-starter` | 仓内生产起点，不是 demo |
-| 官方脚手架 CLI | `mango-cli` | 通过已发布 Maven / npm 包生成业务工程 |
+| 官方脚手架 CLI | `@mango/cli` | 通过已发布 Maven / npm 包生成业务工程；安装后命令为 `mango` / `mango-cli` |
 | 历史本地初始化 CLI | `create-mango-app` | 仓内 starter 验证资产，不作为当前业务项目首选入口 |
 | Web 生成服务 | Mango Initializr | 对齐 Spring Initializr |
 | 生成后的业务项目 | `<business>-platform` | 例如 `guarantee-platform`、`baohan-platform` |
@@ -20,18 +20,43 @@
 
 ## 3. 推荐启动方式
 
-首选 `mango-cli`：
+首选 `@mango/cli`。包名必须使用 scoped package，避免 Nexus `npm-group` 与公共 npm 上同名 `mango-cli` 包冲突；安装后推荐使用 `mango` 命令。
+
+企业环境先配置 npm registry。全局安装 CLI 时使用用户级 `~/.npmrc`；项目内安装依赖时使用企业项目根目录 `.npmrc`。不要依赖父目录 `.npmrc` 配合 `npm --prefix <dir>`，npm 不会按这个方式稳定读取父目录配置。
+
+```ini
+registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+@mango:registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+```
+
+配置用户级 `~/.npmrc` 后安装 CLI：
 
 ```bash
-npm exec --registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/ \
-  --package mango-cli@1.0.7 -- \
-  mango-cli init guarantee-platform \
+npm install -g @mango/cli@1.0.16
+
+mango init guarantee-platform \
   --preset custom \
   --modules workflow,template,file \
   --package com.example.guarantee \
   --group-id com.example \
   --topology monolith
 ```
+
+一次性执行也必须指定 scoped package：
+
+```bash
+npm exec --package @mango/cli@1.0.16 -- \
+  mango init guarantee-platform \
+  --preset custom \
+  --modules workflow,template,file \
+  --package com.example.guarantee \
+  --group-id com.example \
+  --topology monolith
+```
+
+不要安装或执行未 scoped 的 `mango-cli` npm 包。
+
+Mango 包发布到 `npm-hosted`，消费从 `npm-group` 安装。`@mango/cli` 包内 `publishConfig` 已指向 `npm-hosted`，框架维护者发布 CLI 时不需要在命令里重复写 registry。
 
 需要全量 Mango 管理端能力时使用 full preset：
 

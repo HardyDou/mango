@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>{{groupId}}</groupId>
+        <artifactId>{{projectKebab}}-backend</artifactId>
+        <version>{{projectVersion}}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>{{moduleKebab}}</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>{{moduleKebab}}-api</module>
+        <module>{{moduleKebab}}-core</module>
+        <module>{{moduleKebab}}-starter</module>
+        <module>{{moduleKebab}}-starter-remote</module>
+    </modules>
+</project>

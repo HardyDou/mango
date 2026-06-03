@@ -1,4 +1,4 @@
-import { ElMessage, type MessageParams } from 'element-plus';
+import { ElMessage, type MessageOptions, type MessageParams } from 'element-plus';
 
 type MessageType = 'success' | 'warning' | 'info' | 'error';
 
@@ -24,10 +24,17 @@ function normalizeMessage(message: string | MessageParams): string {
   if (typeof message === 'string') {
     return message;
   }
-  if ('message' in message) {
+  if (message && typeof message === 'object' && 'message' in message) {
     return String(message.message || '');
   }
   return '';
+}
+
+function normalizeMessageParams(message: string | MessageParams): MessageOptions {
+  if (message && typeof message === 'object' && typeof message !== 'function' && 'message' in message) {
+    return message;
+  }
+  return {};
 }
 
 function buildKey(type: MessageType, message: string): string {
@@ -52,7 +59,7 @@ export function showMessage(
     if (isSameMessage) {
       activeMessage.count += 1;
       const instance = ElMessage({
-        ...(typeof message === 'string' ? {} : message),
+        ...normalizeMessageParams(message),
         type,
         message: merge ? `${normalizedMessage}（${activeMessage.count}次）` : normalizedMessage,
       });
@@ -65,7 +72,7 @@ export function showMessage(
   }
 
   const instance = ElMessage({
-    ...(typeof message === 'string' ? {} : message),
+    ...normalizeMessageParams(message),
     type,
     message: normalizedMessage,
   });
