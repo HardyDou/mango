@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -19,6 +19,7 @@
     "./style-full.css": "./style-full.css"
   },
   "scripts": {
+    "prepack": "pnpm run build",
     "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build",
     "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build",
     "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
@@ -37,7 +38,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
     "@mango/admin-pages": "1.0.5",
-    "@mango/admin-shell": "1.0.10",
+    "@mango/admin-shell": "1.0.11",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.4",
     "@mango/common": "1.0.4",
