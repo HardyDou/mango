@@ -197,7 +197,6 @@ function createRouteMenu(overrides: Partial<ShellRouteMenu>): ShellRouteMenu {
       visible: 1,
       children: [],
     },
-    menuType: overrides.menuType || MenuTypeEnum.MENU,
     component: overrides.component,
     children: overrides.children,
   } as ShellRouteMenu;

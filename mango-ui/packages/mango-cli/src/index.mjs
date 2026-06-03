@@ -14,9 +14,9 @@ const businessStarterRoot = existsSync(businessModuleTemplateRoot)
 
 const defaultVersions = {
   mangoBackend: '1.0.0-SNAPSHOT',
-  mangoAdmin: readMangoPackageVersion('admin', '1.0.10'),
+  mangoAdmin: readMangoPackageVersion('admin', '1.0.11'),
   mangoAdminPages: readMangoPackageVersion('admin-pages', '1.0.5'),
-  mangoAdminShell: readMangoPackageVersion('admin-shell', '1.0.9'),
+  mangoAdminShell: readMangoPackageVersion('admin-shell', '1.0.10'),
   mangoAppRuntime: readMangoPackageVersion('app-runtime', '1.0.2'),
   mangoAuth: readMangoPackageVersion('auth', '1.0.4'),
   mangoCalendar: readMangoPackageVersion('calendar', '1.0.6'),
