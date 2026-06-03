@@ -967,7 +967,11 @@ function renderFrontendFeatureRegistrarsExpression(preset, selectedModules) {
 function renderBackendManagedDependencies(preset, selectedModules) {
   if (preset === 'full') {
     return renderDependencyXml(
-      [{ groupId: 'io.mango', artifactId: 'mango-admin-starter' }, ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES],
+      [
+        { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
+        { groupId: 'io.mango.platform.seed', artifactId: 'mango-seed-starter' },
+        ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
+      ],
       true,
       12,
     );
@@ -981,7 +985,10 @@ function renderBackendManagedDependencies(preset, selectedModules) {
 
 function renderBackendDependencies(preset, selectedModules) {
   if (preset === 'full') {
-    return renderDependencyXml([{ groupId: 'io.mango', artifactId: 'mango-admin-starter' }], false, 8);
+    return renderDependencyXml([
+      { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
+      { groupId: 'io.mango.platform.seed', artifactId: 'mango-seed-starter' },
+    ], false, 8);
   }
   return renderDependencyXml(
     [...CORE_BACKEND_DEPENDENCIES, ...selectedModules.flatMap(module => module.backend || [])],

@@ -32,6 +32,7 @@
         <module>mango-calendar</module>
         <module>mango-numgen</module>
         <module>mango-org</module>
+        <module>mango-seed</module>
         <module>mango-system</module>
     </modules>
 
