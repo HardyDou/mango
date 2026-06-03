@@ -36,10 +36,11 @@ CREATE DATABASE IF NOT EXISTS `{{projectKebab}}` DEFAULT CHARACTER SET utf8mb4 C
 ```
 
 ```bash
-mvn -f backend/pom.xml -DskipTests package
-mvn -f backend/app/pom.xml spring-boot:run
+scripts/backend-dev.sh
 curl http://127.0.0.1:5555/actuator/health
 ```
+
+`scripts/backend-dev.sh` installs local backend modules before starting the app. Use this script after `mango module add`, otherwise Maven may try to resolve local business starters from the remote repository.
 
 Default local account:
 
