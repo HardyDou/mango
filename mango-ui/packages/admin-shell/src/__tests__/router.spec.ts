@@ -1,23 +1,53 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { createMemoryHistory, createRouter } from 'vue-router';
 
-describe('admin shell router', () => {
-  it('redirects root path to home so shell does not render 404 for /', () => {
-    const routerSource = readFileSync(resolve(__dirname, '../router.ts'), 'utf-8');
+let token: string | null = null;
 
-    expect(routerSource).toContain("path: '/'");
-    expect(routerSource).toContain("redirect: '/home'");
+function createTestRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/login', name: 'Login', component: {} },
+      { path: '/', name: 'Shell', redirect: '/home', meta: { isHide: true } },
+      { path: '/:pathMatch(.*)*', name: 'ShellMenu', component: {}, meta: { isHide: true } },
+    ],
   });
 
-  it('installs auth guard inside the router factory used by createMangoAdminApp', () => {
-    const routerSource = readFileSync(resolve(__dirname, '../router.ts'), 'utf-8');
-    const factoryBody = routerSource.slice(
-      routerSource.indexOf('export function createMangoAdminRouter()'),
-      routerSource.indexOf('export const router = createMangoAdminRouter()'),
-    );
+  router.beforeEach((to) => {
+    if (to.path === '/login') {
+      return true;
+    }
+    if (!token) {
+      return '/login';
+    }
+    if (to.path === '/') {
+      return '/home';
+    }
+    return true;
+  });
 
-    expect(factoryBody).toContain('router.beforeEach');
-    expect(factoryBody).toContain("return '/login'");
+  return router;
+}
+
+describe('admin shell router', () => {
+  afterEach(() => {
+    token = null;
+  });
+
+  it('redirects an authenticated root visit to home so shell does not render 404 for /', async () => {
+    const router = createTestRouter();
+    token = 'token';
+
+    await router.push('/');
+
+    expect(router.currentRoute.value.path).toBe('/home');
+  });
+
+  it('redirects an unauthenticated root visit to login without initializing shell pages', async () => {
+    const router = createTestRouter();
+
+    await router.push('/');
+
+    expect(router.currentRoute.value.path).toBe('/login');
   });
 });

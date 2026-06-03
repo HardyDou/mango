@@ -10,7 +10,6 @@
         :to="{ path: tag.path, query: tag.query }"
         :class="isActive(tag) ? 'tags-view-item active' : 'tags-view-item'"
         @contextmenu.prevent="openContextMenu($event, tag)"
-        @click="refreshPage(tag)"
       >
         <span>{{ tag.meta?.title || tag.name }}</span>
         <el-icon
@@ -39,7 +38,7 @@ import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
 import { isHomeTag } from '@mango/common/utils/tagsView';
-import { resolveClosedTagFallback } from '../../../runtime/tagNavigation';
+import { resolveClosedTagFallback, resolveTagLocation } from '../../../runtime/tagNavigation';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
@@ -85,20 +84,16 @@ const openContextMenu = (e: MouseEvent, tag: any) => {
   contextMenuVisible.value = true;
 };
 
-const closeSelectedTag = (tag: any) => {
+const closeSelectedTag = async (tag: any) => {
   if (isHomeTag(tag)) {
     return;
   }
   const fallback = resolveClosedTagFallback(visitedViews.value, tag, route.path);
   const newTags = visitedViews.value.filter((t) => t.path !== tag.path);
-  storesTagsViewRoutes.setTagsViewRoutes(newTags);
   if (fallback) {
-    router.push(fallback);
+    await router.push(fallback);
   }
-};
-
-const refreshPage = (tag: any) => {
-  router.push(tag);
+  storesTagsViewRoutes.setTagsViewRoutes(newTags);
 };
 
 const onScroll = () => {
