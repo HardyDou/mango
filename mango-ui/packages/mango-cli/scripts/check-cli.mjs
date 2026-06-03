@@ -360,6 +360,18 @@ try {
   if (!moduleApi.includes('`${basePath}/create`') || !moduleApi.includes('`${basePath}/page`')) {
     throw new Error('module add did not generate standard CRUD frontend API');
   }
+  const moduleManifest = JSON.parse(readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json'),
+    'utf8',
+  ));
+  const moduleRootMenu = moduleManifest.menus?.[0];
+  const moduleChildMenu = moduleRootMenu?.children?.[0];
+  if (moduleRootMenu?.menuType !== 1 || moduleRootMenu?.redirect !== '/contract/seals') {
+    throw new Error('module add did not configure directory menu redirect to first runnable child menu');
+  }
+  if (moduleChildMenu?.path !== '/contract/seals' || moduleChildMenu?.component !== 'contract/seal/index') {
+    throw new Error('module add did not generate the expected child menu route/component');
+  }
   const moduleMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!moduleMain.includes("from '@mango-custom-acceptance/contract'") || !moduleMain.includes('registerContractPages();')) {
     throw new Error('module add did not register frontend pages');
