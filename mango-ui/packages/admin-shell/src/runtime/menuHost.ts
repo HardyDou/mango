@@ -289,7 +289,7 @@ export function createNotFoundRouteMenu(path = '/404'): ShellRouteMenu {
 }
 
 export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, currentPath: string): string {
-  if (!menu || menu.path !== currentPath || menu.menuType === MenuTypeEnum.MENU) {
+  if (!menu || menu.path !== currentPath || menu.sourceMenu.menuType === MenuTypeEnum.MENU) {
     return '';
   }
   const targetPath = resolveFirstMenuPath(menu, isRunnableRouteMenu);
@@ -297,7 +297,7 @@ export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, 
 }
 
 function isRunnableRouteMenu(menu: ShellRouteMenu): boolean {
-  return menu.menuType === MenuTypeEnum.MENU && Boolean(menu.path);
+  return menu.sourceMenu.menuType === MenuTypeEnum.MENU && Boolean(menu.path);
 }
 
 export function shouldShowDevCenter(options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {}) {
