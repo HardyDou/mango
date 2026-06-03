@@ -8,6 +8,7 @@ import App from './App.vue';
 import { installShellApp } from './appBootstrap';
 import { configureMangoAdminShell, getMangoAdminShellOptions, type MangoAdminShellOptions } from './config';
 import { createMangoAdminRouter } from './router';
+import { ensureFeatureRegistrars } from './runtime/featureRegistrars';
 import { onShellRuntimeUnauthorized } from './runtime/runtimeHost';
 
 export interface MangoAdminAppInstance {
@@ -23,6 +24,9 @@ export function createMangoAdminApp(options: MangoAdminShellOptions = {}): Mango
   });
   const apiBaseUrl = resolvedOptions.apiBaseUrl || '/api';
   setRequestBaseUrl(apiBaseUrl);
+  void ensureFeatureRegistrars().catch(error => {
+    console.error('[mango-shell] failed to register shell features', error);
+  });
 
   const app = createApp(App);
   const router = createMangoAdminRouter();

@@ -36,6 +36,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
 import { isHomeTag } from '@mango/common/utils/tagsView';
+import { resolveClosedTagFallback } from '../../../runtime/tagNavigation';
 
 const props = defineProps<{
   tag: any;
@@ -65,10 +66,11 @@ const onClose = () => {
     emit('close');
     return;
   }
+  const fallback = resolveClosedTagFallback(storesTagsViewRoutes.tagsViewRoutes, props.tag, route.path);
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.path !== props.tag.path);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  if (route.path === props.tag.path && tags.length > 0) {
-    router.push(tags[tags.length - 1]);
+  if (fallback) {
+    router.push(fallback);
   }
   emit('close');
 };
@@ -85,11 +87,7 @@ const onCloseOthers = () => {
 const onCloseAll = () => {
   const tags = storesTagsViewRoutes.tagsViewRoutes.filter((t) => t.meta?.isAffix);
   storesTagsViewRoutes.setTagsViewRoutes(tags);
-  if (tags.length > 0) {
-    router.push(tags[tags.length - 1]);
-  } else {
-    router.push('/home');
-  }
+  router.push(tags[0] || '/home');
   emit('close');
 };
 </script>

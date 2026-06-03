@@ -7,6 +7,7 @@ const externalPackages = [
   '@mango/admin-pages/core',
   '@mango/admin-pages/defaults',
   '@mango/admin-pages/features',
+  '@mango/admin-pages/notice',
   '@mango/app-runtime',
   '@mango/auth',
   '@mango/common',

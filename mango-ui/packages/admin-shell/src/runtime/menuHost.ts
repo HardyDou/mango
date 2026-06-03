@@ -11,6 +11,7 @@ import {
 import type { MangoMenuPageType } from '@mango/app-runtime';
 import type { RouteRecordRaw } from 'vue-router';
 import { getMangoAdminShellOptions, type MangoAdminShellDevCenterOptions } from '../config';
+import { ensureFeatureRegistrars } from './featureRegistrars';
 import {
   containsMenuPath,
   findMenuByPath,
@@ -140,19 +141,7 @@ export function useMenuHost() {
   };
 }
 
-let featureRegistrarsPromise: Promise<void> | undefined;
 let devCenterPagesPromise: Promise<void> | undefined;
-
-function ensureFeatureRegistrars() {
-  if (!featureRegistrarsPromise) {
-    featureRegistrarsPromise = Promise.resolve().then(async () => {
-      for (const registrar of getMangoAdminShellOptions().featureRegistrars || []) {
-        await registrar();
-      }
-    });
-  }
-  return featureRegistrarsPromise;
-}
 
 export function ensureDevCenterPagesRegistered() {
   if (!shouldShowDevCenter()) {
