@@ -8,6 +8,7 @@
       "menuName": "{{moduleName}}",
       "menuCode": "{{moduleKebab}}",
       "path": "/{{moduleKebab}}",
+      "redirect": "/{{moduleKebab}}/{{aggregateKebab}}s",
       "children": [
         {
           "menuType": 2,
