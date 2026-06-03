@@ -1,6 +1,15 @@
-# mango-cli
+# @mango/cli
 
 Mango project CLI.
+
+## Install
+
+The CLI package is published as `@mango/cli` to avoid collisions with the public `mango-cli` package name. The installed command names remain `mango` and `mango-cli`.
+
+```bash
+npm install -g @mango/cli --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+mango init mango-admin-demo --preset full --topology monolith
+```
 
 ## Init
 
