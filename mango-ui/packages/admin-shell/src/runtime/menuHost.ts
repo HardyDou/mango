@@ -17,6 +17,7 @@ import {
   findMenuByPath,
   findTopMenuByPath,
   resolveFirstMenu as resolveFirstMenuNode,
+  resolveFirstMenuPath,
   type MangoMenuTreeNode,
 } from '@mango/common/utils/menuTree';
 
@@ -285,6 +286,18 @@ export function createNotFoundRouteMenu(path = '/404'): ShellRouteMenu {
     pageType: 'LOCAL_ROUTE',
     children: [],
   }, 'fallback'));
+}
+
+export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, currentPath: string): string {
+  if (!menu || menu.path !== currentPath || menu.menuType === MenuTypeEnum.MENU) {
+    return '';
+  }
+  const targetPath = resolveFirstMenuPath(menu, isRunnableRouteMenu);
+  return targetPath && targetPath !== currentPath ? targetPath : '';
+}
+
+function isRunnableRouteMenu(menu: ShellRouteMenu): boolean {
+  return menu.menuType === MenuTypeEnum.MENU && Boolean(menu.path);
 }
 
 export function shouldShowDevCenter(options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {}) {

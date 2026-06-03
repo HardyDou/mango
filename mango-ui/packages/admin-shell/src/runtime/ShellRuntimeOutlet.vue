@@ -27,7 +27,13 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useRuntimeHost } from './runtimeHost';
-import { containsMenuPath, createNotFoundRouteMenu, useMenuHost, type ShellRouteMenu } from './menuHost';
+import {
+  containsMenuPath,
+  createNotFoundRouteMenu,
+  resolveDirectoryRouteRedirect,
+  useMenuHost,
+  type ShellRouteMenu,
+} from './menuHost';
 import { useRoutesList } from '../stores/routesList';
 import { useTagsViewRoutes } from '../stores/tagsViewRoutes';
 
@@ -65,15 +71,7 @@ async function initShellRuntime() {
     ]);
     routesListStore.setRoutesList(menus.value);
 
-    const currentMenu = selectMenu(route.path);
-    const targetMenu = currentMenu || createNotFoundRouteMenu(route.path);
-    if (targetMenu) {
-      activeTopRoutePath.value = findTopPath(targetMenu.path) || activeTopRoutePath.value;
-      if (currentMenu) {
-        ensureTag(targetMenu);
-      }
-      await mountShellMenu(targetMenu);
-    }
+    await renderCurrentRoute();
   } catch (error) {
     console.error('[mango-shell] failed to initialize shell runtime', error);
   }
@@ -85,13 +83,7 @@ watch(
     if (!menus.value.length) {
       return;
     }
-    const menu = selectMenu(route.path);
-    const targetMenu = menu || createNotFoundRouteMenu(route.path);
-    activeTopRoutePath.value = findTopPath(targetMenu.path) || activeTopRoutePath.value;
-    if (menu) {
-      ensureTag(targetMenu);
-    }
-    await mountShellMenu(targetMenu);
+    await renderCurrentRoute();
   }
 );
 
@@ -116,6 +108,22 @@ function ensureTag(menu: ShellRouteMenu) {
       },
     },
   ]);
+}
+
+async function renderCurrentRoute() {
+  const currentMenu = selectMenu(route.path);
+  const redirectPath = resolveDirectoryRouteRedirect(currentMenu, route.path);
+  if (redirectPath) {
+    await router.replace(redirectPath);
+    return;
+  }
+
+  const targetMenu = currentMenu || createNotFoundRouteMenu(route.path);
+  activeTopRoutePath.value = findTopPath(targetMenu.path) || activeTopRoutePath.value;
+  if (currentMenu) {
+    ensureTag(targetMenu);
+  }
+  await mountShellMenu(targetMenu);
 }
 
 async function mountShellMenu(menu: ShellRouteMenu) {
