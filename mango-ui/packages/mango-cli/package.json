@@ -13,6 +13,7 @@
   "files": [
     "src",
     "templates",
+    "release-versions.json",
     "README.md",
     "package.json"
   ],

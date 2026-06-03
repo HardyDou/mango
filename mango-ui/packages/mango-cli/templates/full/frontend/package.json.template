@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "typecheck": "vue-tsc -p tsconfig.app.json --noEmit",
-    "build": "npm run typecheck && vite build",
+    "build": "node scripts/build-with-report.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test:e2e": "playwright test"
   },

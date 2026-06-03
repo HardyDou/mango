@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(new URL('..', import.meta.url).pathname);
 const cli = join(packageRoot, 'src/index.mjs');
+const releaseVersions = JSON.parse(readFileSync(join(packageRoot, 'release-versions.json'), 'utf8'));
 const tempRoot = mkdtempSync(join(tmpdir(), 'mango-cli-'));
 const fullProjectName = 'mango-full-acceptance';
 const customProjectName = 'mango-custom-acceptance';
@@ -39,6 +40,7 @@ try {
     'AGENTS.md',
     '.gitignore',
     'frontend/package.json',
+    'frontend/scripts/build-with-report.mjs',
     'frontend/src/main.ts',
     'frontend/src/mango-admin-modular.d.ts',
     'frontend/tsconfig.app.json',
@@ -84,17 +86,37 @@ try {
     }
   }
   const expectedVersions = {
-    '@mango/admin': readWorkspacePackageVersion('admin'),
-    '@mango/calendar': readWorkspacePackageVersion('calendar'),
-    '@mango/file': readWorkspacePackageVersion('file'),
-    '@mango/notice': readWorkspacePackageVersion('notice'),
-    '@mango/numgen': readWorkspacePackageVersion('numgen'),
-    '@mango/template': readWorkspacePackageVersion('template'),
-    '@mango/workflow': readWorkspacePackageVersion('workflow'),
-    '@mango/workflow-business-example': readWorkspacePackageVersion('workflow-business-example'),
+    '@mango/admin': readReleasedPackageVersion('@mango/admin'),
+    '@mango/admin-pages': readReleasedPackageVersion('@mango/admin-pages'),
+    '@mango/admin-shell': readReleasedPackageVersion('@mango/admin-shell'),
+    '@mango/app-runtime': readReleasedPackageVersion('@mango/app-runtime'),
+    '@mango/auth': readReleasedPackageVersion('@mango/auth'),
+    '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
+    '@mango/common': readReleasedPackageVersion('@mango/common'),
+    '@mango/file': readReleasedPackageVersion('@mango/file'),
+    '@mango/notice': readReleasedPackageVersion('@mango/notice'),
+    '@mango/numgen': readReleasedPackageVersion('@mango/numgen'),
+    '@mango/rbac': readReleasedPackageVersion('@mango/rbac'),
+    '@mango/system': readReleasedPackageVersion('@mango/system'),
+    '@mango/template': readReleasedPackageVersion('@mango/template'),
+    '@mango/workflow': readReleasedPackageVersion('@mango/workflow'),
+    '@mango/workflow-business-example': readReleasedPackageVersion('@mango/workflow-business-example'),
   };
   for (const [dependency, expectedVersion] of Object.entries(expectedVersions)) {
     assertEqual(frontendPackage.dependencies[dependency], expectedVersion, dependency);
+  }
+  const frontendBuildScript = readFileSync(join(projectRoot, 'frontend/scripts/build-with-report.mjs'), 'utf8');
+  if (!frontendPackage.scripts.build.includes('build-with-report.mjs')
+    || !frontendBuildScript.includes('frontend-build-warnings.log')
+    || !frontendBuildScript.includes('warningCount')) {
+    throw new Error('generated frontend build must capture build warnings');
+  }
+  const frontendViteConfig = readFileSync(join(projectRoot, 'frontend/vite.config.ts'), 'utf8');
+  if (!frontendViteConfig.includes('manualChunks: mangoManualChunks')
+    || !frontendViteConfig.includes('mango-workflow')
+    || !frontendViteConfig.includes('element-plus')
+    || !frontendViteConfig.includes('vue-vendor')) {
+    throw new Error('generated frontend Vite config must split full preset bundles with manualChunks');
   }
 
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
@@ -220,7 +242,7 @@ try {
   assertIncludes(Object.keys(customPackage.dependencies), '@mango/template', 'custom dependencies');
   for (const dependency of ['@mango/calendar', '@mango/file', '@mango/notice', '@mango/numgen']) {
     assertIncludes(Object.keys(customPackage.dependencies), dependency, 'admin optional peer dependencies');
-    assertEqual(customPackage.dependencies[dependency], readWorkspacePackageVersion(dependency.replace('@mango/', '')), dependency);
+    assertEqual(customPackage.dependencies[dependency], readReleasedPackageVersion(dependency), dependency);
   }
 
   const customMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
@@ -301,7 +323,7 @@ try {
   assertEqual(addedConfig.modules.optional.join(','), 'workflow,workflow-example,template,notice', 'modules after add');
   const addedPackage = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
   assertIncludes(Object.keys(addedPackage.dependencies), '@mango/notice', 'dependencies after add');
-  assertEqual(addedPackage.dependencies['@mango/file'], readWorkspacePackageVersion('file'), 'file peer dependency after add');
+  assertEqual(addedPackage.dependencies['@mango/file'], readReleasedPackageVersion('@mango/file'), 'file peer dependency after add');
   assertEqual(addedPackage.dependencies['business-owned-package'], '1.2.3', 'business dependency after add');
   const addedMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!addedMain.includes('registerMangoNoticeAdminPages') || !addedMain.includes('registerMangoNoticeAdminShell')) {
@@ -428,9 +450,12 @@ function assertNotIncludes(values, unexpected, field) {
   }
 }
 
-function readWorkspacePackageVersion(packageName) {
-  const packageJson = JSON.parse(readFileSync(resolve(packageRoot, `../${packageName}/package.json`), 'utf8'));
-  return packageJson.version;
+function readReleasedPackageVersion(packageName) {
+  const version = releaseVersions.npm?.[packageName];
+  if (!version) {
+    throw new Error(`release-versions.json missing npm version for ${packageName}`);
+  }
+  return version;
 }
 
 function assertBusinessAcceptanceBaseline(projectRoot) {

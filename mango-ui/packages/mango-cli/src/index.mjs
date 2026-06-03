@@ -11,24 +11,25 @@ const businessModuleTemplateRoot = resolve(packageRoot, 'templates/business-modu
 const businessStarterRoot = existsSync(businessModuleTemplateRoot)
   ? businessModuleTemplateRoot
   : resolve(repoRoot, 'mango-business-starter');
+const releaseVersions = readReleaseVersions();
 
 const defaultVersions = {
-  mangoBackend: '1.0.0-SNAPSHOT',
-  mangoAdmin: readMangoPackageVersion('admin', '1.0.12'),
-  mangoAdminPages: readMangoPackageVersion('admin-pages', '1.0.5'),
-  mangoAdminShell: readMangoPackageVersion('admin-shell', '1.0.11'),
-  mangoAppRuntime: readMangoPackageVersion('app-runtime', '1.0.2'),
-  mangoAuth: readMangoPackageVersion('auth', '1.0.4'),
-  mangoCalendar: readMangoPackageVersion('calendar', '1.0.6'),
-  mangoCommon: readMangoPackageVersion('common', '1.0.7'),
-  mangoFile: readMangoPackageVersion('file', '1.0.6'),
-  mangoNotice: readMangoPackageVersion('notice', '1.0.6'),
-  mangoNumgen: readMangoPackageVersion('numgen', '1.0.6'),
-  mangoRbac: readMangoPackageVersion('rbac', '1.0.4'),
-  mangoSystem: readMangoPackageVersion('system', '1.0.4'),
-  mangoTemplate: readMangoPackageVersion('template', '1.0.6'),
-  mangoWorkflow: readMangoPackageVersion('workflow', '1.0.6'),
-  mangoWorkflowBusinessExample: readMangoPackageVersion('workflow-business-example', '1.0.6'),
+  mangoBackend: releaseVersions.maven?.mangoBackend || '1.0.0-SNAPSHOT',
+  mangoAdmin: readReleasedMangoPackageVersion('admin', '1.0.11'),
+  mangoAdminPages: readReleasedMangoPackageVersion('admin-pages', '1.0.5'),
+  mangoAdminShell: readReleasedMangoPackageVersion('admin-shell', '1.0.10'),
+  mangoAppRuntime: readReleasedMangoPackageVersion('app-runtime', '1.0.2'),
+  mangoAuth: readReleasedMangoPackageVersion('auth', '1.0.4'),
+  mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
+  mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
+  mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
+  mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
+  mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
+  mangoRbac: readReleasedMangoPackageVersion('rbac', '1.0.4'),
+  mangoSystem: readReleasedMangoPackageVersion('system', '1.0.4'),
+  mangoTemplate: readReleasedMangoPackageVersion('template', '1.0.6'),
+  mangoWorkflow: readReleasedMangoPackageVersion('workflow', '1.0.6'),
+  mangoWorkflowBusinessExample: readReleasedMangoPackageVersion('workflow-business-example', '1.0.6'),
   vue: '3.5.13',
   vueRouter: '^4.1.6',
   vueI18n: '9.2.2',
@@ -1124,8 +1125,16 @@ function readPackageVersion(path, fallback) {
   return content.version || fallback;
 }
 
-function readMangoPackageVersion(packageName, fallback) {
-  return readPackageVersion(`mango-ui/packages/${packageName}/package.json`, fallback);
+function readReleaseVersions() {
+  const releaseVersionsPath = join(packageRoot, 'release-versions.json');
+  if (!existsSync(releaseVersionsPath)) {
+    return {};
+  }
+  return JSON.parse(readFileSync(releaseVersionsPath, 'utf8'));
+}
+
+function readReleasedMangoPackageVersion(packageName, fallback) {
+  return releaseVersions.npm?.[`@mango/${packageName}`] || fallback;
 }
 
 function readMangoBaselineCommit() {
