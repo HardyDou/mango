@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-06-03T14:44:49.404Z",
+  "status": 0,
+  "warningCount": 0,
+  "warnings": [],
+  "commands": [
+    {
+      "command": "typecheck",
+      "status": 0
+    },
+    {
+      "command": "vite-build",
+      "status": 0
+    }
+  ]
+}
