@@ -37,7 +37,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.10",
     "@mango/admin-pages": "1.0.5",
-    "@mango/admin-shell": "1.0.6",
+    "@mango/admin-shell": "1.0.7",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.4",
     "@mango/common": "1.0.4",
