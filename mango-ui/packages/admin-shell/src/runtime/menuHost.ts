@@ -234,7 +234,6 @@ function inferModuleCode(component?: string, path?: string) {
     || target.includes('system/login-log')
     || target.includes('system/tenant')
     || target.includes('system/config')
-    || target.includes('system/route')
     || target.includes('system/public-path')
     || target.includes('system/area')
     || target.includes('system/file')) {
