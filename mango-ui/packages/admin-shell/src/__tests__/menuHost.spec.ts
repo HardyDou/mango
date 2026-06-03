@@ -3,8 +3,10 @@ import {
   createNotFoundRouteMenu,
   filterMenuForRouteByFeatures,
   findUnexpectedTopLevelMenus,
+  resolveDirectoryRouteRedirect,
   shouldShowDevCenter,
   MenuTypeEnum,
+  type ShellRouteMenu,
   type ShellMenu,
 } from '../runtime/menuHost';
 import { getRegisteredPageRoutes, registerModulePages } from '@mango/admin-pages/core';
@@ -31,6 +33,48 @@ describe('admin-shell menu contract', () => {
 
     expect(route.sourceMenu.meta?.source).toBe('fallback');
     expect(route.path).toBe('/missing-page');
+  });
+
+  it('redirects direct directory route visits to the configured runnable child route', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/procurement',
+      redirect: '/procurement/orders',
+      children: [
+        createRouteMenu({
+          menuType: MenuTypeEnum.MENU,
+          path: '/procurement/orders',
+          component: 'procurement/order/index',
+        }),
+      ],
+    });
+
+    expect(resolveDirectoryRouteRedirect(menu, '/procurement')).toBe('/procurement/orders');
+  });
+
+  it('falls back from a direct directory route to the first runnable child route', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.DIRECTORY,
+      path: '/procurement',
+      children: [
+        createRouteMenu({
+          menuType: MenuTypeEnum.MENU,
+          path: '/procurement/orders',
+          component: 'procurement/order/index',
+        }),
+      ],
+    });
+
+    expect(resolveDirectoryRouteRedirect(menu, '/procurement')).toBe('/procurement/orders');
+  });
+
+  it('does not redirect runnable menu routes so missing component errors remain visible', () => {
+    const menu = createRouteMenu({
+      menuType: MenuTypeEnum.MENU,
+      path: '/procurement/orders',
+    });
+
+    expect(resolveDirectoryRouteRedirect(menu, '/procurement/orders')).toBe('');
   });
 
   it('rejects top-level menus that are neither backend menus nor explicit shell menus', () => {
@@ -129,3 +173,32 @@ describe('admin-shell menu contract', () => {
     expect(getRegisteredPageRoutes(['mango-notice']).some(route => route.path === '/workflow/custom-apply')).toBe(false);
   });
 });
+
+function createRouteMenu(overrides: Partial<ShellRouteMenu>): ShellRouteMenu {
+  const path = overrides.path || '/test';
+  return {
+    path,
+    name: overrides.name || path,
+    redirect: overrides.redirect,
+    meta: {
+      title: 'Test',
+      ...(overrides.meta || {}),
+    },
+    sourceMenu: {
+      menuId: path,
+      menuName: String(overrides.name || path),
+      menuCode: String(overrides.name || path),
+      parentId: 0,
+      menuType: overrides.menuType || MenuTypeEnum.MENU,
+      path,
+      component: overrides.component,
+      sort: 1,
+      status: 1,
+      visible: 1,
+      children: [],
+    },
+    menuType: overrides.menuType || MenuTypeEnum.MENU,
+    component: overrides.component,
+    children: overrides.children,
+  } as ShellRouteMenu;
+}
