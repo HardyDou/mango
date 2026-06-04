@@ -24,6 +24,9 @@
       "@mango/admin/full": [
         "./src/mango-admin-full.d.ts"
       ],
+      "@mango/common": [
+        "./src/mango-common.d.ts"
+      ],
       "@mango/workflow/admin-pages": [
         "./src/mango-admin-modular.d.ts"
       ],

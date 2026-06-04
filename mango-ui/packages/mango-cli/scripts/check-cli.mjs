@@ -43,6 +43,7 @@ try {
     'frontend/scripts/build-with-report.mjs',
     'frontend/src/main.ts',
     'frontend/src/mango-admin-modular.d.ts',
+    'frontend/src/mango-common.d.ts',
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
     'scripts/backend-dev.sh',
@@ -349,6 +350,8 @@ try {
     'contract',
     '--aggregate',
     'seal',
+    '--aggregate-name',
+    '合同印章',
     '--module-name',
     '合同管理',
     '--project-dir',
@@ -398,8 +401,40 @@ try {
     throw new Error('module add did not generate standard CRUD controller');
   }
   const moduleApi = readFileSync(join(customRoot, 'frontend/packages/contract-api/src/api.ts'), 'utf8');
-  if (!moduleApi.includes('`${basePath}/create`') || !moduleApi.includes('`${basePath}/page`')) {
+  if (moduleApi.includes('@mango/common/utils/request')) {
+    throw new Error('module add generated frontend API should use @mango/common public entry');
+  }
+  const generatedTsConfig = readFileSync(join(customRoot, 'frontend/tsconfig.json'), 'utf8');
+  if (!generatedTsConfig.includes('"@mango/common"') || !generatedTsConfig.includes('./src/mango-common.d.ts')) {
+    throw new Error('generated frontend tsconfig should isolate @mango/common public request types');
+  }
+  if (!moduleApi.includes('`${basePath}/create`')
+    || !moduleApi.includes('`${basePath}/update`')
+    || !moduleApi.includes('`${basePath}/delete`')
+    || !moduleApi.includes('`${basePath}/detail`')
+    || !moduleApi.includes('`${basePath}/page`')) {
     throw new Error('module add did not generate standard CRUD frontend API');
+  }
+  const modulePage = readFileSync(join(customRoot, 'frontend/packages/contract/src/views/contract/seal/index.vue'), 'utf8');
+  for (const expected of [
+    'openCreateDialog',
+    'openEditDialog',
+    'openDetail',
+    'handleDelete',
+    'el-pagination',
+    'el-dialog',
+    'el-drawer',
+    'updateSeal',
+    'deleteSeal',
+    'getSealDetail',
+    '合同印章名称',
+    '新增合同印章',
+    '编辑合同印章',
+    '合同印章详情',
+  ]) {
+    if (!modulePage.includes(expected)) {
+      throw new Error(`module add generated frontend page missing CRUD capability: ${expected}`);
+    }
   }
   const moduleManifest = JSON.parse(readFileSync(
     join(customRoot, 'backend/modules/contract/contract-starter/src/main/resources/META-INF/mango/resource-manifest.json'),
@@ -413,6 +448,35 @@ try {
   if (moduleChildMenu?.path !== '/contract/seals' || moduleChildMenu?.component !== 'contract/seal/index') {
     throw new Error('module add did not generate the expected child menu route/component');
   }
+  if (moduleChildMenu?.menuName !== '合同印章管理') {
+    throw new Error('module add did not render aggregate display name in menu metadata');
+  }
+  const permissionCodes = new Set(moduleChildMenu?.permissions || []);
+  for (const permissionCode of [
+    'contract:seal:create',
+    'contract:seal:view',
+    'contract:seal:update',
+    'contract:seal:delete',
+  ]) {
+    if (!permissionCodes.has(permissionCode)) {
+      throw new Error(`module add did not generate expected permission: ${permissionCode}`);
+    }
+  }
+  const permissionNames = new Set((moduleChildMenu?.permissionItems || []).map(item => item.permissionName));
+  for (const permissionName of ['新增合同印章', '查看合同印章', '编辑合同印章', '删除合同印章']) {
+    if (!permissionNames.has(permissionName)) {
+      throw new Error(`module add did not generate expected permission name: ${permissionName}`);
+    }
+  }
+  const moduleApiJava = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-api/src/main/java/com/example/custom/contract/api/ContractApi.java'),
+    'utf8',
+  );
+  for (const expected of ['创建合同印章', '修改合同印章', '删除合同印章', '分页查询合同印章', '查询合同印章详情']) {
+    if (!moduleApiJava.includes(expected)) {
+      throw new Error(`module add did not render aggregate display name in API documentation: ${expected}`);
+    }
+  }
   const moduleMain = readFileSync(join(customRoot, 'frontend/src/main.ts'), 'utf8');
   if (!moduleMain.includes("from '@mango-custom-acceptance/contract'") || !moduleMain.includes('registerContractPages();')) {
     throw new Error('module add did not register frontend pages');
@@ -420,6 +484,9 @@ try {
   const moduleConfig = JSON.parse(readFileSync(join(customRoot, 'mango.config.json'), 'utf8'));
   if (!Array.isArray(moduleConfig.businessModules) || moduleConfig.businessModules[0]?.module !== 'contract') {
     throw new Error('module add did not update mango.config.json businessModules');
+  }
+  if (moduleConfig.businessModules[0]?.aggregateDisplayName !== '合同印章') {
+    throw new Error('module add did not persist aggregate display name');
   }
   const modulePackageJson = JSON.parse(readFileSync(join(customRoot, 'frontend/package.json'), 'utf8'));
   if (!Array.isArray(modulePackageJson.workspaces) || !modulePackageJson.workspaces.includes('packages/*')) {

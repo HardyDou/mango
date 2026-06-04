@@ -224,7 +224,7 @@ Usage:
   mango init <project> --preset full [options]
   mango init <project> --preset custom --modules workflow,template [options]
   mango add <module...> [options]
-  mango module add <module> --aggregate <name> [options]
+  mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
 
@@ -239,6 +239,7 @@ Options:
   --npm-registry <url>     NPM registry written to project .npmrc
   --maven-repository <url> Maven repository URL written to generated pom.xml
   --aggregate <name>       Business aggregate name for mango module add
+  --aggregate-name <name>  Business aggregate display name for mango module add
   --module-name <name>     Business module display name for mango module add
   --force                  Overwrite existing target directory
   --help                   Show help
@@ -572,6 +573,7 @@ function addBusinessModule(argv) {
     aggregateKebabSnake: toSnakeCase(aggregateKebab),
     aggregatePascal: toPascalCase(aggregateKebab),
     aggregateCamel: toCamelCase(aggregateKebab),
+    aggregateName: options.aggregateName || toPascalCase(aggregateKebab),
     backendBusinessFlywayModules: '',
   };
   copyTemplate(join(businessStarterRoot, 'backend/modules/{{moduleKebab}}'), moduleTarget, variables);
@@ -593,6 +595,7 @@ function parseBusinessModuleArgs(argv) {
     projectDir: '.',
     module: '',
     aggregate: '',
+    aggregateName: '',
     moduleName: '',
     force: false,
   };
@@ -602,7 +605,7 @@ function parseBusinessModuleArgs(argv) {
       result.force = true;
       continue;
     }
-    if (['--project-dir', '--aggregate', '--module-name'].includes(arg)) {
+    if (['--project-dir', '--aggregate', '--aggregate-name', '--module-name'].includes(arg)) {
       const next = argv[index + 1];
       if (!next || next.startsWith('--')) {
         fail(`missing value for ${arg}`);
@@ -612,6 +615,8 @@ function parseBusinessModuleArgs(argv) {
         result.projectDir = next;
       } else if (arg === '--aggregate') {
         result.aggregate = next;
+      } else if (arg === '--aggregate-name') {
+        result.aggregateName = next;
       } else {
         result.moduleName = next;
       }
@@ -796,6 +801,7 @@ function updateBusinessConfig(targetDir, config, variables) {
     aggregate: variables.aggregateKebab,
     package: variables.modulePackage,
     displayName: variables.moduleName,
+    aggregateDisplayName: variables.aggregateName,
   });
   config.businessModules = nextModules;
   writeFileSync(join(targetDir, 'mango.config.json'), `${JSON.stringify(config, null, 2)}\n`);

@@ -4,15 +4,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 
 /**
- * {{aggregatePascal}}返回对象。
+ * {{aggregateName}}返回对象。
  */
-@Schema(description = "{{aggregatePascal}}返回对象")
+@Schema(description = "{{aggregateName}}返回对象")
 public class {{aggregatePascal}}VO implements Serializable {
 
     @Schema(description = "业务标识")
     private String id;
 
-    @Schema(description = "{{aggregatePascal}}名称")
+    @Schema(description = "{{aggregateName}}名称")
     private String name;
 
     public String getId() {

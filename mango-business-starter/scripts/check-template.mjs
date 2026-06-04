@@ -77,7 +77,7 @@ const requiredFiles = [
 const contentChecks = [
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
-    patterns: ['R<Object>', 'R<PersistencePageResult<?>>', '@ParameterObject', '@Validated', '/create', '/page', '/detail'],
+    patterns: ['R<Object>', 'R<PersistencePageResult<?>>', '@ParameterObject', '@Validated', '/create', '/update', '/delete', '/page', '/detail', '{{aggregateName}}'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
@@ -101,7 +101,16 @@ const contentChecks = [
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/resources/META-INF/mango/resource-manifest.json',
-    patterns: ['"moduleCode": "{{moduleKebab}}"', '"component": "{{moduleKebab}}/{{aggregateKebab}}/index"', '"permissionItems"'],
+    patterns: [
+      '"moduleCode": "{{moduleKebab}}"',
+      '"menuName": "{{aggregateName}}管理"',
+      '"component": "{{moduleKebab}}/{{aggregateKebab}}/index"',
+      '"{{moduleKebab}}:{{aggregateKebab}}:create"',
+      '"{{moduleKebab}}:{{aggregateKebab}}:view"',
+      '"{{moduleKebab}}:{{aggregateKebab}}:update"',
+      '"{{moduleKebab}}:{{aggregateKebab}}:delete"',
+      '"permissionItems"',
+    ],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter-remote/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/remote/{{modulePascal}}FeignClient.java',
@@ -109,15 +118,15 @@ const contentChecks = [
   },
   {
     file: 'frontend/packages/{{moduleKebab}}-api/src/api.ts',
-    patterns: ["from '@mango/common/utils/request'", 'post<string>', 'get<PageResult<{{aggregatePascal}}VO>>', '`${basePath}/create`', '`${basePath}/page`'],
+    patterns: ["from '@mango/common'", 'post<string>', 'get<PageResult<{{aggregatePascal}}VO>>', '`${basePath}/create`', '`${basePath}/update`', '`${basePath}/delete`', '`${basePath}/page`', '`${basePath}/detail`'],
   },
   {
     file: 'frontend/packages/{{moduleKebab}}-api/src/types.ts',
-    patterns: ['page: number', 'size: number', 'records: T[]'],
+    patterns: ['Update{{aggregatePascal}}Command', 'DeleteCommand', 'page: number', 'size: number', 'records: T[]'],
   },
   {
     file: 'frontend/packages/{{moduleKebab}}/src/views/{{moduleKebab}}/{{aggregateKebab}}/index.vue',
-    patterns: ['create{{aggregatePascal}}', 'records.value = result.records', 'page: 1', 'size: 20'],
+    patterns: ['create{{aggregatePascal}}', 'update{{aggregatePascal}}', 'delete{{aggregatePascal}}', 'get{{aggregatePascal}}Detail', 'openCreateDialog', 'openEditDialog', 'openDetail', 'handleDelete', 'el-pagination', 'el-dialog', 'el-drawer', 'records.value = result.records', 'page: 1', 'size: 20'],
   },
   {
     file: 'frontend/packages/{{moduleKebab}}/src/index.ts',
