@@ -36,6 +36,23 @@ for (const [packageName, lockedVersion] of Object.entries(releaseVersions.npm ??
   }
 }
 
+for (const [packageName, workspacePackage] of packageIndex) {
+  for (const dependencyType of ['dependencies', 'peerDependencies', 'devDependencies']) {
+    const dependencies = workspacePackage.packageJson[dependencyType] ?? {};
+    for (const [dependencyName, declaredVersion] of Object.entries(dependencies)) {
+      const dependencyPackage = packageIndex.get(dependencyName);
+      if (!dependencyPackage || declaredVersion === 'workspace:*') {
+        continue;
+      }
+      if (declaredVersion !== dependencyPackage.version) {
+        mismatches.push(
+          `${packageName}: ${dependencyType}.${dependencyName} ${declaredVersion} != local package ${dependencyPackage.version}`,
+        );
+      }
+    }
+  }
+}
+
 if (mismatches.length > 0) {
   console.error(`release-versions.json is inconsistent:\n${mismatches.map((item) => `- ${item}`).join('\n')}`);
   process.exit(1);
@@ -57,6 +74,7 @@ function indexWorkspacePackages() {
     if (packageJson.name?.startsWith('@mango/')) {
       packages.set(packageJson.name, {
         version: packageJson.version,
+        packageJson,
         packageJsonPath,
       });
     }
