@@ -3,9 +3,11 @@ import {
   createNotFoundRouteMenu,
   filterMenuForRouteByFeatures,
   findUnexpectedTopLevelMenus,
+  isRunnableMenu,
   resolveDirectoryRouteRedirect,
   shouldShowDevCenter,
   MenuTypeEnum,
+  toShellRouteMenu,
   type ShellRouteMenu,
   type ShellMenu,
 } from '../runtime/menuHost';
@@ -75,6 +77,22 @@ describe('admin-shell menu contract', () => {
     });
 
     expect(resolveDirectoryRouteRedirect(menu, '/procurement/orders')).toBe('');
+  });
+
+  it('reports visible page menus missing component instead of treating them as runnable', () => {
+    const menu = createShellRouteMenu({
+      menuId: 'broken',
+      menuName: '缺失页面',
+      menuCode: 'broken:page',
+      parentId: 0,
+      menuType: MenuTypeEnum.MENU,
+      path: '/broken',
+      component: undefined,
+    });
+
+    expect(isRunnableMenu(menu)).toBe(false);
+    expect(resolveDirectoryRouteRedirect(menu, '/broken')).toBe('');
+    expect(menu.sourceMenu.meta?.menuContractError).toContain('菜单配置缺少 component');
   });
 
   it('rejects top-level menus that are neither backend menus nor explicit shell menus', () => {
@@ -200,4 +218,18 @@ function createRouteMenu(overrides: Partial<ShellRouteMenu>): ShellRouteMenu {
     component: overrides.component,
     children: overrides.children,
   } as ShellRouteMenu;
+}
+
+function createShellRouteMenu(menu: Partial<ShellMenu> & Pick<ShellMenu, 'menuId' | 'menuName' | 'menuCode' | 'parentId' | 'menuType' | 'path'>): ShellRouteMenu {
+  return toShellRouteMenu({
+    appCode: 'internal-admin',
+    moduleCode: 'mango-workflow',
+    sort: 1,
+    status: 1,
+    visible: 1,
+    keepAlive: 0,
+    pageType: 'LOCAL_ROUTE',
+    ...menu,
+    children: menu.children || [],
+  });
 }

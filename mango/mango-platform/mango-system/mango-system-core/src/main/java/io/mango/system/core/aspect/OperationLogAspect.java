@@ -1,6 +1,7 @@
 package io.mango.system.core.aspect;
 
-import io.swagger.v3.oas.annotations.Operation;
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.iplocation.api.IpLocation;
 import io.mango.infra.iplocation.api.IpLocationResolver;
@@ -8,6 +9,9 @@ import io.mango.infra.log.annotation.Log;
 import io.mango.infra.web.util.JacksonUtils;
 import io.mango.system.api.po.SysOperationLogPo;
 import io.mango.system.core.service.ISysLogService;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +21,18 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Aspect
 @Slf4j
@@ -35,6 +46,10 @@ public class OperationLogAspect {
 
     @Around("@annotation(io.mango.infra.log.annotation.Log) || @annotation(io.mango.authorization.api.annotation.ApiAccess)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
+        MethodSignature signature = (MethodSignature) point.getSignature();
+        if (!shouldRecord(signature)) {
+            return point.proceed();
+        }
         long start = System.currentTimeMillis();
         Object result = null;
         Throwable error = null;
@@ -57,8 +72,9 @@ public class OperationLogAspect {
             }
             HttpServletRequest request = attributes.getRequest();
             MethodSignature signature = (MethodSignature) point.getSignature();
-            Log logAnnotation = signature.getMethod().getAnnotation(Log.class);
-            Operation operationAnnotation = signature.getMethod().getAnnotation(Operation.class);
+            Method method = signature.getMethod();
+            Log logAnnotation = method.getAnnotation(Log.class);
+            Operation operationAnnotation = method.getAnnotation(Operation.class);
             String operationName = resolveOperationName(logAnnotation, operationAnnotation, signature);
 
             SysOperationLogPo opLog = new SysOperationLogPo();
@@ -85,6 +101,17 @@ public class OperationLogAspect {
         }
     }
 
+    private boolean shouldRecord(MethodSignature signature) {
+        Method method = signature.getMethod();
+        Log logAnnotation = method.getAnnotation(Log.class);
+        if (logAnnotation != null) {
+            return true;
+        }
+        return Optional.ofNullable(method.getAnnotation(ApiAccess.class))
+                .map(apiAccess -> apiAccess.mode() != ApiResourceAccessMode.PUBLIC)
+                .orElse(false);
+    }
+
     private String resolveLocation(String clientIp) {
         if (ipLocationResolver == null) {
             return "未知";
@@ -98,7 +125,36 @@ public class OperationLogAspect {
         if (queryParams != null && !"{}".equals(queryParams)) {
             return queryParams;
         }
-        return JacksonUtils.toJsonStr(point.getArgs());
+        return JacksonUtils.toJsonStr(sanitizeArgs(point.getArgs()));
+    }
+
+    private List<Object> sanitizeArgs(Object[] args) {
+        return Arrays.stream(args)
+                .map(this::sanitizeArg)
+                .toList();
+    }
+
+    private Object sanitizeArg(Object arg) {
+        if (arg == null) {
+            return null;
+        }
+        if (arg instanceof ServletRequest) {
+            return "[ServletRequest]";
+        }
+        if (arg instanceof ServletResponse) {
+            return "[ServletResponse]";
+        }
+        if (arg instanceof MultipartFile file) {
+            return Map.of(
+                    "type", "MultipartFile",
+                    "name", Optional.ofNullable(file.getOriginalFilename()).orElse(""),
+                    "size", file.getSize()
+            );
+        }
+        if (isBinaryBody(arg)) {
+            return "[BinaryBody]";
+        }
+        return arg;
     }
 
     private String resolveResult(Object result) {
@@ -120,6 +176,7 @@ public class OperationLogAspect {
     private boolean isBinaryBody(Object value) {
         return value instanceof Resource
                 || value instanceof InputStream
+                || value instanceof OutputStream
                 || value instanceof byte[];
     }
 

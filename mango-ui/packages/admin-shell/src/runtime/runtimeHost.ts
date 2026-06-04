@@ -21,7 +21,7 @@ import { useLayoutStore } from '../stores/layout';
 import { usePreferencesStore } from '../stores/preferences';
 import { installShellApp } from '../appBootstrap';
 import { getMangoAdminShellOptions } from '../config';
-import { ensureDevCenterPagesRegistered, type ShellMenu, type ShellRouteMenu } from './menuHost';
+import { ensureDevCenterPagesRegistered, MenuTypeEnum, type ShellMenu, type ShellRouteMenu } from './menuHost';
 import { ensureFeatureRegistrars } from './featureRegistrars';
 import { defaultRuntimeConfig, loadShellRuntimeConfig } from './runtimeConfig';
 
@@ -148,6 +148,10 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
     }
     const loader = getPageLoader(menu.moduleCode, menu.component) || getPageLoader(undefined, menu.component);
     if (!loader) {
+      if (menu.menuType === MenuTypeEnum.MENU && !menu.component) {
+        mountMenuContractError(menu);
+        return;
+      }
       await mountNotFound(seq);
       return;
     }
@@ -310,6 +314,23 @@ export function useRuntimeHost(containerRef: Ref<HTMLElement | undefined>, route
         ? diagnostics.map(item => item.message)
         : ['请检查 runtime-config.json 是否配置 entry 和 runtimeCode。'],
       retry: retryCurrentMenu,
+    });
+  }
+
+  function mountMenuContractError(menu: ShellMenu) {
+    const container = containerRef.value;
+    if (!container) {
+      return;
+    }
+    const diagnostics = menu.meta?.diagnostics || [];
+    renderRuntimeState(container, {
+      title: '菜单配置错误',
+      description: diagnostics[0] || `${menu.menuName || menu.path || '当前菜单'} 缺少 component，无法作为本地页面挂载。`,
+      details: [
+        `菜单编码：${menu.menuCode || '-'}`,
+        `菜单路径：${menu.path || '-'}`,
+        '请将分组菜单配置为目录，或为页面菜单补充 component。',
+      ],
     });
   }
 
