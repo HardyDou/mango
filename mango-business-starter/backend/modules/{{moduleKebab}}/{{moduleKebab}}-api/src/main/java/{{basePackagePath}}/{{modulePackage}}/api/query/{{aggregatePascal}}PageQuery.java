@@ -6,12 +6,12 @@ import io.mango.infra.persistence.api.crud.QueryType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * {{aggregatePascal}}分页查询。
+ * {{aggregateName}}分页查询。
  */
-@Schema(description = "{{aggregatePascal}}分页查询")
+@Schema(description = "{{aggregateName}}分页查询")
 public class {{aggregatePascal}}PageQuery extends PageQuery {
 
-    @Schema(description = "{{aggregatePascal}}名称")
+    @Schema(description = "{{aggregateName}}名称")
     @QueryField(type = QueryType.LIKE)
     private String name;
 

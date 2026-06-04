@@ -6,17 +6,17 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * 修改{{aggregatePascal}}命令。
+ * 修改{{aggregateName}}命令。
  */
-@Schema(description = "修改{{aggregatePascal}}命令")
+@Schema(description = "修改{{aggregateName}}命令")
 public class Update{{aggregatePascal}}Command implements Serializable {
 
     @Schema(description = "业务标识")
     @NotNull(message = "业务标识不能为空")
     private Long id;
 
-    @Schema(description = "{{aggregatePascal}}名称")
-    @NotBlank(message = "{{aggregatePascal}}名称不能为空")
+    @Schema(description = "{{aggregateName}}名称")
+    @NotBlank(message = "{{aggregateName}}名称不能为空")
     private String name;
 
     public Long getId() {

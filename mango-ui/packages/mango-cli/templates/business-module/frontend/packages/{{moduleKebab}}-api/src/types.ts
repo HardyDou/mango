@@ -4,6 +4,14 @@ export interface Create{{aggregatePascal}}Command {
   name: string;
 }
 
+export interface Update{{aggregatePascal}}Command extends Create{{aggregatePascal}}Command {
+  id: ApiId;
+}
+
+export interface DeleteCommand {
+  id: ApiId;
+}
+
 export interface {{aggregatePascal}}PageQuery {
   page: number;
   size: number;

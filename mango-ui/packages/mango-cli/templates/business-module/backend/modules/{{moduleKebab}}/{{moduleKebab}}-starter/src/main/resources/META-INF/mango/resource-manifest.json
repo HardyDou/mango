@@ -12,22 +12,32 @@
       "children": [
         {
           "menuType": 2,
-          "menuName": "{{aggregatePascal}}管理",
+          "menuName": "{{aggregateName}}管理",
           "menuCode": "{{moduleKebab}}:{{aggregateKebab}}:list",
           "path": "/{{moduleKebab}}/{{aggregateKebab}}s",
           "component": "{{moduleKebab}}/{{aggregateKebab}}/index",
           "permissions": [
             "{{moduleKebab}}:{{aggregateKebab}}:create",
-            "{{moduleKebab}}:{{aggregateKebab}}:view"
+            "{{moduleKebab}}:{{aggregateKebab}}:view",
+            "{{moduleKebab}}:{{aggregateKebab}}:update",
+            "{{moduleKebab}}:{{aggregateKebab}}:delete"
           ],
           "permissionItems": [
             {
               "permissionCode": "{{moduleKebab}}:{{aggregateKebab}}:create",
-              "permissionName": "新增{{aggregatePascal}}"
+              "permissionName": "新增{{aggregateName}}"
             },
             {
               "permissionCode": "{{moduleKebab}}:{{aggregateKebab}}:view",
-              "permissionName": "查看{{aggregatePascal}}"
+              "permissionName": "查看{{aggregateName}}"
+            },
+            {
+              "permissionCode": "{{moduleKebab}}:{{aggregateKebab}}:update",
+              "permissionName": "编辑{{aggregateName}}"
+            },
+            {
+              "permissionCode": "{{moduleKebab}}:{{aggregateKebab}}:delete",
+              "permissionName": "删除{{aggregateName}}"
             }
           ]
         }
