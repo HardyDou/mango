@@ -72,6 +72,7 @@ node mango-pmo/tools/acceptance-evidence-check.mjs \
 
 ## 5. 命名规则
 
+- 测试资产目录归属遵循 `business-pmo/mango-baseline/rules/04-test-assets.md`。
 - 测试文件使用 `*.spec.ts` 或 `*.test.ts`。
 - 用例名称直接描述场景和结果。
 

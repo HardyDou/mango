@@ -27,6 +27,7 @@
 
 ## 4. 分层归属
 
+- 测试资产目录归属遵循 `business-pmo/mango-baseline/rules/04-test-assets.md`。
 - `common`：测试放各模块 `src/test/java`，只测公共规则、通用工具、SPI 契约和高复用基础逻辑，以 `UnitTest` 为主。
 - `infra`：模块内 `src/test/java` 只放少量复杂局部逻辑测试；跨 `api/support/core/starter/starter-remote` 的能力链路、单体真实链路、多服务协作链路统一放 `mango-infra-test`。
 - `platform`：测试放各模块 `src/test/java`，主要验证业务规则、command/query/usecase/service 链路和模块内部协作，以 `IntegrationTest` 为主。

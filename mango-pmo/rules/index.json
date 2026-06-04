@@ -43,6 +43,10 @@
       "path": "rules/03-ai-coding-redlines.md",
       "reason": "AI 编码红线"
     },
+    "process.testAssets": {
+      "path": "rules/04-test-assets.md",
+      "reason": "测试资产目录规范"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -119,15 +123,15 @@
   "roles": {
     "pm": ["agent.pm", "product.prd"],
     "tech-lead": ["agent.techLead"],
-    "dev": ["agent.dev", "process.devEnvironment"],
-    "qa": ["agent.qa"],
+    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets"],
+    "qa": ["agent.qa", "process.testAssets"],
     "pmo": ["agent.pmo"]
   },
   "phases": {
     "requirement": ["product.prd"],
     "design": ["agent.techLead"],
     "develop": ["agent.dev", "process.devEnvironment"],
-    "verify": ["agent.qa"],
+    "verify": ["agent.qa", "process.testAssets"],
     "release": [],
     "governance": ["agent.pmo"]
   },
@@ -176,8 +180,8 @@
     "backendTest": {
       "roles": ["dev", "qa"],
       "paths": ["mango/**/src/test/**"],
-      "keywords": ["后端测试", "单测", "集成测试", "mvn test", "mvn verify", "mango:check", "pmd", "checkstyle", "spotbugs"],
-      "include": ["backend.test"]
+      "keywords": ["后端测试", "单测", "集成测试", "mvn test", "mvn verify", "mango:check", "pmd", "checkstyle", "spotbugs", "测试资产", "回归脚本", "验收证据", "evidence"],
+      "include": ["backend.test", "process.testAssets"]
     },
     "frontendFlow": {
       "roles": ["tech-lead", "dev", "qa"],
@@ -199,9 +203,15 @@
     },
     "frontendTest": {
       "roles": ["dev", "qa"],
-      "paths": ["mango-ui/**/__tests__/**", "mango-ui/**/*.spec.*", "mango-ui/**/*.test.*", "mango-ui/**/playwright/**"],
-      "keywords": ["前端测试", "E2E", "Playwright", "组件测试", "pnpm test", "pnpm build", "pnpm lint"],
-      "include": ["frontend.test"]
+      "paths": ["mango-ui/**/__tests__/**", "mango-ui/**/*.spec.*", "mango-ui/**/*.test.*", "mango-ui/**/e2e/**", "mango-ui/**/playwright/**", "mango-ui/**/playwright.config.*"],
+      "keywords": ["前端测试", "E2E", "Playwright", "组件测试", "pnpm test", "pnpm build", "pnpm lint", "测试资产", "回归脚本", "验收证据", "evidence"],
+      "include": ["frontend.test", "process.testAssets"]
+    },
+    "testAssets": {
+      "roles": ["dev", "qa", "pmo"],
+      "paths": ["mango-docs/evidence/**", "business-docs/evidence/**", ".runtime/**", "mango-ui/packages/mango-cli/tests/**"],
+      "keywords": ["测试目录", "测试资产", "回归脚本", "验收证据", "evidence", ".runtime", "runtime", "临时项目", "生成项目", "mango-cli 验证", "CLI 回归"],
+      "include": ["process.testAssets", "process.devEnvironment"]
     },
     "pmo": {
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],

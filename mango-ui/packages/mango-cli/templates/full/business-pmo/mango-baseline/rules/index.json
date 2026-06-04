@@ -47,6 +47,10 @@
       "path": "rules/03-ai-coding-redlines.md",
       "reason": "AI 编码红线"
     },
+    "process.testAssets": {
+      "path": "rules/04-test-assets.md",
+      "reason": "测试资产目录规范"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -123,15 +127,15 @@
   "roles": {
     "pm": ["agent.pm", "product.prd"],
     "tech-lead": ["agent.techLead"],
-    "dev": ["agent.dev", "process.devEnvironment"],
-    "qa": ["agent.qa"],
+    "dev": ["agent.dev", "process.devEnvironment", "process.testAssets"],
+    "qa": ["agent.qa", "process.testAssets"],
     "pmo": ["agent.pmo"]
   },
   "phases": {
     "requirement": ["product.prd"],
     "design": ["agent.techLead"],
     "develop": ["agent.dev", "process.devEnvironment"],
-    "verify": ["agent.qa"],
+    "verify": ["agent.qa", "process.testAssets"],
     "release": [],
     "governance": ["agent.pmo"]
   },
@@ -139,12 +143,17 @@
     "backend": {
       "paths": ["backend/**", "mango/**", "mango-platform/**", "mango-app/**"],
       "keywords": ["后端", "Java", "Spring", "接口", "数据库", "migration", "Flyway", "API", "CRUD", "持久化", "Service", "Mapper", "Entity", "MangoCrudService", "BaseCrudController", "MyBatis-Plus"],
-      "include": ["backend.devFlow", "backend.code", "backend.naming", "backend.module", "backend.api", "backend.db", "backend.persistence", "backend.test"]
+      "include": ["backend.devFlow", "backend.code", "backend.naming", "backend.module", "backend.api", "backend.db", "backend.persistence", "backend.test", "process.testAssets"]
     },
     "frontend": {
       "paths": ["frontend/**", "mango-ui/**", "apps/**", "packages/**"],
       "keywords": ["前端", "页面", "Vue", "组件", "路由", "E2E", "Playwright", "UI", "Element Plus", "列表", "搜索", "表格", "状态", "微前端", "单体", "npm"],
-      "include": ["frontend.devFlow", "frontend.vue", "frontend.elementPlusUi", "frontend.componentDevelopment", "frontend.monorepo", "frontend.test"]
+      "include": ["frontend.devFlow", "frontend.vue", "frontend.elementPlusUi", "frontend.componentDevelopment", "frontend.monorepo", "frontend.test", "process.testAssets"]
+    },
+    "testAssets": {
+      "paths": ["business-docs/evidence/**", "mango-docs/evidence/**", ".runtime/**", "frontend/**/e2e/**", "frontend/**/__tests__/**"],
+      "keywords": ["测试目录", "测试资产", "回归脚本", "验收证据", "evidence", ".runtime", "runtime", "临时项目", "生成项目", "mango-cli 验证", "CLI 回归"],
+      "include": ["process.testAssets", "process.devEnvironment"]
     },
     "pmo": {
       "paths": ["business-pmo/**", "mango-pmo/**", "rules/**", "agents/**"],
