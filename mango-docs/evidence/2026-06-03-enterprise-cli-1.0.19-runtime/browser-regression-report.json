@@ -1,0 +1,105 @@
+{
+  "baseUrl": "http://127.0.0.1:19081",
+  "backendUrl": "http://127.0.0.1:19080",
+  "database": "procurement-platform-1019",
+  "checks": [
+    {
+      "name": "home-shell-chrome",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/home",
+      "hasSpeaker": 2,
+      "visible404": 0,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\n首页\n首页\n权限与组织\n用户、角色、菜单、租户基础能力\n流程与协同\n审批、任务、通知等流程能力\n平台基础能力\n文件、模板、编号、日历等通用能力\n平台状态\n\n请选择左侧菜单进入具体能力\n\n常用能力\n系统设置\n菜单管理\n文件中心\n工作日历\n\n登录成功"
+    },
+    {
+      "name": "home-content-visible",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/home"
+    },
+    {
+      "name": "procurement-shell-chrome",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/procurement/orders",
+      "hasSpeaker": 2,
+      "visible404": 0,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\nOrder管理\n首页\nOrder管理\n查询\n新增\nOrder名称\n\t\n业务标识\n验收采购订单-1780485262921\n\t\n2062130770809012225\n\n\n验收采购订单-1780486014317\n\t\n2062133922404843521\n\n\n验收采购订单-1780486439906\n\t\n2062135707441905665\n\n\n验收采购订单-17804865209"
+    },
+    {
+      "name": "procurement-directory-redirect",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/procurement/orders"
+    },
+    {
+      "name": "order-create-persisted",
+      "passed": true,
+      "orderName": "验收采购订单-1780486562297",
+      "dbCount": "1"
+    },
+    {
+      "name": "order-search-visible",
+      "passed": true,
+      "orderName": "验收采购订单-1780486562297"
+    },
+    {
+      "name": "system-dict-shell-chrome",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/system/dict",
+      "hasSpeaker": 2,
+      "visible404": 0,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\n权限管理\n应用管理\n字典管理\n参数配置\n行政区划\n日志管理\n首页\nOrder管理\n字典管理\n\n登录成功"
+    },
+    {
+      "name": "dict-search-visible",
+      "passed": true,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\n权限管理\n应用管理\n字典管理\n参数配置\n行政区划\n日志管理\n首页\nOrder管理\n字典管理\n新增类型\n用户性别\nsys_user_sex\n启用\n编辑\n删除\n关键词\n查询\n重置\n当前字典：用户性别\n新增数据\n标签\n\t\n值\n\t\n排序\n\t\n状态\n\t\n创建时间\n\t\n操作\n男\n\t\n0\n\t\n1\n\t\n启用\n\t\n\t\n编辑\n删除\n\n\n女\n\t\n1\n\t\n2\n\t\n启用\n\t\n\t\n编辑\n删除\nTotal 2\n1"
+    },
+    {
+      "name": "notice-site-message-shell-chrome",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/notice/site-message",
+      "hasSpeaker": 2,
+      "visible404": 0,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\n我的消息\n消息配置\n发送任务\n渠道配置\n发送记录\n失败重试\n首页\nOrder管理\n字典管理\n我的消息\n\n登录成功"
+    },
+    {
+      "name": "notice-page-visible",
+      "passed": true,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\n我的消息\n消息配置\n发送任务\n渠道配置\n发送记录\n失败重试\n首页\nOrder管理\n字典管理\n我的消息\n我的消息\n批量已读\n全部已读\n刷新\n设置\n关键词\n业务域\n请选择业务域\n优先级\n全部\n状态\n全部\n查询\n重置\n\t\n业务域\n\t\n标题\n\t\n消息名称\n\t\n优先级\n\t\n状态\n\t\n创建时间\n\t\n操作\nNo Data\nTotal 0\n10/page\n1\n\n登录成功"
+    },
+    {
+      "name": "active-tag-close-fallback",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/home",
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\n首页\n首页\n字典管理\n我的消息\n权限与组织\n用户、角色、菜单、租户基础能力\n流程与协同\n审批、任务、通知等流程能力\n平台基础能力\n文件、模板、编号、日历等通用能力\n平台状态\n\n请选择左侧菜单进入具体能力\n\n常用能力\n系统设置\n菜单管理\n文件中心\n工作日历"
+    },
+    {
+      "name": "no-console-errors-or-warnings",
+      "passed": true,
+      "console": []
+    },
+    {
+      "name": "no-network-failures",
+      "passed": true,
+      "failedRequests": []
+    }
+  ],
+  "knownIssues": [
+    {
+      "name": "dict-reset-clears-keyword",
+      "issueUrl": "https://github.com/HardyDou/mango/issues/75",
+      "value": "用户性别"
+    }
+  ],
+  "console": [],
+  "failedRequests": [],
+  "screenshots": [
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/01-home-stable.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/02-procurement-directory-redirect.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/03-order-create.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/04-order-search.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/05-system-dict.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/06-system-dict-search-reset.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/07-notice-site-message.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/regression-screenshots/08-after-closing-active-order-tag.png"
+  ]
+}

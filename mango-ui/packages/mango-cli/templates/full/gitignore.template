@@ -1,6 +1,8 @@
 node_modules/
 dist/
 target/
+.runtime/
+.pnpm-store/
 .DS_Store
 *.log
 

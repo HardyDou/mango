@@ -24,6 +24,8 @@ mvnw.cmd
 
 # ============ Node / Frontend ============
 **/node_modules/
+.pnpm-store/
+**/.pnpm-store/
 **/.npm
 **/.eslintcache
 **/.parcel-cache

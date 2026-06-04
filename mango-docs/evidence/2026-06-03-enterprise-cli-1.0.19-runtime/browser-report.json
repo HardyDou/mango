@@ -1,0 +1,60 @@
+{
+  "baseUrl": "http://127.0.0.1:19081",
+  "backendUrl": "http://127.0.0.1:19080",
+  "database": "procurement-platform-1019",
+  "checks": [
+    {
+      "name": "procurement-directory-menu-data",
+      "passed": true,
+      "menuRows": "1"
+    },
+    {
+      "name": "procurement-order-page-menu-data",
+      "passed": true,
+      "childRows": "1"
+    },
+    {
+      "name": "login-home",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/home",
+      "textSample": "Mango\nadmin\n芒果集团\n\n暂无可访问菜单\n\n登录成功"
+    },
+    {
+      "name": "procurement-parent-redirect",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/procurement/orders",
+      "hasOrderText": true,
+      "textSample": "Mango\n首页\n采购管理\n系统管理\n审批中心\n平台能力\n通知中心\n0\nadmin\n芒果集团\nOrder管理\n首页\nOrder管理\n查询\n新增\nOrder名称\n\t\n业务标识\n验收采购订单-1780485262921\n\t\n2062130770809012225\n\n登录成功"
+    },
+    {
+      "name": "order-create-visible",
+      "passed": true,
+      "orderName": "验收采购订单-1780486014317"
+    },
+    {
+      "name": "order-create-persisted",
+      "passed": true,
+      "orderName": "验收采购订单-1780486014317",
+      "dbCount": "1"
+    },
+    {
+      "name": "order-search-visible",
+      "passed": true,
+      "orderName": "验收采购订单-1780486014317"
+    },
+    {
+      "name": "no-network-failures",
+      "passed": true,
+      "failedRequests": []
+    }
+  ],
+  "console": [],
+  "failedRequests": [],
+  "screenshots": [
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/screenshots/01-login.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/screenshots/02-home-after-login.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/screenshots/03-procurement-parent-redirect.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/screenshots/04-order-after-create.png",
+    "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.19-runtime/screenshots/05-order-after-search.png"
+  ]
+}
