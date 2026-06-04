@@ -3,9 +3,9 @@
     "mangoBackend": "1.0.0-SNAPSHOT"
   },
   "npm": {
-    "@mango/admin": "1.0.11",
+    "@mango/admin": "1.0.12",
     "@mango/admin-pages": "1.0.5",
-    "@mango/admin-shell": "1.0.10",
+    "@mango/admin-shell": "1.0.11",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.4",
     "@mango/calendar": "1.0.6",
