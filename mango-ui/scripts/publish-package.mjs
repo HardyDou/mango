@@ -89,6 +89,21 @@ if (!found) {
 }
 
 const version = found.packageJson.version;
+if (packageName === '@mango/cli') {
+  console.log('Checking CLI release version lock before publish');
+  run('pnpm', ['--filter', packageName, 'run', 'check:release-versions']);
+  if (!dryRun) {
+    run('pnpm', [
+      '--filter',
+      packageName,
+      'run',
+      'check:release-versions',
+      '--',
+      '--check-registry',
+      `--registry=${GROUP_REGISTRY}`,
+    ]);
+  }
+}
 if (found.packageJson.scripts?.build) {
   console.log(`Building ${packageName} before publish`);
   run('pnpm', ['--filter', packageName, 'build']);

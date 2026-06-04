@@ -41,7 +41,7 @@
     "@mango/admin-shell": "1.0.11",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.4",
-    "@mango/common": "1.0.4",
+    "@mango/common": "1.0.7",
     "@mango/rbac": "1.0.4",
     "@mango/system": "1.0.4",
     "element-plus": "2.5.5"

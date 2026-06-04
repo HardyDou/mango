@@ -8,7 +8,8 @@
     "mango-cli": "src/index.mjs"
   },
   "scripts": {
-    "test": "node scripts/check-cli.mjs"
+    "check:release-versions": "node scripts/check-release-versions.mjs",
+    "test": "pnpm run check:release-versions && node scripts/check-cli.mjs"
   },
   "files": [
     "src",

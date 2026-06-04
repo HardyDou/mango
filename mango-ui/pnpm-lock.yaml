@@ -580,7 +580,7 @@ importers:
         specifier: 1.0.4
         version: link:../auth
       '@mango/common':
-        specifier: 1.0.4
+        specifier: 1.0.7
         version: link:../common
       '@mango/file':
         specifier: 1.0.6
