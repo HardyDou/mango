@@ -10,7 +10,6 @@
 |---|---|---|
 | 业务项目 starter 资产 | `mango-business-starter` | 仓内生产起点，不是 demo |
 | 官方脚手架 CLI | `@mango/cli` | 通过已发布 Maven / npm 包生成业务工程；安装后命令为 `mango` / `mango-cli` |
-| 历史本地初始化 CLI | `create-mango-app` | 仓内 starter 验证资产，不作为当前业务项目首选入口 |
 | Web 生成服务 | Mango Initializr | 对齐 Spring Initializr |
 | 生成后的业务项目 | `<business>-platform` | 例如 `guarantee-platform`、`baohan-platform` |
 | 后端框架依赖 | `mango-admin-starter` | Maven starter 依赖 |

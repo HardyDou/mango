@@ -788,8 +788,6 @@ importers:
         specifier: ^4.3.3
         version: 4.5.14(@types/node@18.19.130)(sass@1.58.3)(terser@5.46.1)
 
-  packages/create-mango-app: {}
-
   packages/file:
     dependencies:
       '@element-plus/icons-vue':
