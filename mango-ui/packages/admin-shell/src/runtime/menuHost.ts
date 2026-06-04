@@ -55,6 +55,7 @@ export type ShellMenuSource = 'backend' | 'shell' | 'custom' | 'fallback';
 export interface ShellMenuMeta {
   source?: ShellMenuSource;
   diagnostics?: string[];
+  menuContractError?: string;
   [key: string]: any;
 }
 
@@ -177,11 +178,20 @@ export function filterMenuForRouteByFeatures(menus: ShellMenu[], enabledFeatures
     .filter(menu => menu.menuType === MenuTypeEnum.MENU || (menu.children && menu.children.length > 0));
 }
 
-function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
+export function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
   const moduleCode = menu.moduleCode || inferModuleCode(menu.component, menu.path);
+  const diagnostics = resolveMenuDiagnostics(menu);
   const sourceMenu = {
     ...menu,
     moduleCode,
+    meta: {
+      ...(menu.meta || {}),
+      diagnostics: [
+        ...(menu.meta?.diagnostics || []),
+        ...diagnostics,
+      ],
+      menuContractError: diagnostics[0] || menu.meta?.menuContractError,
+    },
   };
   return {
     path: menu.path,
@@ -194,10 +204,25 @@ function toShellRouteMenu(menu: ShellMenu): ShellRouteMenu {
       isHide: menu.visible === 0,
       keepAlive: menu.keepAlive === 1,
       embedded: menu.embedded === 1,
+      diagnostics: sourceMenu.meta.diagnostics,
+      menuContractError: sourceMenu.meta.menuContractError,
     },
     sourceMenu,
     children: menu.children?.map(toShellRouteMenu),
   };
+}
+
+function resolveMenuDiagnostics(menu: ShellMenu): string[] {
+  if (
+    menu.menuType === MenuTypeEnum.MENU
+    && menu.visible !== 0
+    && menu.pageType !== 'IFRAME'
+    && menu.pageType !== 'EXTERNAL_LINK'
+    && !menu.component
+  ) {
+    return [`菜单配置缺少 component：${menu.menuCode || menu.menuName || menu.path}`];
+  }
+  return [];
 }
 
 function inferModuleCode(component?: string, path?: string) {
@@ -296,7 +321,7 @@ export function resolveDirectoryRouteRedirect(menu: ShellRouteMenu | undefined, 
 }
 
 function isRunnableRouteMenu(menu: ShellRouteMenu): boolean {
-  return menu.sourceMenu.menuType === MenuTypeEnum.MENU && Boolean(menu.path);
+  return isRunnableMenu(menu);
 }
 
 export function shouldShowDevCenter(options: MangoAdminShellDevCenterOptions = getMangoAdminShellOptions().devCenter || {}) {
@@ -481,7 +506,7 @@ export function isRunnableMenu(menu?: ShellRouteMenu): boolean {
   if (source.pageType === 'IFRAME' || source.pageType === 'EXTERNAL_LINK') {
     return Boolean(source.externalUrl);
   }
-  return source.menuType === MenuTypeEnum.MENU && Boolean(source.component || source.path);
+  return source.menuType === MenuTypeEnum.MENU && Boolean(source.component);
 }
 
 export function findUnexpectedTopLevelMenus(uiTopMenus: string[], backendTopMenus: string[], allowedShellMenus: string[]) {
