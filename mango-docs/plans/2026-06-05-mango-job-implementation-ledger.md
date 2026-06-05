@@ -17,10 +17,10 @@
 | JOB-DEV-007 | Sprint 2 | 实现任务定义 CRUD 和状态流转 | `core` 实现业务服务，不暴露 Entity | Service、Controller、Feign | 集成测试覆盖创建、分页、详情、状态、触发 | DONE | `MangoJobDefinitionService`、`MangoJobController`、`MangoJobFeignClient` |
 | JOB-DEV-008 | Sprint 2 | 实现租户和权限控制 | Job 服务按当前上下文隔离；tenantId 无感知治理拆到 #102 | 租户隔离测试 | 跨租户查询、详情、实例、日志、Worker 不可见 | DONE | `MangoJobMultiDataSourceIntegrationTest`；后续全局租户无感知治理见 GitHub Issue #102 |
 | JOB-DEV-009 | Sprint 2 | 提供实例、日志、Worker、处理器和引擎状态 API | API 前缀 `/job`，返回 Mango VO | Controller 和 Feign API | 编译和集成测试覆盖查询服务 | DONE | `MangoJobController`、`MangoJobQueryService`、`MangoJobFeignClient` |
-| JOB-DEV-010 | Sprint 3 | 定义 `MangoJobEngine` SPI | `core` 只依赖 SPI，不依赖 PowerJob 类型 | SPI 接口 | 编译依赖检查 | TODO | 待开发 |
-| JOB-DEV-011 | Sprint 3 | 实现 PowerJob Adapter | PowerJob 依赖只在 starter Adapter 包或独立 adapter 模块 | Adapter 实现 | Adapter 单测和集成测试 | TODO | 待开发 |
-| JOB-DEV-012 | Sprint 3 | 实现引擎映射和同步状态 | `sync_status`、失败摘要、重试和删除保护 | 映射服务和表字段 | 同步失败补偿测试 | TODO | 待开发 |
-| JOB-DEV-013 | Sprint 3 | 实现 PowerJob Server 认证和健康检查 | token、连接状态、版本兼容检查 | 配置和健康接口 | 认证失败和健康检查测试 | TODO | 待开发 |
+| JOB-DEV-010 | Sprint 3 | 定义 `MangoJobEngine` SPI | `core` 只依赖 SPI，不依赖 PowerJob 类型 | SPI 接口、注册表、同步服务 | 编译依赖检查和 core 集成测试 | DONE | `IMangoJobEngine`、`MangoJobEngineRegistry`、`MangoJobEngineSyncService` |
+| JOB-DEV-011 | Sprint 3 | 实现 PowerJob Adapter | PowerJob 依赖只在 starter Adapter 包；Mango 前端/后端不直连 PowerJob Console | Adapter 实现、PowerJob 5.1.2 SDK 依赖 | Adapter 单测和 starter 编译测试 | DONE | `PowerJobEngineAdapter`、`PowerJobClientOperations`、`PowerJobEngineAdapterTest` |
+| JOB-DEV-012 | Sprint 3 | 实现引擎映射和同步状态 | `sync_status`、失败摘要、映射表；失败可查，重试入口后续迭代 | 映射写入和状态同步 | core 集成测试覆盖同步、触发和映射 | DONE | `MangoJobEngineSyncService`、`MangoJobMultiDataSourceIntegrationTest` |
+| JOB-DEV-013 | Sprint 3 | 实现 PowerJob Server 认证和健康检查 | 显式开启才接入 PowerJob；配置缺失启动失败；SDK client 懒加载，Job Center 不可用时健康检查返回失败 | 配置、懒加载 SDK 操作、健康检查 | 自动配置和健康失败测试 | DONE | `PowerJobAutoConfiguration`、`PowerJobAutoConfigurationTest`、`PowerJobEngineAdapterTest` |
 | JOB-DEV-014 | Sprint 4 | 初始化后台菜单和权限 | 菜单和权限入库，不用前端临时菜单 | 菜单/权限种子 | 登录后菜单和权限按钮验证 | TODO | 待开发 |
 | JOB-DEV-015 | Sprint 4 | 实现前端任务定义页面 | 真实 API、加载、空、错误态 | 前端页面和 API client | 前端测试和 E2E | TODO | 待开发 |
 | JOB-DEV-016 | Sprint 4 | 实现实例、日志、执行器、告警、引擎状态和处理器页面 | 统一 UI，不嵌入 PowerJob Console | 前端页面 | E2E 和页面走查 | TODO | 待开发 |
@@ -44,10 +44,10 @@
 | JOB-DEV-007 | API | CRUD/状态 | `sync-order` | 创建默认为 DRAFT；分页可查；DRAFT -> ENABLED；手动触发生成实例和操作日志 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest.definitionService_shouldCreateUpdateTriggerWithMybatisPlusOnJobDatasource` | DONE |
 | JOB-DEV-008 | API | 租户权限 | tenant-b 创建，tenant-c 查询 | tenant-c 分页为 0；详情返回任务不存在；实例、日志、Worker 均不可见。当前为 Job 级隔离验证，tenantId 无感知统一治理已拆 Issue #102 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest.queryService_shouldReadLogsWorkersAndKeepTenantIsolationOnJobDatasource` | DONE |
 | JOB-DEV-009 | API | 查询接口 | 实例、日志索引、Worker 快照、处理器、引擎状态 | 查询服务返回 Mango VO；POWERJOB PENDING 计数为 1；Controller/Feign 编译通过 | 不涉及页面 | 不涉及前端网络 | `MangoJobQueryService`、`MangoJobController`、`MangoJobFeignClient` | DONE |
-| JOB-DEV-010 | SPI | 引擎 SPI | 待开发 | core 只依赖 SPI | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-011 | Adapter | PowerJob 集成 | 待开发 | Adapter 能创建/触发任务 | 不涉及页面 | 待验证 | 待开发 | TODO |
-| JOB-DEV-012 | Adapter | 同步补偿 | 待开发 | 失败可查可重试 | 不涉及页面 | 待验证 | 待开发 | TODO |
-| JOB-DEV-013 | 运维 | 认证健康 | 待开发 | 认证失败有明确异常 | 不涉及页面 | 待验证 | 待开发 | TODO |
+| JOB-DEV-010 | SPI | 引擎 SPI | `IMangoJobEngine`、`MangoJobEngineRequest`、`MangoJobEngineResult`、`MangoJobTriggerRequest` | core 层只依赖 Mango SPI，不出现 PowerJob 类型；无引擎时定义保持 `PENDING` | 不涉及页面 | 不涉及前端网络 | `mvn -pl mango-platform/mango-job/mango-job-core -am test` | DONE |
+| JOB-DEV-011 | Adapter | PowerJob 集成 | PowerJob 5.1.2；Cron/FIXED_RATE/MANUAL、BUILTIN/SCRIPT、启停和手动触发 | SaveJobInfoRequest 映射 appId/jobName/cron/processor/concurrency/timeout；RunJobRequest 映射 appId/jobId/outerKey | 不涉及页面 | 不涉及前端网络 | `PowerJobEngineAdapterTest`、`mvn -pl mango-platform/mango-job/mango-job-starter -am test` | DONE |
+| JOB-DEV-012 | Adapter | 同步补偿 | 测试引擎返回 appId=10001、jobId=90001、instanceId=80001 | 创建后 `sync_status=SYNCED`、写入 definition engine 字段和 engine mapping；触发后写入 instance engine id 和实例映射；失败路径返回 `FAILED` 摘要 | 不涉及页面 | 不涉及前端网络 | `MangoJobEngineSyncService`、`MangoJobMultiDataSourceIntegrationTest` | DONE |
+| JOB-DEV-013 | 运维 | 认证健康 | `mango.job.powerjob.enabled=true`、完整 app/server/password/appId 配置；Job Center 不可用模拟异常 | 默认不注册 PowerJob Adapter；显式开启缺配置启动失败；完整配置注册懒加载 operations；健康检查异常返回失败摘要 | 不涉及页面 | 不涉及前端网络 | `PowerJobAutoConfigurationTest`、`PowerJobEngineAdapterTest.healthShouldExposePowerJobException` | DONE |
 | JOB-DEV-014 | 页面/权限 | 菜单权限 | 待开发 | 后端菜单可见，按钮受控 | 待走查 | 待验证 | 待开发 | TODO |
 | JOB-DEV-015 | 页面 | 任务定义 | 待开发 | 真实数据增删改查 | 待走查 | 待验证 | 待开发 | TODO |
 | JOB-DEV-016 | 页面 | 运行态页面 | 待开发 | 实例/日志/Worker/告警/处理器可查 | 待走查 | 待验证 | 待开发 | TODO |

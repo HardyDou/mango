@@ -23,6 +23,7 @@ import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobLogIndexEntity;
 import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
+import io.mango.job.core.mapper.MangoJobEngineMappingMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
 import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobOperationLogMapper;
@@ -34,6 +35,14 @@ import io.mango.job.core.service.impl.MangoJobDataSourceRouter;
 import io.mango.job.core.service.impl.MangoJobDefinitionService;
 import io.mango.job.core.service.impl.MangoJobHandlerRegistry;
 import io.mango.job.core.service.impl.MangoJobQueryService;
+import io.mango.job.core.service.engine.IMangoJobEngine;
+import io.mango.job.core.service.engine.IMangoJobEngineRegistry;
+import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
+import io.mango.job.core.service.engine.MangoJobEngineRegistry;
+import io.mango.job.core.service.engine.MangoJobEngineRequest;
+import io.mango.job.core.service.engine.MangoJobEngineResult;
+import io.mango.job.core.service.engine.MangoJobEngineSyncService;
+import io.mango.job.core.service.engine.MangoJobTriggerRequest;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,6 +153,8 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         Long id = jobDefinitionService.createDefinition(command);
         assertThat(jobDefinitionService.detailDefinition(id).getStatus()).isEqualTo(JobDefinitionStatus.DRAFT.name());
+        assertThat(jobDefinitionService.detailDefinition(id).getSyncStatus()).isEqualTo("SYNCED");
+        assertThat(jobDefinitionService.detailDefinition(id).getEngineJobId()).isEqualTo("90001");
 
         MangoJobDefinitionPageQuery pageQuery = new MangoJobDefinitionPageQuery();
         pageQuery.setKeyword("order");
@@ -159,6 +170,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         triggerCommand.setTriggerBatchNo("batch-001");
         Long instanceId = jobDefinitionService.triggerDefinition(triggerCommand);
         assertThat(instanceId).isNotNull();
+        assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getList().get(0).getEngineInstanceId())
+                .isEqualTo("80001");
 
         MangoJobInstancePageQuery instanceQuery = new MangoJobInstancePageQuery();
         instanceQuery.setJobId(id);
@@ -172,11 +185,12 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .filteredOn(item -> JobEngineType.POWERJOB.name().equals(item.getEngineType()))
                 .singleElement()
                 .extracting(MangoJobEngineStatusVO::getPendingCount)
-                .isEqualTo(1L);
+                .isEqualTo(0L);
 
         assertThat(rowCount("primary", "mango_job_definition")).isZero();
         assertThat(rowCount("job", "mango_job_definition")).isOne();
         assertThat(rowCount("job", "mango_job_instance")).isOne();
+        assertThat(rowCount("job", "mango_job_engine_mapping")).isEqualTo(2);
         assertThat(rowCount("job", "mango_job_operation_log")).isEqualTo(3);
     }
 
@@ -317,13 +331,28 @@ class MangoJobMultiDataSourceIntegrationTest {
         IMangoJobDefinitionService jobDefinitionService(MangoJobDefinitionMapper mapper,
                                                         MangoJobInstanceMapper instanceMapper,
                                                         MangoJobOperationLogMapper operationLogMapper,
-                                                        MangoJobDataSourceRouter dataSourceRouter) {
-            return new MangoJobDefinitionService(mapper, instanceMapper, operationLogMapper, dataSourceRouter);
+                                                        MangoJobDataSourceRouter dataSourceRouter,
+                                                        IMangoJobEngineSyncService engineSyncService) {
+            return new MangoJobDefinitionService(mapper, instanceMapper, operationLogMapper, dataSourceRouter,
+                    engineSyncService);
         }
 
         @Bean
         IMangoJobHandlerRegistry jobHandlerRegistry(ObjectProvider<MangoJobHandler> provider) {
             return new MangoJobHandlerRegistry(provider);
+        }
+
+        @Bean
+        IMangoJobEngineRegistry jobEngineRegistry(ObjectProvider<IMangoJobEngine> provider) {
+            return new MangoJobEngineRegistry(provider);
+        }
+
+        @Bean
+        IMangoJobEngineSyncService jobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
+                                                        MangoJobDefinitionMapper definitionMapper,
+                                                        MangoJobInstanceMapper instanceMapper,
+                                                        MangoJobEngineMappingMapper mappingMapper) {
+            return new MangoJobEngineSyncService(engineRegistry, definitionMapper, instanceMapper, mappingMapper);
         }
 
         @Bean
@@ -348,6 +377,38 @@ class MangoJobMultiDataSourceIntegrationTest {
                 @Override
                 public MangoJobHandleResult handle(MangoJobHandleContext context) {
                     return MangoJobHandleResult.success("ok");
+                }
+            };
+        }
+
+        @Bean
+        IMangoJobEngine powerJobTestEngine() {
+            return new IMangoJobEngine() {
+                @Override
+                public String engineType() {
+                    return JobEngineType.POWERJOB.name();
+                }
+
+                @Override
+                public MangoJobEngineResult syncDefinition(MangoJobEngineRequest request) {
+                    MangoJobDefinitionEntity definition = request.getDefinition();
+                    return MangoJobEngineResult.success("10001", definition.getEngineJobId() == null
+                            ? "90001" : definition.getEngineJobId());
+                }
+
+                @Override
+                public MangoJobEngineResult deleteDefinition(MangoJobEngineRequest request) {
+                    return MangoJobEngineResult.success();
+                }
+
+                @Override
+                public MangoJobEngineResult trigger(MangoJobTriggerRequest request) {
+                    return MangoJobEngineResult.triggerSuccess("80001");
+                }
+
+                @Override
+                public MangoJobEngineResult health() {
+                    return MangoJobEngineResult.success();
                 }
             };
         }

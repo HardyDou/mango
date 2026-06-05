@@ -4,6 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * Mango Job 自动配置。
@@ -15,5 +16,6 @@ import org.springframework.context.annotation.Configuration;
         "io.mango.job.core.service",
         "io.mango.job.starter.controller"
 })
+@Import(io.mango.job.starter.powerjob.PowerJobAutoConfiguration.class)
 public class JobAutoConfiguration {
 }

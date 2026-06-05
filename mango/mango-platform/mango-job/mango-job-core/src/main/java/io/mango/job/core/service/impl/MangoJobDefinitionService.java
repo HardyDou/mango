@@ -24,6 +24,7 @@ import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
 import io.mango.job.core.mapper.MangoJobOperationLogMapper;
 import io.mango.job.core.service.IMangoJobDefinitionService;
+import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -45,14 +46,18 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
     private final MangoJobDataSourceRouter dataSourceRouter;
 
+    private final IMangoJobEngineSyncService engineSyncService;
+
     public MangoJobDefinitionService(MangoJobDefinitionMapper mapper,
                                      MangoJobInstanceMapper instanceMapper,
                                      MangoJobOperationLogMapper operationLogMapper,
-                                     MangoJobDataSourceRouter dataSourceRouter) {
+                                     MangoJobDataSourceRouter dataSourceRouter,
+                                     IMangoJobEngineSyncService engineSyncService) {
         this.mapper = mapper;
         this.instanceMapper = instanceMapper;
         this.operationLogMapper = operationLogMapper;
         this.dataSourceRouter = dataSourceRouter;
+        this.engineSyncService = engineSyncService;
     }
 
     @Override
@@ -88,6 +93,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             entity.setStatus(JobDefinitionStatus.DRAFT.name());
             entity.setSyncStatus(MangoJobSupport.syncStatus(JobSyncStatus.PENDING));
             mapper.insert(entity);
+            engineSyncService.syncDefinition(entity, "CREATE");
             writeOperationLog(entity, null, "CREATE_DEFINITION", "SUCCESS", command.getJobCode(), null);
             return entity.getId();
         });
@@ -107,6 +113,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             copyDefinition(command, entity);
             entity.setSyncStatus(MangoJobSupport.syncStatus(JobSyncStatus.PENDING));
             boolean updated = mapper.updateById(entity) > 0;
+            engineSyncService.syncDefinition(entity, "UPDATE");
             writeOperationLog(entity, null, "UPDATE_DEFINITION", "SUCCESS", command.getJobCode(), null);
             return updated;
         });
@@ -123,6 +130,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             entity.setStatus(target.name());
             entity.setSyncStatus(MangoJobSupport.syncStatus(JobSyncStatus.PENDING));
             boolean updated = mapper.updateById(entity) > 0;
+            engineSyncService.syncDefinition(entity, "UPDATE_STATUS");
             writeOperationLog(entity, null, "UPDATE_STATUS", "SUCCESS", target.name(), null);
             return updated;
         });
@@ -133,6 +141,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
         return dataSourceRouter.route(() -> {
             MangoJobDefinitionEntity entity = selectDefinitionRequired(id);
             Require.isTrue(JobDefinitionStatus.DRAFT.name().equals(entity.getStatus()), "只有草稿任务可以删除");
+            engineSyncService.deleteDefinition(entity);
             boolean deleted = mapper.deleteById(id) > 0;
             writeOperationLog(entity, null, "DELETE_DEFINITION", "SUCCESS", entity.getJobCode(), null);
             return deleted;
@@ -164,6 +173,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             instance.setTriggerBatchNo(batchNo);
             instanceMapper.insert(instance);
 
+            engineSyncService.trigger(definition, instance, batchNo);
             writeOperationLog(definition, instance.getId(), "TRIGGER_DEFINITION", "SUCCESS", batchNo, null);
             return instance.getId();
         });
