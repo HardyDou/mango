@@ -1,4 +1,6 @@
 import { expect, test, type APIResponse, type Locator, type Page } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 test.setTimeout(90 * 1000);
 
@@ -46,6 +48,14 @@ interface JobInstance {
   triggerType?: string;
   triggerBatchNo?: string;
   status?: string;
+}
+
+interface JobLogIndex {
+  id: ApiId;
+  jobId: ApiId;
+  instanceId: ApiId;
+  engineType?: string;
+  logLocation?: string;
 }
 
 interface SaveJobDefinitionPayload {
@@ -114,6 +124,14 @@ const exampleJobs: SaveJobDefinitionPayload[] = [
   },
 ];
 
+const evidenceDir = resolve(__dirname, '../../../../../mango-docs/evidence/2026-06-05-mango-job-ui-e2e');
+
+async function saveEvidenceScreenshot(page: Page, filename: string, locator?: Locator) {
+  await mkdir(evidenceDir, { recursive: true });
+  const target = locator || page;
+  await target.screenshot({ path: resolve(evidenceDir, filename) });
+}
+
 async function login(page: Page) {
   await page.goto('/#/login');
   await page.fill('input[placeholder="用户名"]', 'admin');
@@ -164,6 +182,15 @@ async function listInstances(page: Page, headers: LoginHeaders, jobId: ApiId): P
     params: { jobId: String(jobId), pageNum: '1', pageSize: '20' },
   });
   const data = await expectBusinessOk<PageData<JobInstance>>(response);
+  return data.list || data.records || data.rows || data.data || [];
+}
+
+async function listLogs(page: Page, headers: LoginHeaders, jobId: ApiId): Promise<JobLogIndex[]> {
+  const response = await page.request.get('/api/job/logs/page', {
+    headers,
+    params: { jobId: String(jobId), pageNum: '1', pageSize: '20' },
+  });
+  const data = await expectBusinessOk<PageData<JobLogIndex>>(response);
   return data.list || data.records || data.rows || data.data || [];
 }
 
@@ -268,6 +295,7 @@ async function createDraftByUi(page: Page, jobCode: string) {
   await dialog.getByLabel('参数 Schema').fill('{ "type": "object" }');
   await dialog.getByLabel('默认参数').fill('{ "source": "e2e" }');
   await dialog.getByLabel('重试策略').fill('{ "maxRetryTimes": 1 }');
+  await saveEvidenceScreenshot(page, '00-definition-create-manual-schedule.png', dialog);
 
   const responsePromise = page.waitForResponse((response) =>
     response.url().includes('/api/job/definitions') &&
@@ -286,6 +314,14 @@ async function searchDefinition(page: Page, keyword: string) {
   );
   await page.getByRole('button', { name: '查询' }).click();
   await responsePromise;
+}
+
+async function openDefinitionEditor(page: Page, jobCode: string) {
+  await searchDefinition(page, jobCode);
+  await definitionRow(page, jobCode).getByRole('button', { name: '编辑' }).click();
+  const dialog = page.getByRole('dialog', { name: '编辑任务' });
+  await expect(dialog).toBeVisible();
+  return dialog;
 }
 
 function definitionRow(page: Page, jobCode: string) {
@@ -344,6 +380,21 @@ test.describe('Job 管理 E2E', () => {
     for (const payload of exampleJobs) {
       await expect(definitionRow(page, payload.jobCode)).toBeVisible({ timeout: 10000 });
     }
+    await saveEvidenceScreenshot(page, '01-definition-list-frequency.png');
+
+    await page.getByRole('button', { name: /更多筛选/ }).click();
+    await expect(page.locator('.job-search-more')).toBeVisible();
+    await saveEvidenceScreenshot(page, '02-definition-more-filters.png');
+
+    const cronDialog = await openDefinitionEditor(page, 'mango_job_example_cron_powerjob');
+    await expect(cronDialog.getByLabel('调度表达式')).toHaveValue('0 */5 * * * ?');
+    await saveEvidenceScreenshot(page, '03-definition-edit-cron-schedule.png', cronDialog);
+    await cronDialog.getByRole('button', { name: '取消' }).click();
+
+    const fixedRateDialog = await openDefinitionEditor(page, 'mango_job_example_http_callback');
+    await expect(fixedRateDialog.getByLabel('调度表达式')).toHaveValue('300');
+    await saveEvidenceScreenshot(page, '04-definition-edit-fixed-rate-schedule.png', fixedRateDialog);
+    await fixedRateDialog.getByRole('button', { name: '取消' }).click();
 
     const tempCode = `mango_job_e2e_tmp_${Date.now()}`;
     await createDraftByUi(page, tempCode);
@@ -379,6 +430,7 @@ test.describe('Job 管理 E2E', () => {
     await page.locator('.el-message-box', { hasText: '调整状态' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
     await expect(page.locator('.el-message__content', { hasText: '状态已更新' }).last()).toBeVisible({ timeout: 10000 });
     await expect(definitionRow(page, manualCode)).toContainText('已启用');
+    await saveEvidenceScreenshot(page, '05-definition-status-enabled.png');
 
     const manualDefinition = (await listDefinitions(page, headers, manualCode)).find(item => item.jobCode === manualCode);
     expect(manualDefinition).toBeDefined();
@@ -393,17 +445,59 @@ test.describe('Job 管理 E2E', () => {
     await expect(triggerDialog).toBeVisible();
     await triggerDialog.getByLabel('批次号').fill(triggerBatchNo);
     await triggerDialog.getByLabel('触发参数').fill('{ "source": "e2e-trigger" }');
+    await saveEvidenceScreenshot(page, '06-trigger-dialog-frequency-manual.png', triggerDialog);
     await triggerDialog.getByRole('button', { name: '触发' }).click();
     await triggerResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: '已触发' }).last()).toBeVisible({ timeout: 10000 });
 
     const instances = await listInstances(page, headers, manualDefinition!.id);
-    expect(instances).toEqual(expect.arrayContaining([
-      expect.objectContaining({ triggerBatchNo, triggerType: 'MANUAL' }),
-    ]));
+    const triggeredInstance = instances.find(item => item.triggerBatchNo === triggerBatchNo && item.triggerType === 'MANUAL');
+    expect(triggeredInstance).toBeDefined();
+
+    const logs = await listLogs(page, headers, manualDefinition!.id);
+    const executionLog = logs.find(item =>
+      String(item.jobId) === String(manualDefinition!.id)
+      && String(item.instanceId) === String(triggeredInstance!.id)
+      && item.engineType === 'POWERJOB'
+    );
+    expect(executionLog).toBeDefined();
+
+    const instanceResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/instances/page') && response.status() === 200
+    );
+    await clickMenu(page, '执行实例');
+    await instanceResponsePromise;
+    await page.getByPlaceholder('jobId').fill(String(manualDefinition!.id));
+    await page.getByPlaceholder('triggerBatchNo').fill(triggerBatchNo);
+    const filteredInstanceResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/instances/page') && response.status() === 200
+    );
+    await page.getByRole('button', { name: '查询' }).click();
+    await filteredInstanceResponsePromise;
+    await expect(page.locator('.el-table__row', { hasText: triggerBatchNo }).first()).toBeVisible();
+    await saveEvidenceScreenshot(page, '07-instance-filtered-trigger-batch.png');
+
+    const logResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/logs/page') && response.status() === 200
+    );
+    await clickMenu(page, '执行日志');
+    await logResponsePromise;
+    await page.getByPlaceholder('jobId').fill(String(manualDefinition!.id));
+    await page.getByPlaceholder('instanceId').fill(String(triggeredInstance!.id));
+    const filteredLogResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/logs/page') && response.status() === 200
+    );
+    await page.getByRole('button', { name: '查询' }).click();
+    await filteredLogResponsePromise;
+    await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance!.id) }).first()).toBeVisible();
+    await saveEvidenceScreenshot(page, '08-execution-log-index.png');
+
+    await openJobDefinitionPage(page);
 
     await searchDefinition(page, tempCode);
     await definitionRow(page, tempCode).getByRole('button', { name: '删除' }).click();
+    await expect(page.locator('.el-message-box', { hasText: '删除任务' })).toBeVisible();
+    await saveEvidenceScreenshot(page, '09-definition-delete-confirm.png', page.locator('.el-message-box', { hasText: '删除任务' }));
     await page.locator('.el-message-box', { hasText: '删除任务' }).getByRole('button', { name: /^(OK|确认)$/ }).click();
     await expect(page.locator('.el-message__content', { hasText: '任务已删除' }).last()).toBeVisible({ timeout: 10000 });
     await expect(definitionRow(page, tempCode)).toHaveCount(0);
@@ -462,6 +556,7 @@ test.describe('Job 管理 E2E', () => {
         await expectCompactSearchPage(page, page.locator('.job-toolbar'));
       }
       await expect(page.locator('text=/401|403|未授权|拒绝访问|路由加载失败|加载失败/')).toHaveCount(0);
+      await saveEvidenceScreenshot(page, `10-${item.path.replace('/job/', 'job-')}.png`);
     }
 
     await testInfo.attach('job-runtime-pages', {

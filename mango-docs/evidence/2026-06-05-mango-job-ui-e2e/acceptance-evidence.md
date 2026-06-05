@@ -12,29 +12,68 @@
 
 - 前端地址：`http://127.0.0.1:8347`
 - 后端地址：`http://127.0.0.1:18657`
-- 数据库或租户：`mango_dev_a1ce46`，租户 `芒果集团`
+- 数据库：`mango_dev_a1ce46`
+- 租户：`芒果集团` / `TENANT-ID=1`
 - 测试账号：`admin`
 - 浏览器：Playwright Chromium Chrome channel
 
-## 3. 功能验收记录
+## 3. 关键运行数据
+
+- 示例 Job：`mango_job_example_manual_builtin`
+- 最新触发批次：`e2e-job-batch-1780655197851`
+- 最新任务 ID：`2062843494462779394`
+- 最新实例 ID：`2062843531372654594`
+- 最新执行日志 ID：`2062843531406209025`
+- 后台日志位置：`mango-job://jobs/2062843494462779394/instances/2062843531372654594`
+- 说明：当前本地环境未启用外部 PowerJob Server/Worker，因此 Mango 侧实例状态为 `WAITING`，已验证管理端触发、实例落库、执行日志索引落库和 UI 查询闭环。
+
+## 4. 截图清单
+
+| 截图 | 覆盖功能点 | 核心验收内容 | 结论 |
+|---|---|---|---|
+| `00-definition-create-manual-schedule.png` | 新增任务 | 手动调度、处理器、超时、并发策略、错过策略、参数 Schema、默认参数、重试策略均可配置 | PASS |
+| `01-definition-list-frequency.png` | 任务定义列表 | 调度列可见，展示 Cron `0 */5 * * * ?`、固定频率 `300`、手动三类频次 | PASS |
+| `02-definition-more-filters.png` | 更多筛选 | 低频筛选项按需展开，包含任务类型、调度类型、引擎 | PASS |
+| `03-definition-edit-cron-schedule.png` | 编辑 Cron 任务 | 调度类型为 Cron，调度表达式为 `0 */5 * * * ?`，超时和策略可见 | PASS |
+| `04-definition-edit-fixed-rate-schedule.png` | 编辑固定频率任务 | 调度类型为固定频率，调度表达式为 `300` | PASS |
+| `05-definition-status-enabled.png` | 状态流转 | 示例手动任务暂停后重新启用，列表显示已启用并可触发 | PASS |
+| `06-trigger-dialog-frequency-manual.png` | 手动触发 | 批次号和触发参数可配置，手动任务频次通过触发弹窗执行 | PASS |
+| `07-instance-filtered-trigger-batch.png` | 执行实例 | 按任务 ID 和批次号过滤后，能看到刚触发的实例记录 | PASS |
+| `08-execution-log-index.png` | 执行日志 | 按任务 ID 和实例 ID 过滤后，能看到后台生成的日志索引 | PASS |
+| `09-definition-delete-confirm.png` | 删除任务 | 草稿临时任务删除前有确认弹窗，删除后列表不再出现 | PASS |
+| `10-job-instance.png` | 执行实例列表 | 页面真实调用 `/api/job/instances/page`，布局和搜索区可用 | PASS |
+| `10-job-log.png` | 执行日志列表 | 页面真实调用 `/api/job/logs/page`，日志列表可用 | PASS |
+| `10-job-worker.png` | Worker 列表 | 页面真实调用 `/api/job/workers/page`，列表页可进入 | PASS |
+| `10-job-handler.png` | 处理器列表 | 页面真实调用 `/api/job/handlers`，列表页可进入 | PASS |
+| `10-job-engine.png` | 引擎状态 | 页面真实调用 `/api/job/engines/status`，引擎状态页可进入 | PASS |
+
+截图目录绝对路径：
+
+```text
+/Users/hardy/Work/mango/.mango/worktrees/mango-job-sprint-1/mango-docs/evidence/2026-06-05-mango-job-ui-e2e
+```
+
+## 5. 功能验收记录
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| JOB-UI-001 | 任务定义 / `/api/job/definitions/page` | 任务定义列表搜索区紧凑布局和示例任务回显 | 关键字 `mango_job_example_` | 列表回显三条示例任务，分别包含手动内置、Cron PowerJob、HTTP 回调；状态分别可识别为已启用或已暂停 | `.job-toolbar-head` computed display 为 `flex`，主按钮位于标题区右半区；`.job-search` display 为 `flex` 且 `flex-wrap` 为 `wrap`；表格区域首屏可见 | Job API 无 4xx/5xx；E2E 收集到的 console error 为空 | `mango-docs/evidence/2026-06-05-mango-job-ui-e2e/job-definition.png` | PASS |
-| JOB-E2E-001 | 任务定义新增/编辑/状态/触发/删除接口链路 | 任务定义完整管理流程 | `mango_job_e2e_tmp_<timestamp>` 和批次号 `e2e-job-batch-<timestamp>` | UI 新增草稿任务后列表出现对应编码；编辑后名称更新为 `E2E 临时任务已编辑`；示例手动任务可暂停后启用；触发后执行实例接口包含同一批次号和 `MANUAL` 触发类型；临时任务最终删除且列表不再出现 | 新增/编辑弹窗展示 `基本信息`、`执行配置`、`参数配置` 分组；保存、状态确认、触发、删除弹窗均完成页面反馈 | Job API 无 4xx/5xx；E2E 收集到的 console error 为空 | Playwright test attachment `job-definition-layout`；截图同 `job-definition.png` | PASS |
-| JOB-E2E-002 | 执行实例、执行日志、Worker、处理器、引擎状态 | Job 下全部管理页真实 API 访问 | 菜单入口依次进入五个页面 | URL 分别落到 `/job/instance`、`/job/log`、`/job/worker`、`/job/handler`、`/job/engine`；每页 heading 与 `.job-panel` 可见；搜索型页面 toolbar 高度小于 150px | 无 401、403、拒绝访问、路由加载失败、加载失败文案；搜索型页面使用横向紧凑搜索区 | Job API 无 4xx/5xx；E2E 收集到的 console error 为空 | `mango-docs/evidence/2026-06-05-mango-job-ui-e2e/job-instance.png`、`mango-docs/evidence/2026-06-05-mango-job-ui-e2e/job-engine.png` | PASS |
+| JOB-UI-001 | 任务定义 / `/api/job/definitions/page` | 列表、搜索、调度频次展示 | `mango_job_example_` | 三条示例任务回显；Cron、固定频率、手动调度均在调度列可见 | 搜索区紧凑展示，更多筛选默认收起且可展开 | Job API 无 4xx/5xx；console error 为空 | `01-definition-list-frequency.png`、`02-definition-more-filters.png` | PASS |
+| JOB-UI-002 | 任务定义新增/编辑 | 频次和执行配置 | Cron `0 */5 * * * ?`、固定频率 `300`、手动空表达式 | 新增和编辑弹窗展示调度类型、调度表达式、超时、并发、错过、参数和重试配置 | 弹窗分为基本信息、执行配置、参数配置；保存按钮可用 | Job API 无 4xx/5xx；console error 为空 | `00-definition-create-manual-schedule.png`、`03-definition-edit-cron-schedule.png`、`04-definition-edit-fixed-rate-schedule.png` | PASS |
+| JOB-E2E-001 | `/api/job/definitions/trigger` + `/api/job/instances/page` | 示例 Job 触发并产生实例 | `e2e-job-batch-1780655197851` | 触发接口成功；实例接口包含同一批次号和 `MANUAL` 触发类型 | 触发弹窗可输入批次号和触发参数；实例页可按批次号过滤 | Job API 无 4xx/5xx；console error 为空 | `06-trigger-dialog-frequency-manual.png`、`07-instance-filtered-trigger-batch.png` | PASS |
+| JOB-E2E-002 | `/api/job/logs/page` | 后台执行日志索引可见 | `jobId=2062843494462779394`、`instanceId=2062843531372654594` | 日志接口返回一条 POWERJOB 日志索引，`logLocation` 为 `mango-job://jobs/.../instances/...` | 执行日志页可按任务 ID 和实例 ID 过滤，表格展示日志位置 | Job API 无 4xx/5xx；console error 为空 | `08-execution-log-index.png` | PASS |
+| JOB-E2E-003 | 任务定义 CRUD 和状态流转 | 新增、编辑、暂停、启用、删除 | `mango_job_e2e_tmp_<timestamp>` | 临时任务创建为草稿，编辑后名称更新；示例任务可暂停再启用；临时任务可删除 | 状态操作和删除均有确认反馈；删除后列表不再出现临时任务 | Job API 无 4xx/5xx；console error 为空 | `05-definition-status-enabled.png`、`09-definition-delete-confirm.png` | PASS |
+| JOB-E2E-004 | 执行实例、执行日志、Worker、处理器、引擎状态 | Job 下全部管理页真实 API 访问 | 菜单逐个进入 | URL 和 heading 正确；`.job-panel` 可见；无 401、403、拒绝访问、路由加载失败、加载失败文案 | 搜索型页面 toolbar 高度小于 150px；非搜索页主内容可见 | Job API 无 4xx/5xx；console error 为空 | `10-job-instance.png`、`10-job-log.png`、`10-job-worker.png`、`10-job-handler.png`、`10-job-engine.png` | PASS |
 
-## 4. 回归抽查记录
+## 6. 验证命令
 
-| 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
-|---|---|---|---|---|---|---|
-| Job | 任务定义 | 搜索 `mango_job_example_` 后回显三条示例任务 | 更多筛选按钮保留，低频筛选项默认收起 | 标题、主操作、搜索区和表格顺序清晰；新增任务按钮不再掉到标题下方 | `job-definition.png` | PASS |
-| Job | 执行实例/执行日志/Worker | 菜单切换触发对应分页 API | 搜索区在一行内优先铺开，窄屏可换行 | toolbar 高度受控，列表区域首屏可见 | `job-instance.png` | PASS |
-| Job | 处理器/引擎状态 | 页面进入后调用真实接口 | 无权限错误或路由错误文案 | 主内容区域可见，状态信息在 `.job-panel` 内展示 | `job-engine.png` | PASS |
+```bash
+mvn -pl mango-platform/mango-job/mango-job-core -am test
+PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm --dir mango-ui/apps/mango-admin exec playwright test e2e/specs/job-management.spec.ts --project=chromium --reporter=line
+```
 
-## 5. 未验证项和风险
+## 7. 未验证项和风险
 
-| 项目 | 原因 | 影响 | 后续处理 | 用户确认 |
-|---|---|---|---|---|
-| PowerJob Server 实际调度执行结果 | 当前 Sprint 的 E2E 验证 Mango Job 管理页、Mango 原生契约、触发实例落库和真实 Job API；未接入外部 PowerJob Server 的异步执行闭环 | 只能证明管理链路和 Mango 侧实例记录可用，不能证明外部 Worker 完成真实任务体执行 | 后续接入 PowerJob Server/Worker 联调环境后补充跨进程执行 E2E | 暂无 |
-| 多浏览器回归 | 本次按验收重点执行 Chromium；未执行 Firefox/WebKit | 不影响 Chrome/Chromium 管理后台验收结论，跨浏览器细节仍需抽查 | 发布前可补跑 Firefox/WebKit 项目 | 暂无 |
+| 项目 | 原因 | 影响 | 后续处理 |
+|---|---|---|---|
+| 外部 PowerJob Server/Worker 实际执行任务体 | 当前本地验收环境没有启用外部 PowerJob Server/Worker | 已验证 Mango 管理端和后台落库闭环，未证明外部 Worker 完成任务体执行 | Sprint 后续接入 PowerJob Server/Worker 联调环境后补充跨进程执行 E2E |
+| 多浏览器回归 | 本次按验收重点执行 Chromium | 不影响 Chrome/Chromium 管理后台验收，Firefox/WebKit 仍需发布前抽查 | 发布前补跑 Firefox/WebKit 项目 |

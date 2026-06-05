@@ -20,7 +20,6 @@ import io.mango.job.api.query.MangoJobLogPageQuery;
 import io.mango.job.api.query.MangoJobWorkerPageQuery;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
-import io.mango.job.core.entity.MangoJobLogIndexEntity;
 import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobEngineMappingMapper;
@@ -191,6 +190,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(rowCount("job", "mango_job_definition")).isOne();
         assertThat(rowCount("job", "mango_job_instance")).isOne();
         assertThat(rowCount("job", "mango_job_engine_mapping")).isEqualTo(2);
+        assertThat(rowCount("job", "mango_job_log_index")).isOne();
         assertThat(rowCount("job", "mango_job_operation_log")).isEqualTo(3);
     }
 
@@ -208,7 +208,6 @@ class MangoJobMultiDataSourceIntegrationTest {
         TriggerMangoJobCommand triggerCommand = new TriggerMangoJobCommand();
         triggerCommand.setJobId(jobId);
         Long instanceId = jobDefinitionService.triggerDefinition(triggerCommand);
-        insertLogIndex(jobId, instanceId);
         insertWorkerSnapshot();
 
         assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isEqualTo(1);
@@ -292,19 +291,6 @@ class MangoJobMultiDataSourceIntegrationTest {
         return command;
     }
 
-    private void insertLogIndex(Long jobId, Long instanceId) {
-        MangoJobLogIndexEntity entity = new MangoJobLogIndexEntity();
-        entity.setTenantId(MangoContextHolder.tenantId());
-        entity.setJobId(jobId);
-        entity.setInstanceId(instanceId);
-        entity.setEngineType(JobEngineType.POWERJOB.name());
-        entity.setEngineInstanceId("engine-instance-1");
-        entity.setLogLocation("memory://log/1");
-        entity.setReadOffset(0L);
-        entity.setLastFetchedAt(LocalDateTime.now());
-        query("job", () -> logIndexMapper.insert(entity));
-    }
-
     private void insertWorkerSnapshot() {
         MangoJobWorkerSnapshotEntity entity = new MangoJobWorkerSnapshotEntity();
         entity.setTenantId(MangoContextHolder.tenantId());
@@ -332,9 +318,10 @@ class MangoJobMultiDataSourceIntegrationTest {
         IMangoJobDefinitionService jobDefinitionService(MangoJobDefinitionMapper mapper,
                                                         MangoJobInstanceMapper instanceMapper,
                                                         MangoJobOperationLogMapper operationLogMapper,
+                                                        MangoJobLogIndexMapper logIndexMapper,
                                                         MangoJobDataSourceRouter dataSourceRouter,
                                                         IMangoJobEngineSyncService engineSyncService) {
-            return new MangoJobDefinitionService(mapper, instanceMapper, operationLogMapper, dataSourceRouter,
+            return new MangoJobDefinitionService(mapper, instanceMapper, operationLogMapper, logIndexMapper, dataSourceRouter,
                     engineSyncService);
         }
 

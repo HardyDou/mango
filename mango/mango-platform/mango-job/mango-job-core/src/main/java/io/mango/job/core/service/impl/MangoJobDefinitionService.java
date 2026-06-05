@@ -19,9 +19,11 @@ import io.mango.job.api.query.MangoJobDefinitionPageQuery;
 import io.mango.job.api.vo.MangoJobDefinitionVO;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
+import io.mango.job.core.entity.MangoJobLogIndexEntity;
 import io.mango.job.core.entity.MangoJobOperationLogEntity;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
+import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobOperationLogMapper;
 import io.mango.job.core.service.IMangoJobDefinitionService;
 import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
@@ -44,6 +46,8 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
     private final MangoJobOperationLogMapper operationLogMapper;
 
+    private final MangoJobLogIndexMapper logIndexMapper;
+
     private final MangoJobDataSourceRouter dataSourceRouter;
 
     private final IMangoJobEngineSyncService engineSyncService;
@@ -51,11 +55,13 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
     public MangoJobDefinitionService(MangoJobDefinitionMapper mapper,
                                      MangoJobInstanceMapper instanceMapper,
                                      MangoJobOperationLogMapper operationLogMapper,
+                                     MangoJobLogIndexMapper logIndexMapper,
                                      MangoJobDataSourceRouter dataSourceRouter,
                                      IMangoJobEngineSyncService engineSyncService) {
         this.mapper = mapper;
         this.instanceMapper = instanceMapper;
         this.operationLogMapper = operationLogMapper;
+        this.logIndexMapper = logIndexMapper;
         this.dataSourceRouter = dataSourceRouter;
         this.engineSyncService = engineSyncService;
     }
@@ -174,6 +180,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             instanceMapper.insert(instance);
 
             engineSyncService.trigger(definition, instance, batchNo);
+            writeExecutionLogIndex(definition, instance);
             writeOperationLog(definition, instance.getId(), "TRIGGER_DEFINITION", "SUCCESS", batchNo, null);
             return instance.getId();
         });
@@ -304,5 +311,19 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
         log.setErrorSummary(errorSummary);
         log.setTraceId(MangoContextHolder.traceId());
         operationLogMapper.insert(log);
+    }
+
+    private void writeExecutionLogIndex(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance) {
+        MangoJobLogIndexEntity log = new MangoJobLogIndexEntity();
+        log.setTenantId(definition.getTenantId());
+        log.setJobId(definition.getId());
+        log.setInstanceId(instance.getId());
+        log.setEngineType(definition.getEngineType());
+        log.setEngineInstanceId(instance.getEngineInstanceId());
+        log.setLogLocation("mango-job://jobs/" + definition.getId() + "/instances/" + instance.getId());
+        log.setReadOffset(0L);
+        log.setErrorSummary(instance.getErrorSummary());
+        log.setLastFetchedAt(LocalDateTime.now());
+        logIndexMapper.insert(log);
     }
 }
