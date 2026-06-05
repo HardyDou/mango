@@ -2,6 +2,7 @@ export { createMangoAdminApp } from '@mango/admin-shell';
 export type { MangoAdminShellOptions, MangoAdminAppInstance } from '@mango/admin-shell';
 export { registerMangoCalendarAdminPages } from '@mango/calendar/admin-pages';
 export { registerMangoFileAdminPages } from '@mango/file/admin-pages';
+export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
 export { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 export { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';

@@ -21,6 +21,7 @@
     "@mango/auth": "workspace:*",
     "@mango/calendar": "workspace:*",
     "@mango/file": "workspace:*",
+    "@mango/job": "workspace:*",
     "@mango/numgen": "workspace:*",
     "@mango/notice": "workspace:*",
     "@mango/rbac": "workspace:*",

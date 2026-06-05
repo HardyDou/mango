@@ -1,0 +1,165 @@
+.job-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.job-toolbar,
+.job-panel {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+}
+
+.job-toolbar {
+  padding: 16px 18px;
+}
+
+.job-toolbar-head,
+.job-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.job-toolbar h2,
+.job-panel h3 {
+  margin: 0;
+  color: var(--el-text-color-primary);
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.job-toolbar h2 {
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.job-panel h3 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.job-toolbar p,
+.job-panel p {
+  margin: 4px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.job-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin-top: 14px;
+}
+
+.job-search .el-form-item {
+  margin: 0;
+}
+
+.job-panel {
+  padding: 16px 18px 14px;
+}
+
+.job-panel-head {
+  margin-bottom: 12px;
+}
+
+.job-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.job-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 14px;
+}
+
+.job-name-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-name-cell strong {
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-name-cell span,
+.job-muted {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.job-kv {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.job-kv-item {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.job-kv-item span {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.job-kv-item strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--el-text-color-primary);
+  font-size: 18px;
+  line-height: 26px;
+}
+
+.job-json {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 6px;
+  padding: 10px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.job-error {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .job-toolbar-head,
+  .job-panel-head {
+    flex-direction: column;
+  }
+
+  .job-kv {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .job-kv {
+    grid-template-columns: 1fr;
+  }
+}

@@ -49,6 +49,7 @@
   "peerDependencies": {
     "@mango/calendar": "1.0.7",
     "@mango/file": "1.0.7",
+    "@mango/job": "1.0.0",
     "@mango/notice": "1.0.7",
     "@mango/numgen": "1.0.7",
     "@mango/template": "1.0.7",
@@ -64,6 +65,9 @@
       "optional": true
     },
     "@mango/file": {
+      "optional": true
+    },
+    "@mango/job": {
       "optional": true
     },
     "@mango/notice": {

@@ -323,8 +323,9 @@ class MangoJobMultiDataSourceIntegrationTest {
     static class TestApplication {
 
         @Bean
-        MangoJobDataSourceRouter mangoJobDataSourceRouter(PersistenceModuleDataSourceResolver resolver) {
-            return new MangoJobDataSourceRouter(resolver);
+        MangoJobDataSourceRouter mangoJobDataSourceRouter(
+                ObjectProvider<PersistenceModuleDataSourceResolver> resolverProvider) {
+            return new MangoJobDataSourceRouter(resolverProvider);
         }
 
         @Bean

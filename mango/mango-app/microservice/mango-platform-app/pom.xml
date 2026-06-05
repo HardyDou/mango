@@ -80,6 +80,10 @@
             <artifactId>mango-workflow-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.job</groupId>
+            <artifactId>mango-job-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.file</groupId>
             <artifactId>mango-file-starter</artifactId>
         </dependency>

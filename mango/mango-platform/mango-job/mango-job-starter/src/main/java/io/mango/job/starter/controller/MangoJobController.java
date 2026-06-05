@@ -1,5 +1,7 @@
 package io.mango.job.starter.controller;
 
+import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.MangoJobApi;
@@ -53,6 +55,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/definitions/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:list")
     @Operation(summary = "分页查询任务定义", description = "分页查询当前租户下的 Mango Job 任务定义")
     public R<PageResult<MangoJobDefinitionVO>> pageDefinitions(
             @Valid @ParameterObject MangoJobDefinitionPageQuery query) {
@@ -61,6 +64,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/definitions/detail")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:query")
     @Operation(summary = "查询任务定义详情", description = "按任务定义 ID 查询详情")
     public R<MangoJobDefinitionVO> detailDefinition(
             @Parameter(description = "任务定义 ID", required = true)
@@ -71,6 +75,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @PostMapping("/definitions")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:add")
     @Operation(summary = "新增任务定义", description = "创建 Mango Job 任务定义")
     public R<Long> createDefinition(@Valid @RequestBody SaveMangoJobDefinitionCommand command) {
         return R.ok(definitionService.createDefinition(command));
@@ -78,6 +83,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @PutMapping("/definitions")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:edit")
     @Operation(summary = "修改任务定义", description = "更新草稿状态的 Mango Job 任务定义")
     public R<Boolean> updateDefinition(@Valid @RequestBody SaveMangoJobDefinitionCommand command) {
         return R.ok(definitionService.updateDefinition(command));
@@ -85,6 +91,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @PutMapping("/definitions/status")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:status")
     @Operation(summary = "更新任务状态", description = "启用、暂停、禁用或退回草稿任务定义")
     public R<Boolean> updateDefinitionStatus(@Valid @RequestBody UpdateMangoJobDefinitionStatusCommand command) {
         return R.ok(definitionService.updateDefinitionStatus(command));
@@ -92,6 +99,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @DeleteMapping("/definitions")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:delete")
     @Operation(summary = "删除任务定义", description = "删除草稿状态的任务定义")
     public R<Boolean> deleteDefinition(
             @Parameter(description = "任务定义 ID", required = true)
@@ -102,6 +110,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @PostMapping("/definitions/trigger")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:definition:trigger")
     @Operation(summary = "手动触发任务", description = "手动触发非草稿、非禁用状态的任务定义")
     public R<Long> triggerDefinition(@Valid @RequestBody TriggerMangoJobCommand command) {
         return R.ok(definitionService.triggerDefinition(command));
@@ -109,6 +118,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/instances/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:instance:list")
     @Operation(summary = "分页查询任务实例", description = "分页查询任务执行实例摘要")
     public R<PageResult<MangoJobInstanceVO>> pageInstances(
             @Valid @ParameterObject MangoJobInstancePageQuery query) {
@@ -117,6 +127,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/logs/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:log:list")
     @Operation(summary = "分页查询任务日志索引", description = "分页查询任务执行日志索引")
     public R<PageResult<MangoJobLogIndexVO>> pageLogs(@Valid @ParameterObject MangoJobLogPageQuery query) {
         return R.ok(queryService.pageLogs(query));
@@ -124,6 +135,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/workers/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:worker:list")
     @Operation(summary = "分页查询 Worker 快照", description = "分页查询任务执行 Worker 快照")
     public R<PageResult<MangoJobWorkerSnapshotVO>> pageWorkers(
             @Valid @ParameterObject MangoJobWorkerPageQuery query) {
@@ -132,6 +144,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/handlers")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:handler:list")
     @Operation(summary = "查询处理器清单", description = "查询当前应用已注册的 Mango Job 处理器")
     public R<List<MangoJobHandlerVO>> listHandlers() {
         return R.ok(queryService.listHandlers());
@@ -139,6 +152,7 @@ public class MangoJobController implements MangoJobApi {
 
     @Override
     @GetMapping("/engines/status")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:engine:list")
     @Operation(summary = "查询引擎同步状态", description = "查询各调度引擎的任务同步状态汇总")
     public R<List<MangoJobEngineStatusVO>> listEngineStatus() {
         return R.ok(queryService.listEngineStatus());

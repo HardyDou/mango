@@ -6,7 +6,8 @@ export type MangoAdminFeatureCode =
   | 'template'
   | 'notice'
   | 'numgen'
-  | 'calendar';
+  | 'calendar'
+  | 'job';
 
 export type MangoAdminFeaturePreset = 'core' | 'full';
 
@@ -27,6 +28,7 @@ export const MANGO_ADMIN_OPTIONAL_FEATURES: MangoAdminFeatureCode[] = [
   'notice',
   'numgen',
   'calendar',
+  'job',
 ];
 
 export const MANGO_ADMIN_FULL_FEATURES: MangoAdminFeatureCode[] = [
@@ -43,6 +45,7 @@ const MODULE_FEATURE_MAP: Record<string, MangoAdminFeatureCode> = {
   'mango-notice': 'notice',
   'mango-numgen': 'numgen',
   'mango-calendar': 'calendar',
+  'mango-job': 'job',
 };
 
 export function resolveMangoAdminFeatures(features: MangoAdminFeatures = 'core') {
