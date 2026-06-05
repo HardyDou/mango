@@ -20,6 +20,30 @@ export function login(data: {
   return post('/auth/login', data);
 }
 
+export function wecomLogin(data: {
+  code: string;
+  channelConfigId?: string | number;
+  tenantId?: string | number;
+  tenantCode?: string;
+  appCode?: string;
+}) {
+  return post('/auth/wecom/login', data, { ignoreToken: true });
+}
+
+export interface WecomLoginConfig {
+  channelConfigId?: string | number;
+  corpId?: string;
+  agentId?: string;
+  redirectUri?: string;
+}
+
+export function getWecomLoginConfig(tenantId: string | number) {
+  return get<WecomLoginConfig>('/auth/wecom/login-config', {
+    params: { tenantId },
+    ignoreToken: true,
+  });
+}
+
 export function getAccountLoginTenantOptions(data: {
   username: string;
   password: string;

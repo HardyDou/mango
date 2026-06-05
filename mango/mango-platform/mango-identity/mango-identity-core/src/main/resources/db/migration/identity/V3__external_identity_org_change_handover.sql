@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `identity_external_binding` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL COMMENT '租户ID',
+  `user_id` bigint NOT NULL COMMENT 'Mango用户ID',
+  `provider` varchar(32) NOT NULL COMMENT '身份提供方：WECOM',
+  `corp_id` varchar(128) NOT NULL COMMENT '企业ID',
+  `external_user_id` varchar(128) NOT NULL COMMENT '外部用户ID',
+  `display_name` varchar(128) DEFAULT NULL COMMENT '显示名称快照',
+  `bind_source` varchar(32) NOT NULL DEFAULT 'SYNC' COMMENT '绑定来源：SYNC/ADMIN/SELF',
+  `bind_status` varchar(32) NOT NULL DEFAULT 'BOUND' COMMENT '绑定状态：BOUND/CONFLICT/DISABLED',
+  `bind_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
+  `last_login_time` datetime DEFAULT NULL COMMENT '最近第三方登录时间',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_external_binding_external` (`tenant_id`, `provider`, `corp_id`, `external_user_id`),
+  KEY `idx_external_binding_user` (`tenant_id`, `user_id`),
+  KEY `idx_external_binding_provider` (`provider`, `corp_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='第三方登录身份绑定表';

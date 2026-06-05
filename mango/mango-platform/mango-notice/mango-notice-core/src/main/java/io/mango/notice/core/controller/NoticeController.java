@@ -18,6 +18,7 @@ import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
+import io.mango.notice.api.command.SyncWecomUsersCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
@@ -39,6 +40,8 @@ import io.mango.notice.api.vo.NoticeSettingsVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
+import io.mango.notice.api.vo.WecomUserSyncResultVO;
 import io.mango.notice.core.service.INoticeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -211,6 +214,14 @@ public class NoticeController implements NoticeApi {
  }
 
  @Override
+ @GetMapping("/internal/wecom-login-config")
+ @ApiAccess(mode = ApiResourceAccessMode.INTERNAL, desc = "内部读取企业微信扫码登录配置")
+ @Operation(summary = "内部读取企业微信扫码登录配置", description = "内部接口。供认证服务读取企业微信渠道配置，Secret 不对前端开放")
+ public R<NoticeWecomLoginConfigVO> getWecomLoginConfig(@RequestParam(required = false) Long channelConfigId) {
+ return R.ok(noticeService.getWecomLoginConfig(channelConfigId));
+ }
+
+ @Override
  @DeleteMapping("/channels")
  @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "notice:channel:delete")
  @Operation(summary = "删除渠道配置", description = "删除未被消息模板引用且非系统内置的渠道配置")
@@ -315,6 +326,14 @@ public class NoticeController implements NoticeApi {
  @Operation(summary = "保存通知接收账户", description = "新增或更新手机号、邮箱等通知接收账户")
  public R<NoticeRecipientAccountVO> saveRecipientAccount(@RequestBody @Valid SaveNoticeRecipientAccountCommand command) {
  return R.ok(noticeService.saveRecipientAccount(currentUserId(), command));
+ }
+
+ @Override
+ @PostMapping("/wecom/users/sync")
+ @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
+ @Operation(summary = "同步企业微信用户", description = "从企业微信通讯录同步成员，并绑定企业微信通知接收账户")
+ public R<WecomUserSyncResultVO> syncWecomUsers(@RequestBody @Valid SyncWecomUsersCommand command) {
+ return R.ok(noticeService.syncWecomUsers(command));
  }
 
  @Override

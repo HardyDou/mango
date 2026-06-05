@@ -5,8 +5,10 @@ import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.command.LogoutCommand;
 import io.mango.auth.api.command.RefreshTokenCommand;
 import io.mango.auth.api.command.ValidateTokenCommand;
+import io.mango.auth.api.command.WecomLoginCommand;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
+import io.mango.auth.api.vo.WecomLoginConfigVO;
 import io.mango.auth.api.AuthCode;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.impl.LoginAttemptTracker;
@@ -46,6 +48,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -154,6 +157,35 @@ public class AuthController {
     @Operation(summary = "查询账号可登录机构", description = "公开接口。校验用户名、密码和登录域后，返回当前账号可进入的启用机构列表，用于登录页机构选择")
     public R<List<LoginTenantVO>> loginInstitutions(@Valid @RequestBody LoginTenantOptionsCommand command) {
         return R.ok(authService.listLoginTenants(command));
+    }
+
+    @PostMapping("/wecom/login")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "企业微信扫码登录")
+    @Operation(summary = "企业微信扫码登录", description = "公开接口。使用企业微信授权 code 换取企业微信 userid，并按已绑定的 Mango 用户签发登录令牌")
+    public R<LoginVO> wecomLoginEndpoint(@Valid @RequestBody WecomLoginCommand command,
+                                         HttpServletResponse response) {
+        try {
+            LoginVO loginResponse = authService.loginByWecom(command);
+            Cookie cookie = new Cookie("MANGO_TOKEN", loginResponse.getAccessToken());
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setAttribute("SameSite", "Lax");
+            response.addCookie(cookie);
+            return R.ok(loginResponse);
+        } catch (BizException e) {
+            return R.fail(e.getCode(), e.getMessage());
+        }
+    }
+
+    @GetMapping("/wecom/login-config")
+    @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "查询企业微信扫码登录配置")
+    @Operation(summary = "查询企业微信扫码登录配置", description = "公开接口。根据所选机构读取通知中心企业微信渠道配置，返回二维码所需公开字段")
+    public R<WecomLoginConfigVO> wecomLoginConfig(@RequestParam String tenantId) {
+        try {
+            return R.ok(authService.getWecomLoginConfig(tenantId));
+        } catch (BizException e) {
+            return R.fail(e.getCode(), e.getMessage());
+        }
     }
 
     private R<LoginVO> doLogin(LoginCommand loginCommand, String clientIp) {
