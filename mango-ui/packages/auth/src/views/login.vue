@@ -97,6 +97,17 @@
               {{ $t('login.btn') }}
             </el-button>
           </el-form-item>
+          <el-form-item>
+            <el-button
+              size="large"
+              class="wecom-login-btn"
+              :loading="wecomLoading"
+              :disabled="loading || wecomLoading || !form.tenantId"
+              @click="openWecomLogin"
+            >
+              企业微信扫码登录
+            </el-button>
+          </el-form-item>
         </el-form>
         <component
           :is="loginSlots.formAfter"
@@ -110,6 +121,43 @@
         />
       </div>
     </div>
+    <el-dialog
+      v-model="wecomDialogVisible"
+      title="企业微信扫码登录"
+      width="420px"
+    >
+      <div class="wecom-login-panel">
+        <iframe
+          v-if="wecomQrUrl"
+          :src="wecomQrUrl"
+          class="wecom-qr-frame"
+        />
+        <div
+          v-else
+          class="wecom-login-placeholder"
+        >
+          请在通知中心的企业微信渠道配置中启用扫码登录，并补充 AgentId 和扫码回调地址；本地联调可输入授权 code。
+        </div>
+        <el-input
+          v-model="wecomCode"
+          placeholder="企业微信回调 code"
+          clearable
+        />
+      </div>
+      <template #footer>
+        <el-button @click="wecomDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="wecomLoading"
+          :disabled="!wecomCode.trim() || !form.tenantId"
+          @click="handleWecomLogin()"
+        >
+          登录
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -120,8 +168,11 @@ import { ElMessage } from 'element-plus';
 import { Session } from '@mango/common/utils/storage';
 import {
   getAccountLoginTenantOptions,
+  getWecomLoginConfig,
   getLoginTenantOptions,
   login,
+  wecomLogin,
+  type WecomLoginConfig,
   type LoginTenantOption,
 } from '../api/sys';
 import { useUserInfo } from '../store/userInfo';
@@ -155,6 +206,10 @@ const rules = {
 
 // 状态
 const loading = ref(false);
+const wecomLoading = ref(false);
+const wecomDialogVisible = ref(false);
+const wecomCode = ref('');
+const wecomLoginConfig = ref<WecomLoginConfig>();
 const tenantLoading = ref(false);
 const tenantOptions = ref<LoginTenantOption[]>([]);
 const accountTenantResolvedKey = ref('');
@@ -163,6 +218,19 @@ let accountTenantPendingPromise: Promise<boolean> | undefined;
 
 const selectedTenant = computed(() => {
   return tenantOptions.value.find((tenant) => tenant.tenantId === form.tenantId);
+});
+const wecomQrUrl = computed(() => {
+  const config = wecomLoginConfig.value;
+  if (!config?.corpId || !config.agentId || !config.redirectUri) {
+    return '';
+  }
+  const params = new URLSearchParams({
+    appid: config.corpId,
+    agentid: String(config.agentId),
+    redirect_uri: config.redirectUri,
+    state: `tenant:${form.tenantId || ''}`,
+  });
+  return `https://open.work.weixin.qq.com/wwopen/sso/qrConnect?${params.toString()}`;
 });
 
 const loadLoginTenants = async () => {
@@ -246,7 +314,87 @@ const refreshAccountTenants = async (strict = false) => {
 
 onMounted(() => {
   void loadLoginTenants();
+  const code = new URLSearchParams(window.location.search).get('code');
+  if (code) {
+    wecomCode.value = code;
+    wecomDialogVisible.value = true;
+  }
 });
+
+function persistLoginResult(res: any, fallback: Record<string, any>) {
+  const token = res?.accessToken || res?.token;
+  if (!res || !token) {
+    throw new Error('登录响应无效');
+  }
+  const userInfo = res.userInfo || res;
+  const normalizedUserInfo = {
+    ...userInfo,
+    tenantId: userInfo.tenantId ?? res.tenantId ?? fallback.tenantId,
+    tenantCode: userInfo.tenantCode ?? res.tenantCode ?? fallback.tenantCode,
+    tenantName: userInfo.tenantName ?? res.tenantName ?? fallback.tenantName,
+    realm: userInfo.realm ?? res.realm ?? fallback.realm,
+    actorType: userInfo.actorType ?? res.actorType ?? fallback.actorType,
+    partyType: userInfo.partyType ?? res.partyType ?? fallback.partyType,
+    partyId: userInfo.partyId ?? res.partyId ?? fallback.partyId,
+    appCode: userInfo.appCode ?? res.appCode ?? fallback.appCode,
+  };
+  Session.setToken(token, {
+    refreshToken: res.refreshToken,
+    expiresIn: Number(res.expiresIn) || undefined,
+  });
+  userInfoStore.setUserInfos(normalizedUserInfo);
+  if (normalizedUserInfo.tenantId) {
+    Session.set('tenantId', normalizedUserInfo.tenantId);
+  }
+}
+
+async function openWecomLogin() {
+  if (!form.tenantId) {
+    ElMessage.warning('请先选择机构');
+    return;
+  }
+  wecomLoading.value = true;
+  try {
+    wecomLoginConfig.value = await getWecomLoginConfig(form.tenantId);
+  } catch {
+    wecomLoginConfig.value = undefined;
+    ElMessage.warning('未读取到企业微信扫码登录配置');
+  } finally {
+    wecomLoading.value = false;
+  }
+  wecomDialogVisible.value = true;
+}
+
+async function handleWecomLogin() {
+  if (!wecomCode.value.trim()) {
+    ElMessage.warning('请输入企业微信授权 code');
+    return;
+  }
+  wecomLoading.value = true;
+  try {
+    const loginData = {
+      code: wecomCode.value.trim(),
+      channelConfigId: wecomLoginConfig.value?.channelConfigId,
+      tenantId: form.tenantId,
+      tenantCode: selectedTenant.value?.tenantCode,
+      appCode: loginDefaults.value.appCode || 'internal-admin',
+    };
+    const res = await wecomLogin(loginData);
+    persistLoginResult(res, {
+      tenantId: form.tenantId,
+      tenantCode: selectedTenant.value?.tenantCode,
+      tenantName: selectedTenant.value?.tenantName,
+      appCode: loginData.appCode,
+    });
+    ElMessage.success('登录成功');
+    await router.push(loginDefaults.value.redirectPath || '/home');
+  } catch (error) {
+    console.error('企业微信登录失败:', error);
+    ElMessage.error('企业微信登录失败，请确认账号已绑定');
+  } finally {
+    wecomLoading.value = false;
+  }
+}
 
 // 登录处理
 const handleLogin = async () => {
@@ -280,33 +428,15 @@ const handleLogin = async () => {
       // 调用真实登录接口
       const res = await login(loginData);
 
-      // 校验响应数据 - 兼容多种响应格式
-      const token = res?.accessToken || res?.token;
-      if (!res || !token) {
-        throw new Error('登录响应无效');
-      }
-
-      // 保存 Token 和用户信息。登录上下文必须写入 userInfo，后续菜单、权限和文件等接口依赖它组装租户头。
-      const userInfo = res.userInfo || res;
-      const normalizedUserInfo = {
-        ...userInfo,
-        tenantId: userInfo.tenantId ?? res.tenantId ?? form.tenantId,
-        tenantCode: userInfo.tenantCode ?? res.tenantCode ?? selectedTenant.value?.tenantCode ?? loginData.tenantCode,
-        tenantName: userInfo.tenantName ?? res.tenantName ?? selectedTenant.value?.tenantName,
-        realm: userInfo.realm ?? res.realm ?? loginData.realm,
-        actorType: userInfo.actorType ?? res.actorType ?? loginData.actorType,
-        partyType: userInfo.partyType ?? res.partyType ?? loginData.partyType,
-        partyId: userInfo.partyId ?? res.partyId ?? loginData.partyId,
-        appCode: userInfo.appCode ?? res.appCode ?? loginData.appCode,
-      };
-      Session.setToken(token, {
-        refreshToken: res.refreshToken,
-        expiresIn: Number(res.expiresIn) || undefined,
+      persistLoginResult(res, {
+        tenantId: form.tenantId,
+        tenantCode: selectedTenant.value?.tenantCode ?? loginData.tenantCode,
+        tenantName: selectedTenant.value?.tenantName,
+        realm: loginData.realm,
+        actorType: loginData.actorType,
+        partyType: loginData.partyType,
+        appCode: loginData.appCode,
       });
-      userInfoStore.setUserInfos(normalizedUserInfo);
-      if (normalizedUserInfo.tenantId) {
-        Session.set('tenantId', normalizedUserInfo.tenantId);
-      }
 
       ElMessage.success('登录成功');
       await router.push(loginDefaults.value.redirectPath || '/home');
@@ -386,6 +516,32 @@ const handleLogin = async () => {
   .login-btn {
     width: 100%;
   }
+
+  .wecom-login-btn {
+    width: 100%;
+  }
+}
+
+.wecom-login-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wecom-qr-frame {
+  width: 100%;
+  height: 260px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+}
+
+.wecom-login-placeholder {
+  padding: 24px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
 }
 
 :deep(.el-input__wrapper) {

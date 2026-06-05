@@ -55,6 +55,61 @@ export interface PageResult<T> {
   pageSize: number;
 }
 
+export interface WecomUserSyncCommand {
+  channelConfigId?: ApiId;
+  corpId?: string;
+  secret?: string;
+  departmentId?: string;
+  targetOrgId?: ApiId;
+  targetOrgType?: number;
+  fetchChild?: boolean;
+  syncDepartments?: boolean;
+  syncUsers?: boolean;
+  skipUnchanged?: boolean;
+  createMissingUsers?: boolean;
+  updateMatchedUsers?: boolean;
+  bindNoticeAccount?: boolean;
+  bindLoginIdentity?: boolean;
+}
+
+export interface WecomUserSyncResult {
+  totalCount: number;
+  departmentTotalCount: number;
+  departmentCreatedCount: number;
+  departmentUpdatedCount: number;
+  departmentSkippedCount: number;
+  matchedCount: number;
+  createdCount: number;
+  updatedCount: number;
+  boundAccountCount: number;
+  skippedCount: number;
+  unchangedCount: number;
+  failedCount: number;
+  messages?: string[];
+}
+
+export interface ExternalIdentityBindingVO {
+  id?: ApiId;
+  userId?: ApiId;
+  provider: string;
+  corpId: string;
+  externalUserId: string;
+  displayName?: string;
+  bindSource?: string;
+  bindStatus?: string;
+  bindTime?: string;
+  lastLoginTime?: string;
+}
+
+export interface BindExternalIdentityCommand {
+  userId: ApiId;
+  provider: string;
+  corpId: string;
+  externalUserId: string;
+  displayName?: string;
+  bindSource?: string;
+}
+
 type CreateUserCommand = Pick<IdentityUserVO,
   'username' | 'password' | 'nickname' | 'realm' | 'actorType' | 'partyType' | 'partyId' |
   'email' | 'phone' | 'avatar' | 'status' | 'remark'
@@ -84,8 +139,18 @@ export const userApi = {
   create: (data: IdentityUserVO) => post<ApiId>('/identity/users', toCreateCommand(data)),
   update: (data: IdentityUserVO) => put<boolean>('/identity/users', toUpdateCommand(data)),
   delete: (userId: ApiId) => del<boolean>('/identity/users', { params: { userId } }),
+  deleteBatch: (userIds: ApiId[]) => post<number>('/identity/users/delete-batch', { userIds }),
   updateStatus: (userId: ApiId, status: number) => put<boolean>('/identity/users/status', { userId, status }),
   resetPassword: (userId: ApiId, password: string) => put<boolean>('/identity/users/password/reset', { userId, password }),
+  syncWecomUsers: (data: WecomUserSyncCommand) => post<WecomUserSyncResult>('/notice/wecom/users/sync', data),
+  listExternalIdentities: (userId: ApiId) => get<ExternalIdentityBindingVO[]>('/identity/users/external-identities', { params: { userId } }),
+  bindExternalIdentity: (data: BindExternalIdentityCommand) => post<ExternalIdentityBindingVO>('/identity/users/external-identities', data),
+  unbindExternalIdentity: (data: {
+    userId: ApiId;
+    provider: string;
+    corpId: string;
+    externalUserId: string;
+  }) => del<boolean>('/identity/users/external-identities', { data }),
 };
 
 function toBackendQuery(params?: UserQuery) {

@@ -36,6 +36,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.mango.platform.notice</groupId>
+            <artifactId>mango-notice-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Mango 通用能力 -->
         <dependency>
             <groupId>io.mango.common</groupId>

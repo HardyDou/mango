@@ -98,6 +98,7 @@ public class SysOrgController implements SysOrgApi {
     }
 
     @PostMapping
+    @Override
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:add")
     @Operation(summary = "新增组织", description = "权限接口。创建当前租户内的组织")
     public R<Long> create(@Valid @RequestBody CreateOrgCommand command) {
@@ -105,6 +106,7 @@ public class SysOrgController implements SysOrgApi {
     }
 
     @PutMapping
+    @Override
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
     @Operation(summary = "修改组织", description = "权限接口。更新当前租户内的组织")
     public R<Void> update(@Valid @RequestBody UpdateOrgCommand command) {
@@ -132,6 +134,7 @@ public class SysOrgController implements SysOrgApi {
     }
 
     @PostMapping("/{orgId}/members")
+    @Override
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:org:edit")
     @Operation(summary = "添加组织成员", description = "权限接口。将机构成员加入组织并设置岗位")
     public R<Void> addMember(

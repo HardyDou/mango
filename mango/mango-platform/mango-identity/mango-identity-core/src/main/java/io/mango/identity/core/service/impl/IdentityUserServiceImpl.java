@@ -7,17 +7,23 @@ import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.core.entity.SubjectRoleBinding;
 import io.mango.authorization.core.mapper.SubjectRoleBindingMapper;
 import io.mango.common.vo.PageResult;
+import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
+import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
+import io.mango.identity.core.entity.ExternalIdentityBindingEntity;
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.core.entity.TenantMember;
 import io.mango.identity.core.entity.TenantMemberOrgEntity;
+import io.mango.identity.core.mapper.ExternalIdentityBindingMapper;
 import io.mango.identity.core.mapper.IdentityUserMapper;
 import io.mango.identity.core.mapper.TenantMemberMapper;
 import io.mango.identity.core.mapper.TenantMemberOrgMapper;
@@ -32,7 +38,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,11 +56,13 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     private static final String DEFAULT_ACTOR_TYPE = "INTERNAL_USER";
     private static final String DEFAULT_PARTY_TYPE = "INTERNAL_ORG";
     private static final String DEFAULT_INITIAL_PASSWORD = "admin123";
+    private static final String STATUS_BOUND = "BOUND";
 
     private final IdentityUserMapper identityUserMapper;
     private final TenantMemberMapper tenantMemberMapper;
     private final TenantMemberOrgMapper tenantMemberOrgMapper;
     private final SubjectRoleBindingMapper subjectRoleBindingMapper;
+    private final ExternalIdentityBindingMapper externalIdentityBindingMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -129,17 +139,44 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
     @Override
     @Transactional
     public Boolean delete(Long userId) {
-        IdentityUser user = getManageableUser(userId);
-        if (user == null || userId.equals(MangoContextHolder.userId())) {
+        if (userId == null) {
             return false;
         }
-        TenantMember member = currentTenantMember(userId);
-        if (member != null) {
-            subjectRoleBindingMapper.delete(currentTenantSubjectRoleWrapper(member.getMemberId()));
-            tenantMemberMapper.deleteById(member.getMemberId());
-            return true;
+        return deleteBatch(List.of(userId)) > 0;
+    }
+
+    @Override
+    @Transactional
+    public Integer deleteBatch(List<Long> userIds) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || userIds == null || userIds.isEmpty()) {
+            return 0;
         }
-        return false;
+        Long currentUserId = MangoContextHolder.userId();
+        Set<Long> targetUserIds = userIds.stream()
+                .filter(id -> id != null && !id.equals(currentUserId))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (targetUserIds.isEmpty()) {
+            return 0;
+        }
+
+        List<TenantMember> members = tenantMemberMapper.selectList(new LambdaQueryWrapper<TenantMember>()
+                .eq(TenantMember::getTenantId, tenantId)
+                .in(TenantMember::getUserId, targetUserIds)
+                .isNull(TenantMember::getLeftAt));
+        if (members == null || members.isEmpty()) {
+            return 0;
+        }
+        Set<Long> memberIds = members.stream()
+                .map(TenantMember::getMemberId)
+                .collect(Collectors.toSet());
+        subjectRoleBindingMapper.delete(currentTenantSubjectRoleWrapper(memberIds));
+        tenantMemberOrgMapper.delete(new LambdaQueryWrapper<TenantMemberOrgEntity>()
+                .eq(TenantMemberOrgEntity::getTenantId, tenantId)
+                .in(TenantMemberOrgEntity::getMemberId, memberIds));
+        return tenantMemberMapper.delete(new LambdaQueryWrapper<TenantMember>()
+                .eq(TenantMember::getTenantId, tenantId)
+                .in(TenantMember::getMemberId, memberIds));
     }
 
     @Override
@@ -222,6 +259,84 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         return identityUserMapper.selectById(userId);
     }
 
+    @Override
+    @Transactional
+    public ExternalIdentityBindingVO bindExternalIdentity(BindExternalIdentityCommand command) {
+        IdentityUser user = getManageableUser(command.getUserId());
+        if (user == null) {
+            throw new IllegalArgumentException("成员不存在或不可管理");
+        }
+        Long tenantId = currentTenantIdLong();
+        ExternalIdentityBindingEntity existing = findExternalBinding(command.getProvider(), command.getCorpId(),
+                command.getExternalUserId(), tenantId);
+        if (existing != null && !Objects.equals(existing.getUserId(), command.getUserId())) {
+            throw new IllegalArgumentException("该企业微信用户已绑定其他成员");
+        }
+        ExternalIdentityBindingEntity entity = existing == null ? new ExternalIdentityBindingEntity() : existing;
+        entity.setTenantId(tenantId);
+        entity.setUserId(command.getUserId());
+        entity.setProvider(normalizeProvider(command.getProvider()));
+        entity.setCorpId(command.getCorpId().trim());
+        entity.setExternalUserId(command.getExternalUserId().trim());
+        entity.setDisplayName(firstText(command.getDisplayName(), user.getNickname()));
+        entity.setBindSource(firstText(command.getBindSource(), "SYNC"));
+        entity.setBindStatus(STATUS_BOUND);
+        if (entity.getBindTime() == null) {
+            entity.setBindTime(LocalDateTime.now());
+        }
+        if (entity.getId() == null) {
+            externalIdentityBindingMapper.insert(entity);
+        } else {
+            externalIdentityBindingMapper.updateById(entity);
+        }
+        return toExternalIdentityVO(entity);
+    }
+
+    @Override
+    @Transactional
+    public Boolean unbindExternalIdentity(UnbindExternalIdentityCommand command) {
+        Long tenantId = currentTenantIdLong();
+        ExternalIdentityBindingEntity existing = findExternalBinding(command.getProvider(), command.getCorpId(),
+                command.getExternalUserId(), tenantId);
+        if (existing == null || !Objects.equals(existing.getUserId(), command.getUserId())) {
+            return false;
+        }
+        return externalIdentityBindingMapper.deleteById(existing.getId()) > 0;
+    }
+
+    @Override
+    public ExternalIdentityBindingVO findExternalIdentity(ExternalIdentityQuery query) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || query == null) {
+            return null;
+        }
+        LambdaQueryWrapper<ExternalIdentityBindingEntity> wrapper = new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
+                .eq(ExternalIdentityBindingEntity::getTenantId, tenantId);
+        wrapper.eq(StringUtils.hasText(query.getProvider()), ExternalIdentityBindingEntity::getProvider,
+                normalizeProvider(query.getProvider()));
+        wrapper.eq(StringUtils.hasText(query.getCorpId()), ExternalIdentityBindingEntity::getCorpId, query.getCorpId());
+        wrapper.eq(StringUtils.hasText(query.getExternalUserId()), ExternalIdentityBindingEntity::getExternalUserId,
+                query.getExternalUserId());
+        wrapper.eq(query.getUserId() != null, ExternalIdentityBindingEntity::getUserId, query.getUserId());
+        wrapper.last("LIMIT 1");
+        return toExternalIdentityVO(externalIdentityBindingMapper.selectOne(wrapper));
+    }
+
+    @Override
+    public List<ExternalIdentityBindingVO> listExternalIdentities(Long userId) {
+        Long tenantId = currentTenantIdLong();
+        if (tenantId == null || userId == null) {
+            return List.of();
+        }
+        return externalIdentityBindingMapper.selectList(new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
+                .eq(ExternalIdentityBindingEntity::getTenantId, tenantId)
+                .eq(ExternalIdentityBindingEntity::getUserId, userId)
+                .orderByDesc(ExternalIdentityBindingEntity::getBindTime))
+                .stream()
+                .map(this::toExternalIdentityVO)
+                .toList();
+    }
+
     /**
      * 从账号资料构造身份资料 VO。
      */
@@ -287,8 +402,19 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         if (currentTenantMember(userId) != null) {
             return user;
         }
+        if (belongsToCurrentTenant(user)) {
+            log.info("Repair missing tenant member relation: userId={}, tenantId={}", userId, currentTenantId());
+            createTenantMember(user, firstText(user.getNickname(), user.getUsername()));
+            return user;
+        }
         log.warn("Tenant isolation violation: attempt to manage identity user {} by tenant {}", userId, currentTenantId());
         return null;
+    }
+
+    private boolean belongsToCurrentTenant(IdentityUser user) {
+        return user != null
+                && StringUtils.hasText(user.getTenantId())
+                && Objects.equals(user.getTenantId(), currentTenantId());
     }
 
     private Set<Long> currentTenantSubjectIds(Integer memberStatus) {
@@ -402,10 +528,10 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
                 .toList();
     }
 
-    private LambdaQueryWrapper<SubjectRoleBinding> currentTenantSubjectRoleWrapper(Long subjectId) {
+    private LambdaQueryWrapper<SubjectRoleBinding> currentTenantSubjectRoleWrapper(Collection<Long> subjectIds) {
         LambdaQueryWrapper<SubjectRoleBinding> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SubjectRoleBinding::getSubjectType, "TENANT_MEMBER")
-                .eq(SubjectRoleBinding::getSubjectId, subjectId);
+                .in(SubjectRoleBinding::getSubjectId, subjectIds);
         Long tenantId = currentTenantIdLong();
         wrapper.eq(tenantId != null, SubjectRoleBinding::getTenantId, tenantId);
         return wrapper;
@@ -480,6 +606,38 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
         tenantMemberMapper.insert(member);
     }
 
+    private ExternalIdentityBindingEntity findExternalBinding(String provider, String corpId, String externalUserId,
+                                                              Long tenantId) {
+        if (tenantId == null || !StringUtils.hasText(provider) || !StringUtils.hasText(corpId)
+                || !StringUtils.hasText(externalUserId)) {
+            return null;
+        }
+        return externalIdentityBindingMapper.selectOne(new LambdaQueryWrapper<ExternalIdentityBindingEntity>()
+                .eq(ExternalIdentityBindingEntity::getTenantId, tenantId)
+                .eq(ExternalIdentityBindingEntity::getProvider, normalizeProvider(provider))
+                .eq(ExternalIdentityBindingEntity::getCorpId, corpId.trim())
+                .eq(ExternalIdentityBindingEntity::getExternalUserId, externalUserId.trim())
+                .last("LIMIT 1"));
+    }
+
+    private ExternalIdentityBindingVO toExternalIdentityVO(ExternalIdentityBindingEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        ExternalIdentityBindingVO vo = new ExternalIdentityBindingVO();
+        vo.setId(entity.getId());
+        vo.setUserId(entity.getUserId());
+        vo.setProvider(entity.getProvider());
+        vo.setCorpId(entity.getCorpId());
+        vo.setExternalUserId(entity.getExternalUserId());
+        vo.setDisplayName(entity.getDisplayName());
+        vo.setBindSource(entity.getBindSource());
+        vo.setBindStatus(entity.getBindStatus());
+        vo.setBindTime(entity.getBindTime());
+        vo.setLastLoginTime(entity.getLastLoginTime());
+        return vo;
+    }
+
     private TenantMember currentTenantMember(Long userId) {
         Long tenantId = currentTenantIdLong();
         if (tenantId == null || userId == null) {
@@ -498,6 +656,10 @@ public class IdentityUserServiceImpl implements IIdentityUserService {
 
     private String normalizeRealm(String realm) {
         return realm == null || realm.isBlank() ? DEFAULT_REALM : realm.trim();
+    }
+
+    private String normalizeProvider(String provider) {
+        return provider == null ? null : provider.trim().toUpperCase();
     }
 
     private String currentTenantId() {

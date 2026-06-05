@@ -345,6 +345,16 @@
                       <el-input v-model="channelConfig.webhookUrl" />
                     </el-form-item>
                   </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="扫码登录">
+                      <el-switch v-model="channelConfig.loginEnabled" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="扫码回调">
+                      <el-input v-model="channelConfig.loginRedirectUri" placeholder="https://admin.example.com/login" />
+                    </el-form-item>
+                  </el-col>
                 </el-row>
               </template>
               <template v-else>
@@ -656,7 +666,9 @@ function defaultConfig(channelType: NoticeChannelType): ChannelConfigForm {
   }
   if (channelType === 'EMAIL') return defaultEmailConfig(form.providerCode);
   if (channelType === 'WECHAT_OFFICIAL') return { appId: '', appSecret: '' };
-  if (channelType === 'WECOM') return { corpId: '', agentId: '', secret: '', webhookUrl: '' };
+  if (channelType === 'WECOM') {
+    return { corpId: '', agentId: '', secret: '', webhookUrl: '', loginEnabled: false, loginRedirectUri: '' };
+  }
   return { appKey: '', appSecret: '', agentId: '', webhookUrl: '' };
 }
 
@@ -729,6 +741,8 @@ function configFieldLabels(channelType: NoticeChannelType, providerCode?: string
       { key: 'agentId', label: 'AgentId' },
       { key: 'secret', label: 'Secret' },
       { key: 'webhookUrl', label: 'Webhook' },
+      { key: 'loginEnabled', label: '扫码登录' },
+      { key: 'loginRedirectUri', label: '扫码回调' },
     ];
   }
   return [
