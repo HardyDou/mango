@@ -1,6 +1,9 @@
 package io.mango.org.api;
 
 import io.mango.common.result.R;
+import io.mango.org.api.command.AddOrgMemberCommand;
+import io.mango.org.api.command.CreateOrgCommand;
+import io.mango.org.api.command.UpdateOrgCommand;
 import io.mango.org.api.entity.SysOrg;
 import io.mango.org.api.query.SysOrgTreeQuery;
 
@@ -37,4 +40,29 @@ public interface SysOrgApi {
      * @return organization
      */
     R<SysOrg> getById(Long id);
+
+    /**
+     * Create organization.
+     *
+     * @param command create command
+     * @return created organization ID
+     */
+    R<Long> create(CreateOrgCommand command);
+
+    /**
+     * Update organization.
+     *
+     * @param command update command
+     * @return empty result
+     */
+    R<Void> update(UpdateOrgCommand command);
+
+    /**
+     * Add member to organization.
+     *
+     * @param orgId organization ID
+     * @param command add member command
+     * @return empty result
+     */
+    R<Void> addMember(Long orgId, AddOrgMemberCommand command);
 }

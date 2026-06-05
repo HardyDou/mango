@@ -1,6 +1,7 @@
 package io.mango.auth.core.service.impl;
 
 import io.mango.auth.api.AuthCode;
+import io.mango.auth.api.command.WecomLoginCommand;
 import io.mango.authorization.api.AuthorizationQuery;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.api.command.LoginCommand;
@@ -8,14 +9,23 @@ import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.spi.LoginTenantProvider;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
+import io.mango.auth.api.vo.WecomLoginConfigVO;
+import io.mango.common.exception.BizException;
+import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.auth.core.service.IAuthService;
 import io.mango.auth.core.service.TokenRevocationService;
+import io.mango.auth.core.service.WecomLoginClient;
 import io.mango.identity.api.AuthUserProvider;
+import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.query.ExternalIdentityQuery;
+import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.AuthUserInfo;
 import io.mango.authorization.api.ITokenProvider;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
+import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -47,6 +57,9 @@ public class AuthServiceImpl implements IAuthService {
     private final PasswordEncoder passwordEncoder;
     private final ObjectProvider<LoginTenantProvider> loginTenantProvider;
     private final ObjectProvider<TokenRevocationService> tokenRevocationServiceProvider;
+    private final IdentityUserApi identityUserApi;
+    private final WecomLoginClient wecomLoginClient;
+    private final NoticeApi noticeApi;
 
     @Value("${mango.security.jwt.access-token-validity:7200}")
     private long accessTokenValiditySeconds;
@@ -85,6 +98,73 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Override
+    public LoginVO loginByWecom(WecomLoginCommand command) {
+        String tenantId = normalize(command.getTenantId());
+        if (tenantId == null) {
+            throw new BizException(AuthCode.INSTITUTION_REQUIRED.getCode(), "企业微信登录前请先选择机构");
+        }
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.update(current -> current.withTenantId(tenantId));
+            NoticeWecomLoginConfigVO loginConfig = resolveWecomLoginConfig(command.getChannelConfigId());
+            String wecomUserId = wecomLoginClient.getUserId(loginConfig.getCorpId(), loginConfig.getSecret(), command.getCode());
+            ExternalIdentityQuery query = new ExternalIdentityQuery();
+            query.setProvider("WECOM");
+            query.setCorpId(loginConfig.getCorpId());
+            query.setExternalUserId(wecomUserId);
+            var bindingResponse = identityUserApi.findExternalIdentity(query);
+            ExternalIdentityBindingVO binding = bindingResponse == null || !bindingResponse.isSuccess()
+                    ? null : bindingResponse.getData();
+            if (binding == null || binding.getUserId() == null) {
+                throw new BizException(1404, "当前企业微信账号尚未绑定 Mango 用户，请联系管理员绑定后再登录");
+            }
+            AuthUserInfo user = authUserProvider.getByIdForAuth(binding.getUserId());
+            Require.notNull(user, AuthCode.CURRENT_USER_NOT_FOUND);
+            Require.isTrue(user.getStatus() == 1, AuthCode.ACCOUNT_DISABLED);
+
+            LoginCommand loginContext = new LoginCommand();
+            loginContext.setTenantId(tenantId);
+            loginContext.setTenantCode(command.getTenantCode());
+            loginContext.setRealm(user.getRealm());
+            loginContext.setActorType(user.getActorType());
+            loginContext.setPartyType(user.getPartyType());
+            loginContext.setPartyId(user.getPartyId());
+            loginContext.setAppCode(firstText(command.getAppCode(), DEFAULT_APP_CODE));
+            IdentityContext identityContext = resolveIdentityContext(user, loginContext);
+            Map<String, Object> claims = identityContext.toClaims(user.getUsername());
+            String accessToken = tokenService.generateAccessToken(user.getUserId(), user.getUsername(), claims);
+            String refreshToken = tokenService.generateRefreshToken(user.getUserId(), user.getUsername(), claims);
+            LoginVO response = buildLoginVO(user, identityContext, accessToken, refreshToken);
+            loadUserRolesAndPermissions(user.getUserId(), identityContext, response);
+            log.info("User logged in by WeCom successfully: userId={}, wecomUserId={}", user.getUserId(), wecomUserId);
+            return response;
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
+    public WecomLoginConfigVO getWecomLoginConfig(String tenantId) {
+        String normalizedTenantId = normalize(tenantId);
+        if (normalizedTenantId == null) {
+            throw new BizException(AuthCode.INSTITUTION_REQUIRED.getCode(), "请先选择机构");
+        }
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.update(current -> current.withTenantId(normalizedTenantId));
+            NoticeWecomLoginConfigVO noticeConfig = resolveWecomLoginConfig(null);
+            WecomLoginConfigVO config = new WecomLoginConfigVO();
+            config.setChannelConfigId(noticeConfig.getChannelConfigId());
+            config.setCorpId(noticeConfig.getCorpId());
+            config.setAgentId(noticeConfig.getAgentId());
+            config.setRedirectUri(noticeConfig.getRedirectUri());
+            return config;
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    @Override
     public List<LoginTenantVO> listLoginTenants(LoginTenantOptionsCommand command) {
         AuthUserInfo user = authUserProvider.getByUsernameForAuth(command.getUsername(), command.getRealm());
         Require.notNull(user, AuthCode.LOGIN_ACCOUNT_OR_PASSWORD_INVALID);
@@ -97,6 +177,16 @@ public class AuthServiceImpl implements IAuthService {
         List<LoginTenantVO> tenants = provider.listEnabledByUser(user.getUserId());
         Require.notEmpty(tenants, AuthCode.LOGIN_INSTITUTION_EMPTY);
         return tenants;
+    }
+
+    private NoticeWecomLoginConfigVO resolveWecomLoginConfig(Long channelConfigId) {
+        R<NoticeWecomLoginConfigVO> response = noticeApi.getWecomLoginConfig(channelConfigId);
+        NoticeWecomLoginConfigVO config = response == null || !response.isSuccess() ? null : response.getData();
+        if (config == null) {
+            String message = response == null ? null : response.getMsg();
+            throw new BizException(1501, firstText(message, "企业微信扫码登录配置不存在或未启用"));
+        }
+        return config;
     }
 
     @Override

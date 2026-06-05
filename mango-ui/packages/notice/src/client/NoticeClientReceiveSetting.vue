@@ -155,11 +155,15 @@
             <el-table-column label="操作" width="180" fixed="right" align="center">
               <template #default="{ row }">
                 <span v-if="row.system">-</span>
+                <template v-else-if="row.type === 'WECOM'">
+                  <el-button v-if="row.account" link type="danger" @click="disableAccount(row.account)">解绑</el-button>
+                  <span v-else>-</span>
+                </template>
                 <template v-else-if="row.account">
-                  <el-button link type="primary" @click="openAccountDialog(row.account)">{{ modifyAccountText(row) }}</el-button>
+                  <el-button link type="primary" @click="openAccountEdit(row)">{{ modifyAccountText(row) }}</el-button>
                   <el-button v-if="canUnbindAccount(row)" link type="danger" @click="disableAccount(row.account)">解绑</el-button>
                 </template>
-                <el-button v-else link type="primary" @click="openAccountDialog(undefined, row.type)">绑定{{ row.label }}</el-button>
+                <el-button v-else link type="primary" @click="openAccountBind(row)">绑定{{ row.label }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -249,6 +253,7 @@
         <el-button type="primary" :loading="accountDialog.saving" @click="saveAccount">保存</el-button>
       </template>
     </el-dialog>
+
   </div>
 </template>
 
@@ -291,7 +296,6 @@ const accountTypeOptions: Array<{ value: NoticeRecipientAccountType; label: stri
   { value: 'MOBILE', label: '手机号' },
   { value: 'EMAIL', label: '邮箱' },
   { value: 'WECHAT', label: '微信' },
-  { value: 'WECOM', label: '企业微信' },
   { value: 'DINGTALK', label: '钉钉' },
   { value: 'FEISHU', label: '飞书' },
 ];
@@ -335,7 +339,6 @@ const accountDialog = reactive({
     defaultAccount: false,
   },
 });
-
 const accountRows = computed<AccountRow[]>(() => {
   return [{
     label: '系统账号',
@@ -441,6 +444,14 @@ function modifyAccountText(row: AccountRow) {
 function canUnbindAccount(row: AccountRow) {
   if (!row.type) return false;
   return row.type !== 'MOBILE' && row.type !== 'EMAIL';
+}
+
+function openAccountEdit(row: AccountRow) {
+  openAccountDialog(row.account);
+}
+
+function openAccountBind(row: AccountRow) {
+  openAccountDialog(undefined, row.type);
 }
 
 function accountTypeText(type: NoticeRecipientAccountType) {

@@ -17,6 +17,7 @@ import io.mango.notice.api.command.SaveNoticeBusinessConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelConfigCommand;
 import io.mango.notice.api.command.SaveNoticeChannelTemplateCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
+import io.mango.notice.api.command.SyncWecomUsersCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.enums.NoticeChannelConfigStatus;
@@ -51,9 +52,12 @@ import io.mango.notice.core.mapper.NoticeSendRecordMapper;
 import io.mango.notice.core.mapper.NoticeSettingMapper;
 import io.mango.notice.core.mapper.NoticeSiteMessageMapper;
 import io.mango.notice.core.mapper.NoticeTaskMapper;
+import io.mango.notice.core.mapper.NoticeWecomSyncMappingMapper;
+import io.mango.notice.channel.wecom.WecomDirectoryClient;
 import io.mango.notice.support.channel.ChannelSendCommand;
 import io.mango.notice.support.channel.ChannelSendResult;
 import io.mango.notice.support.channel.NoticeChannelSender;
+import io.mango.org.api.SysOrgApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -82,6 +86,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class NoticeServiceTest {
 
@@ -96,7 +101,10 @@ class NoticeServiceTest {
  private NoticeChannelConfigMapper channelConfigMapper;
  private NoticeRecipientAccountMapper recipientAccountMapper;
  private NoticeReceivePreferenceMapper receivePreferenceMapper;
+ private NoticeWecomSyncMappingMapper wecomSyncMappingMapper;
  private IdentityUserApi identityUserApi;
+ private SysOrgApi sysOrgApi;
+ private WecomDirectoryClient wecomDirectoryClient;
  private IOutboxStore outboxStore;
  private List<NoticeTaskStatus> taskStatusUpdates;
  private List<NoticeSendStatus> sendRecordStatusUpdates;
@@ -122,9 +130,12 @@ class NoticeServiceTest {
  channelConfigMapper = mock(NoticeChannelConfigMapper.class);
  recipientAccountMapper = mock(NoticeRecipientAccountMapper.class);
  receivePreferenceMapper = mock(NoticeReceivePreferenceMapper.class);
+ wecomSyncMappingMapper = mock(NoticeWecomSyncMappingMapper.class);
  businessTypeMapper = mock(NoticeBusinessTypeMapper.class);
  businessConfigVersionMapper = mock(NoticeBusinessConfigVersionMapper.class);
  identityUserApi = mock(IdentityUserApi.class);
+ sysOrgApi = mock(SysOrgApi.class);
+ wecomDirectoryClient = mock(WecomDirectoryClient.class);
  outboxStore = mock(IOutboxStore.class);
  taskStatusUpdates = new ArrayList<>();
  sendRecordStatusUpdates = new ArrayList<>();
@@ -180,13 +191,16 @@ class NoticeServiceTest {
 	 taskMapper,
 	 recipientMapper,
 	 recipientAccountMapper,
-	 receivePreferenceMapper,
+ receivePreferenceMapper,
 	 sendRecordMapper,
  mock(NoticeSettingMapper.class),
+ wecomSyncMappingMapper,
  List.of(sender),
  new ObjectMapper(),
  outboxStore,
- identityUserApi);
+ identityUserApi,
+ sysOrgApi,
+ wecomDirectoryClient);
  }
 
  @Test
@@ -831,6 +845,20 @@ class NoticeServiceTest {
  }
 
  @Test
+ void syncWecomUsers_groupTargetReturnsBusinessMessageWithoutCallingWecom() {
+ SyncWecomUsersCommand command = new SyncWecomUsersCommand();
+ command.setTargetOrgId(1L);
+ command.setTargetOrgType(1);
+ command.setSyncUsers(true);
+
+ var result = noticeService.syncWecomUsers(command);
+
+ assertEquals(1, result.getFailedCount());
+ assertEquals("集团节点不支持同步企业微信用户，请选择二级公司或已映射部门", result.getMessages().get(0));
+ verifyNoInteractions(wecomDirectoryClient);
+ }
+
+ @Test
  void send_withoutReceiver_throwsReceiverRequired() {
  when(businessTypeMapper.selectOne(any())).thenReturn(businessType());
  when(channelTemplateMapper.selectList(any())).thenReturn(List.of(template(10L, SITE, "标题", "内容")));
@@ -895,10 +923,13 @@ class NoticeServiceTest {
 	 receivePreferenceMapper,
 	 sendRecordMapper,
  mock(NoticeSettingMapper.class),
+ wecomSyncMappingMapper,
  List.of(emailSender),
  new ObjectMapper(),
  outboxStore,
- identityUserApi);
+ identityUserApi,
+ sysOrgApi,
+ mock(WecomDirectoryClient.class));
  NoticeTaskEntity task = new NoticeTaskEntity();
  task.setId(1L);
  task.setBizType("TEST_NOTICE");
@@ -1512,10 +1543,13 @@ class NoticeServiceTest {
 	 receivePreferenceMapper,
 	 sendRecordMapper,
  mock(NoticeSettingMapper.class),
+ wecomSyncMappingMapper,
  List.of(sender),
  new ObjectMapper(),
  outboxStore,
- identityUserApi);
+ identityUserApi,
+ sysOrgApi,
+ mock(WecomDirectoryClient.class));
  }
 
  private void assertTaskFinalStatus(NoticeTaskStatus status, int successCount, int failCount) {

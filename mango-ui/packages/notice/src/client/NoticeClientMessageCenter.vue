@@ -3,12 +3,14 @@
     <el-card shadow="never">
       <template #header>
         <div class="notice-site-message-page__header">
-          <span>我的消息</span>
+          <div class="notice-site-message-page__title">
+            <span>我的消息</span>
+            <el-button type="primary" plain @click="openReceiveSetting">接收设置</el-button>
+          </div>
           <div class="notice-site-message-page__actions">
             <el-button :disabled="selectedIds.length === 0" @click="markSelectedRead">批量已读</el-button>
             <el-button @click="markAllRead">全部已读</el-button>
             <el-button type="primary" plain @click="loadMessages">刷新</el-button>
-            <el-button type="primary" @click="openReceiveSetting">设置</el-button>
           </div>
         </div>
       </template>
@@ -221,11 +223,20 @@ onMounted(() => {
 }
 
 .notice-site-message-page__header,
+.notice-site-message-page__title,
 .notice-site-message-page__actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+}
+
+.notice-site-message-page__header {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.notice-site-message-page__title {
+  min-width: 0;
 }
 
 .notice-filter-form {
