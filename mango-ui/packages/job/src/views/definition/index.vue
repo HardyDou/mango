@@ -9,37 +9,43 @@
         <el-button v-auth="'job:definition:add'" type="primary" :icon="Plus" @click="openEditor()">新增任务</el-button>
       </div>
 
-      <el-form :model="query" class="job-search" @submit.prevent>
-        <el-form-item label="关键字">
-          <el-input v-model="query.keyword" clearable placeholder="编码/名称/处理器" style="width: 220px" @keyup.enter="loadRows" />
+      <el-form :model="query" class="job-search" inline @submit.prevent>
+        <el-form-item label="关键字" class="job-search-item job-search-item-wide">
+          <el-input v-model="query.keyword" clearable placeholder="编码/名称/处理器" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="应用">
-          <el-input v-model="query.appCode" clearable placeholder="appCode" style="width: 160px" @keyup.enter="loadRows" />
+        <el-form-item label="应用" class="job-search-item">
+          <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 130px">
+        <el-form-item label="状态" class="job-search-item job-search-item-small">
+          <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in jobDefinitionStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="任务类型">
-          <el-select v-model="query.jobType" clearable placeholder="全部" style="width: 140px">
-            <el-option v-for="item in jobTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="调度类型">
-          <el-select v-model="query.scheduleType" clearable placeholder="全部" style="width: 130px">
-            <el-option v-for="item in scheduleTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="引擎">
-          <el-select v-model="query.engineType" clearable placeholder="全部" style="width: 130px">
-            <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
+        <el-form-item class="job-search-actions">
           <el-button v-auth="'job:definition:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
           <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
+          <el-button text type="primary" @click="advancedVisible = !advancedVisible">
+            {{ advancedVisible ? '收起' : '更多筛选' }}
+            <el-icon class="job-more-icon" :class="{ 'is-open': advancedVisible }"><ArrowDown /></el-icon>
+          </el-button>
         </el-form-item>
+        <div v-show="advancedVisible" class="job-search-more">
+          <el-form-item label="任务类型" class="job-search-item">
+            <el-select v-model="query.jobType" clearable placeholder="全部">
+              <el-option v-for="item in jobTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="调度类型" class="job-search-item">
+            <el-select v-model="query.scheduleType" clearable placeholder="全部">
+              <el-option v-for="item in scheduleTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="引擎" class="job-search-item job-search-item-small">
+            <el-select v-model="query.engineType" clearable placeholder="全部">
+              <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+        </div>
       </el-form>
     </section>
 
@@ -52,7 +58,7 @@
       </el-alert>
 
       <el-table v-loading="loading" :data="rows" stripe row-key="id" empty-text="暂无任务定义">
-        <el-table-column label="任务" min-width="220" fixed="left">
+        <el-table-column label="任务" min-width="280" fixed="left">
           <template #default="{ row }">
             <div class="job-name-cell">
               <strong>{{ row.jobName }}</strong>
@@ -118,6 +124,7 @@
 
     <el-dialog v-model="editorVisible" :title="form.id ? '编辑任务' : '新增任务'" width="780px" destroy-on-close append-to-body>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="112px">
+        <div class="job-form-section-title">基本信息</div>
         <el-row :gutter="14">
           <el-col :span="12">
             <el-form-item label="所属应用" prop="appCode">
@@ -141,6 +148,9 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        <div class="job-form-section-title">执行配置</div>
+        <el-row :gutter="14">
           <el-col :span="12">
             <el-form-item label="任务类型" prop="jobType">
               <el-select v-model="form.jobType" style="width: 100%">
@@ -181,6 +191,7 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <div class="job-form-section-title">参数配置</div>
         <el-form-item label="参数 Schema">
           <el-input v-model="form.paramSchema" type="textarea" :rows="4" placeholder="JSON Schema，可为空" />
         </el-form-item>
@@ -218,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { Delete, Edit, Plus, Refresh, Search, VideoPlay } from '@element-plus/icons-vue';
+import { ArrowDown, Delete, Edit, Plus, Refresh, Search, VideoPlay } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { onMounted, reactive, ref } from 'vue';
 import {
@@ -242,6 +253,7 @@ const loading = ref(false);
 const saving = ref(false);
 const triggering = ref(false);
 const errorMessage = ref('');
+const advancedVisible = ref(false);
 const rows = ref<JobDefinition[]>([]);
 const total = ref(0);
 const editorVisible = ref(false);

@@ -9,24 +9,24 @@
         <el-button v-auth="'job:instance:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
       </div>
 
-      <el-form :model="query" class="job-search" @submit.prevent>
-        <el-form-item label="任务ID">
-          <el-input v-model="query.jobId" clearable placeholder="jobId" style="width: 140px" @keyup.enter="loadRows" />
+      <el-form :model="query" class="job-search" inline @submit.prevent>
+        <el-form-item label="任务ID" class="job-search-item job-search-item-small">
+          <el-input v-model="query.jobId" clearable placeholder="jobId" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 130px">
+        <el-form-item label="状态" class="job-search-item job-search-item-small">
+          <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in instanceStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="触发类型">
-          <el-select v-model="query.triggerType" clearable placeholder="全部" style="width: 130px">
+        <el-form-item label="触发类型" class="job-search-item">
+          <el-select v-model="query.triggerType" clearable placeholder="全部">
             <el-option v-for="item in triggerTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="批次号">
-          <el-input v-model="query.triggerBatchNo" clearable placeholder="triggerBatchNo" style="width: 190px" @keyup.enter="loadRows" />
+        <el-form-item label="批次号" class="job-search-item job-search-item-wide">
+          <el-input v-model="query.triggerBatchNo" clearable placeholder="triggerBatchNo" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="job-search-actions">
           <el-button v-auth="'job:instance:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
           <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
         </el-form-item>

@@ -9,24 +9,24 @@
         <el-button v-auth="'job:worker:list'" :icon="Refresh" @click="loadRows">刷新</el-button>
       </div>
 
-      <el-form :model="query" class="job-search" @submit.prevent>
-        <el-form-item label="关键字">
-          <el-input v-model="query.keyword" clearable placeholder="Worker 地址" style="width: 220px" @keyup.enter="loadRows" />
+      <el-form :model="query" class="job-search" inline @submit.prevent>
+        <el-form-item label="关键字" class="job-search-item job-search-item-wide">
+          <el-input v-model="query.keyword" clearable placeholder="Worker 地址" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="应用">
-          <el-input v-model="query.appCode" clearable placeholder="appCode" style="width: 160px" @keyup.enter="loadRows" />
+        <el-form-item label="应用" class="job-search-item">
+          <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 130px">
+        <el-form-item label="状态" class="job-search-item job-search-item-small">
+          <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in workerStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="引擎">
-          <el-select v-model="query.engineType" clearable placeholder="全部" style="width: 130px">
+        <el-form-item label="引擎" class="job-search-item job-search-item-small">
+          <el-select v-model="query.engineType" clearable placeholder="全部">
             <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="job-search-actions">
           <el-button v-auth="'job:worker:list'" type="primary" :icon="Search" @click="loadRows">查询</el-button>
           <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
         </el-form-item>

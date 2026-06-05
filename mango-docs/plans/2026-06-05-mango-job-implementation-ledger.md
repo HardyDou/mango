@@ -28,7 +28,7 @@
 | JOB-DEV-018 | Sprint 5 | 提供运行态和可观测性 | 任务统计、Worker、失败率、耗时、同步失败 | 指标和状态接口 | 指标读取测试 | TODO | 待开发 |
 | JOB-DEV-019 | Sprint 6 | 提供部署配置和 PowerJob Compose 样例 | 覆盖三库、单库降级、Job Center 和 Worker | 部署文档和配置样例 | 启动验证 | TODO | 待开发 |
 | JOB-DEV-020 | Sprint 6 | 完成后端回归和质量检查 | Maven test/verify/mango:check | 验证记录 | 命令通过 | TODO | 待开发 |
-| JOB-DEV-021 | Sprint 6 | 完成前端回归和构建 | pnpm test/build/E2E | 验证记录 | 命令通过 | TODO | 待开发 |
+| JOB-DEV-021 | Sprint 6 | 完成前端回归和构建 | pnpm test/build/E2E | 验证记录 | 命令通过 | DONE | `pnpm --dir mango-ui admin:styles:check`、`pnpm -F @mango/job build`、`pnpm -F mango-admin build`、`PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm --dir mango-ui/apps/mango-admin exec playwright test e2e/specs/job-management.spec.ts --project=chromium --reporter=line`、`mango-docs/evidence/2026-06-05-mango-job-ui-e2e/acceptance-evidence.md` |
 | JOB-DEV-022 | Sprint 6 | 发布 Maven 模块和前端包 | 发布后消费项目可解析 | 发布记录 | 仓库和消费验证 | TODO | 待开发 |
 
 ## 2. 验收证据记录
@@ -55,5 +55,5 @@
 | JOB-DEV-018 | 运维 | 可观测性 | 待开发 | 指标可读 | 待走查 | 待验证 | 待开发 | TODO |
 | JOB-DEV-019 | 部署 | 配置样例 | 待开发 | 三库和降级可启动 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
 | JOB-DEV-020 | 后端验证 | 质量检查 | 待开发 | Maven 检查通过 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-021 | 前端验证 | 构建/E2E | 待开发 | pnpm 检查通过 | 待走查 | 待验证 | 待开发 | TODO |
+| JOB-DEV-021 | 前端验证 | 构建/E2E | `mango_job_example_` 三条示例任务和 `mango_job_e2e_tmp_<timestamp>` 临时任务 | 样式聚合清单包含 `@mango/job/style.css`；Job 包和 mango-admin 构建通过；任务定义 UI 完成新增、查询、编辑、状态流转、触发、删除；各 Job 列表页调用真实 API | 任务定义标题区按钮在右侧，搜索区横向紧凑，表格首屏可见；实例/日志/Worker 搜索区高度受控 | Job API 无 4xx/5xx，E2E 收集到的 console error 为空 | `mango-docs/evidence/2026-06-05-mango-job-ui-e2e/acceptance-evidence.md`、`job-definition.png`、`job-instance.png`、`job-engine.png` | DONE |
 | JOB-DEV-022 | 发布 | 发布消费 | 待开发 | 仓库和消费项目可解析 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
