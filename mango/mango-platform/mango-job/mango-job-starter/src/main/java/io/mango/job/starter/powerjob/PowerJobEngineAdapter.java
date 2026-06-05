@@ -128,7 +128,8 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
                     toLocalDateTime(info.getActualTriggerTime()),
                     toLocalDateTime(info.getFinishedTime()),
                     duration(info),
-                    errorSummary(info));
+                    errorSummary(info),
+                    info.getTaskTrackerAddress());
         } catch (RuntimeException ex) {
             return MangoJobEngineResult.failed(ex.getMessage());
         }

@@ -192,10 +192,10 @@ docker compose -f deploy/job/docker-compose.powerjob.yml up -d
 - PowerJob Server 使用官方 `powerjob/powerjob-server:v5.1.2` 容器启动，PowerJob MySQL 使用 `mango_job` 共置库。
 - Mango 后端启用进程内 PowerJob Worker，`appId=1`、`appName=mango-job`、`worker.port=27777`。
 - 示例任务同步到 PowerJob，取得真实 `engineJobId=3/4/5`。
-- 手动触发示例任务取得真实 `engineInstanceId=943305221780537408`。
+- 手动触发示例任务取得真实 `engineInstanceId=943410988542066752`。
 - Mango 实例状态同步为 `SUCCESS`，PowerJob `instance_info.status=5`、`result=Mango Job runtime probe executed`。
 - Mango 执行日志页面可按任务和实例过滤并展示同一 `engineInstanceId`。
-- 前端 E2E 覆盖任务定义、频次配置、触发、执行实例、执行日志、Worker、处理器和引擎状态，截图保存在 `mango-docs/evidence/2026-06-05-mango-job-ui-e2e`。
+- 前端 E2E 覆盖任务定义、频次配置、触发、执行实例、执行日志、Worker 和引擎状态，截图保存在 `mango-docs/evidence/2026-06-05-mango-job-ui-e2e`。
 
 ### Sprint 4：菜单、权限和统一 UI
 
@@ -206,7 +206,7 @@ docker compose -f deploy/job/docker-compose.powerjob.yml up -d
 - 增加后台菜单种子。
 - 增加权限码。
 - 增加前端页面：任务定义、执行实例、执行日志、执行器、告警规则、引擎状态。
-- 增加处理器页面。
+- 任务定义表单配置 `MangoJobHandler` 执行动作，Handler 不作为独立菜单。
 - 注册页面组件。
 - 增加 API client。
 - 增加加载、空、错误态。
@@ -219,7 +219,7 @@ docker compose -f deploy/job/docker-compose.powerjob.yml up -d
 - 单体和 Shell 菜单一致。
 - 页面使用真实 API。
 - 操作后列表和详情回显真实数据。
-- 处理器列表展示所属应用、模块、参数 schema 和健康状态。
+- Worker 页面展示真实执行节点；任务定义可配置并回显执行动作。
 
 建议验证：
 

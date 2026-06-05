@@ -145,6 +145,7 @@ class PowerJobEngineAdapterTest {
         info.setStatus(InstanceStatus.SUCCEED.getV());
         info.setActualTriggerTime(1000L);
         info.setFinishedTime(3500L);
+        info.setTaskTrackerAddress("127.0.0.1:27777");
         client.fetchInstanceInfoResult = ResultDTO.success(info);
         MangoJobInstanceEntity instance = new MangoJobInstanceEntity();
         instance.setEngineInstanceId("80001");
@@ -158,6 +159,7 @@ class PowerJobEngineAdapterTest {
         assertThat(result.getInstanceStatus()).isEqualTo(JobInstanceStatus.SUCCESS.name());
         assertThat(result.getDurationMillis()).isEqualTo(2500L);
         assertThat(result.getErrorSummary()).isNull();
+        assertThat(result.getWorkerAddress()).isEqualTo("127.0.0.1:27777");
         assertThat(result.getStartTime()).isNotNull();
         assertThat(result.getEndTime()).isNotNull();
         assertThat(client.fetchInstanceInfoId).isEqualTo(80001L);

@@ -14,7 +14,6 @@ export function registerMangoJobAdminPages() {
       'job/instance/index': () => import('./index').then(m => m.JobInstanceView),
       'job/log/index': () => import('./index').then(m => m.JobLogView),
       'job/worker/index': () => import('./index').then(m => m.JobWorkerView),
-      'job/handler/index': () => import('./index').then(m => m.JobHandlerView),
       'job/engine/index': () => import('./index').then(m => m.JobEngineView),
     },
   });

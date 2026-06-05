@@ -67,6 +67,15 @@ interface JobLogIndex {
   logLocation?: string;
 }
 
+interface JobWorkerSnapshot {
+  id: ApiId;
+  appCode?: string;
+  workerAddress?: string;
+  engineType?: string;
+  engineWorkerId?: string;
+  status?: string;
+}
+
 const runtimeProbeHandler = 'mangoJobRuntimeProbeHandler';
 
 interface SaveJobDefinitionPayload {
@@ -202,6 +211,15 @@ async function listLogs(page: Page, headers: LoginHeaders, jobId: ApiId): Promis
     params: { jobId: String(jobId), pageNum: '1', pageSize: '20' },
   });
   const data = await expectBusinessOk<PageData<JobLogIndex>>(response);
+  return data.list || data.records || data.rows || data.data || [];
+}
+
+async function listWorkers(page: Page, headers: LoginHeaders): Promise<JobWorkerSnapshot[]> {
+  const response = await page.request.get('/api/job/workers/page', {
+    headers,
+    params: { appCode: 'mango-job', engineType: 'POWERJOB', pageNum: '1', pageSize: '20' },
+  });
+  const data = await expectBusinessOk<PageData<JobWorkerSnapshot>>(response);
   return data.list || data.records || data.rows || data.data || [];
 }
 
@@ -552,6 +570,17 @@ test.describe('Job 管理 E2E', () => {
     await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance!.engineInstanceId) }).first()).toBeVisible();
     await saveEvidenceScreenshot(page, '08-execution-log-index.png');
 
+    const workers = await listWorkers(page, headers);
+    expect(
+      workers.some(item =>
+        item.appCode === 'mango-job'
+        && item.engineType === 'POWERJOB'
+        && item.status === 'ONLINE'
+        && Boolean(item.workerAddress?.includes(':27777'))
+      ),
+      'Worker 快照必须来自真实 PowerJob taskTrackerAddress',
+    ).toBeTruthy();
+
     await openJobDefinitionPage(page);
 
     await searchDefinition(page, tempCode);
@@ -592,13 +621,13 @@ test.describe('Job 管理 E2E', () => {
     });
 
     await login(page);
+    const headers = await apiHeaders(page);
     await openJobDefinitionPage(page);
 
     const pages = [
       { menu: '执行实例', path: '/job/instance', api: '/api/job/instances/page', heading: '执行实例', search: true },
       { menu: '执行日志', path: '/job/log', api: '/api/job/logs/page', heading: '执行日志', search: true },
       { menu: 'Worker', path: '/job/worker', api: '/api/job/workers/page', heading: 'Worker', search: true },
-      { menu: '处理器', path: '/job/handler', api: '/api/job/handlers', heading: '处理器', search: false },
       { menu: '引擎状态', path: '/job/engine', api: '/api/job/engines/status', heading: '引擎状态', search: false },
     ];
 
@@ -614,6 +643,12 @@ test.describe('Job 管理 E2E', () => {
       if (item.search) {
         await expect(page.locator('.job-search')).toBeVisible();
         await expectCompactSearchPage(page, page.locator('.job-toolbar'));
+      }
+      if (item.path === '/job/worker') {
+        const workers = await listWorkers(page, headers);
+        expect(workers.some(worker => Boolean(worker.workerAddress?.includes(':27777')))).toBeTruthy();
+        await expect(page.locator('.el-table')).toContainText(':27777');
+        await expect(page.locator('.el-table')).toContainText('在线');
       }
       await expect(page.locator('.el-message--error')).toHaveCount(0);
       await expect(page.locator('.job-error')).toHaveCount(0);

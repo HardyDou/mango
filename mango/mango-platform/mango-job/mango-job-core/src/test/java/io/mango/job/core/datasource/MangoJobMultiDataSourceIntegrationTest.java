@@ -20,7 +20,6 @@ import io.mango.job.api.query.MangoJobLogPageQuery;
 import io.mango.job.api.query.MangoJobWorkerPageQuery;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
-import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobEngineMappingMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
@@ -208,10 +207,11 @@ class MangoJobMultiDataSourceIntegrationTest {
         TriggerMangoJobCommand triggerCommand = new TriggerMangoJobCommand();
         triggerCommand.setJobId(jobId);
         Long instanceId = jobDefinitionService.triggerDefinition(triggerCommand);
-        insertWorkerSnapshot();
 
         assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isEqualTo(1);
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getTotal()).isEqualTo(1);
+        assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList().get(0).getWorkerAddress())
+                .isEqualTo("127.0.0.1:27777");
 
         MangoContextHolder.set(MangoContextSnapshot.request("req-3", "trace-3", "tenant-c", "internal-admin", "127.0.0.1")
                 .withSecurity(202L, "tenant-c", "job-admin", "test", "user", "tenant", 202L, "internal-admin"));
@@ -319,18 +319,6 @@ class MangoJobMultiDataSourceIntegrationTest {
         return command;
     }
 
-    private void insertWorkerSnapshot() {
-        MangoJobWorkerSnapshotEntity entity = new MangoJobWorkerSnapshotEntity();
-        entity.setTenantId(MangoContextHolder.tenantId());
-        entity.setAppCode("internal-admin");
-        entity.setWorkerAddress("127.0.0.1:27777");
-        entity.setEngineType(JobEngineType.POWERJOB.name());
-        entity.setEngineWorkerId("worker-1");
-        entity.setLastHeartbeatAt(LocalDateTime.now());
-        entity.setStatus("ONLINE");
-        query("job", () -> workerSnapshotMapper.insert(entity));
-    }
-
     @SpringBootConfiguration
     @EnableAutoConfiguration(exclude = DataSourceAutoConfiguration.class)
     @MapperScan(basePackageClasses = MangoJobDefinitionMapper.class)
@@ -367,8 +355,10 @@ class MangoJobMultiDataSourceIntegrationTest {
         IMangoJobEngineSyncService jobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
                                                         MangoJobDefinitionMapper definitionMapper,
                                                         MangoJobInstanceMapper instanceMapper,
-                                                        MangoJobEngineMappingMapper mappingMapper) {
-            return new MangoJobEngineSyncService(engineRegistry, definitionMapper, instanceMapper, mappingMapper);
+                                                        MangoJobEngineMappingMapper mappingMapper,
+                                                        MangoJobWorkerSnapshotMapper workerSnapshotMapper) {
+            return new MangoJobEngineSyncService(engineRegistry, definitionMapper, instanceMapper, mappingMapper,
+                    workerSnapshotMapper);
         }
 
         @Bean
@@ -421,6 +411,12 @@ class MangoJobMultiDataSourceIntegrationTest {
                 @Override
                 public MangoJobEngineResult trigger(MangoJobTriggerRequest request) {
                     return MangoJobEngineResult.triggerSuccess("80001");
+                }
+
+                @Override
+                public MangoJobEngineResult refreshInstance(MangoJobTriggerRequest request) {
+                    return MangoJobEngineResult.instanceSuccess("SUCCESS", LocalDateTime.now().minusSeconds(1),
+                            LocalDateTime.now(), 1000L, null, "127.0.0.1:27777");
                 }
 
                 @Override

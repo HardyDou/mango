@@ -2,16 +2,21 @@ package io.mango.job.core.service.engine;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.enums.JobInstanceStatus;
 import io.mango.job.api.enums.JobSyncStatus;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobEngineMappingEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
+import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobEngineMappingMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
+import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
 
 /**
  * 默认 Mango Job 引擎同步服务。
@@ -27,14 +32,18 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     private final MangoJobEngineMappingMapper mappingMapper;
 
+    private final MangoJobWorkerSnapshotMapper workerSnapshotMapper;
+
     public MangoJobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
                                      MangoJobDefinitionMapper definitionMapper,
                                      MangoJobInstanceMapper instanceMapper,
-                                     MangoJobEngineMappingMapper mappingMapper) {
+                                     MangoJobEngineMappingMapper mappingMapper,
+                                     MangoJobWorkerSnapshotMapper workerSnapshotMapper) {
         this.engineRegistry = engineRegistry;
         this.definitionMapper = definitionMapper;
         this.instanceMapper = instanceMapper;
         this.mappingMapper = mappingMapper;
+        this.workerSnapshotMapper = workerSnapshotMapper;
     }
 
     @Override
@@ -100,6 +109,7 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
             MangoJobEngineResult result = engine.refreshInstance(request);
             if (result.isSuccess()) {
                 applyInstanceRefreshResult(instance, result);
+                upsertWorkerSnapshot(definition, result);
             }
         });
     }
@@ -155,6 +165,33 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
             instance.setErrorSummary(null);
         }
         instanceMapper.updateById(instance);
+    }
+
+    private void upsertWorkerSnapshot(MangoJobDefinitionEntity definition, MangoJobEngineResult result) {
+        if (!StringUtils.hasText(result.getWorkerAddress())) {
+            return;
+        }
+        MangoJobWorkerSnapshotEntity snapshot = workerSnapshotMapper.selectOne(
+                new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
+                        .eq(MangoJobWorkerSnapshotEntity::getTenantId, definition.getTenantId())
+                        .eq(MangoJobWorkerSnapshotEntity::getAppCode, definition.getAppCode())
+                        .eq(MangoJobWorkerSnapshotEntity::getEngineType, definition.getEngineType())
+                        .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, result.getWorkerAddress()));
+        if (snapshot == null) {
+            snapshot = new MangoJobWorkerSnapshotEntity();
+            snapshot.setTenantId(definition.getTenantId());
+            snapshot.setAppCode(definition.getAppCode());
+            snapshot.setEngineType(definition.getEngineType());
+            snapshot.setWorkerAddress(result.getWorkerAddress());
+            snapshot.setEngineWorkerId(result.getWorkerAddress());
+        }
+        snapshot.setStatus(JobWorkerStatus.ONLINE.name());
+        snapshot.setLastHeartbeatAt(LocalDateTime.now());
+        if (snapshot.getId() == null) {
+            workerSnapshotMapper.insert(snapshot);
+            return;
+        }
+        workerSnapshotMapper.updateById(snapshot);
     }
 
     private void markDefinitionPending(MangoJobDefinitionEntity definition) {

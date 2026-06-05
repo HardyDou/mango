@@ -30,6 +30,8 @@ public class MangoJobEngineResult {
 
     private String errorSummary;
 
+    private String workerAddress;
+
     public static MangoJobEngineResult success(String engineAppId, String engineJobId) {
         MangoJobEngineResult result = new MangoJobEngineResult();
         result.setSuccess(true);
@@ -49,7 +51,8 @@ public class MangoJobEngineResult {
                                                        LocalDateTime startTime,
                                                        LocalDateTime endTime,
                                                        Long durationMillis,
-                                                       String errorSummary) {
+                                                       String errorSummary,
+                                                       String workerAddress) {
         MangoJobEngineResult result = new MangoJobEngineResult();
         result.setSuccess(true);
         result.setInstanceStatus(instanceStatus);
@@ -57,7 +60,16 @@ public class MangoJobEngineResult {
         result.setEndTime(endTime);
         result.setDurationMillis(durationMillis);
         result.setErrorSummary(errorSummary);
+        result.setWorkerAddress(workerAddress);
         return result;
+    }
+
+    public static MangoJobEngineResult instanceSuccess(String instanceStatus,
+                                                       LocalDateTime startTime,
+                                                       LocalDateTime endTime,
+                                                       Long durationMillis,
+                                                       String errorSummary) {
+        return instanceSuccess(instanceStatus, startTime, endTime, durationMillis, errorSummary, null);
     }
 
     public static MangoJobEngineResult success() {
