@@ -1,11 +1,31 @@
 package io.mango.job.core.service;
 
+import io.mango.common.vo.PageResult;
+import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.TriggerMangoJobCommand;
+import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
+import io.mango.job.api.query.MangoJobDefinitionPageQuery;
+import io.mango.job.api.vo.MangoJobDefinitionVO;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 
 /**
  * Job 任务定义内部服务。
  */
 public interface IMangoJobDefinitionService {
+
+    PageResult<MangoJobDefinitionVO> pageDefinitions(MangoJobDefinitionPageQuery query);
+
+    MangoJobDefinitionVO detailDefinition(Long id);
+
+    Long createDefinition(SaveMangoJobDefinitionCommand command);
+
+    Boolean updateDefinition(SaveMangoJobDefinitionCommand command);
+
+    Boolean updateDefinitionStatus(UpdateMangoJobDefinitionStatusCommand command);
+
+    Boolean deleteDefinition(Long id);
+
+    Long triggerDefinition(TriggerMangoJobCommand command);
 
     /**
      * 保存任务定义实体。

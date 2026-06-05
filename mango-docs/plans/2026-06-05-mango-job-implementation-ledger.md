@@ -12,11 +12,11 @@
 | JOB-DEV-002 | Sprint 1 | 声明模块信息和默认数据源 | 仅 `mango-job-starter` 提供 `module.properties`，默认 `persistence-datasource=job` | `META-INF/mango/module.properties` | 检查 module-name、module-path、persistence-datasource | DONE | `mango/mango-platform/mango-job/mango-job-starter/src/main/resources/META-INF/mango/module.properties` |
 | JOB-DEV-003 | Sprint 1 | 建立 `mango_job` 治理表 | Flyway 路径 `db/migration/mango-job`，满足表结构准入 | migration SQL | `mvn mango:check -Drule=persistence-schema` | DONE | `mango-job-core` 局部 schema check 通过；全仓 schema check 仍被 workflow/authorization/calendar/numgen 既有脚本阻断，需专项治理 |
 | JOB-DEV-004 | Sprint 1 | 多数据源迁移到 job 库 | 使用 `mango.persistence.modules.mango-job.datasource=job` | Flyway 集成测试 | MyBatis-Plus/Flyway 真实路由测试 | DONE | `MangoJobMultiDataSourceIntegrationTest` 验证 Flyway 进入 job 库，MyBatis-Plus Service 插入/查询走 job 数据源 |
-| JOB-DEV-005 | Sprint 2 | 定义 Job API 契约 | `api` 只放 Command、Query、VO、枚举、`MangoJobApi` | `mango-job-api` | 编译和模块边界检查 | TODO | 待开发 |
-| JOB-DEV-006 | Sprint 2 | 定义业务处理器契约 | `MangoJobHandler`、Context、Result 和处理器元数据不依赖 PowerJob | API 或 core 契约类 | 单测覆盖注册和参数校验 | TODO | 待开发 |
-| JOB-DEV-007 | Sprint 2 | 实现任务定义 CRUD 和状态流转 | `core` 实现业务服务，不暴露 Entity | Service、Mapper、Controller | 单元和集成测试 | TODO | 待开发 |
-| JOB-DEV-008 | Sprint 2 | 实现租户和权限控制 | 查询、操作和触发按租户和权限隔离 | 权限校验、查询条件 | 权限/租户测试 | TODO | 待开发 |
-| JOB-DEV-009 | Sprint 2 | 提供实例、日志、Worker、处理器和引擎状态 API | API 前缀 `/{module-path}`，返回 Mango VO | Controller 和 API | API 测试 | TODO | 待开发 |
+| JOB-DEV-005 | Sprint 2 | 定义 Job API 契约 | `api` 只放 Command、Query、VO、枚举、`MangoJobApi` | `mango-job-api` | `mvn -pl mango-platform/mango-job/mango-job-api,mango-platform/mango-job/mango-job-core,mango-platform/mango-job/mango-job-starter,mango-platform/mango-job/mango-job-starter-remote -am test` | DONE | `MangoJobApi`、`command`、`query`、`vo` |
+| JOB-DEV-006 | Sprint 2 | 定义业务处理器契约 | `MangoJobHandler`、Context、Result 和处理器元数据不依赖 PowerJob | API 契约、core 注册表 | 集成测试覆盖处理器注册和查询 | DONE | `MangoJobHandlerRegistry`、`MangoJobMultiDataSourceIntegrationTest` |
+| JOB-DEV-007 | Sprint 2 | 实现任务定义 CRUD 和状态流转 | `core` 实现业务服务，不暴露 Entity | Service、Controller、Feign | 集成测试覆盖创建、分页、详情、状态、触发 | DONE | `MangoJobDefinitionService`、`MangoJobController`、`MangoJobFeignClient` |
+| JOB-DEV-008 | Sprint 2 | 实现租户和权限控制 | Job 服务按当前上下文隔离；tenantId 无感知治理拆到 #102 | 租户隔离测试 | 跨租户查询、详情、实例、日志、Worker 不可见 | DONE | `MangoJobMultiDataSourceIntegrationTest`；后续全局租户无感知治理见 GitHub Issue #102 |
+| JOB-DEV-009 | Sprint 2 | 提供实例、日志、Worker、处理器和引擎状态 API | API 前缀 `/job`，返回 Mango VO | Controller 和 Feign API | 编译和集成测试覆盖查询服务 | DONE | `MangoJobController`、`MangoJobQueryService`、`MangoJobFeignClient` |
 | JOB-DEV-010 | Sprint 3 | 定义 `MangoJobEngine` SPI | `core` 只依赖 SPI，不依赖 PowerJob 类型 | SPI 接口 | 编译依赖检查 | TODO | 待开发 |
 | JOB-DEV-011 | Sprint 3 | 实现 PowerJob Adapter | PowerJob 依赖只在 starter Adapter 包或独立 adapter 模块 | Adapter 实现 | Adapter 单测和集成测试 | TODO | 待开发 |
 | JOB-DEV-012 | Sprint 3 | 实现引擎映射和同步状态 | `sync_status`、失败摘要、重试和删除保护 | 映射服务和表字段 | 同步失败补偿测试 | TODO | 待开发 |
@@ -39,11 +39,11 @@
 | JOB-DEV-002 | 模块信息 | 默认数据源 | `module-name=mango-job`、`module-path=/job`、`persistence-datasource=job` | module.properties 只在 starter | 不涉及页面 | 不涉及前端网络 | `META-INF/mango/module.properties` | DONE |
 | JOB-DEV-003 | 数据库 | 治理表 | `mango_job_definition` 等 7 张治理表 | 新表包含 `id`、`tenant_id`、`created_by`、`created_at`、`updated_by`、`updated_at` | 不涉及页面 | 不涉及前端网络 | 在 `mango-platform/mango-job/mango-job-core` 执行 `mvn mango:check -Drule=persistence-schema` 通过；全仓同规则被既有模块 276 个问题阻断 | DONE |
 | JOB-DEV-004 | 数据库 | 多数据源 | H2 primary + job 双数据源 | resolver 映射 `mango-job -> job`；`mango_job_definition` 只在 job 库；MyBatis-Plus Service 写入 job 库 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest` | DONE |
-| JOB-DEV-005 | API | 契约 | 待开发 | api 不依赖 core/PowerJob | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-006 | API | 处理器契约 | 待开发 | 不暴露 PowerJob 类型 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-007 | API | CRUD/状态 | 待开发 | 状态流转正确 | 不涉及页面 | 待验证 | 待开发 | TODO |
-| JOB-DEV-008 | API | 租户权限 | 待开发 | 跨租户不可见 | 不涉及页面 | 待验证 | 待开发 | TODO |
-| JOB-DEV-009 | API | 查询接口 | 待开发 | 返回 Mango VO | 不涉及页面 | 待验证 | 待开发 | TODO |
+| JOB-DEV-005 | API | 契约 | `MangoJobApi`、Command、Query、VO | api 不依赖 core/PowerJob；Controller/Feign 复用契约 | 不涉及页面 | 不涉及前端网络 | `mvn -pl mango-platform/mango-job/mango-job-api,mango-platform/mango-job/mango-job-core,mango-platform/mango-job/mango-job-starter,mango-platform/mango-job/mango-job-starter-remote -am test` | DONE |
+| JOB-DEV-006 | API | 处理器契约 | `syncOrderHandler` 测试 Bean | Handler 注册表返回 `syncOrderHandler`；契约不暴露 PowerJob 类型 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest.definitionService_shouldCreateUpdateTriggerWithMybatisPlusOnJobDatasource` | DONE |
+| JOB-DEV-007 | API | CRUD/状态 | `sync-order` | 创建默认为 DRAFT；分页可查；DRAFT -> ENABLED；手动触发生成实例和操作日志 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest.definitionService_shouldCreateUpdateTriggerWithMybatisPlusOnJobDatasource` | DONE |
+| JOB-DEV-008 | API | 租户权限 | tenant-b 创建，tenant-c 查询 | tenant-c 分页为 0；详情返回任务不存在；实例、日志、Worker 均不可见。当前为 Job 级隔离验证，tenantId 无感知统一治理已拆 Issue #102 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest.queryService_shouldReadLogsWorkersAndKeepTenantIsolationOnJobDatasource` | DONE |
+| JOB-DEV-009 | API | 查询接口 | 实例、日志索引、Worker 快照、处理器、引擎状态 | 查询服务返回 Mango VO；POWERJOB PENDING 计数为 1；Controller/Feign 编译通过 | 不涉及页面 | 不涉及前端网络 | `MangoJobQueryService`、`MangoJobController`、`MangoJobFeignClient` | DONE |
 | JOB-DEV-010 | SPI | 引擎 SPI | 待开发 | core 只依赖 SPI | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
 | JOB-DEV-011 | Adapter | PowerJob 集成 | 待开发 | Adapter 能创建/触发任务 | 不涉及页面 | 待验证 | 待开发 | TODO |
 | JOB-DEV-012 | Adapter | 同步补偿 | 待开发 | 失败可查可重试 | 不涉及页面 | 待验证 | 待开发 | TODO |

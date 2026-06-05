@@ -12,7 +12,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "mango.job", name = "enabled", havingValue = "true", matchIfMissing = true)
 @MapperScan("io.mango.job.core.mapper")
 @ComponentScan({
-        "io.mango.job.core.service"
+        "io.mango.job.core.service",
+        "io.mango.job.starter.controller"
 })
 public class JobAutoConfiguration {
 }
