@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,6 +45,66 @@ class PersistenceDataSourceAutoConfigurationTest {
 
                     PersistenceModuleDataSourceResolver resolver = ctx.getBean(PersistenceModuleDataSourceResolver.class);
                     assertThat(resolver.resolveDataSource("mango-job")).contains("job");
+                });
+    }
+
+    @Test
+    void moduleResolver_shouldUseDeploymentOverrideBeforeModuleDefault() {
+        contextRunner
+                .withBean(PersistenceModuleDataSourceDefaults.class, () -> new PersistenceModuleDataSourceDefaults(Map.of(
+                        "mango-job", "job")))
+                .withPropertyValues(
+                        "mango.persistence.datasources.primary.primary=true",
+                        "mango.persistence.datasources.primary.url=jdbc:h2:mem:primary_override;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                        "mango.persistence.datasources.primary.driver-class-name=org.h2.Driver",
+                        "mango.persistence.datasources.primary.username=sa",
+                        "mango.persistence.datasources.primary.password=",
+                        "mango.persistence.datasources.job.url=jdbc:h2:mem:job_override;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                        "mango.persistence.datasources.job.driver-class-name=org.h2.Driver",
+                        "mango.persistence.datasources.job.username=sa",
+                        "mango.persistence.datasources.job.password=",
+                        "mango.persistence.modules.mango-job.datasource=primary")
+                .run(ctx -> {
+                    PersistenceModuleDataSourceResolver resolver = ctx.getBean(PersistenceModuleDataSourceResolver.class);
+                    assertThat(resolver.resolveDataSource("mango-job")).contains("primary");
+                });
+    }
+
+    @Test
+    void moduleResolver_shouldUseModuleDefaultWhenDatasourceExists() {
+        contextRunner
+                .withBean(PersistenceModuleDataSourceDefaults.class, () -> new PersistenceModuleDataSourceDefaults(Map.of(
+                        "mango-job", "job")))
+                .withPropertyValues(
+                        "mango.persistence.datasources.primary.primary=true",
+                        "mango.persistence.datasources.primary.url=jdbc:h2:mem:primary_default;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                        "mango.persistence.datasources.primary.driver-class-name=org.h2.Driver",
+                        "mango.persistence.datasources.primary.username=sa",
+                        "mango.persistence.datasources.primary.password=",
+                        "mango.persistence.datasources.job.url=jdbc:h2:mem:job_default;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                        "mango.persistence.datasources.job.driver-class-name=org.h2.Driver",
+                        "mango.persistence.datasources.job.username=sa",
+                        "mango.persistence.datasources.job.password=")
+                .run(ctx -> {
+                    PersistenceModuleDataSourceResolver resolver = ctx.getBean(PersistenceModuleDataSourceResolver.class);
+                    assertThat(resolver.resolveDataSource("mango-job")).contains("job");
+                });
+    }
+
+    @Test
+    void moduleResolver_shouldFallbackToPrimaryWhenModuleDefaultDatasourceDoesNotExist() {
+        contextRunner
+                .withBean(PersistenceModuleDataSourceDefaults.class, () -> new PersistenceModuleDataSourceDefaults(Map.of(
+                        "mango-job", "job")))
+                .withPropertyValues(
+                        "mango.persistence.datasources.primary.primary=true",
+                        "mango.persistence.datasources.primary.url=jdbc:h2:mem:primary_fallback;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+                        "mango.persistence.datasources.primary.driver-class-name=org.h2.Driver",
+                        "mango.persistence.datasources.primary.username=sa",
+                        "mango.persistence.datasources.primary.password=")
+                .run(ctx -> {
+                    PersistenceModuleDataSourceResolver resolver = ctx.getBean(PersistenceModuleDataSourceResolver.class);
+                    assertThat(resolver.resolveDataSource("mango-job")).contains("primary");
                 });
     }
 

@@ -11,8 +11,16 @@ public class DefaultPersistenceModuleDataSourceResolver implements PersistenceMo
 
     private final PersistenceDataSourceProperties properties;
 
-    public DefaultPersistenceModuleDataSourceResolver(PersistenceDataSourceProperties properties) {
+    private final PersistenceModuleDataSourceDefaults moduleDefaults;
+
+    private final PersistenceDataSourceRegistry registry;
+
+    public DefaultPersistenceModuleDataSourceResolver(PersistenceDataSourceProperties properties,
+                                                      PersistenceModuleDataSourceDefaults moduleDefaults,
+                                                      PersistenceDataSourceRegistry registry) {
         this.properties = properties;
+        this.moduleDefaults = moduleDefaults;
+        this.registry = registry;
     }
 
     @Override
@@ -20,9 +28,12 @@ public class DefaultPersistenceModuleDataSourceResolver implements PersistenceMo
         if (!StringUtils.hasText(moduleName)) {
             return Optional.empty();
         }
-        PersistenceDataSourceProperties.ModuleConfig config = properties.getModules().get(moduleName.trim());
+        String normalizedModuleName = moduleName.trim();
+        PersistenceDataSourceProperties.ModuleConfig config = properties.getModules().get(normalizedModuleName);
         if (config == null || !StringUtils.hasText(config.getDatasource())) {
-            return Optional.empty();
+            return moduleDefaults.resolve(normalizedModuleName)
+                    .filter(registry::contains)
+                    .or(() -> Optional.of(registry.primaryName()));
         }
         return Optional.of(config.getDatasource().trim());
     }

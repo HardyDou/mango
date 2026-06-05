@@ -21,6 +21,13 @@ public interface PersistenceDataSourceRegistry {
     Optional<DataSource> find(String name);
 
     /**
+     * 判断数据源是否存在。
+     */
+    default boolean contains(String name) {
+        return find(name).isPresent();
+    }
+
+    /**
      * 获取数据源。
      */
     DataSource get(String name);

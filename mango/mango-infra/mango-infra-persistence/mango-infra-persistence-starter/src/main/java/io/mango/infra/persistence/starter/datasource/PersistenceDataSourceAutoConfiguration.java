@@ -18,7 +18,8 @@ import java.util.Map;
 /**
  * Mango 多数据源自动配置。
  */
-@AutoConfiguration(before = DataSourceAutoConfiguration.class)
+@AutoConfiguration(before = DataSourceAutoConfiguration.class,
+        beforeName = "com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure")
 @Conditional(PersistenceManagedDataSourceCondition.class)
 @ConditionalOnClass(DataSource.class)
 @EnableConfigurationProperties(PersistenceDataSourceProperties.class)
@@ -43,10 +44,18 @@ public class PersistenceDataSourceAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(PersistenceModuleDataSourceDefaults.class)
+    public PersistenceModuleDataSourceDefaults persistenceModuleDataSourceDefaults() {
+        return new PersistenceModuleDataSourceDefaults();
+    }
+
+    @Bean
     @ConditionalOnMissingBean(PersistenceModuleDataSourceResolver.class)
     public PersistenceModuleDataSourceResolver persistenceModuleDataSourceResolver(
-            PersistenceDataSourceProperties properties) {
-        return new DefaultPersistenceModuleDataSourceResolver(properties);
+            PersistenceDataSourceProperties properties,
+            PersistenceModuleDataSourceDefaults moduleDefaults,
+            PersistenceDataSourceRegistry registry) {
+        return new DefaultPersistenceModuleDataSourceResolver(properties, moduleDefaults, registry);
     }
 
     @Bean

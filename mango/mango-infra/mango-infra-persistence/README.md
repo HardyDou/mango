@@ -85,9 +85,34 @@ mango:
 规则：
 
 - `primary` 是默认数据源；未声明模块映射时使用默认数据源。
-- `mango.persistence.modules.<module>.datasource` 用于声明模块运行和迁移使用的数据源。
+- 模块可在 `META-INF/mango/module.properties` 中声明默认逻辑数据源，例如 `persistence-datasource=job`。
+- `mango.persistence.modules.<module>.datasource` 用于部署侧覆盖模块运行和迁移使用的数据源。
+- 模块数据源解析顺序为：部署覆盖 `mango.persistence.modules.<module>.datasource`、模块默认 `persistence-datasource`、`primary`。
+- 模块默认数据源只有在部署侧已注册同名数据源时才会生效；未注册时回退到 `primary`，便于单库部署。
 - 业务代码禁止硬编码 JDBC URL、用户名和密码。
+- 模块正式包禁止携带真实 JDBC 连接配置；模块测试可在 `src/test/resources/application-test.yml` 配置测试数据源。
 - 密码只能来自环境变量、配置中心或部署密钥。
+
+模块默认数据源示例：
+
+```properties
+module-name=mango-job
+module-path=job
+persistence-datasource=job
+```
+
+轻量单库部署只配置 `primary` 即可，所有未显式覆盖且默认数据源未注册的模块都会使用主库：
+
+```yaml
+mango:
+  persistence:
+    datasources:
+      primary:
+        primary: true
+        url: jdbc:mysql://localhost:3306/mango
+        username: mango
+        password: ${MANGO_DB_PASSWORD}
+```
 
 ### 运行期路由
 
