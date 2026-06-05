@@ -8,10 +8,10 @@
 
 | ID | 来源 | 要求 | 设计决策 | 交付物 | 验收方式 | 状态 | 证据文件 |
 |---|---|---|---|---|---|---|---|
-| JOB-DEV-001 | Sprint 1 | 新增 `mango-platform/mango-job` 聚合模块 | 按 api/core/starter/starter-remote 拆分 | Maven 模块和 POM | `mvn -pl mango-platform/mango-job -am test` | TODO | 待开发 |
-| JOB-DEV-002 | Sprint 1 | 声明模块信息和默认数据源 | 仅 `mango-job-starter` 提供 `module.properties`，默认 `persistence-datasource=job` | `META-INF/mango/module.properties` | 检查 module-name、module-path、persistence-datasource | TODO | 待开发 |
-| JOB-DEV-003 | Sprint 1 | 建立 `mango_job` 治理表 | Flyway 路径 `db/migration/mango-job`，满足表结构准入 | migration SQL | `mvn mango:check -Drule=persistence-schema` | TODO | 待开发 |
-| JOB-DEV-004 | Sprint 1 | 多数据源迁移到 job 库 | 使用 `mango.persistence.modules.mango-job.datasource=job` | Flyway 集成测试 | MyBatis-Plus/Flyway 真实路由测试 | TODO | 待开发 |
+| JOB-DEV-001 | Sprint 1 | 新增 `mango-platform/mango-job` 聚合模块 | 按 api/core/starter/starter-remote 拆分 | Maven 模块和 POM | `mvn -pl mango-platform/mango-job/mango-job-core -am test`、starter 和 starter-remote 测试 | DONE | `mango/mango-platform/pom.xml`、`mango/mango-platform/mango-job/pom.xml`、`mango/mango-platform/mango-job/*/pom.xml` |
+| JOB-DEV-002 | Sprint 1 | 声明模块信息和默认数据源 | 仅 `mango-job-starter` 提供 `module.properties`，默认 `persistence-datasource=job` | `META-INF/mango/module.properties` | 检查 module-name、module-path、persistence-datasource | DONE | `mango/mango-platform/mango-job/mango-job-starter/src/main/resources/META-INF/mango/module.properties` |
+| JOB-DEV-003 | Sprint 1 | 建立 `mango_job` 治理表 | Flyway 路径 `db/migration/mango-job`，满足表结构准入 | migration SQL | `mvn mango:check -Drule=persistence-schema` | DONE | `mango-job-core` 局部 schema check 通过；全仓 schema check 仍被 workflow/authorization/calendar/numgen 既有脚本阻断，需专项治理 |
+| JOB-DEV-004 | Sprint 1 | 多数据源迁移到 job 库 | 使用 `mango.persistence.modules.mango-job.datasource=job` | Flyway 集成测试 | MyBatis-Plus/Flyway 真实路由测试 | DONE | `MangoJobMultiDataSourceIntegrationTest` 验证 Flyway 进入 job 库，MyBatis-Plus Service 插入/查询走 job 数据源 |
 | JOB-DEV-005 | Sprint 2 | 定义 Job API 契约 | `api` 只放 Command、Query、VO、枚举、`MangoJobApi` | `mango-job-api` | 编译和模块边界检查 | TODO | 待开发 |
 | JOB-DEV-006 | Sprint 2 | 定义业务处理器契约 | `MangoJobHandler`、Context、Result 和处理器元数据不依赖 PowerJob | API 或 core 契约类 | 单测覆盖注册和参数校验 | TODO | 待开发 |
 | JOB-DEV-007 | Sprint 2 | 实现任务定义 CRUD 和状态流转 | `core` 实现业务服务，不暴露 Entity | Service、Mapper、Controller | 单元和集成测试 | TODO | 待开发 |
@@ -35,10 +35,10 @@
 
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
-| JOB-DEV-001 | Maven | 模块骨架 | 待开发 | reactor 识别模块 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-002 | 模块信息 | 默认数据源 | 待开发 | module.properties 只在 starter | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-003 | 数据库 | 治理表 | 待开发 | schema check 通过 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
-| JOB-DEV-004 | 数据库 | 多数据源 | 待开发 | migration 进入 job 库 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
+| JOB-DEV-001 | Maven | 模块骨架 | api/core/starter/starter-remote 四模块 | reactor 识别并完成 core/starter/starter-remote 测试 | 不涉及页面 | 不涉及前端网络 | `mvn -pl mango-platform/mango-job/mango-job-core -am test`、`mvn -pl mango-platform/mango-job/mango-job-starter -am test`、`mvn -pl mango-platform/mango-job/mango-job-starter-remote -am test` | DONE |
+| JOB-DEV-002 | 模块信息 | 默认数据源 | `module-name=mango-job`、`module-path=/job`、`persistence-datasource=job` | module.properties 只在 starter | 不涉及页面 | 不涉及前端网络 | `META-INF/mango/module.properties` | DONE |
+| JOB-DEV-003 | 数据库 | 治理表 | `mango_job_definition` 等 7 张治理表 | 新表包含 `id`、`tenant_id`、`created_by`、`created_at`、`updated_by`、`updated_at` | 不涉及页面 | 不涉及前端网络 | 在 `mango-platform/mango-job/mango-job-core` 执行 `mvn mango:check -Drule=persistence-schema` 通过；全仓同规则被既有模块 276 个问题阻断 | DONE |
+| JOB-DEV-004 | 数据库 | 多数据源 | H2 primary + job 双数据源 | resolver 映射 `mango-job -> job`；`mango_job_definition` 只在 job 库；MyBatis-Plus Service 写入 job 库 | 不涉及页面 | 不涉及前端网络 | `MangoJobMultiDataSourceIntegrationTest` | DONE |
 | JOB-DEV-005 | API | 契约 | 待开发 | api 不依赖 core/PowerJob | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
 | JOB-DEV-006 | API | 处理器契约 | 待开发 | 不暴露 PowerJob 类型 | 不涉及页面 | 不涉及前端网络 | 待开发 | TODO |
 | JOB-DEV-007 | API | CRUD/状态 | 待开发 | 状态流转正确 | 不涉及页面 | 待验证 | 待开发 | TODO |
