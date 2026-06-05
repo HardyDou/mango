@@ -1,7 +1,11 @@
 package io.mango.infra.persistence.starter;
 
+import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
+import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceRegistry;
+import io.mango.infra.persistence.starter.datasource.PersistenceModuleDataSourceResolver;
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -44,7 +48,7 @@ import java.util.Set;
  *
  * @see PersistenceFlywayProperties
  */
-@AutoConfiguration(before = FlywayAutoConfiguration.class)
+@AutoConfiguration(after = PersistenceDataSourceAutoConfiguration.class, before = FlywayAutoConfiguration.class)
 @ConditionalOnClass(Flyway.class)
 @ConditionalOnBean(DataSource.class)
 @EnableConfigurationProperties(PersistenceFlywayProperties.class)
@@ -74,14 +78,18 @@ public class PersistenceFlywayAutoConfiguration {
     @ConditionalOnMissingBean(name = "persistenceFlywayMigrationInitializer")
     public FlywayMigrationInitializer persistenceFlywayMigrationInitializer(@Autowired Flyway flyway,
                                                                            @Autowired DataSource dataSource,
-                                                                           @Autowired PersistenceFlywayProperties properties) {
+                                                                           @Autowired PersistenceFlywayProperties properties,
+                                                                           ObjectProvider<PersistenceDataSourceRegistry> registryProvider,
+                                                                           ObjectProvider<PersistenceModuleDataSourceResolver> resolverProvider) {
         return new FlywayMigrationInitializer(flyway, ignored -> {
             if (!properties.isEnabled()) {
                 return;
             }
             try {
+                PersistenceDataSourceRegistry registry = registryProvider.getIfAvailable();
+                PersistenceModuleDataSourceResolver resolver = resolverProvider.getIfAvailable();
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
-                    DataSource moduleDataSource = resolveDataSource(dataSource, module.config());
+                    DataSource moduleDataSource = resolveDataSource(dataSource, module, registry, resolver);
                     try {
                         Flyway.configure()
                                 .dataSource(moduleDataSource)
@@ -161,8 +169,17 @@ public class PersistenceFlywayAutoConfiguration {
     }
 
     private DataSource resolveDataSource(DataSource defaultDataSource,
-                                         PersistenceFlywayProperties.ModuleConfig config) {
-        PersistenceFlywayProperties.DataSourceConfig datasource = config.getDatasource();
+                                         ModuleMigration module,
+                                         PersistenceDataSourceRegistry registry,
+                                         PersistenceModuleDataSourceResolver resolver) {
+        if (registry != null && resolver != null) {
+            String dataSourceName = resolver.resolveDataSource(module.name()).orElse("");
+            if (StringUtils.hasText(dataSourceName)) {
+                return registry.get(dataSourceName);
+            }
+        }
+
+        PersistenceFlywayProperties.DataSourceConfig datasource = module.config().getDatasource();
         if (datasource == null || !StringUtils.hasText(datasource.getUrl())) {
             return defaultDataSource;
         }

@@ -38,6 +38,7 @@
 | 实体基类 | `BaseEntity`、`AuditableEntity`、`TenantEntity` |
 | 主键规范 | `BaseEntity.id` 默认 `@TableId(type = IdType.ASSIGN_ID)`，项目规范要求业务表使用 `Long` 雪花 ID |
 | 审计填充 | 基于 MangoContext 自动填充 `createdBy`、`createdAt`、`updatedBy`、`updatedAt`、`tenantId` |
+| 多数据源 | 支持按名称注册数据源、运行期路由、模块数据源映射和事务内切换保护 |
 | Flyway | 统一装配数据库迁移 |
 | MyBatis-Plus | 统一分页插件和基础配置 |
 | 查询对象 | `io.mango.common.po.PageQuery`、`PersistencePageResult` |
@@ -48,6 +49,122 @@
 | 数据权限扩展 | `DataScopeProvider`、`DataScopeRule` 作为扩展点，具体业务策略由业务模块接入 |
 | 导入导出扩展 | `ExcelAdapter`、`ImportableService`、`ExportableService`，Excel 实现由 `mango-infra-excel-starter` 提供 |
 | 表结构准入 | `mango:check -Drule=persistence-schema` 和启动期 schema validation |
+
+## 多数据源
+
+Mango 多数据源用于模块独立数据库和技术引擎库隔离，例如后续 `mango-job` 治理库、PowerJob 引擎库。未配置多数据源时，应用保持 Spring Boot 单数据源默认行为。
+
+### 配置示例
+
+```yaml
+mango:
+  persistence:
+    datasources:
+      primary:
+        primary: true
+        url: jdbc:mysql://localhost:3306/mango
+        username: mango
+        password: ${MANGO_DB_PASSWORD}
+      job:
+        url: jdbc:mysql://localhost:3306/mango_job
+        username: mango_job
+        password: ${MANGO_JOB_DB_PASSWORD}
+      powerjob:
+        url: jdbc:mysql://localhost:3306/powerjob
+        username: powerjob
+        password: ${POWERJOB_DB_PASSWORD}
+    modules:
+      mango-system:
+        datasource: primary
+      mango-job:
+        datasource: job
+      powerjob:
+        datasource: powerjob
+```
+
+规则：
+
+- `primary` 是默认数据源；未声明模块映射时使用默认数据源。
+- 模块可在 `META-INF/mango/module.properties` 中声明默认逻辑数据源，例如 `persistence-datasource=job`。
+- `mango.persistence.modules.<module>.datasource` 用于部署侧覆盖模块运行和迁移使用的数据源。
+- 模块数据源解析顺序为：部署覆盖 `mango.persistence.modules.<module>.datasource`、模块默认 `persistence-datasource`、`primary`。
+- 模块默认数据源只有在部署侧已注册同名数据源时才会生效；未注册时回退到 `primary`，便于单库部署。
+- 业务代码禁止硬编码 JDBC URL、用户名和密码。
+- 模块正式包禁止携带真实 JDBC 连接配置；模块测试可在 `src/test/resources/application-test.yml` 配置测试数据源。
+- 密码只能来自环境变量、配置中心或部署密钥。
+
+模块默认数据源示例：
+
+```properties
+module-name=mango-job
+module-path=job
+persistence-datasource=job
+```
+
+轻量单库部署只配置 `primary` 即可，所有未显式覆盖且默认数据源未注册的模块都会使用主库：
+
+```yaml
+mango:
+  persistence:
+    datasources:
+      primary:
+        primary: true
+        url: jdbc:mysql://localhost:3306/mango
+        username: mango
+        password: ${MANGO_DB_PASSWORD}
+```
+
+### 运行期路由
+
+业务代码可以在明确边界内使用注解或上下文选择数据源：
+
+```java
+@PersistenceDataSource("job")
+public void saveJobDefinition(...) {
+    ...
+}
+```
+
+```java
+try (PersistenceDataSourceContext.Scope ignored = PersistenceDataSourceContext.use("job")) {
+    mapper.insert(entity);
+}
+```
+
+限制：
+
+- 一个事务内只能使用一个数据源。
+- 事务开启后切换到其它数据源会立即失败。
+- 跨库写入必须通过 API、事件、outbox 或补偿流程建模。
+- 禁止跨库 join 和跨库外键。
+
+### Flyway 多数据源迁移
+
+迁移路径仍使用模块隔离：
+
+```text
+db/migration/{module}/V{version}__{description}.sql
+```
+
+Flyway 会按模块映射选择目标数据源，并在目标库内使用独立 history table，默认：
+
+```text
+flyway_schema_history_{module}
+```
+
+旧配置 `mango.persistence.flyway.modules.<module>.datasource` 仍兼容；新配置 `mango.persistence.modules.<module>.datasource` 优先。
+
+### Job 和 PowerJob 数据库边界
+
+后续任务调度建议使用三类数据库：
+
+| 数据库 | 用途 |
+|---|---|
+| `mango` | Mango 主业务库。 |
+| `mango_job` | Mango Job 治理库，保存任务定义、租户快照、执行摘要和引擎映射。 |
+| `powerjob` | PowerJob Server 引擎库，由 PowerJob 管理内部表。 |
+
+`mango_job` 不跨库外键引用主库。`powerjob` 表结构不由 Mango Flyway 维护。
 
 ## 表结构规范
 

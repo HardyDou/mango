@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 
 import javax.sql.DataSource;
 
@@ -23,6 +24,10 @@ class PersistenceFlywayAutoConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(PersistenceFlywayAutoConfiguration.class));
+
+    private final ApplicationContextRunner multiDataSourceContextRunner = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(PersistenceDataSourceAutoConfiguration.class,
+                    PersistenceFlywayAutoConfiguration.class));
 
     @Test
     void whenEnabled_shouldCreateFlywayBean() {
@@ -134,6 +139,35 @@ class PersistenceFlywayAutoConfigurationTest {
                     JdbcTemplate moduleJdbcTemplate = new JdbcTemplate(h2DataSource(moduleUrl));
                     assertThat(tableExists(moduleJdbcTemplate, "persistence_flyway_user")).isTrue();
                     assertThat(tableExists(moduleJdbcTemplate, "flyway_schema_history_persistence_test")).isTrue();
+                });
+    }
+
+    @Test
+    void moduleDatasourceMapping_shouldRunMigrationAgainstRegisteredDatasource() {
+        String primaryUrl = "jdbc:h2:mem:flyway_primary_registry;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        String jobUrl = "jdbc:h2:mem:flyway_job_registry;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        multiDataSourceContextRunner
+                .withPropertyValues(
+                        "mango.persistence.datasources.primary.primary=true",
+                        "mango.persistence.datasources.primary.url=" + primaryUrl,
+                        "mango.persistence.datasources.primary.username=sa",
+                        "mango.persistence.datasources.primary.password=",
+                        "mango.persistence.datasources.primary.driver-class-name=org.h2.Driver",
+                        "mango.persistence.datasources.job.url=" + jobUrl,
+                        "mango.persistence.datasources.job.username=sa",
+                        "mango.persistence.datasources.job.password=",
+                        "mango.persistence.datasources.job.driver-class-name=org.h2.Driver",
+                        "mango.persistence.modules.persistence-test.datasource=job",
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                )
+                .run(ctx -> {
+                    JdbcTemplate primaryJdbcTemplate = new JdbcTemplate(h2DataSource(primaryUrl));
+                    assertThat(tableExists(primaryJdbcTemplate, "persistence_flyway_user")).isFalse();
+
+                    JdbcTemplate jobJdbcTemplate = new JdbcTemplate(h2DataSource(jobUrl));
+                    assertThat(tableExists(jobJdbcTemplate, "persistence_flyway_user")).isTrue();
+                    assertThat(tableExists(jobJdbcTemplate, "flyway_schema_history_persistence_test")).isTrue();
                 });
     }
 
