@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 test.setTimeout(90 * 1000);
+test.describe.configure({ mode: 'serial' });
 
 type ApiId = string | number;
 type JobDefinitionStatus = 'DRAFT' | 'ENABLED' | 'DISABLED' | 'PAUSED';
@@ -40,6 +41,10 @@ interface JobDefinition {
   handlerName?: string;
   status?: JobDefinitionStatus;
   engineType: string;
+  engineAppId?: string;
+  engineJobId?: string;
+  syncStatus?: string;
+  syncError?: string;
 }
 
 interface JobInstance {
@@ -48,6 +53,9 @@ interface JobInstance {
   triggerType?: string;
   triggerBatchNo?: string;
   status?: string;
+  engineType?: string;
+  engineInstanceId?: string;
+  errorSummary?: string;
 }
 
 interface JobLogIndex {
@@ -55,8 +63,11 @@ interface JobLogIndex {
   jobId: ApiId;
   instanceId: ApiId;
   engineType?: string;
+  engineInstanceId?: string;
   logLocation?: string;
 }
+
+const runtimeProbeHandler = 'mangoJobRuntimeProbeHandler';
 
 interface SaveJobDefinitionPayload {
   id?: ApiId;
@@ -83,7 +94,7 @@ const exampleJobs: SaveJobDefinitionPayload[] = [
     jobName: '示例 手动内置任务',
     jobType: 'BUILTIN',
     scheduleType: 'MANUAL',
-    handlerName: 'sampleManualHandler',
+    handlerName: runtimeProbeHandler,
     paramSchema: '{ "type": "object", "properties": { "source": { "type": "string" } } }',
     paramValue: '{ "source": "acceptance", "kind": "manual" }',
     concurrencyPolicy: 'SERIAL',
@@ -99,7 +110,7 @@ const exampleJobs: SaveJobDefinitionPayload[] = [
     jobType: 'BUILTIN',
     scheduleType: 'CRON',
     scheduleExpression: '0 */5 * * * ?',
-    handlerName: 'sampleCronHandler',
+    handlerName: runtimeProbeHandler,
     paramValue: '{ "source": "acceptance", "kind": "cron" }',
     concurrencyPolicy: 'SERIAL',
     misfireStrategy: 'FIRE_ONCE',
@@ -109,13 +120,13 @@ const exampleJobs: SaveJobDefinitionPayload[] = [
   },
   {
     appCode: 'mango-job',
-    jobCode: 'mango_job_example_http_callback',
-    jobName: '示例 HTTP 回调任务',
-    jobType: 'HTTP',
+    jobCode: 'mango_job_example_fixed_rate_probe',
+    jobName: '示例 固定频率任务',
+    jobType: 'BUILTIN',
     scheduleType: 'FIXED_RATE',
-    scheduleExpression: '300',
-    handlerName: 'https://example.invalid/mango/job/callback',
-    paramValue: '{ "source": "acceptance", "kind": "http" }',
+    scheduleExpression: '60000',
+    handlerName: runtimeProbeHandler,
+    paramValue: '{ "source": "acceptance", "kind": "fixed-rate" }',
     concurrencyPolicy: 'DISCARD',
     misfireStrategy: 'IGNORE',
     timeoutSeconds: 120,
@@ -198,6 +209,14 @@ async function createDefinition(page: Page, headers: LoginHeaders, payload: Save
   return expectBusinessOk<ApiId>(await page.request.post('/api/job/definitions', { headers, data: payload }));
 }
 
+async function detailDefinition(page: Page, headers: LoginHeaders, id: ApiId): Promise<JobDefinition> {
+  const response = await page.request.get('/api/job/definitions/detail', {
+    headers,
+    params: { id: String(id) },
+  });
+  return expectBusinessOk<JobDefinition>(response);
+}
+
 async function updateDefinitionStatus(page: Page, headers: LoginHeaders, id: ApiId, status: JobDefinitionStatus) {
   await expectBusinessOk<boolean>(await page.request.put('/api/job/definitions/status', {
     headers,
@@ -235,10 +254,47 @@ async function prepareExampleJobs(page: Page, headers: LoginHeaders) {
   for (const payload of exampleJobs) {
     const id = await createDefinition(page, headers, payload);
     await updateDefinitionStatus(page, headers, id, 'ENABLED');
-    if (payload.jobCode === 'mango_job_example_http_callback') {
-      await updateDefinitionStatus(page, headers, id, 'PAUSED');
-    }
+    const synced = await waitForSyncedDefinition(page, headers, id);
+    expect(synced.engineType).toBe('POWERJOB');
+    expect(synced.syncStatus, synced.syncError || '任务定义必须同步到 PowerJob').toBe('SYNCED');
+    expect(synced.engineAppId).toBeTruthy();
+    expect(synced.engineJobId).toBeTruthy();
   }
+}
+
+async function waitForSyncedDefinition(page: Page, headers: LoginHeaders, id: ApiId): Promise<JobDefinition> {
+  let latest: JobDefinition | undefined;
+  await expect.poll(async () => {
+    latest = await detailDefinition(page, headers, id);
+    return latest.syncStatus === 'SYNCED' && Boolean(latest.engineJobId);
+  }, {
+    timeout: 30_000,
+    intervals: [500, 1000, 2000],
+    message: '任务定义必须获得真实 PowerJob engineJobId',
+  }).toBeTruthy();
+  return latest!;
+}
+
+async function waitForTriggeredInstance(
+  page: Page,
+  headers: LoginHeaders,
+  jobId: ApiId,
+  triggerBatchNo: string,
+): Promise<JobInstance> {
+  let latest: JobInstance | undefined;
+  await expect.poll(async () => {
+    const instances = await listInstances(page, headers, jobId);
+    latest = instances.find(item => item.triggerBatchNo === triggerBatchNo && item.triggerType === 'MANUAL');
+    return Boolean(latest?.engineInstanceId) && latest?.status !== 'WAITING' && latest?.status !== 'RUNNING';
+  }, {
+    timeout: 60_000,
+    intervals: [1000, 2000, 3000],
+    message: '手动触发必须获得真实 PowerJob engineInstanceId 并完成执行',
+  }).toBeTruthy();
+  expect(latest!.engineType).toBe('POWERJOB');
+  expect(latest!.engineInstanceId).toBeTruthy();
+  expect(latest!.status, latest!.errorSummary || '示例任务应执行成功').toBe('SUCCESS');
+  return latest!;
 }
 
 async function clickMenu(page: Page, name: string) {
@@ -287,7 +343,7 @@ async function createDraftByUi(page: Page, jobCode: string) {
   await dialog.getByLabel('任务名称').fill('E2E 临时任务');
   await selectFormOption(page, dialog, '底层引擎', 'PowerJob');
   await selectFormOption(page, dialog, '任务类型', '内置处理器');
-  await dialog.getByLabel('处理器').fill('e2eTemporaryHandler');
+  await dialog.getByLabel('处理器').fill(runtimeProbeHandler);
   await selectFormOption(page, dialog, '调度类型', '手动');
   await dialog.getByLabel('超时秒数').fill('180');
   await dialog.getByLabel('并发策略').fill('SERIAL');
@@ -391,8 +447,8 @@ test.describe('Job 管理 E2E', () => {
     await saveEvidenceScreenshot(page, '03-definition-edit-cron-schedule.png', cronDialog);
     await cronDialog.getByRole('button', { name: '取消' }).click();
 
-    const fixedRateDialog = await openDefinitionEditor(page, 'mango_job_example_http_callback');
-    await expect(fixedRateDialog.getByLabel('调度表达式')).toHaveValue('300');
+    const fixedRateDialog = await openDefinitionEditor(page, 'mango_job_example_fixed_rate_probe');
+    await expect(fixedRateDialog.getByLabel('调度表达式')).toHaveValue('60000');
     await saveEvidenceScreenshot(page, '04-definition-edit-fixed-rate-schedule.png', fixedRateDialog);
     await fixedRateDialog.getByRole('button', { name: '取消' }).click();
 
@@ -434,6 +490,8 @@ test.describe('Job 管理 E2E', () => {
 
     const manualDefinition = (await listDefinitions(page, headers, manualCode)).find(item => item.jobCode === manualCode);
     expect(manualDefinition).toBeDefined();
+    expect(manualDefinition!.syncStatus).toBe('SYNCED');
+    expect(manualDefinition!.engineJobId).toBeTruthy();
     const triggerBatchNo = `e2e-job-batch-${Date.now()}`;
     const triggerResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/job/definitions/trigger') &&
@@ -444,21 +502,20 @@ test.describe('Job 管理 E2E', () => {
     const triggerDialog = page.getByRole('dialog', { name: '手动触发' });
     await expect(triggerDialog).toBeVisible();
     await triggerDialog.getByLabel('批次号').fill(triggerBatchNo);
-    await triggerDialog.getByLabel('触发参数').fill('{ "source": "e2e-trigger" }');
+    await triggerDialog.getByLabel('触发参数').fill('{ "source": "e2e-trigger", "assert": "powerjob-runtime" }');
     await saveEvidenceScreenshot(page, '06-trigger-dialog-frequency-manual.png', triggerDialog);
     await triggerDialog.getByRole('button', { name: '触发' }).click();
     await triggerResponsePromise;
     await expect(page.locator('.el-message__content', { hasText: '已触发' }).last()).toBeVisible({ timeout: 10000 });
 
-    const instances = await listInstances(page, headers, manualDefinition!.id);
-    const triggeredInstance = instances.find(item => item.triggerBatchNo === triggerBatchNo && item.triggerType === 'MANUAL');
-    expect(triggeredInstance).toBeDefined();
+    const triggeredInstance = await waitForTriggeredInstance(page, headers, manualDefinition!.id, triggerBatchNo);
 
     const logs = await listLogs(page, headers, manualDefinition!.id);
     const executionLog = logs.find(item =>
       String(item.jobId) === String(manualDefinition!.id)
       && String(item.instanceId) === String(triggeredInstance!.id)
       && item.engineType === 'POWERJOB'
+      && item.engineInstanceId
     );
     expect(executionLog).toBeDefined();
 
@@ -475,6 +532,8 @@ test.describe('Job 管理 E2E', () => {
     await page.getByRole('button', { name: '查询' }).click();
     await filteredInstanceResponsePromise;
     await expect(page.locator('.el-table__row', { hasText: triggerBatchNo }).first()).toBeVisible();
+    await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance.engineInstanceId) }).first()).toBeVisible();
+    await expect(page.locator('.el-table__row', { hasText: '成功' }).first()).toBeVisible();
     await saveEvidenceScreenshot(page, '07-instance-filtered-trigger-batch.png');
 
     const logResponsePromise = page.waitForResponse((response) =>
@@ -490,6 +549,7 @@ test.describe('Job 管理 E2E', () => {
     await page.getByRole('button', { name: '查询' }).click();
     await filteredLogResponsePromise;
     await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance!.id) }).first()).toBeVisible();
+    await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance!.engineInstanceId) }).first()).toBeVisible();
     await saveEvidenceScreenshot(page, '08-execution-log-index.png');
 
     await openJobDefinitionPage(page);
@@ -555,7 +615,9 @@ test.describe('Job 管理 E2E', () => {
         await expect(page.locator('.job-search')).toBeVisible();
         await expectCompactSearchPage(page, page.locator('.job-toolbar'));
       }
-      await expect(page.locator('text=/401|403|未授权|拒绝访问|路由加载失败|加载失败/')).toHaveCount(0);
+      await expect(page.locator('.el-message--error')).toHaveCount(0);
+      await expect(page.locator('.job-error')).toHaveCount(0);
+      await expect(page.locator('.error-container')).toHaveCount(0);
       await saveEvidenceScreenshot(page, `10-${item.path.replace('/job/', 'job-')}.png`);
     }
 

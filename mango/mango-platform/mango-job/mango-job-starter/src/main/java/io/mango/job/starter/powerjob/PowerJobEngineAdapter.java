@@ -2,6 +2,7 @@ package io.mango.job.starter.powerjob;
 
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobEngineType;
+import io.mango.job.api.enums.JobInstanceStatus;
 import io.mango.job.api.enums.JobScheduleType;
 import io.mango.job.api.enums.JobType;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
@@ -12,11 +13,17 @@ import io.mango.job.core.service.engine.MangoJobTriggerRequest;
 import org.springframework.util.StringUtils;
 import tech.powerjob.common.enums.DispatchStrategy;
 import tech.powerjob.common.enums.ExecuteType;
+import tech.powerjob.common.enums.InstanceStatus;
 import tech.powerjob.common.enums.ProcessorType;
 import tech.powerjob.common.enums.TimeExpressionType;
 import tech.powerjob.common.request.http.RunJobRequest;
 import tech.powerjob.common.request.http.SaveJobInfoRequest;
+import tech.powerjob.common.response.InstanceInfoDTO;
 import tech.powerjob.common.response.ResultDTO;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * PowerJob 引擎适配器。
@@ -88,13 +95,40 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
             RunJobRequest runRequest = new RunJobRequest()
                     .setAppId(properties.getAppId())
                     .setJobId(Long.valueOf(definition.getEngineJobId()))
-                    .setInstanceParams(definition.getParamValue())
+                    .setInstanceParams(PowerJobMangoPayload.instanceParams(
+                            definition, request.getInstance(), request.getBatchNo(), request.getParamValue()))
                     .setOuterKey(request.getBatchNo());
             ResultDTO<Long> result = client.runJob(runRequest);
             if (!result.isSuccess()) {
                 return MangoJobEngineResult.failed(result.getMessage());
             }
             return MangoJobEngineResult.triggerSuccess(String.valueOf(result.getData()));
+        } catch (RuntimeException ex) {
+            return MangoJobEngineResult.failed(ex.getMessage());
+        }
+    }
+
+    @Override
+    public MangoJobEngineResult refreshInstance(MangoJobTriggerRequest request) {
+        try {
+            String engineInstanceId = request.getInstance().getEngineInstanceId();
+            if (!StringUtils.hasText(engineInstanceId)) {
+                return MangoJobEngineResult.success();
+            }
+            ResultDTO<InstanceInfoDTO> result = client.fetchInstanceInfo(Long.valueOf(engineInstanceId));
+            if (!result.isSuccess()) {
+                return MangoJobEngineResult.failed(result.getMessage());
+            }
+            InstanceInfoDTO info = result.getData();
+            if (info == null) {
+                return MangoJobEngineResult.failed("PowerJob 实例不存在：" + engineInstanceId);
+            }
+            return MangoJobEngineResult.instanceSuccess(
+                    toMangoInstanceStatus(info.getStatus()),
+                    toLocalDateTime(info.getActualTriggerTime()),
+                    toLocalDateTime(info.getFinishedTime()),
+                    duration(info),
+                    errorSummary(info));
         } catch (RuntimeException ex) {
             return MangoJobEngineResult.failed(ex.getMessage());
         }
@@ -118,12 +152,12 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
         request.setAppId(properties.getAppId());
         request.setJobName(definition.getJobName());
         request.setJobDescription(definition.getJobCode());
-        request.setJobParams(definition.getParamValue());
+        request.setJobParams(PowerJobMangoPayload.jobParams(definition));
         request.setTimeExpressionType(timeExpressionType(definition.getScheduleType()));
         request.setTimeExpression(timeExpression(definition));
         request.setExecuteType(ExecuteType.STANDALONE);
         request.setProcessorType(processorType(definition.getJobType()));
-        request.setProcessorInfo(definition.getHandlerName());
+        request.setProcessorInfo(MangoPowerJobProcessor.PROCESSOR_NAME);
         request.setMaxInstanceNum(properties.getMaxInstanceNum());
         request.setConcurrency(properties.getConcurrency());
         request.setInstanceTimeLimit(timeoutMillis(definition));
@@ -168,5 +202,46 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
 
     private boolean targetEnabled(MangoJobDefinitionEntity definition) {
         return JobDefinitionStatus.ENABLED.name().equals(definition.getStatus());
+    }
+
+    private String toMangoInstanceStatus(int status) {
+        InstanceStatus instanceStatus = InstanceStatus.of(status);
+        if (instanceStatus == InstanceStatus.WAITING_DISPATCH
+                || instanceStatus == InstanceStatus.WAITING_WORKER_RECEIVE) {
+            return JobInstanceStatus.WAITING.name();
+        }
+        if (instanceStatus == InstanceStatus.RUNNING) {
+            return JobInstanceStatus.RUNNING.name();
+        }
+        if (instanceStatus == InstanceStatus.SUCCEED) {
+            return JobInstanceStatus.SUCCESS.name();
+        }
+        if (instanceStatus == InstanceStatus.CANCELED || instanceStatus == InstanceStatus.STOPPED) {
+            return JobInstanceStatus.CANCELED.name();
+        }
+        return JobInstanceStatus.FAILED.name();
+    }
+
+    private LocalDateTime toLocalDateTime(Long millis) {
+        if (millis == null || millis <= 0) {
+            return null;
+        }
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
+    }
+
+    private Long duration(InstanceInfoDTO info) {
+        if (info.getActualTriggerTime() == null || info.getFinishedTime() == null) {
+            return null;
+        }
+        long duration = info.getFinishedTime() - info.getActualTriggerTime();
+        return duration >= 0 ? duration : null;
+    }
+
+    private String errorSummary(InstanceInfoDTO info) {
+        String status = toMangoInstanceStatus(info.getStatus());
+        if (JobInstanceStatus.FAILED.name().equals(status) || JobInstanceStatus.CANCELED.name().equals(status)) {
+            return StringUtils.hasText(info.getResult()) ? info.getResult() : status;
+        }
+        return null;
     }
 }

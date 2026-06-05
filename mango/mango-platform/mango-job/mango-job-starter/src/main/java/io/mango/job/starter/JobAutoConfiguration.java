@@ -14,7 +14,8 @@ import org.springframework.context.annotation.Import;
 @MapperScan("io.mango.job.core.mapper")
 @ComponentScan({
         "io.mango.job.core.service",
-        "io.mango.job.starter.controller"
+        "io.mango.job.starter.controller",
+        "io.mango.job.starter.probe"
 })
 @Import(io.mango.job.starter.powerjob.PowerJobAutoConfiguration.class)
 public class JobAutoConfiguration {

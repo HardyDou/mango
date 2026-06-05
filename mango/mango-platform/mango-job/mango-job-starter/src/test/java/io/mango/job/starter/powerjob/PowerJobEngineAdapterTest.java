@@ -1,9 +1,11 @@
 package io.mango.job.starter.powerjob;
 
 import io.mango.job.api.enums.JobDefinitionStatus;
+import io.mango.job.api.enums.JobInstanceStatus;
 import io.mango.job.api.enums.JobScheduleType;
 import io.mango.job.api.enums.JobType;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
+import io.mango.job.core.entity.MangoJobInstanceEntity;
 import io.mango.job.core.service.engine.MangoJobEngineRequest;
 import io.mango.job.core.service.engine.MangoJobEngineResult;
 import io.mango.job.core.service.engine.MangoJobTriggerRequest;
@@ -11,10 +13,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.powerjob.common.enums.DispatchStrategy;
 import tech.powerjob.common.enums.ExecuteType;
+import tech.powerjob.common.enums.InstanceStatus;
 import tech.powerjob.common.enums.ProcessorType;
 import tech.powerjob.common.enums.TimeExpressionType;
 import tech.powerjob.common.request.http.RunJobRequest;
 import tech.powerjob.common.request.http.SaveJobInfoRequest;
+import tech.powerjob.common.response.InstanceInfoDTO;
 import tech.powerjob.common.response.PowerResultDTO;
 import tech.powerjob.common.response.ResultDTO;
 
@@ -49,12 +53,15 @@ class PowerJobEngineAdapterTest {
         assertThat(client.saveJobRequest.getAppId()).isEqualTo(10001L);
         assertThat(client.saveJobRequest.getJobName()).isEqualTo("同步用户状态");
         assertThat(client.saveJobRequest.getJobDescription()).isEqualTo("sync-user-status");
-        assertThat(client.saveJobRequest.getJobParams()).isEqualTo("{\"dryRun\":false}");
+        assertThat(client.saveJobRequest.getJobParams())
+                .contains("\"jobCode\":\"sync-user-status\"")
+                .contains("\"handlerName\":\"syncUserStatusJobHandler\"")
+                .contains("\"parameter\":\"{\\\"dryRun\\\":false}\"");
         assertThat(client.saveJobRequest.getTimeExpressionType()).isEqualTo(TimeExpressionType.CRON);
         assertThat(client.saveJobRequest.getTimeExpression()).isEqualTo("0 0/5 * * * ?");
         assertThat(client.saveJobRequest.getExecuteType()).isEqualTo(ExecuteType.STANDALONE);
         assertThat(client.saveJobRequest.getProcessorType()).isEqualTo(ProcessorType.BUILT_IN);
-        assertThat(client.saveJobRequest.getProcessorInfo()).isEqualTo("syncUserStatusJobHandler");
+        assertThat(client.saveJobRequest.getProcessorInfo()).isEqualTo(MangoPowerJobProcessor.PROCESSOR_NAME);
         assertThat(client.saveJobRequest.getMaxInstanceNum()).isEqualTo(3);
         assertThat(client.saveJobRequest.getConcurrency()).isEqualTo(2);
         assertThat(client.saveJobRequest.getInstanceTimeLimit()).isEqualTo(30000L);
@@ -104,6 +111,8 @@ class PowerJobEngineAdapterTest {
         client.runJobResult = PowerResultDTO.s(80001L);
         MangoJobTriggerRequest request = new MangoJobTriggerRequest();
         request.setDefinition(definition);
+        request.setInstance(new io.mango.job.core.entity.MangoJobInstanceEntity());
+        request.getInstance().setId(70001L);
         request.setBatchNo("batch-20260605");
 
         MangoJobEngineResult result = adapter.trigger(request);
@@ -112,7 +121,10 @@ class PowerJobEngineAdapterTest {
         assertThat(result.getEngineInstanceId()).isEqualTo("80001");
         assertThat(client.runJobRequest.getAppId()).isEqualTo(10001L);
         assertThat(client.runJobRequest.getJobId()).isEqualTo(90003L);
-        assertThat(client.runJobRequest.getInstanceParams()).isEqualTo("{\"dryRun\":false}");
+        assertThat(client.runJobRequest.getInstanceParams())
+                .contains("\"mangoInstanceId\":70001")
+                .contains("\"triggerBatchNo\":\"batch-20260605\"")
+                .contains("\"parameter\":\"{\\\"dryRun\\\":false}\"");
         assertThat(client.runJobRequest.getOuterKey()).isEqualTo("batch-20260605");
     }
 
@@ -125,6 +137,30 @@ class PowerJobEngineAdapterTest {
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getErrorSummary()).isEqualTo("任务尚未同步到 PowerJob");
         assertThat(client.runJobRequest).isNull();
+    }
+
+    @Test
+    void refreshInstanceShouldMapPowerJobStatus() {
+        InstanceInfoDTO info = new InstanceInfoDTO();
+        info.setStatus(InstanceStatus.SUCCEED.getV());
+        info.setActualTriggerTime(1000L);
+        info.setFinishedTime(3500L);
+        client.fetchInstanceInfoResult = ResultDTO.success(info);
+        MangoJobInstanceEntity instance = new MangoJobInstanceEntity();
+        instance.setEngineInstanceId("80001");
+        MangoJobTriggerRequest request = new MangoJobTriggerRequest();
+        request.setDefinition(cronDefinition());
+        request.setInstance(instance);
+
+        MangoJobEngineResult result = adapter.refreshInstance(request);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInstanceStatus()).isEqualTo(JobInstanceStatus.SUCCESS.name());
+        assertThat(result.getDurationMillis()).isEqualTo(2500L);
+        assertThat(result.getErrorSummary()).isNull();
+        assertThat(result.getStartTime()).isNotNull();
+        assertThat(result.getEndTime()).isNotNull();
+        assertThat(client.fetchInstanceInfoId).isEqualTo(80001L);
     }
 
     @Test
@@ -182,6 +218,8 @@ class PowerJobEngineAdapterTest {
 
         private ResultDTO<?> fetchAllJobResult = ResultDTO.success(null);
 
+        private ResultDTO<InstanceInfoDTO> fetchInstanceInfoResult = ResultDTO.failed("instance missing");
+
         private RuntimeException fetchAllJobError;
 
         private SaveJobInfoRequest saveJobRequest;
@@ -191,6 +229,8 @@ class PowerJobEngineAdapterTest {
         private Long enabledJobId;
 
         private Long disabledJobId;
+
+        private Long fetchInstanceInfoId;
 
         @Override
         public ResultDTO<Long> saveJob(SaveJobInfoRequest request) {
@@ -219,6 +259,12 @@ class PowerJobEngineAdapterTest {
         public PowerResultDTO<Long> runJob(RunJobRequest request) {
             this.runJobRequest = request;
             return runJobResult;
+        }
+
+        @Override
+        public ResultDTO<InstanceInfoDTO> fetchInstanceInfo(Long instanceId) {
+            this.fetchInstanceInfoId = instanceId;
+            return fetchInstanceInfoResult;
         }
 
         @Override

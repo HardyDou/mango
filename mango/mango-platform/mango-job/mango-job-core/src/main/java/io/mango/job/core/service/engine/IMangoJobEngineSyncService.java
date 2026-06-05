@@ -13,4 +13,11 @@ public interface IMangoJobEngineSyncService {
     void deleteDefinition(MangoJobDefinitionEntity definition);
 
     void trigger(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance, String batchNo);
+
+    void trigger(MangoJobDefinitionEntity definition,
+                 MangoJobInstanceEntity instance,
+                 String batchNo,
+                 String paramValue);
+
+    void refreshInstance(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance);
 }

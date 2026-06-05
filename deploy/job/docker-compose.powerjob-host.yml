@@ -1,0 +1,30 @@
+services:
+  powerjob-mysql:
+    network_mode: host
+    ports: []
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --port=${POWERJOB_MYSQL_PORT:-33306}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -P ${POWERJOB_MYSQL_PORT:-33306} -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+  powerjob-server:
+    network_mode: host
+    ports: []
+    depends_on:
+      powerjob-mysql:
+        condition: service_healthy
+    environment:
+      PARAMS: >-
+        --spring.profiles.active=product
+        --spring.datasource.core.driver-class-name=com.mysql.cj.jdbc.Driver
+        --spring.datasource.core.jdbc-url=jdbc:mysql://127.0.0.1:${POWERJOB_MYSQL_PORT:-33306}/${POWERJOB_DB_NAME:-mango_job}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        --spring.datasource.core.username=${POWERJOB_DB_USERNAME:-powerjob}
+        --spring.datasource.core.password=${POWERJOB_DB_PASSWORD:-powerjob}
+        --oms.storage.dfs.mysql_series.driver=com.mysql.cj.jdbc.Driver
+        --oms.storage.dfs.mysql_series.url=jdbc:mysql://127.0.0.1:${POWERJOB_MYSQL_PORT:-33306}/${POWERJOB_DB_NAME:-mango_job}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        --oms.storage.dfs.mysql_series.username=${POWERJOB_DB_USERNAME:-powerjob}
+        --oms.storage.dfs.mysql_series.password=${POWERJOB_DB_PASSWORD:-powerjob}
+        --oms.storage.dfs.mysql_series.auto_create_table=true
+        --oms.auth.openapi.enable=false

@@ -4,6 +4,7 @@ import tech.powerjob.client.PowerJobClient;
 import tech.powerjob.client.ClientConfig;
 import tech.powerjob.common.request.http.RunJobRequest;
 import tech.powerjob.common.request.http.SaveJobInfoRequest;
+import tech.powerjob.common.response.InstanceInfoDTO;
 import tech.powerjob.common.response.PowerResultDTO;
 import tech.powerjob.common.response.ResultDTO;
 
@@ -48,6 +49,11 @@ public class PowerJobClientOperations implements IPowerJobClientOperations {
     @Override
     public PowerResultDTO<Long> runJob(RunJobRequest request) {
         return client().runJob(request);
+    }
+
+    @Override
+    public ResultDTO<InstanceInfoDTO> fetchInstanceInfo(Long instanceId) {
+        return client().fetchInstanceInfo(instanceId);
     }
 
     @Override

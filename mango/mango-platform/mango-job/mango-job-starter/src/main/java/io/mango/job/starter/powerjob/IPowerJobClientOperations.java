@@ -2,6 +2,7 @@ package io.mango.job.starter.powerjob;
 
 import tech.powerjob.common.request.http.RunJobRequest;
 import tech.powerjob.common.request.http.SaveJobInfoRequest;
+import tech.powerjob.common.response.InstanceInfoDTO;
 import tech.powerjob.common.response.PowerResultDTO;
 import tech.powerjob.common.response.ResultDTO;
 
@@ -19,6 +20,8 @@ public interface IPowerJobClientOperations {
     ResultDTO<Void> deleteJob(Long jobId);
 
     PowerResultDTO<Long> runJob(RunJobRequest request);
+
+    ResultDTO<InstanceInfoDTO> fetchInstanceInfo(Long instanceId);
 
     ResultDTO<?> fetchAllJob();
 }

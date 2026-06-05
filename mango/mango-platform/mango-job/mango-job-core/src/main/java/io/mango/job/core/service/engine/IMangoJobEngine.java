@@ -37,6 +37,16 @@ public interface IMangoJobEngine {
     MangoJobEngineResult trigger(MangoJobTriggerRequest request);
 
     /**
+     * 刷新引擎侧实例运行状态。
+     *
+     * @param request 实例请求
+     * @return 实例状态结果
+     */
+    default MangoJobEngineResult refreshInstance(MangoJobTriggerRequest request) {
+        return MangoJobEngineResult.success();
+    }
+
+    /**
      * 检查引擎健康状态。
      *
      * @return 健康检查结果

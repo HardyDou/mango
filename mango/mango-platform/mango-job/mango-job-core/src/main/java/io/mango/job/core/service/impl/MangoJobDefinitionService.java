@@ -40,6 +40,10 @@ import java.util.UUID;
 @Service
 public class MangoJobDefinitionService implements IMangoJobDefinitionService {
 
+    private static final long MIN_FIXED_RATE_INTERVAL_MILLIS = 1000L;
+
+    private static final long MAX_FIXED_RATE_INTERVAL_MILLIS = 120000L;
+
     private final MangoJobDefinitionMapper mapper;
 
     private final MangoJobInstanceMapper instanceMapper;
@@ -179,7 +183,7 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
             instance.setTriggerBatchNo(batchNo);
             instanceMapper.insert(instance);
 
-            engineSyncService.trigger(definition, instance, batchNo);
+            engineSyncService.trigger(definition, instance, batchNo, command.getParamValue());
             writeExecutionLogIndex(definition, instance);
             writeOperationLog(definition, instance.getId(), "TRIGGER_DEFINITION", "SUCCESS", batchNo, null);
             return instance.getId();
@@ -234,8 +238,26 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
         if (scheduleType != JobScheduleType.MANUAL) {
             Require.notBlank(command.getScheduleExpression(), "调度表达式不能为空");
         }
+        validateScheduleExpression(scheduleType, command.getScheduleExpression());
         if (command.getTimeoutSeconds() != null) {
             Require.isTrue(command.getTimeoutSeconds() > 0, "执行超时必须大于0");
+        }
+    }
+
+    private void validateScheduleExpression(JobScheduleType scheduleType, String scheduleExpression) {
+        if (scheduleType != JobScheduleType.FIXED_RATE) {
+            return;
+        }
+        String expression = MangoJobSupport.trimToNull(scheduleExpression);
+        Require.notBlank(expression, "固定频率调度表达式不能为空");
+        try {
+            long intervalMillis = Long.parseLong(expression);
+            Require.isTrue(intervalMillis >= MIN_FIXED_RATE_INTERVAL_MILLIS,
+                    "固定频率调度表达式单位为毫秒，最小值为1000");
+            Require.isTrue(intervalMillis < MAX_FIXED_RATE_INTERVAL_MILLIS,
+                    "固定频率调度表达式单位为毫秒，必须小于120000");
+        } catch (NumberFormatException ex) {
+            Require.fail(400, "固定频率调度表达式必须为毫秒数");
         }
     }
 

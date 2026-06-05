@@ -224,6 +224,34 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getTotal()).isZero();
     }
 
+    @Test
+    void definitionService_shouldRejectTooSmallFixedRateExpression() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-4", "trace-4", "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(203L, "tenant-b", "job-admin", "test", "user", "tenant", 203L, "internal-admin"));
+
+        SaveMangoJobDefinitionCommand command = definitionCommand("sync-fixed-rate");
+        command.setScheduleType(JobScheduleType.FIXED_RATE.name());
+        command.setScheduleExpression("300");
+
+        assertThatThrownBy(() -> jobDefinitionService.createDefinition(command))
+                .hasMessageContaining("固定频率调度表达式单位为毫秒，最小值为1000");
+        assertThat(rowCount("job", "mango_job_definition")).isZero();
+    }
+
+    @Test
+    void definitionService_shouldRejectTooLargeFixedRateExpression() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-5", "trace-5", "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(204L, "tenant-b", "job-admin", "test", "user", "tenant", 204L, "internal-admin"));
+
+        SaveMangoJobDefinitionCommand command = definitionCommand("sync-fixed-rate-large");
+        command.setScheduleType(JobScheduleType.FIXED_RATE.name());
+        command.setScheduleExpression("120000");
+
+        assertThatThrownBy(() -> jobDefinitionService.createDefinition(command))
+                .hasMessageContaining("固定频率调度表达式单位为毫秒，必须小于120000");
+        assertThat(rowCount("job", "mango_job_definition")).isZero();
+    }
+
     @AfterEach
     void tearDown() {
         MangoContextHolder.clear();
@@ -349,9 +377,10 @@ class MangoJobMultiDataSourceIntegrationTest {
                                               MangoJobWorkerSnapshotMapper workerSnapshotMapper,
                                               MangoJobDefinitionMapper definitionMapper,
                                               IMangoJobHandlerRegistry handlerRegistry,
-                                              MangoJobDataSourceRouter dataSourceRouter) {
+                                              MangoJobDataSourceRouter dataSourceRouter,
+                                              IMangoJobEngineSyncService engineSyncService) {
             return new MangoJobQueryService(instanceMapper, logIndexMapper, workerSnapshotMapper, definitionMapper,
-                    handlerRegistry, dataSourceRouter);
+                    handlerRegistry, dataSourceRouter, engineSyncService);
         }
 
         @Bean

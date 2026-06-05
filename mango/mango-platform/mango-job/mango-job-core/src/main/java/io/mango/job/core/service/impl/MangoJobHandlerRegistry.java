@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 当前应用内 Job 处理器注册表。
@@ -21,6 +22,8 @@ import java.util.Map;
 public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
 
     private final Map<String, MangoJobHandlerVO> handlers = new LinkedHashMap<>();
+
+    private final Map<String, MangoJobHandler> handlerBeans = new LinkedHashMap<>();
 
     public MangoJobHandlerRegistry(ObjectProvider<MangoJobHandler> provider) {
         provider.orderedStream().forEach(this::register);
@@ -43,13 +46,23 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
         vo.setJobType(JobType.BUILTIN.name());
         vo.setConcurrent(Boolean.TRUE);
         handlers.put(key, vo);
+        handlerBeans.put(handlerName, handler);
     }
 
     @Override
     public synchronized List<MangoJobHandlerVO> listHandlers() {
         return handlers.values().stream()
                 .sorted(Comparator.comparing(MangoJobHandlerVO::getAppCode)
-                        .thenComparing(MangoJobHandlerVO::getHandlerName))
+                .thenComparing(MangoJobHandlerVO::getHandlerName))
                 .toList();
+    }
+
+    @Override
+    public synchronized Optional<MangoJobHandler> findHandler(String handlerName) {
+        String normalized = MangoJobSupport.trimToNull(handlerName);
+        if (normalized == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(handlerBeans.get(normalized));
     }
 }

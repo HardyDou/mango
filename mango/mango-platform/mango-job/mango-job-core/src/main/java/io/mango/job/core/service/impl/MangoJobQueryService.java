@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.enums.JobEngineType;
+import io.mango.job.api.enums.JobInstanceStatus;
 import io.mango.job.api.enums.JobSyncStatus;
 import io.mango.job.api.query.MangoJobInstancePageQuery;
 import io.mango.job.api.query.MangoJobLogPageQuery;
@@ -24,6 +25,7 @@ import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import io.mango.job.core.service.IMangoJobHandlerRegistry;
 import io.mango.job.core.service.IMangoJobQueryService;
+import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -48,18 +50,22 @@ public class MangoJobQueryService implements IMangoJobQueryService {
 
     private final MangoJobDataSourceRouter dataSourceRouter;
 
+    private final IMangoJobEngineSyncService engineSyncService;
+
     public MangoJobQueryService(MangoJobInstanceMapper instanceMapper,
                                 MangoJobLogIndexMapper logIndexMapper,
                                 MangoJobWorkerSnapshotMapper workerSnapshotMapper,
                                 MangoJobDefinitionMapper definitionMapper,
                                 IMangoJobHandlerRegistry handlerRegistry,
-                                MangoJobDataSourceRouter dataSourceRouter) {
+                                MangoJobDataSourceRouter dataSourceRouter,
+                                IMangoJobEngineSyncService engineSyncService) {
         this.instanceMapper = instanceMapper;
         this.logIndexMapper = logIndexMapper;
         this.workerSnapshotMapper = workerSnapshotMapper;
         this.definitionMapper = definitionMapper;
         this.handlerRegistry = handlerRegistry;
         this.dataSourceRouter = dataSourceRouter;
+        this.engineSyncService = engineSyncService;
     }
 
     @Override
@@ -69,6 +75,7 @@ public class MangoJobQueryService implements IMangoJobQueryService {
             IPage<MangoJobInstanceEntity> page = instanceMapper.selectPage(
                     new Page<>(resolved.getPage(), resolved.getSize()),
                     instanceWrapper(resolved));
+            refreshRunningInstances(page.getRecords());
             return PageResult.of(page.getRecords().stream().map(MangoJobSupport::toInstanceVO).toList(),
                     page.getTotal(), page.getCurrent(), page.getSize());
         });
@@ -167,5 +174,22 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                 .eq(MangoJobDefinitionEntity::getTenantId, tenantId)
                 .eq(MangoJobDefinitionEntity::getEngineType, engineType.name())
                 .eq(MangoJobDefinitionEntity::getSyncStatus, syncStatus.name()));
+    }
+
+    private void refreshRunningInstances(List<MangoJobInstanceEntity> records) {
+        records.stream()
+                .filter(this::needsRefresh)
+                .forEach(instance -> {
+                    MangoJobDefinitionEntity definition = definitionMapper.selectById(instance.getJobId());
+                    if (definition != null && MangoJobSupport.currentTenantId().equals(definition.getTenantId())) {
+                        engineSyncService.refreshInstance(definition, instance);
+                    }
+                });
+    }
+
+    private boolean needsRefresh(MangoJobInstanceEntity instance) {
+        return StringUtils.hasText(instance.getEngineInstanceId())
+                && (JobInstanceStatus.WAITING.name().equals(instance.getStatus())
+                || JobInstanceStatus.RUNNING.name().equals(instance.getStatus()));
     }
 }

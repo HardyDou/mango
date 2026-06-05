@@ -17,4 +17,6 @@ public class MangoJobTriggerRequest {
     private MangoJobInstanceEntity instance;
 
     private String batchNo;
+
+    private String paramValue;
 }

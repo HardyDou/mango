@@ -1,0 +1,34 @@
+mango:
+  persistence:
+    datasources:
+      primary:
+        primary: true
+        url: ${MANGO_DB_URL}
+        username: ${MANGO_DB_USERNAME}
+        password: ${MANGO_DB_PASSWORD}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+      job:
+        url: ${MANGO_JOB_DB_URL}
+        username: ${MANGO_JOB_DB_USERNAME}
+        password: ${MANGO_JOB_DB_PASSWORD}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    modules:
+      mango-job:
+        datasource: job
+  job:
+    enabled: true
+    powerjob:
+      enabled: true
+      app-id: ${POWERJOB_APP_ID:}
+      app-name: ${POWERJOB_APP_NAME:mango-job}
+      password: ${POWERJOB_APP_PASSWORD}
+      server-addresses:
+        - ${POWERJOB_SERVER_ADDRESS:127.0.0.1:7700}
+      worker:
+        enabled: true
+        app-name: ${POWERJOB_APP_NAME:mango-job}
+        server-addresses:
+          - ${POWERJOB_SERVER_ADDRESS:127.0.0.1:7700}
+        protocol: HTTP
+        port: ${POWERJOB_WORKER_PORT:27777}
+        allow-lazy-connect-server: ${POWERJOB_WORKER_LAZY_CONNECT:false}
