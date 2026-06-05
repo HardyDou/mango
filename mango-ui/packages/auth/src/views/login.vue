@@ -216,6 +216,11 @@ const accountTenantResolvedKey = ref('');
 const accountTenantPendingKey = ref('');
 let accountTenantPendingPromise: Promise<boolean> | undefined;
 
+interface WecomCallbackState {
+  tenantId?: string;
+  channelConfigId?: string;
+}
+
 const selectedTenant = computed(() => {
   return tenantOptions.value.find((tenant) => tenant.tenantId === form.tenantId);
 });
@@ -228,10 +233,102 @@ const wecomQrUrl = computed(() => {
     appid: config.corpId,
     agentid: String(config.agentId),
     redirect_uri: config.redirectUri,
-    state: `tenant:${form.tenantId || ''}`,
+    state: buildWecomState(config),
   });
   return `https://open.work.weixin.qq.com/wwopen/sso/qrConnect?${params.toString()}`;
 });
+
+function base64UrlEncode(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return window.btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function base64UrlDecode(value: string) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+  const binary = window.atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function buildWecomState(config: WecomLoginConfig) {
+  const state = {
+    t: String(form.tenantId || ''),
+    c: config.channelConfigId == null ? '' : String(config.channelConfigId),
+  };
+  return `mwc.${base64UrlEncode(JSON.stringify(state))}`;
+}
+
+function parseWecomState(rawState: string | null): WecomCallbackState {
+  if (!rawState) {
+    return {};
+  }
+  if (rawState.startsWith('tenant:')) {
+    return { tenantId: rawState.slice('tenant:'.length) || undefined };
+  }
+  const statePrefix = rawState.startsWith('mango-wecom.')
+    ? 'mango-wecom.'
+    : 'mwc.';
+  if (!rawState.startsWith(statePrefix)) {
+    return {};
+  }
+  try {
+    const decoded = JSON.parse(base64UrlDecode(rawState.slice(statePrefix.length)));
+    return {
+      tenantId: decoded?.t ? String(decoded.t) : undefined,
+      channelConfigId: decoded?.c ? String(decoded.c) : undefined,
+    };
+  } catch (error) {
+    console.warn('解析企业微信登录 state 失败:', error);
+    return {};
+  }
+}
+
+function readWecomCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const hashQueryStart = window.location.hash.indexOf('?');
+  if (hashQueryStart >= 0) {
+    const hashParams = new URLSearchParams(window.location.hash.slice(hashQueryStart + 1));
+    hashParams.forEach((value, key) => {
+      if (!params.has(key)) {
+        params.set(key, value);
+      }
+    });
+  }
+  const code = params.get('code')?.trim() || '';
+  const state = params.get('state');
+  return {
+    code,
+    state: parseWecomState(state),
+    hasCallbackParams: Boolean(code || state),
+  };
+}
+
+function removeParams(search: string, names: string[]) {
+  const params = new URLSearchParams(search);
+  names.forEach((name) => params.delete(name));
+  const next = params.toString();
+  return next ? `?${next}` : '';
+}
+
+function clearWecomCallbackUrl() {
+  const url = new URL(window.location.href);
+  url.search = removeParams(url.search, ['code', 'state']);
+  const hashQueryStart = url.hash.indexOf('?');
+  if (hashQueryStart >= 0) {
+    const hashPath = url.hash.slice(0, hashQueryStart);
+    const hashSearch = removeParams(url.hash.slice(hashQueryStart), ['code', 'state']);
+    url.hash = `${hashPath}${hashSearch}`;
+  }
+  window.history.replaceState(window.history.state, document.title, `${url.pathname}${url.search}${url.hash}`);
+}
 
 const loadLoginTenants = async () => {
   tenantLoading.value = true;
@@ -313,12 +410,20 @@ const refreshAccountTenants = async (strict = false) => {
 };
 
 onMounted(() => {
-  void loadLoginTenants();
-  const code = new URLSearchParams(window.location.search).get('code');
-  if (code) {
-    wecomCode.value = code;
-    wecomDialogVisible.value = true;
-  }
+  void (async () => {
+    const callback = readWecomCallback();
+    if (callback.state.tenantId) {
+      form.tenantId = callback.state.tenantId;
+    }
+    if (callback.hasCallbackParams) {
+      clearWecomCallbackUrl();
+    }
+
+    await loadLoginTenants();
+    if (callback.code) {
+      await handleWecomCallback(callback.code, callback.state);
+    }
+  })();
 });
 
 function persistLoginResult(res: any, fallback: Record<string, any>) {
@@ -370,6 +475,10 @@ async function handleWecomLogin() {
     ElMessage.warning('请输入企业微信授权 code');
     return;
   }
+  if (!form.tenantId) {
+    ElMessage.warning('企业微信回调缺少机构信息，请重新扫码');
+    return;
+  }
   wecomLoading.value = true;
   try {
     const loginData = {
@@ -394,6 +503,41 @@ async function handleWecomLogin() {
   } finally {
     wecomLoading.value = false;
   }
+}
+
+async function handleWecomCallback(code: string, state: WecomCallbackState) {
+  wecomCode.value = code;
+  if (!state.tenantId) {
+    wecomDialogVisible.value = true;
+    ElMessage.warning('企业微信回调缺少机构信息，请重新扫码');
+    return;
+  }
+  if (state.tenantId) {
+    form.tenantId = state.tenantId;
+  }
+  if (!form.tenantId) {
+    wecomDialogVisible.value = true;
+    ElMessage.warning('企业微信回调缺少机构信息，请重新选择机构后登录');
+    return;
+  }
+  if (tenantOptions.value.length > 0 && !tenantOptions.value.some((tenant) => tenant.tenantId === form.tenantId)) {
+    wecomDialogVisible.value = true;
+    ElMessage.warning('企业微信回调机构不可用，请重新选择机构后登录');
+    return;
+  }
+
+  wecomLoginConfig.value = state.channelConfigId
+    ? { channelConfigId: state.channelConfigId }
+    : undefined;
+  if (!wecomLoginConfig.value?.channelConfigId) {
+    try {
+      wecomLoginConfig.value = await getWecomLoginConfig(form.tenantId);
+    } catch (error) {
+      console.warn('恢复企业微信扫码登录配置失败:', error);
+    }
+  }
+  wecomDialogVisible.value = true;
+  await handleWecomLogin();
 }
 
 // 登录处理
