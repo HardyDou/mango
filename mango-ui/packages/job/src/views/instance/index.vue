@@ -261,7 +261,12 @@ async function syncRows() {
   syncing.value = true;
   errorMessage.value = '';
   try {
-    await jobApi.syncInstances(query);
+    await jobApi.syncInstances({
+      jobId: query.jobId,
+      triggerTimeStart: query.triggerTimeStart,
+      triggerTimeEnd: query.triggerTimeEnd,
+      size: query.pageSize,
+    });
     await loadRows();
   } catch (error: unknown) {
     errorMessage.value = requestErrorMessage(error, '执行实例同步失败');

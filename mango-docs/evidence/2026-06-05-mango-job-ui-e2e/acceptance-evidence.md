@@ -23,31 +23,30 @@
 ## 3. 关键运行数据
 
 - 示例 Job：`mango_job_example_manual_builtin`
-- 最新触发批次：`e2e-job-batch-1780736483992`
-- 最新任务 ID：手动任务 `2063184429314854914`，每分钟任务 `2063184433400107010`
-- 最新实例 ID：手动实例 `2063184470238679042`，每分钟实例 `2063184745930280961`、`2063184810581282818`
-- 最新执行日志 ID：手动日志 `2063184470561640449`，每分钟日志 `2063184745947058178`、`2063184810614837250`
-- Mango `engineJobId`：手动任务 `129`、Cron 任务 `130`、固定频率任务 `131`、每分钟任务 `132`
+- 最新触发批次：`e2e-job-batch-1780748099754`
+- 最新任务 ID：手动任务 `2063233150706634754`，每分钟任务 `2063233153529401346`
+- 最新实例 ID：手动实例 `2063233190175035394`，每分钟实例 `2063233453053038593`、`2063233453103370241`
+- 最新执行日志 ID：手动日志 `2063233190435082241`，每分钟日志 `2063233453069815810`、`2063233453111758849`
+- Mango `engineJobId`：手动任务 `139`、Cron 任务 `140`、固定频率任务 `141`、每分钟任务 `142`
 - 每分钟任务：`mango_job_example_every_minute_cron_probe`，Mango `scheduleType=CRON`、`scheduleExpression=0 */1 * * * ?`、`status=ENABLED`、`syncStatus=SYNCED`；E2E 会先调用 `/api/job/instances/sync`，再断言至少两次调度实例已进入 `SUCCESS`。
-- Mango `engineInstanceId`：手动实例 `943552659921567808`，每分钟实例 `943552706985852992`、`943552958824448064`
-- PowerJob `instance_info.status`：`5`
-- PowerJob `instance_info.result`：`Mango Job runtime probe executed`
+- Mango `engineInstanceId`：手动实例 `943601379845341248`，每分钟实例 `943601509206065216`、`943601382965903424`
+- 执行结果：Mango 日志详情接口返回 `Mango Job runtime probe executed`，实例状态为 `SUCCESS`。
 - PowerJob `task_tracker_address`：`192.168.31.200:27777`
-- 后台日志位置：`mango-job://jobs/2063184429314854914/instances/2063184470238679042`
-- 执行日志：`powerjob_files.name=oms-943552659921567808.log`，包含 `Mango Job handler message`、`Mango Job handler output`、`Mango Job runtime probe System.out` 和 `Mango Job runtime probe logger`；归档内容中无额外 `[logger]` 段，logger 行按后台 console 原样归入执行日志。
+- 后台日志位置：`mango-job://jobs/2063233150706634754/instances/2063233190175035394`
+- 执行日志：通过 `/api/job/logs/detail` 读取 PowerJob 原生日志归档内容，包含 `Mango Job handler message`、`Mango Job handler output`、`Mango Job runtime probe System.out` 和 `Mango Job runtime probe logger`；归档内容中无额外 `[logger]` 段，logger 行按后台 console 原样归入执行日志。
 - 说明：本轮已启用真实 PowerJob Server 和 Mango 进程内 Worker，示例任务通过 `mangoPowerJobProcessor` 派发到 `mangoJobRuntimeProbeHandler` 并执行成功，Mango 侧实例状态为 `SUCCESS`。
 
 ## 4. 截图清单
 
 | 截图 | 覆盖功能点 | 核心验收内容 | 结论 |
 |---|---|---|---|
-| `00-definition-create-manual-schedule.png` | 新增任务 | 手动调度、处理器、超时、并发策略、错过策略、参数 Schema、默认参数、重试策略均可配置 | PASS |
+| `00-definition-create-manual-schedule.png` | 新增任务 | 手动调度、处理器、超时、并发策略、错过策略、参数 Schema、默认参数结构化表单、重试策略均可配置 | PASS |
 | `01-definition-list-frequency.png` | 任务定义列表 | 调度列可见，展示 Cron `0 */5 * * * ?`、每 1 分钟固定频率 `60000`、手动三类频次 | PASS |
 | `02-definition-more-filters.png` | 更多筛选 | 低频筛选项按需展开，包含任务类型、调度类型、引擎 | PASS |
 | `03-definition-edit-cron-schedule.png` | 编辑 Cron 任务 | 调度类型为 Cron，调度表达式为 `0 */5 * * * ?`，超时和策略可见 | PASS |
 | `04-definition-edit-fixed-rate-schedule.png` | 编辑每分钟任务 | 调度类型为固定频率，调度表达式为 `60000`，任务名称明确为每分钟执行一次 | PASS |
 | `05-definition-status-enabled.png` | 状态流转 | 示例手动任务暂停后重新启用，列表显示已启用并可触发 | PASS |
-| `06-trigger-dialog-frequency-manual.png` | 手动触发 | 批次号和触发参数可配置，手动任务频次通过触发弹窗执行 | PASS |
+| `06-trigger-dialog-frequency-manual.png` | 手动触发 | 批次号和触发参数结构化表单可配置，手动任务频次通过触发弹窗执行 | PASS |
 | `07-instance-filtered-trigger-batch.png` | 执行实例 | 按任务 ID 和批次号过滤后，能看到刚触发的实例记录 | PASS |
 | `08-execution-log-index.png` | 执行实例日志入口 | 执行实例行内日志按钮可打开日志详情，截图保留对应实例行 | PASS |
 | `08b-execution-log-detail.png` | 日志详情 | 详情抽屉统一展示执行日志，日志内容包含 handler message、handler output、System.out、logger 与触发参数 | PASS |
@@ -69,10 +68,10 @@
 | 台账 ID | 页面/接口 | 功能点 | 测试数据 | 关键断言 | UI/交互检查 | console/network 结果 | 截图/trace/日志 | 结论 |
 |---|---|---|---|---|---|---|---|---|
 | JOB-UI-001 | 任务定义 / `/api/job/definitions/page` | 列表、搜索、调度频次展示 | `mango_job_example_` | 三条示例任务回显；Cron、每 1 分钟固定频率、手动调度均在调度列可见 | 搜索区紧凑展示，更多筛选默认收起且可展开 | Job API 无 4xx/5xx；console error 为空 | `01-definition-list-frequency.png`、`02-definition-more-filters.png` | PASS |
-| JOB-UI-002 | 任务定义新增/编辑 | 频次和执行配置 | Cron `0 */5 * * * ?`、每 1 分钟固定频率 `60000`、手动空表达式 | 新增和编辑弹窗展示调度类型、调度表达式、超时、并发、错过、参数和重试配置；每分钟任务名称明确 | 弹窗分为基本信息、执行配置、参数配置；保存按钮可用 | Job API 无 4xx/5xx；console error 为空 | `00-definition-create-manual-schedule.png`、`03-definition-edit-cron-schedule.png`、`04-definition-edit-fixed-rate-schedule.png` | PASS |
-| JOB-E2E-001 | `/api/job/definitions/trigger` + `/api/job/instances/page` | 示例 Job 触发并产生实例 | `e2e-job-batch-1780736483992` | 触发接口成功；实例接口包含同一批次号、`MANUAL` 触发类型、`engineInstanceId=943552659921567808` 和 `SUCCESS` 状态 | 触发弹窗可输入批次号和触发参数；实例页可按批次号过滤 | Job API 无 4xx/5xx；console error 为空 | `06-trigger-dialog-frequency-manual.png`、`07-instance-filtered-trigger-batch.png` | PASS |
-| JOB-E2E-002 | `/api/job/logs/page`、`/api/job/logs/detail` | 后台执行日志索引和日志详情可见 | `jobId=2063184429314854914`、`instanceId=2063184470238679042` | 日志接口返回一条 POWERJOB 日志索引，`engineInstanceId=943552659921567808`；详情接口返回可查看的统一执行日志，内容包含 `Mango Job handler message`、`Mango Job handler output`、`Mango Job runtime probe System.out`、`Mango Job runtime probe logger` 和 `powerjob-runtime`；PowerJob 归档无额外 `[logger]` 段 | 实例行可直接打开日志抽屉；详情统一展示执行日志；无独立执行日志菜单 | Job API 无 4xx/5xx；console error 为空 | `08-execution-log-index.png`、`08b-execution-log-detail.png` | PASS |
-| JOB-E2E-003 | `/api/job/instances/sync` + `/api/job/instances/page` + `/api/job/logs/detail` | 每 1 分钟调度实例和日志可见 | `mango_job_example_every_minute_cron_probe`、`0 */1 * * * ?` | 同步接口成功；实例接口至少返回两个 `SCHEDULED`、`SUCCESS`、带 `engineInstanceId` 的实例，最新两次为 `943552706985852992`、`943552958824448064`；调度实例日志详情可读取 PowerJob 原生归档内容 | 实例页可按任务名称下拉筛选；调度实例行内日志按钮可打开详情抽屉 | Job API 无 4xx/5xx；console error 为空 | `08c-scheduled-every-minute-instance.png`、`08d-scheduled-every-minute-log-detail.png` | PASS |
+| JOB-UI-002 | 任务定义新增/编辑 | 频次、执行配置和结构化参数 | Cron `0 */5 * * * ?`、每 1 分钟固定频率 `60000`、手动空表达式；参数字段 `来源`、`批处理数量`、`试运行` | 新增和编辑弹窗展示调度类型、调度表达式、超时、并发、错过、参数 Schema、结构化参数表单和重试配置；每分钟任务名称明确 | 弹窗分为基本信息、执行配置、参数配置；保存按钮可用；默认参数由 Schema 渲染表单并提交为 JSON | Job API 无 4xx/5xx；console error 为空 | `00-definition-create-manual-schedule.png`、`03-definition-edit-cron-schedule.png`、`04-definition-edit-fixed-rate-schedule.png` | PASS |
+| JOB-E2E-001 | `/api/job/definitions/trigger` + `/api/job/instances/page` | 示例 Job 触发并产生实例 | `e2e-job-batch-1780748099754` | 触发接口成功；实例接口包含同一批次号、`MANUAL` 触发类型、`engineInstanceId=943601379845341248` 和 `SUCCESS` 状态 | 触发弹窗可输入批次号；触发参数由 Schema 渲染为 `来源`、`断言标记` 表单；实例页可按批次号过滤 | Job API 无 4xx/5xx；console error 为空 | `06-trigger-dialog-frequency-manual.png`、`07-instance-filtered-trigger-batch.png` | PASS |
+| JOB-E2E-002 | `/api/job/logs/page`、`/api/job/logs/detail` | 后台执行日志索引和日志详情可见 | `jobId=2063233150706634754`、`instanceId=2063233190175035394` | 日志接口返回一条 POWERJOB 日志索引，`engineInstanceId=943601379845341248`；详情接口返回可查看的统一执行日志，内容包含 `Mango Job handler message`、`Mango Job handler output`、`Mango Job runtime probe System.out`、`Mango Job runtime probe logger` 和 `powerjob-runtime`；PowerJob 归档无额外 `[logger]` 段 | 实例行可直接打开日志抽屉；详情统一展示执行日志；无独立执行日志菜单 | Job API 无 4xx/5xx；console error 为空 | `08-execution-log-index.png`、`08b-execution-log-detail.png` | PASS |
+| JOB-E2E-003 | `/api/job/instances/sync` + `/api/job/instances/page` + `/api/job/logs/detail` | 每 1 分钟调度实例和日志可见 | `mango_job_example_every_minute_cron_probe`、`0 */1 * * * ?` | 同步接口成功；实例接口至少返回两个 `SCHEDULED`、`SUCCESS`、带 `engineInstanceId` 的实例，最新两次为 `943601509206065216`、`943601382965903424`；调度实例日志详情可读取 PowerJob 原生归档内容 | 实例页可按任务名称下拉筛选；调度实例行内日志按钮可打开详情抽屉 | Job API 无 4xx/5xx；console error 为空 | `08c-scheduled-every-minute-instance.png`、`08d-scheduled-every-minute-log-detail.png` | PASS |
 | JOB-E2E-004 | 任务定义 CRUD 和状态流转 | 新增、编辑、暂停、启用、删除 | `mango_job_e2e_tmp_<timestamp>` | 临时任务创建为草稿，编辑后名称更新；示例任务可暂停再启用；临时任务可删除 | 状态操作和删除均有确认反馈；删除后列表不再出现临时任务 | Job API 无 4xx/5xx；console error 为空 | `05-definition-status-enabled.png`、`09-definition-delete-confirm.png` | PASS |
 | JOB-E2E-005 | 执行实例、Worker、引擎状态 | Job 下全部管理页真实 API 访问 | 菜单逐个进入 | URL 和 heading 正确；`.job-panel` 可见；Worker 表格包含 `:27777` 地址和在线状态；无 401、403、拒绝访问、路由加载失败、加载失败文案；执行日志菜单不可见 | 搜索型页面 toolbar 高度小于 190px；非搜索页主内容可见 | Job API 无 4xx/5xx；console error 为空 | `10-job-instance.png`、`10-job-worker.png`、`10-job-engine.png` | PASS |
 

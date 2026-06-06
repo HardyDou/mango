@@ -223,6 +223,13 @@ public interface MangoJobHandler {
 | `engine_job_id` | 引擎任务标识。 |
 | `sync_status` | `PENDING`、`SYNCED`、`FAILED`，表示 Mango 与引擎侧同步状态。 |
 
+参数配置说明：
+
+- `param_schema` 使用 JSON Schema 的对象型子集描述参数字段，首轮 UI 支持 `string`、`number`、`integer`、`boolean`、`enum`、`date`、`date-time`、`default`、`required`、`minimum`、`maximum`。
+- 任务定义默认参数和手动触发参数由 Mango UI 根据 `param_schema` 渲染结构化表单，业务用户不需要直接编辑 JSON。
+- `param_value` 仍按 JSON 字符串保存和传输，作为引擎无关的 Mango 参数契约；UI 保留 JSON 高级模式，用于补充 Schema 未覆盖字段或排查参数问题。
+- 表单模式编辑时不得丢弃 `param_schema` 未声明但已存在于 `param_value` 的扩展字段。
+
 唯一约束和索引：
 
 - `uk_job_tenant_app_code`：`tenant_id`、`app_code`、`job_code` 唯一。
@@ -554,6 +561,7 @@ UI 原则：
 - 后端菜单 `component` 必须能命中页面注册表。
 - 单体、Shell、微前端形态下菜单、权限和页面一致。
 - 不显示 PowerJob 原生页面 iframe 作为正式交付。
+- 参数配置区域优先展示结构化表单，JSON Schema 和 JSON 高级模式保留给开发者、运维和复杂参数场景。
 
 ## 15. 权限和租户
 

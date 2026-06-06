@@ -196,7 +196,12 @@
           <el-input v-model="form.paramSchema" type="textarea" :rows="4" placeholder="JSON Schema，可为空" />
         </el-form-item>
         <el-form-item label="默认参数">
-          <el-input v-model="form.paramValue" type="textarea" :rows="4" placeholder="JSON，可为空" />
+          <JobParamEditor
+            ref="defaultParamEditorRef"
+            v-model="form.paramValue"
+            :schema-text="form.paramSchema"
+            placeholder="默认参数 JSON，可为空"
+          />
         </el-form-item>
         <el-form-item label="重试策略">
           <el-input v-model="form.retryPolicy" type="textarea" :rows="3" placeholder="JSON，可为空" />
@@ -217,7 +222,13 @@
           <el-input v-model="triggerForm.triggerBatchNo" clearable placeholder="为空时由服务端生成" />
         </el-form-item>
         <el-form-item label="触发参数">
-          <el-input v-model="triggerForm.paramValue" type="textarea" :rows="5" placeholder="JSON，可为空" />
+          <JobParamEditor
+            ref="triggerParamEditorRef"
+            v-model="triggerForm.paramValue"
+            :schema-text="triggerTarget?.paramSchema || ''"
+            :rows="5"
+            placeholder="触发参数 JSON，可为空"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -248,6 +259,7 @@ import {
   type SaveJobDefinitionPayload,
 } from '../../api/job';
 import '../job-admin.css';
+import JobParamEditor from './JobParamEditor.vue';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -260,6 +272,8 @@ const editorVisible = ref(false);
 const triggerVisible = ref(false);
 const triggerTarget = ref<JobDefinition>();
 const formRef = ref<FormInstance>();
+const defaultParamEditorRef = ref<InstanceType<typeof JobParamEditor>>();
+const triggerParamEditorRef = ref<InstanceType<typeof JobParamEditor>>();
 
 const query = reactive<JobDefinitionQuery>({
   pageNum: 1,
@@ -356,6 +370,10 @@ function openEditor(row?: JobDefinition) {
 
 async function saveRow() {
   await formRef.value?.validate();
+  if (!defaultParamEditorRef.value?.validate()) {
+    ElMessage.error('请检查默认参数配置');
+    return;
+  }
   saving.value = true;
   try {
     if (form.id) {
@@ -413,6 +431,10 @@ function openTrigger(row: JobDefinition) {
 
 async function triggerRow() {
   if (!triggerTarget.value?.id) {
+    return;
+  }
+  if (!triggerParamEditorRef.value?.validate()) {
+    ElMessage.error('请检查触发参数配置');
     return;
   }
   triggering.value = true;

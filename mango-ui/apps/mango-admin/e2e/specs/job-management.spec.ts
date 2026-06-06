@@ -117,7 +117,14 @@ const exampleJobs: SaveJobDefinitionPayload[] = [
     jobType: 'BUILTIN',
     scheduleType: 'MANUAL',
     handlerName: runtimeProbeHandler,
-    paramSchema: '{ "type": "object", "properties": { "source": { "type": "string" } } }',
+    paramSchema: JSON.stringify({
+      type: 'object',
+      properties: {
+        source: { type: 'string', title: '来源' },
+        assert: { type: 'string', title: '断言标记' },
+      },
+      required: ['source'],
+    }),
     paramValue: '{ "source": "acceptance", "kind": "manual" }',
     concurrencyPolicy: 'SERIAL',
     misfireStrategy: 'IGNORE',
@@ -462,6 +469,22 @@ async function selectFormOption(page: Page, dialog: ReturnType<Page['getByRole']
   await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: option }).first().click();
 }
 
+function paramEditor(dialog: Locator) {
+  return dialog.locator('.job-param-editor').first();
+}
+
+async function fillParamTextField(editor: Locator, label: string, value: string) {
+  const field = editor.locator('.el-form-item', { hasText: label }).first();
+  await expect(field).toBeVisible();
+  await field.getByRole('textbox').fill(value);
+}
+
+async function fillParamNumberField(editor: Locator, label: string, value: string) {
+  const field = editor.locator('.el-form-item', { hasText: label }).first();
+  await expect(field).toBeVisible();
+  await field.locator('input').fill(value);
+}
+
 async function createDraftByUi(page: Page, jobCode: string) {
   await page.getByRole('button', { name: '新增任务' }).click();
   const dialog = page.getByRole('dialog', { name: '新增任务' });
@@ -480,8 +503,20 @@ async function createDraftByUi(page: Page, jobCode: string) {
   await dialog.getByLabel('超时秒数').fill('180');
   await dialog.getByLabel('并发策略').fill('SERIAL');
   await dialog.getByLabel('错过策略').fill('IGNORE');
-  await dialog.getByLabel('参数 Schema').fill('{ "type": "object" }');
-  await dialog.getByLabel('默认参数').fill('{ "source": "e2e" }');
+  await dialog.getByLabel('参数 Schema').fill(JSON.stringify({
+    type: 'object',
+    properties: {
+      source: { type: 'string', title: '来源', description: '任务来源标记' },
+      batchSize: { type: 'integer', title: '批处理数量', default: 100, minimum: 1, maximum: 500 },
+      dryRun: { type: 'boolean', title: '试运行', default: false },
+    },
+    required: ['source'],
+  }, null, 2));
+  const editor = paramEditor(dialog);
+  await expect(editor.getByText('按参数 Schema 生成表单')).toBeVisible();
+  await fillParamTextField(editor, '来源', 'e2e');
+  await fillParamNumberField(editor, '批处理数量', '128');
+  await expect(editor.locator('.el-form-item', { hasText: '试运行' }).first()).toBeVisible();
   await dialog.getByLabel('重试策略').fill('{ "maxRetryTimes": 1 }');
   await saveEvidenceScreenshot(page, '00-definition-create-manual-schedule.png', dialog);
 
@@ -646,7 +681,10 @@ test.describe('Job 管理 E2E', () => {
     const triggerDialog = page.getByRole('dialog', { name: '手动触发' });
     await expect(triggerDialog).toBeVisible();
     await triggerDialog.getByLabel('批次号').fill(triggerBatchNo);
-    await triggerDialog.getByLabel('触发参数').fill('{ "source": "e2e-trigger", "assert": "powerjob-runtime" }');
+    const triggerParamEditor = paramEditor(triggerDialog);
+    await expect(triggerParamEditor.getByText('按参数 Schema 生成表单')).toBeVisible();
+    await fillParamTextField(triggerParamEditor, '来源', 'e2e-trigger');
+    await fillParamTextField(triggerParamEditor, '断言标记', 'powerjob-runtime');
     await saveEvidenceScreenshot(page, '06-trigger-dialog-frequency-manual.png', triggerDialog);
     await triggerDialog.getByRole('button', { name: '触发' }).click();
     await triggerResponsePromise;
