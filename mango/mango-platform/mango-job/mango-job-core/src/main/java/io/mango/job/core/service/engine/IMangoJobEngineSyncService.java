@@ -20,4 +20,9 @@ public interface IMangoJobEngineSyncService {
                  String paramValue);
 
     void refreshInstance(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance);
+
+    void importScheduledInstances(MangoJobDefinitionEntity definition,
+                                  java.time.LocalDateTime triggerTimeStart,
+                                  java.time.LocalDateTime triggerTimeEnd,
+                                  int limit);
 }

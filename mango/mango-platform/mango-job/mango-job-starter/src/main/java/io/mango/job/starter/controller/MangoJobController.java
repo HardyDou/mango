@@ -6,6 +6,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.MangoJobApi;
 import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.query.MangoJobDefinitionPageQuery;
@@ -16,6 +17,7 @@ import io.mango.job.api.vo.MangoJobDefinitionVO;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
 import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.api.vo.MangoJobInstanceVO;
+import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.api.vo.MangoJobLogIndexVO;
 import io.mango.job.api.vo.MangoJobWorkerSnapshotVO;
 import io.mango.job.core.service.IMangoJobDefinitionService;
@@ -126,11 +128,30 @@ public class MangoJobController implements MangoJobApi {
     }
 
     @Override
+    @PostMapping("/instances/sync")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:instance:sync")
+    @Operation(summary = "同步任务实例", description = "从调度引擎同步已产生的实例并刷新运行中实例状态")
+    public R<Boolean> syncInstances(@Valid @RequestBody SyncMangoJobInstanceCommand command) {
+        return R.ok(queryService.syncInstances(command));
+    }
+
+    @Override
     @GetMapping("/logs/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:log:list")
     @Operation(summary = "分页查询任务日志索引", description = "分页查询任务执行日志索引")
     public R<PageResult<MangoJobLogIndexVO>> pageLogs(@Valid @ParameterObject MangoJobLogPageQuery query) {
         return R.ok(queryService.pageLogs(query));
+    }
+
+    @Override
+    @GetMapping("/logs/detail")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "job:log:list")
+    @Operation(summary = "查询任务日志详情", description = "按日志索引 ID 查询任务输出和引擎实例日志详情")
+    public R<MangoJobLogDetailVO> detailLog(
+            @Parameter(description = "日志索引 ID", required = true)
+            @NotNull(message = "日志 ID 不能为空")
+            @RequestParam Long id) {
+        return R.ok(queryService.detailLog(id));
     }
 
     @Override

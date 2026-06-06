@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.MangoJobApi;
 import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.query.MangoJobDefinitionPageQuery;
@@ -14,6 +15,7 @@ import io.mango.job.api.vo.MangoJobDefinitionVO;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
 import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.api.vo.MangoJobInstanceVO;
+import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.api.vo.MangoJobLogIndexVO;
 import io.mango.job.api.vo.MangoJobWorkerSnapshotVO;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -66,8 +68,16 @@ public interface MangoJobFeignClient extends MangoJobApi {
     R<PageResult<MangoJobInstanceVO>> pageInstances(@SpringQueryMap MangoJobInstancePageQuery query);
 
     @Override
+    @PostMapping("/instances/sync")
+    R<Boolean> syncInstances(@RequestBody SyncMangoJobInstanceCommand command);
+
+    @Override
     @GetMapping("/logs/page")
     R<PageResult<MangoJobLogIndexVO>> pageLogs(@SpringQueryMap MangoJobLogPageQuery query);
+
+    @Override
+    @GetMapping("/logs/detail")
+    R<MangoJobLogDetailVO> detailLog(@RequestParam Long id);
 
     @Override
     @GetMapping("/workers/page")

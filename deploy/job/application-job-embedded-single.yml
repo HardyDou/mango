@@ -12,11 +12,18 @@ mango:
         username: ${MANGO_JOB_DB_USERNAME:${MANGO_DB_USERNAME}}
         password: ${MANGO_JOB_DB_PASSWORD:${MANGO_DB_PASSWORD}}
         driver-class-name: com.mysql.cj.jdbc.Driver
+      powerjob:
+        url: ${POWERJOB_DB_URL:${MANGO_JOB_DB_URL:${MANGO_DB_URL}}}
+        username: ${POWERJOB_DB_USERNAME:${MANGO_JOB_DB_USERNAME:${MANGO_DB_USERNAME}}}
+        password: ${POWERJOB_DB_PASSWORD:${MANGO_JOB_DB_PASSWORD:${MANGO_DB_PASSWORD}}}
+        driver-class-name: com.mysql.cj.jdbc.Driver
     modules:
       mango-job:
         datasource: job
   job:
     enabled: true
+    probe:
+      enabled: ${MANGO_JOB_PROBE_ENABLED:false}
     powerjob:
       enabled: true
       app-id: ${POWERJOB_APP_ID:}
@@ -24,6 +31,9 @@ mango:
       password: ${POWERJOB_APP_PASSWORD}
       server-addresses:
         - ${POWERJOB_SERVER_ADDRESS:127.0.0.1:7700}
+      native-log:
+        enabled: ${POWERJOB_NATIVE_LOG_ENABLED:false}
+        datasource: ${POWERJOB_NATIVE_LOG_DATASOURCE:powerjob}
       worker:
         enabled: true
         app-name: ${POWERJOB_APP_NAME:mango-job}
@@ -32,3 +42,4 @@ mango:
         protocol: HTTP
         port: ${POWERJOB_WORKER_PORT:27777}
         allow-lazy-connect-server: ${POWERJOB_WORKER_LAZY_CONNECT:false}
+        capture-console-output: ${POWERJOB_WORKER_CAPTURE_CONSOLE_OUTPUT:false}

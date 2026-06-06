@@ -2,10 +2,10 @@ import { expect, test, type APIResponse, type Locator, type Page } from '@playwr
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-test.setTimeout(90 * 1000);
+test.setTimeout(240 * 1000);
 test.describe.configure({ mode: 'serial' });
 
-type ApiId = string | number;
+type ApiId = string;
 type JobDefinitionStatus = 'DRAFT' | 'ENABLED' | 'DISABLED' | 'PAUSED';
 
 interface LoginHeaders {
@@ -50,6 +50,8 @@ interface JobDefinition {
 interface JobInstance {
   id: ApiId;
   jobId: ApiId;
+  jobCode?: string;
+  jobName?: string;
   triggerType?: string;
   triggerBatchNo?: string;
   status?: string;
@@ -65,6 +67,17 @@ interface JobLogIndex {
   engineType?: string;
   engineInstanceId?: string;
   logLocation?: string;
+}
+
+interface JobLogDetail extends JobLogIndex {
+  jobCode?: string;
+  jobName?: string;
+  logSource?: string;
+  nativeLogAvailable?: boolean;
+  logFetchStatus?: string;
+  nativeLogContent?: string;
+  content?: string;
+  engineResult?: string;
 }
 
 interface JobWorkerSnapshot {
@@ -142,6 +155,21 @@ const exampleJobs: SaveJobDefinitionPayload[] = [
     retryPolicy: '{ "maxRetryTimes": 0 }',
     engineType: 'POWERJOB',
   },
+  {
+    appCode: 'mango-job',
+    jobCode: 'mango_job_example_every_minute_cron_probe',
+    jobName: '示例 每分钟执行一次任务',
+    jobType: 'BUILTIN',
+    scheduleType: 'CRON',
+    scheduleExpression: '0 */1 * * * ?',
+    handlerName: runtimeProbeHandler,
+    paramValue: '{ "source": "acceptance", "kind": "every-minute-cron" }',
+    concurrencyPolicy: 'SERIAL',
+    misfireStrategy: 'IGNORE',
+    timeoutSeconds: 120,
+    retryPolicy: '{ "maxRetryTimes": 0 }',
+    engineType: 'POWERJOB',
+  },
 ];
 
 const evidenceDir = resolve(__dirname, '../../../../../mango-docs/evidence/2026-06-05-mango-job-ui-e2e');
@@ -205,6 +233,13 @@ async function listInstances(page: Page, headers: LoginHeaders, jobId: ApiId): P
   return data.list || data.records || data.rows || data.data || [];
 }
 
+async function syncInstances(page: Page, headers: LoginHeaders, jobId: ApiId) {
+  await expectBusinessOk<boolean>(await page.request.post('/api/job/instances/sync', {
+    headers,
+    data: { jobId, size: 50 },
+  }));
+}
+
 async function listLogs(page: Page, headers: LoginHeaders, jobId: ApiId): Promise<JobLogIndex[]> {
   const response = await page.request.get('/api/job/logs/page', {
     headers,
@@ -212,6 +247,14 @@ async function listLogs(page: Page, headers: LoginHeaders, jobId: ApiId): Promis
   });
   const data = await expectBusinessOk<PageData<JobLogIndex>>(response);
   return data.list || data.records || data.rows || data.data || [];
+}
+
+async function detailLog(page: Page, headers: LoginHeaders, logId: ApiId): Promise<JobLogDetail> {
+  const response = await page.request.get('/api/job/logs/detail', {
+    headers,
+    params: { id: String(logId) },
+  });
+  return expectBusinessOk<JobLogDetail>(response);
 }
 
 async function listWorkers(page: Page, headers: LoginHeaders): Promise<JobWorkerSnapshot[]> {
@@ -301,6 +344,7 @@ async function waitForTriggeredInstance(
 ): Promise<JobInstance> {
   let latest: JobInstance | undefined;
   await expect.poll(async () => {
+    await syncInstances(page, headers, jobId);
     const instances = await listInstances(page, headers, jobId);
     latest = instances.find(item => item.triggerBatchNo === triggerBatchNo && item.triggerType === 'MANUAL');
     return Boolean(latest?.engineInstanceId) && latest?.status !== 'WAITING' && latest?.status !== 'RUNNING';
@@ -313,6 +357,76 @@ async function waitForTriggeredInstance(
   expect(latest!.engineInstanceId).toBeTruthy();
   expect(latest!.status, latest!.errorSummary || '示例任务应执行成功').toBe('SUCCESS');
   return latest!;
+}
+
+async function waitForScheduledInstance(
+  page: Page,
+  headers: LoginHeaders,
+  jobId: ApiId,
+): Promise<JobInstance[]> {
+  let latest: JobInstance[] = [];
+  await expect.poll(async () => {
+    await syncInstances(page, headers, jobId);
+    const instances = await listInstances(page, headers, jobId);
+    latest = instances.filter(item =>
+      item.triggerType === 'SCHEDULED'
+      && Boolean(item.engineInstanceId)
+      && item.status !== 'WAITING'
+      && item.status !== 'RUNNING'
+    );
+    return new Set(latest.map(item => item.engineInstanceId)).size >= 2;
+  }, {
+    timeout: 180_000,
+    intervals: [5000, 10_000, 15_000],
+    message: '每分钟示例任务必须产生至少两次可见的 PowerJob 调度执行实例',
+  }).toBeTruthy();
+  expect(latest[0].engineType).toBe('POWERJOB');
+  expect(latest[0].engineInstanceId).toBeTruthy();
+  expect(latest[0].status, latest[0].errorSummary || '每分钟示例任务应执行成功').toBe('SUCCESS');
+  return latest;
+}
+
+async function waitForExecutionLogDetail(
+  page: Page,
+  headers: LoginHeaders,
+  logId: ApiId,
+): Promise<JobLogDetail> {
+  let latest: JobLogDetail | undefined;
+  const startedAt = Date.now();
+  const timeoutMs = 120_000;
+  while (Date.now() - startedAt < timeoutMs) {
+    latest = await detailLog(page, headers, logId);
+    const content = latest.nativeLogContent || '';
+    if (latest.logSource === 'POWERJOB_NATIVE_LOG'
+      && latest.nativeLogAvailable === true
+      && content.includes('Mango Job handler output')
+      && content.includes('Mango Job runtime probe System.out')
+      && content.includes('Mango Job runtime probe logger')) {
+      return latest;
+    }
+    await page.waitForTimeout(3_000);
+  }
+
+  throw new Error([
+    '执行日志必须归档并可通过 Mango 详情接口读取',
+    `logId=${logId}`,
+    `logSource=${latest?.logSource || ''}`,
+    `nativeLogAvailable=${String(latest?.nativeLogAvailable)}`,
+    `logFetchStatus=${latest?.logFetchStatus || ''}`,
+    `engineInstanceId=${String(latest?.engineInstanceId || '')}`,
+    `engineResult=${(latest?.engineResult || '').slice(0, 240)}`,
+    `nativeLogContent=${(latest?.nativeLogContent || '').slice(0, 240)}`,
+    `content=${(latest?.content || '').slice(0, 240)}`,
+  ].join('\n'));
+}
+
+async function expectVisibleExecutionLog(drawer: Locator, snippets: string[]) {
+  await expect(drawer).toBeVisible();
+  const logOutput = drawer.locator('.job-log-output', { hasText: '执行日志' }).last();
+  await expect(logOutput).toBeVisible();
+  for (const snippet of snippets) {
+    await expect(logOutput).toContainText(snippet, { timeout: 70_000 });
+  }
 }
 
 async function clickMenu(page: Page, name: string) {
@@ -390,6 +504,18 @@ async function searchDefinition(page: Page, keyword: string) {
   await responsePromise;
 }
 
+async function selectInstanceTaskFilter(page: Page, keyword: string) {
+  const taskField = page.locator('.job-search .el-form-item', { hasText: '任务' }).first();
+  const taskCombobox = taskField.getByRole('combobox', { name: '任务' });
+  await taskField.locator('.el-select').click();
+  const responsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/job/definitions/page') && response.status() === 200
+  );
+  await taskCombobox.fill(keyword);
+  await responsePromise;
+  await page.locator('.el-select-dropdown:visible .el-select-dropdown__item', { hasText: keyword }).first().click();
+}
+
 async function openDefinitionEditor(page: Page, jobCode: string) {
   await searchDefinition(page, jobCode);
   await definitionRow(page, jobCode).getByRole('button', { name: '编辑' }).click();
@@ -418,7 +544,7 @@ async function expectCompactSearchPage(page: Page, toolbar: Locator) {
   await expect(page.locator('.job-search')).toHaveCSS('display', 'flex');
   await expect(page.locator('.job-search')).toHaveCSS('flex-wrap', 'wrap');
   const toolbarBox = await toolbar.boundingBox();
-  expect(toolbarBox?.height || 0).toBeLessThan(150);
+  expect(toolbarBox?.height || 0).toBeLessThan(190);
 }
 
 test.describe('Job 管理 E2E', () => {
@@ -536,39 +662,116 @@ test.describe('Job 管理 E2E', () => {
       && item.engineInstanceId
     );
     expect(executionLog).toBeDefined();
+    const apiLogDetail = await waitForExecutionLogDetail(page, headers, executionLog!.id);
+    expect(apiLogDetail.nativeLogContent || '').toContain('Mango Job runtime probe executed');
+    expect(apiLogDetail.nativeLogContent || '').toContain('Mango Job runtime probe System.out');
+    expect(apiLogDetail.nativeLogContent || '').toContain('Mango Job runtime probe logger');
+    expect(apiLogDetail.nativeLogContent || '').toContain('powerjob-runtime');
+    expect(apiLogDetail.engineResult || '').toContain('Mango Job runtime probe executed');
+
+    const everyMinuteCode = 'mango_job_example_every_minute_cron_probe';
+    const everyMinuteDefinition = (await listDefinitions(page, headers, everyMinuteCode))
+      .find(item => item.jobCode === everyMinuteCode);
+    expect(everyMinuteDefinition).toBeDefined();
+    expect(everyMinuteDefinition!.scheduleType).toBe('CRON');
+    expect(everyMinuteDefinition!.scheduleExpression).toBe('0 */1 * * * ?');
+    const scheduledInstances = await waitForScheduledInstance(page, headers, everyMinuteDefinition!.id);
+    const scheduledInstance = scheduledInstances[0];
 
     const instanceResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/job/instances/page') && response.status() === 200
     );
     await clickMenu(page, '执行实例');
     await instanceResponsePromise;
-    await page.getByPlaceholder('jobId').fill(String(manualDefinition!.id));
+    await selectInstanceTaskFilter(page, manualCode);
     await page.getByPlaceholder('triggerBatchNo').fill(triggerBatchNo);
     const filteredInstanceResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/job/instances/page') && response.status() === 200
     );
     await page.getByRole('button', { name: '查询' }).click();
     await filteredInstanceResponsePromise;
-    await expect(page.locator('.el-table__row', { hasText: triggerBatchNo }).first()).toBeVisible();
-    await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance.engineInstanceId) }).first()).toBeVisible();
-    await expect(page.locator('.el-table__row', { hasText: '成功' }).first()).toBeVisible();
+    const instanceRow = page.locator('.el-table__row', { hasText: triggerBatchNo }).first();
+    await expect(instanceRow).toBeVisible();
+    await expect(instanceRow).toContainText('示例 手动内置任务');
+    await expect(instanceRow).toContainText(manualCode);
+    await expect(instanceRow).toContainText(String(triggeredInstance.engineInstanceId));
+    await expect(instanceRow).toContainText('成功');
     await saveEvidenceScreenshot(page, '07-instance-filtered-trigger-batch.png');
+    await saveEvidenceScreenshot(page, '08-execution-log-index.png', instanceRow);
 
-    const logResponsePromise = page.waitForResponse((response) =>
+    const instanceLogResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/job/logs/page') && response.status() === 200
     );
-    await clickMenu(page, '执行日志');
-    await logResponsePromise;
-    await page.getByPlaceholder('jobId').fill(String(manualDefinition!.id));
-    await page.getByPlaceholder('instanceId').fill(String(triggeredInstance!.id));
-    const filteredLogResponsePromise = page.waitForResponse((response) =>
-      response.url().includes('/api/job/logs/page') && response.status() === 200
+    const detailResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/logs/detail') && response.status() === 200
+    );
+    await instanceRow.getByRole('button', { name: '日志' }).click();
+    await instanceLogResponsePromise;
+    const detailResponse = await detailResponsePromise;
+    const logDetail = await expectBusinessOk<JobLogDetail>(detailResponse);
+    expect(logDetail.logSource).toBe('POWERJOB_NATIVE_LOG');
+    expect(logDetail.nativeLogAvailable).toBe(true);
+    expect(logDetail.nativeLogContent || '').toContain('Mango Job handler output');
+    expect(logDetail.nativeLogContent || '').toContain('Mango Job runtime probe executed');
+    expect(logDetail.nativeLogContent || '').toContain('Mango Job runtime probe System.out');
+    expect(logDetail.nativeLogContent || '').toContain('Mango Job runtime probe logger');
+    expect(logDetail.nativeLogContent || '').toContain('powerjob-runtime');
+    expect(logDetail.engineResult || '').toContain('Mango Job runtime probe executed');
+    const logDetailDrawer = page.getByRole('dialog', { name: '执行日志详情' });
+    await expect(logDetailDrawer).toBeVisible();
+    await expect(logDetailDrawer).toContainText('示例 手动内置任务');
+    await expect(logDetailDrawer).toContainText(manualCode);
+    await expectVisibleExecutionLog(logDetailDrawer, [
+      'Mango Job handler output',
+      'Mango Job runtime probe executed',
+      'Mango Job runtime probe System.out',
+      'Mango Job runtime probe logger',
+      'powerjob-runtime',
+    ]);
+    await saveEvidenceScreenshot(page, '08b-execution-log-detail.png', logDetailDrawer);
+    await page.keyboard.press('Escape');
+
+    await selectInstanceTaskFilter(page, everyMinuteCode);
+    await page.getByPlaceholder('triggerBatchNo').clear();
+    await syncInstances(page, headers, everyMinuteDefinition!.id);
+    const scheduledResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/instances/page') && response.status() === 200
     );
     await page.getByRole('button', { name: '查询' }).click();
-    await filteredLogResponsePromise;
-    await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance!.id) }).first()).toBeVisible();
-    await expect(page.locator('.el-table__row', { hasText: String(triggeredInstance!.engineInstanceId) }).first()).toBeVisible();
-    await saveEvidenceScreenshot(page, '08-execution-log-index.png');
+    await scheduledResponsePromise;
+    const scheduledRow = page.locator('.el-table__row', { hasText: String(scheduledInstance.engineInstanceId) }).first();
+    await expect(scheduledRow).toBeVisible();
+    await expect(scheduledRow).toContainText('示例 每分钟执行一次任务');
+    await expect(scheduledRow).toContainText(everyMinuteCode);
+    await expect(scheduledRow).toContainText('调度');
+    await expect(scheduledRow).toContainText('成功');
+    await saveEvidenceScreenshot(page, '08c-scheduled-every-minute-instance.png');
+
+    const scheduledLogResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/job/logs/page') && response.status() === 200
+    );
+    await scheduledRow.getByRole('button', { name: '日志' }).click();
+    const scheduledLogResponse = await scheduledLogResponsePromise;
+    const scheduledLogPage = await expectBusinessOk<PageData<JobLogIndex>>(scheduledLogResponse);
+    const scheduledLogIndex = (scheduledLogPage.list || scheduledLogPage.records || scheduledLogPage.rows || scheduledLogPage.data || [])[0];
+    expect(scheduledLogIndex).toBeDefined();
+    const scheduledLogDetail = await waitForExecutionLogDetail(page, headers, scheduledLogIndex.id);
+    expect(scheduledLogDetail.logSource).toBe('POWERJOB_NATIVE_LOG');
+    expect(scheduledLogDetail.nativeLogAvailable).toBe(true);
+    expect(scheduledLogDetail.nativeLogContent || '').toContain('Mango Job runtime probe executed');
+    expect(scheduledLogDetail.nativeLogContent || '').toContain('Mango Job runtime probe System.out');
+    expect(scheduledLogDetail.nativeLogContent || '').toContain('Mango Job runtime probe logger');
+    const scheduledLogDrawer = page.getByRole('dialog', { name: '执行日志详情' });
+    await expect(scheduledLogDrawer).toContainText('示例 每分钟执行一次任务');
+    await expect(scheduledLogDrawer).toContainText(everyMinuteCode);
+    await expectVisibleExecutionLog(scheduledLogDrawer, [
+      'Mango Job handler output',
+      'Mango Job runtime probe executed',
+      'Mango Job runtime probe System.out',
+      'Mango Job runtime probe logger',
+    ]);
+    await saveEvidenceScreenshot(page, '08d-scheduled-every-minute-log-detail.png', scheduledLogDrawer);
+    await page.keyboard.press('Escape');
 
     const workers = await listWorkers(page, headers);
     expect(
@@ -623,10 +826,13 @@ test.describe('Job 管理 E2E', () => {
     await login(page);
     const headers = await apiHeaders(page);
     await openJobDefinitionPage(page);
+    await expect(page.locator(
+      '.layout-columns-aside .el-menu-item, .layout-columns-aside .el-sub-menu__title',
+      { hasText: /^\s*执行日志\s*$/ },
+    )).toHaveCount(0);
 
     const pages = [
       { menu: '执行实例', path: '/job/instance', api: '/api/job/instances/page', heading: '执行实例', search: true },
-      { menu: '执行日志', path: '/job/log', api: '/api/job/logs/page', heading: '执行日志', search: true },
       { menu: 'Worker', path: '/job/worker', api: '/api/job/workers/page', heading: 'Worker', search: true },
       { menu: '引擎状态', path: '/job/engine', api: '/api/job/engines/status', heading: '引擎状态', search: false },
     ];

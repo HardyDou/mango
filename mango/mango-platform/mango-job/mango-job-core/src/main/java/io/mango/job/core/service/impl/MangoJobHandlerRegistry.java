@@ -46,7 +46,7 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
         vo.setJobType(JobType.BUILTIN.name());
         vo.setConcurrent(Boolean.TRUE);
         handlers.put(key, vo);
-        handlerBeans.put(handlerName, handler);
+        handlerBeans.put(key, handler);
     }
 
     @Override
@@ -59,10 +59,22 @@ public class MangoJobHandlerRegistry implements IMangoJobHandlerRegistry {
 
     @Override
     public synchronized Optional<MangoJobHandler> findHandler(String handlerName) {
+        return findHandler(MangoContextHolder.appCode(), handlerName);
+    }
+
+    @Override
+    public synchronized Optional<MangoJobHandler> findHandler(String appCode, String handlerName) {
         String normalized = MangoJobSupport.trimToNull(handlerName);
         if (normalized == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(handlerBeans.get(normalized));
+        String normalizedAppCode = MangoJobSupport.trimToNull(appCode);
+        if (normalizedAppCode != null) {
+            MangoJobHandler handler = handlerBeans.get(normalizedAppCode + ":" + normalized);
+            if (handler != null) {
+                return Optional.of(handler);
+            }
+        }
+        return Optional.ofNullable(handlerBeans.get("local:" + normalized));
     }
 }

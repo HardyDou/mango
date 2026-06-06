@@ -3,6 +3,7 @@ package io.mango.job.api;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.query.MangoJobDefinitionPageQuery;
@@ -13,6 +14,7 @@ import io.mango.job.api.vo.MangoJobDefinitionVO;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
 import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.api.vo.MangoJobInstanceVO;
+import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.api.vo.MangoJobLogIndexVO;
 import io.mango.job.api.vo.MangoJobWorkerSnapshotVO;
 import jakarta.validation.Valid;
@@ -43,7 +45,11 @@ public interface MangoJobApi {
 
     R<PageResult<MangoJobInstanceVO>> pageInstances(@Valid MangoJobInstancePageQuery query);
 
+    R<Boolean> syncInstances(@Valid SyncMangoJobInstanceCommand command);
+
     R<PageResult<MangoJobLogIndexVO>> pageLogs(@Valid MangoJobLogPageQuery query);
+
+    R<MangoJobLogDetailVO> detailLog(@NotNull(message = "日志 ID 不能为空") Long id);
 
     R<PageResult<MangoJobWorkerSnapshotVO>> pageWorkers(@Valid MangoJobWorkerPageQuery query);
 

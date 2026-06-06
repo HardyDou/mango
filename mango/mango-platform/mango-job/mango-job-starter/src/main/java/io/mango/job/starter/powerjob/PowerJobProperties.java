@@ -66,6 +66,11 @@ public class PowerJobProperties {
      */
     private Worker worker = new Worker();
 
+    /**
+     * PowerJob 原生日志读取配置。
+     */
+    private NativeLog nativeLog = new NativeLog();
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -154,6 +159,46 @@ public class PowerJobProperties {
         this.worker = worker;
     }
 
+    public NativeLog getNativeLog() {
+        return nativeLog;
+    }
+
+    public void setNativeLog(NativeLog nativeLog) {
+        this.nativeLog = nativeLog;
+    }
+
+    /**
+     * PowerJob 原生日志读取配置。
+     */
+    public static class NativeLog {
+
+        /**
+         * 是否启用 PowerJob 内部表读取。只有 PowerJob 表与 Mango 可访问数据源打通时才开启。
+         */
+        private boolean enabled;
+
+        /**
+         * PowerJob 内部表所在数据源；缺省使用 mango-job 模块数据源。
+         */
+        private String datasource;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getDatasource() {
+            return datasource;
+        }
+
+        public void setDatasource(String datasource) {
+            this.datasource = datasource;
+        }
+    }
+
     /**
      * PowerJob Worker 配置。
      */
@@ -228,6 +273,11 @@ public class PowerJobProperties {
          * 最大追加工作流上下文长度。
          */
         private int maxAppendedWfContextLength = 8192;
+
+        /**
+         * 是否捕获任务线程 System.out/System.err 到 PowerJob OmsLogger。
+         */
+        private boolean captureConsoleOutput;
 
         public boolean isEnabled() {
             return enabled;
@@ -339,6 +389,14 @@ public class PowerJobProperties {
 
         public void setMaxAppendedWfContextLength(int maxAppendedWfContextLength) {
             this.maxAppendedWfContextLength = maxAppendedWfContextLength;
+        }
+
+        public boolean isCaptureConsoleOutput() {
+            return captureConsoleOutput;
+        }
+
+        public void setCaptureConsoleOutput(boolean captureConsoleOutput) {
+            this.captureConsoleOutput = captureConsoleOutput;
         }
     }
 }

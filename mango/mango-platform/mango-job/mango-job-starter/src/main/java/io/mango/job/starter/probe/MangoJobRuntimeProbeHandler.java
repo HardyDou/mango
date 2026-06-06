@@ -3,7 +3,8 @@ package io.mango.job.starter.probe;
 import io.mango.job.api.handler.MangoJobHandleContext;
 import io.mango.job.api.handler.MangoJobHandleResult;
 import io.mango.job.api.handler.MangoJobHandler;
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.net.InetAddress;
@@ -13,10 +14,11 @@ import java.time.LocalDateTime;
 /**
  * Mango Job 运行时探针处理器。
  */
-@Component
 public class MangoJobRuntimeProbeHandler implements MangoJobHandler {
 
     public static final String HANDLER_NAME = "mangoJobRuntimeProbeHandler";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MangoJobRuntimeProbeHandler.class);
 
     @Override
     public String handlerName() {
@@ -26,6 +28,8 @@ public class MangoJobRuntimeProbeHandler implements MangoJobHandler {
     @Override
     public MangoJobHandleResult handle(MangoJobHandleContext context) {
         String result = resultJson(context);
+        System.out.println("Mango Job runtime probe System.out: " + result);
+        LOGGER.info("Mango Job runtime probe logger: {}", result);
         if (shouldFail(context.getParameter())) {
             MangoJobHandleResult failed = MangoJobHandleResult.failed("Mango Job runtime probe failed by parameter");
             failed.setResult(result);

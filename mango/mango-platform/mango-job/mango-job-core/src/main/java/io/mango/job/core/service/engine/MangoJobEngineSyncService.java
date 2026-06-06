@@ -1,17 +1,21 @@
 package io.mango.job.core.service.engine;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobTriggerType;
 import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.enums.JobInstanceStatus;
 import io.mango.job.api.enums.JobSyncStatus;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobEngineMappingEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
+import io.mango.job.core.entity.MangoJobLogIndexEntity;
 import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobEngineMappingMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
+import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -32,17 +36,21 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     private final MangoJobEngineMappingMapper mappingMapper;
 
+    private final MangoJobLogIndexMapper logIndexMapper;
+
     private final MangoJobWorkerSnapshotMapper workerSnapshotMapper;
 
     public MangoJobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
                                      MangoJobDefinitionMapper definitionMapper,
                                      MangoJobInstanceMapper instanceMapper,
                                      MangoJobEngineMappingMapper mappingMapper,
+                                     MangoJobLogIndexMapper logIndexMapper,
                                      MangoJobWorkerSnapshotMapper workerSnapshotMapper) {
         this.engineRegistry = engineRegistry;
         this.definitionMapper = definitionMapper;
         this.instanceMapper = instanceMapper;
         this.mappingMapper = mappingMapper;
+        this.logIndexMapper = logIndexMapper;
         this.workerSnapshotMapper = workerSnapshotMapper;
     }
 
@@ -114,6 +122,85 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
         });
     }
 
+    @Override
+    public void importScheduledInstances(MangoJobDefinitionEntity definition,
+                                         LocalDateTime triggerTimeStart,
+                                         LocalDateTime triggerTimeEnd,
+                                         int limit) {
+        if (!StringUtils.hasText(definition.getEngineJobId())) {
+            return;
+        }
+        engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
+            MangoJobInstanceImportRequest request = new MangoJobInstanceImportRequest();
+            request.setDefinition(definition);
+            request.setTriggerTimeStart(triggerTimeStart);
+            request.setTriggerTimeEnd(triggerTimeEnd);
+            request.setLimit(limit);
+            engine.importInstances(request).stream()
+                    .filter(MangoJobEngineInstanceSnapshot::hasEngineInstanceId)
+                    .forEach(snapshot -> importScheduledInstance(definition, snapshot));
+        });
+    }
+
+    private void importScheduledInstance(MangoJobDefinitionEntity definition,
+                                         MangoJobEngineInstanceSnapshot snapshot) {
+        MangoJobInstanceEntity instance = selectInstanceByEngineId(definition, snapshot.getEngineInstanceId());
+        if (instance == null) {
+            instance = new MangoJobInstanceEntity();
+            instance.setTenantId(definition.getTenantId());
+            instance.setJobId(definition.getId());
+            instance.setTriggerType(JobTriggerType.SCHEDULED.name());
+            instance.setTriggerTime(resolveTime(snapshot.getTriggerTime()));
+            instance.setStatus(resolveStatus(snapshot.getStatus()));
+            instance.setEngineType(definition.getEngineType());
+            instance.setEngineInstanceId(snapshot.getEngineInstanceId());
+            instance.setTraceId(snapshot.getEngineInstanceId());
+            instance.setTriggerBatchNo(snapshot.getTriggerBatchNo());
+            applySnapshot(instance, snapshot);
+            instanceMapper.insert(instance);
+        } else {
+            applySnapshot(instance, snapshot);
+            instanceMapper.updateById(instance);
+        }
+        upsertLogIndex(definition, instance);
+        upsertInstanceMapping(definition, instance, JobSyncStatus.SYNCED.name(), null);
+        upsertWorkerSnapshot(definition, snapshot);
+    }
+
+    private MangoJobInstanceEntity selectInstanceByEngineId(MangoJobDefinitionEntity definition, String engineInstanceId) {
+        return instanceMapper.selectOne(new LambdaQueryWrapper<MangoJobInstanceEntity>()
+                .eq(MangoJobInstanceEntity::getTenantId, definition.getTenantId())
+                .eq(MangoJobInstanceEntity::getEngineType, definition.getEngineType())
+                .eq(MangoJobInstanceEntity::getEngineInstanceId, engineInstanceId)
+                .last("limit 1"));
+    }
+
+    private void applySnapshot(MangoJobInstanceEntity instance, MangoJobEngineInstanceSnapshot snapshot) {
+        if (snapshot.getTriggerTime() != null) {
+            instance.setTriggerTime(snapshot.getTriggerTime());
+        }
+        if (snapshot.getStartTime() != null) {
+            instance.setStartTime(snapshot.getStartTime());
+        }
+        if (snapshot.getEndTime() != null) {
+            instance.setEndTime(snapshot.getEndTime());
+        }
+        if (StringUtils.hasText(snapshot.getStatus())) {
+            instance.setStatus(snapshot.getStatus());
+        }
+        if (snapshot.getDurationMillis() != null) {
+            instance.setDurationMillis(snapshot.getDurationMillis());
+        }
+        if (StringUtils.hasText(snapshot.getErrorSummary())) {
+            instance.setErrorSummary(snapshot.getErrorSummary());
+        } else if (JobInstanceStatus.SUCCESS.name().equals(instance.getStatus())) {
+            instance.setErrorSummary(null);
+        }
+        if (StringUtils.hasText(snapshot.getTriggerBatchNo())) {
+            instance.setTriggerBatchNo(snapshot.getTriggerBatchNo());
+        }
+    }
+
     private void applyDefinitionSyncResult(MangoJobDefinitionEntity definition, MangoJobEngineResult result) {
         if (result.isSuccess()) {
             definition.setEngineAppId(resolve(result.getEngineAppId(), definition.getEngineAppId()));
@@ -141,7 +228,10 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
             return;
         }
         instance.setErrorSummary(result.getErrorSummary());
+        instance.setStatus(JobInstanceStatus.FAILED.name());
+        instance.setEndTime(LocalDateTime.now());
         instanceMapper.updateById(instance);
+        upsertLogIndex(definition, instance);
         insertInstanceMapping(definition, instance, JobSyncStatus.FAILED.name(), result.getErrorSummary());
         Require.fail(500, "触发引擎任务失败：" + result.getErrorSummary());
     }
@@ -171,27 +261,48 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
         if (!StringUtils.hasText(result.getWorkerAddress())) {
             return;
         }
-        MangoJobWorkerSnapshotEntity snapshot = workerSnapshotMapper.selectOne(
-                new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
-                        .eq(MangoJobWorkerSnapshotEntity::getTenantId, definition.getTenantId())
-                        .eq(MangoJobWorkerSnapshotEntity::getAppCode, definition.getAppCode())
-                        .eq(MangoJobWorkerSnapshotEntity::getEngineType, definition.getEngineType())
-                        .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, result.getWorkerAddress()));
-        if (snapshot == null) {
-            snapshot = new MangoJobWorkerSnapshotEntity();
-            snapshot.setTenantId(definition.getTenantId());
-            snapshot.setAppCode(definition.getAppCode());
-            snapshot.setEngineType(definition.getEngineType());
-            snapshot.setWorkerAddress(result.getWorkerAddress());
-            snapshot.setEngineWorkerId(result.getWorkerAddress());
-        }
+        MangoJobWorkerSnapshotEntity snapshot = new MangoJobWorkerSnapshotEntity();
+        snapshot.setTenantId(definition.getTenantId());
+        snapshot.setAppCode(definition.getAppCode());
+        snapshot.setEngineType(definition.getEngineType());
+        snapshot.setWorkerAddress(result.getWorkerAddress());
+        snapshot.setEngineWorkerId(result.getWorkerAddress());
         snapshot.setStatus(JobWorkerStatus.ONLINE.name());
         snapshot.setLastHeartbeatAt(LocalDateTime.now());
-        if (snapshot.getId() == null) {
+        upsertWorkerSnapshot(snapshot);
+    }
+
+    private void upsertWorkerSnapshot(MangoJobDefinitionEntity definition, MangoJobEngineInstanceSnapshot snapshot) {
+        if (!StringUtils.hasText(snapshot.getWorkerAddress())) {
+            return;
+        }
+        MangoJobWorkerSnapshotEntity worker = new MangoJobWorkerSnapshotEntity();
+        worker.setTenantId(definition.getTenantId());
+        worker.setAppCode(definition.getAppCode());
+        worker.setEngineType(definition.getEngineType());
+        worker.setWorkerAddress(snapshot.getWorkerAddress());
+        worker.setEngineWorkerId(snapshot.getWorkerAddress());
+        worker.setStatus(JobWorkerStatus.ONLINE.name());
+        worker.setLastHeartbeatAt(LocalDateTime.now());
+        upsertWorkerSnapshot(worker);
+    }
+
+    private void upsertWorkerSnapshot(MangoJobWorkerSnapshotEntity snapshot) {
+        MangoJobWorkerSnapshotEntity existing = workerSnapshotMapper.selectOne(
+                new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
+                        .eq(MangoJobWorkerSnapshotEntity::getTenantId, snapshot.getTenantId())
+                        .eq(MangoJobWorkerSnapshotEntity::getAppCode, snapshot.getAppCode())
+                        .eq(MangoJobWorkerSnapshotEntity::getEngineType, snapshot.getEngineType())
+                        .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, snapshot.getWorkerAddress())
+                        .last("limit 1"));
+        if (existing == null) {
             workerSnapshotMapper.insert(snapshot);
             return;
         }
-        workerSnapshotMapper.updateById(snapshot);
+        existing.setStatus(snapshot.getStatus());
+        existing.setEngineWorkerId(snapshot.getEngineWorkerId());
+        existing.setLastHeartbeatAt(snapshot.getLastHeartbeatAt());
+        workerSnapshotMapper.updateById(existing);
     }
 
     private void markDefinitionPending(MangoJobDefinitionEntity definition) {
@@ -239,6 +350,75 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
         mapping.setSyncStatus(syncStatus);
         mapping.setSyncError(syncError);
         mappingMapper.insert(mapping);
+    }
+
+    private void upsertInstanceMapping(MangoJobDefinitionEntity definition,
+                                       MangoJobInstanceEntity instance,
+                                       String syncStatus,
+                                       String syncError) {
+        MangoJobEngineMappingEntity mapping = mappingMapper.selectOne(
+                new LambdaQueryWrapper<MangoJobEngineMappingEntity>()
+                        .eq(MangoJobEngineMappingEntity::getTenantId, definition.getTenantId())
+                        .eq(MangoJobEngineMappingEntity::getEngineType, definition.getEngineType())
+                        .eq(MangoJobEngineMappingEntity::getEngineInstanceId, instance.getEngineInstanceId())
+                        .last("limit 1"));
+        if (mapping == null) {
+            mapping = new MangoJobEngineMappingEntity();
+            mapping.setTenantId(definition.getTenantId());
+            mapping.setJobId(definition.getId());
+            mapping.setInstanceId(instance.getId());
+            mapping.setAppCode(definition.getAppCode());
+            mapping.setEngineType(definition.getEngineType());
+            mapping.setEngineAppId(definition.getEngineAppId());
+            mapping.setEngineJobId(definition.getEngineJobId());
+            mapping.setEngineInstanceId(instance.getEngineInstanceId());
+            mapping.setSyncStatus(syncStatus);
+            mapping.setSyncError(syncError);
+            mappingMapper.insert(mapping);
+            return;
+        }
+        mapping.setJobId(definition.getId());
+        mapping.setInstanceId(instance.getId());
+        mapping.setAppCode(definition.getAppCode());
+        mapping.setEngineAppId(definition.getEngineAppId());
+        mapping.setEngineJobId(definition.getEngineJobId());
+        mapping.setSyncStatus(syncStatus);
+        mapping.setSyncError(syncError);
+        mappingMapper.updateById(mapping);
+    }
+
+    private void upsertLogIndex(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance) {
+        MangoJobLogIndexEntity log = logIndexMapper.selectOne(new LambdaQueryWrapper<MangoJobLogIndexEntity>()
+                .eq(MangoJobLogIndexEntity::getTenantId, definition.getTenantId())
+                .eq(MangoJobLogIndexEntity::getInstanceId, instance.getId())
+                .last("limit 1"));
+        if (log == null) {
+            log = new MangoJobLogIndexEntity();
+            log.setId(IdWorker.getId());
+            log.setTenantId(definition.getTenantId());
+            log.setJobId(definition.getId());
+            log.setInstanceId(instance.getId());
+            log.setEngineType(definition.getEngineType());
+            log.setEngineInstanceId(instance.getEngineInstanceId());
+            log.setLogLocation("mango-job://jobs/" + definition.getId() + "/instances/" + instance.getId());
+            log.setReadOffset(0L);
+            log.setErrorSummary(instance.getErrorSummary());
+            log.setLastFetchedAt(LocalDateTime.now());
+            logIndexMapper.insert(log);
+            return;
+        }
+        log.setEngineInstanceId(instance.getEngineInstanceId());
+        log.setErrorSummary(instance.getErrorSummary());
+        log.setLastFetchedAt(LocalDateTime.now());
+        logIndexMapper.updateById(log);
+    }
+
+    private LocalDateTime resolveTime(LocalDateTime time) {
+        return time == null ? LocalDateTime.now() : time;
+    }
+
+    private String resolveStatus(String status) {
+        return StringUtils.hasText(status) ? status : JobInstanceStatus.WAITING.name();
     }
 
     private static String resolve(String preferred, String fallback) {

@@ -166,7 +166,7 @@ mvn -pl mango-platform/mango-job/mango-job-core -am test
 - 手动触发后 Mango 实例记录能关联 PowerJob instance。
 - PowerJob Worker 在线，并通过 `mangoPowerJobProcessor` 执行业务 `MangoJobHandler`。
 - Mango 实例状态不能停留在 `WAITING`，必须能同步为运行中或终态。
-- Mango 执行日志页面能看到 PowerJob 实际执行日志或 Mango 处理器落库日志索引。
+- Mango 执行实例行内日志入口能看到 PowerJob 实际执行日志或 Mango 处理器落库日志索引。
 - PowerJob 异常转换为 Mango 业务异常。
 - 前端和业务 API 不出现 PowerJob 内部模型。
 - 同步失败可查询并重试。
@@ -194,8 +194,8 @@ docker compose -f deploy/job/docker-compose.powerjob.yml up -d
 - 示例任务同步到 PowerJob，取得真实 `engineJobId=3/4/5`。
 - 手动触发示例任务取得真实 `engineInstanceId=943410988542066752`。
 - Mango 实例状态同步为 `SUCCESS`，PowerJob `instance_info.status=5`、`result=Mango Job runtime probe executed`。
-- Mango 执行日志页面可按任务和实例过滤并展示同一 `engineInstanceId`。
-- 前端 E2E 覆盖任务定义、频次配置、触发、执行实例、执行日志、Worker 和引擎状态，截图保存在 `mango-docs/evidence/2026-06-05-mango-job-ui-e2e`。
+- Mango 执行实例行内日志入口可按任务和实例过滤并展示同一 `engineInstanceId`。
+- 前端 E2E 覆盖任务定义、频次配置、触发、执行实例、执行日志详情、Worker 和引擎状态，截图保存在 `mango-docs/evidence/2026-06-05-mango-job-ui-e2e`。
 
 ### Sprint 4：菜单、权限和统一 UI
 
@@ -205,7 +205,7 @@ docker compose -f deploy/job/docker-compose.powerjob.yml up -d
 
 - 增加后台菜单种子。
 - 增加权限码。
-- 增加前端页面：任务定义、执行实例、执行日志、执行器、告警规则、引擎状态。
+- 增加前端页面：任务定义、执行实例、Worker、引擎状态；执行日志作为执行实例行内详情入口。
 - 任务定义表单配置 `MangoJobHandler` 执行动作，Handler 不作为独立菜单。
 - 注册页面组件。
 - 增加 API client。
@@ -325,6 +325,8 @@ mango:
         server-address: http://powerjob-server:7700
         app-name: mango-job
         datasource: job
+        native-log:
+          datasource: job
         access-token: ${POWERJOB_ACCESS_TOKEN}
     worker:
       enabled: true

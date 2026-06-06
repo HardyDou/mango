@@ -5,6 +5,7 @@ import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceContext;
 import io.mango.infra.persistence.starter.datasource.PersistenceModuleDataSourceResolver;
 import io.mango.job.api.command.SaveMangoJobDefinitionCommand;
+import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.enums.JobDefinitionStatus;
@@ -37,9 +38,11 @@ import io.mango.job.core.service.engine.IMangoJobEngine;
 import io.mango.job.core.service.engine.IMangoJobEngineRegistry;
 import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
 import io.mango.job.core.service.engine.MangoJobEngineRegistry;
+import io.mango.job.core.service.engine.MangoJobEngineInstanceSnapshot;
 import io.mango.job.core.service.engine.MangoJobEngineRequest;
 import io.mango.job.core.service.engine.MangoJobEngineResult;
 import io.mango.job.core.service.engine.MangoJobEngineSyncService;
+import io.mango.job.core.service.engine.MangoJobInstanceImportRequest;
 import io.mango.job.core.service.engine.MangoJobTriggerRequest;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.AfterEach;
@@ -170,6 +173,10 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(instanceId).isNotNull();
         assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getList().get(0).getEngineInstanceId())
                 .isEqualTo("80001");
+        assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getList().get(0).getJobCode())
+                .isEqualTo("sync-order");
+        assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getList().get(0).getJobName())
+                .isEqualTo("Sync Order");
 
         MangoJobInstancePageQuery instanceQuery = new MangoJobInstancePageQuery();
         instanceQuery.setJobId(id);
@@ -222,6 +229,79 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getTotal()).isZero();
         assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isZero();
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getTotal()).isZero();
+    }
+
+    @Test
+    void queryService_shouldImportScheduledInstancesOnlyWhenSyncRequested() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-6", "trace-6", "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(205L, "tenant-b", "job-admin", "test", "user", "tenant", 205L, "internal-admin"));
+
+        SaveMangoJobDefinitionCommand command = definitionCommand("sync-scheduled");
+        command.setScheduleType(JobScheduleType.CRON.name());
+        command.setScheduleExpression("0 */1 * * * ?");
+        Long jobId = jobDefinitionService.createDefinition(command);
+        UpdateMangoJobDefinitionStatusCommand statusCommand = new UpdateMangoJobDefinitionStatusCommand();
+        statusCommand.setId(jobId);
+        statusCommand.setStatus(JobDefinitionStatus.ENABLED.name());
+        jobDefinitionService.updateDefinitionStatus(statusCommand);
+
+        MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
+        query.setJobId(jobId);
+        SyncMangoJobInstanceCommand syncCommand = new SyncMangoJobInstanceCommand();
+        syncCommand.setJobId(jobId);
+
+        assertThat(jobQueryService.pageInstances(query).getTotal()).isZero();
+
+        assertThat(jobQueryService.syncInstances(syncCommand)).isTrue();
+
+        assertThat(jobQueryService.pageInstances(query).getList())
+                .singleElement()
+                .satisfies(instance -> {
+                    assertThat(instance.getJobCode()).isEqualTo("sync-scheduled");
+                    assertThat(instance.getJobName()).isEqualTo("Sync sync-scheduled");
+                    assertThat(instance.getTriggerType()).isEqualTo("SCHEDULED");
+                    assertThat(instance.getStatus()).isEqualTo("SUCCESS");
+                    assertThat(instance.getEngineInstanceId()).isEqualTo("81001");
+                });
+        assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isEqualTo(1);
+        assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
+                .singleElement()
+                .extracting("workerAddress")
+                .isEqualTo("127.0.0.1:28888");
+
+        assertThat(jobQueryService.pageInstances(query).getTotal()).isEqualTo(1);
+        assertThat(rowCount("job", "mango_job_instance")).isOne();
+        assertThat(rowCount("job", "mango_job_log_index")).isOne();
+        assertThat(rowCount("job", "mango_job_engine_mapping")).isEqualTo(2);
+    }
+
+    @Test
+    void definitionService_shouldMarkInstanceFailedWhenEngineTriggerFails() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-7", "trace-7", "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(206L, "tenant-b", "job-admin", "test", "user", "tenant", 206L, "internal-admin"));
+
+        Long jobId = jobDefinitionService.createDefinition(definitionCommand("sync-failed-trigger"));
+        UpdateMangoJobDefinitionStatusCommand statusCommand = new UpdateMangoJobDefinitionStatusCommand();
+        statusCommand.setId(jobId);
+        statusCommand.setStatus(JobDefinitionStatus.ENABLED.name());
+        jobDefinitionService.updateDefinitionStatus(statusCommand);
+
+        TriggerMangoJobCommand triggerCommand = new TriggerMangoJobCommand();
+        triggerCommand.setJobId(jobId);
+        triggerCommand.setTriggerBatchNo("fail-trigger");
+
+        assertThatThrownBy(() -> jobDefinitionService.triggerDefinition(triggerCommand))
+                .hasMessageContaining("触发引擎任务失败：powerjob trigger failed");
+
+        MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
+        query.setJobId(jobId);
+        assertThat(jobQueryService.pageInstances(query).getList())
+                .singleElement()
+                .satisfies(instance -> {
+                    assertThat(instance.getStatus()).isEqualTo("FAILED");
+                    assertThat(instance.getErrorSummary()).isEqualTo("powerjob trigger failed");
+                });
+        assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isEqualTo(1);
     }
 
     @Test
@@ -356,9 +436,10 @@ class MangoJobMultiDataSourceIntegrationTest {
                                                         MangoJobDefinitionMapper definitionMapper,
                                                         MangoJobInstanceMapper instanceMapper,
                                                         MangoJobEngineMappingMapper mappingMapper,
+                                                        MangoJobLogIndexMapper logIndexMapper,
                                                         MangoJobWorkerSnapshotMapper workerSnapshotMapper) {
             return new MangoJobEngineSyncService(engineRegistry, definitionMapper, instanceMapper, mappingMapper,
-                    workerSnapshotMapper);
+                    logIndexMapper, workerSnapshotMapper);
         }
 
         @Bean
@@ -368,9 +449,10 @@ class MangoJobMultiDataSourceIntegrationTest {
                                               MangoJobDefinitionMapper definitionMapper,
                                               IMangoJobHandlerRegistry handlerRegistry,
                                               MangoJobDataSourceRouter dataSourceRouter,
-                                              IMangoJobEngineSyncService engineSyncService) {
+                                              IMangoJobEngineSyncService engineSyncService,
+                                              IMangoJobEngineRegistry engineRegistry) {
             return new MangoJobQueryService(instanceMapper, logIndexMapper, workerSnapshotMapper, definitionMapper,
-                    handlerRegistry, dataSourceRouter, engineSyncService);
+                    handlerRegistry, dataSourceRouter, engineSyncService, engineRegistry);
         }
 
         @Bean
@@ -410,6 +492,9 @@ class MangoJobMultiDataSourceIntegrationTest {
 
                 @Override
                 public MangoJobEngineResult trigger(MangoJobTriggerRequest request) {
+                    if ("fail-trigger".equals(request.getBatchNo())) {
+                        return MangoJobEngineResult.failed("powerjob trigger failed");
+                    }
                     return MangoJobEngineResult.triggerSuccess("80001");
                 }
 
@@ -417,6 +502,22 @@ class MangoJobMultiDataSourceIntegrationTest {
                 public MangoJobEngineResult refreshInstance(MangoJobTriggerRequest request) {
                     return MangoJobEngineResult.instanceSuccess("SUCCESS", LocalDateTime.now().minusSeconds(1),
                             LocalDateTime.now(), 1000L, null, "127.0.0.1:27777");
+                }
+
+                @Override
+                public List<MangoJobEngineInstanceSnapshot> importInstances(MangoJobInstanceImportRequest request) {
+                    if (!"90001".equals(request.getDefinition().getEngineJobId())) {
+                        return List.of();
+                    }
+                    MangoJobEngineInstanceSnapshot snapshot = new MangoJobEngineInstanceSnapshot();
+                    snapshot.setEngineInstanceId("81001");
+                    snapshot.setTriggerTime(LocalDateTime.now().minusMinutes(1));
+                    snapshot.setStartTime(LocalDateTime.now().minusMinutes(1));
+                    snapshot.setEndTime(LocalDateTime.now().minusMinutes(1).plusSeconds(1));
+                    snapshot.setDurationMillis(1000L);
+                    snapshot.setStatus("SUCCESS");
+                    snapshot.setWorkerAddress("127.0.0.1:28888");
+                    return List.of(snapshot);
                 }
 
                 @Override

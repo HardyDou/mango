@@ -40,7 +40,7 @@ public class SaveMangoJobDefinitionCommand implements Serializable {
 
     @NotBlank(message = "任务类型不能为空")
     @Size(max = 32, message = "任务类型不能超过32个字符")
-    @Schema(description = "任务类型：BUILTIN、REMOTE_API、HTTP、SCRIPT、ENGINE_NATIVE", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "任务类型：BUILTIN", requiredMode = Schema.RequiredMode.REQUIRED)
     private String jobType;
 
     @NotBlank(message = "调度类型不能为空")
@@ -53,7 +53,7 @@ public class SaveMangoJobDefinitionCommand implements Serializable {
     private String scheduleExpression;
 
     @Size(max = 256, message = "处理器名称不能超过256个字符")
-    @Schema(description = "处理器名称。BUILTIN、REMOTE_API 类型必填")
+    @Schema(description = "处理器名称。BUILTIN 类型必填")
     private String handlerName;
 
     @Schema(description = "参数表单 schema JSON")
@@ -79,6 +79,6 @@ public class SaveMangoJobDefinitionCommand implements Serializable {
 
     @NotNull(message = "引擎类型不能为空")
     @Size(max = 32, message = "引擎类型不能超过32个字符")
-    @Schema(description = "引擎类型：POWERJOB、XXL_JOB、QUARTZ", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "引擎类型：POWERJOB", requiredMode = Schema.RequiredMode.REQUIRED)
     private String engineType;
 }

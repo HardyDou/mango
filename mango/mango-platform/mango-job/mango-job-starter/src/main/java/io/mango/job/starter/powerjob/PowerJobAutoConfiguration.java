@@ -2,6 +2,8 @@ package io.mango.job.starter.powerjob;
 
 import io.mango.job.core.service.engine.IMangoJobEngine;
 import io.mango.job.core.service.IMangoJobHandlerRegistry;
+import io.mango.job.core.service.impl.MangoJobDataSourceRouter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -43,15 +45,38 @@ public class PowerJobAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(name = "powerJobEngineAdapter")
     @ConditionalOnProperty(prefix = "mango.job.powerjob", name = "enabled", havingValue = "true")
-    IMangoJobEngine powerJobEngineAdapter(IPowerJobClientOperations client, PowerJobProperties properties) {
-        return new PowerJobEngineAdapter(client, properties);
+    IMangoJobEngine powerJobEngineAdapter(IPowerJobClientOperations client,
+                                          PowerJobProperties properties,
+                                          ObjectProvider<IPowerJobNativeLogReader> nativeLogReaderProvider,
+                                          ObjectProvider<IPowerJobInstanceReader> instanceReaderProvider) {
+        return new PowerJobEngineAdapter(client, properties, nativeLogReaderProvider.getIfAvailable(),
+                instanceReaderProvider.getIfAvailable());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.job.powerjob.native-log", name = "enabled", havingValue = "true")
+    IPowerJobNativeLogReader powerJobNativeLogReader(PowerJobFileMapper fileMapper,
+                                                     MangoJobDataSourceRouter dataSourceRouter,
+                                                     PowerJobProperties properties) {
+        return new PowerJobDatabaseNativeLogReader(fileMapper, dataSourceRouter, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "mango.job.powerjob.native-log", name = "enabled", havingValue = "true")
+    IPowerJobInstanceReader powerJobInstanceReader(PowerJobInstanceInfoMapper instanceInfoMapper,
+                                                   MangoJobDataSourceRouter dataSourceRouter,
+                                                   PowerJobProperties properties) {
+        return new PowerJobDatabaseInstanceReader(instanceInfoMapper, dataSourceRouter, properties);
     }
 
     @Bean
     @ConditionalOnMissingBean(name = "mangoPowerJobProcessor")
     @ConditionalOnProperty(prefix = "mango.job.powerjob.worker", name = "enabled", havingValue = "true")
-    MangoPowerJobProcessor mangoPowerJobProcessor(IMangoJobHandlerRegistry handlerRegistry) {
-        return new MangoPowerJobProcessor(handlerRegistry);
+    MangoPowerJobProcessor mangoPowerJobProcessor(IMangoJobHandlerRegistry handlerRegistry,
+                                                  PowerJobProperties properties) {
+        return new MangoPowerJobProcessor(handlerRegistry, properties.getWorker().isCaptureConsoleOutput());
     }
 
     @Bean

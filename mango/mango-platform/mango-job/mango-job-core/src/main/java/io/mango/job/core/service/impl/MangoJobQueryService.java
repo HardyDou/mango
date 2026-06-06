@@ -3,9 +3,12 @@ package io.mango.job.core.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.job.api.command.SyncMangoJobInstanceCommand;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobInstanceStatus;
+import io.mango.job.api.enums.JobScheduleType;
 import io.mango.job.api.enums.JobSyncStatus;
 import io.mango.job.api.query.MangoJobInstancePageQuery;
 import io.mango.job.api.query.MangoJobLogPageQuery;
@@ -13,6 +16,7 @@ import io.mango.job.api.query.MangoJobWorkerPageQuery;
 import io.mango.job.api.vo.MangoJobEngineStatusVO;
 import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.api.vo.MangoJobInstanceVO;
+import io.mango.job.api.vo.MangoJobLogDetailVO;
 import io.mango.job.api.vo.MangoJobLogIndexVO;
 import io.mango.job.api.vo.MangoJobWorkerSnapshotVO;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
@@ -25,12 +29,18 @@ import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import io.mango.job.core.service.IMangoJobHandlerRegistry;
 import io.mango.job.core.service.IMangoJobQueryService;
+import io.mango.job.core.service.engine.IMangoJobEngineRegistry;
 import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
+import io.mango.job.core.service.engine.MangoJobLogRequest;
+import io.mango.job.core.service.engine.MangoJobLogResult;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Job 运行态查询服务实现。
@@ -52,13 +62,16 @@ public class MangoJobQueryService implements IMangoJobQueryService {
 
     private final IMangoJobEngineSyncService engineSyncService;
 
+    private final IMangoJobEngineRegistry engineRegistry;
+
     public MangoJobQueryService(MangoJobInstanceMapper instanceMapper,
                                 MangoJobLogIndexMapper logIndexMapper,
                                 MangoJobWorkerSnapshotMapper workerSnapshotMapper,
                                 MangoJobDefinitionMapper definitionMapper,
                                 IMangoJobHandlerRegistry handlerRegistry,
                                 MangoJobDataSourceRouter dataSourceRouter,
-                                IMangoJobEngineSyncService engineSyncService) {
+                                IMangoJobEngineSyncService engineSyncService,
+                                IMangoJobEngineRegistry engineRegistry) {
         this.instanceMapper = instanceMapper;
         this.logIndexMapper = logIndexMapper;
         this.workerSnapshotMapper = workerSnapshotMapper;
@@ -66,6 +79,7 @@ public class MangoJobQueryService implements IMangoJobQueryService {
         this.handlerRegistry = handlerRegistry;
         this.dataSourceRouter = dataSourceRouter;
         this.engineSyncService = engineSyncService;
+        this.engineRegistry = engineRegistry;
     }
 
     @Override
@@ -75,10 +89,36 @@ public class MangoJobQueryService implements IMangoJobQueryService {
             IPage<MangoJobInstanceEntity> page = instanceMapper.selectPage(
                     new Page<>(resolved.getPage(), resolved.getSize()),
                     instanceWrapper(resolved));
-            refreshRunningInstances(page.getRecords());
-            return PageResult.of(page.getRecords().stream().map(MangoJobSupport::toInstanceVO).toList(),
+            Map<Long, MangoJobDefinitionEntity> definitions = selectTenantDefinitions(page.getRecords());
+            return PageResult.of(page.getRecords().stream()
+                            .map(instance -> MangoJobSupport.toInstanceVO(instance, definitions.get(instance.getJobId())))
+                            .toList(),
                     page.getTotal(), page.getCurrent(), page.getSize());
         });
+    }
+
+    @Override
+    public Boolean syncInstances(SyncMangoJobInstanceCommand command) {
+        return dataSourceRouter.route(() -> {
+            MangoJobInstancePageQuery resolved = toInstanceQuery(command);
+            importScheduledInstances(resolved);
+            refreshRunningInstances(resolved);
+            return Boolean.TRUE;
+        });
+    }
+
+    private MangoJobInstancePageQuery toInstanceQuery(SyncMangoJobInstanceCommand command) {
+        MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
+        if (command == null) {
+            return query;
+        }
+        query.setJobId(command.getJobId());
+        query.setTriggerTimeStart(command.getTriggerTimeStart());
+        query.setTriggerTimeEnd(command.getTriggerTimeEnd());
+        if (command.getSize() != null) {
+            query.setSize(command.getSize());
+        }
+        return query;
     }
 
     @Override
@@ -90,6 +130,22 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                     logWrapper(resolved));
             return PageResult.of(page.getRecords().stream().map(MangoJobSupport::toLogVO).toList(),
                     page.getTotal(), page.getCurrent(), page.getSize());
+        });
+    }
+
+    @Override
+    public MangoJobLogDetailVO detailLog(Long id) {
+        return dataSourceRouter.route(() -> {
+            Require.notNull(id, "日志 ID 不能为空");
+            MangoJobLogIndexEntity logIndex = logIndexMapper.selectById(id);
+            Require.notNull(logIndex, 404, "日志索引不存在");
+            String tenantId = MangoJobSupport.currentTenantId();
+            Require.isTrue(tenantId.equals(logIndex.getTenantId()), 404, "日志索引不存在");
+            MangoJobInstanceEntity instance = selectTenantInstance(logIndex.getInstanceId(), tenantId);
+            MangoJobDefinitionEntity definition = selectTenantDefinition(logIndex.getJobId(), tenantId);
+            MangoJobLogDetailVO detail = toLogDetailVO(logIndex, instance, definition);
+            fetchEngineLog(logIndex, instance, definition, detail);
+            return detail;
         });
     }
 
@@ -176,7 +232,34 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                 .eq(MangoJobDefinitionEntity::getSyncStatus, syncStatus.name()));
     }
 
-    private void refreshRunningInstances(List<MangoJobInstanceEntity> records) {
+    private void importScheduledInstances(MangoJobInstancePageQuery query) {
+        selectImportDefinitions(query).forEach(definition -> engineSyncService.importScheduledInstances(
+                definition, query.getTriggerTimeStart(), query.getTriggerTimeEnd(), importLimit(query)));
+    }
+
+    private List<MangoJobDefinitionEntity> selectImportDefinitions(MangoJobInstancePageQuery query) {
+        String tenantId = MangoJobSupport.currentTenantId();
+        LambdaQueryWrapper<MangoJobDefinitionEntity> wrapper = new LambdaQueryWrapper<MangoJobDefinitionEntity>()
+                .eq(MangoJobDefinitionEntity::getTenantId, tenantId)
+                .eq(query.getJobId() != null, MangoJobDefinitionEntity::getId, query.getJobId())
+                .ne(MangoJobDefinitionEntity::getScheduleType, JobScheduleType.MANUAL.name())
+                .isNotNull(MangoJobDefinitionEntity::getEngineJobId);
+        if (query.getJobId() == null) {
+            wrapper.orderByDesc(MangoJobDefinitionEntity::getUpdatedAt).last("limit 20");
+        }
+        return definitionMapper.selectList(wrapper);
+    }
+
+    private int importLimit(MangoJobInstancePageQuery query) {
+        long size = query.getSize();
+        if (size <= 0) {
+            return 20;
+        }
+        return (int) Math.min(Math.max(size, 20), 100);
+    }
+
+    private void refreshRunningInstances(MangoJobInstancePageQuery query) {
+        List<MangoJobInstanceEntity> records = instanceMapper.selectList(instanceWrapper(query).last("limit " + importLimit(query)));
         records.stream()
                 .filter(this::needsRefresh)
                 .forEach(instance -> {
@@ -187,9 +270,100 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                 });
     }
 
+    private Map<Long, MangoJobDefinitionEntity> selectTenantDefinitions(List<MangoJobInstanceEntity> records) {
+        List<Long> jobIds = records.stream()
+                .map(MangoJobInstanceEntity::getJobId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (jobIds.isEmpty()) {
+            return Map.of();
+        }
+        String tenantId = MangoJobSupport.currentTenantId();
+        return definitionMapper.selectList(new LambdaQueryWrapper<MangoJobDefinitionEntity>()
+                        .eq(MangoJobDefinitionEntity::getTenantId, tenantId)
+                        .in(MangoJobDefinitionEntity::getId, jobIds))
+                .stream()
+                .collect(Collectors.toMap(MangoJobDefinitionEntity::getId, Function.identity()));
+    }
+
     private boolean needsRefresh(MangoJobInstanceEntity instance) {
         return StringUtils.hasText(instance.getEngineInstanceId())
                 && (JobInstanceStatus.WAITING.name().equals(instance.getStatus())
                 || JobInstanceStatus.RUNNING.name().equals(instance.getStatus()));
+    }
+
+    private MangoJobInstanceEntity selectTenantInstance(Long instanceId, String tenantId) {
+        if (instanceId == null) {
+            return null;
+        }
+        MangoJobInstanceEntity instance = instanceMapper.selectById(instanceId);
+        if (instance == null || !tenantId.equals(instance.getTenantId())) {
+            return null;
+        }
+        return instance;
+    }
+
+    private MangoJobDefinitionEntity selectTenantDefinition(Long jobId, String tenantId) {
+        if (jobId == null) {
+            return null;
+        }
+        MangoJobDefinitionEntity definition = definitionMapper.selectById(jobId);
+        if (definition == null || !tenantId.equals(definition.getTenantId())) {
+            return null;
+        }
+        return definition;
+    }
+
+    private MangoJobLogDetailVO toLogDetailVO(MangoJobLogIndexEntity logIndex,
+                                              MangoJobInstanceEntity instance,
+                                              MangoJobDefinitionEntity definition) {
+        MangoJobLogDetailVO detail = new MangoJobLogDetailVO();
+        detail.setId(logIndex.getId());
+        detail.setTenantId(logIndex.getTenantId());
+        detail.setJobId(logIndex.getJobId());
+        detail.setInstanceId(logIndex.getInstanceId());
+        detail.setEngineType(logIndex.getEngineType());
+        detail.setEngineInstanceId(logIndex.getEngineInstanceId());
+        detail.setLogLocation(logIndex.getLogLocation());
+        detail.setReadOffset(logIndex.getReadOffset());
+        detail.setErrorSummary(logIndex.getErrorSummary());
+        detail.setLastFetchedAt(logIndex.getLastFetchedAt());
+        detail.setCreatedAt(logIndex.getCreatedAt());
+        detail.setLogSource("MANGO_LOG_INDEX");
+        if (definition != null) {
+            detail.setJobCode(definition.getJobCode());
+            detail.setJobName(definition.getJobName());
+        }
+        if (instance != null) {
+            detail.setInstanceStatus(instance.getStatus());
+            detail.setTriggerBatchNo(instance.getTriggerBatchNo());
+        }
+        return detail;
+    }
+
+    private void fetchEngineLog(MangoJobLogIndexEntity logIndex,
+                                MangoJobInstanceEntity instance,
+                                MangoJobDefinitionEntity definition,
+                                MangoJobLogDetailVO detail) {
+        if (!StringUtils.hasText(logIndex.getEngineType())) {
+            return;
+        }
+        engineRegistry.findEngine(logIndex.getEngineType()).ifPresentOrElse(engine -> {
+            MangoJobLogRequest request = new MangoJobLogRequest();
+            request.setLogIndex(logIndex);
+            request.setInstance(instance);
+            request.setDefinition(definition);
+            MangoJobLogResult result = engine.fetchLog(request);
+            detail.setLogSource(StringUtils.hasText(result.getSource()) ? result.getSource() : logIndex.getEngineType());
+            detail.setNativeLogAvailable(result.isNativeLogAvailable());
+            detail.setLogFetchStatus(result.getLogFetchStatus());
+            detail.setNativeLogContent(result.getNativeLogContent());
+            detail.setContent(result.getContent());
+            detail.setEngineResult(result.getEngineResult());
+            if (!result.isSuccess() && StringUtils.hasText(result.getErrorSummary())) {
+                detail.setErrorSummary(result.getErrorSummary());
+            }
+        }, () -> detail.setErrorSummary("调度引擎未注册：" + logIndex.getEngineType()));
     }
 }

@@ -7,8 +7,12 @@ import io.mango.job.api.enums.JobScheduleType;
 import io.mango.job.api.enums.JobType;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.service.engine.IMangoJobEngine;
+import io.mango.job.core.service.engine.MangoJobEngineInstanceSnapshot;
 import io.mango.job.core.service.engine.MangoJobEngineRequest;
 import io.mango.job.core.service.engine.MangoJobEngineResult;
+import io.mango.job.core.service.engine.MangoJobInstanceImportRequest;
+import io.mango.job.core.service.engine.MangoJobLogRequest;
+import io.mango.job.core.service.engine.MangoJobLogResult;
 import io.mango.job.core.service.engine.MangoJobTriggerRequest;
 import org.springframework.util.StringUtils;
 import tech.powerjob.common.enums.DispatchStrategy;
@@ -24,6 +28,7 @@ import tech.powerjob.common.response.ResultDTO;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 /**
  * PowerJob 引擎适配器。
@@ -34,9 +39,28 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
 
     private final PowerJobProperties properties;
 
+    private final IPowerJobNativeLogReader nativeLogReader;
+
+    private final IPowerJobInstanceReader instanceReader;
+
     public PowerJobEngineAdapter(IPowerJobClientOperations client, PowerJobProperties properties) {
+        this(client, properties, null, null);
+    }
+
+    public PowerJobEngineAdapter(IPowerJobClientOperations client,
+                                 PowerJobProperties properties,
+                                 IPowerJobNativeLogReader nativeLogReader) {
+        this(client, properties, nativeLogReader, null);
+    }
+
+    public PowerJobEngineAdapter(IPowerJobClientOperations client,
+                                 PowerJobProperties properties,
+                                 IPowerJobNativeLogReader nativeLogReader,
+                                 IPowerJobInstanceReader instanceReader) {
         this.client = client;
         this.properties = properties;
+        this.nativeLogReader = nativeLogReader;
+        this.instanceReader = instanceReader;
     }
 
     @Override
@@ -136,6 +160,52 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
     }
 
     @Override
+    public List<MangoJobEngineInstanceSnapshot> importInstances(MangoJobInstanceImportRequest request) {
+        if (instanceReader == null || request == null || request.getDefinition() == null
+                || !StringUtils.hasText(request.getDefinition().getEngineJobId())) {
+            return List.of();
+        }
+        Long jobId = Long.valueOf(request.getDefinition().getEngineJobId());
+        return instanceReader.readRecentInstances(jobId, request.getTriggerTimeStart(), request.getTriggerTimeEnd(),
+                        request.getLimit())
+                .stream()
+                .map(this::toSnapshot)
+                .toList();
+    }
+
+    @Override
+    public MangoJobLogResult fetchLog(MangoJobLogRequest request) {
+        try {
+            String engineInstanceId = request.getLogIndex().getEngineInstanceId();
+            if (!StringUtils.hasText(engineInstanceId)) {
+                return MangoJobLogResult.failed("POWERJOB_NATIVE_LOG", "日志索引缺少 PowerJob 实例 ID");
+            }
+            ResultDTO<InstanceInfoDTO> result = client.fetchInstanceInfo(Long.valueOf(engineInstanceId));
+            if (!result.isSuccess()) {
+                return MangoJobLogResult.failed("POWERJOB_NATIVE_LOG", result.getMessage());
+            }
+            InstanceInfoDTO info = result.getData();
+            if (info == null) {
+                return MangoJobLogResult.failed("POWERJOB_NATIVE_LOG", "PowerJob 实例不存在：" + engineInstanceId);
+            }
+            String engineResult = info.getResult();
+            if (nativeLogReader == null) {
+                return MangoJobLogResult.unavailable(
+                        "POWERJOB_NATIVE_LOG",
+                        "执行日志读取器未启用，当前执行结果仅作为兜底信息返回",
+                        engineResult);
+            }
+            PowerJobNativeLog nativeLog = nativeLogReader.readInstanceLog(Long.valueOf(engineInstanceId));
+            if (!nativeLog.isAvailable()) {
+                return MangoJobLogResult.unavailable("POWERJOB_NATIVE_LOG", nativeLog.getErrorSummary(), engineResult);
+            }
+            return MangoJobLogResult.success("POWERJOB_NATIVE_LOG", nativeLog.getContent(), engineResult);
+        } catch (RuntimeException ex) {
+            return MangoJobLogResult.failed("POWERJOB_NATIVE_LOG", ex.getMessage());
+        }
+    }
+
+    @Override
     public MangoJobEngineResult health() {
         try {
             ResultDTO<?> result = client.fetchAllJob();
@@ -187,11 +257,8 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
     }
 
     private ProcessorType processorType(String jobType) {
-        JobType type = JobType.valueOf(jobType);
-        return switch (type) {
-            case BUILTIN, REMOTE_API, HTTP, ENGINE_NATIVE -> ProcessorType.BUILT_IN;
-            case SCRIPT -> ProcessorType.SHELL;
-        };
+        JobType.valueOf(jobType);
+        return ProcessorType.BUILT_IN;
     }
 
     private Long timeoutMillis(MangoJobDefinitionEntity definition) {
@@ -230,6 +297,34 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
     }
 
+    private MangoJobEngineInstanceSnapshot toSnapshot(PowerJobInstanceInfoEntity entity) {
+        MangoJobEngineInstanceSnapshot snapshot = new MangoJobEngineInstanceSnapshot();
+        Long engineInstanceId = entity.getInstanceId() == null ? entity.getId() : entity.getInstanceId();
+        snapshot.setEngineInstanceId(engineInstanceId == null ? null : String.valueOf(engineInstanceId));
+        snapshot.setTriggerTime(toLocalDateTime(resolveTriggerTime(entity)));
+        snapshot.setStartTime(toLocalDateTime(entity.getActualTriggerTime()));
+        snapshot.setEndTime(toLocalDateTime(entity.getFinishedTime()));
+        snapshot.setStatus(toMangoInstanceStatus(entity.getStatus()));
+        snapshot.setDurationMillis(duration(entity));
+        snapshot.setErrorSummary(errorSummary(entity));
+        snapshot.setWorkerAddress(entity.getTaskTrackerAddress());
+        snapshot.setTriggerBatchNo(entity.getOuterKey());
+        return snapshot;
+    }
+
+    private Long resolveTriggerTime(PowerJobInstanceInfoEntity entity) {
+        if (entity.getActualTriggerTime() != null && entity.getActualTriggerTime() > 0) {
+            return entity.getActualTriggerTime();
+        }
+        if (entity.getExpectedTriggerTime() != null && entity.getExpectedTriggerTime() > 0) {
+            return entity.getExpectedTriggerTime();
+        }
+        if (entity.getGmtCreate() != null) {
+            return entity.getGmtCreate().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        }
+        return null;
+    }
+
     private Long duration(InstanceInfoDTO info) {
         if (info.getActualTriggerTime() == null || info.getFinishedTime() == null) {
             return null;
@@ -238,10 +333,26 @@ public class PowerJobEngineAdapter implements IMangoJobEngine {
         return duration >= 0 ? duration : null;
     }
 
+    private Long duration(PowerJobInstanceInfoEntity entity) {
+        if (entity.getActualTriggerTime() == null || entity.getFinishedTime() == null) {
+            return null;
+        }
+        long duration = entity.getFinishedTime() - entity.getActualTriggerTime();
+        return duration >= 0 ? duration : null;
+    }
+
     private String errorSummary(InstanceInfoDTO info) {
         String status = toMangoInstanceStatus(info.getStatus());
         if (JobInstanceStatus.FAILED.name().equals(status) || JobInstanceStatus.CANCELED.name().equals(status)) {
             return StringUtils.hasText(info.getResult()) ? info.getResult() : status;
+        }
+        return null;
+    }
+
+    private String errorSummary(PowerJobInstanceInfoEntity entity) {
+        String status = toMangoInstanceStatus(entity.getStatus());
+        if (JobInstanceStatus.FAILED.name().equals(status) || JobInstanceStatus.CANCELED.name().equals(status)) {
+            return StringUtils.hasText(entity.getResult()) ? entity.getResult() : status;
         }
         return null;
     }

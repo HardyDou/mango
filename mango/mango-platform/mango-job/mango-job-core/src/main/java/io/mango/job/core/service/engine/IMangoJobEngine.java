@@ -1,5 +1,7 @@
 package io.mango.job.core.service.engine;
 
+import java.util.List;
+
 /**
  * Mango Job 底层调度引擎 SPI。
  */
@@ -44,6 +46,26 @@ public interface IMangoJobEngine {
      */
     default MangoJobEngineResult refreshInstance(MangoJobTriggerRequest request) {
         return MangoJobEngineResult.success();
+    }
+
+    /**
+     * 导入引擎侧已产生的调度实例。
+     *
+     * @param request 实例导入请求
+     * @return 引擎实例快照
+     */
+    default List<MangoJobEngineInstanceSnapshot> importInstances(MangoJobInstanceImportRequest request) {
+        return List.of();
+    }
+
+    /**
+     * 查询引擎侧执行日志或任务输出。
+     *
+     * @param request 日志请求
+     * @return 日志结果
+     */
+    default MangoJobLogResult fetchLog(MangoJobLogRequest request) {
+        return MangoJobLogResult.failed(engineType(), "当前调度引擎不支持日志详情查询");
     }
 
     /**

@@ -21,7 +21,26 @@ Supported layouts:
 - `mango` + `mango_job` + `powerjob`: higher isolation. PowerJob Server uses a separate database or schema.
 - `primary` fallback: development or explicitly accepted small deployments only.
 
-Mango must not query or modify PowerJob internal tables.
+Mango must not manage or modify PowerJob internal tables. The only allowed read path is the `PowerJobEngineAdapter` native-log reader, which reads PowerJob archived instance logs for Mango's execution-log detail page. This reader is disabled by default and must be enabled explicitly after the PowerJob datasource is configured.
+
+If PowerJob internal tables are not co-located with `mango_job`, configure:
+
+```yaml
+mango:
+  job:
+    powerjob:
+      native-log:
+        enabled: true
+        datasource: powerjob
+```
+
+For local acceptance examples that use the built-in runtime probe and assert `System.out`/logger output in PowerJob logs, enable:
+
+```bash
+MANGO_JOB_PROBE_ENABLED=true
+POWERJOB_NATIVE_LOG_ENABLED=true
+POWERJOB_WORKER_CAPTURE_CONSOLE_OUTPUT=true
+```
 
 ## Start PowerJob Server
 

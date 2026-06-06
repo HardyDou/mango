@@ -229,12 +229,8 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
         JobType jobType = MangoJobSupport.jobType(command.getJobType());
         JobScheduleType scheduleType = MangoJobSupport.scheduleType(command.getScheduleType());
         MangoJobSupport.engineType(command.getEngineType());
-        if (jobType == JobType.SCRIPT) {
-            Require.fail(400, "脚本任务首轮不启用");
-        }
-        if (jobType == JobType.BUILTIN || jobType == JobType.REMOTE_API) {
-            Require.notBlank(command.getHandlerName(), "处理器名称不能为空");
-        }
+        Require.isTrue(jobType == JobType.BUILTIN, "当前版本仅支持内置处理器任务");
+        Require.notBlank(command.getHandlerName(), "处理器名称不能为空");
         if (scheduleType != JobScheduleType.MANUAL) {
             Require.notBlank(command.getScheduleExpression(), "调度表达式不能为空");
         }

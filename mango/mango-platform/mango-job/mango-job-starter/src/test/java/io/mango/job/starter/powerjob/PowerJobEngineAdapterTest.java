@@ -8,6 +8,8 @@ import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
 import io.mango.job.core.service.engine.MangoJobEngineRequest;
 import io.mango.job.core.service.engine.MangoJobEngineResult;
+import io.mango.job.core.service.engine.MangoJobLogRequest;
+import io.mango.job.core.service.engine.MangoJobLogResult;
 import io.mango.job.core.service.engine.MangoJobTriggerRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,8 @@ class PowerJobEngineAdapterTest {
 
     private FakePowerJobClientOperations client;
 
+    private FakePowerJobNativeLogReader nativeLogReader;
+
     private PowerJobEngineAdapter adapter;
 
     @BeforeEach
@@ -37,7 +41,8 @@ class PowerJobEngineAdapterTest {
         properties.setMaxInstanceNum(3);
         properties.setConcurrency(2);
         client = new FakePowerJobClientOperations();
-        adapter = new PowerJobEngineAdapter(client, properties);
+        nativeLogReader = new FakePowerJobNativeLogReader();
+        adapter = new PowerJobEngineAdapter(client, properties, nativeLogReader);
     }
 
     @Test
@@ -78,8 +83,8 @@ class PowerJobEngineAdapterTest {
         definition.setStatus(JobDefinitionStatus.DISABLED.name());
         definition.setScheduleType(JobScheduleType.FIXED_RATE.name());
         definition.setScheduleExpression("30000");
-        definition.setJobType(JobType.SCRIPT.name());
-        definition.setHandlerName("scripts/cleanup.sh");
+        definition.setJobType(JobType.BUILTIN.name());
+        definition.setHandlerName("cleanupJobHandler");
         client.saveJobResult = ResultDTO.success(90002L);
 
         MangoJobEngineResult result = adapter.syncDefinition(engineRequest(definition, "UPDATE_STATUS"));
@@ -87,7 +92,7 @@ class PowerJobEngineAdapterTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(client.saveJobRequest.getId()).isEqualTo(90002L);
         assertThat(client.saveJobRequest.getTimeExpressionType()).isEqualTo(TimeExpressionType.FIXED_RATE);
-        assertThat(client.saveJobRequest.getProcessorType()).isEqualTo(ProcessorType.SHELL);
+        assertThat(client.saveJobRequest.getProcessorType()).isEqualTo(ProcessorType.BUILT_IN);
         assertThat(client.saveJobRequest.isEnable()).isFalse();
         assertThat(client.disabledJobId).isEqualTo(90002L);
         assertThat(client.enabledJobId).isNull();
@@ -163,6 +168,55 @@ class PowerJobEngineAdapterTest {
         assertThat(result.getStartTime()).isNotNull();
         assertThat(result.getEndTime()).isNotNull();
         assertThat(client.fetchInstanceInfoId).isEqualTo(80001L);
+    }
+
+    @Test
+    void fetchLogShouldExposeExecutionLogWithHandlerResultFallback() {
+        InstanceInfoDTO info = new InstanceInfoDTO();
+        info.setResult("{\"result\":\"handler-return\"}");
+        client.fetchInstanceInfoResult = ResultDTO.success(info);
+        nativeLogReader.result = PowerJobNativeLog.available(
+                "2026-06-06 10:07:00 INFO Mango Job handler output: {\"rows\":3}");
+        MangoJobLogRequest request = new MangoJobLogRequest();
+        io.mango.job.core.entity.MangoJobLogIndexEntity logIndex = new io.mango.job.core.entity.MangoJobLogIndexEntity();
+        logIndex.setEngineInstanceId("80001");
+        request.setLogIndex(logIndex);
+
+        MangoJobLogResult result = adapter.fetchLog(request);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getSource()).isEqualTo("POWERJOB_NATIVE_LOG");
+        assertThat(result.isNativeLogAvailable()).isTrue();
+        assertThat(result.getNativeLogContent()).contains("Mango Job handler output").contains("\"rows\":3");
+        assertThat(result.getContent()).isEqualTo(result.getNativeLogContent());
+        assertThat(result.getEngineResult()).isEqualTo("{\"result\":\"handler-return\"}");
+        assertThat(client.fetchInstanceInfoId).isEqualTo(80001L);
+        assertThat(nativeLogReader.instanceId).isEqualTo(80001L);
+    }
+
+    @Test
+    void fetchLogShouldNotPretendInstanceResultIsNativeLogWhenReaderUnavailable() {
+        PowerJobProperties properties = new PowerJobProperties();
+        properties.setAppId(10001L);
+        PowerJobEngineAdapter adapterWithoutReader = new PowerJobEngineAdapter(client, properties);
+        InstanceInfoDTO info = new InstanceInfoDTO();
+        info.setResult("{\"result\":\"handler-return\"}");
+        client.fetchInstanceInfoResult = ResultDTO.success(info);
+        MangoJobLogRequest request = new MangoJobLogRequest();
+        io.mango.job.core.entity.MangoJobLogIndexEntity logIndex = new io.mango.job.core.entity.MangoJobLogIndexEntity();
+        logIndex.setEngineInstanceId("80001");
+        request.setLogIndex(logIndex);
+
+        MangoJobLogResult result = adapterWithoutReader.fetchLog(request);
+
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getSource()).isEqualTo("POWERJOB_NATIVE_LOG");
+        assertThat(result.isNativeLogAvailable()).isFalse();
+        assertThat(result.getNativeLogContent()).isNull();
+        assertThat(result.getContent()).isNull();
+        assertThat(result.getEngineResult()).isEqualTo("{\"result\":\"handler-return\"}");
+        assertThat(result.getErrorSummary()).contains("执行日志读取器未启用");
+        assertThat(result.getErrorSummary()).doesNotContain("原生日志").doesNotContain("实例结果");
     }
 
     @Test
@@ -275,6 +329,19 @@ class PowerJobEngineAdapterTest {
                 throw fetchAllJobError;
             }
             return fetchAllJobResult;
+        }
+    }
+
+    private static class FakePowerJobNativeLogReader implements IPowerJobNativeLogReader {
+
+        private Long instanceId;
+
+        private PowerJobNativeLog result = PowerJobNativeLog.unavailable("not found");
+
+        @Override
+        public PowerJobNativeLog readInstanceLog(Long instanceId) {
+            this.instanceId = instanceId;
+            return result;
         }
     }
 }

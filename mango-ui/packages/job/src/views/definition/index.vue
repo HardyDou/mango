@@ -154,7 +154,7 @@
           <el-col :span="12">
             <el-form-item label="任务类型" prop="jobType">
               <el-select v-model="form.jobType" style="width: 100%">
-                <el-option v-for="item in jobTypeOptions.filter(item => item.value !== 'SCRIPT')" :key="item.value" :label="item.label" :value="item.value" />
+                <el-option v-for="item in jobTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
               </el-select>
             </el-form-item>
           </el-col>

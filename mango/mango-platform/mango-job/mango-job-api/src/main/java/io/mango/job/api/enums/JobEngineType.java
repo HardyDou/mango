@@ -8,15 +8,5 @@ public enum JobEngineType {
     /**
      * PowerJob 引擎。
      */
-    POWERJOB,
-
-    /**
-     * XXL-JOB 引擎。
-     */
-    XXL_JOB,
-
-    /**
-     * Quartz 内嵌引擎。
-     */
-    QUARTZ
+    POWERJOB
 }

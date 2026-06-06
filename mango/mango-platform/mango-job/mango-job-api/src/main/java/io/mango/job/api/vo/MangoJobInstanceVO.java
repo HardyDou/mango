@@ -24,6 +24,12 @@ public class MangoJobInstanceVO implements Serializable {
     @Schema(description = "任务 ID")
     private Long jobId;
 
+    @Schema(description = "任务编码")
+    private String jobCode;
+
+    @Schema(description = "任务名称")
+    private String jobName;
+
     @Schema(description = "触发类型")
     private String triggerType;
 

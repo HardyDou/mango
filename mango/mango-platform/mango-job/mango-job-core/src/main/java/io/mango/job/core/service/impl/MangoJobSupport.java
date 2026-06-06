@@ -124,6 +124,10 @@ final class MangoJobSupport {
     }
 
     static MangoJobInstanceVO toInstanceVO(MangoJobInstanceEntity entity) {
+        return toInstanceVO(entity, null);
+    }
+
+    static MangoJobInstanceVO toInstanceVO(MangoJobInstanceEntity entity, MangoJobDefinitionEntity definition) {
         if (entity == null) {
             return null;
         }
@@ -131,6 +135,10 @@ final class MangoJobSupport {
         vo.setId(entity.getId());
         vo.setTenantId(entity.getTenantId());
         vo.setJobId(entity.getJobId());
+        if (definition != null) {
+            vo.setJobCode(definition.getJobCode());
+            vo.setJobName(definition.getJobName());
+        }
         vo.setTriggerType(entity.getTriggerType());
         vo.setTriggerUserId(entity.getTriggerUserId());
         vo.setTriggerTime(entity.getTriggerTime());

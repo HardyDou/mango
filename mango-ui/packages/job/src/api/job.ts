@@ -1,6 +1,6 @@
 import { del, get, post, put } from '@mango/common/utils/request';
 
-export type ApiId = string | number;
+export type ApiId = string;
 
 export interface PageResult<T> {
   list: T[];
@@ -23,8 +23,8 @@ interface BackendPageResult<T> {
 }
 
 export type JobDefinitionStatus = 'DRAFT' | 'ENABLED' | 'DISABLED' | 'PAUSED';
-export type JobEngineType = 'POWERJOB' | 'XXL_JOB' | 'QUARTZ';
-export type JobType = 'BUILTIN' | 'REMOTE_API' | 'HTTP' | 'SCRIPT' | 'ENGINE_NATIVE';
+export type JobEngineType = 'POWERJOB';
+export type JobType = 'BUILTIN';
 export type JobScheduleType = 'CRON' | 'FIXED_RATE' | 'ONE_TIME' | 'MANUAL';
 export type JobSyncStatus = 'PENDING' | 'SYNCED' | 'FAILED';
 export type JobInstanceStatus = 'WAITING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT' | 'CANCELED';
@@ -74,6 +74,8 @@ export interface JobInstance {
   id?: ApiId;
   tenantId?: string;
   jobId?: ApiId;
+  jobCode?: string;
+  jobName?: string;
   triggerType?: JobTriggerType;
   triggerUserId?: ApiId;
   triggerTime?: string;
@@ -99,6 +101,13 @@ export interface JobInstanceQuery {
   triggerTimeEnd?: string;
 }
 
+export interface SyncJobInstancePayload {
+  jobId?: ApiId | '';
+  triggerTimeStart?: string;
+  triggerTimeEnd?: string;
+  size?: number;
+}
+
 export interface JobLogIndex {
   id?: ApiId;
   tenantId?: string;
@@ -111,6 +120,19 @@ export interface JobLogIndex {
   errorSummary?: string;
   lastFetchedAt?: string;
   createdAt?: string;
+}
+
+export interface JobLogDetail extends JobLogIndex {
+  jobCode?: string;
+  jobName?: string;
+  instanceStatus?: JobInstanceStatus;
+  triggerBatchNo?: string;
+  logSource?: string;
+  nativeLogAvailable?: boolean;
+  logFetchStatus?: string;
+  nativeLogContent?: string;
+  content?: string;
+  engineResult?: string;
 }
 
 export interface JobLogQuery {
@@ -199,9 +221,11 @@ export const jobApi = {
   pageInstances: (params?: JobInstanceQuery) =>
     get<BackendPageResult<JobInstance>>('/job/instances/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobInstance>(data, params)),
+  syncInstances: (params?: SyncJobInstancePayload) => post<boolean>('/job/instances/sync', normalizeParams(params)),
   pageLogs: (params?: JobLogQuery) =>
     get<BackendPageResult<JobLogIndex>>('/job/logs/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobLogIndex>(data, params)),
+  detailLog: (id: ApiId) => get<JobLogDetail>('/job/logs/detail', { params: { id } }),
   pageWorkers: (params?: JobWorkerQuery) =>
     get<BackendPageResult<JobWorkerSnapshot>>('/job/workers/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobWorkerSnapshot>(data, params)),
@@ -259,10 +283,6 @@ export const jobDefinitionStatusOptions = [
 
 export const jobTypeOptions = [
   { label: '内置处理器', value: 'BUILTIN' },
-  { label: '远程服务', value: 'REMOTE_API' },
-  { label: 'HTTP', value: 'HTTP' },
-  { label: '脚本', value: 'SCRIPT' },
-  { label: '引擎原生', value: 'ENGINE_NATIVE' },
 ] as const;
 
 export const scheduleTypeOptions = [
@@ -274,8 +294,6 @@ export const scheduleTypeOptions = [
 
 export const engineTypeOptions = [
   { label: 'PowerJob', value: 'POWERJOB' },
-  { label: 'XXL-JOB', value: 'XXL_JOB' },
-  { label: 'Quartz', value: 'QUARTZ' },
 ] as const;
 
 export const syncStatusOptions = [
