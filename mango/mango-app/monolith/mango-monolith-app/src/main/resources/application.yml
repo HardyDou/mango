@@ -112,6 +112,8 @@ mango:
           enabled: true
         workflow:
           enabled: true
+        mango-job:
+          enabled: true
         kv:
           enabled: true
         notification:
@@ -145,6 +147,8 @@ mango:
     local:
       root-path: ${MANGO_FILE_ROOT:./data/files}
   workflow:
+    enabled: true
+  job:
     enabled: true
   authorization:
     resource-sync:

@@ -89,7 +89,8 @@ public class PersistenceFlywayAutoConfiguration {
                 PersistenceDataSourceRegistry registry = registryProvider.getIfAvailable();
                 PersistenceModuleDataSourceResolver resolver = resolverProvider.getIfAvailable();
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
-                    DataSource moduleDataSource = resolveDataSource(dataSource, module, registry, resolver);
+                    ResolvedDataSource resolvedDataSource = resolveDataSource(dataSource, module, registry, resolver);
+                    DataSource moduleDataSource = resolvedDataSource.dataSource();
                     try {
                         Flyway.configure()
                                 .dataSource(moduleDataSource)
@@ -102,7 +103,7 @@ public class PersistenceFlywayAutoConfiguration {
                                 .load()
                                 .migrate();
                     } finally {
-                        closeModuleDataSource(dataSource, moduleDataSource);
+                        closeModuleDataSource(resolvedDataSource);
                     }
                 }
             } catch (Exception e) {
@@ -168,20 +169,20 @@ public class PersistenceFlywayAutoConfiguration {
         return HISTORY_TABLE_PREFIX + sanitizeModuleName(module.name());
     }
 
-    private DataSource resolveDataSource(DataSource defaultDataSource,
-                                         ModuleMigration module,
-                                         PersistenceDataSourceRegistry registry,
-                                         PersistenceModuleDataSourceResolver resolver) {
+    private ResolvedDataSource resolveDataSource(DataSource defaultDataSource,
+                                                 ModuleMigration module,
+                                                 PersistenceDataSourceRegistry registry,
+                                                 PersistenceModuleDataSourceResolver resolver) {
         if (registry != null && resolver != null) {
             String dataSourceName = resolver.resolveDataSource(module.name()).orElse("");
             if (StringUtils.hasText(dataSourceName)) {
-                return registry.get(dataSourceName);
+                return new ResolvedDataSource(registry.get(dataSourceName), false);
             }
         }
 
         PersistenceFlywayProperties.DataSourceConfig datasource = module.config().getDatasource();
         if (datasource == null || !StringUtils.hasText(datasource.getUrl())) {
-            return defaultDataSource;
+            return new ResolvedDataSource(defaultDataSource, false);
         }
 
         DataSourceBuilder<?> builder = DataSourceBuilder.create()
@@ -191,11 +192,11 @@ public class PersistenceFlywayAutoConfiguration {
         if (StringUtils.hasText(datasource.getDriverClassName())) {
             builder.driverClassName(datasource.getDriverClassName());
         }
-        return builder.build();
+        return new ResolvedDataSource(builder.build(), true);
     }
 
-    private void closeModuleDataSource(DataSource defaultDataSource, DataSource moduleDataSource) throws Exception {
-        if (moduleDataSource == defaultDataSource || !(moduleDataSource instanceof AutoCloseable closeable)) {
+    private void closeModuleDataSource(ResolvedDataSource resolvedDataSource) throws Exception {
+        if (!resolvedDataSource.closeAfterUse() || !(resolvedDataSource.dataSource() instanceof AutoCloseable closeable)) {
             return;
         }
         closeable.close();
@@ -204,5 +205,8 @@ public class PersistenceFlywayAutoConfiguration {
     private record ModuleMigration(String name,
                                    String location,
                                    PersistenceFlywayProperties.ModuleConfig config) {
+    }
+
+    private record ResolvedDataSource(DataSource dataSource, boolean closeAfterUse) {
     }
 }

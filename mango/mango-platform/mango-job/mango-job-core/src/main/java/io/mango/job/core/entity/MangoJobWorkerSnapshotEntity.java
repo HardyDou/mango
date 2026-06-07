@@ -1,0 +1,41 @@
+package io.mango.job.core.entity;
+
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.mango.infra.persistence.api.entity.TenantEntity;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+/**
+ * Job Worker 运行态快照实体。
+ */
+@Getter
+@Setter
+@TableName("mango_job_worker_snapshot")
+public class MangoJobWorkerSnapshotEntity extends TenantEntity {
+
+    private String appCode;
+
+    private String serviceCode;
+
+    private String workerGroup;
+
+    private String workerAddress;
+
+    private String runtimeAddress;
+
+    private String transportType;
+
+    private String registerSource;
+
+    private String instanceId;
+
+    private String engineType;
+
+    private String engineWorkerId;
+
+    private LocalDateTime lastHeartbeatAt;
+
+    private String status;
+}

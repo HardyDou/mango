@@ -116,6 +116,10 @@
             <artifactId>mango-workflow-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.job</groupId>
+            <artifactId>mango-job-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.calendar</groupId>
             <artifactId>mango-calendar-starter</artifactId>
         </dependency>

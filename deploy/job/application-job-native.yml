@@ -1,0 +1,32 @@
+mango:
+  persistence:
+    datasources:
+      primary:
+        primary: true
+        url: ${MANGO_DB_URL}
+        username: ${MANGO_DB_USERNAME}
+        password: ${MANGO_DB_PASSWORD}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+      job:
+        url: ${MANGO_JOB_DB_URL:${MANGO_DB_URL}}
+        username: ${MANGO_JOB_DB_USERNAME:${MANGO_DB_USERNAME}}
+        password: ${MANGO_JOB_DB_PASSWORD:${MANGO_DB_PASSWORD}}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    modules:
+      mango-job:
+        datasource: job
+  job:
+    enabled: true
+    native:
+      embedded-worker-enabled: ${MANGO_JOB_EMBEDDED_WORKER_ENABLED:true}
+      transport: ${MANGO_JOB_TRANSPORT:IN_MEMORY}
+      scheduler-enabled: ${MANGO_JOB_SCHEDULER_ENABLED:true}
+      scan-interval-millis: ${MANGO_JOB_SCAN_INTERVAL_MILLIS:5000}
+      scheduler-tenant-id: ${MANGO_JOB_SCHEDULER_TENANT_ID:1}
+      scan-limit: ${MANGO_JOB_SCAN_LIMIT:50}
+      lease-seconds: ${MANGO_JOB_LEASE_SECONDS:300}
+      worker-address: ${MANGO_JOB_WORKER_ADDRESS:}
+      job-center-address: ${MANGO_JOB_CENTER_ADDRESS:}
+      worker-heartbeat-interval-millis: ${MANGO_JOB_WORKER_HEARTBEAT_INTERVAL_MILLIS:15000}
+    probe:
+      enabled: ${MANGO_JOB_PROBE_ENABLED:false}
