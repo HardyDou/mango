@@ -60,13 +60,13 @@ public class MangoJobLogDetailVO implements Serializable {
     @Schema(description = "日志拉取状态")
     private String logFetchStatus;
 
-    @Schema(description = "调度引擎原生执行日志内容")
+    @Schema(description = "执行日志内容")
     private String nativeLogContent;
 
     @Schema(description = "兼容字段，等同 nativeLogContent")
     private String content;
 
-    @Schema(description = "执行结果兜底内容")
+    @Schema(description = "执行结果内容")
     private String engineResult;
 
     @Schema(description = "错误摘要")

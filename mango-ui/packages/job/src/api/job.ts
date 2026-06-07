@@ -23,13 +23,30 @@ interface BackendPageResult<T> {
 }
 
 export type JobDefinitionStatus = 'DRAFT' | 'ENABLED' | 'DISABLED' | 'PAUSED';
-export type JobEngineType = 'POWERJOB';
+export type JobEngineType = 'MANGO_NATIVE';
 export type JobType = 'BUILTIN';
 export type JobScheduleType = 'CRON' | 'FIXED_RATE' | 'ONE_TIME' | 'MANUAL';
 export type JobSyncStatus = 'PENDING' | 'SYNCED' | 'FAILED';
-export type JobInstanceStatus = 'WAITING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT' | 'CANCELED';
+export type JobInstanceStatus =
+  | 'CREATED'
+  | 'WAITING'
+  | 'DISPATCHED'
+  | 'RUNNING'
+  | 'RETRY_WAITING'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'TIMEOUT'
+  | 'CANCELED';
 export type JobTriggerType = 'SCHEDULED' | 'MANUAL' | 'RETRY' | 'API';
-export type JobWorkerStatus = 'ONLINE' | 'OFFLINE' | 'UNKNOWN';
+export type JobAlarmType = 'INSTANCE_FAILED';
+export type JobWorkerStatus =
+  | 'REGISTERED'
+  | 'ONLINE'
+  | 'DRAINING'
+  | 'OFFLINE'
+  | 'EXPIRED'
+  | 'DISABLED'
+  | 'UNKNOWN';
 
 export interface JobDefinition {
   id?: ApiId;
@@ -79,10 +96,15 @@ export interface JobInstance {
   triggerType?: JobTriggerType;
   triggerUserId?: ApiId;
   triggerTime?: string;
+  scheduledFireTime?: string;
+  actualFireTime?: string;
   startTime?: string;
   endTime?: string;
   status?: JobInstanceStatus;
   durationMillis?: number;
+  attemptCount?: number;
+  resultSummary?: string;
+  workerAddress?: string;
   engineType?: JobEngineType;
   engineInstanceId?: string;
   errorSummary?: string;
@@ -154,6 +176,29 @@ export interface JobWorkerSnapshot {
   status?: JobWorkerStatus;
 }
 
+export interface JobWorkerHandlerPayload {
+  appCode?: string;
+  handlerName: string;
+  jobType?: JobType;
+  paramSchema?: string;
+  concurrent?: boolean;
+  timeoutSeconds?: number;
+  retryPolicy?: string;
+}
+
+export interface CreateJobWorkerPayload {
+  appCode: string;
+  workerAddress: string;
+  transportType: 'HTTP_INTERNAL';
+  workerInstanceId?: string;
+  handlers: JobWorkerHandlerPayload[];
+}
+
+export interface UpdateJobWorkerStatusPayload {
+  id: ApiId;
+  status: JobWorkerStatus;
+}
+
 export interface JobWorkerQuery {
   pageNum?: number;
   pageSize?: number;
@@ -181,6 +226,36 @@ export interface JobEngineStatus {
   lastUpdatedAt?: string;
 }
 
+export interface JobAlarmRule {
+  id?: ApiId;
+  tenantId?: string;
+  jobId?: ApiId;
+  jobCode?: string;
+  jobName?: string;
+  appCode: string;
+  ruleName: string;
+  alarmType: JobAlarmType;
+  triggerCondition?: string;
+  noticeSceneCode: string;
+  noticeTemplateCode: string;
+  noticeParams?: string;
+  enabled?: boolean;
+  createdBy?: ApiId;
+  createdAt?: string;
+  updatedBy?: ApiId;
+  updatedAt?: string;
+}
+
+export interface JobAlarmRuleQuery {
+  pageNum?: number;
+  pageSize?: number;
+  appCode?: string;
+  jobId?: ApiId | '';
+  alarmType?: JobAlarmType | '';
+  enabled?: boolean | '';
+  keyword?: string;
+}
+
 export interface TriggerJobPayload {
   jobId: ApiId;
   triggerBatchNo?: string;
@@ -206,6 +281,25 @@ export type SaveJobDefinitionPayload = Pick<
   | 'engineType'
 >;
 
+export type SaveJobAlarmRulePayload = Pick<
+  JobAlarmRule,
+  | 'id'
+  | 'jobId'
+  | 'appCode'
+  | 'ruleName'
+  | 'alarmType'
+  | 'triggerCondition'
+  | 'noticeSceneCode'
+  | 'noticeTemplateCode'
+  | 'noticeParams'
+  | 'enabled'
+>;
+
+export interface UpdateJobAlarmRuleStatusPayload {
+  id: ApiId;
+  enabled: boolean;
+}
+
 export const jobApi = {
   pageDefinitions: (params?: JobDefinitionQuery) =>
     get<BackendPageResult<JobDefinition>>('/job/definitions/page', { params: normalizeParams(params) })
@@ -222,6 +316,7 @@ export const jobApi = {
     get<BackendPageResult<JobInstance>>('/job/instances/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobInstance>(data, params)),
   syncInstances: (params?: SyncJobInstancePayload) => post<boolean>('/job/instances/sync', normalizeParams(params)),
+  detailInstanceLog: (instanceId: ApiId) => get<JobLogDetail>(`/job/instances/${instanceId}/logs`),
   pageLogs: (params?: JobLogQuery) =>
     get<BackendPageResult<JobLogIndex>>('/job/logs/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobLogIndex>(data, params)),
@@ -229,7 +324,18 @@ export const jobApi = {
   pageWorkers: (params?: JobWorkerQuery) =>
     get<BackendPageResult<JobWorkerSnapshot>>('/job/workers/page', { params: normalizeParams(params) })
       .then(data => fromBackendPageResult<JobWorkerSnapshot>(data, params)),
+  createWorker: (data: CreateJobWorkerPayload) => post<ApiId>('/job/workers', normalizeParams(data)),
+  updateWorkerStatus: (data: UpdateJobWorkerStatusPayload) => put<boolean>('/job/workers/status', normalizeParams(data)),
   listHandlers: () => get<JobHandler[]>('/job/handlers'),
+  pageAlarmRules: (params?: JobAlarmRuleQuery) =>
+    get<BackendPageResult<JobAlarmRule>>('/job/alarm-rules/page', { params: normalizeParams(params) })
+      .then(data => fromBackendPageResult<JobAlarmRule>(data, params)),
+  detailAlarmRule: (id: ApiId) => get<JobAlarmRule>('/job/alarm-rules/detail', { params: { id } }),
+  createAlarmRule: (data: SaveJobAlarmRulePayload) => post<ApiId>('/job/alarm-rules', normalizeParams(data)),
+  updateAlarmRule: (data: SaveJobAlarmRulePayload) => put<boolean>('/job/alarm-rules', normalizeParams(data)),
+  updateAlarmRuleStatus: (data: UpdateJobAlarmRuleStatusPayload) =>
+    put<boolean>('/job/alarm-rules/status', normalizeParams(data)),
+  deleteAlarmRule: (id: ApiId) => del<boolean>('/job/alarm-rules', { params: { id } }),
   listEngineStatus: () => get<JobEngineStatus[]>('/job/engines/status'),
 };
 
@@ -293,7 +399,7 @@ export const scheduleTypeOptions = [
 ] as const;
 
 export const engineTypeOptions = [
-  { label: 'PowerJob', value: 'POWERJOB' },
+  { label: 'Mango 原生', value: 'MANGO_NATIVE' },
 ] as const;
 
 export const syncStatusOptions = [
@@ -303,8 +409,11 @@ export const syncStatusOptions = [
 ] as const;
 
 export const instanceStatusOptions = [
+  { label: '已创建', value: 'CREATED', type: 'info' },
   { label: '等待执行', value: 'WAITING', type: 'info' },
+  { label: '已分发', value: 'DISPATCHED', type: 'warning' },
   { label: '执行中', value: 'RUNNING', type: 'warning' },
+  { label: '等待重试', value: 'RETRY_WAITING', type: 'warning' },
   { label: '成功', value: 'SUCCESS', type: 'success' },
   { label: '失败', value: 'FAILED', type: 'danger' },
   { label: '超时', value: 'TIMEOUT', type: 'danger' },
@@ -319,18 +428,42 @@ export const triggerTypeOptions = [
 ] as const;
 
 export const workerStatusOptions = [
+  { label: '已注册', value: 'REGISTERED', type: 'info' },
   { label: '在线', value: 'ONLINE', type: 'success' },
+  { label: '排空中', value: 'DRAINING', type: 'warning' },
   { label: '离线', value: 'OFFLINE', type: 'danger' },
+  { label: '已过期', value: 'EXPIRED', type: 'danger' },
+  { label: '已禁用', value: 'DISABLED', type: 'info' },
   { label: '未知', value: 'UNKNOWN', type: 'info' },
+] as const;
+
+export const alarmTypeOptions = [
+  { label: '实例失败', value: 'INSTANCE_FAILED', type: 'danger' },
+] as const;
+
+export const enabledOptions = [
+  { label: '启用', value: true, type: 'success' },
+  { label: '停用', value: false, type: 'info' },
 ] as const;
 
 export function optionLabel(options: readonly { label: string; value: string }[], value?: string) {
   return options.find(item => item.value === value)?.label || value || '-';
 }
 
+export function booleanOptionLabel(options: readonly { label: string; value: boolean }[], value?: boolean) {
+  return options.find(item => item.value === value)?.label || (value === undefined ? '-' : String(value));
+}
+
 export function optionTagType(
   options: readonly { value: string; type?: string }[],
   value?: string,
+): '' | 'success' | 'info' | 'warning' | 'danger' {
+  return (options.find(item => item.value === value)?.type || '') as '' | 'success' | 'info' | 'warning' | 'danger';
+}
+
+export function booleanOptionTagType(
+  options: readonly { value: boolean; type?: string }[],
+  value?: boolean,
 ): '' | 'success' | 'info' | 'warning' | 'danger' {
   return (options.find(item => item.value === value)?.type || '') as '' | 'success' | 'info' | 'warning' | 'danger';
 }

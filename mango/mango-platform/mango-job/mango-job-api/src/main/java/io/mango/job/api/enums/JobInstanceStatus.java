@@ -6,14 +6,29 @@ package io.mango.job.api.enums;
 public enum JobInstanceStatus {
 
     /**
+     * 已创建。
+     */
+    CREATED,
+
+    /**
      * 等待执行。
      */
     WAITING,
 
     /**
+     * 已分发。
+     */
+    DISPATCHED,
+
+    /**
      * 执行中。
      */
     RUNNING,
+
+    /**
+     * 等待重试。
+     */
+    RETRY_WAITING,
 
     /**
      * 执行成功。

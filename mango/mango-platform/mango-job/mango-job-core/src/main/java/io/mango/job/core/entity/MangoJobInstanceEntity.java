@@ -17,11 +17,19 @@ public class MangoJobInstanceEntity extends TenantEntity {
 
     private Long jobId;
 
+    private String jobCode;
+
+    private String jobNameSnapshot;
+
     private String triggerType;
 
     private Long triggerUserId;
 
     private LocalDateTime triggerTime;
+
+    private LocalDateTime scheduledFireTime;
+
+    private LocalDateTime actualFireTime;
 
     private LocalDateTime startTime;
 
@@ -30,6 +38,16 @@ public class MangoJobInstanceEntity extends TenantEntity {
     private String status;
 
     private Long durationMillis;
+
+    private Integer attemptCount;
+
+    private LocalDateTime nextRetryTime;
+
+    private String retryReason;
+
+    private String resultSummary;
+
+    private String idempotencyKey;
 
     private String engineType;
 

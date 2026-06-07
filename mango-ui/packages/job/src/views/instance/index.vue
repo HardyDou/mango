@@ -80,22 +80,22 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="触发" min-width="210" show-overflow-tooltip>
+        <el-table-column label="触发" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             {{ optionLabel(triggerTypeOptions, row.triggerType) }}
             <span v-if="row.triggerBatchNo" class="job-muted"> / {{ row.triggerBatchNo }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="triggerTime" label="触发时间" width="170" show-overflow-tooltip />
+        <el-table-column prop="scheduledFireTime" label="计划触发" width="170" show-overflow-tooltip />
+        <el-table-column prop="actualFireTime" label="实际触发" width="170" show-overflow-tooltip />
         <el-table-column prop="startTime" label="开始时间" width="170" show-overflow-tooltip />
         <el-table-column prop="endTime" label="结束时间" width="170" show-overflow-tooltip />
         <el-table-column label="耗时" width="110">
           <template #default="{ row }">{{ formatDuration(row.durationMillis) }}</template>
         </el-table-column>
-        <el-table-column label="引擎" width="110">
-          <template #default="{ row }">{{ row.engineType || '-' }}</template>
-        </el-table-column>
-        <el-table-column prop="engineInstanceId" label="引擎实例" min-width="170" show-overflow-tooltip />
+        <el-table-column prop="workerAddress" label="Worker" min-width="210" show-overflow-tooltip />
+        <el-table-column prop="attemptCount" label="尝试" width="76" />
+        <el-table-column prop="resultSummary" label="结果摘要" min-width="220" show-overflow-tooltip />
         <el-table-column prop="traceId" label="Trace ID" min-width="160" show-overflow-tooltip />
         <el-table-column prop="errorSummary" label="错误摘要" min-width="220" show-overflow-tooltip />
         <el-table-column label="操作" width="96" fixed="right">
@@ -130,11 +130,13 @@
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="批次号">{{ selectedInstance.triggerBatchNo || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="引擎">{{ selectedInstance.engineType || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="引擎实例">{{ selectedInstance.engineInstanceId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Worker">{{ selectedInstance.workerAddress || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="尝试次数">{{ selectedInstance.attemptCount ?? '-' }}</el-descriptions-item>
+          <el-descriptions-item label="计划触发">{{ selectedInstance.scheduledFireTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="实际触发">{{ selectedInstance.actualFireTime || '-' }}</el-descriptions-item>
         </el-descriptions>
 
-        <el-empty v-if="!logLoading && selectedInstance && logIndexes.length === 0" description="当前执行实例暂无日志" />
+        <el-empty v-if="!logLoading && selectedInstance && !logDetail" description="当前执行实例暂无日志" />
 
         <el-alert
           v-if="logPolling && logDetail && !nativeLogContent(logDetail)"
@@ -142,27 +144,8 @@
           type="info"
           :closable="false"
           show-icon
-          title="PowerJob 原生日志归档中，页面会自动刷新。"
+          title="执行日志归档中，页面会自动刷新。"
         />
-
-        <section v-if="logIndexes.length > 1" class="job-log-output">
-          <div class="job-panel-head">
-            <div>
-              <h3>日志索引</h3>
-              <p>一个执行实例可能产生多条日志索引，默认展示最新一条。</p>
-            </div>
-          </div>
-          <el-table :data="logIndexes" size="small" row-key="id" @row-click="selectLogIndex">
-            <el-table-column prop="id" label="日志ID" width="120" />
-            <el-table-column prop="logLocation" label="日志位置" min-width="220" show-overflow-tooltip />
-            <el-table-column prop="createdAt" label="创建时间" width="170" show-overflow-tooltip />
-            <el-table-column label="操作" width="88">
-              <template #default="{ row }">
-                <el-button link type="primary" @click.stop="selectLogIndex(row)">查看</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </section>
 
         <el-descriptions v-if="logDetail" class="job-log-meta" :column="2" border>
           <el-descriptions-item label="日志状态">
@@ -210,7 +193,6 @@ import {
   type JobInstance,
   type JobInstanceQuery,
   type JobLogDetail,
-  type JobLogIndex,
 } from '../../api/job';
 import '../job-admin.css';
 
@@ -225,7 +207,6 @@ const total = ref(0);
 const definitionOptions = ref<JobDefinition[]>([]);
 const logVisible = ref(false);
 const selectedInstance = ref<JobInstance | null>(null);
-const logIndexes = ref<JobLogIndex[]>([]);
 const logDetail = ref<JobLogDetail | null>(null);
 const logPolling = ref(false);
 let logLoadToken = 0;
@@ -301,15 +282,10 @@ async function openInstanceLogs(row: JobInstance) {
   selectedInstance.value = row;
   logLoading.value = true;
   logError.value = '';
-  logIndexes.value = [];
   logDetail.value = null;
   logPolling.value = false;
   try {
-    const page = await jobApi.pageLogs({ jobId: row.jobId, instanceId: row.id, pageNum: 1, pageSize: 20 });
-    logIndexes.value = page.list;
-    if (page.list[0]?.id) {
-      logDetail.value = await loadLogDetailUntilReadable(page.list[0].id, currentToken);
-    }
+    logDetail.value = await loadInstanceLogUntilReadable(row.id, currentToken);
   } catch (error: unknown) {
     logError.value = requestErrorMessage(error, '执行日志加载失败');
   } finally {
@@ -317,26 +293,9 @@ async function openInstanceLogs(row: JobInstance) {
   }
 }
 
-async function selectLogIndex(row: JobLogIndex) {
-  if (!row.id) {
-    return;
-  }
-  const currentToken = ++logLoadToken;
-  logLoading.value = true;
-  logError.value = '';
-  logPolling.value = false;
-  try {
-    logDetail.value = await loadLogDetailUntilReadable(row.id, currentToken);
-  } catch (error: unknown) {
-    logError.value = requestErrorMessage(error, '日志详情加载失败');
-  } finally {
-    logLoading.value = false;
-  }
-}
-
-async function loadLogDetailUntilReadable(id: ApiId, token: number) {
+async function loadInstanceLogUntilReadable(instanceId: ApiId, token: number) {
   const startedAt = Date.now();
-  let latest = await jobApi.detailLog(id);
+  let latest = await jobApi.detailInstanceLog(instanceId);
   logDetail.value = latest;
   logLoading.value = false;
   while (
@@ -348,7 +307,7 @@ async function loadLogDetailUntilReadable(id: ApiId, token: number) {
   ) {
     logPolling.value = true;
     await wait(3000);
-    latest = await jobApi.detailLog(id);
+    latest = await jobApi.detailInstanceLog(instanceId);
     logDetail.value = latest;
   }
   if (token === logLoadToken) {

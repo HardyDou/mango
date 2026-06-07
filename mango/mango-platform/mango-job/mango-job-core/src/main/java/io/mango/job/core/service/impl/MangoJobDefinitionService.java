@@ -332,16 +332,27 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
     }
 
     private void writeExecutionLogIndex(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance) {
-        MangoJobLogIndexEntity log = new MangoJobLogIndexEntity();
-        log.setTenantId(definition.getTenantId());
-        log.setJobId(definition.getId());
-        log.setInstanceId(instance.getId());
+        MangoJobLogIndexEntity log = logIndexMapper.selectOne(new LambdaQueryWrapper<MangoJobLogIndexEntity>()
+                .eq(MangoJobLogIndexEntity::getTenantId, definition.getTenantId())
+                .eq(MangoJobLogIndexEntity::getInstanceId, instance.getId())
+                .last("limit 1"));
+        boolean exists = log != null;
+        if (!exists) {
+            log = new MangoJobLogIndexEntity();
+            log.setTenantId(definition.getTenantId());
+            log.setJobId(definition.getId());
+            log.setInstanceId(instance.getId());
+            log.setReadOffset(0L);
+        }
         log.setEngineType(definition.getEngineType());
         log.setEngineInstanceId(instance.getEngineInstanceId());
         log.setLogLocation("mango-job://jobs/" + definition.getId() + "/instances/" + instance.getId());
-        log.setReadOffset(0L);
         log.setErrorSummary(instance.getErrorSummary());
         log.setLastFetchedAt(LocalDateTime.now());
-        logIndexMapper.insert(log);
+        if (exists) {
+            logIndexMapper.updateById(log);
+        } else {
+            logIndexMapper.insert(log);
+        }
     }
 }

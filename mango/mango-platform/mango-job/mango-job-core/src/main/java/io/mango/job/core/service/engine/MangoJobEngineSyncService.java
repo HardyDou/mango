@@ -3,6 +3,7 @@ package io.mango.job.core.service.engine;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
+import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobTriggerType;
 import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.enums.JobInstanceStatus;
@@ -17,10 +18,13 @@ import io.mango.job.core.mapper.MangoJobEngineMappingMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
 import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
+import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 /**
  * 默认 Mango Job 引擎同步服务。
@@ -40,22 +44,41 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     private final MangoJobWorkerSnapshotMapper workerSnapshotMapper;
 
+    private final IMangoNativeJobRuntime nativeJobRuntime;
+
     public MangoJobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
                                      MangoJobDefinitionMapper definitionMapper,
                                      MangoJobInstanceMapper instanceMapper,
                                      MangoJobEngineMappingMapper mappingMapper,
                                      MangoJobLogIndexMapper logIndexMapper,
                                      MangoJobWorkerSnapshotMapper workerSnapshotMapper) {
+        this(engineRegistry, definitionMapper, instanceMapper, mappingMapper, logIndexMapper, workerSnapshotMapper, null);
+    }
+
+    @Autowired
+    public MangoJobEngineSyncService(IMangoJobEngineRegistry engineRegistry,
+                                     MangoJobDefinitionMapper definitionMapper,
+                                     MangoJobInstanceMapper instanceMapper,
+                                     MangoJobEngineMappingMapper mappingMapper,
+                                     MangoJobLogIndexMapper logIndexMapper,
+                                     MangoJobWorkerSnapshotMapper workerSnapshotMapper,
+                                     IMangoNativeJobRuntime nativeJobRuntime) {
         this.engineRegistry = engineRegistry;
         this.definitionMapper = definitionMapper;
         this.instanceMapper = instanceMapper;
         this.mappingMapper = mappingMapper;
         this.logIndexMapper = logIndexMapper;
         this.workerSnapshotMapper = workerSnapshotMapper;
+        this.nativeJobRuntime = nativeJobRuntime;
     }
 
     @Override
     public void syncDefinition(MangoJobDefinitionEntity definition, String action) {
+        if (isNative(definition)) {
+            nativeJobRuntime.syncDefinition(definition);
+            upsertJobMapping(definition, JobSyncStatus.SYNCED.name(), null);
+            return;
+        }
         engineRegistry.findEngine(definition.getEngineType()).ifPresentOrElse(engine -> {
             MangoJobEngineRequest request = new MangoJobEngineRequest();
             request.setDefinition(definition);
@@ -67,6 +90,10 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     @Override
     public void deleteDefinition(MangoJobDefinitionEntity definition) {
+        if (isNative(definition)) {
+            nativeJobRuntime.deleteDefinition(definition);
+            return;
+        }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
             MangoJobEngineRequest request = new MangoJobEngineRequest();
             request.setDefinition(definition);
@@ -78,6 +105,11 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     @Override
     public void trigger(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance, String batchNo) {
+        if (isNative(definition)) {
+            nativeJobRuntime.trigger(definition, instance, batchNo, null);
+            insertInstanceMapping(definition, instance, JobSyncStatus.SYNCED.name(), null);
+            return;
+        }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
             MangoJobTriggerRequest request = new MangoJobTriggerRequest();
             request.setDefinition(definition);
@@ -93,6 +125,11 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
                         MangoJobInstanceEntity instance,
                         String batchNo,
                         String paramValue) {
+        if (isNative(definition)) {
+            nativeJobRuntime.trigger(definition, instance, batchNo, paramValue);
+            insertInstanceMapping(definition, instance, JobSyncStatus.SYNCED.name(), null);
+            return;
+        }
         engineRegistry.findEngine(definition.getEngineType()).ifPresent(engine -> {
             MangoJobTriggerRequest request = new MangoJobTriggerRequest();
             request.setDefinition(definition);
@@ -106,6 +143,9 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     @Override
     public void refreshInstance(MangoJobDefinitionEntity definition, MangoJobInstanceEntity instance) {
+        if (isNative(definition)) {
+            return;
+        }
         if (!StringUtils.hasText(instance.getEngineInstanceId())) {
             return;
         }
@@ -127,6 +167,10 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
                                          LocalDateTime triggerTimeStart,
                                          LocalDateTime triggerTimeEnd,
                                          int limit) {
+        if (isNative(definition)) {
+            nativeJobRuntime.importScheduledInstances(definition, triggerTimeStart, triggerTimeEnd, limit);
+            return;
+        }
         if (!StringUtils.hasText(definition.getEngineJobId())) {
             return;
         }
@@ -258,7 +302,7 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
     }
 
     private void upsertWorkerSnapshot(MangoJobDefinitionEntity definition, MangoJobEngineResult result) {
-        if (!StringUtils.hasText(result.getWorkerAddress())) {
+        if (!hasValidWorkerAddress(result.getWorkerAddress())) {
             return;
         }
         MangoJobWorkerSnapshotEntity snapshot = new MangoJobWorkerSnapshotEntity();
@@ -273,7 +317,7 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
     }
 
     private void upsertWorkerSnapshot(MangoJobDefinitionEntity definition, MangoJobEngineInstanceSnapshot snapshot) {
-        if (!StringUtils.hasText(snapshot.getWorkerAddress())) {
+        if (!hasValidWorkerAddress(snapshot.getWorkerAddress())) {
             return;
         }
         MangoJobWorkerSnapshotEntity worker = new MangoJobWorkerSnapshotEntity();
@@ -423,5 +467,22 @@ public class MangoJobEngineSyncService implements IMangoJobEngineSyncService {
 
     private static String resolve(String preferred, String fallback) {
         return StringUtils.hasText(preferred) ? preferred : fallback;
+    }
+
+    private static boolean hasValidWorkerAddress(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        return !("N/A".equals(normalized)
+                || "UNKNOWN".equals(normalized)
+                || "NULL".equals(normalized)
+                || "-".equals(normalized));
+    }
+
+    private boolean isNative(MangoJobDefinitionEntity definition) {
+        return definition != null
+                && nativeJobRuntime != null
+                && JobEngineType.MANGO_NATIVE.name().equals(definition.getEngineType());
     }
 }

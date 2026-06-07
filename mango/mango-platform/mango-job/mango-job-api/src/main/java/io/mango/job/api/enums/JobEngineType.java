@@ -1,12 +1,12 @@
 package io.mango.job.api.enums;
 
 /**
- * Job 底层调度引擎类型。
+ * Job 运行时类型。
  */
 public enum JobEngineType {
 
     /**
-     * PowerJob 引擎。
+     * Mango 原生 Job Engine。
      */
-    POWERJOB
+    MANGO_NATIVE
 }

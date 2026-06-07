@@ -30,6 +30,9 @@ public class MangoJobInstanceVO implements Serializable {
     @Schema(description = "任务名称")
     private String jobName;
 
+    @Schema(description = "任务名称快照")
+    private String jobNameSnapshot;
+
     @Schema(description = "触发类型")
     private String triggerType;
 
@@ -38,6 +41,12 @@ public class MangoJobInstanceVO implements Serializable {
 
     @Schema(description = "触发时间")
     private LocalDateTime triggerTime;
+
+    @Schema(description = "计划触发时间")
+    private LocalDateTime scheduledFireTime;
+
+    @Schema(description = "实际触发时间")
+    private LocalDateTime actualFireTime;
 
     @Schema(description = "开始时间")
     private LocalDateTime startTime;
@@ -50,6 +59,15 @@ public class MangoJobInstanceVO implements Serializable {
 
     @Schema(description = "执行耗时毫秒")
     private Long durationMillis;
+
+    @Schema(description = "执行尝试次数")
+    private Integer attemptCount;
+
+    @Schema(description = "结果摘要")
+    private String resultSummary;
+
+    @Schema(description = "Worker 地址")
+    private String workerAddress;
 
     @Schema(description = "引擎类型")
     private String engineType;

@@ -4,7 +4,7 @@
       <div class="job-toolbar-head">
         <div>
           <h2>任务定义</h2>
-          <p>维护 Mango 原生任务契约，底层调度由已配置引擎执行。</p>
+          <p>维护任务定义、调度频率、处理器和结构化参数。</p>
         </div>
         <el-button v-auth="'job:definition:add'" type="primary" :icon="Plus" @click="openEditor()">新增任务</el-button>
       </div>
@@ -300,7 +300,7 @@ const form = reactive<SaveJobDefinitionPayload>({
   concurrencyPolicy: '',
   timeoutSeconds: 300,
   retryPolicy: '',
-  engineType: 'POWERJOB',
+  engineType: 'MANGO_NATIVE',
 });
 
 const triggerForm = reactive({
@@ -363,7 +363,7 @@ function openEditor(row?: JobDefinition) {
     concurrencyPolicy: row?.concurrencyPolicy || '',
     timeoutSeconds: row?.timeoutSeconds || 300,
     retryPolicy: row?.retryPolicy || '',
-    engineType: row?.engineType || 'POWERJOB',
+    engineType: row?.engineType || 'MANGO_NATIVE',
   });
   editorVisible.value = true;
 }

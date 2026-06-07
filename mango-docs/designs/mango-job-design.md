@@ -1,5 +1,9 @@
 # Mango Job 任务调度设计说明
 
+> 状态：历史设计，已被 `mango-docs/designs/mango-native-job-engine-design.md` 替代。
+>
+> 替代原因：本设计以 PowerJob Adapter 作为底层运行时，实践中形成 Mango 与 PowerJob 双事实源，导致任务实例、Worker、日志和调度状态在 Mango UI 中不可一致解释。后续 Job 研发以 Mango 原生 Job Engine 为准，PowerJob 只作为能力参考和迁移参考；当前交付已废弃 PowerJob 运行时集成代码。
+
 ## 1. 目标
 
 为 Mango 增加统一任务调度能力。设计结论是 Mango 提供原生 Job 契约、治理数据、权限菜单和统一 UI，底层优先集成 PowerJob 作为调度执行引擎。

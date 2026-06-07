@@ -6,14 +6,34 @@ package io.mango.job.api.enums;
 public enum JobWorkerStatus {
 
     /**
+     * 已注册。
+     */
+    REGISTERED,
+
+    /**
      * 在线。
      */
     ONLINE,
 
     /**
+     * 排空中。
+     */
+    DRAINING,
+
+    /**
      * 离线。
      */
     OFFLINE,
+
+    /**
+     * 心跳过期。
+     */
+    EXPIRED,
+
+    /**
+     * 已禁用。
+     */
+    DISABLED,
 
     /**
      * 状态未知。

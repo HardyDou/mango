@@ -15,6 +15,8 @@ public class MangoJobDefinitionEntity extends TenantEntity {
 
     private String appCode;
 
+    private String moduleCode;
+
     private String jobCode;
 
     private String jobName;
@@ -27,6 +29,8 @@ public class MangoJobDefinitionEntity extends TenantEntity {
 
     private String handlerName;
 
+    private String handlerVersion;
+
     private String paramSchema;
 
     private String paramValue;
@@ -38,6 +42,14 @@ public class MangoJobDefinitionEntity extends TenantEntity {
     private Integer timeoutSeconds;
 
     private String retryPolicy;
+
+    private String timezone;
+
+    private Integer maxRetryCount;
+
+    private Integer version;
+
+    private Integer deleted;
 
     private String status;
 

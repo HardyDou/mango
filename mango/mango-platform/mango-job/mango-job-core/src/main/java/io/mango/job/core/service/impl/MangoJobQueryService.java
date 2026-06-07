@@ -1,6 +1,7 @@
 package io.mango.job.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.Require;
@@ -10,6 +11,7 @@ import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobInstanceStatus;
 import io.mango.job.api.enums.JobScheduleType;
 import io.mango.job.api.enums.JobSyncStatus;
+import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.query.MangoJobInstancePageQuery;
 import io.mango.job.api.query.MangoJobLogPageQuery;
 import io.mango.job.api.query.MangoJobWorkerPageQuery;
@@ -23,19 +25,23 @@ import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
 import io.mango.job.core.entity.MangoJobLogIndexEntity;
 import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
+import io.mango.job.core.entity.MangoJobAttemptEntity;
+import io.mango.job.core.mapper.MangoJobAttemptMapper;
 import io.mango.job.core.mapper.MangoJobDefinitionMapper;
 import io.mango.job.core.mapper.MangoJobInstanceMapper;
 import io.mango.job.core.mapper.MangoJobLogIndexMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
-import io.mango.job.core.service.IMangoJobHandlerRegistry;
+import io.mango.job.support.service.IMangoJobHandlerRegistry;
 import io.mango.job.core.service.IMangoJobQueryService;
 import io.mango.job.core.service.engine.IMangoJobEngineRegistry;
 import io.mango.job.core.service.engine.IMangoJobEngineSyncService;
 import io.mango.job.core.service.engine.MangoJobLogRequest;
 import io.mango.job.core.service.engine.MangoJobLogResult;
+import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +54,11 @@ import java.util.stream.Collectors;
 @Service
 public class MangoJobQueryService implements IMangoJobQueryService {
 
+    private static final int WORKER_ONLINE_HEARTBEAT_SECONDS = 600;
+
     private final MangoJobInstanceMapper instanceMapper;
+
+    private final MangoJobAttemptMapper attemptMapper;
 
     private final MangoJobLogIndexMapper logIndexMapper;
 
@@ -64,15 +74,20 @@ public class MangoJobQueryService implements IMangoJobQueryService {
 
     private final IMangoJobEngineRegistry engineRegistry;
 
+    private final IMangoNativeJobRuntime nativeJobRuntime;
+
     public MangoJobQueryService(MangoJobInstanceMapper instanceMapper,
+                                MangoJobAttemptMapper attemptMapper,
                                 MangoJobLogIndexMapper logIndexMapper,
                                 MangoJobWorkerSnapshotMapper workerSnapshotMapper,
                                 MangoJobDefinitionMapper definitionMapper,
                                 IMangoJobHandlerRegistry handlerRegistry,
                                 MangoJobDataSourceRouter dataSourceRouter,
                                 IMangoJobEngineSyncService engineSyncService,
-                                IMangoJobEngineRegistry engineRegistry) {
+                                IMangoJobEngineRegistry engineRegistry,
+                                IMangoNativeJobRuntime nativeJobRuntime) {
         this.instanceMapper = instanceMapper;
+        this.attemptMapper = attemptMapper;
         this.logIndexMapper = logIndexMapper;
         this.workerSnapshotMapper = workerSnapshotMapper;
         this.definitionMapper = definitionMapper;
@@ -80,18 +95,26 @@ public class MangoJobQueryService implements IMangoJobQueryService {
         this.dataSourceRouter = dataSourceRouter;
         this.engineSyncService = engineSyncService;
         this.engineRegistry = engineRegistry;
+        this.nativeJobRuntime = nativeJobRuntime;
     }
 
     @Override
     public PageResult<MangoJobInstanceVO> pageInstances(MangoJobInstancePageQuery query) {
         return dataSourceRouter.route(() -> {
             MangoJobInstancePageQuery resolved = query == null ? new MangoJobInstancePageQuery() : query;
+            importScheduledInstances(resolved);
+            refreshRunningInstances(resolved);
             IPage<MangoJobInstanceEntity> page = instanceMapper.selectPage(
                     new Page<>(resolved.getPage(), resolved.getSize()),
                     instanceWrapper(resolved));
             Map<Long, MangoJobDefinitionEntity> definitions = selectTenantDefinitions(page.getRecords());
             return PageResult.of(page.getRecords().stream()
-                            .map(instance -> MangoJobSupport.toInstanceVO(instance, definitions.get(instance.getJobId())))
+                            .map(instance -> {
+                                MangoJobInstanceVO vo = MangoJobSupport.toInstanceVO(instance,
+                                        definitions.get(instance.getJobId()));
+                                vo.setWorkerAddress(latestWorkerAddress(instance.getId()));
+                                return vo;
+                            })
                             .toList(),
                     page.getTotal(), page.getCurrent(), page.getSize());
         });
@@ -150,13 +173,22 @@ public class MangoJobQueryService implements IMangoJobQueryService {
     }
 
     @Override
+    public MangoJobLogDetailVO detailInstanceLog(Long instanceId) {
+        return nativeJobRuntime.detailInstanceLog(instanceId);
+    }
+
+    @Override
     public PageResult<MangoJobWorkerSnapshotVO> pageWorkers(MangoJobWorkerPageQuery query) {
         return dataSourceRouter.route(() -> {
             MangoJobWorkerPageQuery resolved = query == null ? new MangoJobWorkerPageQuery() : query;
+            expireStaleWorkers();
             IPage<MangoJobWorkerSnapshotEntity> page = workerSnapshotMapper.selectPage(
                     new Page<>(resolved.getPage(), resolved.getSize()),
                     workerWrapper(resolved));
-            return PageResult.of(page.getRecords().stream().map(MangoJobSupport::toWorkerVO).toList(),
+            return PageResult.of(page.getRecords().stream()
+                            .map(this::resolveWorkerStatus)
+                            .map(MangoJobSupport::toWorkerVO)
+                            .toList(),
                     page.getTotal(), page.getCurrent(), page.getSize());
         });
     }
@@ -204,8 +236,36 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                 .eq(StringUtils.hasText(query.getAppCode()), MangoJobWorkerSnapshotEntity::getAppCode, query.getAppCode())
                 .eq(StringUtils.hasText(query.getStatus()), MangoJobWorkerSnapshotEntity::getStatus, query.getStatus())
                 .eq(StringUtils.hasText(query.getEngineType()), MangoJobWorkerSnapshotEntity::getEngineType, query.getEngineType())
+                .notIn(MangoJobWorkerSnapshotEntity::getWorkerAddress, "N/A", "n/a", "UNKNOWN", "unknown", "NULL", "null", "-")
                 .like(StringUtils.hasText(keyword), MangoJobWorkerSnapshotEntity::getWorkerAddress, keyword)
                 .orderByDesc(MangoJobWorkerSnapshotEntity::getLastHeartbeatAt);
+    }
+
+    private void expireStaleWorkers() {
+        String tenantId = MangoJobSupport.currentTenantId();
+        workerSnapshotMapper.update(null, new LambdaUpdateWrapper<MangoJobWorkerSnapshotEntity>()
+                .eq(MangoJobWorkerSnapshotEntity::getTenantId, tenantId)
+                .eq(MangoJobWorkerSnapshotEntity::getStatus, JobWorkerStatus.ONLINE.name())
+                .isNull(MangoJobWorkerSnapshotEntity::getLastHeartbeatAt)
+                .set(MangoJobWorkerSnapshotEntity::getStatus, JobWorkerStatus.EXPIRED.name()));
+        workerSnapshotMapper.update(null, new LambdaUpdateWrapper<MangoJobWorkerSnapshotEntity>()
+                .eq(MangoJobWorkerSnapshotEntity::getTenantId, tenantId)
+                .eq(MangoJobWorkerSnapshotEntity::getStatus, JobWorkerStatus.ONLINE.name())
+                .lt(MangoJobWorkerSnapshotEntity::getLastHeartbeatAt,
+                        LocalDateTime.now().minusSeconds(WORKER_ONLINE_HEARTBEAT_SECONDS))
+                .set(MangoJobWorkerSnapshotEntity::getStatus, JobWorkerStatus.EXPIRED.name()));
+    }
+
+    private MangoJobWorkerSnapshotEntity resolveWorkerStatus(MangoJobWorkerSnapshotEntity worker) {
+        if (!MangoJobSupport.hasValidWorkerAddress(worker.getWorkerAddress())) {
+            worker.setStatus(JobWorkerStatus.UNKNOWN.name());
+            return worker;
+        }
+        LocalDateTime heartbeat = worker.getLastHeartbeatAt();
+        if (heartbeat == null || heartbeat.isBefore(LocalDateTime.now().minusSeconds(WORKER_ONLINE_HEARTBEAT_SECONDS))) {
+            worker.setStatus(JobWorkerStatus.EXPIRED.name());
+        }
+        return worker;
     }
 
     private MangoJobEngineStatusVO engineStatus(JobEngineType engineType) {
@@ -287,6 +347,18 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                 .collect(Collectors.toMap(MangoJobDefinitionEntity::getId, Function.identity()));
     }
 
+    private String latestWorkerAddress(Long instanceId) {
+        if (instanceId == null) {
+            return null;
+        }
+        List<MangoJobAttemptEntity> attempts = attemptMapper.selectList(
+                new LambdaQueryWrapper<MangoJobAttemptEntity>()
+                        .eq(MangoJobAttemptEntity::getInstanceId, instanceId)
+                        .orderByDesc(MangoJobAttemptEntity::getAttemptNo)
+                        .last("limit 1"));
+        return attempts.isEmpty() ? null : attempts.get(0).getWorkerAddressSnapshot();
+    }
+
     private boolean needsRefresh(MangoJobInstanceEntity instance) {
         return StringUtils.hasText(instance.getEngineInstanceId())
                 && (JobInstanceStatus.WAITING.name().equals(instance.getStatus())
@@ -346,6 +418,18 @@ public class MangoJobQueryService implements IMangoJobQueryService {
                                 MangoJobInstanceEntity instance,
                                 MangoJobDefinitionEntity definition,
                                 MangoJobLogDetailVO detail) {
+        if (JobEngineType.MANGO_NATIVE.name().equals(logIndex.getEngineType()) && instance != null) {
+            MangoJobLogDetailVO nativeDetail = nativeJobRuntime.detailInstanceLog(instance.getId());
+            detail.setLogSource(nativeDetail.getLogSource());
+            detail.setNativeLogAvailable(nativeDetail.getNativeLogAvailable());
+            detail.setLogFetchStatus(nativeDetail.getLogFetchStatus());
+            detail.setNativeLogContent(nativeDetail.getNativeLogContent());
+            detail.setContent(nativeDetail.getContent());
+            detail.setEngineResult(nativeDetail.getEngineResult());
+            detail.setReadOffset(nativeDetail.getReadOffset());
+            detail.setLastFetchedAt(nativeDetail.getLastFetchedAt());
+            return;
+        }
         if (!StringUtils.hasText(logIndex.getEngineType())) {
             return;
         }

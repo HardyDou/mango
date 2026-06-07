@@ -10,6 +10,7 @@ export function registerMangoJobAdminPages() {
   registerModulePages({
     moduleCode: 'mango-job',
     pages: {
+      'job/alarm/index': () => import('./index').then(m => m.JobAlarmView),
       'job/definition/index': () => import('./index').then(m => m.JobDefinitionView),
       'job/instance/index': () => import('./index').then(m => m.JobInstanceView),
       'job/worker/index': () => import('./index').then(m => m.JobWorkerView),

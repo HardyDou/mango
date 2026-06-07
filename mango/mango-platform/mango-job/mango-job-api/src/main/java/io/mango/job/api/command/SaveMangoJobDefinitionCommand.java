@@ -79,6 +79,6 @@ public class SaveMangoJobDefinitionCommand implements Serializable {
 
     @NotNull(message = "引擎类型不能为空")
     @Size(max = 32, message = "引擎类型不能超过32个字符")
-    @Schema(description = "引擎类型：POWERJOB", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "引擎类型：MANGO_NATIVE", requiredMode = Schema.RequiredMode.REQUIRED)
     private String engineType;
 }

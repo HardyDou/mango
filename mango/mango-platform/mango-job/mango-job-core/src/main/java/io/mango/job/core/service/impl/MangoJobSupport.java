@@ -22,6 +22,7 @@ import io.mango.job.core.entity.MangoJobWorkerSnapshotEntity;
 import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Job 服务内部支持方法。
@@ -42,6 +43,18 @@ final class MangoJobSupport {
             return null;
         }
         return value.trim();
+    }
+
+    static boolean hasValidWorkerAddress(String value) {
+        String address = trimToNull(value);
+        if (address == null) {
+            return false;
+        }
+        String normalized = address.toUpperCase(Locale.ROOT);
+        return !("N/A".equals(normalized)
+                || "UNKNOWN".equals(normalized)
+                || "NULL".equals(normalized)
+                || "-".equals(normalized));
     }
 
     static String normalizeRequired(String value, String message) {
@@ -135,17 +148,25 @@ final class MangoJobSupport {
         vo.setId(entity.getId());
         vo.setTenantId(entity.getTenantId());
         vo.setJobId(entity.getJobId());
+        vo.setJobCode(entity.getJobCode());
+        vo.setJobNameSnapshot(entity.getJobNameSnapshot());
         if (definition != null) {
             vo.setJobCode(definition.getJobCode());
             vo.setJobName(definition.getJobName());
+        } else {
+            vo.setJobName(entity.getJobNameSnapshot());
         }
         vo.setTriggerType(entity.getTriggerType());
         vo.setTriggerUserId(entity.getTriggerUserId());
         vo.setTriggerTime(entity.getTriggerTime());
+        vo.setScheduledFireTime(entity.getScheduledFireTime());
+        vo.setActualFireTime(entity.getActualFireTime());
         vo.setStartTime(entity.getStartTime());
         vo.setEndTime(entity.getEndTime());
         vo.setStatus(entity.getStatus());
         vo.setDurationMillis(entity.getDurationMillis());
+        vo.setAttemptCount(entity.getAttemptCount());
+        vo.setResultSummary(entity.getResultSummary());
         vo.setEngineType(entity.getEngineType());
         vo.setEngineInstanceId(entity.getEngineInstanceId());
         vo.setErrorSummary(entity.getErrorSummary());

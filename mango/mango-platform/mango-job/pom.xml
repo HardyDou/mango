@@ -17,6 +17,7 @@
 
     <modules>
         <module>mango-job-api</module>
+        <module>mango-job-support</module>
         <module>mango-job-core</module>
         <module>mango-job-starter</module>
         <module>mango-job-starter-remote</module>
