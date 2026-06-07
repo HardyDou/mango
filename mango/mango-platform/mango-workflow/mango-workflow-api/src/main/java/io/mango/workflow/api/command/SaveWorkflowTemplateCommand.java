@@ -29,15 +29,16 @@ public class SaveWorkflowTemplateCommand {
     @Size(max = 128, message = "模板编码最多128个字符")
     private String templateCode;
 
-    @Schema(description = "流程模板分类ID")
+    @Schema(description = "历史流程模板分类ID，业务域替换后前台不再使用")
     private Long templateCategoryId;
 
-    @Schema(description = "业务场景编码")
-    @Size(max = 64, message = "业务场景编码最多64个字符")
+    @Schema(description = "业务域编码")
+    @NotBlank(message = "业务域编码不能为空")
+    @Size(max = 64, message = "业务域编码最多64个字符")
     private String categoryCode;
 
-    @Schema(description = "业务场景名称")
-    @Size(max = 64, message = "业务场景名称最多64个字符")
+    @Schema(description = "业务域名称")
+    @Size(max = 64, message = "业务域名称最多64个字符")
     private String categoryName;
 
     @Schema(description = "流程图标")

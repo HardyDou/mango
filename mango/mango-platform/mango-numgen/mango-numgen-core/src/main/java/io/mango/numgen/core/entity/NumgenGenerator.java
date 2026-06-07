@@ -21,6 +21,8 @@ public class NumgenGenerator {
 
     private String genName;
 
+    private String domainCode;
+
     private Integer status;
 
     private Integer currentRuleVersion;

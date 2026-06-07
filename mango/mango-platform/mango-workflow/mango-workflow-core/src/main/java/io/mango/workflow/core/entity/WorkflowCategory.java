@@ -20,6 +20,7 @@ public class WorkflowCategory {
     private Long tenantId;
     private String categoryName;
     private String categoryCode;
+    private String domainCode;
     private Integer sort;
     private Integer status;
     private String remark;

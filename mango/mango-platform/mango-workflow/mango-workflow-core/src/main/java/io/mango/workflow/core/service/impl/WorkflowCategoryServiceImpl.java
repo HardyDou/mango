@@ -44,9 +44,10 @@ public class WorkflowCategoryServiceImpl implements IWorkflowCategoryService {
     }
 
     @Override
-    public R<List<WorkflowCategoryVO>> list(Integer status) {
+    public R<List<WorkflowCategoryVO>> list(Integer status, String domainCode) {
         LambdaQueryWrapper<WorkflowCategory> wrapper = new LambdaQueryWrapper<WorkflowCategory>()
                 .eq(status != null, WorkflowCategory::getStatus, status)
+                .eq(StringUtils.hasText(domainCode), WorkflowCategory::getDomainCode, trimToNull(domainCode))
                 .orderByAsc(WorkflowCategory::getSort)
                 .orderByDesc(WorkflowCategory::getUpdatedTime);
         return R.ok(mapper.selectList(wrapper).stream().map(this::toVO).toList());
@@ -108,6 +109,7 @@ public class WorkflowCategoryServiceImpl implements IWorkflowCategoryService {
                         .or()
                         .like(WorkflowCategory::getCategoryCode, keyword))
                 .eq(query.getStatus() != null, WorkflowCategory::getStatus, query.getStatus())
+                .eq(StringUtils.hasText(query.getDomainCode()), WorkflowCategory::getDomainCode, trimToNull(query.getDomainCode()))
                 .orderByAsc(WorkflowCategory::getSort)
                 .orderByDesc(WorkflowCategory::getUpdatedTime);
     }
@@ -127,6 +129,7 @@ public class WorkflowCategoryServiceImpl implements IWorkflowCategoryService {
     private void copy(SaveWorkflowCategoryCommand command, WorkflowCategory entity) {
         entity.setCategoryName(command.getCategoryName().trim());
         entity.setCategoryCode(command.getCategoryCode().trim());
+        entity.setDomainCode(resolveDomainCode(command.getDomainCode()));
         entity.setSort(command.getSort() == null ? 0 : command.getSort());
         entity.setStatus(command.getStatus() == null ? 1 : command.getStatus());
         entity.setRemark(trimToNull(command.getRemark()));
@@ -137,6 +140,7 @@ public class WorkflowCategoryServiceImpl implements IWorkflowCategoryService {
         vo.setId(entity.getId());
         vo.setCategoryName(entity.getCategoryName());
         vo.setCategoryCode(entity.getCategoryCode());
+        vo.setDomainCode(entity.getDomainCode());
         vo.setSort(entity.getSort());
         vo.setStatus(entity.getStatus());
         vo.setRemark(entity.getRemark());
@@ -155,5 +159,9 @@ public class WorkflowCategoryServiceImpl implements IWorkflowCategoryService {
 
     private String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String resolveDomainCode(String domainCode) {
+        return StringUtils.hasText(domainCode) ? domainCode.trim() : "COMMON";
     }
 }

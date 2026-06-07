@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ISysConfigService {
 
-    R<List<SysConfigPo>> list(ConfigTypeEnum type);
+    R<List<SysConfigPo>> list(ConfigTypeEnum type, String domainCode);
 
     R<SysConfigPo> get(Long id);
 

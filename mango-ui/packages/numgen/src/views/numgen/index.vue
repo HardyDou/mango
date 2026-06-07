@@ -51,50 +51,62 @@
       </el-table>
     </section>
 
-    <section v-else class="numgen-rule-panel">
-      <div class="numgen-table-head">
-        <div>
-          <h3>编号规则</h3>
-          <p>维护业务Key、当前生效版本和待发布规则，编辑后发布才会影响业务生成。</p>
-        </div>
-        <div class="numgen-head-actions">
-          <el-button type="primary" :icon="Plus" @click="openGeneratorDrawer()">新增规则</el-button>
-        </div>
-      </div>
+    <div v-else class="numgen-list-layout">
+      <DomainSideTree
+        v-model="generatorQuery.domainCode"
+        title="业务域"
+        subtitle="按业务域维护编号"
+        all-label="全部规则"
+        all-code="ALL"
+        :all-count="generatorTotal"
+        @change="handleDomainChange"
+      />
 
-      <el-form :inline="true" :model="generatorQuery" class="search-form">
-        <el-form-item label="关键字">
-          <el-input
-            v-model="generatorQuery.keyword"
-            placeholder="业务Key / 名称"
-            clearable
-            @keyup.enter="loadGenerators"
-            @clear="loadGenerators"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="generatorQuery.status" clearable placeholder="全部状态">
-            <el-option label="启用" :value="1" />
-            <el-option label="停用" :value="0" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadGenerators">查询</el-button>
-          <el-button :icon="Refresh" @click="resetGeneratorQuery">重置</el-button>
-        </el-form-item>
-      </el-form>
+      <section class="numgen-rule-panel">
+        <div class="numgen-table-head">
+          <div>
+            <h3>编号规则</h3>
+            <p>维护业务Key、当前生效版本和待发布规则，编辑后发布才会影响业务生成。</p>
+          </div>
+          <div class="numgen-head-actions">
+            <el-button type="primary" :icon="Plus" @click="openGeneratorDrawer()">新增规则</el-button>
+          </div>
+        </div>
 
-      <el-table
-        class="generator-table"
-        :data="generatorRows"
-        v-loading="generatorLoading"
-        row-key="id"
-        stripe
-        highlight-current-row
-        @row-click="selectGenerator"
-      >
+        <el-form :inline="true" :model="generatorQuery" class="search-form">
+          <el-form-item label="关键字">
+            <el-input
+              v-model="generatorQuery.keyword"
+              placeholder="业务Key / 名称"
+              clearable
+              @keyup.enter="loadGenerators"
+              @clear="loadGenerators"
+            />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="generatorQuery.status" clearable placeholder="全部状态">
+              <el-option label="启用" :value="1" />
+              <el-option label="停用" :value="0" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :icon="Search" @click="loadGenerators">查询</el-button>
+            <el-button :icon="Refresh" @click="resetGeneratorQuery">重置</el-button>
+          </el-form-item>
+        </el-form>
+
+        <el-table
+          class="generator-table"
+          :data="generatorRows"
+          v-loading="generatorLoading"
+          row-key="id"
+          stripe
+          highlight-current-row
+          @row-click="selectGenerator"
+        >
         <el-table-column prop="genName" label="规则名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="genKey" label="业务Key" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="domainCode" label="业务域" width="120" show-overflow-tooltip />
         <el-table-column label="生效版本" width="118">
           <template #default="{ row }">
             <span v-if="row.currentRuleVersion">V{{ row.currentRuleVersion }}</span>
@@ -131,17 +143,18 @@
             </div>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
 
-      <div class="pagination-row">
-        <Pagination
-          v-model:current-page="generatorQuery.pageNum"
-          v-model:page-size="generatorQuery.pageSize"
-          :total="generatorTotal"
-          @change="loadGenerators"
-        />
-      </div>
-    </section>
+        <div class="pagination-row">
+          <Pagination
+            v-model:current-page="generatorQuery.pageNum"
+            v-model:page-size="generatorQuery.pageSize"
+            :total="generatorTotal"
+            @change="loadGenerators"
+          />
+        </div>
+      </section>
+    </div>
 
     <el-dialog v-model="generatorDrawerVisible" :title="generatorForm.id ? '编辑生成器' : '新增生成器'" width="860px" destroy-on-close append-to-body>
       <el-form ref="generatorFormRef" :model="generatorForm" :rules="generatorRules" label-width="96px" class="generator-editor-block">
@@ -151,6 +164,9 @@
           </el-form-item>
           <el-form-item label="名称" prop="genName">
             <el-input v-model="generatorForm.genName" placeholder="例如 订单号" />
+          </el-form-item>
+          <el-form-item label="业务域" prop="domainCode">
+            <el-input v-model="generatorForm.domainCode" placeholder="如 NUMGEN" />
           </el-form-item>
           <el-form-item label="状态">
             <el-radio-group v-model="generatorForm.status">
@@ -379,6 +395,7 @@ import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Clock, Delete, Edit, Finished, Plus, Refresh, Search } from '@element-plus/icons-vue';
 import Pagination from '@mango/common/components/Pagination/index.vue';
+import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
 import {
   numgenApi,
   type ApiId,
@@ -439,11 +456,12 @@ const segmentPropertyVisible = ref(false);
 const expressionHelpVisible = ref(false);
 
 const generatorFormRef = ref<FormInstance>();
-const generatorQuery = reactive<NumgenGeneratorQuery>({ pageNum: 1, pageSize: 10, keyword: '', status: '' });
+const generatorQuery = reactive<NumgenGeneratorQuery>({ pageNum: 1, pageSize: 10, keyword: '', domainCode: '', status: '' });
 
 const generatorForm = reactive<NumgenGenerator>({
   genKey: '',
   genName: '',
+  domainCode: 'NUMGEN',
   status: 1,
 });
 
@@ -498,6 +516,7 @@ const sequenceScopeHint = computed(() => {
 const generatorRules: FormRules = {
   genKey: [{ required: true, message: '请输入业务Key', trigger: 'blur' }],
   genName: [{ required: true, message: '请输入名称', trigger: 'blur' }],
+  domainCode: [{ required: true, message: '请输入业务域编码', trigger: 'blur' }],
 };
 
 const segmentRules: FormRules = {
@@ -527,6 +546,14 @@ function resetGeneratorQuery() {
   generatorQuery.keyword = '';
   generatorQuery.status = '';
   generatorQuery.pageNum = 1;
+  loadGenerators();
+}
+
+function handleDomainChange() {
+  generatorQuery.pageNum = 1;
+  selectedGenerator.value = undefined;
+  selectedVersion.value = undefined;
+  versionRows.value = [];
   loadGenerators();
 }
 
@@ -583,6 +610,7 @@ async function openGeneratorDrawer(row?: NumgenGenerator) {
     id: undefined,
     genKey: '',
     genName: '',
+    domainCode: generatorQuery.domainCode || 'NUMGEN',
     status: 1,
   });
   resetDialogSegmentEditor();
@@ -633,6 +661,7 @@ function buildGeneratorSavePayload(): NumgenGeneratorSavePayload {
     id: generatorForm.id,
     genKey: generatorForm.genKey,
     genName: generatorForm.genName,
+    domainCode: generatorForm.domainCode,
     status: generatorForm.status,
   };
 }
@@ -1184,6 +1213,13 @@ function segmentTypeLabel(type: SegmentEditorType) {
   min-width: 0;
 }
 
+.numgen-list-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  min-height: calc(100vh - 136px);
+}
+
 .numgen-rule-panel {
   padding: 16px;
   border: 1px solid var(--el-border-color-lighter);
@@ -1574,6 +1610,10 @@ function segmentTypeLabel(type: SegmentEditorType) {
 }
 
 @media (max-width: 960px) {
+  .numgen-list-layout {
+    grid-template-columns: 1fr;
+  }
+
   .section-head {
     flex-direction: column;
   }

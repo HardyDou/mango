@@ -12,6 +12,7 @@ export interface SysConfig {
   configGroup: string;
   configName?: string;
   type?: string;
+  domainCode?: string;
   description?: string;
   remark?: string;
   status?: number;
@@ -24,6 +25,7 @@ export interface SysConfigQuery {
   pageSize?: number;
   keyword?: string;
   configGroup?: string;
+  domainCode?: string;
 }
 
 export interface PageResult<T> {
@@ -62,6 +64,7 @@ export const configApi = {
 function toBackendQuery(params?: SysConfigQuery) {
   return {
     type: params?.configGroup ? toBackendType(params.configGroup) : undefined,
+    domainCode: params?.domainCode || undefined,
   };
 }
 
@@ -78,6 +81,7 @@ function fromBackend(item: any): SysConfig {
   return {
     ...item,
     configGroup: group,
+    domainCode: item.domainCode ?? 'COMMON',
     description: item.description ?? item.remark,
   };
 }
@@ -89,6 +93,7 @@ function toBackend(item: SysConfig) {
     configValue: item.configValue,
     configName: item.configName || item.configKey,
     type: item.type || toBackendType(item.configGroup),
+    domainCode: item.domainCode || 'COMMON',
     status: item.status,
     sort: 0,
     remark: item.remark || item.description,

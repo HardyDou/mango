@@ -22,6 +22,9 @@ public class WorkflowDefinitionVO {
     @Schema(description = "流程分类名称")
     private String categoryName;
 
+    @Schema(description = "业务域编码")
+    private String domainCode;
+
     @Schema(description = "所属组织ID")
     private Long orgId;
 

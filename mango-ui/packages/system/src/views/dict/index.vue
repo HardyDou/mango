@@ -1,8 +1,18 @@
 <template>
   <div class="dict-container">
-    <el-row :gutter="20">
-      <!-- 左侧：字典类型列表 -->
-      <el-col :span="8">
+    <div class="dict-layout">
+      <DomainSideTree
+        v-model="typeDomainCode"
+        title="业务域"
+        subtitle="按业务域维护字典"
+        all-label="全部字典"
+        all-code="ALL"
+        :all-count="typeTotal"
+        @change="handleDomainChange"
+      />
+
+      <!-- 中间：字典类型列表 -->
+      <section class="dict-type-panel">
         <el-card class="type-card">
           <div class="search-toolbar dict-type-toolbar">
             <el-input
@@ -39,6 +49,7 @@
               <div class="type-info">
                 <span class="type-name">{{ item.name }}</span>
                 <span class="type-code">{{ item.code }}</span>
+                <span class="type-domain">{{ item.domainCode || 'COMMON' }}</span>
               </div>
               <div class="type-actions">
                 <DictTag
@@ -70,10 +81,10 @@
             />
           </div>
         </el-card>
-      </el-col>
+      </section>
 
       <!-- 右侧：字典数据列表 -->
-      <el-col :span="16">
+      <section class="dict-data-panel">
         <el-card class="data-card">
           <el-form
             :inline="true"
@@ -188,8 +199,8 @@
             @pagination="loadDataList"
           />
         </el-card>
-      </el-col>
-    </el-row>
+      </section>
+    </div>
 
     <!-- 字典类型编辑弹窗 -->
     <el-dialog
@@ -220,6 +231,15 @@
             v-model="typeForm.code"
             placeholder="请输入类型编码"
             :disabled="!!typeForm.id"
+          />
+        </el-form-item>
+        <el-form-item
+          label="业务域"
+          prop="domainCode"
+        >
+          <DomainSelector
+            v-model="typeForm.domainCode"
+            placeholder="请选择业务域"
           />
         </el-form-item>
         <el-form-item
@@ -362,12 +382,16 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Search } from '@element-plus/icons-vue';
 import { DictTag, Pagination, formatDate, useDict } from '@mango/common';
 import { dictTypeApi, dictDataApi, type DictType, type DictData } from '../../api/dict';
+import DomainSelector from '../../components/DomainSelector/index.vue';
+import DomainSideTree from '../../components/DomainSideTree/index.vue';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
 
 // ==================== 类型列表 ====================
 const typeKeyword = ref('');
+const typeDomainCode = ref('');
 const typeList = ref<DictType[]>([]);
+const typeTotal = ref(0);
 const currentType = ref<DictType | null>(null);
 const typeDialogVisible = ref(false);
 const typeFormRef = ref<FormInstance>();
@@ -375,6 +399,7 @@ const typeForm = reactive<DictType>({
   id: undefined,
   name: '',
   code: '',
+  domainCode: 'COMMON',
   description: '',
   sort: 0,
   status: 1,
@@ -390,8 +415,12 @@ const typeRules: FormRules = {
  */
 async function loadTypeList() {
   try {
-    const data = await dictTypeApi.list({ keyword: typeKeyword.value });
+    const data = await dictTypeApi.list({
+      keyword: typeKeyword.value,
+      domainCode: typeDomainCode.value || undefined,
+    });
     typeList.value = data.list;
+    typeTotal.value = data.total;
     if (!currentType.value && typeList.value.length > 0) {
       handleSelectType(typeList.value[0]);
     }
@@ -404,7 +433,15 @@ async function loadTypeList() {
  * 搜索类型
  */
 function handleTypeSearch() {
+  currentType.value = null;
+  dataQuery.typeId = undefined;
+  dataList.value = [];
+  dataTotal.value = 0;
   loadTypeList();
+}
+
+function handleDomainChange() {
+  handleTypeSearch();
 }
 
 /**
@@ -435,6 +472,7 @@ function handleAddType() {
   typeForm.id = undefined;
   typeForm.name = '';
   typeForm.code = '';
+  typeForm.domainCode = typeDomainCode.value || 'COMMON';
   typeForm.description = '';
   typeForm.sort = 0;
   typeForm.status = 1;
@@ -467,6 +505,7 @@ function handleEditType(row: DictType) {
   typeForm.id = row.id;
   typeForm.name = row.name;
   typeForm.code = row.code;
+  typeForm.domainCode = row.domainCode || 'COMMON';
   typeForm.description = row.description || '';
   typeForm.sort = row.sort || 0;
   typeForm.status = row.status ?? 1;
@@ -646,6 +685,18 @@ onMounted(() => {
   padding: 0;
 }
 
+.dict-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(300px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.dict-type-panel,
+.dict-data-panel {
+  min-width: 0;
+}
+
 .type-card,
 .data-card {
   height: calc(100vh - 140px);
@@ -661,6 +712,8 @@ onMounted(() => {
 }
 
 .dict-type-toolbar {
+  flex-wrap: nowrap;
+
   :deep(.el-input) {
     flex: 1;
   }
@@ -710,6 +763,15 @@ onMounted(() => {
   color: #909399;
 }
 
+.type-domain {
+  width: fit-content;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--el-color-info-light-9);
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
 .type-actions {
   display: flex;
   align-items: center;
@@ -731,5 +793,17 @@ onMounted(() => {
 .current-type {
   color: var(--el-text-color-secondary);
   font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  .dict-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .type-card,
+  .data-card {
+    height: auto;
+    min-height: 360px;
+  }
 }
 </style>

@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface IDictService {
 
-    R<List<DictTypeVO>> listTypes();
+    R<List<DictTypeVO>> listTypes(String domainCode);
 
     R<DictTypeVO> getType(Long id);
 

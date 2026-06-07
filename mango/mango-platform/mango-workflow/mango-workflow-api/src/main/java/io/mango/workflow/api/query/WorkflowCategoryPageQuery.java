@@ -18,4 +18,7 @@ public class WorkflowCategoryPageQuery extends PageQuery {
 
     @Schema(description = "状态：0-停用，1-启用")
     private Integer status;
+
+    @Schema(description = "业务域编码")
+    private String domainCode;
 }

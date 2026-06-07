@@ -9,6 +9,7 @@ import io.mango.system.core.mapper.SysConfigMapper;
 import io.mango.system.core.service.ISysConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,10 +22,13 @@ public class SysConfigServiceImpl implements ISysConfigService {
     private final SysConfigMapper sysConfigMapper;
 
     @Override
-    public R<List<SysConfigPo>> list(ConfigTypeEnum type) {
+    public R<List<SysConfigPo>> list(ConfigTypeEnum type, String domainCode) {
         LambdaQueryWrapper<SysConfig> wrapper = new LambdaQueryWrapper<>();
         if (type != null) {
             wrapper.eq(SysConfig::getType, type);
+        }
+        if (StringUtils.hasText(domainCode)) {
+            wrapper.eq(SysConfig::getDomainCode, domainCode.trim());
         }
         wrapper.orderByAsc(SysConfig::getSort);
         List<SysConfig> list = sysConfigMapper.selectList(wrapper);
@@ -48,6 +52,7 @@ public class SysConfigServiceImpl implements ISysConfigService {
         entity.setConfigValue(po.getConfigValue());
         entity.setConfigName(po.getConfigName());
         entity.setType(po.getType());
+        entity.setDomainCode(resolveDomainCode(po.getDomainCode()));
         entity.setSort(po.getSort());
         entity.setStatus(po.getStatus());
         entity.setRemark(po.getRemark());
@@ -66,6 +71,7 @@ public class SysConfigServiceImpl implements ISysConfigService {
         entity.setConfigValue(po.getConfigValue());
         entity.setConfigName(po.getConfigName());
         entity.setType(po.getType());
+        entity.setDomainCode(resolveDomainCode(po.getDomainCode()));
         entity.setSort(po.getSort());
         entity.setStatus(po.getStatus());
         entity.setRemark(po.getRemark());
@@ -110,9 +116,14 @@ public class SysConfigServiceImpl implements ISysConfigService {
         po.setConfigValue(entity.getConfigValue());
         po.setConfigName(entity.getConfigName());
         po.setType(entity.getType());
+        po.setDomainCode(entity.getDomainCode());
         po.setSort(entity.getSort());
         po.setStatus(entity.getStatus());
         po.setRemark(entity.getRemark());
         return po;
+    }
+
+    private String resolveDomainCode(String domainCode) {
+        return StringUtils.hasText(domainCode) ? domainCode.trim() : "COMMON";
     }
 }

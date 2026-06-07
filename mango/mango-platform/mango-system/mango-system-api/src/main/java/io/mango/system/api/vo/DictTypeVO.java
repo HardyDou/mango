@@ -12,6 +12,8 @@ public class DictTypeVO {
     private String dictType;
     @Schema(description = "字典类型名称")
     private String dictName;
+    @Schema(description = "业务域编码")
+    private String domainCode;
     @Schema(description = "状态：0-禁用，1-启用")
     private Integer status;
     @Schema(description = "备注")

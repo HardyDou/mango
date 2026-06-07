@@ -15,6 +15,7 @@ public class SysConfig {
     private String configValue;
     private String configName;
     private ConfigTypeEnum type;
+    private String domainCode;
     private Integer sort;
     private Integer status;
     private String remark;

@@ -17,6 +17,8 @@ public class SysConfigVO {
     private String configName;
     @Schema(description = "配置类型")
     private ConfigTypeEnum type;
+    @Schema(description = "业务域编码")
+    private String domainCode;
     @Schema(description = "排序号")
     private Integer sort;
     @Schema(description = "状态：0-禁用，1-启用")

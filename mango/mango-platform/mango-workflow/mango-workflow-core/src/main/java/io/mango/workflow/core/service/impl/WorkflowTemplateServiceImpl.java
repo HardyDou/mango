@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.CreateWorkflowDefinitionFromTemplateCommand;
@@ -23,11 +25,9 @@ import io.mango.workflow.api.vo.WorkflowTemplateImportErrorVO;
 import io.mango.workflow.api.vo.WorkflowTemplateImportVO;
 import io.mango.workflow.api.vo.WorkflowTemplateVO;
 import io.mango.workflow.core.entity.WorkflowDefinition;
-import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.entity.WorkflowTemplate;
 import io.mango.workflow.core.entity.WorkflowTemplateCategory;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
-import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowTemplateCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowTemplateMapper;
 import io.mango.workflow.core.service.IWorkflowTemplateService;
@@ -56,8 +56,8 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
 
     private final WorkflowTemplateMapper templateMapper;
     private final WorkflowDefinitionMapper definitionMapper;
-    private final WorkflowCategoryMapper categoryMapper;
     private final WorkflowTemplateCategoryMapper templateCategoryMapper;
+    private final DomainApi domainApi;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -114,13 +114,19 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         Require.notNull(command.getDefinitionId(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
         WorkflowDefinition definition = definitionMapper.selectById(command.getDefinitionId());
         Require.notNull(definition, WorkflowCode.DEFINITION_NOT_FOUND);
+        String templateDomainCode = StringUtils.hasText(command.getCategoryCode())
+                ? command.getCategoryCode().trim()
+                : definition.getDomainCode();
+        validateDomain(templateDomainCode);
 
         SaveWorkflowTemplateCommand template = new SaveWorkflowTemplateCommand();
         template.setTemplateName(command.getTemplateName());
         template.setTemplateCode(command.getTemplateCode());
         template.setTemplateCategoryId(command.getTemplateCategoryId());
-        template.setCategoryCode(command.getCategoryCode());
-        template.setCategoryName(command.getCategoryName());
+        template.setCategoryCode(templateDomainCode);
+        template.setCategoryName(StringUtils.hasText(command.getCategoryName())
+                ? command.getCategoryName().trim()
+                : templateDomainCode);
         template.setIcon(definition.getIcon());
         template.setAdminUsers(parseStringList(definition.getAdminUsers()));
         template.setDesignerJson(definition.getDesignerJson());
@@ -151,11 +157,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         Require.isTrue(WorkflowTemplateStatus.ENABLED.name().equals(template.getStatus()),
                 WorkflowCode.DEFINITION_STATUS_INVALID.getCode(), "流程模板不可导入");
         Long targetTenantId = resolveTargetTenantId(command.getTargetTenantId());
-        Require.notNull(command.getCategoryId(), WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
-        Require.isTrue(command.getCategoryId() > 0, WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
-        WorkflowCategory category = categoryMapper.selectById(command.getCategoryId());
-        Require.notNull(category, WorkflowCode.CATEGORY_NOT_FOUND);
-        Require.isTrue(targetTenantId.equals(category.getTenantId()), WorkflowCode.CATEGORY_NOT_FOUND);
+        validateDomain(command.getDomainCode());
         Require.notBlank(command.getDefinitionName(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程名称不能为空");
         Require.notBlank(command.getDefinitionKey(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程编码不能为空");
         Long count = definitionMapper.selectCount(new LambdaQueryWrapper<WorkflowDefinition>()
@@ -166,7 +168,8 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         LocalDateTime now = LocalDateTime.now();
         WorkflowDefinition definition = new WorkflowDefinition();
         definition.setTenantId(targetTenantId);
-        definition.setCategoryId(command.getCategoryId());
+        definition.setCategoryId(command.getCategoryId() == null ? 0L : command.getCategoryId());
+        definition.setDomainCode(command.getDomainCode().trim());
         definition.setOrgId(command.getOrgId());
         definition.setAdminUsers(toJsonList(command.getAdminUsers() == null || command.getAdminUsers().isEmpty()
                 ? parseStringList(template.getAdminUsers())
@@ -196,12 +199,8 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
     @Transactional(rollbackFor = Exception.class)
     public R<WorkflowTemplateImportVO> importTemplates(ImportWorkflowTemplatesCommand command) {
         Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
-        Require.notNull(command.getCategoryId(), WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
-        Require.isTrue(command.getCategoryId() > 0, WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
+        validateDomain(command.getDomainCode());
         Long targetTenantId = resolveTargetTenantId(command.getTargetTenantId());
-        WorkflowCategory category = categoryMapper.selectById(command.getCategoryId());
-        Require.notNull(category, WorkflowCode.CATEGORY_NOT_FOUND);
-        Require.isTrue(targetTenantId.equals(category.getTenantId()), WorkflowCode.CATEGORY_NOT_FOUND);
 
         List<WorkflowTemplate> templates = importTemplateList(command);
         Require.notEmpty(templates, WorkflowCode.TEMPLATE_IMPORT_FAILED.getCode(), "没有可导入的流程模板");
@@ -213,7 +212,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        createDraftDefinitions(targetTenantId, command.getCategoryId(), command.getOrgId(), command.getAdminUsers(), templates, result, now);
+        createDraftDefinitions(targetTenantId, command.getCategoryId(), command.getDomainCode(), command.getOrgId(), command.getAdminUsers(), templates, result, now);
         return R.ok(result);
     }
 
@@ -222,8 +221,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
     public R<WorkflowTemplateImportVO> pushTemplates(PushWorkflowTemplatesCommand command) {
         Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
         Require.notEmpty(command.getTargetTenantIds(), WorkflowCode.TEMPLATE_IMPORT_FAILED.getCode(), "目标租户不能为空");
-        Require.notBlank(command.getCategoryCode(), WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类编码不能为空");
-        Require.notBlank(command.getCategoryName(), WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类名称不能为空");
+        validateDomain(command.getDomainCode());
 
         List<Long> targetTenantIds = command.getTargetTenantIds().stream()
                 .filter(id -> id != null && id > 0)
@@ -234,6 +232,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         ImportWorkflowTemplatesCommand importCommand = new ImportWorkflowTemplatesCommand();
         importCommand.setTemplateCategoryId(command.getTemplateCategoryId());
         importCommand.setTemplateIds(command.getTemplateIds());
+        importCommand.setDomainCode(command.getDomainCode());
         List<WorkflowTemplate> templates = importTemplateList(importCommand);
         Require.notEmpty(templates, WorkflowCode.TEMPLATE_IMPORT_FAILED.getCode(), "没有可推送的流程模板");
 
@@ -251,8 +250,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
 
         LocalDateTime now = LocalDateTime.now();
         for (Long targetTenantId : targetTenantIds) {
-            WorkflowCategory category = ensureTargetCategory(targetTenantId, command.getCategoryCode(), command.getCategoryName(), now);
-            createDraftDefinitions(targetTenantId, category.getId(), command.getOrgId(), command.getAdminUsers(), templates, result, now);
+            createDraftDefinitions(targetTenantId, 0L, command.getDomainCode(), command.getOrgId(), command.getAdminUsers(), templates, result, now);
         }
         return R.ok(result);
     }
@@ -260,6 +258,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
     private void createDraftDefinitions(
             Long targetTenantId,
             Long categoryId,
+            String domainCode,
             Long orgId,
             List<String> adminUsers,
             List<WorkflowTemplate> templates,
@@ -268,7 +267,8 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         for (WorkflowTemplate template : templates) {
             WorkflowDefinition definition = new WorkflowDefinition();
             definition.setTenantId(targetTenantId);
-            definition.setCategoryId(categoryId);
+            definition.setCategoryId(categoryId == null ? 0L : categoryId);
+            definition.setDomainCode(StringUtils.hasText(domainCode) ? domainCode.trim() : "WORKFLOW");
             definition.setOrgId(orgId);
             definition.setAdminUsers(toJsonList(adminUsers == null || adminUsers.isEmpty()
                     ? parseStringList(template.getAdminUsers())
@@ -293,31 +293,6 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
             definitionMapper.insert(definition);
             result.getDefinitionIds().add(definition.getId());
         }
-    }
-
-    private WorkflowCategory ensureTargetCategory(Long tenantId, String categoryCode, String categoryName, LocalDateTime now) {
-        WorkflowCategory category = categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowCategory>()
-                .eq(WorkflowCategory::getTenantId, tenantId)
-                .eq(WorkflowCategory::getCategoryCode, categoryCode.trim())
-                .last("LIMIT 1"));
-        if (category != null) {
-            return category;
-        }
-        WorkflowCategory created = new WorkflowCategory();
-        created.setTenantId(tenantId);
-        created.setCategoryCode(categoryCode.trim());
-        created.setCategoryName(categoryName.trim());
-        created.setSort(0);
-        created.setStatus(1);
-        created.setRemark("由流程模板推送自动创建");
-        created.setCreatedBy(MangoContextHolder.userId());
-        created.setUpdatedBy(MangoContextHolder.userId());
-        created.setCreatedTime(now);
-        created.setCreatedAt(now);
-        created.setUpdatedTime(now);
-        created.setUpdatedAt(now);
-        categoryMapper.insert(created);
-        return created;
     }
 
     private LambdaQueryWrapper<WorkflowTemplate> wrapper(WorkflowTemplatePageQuery query) {
@@ -348,16 +323,20 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
                 .eq(WorkflowTemplate::getTenantId, resolveTenantId())
                 .eq(WorkflowTemplate::getLatestFlag, true)
                 .eq(WorkflowTemplate::getStatus, WorkflowTemplateStatus.ENABLED.name());
+        boolean hasSelectedTemplates = command.getTemplateIds() != null && !command.getTemplateIds().isEmpty();
         if (command.getTemplateCategoryId() != null) {
             wrapper.eq(WorkflowTemplate::getTemplateCategoryId, command.getTemplateCategoryId());
+        } else if (hasSelectedTemplates) {
+            wrapper.in(WorkflowTemplate::getId, command.getTemplateIds());
+        } else if (StringUtils.hasText(command.getDomainCode())) {
+            wrapper.eq(WorkflowTemplate::getCategoryCode, command.getDomainCode().trim());
         } else {
             Require.notEmpty(command.getTemplateIds(), WorkflowCode.TEMPLATE_IMPORT_FAILED.getCode(), "请选择要导入的流程模板");
-            wrapper.in(WorkflowTemplate::getId, command.getTemplateIds());
         }
         List<WorkflowTemplate> templates = templateMapper.selectList(wrapper).stream()
                 .sorted(Comparator.comparing(WorkflowTemplate::getTemplateCode))
                 .toList();
-        if (command.getTemplateCategoryId() == null) {
+        if (command.getTemplateCategoryId() == null && hasSelectedTemplates) {
             List<Long> selectedIds = command.getTemplateIds().stream().distinct().toList();
             Require.isTrue(templates.size() == selectedIds.size(), WorkflowCode.TEMPLATE_IMPORT_FAILED.getCode(), "存在不可导入的流程模板，请确认模板已启用且为最新版本");
         }
@@ -399,6 +378,7 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
         Require.notBlank(command.getTemplateName(), WorkflowCode.DEFINITION_INVALID.getCode(), "模板名称不能为空");
         Require.notBlank(command.getTemplateCode(), WorkflowCode.DEFINITION_INVALID.getCode(), "模板编码不能为空");
         Require.notBlank(command.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
+        validateDomain(command.getCategoryCode());
         if (command.getTemplateCategoryId() != null) {
             Require.notNull(templateCategoryMapper.selectById(command.getTemplateCategoryId()), WorkflowCode.TEMPLATE_CATEGORY_NOT_FOUND);
         }
@@ -427,6 +407,15 @@ public class WorkflowTemplateServiceImpl implements IWorkflowTemplateService {
                 ? parseStatus(command.getStatus()).name()
                 : WorkflowTemplateStatus.ENABLED.name());
         entity.setRemark(trimToNull(command.getRemark()));
+    }
+
+    private void validateDomain(String domainCode) {
+        Require.notBlank(domainCode, WorkflowCode.DEFINITION_INVALID.getCode(), "业务域不能为空");
+        R<DomainVO> response = domainApi.detailByCode(domainCode.trim());
+        Require.isTrue(response != null && response.isSuccess() && response.getData() != null,
+                WorkflowCode.DEFINITION_INVALID.getCode(), "业务域不存在");
+        Require.isTrue(Integer.valueOf(1).equals(response.getData().getStatus()),
+                WorkflowCode.DEFINITION_INVALID.getCode(), "业务域已停用");
     }
 
     private WorkflowTemplateStatus parseStatus(String value) {
