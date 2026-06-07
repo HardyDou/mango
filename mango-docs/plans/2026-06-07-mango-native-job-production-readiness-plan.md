@@ -52,8 +52,8 @@
 | JOB-QA-001 | 后端 | Maven 测试 | Job support/api/core/starter-remote/starter 聚合测试通过 | 已通过 | 2026-06-07 清理旧 target 后重跑 Job 聚合 Maven 测试 `BUILD SUCCESS`，25 tests |
 | JOB-QA-002 | 后端 | Job 模块静态检查 | 相关后端模块 `checkstyle:check pmd:check` 通过，非本任务工具/规范冲突登记 Issue | Job 目标模块已通过，全仓规则门禁待治理 | 2026-06-07 清理旧 target 后重跑 Job 聚合 `checkstyle:check pmd:check` 为 `BUILD SUCCESS`；Job core 仍有 5 条 `XxxServiceImpl` 命名规则冲突，按 PMO 命名规范不在本轮改类名；全仓 `mvn mango:check -Drule=all` 失败并报告 19672 个跨模块历史规则 issue，已登记 `mango-docs/plans/2026-06-07-job-quality-tooling-rule-alignment-issue.md` |
 | JOB-QA-003 | 前端 | Job 包构建 | `pnpm -F @mango/job build` 通过 | 已通过 | Vite build success |
-| JOB-QA-004 | 前端 | 管理后台 E2E | `job-management.spec.ts` 通过，截图留存 | 已通过 | 2026-06-07 清理 Job E2E 非空断言告警后完整 E2E `9 passed (2.2m)`；稳定性 E2E `job-scheduler-stability.spec.ts` 本地 3 分钟观察 `1 passed, 2 skipped`；截图和报告证据已留存 |
-| JOB-QA-005 | 前端 | 管理后台构建 | `pnpm -F mango-admin build` 通过，Job E2E lint 清零 | 已通过 | Vite build success；存在既有 dynamic/static import warning；`pnpm --dir apps/mango-admin exec eslint e2e/specs/job-management.spec.ts e2e/specs/job-scheduler-stability.spec.ts` 为 0 errors、0 warnings |
+| JOB-QA-004 | 前端 | 管理后台 E2E | `job-management.spec.ts` 通过，截图留存 | 已通过 | 2026-06-07 PR 级补跑完整 E2E `9 passed (2.5m)`；稳定性 E2E `job-scheduler-stability.spec.ts` 本地 3 分钟观察 `1 passed, 2 skipped`；截图和报告证据已留存 |
+| JOB-QA-005 | 前端 | 管理后台构建 | `pnpm -F mango-admin build` 通过，Job E2E lint 清零 | 已通过 | 2026-06-07 PR 级补跑 `pnpm -F mango-admin build` 通过；存在既有 dynamic/static import warning；`pnpm --dir apps/mango-admin exec eslint e2e/specs/job-management.spec.ts e2e/specs/job-scheduler-stability.spec.ts` 为 0 errors、0 warnings |
 | JOB-QA-006 | 质量 | 红线关键词扫描 | Job 运行时代码、Job 前端、E2E、部署资料和投产文档不得残留交付红线词；PowerJob 只允许出现在历史参考文档 | 已通过 | `rg -n "PowerJob|powerjob|POWERJOB|tech\\.powerjob|TODO|FIXME|mock|fake|dummy|临时|后续优化|未来优化|N/A" ...` 仅命中历史参考文档和非法 Worker 过滤逻辑 |
 | JOB-DATA-001 | 数据库 | 独立 Job 数据库 | `mango_job` migration 可在空库执行，主库不保存 Job 治理表 | 本地 MySQL 独立库已验证，预发待验证 | `mango_job.flyway_schema_history_mango_job` 已执行 V1-V4；关键 V4 表存在于 `mango_job`；当前本地旧主库残留 V1 Job 表，预发必须使用干净库或执行历史清理方案 |
 | JOB-DATA-002 | 数据库 | migration 升级路径 | 预发库执行 migration 成功，唯一约束和索引生效 | 本地 H2/MySQL 已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#flywayAndMybatisPlus_shouldCreateNativeEngineTablesAndIndexesOnJobDatasource`；本地 MySQL `mango_job` 关键唯一约束和索引只读检查通过 |
@@ -145,3 +145,4 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 - 2026-06-07 补跑全仓 `mvn mango:check -Drule=all`，结果在根模块失败并报告 19672 个跨模块历史规则 issue；本轮按用户要求不扩大到 infra/common/其它平台模块，已追加到质量工具规则对齐 Issue。
 - 2026-06-07 清理 `job-management.spec.ts` 的 `@typescript-eslint/no-non-null-assertion` 告警，改为显式断言辅助函数。随后 `job-management.spec.ts` 与 `job-scheduler-stability.spec.ts` ESLint 无告警，完整 Job 管理 E2E 重新执行通过 `9 passed (2.2m)`。
 - 2026-06-07 清理 Job 模块旧 `target` 目录后重新确认 PowerJob 源码/产物路径扫描为空；后端 Job 聚合测试再次通过 `BUILD SUCCESS`，25 tests；Job 聚合 checkstyle/PMD 再次返回 `BUILD SUCCESS`。
+- 2026-06-07 PR #101 更新后补跑 `pnpm -F mango-admin build` 通过，完整 Job 管理 E2E 再次通过 `9 passed (2.5m)`。
