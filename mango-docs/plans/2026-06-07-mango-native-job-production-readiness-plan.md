@@ -60,7 +60,7 @@
 | JOB-TENANT-001 | 租户 | 租户隔离 | 租户 A/B 的任务定义、实例、日志、Worker 查询隔离 | 后端已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest` |
 | JOB-MENU-001 | 菜单权限 | 菜单入库 | `平台能力/任务管理` 菜单由 migration 入库 | 本地已通过，预发待验证 | `V43__native_job_menu_names.sql`；E2E |
 | JOB-MENU-002 | 菜单权限 | 按钮权限 | 触发、暂停、删除、Worker 高风险动作权限码可控 | 本地 E2E 覆盖管理员操作，预发权限矩阵待验证 | `V44__native_job_worker_governance_permissions.sql`；E2E 覆盖 Worker 登记、禁用、恢复；普通用户权限待预发补充 |
-| JOB-RUNTIME-001 | 调度 | 每分钟 Cron 稳定性 | 预发连续运行 2-4 小时，无重复窗口、无长时间积压 | 本地 H2 连续窗口和本地 MySQL 3 分钟真实调度观察已覆盖，预发 2-4 小时待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldKeepEveryMinuteCronStableAcrossContinuousWindows`；`mango-ui/apps/mango-admin/e2e/specs/job-scheduler-stability.spec.ts`；`mango-docs/evidence/2026-06-07-mango-native-job-e2e/job-scheduler-stability-local.md` |
+| JOB-RUNTIME-001 | 调度 | 每分钟 Cron 稳定性 | 预发连续运行 2-4 小时，无重复窗口、无长时间积压 | 本地 H2 连续窗口和本地 MySQL 10 分钟真实调度观察已覆盖，预发 2-4 小时待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldKeepEveryMinuteCronStableAcrossContinuousWindows`；`mango-ui/apps/mango-admin/e2e/specs/job-scheduler-stability.spec.ts`；`mango-docs/evidence/2026-06-07-mango-native-job-e2e/job-scheduler-stability-local.md` |
 | JOB-RUNTIME-002 | 调度 | 服务重启恢复 | JobCenter 重启后调度游标继续推进，不补错窗口 | 本地已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldContinueScheduleCursorAfterJobCenterRestartWithoutDuplicatingCompletedWindow` |
 | JOB-RUNTIME-003 | Worker | 内嵌 Worker | 单体 `IN_MEMORY` 不绕本机 HTTP 端口，日志可见 | 已通过，预发待验证 | E2E 截图和后端测试 |
 | JOB-RUNTIME-004 | Worker | 远程 Worker | 独立 Worker 通过 `HTTP_INTERNAL` 注册、心跳、执行、回传日志 | 后端已通过，预发待验证 | `MangoJobRemoteDispatchE2ETest` |
@@ -129,7 +129,7 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 | ID | 阻断项 | 影响 | 处理方式 |
 |---|---|---|---|
 | BLOCK-001 | 预发真实部署未验证 | 不能发布生产 | 按第 7 节逐项验收 |
-| BLOCK-002 | 预发长时间调度稳定性未验证 | 不能开放生产定时任务 | 本地 3 分钟真实调度观察已通过；预发仍需连续运行 2-4 小时并记录实例数、重复窗口、失败数和积压数 |
+| BLOCK-002 | 预发长时间调度稳定性未验证 | 不能开放生产定时任务 | 本地 10 分钟真实调度观察已通过，期间 10 个成功实例、重复窗口 0、失败 0；预发仍需连续运行 2-4 小时并记录实例数、重复窗口、失败数、积压数和调度延迟分布 |
 | BLOCK-003 | 监控、日志保留、回滚资料已补，执行未验证 | 不能直接交给运维投产 | 在预发按 `deploy/job/README.md` 执行监控、清理和回滚演练 |
 | BLOCK-004 | 告警预发真实通道未验证 | 不能声明真实第三方通道生产可用 | 预发通过后台创建 `INSTANCE_FAILED` 告警规则，配置 notice 模板和接收人规则，触发失败任务后核验 notice 发送记录和目标通道 |
 | BLOCK-005 | PR、发布包和业务消费入口未验证 | 不能发布生产 | 合并最新 main 后重跑受影响验证，创建 PR 并完成发布验证 |
@@ -146,3 +146,4 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 - 2026-06-07 清理 `job-management.spec.ts` 的 `@typescript-eslint/no-non-null-assertion` 告警，改为显式断言辅助函数。随后 `job-management.spec.ts` 与 `job-scheduler-stability.spec.ts` ESLint 无告警，完整 Job 管理 E2E 重新执行通过 `9 passed (2.2m)`。
 - 2026-06-07 清理 Job 模块旧 `target` 目录后重新确认 PowerJob 源码/产物路径扫描为空；后端 Job 聚合测试再次通过 `BUILD SUCCESS`，25 tests；Job 聚合 checkstyle/PMD 再次返回 `BUILD SUCCESS`。
 - 2026-06-07 PR #101 更新后补跑 `pnpm -F mango-admin build` 通过，完整 Job 管理 E2E 再次通过 `9 passed (2.5m)`。
+- 2026-06-07 将本地每分钟 Cron 稳定性观察从 3 分钟补强到 10 分钟：`job-scheduler-stability.spec.ts` 通过 `1 passed, 2 skipped (10.3m)`，生成 10 个 `SUCCESS` 实例，重复窗口 0，失败实例 0，样本日志包含 `System.out` 和 logger。观察中存在一次本地触发延迟约 48 秒，预发长跑需继续记录调度延迟分布。
