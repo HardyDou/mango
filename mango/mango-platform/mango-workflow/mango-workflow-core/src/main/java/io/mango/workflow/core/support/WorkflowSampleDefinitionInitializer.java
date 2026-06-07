@@ -40,6 +40,7 @@ import java.util.Map;
 public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
 
     private static final Long SYSTEM_USER_ID = 1L;
+    private static final String DEFAULT_DOMAIN_CODE = "COMMON";
 
     private final WorkflowSampleProperties properties;
     private final WorkflowCategoryMapper categoryMapper;
@@ -68,8 +69,10 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
     }
 
     private Long ensureCategory() {
+        String domainCode = sampleDomainCode();
         WorkflowCategory category = categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowCategory>()
                 .eq(WorkflowCategory::getTenantId, properties.getTenantId())
+                .eq(WorkflowCategory::getDomainCode, domainCode)
                 .eq(WorkflowCategory::getCategoryCode, properties.getCategoryCode())
                 .last("LIMIT 1"));
         if (category != null) {
@@ -80,6 +83,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         created.setTenantId(properties.getTenantId());
         created.setCategoryName(properties.getCategoryName());
         created.setCategoryCode(properties.getCategoryCode());
+        created.setDomainCode(domainCode);
         created.setSort(10);
         created.setStatus(1);
         created.setRemark("系统内置通用示例流程分类");
@@ -193,6 +197,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
     private Long createDefinition(Long categoryId, SampleDefinition sample) {
         SaveWorkflowDefinitionCommand command = new SaveWorkflowDefinitionCommand();
         command.setCategoryId(categoryId);
+        command.setDomainCode(sampleDomainCode());
         command.setOrgId(1L);
         command.setAdminUsers(List.of("admin"));
         command.setIcon(sample.icon());
@@ -214,6 +219,7 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
         SaveWorkflowDefinitionCommand command = new SaveWorkflowDefinitionCommand();
         command.setId(definition.getId());
         command.setCategoryId(definition.getCategoryId());
+        command.setDomainCode(sampleDomainCode());
         command.setOrgId(definition.getOrgId());
         command.setAdminUsers(List.of("admin"));
         command.setIcon(sample.icon());
@@ -229,6 +235,12 @@ public class WorkflowSampleDefinitionInitializer implements ApplicationRunner {
             throw new IllegalStateException("内置示例流程更新失败：" + updateResult.getMsg());
         }
         return definition.getId();
+    }
+
+    private String sampleDomainCode() {
+        return StringUtils.hasText(properties.getDomainCode())
+                ? properties.getDomainCode().trim()
+                : DEFAULT_DOMAIN_CODE;
     }
 
     private List<SampleDefinition> samples() {

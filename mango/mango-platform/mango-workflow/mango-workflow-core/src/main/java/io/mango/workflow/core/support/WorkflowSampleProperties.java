@@ -31,4 +31,9 @@ public class WorkflowSampleProperties {
      * 示例流程所属分类名称。
      */
     private String categoryName = "通用流程";
+
+    /**
+     * 示例流程所属业务域编码。
+     */
+    private String domainCode = "COMMON";
 }
