@@ -148,7 +148,7 @@
         <el-row :gutter="14">
           <el-col :span="12">
             <el-form-item label="通知场景" prop="noticeSceneCode">
-              <el-input v-model="form.noticeSceneCode" placeholder="mango-notice bizType" />
+              <el-input v-model="form.noticeSceneCode" readonly placeholder="job.instance.failed" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -263,8 +263,8 @@ function defaultForm(): AlarmRuleForm {
     jobId: '',
     ruleName: '',
     alarmType: 'INSTANCE_FAILED',
-    noticeSceneCode: 'MANGO_JOB_FAILED',
-    noticeTemplateCode: 'MANGO_JOB_FAILED_TEMPLATE',
+    noticeSceneCode: 'job.instance.failed',
+    noticeTemplateCode: 'job.instance.failed.site',
     recipientRuleCode: '',
     userId: '',
     userIdsText: '',

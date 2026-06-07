@@ -248,15 +248,9 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
                                   String serviceCode,
                                   String workerGroup,
                                   String jobCode) {
-        MangoJobWorkerCapabilityEntity capability = workerCapabilityMapper.selectOne(
-                new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
-                        .eq(MangoJobWorkerCapabilityEntity::getWorkerId, worker.getId())
-                        .eq(MangoJobWorkerCapabilityEntity::getServiceCode, serviceCode)
-                        .eq(MangoJobWorkerCapabilityEntity::getWorkerGroup, workerGroup)
-                        .eq(MangoJobWorkerCapabilityEntity::getAppCode, appCode)
-                        .eq(MangoJobWorkerCapabilityEntity::getHandlerName, handlerName)
-                        .eq(MangoJobWorkerCapabilityEntity::getJobCode, capabilityJobCode(jobCode))
-                        .last("limit 1"));
+        String normalizedJobCode = capabilityJobCode(jobCode);
+        MangoJobWorkerCapabilityEntity capability = selectCapability(worker.getId(), serviceCode, workerGroup,
+                appCode, handlerName, normalizedJobCode);
         if (capability == null) {
             capability = new MangoJobWorkerCapabilityEntity();
             capability.setTenantId(command.getTenantId().trim());
@@ -264,17 +258,42 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
             capability.setServiceCode(serviceCode);
             capability.setWorkerGroup(workerGroup);
             capability.setAppCode(appCode);
-            capability.setJobCode(capabilityJobCode(jobCode));
+            capability.setJobCode(normalizedJobCode);
             capability.setHandlerName(handlerName);
             capability.setHandlerVersion(null);
             capability.setEnabled(1);
             capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
-            workerCapabilityMapper.insert(capability);
+            try {
+                workerCapabilityMapper.insert(capability);
+            } catch (DuplicateKeyException ex) {
+                capability = selectCapability(worker.getId(), serviceCode, workerGroup, appCode,
+                        handlerName, normalizedJobCode);
+                Require.notNull(capability, "Worker 能力并发注册失败");
+                capability.setEnabled(1);
+                capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
+                workerCapabilityMapper.updateById(capability);
+            }
             return;
         }
         capability.setEnabled(1);
         capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
         workerCapabilityMapper.updateById(capability);
+    }
+
+    private MangoJobWorkerCapabilityEntity selectCapability(Long workerId,
+                                                            String serviceCode,
+                                                            String workerGroup,
+                                                            String appCode,
+                                                            String handlerName,
+                                                            String jobCode) {
+        return workerCapabilityMapper.selectOne(new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
+                .eq(MangoJobWorkerCapabilityEntity::getWorkerId, workerId)
+                .eq(MangoJobWorkerCapabilityEntity::getServiceCode, serviceCode)
+                .eq(MangoJobWorkerCapabilityEntity::getWorkerGroup, workerGroup)
+                .eq(MangoJobWorkerCapabilityEntity::getAppCode, appCode)
+                .eq(MangoJobWorkerCapabilityEntity::getHandlerName, handlerName)
+                .eq(MangoJobWorkerCapabilityEntity::getJobCode, jobCode)
+                .last("limit 1"));
     }
 
     private void disableMissingCapabilities(RegisterMangoJobWorkerCommand command, MangoJobWorkerSnapshotEntity worker) {

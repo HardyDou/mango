@@ -16,6 +16,7 @@ import io.mango.job.api.command.TriggerMangoJobCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
 import io.mango.job.api.command.UpdateMangoJobDefinitionStatusCommand;
 import io.mango.job.api.command.UpdateMangoJobWorkerStatusCommand;
+import io.mango.job.api.constant.MangoJobNoticeBizTypes;
 import io.mango.job.api.enums.JobDefinitionStatus;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobScheduleType;
@@ -1184,8 +1185,8 @@ class MangoJobMultiDataSourceIntegrationTest {
             rule.setRuleName("失败任务告警");
             rule.setAlarmType("INSTANCE_FAILED");
             rule.setTriggerCondition("{\"status\":\"FAILED\"}");
-            rule.setNoticeSceneCode("MANGO_JOB_FAILED");
-            rule.setNoticeTemplateCode("MANGO_JOB_FAILED_TEMPLATE");
+            rule.setNoticeSceneCode(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
+            rule.setNoticeTemplateCode(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED_SITE_TEMPLATE);
             rule.setNoticeParams("{\"userIds\":[216]}");
             rule.setEnabled(1);
             alarmRuleMapper.insert(rule);
@@ -1203,13 +1204,13 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         assertThat(noticeApiCapture.lastCommand).isNotNull()
                 .satisfies(notice -> {
-                    assertThat(notice.getBizType()).isEqualTo("MANGO_JOB_FAILED");
+                    assertThat(notice.getBizType()).isEqualTo(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
                     assertThat(notice.getBizId()).isEqualTo(String.valueOf(instanceId));
                     assertThat(notice.getUserIds()).containsExactly(216L);
                     assertThat(notice.getIdempotentKey()).startsWith("mango-job:alarm:");
                     assertThat(notice.getParams())
                             .containsEntry("jobCode", "native-failed-alarm")
-                            .containsEntry("noticeTemplateCode", "MANGO_JOB_FAILED_TEMPLATE")
+                            .containsEntry("noticeTemplateCode", MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED_SITE_TEMPLATE)
                             .containsEntry("errorSummary", "handler failed intentionally");
                 });
         MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
@@ -1245,8 +1246,8 @@ class MangoJobMultiDataSourceIntegrationTest {
                     assertThat(rule.getJobCode()).isEqualTo("alarm-crud-job");
                     assertThat(rule.getJobName()).isEqualTo("Sync alarm-crud-job");
                     assertThat(rule.getAlarmType()).isEqualTo("INSTANCE_FAILED");
-                    assertThat(rule.getNoticeSceneCode()).isEqualTo("MANGO_JOB_FAILED");
-                    assertThat(rule.getNoticeTemplateCode()).isEqualTo("MANGO_JOB_FAILED_TEMPLATE");
+                    assertThat(rule.getNoticeSceneCode()).isEqualTo(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
+                    assertThat(rule.getNoticeTemplateCode()).isEqualTo(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED_SITE_TEMPLATE);
                     assertThat(rule.getNoticeParams()).contains("recipientRuleCode");
                     assertThat(rule.getEnabled()).isTrue();
                 });
@@ -1260,13 +1261,13 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         createCommand.setId(alarmRuleId);
         createCommand.setRuleName("失败告警规则已更新");
-        createCommand.setNoticeTemplateCode("MANGO_JOB_FAILED_TEMPLATE_V2");
+        createCommand.setNoticeTemplateCode("job.instance.failed.site.v2");
         createCommand.setNoticeParams("{\"recipientRuleCode\":\"jobDuty\",\"userId\":217,\"userIds\":[217,218]}");
         assertThat(alarmRuleService.updateAlarmRule(createCommand)).isTrue();
         assertThat(alarmRuleService.detailAlarmRule(alarmRuleId))
                 .satisfies(rule -> {
                     assertThat(rule.getRuleName()).isEqualTo("失败告警规则已更新");
-                    assertThat(rule.getNoticeTemplateCode()).isEqualTo("MANGO_JOB_FAILED_TEMPLATE_V2");
+                    assertThat(rule.getNoticeTemplateCode()).isEqualTo("job.instance.failed.site.v2");
                     assertThat(rule.getNoticeParams()).contains("\"userId\":217");
                 });
 
@@ -1458,8 +1459,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         command.setRuleName(ruleName);
         command.setAlarmType("INSTANCE_FAILED");
         command.setTriggerCondition("{\"status\":\"FAILED\"}");
-        command.setNoticeSceneCode("MANGO_JOB_FAILED");
-        command.setNoticeTemplateCode("MANGO_JOB_FAILED_TEMPLATE");
+        command.setNoticeSceneCode(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
+        command.setNoticeTemplateCode(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED_SITE_TEMPLATE);
         command.setNoticeParams("{\"recipientRuleCode\":\"jobDuty\",\"userIds\":[217]}");
         command.setEnabled(true);
         return command;

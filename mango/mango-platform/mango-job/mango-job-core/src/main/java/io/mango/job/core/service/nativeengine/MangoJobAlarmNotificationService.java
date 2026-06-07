@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
+import io.mango.job.api.constant.MangoJobNoticeBizTypes;
 import io.mango.job.core.entity.MangoJobAlarmRuleEntity;
 import io.mango.job.core.entity.MangoJobDefinitionEntity;
 import io.mango.job.core.entity.MangoJobInstanceEntity;
@@ -83,7 +84,7 @@ public class MangoJobAlarmNotificationService {
                             MangoJobInstanceEntity instance,
                             String errorSummary) {
         SendNoticeCommand command = new SendNoticeCommand();
-        command.setBizType(rule.getNoticeSceneCode());
+        command.setBizType(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED);
         command.setBizId(String.valueOf(instance.getId()));
         command.setTitle("Mango Job 任务执行失败：" + definition.getJobName());
         command.setContent(errorSummary);

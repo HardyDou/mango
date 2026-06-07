@@ -9,6 +9,7 @@ import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.job.api.command.SaveMangoJobAlarmRuleCommand;
 import io.mango.job.api.command.UpdateMangoJobAlarmRuleStatusCommand;
+import io.mango.job.api.constant.MangoJobNoticeBizTypes;
 import io.mango.job.api.query.MangoJobAlarmRulePageQuery;
 import io.mango.job.api.vo.MangoJobAlarmRuleVO;
 import io.mango.job.core.entity.MangoJobAlarmRuleEntity;
@@ -155,6 +156,8 @@ public class MangoJobAlarmRuleService implements IMangoJobAlarmRuleService {
         Require.isTrue(ALARM_TYPE_INSTANCE_FAILED.equals(command.getAlarmType().trim()),
                 "当前版本仅支持 INSTANCE_FAILED 告警");
         Require.notBlank(command.getNoticeSceneCode(), "通知场景编码不能为空");
+        Require.isTrue(MangoJobNoticeBizTypes.JOB_INSTANCE_FAILED.equals(command.getNoticeSceneCode().trim()),
+                "失败实例告警通知场景编码必须为 job.instance.failed");
         Require.notBlank(command.getNoticeTemplateCode(), "通知模板编码不能为空");
         validateJson(command.getTriggerCondition(), "触发条件 JSON 不合法");
         validateJson(command.getNoticeParams(), "通知参数 JSON 不合法");

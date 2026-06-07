@@ -42,7 +42,8 @@ public class SaveMangoJobAlarmRuleCommand implements Serializable {
 
     @NotBlank(message = "通知场景编码不能为空")
     @Size(max = 128, message = "通知场景编码不能超过128个字符")
-    @Schema(description = "通知场景编码，映射 mango-notice bizType", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "通知场景编码。失败实例固定为 mango-notice 业务 Key：job.instance.failed",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     private String noticeSceneCode;
 
     @NotBlank(message = "通知模板编码不能为空")

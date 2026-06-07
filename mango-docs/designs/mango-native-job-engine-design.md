@@ -468,7 +468,7 @@ append-only 事件表。
 - `mango_job_alarm_record`: 告警触发记录。
 - `mango_job_operation_log`: 用户操作审计。
 
-通知发送由 `mango-notice` 完成。Job 模块在失败实例终态后发出通知场景、模板编码、模板参数和接收方表达式，不直接管理短信、邮件或企业微信通道。
+通知发送由 `mango-notice` 完成。Job 模块在失败实例终态后使用固定业务 Key `job.instance.failed` 提交 `SendNoticeCommand`，模板参数和接收方表达式来自启用的告警规则；系统消息、短信、邮件或企业微信通道由 `mango-notice` 的业务类型、渠道模板和接收人配置负责。
 
 ## 9. 状态机
 
@@ -863,7 +863,7 @@ API 分组：
 通知：
 
 - Job 写告警事件和告警记录，失败实例会按启用的告警规则提交 `mango-notice`。
-- `mango-notice` 根据模板编码和模板参数发送系统消息、短信、邮件、企业微信等。
+- `mango-notice` 根据业务 Key `job.instance.failed`、渠道模板和模板参数发送系统消息、短信、邮件、企业微信等；内置 SQL 只固化 `JOB` 业务域下的系统消息模板。
 
 ## 18. 迁移策略
 

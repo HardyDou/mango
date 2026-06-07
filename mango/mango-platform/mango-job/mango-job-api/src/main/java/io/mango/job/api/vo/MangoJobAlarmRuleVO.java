@@ -42,7 +42,7 @@ public class MangoJobAlarmRuleVO implements Serializable {
     @Schema(description = "触发条件 JSON")
     private String triggerCondition;
 
-    @Schema(description = "通知场景编码")
+    @Schema(description = "通知场景编码。失败实例固定为 mango-notice 业务 Key：job.instance.failed")
     private String noticeSceneCode;
 
     @Schema(description = "通知模板编码")

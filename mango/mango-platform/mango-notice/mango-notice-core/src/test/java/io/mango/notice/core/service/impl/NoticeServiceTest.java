@@ -90,6 +90,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 class NoticeServiceTest {
 
+ private static final String JOB_INSTANCE_FAILED = "job.instance.failed";
+
  private NoticeSiteMessageMapper messageMapper;
  private NoticeService noticeService;
  private NoticeTaskMapper taskMapper;
@@ -550,6 +552,52 @@ class NoticeServiceTest {
  assertTrue(siteRecord.getRequestSnapshot().contains("\"bizId\":\"SO-1001\""));
  assertTrue(siteRecord.getRequestSnapshot().contains("\"recipientId\":100"));
  assertTaskTotalCount(2, "SITE,SMS");
+ }
+
+ @Test
+ void send_jobInstanceFailedSiteMessage_rendersConfiguredSystemMessage() {
+ NoticeBusinessTypeEntity businessType = businessType();
+ businessType.setBizType(JOB_INSTANCE_FAILED);
+ businessType.setBizName("定时任务执行失败");
+ businessType.setBizGroup("JOB");
+ businessType.setDomainCode("JOB");
+ businessType.setDefaultPriority(NoticePriority.HIGH);
+ NoticeBusinessChannelTemplateEntity siteTemplate = template(2060000000000014003L, SITE,
+ "定时任务执行失败：{{jobName}}",
+ "定时任务 {{jobName}}（{{jobCode}}）执行失败。实例：{{instanceId}}；处理器：{{handlerName}}；"
+ + "触发批次：{{triggerBatchNo}}；失败原因：{{errorSummary}}。请进入平台能力/任务管理/执行实例查看日志。");
+ siteTemplate.setBizType(JOB_INSTANCE_FAILED);
+ siteTemplate.setTemplateName("定时任务执行失败系统消息");
+ when(businessTypeMapper.selectOne(any())).thenReturn(businessType);
+ when(channelTemplateMapper.selectList(any())).thenReturn(List.of(siteTemplate));
+ SendNoticeCommand command = new SendNoticeCommand();
+ command.setBizType(JOB_INSTANCE_FAILED);
+ command.setBizId("2063066834913808386");
+ command.setUserId(216L);
+ command.setParams(Map.of(
+ "jobName", "同步订单",
+ "jobCode", "sync-order",
+ "instanceId", "2063066834913808386",
+ "handlerName", "syncOrderHandler",
+ "triggerBatchNo", "batch-20260607-001",
+ "errorSummary", "handler failed intentionally"));
+
+ noticeService.send(command);
+
+ verify(outboxStore).enqueue(any(OutboxMessage.class));
+ ArgumentCaptor<NoticeSendRecordEntity> captor = ArgumentCaptor.forClass(NoticeSendRecordEntity.class);
+ verify(sendRecordMapper).insert(captor.capture());
+ NoticeSendRecordEntity record = captor.getValue();
+ assertEquals(JOB_INSTANCE_FAILED, record.getBizType());
+ assertEquals("2063066834913808386", record.getBizId());
+ assertEquals(SITE, record.getChannelType());
+ assertEquals("定时任务执行失败：同步订单", record.getRenderedTitle());
+ assertEquals("定时任务 同步订单（sync-order）执行失败。实例：2063066834913808386；处理器：syncOrderHandler；"
+ + "触发批次：batch-20260607-001；失败原因：handler failed intentionally。请进入平台能力/任务管理/执行实例查看日志。",
+ record.getRenderedContent());
+ assertTrue(record.getRequestSnapshot().contains("\"bizType\":\"job.instance.failed\""));
+ assertTrue(record.getRequestSnapshot().contains("\"jobCode\":\"sync-order\""));
+ assertTaskTotalCount(1, "SITE");
  }
 
  @Test
