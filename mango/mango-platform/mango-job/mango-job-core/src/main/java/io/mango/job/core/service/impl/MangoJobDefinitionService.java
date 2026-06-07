@@ -209,6 +209,8 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
         return new LambdaQueryWrapper<MangoJobDefinitionEntity>()
                 .eq(MangoJobDefinitionEntity::getTenantId, tenantId)
                 .eq(StringUtils.hasText(query.getAppCode()), MangoJobDefinitionEntity::getAppCode, query.getAppCode())
+                .eq(StringUtils.hasText(query.getOwnerService()), MangoJobDefinitionEntity::getOwnerService, query.getOwnerService())
+                .eq(StringUtils.hasText(query.getWorkerGroup()), MangoJobDefinitionEntity::getWorkerGroup, query.getWorkerGroup())
                 .eq(StringUtils.hasText(query.getStatus()), MangoJobDefinitionEntity::getStatus, query.getStatus())
                 .eq(StringUtils.hasText(query.getJobType()), MangoJobDefinitionEntity::getJobType, query.getJobType())
                 .eq(StringUtils.hasText(query.getScheduleType()), MangoJobDefinitionEntity::getScheduleType, query.getScheduleType())
@@ -295,7 +297,18 @@ public class MangoJobDefinitionService implements IMangoJobDefinitionService {
     }
 
     private void copyDefinition(SaveMangoJobDefinitionCommand command, MangoJobDefinitionEntity entity) {
-        entity.setAppCode(MangoJobSupport.normalizeRequired(command.getAppCode(), "所属应用不能为空"));
+        String appCode = MangoJobSupport.normalizeRequired(command.getAppCode(), "所属应用不能为空");
+        String ownerService = MangoJobSupport.trimToNull(command.getOwnerService());
+        if (ownerService == null) {
+            ownerService = appCode;
+        }
+        String workerGroup = MangoJobSupport.trimToNull(command.getWorkerGroup());
+        if (workerGroup == null) {
+            workerGroup = ownerService;
+        }
+        entity.setAppCode(appCode);
+        entity.setOwnerService(ownerService);
+        entity.setWorkerGroup(workerGroup);
         entity.setJobCode(MangoJobSupport.normalizeRequired(command.getJobCode(), "任务编码不能为空"));
         entity.setJobName(MangoJobSupport.normalizeRequired(command.getJobName(), "任务名称不能为空"));
         entity.setJobType(MangoJobSupport.jobType(command.getJobType()).name());

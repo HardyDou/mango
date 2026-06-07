@@ -6,6 +6,8 @@ import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
 import io.mango.job.api.enums.JobTransportType;
+import io.mango.job.api.enums.JobWorkerRegisterSource;
+import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.support.service.IMangoJobHandlerRegistry;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +20,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 远程 Worker 向 JobCenter 注册自身能力。
@@ -55,23 +57,25 @@ public class MangoJobRemoteWorkerRegistrar {
             LOGGER.warn("Mango Job remote worker registration skipped because worker-address is empty");
             return;
         }
-        RegisterMangoJobWorkerCommand command = toCommand();
-        if (command.getHandlers().isEmpty()) {
+        List<RegisterMangoJobWorkerCommand> commands = toCommands();
+        if (commands.isEmpty()) {
             LOGGER.warn("Mango Job remote worker registration skipped because no handler is registered, workerAddress={}",
-                    command.getWorkerAddress());
+                    properties.getWorkerAddress());
             return;
         }
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
-            MangoContextHolder.set(MangoContextSnapshot.empty()
-                    .withRequest("job-worker-register", "job-worker-register", command.getTenantId(),
-                            command.getAppCode(), command.getWorkerAddress())
-                    .withSecurity(null, command.getTenantId(), "job-worker", "SYSTEM",
-                            "JOB", "SYSTEM", null, command.getAppCode()));
-            R<Long> response = jobFeignClient.registerWorker(URI.create(properties.getJobCenterAddress().trim()),
-                    command);
-            Require.notNull(response, "Worker 注册 JobCenter 无响应");
-            Require.isTrue(response.isSuccess(), response.getMsg());
+            for (RegisterMangoJobWorkerCommand command : commands) {
+                MangoContextHolder.set(MangoContextSnapshot.empty()
+                        .withRequest("job-worker-register", "job-worker-register", command.getTenantId(),
+                                command.getAppCode(), command.getWorkerAddress())
+                        .withSecurity(null, command.getTenantId(), "job-worker", "SYSTEM",
+                                "JOB", "SYSTEM", null, command.getAppCode()));
+                R<Long> response = jobFeignClient.registerWorker(URI.create(properties.getJobCenterAddress().trim()),
+                        command);
+                Require.notNull(response, "Worker 注册 JobCenter 无响应");
+                Require.isTrue(response.isSuccess(), response.getMsg());
+            }
         } catch (RuntimeException ex) {
             LOGGER.warn("Mango Job remote worker registration failed, jobCenter={}, workerAddress={}",
                     properties.getJobCenterAddress(), properties.getWorkerAddress(), ex);
@@ -80,32 +84,32 @@ public class MangoJobRemoteWorkerRegistrar {
         }
     }
 
-    private RegisterMangoJobWorkerCommand toCommand() {
+    private List<RegisterMangoJobWorkerCommand> toCommands() {
+        return handlerRegistry.listHandlers().stream()
+                .collect(Collectors.groupingBy(this::workerRegistrationKey))
+                .values()
+                .stream()
+                .map(this::toCommand)
+                .toList();
+    }
+
+    private RegisterMangoJobWorkerCommand toCommand(List<MangoJobHandlerVO> handlers) {
+        MangoJobHandlerVO first = handlers.get(0);
         RegisterMangoJobWorkerCommand command = new RegisterMangoJobWorkerCommand();
         command.setTenantId(properties.getSchedulerTenantId());
-        command.setAppCode(resolveAppCode());
+        command.setAppCode(first.getAppCode());
+        command.setServiceCode(first.getServiceCode());
+        command.setWorkerGroup(first.getWorkerGroup());
         command.setWorkerAddress(properties.getWorkerAddress().trim());
+        command.setRuntimeAddress(properties.getWorkerAddress().trim());
         command.setTransportType(JobTransportType.HTTP_INTERNAL);
+        command.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO);
         command.setWorkerInstanceId(ManagementFactory.getRuntimeMXBean().getName());
-        command.getHandlers().addAll(handlerRegistry.listHandlers().stream()
-                .filter(handler -> command.getAppCode().equals(handler.getAppCode()))
-                .toList());
+        command.getHandlers().addAll(handlers);
         return command;
     }
 
-    private String resolveAppCode() {
-        return handlerRegistry.listHandlers().stream()
-                .filter(handler -> StringUtils.hasText(handler.getAppCode()))
-                .map(handler -> handler.getAppCode().trim())
-                .findFirst()
-                .orElse(hostName());
-    }
-
-    private String hostName() {
-        try {
-            return InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException ex) {
-            return "mango-job-worker";
-        }
+    private String workerRegistrationKey(MangoJobHandlerVO handler) {
+        return handler.getAppCode() + ":" + handler.getServiceCode() + ":" + handler.getWorkerGroup();
     }
 }

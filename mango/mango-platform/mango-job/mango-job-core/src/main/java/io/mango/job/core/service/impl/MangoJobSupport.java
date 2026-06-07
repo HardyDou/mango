@@ -111,6 +111,8 @@ final class MangoJobSupport {
         vo.setId(entity.getId());
         vo.setTenantId(entity.getTenantId());
         vo.setAppCode(entity.getAppCode());
+        vo.setOwnerService(entity.getOwnerService());
+        vo.setWorkerGroup(entity.getWorkerGroup());
         vo.setJobCode(entity.getJobCode());
         vo.setJobName(entity.getJobName());
         vo.setJobType(entity.getJobType());
@@ -202,7 +204,13 @@ final class MangoJobSupport {
         vo.setId(entity.getId());
         vo.setTenantId(entity.getTenantId());
         vo.setAppCode(entity.getAppCode());
+        vo.setServiceCode(entity.getServiceCode());
+        vo.setWorkerGroup(entity.getWorkerGroup());
         vo.setWorkerAddress(entity.getWorkerAddress());
+        vo.setRuntimeAddress(entity.getRuntimeAddress());
+        vo.setTransportType(entity.getTransportType());
+        vo.setRegisterSource(entity.getRegisterSource());
+        vo.setInstanceId(entity.getInstanceId());
         vo.setEngineType(entity.getEngineType());
         vo.setEngineWorkerId(entity.getEngineWorkerId());
         vo.setLastHeartbeatAt(entity.getLastHeartbeatAt());

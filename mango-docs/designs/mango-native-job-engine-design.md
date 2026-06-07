@@ -219,6 +219,8 @@ mango-ui/packages/job
 - `id`
 - `tenant_id`
 - `app_code`
+- `owner_service`
+- `worker_group`
 - `module_code`
 - `job_code`
 - `job_name`
@@ -245,7 +247,9 @@ mango-ui/packages/job
 约束：
 
 - `uk_job_definition_code`: `tenant_id, app_code, job_code, deleted`。
-- 任务启用时必须存在可用 handler capability。
+- `owner_service` 默认等于 `app_code`，表达任务所属服务。
+- `worker_group` 默认等于 `owner_service`，表达同一服务下的执行池隔离。
+- 任务启用和调度时必须存在可用 handler capability。
 
 ### 8.2 `mango_job_schedule_cursor`
 
@@ -333,34 +337,33 @@ mango-ui/packages/job
 - Worker 上报结果必须匹配 `attempt_id + fencing_token`。
 - Attempt 租约过期后，JobCenter 可标记 `LOST` 并按策略创建新 attempt。
 
-### 8.5 `mango_job_worker`
+### 8.5 `mango_job_worker_snapshot`
 
-Worker 注册表。
+Worker 快照表。
 
 关键字段：
 
 - `id`
-- `worker_key`
-- `tenant_scope`
+- `tenant_id`
 - `app_code`
-- `env_code`
-- `host`
-- `ip`
-- `port`
+- `service_code`
+- `worker_group`
+- `worker_address`
+- `runtime_address`
 - `transport_type`
+- `register_source`
 - `instance_id`
-- `version`
-- `labels`
-- `max_concurrency`
-- `current_load`
+- `engine_type`
+- `engine_worker_id`
 - `status`
 - `last_heartbeat_at`
-- `drain_requested`
-- `disabled`
 
 约束：
 
-- `worker_key` 由 `app_code + env_code + instance_id + transport_type` 生成。
+- Worker 快照唯一键为 `tenant_id + service_code + worker_group + engine_type + worker_address`。
+- 内嵌 Worker 地址由当前进程生成，当前实现格式为 `in-memory://{host}/embedded-{pid}@{host}`。
+- 远程 Worker 地址使用 `http(s)://...`。
+- `transport_type` 是调度选择 transport 的事实字段，地址前缀只作为历史兼容回退。
 - Worker 不能只靠配置推断在线，必须有真实心跳。
 
 ### 8.6 `mango_job_worker_capability`
@@ -370,7 +373,10 @@ Worker 能力表。
 关键字段：
 
 - `worker_id`
+- `service_code`
+- `worker_group`
 - `app_code`
+- `job_code`
 - `handler_name`
 - `handler_version`
 - `param_schema_hash`
@@ -378,8 +384,15 @@ Worker 能力表。
 
 用途：
 
-- JobCenter 分发任务前按 app、handler、标签、容量和状态选择 Worker。
+- JobCenter 分发任务前按 `tenantId + ownerService + workerGroup + appCode + handlerName + jobCode` 选择 Worker。
 - UI 展示“哪些 Worker 可以执行这个任务”。
+- `job_code` 存储为空串表示该 handler 不限制具体任务编码；指定值时只允许执行对应 `jobCode`。
+
+约束：
+
+- Worker 快照唯一键为 `tenant_id + service_code + worker_group + engine_type + worker_address`。
+- Worker 能力唯一键为 `worker_id + service_code + worker_group + app_code + handler_name + job_code`。
+- 同一个远程地址可以按不同 `service_code + worker_group` 注册为不同 Worker。
 
 ### 8.7 `mango_job_log_index` 和 `mango_job_log_chunk`
 
@@ -564,7 +577,7 @@ JobCenter 周期扫描 `mango_job_schedule_cursor`。
 JobCenter 分发流程：
 
 1. 查询 `WAITING` 实例。
-2. 根据 app、handler、标签、容量、状态选择 Worker。
+2. 根据租户、任务归属、应用、处理器、任务编码、能力启用状态和 Worker 在线状态选择 Worker。
 3. 创建 `mango_job_attempt`。
 4. 写入 `lease_owner`、`lease_until`、`fencing_token`。
 5. 将实例置为 `DISPATCHED`。
@@ -600,11 +613,35 @@ Worker 能力：
 
 ```java
 public interface MangoJobHandler {
+    default String appCode() {
+        return null;
+    }
+
+    default String serviceCode() {
+        return appCode();
+    }
+
+    default String workerGroup() {
+        return serviceCode();
+    }
+
+    default Set<String> supportedJobCodes() {
+        return Set.of();
+    }
+
     String handlerName();
 
     MangoJobHandleResult handle(MangoJobContext context);
 }
 ```
+
+归属规则：
+
+- 任务定义必须保存 `ownerService` 和 `workerGroup`；未配置时分别回退到 `appCode` 和 `ownerService`。
+- Worker 启动时必须注册 `serviceCode`、`workerGroup`、`appCode`、`handlerName` 和可选 `supportedJobCodes`。
+- JobCenter 派发前按 capability 过滤，禁止所有 Worker 共用一个全局队列后只按空闲随机派发。
+- Worker 收到命令后必须按同一归属再次查找本进程 handler；归属不匹配时拒绝执行，不能猜测执行。
+- 内嵌 Worker 只能由当前 Spring 容器真实 `MangoJobHandler` 自动注册，不允许手动添加。
 
 `MangoJobContext` 至少包含：
 

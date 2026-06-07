@@ -15,6 +15,10 @@ public class MangoJobDefinitionEntity extends TenantEntity {
 
     private String appCode;
 
+    private String ownerService;
+
+    private String workerGroup;
+
     private String moduleCode;
 
     private String jobCode;

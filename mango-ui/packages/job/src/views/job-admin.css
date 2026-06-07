@@ -12,7 +12,7 @@
 }
 
 .job-toolbar {
-  padding: 16px 18px;
+  padding: 12px 16px;
 }
 
 .job-toolbar-head,
@@ -37,8 +37,8 @@
 }
 
 .job-toolbar h2 {
-  font-size: 20px;
-  line-height: 28px;
+  font-size: 18px;
+  line-height: 24px;
 }
 
 .job-panel h3 {
@@ -48,18 +48,18 @@
 
 .job-toolbar p,
 .job-panel p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--el-text-color-secondary);
   font-size: 13px;
-  line-height: 20px;
+  line-height: 18px;
 }
 
 .job-search {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 10px 14px;
-  margin-top: 14px;
+  gap: 8px 12px;
+  margin-top: 10px;
 }
 
 .job-search .el-form-item {
@@ -67,15 +67,15 @@
 }
 
 .job-search-item {
-  width: 178px;
-}
-
-.job-search-item-small {
   width: 150px;
 }
 
+.job-search-item-small {
+  width: 124px;
+}
+
 .job-search-item-wide {
-  width: 260px;
+  width: 230px;
 }
 
 .job-search-item .el-form-item__content,
@@ -96,7 +96,7 @@
   display: flex;
   flex: 0 0 100%;
   flex-wrap: wrap;
-  gap: 10px 14px;
+  gap: 8px 12px;
   padding-top: 2px;
 }
 

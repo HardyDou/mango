@@ -19,6 +19,12 @@
         <el-form-item label="应用" class="job-search-item">
           <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
+        <el-form-item label="服务" class="job-search-item">
+          <el-input v-model="query.serviceCode" clearable placeholder="serviceCode" @keyup.enter="loadRows" />
+        </el-form-item>
+        <el-form-item label="Worker组" class="job-search-item">
+          <el-input v-model="query.workerGroup" clearable placeholder="workerGroup" @keyup.enter="loadRows" />
+        </el-form-item>
         <el-form-item label="状态" class="job-search-item job-search-item-small">
           <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in workerStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
@@ -27,6 +33,11 @@
         <el-form-item label="运行时" class="job-search-item job-search-item-small">
           <el-select v-model="query.engineType" clearable placeholder="全部">
             <el-option v-for="item in engineTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="通信" class="job-search-item job-search-item-small">
+          <el-select v-model="query.transportType" clearable placeholder="全部">
+            <el-option v-for="item in transportTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
         <el-form-item class="job-search-actions">
@@ -47,6 +58,11 @@
       <el-table v-loading="loading" :data="rows" stripe row-key="id" empty-text="暂无 Worker 节点">
         <el-table-column prop="workerAddress" label="Worker 地址" min-width="240" fixed="left" show-overflow-tooltip />
         <el-table-column prop="appCode" label="应用" min-width="140" show-overflow-tooltip />
+        <el-table-column label="服务/组" min-width="190" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.serviceCode || '-' }} / {{ row.workerGroup || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="92">
           <template #default="{ row }">
             <el-tag :type="optionTagType(workerStatusOptions, row.status)" size="small">
@@ -55,7 +71,22 @@
           </template>
         </el-table-column>
         <el-table-column prop="engineType" label="运行时" width="120" />
+        <el-table-column label="通信" width="92">
+          <template #default="{ row }">
+            <el-tag :type="optionTagType(transportTypeOptions, row.transportType)" size="small">
+              {{ optionLabel(transportTypeOptions, row.transportType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="注册来源" width="112">
+          <template #default="{ row }">
+            <el-tag :type="optionTagType(workerRegisterSourceOptions, row.registerSource)" size="small">
+              {{ optionLabel(workerRegisterSourceOptions, row.registerSource) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="engineWorkerId" label="实例标识" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="runtimeAddress" label="运行地址" min-width="220" show-overflow-tooltip />
         <el-table-column prop="lastHeartbeatAt" label="最近心跳" width="170" show-overflow-tooltip />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
@@ -84,6 +115,12 @@
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="110px">
         <el-form-item label="所属应用" prop="appCode">
           <el-input v-model="createForm.appCode" placeholder="mango-job" />
+        </el-form-item>
+        <el-form-item label="执行服务">
+          <el-input v-model="createForm.serviceCode" clearable placeholder="默认跟随所属应用" />
+        </el-form-item>
+        <el-form-item label="Worker组">
+          <el-input v-model="createForm.workerGroup" clearable placeholder="默认跟随执行服务" />
         </el-form-item>
         <el-form-item label="Worker 地址" prop="workerAddress">
           <el-input v-model="createForm.workerAddress" placeholder="http://127.0.0.1:18658" />
@@ -117,6 +154,8 @@ import {
   optionLabel,
   optionTagType,
   requestErrorMessage,
+  transportTypeOptions,
+  workerRegisterSourceOptions,
   workerStatusOptions,
   type CreateJobWorkerPayload,
   type JobWorkerQuery,
@@ -137,11 +176,17 @@ const query = reactive<JobWorkerQuery>({
   pageSize: 10,
   keyword: '',
   appCode: '',
+  serviceCode: '',
+  workerGroup: '',
   status: '',
   engineType: '',
+  transportType: '',
+  registerSource: '',
 });
 const createForm = reactive({
   appCode: 'mango-job',
+  serviceCode: '',
+  workerGroup: '',
   workerAddress: '',
   workerInstanceId: '',
   handlerName: '',
@@ -173,13 +218,26 @@ async function loadRows() {
 }
 
 function resetQuery() {
-  Object.assign(query, { pageNum: 1, pageSize: 10, keyword: '', appCode: '', status: '', engineType: '' });
+  Object.assign(query, {
+    pageNum: 1,
+    pageSize: 10,
+    keyword: '',
+    appCode: '',
+    serviceCode: '',
+    workerGroup: '',
+    status: '',
+    engineType: '',
+    transportType: '',
+    registerSource: '',
+  });
   loadRows();
 }
 
 function openCreateDialog() {
   Object.assign(createForm, {
     appCode: 'mango-job',
+    serviceCode: '',
+    workerGroup: '',
     workerAddress: '',
     workerInstanceId: '',
     handlerName: '',
@@ -194,11 +252,15 @@ async function submitCreate() {
   try {
     const payload: CreateJobWorkerPayload = {
       appCode: createForm.appCode.trim(),
+      serviceCode: createForm.serviceCode.trim() || undefined,
+      workerGroup: createForm.workerGroup.trim() || undefined,
       workerAddress: createForm.workerAddress.trim(),
       transportType: 'HTTP_INTERNAL',
       workerInstanceId: createForm.workerInstanceId.trim() || undefined,
       handlers: [{
         appCode: createForm.appCode.trim(),
+        serviceCode: createForm.serviceCode.trim() || undefined,
+        workerGroup: createForm.workerGroup.trim() || undefined,
         handlerName: createForm.handlerName.trim(),
         jobType: 'BUILTIN',
         paramSchema: createForm.paramSchema.trim() || undefined,

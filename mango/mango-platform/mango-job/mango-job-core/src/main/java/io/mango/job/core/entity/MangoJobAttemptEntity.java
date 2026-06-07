@@ -25,6 +25,10 @@ public class MangoJobAttemptEntity extends TenantEntity {
 
     private String workerAddressSnapshot;
 
+    private String serviceCodeSnapshot;
+
+    private String workerGroupSnapshot;
+
     private String status;
 
     private String leaseOwner;

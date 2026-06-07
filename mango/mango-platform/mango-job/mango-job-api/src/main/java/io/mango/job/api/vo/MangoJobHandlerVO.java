@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Job 处理器元数据返回对象。
@@ -17,8 +19,17 @@ public class MangoJobHandlerVO implements Serializable {
     @Schema(description = "所属逻辑应用")
     private String appCode;
 
+    @Schema(description = "执行服务编码")
+    private String serviceCode;
+
+    @Schema(description = "Worker 分组")
+    private String workerGroup;
+
     @Schema(description = "处理器名称")
     private String handlerName;
+
+    @Schema(description = "支持的任务编码。为空表示不限制 jobCode")
+    private Set<String> supportedJobCodes = new LinkedHashSet<>();
 
     @Schema(description = "处理器类型")
     private String jobType;

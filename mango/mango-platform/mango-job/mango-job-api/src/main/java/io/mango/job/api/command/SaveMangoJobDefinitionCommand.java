@@ -28,6 +28,14 @@ public class SaveMangoJobDefinitionCommand implements Serializable {
     @Schema(description = "所属逻辑应用", requiredMode = Schema.RequiredMode.REQUIRED)
     private String appCode;
 
+    @Size(max = 128, message = "执行服务编码不能超过128个字符")
+    @Schema(description = "执行服务编码。为空时默认使用所属应用")
+    private String ownerService;
+
+    @Size(max = 128, message = "Worker 分组不能超过128个字符")
+    @Schema(description = "Worker 分组。为空时默认使用执行服务编码")
+    private String workerGroup;
+
     @NotBlank(message = "任务编码不能为空")
     @Size(max = 128, message = "任务编码不能超过128个字符")
     @Schema(description = "任务编码，租户和应用内唯一", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -52,7 +60,7 @@ public class SaveMangoJobDefinitionCommand implements Serializable {
     @Schema(description = "调度表达式。CRON、FIXED_RATE、ONE_TIME 类型必填")
     private String scheduleExpression;
 
-    @Size(max = 256, message = "处理器名称不能超过256个字符")
+    @Size(max = 128, message = "处理器名称不能超过128个字符")
     @Schema(description = "处理器名称。BUILTIN 类型必填")
     private String handlerName;
 

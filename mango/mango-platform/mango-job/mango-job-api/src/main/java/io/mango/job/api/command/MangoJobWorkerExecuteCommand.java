@@ -25,6 +25,14 @@ public class MangoJobWorkerExecuteCommand implements Serializable {
     @Schema(description = "所属应用", requiredMode = Schema.RequiredMode.REQUIRED)
     private String appCode;
 
+    @NotBlank(message = "执行服务编码不能为空")
+    @Schema(description = "执行服务编码", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String ownerService;
+
+    @NotBlank(message = "Worker 分组不能为空")
+    @Schema(description = "Worker 分组", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String workerGroup;
+
     @NotBlank(message = "任务编码不能为空")
     @Schema(description = "任务编码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String jobCode;

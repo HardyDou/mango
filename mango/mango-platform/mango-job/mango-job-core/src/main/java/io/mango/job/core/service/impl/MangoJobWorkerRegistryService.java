@@ -9,6 +9,7 @@ import io.mango.job.api.command.RegisterMangoJobWorkerCommand;
 import io.mango.job.api.command.UpdateMangoJobWorkerStatusCommand;
 import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobTransportType;
+import io.mango.job.api.enums.JobWorkerRegisterSource;
 import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.vo.MangoJobHandlerVO;
 import io.mango.job.core.entity.MangoJobWorkerCapabilityEntity;
@@ -17,6 +18,8 @@ import io.mango.job.core.mapper.MangoJobWorkerCapabilityMapper;
 import io.mango.job.core.mapper.MangoJobWorkerSnapshotMapper;
 import io.mango.job.core.service.IMangoJobWorkerRegistryService;
 import io.mango.job.support.nativeengine.MangoJobTransportAddresses;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -34,6 +37,10 @@ import java.util.stream.Collectors;
  */
 @Service
 public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistryService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MangoJobWorkerRegistryService.class);
+
+    private static final int MAX_HANDLER_NAME_LENGTH = 128;
 
     private final MangoJobWorkerSnapshotMapper workerSnapshotMapper;
 
@@ -57,6 +64,9 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
             MangoJobWorkerSnapshotEntity worker = upsertWorker(command, false);
             upsertCapabilities(command, worker);
             disableMissingCapabilities(command, worker);
+            LOGGER.info("Mango job worker registered, workerId={}, appCode={}, serviceCode={}, workerGroup={}, transportType={}, registerSource={}, handlerCount={}, workerAddress={}",
+                    worker.getId(), worker.getAppCode(), worker.getServiceCode(), worker.getWorkerGroup(),
+                    worker.getTransportType(), worker.getRegisterSource(), command.getHandlers().size(), worker.getWorkerAddress());
             return worker.getId();
         });
     }
@@ -67,8 +77,12 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         RegisterMangoJobWorkerCommand registerCommand = new RegisterMangoJobWorkerCommand();
         registerCommand.setTenantId(currentTenantId());
         registerCommand.setAppCode(command.getAppCode());
+        registerCommand.setServiceCode(command.getServiceCode());
+        registerCommand.setWorkerGroup(command.getWorkerGroup());
         registerCommand.setWorkerAddress(command.getWorkerAddress());
+        registerCommand.setRuntimeAddress(command.getRuntimeAddress());
         registerCommand.setTransportType(command.getTransportType());
+        registerCommand.setRegisterSource(JobWorkerRegisterSource.MANUAL);
         registerCommand.setWorkerInstanceId(command.getWorkerInstanceId());
         registerCommand.setHandlers(command.getHandlers());
         return dataSourceRouter.route(() -> {
@@ -104,10 +118,15 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
     private void validate(RegisterMangoJobWorkerCommand command) {
         Require.notBlank(command.getTenantId(), "租户 ID 不能为空");
         Require.notBlank(command.getAppCode(), "所属应用不能为空");
+        resolveServiceCode(command);
+        resolveWorkerGroup(command);
         Require.notBlank(command.getWorkerAddress(), "Worker 地址不能为空");
         Require.notNull(command.getTransportType(), "通信方式不能为空");
+        Require.notNull(resolveRegisterSource(command), "注册来源不能为空");
         Require.isTrue(MangoJobSupport.hasValidWorkerAddress(command.getWorkerAddress()), "Worker 地址无效");
         if (command.getTransportType() == JobTransportType.IN_MEMORY) {
+            Require.isTrue(command.getRegisterSource() == JobWorkerRegisterSource.EMBEDDED_AUTO,
+                    "IN_MEMORY Worker 只能由系统自动注册");
             Require.isTrue(MangoJobTransportAddresses.isInMemory(command.getWorkerAddress()),
                     "IN_MEMORY Worker 地址必须使用 " + MangoJobTransportAddresses.IN_MEMORY_PREFIX);
         }
@@ -119,50 +138,67 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         for (MangoJobHandlerVO handler : command.getHandlers()) {
             Require.notNull(handler, "Worker 处理器不能为空");
             Require.notBlank(handler.getHandlerName(), "Worker 处理器名称不能为空");
+            Require.isTrue(handler.getHandlerName().trim().length() <= MAX_HANDLER_NAME_LENGTH,
+                    "Worker 处理器名称不能超过128个字符");
         }
     }
 
     private MangoJobWorkerSnapshotEntity upsertWorker(RegisterMangoJobWorkerCommand command, boolean forceOnline) {
         String tenantId = command.getTenantId().trim();
         String appCode = command.getAppCode().trim();
+        String serviceCode = resolveServiceCode(command);
+        String workerGroup = resolveWorkerGroup(command);
         String address = command.getWorkerAddress().trim();
         LocalDateTime now = LocalDateTime.now();
-        MangoJobWorkerSnapshotEntity existing = selectWorker(tenantId, appCode, address);
-        int updated = updateWorkerHeartbeat(command, tenantId, appCode, address, now,
+        MangoJobWorkerSnapshotEntity existing = selectWorker(tenantId, serviceCode, workerGroup, address);
+        int updated = updateWorkerHeartbeat(command, tenantId, serviceCode, workerGroup, address, now,
                 forceOnline || canHeartbeatSetOnline(existing));
         if (updated > 0) {
-            return selectWorker(tenantId, appCode, address);
+            return selectWorker(tenantId, serviceCode, workerGroup, address);
         }
 
         MangoJobWorkerSnapshotEntity worker = new MangoJobWorkerSnapshotEntity();
         worker.setTenantId(tenantId);
         worker.setAppCode(appCode);
+        worker.setServiceCode(serviceCode);
+        worker.setWorkerGroup(workerGroup);
         worker.setWorkerAddress(address);
+        worker.setRuntimeAddress(resolveRuntimeAddress(command, address));
+        worker.setTransportType(command.getTransportType().name());
+        worker.setRegisterSource(resolveRegisterSource(command).name());
         worker.setEngineType(JobEngineType.MANGO_NATIVE.name());
         worker.setEngineWorkerId(resolveWorkerInstanceId(command, address));
+        worker.setInstanceId(resolveWorkerInstanceId(command, address));
         worker.setStatus(JobWorkerStatus.ONLINE.name());
         worker.setLastHeartbeatAt(now);
         try {
             workerSnapshotMapper.insert(worker);
             return worker;
         } catch (DuplicateKeyException ex) {
-            updateWorkerHeartbeat(command, tenantId, appCode, address, now, true);
-            return selectWorker(tenantId, appCode, address);
+            updateWorkerHeartbeat(command, tenantId, serviceCode, workerGroup, address, now, true);
+            return selectWorker(tenantId, serviceCode, workerGroup, address);
         }
     }
 
     private int updateWorkerHeartbeat(RegisterMangoJobWorkerCommand command,
                                       String tenantId,
-                                      String appCode,
+                                      String serviceCode,
+                                      String workerGroup,
                                       String address,
                                       LocalDateTime now,
                                       boolean setOnline) {
         LambdaUpdateWrapper<MangoJobWorkerSnapshotEntity> wrapper = new LambdaUpdateWrapper<MangoJobWorkerSnapshotEntity>()
                 .eq(MangoJobWorkerSnapshotEntity::getTenantId, tenantId)
-                .eq(MangoJobWorkerSnapshotEntity::getAppCode, appCode)
+                .eq(MangoJobWorkerSnapshotEntity::getServiceCode, serviceCode)
+                .eq(MangoJobWorkerSnapshotEntity::getWorkerGroup, workerGroup)
                 .eq(MangoJobWorkerSnapshotEntity::getEngineType, JobEngineType.MANGO_NATIVE.name())
                 .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, address)
+                .set(MangoJobWorkerSnapshotEntity::getAppCode, command.getAppCode().trim())
+                .set(MangoJobWorkerSnapshotEntity::getRuntimeAddress, resolveRuntimeAddress(command, address))
+                .set(MangoJobWorkerSnapshotEntity::getTransportType, command.getTransportType().name())
+                .set(MangoJobWorkerSnapshotEntity::getRegisterSource, resolveRegisterSource(command).name())
                 .set(MangoJobWorkerSnapshotEntity::getEngineWorkerId, resolveWorkerInstanceId(command, address))
+                .set(MangoJobWorkerSnapshotEntity::getInstanceId, resolveWorkerInstanceId(command, address))
                 .set(MangoJobWorkerSnapshotEntity::getLastHeartbeatAt, now);
         if (setOnline) {
             wrapper.set(MangoJobWorkerSnapshotEntity::getStatus, JobWorkerStatus.ONLINE.name());
@@ -170,10 +206,11 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         return workerSnapshotMapper.update(null, wrapper);
     }
 
-    private MangoJobWorkerSnapshotEntity selectWorker(String tenantId, String appCode, String address) {
+    private MangoJobWorkerSnapshotEntity selectWorker(String tenantId, String serviceCode, String workerGroup, String address) {
         return workerSnapshotMapper.selectOne(new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
                 .eq(MangoJobWorkerSnapshotEntity::getTenantId, tenantId)
-                .eq(MangoJobWorkerSnapshotEntity::getAppCode, appCode)
+                .eq(MangoJobWorkerSnapshotEntity::getServiceCode, serviceCode)
+                .eq(MangoJobWorkerSnapshotEntity::getWorkerGroup, workerGroup)
                 .eq(MangoJobWorkerSnapshotEntity::getEngineType, JobEngineType.MANGO_NATIVE.name())
                 .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, address)
                 .last("limit 1"));
@@ -190,28 +227,54 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         for (MangoJobHandlerVO handler : command.getHandlers()) {
             String handlerName = handler.getHandlerName().trim();
             String appCode = resolveCapabilityAppCode(handler, command);
-            MangoJobWorkerCapabilityEntity capability = workerCapabilityMapper.selectOne(
-                    new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
-                            .eq(MangoJobWorkerCapabilityEntity::getWorkerId, worker.getId())
-                            .eq(MangoJobWorkerCapabilityEntity::getAppCode, appCode)
-                            .eq(MangoJobWorkerCapabilityEntity::getHandlerName, handlerName)
-                            .last("limit 1"));
-            if (capability == null) {
-                capability = new MangoJobWorkerCapabilityEntity();
-                capability.setTenantId(command.getTenantId().trim());
-                capability.setWorkerId(worker.getId());
-                capability.setAppCode(appCode);
-                capability.setHandlerName(handlerName);
-                capability.setHandlerVersion(null);
-                capability.setEnabled(1);
-                capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
-                workerCapabilityMapper.insert(capability);
+            String serviceCode = resolveCapabilityServiceCode(handler, command);
+            String workerGroup = resolveCapabilityWorkerGroup(handler, command);
+            Set<String> jobCodes = resolveCapabilityJobCodes(handler);
+            if (jobCodes.isEmpty()) {
+                upsertCapability(command, worker, handler, handlerName, appCode, serviceCode, workerGroup, null);
                 continue;
             }
+            for (String jobCode : jobCodes) {
+                upsertCapability(command, worker, handler, handlerName, appCode, serviceCode, workerGroup, jobCode);
+            }
+        }
+    }
+
+    private void upsertCapability(RegisterMangoJobWorkerCommand command,
+                                  MangoJobWorkerSnapshotEntity worker,
+                                  MangoJobHandlerVO handler,
+                                  String handlerName,
+                                  String appCode,
+                                  String serviceCode,
+                                  String workerGroup,
+                                  String jobCode) {
+        MangoJobWorkerCapabilityEntity capability = workerCapabilityMapper.selectOne(
+                new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
+                        .eq(MangoJobWorkerCapabilityEntity::getWorkerId, worker.getId())
+                        .eq(MangoJobWorkerCapabilityEntity::getServiceCode, serviceCode)
+                        .eq(MangoJobWorkerCapabilityEntity::getWorkerGroup, workerGroup)
+                        .eq(MangoJobWorkerCapabilityEntity::getAppCode, appCode)
+                        .eq(MangoJobWorkerCapabilityEntity::getHandlerName, handlerName)
+                        .eq(MangoJobWorkerCapabilityEntity::getJobCode, capabilityJobCode(jobCode))
+                        .last("limit 1"));
+        if (capability == null) {
+            capability = new MangoJobWorkerCapabilityEntity();
+            capability.setTenantId(command.getTenantId().trim());
+            capability.setWorkerId(worker.getId());
+            capability.setServiceCode(serviceCode);
+            capability.setWorkerGroup(workerGroup);
+            capability.setAppCode(appCode);
+            capability.setJobCode(capabilityJobCode(jobCode));
+            capability.setHandlerName(handlerName);
+            capability.setHandlerVersion(null);
             capability.setEnabled(1);
             capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
-            workerCapabilityMapper.updateById(capability);
+            workerCapabilityMapper.insert(capability);
+            return;
         }
+        capability.setEnabled(1);
+        capability.setParamSchemaHash(schemaHash(handler.getParamSchema()));
+        workerCapabilityMapper.updateById(capability);
     }
 
     private void disableMissingCapabilities(RegisterMangoJobWorkerCommand command, MangoJobWorkerSnapshotEntity worker) {
@@ -219,13 +282,26 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
                 .filter(Objects::nonNull)
                 .map(handler -> {
                     String appCode = resolveCapabilityAppCode(handler, command);
-                    return appCode + ":" + handler.getHandlerName().trim();
+                    String serviceCode = resolveCapabilityServiceCode(handler, command);
+                    String workerGroup = resolveCapabilityWorkerGroup(handler, command);
+                    Set<String> jobCodes = resolveCapabilityJobCodes(handler);
+                    if (jobCodes.isEmpty()) {
+                        return Set.of(serviceCode + ":" + workerGroup + ":" + appCode + ":"
+                                + handler.getHandlerName().trim() + ":");
+                    }
+                    return jobCodes.stream()
+                            .map(jobCode -> serviceCode + ":" + workerGroup + ":" + appCode + ":"
+                                    + handler.getHandlerName().trim() + ":" + jobCode)
+                            .collect(Collectors.toSet());
                 })
+                .flatMap(Set::stream)
                 .collect(Collectors.toSet());
         for (MangoJobWorkerCapabilityEntity capability : workerCapabilityMapper.selectList(
                 new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
                         .eq(MangoJobWorkerCapabilityEntity::getWorkerId, worker.getId()))) {
-            String key = capability.getAppCode() + ":" + capability.getHandlerName();
+            String key = capability.getServiceCode() + ":" + capability.getWorkerGroup() + ":"
+                    + capability.getAppCode() + ":" + capability.getHandlerName() + ":"
+                    + capabilityJobCode(capability.getJobCode());
             if (!activeKeys.contains(key)) {
                 workerCapabilityMapper.update(null, new LambdaUpdateWrapper<MangoJobWorkerCapabilityEntity>()
                         .eq(MangoJobWorkerCapabilityEntity::getId, capability.getId())
@@ -246,6 +322,67 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
             return handler.getAppCode().trim();
         }
         return command.getAppCode().trim();
+    }
+
+    private String resolveServiceCode(RegisterMangoJobWorkerCommand command) {
+        if (StringUtils.hasText(command.getServiceCode())) {
+            return command.getServiceCode().trim();
+        }
+        return command.getAppCode().trim();
+    }
+
+    private String resolveWorkerGroup(RegisterMangoJobWorkerCommand command) {
+        if (StringUtils.hasText(command.getWorkerGroup())) {
+            return command.getWorkerGroup().trim();
+        }
+        return resolveServiceCode(command);
+    }
+
+    private String resolveCapabilityServiceCode(MangoJobHandlerVO handler, RegisterMangoJobWorkerCommand command) {
+        if (StringUtils.hasText(handler.getServiceCode())) {
+            return handler.getServiceCode().trim();
+        }
+        return resolveServiceCode(command);
+    }
+
+    private String resolveCapabilityWorkerGroup(MangoJobHandlerVO handler, RegisterMangoJobWorkerCommand command) {
+        if (StringUtils.hasText(handler.getWorkerGroup())) {
+            return handler.getWorkerGroup().trim();
+        }
+        return resolveCapabilityServiceCode(handler, command);
+    }
+
+    private Set<String> resolveCapabilityJobCodes(MangoJobHandlerVO handler) {
+        if (handler.getSupportedJobCodes() == null || handler.getSupportedJobCodes().isEmpty()) {
+            return Set.of();
+        }
+        return handler.getSupportedJobCodes().stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+    }
+
+    private String capabilityJobCode(String jobCode) {
+        return StringUtils.hasText(jobCode) ? jobCode.trim() : "";
+    }
+
+    private String resolveRuntimeAddress(RegisterMangoJobWorkerCommand command, String address) {
+        if (StringUtils.hasText(command.getRuntimeAddress())) {
+            return command.getRuntimeAddress().trim();
+        }
+        return address;
+    }
+
+    private JobWorkerRegisterSource resolveRegisterSource(RegisterMangoJobWorkerCommand command) {
+        if (command.getRegisterSource() != null) {
+            return command.getRegisterSource();
+        }
+        if (command.getTransportType() == JobTransportType.IN_MEMORY) {
+            command.setRegisterSource(JobWorkerRegisterSource.EMBEDDED_AUTO);
+            return command.getRegisterSource();
+        }
+        command.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO);
+        return command.getRegisterSource();
     }
 
     private boolean canHeartbeatSetOnline(MangoJobWorkerSnapshotEntity worker) {

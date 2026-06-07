@@ -19,6 +19,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
@@ -44,6 +46,8 @@ class MangoJobWorkerInternalControllerTest {
         MangoJobWorkerExecuteCommand command = new MangoJobWorkerExecuteCommand();
         command.setTenantId("tenant-remote");
         command.setAppCode("remote-worker-app");
+        command.setOwnerService("remote-worker-app");
+        command.setWorkerGroup("remote-worker-app");
         command.setJobCode("remote-worker-probe");
         command.setHandlerName("remoteProbeHandler");
         command.setInstanceId(90001L);
@@ -71,9 +75,35 @@ class MangoJobWorkerInternalControllerTest {
         assertThat(result.get("logs").toString()).contains("remote-http");
     }
 
+    @Test
+    void executeShouldRejectMismatchedWorkerOwnershipBeforeBusinessCodeRuns() {
+        TestApplication.REMOTE_PROBE_EXECUTIONS.set(0);
+        MangoJobWorkerExecuteCommand command = new MangoJobWorkerExecuteCommand();
+        command.setTenantId("tenant-remote");
+        command.setAppCode("remote-worker-app");
+        command.setOwnerService("service-b");
+        command.setWorkerGroup("service-b");
+        command.setJobCode("remote-worker-probe");
+        command.setHandlerName("remoteProbeHandler");
+        command.setInstanceId(90002L);
+        command.setOperatorId(1001L);
+        command.setTriggerType(JobTriggerType.MANUAL);
+        command.setTriggerBatchNo("remote-batch-002");
+        command.setTraceId("remote-trace-002");
+        command.setParameter("{\"scene\":\"wrong-worker\"}");
+
+        ResponseEntity<R> response = restTemplate.postForEntity(
+                "http://127.0.0.1:" + port + "/job/internal/workers/execute", command, R.class);
+
+        assertThat(response.getStatusCode().is5xxServerError()).isTrue();
+        assertThat(TestApplication.REMOTE_PROBE_EXECUTIONS).hasValue(0);
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, FlywayAutoConfiguration.class})
     static class TestApplication {
+
+        static final AtomicInteger REMOTE_PROBE_EXECUTIONS = new AtomicInteger();
 
         @Bean
         MangoJobHandler remoteProbeHandler() {
@@ -84,12 +114,23 @@ class MangoJobWorkerInternalControllerTest {
                 }
 
                 @Override
+                public String serviceCode() {
+                    return "remote-worker-app";
+                }
+
+                @Override
+                public String workerGroup() {
+                    return "remote-worker-app";
+                }
+
+                @Override
                 public String handlerName() {
                     return "remoteProbeHandler";
                 }
 
                 @Override
                 public MangoJobHandleResult handle(MangoJobHandleContext context) {
+                    REMOTE_PROBE_EXECUTIONS.incrementAndGet();
                     System.out.println("remoteProbeHandler System.out " + context.getParameter());
                     org.slf4j.LoggerFactory.getLogger("remoteProbeHandler")
                             .info("remoteProbeHandler logger {}", context.getParameter());

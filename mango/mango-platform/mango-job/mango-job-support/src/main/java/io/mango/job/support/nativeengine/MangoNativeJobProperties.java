@@ -14,6 +14,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class MangoNativeJobProperties {
 
     /**
+     * 当前 Job 运行时默认应用编码。处理器未显式声明 appCode 时使用。
+     */
+    private String appCode;
+
+    /**
+     * 当前 Job 运行时默认服务编码。处理器未显式声明 serviceCode 时使用。
+     */
+    private String serviceCode;
+
+    /**
+     * 当前 Job 运行时默认 Worker 分组。处理器未显式声明 workerGroup 时使用。
+     */
+    private String workerGroup;
+
+    /**
      * 是否启用原生调度扫描。
      */
     private boolean schedulerEnabled = true;

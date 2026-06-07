@@ -16,6 +16,18 @@ public class MangoJobWorkerPageQuery extends PageQuery {
     @Schema(description = "所属逻辑应用")
     private String appCode;
 
+    @Schema(description = "执行服务编码")
+    private String serviceCode;
+
+    @Schema(description = "Worker 分组")
+    private String workerGroup;
+
+    @Schema(description = "通信方式")
+    private String transportType;
+
+    @Schema(description = "注册来源")
+    private String registerSource;
+
     @Schema(description = "Worker 状态")
     private String status;
 

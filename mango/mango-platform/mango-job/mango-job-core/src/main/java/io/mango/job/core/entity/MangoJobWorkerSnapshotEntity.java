@@ -17,7 +17,19 @@ public class MangoJobWorkerSnapshotEntity extends TenantEntity {
 
     private String appCode;
 
+    private String serviceCode;
+
+    private String workerGroup;
+
     private String workerAddress;
+
+    private String runtimeAddress;
+
+    private String transportType;
+
+    private String registerSource;
+
+    private String instanceId;
 
     private String engineType;
 

@@ -17,6 +17,12 @@ public class MangoJobWorkerCapabilityEntity extends TenantEntity {
 
     private String appCode;
 
+    private String serviceCode;
+
+    private String workerGroup;
+
+    private String jobCode;
+
     private String handlerName;
 
     private String handlerVersion;

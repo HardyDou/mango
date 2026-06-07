@@ -51,6 +51,13 @@ public class JobAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
+    MangoEmbeddedWorkerRegistrar mangoEmbeddedWorkerRegistrar(IMangoNativeJobRuntime nativeJobRuntime,
+                                                              MangoNativeJobProperties properties) {
+        return new MangoEmbeddedWorkerRegistrar(nativeJobRuntime, properties);
+    }
+
+    @Bean
     @ConditionalOnProperty(prefix = "mango.job.probe", name = "enabled", havingValue = "true")
     MangoJobRuntimeProbeHandler mangoJobRuntimeProbeHandler() {
         return new MangoJobRuntimeProbeHandler();

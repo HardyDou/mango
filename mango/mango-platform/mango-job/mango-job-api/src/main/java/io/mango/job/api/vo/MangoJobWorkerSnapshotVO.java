@@ -24,8 +24,26 @@ public class MangoJobWorkerSnapshotVO implements Serializable {
     @Schema(description = "所属逻辑应用")
     private String appCode;
 
+    @Schema(description = "执行服务编码")
+    private String serviceCode;
+
+    @Schema(description = "Worker 分组")
+    private String workerGroup;
+
     @Schema(description = "Worker 地址")
     private String workerAddress;
+
+    @Schema(description = "运行地址")
+    private String runtimeAddress;
+
+    @Schema(description = "通信方式")
+    private String transportType;
+
+    @Schema(description = "注册来源")
+    private String registerSource;
+
+    @Schema(description = "实例标识")
+    private String instanceId;
 
     @Schema(description = "引擎类型")
     private String engineType;

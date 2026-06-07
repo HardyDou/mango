@@ -1,5 +1,7 @@
 package io.mango.job.api.handler;
 
+import java.util.Set;
+
 /**
  * Mango 原生 Job 处理器契约。
  * <p>
@@ -14,6 +16,33 @@ public interface MangoJobHandler {
      */
     default String appCode() {
         return null;
+    }
+
+    /**
+     * 执行服务编码。用于调度中心选择可执行 Worker；默认跟随 appCode。
+     *
+     * @return 服务编码；返回 null 表示使用 appCode
+     */
+    default String serviceCode() {
+        return appCode();
+    }
+
+    /**
+     * Worker 分组。用于同一服务下的执行隔离；默认跟随 serviceCode。
+     *
+     * @return Worker 分组；返回 null 表示使用 serviceCode
+     */
+    default String workerGroup() {
+        return serviceCode();
+    }
+
+    /**
+     * 当前处理器显式支持的任务编码。空集合表示按处理器维度匹配，不限制 jobCode。
+     *
+     * @return 支持的任务编码集合
+     */
+    default Set<String> supportedJobCodes() {
+        return Set.of();
     }
 
     /**

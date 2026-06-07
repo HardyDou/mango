@@ -16,6 +16,9 @@
         <el-form-item label="应用" class="job-search-item">
           <el-input v-model="query.appCode" clearable placeholder="appCode" @keyup.enter="loadRows" />
         </el-form-item>
+        <el-form-item label="服务" class="job-search-item">
+          <el-input v-model="query.ownerService" clearable placeholder="ownerService" @keyup.enter="loadRows" />
+        </el-form-item>
         <el-form-item label="状态" class="job-search-item job-search-item-small">
           <el-select v-model="query.status" clearable placeholder="全部">
             <el-option v-for="item in jobDefinitionStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
@@ -34,6 +37,9 @@
             <el-select v-model="query.jobType" clearable placeholder="全部">
               <el-option v-for="item in jobTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
+          </el-form-item>
+          <el-form-item label="Worker组" class="job-search-item">
+            <el-input v-model="query.workerGroup" clearable placeholder="workerGroup" @keyup.enter="loadRows" />
           </el-form-item>
           <el-form-item label="调度类型" class="job-search-item">
             <el-select v-model="query.scheduleType" clearable placeholder="全部">
@@ -67,6 +73,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="appCode" label="应用" min-width="130" show-overflow-tooltip />
+        <el-table-column label="执行归属" min-width="210" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.ownerService || row.appCode }} / {{ row.workerGroup || row.ownerService || row.appCode }}
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="96">
           <template #default="{ row }">
             <el-tag :type="optionTagType(jobDefinitionStatusOptions, row.status)" size="small">
@@ -129,6 +140,16 @@
           <el-col :span="12">
             <el-form-item label="所属应用" prop="appCode">
               <el-input v-model="form.appCode" placeholder="例如 mango-admin" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="执行服务">
+              <el-input v-model="form.ownerService" placeholder="默认跟随所属应用" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Worker组">
+              <el-input v-model="form.workerGroup" placeholder="默认跟随执行服务" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -280,6 +301,8 @@ const query = reactive<JobDefinitionQuery>({
   pageSize: 10,
   keyword: '',
   appCode: '',
+  ownerService: '',
+  workerGroup: '',
   status: '',
   jobType: '',
   scheduleType: '',
@@ -288,6 +311,8 @@ const query = reactive<JobDefinitionQuery>({
 
 const form = reactive<SaveJobDefinitionPayload>({
   appCode: '',
+  ownerService: '',
+  workerGroup: '',
   jobCode: '',
   jobName: '',
   jobType: 'BUILTIN',
@@ -339,6 +364,8 @@ function resetQuery() {
     pageSize: 10,
     keyword: '',
     appCode: '',
+    ownerService: '',
+    workerGroup: '',
     status: '',
     jobType: '',
     scheduleType: '',
@@ -351,6 +378,8 @@ function openEditor(row?: JobDefinition) {
   Object.assign(form, {
     id: row?.id,
     appCode: row?.appCode || '',
+    ownerService: row?.ownerService || '',
+    workerGroup: row?.workerGroup || '',
     jobCode: row?.jobCode || '',
     jobName: row?.jobName || '',
     jobType: row?.jobType || 'BUILTIN',

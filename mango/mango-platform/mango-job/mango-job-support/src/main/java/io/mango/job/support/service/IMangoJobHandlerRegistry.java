@@ -41,4 +41,20 @@ public interface IMangoJobHandlerRegistry {
      * @return 处理器实例
      */
     Optional<MangoJobHandler> findHandler(String appCode, String handlerName);
+
+    /**
+     * 按完整执行归属查询处理器实例。
+     *
+     * @param appCode 应用编码
+     * @param serviceCode 执行服务编码
+     * @param workerGroup Worker 分组
+     * @param handlerName 处理器名称
+     * @param jobCode 任务编码
+     * @return 处理器实例
+     */
+    Optional<MangoJobHandler> findHandler(String appCode,
+                                          String serviceCode,
+                                          String workerGroup,
+                                          String handlerName,
+                                          String jobCode);
 }

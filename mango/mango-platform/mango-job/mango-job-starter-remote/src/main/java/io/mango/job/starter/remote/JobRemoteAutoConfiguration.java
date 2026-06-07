@@ -7,6 +7,7 @@ import io.mango.job.support.nativeengine.MangoJobWorkerExecutor;
 import io.mango.job.support.nativeengine.MangoJobWorkerInternalController;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -25,8 +26,10 @@ public class JobRemoteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    IMangoJobHandlerRegistry mangoJobHandlerRegistry(ObjectProvider<MangoJobHandler> handlers) {
-        return new MangoJobHandlerRegistry(handlers);
+    IMangoJobHandlerRegistry mangoJobHandlerRegistry(ObjectProvider<MangoJobHandler> handlers,
+                                                     MangoNativeJobProperties properties,
+                                                     @Value("${spring.application.name:}") String applicationName) {
+        return new MangoJobHandlerRegistry(handlers, properties, applicationName);
     }
 
     @Bean

@@ -41,6 +41,13 @@ public interface IMangoNativeJobRuntime {
     void tick();
 
     /**
+     * 注册当前进程内嵌 Worker。
+     *
+     * @param tenantId 调度租户 ID
+     */
+    void registerEmbeddedWorkers(String tenantId);
+
+    /**
      * 导入指定时间范围内的调度实例。
      *
      * @param definition 任务定义实体

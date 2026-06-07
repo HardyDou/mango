@@ -21,6 +21,7 @@ import io.mango.job.api.enums.JobEngineType;
 import io.mango.job.api.enums.JobScheduleType;
 import io.mango.job.api.enums.JobType;
 import io.mango.job.api.enums.JobTransportType;
+import io.mango.job.api.enums.JobWorkerRegisterSource;
 import io.mango.job.api.enums.JobWorkerStatus;
 import io.mango.job.api.handler.MangoJobHandleContext;
 import io.mango.job.api.handler.MangoJobHandleResult;
@@ -62,6 +63,7 @@ import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import io.mango.job.support.nativeengine.IMangoJobWorkerTransport;
 import io.mango.job.support.nativeengine.MangoJobWorkerDispatchRequest;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
+import io.mango.job.starter.MangoEmbeddedWorkerRegistrar;
 import io.mango.notice.api.NoticeApi;
 import io.mango.notice.api.command.SendNoticeCommand;
 import io.mango.notice.api.vo.NoticeSendResultVO;
@@ -91,6 +93,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -111,6 +114,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
                 "mango.persistence.flyway.enabled=true",
                 "mango.persistence.mybatis-plus.tenant.enabled=false",
                 "mango.persistence.schema-validation.enabled=false",
+                "mango.job.native.app-code=internal-admin",
                 "spring.autoconfigure.exclude=io.mango.job.starter.remote.JobRemoteAutoConfiguration"
         }
 )
@@ -138,6 +142,9 @@ class MangoJobMultiDataSourceIntegrationTest {
     private MangoJobLogIndexMapper logIndexMapper;
 
     @Autowired
+    private MangoJobLogChunkMapper logChunkMapper;
+
+    @Autowired
     private MangoJobWorkerSnapshotMapper workerSnapshotMapper;
 
     @Autowired
@@ -158,10 +165,14 @@ class MangoJobMultiDataSourceIntegrationTest {
     @Autowired
     private MangoNativeJobProperties nativeProperties;
 
+    @Autowired
+    private MangoEmbeddedWorkerRegistrar embeddedWorkerRegistrar;
+
     @BeforeEach
     void cleanTables() {
         nativeProperties.setEmbeddedWorkerEnabled(true);
         nativeProperties.setTransport(JobTransportType.IN_MEMORY);
+        nativeProperties.setSchedulerTenantId("1");
         cleanDatasource("job");
         cleanDatasource("primary");
     }
@@ -179,6 +190,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         entity.setId(10001L);
         entity.setTenantId("tenant-a");
         entity.setAppCode("internal-admin");
+        entity.setOwnerService("internal-admin");
+        entity.setWorkerGroup("internal-admin");
         entity.setJobCode("sync-user");
         entity.setJobName("Sync User");
         entity.setJobType("BUILTIN");
@@ -205,9 +218,14 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(tableExists("job", "mango_job_worker_capability")).isTrue();
         assertThat(tableExists("job", "mango_job_log_chunk")).isTrue();
         assertThat(tableExists("job", "mango_job_event")).isTrue();
+        assertThat(columnExists("job", "mango_job_definition", "owner_service")).isTrue();
+        assertThat(columnExists("job", "mango_job_worker_snapshot", "service_code")).isTrue();
+        assertThat(columnExists("job", "mango_job_worker_capability", "job_code")).isTrue();
         assertThat(constraintOrIndexExists("job", "mango_job_schedule_cursor", "uk_schedule_cursor_job")).isTrue();
         assertThat(constraintOrIndexExists("job", "mango_job_instance", "uk_instance_idempotency")).isTrue();
         assertThat(constraintOrIndexExists("job", "mango_job_log_chunk", "uk_log_chunk_sequence")).isTrue();
+        assertThat(constraintOrIndexExists("job", "mango_job_worker_snapshot", "uk_worker_owner_engine_address")).isTrue();
+        assertThat(constraintOrIndexExists("job", "mango_job_worker_capability", "uk_worker_owner_handler")).isTrue();
 
         MangoJobEventEntity event = new MangoJobEventEntity();
         event.setTenantId("tenant-a");
@@ -236,6 +254,8 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         SaveMangoJobDefinitionCommand command = new SaveMangoJobDefinitionCommand();
         command.setAppCode("internal-admin");
+        command.setOwnerService("internal-admin");
+        command.setWorkerGroup("internal-admin");
         command.setJobCode("sync-order");
         command.setJobName("Sync Order");
         command.setJobType(JobType.BUILTIN.name());
@@ -245,6 +265,8 @@ class MangoJobMultiDataSourceIntegrationTest {
 
         Long id = jobDefinitionService.createDefinition(command);
         assertThat(jobDefinitionService.detailDefinition(id).getStatus()).isEqualTo(JobDefinitionStatus.DRAFT.name());
+        assertThat(jobDefinitionService.detailDefinition(id).getOwnerService()).isEqualTo("internal-admin");
+        assertThat(jobDefinitionService.detailDefinition(id).getWorkerGroup()).isEqualTo("internal-admin");
         assertThat(jobDefinitionService.detailDefinition(id).getSyncStatus()).isEqualTo("SYNCED");
         assertThat(jobDefinitionService.detailDefinition(id).getEngineJobId()).isEqualTo(String.valueOf(id));
 
@@ -348,6 +370,37 @@ class MangoJobMultiDataSourceIntegrationTest {
     }
 
     @Test
+    void embeddedWorkerRegistrar_shouldAutoRegisterLocalHandlersWithoutDispatch() {
+        nativeProperties.setSchedulerTenantId("tenant-b");
+        MangoContextHolder.set(MangoContextSnapshot.request("req-worker-auto", "trace-worker-auto",
+                        "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(207L, "tenant-b", "job-admin", "test", "user", "tenant", 207L, "internal-admin"));
+
+        embeddedWorkerRegistrar.registerOnReady();
+
+        assertThat(rowCount("job", "mango_job_instance")).isZero();
+        assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
+                .singleElement()
+                .satisfies(worker -> {
+                    assertThat(worker.getWorkerAddress()).startsWith("in-memory://");
+                    assertThat(worker.getRuntimeAddress()).startsWith("in-memory://");
+                    assertThat(worker.getTransportType()).isEqualTo(JobTransportType.IN_MEMORY.name());
+                    assertThat(worker.getRegisterSource()).isEqualTo(JobWorkerRegisterSource.EMBEDDED_AUTO.name());
+                    assertThat(worker.getServiceCode()).isEqualTo("internal-admin");
+                    assertThat(worker.getWorkerGroup()).isEqualTo("internal-admin");
+                    assertThat(worker.getStatus()).isEqualTo(JobWorkerStatus.ONLINE.name());
+                });
+        assertThat(query("job", () -> workerCapabilityMapper.selectList(
+                new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
+                        .eq(MangoJobWorkerCapabilityEntity::getTenantId, "tenant-b")
+                        .eq(MangoJobWorkerCapabilityEntity::getHandlerName, "syncOrderHandler")
+                        .eq(MangoJobWorkerCapabilityEntity::getServiceCode, "internal-admin")
+                        .eq(MangoJobWorkerCapabilityEntity::getWorkerGroup, "internal-admin")
+                        .eq(MangoJobWorkerCapabilityEntity::getEnabled, 1))))
+                .hasSize(1);
+    }
+
+    @Test
     void nativeRuntime_shouldExecuteInMemoryWorkerAndPersistLogsOnJobDatasource() {
         MangoContextHolder.set(MangoContextSnapshot.request("req-native", "trace-native", "tenant-b",
                         "internal-admin", "127.0.0.1")
@@ -383,6 +436,16 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(detail.getContent()).contains("syncOrderHandler System.out");
         assertThat(detail.getContent()).contains("syncOrderHandler logger");
         assertThat(detail.getContent()).contains("Job attempt leased by in-memory://");
+        assertThat(query("job", () -> logChunkMapper.selectList(
+                new LambdaQueryWrapper<>()).stream()
+                .filter(log -> "System.out".equals(log.getLoggerName()))
+                .filter(log -> log.getContent().contains("syncOrderHandler logger"))
+                .count())).isZero();
+        assertThat(query("job", () -> logChunkMapper.selectList(
+                new LambdaQueryWrapper<>()).stream()
+                .filter(log -> !"System.out".equals(log.getLoggerName()))
+                .filter(log -> log.getContent().contains("syncOrderHandler logger"))
+                .count())).isOne();
         assertThat(rowCount("job", "mango_job_attempt")).isOne();
         assertThat(rowCount("job", "mango_job_log_chunk")).isGreaterThanOrEqualTo(2);
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
@@ -390,6 +453,10 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .satisfies(worker -> {
                     assertThat(worker.getEngineType()).isEqualTo(JobEngineType.MANGO_NATIVE.name());
                     assertThat(worker.getWorkerAddress()).startsWith("in-memory://");
+                    assertThat(worker.getServiceCode()).isEqualTo("internal-admin");
+                    assertThat(worker.getWorkerGroup()).isEqualTo("internal-admin");
+                    assertThat(worker.getTransportType()).isEqualTo(JobTransportType.IN_MEMORY.name());
+                    assertThat(worker.getRegisterSource()).isEqualTo(JobWorkerRegisterSource.EMBEDDED_AUTO.name());
                     assertThat(worker.getStatus()).isEqualTo("ONLINE");
                 });
     }
@@ -621,6 +688,71 @@ class MangoJobMultiDataSourceIntegrationTest {
     }
 
     @Test
+    void embeddedWorkers_shouldRegisterMultipleInMemoryInstancesAndDispatchOnlyByCapability() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-embedded-multi", "trace-embedded-multi",
+                        "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(225L, "tenant-b", "job-admin", "test", "user", "tenant", 225L, "internal-admin"));
+
+        nativeProperties.setSchedulerTenantId("tenant-b");
+        embeddedWorkerRegistrar.registerOnReady();
+        registerEmbeddedWorker("in-memory://test-node/embedded-second-instance",
+                "embedded-second-instance", "syncOrderHandler", "internal-admin", "internal-admin");
+        registerEmbeddedWorker("in-memory://test-node/embedded-service-b-instance",
+                "embedded-service-b-instance", "syncOrderHandler", "service-b", "service-b");
+
+        List<MangoJobWorkerSnapshotEntity> embeddedWorkers = query("job", () -> workerSnapshotMapper.selectList(
+                new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
+                        .eq(MangoJobWorkerSnapshotEntity::getTenantId, "tenant-b")
+                        .eq(MangoJobWorkerSnapshotEntity::getTransportType, JobTransportType.IN_MEMORY.name())
+                        .eq(MangoJobWorkerSnapshotEntity::getRegisterSource,
+                                JobWorkerRegisterSource.EMBEDDED_AUTO.name())
+                        .orderByAsc(MangoJobWorkerSnapshotEntity::getServiceCode)
+                        .orderByAsc(MangoJobWorkerSnapshotEntity::getWorkerAddress)));
+        assertThat(embeddedWorkers)
+                .hasSize(3)
+                .allSatisfy(worker -> {
+                    assertThat(worker.getStatus()).isEqualTo(JobWorkerStatus.ONLINE.name());
+                    assertThat(worker.getWorkerAddress()).startsWith("in-memory://");
+                });
+        assertThat(embeddedWorkers)
+                .filteredOn(worker -> "internal-admin".equals(worker.getServiceCode()))
+                .hasSize(2);
+        assertThat(embeddedWorkers)
+                .filteredOn(worker -> "service-b".equals(worker.getServiceCode()))
+                .singleElement()
+                .satisfies(worker -> assertThat(worker.getWorkerGroup()).isEqualTo("service-b"));
+
+        SaveMangoJobDefinitionCommand command = definitionCommand("embedded-multi-owner-job");
+        command.setParamValue("{\"scene\":\"embedded-multi\"}");
+        Long jobId = jobDefinitionService.createDefinition(command);
+        UpdateMangoJobDefinitionStatusCommand statusCommand = new UpdateMangoJobDefinitionStatusCommand();
+        statusCommand.setId(jobId);
+        statusCommand.setStatus(JobDefinitionStatus.ENABLED.name());
+        jobDefinitionService.updateDefinitionStatus(statusCommand);
+
+        TriggerMangoJobCommand triggerCommand = new TriggerMangoJobCommand();
+        triggerCommand.setJobId(jobId);
+        triggerCommand.setTriggerBatchNo("embedded-multi-owner-batch");
+        Long instanceId = jobDefinitionService.triggerDefinition(triggerCommand);
+
+        assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getList())
+                .singleElement()
+                .satisfies(instance -> {
+                    assertThat(instance.getId()).isEqualTo(instanceId);
+                    assertThat(instance.getStatus()).isEqualTo("SUCCESS");
+                    assertThat(instance.getWorkerAddress()).startsWith("in-memory://");
+                });
+        Long workerId = query("job", () -> jdbcTemplate().queryForObject(
+                "SELECT worker_id FROM mango_job_attempt WHERE instance_id = ?",
+                Long.class, instanceId));
+        assertThat(query("job", () -> workerSnapshotMapper.selectById(workerId)))
+                .satisfies(worker -> {
+                    assertThat(worker.getServiceCode()).isEqualTo("internal-admin");
+                    assertThat(worker.getWorkerGroup()).isEqualTo("internal-admin");
+                });
+    }
+
+    @Test
     void nativeRuntime_shouldDispatchToHttpInternalWorkerWhenEmbeddedWorkerDisabled() {
         MangoContextHolder.set(MangoContextSnapshot.request("req-native-http", "trace-native-http",
                         "tenant-b", "internal-admin", "127.0.0.1")
@@ -701,6 +833,128 @@ class MangoJobMultiDataSourceIntegrationTest {
     }
 
     @Test
+    void workerRegistry_shouldKeepOneWorkerWhenSameInstanceRegistersConcurrently() throws Exception {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-worker-register-race", "trace-worker-register-race",
+                        "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(223L, "tenant-b", "job-admin", "test", "user", "tenant", 223L, "internal-admin"));
+
+        int workers = 6;
+        CountDownLatch ready = new CountDownLatch(workers);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(workers);
+        try {
+            List<? extends Future<?>> futures = IntStream.range(0, workers)
+                    .mapToObj(index -> executor.submit(() -> {
+                        MangoContextHolder.set(MangoContextSnapshot.request("req-worker-register-race-" + index,
+                                        "trace-worker-register-race-" + index, "tenant-b", "internal-admin",
+                                        "127.0.0.1")
+                                .withSecurity(223L, "tenant-b", "job-admin", "test", "user",
+                                        "tenant", 223L, "internal-admin"));
+                        ready.countDown();
+                        try {
+                            if (!start.await(5, TimeUnit.SECONDS)) {
+                                throw new IllegalStateException("worker register race timeout");
+                            }
+                            registerNativeWorker("http://worker-race:8080", "syncOrderHandler");
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException("worker register interrupted", ex);
+                        } finally {
+                            MangoContextHolder.clear();
+                        }
+                        return null;
+                    }))
+                    .toList();
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            for (Future<?> future : futures) {
+                future.get(10, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(query("job", () -> workerSnapshotMapper.selectList(
+                new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
+                        .eq(MangoJobWorkerSnapshotEntity::getTenantId, "tenant-b")
+                        .eq(MangoJobWorkerSnapshotEntity::getServiceCode, "internal-admin")
+                        .eq(MangoJobWorkerSnapshotEntity::getWorkerGroup, "internal-admin")
+                        .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, "http://worker-race:8080"))))
+                .hasSize(1);
+        assertThat(query("job", () -> workerCapabilityMapper.selectList(
+                new LambdaQueryWrapper<MangoJobWorkerCapabilityEntity>()
+                        .eq(MangoJobWorkerCapabilityEntity::getTenantId, "tenant-b")
+                        .eq(MangoJobWorkerCapabilityEntity::getServiceCode, "internal-admin")
+                        .eq(MangoJobWorkerCapabilityEntity::getWorkerGroup, "internal-admin")
+                        .eq(MangoJobWorkerCapabilityEntity::getHandlerName, "syncOrderHandler"))))
+                .singleElement()
+                .satisfies(capability -> assertThat(capability.getJobCode()).isEmpty());
+    }
+
+    @Test
+    void workerRegistry_shouldAllowSameAddressForDifferentWorkerGroupsAndDispatchByOwner() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-worker-owner-same-address", "trace-worker-owner-same-address",
+                        "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(224L, "tenant-b", "job-admin", "test", "user", "tenant", 224L, "internal-admin"));
+
+        nativeProperties.setEmbeddedWorkerEnabled(false);
+        try {
+            SaveMangoJobDefinitionCommand command = definitionCommand("service-a-same-address-job");
+            command.setOwnerService("service-a");
+            command.setWorkerGroup("service-a");
+            Long jobId = jobDefinitionService.createDefinition(command);
+            UpdateMangoJobDefinitionStatusCommand statusCommand = new UpdateMangoJobDefinitionStatusCommand();
+            statusCommand.setId(jobId);
+            statusCommand.setStatus(JobDefinitionStatus.ENABLED.name());
+            jobDefinitionService.updateDefinitionStatus(statusCommand);
+
+            registerNativeWorker("http://shared-worker:8080", "syncOrderHandler", "service-a", "service-a");
+            registerNativeWorker("http://shared-worker:8080", "syncOrderHandler", "service-b", "service-b");
+
+            assertThat(query("job", () -> workerSnapshotMapper.selectList(
+                    new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
+                            .eq(MangoJobWorkerSnapshotEntity::getTenantId, "tenant-b")
+                            .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, "http://shared-worker:8080"))))
+                    .hasSize(2)
+                    .extracting(MangoJobWorkerSnapshotEntity::getServiceCode)
+                    .containsExactlyInAnyOrder("service-a", "service-b");
+
+            TriggerMangoJobCommand triggerCommand = new TriggerMangoJobCommand();
+            triggerCommand.setJobId(jobId);
+            triggerCommand.setTriggerBatchNo("service-a-same-address-batch");
+            Long instanceId = jobDefinitionService.triggerDefinition(triggerCommand);
+
+            assertThat(jobQueryService.pageInstances(new MangoJobInstancePageQuery()).getList())
+                    .singleElement()
+                    .satisfies(instance -> {
+                        assertThat(instance.getId()).isEqualTo(instanceId);
+                        assertThat(instance.getStatus()).isEqualTo("SUCCESS");
+                        assertThat(instance.getWorkerAddress()).isEqualTo("http://shared-worker:8080");
+                    });
+            MangoJobWorkerPageQuery workerPageQuery = new MangoJobWorkerPageQuery();
+            workerPageQuery.setServiceCode("service-a");
+            workerPageQuery.setWorkerGroup("service-a");
+            assertThat(jobQueryService.pageWorkers(workerPageQuery).getList())
+                    .singleElement()
+                    .satisfies(worker -> {
+                        assertThat(worker.getServiceCode()).isEqualTo("service-a");
+                        assertThat(worker.getWorkerGroup()).isEqualTo("service-a");
+                        assertThat(worker.getWorkerAddress()).isEqualTo("http://shared-worker:8080");
+                    });
+            assertThat(query("job", () -> workerSnapshotMapper.selectList(
+                    new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
+                            .eq(MangoJobWorkerSnapshotEntity::getTenantId, "tenant-b")
+                            .eq(MangoJobWorkerSnapshotEntity::getServiceCode, "service-a")
+                            .eq(MangoJobWorkerSnapshotEntity::getWorkerGroup, "service-a")
+                            .eq(MangoJobWorkerSnapshotEntity::getWorkerAddress, "http://shared-worker:8080"))))
+                    .singleElement()
+                    .satisfies(worker -> assertThat(worker.getTransportType()).isEqualTo(JobTransportType.HTTP_INTERNAL.name()));
+        } finally {
+            nativeProperties.setEmbeddedWorkerEnabled(true);
+        }
+    }
+
+    @Test
     void workerRegistry_shouldSupportManualCreateStatusGovernanceAndHeartbeatProtection() {
         MangoContextHolder.set(MangoContextSnapshot.request("req-worker-governance", "trace-worker-governance",
                         "tenant-b", "internal-admin", "127.0.0.1")
@@ -766,7 +1020,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         triggerCommand.setJobId(jobId);
         triggerCommand.setTriggerBatchNo("disabled-worker-batch");
         assertThatThrownBy(() -> jobDefinitionService.triggerDefinition(triggerCommand))
-                .hasMessageContaining("未找到可执行任务的在线 Worker：syncOrderHandler");
+                .hasMessageContaining("未找到可执行任务的在线 Worker：internal-admin/internal-admin/"
+                        + "internal-admin/syncOrderHandler");
 
         MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
         query.setJobId(jobId);
@@ -774,8 +1029,50 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .singleElement()
                 .satisfies(instance -> {
                     assertThat(instance.getStatus()).isEqualTo("FAILED");
-                    assertThat(instance.getErrorSummary()).isEqualTo("未找到可执行任务的在线 Worker：syncOrderHandler");
+                    assertThat(instance.getErrorSummary()).isEqualTo("未找到可执行任务的在线 Worker："
+                            + "internal-admin/internal-admin/internal-admin/syncOrderHandler");
                 });
+    }
+
+    @Test
+    void nativeRuntime_shouldNotDispatchServiceAJobToServiceBWorker() {
+        MangoContextHolder.set(MangoContextSnapshot.request("req-worker-owner-guard", "trace-worker-owner-guard",
+                        "tenant-b", "internal-admin", "127.0.0.1")
+                .withSecurity(221L, "tenant-b", "job-admin", "test", "user", "tenant", 221L, "internal-admin"));
+
+        nativeProperties.setEmbeddedWorkerEnabled(false);
+        try {
+            SaveMangoJobDefinitionCommand command = definitionCommand("service-a-owned-job");
+            command.setOwnerService("service-a");
+            command.setWorkerGroup("service-a");
+            command.setHandlerName("syncOrderHandler");
+            Long jobId = jobDefinitionService.createDefinition(command);
+            UpdateMangoJobDefinitionStatusCommand statusCommand = new UpdateMangoJobDefinitionStatusCommand();
+            statusCommand.setId(jobId);
+            statusCommand.setStatus(JobDefinitionStatus.ENABLED.name());
+            jobDefinitionService.updateDefinitionStatus(statusCommand);
+
+            registerNativeWorker("http://service-b-worker:8080", "syncOrderHandler", "service-b", "service-b");
+
+            TriggerMangoJobCommand triggerCommand = new TriggerMangoJobCommand();
+            triggerCommand.setJobId(jobId);
+            triggerCommand.setTriggerBatchNo("service-owner-guard-batch");
+            assertThatThrownBy(() -> jobDefinitionService.triggerDefinition(triggerCommand))
+                    .hasMessageContaining("未找到可执行任务的 Worker 能力：service-a/service-a/"
+                            + "internal-admin/syncOrderHandler/service-a-owned-job");
+
+            MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
+            query.setJobId(jobId);
+            assertThat(jobQueryService.pageInstances(query).getList())
+                    .singleElement()
+                    .satisfies(instance -> {
+                        assertThat(instance.getStatus()).isEqualTo("FAILED");
+                        assertThat(instance.getWorkerAddress()).isNull();
+                        assertThat(instance.getErrorSummary()).contains("service-a/service-a");
+                    });
+        } finally {
+            nativeProperties.setEmbeddedWorkerEnabled(true);
+        }
     }
 
     @Test
@@ -851,7 +1148,8 @@ class MangoJobMultiDataSourceIntegrationTest {
             cleanTable("job", "mango_job_worker_capability");
             cleanTable("job", "mango_job_worker_snapshot");
             assertThatThrownBy(() -> jobDefinitionService.triggerDefinition(triggerCommand))
-                    .hasMessageContaining("未找到可执行任务的 Worker 能力：syncOrderHandler");
+                    .hasMessageContaining("未找到可执行任务的 Worker 能力：internal-admin/internal-admin/"
+                            + "internal-admin/syncOrderHandler/sync-failed-trigger");
 
             MangoJobInstancePageQuery query = new MangoJobInstancePageQuery();
             query.setJobId(jobId);
@@ -859,7 +1157,8 @@ class MangoJobMultiDataSourceIntegrationTest {
                     .singleElement()
                     .satisfies(instance -> {
                         assertThat(instance.getStatus()).isEqualTo("FAILED");
-                        assertThat(instance.getErrorSummary()).isEqualTo("未找到可执行任务的 Worker 能力：syncOrderHandler");
+                        assertThat(instance.getErrorSummary()).isEqualTo("未找到可执行任务的 Worker 能力："
+                                + "internal-admin/internal-admin/internal-admin/syncOrderHandler/sync-failed-trigger");
                     });
             assertThat(jobQueryService.pageLogs(new MangoJobLogPageQuery()).getTotal()).isEqualTo(1);
         } finally {
@@ -1062,6 +1361,19 @@ class MangoJobMultiDataSourceIntegrationTest {
         }
     }
 
+    private boolean columnExists(String datasource, String tableName, String columnName) {
+        try {
+            return query(datasource, () -> jdbcTemplate().queryForObject("""
+                    SELECT COUNT(*)
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE LOWER(TABLE_NAME) = LOWER(?)
+                      AND LOWER(COLUMN_NAME) = LOWER(?)
+                    """, Integer.class, tableName, columnName) > 0);
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
     private boolean constraintOrIndexExists(String datasource, String tableName, String name) {
         return query(datasource, () -> {
             Integer constraintCount = jdbcTemplate().queryForObject("""
@@ -1128,6 +1440,8 @@ class MangoJobMultiDataSourceIntegrationTest {
     private SaveMangoJobDefinitionCommand definitionCommand(String jobCode) {
         SaveMangoJobDefinitionCommand command = new SaveMangoJobDefinitionCommand();
         command.setAppCode("internal-admin");
+        command.setOwnerService("internal-admin");
+        command.setWorkerGroup("internal-admin");
         command.setJobCode(jobCode);
         command.setJobName("Sync " + jobCode);
         command.setJobType(JobType.BUILTIN.name());
@@ -1155,9 +1469,16 @@ class MangoJobMultiDataSourceIntegrationTest {
         MangoJobWorkerSnapshotEntity worker = new MangoJobWorkerSnapshotEntity();
         worker.setTenantId("tenant-b");
         worker.setAppCode("internal-admin");
+        worker.setServiceCode("internal-admin");
+        worker.setWorkerGroup("internal-admin");
         worker.setEngineType(JobEngineType.MANGO_NATIVE.name());
         worker.setEngineWorkerId(workerAddress);
+        worker.setInstanceId(workerAddress);
         worker.setWorkerAddress(workerAddress);
+        worker.setRuntimeAddress(workerAddress);
+        worker.setTransportType(workerAddress.startsWith("in-memory://")
+                ? JobTransportType.IN_MEMORY.name() : JobTransportType.HTTP_INTERNAL.name());
+        worker.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO.name());
         worker.setStatus(status);
         worker.setLastHeartbeatAt(lastHeartbeatAt);
         query("job", () -> {
@@ -1167,14 +1488,51 @@ class MangoJobMultiDataSourceIntegrationTest {
     }
 
     private void registerNativeWorker(String workerAddress, String handlerName) {
+        registerNativeWorker(workerAddress, handlerName, "internal-admin", "internal-admin");
+    }
+
+    private void registerNativeWorker(String workerAddress,
+                                      String handlerName,
+                                      String serviceCode,
+                                      String workerGroup) {
         RegisterMangoJobWorkerCommand command = new RegisterMangoJobWorkerCommand();
         command.setTenantId("tenant-b");
         command.setAppCode("internal-admin");
+        command.setServiceCode(serviceCode);
+        command.setWorkerGroup(workerGroup);
         command.setWorkerAddress(workerAddress);
+        command.setRuntimeAddress(workerAddress);
         command.setTransportType(JobTransportType.HTTP_INTERNAL);
+        command.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO);
         command.setWorkerInstanceId("worker-a");
         MangoJobHandlerVO handler = new MangoJobHandlerVO();
         handler.setAppCode("internal-admin");
+        handler.setServiceCode(serviceCode);
+        handler.setWorkerGroup(workerGroup);
+        handler.setHandlerName(handlerName);
+        command.getHandlers().add(handler);
+        workerRegistryService.registerWorker(command);
+    }
+
+    private void registerEmbeddedWorker(String workerAddress,
+                                        String instanceId,
+                                        String handlerName,
+                                        String serviceCode,
+                                        String workerGroup) {
+        RegisterMangoJobWorkerCommand command = new RegisterMangoJobWorkerCommand();
+        command.setTenantId("tenant-b");
+        command.setAppCode("internal-admin");
+        command.setServiceCode(serviceCode);
+        command.setWorkerGroup(workerGroup);
+        command.setWorkerAddress(workerAddress);
+        command.setRuntimeAddress(workerAddress);
+        command.setTransportType(JobTransportType.IN_MEMORY);
+        command.setRegisterSource(JobWorkerRegisterSource.EMBEDDED_AUTO);
+        command.setWorkerInstanceId(instanceId);
+        MangoJobHandlerVO handler = new MangoJobHandlerVO();
+        handler.setAppCode("internal-admin");
+        handler.setServiceCode(serviceCode);
+        handler.setWorkerGroup(workerGroup);
         handler.setHandlerName(handlerName);
         command.getHandlers().add(handler);
         workerRegistryService.registerWorker(command);

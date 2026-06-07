@@ -27,6 +27,8 @@ export type JobEngineType = 'MANGO_NATIVE';
 export type JobType = 'BUILTIN';
 export type JobScheduleType = 'CRON' | 'FIXED_RATE' | 'ONE_TIME' | 'MANUAL';
 export type JobSyncStatus = 'PENDING' | 'SYNCED' | 'FAILED';
+export type JobTransportType = 'IN_MEMORY' | 'HTTP_INTERNAL';
+export type JobWorkerRegisterSource = 'EMBEDDED_AUTO' | 'REMOTE_AUTO' | 'MANUAL';
 export type JobInstanceStatus =
   | 'CREATED'
   | 'WAITING'
@@ -52,6 +54,8 @@ export interface JobDefinition {
   id?: ApiId;
   tenantId?: string;
   appCode: string;
+  ownerService?: string;
+  workerGroup?: string;
   jobCode: string;
   jobName: string;
   jobType: JobType;
@@ -80,6 +84,8 @@ export interface JobDefinitionQuery {
   pageNum?: number;
   pageSize?: number;
   appCode?: string;
+  ownerService?: string;
+  workerGroup?: string;
   status?: JobDefinitionStatus | '';
   jobType?: JobType | '';
   scheduleType?: JobScheduleType | '';
@@ -169,16 +175,25 @@ export interface JobWorkerSnapshot {
   id?: ApiId;
   tenantId?: string;
   appCode?: string;
+  serviceCode?: string;
+  workerGroup?: string;
   workerAddress?: string;
+  runtimeAddress?: string;
+  transportType?: JobTransportType;
+  registerSource?: JobWorkerRegisterSource;
   engineType?: JobEngineType;
   engineWorkerId?: string;
+  instanceId?: string;
   lastHeartbeatAt?: string;
   status?: JobWorkerStatus;
 }
 
 export interface JobWorkerHandlerPayload {
   appCode?: string;
+  serviceCode?: string;
+  workerGroup?: string;
   handlerName: string;
+  supportedJobCodes?: string[];
   jobType?: JobType;
   paramSchema?: string;
   concurrent?: boolean;
@@ -188,7 +203,10 @@ export interface JobWorkerHandlerPayload {
 
 export interface CreateJobWorkerPayload {
   appCode: string;
+  serviceCode?: string;
+  workerGroup?: string;
   workerAddress: string;
+  runtimeAddress?: string;
   transportType: 'HTTP_INTERNAL';
   workerInstanceId?: string;
   handlers: JobWorkerHandlerPayload[];
@@ -203,6 +221,10 @@ export interface JobWorkerQuery {
   pageNum?: number;
   pageSize?: number;
   appCode?: string;
+  serviceCode?: string;
+  workerGroup?: string;
+  transportType?: JobTransportType | '';
+  registerSource?: JobWorkerRegisterSource | '';
   status?: JobWorkerStatus | '';
   engineType?: JobEngineType | '';
   keyword?: string;
@@ -210,7 +232,10 @@ export interface JobWorkerQuery {
 
 export interface JobHandler {
   appCode?: string;
+  serviceCode?: string;
+  workerGroup?: string;
   handlerName?: string;
+  supportedJobCodes?: string[];
   jobType?: JobType;
   paramSchema?: string;
   concurrent?: boolean;
@@ -266,6 +291,8 @@ export type SaveJobDefinitionPayload = Pick<
   JobDefinition,
   | 'id'
   | 'appCode'
+  | 'ownerService'
+  | 'workerGroup'
   | 'jobCode'
   | 'jobName'
   | 'jobType'
@@ -435,6 +462,17 @@ export const workerStatusOptions = [
   { label: '已过期', value: 'EXPIRED', type: 'danger' },
   { label: '已禁用', value: 'DISABLED', type: 'info' },
   { label: '未知', value: 'UNKNOWN', type: 'info' },
+] as const;
+
+export const transportTypeOptions = [
+  { label: '内存', value: 'IN_MEMORY', type: 'success' },
+  { label: 'HTTP', value: 'HTTP_INTERNAL', type: 'info' },
+] as const;
+
+export const workerRegisterSourceOptions = [
+  { label: '内嵌自动', value: 'EMBEDDED_AUTO', type: 'success' },
+  { label: '远程自动', value: 'REMOTE_AUTO', type: 'warning' },
+  { label: '手动登记', value: 'MANUAL', type: 'info' },
 ] as const;
 
 export const alarmTypeOptions = [

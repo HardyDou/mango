@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.PrintStream;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Mango Job Worker 本地处理器执行器。
@@ -24,6 +26,12 @@ public class MangoJobWorkerExecutor {
 
     private static final String LINE_BREAK_REGEX = "\\R";
 
+    private static final Pattern LOGBACK_CONSOLE_LINE = Pattern.compile(
+            "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\[[^]]+] \\w+\\s+\\S+ - .*");
+
+    private static final Pattern SPRING_BOOT_CONSOLE_LINE = Pattern.compile(
+            "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}.*\\s---\\s\\[[^]]+]\\s.*: .*");
+
     private final IMangoJobHandlerRegistry handlerRegistry;
 
     public MangoJobWorkerExecutor(IMangoJobHandlerRegistry handlerRegistry) {
@@ -32,8 +40,15 @@ public class MangoJobWorkerExecutor {
 
     public MangoJobWorkerExecuteResultVO execute(MangoJobWorkerExecuteCommand command, String workerAddress) {
         Require.notNull(command, "Worker 执行命令不能为空");
-        MangoJobHandler handler = handlerRegistry.findHandler(command.getAppCode(), command.getHandlerName())
-                .orElseGet(() -> Require.fail(404, "Job 处理器未注册：" + command.getHandlerName()));
+        String ownerService = StringUtils.hasText(command.getOwnerService())
+                ? command.getOwnerService().trim() : command.getAppCode();
+        String workerGroup = StringUtils.hasText(command.getWorkerGroup())
+                ? command.getWorkerGroup().trim() : ownerService;
+        MangoJobHandler handler = handlerRegistry.findHandler(command.getAppCode(), ownerService,
+                        workerGroup, command.getHandlerName(), command.getJobCode())
+                .orElseGet(() -> Require.fail(404, "Job 处理器未注册或归属不匹配："
+                        + ownerService + "/" + workerGroup + "/"
+                        + command.getAppCode() + "/" + command.getHandlerName() + "/" + command.getJobCode()));
         MangoContextSnapshot previous = MangoContextHolder.get();
         PrintStream originalOut = System.out;
         PrintStream originalErr = System.err;
@@ -90,7 +105,7 @@ public class MangoJobWorkerExecutor {
                 ? JobHandleStatus.SUCCESS : handleResult.getStatus());
         result.setMessage(handleResult == null ? null : handleResult.getMessage());
         result.setResult(handleResult == null ? null : handleResult.getResult());
-        addMultilineLog(result, "INFO", "System.out", buffer.stdout());
+        addMultilineLog(result, "INFO", "System.out", buffer.stdout(), logbackCapture.events());
         addMultilineLog(result, "ERROR", "System.err", buffer.stderr());
         logbackCapture.events().forEach(event -> addLog(result, event.level(), event.loggerName(), event.message()));
         return result;
@@ -100,14 +115,31 @@ public class MangoJobWorkerExecutor {
                                  String level,
                                  String loggerName,
                                  String content) {
+        addMultilineLog(result, level, loggerName, content, List.of());
+    }
+
+    private void addMultilineLog(MangoJobWorkerExecuteResultVO result,
+                                 String level,
+                                 String loggerName,
+                                 String content,
+                                 List<MangoJobLogbackCapture.CapturedEvent> capturedEvents) {
         if (!StringUtils.hasText(content)) {
             return;
         }
         for (String line : content.split(LINE_BREAK_REGEX)) {
-            if (StringUtils.hasText(line)) {
+            if (StringUtils.hasText(line) && !isLogbackConsoleMirror(line, capturedEvents)) {
                 addLog(result, level, loggerName, line);
             }
         }
+    }
+
+    private boolean isLogbackConsoleMirror(String line, List<MangoJobLogbackCapture.CapturedEvent> capturedEvents) {
+        if (!LOGBACK_CONSOLE_LINE.matcher(line).matches()
+                && !SPRING_BOOT_CONSOLE_LINE.matcher(line).matches()) {
+            return false;
+        }
+        return capturedEvents.stream()
+                .anyMatch(event -> StringUtils.hasText(event.message()) && line.contains(event.message()));
     }
 
     private void addLog(MangoJobWorkerExecuteResultVO result, String level, String loggerName, String content) {

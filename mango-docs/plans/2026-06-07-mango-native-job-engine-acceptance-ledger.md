@@ -18,6 +18,7 @@
 - 失败执行实例按启用的 `mango_job_alarm_rule` 调用 `mango-notice`。
 - 远程 Worker `HTTP_INTERNAL` 注册、心跳、派发、Java Handler 执行、日志回传。
 - Worker 重复心跳注册幂等更新。
+- 真实双进程单体多实例下两个 `IN_MEMORY` Worker 自动注册，Cron 每分钟窗口不重复创建。
 - 后端单元测试、前端包构建和管理后台 E2E。
 
 不把以下能力标记为本次验收完成：
@@ -52,12 +53,44 @@
 | JOB-ACC-021 | 用户要求；设计 6.3 | Worker 必须支持手动登记、禁用、排空、下线和恢复，且状态治理真实影响调度分发 | 新增 Worker 管理 API、按钮权限和统一 UI；手动登记仅支持远程 `HTTP_INTERNAL` Worker；人工 `DISABLED/DRAINING/OFFLINE` 状态不会被心跳自动覆盖；调度只选择 `ONLINE` Worker | `CreateMangoJobWorkerCommand`；`UpdateMangoJobWorkerStatusCommand`；`MangoJobWorkerRegistryService`；`MangoJobController`；`V43__native_job_menu_names.sql`；`V44__native_job_worker_governance_permissions.sql`；Worker 页面 | Maven 集成测试验证手动登记、禁用后心跳不恢复、恢复在线；禁用内嵌 Worker 后手动触发失败并记录实例失败原因；Playwright 通过 UI 登记远程 Worker、禁用、恢复并用 API 断言状态 | DONE | `MangoJobMultiDataSourceIntegrationTest#workerRegistry_shouldSupportManualCreateStatusGovernanceAndHeartbeatProtection`；`MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldNotDispatchToManuallyDisabledEmbeddedWorker`；`11-worker-create-dialog.png`；`12-worker-created-online.png`；`13-worker-disabled.png`；`14-worker-restored-online.png`；Job 聚合 Maven BUILD SUCCESS，25 tests；E2E `9 passed (1.9m)` |
 | JOB-ACC-022 | 用户要求；设计 8.9、17 | 失败任务应接入 `mango-notice`，由 notice 负责系统消息、短信、邮件、企业微信等通道 | 原生运行时在实例失败终态后查询启用的 `INSTANCE_FAILED` 告警规则，构造 `SendNoticeCommand` 调用可选 `NoticeApi`；规则按任务级或应用级匹配，模板编码和接收人规则从 `mango_job_alarm_rule` 配置读取 | `MangoJobAlarmNotificationService`；`MangoNativeJobRuntime`；`mango_job_alarm_rule`；告警规则页面 | Maven 集成测试创建失败 handler、启用告警规则、触发失败实例，断言 `NoticeApi.send` 收到 `bizType`、`bizId`、`userIds`、`idempotentKey` 和模板参数，实例失败状态和行内日志仍可查询 | DONE | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldSendNoticeWhenFailedInstanceMatchesEnabledAlarmRule`；Job 聚合 Maven BUILD SUCCESS，25 tests |
 | JOB-ACC-023 | 用户要求；投产计划 `JOB-ALARM-003`；设计 6.5、8.9、17 | 告警规则必须可通过 Mango 后台维护，不依赖 DBA 直接写表 | 新增告警规则 API、权限 migration 和统一 UI；支持任务级 `jobId` 规则与应用级默认规则；通知参数通过收件规则、单用户、多用户结构化字段生成 `noticeParams` JSON；后端校验 JSON、租户和任务归属 | `MangoJobAlarmRuleService`；`MangoJobController`；`MangoJobFeignClient`；`V45__native_job_alarm_rule_permissions.sql`；`mango-ui/packages/job/src/views/alarm/index.vue` | Maven 集成测试覆盖 CRUD、启停、删除、租户隔离、非法 JSON、任务归属校验；Playwright E2E 通过后台创建、编辑、停用、启用、删除任务级规则并用 API 断言落库 | DONE | `MangoJobMultiDataSourceIntegrationTest#alarmRuleService_shouldManageCrudStatusAndTenantIsolationOnJobDatasource`；`MangoJobMultiDataSourceIntegrationTest#alarmRuleService_shouldRejectInvalidJsonAndMismatchedJobScope`；`15-alarm-rule-create-dialog.png` 到 `20-alarm-rule-deleted.png`；Job 聚合 Maven BUILD SUCCESS，25 tests |
+| JOB-ACC-024 | 用户要求；Worker 归属升级计划 | 调度系统必须知道任务归属，不能把 A 服务的任务随机交给 B 服务 Worker | 任务定义保存 `ownerService`、`workerGroup`；Worker 快照保存 `serviceCode`、`workerGroup`、`transportType`、`registerSource`、`instanceId`、`runtimeAddress`；Worker capability 保存 `serviceCode`、`workerGroup`、`appCode`、`handlerName`、`jobCode`；调度层按归属和能力过滤，Worker 执行前按同一归属二次查 handler | `V5__job_worker_ownership.sql`；`MangoNativeJobRuntime#selectWorker`；`MangoJobWorkerExecutor#execute`；`MangoJobHandlerRegistry#findHandler`；Worker 页面 | Maven 集成测试验证 A 服务任务只有 B Worker 时触发失败且不记录 Worker 地址；同一 HTTP 地址可登记 service A/B 两个 Worker，A 任务只匹配 A 归属；重复注册同一 Worker 只保留一条快照和一条能力；远程 Worker ownership mismatch 被 Controller 拒绝 | DONE | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldNotDispatchServiceAJobToServiceBWorker`；`MangoJobMultiDataSourceIntegrationTest#workerRegistry_shouldAllowSameAddressForDifferentWorkerGroupsAndDispatchByOwner`；`MangoJobMultiDataSourceIntegrationTest#workerRegistry_shouldKeepRegistrationIdempotentWhenWorkerHeartbeatRepeats`；`MangoJobWorkerInternalControllerTest#executeShouldRejectWhenWorkerDoesNotOwnHandlerCapability`；针对性 Maven BUILD SUCCESS，24 tests；远程 Worker Controller BUILD SUCCESS，2 tests |
+| JOB-ACC-025 | 用户要求；灵活部署 | 单体多实例下每个真实进程应自动注册独立内嵌 Worker，且 Cron 不重复调度同一窗口 | 内嵌 Worker 当前地址格式为 `in-memory://{host}/embedded-{pid}@{host}`；JobCenter 使用调度游标 CAS、幂等键、租约 token 防止重复窗口；Worker 心跳过期后查询侧持久化 `EXPIRED` | `MangoNativeJobRuntime#upsertEmbeddedWorkers`；`MangoEmbeddedWorkerRegistrar`；`MangoJobScheduleCursorEntity`；`MangoJobLeaseService`；`MangoJobQueryService#expireStaleWorkers` | 后端集成测试覆盖多内嵌 Worker 自动注册、按 capability 派发、并发 tick 去重、每分钟连续窗口、过期 Worker 过滤；本地真实双进程 monolith `18657/18658` 共用 `mango_dev_a1ce46` 和 `mango_dev_a1ce46_job` 验证两个 `IN_MEMORY` Worker 同时在线，每分钟示例任务最近 12 个窗口均为单实例 `SUCCESS`，重复窗口数 0 | DONE | `MangoJobMultiDataSourceIntegrationTest#embeddedWorkers_shouldRegisterMultipleInMemoryInstancesAndDispatchOnlyByCapability`；`MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldCreateOnlyOneScheduledInstanceWhenTwoJobCentersTickSameCursor`；`MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldKeepEveryMinuteCronStableAcrossContinuousWindows`；`MangoJobMultiDataSourceIntegrationTest#queryService_shouldFilterInvalidExpireStaleWorkersAndRecoverOnHeartbeat`；本地 DB 证据：`embedded-29094`、`embedded-35634` 同为 `IN_MEMORY/EMBEDDED_AUTO/ONLINE`，`duplicate_windows=0` |
 
 ## 4. 验证命令
 
 ```bash
 cd mango
 mvn -pl mango-platform/mango-job/mango-job-support,mango-platform/mango-job/mango-job-api,mango-platform/mango-job/mango-job-core,mango-platform/mango-job/mango-job-starter-remote,mango-platform/mango-job/mango-job-starter -am test -DskipTests=false -Dsurefire.failIfNoSpecifiedTests=false
+
+mvn -pl mango-platform/mango-job/mango-job-starter -am test -DskipTests=false -Dtest=MangoJobMultiDataSourceIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false
+
+mvn -pl mango-platform/mango-job/mango-job-starter-remote -am test -DskipTests=false -Dtest=MangoJobWorkerInternalControllerTest -Dsurefire.failIfNoSpecifiedTests=false
+
+mvn -pl mango-platform/mango-job/mango-job-starter -am test -DskipTests=false -Dtest=MangoJobMultiDataSourceIntegrationTest#embeddedWorkers_shouldRegisterMultipleInMemoryInstancesAndDispatchOnlyByCapability -Dsurefire.failIfNoSpecifiedTests=false
+
+curl -sS http://127.0.0.1:18657/actuator/health
+curl -sS http://127.0.0.1:18658/actuator/health
+
+mysql -h127.0.0.1 -P3306 -uroot -NBe "
+SELECT version, checksum, success
+FROM mango_dev_a1ce46.flyway_schema_history_authorization
+WHERE version='43';
+SELECT version, description, success
+FROM mango_dev_a1ce46_job.flyway_schema_history_mango_job
+ORDER BY installed_rank;
+SELECT worker_address, status, transport_type, register_source, instance_id
+FROM mango_dev_a1ce46_job.mango_job_worker_snapshot
+WHERE transport_type='IN_MEMORY';
+SELECT COUNT(*) duplicate_windows
+FROM (
+  SELECT i.scheduled_fire_time
+  FROM mango_dev_a1ce46_job.mango_job_instance i
+  JOIN mango_dev_a1ce46_job.mango_job_definition d ON d.id=i.job_id
+  WHERE d.job_code='mango_job_example_chromium_every_minute_cron_probe'
+    AND i.trigger_type='SCHEDULED'
+  GROUP BY i.scheduled_fire_time
+  HAVING COUNT(*) > 1
+) x;"
 
 cd mango-ui
 pnpm -F @mango/job build
@@ -77,9 +110,19 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 ## 5. 验收地址
 
 - 后端：`http://127.0.0.1:18657`
+- 第二后端实例：`http://127.0.0.1:18658`
 - 前端：`http://127.0.0.1:8347`
-- 数据库：`127.0.0.1:3306/mango_dev_a1ce46`
+- 主库：`127.0.0.1:3306/mango_dev_a1ce46`
+- Job 独立库：`127.0.0.1:3306/mango_dev_a1ce46_job`
 
 ## 6. 截图证据目录
 
 `/Users/hardy/Work/mango/.mango/worktrees/mango-job-sprint-1/mango-docs/evidence/2026-06-07-mango-native-job-e2e`
+
+## 7. 当前阻塞处理结论
+
+- GitHub Issue `#109` 对应旧本地库 `mango_dev_job_runtime_dual_0607` 的授权模块 V43 checksum mismatch；当前 worktree 使用干净主库 `mango_dev_a1ce46`，V43 checksum 为 `-1719360344` 且 `success=1`，与当前源码一致。
+- 当前 Job 独立库 `mango_dev_a1ce46_job` 已执行 `flyway_schema_history_mango_job` V1 到 V5，全部 `success=1`。
+- 真实双进程单体多实例运行态验收已完成：`18657` 和 `18658` 两个 monolith 健康检查均为 `UP`，两个内嵌 Worker `embedded-29094`、`embedded-35634` 同时在线。
+- 每分钟示例任务 `mango_job_example_chromium_every_minute_cron_probe` 最近 12 个调度窗口均为 1 条 `SUCCESS` 实例，重复窗口数 0。
+- 本地验收阻塞已解除；生产发布仍需按投产计划完成预发 2-4 小时长跑、真实通知通道、权限矩阵和发布物验证。
