@@ -4,7 +4,7 @@
 
 - 页面：平台能力/任务管理/任务定义、执行实例、Worker 节点、运行状态、告警规则。
 - 接口：`/api/job/definitions/page`、`/api/job/instances/page`、`/api/job/instances/{id}/logs`、`/api/job/workers/page`、`/api/job/engines/status`、`/api/job/alarm-rules/page`、`/api/job/alarm-rules/detail`、`/api/job/alarm-rules/status`。
-- 权限：管理员登录后使用真实菜单和 `job:*` 权限访问，V45 告警规则菜单和按钮权限已入库并授予角色 1。
+- 权限：管理员登录后使用真实菜单和 `job:*` 权限访问，V46 告警规则菜单和按钮权限已入库并授予角色 1。
 - 数据：`mango_dev_a1ce46`，`primary` 与 `job` 两个数据源健康检查均为 `UP`。
 - 部署形态：本地单体 JobCenter + `IN_MEMORY` Worker，远程 Worker 由后端 E2E 覆盖 `HTTP_INTERNAL`。
 
@@ -28,7 +28,7 @@
 | JOB-ACC-007 | `/job/instance`、`/api/job/instances/{id}/logs` | 执行实例行内日志详情 | 手动实例和每分钟实例 | 日志详情包含 stdout、logger、handler result 内容 | 独立“执行日志”菜单不存在，日志从实例行按钮进入 | 日志详情接口返回 `nativeLogContent` 和实例上下文 | `08-execution-instance-log-entry.png`、`08b-execution-log-detail.png`、`08d-scheduled-every-minute-log-detail.png` | PASS |
 | JOB-ACC-009 | `/job/worker`、`/api/job/workers/page` | Worker 列表显示真实 Worker | `mango-job` 内嵌 Worker | Worker 地址包含 `in-memory://`，状态为在线，不显示非法 Worker 地址 | Worker 搜索区、表格、状态标签和操作列布局可用 | Worker 分页请求返回真实 worker 快照，失败请求数组为空 | `10-job-worker.png` | PASS |
 | JOB-ACC-011 | `/job/engine`、`/api/job/engines/status` | 运行状态使用真实 Job API | `MANGO_NATIVE` | 运行时状态展示待同步、已同步、同步失败和最近更新时间 | 页面主内容不是空白、404 或加载失败，刷新按钮可见 | 运行状态接口返回业务成功体，失败请求数组为空 | `10-job-engine.png` | PASS |
-| JOB-ACC-023 | `/job/alarm`、`/api/job/alarm-rules/*` | 告警规则创建、编辑、停用、启用、删除 | `E2E 失败告警 *`、`MANGO_JOB_FAILED_TEMPLATE_E2E`、`jobDutyE2E` | 规则落库后列表可查询；编辑后模板和收件规则变化；停用/启用状态准确；删除后列表不再出现 | 告警规则搜索区、结构化收件字段、任务选择器、状态标签和确认操作可用 | V45 授权 migration 入库后，告警规则分页、详情、保存、状态、删除请求均返回业务成功体 | `15-alarm-rule-create-dialog.png`、`16-alarm-rule-created.png`、`17-alarm-rule-edit-dialog.png`、`18-alarm-rule-disabled.png`、`19-alarm-rule-enabled.png`、`20-alarm-rule-deleted.png` | PASS |
+| JOB-ACC-023 | `/job/alarm`、`/api/job/alarm-rules/*` | 告警规则创建、编辑、停用、启用、删除 | `E2E 失败告警 *`、`MANGO_JOB_FAILED_TEMPLATE_E2E`、`jobDutyE2E` | 规则落库后列表可查询；编辑后模板和收件规则变化；停用/启用状态准确；删除后列表不再出现 | 告警规则搜索区、结构化收件字段、任务选择器、状态标签和确认操作可用 | V46 授权 migration 入库后，告警规则分页、详情、保存、状态、删除请求均返回业务成功体 | `15-alarm-rule-create-dialog.png`、`16-alarm-rule-created.png`、`17-alarm-rule-edit-dialog.png`、`18-alarm-rule-disabled.png`、`19-alarm-rule-enabled.png`、`20-alarm-rule-deleted.png` | PASS |
 | JOB-ACC-021 | `/job/worker`、`/api/job/workers/*` | Worker 手动登记、禁用、恢复 | `127.0.0.1:39080/e2e-*` | 手动 Worker 创建后在线；禁用后状态为停用；恢复后状态为在线 | 新增 Worker 弹窗、状态操作按钮和二次确认可用 | Worker 创建和状态更新请求返回业务成功体，失败请求数组为空 | `11-worker-create-dialog.png`、`12-worker-created-online.png`、`13-worker-disabled.png`、`14-worker-restored-online.png` | PASS |
 
 ## 4. 回归抽查记录
@@ -36,7 +36,7 @@
 | 模块 | 页面 | 功能点 1 | 功能点 2 | UI 细节 | 截图/trace | 结论 |
 |---|---|---|---|---|---|---|
 | Job 管理 | 任务管理五个页面 | 菜单路径 `平台能力/任务管理` 可访问 | 独立“执行日志”菜单已移除 | 页面标题、搜索区、工具栏、表格和空/错误态区域可见 | `10-job-instance.png`、`10-job-worker.png`、`10-job-engine.png`、`10-job-alarm.png` | PASS |
-| Job 管理 | 告警规则 | V45 权限补执行后接口可访问 | 规则 CRUD 后清理测试数据 | 新增/编辑弹窗字段按业务聚合，不直接暴露 JSON 文本区作为主要输入 | `15-alarm-rule-create-dialog.png` 到 `20-alarm-rule-deleted.png` | PASS |
+| Job 管理 | 告警规则 | V46 权限补执行后接口可访问 | 规则 CRUD 后清理测试数据 | 新增/编辑弹窗字段按业务聚合，不直接暴露 JSON 文本区作为主要输入 | `15-alarm-rule-create-dialog.png` 到 `20-alarm-rule-deleted.png` | PASS |
 
 ## 5. 未验证项和风险
 

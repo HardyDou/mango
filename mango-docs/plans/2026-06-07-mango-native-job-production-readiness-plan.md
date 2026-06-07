@@ -59,8 +59,8 @@
 | JOB-DATA-001 | 数据库 | 独立 Job 数据库 | `mango_job` migration 可在空库执行，主库不保存 Job 治理表 | 本地 MySQL 独立库已验证，预发待验证 | 当前 worktree Job 独立库 `mango_dev_a1ce46_job.flyway_schema_history_mango_job` 已执行 V1-V5 且全部 `success=1`；当前主库 `mango_dev_a1ce46` 授权 V43 checksum 与源码一致；旧本地库残留或 checksum mismatch 按历史脏库处理 |
 | JOB-DATA-002 | 数据库 | migration 升级路径 | 预发库执行 migration 成功，唯一约束和索引生效 | 本地 H2/MySQL 已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#flywayAndMybatisPlus_shouldCreateNativeEngineTablesAndIndexesOnJobDatasource`；本地 MySQL `mango_job` 关键唯一约束和索引只读检查通过 |
 | JOB-TENANT-001 | 租户 | 租户隔离 | 租户 A/B 的任务定义、实例、日志、Worker 查询隔离 | 后端已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest` |
-| JOB-MENU-001 | 菜单权限 | 菜单入库 | `平台能力/任务管理` 菜单由 migration 入库 | 本地已通过，预发待验证 | `V43__native_job_menu_names.sql`；E2E |
-| JOB-MENU-002 | 菜单权限 | 按钮权限 | 触发、暂停、删除、Worker 高风险动作权限码可控 | 本地 E2E 覆盖管理员操作，预发权限矩阵待验证 | `V44__native_job_worker_governance_permissions.sql`；E2E 覆盖 Worker 登记、禁用、恢复；普通用户权限待预发补充 |
+| JOB-MENU-001 | 菜单权限 | 菜单入库 | `平台能力/任务管理` 菜单由 migration 入库 | 本地已通过，预发待验证 | `V44__native_job_menu_names.sql`；E2E |
+| JOB-MENU-002 | 菜单权限 | 按钮权限 | 触发、暂停、删除、Worker 高风险动作权限码可控 | 本地 E2E 覆盖管理员操作，预发权限矩阵待验证 | `V45__native_job_worker_governance_permissions.sql`；E2E 覆盖 Worker 登记、禁用、恢复；普通用户权限待预发补充 |
 | JOB-RUNTIME-001 | 调度 | 每分钟 Cron 稳定性 | 预发连续运行 2-4 小时，无重复窗口、无长时间积压 | 本地 H2 连续窗口、本地 MySQL 10 分钟真实调度观察、真实双进程最近 12 个窗口去重均已覆盖；预发 2-4 小时待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldKeepEveryMinuteCronStableAcrossContinuousWindows`；`mango-ui/apps/mango-admin/e2e/specs/job-scheduler-stability.spec.ts`；`mango-docs/evidence/2026-06-07-mango-native-job-e2e/job-scheduler-stability-local.md`；双进程 DB 证据 `duplicate_windows=0` |
 | JOB-RUNTIME-002 | 调度 | 服务重启恢复 | JobCenter 重启后调度游标继续推进，不补错窗口 | 本地已覆盖，预发待验证 | `MangoJobMultiDataSourceIntegrationTest#nativeRuntime_shouldContinueScheduleCursorAfterJobCenterRestartWithoutDuplicatingCompletedWindow` |
 | JOB-RUNTIME-003 | Worker | 内嵌 Worker | 单体 `IN_MEMORY` 不绕本机 HTTP 端口，日志可见；单体多实例显示多个真实内嵌 Worker | 已通过，预发待验证 | E2E 截图、后端测试、双进程 DB 证据：`embedded-29094` 和 `embedded-35634` 同时 `ONLINE` |
@@ -139,7 +139,7 @@ node mango-pmo/tools/delivery-contract-check.mjs \
 
 ## 9. 本轮修正记录
 
-- Worker 治理按钮权限从 `V43__native_job_menu_names.sql` 拆分到 `V44__native_job_worker_governance_permissions.sql`。原因是本地验证库已执行过早期 V43，继续修改同一 migration 会触发 Flyway checksum 校验失败。
+- Worker 治理按钮权限从 `V44__native_job_menu_names.sql` 拆分到 `V45__native_job_worker_governance_permissions.sql`。原因是本地验证库已执行过早期 V43，继续修改同一 migration 会触发 Flyway checksum 校验失败。
 - Issue `#109` 的 V43 checksum mismatch 已确认发生在旧本地库 `mango_dev_job_runtime_dual_0607`；当前 worktree 主库 `mango_dev_a1ce46.flyway_schema_history_authorization` V43 checksum 为 `-1719360344` 且 `success=1`，与当前源码一致，不再阻塞本地验收。
 - 重启后本地后端 `http://127.0.0.1:18657` 健康检查通过，`primary` 和 `job` 两个 MySQL 数据源均为 `UP`，授权 V44 已执行成功。
 - 新增 `job-scheduler-stability.spec.ts` 作为可重复的每分钟 Cron 稳定性 E2E。2026-06-07 本地以 `JOB_STABILITY_MINUTES=3` 跑通真实登录、任务创建、启用、调度实例查询、重复窗口断言、失败实例断言和日志详情断言，报告见 `mango-docs/evidence/2026-06-07-mango-native-job-e2e/job-scheduler-stability-local.md`。该结果不替代预发 2-4 小时长跑。
