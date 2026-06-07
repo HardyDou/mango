@@ -29,6 +29,8 @@ public class TemplateVO implements Serializable {
     private String categoryCode;
     @Schema(description = "分类名称")
     private String categoryName;
+    @Schema(description = "业务域编码")
+    private String domainCode;
     @Deprecated
     @Schema(description = "业务组编码。兼容历史字段，前端不再使用")
     private String businessGroup;

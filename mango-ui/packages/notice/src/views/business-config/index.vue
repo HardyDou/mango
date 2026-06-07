@@ -5,16 +5,15 @@
         <h1>消息配置</h1>
       </div>
       <div class="definition-layout">
-        <aside class="domain-panel">
-          <div class="domain-panel-head">
-            <span>业务域</span>
-            <el-button size="small" link type="primary" @click="openDomainCreate">新增</el-button>
-          </div>
-          <el-menu :default-active="activeDomain" @select="selectDomain">
-            <el-menu-item index="">全部</el-menu-item>
-            <el-menu-item v-for="item in businessDomains" :key="item" :index="item">{{ item }}</el-menu-item>
-          </el-menu>
-        </aside>
+        <DomainSideTree
+          v-model="activeDomain"
+          title="业务域"
+          subtitle="按业务域组织消息定义"
+          all-label="全部消息"
+          all-code="ALL"
+          @change="selectDomain"
+          @loaded="handleDomainsLoaded"
+        />
         <main class="definition-main">
           <div class="list-toolbar">
             <el-form :inline="true" :model="query" class="notice-filter">
@@ -36,7 +35,7 @@
           <el-table :data="businessTypes" border stripe v-loading="loading">
             <el-table-column prop="bizName" label="消息名称" min-width="150" />
             <el-table-column prop="bizType" label="消息编码" min-width="180" />
-            <el-table-column prop="bizGroup" label="业务域" width="110" />
+            <el-table-column prop="domainCode" label="业务域" width="110" />
             <el-table-column label="生命周期" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? '启用' : '停用' }}</el-tag>
@@ -99,16 +98,17 @@
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
               <el-form-item label="业务域" required>
-                <el-select
-                  v-model="form.bizGroup"
+                <el-tree-select
+                  v-model="form.domainCode"
+                  :data="domainOptions"
+                  :props="domainTreeProps"
                   class="form-control"
+                  check-strictly
+                  clearable
                   filterable
-                  allow-create
-                  default-first-option
+                  node-key="domainCode"
                   placeholder="请选择业务域"
-                >
-                  <el-option v-for="item in businessDomains" :key="item" :label="item" :value="item" />
-                </el-select>
+                />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="12">
@@ -291,7 +291,7 @@
         <section class="form-section">
           <div class="section-title">基础信息</div>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="业务域">{{ currentBusinessType?.bizGroup || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="业务域">{{ currentBusinessType?.domainCode || currentBusinessType?.bizGroup || '-' }}</el-descriptions-item>
             <el-descriptions-item label="业务Key">{{ currentBusinessType?.bizType || '-' }}</el-descriptions-item>
             <el-descriptions-item label="名称">{{ currentBusinessType?.bizName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="生命周期">
@@ -413,7 +413,7 @@
             <section class="form-section">
               <div class="section-title">基础信息</div>
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="业务域">{{ currentBusinessType?.bizGroup || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="业务域">{{ currentBusinessType?.domainCode || currentBusinessType?.bizGroup || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="业务Key">{{ currentBusinessType?.bizType || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="名称">{{ currentBusinessType?.bizName || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="查看版本">
@@ -484,15 +484,6 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="domainVisible" title="新增业务域" width="420px">
-      <el-form label-width="88px">
-        <el-form-item label="业务域名称"><el-input v-model="domainForm.name" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="domainVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveDomain">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -501,6 +492,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Delete, Plus } from '@element-plus/icons-vue';
 import { Editor } from '@mango/common';
+import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
 import {
   activateBusinessConfigVersion,
   createBusinessType,
@@ -509,6 +501,7 @@ import {
   getBusinessTypes,
   getChannelConfigs,
   getChannelTemplates,
+  getNoticeDomains,
   publishBusinessConfigDraft,
   publishChannelTemplate,
   saveBusinessConfigDraft,
@@ -518,6 +511,7 @@ import {
 import type {
   NoticeBusinessConfigVersion,
   NoticeBusinessType,
+  NoticeDomainOption,
   NoticeChannelConfig,
   NoticeChannelTemplate,
   NoticeChannelType,
@@ -568,6 +562,7 @@ interface BusinessTypeForm {
   bizType: string;
   bizName: string;
   bizGroup: string;
+  domainCode: string;
   description: string;
   paramsSchema: string;
   defaultPriority: NoticePriority;
@@ -593,8 +588,8 @@ const schemaTypeOptions: Array<{ label: string; value: SchemaFieldType }> = [
 const loading = ref(false);
 const pageMode = ref<PageMode>('LIST');
 const businessTypes = ref<NoticeBusinessType[]>([]);
+const domainOptions = ref<NoticeDomainOption[]>([]);
 const channelConfigs = ref<NoticeChannelConfig[]>([]);
-const domainVisible = ref(false);
 const currentBusinessType = ref<NoticeBusinessType>();
 const editingBusinessType = ref<NoticeBusinessType>();
 const activeChannel = ref<NoticeChannelType>('SITE');
@@ -611,8 +606,11 @@ const channelDrafts = reactive<Record<NoticeChannelType, Partial<NoticeChannelTe
 const channelMappingDrafts = reactive<Record<NoticeChannelType, TemplateMappingRow[]>>({} as Record<NoticeChannelType, TemplateMappingRow[]>);
 const query = reactive<{ bizType?: string; enabled?: boolean }>({});
 const activeDomain = ref('');
-const customDomains = ref<string[]>([]);
-const domainForm = reactive({ name: '' });
+const domainTreeProps = {
+  label: 'domainName',
+  value: 'domainCode',
+  children: 'children',
+};
 
 const paramsSchemaJson = computed(() => JSON.stringify(buildParamsSchema(), null, 2));
 const schemaFieldCount = computed(() => schemaFields.value.filter(item => item.name.trim()).length);
@@ -682,20 +680,13 @@ const templateContentPlaceholder = computed(() => {
   }
   return '请输入通知内容，支持变量 {{orderNo}}';
 });
-const businessDomains = computed(() => {
-  const domains = new Set<string>();
-  customDomains.value.forEach(item => domains.add(item));
-  businessTypes.value.map(item => item.bizGroup).filter(Boolean).forEach(item => domains.add(String(item)));
-  return Array.from(domains);
-});
-
 async function loadBusinessTypes() {
   loading.value = true;
   try {
     const result = await getBusinessTypes({
       bizType: query.bizType,
       enabled: query.enabled,
-      bizGroup: activeDomain.value || undefined,
+      domainCode: activeDomain.value || undefined,
     });
     businessTypes.value = result.list || [];
   } finally {
@@ -706,6 +697,18 @@ async function loadBusinessTypes() {
 async function loadChannelConfigs() {
   const result = await getChannelConfigs({ enabled: true, pageSize: 200 });
   channelConfigs.value = result.list || [];
+}
+
+async function loadDomainOptions() {
+  domainOptions.value = await getNoticeDomains();
+}
+
+function handleDomainsLoaded(domains: NoticeDomainOption[]) {
+  domainOptions.value = domains;
+}
+
+function flattenDomainOptions(options: NoticeDomainOption[]): NoticeDomainOption[] {
+  return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
 }
 
 function openCreate() {
@@ -786,7 +789,8 @@ function baseFormFromBusiness(row: NoticeBusinessType): BusinessTypeForm {
   return {
     bizType: row.bizType,
     bizName: row.bizName,
-    bizGroup: row.bizGroup || '',
+    bizGroup: row.bizGroup || row.domainCode || '',
+    domainCode: row.domainCode || row.bizGroup || 'NOTICE',
     description: row.description || '',
     paramsSchema: row.paramsSchema || '',
     defaultPriority: row.defaultPriority || 'NORMAL',
@@ -841,6 +845,7 @@ function createBusinessTypeForm(): BusinessTypeForm {
     bizType: '',
     bizName: '',
     bizGroup: '',
+    domainCode: 'NOTICE',
     description: '',
     paramsSchema: '',
     defaultPriority: 'NORMAL',
@@ -1109,27 +1114,8 @@ async function copyVariable(name: string) {
   }
 }
 
-function selectDomain(index: string) {
-  activeDomain.value = index;
+function selectDomain() {
   loadBusinessTypes();
-}
-
-function openDomainCreate() {
-  domainForm.name = '';
-  domainVisible.value = true;
-}
-
-function saveDomain() {
-  const name = domainForm.name.trim();
-  if (!name) {
-    ElMessage.error('请输入业务域名称');
-    return;
-  }
-  if (!customDomains.value.includes(name)) {
-    customDomains.value.push(name);
-  }
-  activeDomain.value = name;
-  domainVisible.value = false;
 }
 
 async function quickPublish(row: NoticeBusinessType) {
@@ -1175,7 +1161,8 @@ async function saveMaintenance() {
       businessType = await createBusinessType({
         bizType: form.bizType.trim(),
         bizName: form.bizName.trim(),
-        bizGroup: form.bizGroup.trim(),
+        bizGroup: form.domainCode.trim(),
+        domainCode: form.domainCode.trim(),
         description: form.description.trim(),
       });
       editingBusinessType.value = businessType;
@@ -1183,7 +1170,8 @@ async function saveMaintenance() {
     } else {
       businessType = await updateBusinessType(businessType.id, {
         bizName: form.bizName.trim(),
-        bizGroup: form.bizGroup.trim(),
+        bizGroup: form.domainCode.trim(),
+        domainCode: form.domainCode.trim(),
         description: form.description.trim(),
       });
       editingBusinessType.value = businessType;
@@ -1217,7 +1205,8 @@ async function saveBaseIfNeeded() {
       const created = await createBusinessType({
         bizType: form.bizType.trim(),
         bizName: form.bizName.trim(),
-        bizGroup: form.bizGroup.trim(),
+        bizGroup: form.domainCode.trim(),
+        domainCode: form.domainCode.trim(),
         description: form.description.trim(),
       });
       editingBusinessType.value = created;
@@ -1226,7 +1215,8 @@ async function saveBaseIfNeeded() {
     }
     const updated = await updateBusinessType(editingBusinessType.value.id, {
       bizName: form.bizName.trim(),
-      bizGroup: form.bizGroup.trim(),
+      bizGroup: form.domainCode.trim(),
+      domainCode: form.domainCode.trim(),
       description: form.description.trim(),
     });
     editingBusinessType.value = updated;
@@ -1239,7 +1229,7 @@ async function saveBaseIfNeeded() {
 }
 
 function validateBaseForm() {
-  if (!form.bizGroup.trim()) {
+  if (!form.domainCode.trim()) {
     ElMessage.error('请选择业务域');
     return false;
   }
@@ -1423,6 +1413,7 @@ watch(activeChannel, (_channel, oldChannel) => {
 });
 
 onMounted(() => {
+  loadDomainOptions();
   loadBusinessTypes();
   loadChannelConfigs();
 });

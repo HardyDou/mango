@@ -21,6 +21,9 @@ public class WorkflowCategoryVO {
     @Schema(description = "分类编码")
     private String categoryCode;
 
+    @Schema(description = "业务域编码")
+    private String domainCode;
+
     @Schema(description = "排序号")
     private Integer sort;
 

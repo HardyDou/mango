@@ -13,6 +13,7 @@ export interface TemplateItem {
   templateName: string;
   categoryCode?: string;
   categoryName?: string;
+  domainCode?: string;
   /** @deprecated 前端不再使用，业务侧统一按 templateCode 渲染。 */
   businessKey?: string;
   sourceFormat?: TemplateSourceFormat;
@@ -76,6 +77,7 @@ export interface TemplateQuery {
   pageSize?: number;
   keyword?: string;
   categoryCode?: string;
+  domainCode?: string;
   sourceFormat?: string;
   status?: number;
 }
@@ -102,6 +104,7 @@ export interface SaveTemplatePayload {
   templateName: string;
   categoryCode?: string;
   categoryName?: string;
+  domainCode: string;
   sourceFormat?: TemplateSourceFormat;
   draftContent?: string;
   draftSourceFileId?: number;

@@ -92,6 +92,10 @@
             <artifactId>mango-system-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.domain</groupId>
+            <artifactId>mango-domain-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.notice</groupId>
             <artifactId>mango-notice-starter</artifactId>
         </dependency>

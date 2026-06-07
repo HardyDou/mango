@@ -328,6 +328,9 @@ public class NoticeService implements INoticeService {
  if (StringUtils.hasText(query.getBizGroup())) {
  wrapper.eq(NoticeBusinessTypeEntity::getBizGroup, query.getBizGroup());
  }
+ if (StringUtils.hasText(query.getDomainCode())) {
+ wrapper.eq(NoticeBusinessTypeEntity::getDomainCode, query.getDomainCode());
+ }
  if (query.getEnabled() != null) {
  wrapper.eq(NoticeBusinessTypeEntity::getEnabled, query.getEnabled());
  }
@@ -344,7 +347,8 @@ public class NoticeService implements INoticeService {
  NoticeBusinessTypeEntity entity = new NoticeBusinessTypeEntity();
  entity.setBizType(command.getBizType());
  entity.setBizName(command.getBizName());
- entity.setBizGroup(command.getBizGroup());
+ entity.setDomainCode(resolveDomainCode(command.getDomainCode(), command.getBizGroup()));
+ entity.setBizGroup(resolveBizGroup(command.getBizGroup(), entity.getDomainCode()));
  entity.setDescription(command.getDescription());
  entity.setParamsSchema(command.getParamsSchema());
  entity.setEnabled(true);
@@ -363,7 +367,8 @@ public class NoticeService implements INoticeService {
  NoticeBusinessTypeEntity entity = businessTypeMapper.selectById(id);
  Require.notNull(entity, "业务类型不存在");
  entity.setBizName(command.getBizName());
- entity.setBizGroup(command.getBizGroup());
+ entity.setDomainCode(resolveDomainCode(command.getDomainCode(), command.getBizGroup()));
+ entity.setBizGroup(resolveBizGroup(command.getBizGroup(), entity.getDomainCode()));
  entity.setDescription(command.getDescription());
  businessTypeMapper.updateById(entity);
  return toBusinessTypeVO(entity);
@@ -2791,5 +2796,19 @@ public class NoticeService implements INoticeService {
  } catch (JsonProcessingException ex) {
  return "{}";
  }
+ }
+
+ private String resolveDomainCode(String domainCode, String bizGroup) {
+ if (StringUtils.hasText(domainCode)) {
+ return domainCode.trim();
+ }
+ if (StringUtils.hasText(bizGroup)) {
+ return bizGroup.trim();
+ }
+ return "NOTICE";
+ }
+
+ private String resolveBizGroup(String bizGroup, String domainCode) {
+ return StringUtils.hasText(bizGroup) ? bizGroup.trim() : domainCode;
  }
 }

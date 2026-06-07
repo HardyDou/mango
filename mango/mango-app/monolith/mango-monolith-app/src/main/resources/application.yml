@@ -124,6 +124,8 @@ mango:
           enabled: true
         notice:
           enabled: true
+        domain:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region
@@ -241,6 +243,8 @@ springdoc:
         url: /v3/api-docs/mango-file
       - name: mango-numgen
         url: /v3/api-docs/mango-numgen
+      - name: mango-domain
+        url: /v3/api-docs/mango-domain
       - name: mango-infra-realtime
         url: /v3/api-docs/mango-infra-realtime
   api-docs:

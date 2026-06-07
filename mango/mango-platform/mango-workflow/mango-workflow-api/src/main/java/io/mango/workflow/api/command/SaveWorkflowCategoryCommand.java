@@ -25,6 +25,10 @@ public class SaveWorkflowCategoryCommand {
     @Size(max = 64, message = "分类编码最多64个字符")
     private String categoryCode;
 
+    @Schema(description = "业务域编码")
+    @Size(max = 64, message = "业务域编码最多64个字符")
+    private String domainCode;
+
     @Schema(description = "排序号，越小越靠前")
     private Integer sort;
 

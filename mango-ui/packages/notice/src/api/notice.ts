@@ -2,6 +2,7 @@ import { del, get, post, put } from '@mango/common';
 import type {
   NoticeBusinessConfigVersion,
   NoticeBusinessType,
+  NoticeDomainOption,
   NoticeChannelConfig,
   NoticeChannelTemplate,
   NoticeChannelType,
@@ -123,6 +124,12 @@ export function getBusinessTypes(params?: Record<string, unknown>) {
   return get<PageResult<NoticeBusinessType>>('/notice/business-types', { params });
 }
 
+export function getNoticeDomains() {
+  return get<any[]>('/domain/domains/enabled-tree').then((list) =>
+    (Array.isArray(list) ? list : []).map(normalizeDomainOption)
+  );
+}
+
 export function createBusinessType(data: Partial<NoticeBusinessType>) {
   return post<NoticeBusinessType>('/notice/business-types', data);
 }
@@ -133,6 +140,15 @@ export function updateBusinessType(id: string, data: Partial<NoticeBusinessType>
 
 export function deleteBusinessType(id: string) {
   return del<boolean>(`/notice/business-types/${id}`);
+}
+
+function normalizeDomainOption(item: any): NoticeDomainOption {
+  return {
+    id: item?.id ? String(item.id) : undefined,
+    domainCode: item?.domainCode ?? '',
+    domainName: item?.domainName ?? item?.domainCode ?? '',
+    children: Array.isArray(item?.children) ? item.children.map(normalizeDomainOption) : [],
+  };
 }
 
 export function getBusinessConfigVersions(businessTypeId: string) {

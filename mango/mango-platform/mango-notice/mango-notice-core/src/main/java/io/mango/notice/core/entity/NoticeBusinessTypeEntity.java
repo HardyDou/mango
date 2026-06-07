@@ -23,6 +23,8 @@ public class NoticeBusinessTypeEntity {
 
     private String bizGroup;
 
+    private String domainCode;
+
     private String description;
 
     private String paramsSchema;

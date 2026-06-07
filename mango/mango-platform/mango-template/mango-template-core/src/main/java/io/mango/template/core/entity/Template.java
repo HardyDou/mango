@@ -21,6 +21,7 @@ public class Template {
     private String templateName;
     private String categoryCode;
     private String categoryName;
+    private String domainCode;
     private String businessGroup;
     private String businessType;
     private String businessKey;

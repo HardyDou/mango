@@ -15,6 +15,7 @@ export interface DictType {
   id?: ApiId;
   name: string;
   code: string;
+  domainCode?: string;
   description?: string;
   sort?: number;
   status?: number;
@@ -41,6 +42,7 @@ export interface DictTypeQuery {
   pageNum?: number;
   pageSize?: number;
   keyword?: string;
+  domainCode?: string;
 }
 
 /** 字典数据查询参数 */
@@ -149,10 +151,11 @@ export const dictDataApi = {
 };
 
 function fromBackendType(item: any): DictType {
-  return {
+    return {
     id: item.id,
     name: item.dictName ?? item.name,
     code: item.dictType ?? item.code,
+    domainCode: item.domainCode ?? 'COMMON',
     description: item.remark ?? item.description,
     sort: item.sort ?? 0,
     status: item.status ?? 1,
@@ -166,6 +169,7 @@ function toBackendType(item: DictType) {
     id: item.id,
     dictName: item.name,
     dictType: item.code,
+    domainCode: item.domainCode || 'COMMON',
     status: item.status,
     remark: item.description,
   };

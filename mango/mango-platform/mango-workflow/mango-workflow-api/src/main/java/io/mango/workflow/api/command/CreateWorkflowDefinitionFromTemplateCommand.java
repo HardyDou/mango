@@ -19,9 +19,13 @@ public class CreateWorkflowDefinitionFromTemplateCommand {
     @NotNull(message = "流程模板ID不能为空")
     private Long templateId;
 
-    @Schema(description = "流程分类ID")
-    @NotNull(message = "流程分类ID不能为空")
+    @Schema(description = "历史流程分类ID，业务域替换后不再作为必填归属")
     private Long categoryId;
+
+    @Schema(description = "业务域编码")
+    @NotBlank(message = "业务域编码不能为空")
+    @Size(max = 64, message = "业务域编码最多64个字符")
+    private String domainCode;
 
     @Schema(description = "目标租户ID；为空时使用当前登录租户")
     private Long targetTenantId;

@@ -1,7 +1,7 @@
 package io.mango.workflow.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.List;
@@ -13,9 +13,12 @@ import java.util.List;
 @Schema(description = "批量导入流程模板命令")
 public class ImportWorkflowTemplatesCommand {
 
-    @Schema(description = "流程分类ID")
-    @NotNull(message = "流程分类ID不能为空")
+    @Schema(description = "历史流程分类ID，业务域替换后不再作为必填归属")
     private Long categoryId;
+
+    @Schema(description = "目标业务域编码")
+    @NotBlank(message = "业务域编码不能为空")
+    private String domainCode;
 
     @Schema(description = "目标租户ID；为空时使用当前登录租户")
     private Long targetTenantId;
@@ -23,7 +26,7 @@ public class ImportWorkflowTemplatesCommand {
     @Schema(description = "所属组织ID")
     private Long orgId;
 
-    @Schema(description = "模板分类ID。按分类批量导入时传入")
+    @Schema(description = "历史模板分类ID，业务域替换后前台不再使用")
     private Long templateCategoryId;
 
     @Schema(description = "模板ID列表。选择具体模板导入时传入")

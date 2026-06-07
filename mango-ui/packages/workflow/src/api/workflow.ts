@@ -61,6 +61,7 @@ export interface WorkflowCategory {
   id?: WorkflowId;
   categoryName: string;
   categoryCode: string;
+  domainCode?: string;
   sort?: number;
   status?: number;
   remark?: string;
@@ -68,10 +69,18 @@ export interface WorkflowCategory {
   updatedTime?: string;
 }
 
+export interface WorkflowDomainOption {
+  id?: WorkflowId;
+  domainCode: string;
+  domainName: string;
+  children?: WorkflowDomainOption[];
+}
+
 export interface WorkflowDefinition {
   id?: WorkflowId;
-  categoryId: WorkflowId;
+  categoryId?: WorkflowId;
   categoryName?: string;
+  domainCode?: string;
   orgId?: WorkflowId;
   adminUsers?: string[];
   icon?: string;
@@ -98,7 +107,7 @@ export interface WorkflowDefinition {
 }
 
 type WorkflowDefinitionCommand = Pick<WorkflowDefinition,
-  'id' | 'categoryId' | 'orgId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
+  'id' | 'categoryId' | 'domainCode' | 'orgId' | 'adminUsers' | 'icon' | 'definitionName' | 'definitionKey' | 'designerJson' | 'formCode' | 'formJson' | 'status' | 'remark'
 >;
 
 export interface WorkflowPageQuery {
@@ -106,6 +115,7 @@ export interface WorkflowPageQuery {
   pageSize?: number;
   keyword?: string;
   categoryId?: WorkflowId | '';
+  domainCode?: string;
   orgId?: WorkflowId | '';
   status?: string;
   publishedOnly?: boolean;
@@ -154,7 +164,8 @@ export interface WorkflowTemplate {
 }
 
 export interface ImportWorkflowTemplatesCommand {
-  categoryId: WorkflowId;
+  categoryId?: WorkflowId;
+  domainCode: string;
   targetTenantId?: WorkflowId;
   orgId?: WorkflowId;
   templateCategoryId?: WorkflowId;
@@ -164,8 +175,7 @@ export interface ImportWorkflowTemplatesCommand {
 
 export interface PushWorkflowTemplatesCommand {
   targetTenantIds: WorkflowId[];
-  categoryCode: string;
-  categoryName: string;
+  domainCode: string;
   orgId?: WorkflowId;
   templateCategoryId?: WorkflowId;
   templateIds?: WorkflowId[];
@@ -218,6 +228,7 @@ export interface WorkflowDefinitionVersion {
   definitionId: WorkflowId;
   versionNo: number;
   categoryId?: WorkflowId;
+  domainCode?: string;
   orgId?: WorkflowId;
   adminUsers?: string;
   icon?: string;
@@ -451,12 +462,14 @@ export interface WorkflowCopiedReadCommand {
 export const workflowApi = {
   categoriesPage: (params?: WorkflowPageQuery) => get<any>('/workflow/categories/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeCategory, params)),
-  categoriesList: (status?: number) => get<WorkflowCategory[]>('/workflow/categories/list', { params: { status } })
+  categoriesList: (status?: number, domainCode?: string) => get<WorkflowCategory[]>('/workflow/categories/list', { params: { status, domainCode: domainCode || undefined } })
     .then(list => (Array.isArray(list) ? list.map(normalizeCategory) : [])),
   categoryDetail: (id: WorkflowId) => get<WorkflowCategory>('/workflow/categories/detail', { params: { id } }).then(normalizeCategory),
   createCategory: (data: WorkflowCategory) => post<WorkflowId>('/workflow/categories', data),
   updateCategory: (data: WorkflowCategory) => put<boolean>('/workflow/categories', data),
   deleteCategory: (id: WorkflowId) => del<boolean>('/workflow/categories', { params: { id } }),
+  enabledDomains: () => get<any[]>('/domain/domains/enabled-tree')
+    .then(list => (Array.isArray(list) ? list.map(normalizeDomainOption) : [])),
 
   definitionsPage: (params?: WorkflowPageQuery) => get<any>('/workflow/definitions/page', { params: toBackendPageParams(params) })
     .then(data => fromBackendPageResult(data, normalizeDefinition, params)),
@@ -764,6 +777,7 @@ function normalizeCategory(item: any): WorkflowCategory {
     id: normalizeId(item?.id),
     categoryName: item?.categoryName ?? '',
     categoryCode: item?.categoryCode ?? '',
+    domainCode: item?.domainCode ?? 'COMMON',
     createdTime: normalizeDateTime(item?.createdTime),
     updatedTime: normalizeDateTime(item?.updatedTime),
   };
@@ -776,6 +790,15 @@ function normalizeTemplateCategory(item: any): WorkflowTemplateCategory {
     parentId: item?.parentId ? normalizeId(item.parentId) : undefined,
     createdTime: normalizeDateTime(item?.createdTime),
     updatedTime: normalizeDateTime(item?.updatedTime),
+  };
+}
+
+function normalizeDomainOption(item: any): WorkflowDomainOption {
+  return {
+    id: normalizeId(item?.id),
+    domainCode: item?.domainCode ?? '',
+    domainName: item?.domainName ?? item?.domainCode ?? '',
+    children: Array.isArray(item?.children) ? item.children.map(normalizeDomainOption) : [],
   };
 }
 
@@ -798,6 +821,7 @@ function normalizeDefinition(item: any): WorkflowDefinition {
     id: normalizeId(item?.id),
     categoryId: normalizeId(item?.categoryId),
     categoryName: item?.categoryName,
+    domainCode: item?.domainCode ?? 'COMMON',
     orgId: item?.orgId ? normalizeId(item.orgId) : undefined,
     sourceTemplateId: item?.sourceTemplateId ? normalizeId(item.sourceTemplateId) : undefined,
     adminUsers: normalizeStringList(item?.adminUsers),
@@ -811,7 +835,8 @@ function normalizeDefinition(item: any): WorkflowDefinition {
 
 function toDefinitionCommand(data: WorkflowDefinition, includeId: boolean): WorkflowDefinitionCommand {
   const command: WorkflowDefinitionCommand = {
-    categoryId: data.categoryId,
+    categoryId: data.categoryId || undefined,
+    domainCode: data.domainCode || undefined,
     orgId: data.orgId,
     adminUsers: normalizeStringList(data.adminUsers),
     icon: data.icon || 'Setting',

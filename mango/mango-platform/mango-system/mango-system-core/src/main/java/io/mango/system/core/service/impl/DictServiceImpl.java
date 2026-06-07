@@ -14,6 +14,7 @@ import io.mango.system.core.mapper.DictTypeMapper;
 import io.mango.system.core.mapper.DictDataMapper;
 import io.mango.system.core.service.IDictService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,8 +28,12 @@ public class DictServiceImpl implements IDictService {
     private final DictDataMapper dictDataMapper;
 
     @Override
-    public R<List<DictTypeVO>> listTypes() {
-        List<DictType> list = dictTypeMapper.selectList(null);
+    public R<List<DictTypeVO>> listTypes(String domainCode) {
+        LambdaQueryWrapper<DictType> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(domainCode)) {
+            wrapper.eq(DictType::getDomainCode, domainCode.trim());
+        }
+        List<DictType> list = dictTypeMapper.selectList(wrapper);
         List<DictTypeVO> voList = list.stream().map(this::convertToTypeVO).collect(Collectors.toList());
         return R.ok(voList);
     }
@@ -47,6 +52,7 @@ public class DictServiceImpl implements IDictService {
         DictType entity = new DictType();
         entity.setDictType(po.getDictType());
         entity.setDictName(po.getDictName());
+        entity.setDomainCode(resolveDomainCode(po.getDomainCode()));
         entity.setStatus(po.getStatus() == null ? 1 : po.getStatus());
         entity.setRemark(po.getRemark());
         dictTypeMapper.insert(entity);
@@ -62,6 +68,7 @@ public class DictServiceImpl implements IDictService {
         entity.setId(po.getId());
         entity.setDictType(po.getDictType());
         entity.setDictName(po.getDictName());
+        entity.setDomainCode(resolveDomainCode(po.getDomainCode()));
         entity.setStatus(po.getStatus());
         entity.setRemark(po.getRemark());
         return R.ok(dictTypeMapper.updateById(entity) > 0);
@@ -158,9 +165,14 @@ public class DictServiceImpl implements IDictService {
         vo.setId(entity.getId());
         vo.setDictType(entity.getDictType());
         vo.setDictName(entity.getDictName());
+        vo.setDomainCode(entity.getDomainCode());
         vo.setStatus(entity.getStatus());
         vo.setRemark(entity.getRemark());
         return vo;
+    }
+
+    private String resolveDomainCode(String domainCode) {
+        return StringUtils.hasText(domainCode) ? domainCode.trim() : "COMMON";
     }
 
     private DictDataVO convertToDataVO(DictData entity) {

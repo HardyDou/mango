@@ -8,62 +8,26 @@
     </section>
 
     <div class="template-layout">
-      <aside class="category-panel">
-        <div class="panel-head">
-          <div>
-            <h3>模板分类</h3>
-            <p>用于沉淀可复用流程资产</p>
-          </div>
-          <el-button :icon="FolderAdd" type="primary" link @click="openCategoryForm()">新增</el-button>
-        </div>
-        <div class="category-tools">
-          <el-button :icon="Refresh" text @click="loadTemplateCategories">刷新分类</el-button>
-        </div>
-        <div v-loading="categoryLoading" class="category-list">
-          <button
-            class="category-item"
-            :class="{ active: !query.templateCategoryId }"
-            type="button"
-            @click="selectTemplateCategory('')"
-          >
-            <span class="category-main">
-              <span class="category-name">全部模板</span>
-              <span class="category-code">ALL</span>
-            </span>
-            <el-tag size="small" type="info">{{ total }}</el-tag>
-          </button>
-          <button
-            v-for="item in templateCategories"
-            :key="item.id"
-            class="category-item"
-            :class="{ active: query.templateCategoryId === item.id }"
-            type="button"
-            @click="selectTemplateCategory(item.id || '')"
-          >
-            <span class="category-main">
-              <span class="category-name">{{ item.categoryName }}</span>
-              <span class="category-code">{{ item.categoryCode }}</span>
-            </span>
-            <span class="category-actions" @click.stop>
-              <el-tag :type="item.status === 1 ? 'success' : 'info'" size="small">
-                {{ item.status === 1 ? '启用' : '停用' }}
-              </el-tag>
-              <el-button link type="primary" @click="openCategoryForm(item)">编辑</el-button>
-              <el-button link type="danger" @click="deleteCategory(item)">删除</el-button>
-            </span>
-          </button>
-          <el-empty v-if="!categoryLoading && templateCategories.length === 0" :image-size="96" description="暂无模板分类" />
-        </div>
-      </aside>
+      <DomainSideTree
+        v-model="query.domainCode"
+        title="业务域"
+        subtitle="按业务域沉淀流程模板"
+        all-label="全部模板"
+        all-code="ALL"
+        :all-count="total"
+        @change="selectTemplateDomain"
+        @loaded="handleDomainsLoaded"
+      />
 
       <section class="template-panel">
         <div class="table-head">
           <div>
-            <h3>{{ currentTemplateCategoryName }}</h3>
+            <h3>{{ currentTemplateDomainName }}</h3>
             <p>模板只能推送或导入为流程草稿后使用，模板本身不参与运行。</p>
           </div>
           <div class="table-actions">
             <el-button :icon="Upload" type="primary" @click="openPushDialog()">推送流程</el-button>
+            <el-button :icon="FolderAdd" @click="openCategoryManage">管理分类</el-button>
           </div>
         </div>
 
@@ -76,6 +40,22 @@
               <el-option label="启用" value="ENABLED" />
               <el-option label="停用" value="DISABLED" />
               <el-option label="归档" value="ARCHIVED" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="模板分类">
+            <el-select
+              v-model="query.templateCategoryId"
+              clearable
+              filterable
+              placeholder="全部分类"
+              style="width: 180px"
+            >
+              <el-option
+                v-for="item in templateCategoryOptions"
+                :key="item.id"
+                :label="item.categoryName"
+                :value="item.id"
+              />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -93,8 +73,17 @@
           <el-table-column type="selection" width="48" />
           <el-table-column prop="templateName" label="模板名称" min-width="180" show-overflow-tooltip />
           <el-table-column prop="templateCode" label="模板编码" min-width="170" show-overflow-tooltip />
-          <el-table-column prop="templateCategoryName" label="模板分类" min-width="130" show-overflow-tooltip />
-          <el-table-column prop="categoryName" label="业务场景" min-width="120" show-overflow-tooltip />
+          <el-table-column label="业务域" min-width="140">
+            <template #default="{ row }">
+              <span>{{ domainName(row.categoryCode) }}</span>
+              <span class="domain-code-cell">{{ row.categoryCode || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="模板分类" min-width="140" show-overflow-tooltip>
+            <template #default="{ row }">
+              {{ row.templateCategoryName || '未分类' }}
+            </template>
+          </el-table-column>
           <el-table-column label="版本" width="90">
             <template #default="{ row }">v{{ row.versionNo || 1 }}</template>
           </el-table-column>
@@ -140,16 +129,32 @@
         <el-form-item label="模板编码" prop="templateCode">
           <el-input v-model="templateForm.templateCode" />
         </el-form-item>
-        <el-form-item label="模板分类">
-          <el-select v-model="templateForm.templateCategoryId" clearable filterable placeholder="请选择模板分类">
-            <el-option v-for="item in templateCategories" :key="item.id" :label="item.categoryName" :value="item.id!" />
+        <el-form-item label="业务域" prop="categoryCode">
+          <el-tree-select
+            v-model="templateForm.categoryCode"
+            :data="domainOptions"
+            :props="domainTreeProps"
+            check-strictly
+            filterable
+            node-key="domainCode"
+            placeholder="请选择业务域"
+            @change="syncTemplateDomainName"
+          />
+        </el-form-item>
+        <el-form-item label="模板分类" prop="templateCategoryId">
+          <el-select
+            v-model="templateForm.templateCategoryId"
+            clearable
+            filterable
+            placeholder="请选择模板分类"
+          >
+            <el-option
+              v-for="item in templateCategoryOptions"
+              :key="item.id"
+              :label="item.categoryName"
+              :value="item.id"
+            />
           </el-select>
-        </el-form-item>
-        <el-form-item label="业务场景编码">
-          <el-input v-model="templateForm.categoryCode" />
-        </el-form-item>
-        <el-form-item label="业务场景名称">
-          <el-input v-model="templateForm.categoryName" />
         </el-form-item>
         <el-form-item label="设计器JSON" prop="designerJson">
           <el-input v-model="templateForm.designerJson" :rows="8" type="textarea" />
@@ -174,13 +179,45 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="categoryDialogVisible" :title="categoryForm.id ? '编辑模板分类' : '新增模板分类'" width="520px">
+    <el-dialog v-model="categoryManageDialog" title="模板分类管理" width="760px">
+      <div class="category-manage-head">
+        <el-button :icon="Refresh" @click="loadTemplateCategories">刷新</el-button>
+        <el-button :icon="FolderAdd" type="primary" @click="openCategoryForm()">新增分类</el-button>
+      </div>
+      <el-table v-loading="categoryLoading" :data="templateCategoryManageList" border>
+        <el-table-column prop="categoryName" label="分类名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="categoryCode" label="分类编码" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="icon" label="图标" min-width="110" show-overflow-tooltip />
+        <el-table-column prop="sort" label="排序" width="80" />
+        <el-table-column label="状态" width="92">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="190" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openCategoryForm(row)">编辑</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleCategoryStatus(row)">
+              {{ row.status === 1 ? '停用' : '启用' }}
+            </el-button>
+            <el-button link type="danger" @click="deleteCategory(row)">删除</el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无模板分类" />
+        </template>
+      </el-table>
+    </el-dialog>
+
+    <el-dialog v-model="categoryDialogVisible" :title="categoryForm.id ? '编辑模板分类' : '新增模板分类'" width="560px">
       <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px">
         <el-form-item label="分类名称" prop="categoryName">
-          <el-input v-model="categoryForm.categoryName" />
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入模板分类名称" />
         </el-form-item>
         <el-form-item label="分类编码" prop="categoryCode">
-          <el-input v-model="categoryForm.categoryCode" />
+          <el-input v-model="categoryForm.categoryCode" placeholder="请输入模板分类编码" />
         </el-form-item>
         <el-form-item label="图标">
           <el-input v-model="categoryForm.icon" placeholder="如 CollectionTag" />
@@ -221,15 +258,16 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="目标流程分类" required>
-          <div class="category-target-stack">
-            <el-form-item label="分类名称" prop="categoryName">
-              <el-input v-model="pushForm.categoryName" placeholder="请输入目标流程分类名称" />
-            </el-form-item>
-            <el-form-item label="分类编码" prop="categoryCode">
-              <el-input v-model="pushForm.categoryCode" placeholder="请输入目标流程分类编码" />
-            </el-form-item>
-          </div>
+        <el-form-item label="目标业务域" prop="domainCode">
+          <el-tree-select
+            v-model="pushForm.domainCode"
+            :data="domainOptions"
+            :props="domainTreeProps"
+            check-strictly
+            filterable
+            node-key="domainCode"
+            placeholder="请选择目标业务域"
+          />
         </el-form-item>
         <el-form-item label="推送方式">
           <el-radio-group v-model="pushMode">
@@ -239,14 +277,14 @@
         </el-form-item>
         <el-alert
           class="import-rule"
-          :title="pushMode === 'CATEGORY' ? '将推送当前左侧选中的模板分类下全部启用模板。' : `将推送 ${pushForm.templateIds.length} 个已选模板。`"
+          :title="pushMode === 'CATEGORY' ? pushRangeTip : `将推送 ${pushForm.templateIds.length} 个已选模板。`"
           type="info"
           :closable="false"
           show-icon
         />
         <el-alert
           class="import-rule"
-          title="目标机构不存在该流程分类时会自动创建；如目标机构已存在同流程编码，推送会整批失败。"
+          title="推送会在目标机构生成流程草稿；如目标机构已存在同流程编码，推送会整批失败。"
           type="warning"
           :closable="false"
           show-icon
@@ -263,11 +301,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { FolderAdd, Plus, Refresh, Search, Upload } from '@element-plus/icons-vue';
+import { FolderAdd, Refresh, Search, Upload } from '@element-plus/icons-vue';
+import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
 import {
   defaultDesignerJson,
   workflowApi,
   type WorkflowId,
+  type WorkflowDomainOption,
   type WorkflowTemplate,
   type WorkflowTemplateCategory,
   type WorkflowTenantOption,
@@ -279,7 +319,9 @@ const saving = ref(false);
 const tenantLoading = ref(false);
 const templates = ref<WorkflowTemplate[]>([]);
 const total = ref(0);
-const templateCategories = ref<WorkflowTemplateCategory[]>([]);
+const domainOptions = ref<WorkflowDomainOption[]>([]);
+const templateCategoryOptions = ref<WorkflowTemplateCategory[]>([]);
+const templateCategoryManageList = ref<WorkflowTemplateCategory[]>([]);
 const tenantOptions = ref<WorkflowTenantOption[]>([]);
 
 const query = reactive({
@@ -287,10 +329,12 @@ const query = reactive({
   pageSize: 10,
   keyword: '',
   status: '',
+  domainCode: '',
   templateCategoryId: '' as WorkflowId | '',
 });
 
 const templateDialogVisible = ref(false);
+const categoryManageDialog = ref(false);
 const categoryDialogVisible = ref(false);
 const pushDialogVisible = ref(false);
 const pushMode = ref<'SELECTED' | 'CATEGORY'>('SELECTED');
@@ -302,7 +346,6 @@ const pushFormRef = ref<FormInstance>();
 const templateForm = reactive<WorkflowTemplate>({
   templateName: '',
   templateCode: '',
-  templateCategoryId: '',
   categoryCode: '',
   categoryName: '',
   designerJson: defaultDesignerJson(),
@@ -320,9 +363,7 @@ const categoryForm = reactive<WorkflowTemplateCategory>({
 
 const pushForm = reactive({
   targetTenantIds: [] as WorkflowId[],
-  categoryName: '',
-  categoryCode: '',
-  templateCategoryId: '' as WorkflowId | '',
+  domainCode: 'WORKFLOW',
   templateIds: [] as WorkflowId[],
 });
 
@@ -331,16 +372,31 @@ const categoryEnabled = computed({
   set: value => { categoryForm.status = value ? 1 : 0; },
 });
 
-const currentTemplateCategoryName = computed(() => {
-  if (!query.templateCategoryId) {
+const domainTreeProps = {
+  label: 'domainName',
+  value: 'domainCode',
+  children: 'children',
+};
+
+const currentTemplateDomainName = computed(() => {
+  if (!query.domainCode) {
     return '全部流程模板';
   }
-  return templateCategories.value.find(item => item.id === query.templateCategoryId)?.categoryName || '流程模板';
+  return domainName(query.domainCode);
+});
+
+const pushRangeTip = computed(() => {
+  if (query.templateCategoryId) {
+    const categoryName = templateCategoryOptions.value.find(item => item.id === query.templateCategoryId)?.categoryName || '当前模板分类';
+    return `将推送「${categoryName}」下全部启用模板。`;
+  }
+  return `将推送「${query.domainCode ? domainName(query.domainCode) : '全部业务域'}」下全部启用模板。`;
 });
 
 const templateRules: FormRules = {
   templateName: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
   templateCode: [{ required: true, message: '请输入模板编码', trigger: 'blur' }],
+  categoryCode: [{ required: true, message: '请选择业务域', trigger: 'change' }],
   designerJson: [{ required: true, message: '请输入设计器JSON', trigger: 'blur' }],
 };
 
@@ -351,19 +407,61 @@ const categoryRules: FormRules = {
 
 const pushRules: FormRules = {
   targetTenantIds: [{ required: true, message: '请选择目标机构', trigger: 'change' }],
-  categoryName: [{ required: true, message: '请输入目标分类名称', trigger: 'blur' }],
-  categoryCode: [{ required: true, message: '请输入目标分类编码', trigger: 'blur' }],
+  domainCode: [{ required: true, message: '请选择目标业务域', trigger: 'change' }],
 };
 
 onMounted(async () => {
-  await Promise.all([loadTemplateCategories(), loadTenants()]);
+  await Promise.all([loadDomainOptions(), loadTemplateCategories(), loadTenants()]);
   await loadTemplates();
 });
+
+async function loadDomainOptions() {
+  domainOptions.value = await workflowApi.enabledDomains();
+}
+
+async function loadTemplateCategories() {
+  templateCategoryOptions.value = await workflowApi.templateCategoriesList(1);
+}
+
+async function loadTemplateCategoryManageList() {
+  categoryLoading.value = true;
+  try {
+    templateCategoryManageList.value = await workflowApi.templateCategoriesList();
+  } finally {
+    categoryLoading.value = false;
+  }
+}
+
+function handleDomainsLoaded(domains: WorkflowDomainOption[]) {
+  domainOptions.value = domains;
+}
+
+function flattenDomainOptions(options: WorkflowDomainOption[]): WorkflowDomainOption[] {
+  return options.flatMap(item => [item, ...flattenDomainOptions(item.children || [])]);
+}
+
+function domainName(domainCode?: string) {
+  if (!domainCode) {
+    return '未设置业务域';
+  }
+  return flattenDomainOptions(domainOptions.value).find(item => item.domainCode === domainCode)?.domainName || domainCode;
+}
+
+function syncTemplateDomainName() {
+  templateForm.categoryName = domainName(templateForm.categoryCode);
+}
 
 async function loadTemplates() {
   loading.value = true;
   try {
-    const page = await workflowApi.templatesPage(query);
+    const page = await workflowApi.templatesPage({
+      pageNum: query.pageNum,
+      pageSize: query.pageSize,
+      keyword: query.keyword,
+      status: query.status,
+      categoryCode: query.domainCode,
+      templateCategoryId: query.templateCategoryId,
+    });
     templates.value = page.list;
     total.value = page.total;
   } finally {
@@ -375,22 +473,12 @@ function handleTemplateSelectionChange(rows: WorkflowTemplate[]) {
   selectedTemplates.value = rows;
 }
 
-async function loadTemplateCategories() {
-  categoryLoading.value = true;
-  try {
-    templateCategories.value = await workflowApi.templateCategoriesList();
-  } finally {
-    categoryLoading.value = false;
-  }
-}
-
 function resetQuery() {
-  Object.assign(query, { pageNum: 1, pageSize: 10, keyword: '', status: '', templateCategoryId: '' });
+  Object.assign(query, { pageNum: 1, pageSize: 10, keyword: '', status: '', domainCode: '', templateCategoryId: '' });
   loadTemplates();
 }
 
-function selectTemplateCategory(categoryId: WorkflowId | '') {
-  query.templateCategoryId = categoryId;
+function selectTemplateDomain() {
   query.pageNum = 1;
   loadTemplates();
 }
@@ -400,14 +488,15 @@ function openTemplateForm(row?: WorkflowTemplate) {
     id: undefined,
     templateName: '',
     templateCode: '',
-    templateCategoryId: templateCategories.value[0]?.id || '',
-    categoryCode: '',
-    categoryName: '',
+    templateCategoryId: query.templateCategoryId || undefined,
+    categoryCode: query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
+    categoryName: domainName(query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW'),
     designerJson: defaultDesignerJson(),
     formJson: '',
     status: 'ENABLED',
     remark: '',
   });
+  syncTemplateDomainName();
   templateDialogVisible.value = true;
 }
 
@@ -424,8 +513,21 @@ async function saveTemplate() {
   }
 }
 
+async function openCategoryManage() {
+  categoryManageDialog.value = true;
+  await loadTemplateCategoryManageList();
+}
+
 function openCategoryForm(row?: WorkflowTemplateCategory) {
-  Object.assign(categoryForm, row || { id: undefined, categoryName: '', categoryCode: '', icon: '', sort: 0, status: 1, remark: '' });
+  Object.assign(categoryForm, row || {
+    id: undefined,
+    categoryName: '',
+    categoryCode: '',
+    icon: '',
+    sort: 0,
+    status: 1,
+    remark: '',
+  });
   categoryDialogVisible.value = true;
 }
 
@@ -440,17 +542,29 @@ async function saveCategory() {
     }
     ElMessage.success('保存成功');
     categoryDialogVisible.value = false;
-    await loadTemplateCategories();
+    await Promise.all([loadTemplateCategories(), loadTemplateCategoryManageList(), loadTemplates()]);
   } finally {
     saving.value = false;
   }
+}
+
+async function toggleCategoryStatus(row: WorkflowTemplateCategory) {
+  await workflowApi.updateTemplateCategory({
+    ...row,
+    status: row.status === 1 ? 0 : 1,
+  });
+  ElMessage.success(row.status === 1 ? '已停用' : '已启用');
+  await Promise.all([loadTemplateCategories(), loadTemplateCategoryManageList(), loadTemplates()]);
 }
 
 async function deleteCategory(row: WorkflowTemplateCategory) {
   await ElMessageBox.confirm(`确认删除模板分类「${row.categoryName}」？`, '删除模板分类', { type: 'warning' });
   await workflowApi.deleteTemplateCategory(row.id!);
   ElMessage.success('删除成功');
-  await loadTemplateCategories();
+  if (query.templateCategoryId === row.id) {
+    query.templateCategoryId = '';
+  }
+  await Promise.all([loadTemplateCategories(), loadTemplateCategoryManageList(), loadTemplates()]);
 }
 
 function openPreview(row: WorkflowTemplate) {
@@ -475,13 +589,10 @@ async function loadTenants(keyword = '') {
 
 function openPushDialog(row?: WorkflowTemplate) {
   const selected = row ? [row] : selectedTemplates.value;
-  const category = templateCategories.value.find(item => item.id === query.templateCategoryId);
   pushMode.value = row || selected.length > 0 ? 'SELECTED' : 'CATEGORY';
   Object.assign(pushForm, {
     targetTenantIds: [],
-    categoryName: category?.categoryName || '通用流程',
-    categoryCode: category?.categoryCode || 'COMMON',
-    templateCategoryId: query.templateCategoryId || '',
+    domainCode: row?.categoryCode || query.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
     templateIds: selected.map(item => item.id!).filter(Boolean),
   });
   pushDialogVisible.value = true;
@@ -493,17 +604,16 @@ async function submitPush() {
     ElMessage.warning('请先勾选要推送的流程模板');
     return;
   }
-  if (pushMode.value === 'CATEGORY' && !pushForm.templateCategoryId) {
-    ElMessage.warning('请先在左侧选择一个模板分类');
+  if (pushMode.value === 'CATEGORY' && !pushForm.domainCode) {
+    ElMessage.warning('请先在左侧选择一个业务域');
     return;
   }
   saving.value = true;
   try {
     const result = await workflowApi.pushTemplates({
       targetTenantIds: pushForm.targetTenantIds,
-      categoryName: pushForm.categoryName,
-      categoryCode: pushForm.categoryCode,
-      templateCategoryId: pushMode.value === 'CATEGORY' ? pushForm.templateCategoryId : undefined,
+      domainCode: pushForm.domainCode,
+      templateCategoryId: pushMode.value === 'CATEGORY' ? query.templateCategoryId || undefined : undefined,
       templateIds: pushMode.value === 'SELECTED' ? pushForm.templateIds : undefined,
     });
     ElMessage.success(`推送成功 ${result.definitionIds.length} 个流程`);
@@ -560,17 +670,10 @@ async function submitPush() {
   align-items: start;
 }
 
-.category-panel,
 .template-panel {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-}
-
-.category-panel {
-  position: sticky;
-  top: 12px;
-  overflow: hidden;
 }
 
 .template-panel {
@@ -578,7 +681,6 @@ async function submitPush() {
   padding: 16px;
 }
 
-.panel-head,
 .table-head {
   display: flex;
   align-items: flex-start;
@@ -586,16 +688,10 @@ async function submitPush() {
   gap: 12px;
 }
 
-.panel-head {
-  padding: 16px 16px 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
 .table-head {
   margin-bottom: 16px;
 }
 
-.panel-head h3,
 .table-head h3 {
   margin: 0;
   font-size: 16px;
@@ -603,7 +699,6 @@ async function submitPush() {
   color: var(--el-text-color-primary);
 }
 
-.panel-head p,
 .table-head p {
   margin: 6px 0 0;
   font-size: 12px;
@@ -614,76 +709,6 @@ async function submitPush() {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
-}
-
-.category-tools {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.category-list {
-  display: flex;
-  flex-direction: column;
-  min-height: 180px;
-  max-height: calc(100vh - 260px);
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.category-item {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 8px 10px 12px;
-  color: var(--el-text-color-primary);
-  text-align: left;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.category-item:hover {
-  background: var(--el-fill-color-light);
-}
-
-.category-item.active {
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary-light-7);
-}
-
-.category-main {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.category-name,
-.category-code {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.category-name {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.category-code {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.category-actions {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 6px;
 }
 
 .filter-form {
@@ -697,17 +722,6 @@ async function submitPush() {
 
 .import-rule {
   margin-top: 12px;
-}
-
-.category-target-stack {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.category-target-stack :deep(.el-form-item) {
-  margin-bottom: 0;
 }
 
 @media (max-width: 768px) {
@@ -724,18 +738,8 @@ async function submitPush() {
     grid-template-columns: 1fr;
   }
 
-  .category-panel {
-    position: static;
-  }
-
-  .category-list {
-    max-height: none;
-  }
-
-  .table-head,
-  .panel-head {
+  .table-head {
     flex-direction: column;
   }
-
 }
 </style>

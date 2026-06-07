@@ -1045,6 +1045,9 @@ importers:
       '@mango/file':
         specifier: 1.0.7
         version: link:../file
+      '@mango/system':
+        specifier: 1.0.5
+        version: link:../system
       element-plus:
         specifier: 2.5.5
         version: 2.5.5(vue@3.5.13(typescript@5.9.3))
