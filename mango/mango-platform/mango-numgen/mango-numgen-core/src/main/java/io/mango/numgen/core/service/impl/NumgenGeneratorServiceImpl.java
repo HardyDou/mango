@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
 import io.mango.numgen.api.command.SaveNumgenGeneratorCommand;
 import io.mango.numgen.api.command.UpdateNumgenGeneratorStatusCommand;
 import io.mango.numgen.api.query.NumgenGeneratorPageQuery;
@@ -28,6 +30,7 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
 
     private final NumgenGeneratorMapper generatorMapper;
     private final NumgenRuleMapper ruleMapper;
+    private final DomainApi domainApi;
 
     @Override
     public R<PageResult<NumgenGeneratorVO>> pageGenerators(NumgenGeneratorPageQuery query) {
@@ -92,9 +95,10 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         String keyword = NumgenContextSupport.trimToNull(query.getKeyword());
         return new LambdaQueryWrapper<NumgenGenerator>()
                 .and(StringUtils.hasText(keyword), nested -> nested
-                        .like(NumgenGenerator::getGenKey, keyword)
-                        .or()
-                        .like(NumgenGenerator::getGenName, keyword))
+                .like(NumgenGenerator::getGenKey, keyword)
+                .or()
+                .like(NumgenGenerator::getGenName, keyword))
+                .eq(StringUtils.hasText(query.getDomainCode()), NumgenGenerator::getDomainCode, NumgenContextSupport.trimToNull(query.getDomainCode()))
                 .eq(query.getStatus() != null, NumgenGenerator::getStatus, query.getStatus())
                 .eq(NumgenGenerator::getTenantId, NumgenContextSupport.currentTenantId())
                 .orderByDesc(NumgenGenerator::getUpdateTime);
@@ -114,12 +118,14 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         }
         Require.notBlank(command.getGenKey(), "业务 Key 不能为空");
         Require.notBlank(command.getGenName(), "名称不能为空");
+        validateDomain(command.getDomainCode());
         Require.notNull(command.getStatus(), "状态不能为空");
     }
 
     private void copy(SaveNumgenGeneratorCommand command, NumgenGenerator entity) {
         entity.setGenKey(command.getGenKey().trim());
         entity.setGenName(command.getGenName().trim());
+        entity.setDomainCode(validateDomain(command.getDomainCode()).getDomainCode());
         entity.setStatus(command.getStatus());
     }
 
@@ -128,6 +134,7 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
         vo.setGenName(entity.getGenName());
+        vo.setDomainCode(entity.getDomainCode());
         vo.setStatus(entity.getStatus());
         vo.setCurrentRuleVersion(entity.getCurrentRuleVersion());
         vo.setCurrentPublishStatus(entity.getCurrentPublishStatus());
@@ -135,5 +142,13 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         vo.setCreateTime(entity.getCreateTime());
         vo.setUpdateTime(entity.getUpdateTime());
         return vo;
+    }
+
+    private DomainVO validateDomain(String domainCode) {
+        Require.notBlank(domainCode, "业务域不能为空");
+        R<DomainVO> response = domainApi.detailByCode(domainCode.trim());
+        Require.isTrue(response != null && response.isSuccess() && response.getData() != null, "业务域不存在");
+        Require.isTrue(Integer.valueOf(1).equals(response.getData().getStatus()), "业务域已停用");
+        return response.getData();
     }
 }

@@ -9,6 +9,8 @@ import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.template.api.TemplateCode;
@@ -61,6 +63,7 @@ public class TemplateServiceImpl implements ITemplateService {
     private final ITemplateFileStore fileStore;
     private final ObjectMapper objectMapper;
     private final Executor templateRenderExecutor;
+    private final DomainApi domainApi;
 
     @Override
     public R<PageResult<TemplateVO>> page(TemplatePageQuery query) {
@@ -406,6 +409,7 @@ public class TemplateServiceImpl implements ITemplateService {
         }
         Require.notBlank(command.getTemplateCode(), "模板编码不能为空");
         Require.notBlank(command.getTemplateName(), "模板名称不能为空");
+        validateDomain(command.getDomainCode());
     }
 
     private void validateVersionSource(PublishTemplateVersionCommand command) {
@@ -616,6 +620,7 @@ public class TemplateServiceImpl implements ITemplateService {
                 .or()
                 .like(Template::getTemplateName, keyword));
         wrapper.eq(StringUtils.hasText(query.getCategoryCode()), Template::getCategoryCode, query.getCategoryCode());
+        wrapper.eq(StringUtils.hasText(query.getDomainCode()), Template::getDomainCode, trimToNull(query.getDomainCode()));
         wrapper.eq(StringUtils.hasText(query.getBusinessKey()), Template::getBusinessKey, query.getBusinessKey());
         wrapper.eq(StringUtils.hasText(query.getSourceFormat()), Template::getSourceFormat, query.getSourceFormat());
         wrapper.eq(query.getStatus() != null, Template::getStatus, query.getStatus());
@@ -650,8 +655,10 @@ public class TemplateServiceImpl implements ITemplateService {
     private void applyTemplate(Template entity, SaveTemplateCommand command) {
         entity.setTemplateCode(command.getTemplateCode().trim());
         entity.setTemplateName(command.getTemplateName().trim());
-        entity.setCategoryCode(trimToNull(command.getCategoryCode()));
-        entity.setCategoryName(trimToNull(command.getCategoryName()));
+        DomainVO domain = validateDomain(command.getDomainCode());
+        entity.setDomainCode(domain.getDomainCode());
+        entity.setCategoryCode(domain.getDomainCode());
+        entity.setCategoryName(domain.getDomainName());
         entity.setBusinessGroup(trimToNull(command.getBusinessGroup()));
         entity.setBusinessType(trimToNull(command.getBusinessType()));
         entity.setBusinessKey(resolveBusinessKey(command));
@@ -738,6 +745,7 @@ public class TemplateServiceImpl implements ITemplateService {
         vo.setTemplateName(entity.getTemplateName());
         vo.setCategoryCode(entity.getCategoryCode());
         vo.setCategoryName(entity.getCategoryName());
+        vo.setDomainCode(entity.getDomainCode());
         vo.setBusinessGroup(entity.getBusinessGroup());
         vo.setBusinessType(entity.getBusinessType());
         vo.setBusinessKey(entity.getBusinessKey());
@@ -818,6 +826,14 @@ public class TemplateServiceImpl implements ITemplateService {
 
     private String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private DomainVO validateDomain(String domainCode) {
+        Require.notBlank(domainCode, "业务域不能为空");
+        R<DomainVO> response = domainApi.detailByCode(domainCode.trim());
+        Require.isTrue(response != null && response.isSuccess() && response.getData() != null, "业务域不存在");
+        Require.isTrue(Integer.valueOf(1).equals(response.getData().getStatus()), "业务域已停用");
+        return response.getData();
     }
 
     private record RenderContext(Template template,

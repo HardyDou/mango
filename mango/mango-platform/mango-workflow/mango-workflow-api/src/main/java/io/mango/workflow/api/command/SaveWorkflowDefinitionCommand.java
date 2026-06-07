@@ -3,7 +3,6 @@ package io.mango.workflow.api.command;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,9 +19,13 @@ public class SaveWorkflowDefinitionCommand {
     @Schema(description = "流程定义ID，新增时为空，修改时必填")
     private Long id;
 
-    @Schema(description = "流程分类ID")
-    @NotNull(message = "流程分类ID不能为空")
+    @Schema(description = "流程分类ID，用于流程发起页分组和工作流模块内运营分类")
     private Long categoryId;
+
+    @Schema(description = "业务域编码")
+    @NotBlank(message = "业务域编码不能为空")
+    @Size(max = 64, message = "业务域编码最多64个字符")
+    private String domainCode;
 
     @Schema(description = "所属组织ID")
     private Long orgId;

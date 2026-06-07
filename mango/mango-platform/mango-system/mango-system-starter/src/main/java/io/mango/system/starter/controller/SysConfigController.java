@@ -29,8 +29,10 @@ public class SysConfigController {
     @Operation(summary = "获取系统配置列表", description = "权限接口。按配置类型查询系统配置列表")
     public R<List<SysConfigPo>> list(
             @Parameter(description = "配置类型")
-            @RequestParam(required = false) ConfigTypeEnum type) {
-        return configService.list(type);
+            @RequestParam(required = false) ConfigTypeEnum type,
+            @Parameter(description = "业务域编码")
+            @RequestParam(required = false) String domainCode) {
+        return configService.list(type, domainCode);
     }
 
     @GetMapping("/detail")
@@ -85,8 +87,10 @@ public class SysConfigController {
     @Operation(summary = "按类型获取系统配置", description = "权限接口。按配置类型查询系统配置列表")
     public R<List<SysConfigPo>> listByType(
             @Parameter(description = "配置类型")
-            @RequestParam ConfigTypeEnum type) {
-        return configService.list(type);
+            @RequestParam ConfigTypeEnum type,
+            @Parameter(description = "业务域编码")
+            @RequestParam(required = false) String domainCode) {
+        return configService.list(type, domainCode);
     }
 
     @GetMapping("/groups")

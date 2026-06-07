@@ -287,6 +287,26 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.domain</groupId>
+                <artifactId>mango-domain-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.domain</groupId>
+                <artifactId>mango-domain-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.domain</groupId>
+                <artifactId>mango-domain-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.domain</groupId>
+                <artifactId>mango-domain-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.notice</groupId>
                 <artifactId>mango-notice-api</artifactId>
                 <version>${project.version}</version>

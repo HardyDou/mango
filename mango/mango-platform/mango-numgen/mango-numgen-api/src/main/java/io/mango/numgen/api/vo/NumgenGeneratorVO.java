@@ -21,6 +21,9 @@ public class NumgenGeneratorVO implements Serializable {
     @Schema(description = "名称")
     private String genName;
 
+    @Schema(description = "业务域编码")
+    private String domainCode;
+
     @Schema(description = "状态：1-启用，0-停用")
     private Integer status;
 

@@ -12,6 +12,7 @@ public class DictType {
     private Long id;
     private String dictType;
     private String dictName;
+    private String domainCode;
     private Integer status;
     private String remark;
     @TableField(fill = FieldFill.INSERT)

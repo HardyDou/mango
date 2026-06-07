@@ -19,6 +19,7 @@ public class WorkflowDefinition {
 
     private Long tenantId;
     private Long categoryId;
+    private String domainCode;
     private Long orgId;
     private String adminUsers;
     private String icon;

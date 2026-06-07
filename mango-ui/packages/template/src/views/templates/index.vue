@@ -1,55 +1,56 @@
 <template>
   <div class="template-container">
-    <el-card v-if="pageMode === 'list'" class="template-main">
-      <el-form :inline="true" class="search-form">
-        <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="搜索模板编码或名称"
-            clearable
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="query.categoryCode" placeholder="全部分类" clearable filterable style="width: 150px">
-            <el-option
-              v-for="item in categoryOptions"
-              :key="item.categoryCode"
-              :label="item.categoryName"
-              :value="item.categoryCode"
+    <div v-if="pageMode === 'list'" class="template-list-layout">
+      <DomainSideTree
+        v-model="query.domainCode"
+        title="业务域"
+        subtitle="按业务域维护模板"
+        all-label="全部模板"
+        all-code="ALL"
+        :all-count="total"
+        @change="handleDomainChange"
+      />
+
+      <el-card class="template-main">
+        <el-form :inline="true" class="search-form">
+          <el-form-item label="关键词">
+            <el-input
+              v-model="query.keyword"
+              placeholder="搜索模板编码或名称"
+              clearable
+              @keyup.enter="handleSearch"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="格式">
-          <DictSelect
-            v-model="query.sourceFormat"
-            dict-type="template_source_format"
-            placeholder="全部格式"
-            clearable
-            style="width: 130px"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+          </el-form-item>
+          <el-form-item label="格式">
+            <DictSelect
+              v-model="query.sourceFormat"
+              dict-type="template_source_format"
+              placeholder="全部格式"
+              clearable
+              style="width: 130px"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch">查询</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-form>
 
-      <div class="action-toolbar">
-        <div class="toolbar-left">
-          <el-button type="primary" @click="handleCreate">新增模板</el-button>
-          <el-button type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">批量删除</el-button>
-          <el-button @click="loadData">刷新</el-button>
+        <div class="action-toolbar">
+          <div class="toolbar-left">
+            <el-button type="primary" @click="handleCreate">新增模板</el-button>
+            <el-button type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">批量删除</el-button>
+            <el-button @click="loadData">刷新</el-button>
+          </div>
         </div>
-      </div>
 
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        class="data-table"
-        stripe
-        @selection-change="handleSelectionChange"
-      >
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          class="data-table"
+          stripe
+          @selection-change="handleSelectionChange"
+        >
         <template #empty>
           <el-empty description="暂无模板">
             <el-button type="primary" @click="handleCreate">新增模板</el-button>
@@ -64,8 +65,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="categoryName" label="分类" min-width="130" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.categoryName || row.categoryCode || '-' }}</template>
+        <el-table-column prop="domainCode" label="业务域" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.categoryName || row.domainCode || row.categoryCode || '-' }}</template>
         </el-table-column>
         <el-table-column prop="sourceFormat" label="模板格式" width="120">
           <template #default="{ row }">
@@ -103,15 +104,16 @@
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
 
-      <Pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
-        :total="total"
-        @change="loadData"
-      />
-    </el-card>
+        <Pagination
+          v-model:current-page="query.pageNum"
+          v-model:page-size="query.pageSize"
+          :total="total"
+          @change="loadData"
+        />
+      </el-card>
+    </div>
 
     <el-card v-else-if="pageMode === 'preview'" class="template-main page-card preview-page">
       <div class="page-header">
@@ -154,7 +156,7 @@
             <el-descriptions v-if="detail" :column="1" border>
               <el-descriptions-item label="模板编码">{{ detail.templateCode }}</el-descriptions-item>
               <el-descriptions-item label="模板名称">{{ detail.templateName }}</el-descriptions-item>
-              <el-descriptions-item label="模板分类">{{ detail.categoryName || detail.categoryCode || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="业务域">{{ detail.categoryName || detail.domainCode || detail.categoryCode || '-' }}</el-descriptions-item>
               <el-descriptions-item label="预览版本">{{ previewingTemplateVersion ? `V${previewingTemplateVersion.versionNo}` : '-' }}</el-descriptions-item>
               <el-descriptions-item label="模板格式">
                 <DictTag
@@ -335,15 +337,8 @@
               <el-form-item label="模板名称" prop="templateName">
                 <el-input v-model="templateForm.templateName" placeholder="如 合同到期提醒" />
               </el-form-item>
-              <el-form-item label="模板分类">
-                <el-select v-model="templateForm.categoryCode" class="form-select" placeholder="可选，用于列表分组" clearable filterable @change="handleCategoryChange">
-                  <el-option
-                    v-for="item in categoryOptions"
-                    :key="item.categoryCode"
-                    :label="item.categoryName"
-                    :value="item.categoryCode"
-                  />
-                </el-select>
+              <el-form-item label="业务域" prop="domainCode">
+                <el-input v-model="templateForm.domainCode" class="form-select" placeholder="如 TEMPLATE" />
               </el-form-item>
             </div>
             <el-form-item label="备注">
@@ -499,13 +494,12 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Delete, EditPen, MagicStick, Plus } from '@element-plus/icons-vue';
 import { CodeEditor, DictSelect, DictTag, Editor, Pagination, useDict } from '@mango/common';
 import { fileApi, FilePreviewPanel, MUpload, type FileRecord } from '@mango/file';
+import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
 import {
   templateApi,
-  templateCategoryApi,
   type JsonObject,
   type JsonValue,
   type SaveTemplatePayload,
-  type TemplateCategory,
   type TemplateDetail,
   type TemplateItem,
   type TemplateOutputFormat,
@@ -528,7 +522,6 @@ type RenderVariableRow = TemplateVariableDefinition & {
 
 const loading = ref(false);
 const tableData = ref<TemplateItem[]>([]);
-const categoryOptions = ref<TemplateCategory[]>([]);
 const selectedRows = ref<TemplateItem[]>([]);
 const total = ref(0);
 const pageMode = ref<'list' | 'maintain' | 'preview' | 'versions'>('list');
@@ -556,7 +549,7 @@ const query = reactive<TemplateQuery>({
   pageNum: 1,
   pageSize: 10,
   keyword: '',
-  categoryCode: '',
+  domainCode: '',
   sourceFormat: '',
 });
 
@@ -565,6 +558,7 @@ const templateForm = reactive<SaveTemplatePayload>({
   templateName: '',
   categoryCode: '',
   categoryName: '',
+  domainCode: 'TEMPLATE',
   sourceFormat: undefined,
   remark: '',
 });
@@ -596,6 +590,7 @@ const renderForm = reactive<{
 const templateRules: FormRules = {
   templateCode: [{ required: true, message: '请输入模板编码', trigger: 'blur' }],
   templateName: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
+  domainCode: [{ required: true, message: '请输入业务域编码', trigger: 'blur' }],
 };
 
 const { options: sourceDictOptions } = useDict('template_source_format');
@@ -614,7 +609,6 @@ const renderDefaultFileName = computed(() => `${currentTemplate.value?.templateC
 const renderResultTitle = computed(() => (isFileRenderResult.value ? '生成文件结果' : '预览内容'));
 const renderFileDescription = computed(() => `${renderForm.outputFormat} 文件已生成，可下载后查看完整内容。`);
 onMounted(() => {
-  loadCategories();
   loadData();
 });
 
@@ -633,10 +627,6 @@ watch(() => versionForm.sourceFormat, (format, previous) => {
   }
   versionForm.content = '';
 });
-
-async function loadCategories() {
-  categoryOptions.value = await templateCategoryApi.list();
-}
 
 async function loadData() {
   loading.value = true;
@@ -660,13 +650,19 @@ function handleSearch() {
 }
 
 function handleReset() {
+  const currentDomainCode = query.domainCode;
   Object.assign(query, {
     pageNum: 1,
     pageSize: 10,
     keyword: '',
-    categoryCode: '',
+    domainCode: currentDomainCode,
     sourceFormat: '',
   });
+  loadData();
+}
+
+function handleDomainChange() {
+  query.pageNum = 1;
   loadData();
 }
 
@@ -696,8 +692,9 @@ function handleCreate() {
     id: undefined,
     templateCode: '',
     templateName: '',
-    categoryCode: '',
+    categoryCode: query.domainCode || 'TEMPLATE',
     categoryName: '',
+    domainCode: query.domainCode || 'TEMPLATE',
     sourceFormat: undefined,
     remark: '',
   });
@@ -711,8 +708,9 @@ async function handleEdit(row: TemplateItem) {
     id: row.id,
     templateCode: row.templateCode,
     templateName: row.templateName,
-    categoryCode: row.categoryCode || '',
+    categoryCode: row.categoryCode || row.domainCode || '',
     categoryName: row.categoryName || '',
+    domainCode: row.domainCode || row.categoryCode || 'TEMPLATE',
     sourceFormat: row.sourceFormat,
     remark: row.remark || '',
   });
@@ -730,12 +728,6 @@ async function handleVersions(row: TemplateItem) {
 function previewVersion(row: TemplateVersion) {
   if (!currentTemplate.value) return;
   handlePreview(currentTemplate.value, row);
-}
-
-function handleCategoryChange(value?: string | number | Array<string | number>) {
-  const categoryCode = Array.isArray(value) ? value[0] : value;
-  const category = categoryOptions.value.find((item) => item.categoryCode === categoryCode);
-  templateForm.categoryName = category?.categoryName || '';
 }
 
 async function submitTemplate() {
@@ -762,8 +754,9 @@ async function saveTemplateBase(): Promise<TemplateItem> {
       id: templateForm.id,
       templateCode: templateForm.templateCode,
       templateName: templateForm.templateName,
-      categoryCode: templateForm.categoryCode,
+      categoryCode: templateForm.domainCode,
       categoryName: templateForm.categoryName,
+      domainCode: templateForm.domainCode,
       sourceFormat: versionForm.sourceFormat,
       currentVersionNo: currentTemplate.value?.currentVersionNo || 0,
       publishedVersionNo: currentTemplate.value?.publishedVersionNo || currentTemplate.value?.currentVersionNo || 0,
@@ -779,8 +772,9 @@ async function saveTemplateBase(): Promise<TemplateItem> {
     id,
     templateCode: templateForm.templateCode,
     templateName: templateForm.templateName,
-    categoryCode: templateForm.categoryCode,
+    categoryCode: templateForm.domainCode,
     categoryName: templateForm.categoryName,
+    domainCode: templateForm.domainCode,
     sourceFormat: versionForm.sourceFormat,
     currentVersionNo: 0,
     publishedVersionNo: 0,
@@ -821,8 +815,9 @@ function templateSavePayload(): SaveTemplatePayload {
     id: templateForm.id,
     templateCode: templateForm.templateCode,
     templateName: templateForm.templateName,
-    categoryCode: templateForm.categoryCode,
+    categoryCode: templateForm.domainCode,
     categoryName: templateForm.categoryName,
+    domainCode: templateForm.domainCode,
     sourceFormat: versionForm.sourceFormat,
     draftContent: versionForm.content,
     draftSourceFileId: versionForm.sourceFileId,
@@ -1244,6 +1239,14 @@ function isJsonObject(value: unknown): value is JsonObject {
   display: flex;
   min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
   padding: 0;
+}
+
+.template-list-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  min-height: calc(100vh - 136px);
 }
 
 .template-main {
@@ -1773,6 +1776,10 @@ function isJsonObject(value: unknown): value is JsonObject {
 }
 
 @media (max-width: 980px) {
+  .template-list-layout {
+    grid-template-columns: 1fr;
+  }
+
   .preview-layout,
   .maintain-editor-layout,
   .form-grid {

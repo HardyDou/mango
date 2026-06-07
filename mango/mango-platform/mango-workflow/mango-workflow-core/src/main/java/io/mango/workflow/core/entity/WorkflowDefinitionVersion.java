@@ -21,6 +21,7 @@ public class WorkflowDefinitionVersion {
     private Long definitionId;
     private Integer versionNo;
     private Long categoryId;
+    private String domainCode;
     private Long orgId;
     private String adminUsers;
     private String icon;

@@ -18,6 +18,7 @@ export interface NumgenGenerator {
   id?: ApiId;
   genKey: string;
   genName: string;
+  domainCode?: string;
   status?: number;
   currentRuleVersion?: number;
   currentPublishStatus?: NumgenPublishStatus;
@@ -26,12 +27,13 @@ export interface NumgenGenerator {
   updateTime?: string;
 }
 
-export type NumgenGeneratorSavePayload = Pick<NumgenGenerator, 'id' | 'genKey' | 'genName' | 'status'>;
+export type NumgenGeneratorSavePayload = Pick<NumgenGenerator, 'id' | 'genKey' | 'genName' | 'domainCode' | 'status'>;
 
 export interface NumgenGeneratorQuery {
   pageNum?: number;
   pageSize?: number;
   keyword?: string;
+  domainCode?: string;
   status?: number | '';
 }
 
@@ -190,6 +192,7 @@ function toBackendGeneratorPayload(data: NumgenGeneratorSavePayload): NumgenGene
     id: data.id,
     genKey: data.genKey,
     genName: data.genName,
+    domainCode: data.domainCode,
     status: data.status,
   };
 }

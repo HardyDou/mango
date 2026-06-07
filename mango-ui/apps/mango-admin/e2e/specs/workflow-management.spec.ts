@@ -192,6 +192,39 @@ async function cleanupWorkflowUploadFiles(request: APIRequestContext, token: str
   }
 }
 
+async function expectWorkflowCategoryAndDefinitionInDomain(
+  request: APIRequestContext,
+  token: string,
+  params: {
+    categoryId: string;
+    definitionId: string;
+    domainCode: string;
+    categoryName: string;
+  },
+) {
+  const headers = { Authorization: `Bearer ${token}` };
+  const categoryResponse = await request.get(api(`/workflow/categories/list?status=1&domainCode=${params.domainCode}`), {
+    headers,
+  });
+  expect(categoryResponse.status()).toBe(200);
+  const categoryBody = await categoryResponse.json();
+  expectApiSuccess(categoryBody, '按业务域查询流程分类失败');
+  const category = (categoryBody.data || []).find((item: any) => String(item.id) === String(params.categoryId));
+  expect(category, `未在 ${params.domainCode} 业务域分类列表中找到测试分类`).toBeTruthy();
+  expect(category.categoryName).toBe(params.categoryName);
+  expect(category.domainCode).toBe(params.domainCode);
+
+  const definitionResponse = await request.get(api(`/workflow/definitions/detail?id=${params.definitionId}`), {
+    headers,
+  });
+  expect(definitionResponse.status()).toBe(200);
+  const definitionBody = await definitionResponse.json();
+  expectApiSuccess(definitionBody, '查询流程定义详情失败');
+  expect(String(definitionBody.data.categoryId)).toBe(String(params.categoryId));
+  expect(definitionBody.data.categoryName).toBe(params.categoryName);
+  expect(definitionBody.data.domainCode).toBe(params.domainCode);
+}
+
 function expectApiSuccess(body: any, context: string) {
   expect(body.success || body.code === 200, `${context}: ${JSON.stringify(body, null, 2)}`).toBeTruthy();
 }
@@ -1339,6 +1372,114 @@ function startProcessDialog(page: Page, name: string) {
 }
 
 test.describe('工作流配置真实接口闭环', () => {
+  test('流程定义同时支持业务域侧栏和流程分类筛选并在发起页按分类分组', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const unique = Date.now();
+    const domainCode = 'WORKFLOW';
+    const keyword = `e2e_workflow_domain_category_${unique}`;
+    const categoryName = `E2E域内分类${unique}`;
+    const categoryCode = keyword;
+    const definitionName = `E2E域内流程${unique}`;
+    const definitionKey = `e2e_domain_category_${unique}`;
+    const token = await loginToken(request, platformTenant);
+    const headers = { Authorization: `Bearer ${token}` };
+
+    try {
+      await cleanupWorkflow(request, token, keyword);
+
+      const createCategoryResponse = await request.post(api(`/workflow/categories`), {
+        headers,
+        data: {
+          categoryName,
+          categoryCode,
+          domainCode,
+          sort: 95,
+          status: 1,
+          remark: 'E2E业务域与流程分类并存验证数据',
+        },
+      });
+      expect(createCategoryResponse.status()).toBe(200);
+      const createCategoryBody = await createCategoryResponse.json();
+      expectApiSuccess(createCategoryBody, '创建业务域内流程分类失败');
+      const categoryId = String(createCategoryBody.data);
+
+      const createDefinitionResponse = await request.post(api(`/workflow/definitions`), {
+        headers,
+        data: {
+          categoryId,
+          domainCode,
+          definitionName,
+          definitionKey,
+          designerJson: designerJson(unique),
+          formCode: `form_${keyword}`,
+          formJson: leaveFormJson(),
+          status: 'DRAFT',
+          remark: 'E2E业务域与流程分类并存验证数据',
+        },
+      });
+      expect(createDefinitionResponse.status()).toBe(200);
+      const createDefinitionBody = await createDefinitionResponse.json();
+      expectApiSuccess(createDefinitionBody, '创建业务域内流程定义失败');
+      const definitionId = String(createDefinitionBody.data);
+
+      const deployResponse = await request.post(api(`/workflow/definitions/deploy?id=${definitionId}`), {
+        headers,
+      });
+      expect(deployResponse.status()).toBe(200);
+      const deployBody = await deployResponse.json();
+      expectApiSuccess(deployBody, '发布业务域内流程定义失败');
+      expect(deployBody.data.processDefinitionId).toBeTruthy();
+
+      await expectWorkflowCategoryAndDefinitionInDomain(request, token, {
+        categoryId,
+        definitionId,
+        domainCode,
+        categoryName,
+      });
+
+      await loginPage(page, platformTenant);
+      await openWorkflowManage(page);
+      await expect(page.getByRole('heading', { name: '业务域' })).toBeVisible({ timeout: 10000 });
+      await page.getByRole('button', { name: /工作流域\s+WORKFLOW/ }).click();
+      await expect(page.locator('.workflow-definition-panel')).toContainText('流程分类');
+
+      await page.getByPlaceholder('流程名称/编码').fill(definitionName);
+      await page.locator('.workflow-definition-panel').getByRole('button', { name: '查询' }).click();
+      const definitionRow = page.locator('.el-table__row', { hasText: definitionName }).first();
+      await expect(definitionRow).toBeVisible({ timeout: 10000 });
+      await expect(definitionRow).toContainText(domainCode);
+      await expect(definitionRow).toContainText(categoryName);
+
+      await page.locator('.workflow-definition-panel .el-form-item', { hasText: '流程分类' }).locator('.el-select').click();
+      await page.getByRole('option', { name: categoryName }).click();
+      const filteredResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions/page')
+        && response.url().includes(`categoryId=${encodeURIComponent(categoryId)}`)
+        && response.url().includes(`domainCode=${domainCode}`)
+        && response.status() === 200
+      );
+      await page.locator('.workflow-definition-panel').getByRole('button', { name: '查询' }).click();
+      await filteredResponsePromise;
+      await expect(definitionRow).toBeVisible({ timeout: 10000 });
+
+      const publishedResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/definitions/page')
+        && response.url().includes('publishedOnly=true')
+        && response.status() === 200
+      );
+      await openStartProcess(page);
+      await publishedResponsePromise;
+      await page.getByPlaceholder('搜索流程名称/编码').fill(definitionName);
+      await page.getByRole('button', { name: '查询' }).click();
+      const launchGroup = page.locator('.workflow-launch-group', { hasText: categoryName });
+      await expect(launchGroup).toBeVisible({ timeout: 10000 });
+      await expect(launchGroup.locator('.workflow-launch-card', { hasText: definitionName })).toBeVisible();
+      await expectNoAuthError(page);
+    } finally {
+      await cleanupWorkflow(request, token, keyword).catch(() => undefined);
+    }
+  });
+
   test('流程定义图标上传使用文件组件直连地址并保存到流程', async ({ page, request }) => {
     test.setTimeout(90_000);
     const unique = Date.now();
@@ -1797,9 +1938,11 @@ test.describe('工作流配置真实接口闭环', () => {
     }
   });
 
-  test('流程可生成模板，模板可导入流程且重复编码整批失败', async ({ request }) => {
+  test('流程可生成模板，模板可按业务域和模板分类筛选且可导入流程', async ({ page, request }) => {
+    test.setTimeout(90_000);
     const unique = Date.now();
     const keyword = `e2e_workflow_template_${unique}`;
+    const domainCode = 'WORKFLOW';
     const categoryName = `E2E模板目标分类${unique}`;
     const categoryCode = keyword;
     const templateCategoryName = `E2E模板分类${unique}`;
@@ -1807,7 +1950,7 @@ test.describe('工作流配置真实接口闭环', () => {
     const definitionName = `E2E模板来源流程${unique}`;
     const definitionKey = `e2e_template_source_${unique}`;
     const templateName = `E2E流程模板${unique}`;
-    const templateCode = `e2e_template_${unique}`;
+    const templateCode = keyword;
     const token = await loginToken(request, platformTenant);
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -1820,6 +1963,7 @@ test.describe('工作流配置真实接口闭环', () => {
         data: {
           categoryName,
           categoryCode,
+          domainCode,
           sort: 98,
           status: 1,
           remark: 'E2E模板导入目标分类',
@@ -1850,6 +1994,7 @@ test.describe('工作流配置真实接口闭环', () => {
         headers,
         data: {
           categoryId,
+          domainCode,
           definitionName,
           definitionKey,
           designerJson: approvalDesignerJson(unique),
@@ -1871,8 +2016,8 @@ test.describe('工作流配置真实接口闭环', () => {
           templateName,
           templateCode,
           templateCategoryId,
-          categoryCode: keyword,
-          categoryName: 'E2E模板业务场景',
+          categoryCode: domainCode,
+          categoryName: '工作流域',
           remark: 'E2E由流程生成模板',
         },
       });
@@ -1881,12 +2026,46 @@ test.describe('工作流配置真实接口闭环', () => {
       expectApiSuccess(createTemplateBody, '流程生成模板失败');
       const templateId = createTemplateBody.data;
 
+      const pageResponse = await request.get(api(`/workflow/templates/page?page=1&size=10&categoryCode=${domainCode}&templateCategoryId=${templateCategoryId}&keyword=${keyword}`), {
+        headers,
+      });
+      expect(pageResponse.status()).toBe(200);
+      const pageBody = await pageResponse.json();
+      expectApiSuccess(pageBody, '按业务域和模板分类查询流程模板失败');
+      expect(pageBody.data?.list?.[0]?.templateCategoryName).toBe(templateCategoryName);
+      expect(pageBody.data?.list?.[0]?.categoryCode).toBe(domainCode);
+
+      await loginPage(page, platformTenant);
+      const templatePageResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/templates/page')
+        && response.url().includes(`categoryCode=${domainCode}`)
+        && response.status() === 200
+      );
+      const templateCategoryListResponsePromise = page.waitForResponse((response) =>
+        response.url().includes('/api/workflow/template-categories/list')
+        && response.status() === 200
+      );
+      await page.goto('/#/workflow/manage/template');
+      const templateCategoryListResponse = await templateCategoryListResponsePromise;
+      const templateCategoryListBody = await templateCategoryListResponse.json();
+      expectApiSuccess(templateCategoryListBody, '查询流程模板分类选项失败');
+      expect((templateCategoryListBody.data || []).some((item: any) => item.categoryName === templateCategoryName)).toBeTruthy();
+      await page.getByRole('button', { name: /工作流域 WORKFLOW/ }).click();
+      await templatePageResponsePromise;
+      await page.getByPlaceholder('模板名称/编码/场景').fill(keyword);
+      await expect(page.locator('.filter-form .el-form-item', { hasText: '模板分类' })).toBeVisible();
+      const templateRow = page.locator('.el-table__row', { hasText: templateName }).first();
+      await expect(templateRow).toBeVisible();
+      await expect(templateRow).toContainText(templateCategoryName);
+      await expect(templateRow).toContainText(domainCode);
+
       const singleImportKey = `${templateCode}_single`;
       const singleImportResponse = await request.post(api(`/workflow/templates/create-definition`), {
         headers,
         data: {
           templateId,
           categoryId,
+          domainCode,
           targetTenantId: '1',
           orgId: '1',
           definitionName: `${templateName}单个导入`,
@@ -1912,6 +2091,7 @@ test.describe('工作流配置真实接口闭环', () => {
         headers,
         data: {
           categoryId,
+          domainCode,
           targetTenantId: '1',
           orgId: '1',
           templateCategoryId,
@@ -1926,6 +2106,7 @@ test.describe('工作流配置真实接口闭环', () => {
         headers,
         data: {
           categoryId,
+          domainCode,
           targetTenantId: '1',
           orgId: '1',
           templateCategoryId,

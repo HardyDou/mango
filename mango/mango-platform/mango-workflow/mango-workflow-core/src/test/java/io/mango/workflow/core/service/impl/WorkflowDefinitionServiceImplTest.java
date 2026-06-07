@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.domain.api.DomainApi;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
+import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
 import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
@@ -32,11 +34,13 @@ class WorkflowDefinitionServiceImplTest {
     @Mock
     private WorkflowDefinitionMapper definitionMapper;
     @Mock
-    private WorkflowDefinitionVersionMapper versionMapper;
-    @Mock
     private WorkflowCategoryMapper categoryMapper;
     @Mock
+    private WorkflowDefinitionVersionMapper versionMapper;
+    @Mock
     private WorkflowNodeDefinitionMapper nodeDefinitionMapper;
+    @Mock
+    private DomainApi domainApi;
     @Mock
     private RepositoryService repositoryService;
     @Mock
@@ -49,9 +53,10 @@ class WorkflowDefinitionServiceImplTest {
         MockitoAnnotations.openMocks(this);
         service = new WorkflowDefinitionServiceImpl(
                 definitionMapper,
-                versionMapper,
                 categoryMapper,
+                versionMapper,
                 nodeDefinitionMapper,
+                domainApi,
                 repositoryService,
                 bpmnConverter,
                 new ObjectMapper());
@@ -92,6 +97,10 @@ class WorkflowDefinitionServiceImplTest {
         published.setPublishStatus("SUCCESS");
         published.setPublishTime(LocalDateTime.parse("2026-05-20T09:30:00"));
         when(versionMapper.selectOne(any(Wrapper.class))).thenReturn(published);
+        WorkflowCategory category = new WorkflowCategory();
+        category.setId(10L);
+        category.setCategoryName("通用流程");
+        when(categoryMapper.selectById(10L)).thenReturn(category);
 
         WorkflowDefinitionPageQuery query = new WorkflowDefinitionPageQuery();
         query.setPage(1);
@@ -108,6 +117,7 @@ class WorkflowDefinitionServiceImplTest {
         assertThat(vo.getFormJson()).isEqualTo("{\"mode\":\"published\"}");
         assertThat(vo.getDesignerJson()).isEqualTo("{\"name\":\"published\"}");
         assertThat(vo.getProcessDefinitionId()).isEqualTo("proc-published");
+        assertThat(vo.getCategoryName()).isEqualTo("通用流程");
         assertThat(vo.getHasUnpublishedChanges()).isFalse();
     }
 }

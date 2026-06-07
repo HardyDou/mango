@@ -15,7 +15,7 @@ public interface IWorkflowCategoryService {
 
     R<PageResult<WorkflowCategoryVO>> page(WorkflowCategoryPageQuery query);
 
-    R<List<WorkflowCategoryVO>> list(Integer status);
+    R<List<WorkflowCategoryVO>> list(Integer status, String domainCode);
 
     R<WorkflowCategoryVO> get(Long id);
 

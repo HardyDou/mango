@@ -31,6 +31,10 @@ public class SysConfigPo {
     @NotNull(message = "type不能为空")
     private ConfigTypeEnum type;
 
+    @Schema(description = "业务域编码")
+    @Size(max = 64, message = "domainCode长度不能超过64")
+    private String domainCode;
+
     @Schema(description = "排序号")
     private Integer sort;
     @Schema(description = "状态：0-禁用，1-启用")
