@@ -1843,6 +1843,7 @@ test.describe('工作流配置真实接口闭环', () => {
     const keyword = `e2e_workflow_${unique}`;
     const categoryName = `E2E流程分类${unique}`;
     const categoryCode = keyword;
+    const domainCode = 'WORKFLOW';
     const definitionName = `E2E流程${unique}`;
     const definitionKey = `e2e_process_${unique}`;
     const token = await loginToken(request, platformTenant);
@@ -1856,6 +1857,7 @@ test.describe('工作流配置真实接口闭环', () => {
         data: {
           categoryName,
           categoryCode,
+          domainCode,
           sort: 99,
           status: 1,
           remark: 'E2E验证数据',
@@ -1870,6 +1872,7 @@ test.describe('工作流配置真实接口闭环', () => {
         headers,
         data: {
           categoryId,
+          domainCode,
           definitionName,
           definitionKey,
           designerJson: designerJson(unique),
@@ -1924,8 +1927,13 @@ test.describe('工作流配置真实接口闭环', () => {
       await pageResponsePromise;
       await expect(page.getByText('流程定义').first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByRole('button', { name: '创建流程' })).toBeVisible();
-      await page.getByRole('heading', { name: '流程分类' }).click();
-      await expect(page.getByRole('button', { name: '新增' })).toBeVisible();
+      await page.getByRole('button', { name: '管理分类' }).click();
+      const categoryManageDialog = page.getByRole('dialog', { name: '流程分类管理' });
+      await expect(categoryManageDialog).toBeVisible();
+      await expect(categoryManageDialog.getByRole('button', { name: '新增分类' })).toBeVisible();
+      await expect(categoryManageDialog.locator('.el-table')).toContainText(categoryName);
+      await page.keyboard.press('Escape');
+      await expect(categoryManageDialog).toBeHidden();
       await page.getByRole('heading', { name: '全部流程定义' }).click();
       await page.getByPlaceholder('流程名称/编码').fill(definitionName);
       await page.getByRole('button', { name: '查询' }).first().click();
@@ -2054,6 +2062,13 @@ test.describe('工作流配置真实接口闭环', () => {
       await templatePageResponsePromise;
       await page.getByPlaceholder('模板名称/编码/场景').fill(keyword);
       await expect(page.locator('.filter-form .el-form-item', { hasText: '模板分类' })).toBeVisible();
+      await page.getByRole('button', { name: '管理分类' }).click();
+      const templateCategoryManageDialog = page.getByRole('dialog', { name: '模板分类管理' });
+      await expect(templateCategoryManageDialog).toBeVisible();
+      await expect(templateCategoryManageDialog.getByRole('button', { name: '新增分类' })).toBeVisible();
+      await expect(templateCategoryManageDialog.locator('.el-table')).toContainText(templateCategoryName);
+      await page.keyboard.press('Escape');
+      await expect(templateCategoryManageDialog).toBeHidden();
       const templateRow = page.locator('.el-table__row', { hasText: templateName }).first();
       await expect(templateRow).toBeVisible();
       await expect(templateRow).toContainText(templateCategoryName);

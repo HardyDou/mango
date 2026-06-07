@@ -520,6 +520,7 @@
           <div class="definition-head-actions">
             <el-button :icon="Plus" type="primary" @click="openDefinitionForm()">创建流程</el-button>
             <el-button :icon="Download" type="success" @click="openDefinitionImport">导入流程</el-button>
+            <el-button :icon="FolderAdd" @click="openCategoryManage">管理分类</el-button>
           </div>
         </div>
 
@@ -658,6 +659,96 @@
       </el-collapse>
     </el-drawer>
 
+    <el-dialog v-model="categoryManageDialog" title="流程分类管理" width="820px">
+      <div class="category-manage-head">
+        <el-form :inline="true" class="category-manage-filter">
+          <el-form-item label="业务域">
+            <el-tree-select
+              v-model="categoryManageDomainCode"
+              :data="domainOptions"
+              :props="domainTreeProps"
+              check-strictly
+              clearable
+              filterable
+              node-key="domainCode"
+              placeholder="全部业务域"
+              @change="loadCategoryManageList"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button :icon="Refresh" @click="loadCategoryManageList">刷新</el-button>
+          </el-form-item>
+        </el-form>
+        <el-button :icon="Plus" type="primary" @click="openCategoryForm()">新增分类</el-button>
+      </div>
+
+      <el-table v-loading="categoryManageLoading" :data="categoryManageList" border>
+        <el-table-column prop="categoryName" label="分类名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="categoryCode" label="分类编码" min-width="150" show-overflow-tooltip />
+        <el-table-column label="业务域" min-width="140">
+          <template #default="{ row }">
+            <span>{{ domainName(row.domainCode) }}</span>
+            <span class="domain-code-cell">{{ row.domainCode || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="80" />
+        <el-table-column label="状态" width="92">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="190" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openCategoryForm(row)">编辑</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleCategoryStatus(row)">
+              {{ row.status === 1 ? '停用' : '启用' }}
+            </el-button>
+            <el-button link type="danger" @click="deleteCategory(row)">删除</el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无流程分类" />
+        </template>
+      </el-table>
+    </el-dialog>
+
+    <el-dialog v-model="categoryDialog" :title="categoryForm.id ? '编辑流程分类' : '新增流程分类'" width="560px">
+      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px">
+        <el-form-item label="业务域" prop="domainCode">
+          <el-tree-select
+            v-model="categoryForm.domainCode"
+            :data="domainOptions"
+            :props="domainTreeProps"
+            check-strictly
+            filterable
+            node-key="domainCode"
+            placeholder="请选择业务域"
+          />
+        </el-form-item>
+        <el-form-item label="分类名称" prop="categoryName">
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入流程分类名称" />
+        </el-form-item>
+        <el-form-item label="分类编码" prop="categoryCode">
+          <el-input v-model="categoryForm.categoryCode" placeholder="请输入流程分类编码" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="categoryForm.sort" :min="0" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-switch v-model="categoryEnabled" active-text="启用" inactive-text="停用" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="categoryForm.remark" :rows="3" type="textarea" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="categoryDialog = false">取消</el-button>
+        <el-button :loading="saving" type="primary" @click="saveCategory">保存</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="templateDialog" title="流程转模板" width="560px">
       <el-form ref="templateFormRef" :model="templateForm" :rules="templateRules" label-width="110px">
         <el-form-item label="模板名称" prop="templateName">
@@ -752,7 +843,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { ArrowDown, Bell, Box, Cloudy, Connection, Download, ForkSpoon, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
+import { ArrowDown, Bell, Box, Cloudy, Connection, Download, FolderAdd, ForkSpoon, Plus, QuestionFilled, Refresh, Search, Setting, Share, User } from '@element-plus/icons-vue';
 import FcDesigner, { type Config as FcDesignerConfig } from 'form-create-designer';
 import type { Rule as FcRule } from '@form-create/element-ui';
 import 'form-create-designer/src/style/index.css';
@@ -1228,6 +1319,7 @@ const definitions = ref<WorkflowDefinition[]>([]);
 const importTemplates = ref<WorkflowTemplate[]>([]);
 const domainOptions = ref<WorkflowDomainOption[]>([]);
 const definitionCategoryOptions = ref<WorkflowCategory[]>([]);
+const categoryManageList = ref<WorkflowCategory[]>([]);
 const nodeCatalog = ref<WorkflowNodeCatalog[]>([]);
 const versions = ref<WorkflowDefinitionVersion[]>([]);
 const currentVersionDefinition = ref<WorkflowDefinition | null>(null);
@@ -1241,10 +1333,13 @@ const publishing = ref(false);
 const validateDialogShow = ref(false);
 const validateFlowStep = ref(0);
 const validateErrMsg = ref<string[]>([]);
+const categoryManageDialog = ref(false);
+const categoryDialog = ref(false);
 const templateDialog = ref(false);
 const definitionImportDialog = ref(false);
 const versionDrawer = ref(false);
 const definitionFormRef = ref<FormInstance>();
+const categoryFormRef = ref<FormInstance>();
 const templateFormRef = ref<FormInstance>();
 const definitionImportFormRef = ref<FormInstance>();
 const formDesignerRef = ref<InstanceType<typeof FcDesigner>>();
@@ -1263,6 +1358,8 @@ const designerSteps = [
   { key: 'form', title: '表单信息', description: '表单模式与变量' },
   { key: 'process', title: '流程设计', description: '节点、分支、执行动作' },
 ];
+const categoryManageLoading = ref(false);
+const categoryManageDomainCode = ref('');
 const domainTreeProps = {
   label: 'domainName',
   value: 'domainCode',
@@ -1280,6 +1377,14 @@ const definitionForm = reactive<WorkflowDefinition>({
   status: 'DRAFT',
 });
 
+const categoryForm = reactive<WorkflowCategory>({
+  categoryName: '',
+  categoryCode: '',
+  domainCode: 'WORKFLOW',
+  sort: 0,
+  status: 1,
+});
+
 const templateForm = reactive({
   definitionId: '' as WorkflowId | '',
   templateName: '',
@@ -1287,6 +1392,11 @@ const templateForm = reactive({
   categoryCode: '',
   categoryName: '',
   remark: '',
+});
+
+const categoryEnabled = computed({
+  get: () => categoryForm.status === 1,
+  set: value => { categoryForm.status = value ? 1 : 0; },
 });
 
 const definitionImportMode = ref<'SELECTED' | 'CATEGORY'>('SELECTED');
@@ -1422,6 +1532,12 @@ const definitionRules: FormRules = {
   designerJson: [{ required: true, message: '请设计流程节点', trigger: 'blur' }],
 };
 
+const categoryRules: FormRules = {
+  domainCode: [{ required: true, message: '请选择业务域', trigger: 'change' }],
+  categoryName: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
+  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
+};
+
 const templateRules: FormRules = {
   templateName: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
   templateCode: [{ required: true, message: '请输入模板编码', trigger: 'blur' }],
@@ -1511,6 +1627,15 @@ async function loadDefinitionCategories(domainCode = definitionQuery.domainCode)
   }
   if (definitionForm.categoryId && !availableIds.has(definitionForm.categoryId)) {
     definitionForm.categoryId = '';
+  }
+}
+
+async function loadCategoryManageList() {
+  categoryManageLoading.value = true;
+  try {
+    categoryManageList.value = await workflowApi.categoriesList(undefined, categoryManageDomainCode.value || undefined);
+  } finally {
+    categoryManageLoading.value = false;
   }
 }
 
@@ -1793,6 +1918,63 @@ async function deleteDefinition(row: WorkflowDefinition) {
   await workflowApi.deleteDefinition(row.id!);
   ElMessage.success('删除成功');
   await loadDefinitions();
+}
+
+async function openCategoryManage() {
+  await loadDomainOptions();
+  categoryManageDomainCode.value = definitionQuery.domainCode;
+  categoryManageDialog.value = true;
+  await loadCategoryManageList();
+}
+
+function openCategoryForm(row?: WorkflowCategory) {
+  Object.assign(categoryForm, row || {
+    id: undefined,
+    categoryName: '',
+    categoryCode: '',
+    domainCode: categoryManageDomainCode.value || definitionQuery.domainCode || domainOptions.value[0]?.domainCode || 'WORKFLOW',
+    sort: 0,
+    status: 1,
+    remark: '',
+  });
+  categoryDialog.value = true;
+}
+
+async function saveCategory() {
+  await categoryFormRef.value?.validate();
+  saving.value = true;
+  try {
+    if (categoryForm.id) {
+      await workflowApi.updateCategory(categoryForm);
+    } else {
+      await workflowApi.createCategory(categoryForm);
+    }
+    ElMessage.success('保存成功');
+    categoryDialog.value = false;
+    categoryManageDomainCode.value = categoryForm.domainCode || categoryManageDomainCode.value;
+    await Promise.all([loadCategoryManageList(), loadDefinitionCategories(), loadDefinitions()]);
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function toggleCategoryStatus(row: WorkflowCategory) {
+  await workflowApi.updateCategory({
+    ...row,
+    status: row.status === 1 ? 0 : 1,
+  });
+  ElMessage.success(row.status === 1 ? '已停用' : '已启用');
+  await Promise.all([loadCategoryManageList(), loadDefinitionCategories(), loadDefinitions()]);
+}
+
+async function deleteCategory(row: WorkflowCategory) {
+  await ElMessageBox.confirm(`确认删除流程分类「${row.categoryName}」？`, '删除流程分类', { type: 'warning' });
+  await workflowApi.deleteCategory(row.id!);
+  ElMessage.success('删除成功');
+  if (definitionQuery.categoryId === row.id) {
+    definitionQuery.categoryId = '';
+  }
+  await Promise.all([loadCategoryManageList(), loadDefinitionCategories(), loadDefinitions()]);
 }
 
 async function openTemplateForm(row: WorkflowDefinition) {

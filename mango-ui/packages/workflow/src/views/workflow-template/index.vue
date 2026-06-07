@@ -27,6 +27,7 @@
           </div>
           <div class="table-actions">
             <el-button :icon="Upload" type="primary" @click="openPushDialog()">推送流程</el-button>
+            <el-button :icon="FolderAdd" @click="openCategoryManage">管理分类</el-button>
           </div>
         </div>
 
@@ -178,6 +179,65 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="categoryManageDialog" title="模板分类管理" width="760px">
+      <div class="category-manage-head">
+        <el-button :icon="Refresh" @click="loadTemplateCategories">刷新</el-button>
+        <el-button :icon="FolderAdd" type="primary" @click="openCategoryForm()">新增分类</el-button>
+      </div>
+      <el-table v-loading="categoryLoading" :data="templateCategoryManageList" border>
+        <el-table-column prop="categoryName" label="分类名称" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="categoryCode" label="分类编码" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="icon" label="图标" min-width="110" show-overflow-tooltip />
+        <el-table-column prop="sort" label="排序" width="80" />
+        <el-table-column label="状态" width="92">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="190" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openCategoryForm(row)">编辑</el-button>
+            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleCategoryStatus(row)">
+              {{ row.status === 1 ? '停用' : '启用' }}
+            </el-button>
+            <el-button link type="danger" @click="deleteCategory(row)">删除</el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无模板分类" />
+        </template>
+      </el-table>
+    </el-dialog>
+
+    <el-dialog v-model="categoryDialogVisible" :title="categoryForm.id ? '编辑模板分类' : '新增模板分类'" width="560px">
+      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px">
+        <el-form-item label="分类名称" prop="categoryName">
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入模板分类名称" />
+        </el-form-item>
+        <el-form-item label="分类编码" prop="categoryCode">
+          <el-input v-model="categoryForm.categoryCode" placeholder="请输入模板分类编码" />
+        </el-form-item>
+        <el-form-item label="图标">
+          <el-input v-model="categoryForm.icon" placeholder="如 CollectionTag" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="categoryForm.sort" :min="0" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-switch v-model="categoryEnabled" active-text="启用" inactive-text="停用" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="categoryForm.remark" :rows="3" type="textarea" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="categoryDialogVisible = false">取消</el-button>
+        <el-button :loading="saving" type="primary" @click="saveCategory">保存</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="pushDialogVisible" title="推送流程" width="600px">
       <el-form ref="pushFormRef" :model="pushForm" :rules="pushRules" label-position="top">
         <el-form-item label="目标机构" prop="targetTenantIds">
@@ -241,7 +301,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { Refresh, Search, Upload } from '@element-plus/icons-vue';
+import { FolderAdd, Refresh, Search, Upload } from '@element-plus/icons-vue';
 import DomainSideTree from '../../../../system/src/components/DomainSideTree/index.vue';
 import {
   defaultDesignerJson,
@@ -254,12 +314,14 @@ import {
 } from '../../api/workflow';
 
 const loading = ref(false);
+const categoryLoading = ref(false);
 const saving = ref(false);
 const tenantLoading = ref(false);
 const templates = ref<WorkflowTemplate[]>([]);
 const total = ref(0);
 const domainOptions = ref<WorkflowDomainOption[]>([]);
 const templateCategoryOptions = ref<WorkflowTemplateCategory[]>([]);
+const templateCategoryManageList = ref<WorkflowTemplateCategory[]>([]);
 const tenantOptions = ref<WorkflowTenantOption[]>([]);
 
 const query = reactive({
@@ -272,10 +334,13 @@ const query = reactive({
 });
 
 const templateDialogVisible = ref(false);
+const categoryManageDialog = ref(false);
+const categoryDialogVisible = ref(false);
 const pushDialogVisible = ref(false);
 const pushMode = ref<'SELECTED' | 'CATEGORY'>('SELECTED');
 const selectedTemplates = ref<WorkflowTemplate[]>([]);
 const templateFormRef = ref<FormInstance>();
+const categoryFormRef = ref<FormInstance>();
 const pushFormRef = ref<FormInstance>();
 
 const templateForm = reactive<WorkflowTemplate>({
@@ -288,10 +353,23 @@ const templateForm = reactive<WorkflowTemplate>({
   status: 'ENABLED',
 });
 
+const categoryForm = reactive<WorkflowTemplateCategory>({
+  categoryName: '',
+  categoryCode: '',
+  icon: '',
+  sort: 0,
+  status: 1,
+});
+
 const pushForm = reactive({
   targetTenantIds: [] as WorkflowId[],
   domainCode: 'WORKFLOW',
   templateIds: [] as WorkflowId[],
+});
+
+const categoryEnabled = computed({
+  get: () => categoryForm.status === 1,
+  set: value => { categoryForm.status = value ? 1 : 0; },
 });
 
 const domainTreeProps = {
@@ -322,6 +400,11 @@ const templateRules: FormRules = {
   designerJson: [{ required: true, message: '请输入设计器JSON', trigger: 'blur' }],
 };
 
+const categoryRules: FormRules = {
+  categoryName: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
+  categoryCode: [{ required: true, message: '请输入分类编码', trigger: 'blur' }],
+};
+
 const pushRules: FormRules = {
   targetTenantIds: [{ required: true, message: '请选择目标机构', trigger: 'change' }],
   domainCode: [{ required: true, message: '请选择目标业务域', trigger: 'change' }],
@@ -338,6 +421,15 @@ async function loadDomainOptions() {
 
 async function loadTemplateCategories() {
   templateCategoryOptions.value = await workflowApi.templateCategoriesList(1);
+}
+
+async function loadTemplateCategoryManageList() {
+  categoryLoading.value = true;
+  try {
+    templateCategoryManageList.value = await workflowApi.templateCategoriesList();
+  } finally {
+    categoryLoading.value = false;
+  }
 }
 
 function handleDomainsLoaded(domains: WorkflowDomainOption[]) {
@@ -419,6 +511,60 @@ async function saveTemplate() {
   } finally {
     saving.value = false;
   }
+}
+
+async function openCategoryManage() {
+  categoryManageDialog.value = true;
+  await loadTemplateCategoryManageList();
+}
+
+function openCategoryForm(row?: WorkflowTemplateCategory) {
+  Object.assign(categoryForm, row || {
+    id: undefined,
+    categoryName: '',
+    categoryCode: '',
+    icon: '',
+    sort: 0,
+    status: 1,
+    remark: '',
+  });
+  categoryDialogVisible.value = true;
+}
+
+async function saveCategory() {
+  await categoryFormRef.value?.validate();
+  saving.value = true;
+  try {
+    if (categoryForm.id) {
+      await workflowApi.updateTemplateCategory(categoryForm);
+    } else {
+      await workflowApi.createTemplateCategory(categoryForm);
+    }
+    ElMessage.success('保存成功');
+    categoryDialogVisible.value = false;
+    await Promise.all([loadTemplateCategories(), loadTemplateCategoryManageList(), loadTemplates()]);
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function toggleCategoryStatus(row: WorkflowTemplateCategory) {
+  await workflowApi.updateTemplateCategory({
+    ...row,
+    status: row.status === 1 ? 0 : 1,
+  });
+  ElMessage.success(row.status === 1 ? '已停用' : '已启用');
+  await Promise.all([loadTemplateCategories(), loadTemplateCategoryManageList(), loadTemplates()]);
+}
+
+async function deleteCategory(row: WorkflowTemplateCategory) {
+  await ElMessageBox.confirm(`确认删除模板分类「${row.categoryName}」？`, '删除模板分类', { type: 'warning' });
+  await workflowApi.deleteTemplateCategory(row.id!);
+  ElMessage.success('删除成功');
+  if (query.templateCategoryId === row.id) {
+    query.templateCategoryId = '';
+  }
+  await Promise.all([loadTemplateCategories(), loadTemplateCategoryManageList(), loadTemplates()]);
 }
 
 function openPreview(row: WorkflowTemplate) {
