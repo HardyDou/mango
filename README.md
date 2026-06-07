@@ -73,6 +73,8 @@ npx playwright test
 
 - [前端索引](./mango-ui/index.md)
 - [前端项目说明](./mango-ui/README.md)
+- [任务管理使用说明](./mango/mango-platform/mango-job/README.md)
+- [任务管理部署说明](./deploy/job/README.md)
 - [协作入口](./CLAUDE.md)
 - [研发总流程](./mango-pmo/rules/00-dev-flow.md)
 - [前端代码规范](./mango-pmo/rules/frontend/01-vue-code.md)

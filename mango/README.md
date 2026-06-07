@@ -83,6 +83,7 @@ mango/
 │   ├── mango-identity/         # 账号、身份资料与认证用户事实
 │   ├── mango-captcha/          # 验证码
 │   ├── mango-biz-notification/          # 消息
+│   ├── mango-job/             # 任务调度与任务管理
 │   ├── mango-org/              # 组织
 │   └── mango-system/           # 系统配置、字典、租户、日志、路由、区域、国际化
 ├── mango-extension/            # 可选扩展
@@ -111,3 +112,7 @@ mango/
 - `mango-xxx-starter-remote` - 远程调用
 
 详情参见 [05-module.md](./.claude/rules/05-module.md)
+
+## 平台能力文档
+
+- [任务管理使用说明](./mango-platform/mango-job/README.md)

@@ -104,8 +104,8 @@ Required `mango_job_alarm_rule` fields:
 | `app_code` | Job application code, for example `mango-job`. |
 | `job_id` | Specific job definition ID. Leave `null` for an app-level failed-instance rule. |
 | `alarm_type` | `INSTANCE_FAILED`. |
-| `notice_scene_code` | Notice business type. Mango Job maps this to `SendNoticeCommand.bizType`. |
-| `notice_template_code` | Notice template code. Mango Job passes it in notice params as `noticeTemplateCode`. |
+| `notice_scene_code` | Failed-instance notice business key. Current value must be `job.instance.failed`; Mango Job maps this to `SendNoticeCommand.bizType`. |
+| `notice_template_code` | Notice template code. Current SITE template is `job.instance.failed.site`; Mango Job passes it in notice params as `noticeTemplateCode`. |
 | `notice_params` | Optional JSON. Supported keys are `userId`, `userIds`, and `recipientRuleCode`. |
 | `enabled` | `1` to enable the rule. |
 
@@ -116,12 +116,14 @@ insert into mango_job_alarm_rule
   (tenant_id, app_code, job_id, rule_name, alarm_type, trigger_condition,
    notice_scene_code, notice_template_code, notice_params, enabled, created_at, updated_at)
 values
-  ('1', 'mango-job', null, 'Job failed alarm', 'INSTANCE_FAILED', '{"status":"FAILED"}',
-   'MANGO_JOB_FAILED', 'MANGO_JOB_FAILED_TEMPLATE',
-   '{"recipientRuleCode":"MANGO_JOB_OWNER"}', 1, now(), now());
+  ('1', 'mango-job', null, '定时任务失败告警', 'INSTANCE_FAILED', '{"status":"FAILED"}',
+   'job.instance.failed', 'job.instance.failed.site',
+   '{"recipientRuleCode":"jobDuty"}', 1, now(), now());
 ```
 
-Notice templates, recipient rules and third-party channels are configured in `mango-notice`. Production readiness requires a pre-production failed-job test that verifies the notice send record and the target system message, SMS, email or enterprise WeCom channel.
+Notice templates, recipient rules and third-party channels are configured in `mango-notice`. The seeded Mango SITE message template is in `mango/mango-platform/mango-notice/mango-notice-core/src/main/resources/db/migration/notice/V14__seed_job_site_message.sql`, and the notice business domain display name is `定时任务`.
+
+Production readiness requires a pre-production failed-job test that verifies the notice send record and the target system message, SMS, email or enterprise WeCom channel.
 
 ## Log Retention
 
