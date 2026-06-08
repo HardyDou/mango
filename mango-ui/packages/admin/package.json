@@ -36,7 +36,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "2.3.2",
     "@mango/admin-pages": "1.0.6",
     "@mango/admin-shell": "1.0.12",
     "@mango/app-runtime": "1.0.2",
@@ -44,7 +44,7 @@
     "@mango/common": "1.0.7",
     "@mango/rbac": "1.0.5",
     "@mango/system": "1.0.5",
-    "element-plus": "2.5.5"
+    "element-plus": "2.14.1"
   },
   "peerDependencies": {
     "@mango/calendar": "1.0.7",
