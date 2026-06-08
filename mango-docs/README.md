@@ -17,3 +17,7 @@
 规范统一放：
 
 - [mango-pmo](../mango-pmo/)
+
+文档资产归档边界见：
+
+- [mango-pmo/rules/06-document-assets.md](../mango-pmo/rules/06-document-assets.md)
