@@ -23,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -78,8 +79,11 @@ class MangoCrudServiceImplIntegrationTest {
                 10002L, "bob", "Bob", 1));
         insertOtherTenantUser();
 
+        assertAuditFieldsFilledOnCreate(aliceId);
+
         assertThat(aliceId).isEqualTo(10001L);
         assertThat(userCrudService.updateByCommand(new UserUpdateCommand(aliceId, "Alice Updated", 2))).isTrue();
+        assertAuditFieldsFilledOnUpdate(aliceId);
 
         UserVO detail = (UserVO) userCrudService.detailById(aliceId);
         assertThat(detail.nickname()).isEqualTo("Alice Updated");
@@ -111,6 +115,32 @@ class MangoCrudServiceImplIntegrationTest {
                 INSERT INTO demo_user (id, username, nickname, status, tenant_id, created_by, created_at, updated_by, updated_at)
                 VALUES (20001, 'mallory', 'Mallory', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
                 """);
+    }
+
+    private void assertAuditFieldsFilledOnCreate(Long id) {
+        Map<String, Object> row = jdbcTemplate.queryForMap("""
+                SELECT tenant_id, created_by, created_at, updated_by, updated_at
+                FROM demo_user
+                WHERE id = ?
+                """, id);
+        assertThat(row.get("TENANT_ID")).isEqualTo("tenant-a");
+        assertThat(row.get("CREATED_BY")).isEqualTo(1001L);
+        assertThat(row.get("CREATED_AT")).isNotNull();
+        assertThat(row.get("UPDATED_BY")).isEqualTo(1001L);
+        assertThat(row.get("UPDATED_AT")).isNotNull();
+    }
+
+    private void assertAuditFieldsFilledOnUpdate(Long id) {
+        Map<String, Object> row = jdbcTemplate.queryForMap("""
+                SELECT tenant_id, created_by, created_at, updated_by, updated_at
+                FROM demo_user
+                WHERE id = ?
+                """, id);
+        assertThat(row.get("TENANT_ID")).isEqualTo("tenant-a");
+        assertThat(row.get("CREATED_BY")).isEqualTo(1001L);
+        assertThat(row.get("CREATED_AT")).isNotNull();
+        assertThat(row.get("UPDATED_BY")).isEqualTo(1001L);
+        assertThat(row.get("UPDATED_AT")).isNotNull();
     }
 
     @SpringBootApplication
