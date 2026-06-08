@@ -57,6 +57,34 @@ mango add notice --project-dir ./claim-admin
 
 Business-owned files are not rewritten by `add`.
 
+## PMO Baseline Sync
+
+Sync or upgrade the Mango PMO baseline in an existing business project:
+
+```bash
+mango pmo sync --project-dir ./claim-admin
+```
+
+`pmo sync` creates or updates:
+
+- `business-pmo/mango-baseline/**`
+- `business-pmo/README.md`
+- missing `business-docs/plans/` examples
+
+It writes the Mango commit, CLI version, and sync time into the baseline README. It does not overwrite business-owned `business-pmo/rules/**` files, and it leaves existing business docs in place.
+
+Preview changes without writing files:
+
+```bash
+mango pmo sync --project-dir ./claim-admin --dry-run
+```
+
+When a root `AGENTS.md` points to an external `/Users/.../mango-pmo`, migrate it to the project-local baseline entry with:
+
+```bash
+mango pmo sync --project-dir ./claim-admin --write-agents
+```
+
 ## Business Module
 
 Generate an enterprise-owned business module in an existing generated project:
@@ -89,6 +117,7 @@ The CLI generates Mango consumer projects from released Maven and npm materials:
 - private Maven and npm registry configuration without credentials
 - unified Mango framework versions rendered into generated files
 - Mango PMO baseline documents in generated projects
+- Mango PMO baseline sync and upgrade for existing business projects
 - optional Mango module selection for custom business projects
 - additive optional module integration through `mango add`
 - enterprise-owned business module generation through `mango module add`
