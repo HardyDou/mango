@@ -3,6 +3,8 @@ package io.mango.infra.persistence.starter.datasource;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
+import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.apache.ibatis.annotations.Mapper;

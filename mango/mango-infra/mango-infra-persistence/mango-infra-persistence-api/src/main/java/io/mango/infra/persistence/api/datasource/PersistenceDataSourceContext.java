@@ -1,4 +1,4 @@
-package io.mango.infra.persistence.starter.datasource;
+package io.mango.infra.persistence.api.datasource;
 
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
@@ -6,6 +6,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * 当前线程数据源上下文。
@@ -13,6 +14,7 @@ import java.util.Optional;
 public final class PersistenceDataSourceContext {
 
     private static final ThreadLocal<Deque<String>> CONTEXT = ThreadLocal.withInitial(ArrayDeque::new);
+    private static volatile Supplier<Optional<String>> transactionBoundDataSourceLookup = Optional::empty;
 
     private PersistenceDataSourceContext() {
     }
@@ -36,11 +38,15 @@ public final class PersistenceDataSourceContext {
         CONTEXT.remove();
     }
 
+    public static void registerTransactionBoundDataSourceLookup(Supplier<Optional<String>> lookup) {
+        transactionBoundDataSourceLookup = lookup == null ? Optional::empty : lookup;
+    }
+
     private static void assertTransactionSwitchAllowed(String targetDataSourceName) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             return;
         }
-        Optional<String> currentName = current().or(MangoRoutingDataSource::boundTransactionDataSourceName);
+        Optional<String> currentName = current().or(transactionBoundDataSourceLookup);
         if (currentName.isPresent() && !targetDataSourceName.equals(currentName.get())) {
             throw new IllegalStateException("Cannot switch Mango datasource inside one transaction: current="
                     + currentName.get() + ", target=" + targetDataSourceName);

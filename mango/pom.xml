@@ -97,8 +97,23 @@
             </dependency>
             <dependency>
                 <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-core</artifactId>
+                <version>3.5.16</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-extension</artifactId>
+                <version>3.5.16</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
                 <version>3.5.16</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis</artifactId>
+                <version>3.5.19</version>
             </dependency>
 
             <!-- Spring Cloud -->
@@ -530,6 +545,11 @@
             <dependency>
                 <groupId>io.mango.infra.web</groupId>
                 <artifactId>mango-infra-web-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.infra.persistence</groupId>
+                <artifactId>mango-infra-persistence-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

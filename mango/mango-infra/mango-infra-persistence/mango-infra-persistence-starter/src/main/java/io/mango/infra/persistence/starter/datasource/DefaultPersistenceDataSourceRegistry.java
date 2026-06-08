@@ -1,5 +1,7 @@
 package io.mango.infra.persistence.starter.datasource;
 
+import io.mango.infra.persistence.api.datasource.PersistenceDataSourceDefinition;
+
 import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.LinkedHashMap;

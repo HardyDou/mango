@@ -1,4 +1,4 @@
-package io.mango.infra.persistence.starter.datasource;
+package io.mango.infra.persistence.api.datasource;
 
 /**
  * Mango 数据源定义。

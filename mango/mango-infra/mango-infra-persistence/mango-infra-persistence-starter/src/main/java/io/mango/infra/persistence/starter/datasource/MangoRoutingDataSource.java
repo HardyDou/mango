@@ -1,5 +1,6 @@
 package io.mango.infra.persistence.starter.datasource;
 
+import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -16,6 +17,10 @@ public class MangoRoutingDataSource extends AbstractRoutingDataSource {
     private static final ThreadLocal<Boolean> LAST_ROUTED_CLEANUP_REGISTERED = new ThreadLocal<>();
 
     private final PersistenceDataSourceRegistry registry;
+
+    static {
+        PersistenceDataSourceContext.registerTransactionBoundDataSourceLookup(MangoRoutingDataSource::boundTransactionDataSourceName);
+    }
 
     public MangoRoutingDataSource(PersistenceDataSourceRegistry registry) {
         this.registry = registry;

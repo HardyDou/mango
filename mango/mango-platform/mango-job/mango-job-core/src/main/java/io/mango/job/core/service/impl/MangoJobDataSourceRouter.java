@@ -1,7 +1,7 @@
 package io.mango.job.core.service.impl;
 
-import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceContext;
-import io.mango.infra.persistence.starter.datasource.PersistenceModuleDataSourceResolver;
+import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
+import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;

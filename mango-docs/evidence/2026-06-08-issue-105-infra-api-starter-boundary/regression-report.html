@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Issue 105 Regression Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18202a;
+      --muted: #5c6673;
+      --line: #d7dde5;
+      --panel: #f7f9fb;
+      --ok: #0f7b4f;
+      --accent: #2459a8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 40px 44px 56px;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 22px;
+      margin-bottom: 26px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 5px 9px;
+      background: #fff;
+    }
+    .pass {
+      color: var(--ok);
+      border-color: rgba(15, 123, 79, .35);
+      background: rgba(15, 123, 79, .08);
+      font-weight: 650;
+    }
+    section { margin-top: 26px; }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+    ul {
+      margin: 0;
+      padding-left: 22px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { background: var(--panel); color: var(--ink); }
+    tr:last-child td { border-bottom: 0; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--accent);
+      font-size: .94em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 16px;
+      background: var(--panel);
+    }
+    .box p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Issue 105 回归测试报告</h1>
+      <div class="meta">
+        <span class="pill">#105 infra API/Starter 边界治理</span>
+        <span class="pill">2026-06-08</span>
+        <span class="pill">feature/issue-105-infra-api-starter-boundary</span>
+        <span class="pill pass">结论：通过</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>改动摘要</h2>
+      <ul>
+        <li>新增 <code>mango-infra-persistence-api</code>，承载持久化轻量契约和数据源 Resolver 接口。</li>
+        <li><code>mango-infra-persistence-starter</code> 继续承载自动配置、Flyway、MyBatis-Plus 和运行时实现。</li>
+        <li><code>mango-job-core</code> 改依赖 API 模块，并显式声明自身使用的 MyBatis/Jackson 依赖。</li>
+        <li><code>mango:check dependency</code> 支持 Maven reactor session 作用域，局部模块检查不再扫描无关历史模块。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>验证结果</h2>
+      <table>
+        <thead>
+          <tr><th>验证项</th><th>结果</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Maven plugin 安装</td><td>通过</td></tr>
+          <tr><td>persistence API/starter/web-starter + job-core + maven-plugin 测试</td><td>通过</td></tr>
+          <tr><td>job-core scoped dependency check</td><td>通过，<code>passed=true</code></td></tr>
+          <tr><td>monolith 编译回归</td><td>通过</td></tr>
+          <tr><td><code>git diff --check</code></td><td>通过</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="grid">
+      <div class="box">
+        <h2>回归范围</h2>
+        <p>覆盖持久化契约包路径、多数据源上下文、事务切换保护、Job core 依赖边界、Maven checker 局部 reactor 行为和 monolith 应用装配编译。</p>
+      </div>
+      <div class="box">
+        <h2>剩余风险</h2>
+        <p>全仓仍存在历史 <code>core -> *-starter</code> 债务。本次按 #105 范围验证 Job scoped check 与 checker 作用域，未放松原有禁止规则。</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

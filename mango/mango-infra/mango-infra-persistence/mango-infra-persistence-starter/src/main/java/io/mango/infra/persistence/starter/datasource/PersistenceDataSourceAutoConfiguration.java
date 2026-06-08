@@ -1,5 +1,7 @@
 package io.mango.infra.persistence.starter.datasource;
 
+import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
+
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
