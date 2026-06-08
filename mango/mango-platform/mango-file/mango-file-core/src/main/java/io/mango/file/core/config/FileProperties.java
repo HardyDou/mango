@@ -22,6 +22,9 @@ public class FileProperties {
     /** 默认本地存储桶。 */
     private String defaultBucket = "local";
 
+    /** 文件代理访问外部基准地址，例如 https://example.com/api。 */
+    private String publicBaseUrl;
+
     /** 本地存储配置。 */
     private Local local = new Local();
 
