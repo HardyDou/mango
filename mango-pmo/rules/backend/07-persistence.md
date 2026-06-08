@@ -31,6 +31,20 @@
 - 禁止新增 `job`、`system`、`file` 这类无 `mango_` 前缀的模块物理数据库名。
 - 本地临时验证库和 worktree 库可以使用 `mango_dev_*`，但不得作为模块部署配置样例。
 
+## 0.3 租户自动隔离规则
+
+- 继承 `TenantEntity` 或包含 `tenant_id` 的普通租户表默认纳入 MyBatis-Plus `TenantLineInnerInterceptor`。
+- 普通 CRUD、BaseMapper、Wrapper、分页查询和自定义 Mapper/XML SQL 默认依赖租户插件自动追加 `tenant_id` 过滤。
+- 业务代码禁止在普通租户表查询中重复手写 `.eq(Entity::getTenantId, currentTenantId)` 或等价 SQL 条件；确需跨租户、租户初始化或授权校验时必须显式建模并写明场景。
+- 插入普通租户实体禁止手工 `setTenantId`；由 `PersistenceAuditMetaObjectHandler` 根据 `MangoContextHolder` / `PersistenceContext` 自动填充。
+- 业务 VO 可以返回 `tenantId` 用于审计、诊断或跨租户管理页面展示，但不得把客户端传入的 `tenantId` 当作普通 CRUD 隔离条件。
+- `mango.persistence.mybatis-plus.tenant.excluded-tables` 只配置全局元数据表、无租户字段表、跨租户授权关系表、迁移历史表和基础设施内部表；新增例外表必须说明所有权、访问权限和测试口径。
+- 当前默认例外表包括 Flyway/Liquibase 历史表、KV 基础设施表、租户/字典/区域/平台配置表、授权资源/菜单/应用元数据表、前端运行时元数据表、身份用户和租户成员关系表。
+- `mango.persistence.schema-validation.excluded-tables` 只用于结构校验例外，不等同于租户过滤例外；两份配置不得混用语义。
+- 任务、异步、开放接口、远程 Worker、跨租户授权、租户初始化和平台运营场景必须在进入 Mapper 前显式建立租户上下文；缺少上下文时不得依赖默认平台租户静默执行。
+- 非 Web 任务如果配置 `mango.persistence.mybatis-plus.tenant.default-tenant-id`，只能用于明确单租户任务或本地验证，不得作为多租户业务链路的隐式兜底。
+- 自定义 Mapper SQL、XML SQL、`Db`/`DbHelper`/`DbUtil` 等绕开实体服务的访问必须有集成测试证明租户插件生效；插件无法覆盖的 SQL 必须显式标注例外并补权限/租户断言。
+
 ## 1. 事务规则
 
 - 写操作必须放在明确事务边界内。

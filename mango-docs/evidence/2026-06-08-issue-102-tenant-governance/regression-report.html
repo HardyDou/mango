@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Issue 102 回归测试报告</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f7f8fa;
+      color: #1f2937;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+    .meta {
+      margin-bottom: 24px;
+      color: #4b5563;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #d9dee6;
+    }
+    th,
+    td {
+      padding: 11px 13px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    th {
+      background: #eef2f7;
+      color: #111827;
+      font-weight: 650;
+    }
+    .pass {
+      color: #047857;
+      font-weight: 700;
+    }
+    .panel {
+      margin-top: 20px;
+      padding: 18px;
+      background: #fff;
+      border: 1px solid #d9dee6;
+      border-radius: 8px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Issue 102 回归测试报告</h1>
+    <div class="meta">tenantId 自动注入与业务无感知租户隔离规范 · 2026-06-08 · feature/issue-102-tenant-governance</div>
+    <table>
+      <thead>
+        <tr>
+          <th>场景</th>
+          <th>关键断言</th>
+          <th>结果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>BaseMapper 自动过滤</td><td>selectList 不手写 tenant 条件，仅返回当前租户数据</td><td class="pass">PASS</td></tr>
+        <tr><td>Wrapper 自动过滤</td><td>LambdaQueryWrapper 只按业务字段查询，不串租户</td><td class="pass">PASS</td></tr>
+        <tr><td>插入自动填充</td><td>未调用 setTenantId，tenant_id 和审计字段来自上下文</td><td class="pass">PASS</td></tr>
+        <tr><td>自定义 XML SQL</td><td>XML SQL 不写 tenant 条件，租户插件自动追加过滤</td><td class="pass">PASS</td></tr>
+        <tr><td>自定义 XML 分页</td><td>分页总数和记录均按当前租户过滤</td><td class="pass">PASS</td></tr>
+        <tr><td>既有持久化回归</td><td>CRUD、多表查询、自动配置、审计填充测试全部通过</td><td class="pass">PASS</td></tr>
+        <tr><td>PMO/CLI 回归</td><td>preflight 加载 DB/持久化规则，CLI baseline sync 回归通过</td><td class="pass">PASS</td></tr>
+      </tbody>
+    </table>
+    <section class="panel">
+      <h2>执行命令</h2>
+      <pre>mvn -q -f mango/pom.xml -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter -am -Dtest=TenantIsolationIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test -Dcheckstyle.skip=true
+mvn -q -f mango/pom.xml -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter -am -Dtest=TenantIsolationIntegrationTest,MangoCrudServiceImplIntegrationTest,MultiTableQueryServiceIntegrationTest,PersistenceMybatisPlusAutoConfigurationTest,PersistenceAuditAutoConfigurationTest -Dsurefire.failIfNoSpecifiedTests=false test -Dcheckstyle.skip=true
+pnpm --filter @mango/cli test</pre>
+    </section>
+    <section class="panel">
+      <h2>未验证项与风险</h2>
+      <ul>
+        <li>未批量重构历史显式 tenantId 代码；已输出模块迁移清单。</li>
+        <li>未连接真实 MySQL；已用 H2 MySQL mode 覆盖 MyBatis-Plus 插件链路。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
