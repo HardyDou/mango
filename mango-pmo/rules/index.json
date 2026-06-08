@@ -51,6 +51,10 @@
       "path": "rules/05-ai-delivery-quality.md",
       "reason": "AI 交付质量门禁"
     },
+    "process.documentAssets": {
+      "path": "rules/06-document-assets.md",
+      "reason": "文档资产归档边界"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -129,7 +133,7 @@
     "tech-lead": ["agent.techLead"],
     "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.aiDeliveryQuality"],
     "qa": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
-    "pmo": ["agent.pmo", "process.aiDeliveryQuality"]
+    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
   },
   "phases": {
     "requirement": ["product.prd"],
@@ -137,7 +141,7 @@
     "develop": ["agent.dev", "process.devEnvironment", "process.aiDeliveryQuality"],
     "verify": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
     "release": ["process.aiDeliveryQuality"],
-    "governance": ["agent.pmo", "process.aiDeliveryQuality"]
+    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
   },
   "bundles": {
     "deliveryContract": {
@@ -219,8 +223,13 @@
     },
     "pmo": {
       "paths": ["mango-pmo/**", "rules/**", "agents/**"],
-      "keywords": ["PMO", "规范治理", "规则治理", "Agent 入口", "Agent入口", "流程规范"],
-      "include": ["agent.pmo", "process.aiDeliveryQuality"]
+      "keywords": ["PMO", "规范治理", "规则治理", "Agent 入口", "Agent入口", "流程规范", "规范源", "文档归档", "归档边界"],
+      "include": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
+    },
+    "documentAssets": {
+      "paths": ["mango-docs/**", "mango-pmo/rules/**", "README.md", "**/README.md"],
+      "keywords": ["文档资产", "归档边界", "规范源", "唯一规范源", "使用说明", "设计文档", "交付记录", "开发者指南", "模块 README"],
+      "include": ["process.documentAssets"]
     },
     "devEnvironment": {
       "paths": ["scripts/**", ".mango/**"],
