@@ -54,16 +54,11 @@ import io.mango.file.core.storage.FileStorageRouter;
 import io.mango.file.core.storage.MultipartUpload;
 import io.mango.file.core.storage.UploadPartSign;
 import io.mango.infra.context.core.MangoContextHolder;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -112,6 +107,7 @@ public class FileServiceImpl implements IFileService {
     private final FileUploadPartMapper fileUploadPartMapper;
     private final FileDirectoryMapper fileDirectoryMapper;
     private final ObjectMapper objectMapper;
+    private final FileAccessUrlAssembler fileAccessUrlAssembler;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -692,7 +688,7 @@ public class FileServiceImpl implements IFileService {
 
     private void fillDirectAccess(FilePreviewVO vo, FileRecord record, FileSettingsVO settings) {
         vo.setDirectAccess(false);
-        String fallbackUrl = downloadUrl(record.getId());
+        String fallbackUrl = fileAccessUrlAssembler.downloadUrl(record.getId());
         vo.setPreviewUrl(fallbackUrl);
         vo.setDownloadUrl(fallbackUrl);
         if (FileAccessMode.of(settings.getAccessMode()) != FileAccessMode.DIRECT) {
@@ -705,15 +701,17 @@ public class FileServiceImpl implements IFileService {
         if (!shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
+                        String externalUrl = fileAccessUrlAssembler.externalize(url);
                         vo.setDirectAccess(true);
-                        vo.setPreviewUrl(url);
-                        vo.setDirectPreviewUrl(url);
+                        vo.setPreviewUrl(externalUrl);
+                        vo.setDirectPreviewUrl(externalUrl);
                     });
             fileStorageRouter.publicDownloadUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
+                        String externalUrl = fileAccessUrlAssembler.externalize(url);
                         vo.setDirectAccess(true);
-                        vo.setDownloadUrl(url);
-                        vo.setDirectDownloadUrl(url);
+                        vo.setDownloadUrl(externalUrl);
+                        vo.setDirectDownloadUrl(externalUrl);
                     });
             fillConfiguredPreviewUrl(vo, record, settings);
             return;
@@ -723,17 +721,19 @@ public class FileServiceImpl implements IFileService {
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                 .ifPresent(url -> {
+                    String externalUrl = fileAccessUrlAssembler.externalize(url);
                     vo.setDirectAccess(true);
-                    vo.setPreviewUrl(url);
-                    vo.setDirectPreviewUrl(url);
+                    vo.setPreviewUrl(externalUrl);
+                    vo.setDirectPreviewUrl(externalUrl);
                     vo.setDirectPreviewExpireSeconds(previewExpireSeconds);
                 });
         fileStorageRouter.presignedDownloadUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(downloadExpireSeconds))
                 .ifPresent(url -> {
+                    String externalUrl = fileAccessUrlAssembler.externalize(url);
                     vo.setDirectAccess(true);
-                    vo.setDownloadUrl(url);
-                    vo.setDirectDownloadUrl(url);
+                    vo.setDownloadUrl(externalUrl);
+                    vo.setDirectDownloadUrl(externalUrl);
                     vo.setDirectDownloadExpireSeconds(downloadExpireSeconds);
                 });
         fillConfiguredPreviewUrl(vo, record, settings);
@@ -745,7 +745,8 @@ public class FileServiceImpl implements IFileService {
         }
         long expireSeconds = positiveOrDefault(settings.getPreviewExpireSeconds(), 600L);
         String sourceUrl = StringUtils.hasText(vo.getDirectDownloadUrl()) ? vo.getDirectDownloadUrl() : vo.getDownloadUrl();
-        vo.setPreviewUrl(FilePreviewUrlBuilder.build(settings.getPreviewProviderUrl(), record, sourceUrl, expireSeconds));
+        String previewUrl = FilePreviewUrlBuilder.build(settings.getPreviewProviderUrl(), record, sourceUrl, expireSeconds);
+        vo.setPreviewUrl(fileAccessUrlAssembler.externalize(previewUrl));
     }
 
     private boolean requiresPreviewProvider(FileRecord record, FileSettingsVO settings) {
@@ -753,7 +754,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     private void fillDirectAccess(FileRecordVO vo, FileRecord record, FileSettingsVO settings) {
-        String fallbackUrl = downloadUrl(record.getId());
+        String fallbackUrl = fileAccessUrlAssembler.downloadUrl(record.getId());
         vo.setUrl(fallbackUrl);
         vo.setPreviewUrl(fallbackUrl);
         vo.setDownloadUrl(fallbackUrl);
@@ -767,16 +768,18 @@ public class FileServiceImpl implements IFileService {
         if (!shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
+                        String externalUrl = fileAccessUrlAssembler.externalize(url);
                         vo.setDirectAccess(true);
-                        vo.setUrl(url);
-                        vo.setPreviewUrl(url);
-                        vo.setDirectPreviewUrl(url);
+                        vo.setUrl(externalUrl);
+                        vo.setPreviewUrl(externalUrl);
+                        vo.setDirectPreviewUrl(externalUrl);
                     });
             fileStorageRouter.publicDownloadUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
+                        String externalUrl = fileAccessUrlAssembler.externalize(url);
                         vo.setDirectAccess(true);
-                        vo.setDownloadUrl(url);
-                        vo.setDirectDownloadUrl(url);
+                        vo.setDownloadUrl(externalUrl);
+                        vo.setDirectDownloadUrl(externalUrl);
                     });
             return;
         }
@@ -785,105 +788,22 @@ public class FileServiceImpl implements IFileService {
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                     .ifPresent(url -> {
+                        String externalUrl = fileAccessUrlAssembler.externalize(url);
                         vo.setDirectAccess(true);
-                        vo.setUrl(url);
-                        vo.setPreviewUrl(url);
-                        vo.setDirectPreviewUrl(url);
+                        vo.setUrl(externalUrl);
+                        vo.setPreviewUrl(externalUrl);
+                        vo.setDirectPreviewUrl(externalUrl);
                         vo.setDirectPreviewExpireSeconds(previewExpireSeconds);
                     });
         fileStorageRouter.presignedDownloadUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(downloadExpireSeconds))
                 .ifPresent(url -> {
+                    String externalUrl = fileAccessUrlAssembler.externalize(url);
                     vo.setDirectAccess(true);
-                    vo.setDownloadUrl(url);
-                    vo.setDirectDownloadUrl(url);
+                    vo.setDownloadUrl(externalUrl);
+                    vo.setDirectDownloadUrl(externalUrl);
                     vo.setDirectDownloadExpireSeconds(downloadExpireSeconds);
                 });
-    }
-
-    private String downloadUrl(Long fileId) {
-        String path = "/file/files/download";
-        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-        if (attributes instanceof ServletRequestAttributes servletAttributes) {
-            HttpServletRequest request = servletAttributes.getRequest();
-            String scheme = firstHeaderValue(request, "X-Forwarded-Proto", request.getScheme());
-            String forwardedHost = firstHeaderValue(request, "X-Forwarded-Host", null);
-            String host = StringUtils.hasText(forwardedHost) ? forwardedHost : request.getServerName();
-            int port = resolvePort(request, scheme, host);
-            host = stripPort(host);
-            UriComponentsBuilder builder = UriComponentsBuilder.newInstance()
-                    .scheme(scheme)
-                    .host(host);
-            if (port > 0 && !isDefaultPort(scheme, port)) {
-                builder.port(port);
-            }
-            return builder.path(normalizePath(firstHeaderValue(request, "X-Forwarded-Prefix", request.getContextPath())))
-                    .path(path)
-                    .queryParam("id", fileId)
-                    .build()
-                    .toUriString();
-        }
-        return path + "?id=" + fileId;
-    }
-
-    private String firstHeaderValue(HttpServletRequest request, String headerName, String fallback) {
-        String value = request.getHeader(headerName);
-        if (!StringUtils.hasText(value)) {
-            return fallback;
-        }
-        String first = value.split(",", 2)[0].trim();
-        return StringUtils.hasText(first) ? first : fallback;
-    }
-
-    private int resolvePort(HttpServletRequest request, String scheme, String host) {
-        String forwardedPort = firstHeaderValue(request, "X-Forwarded-Port", null);
-        if (StringUtils.hasText(forwardedPort)) {
-            try {
-                return Integer.parseInt(forwardedPort);
-            } catch (NumberFormatException ignored) {
-                return request.getServerPort();
-            }
-        }
-        int hostPort = portFromHost(host);
-        return hostPort > 0 ? hostPort : request.getServerPort();
-    }
-
-    private int portFromHost(String host) {
-        if (!StringUtils.hasText(host) || host.startsWith("[")) {
-            return -1;
-        }
-        int index = host.lastIndexOf(':');
-        if (index < 0 || index == host.length() - 1) {
-            return -1;
-        }
-        try {
-            return Integer.parseInt(host.substring(index + 1));
-        } catch (NumberFormatException ignored) {
-            return -1;
-        }
-    }
-
-    private String stripPort(String host) {
-        if (!StringUtils.hasText(host) || host.startsWith("[")) {
-            return host;
-        }
-        int index = host.lastIndexOf(':');
-        if (index < 0) {
-            return host;
-        }
-        return host.substring(0, index);
-    }
-
-    private String normalizePath(String path) {
-        if (!StringUtils.hasText(path) || "/".equals(path)) {
-            return "";
-        }
-        return path.startsWith("/") ? path : "/" + path;
-    }
-
-    private boolean isDefaultPort(String scheme, int port) {
-        return ("http".equalsIgnoreCase(scheme) && port == 80)
-                || ("https".equalsIgnoreCase(scheme) && port == 443);
     }
 
     private boolean shouldUsePresignedUrl(FileRecord record, FileSettingsVO settings) {

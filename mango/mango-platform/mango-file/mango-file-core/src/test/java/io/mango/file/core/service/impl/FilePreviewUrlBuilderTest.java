@@ -30,6 +30,17 @@ class FilePreviewUrlBuilderTest {
     }
 
     @Test
+    void build_模板使用fileUrl_保留外部基准地址() {
+        FileRecord record = record();
+
+        String url = FilePreviewUrlBuilder.build("https://preview.example.com/onlinePreview?source={fileUrl}", record,
+                "https://files.example.com/api/file/files/download?id=100", 900L);
+
+        assertThat(url).isEqualTo("https://preview.example.com/onlinePreview"
+                + "?source=https://files.example.com/api/file/files/download%3Fid%3D100");
+    }
+
+    @Test
     void build_地址模板含占位符_替换占位符() {
         FileRecord record = record();
 

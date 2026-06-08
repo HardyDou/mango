@@ -165,6 +165,16 @@ mango:
 
 上传校验以后端策略为准，前端只做提前提示。高频上传路径读取的是按机构缓存的策略，策略保存后会清理对应机构缓存。
 
+文件代理访问地址优先使用 `mango.file.public-base-url` 作为外部基准地址，例如：
+
+```yaml
+mango:
+  file:
+    public-base-url: https://mango.example.com/api
+```
+
+未配置时，文件服务会使用 `X-Forwarded-Proto`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Prefix` 或当前请求上下文组装上传、详情、预览响应中的代理下载/预览地址。没有请求上下文且未配置外部基准地址时，才降级为相对 `/file/files/download?id=...`。这些地址仍只属于运行时响应，不允许业务系统持久化。
+
 ## 物理对象、秒传与分片上传
 
 文件服务把业务文件记录和底层物理对象拆开：

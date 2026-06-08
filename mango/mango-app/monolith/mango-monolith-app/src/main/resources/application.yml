@@ -94,6 +94,9 @@ mango:
       token-store: true
       outbox: true
   persistence:
+    mybatis-plus:
+      tenant:
+        default-tenant-id: ${MANGO_DEFAULT_TENANT_ID:1}
     flyway:
       modules:
         system:
