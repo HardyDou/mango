@@ -10,7 +10,7 @@
 ## 2. 目录归属
 
 - 后端测试放到被测 Maven 模块的 `src/test/java` 或 `src/test/resources`。
-- 后端跨模块能力链路放到约定的聚合测试模块或 app 模块。
+- 后端跨模块能力链路放到约定的聚合测试模块，例如 `mango-infra-test` 或 app 模块。
 - 前端应用 E2E 放到对应应用的 `e2e/specs`。
 - 前端 E2E 公共 fixture、登录、接口和截图工具放到对应应用的 `e2e/support`。
 - 前端包单测和组件测试放到对应包的 `src/__tests__`。
@@ -19,7 +19,7 @@
 
 ## 3. Evidence 边界
 
-- `business-docs/evidence/` 只保存某次验收的最终证据。
+- `mango-docs/evidence/` 只保存某次验收的最终证据。
 - 允许保存截图、报告、trace 摘要和可复核脚本副本。
 - 禁止把生成项目、依赖缓存、构建产物、运行日志和临时下载文件放入 evidence。
 - 可复用脚本在 evidence 中只能作为当次执行副本；长期入口必须沉淀到正式测试目录。
@@ -29,7 +29,7 @@
 - 测试生成的临时项目放到 `.runtime/projects/`。
 - 测试包缓存放到 `.runtime/package-store/`。
 - 测试日志、中间截图、下载文件、trace/video 原始产物放到 `.runtime/` 子目录。
-- 任务结束后只把最终证据复制到 `business-docs/evidence/`。
+- 任务结束后只把最终证据复制到 `mango-docs/evidence/`。
 - `.runtime/` 内容不得提交。
 
 ## 5. 命名规则
@@ -43,10 +43,10 @@
 
 - 单模块测试可以使用模块原生命令。
 - 跨模块回归必须提供明确命令入口。
-- 主框架 E2E 入口应放在前端应用的 `e2e` 目录。
-- 微前端 E2E 入口应放在壳应用的 `e2e` 目录。
-- CLI 企业项目回归入口应放在 CLI 包测试目录或 CLI 包脚本中。
-- 后端全仓测试入口使用 Maven 聚合命令。
+- 主框架 E2E 入口应放在 `mango-ui/apps/mango-admin/e2e`。
+- 微前端 E2E 入口应放在 `mango-ui/apps/mango-admin-shell/e2e`。
+- CLI 企业项目回归入口应放在 `mango-ui/packages/mango-cli/tests` 或 CLI 包脚本中。
+- 后端全仓测试入口使用仓库 Maven 聚合命令。
 
 ## 7. 禁止事项
 

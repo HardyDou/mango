@@ -21,6 +21,16 @@
 
 模板或 CLI 改动必须用生成后的企业业务项目做真实验证，至少覆盖数据库 migration、后端启动、创建记录、分页回显、详情查询和前端页面调用。
 
+## 0.2 数据库命名规则
+
+- Mango 主库默认使用 `mango`。
+- Mango 模块独立数据库统一使用 `mango_{module}`。
+- `{module}` 默认取 `module-path`；没有 `module-path` 时取 `module-name` 去掉开头的 `mango-`，并将 `-` 转为 `_`。
+- 示例：`mango-job` / `job` 对应 `mango_job`，`mango-system` / `system` 对应 `mango_system`。
+- 第三方组件内部库如果归属某个 Mango 模块托管，默认共置到该模块库；如果独立部署，也必须在设计中写清所有权、migration 归属、账号权限和备份边界。
+- 禁止新增 `job`、`system`、`file` 这类无 `mango_` 前缀的模块物理数据库名。
+- 本地临时验证库和 worktree 库可以使用 `mango_dev_*`，但不得作为模块部署配置样例。
+
 ## 1. 事务规则
 
 - 写操作必须放在明确事务边界内。

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Issue 104 回归测试报告</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f6f7f9;
+      color: #1f2937;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+    .meta {
+      margin-bottom: 24px;
+      color: #4b5563;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid #d7dce2;
+    }
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    th {
+      background: #eef2f7;
+      color: #111827;
+      font-weight: 650;
+    }
+    .pass {
+      color: #047857;
+      font-weight: 700;
+    }
+    .panel {
+      margin-top: 22px;
+      padding: 18px;
+      background: #ffffff;
+      border: 1px solid #d7dce2;
+      border-radius: 8px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Issue 104 回归测试报告</h1>
+    <div class="meta">CLI 支持现有业务项目同步/升级 Mango PMO baseline · 2026-06-08 · feature/issue-104-cli-pmo-baseline-sync</div>
+    <table>
+      <thead>
+        <tr>
+          <th>场景</th>
+          <th>关键断言</th>
+          <th>结果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>dry-run</td><td>输出 add/update/skip/warn 计划，不创建 business-pmo</td><td class="pass">PASS</td></tr>
+        <tr><td>baseline sync</td><td>生成 mango-baseline、business-pmo README、缺失的 plans 示例</td><td class="pass">PASS</td></tr>
+        <tr><td>preflight</td><td>同步后可执行验收命令，加载后端开发流与前端测试规范</td><td class="pass">PASS</td></tr>
+        <tr><td>DB 命名规则</td><td>包含 mango_{module} 规则，禁止 job/system/file 无前缀库名</td><td class="pass">PASS</td></tr>
+        <tr><td>业务资产保护</td><td>不覆盖 business-pmo/rules/** 和已有 business-docs/plans 文档</td><td class="pass">PASS</td></tr>
+        <tr><td>AGENTS 迁移</td><td>默认 warn；--write-agents 迁移为项目本地 baseline 入口</td><td class="pass">PASS</td></tr>
+        <tr><td>历史功能回归</td><td>full/custom/add/module 既有 CLI 验收全部通过</td><td class="pass">PASS</td></tr>
+      </tbody>
+    </table>
+    <section class="panel">
+      <h2>执行命令</h2>
+      <pre>pnpm --filter @mango/cli test
+git diff --check</pre>
+    </section>
+    <section class="panel">
+      <h2>结果摘要</h2>
+      <pre>release-versions.json matches 15 local package versions.
+mango-cli full/custom/add/module/pmo sync checks passed.</pre>
+    </section>
+    <section class="panel">
+      <h2>未验证项与风险</h2>
+      <ul>
+        <li>未连接真实外部业务仓执行同步；已用 CLI 临时业务项目覆盖文件计划、写入、保护和 preflight 行为。</li>
+        <li>未发布 npm 包；本次仅验证源码 CLI。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

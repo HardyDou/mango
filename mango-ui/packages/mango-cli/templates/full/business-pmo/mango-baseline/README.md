@@ -6,6 +6,8 @@
 
 ```text
 Mango commit: {{mangoBaselineCommit}}
+Mango CLI version: {{mangoCliVersion}}
+Synced at: {{mangoBaselineSyncedAt}}
 ```
 
 业务团队不得在普通业务需求中直接修改本目录。需要调整 Mango 框架规范时，应回到 Mango 仓库完成 PMO 治理，再通过升级 Mango 版本同步新的 baseline。
