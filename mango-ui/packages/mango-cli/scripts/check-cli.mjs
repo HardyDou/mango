@@ -46,6 +46,7 @@ try {
     'frontend/src/mango-common.d.ts',
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
+    'scripts/dev-workspace.sh',
     'scripts/backend-dev.sh',
     'backend/pom.xml',
     'backend/app/pom.xml',
@@ -122,6 +123,7 @@ try {
 
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
+  const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
   if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>')
     || pom.includes('{{')
@@ -140,10 +142,19 @@ try {
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
   }
-  if (!backendDevScript.includes('mvn -f backend/pom.xml -DskipTests install')
-    || !backendDevScript.includes('mvn -f backend/app/pom.xml')
-    || !backendDevScript.includes('MANGO_BACKEND_PORT')) {
-    throw new Error('generated backend dev script must install local modules before starting app');
+  if (!devWorkspaceScript.includes('SPRING_BOOT_PLUGIN="org.springframework.boot:spring-boot-maven-plugin:')
+    || !devWorkspaceScript.includes('mvn -f backend/pom.xml -DskipTests install')
+    || !devWorkspaceScript.includes('-Dspring-boot.run.arguments="$(backend_arguments)"')
+    || !devWorkspaceScript.includes('diagnose_backend_failure')
+    || !devWorkspaceScript.includes('DEFAULT_DB_NAME="mango_full_acceptance"')) {
+    throw new Error('generated dev-workspace script must own backend development startup and diagnostics');
+  }
+  if (!backendDevScript.includes('Use scripts/dev-workspace.sh backend')
+    || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
+    throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
+  }
+  if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0) {
+    throw new Error('generated dev-workspace script must be executable');
   }
   if ((statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
     throw new Error('generated backend dev script must be executable');
