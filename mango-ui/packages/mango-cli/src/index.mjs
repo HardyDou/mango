@@ -976,7 +976,6 @@ function renderBackendManagedDependencies(preset, selectedModules) {
     return renderDependencyXml(
       [
         { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
-        { groupId: 'io.mango.platform.seed', artifactId: 'mango-seed-starter' },
         ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
       ],
       true,
@@ -994,7 +993,6 @@ function renderBackendDependencies(preset, selectedModules) {
   if (preset === 'full') {
     return renderDependencyXml([
       { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
-      { groupId: 'io.mango.platform.seed', artifactId: 'mango-seed-starter' },
     ], false, 8);
   }
   return renderDependencyXml(
