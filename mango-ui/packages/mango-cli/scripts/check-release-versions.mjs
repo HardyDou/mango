@@ -1,14 +1,21 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspaceRoot = resolve(packageRoot, '../..');
+const repoRoot = resolve(workspaceRoot, '..');
 const packagesRoot = join(workspaceRoot, 'packages');
+const appsRoot = join(workspaceRoot, 'apps');
+const businessStarterRoot = join(repoRoot, 'mango-business-starter');
 const releaseVersionsPath = join(packageRoot, 'release-versions.json');
 const releaseVersions = JSON.parse(readFileSync(releaseVersionsPath, 'utf8'));
 const packageIndex = indexWorkspacePackages();
+const uiDependencyLocks = {
+  'element-plus': '2.14.1',
+  '@element-plus/icons-vue': '2.3.2',
+};
 
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length);
@@ -53,6 +60,26 @@ for (const [packageName, workspacePackage] of packageIndex) {
   }
 }
 
+for (const packageJsonPath of collectPackageJsonFiles([
+  appsRoot,
+  packagesRoot,
+  businessStarterRoot,
+  join(packageRoot, 'templates'),
+])) {
+  const packageJson = parsePackageJson(packageJsonPath);
+  for (const dependencyType of ['dependencies', 'peerDependencies', 'devDependencies']) {
+    const dependencies = packageJson[dependencyType] ?? {};
+    for (const [dependencyName, lockedVersion] of Object.entries(uiDependencyLocks)) {
+      const declaredVersion = dependencies[dependencyName];
+      if (declaredVersion && declaredVersion !== lockedVersion) {
+        mismatches.push(
+          `${relativePath(packageJsonPath)}: ${dependencyType}.${dependencyName} ${declaredVersion} != ${lockedVersion}`,
+        );
+      }
+    }
+  }
+}
+
 if (mismatches.length > 0) {
   console.error(`release-versions.json is inconsistent:\n${mismatches.map((item) => `- ${item}`).join('\n')}`);
   process.exit(1);
@@ -91,4 +118,50 @@ function npmViewVersion(packageName, registryUrl) {
     return '';
   }
   return result.stdout.trim();
+}
+
+function parsePackageJson(packageJsonPath) {
+  const content = readFileSync(packageJsonPath, 'utf8')
+    .split('\n')
+    .filter((line) => !line.trim().match(/^{{[a-zA-Z0-9]+}}$/))
+    .join('\n');
+  return JSON.parse(content);
+}
+
+function collectPackageJsonFiles(roots) {
+  const packageJsonFiles = [];
+  for (const root of roots) {
+    collectPackageJsonFilesFromRoot(root, packageJsonFiles);
+  }
+  return packageJsonFiles;
+}
+
+function collectPackageJsonFilesFromRoot(root, packageJsonFiles) {
+  if (!existsSync(root)) {
+    return;
+  }
+  const stats = statSync(root);
+  if (stats.isFile()) {
+    if (root.endsWith('package.json') || root.endsWith('package.json.template')) {
+      packageJsonFiles.push(root);
+    }
+    return;
+  }
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === 'coverage') {
+      continue;
+    }
+    const entryPath = join(root, entry.name);
+    if (entry.isDirectory()) {
+      collectPackageJsonFilesFromRoot(entryPath, packageJsonFiles);
+      continue;
+    }
+    if (entry.isFile() && (entry.name === 'package.json' || entry.name === 'package.json.template')) {
+      packageJsonFiles.push(entryPath);
+    }
+  }
+}
+
+function relativePath(path) {
+  return path.slice(repoRoot.length + 1);
 }

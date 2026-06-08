@@ -14,7 +14,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "{{iconsVueVersion}}",
+    "@element-plus/icons-vue": "2.3.2",
     "@mango/admin": "{{mangoAdminVersion}}",
     "@mango/admin-pages": "{{mangoAdminPagesVersion}}",
     "@mango/admin-shell": "{{mangoAdminShellVersion}}",
@@ -24,7 +24,7 @@
     "@mango/rbac": "{{mangoRbacVersion}}",
     "@mango/system": "{{mangoSystemVersion}}",
 {{frontendModuleDependencies}}
-    "element-plus": "{{elementPlusVersion}}",
+    "element-plus": "2.14.1",
     "pinia": "{{piniaVersion}}",
     "vue": "{{vueVersion}}",
     "vue-i18n": "{{vueI18nVersion}}",

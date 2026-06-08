@@ -25,7 +25,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "2.3.2",
     "@form-create/element-ui": "3.2.16",
     "@mango/admin-pages": "1.0.6",
     "@mango/api-schema": "1.0.2",
@@ -34,7 +34,7 @@
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {
-    "element-plus": "2.5.5",
+    "element-plus": "2.14.1",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
   },
