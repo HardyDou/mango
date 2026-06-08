@@ -32,6 +32,8 @@ class AppModuleResourceManifestSyncRunnerTest {
         assertEquals(1, manifests.size());
         assertEquals("internal-admin", manifests.get(0).getAppCode());
         assertEquals("contract", manifests.get(0).getModuleCode());
+        assertEquals(List.of("internal-admin-default"), manifests.get(0).getPackageCodes());
+        assertEquals(List.of("ROLE_ADMIN"), manifests.get(0).getRoleCodes());
         assertEquals(1, manifests.get(0).getMenus().size());
     }
 

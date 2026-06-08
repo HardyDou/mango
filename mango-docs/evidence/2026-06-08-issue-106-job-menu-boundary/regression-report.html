@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Issue 106 Job 菜单初始化回归报告</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f6f8fa;
+      color: #1f2937;
+      font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px;
+      background: #fff;
+      min-height: 100vh;
+      box-shadow: 0 0 0 1px #e5e7eb;
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      line-height: 1.25;
+    }
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+    }
+    ul {
+      margin: 0;
+      padding-left: 22px;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Issue 106 Job 菜单初始化与授权模块归口边界回归报告</h1>
+  <h2>结论</h2>
+  <ul>
+    <li>状态：<span class="status">PASS</span></li>
+    <li>Issue：#106 治理：Job 菜单初始化与授权模块归口边界</li>
+    <li>分支：feature/issue-106-job-menu-boundary</li>
+    <li>验证日期：2026-06-08</li>
+  </ul>
+
+  <h2>改动范围</h2>
+  <ul>
+    <li>新增 <code>mango-pmo/rules/backend/11-module-menu.md</code>，明确功能模块菜单初始化归口。</li>
+    <li><code>mango-authorization</code> 资源清单命令新增 <code>packageCodes</code>、<code>roleCodes</code>。</li>
+    <li><code>AppModuleServiceImpl</code> 注册资源清单时幂等关联已存在菜单包和角色。</li>
+    <li><code>mango-job-starter</code> 新增 <code>META-INF/mango/resource-manifest.json</code>，声明 Job 默认菜单、页面路由和按钮权限。</li>
+    <li><code>mango-authorization</code> README 更新资源清单使用说明，并链接 PMO 规则源。</li>
+  </ul>
+
+  <h2>业务断言</h2>
+  <ul>
+    <li>Job 默认菜单由 Job starter 自身资源清单提供，不再要求新增 authorization migration。</li>
+    <li>Authorization 只消费清单并关联已存在的菜单包/角色，不创建角色、主体或菜单包。</li>
+    <li>资源清单包含任务定义、执行实例、Worker 节点、告警规则、运行状态 5 个页面菜单。</li>
+    <li>资源清单权限覆盖前端 <code>v-auth</code> 中的 Job 权限点，包括 <code>job:log:list</code>。</li>
+    <li>Job starter 打包产物包含 <code>META-INF/mango/resource-manifest.json</code>。</li>
+  </ul>
+
+  <h2>验证命令</h2>
+  <ul>
+    <li><code>AppModuleServiceImplTest</code>：PASS</li>
+    <li><code>AppModuleResourceManifestSyncRunnerTest</code>：PASS</li>
+    <li>PMO index 与 Job manifest JSON 解析：PASS</li>
+    <li>Job starter package 与 jar 资源清单存在性检查：PASS</li>
+    <li>Job 前端页面注册键与 <code>v-auth</code> 权限点覆盖检查：PASS</li>
+    <li><code>git diff --check</code>：PASS</li>
+  </ul>
+
+  <h2>未验证项和风险</h2>
+  <ul>
+    <li>未启动完整本地后端和管理台做真实菜单入库后的浏览器联调。</li>
+    <li>历史 authorization migration 中已有 Job 菜单数据未在本 Issue 中删除或重写，避免修改已执行历史 migration。</li>
+    <li><code>packageCodes</code> / <code>roleCodes</code> 只关联已存在菜单包和角色；目标环境缺少基础资产时会跳过关联。</li>
+  </ul>
+</main>
+</body>
+</html>

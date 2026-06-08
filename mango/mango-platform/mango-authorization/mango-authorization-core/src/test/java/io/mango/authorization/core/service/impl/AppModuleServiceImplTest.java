@@ -5,9 +5,17 @@ import io.mango.authorization.api.command.AppModuleResourceManifestCommand;
 import io.mango.authorization.core.entity.AuthorizationAppModule;
 import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.MenuPackage;
+import io.mango.authorization.core.entity.MenuPackageItem;
+import io.mango.authorization.core.entity.Role;
+import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.authorization.core.mapper.MenuPackageItemMapper;
+import io.mango.authorization.core.mapper.MenuPackageMapper;
+import io.mango.authorization.core.mapper.RoleMapper;
+import io.mango.authorization.core.mapper.RoleMenuMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,12 +44,27 @@ class AppModuleServiceImplTest {
     private MenuMapper menuMapper;
     @Mock
     private FrontendMenuRuntimeConfigMapper menuRuntimeConfigMapper;
+    @Mock
+    private MenuPackageMapper menuPackageMapper;
+    @Mock
+    private MenuPackageItemMapper menuPackageItemMapper;
+    @Mock
+    private RoleMapper roleMapper;
+    @Mock
+    private RoleMenuMapper roleMenuMapper;
 
     private AppModuleServiceImpl appModuleService;
 
     @BeforeEach
     void setUp() {
-        appModuleService = new AppModuleServiceImpl(appModuleMapper, menuMapper, menuRuntimeConfigMapper);
+        appModuleService = new AppModuleServiceImpl(
+                appModuleMapper,
+                menuMapper,
+                menuRuntimeConfigMapper,
+                menuPackageMapper,
+                menuPackageItemMapper,
+                roleMapper,
+                roleMenuMapper);
     }
 
     @Test
@@ -89,6 +112,52 @@ class AppModuleServiceImplTest {
         verify(menuRuntimeConfigMapper, org.mockito.Mockito.times(3)).insert(configCaptor.capture());
         assertEquals("LOCAL_ROUTE", configCaptor.getAllValues().get(1).getPageType());
         assertNotNull(configCaptor.getAllValues().get(1).getMenuId());
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should assign menus to packages and default roles")
+    void registerResourceManifest_packageAndRoleCodes_assignsMenus() {
+        AtomicLong ids = new AtomicLong(200);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(appModuleMapper.insert(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuMapper.insert(any(Menu.class))).thenAnswer(invocation -> {
+            Menu menu = invocation.getArgument(0);
+            menu.setMenuId(ids.incrementAndGet());
+            return 1;
+        });
+        when(menuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
+        MenuPackage menuPackage = new MenuPackage();
+        menuPackage.setPackageId(1L);
+        menuPackage.setPackageCode("internal-admin-default");
+        when(menuPackageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(menuPackage);
+        when(menuPackageItemMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuPackageItemMapper.insert(any(MenuPackageItem.class))).thenReturn(1);
+        Role role = new Role();
+        role.setTenantId(1L);
+        role.setRoleId(1L);
+        role.setRoleCode("ROLE_ADMIN");
+        when(roleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(role);
+        when(roleMenuMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(roleMenuMapper.insert(any(RoleMenu.class))).thenReturn(1);
+
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.setPackageCodes(List.of("internal-admin-default"));
+        manifest.setRoleCodes(List.of("ROLE_ADMIN"));
+
+        int registered = appModuleService.registerResourceManifest(manifest);
+
+        assertEquals(3, registered);
+        ArgumentCaptor<MenuPackageItem> packageItemCaptor = ArgumentCaptor.forClass(MenuPackageItem.class);
+        verify(menuPackageItemMapper, org.mockito.Mockito.times(3)).insert(packageItemCaptor.capture());
+        assertEquals(1L, packageItemCaptor.getAllValues().get(0).getPackageId());
+        assertEquals(201L, packageItemCaptor.getAllValues().get(0).getMenuId());
+        ArgumentCaptor<RoleMenu> roleMenuCaptor = ArgumentCaptor.forClass(RoleMenu.class);
+        verify(roleMenuMapper, org.mockito.Mockito.times(3)).insert(roleMenuCaptor.capture());
+        assertEquals(1L, roleMenuCaptor.getAllValues().get(0).getTenantId());
+        assertEquals(1L, roleMenuCaptor.getAllValues().get(0).getRoleId());
+        assertEquals(201L, roleMenuCaptor.getAllValues().get(0).getMenuId());
     }
 
     @Test
