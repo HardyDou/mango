@@ -27,7 +27,7 @@ Use `npm run dev` for backend integration. `VITE_ADMIN_PROXY_PATH` must point to
 
 ## Backend
 
-The backend consumes `io.mango:mango-admin-starter` and the optional `io.mango.platform.seed:mango-seed-starter`.
+The backend consumes `io.mango:mango-admin-starter`. `io.mango.platform.seed:mango-seed-starter` is an optional startup seed capability and is not required by the default generated app.
 
 Create the local database before first startup:
 
@@ -42,7 +42,7 @@ curl http://127.0.0.1:5555/actuator/health
 
 `scripts/backend-dev.sh` installs local backend modules before starting the app. Use this script after `mango module add`, otherwise Maven may try to resolve local business starters from the remote repository.
 
-Official seed data is disabled by default. Enable it only for an empty or prepared database, and provide the initial administrator password explicitly:
+Official seed data is disabled by default and requires adding `io.mango.platform.seed:mango-seed-starter` to the backend app dependencies. Enable it only for an empty or prepared database, and provide the initial administrator password explicitly:
 
 ```bash
 MANGO_SEED_ENABLED=true \
