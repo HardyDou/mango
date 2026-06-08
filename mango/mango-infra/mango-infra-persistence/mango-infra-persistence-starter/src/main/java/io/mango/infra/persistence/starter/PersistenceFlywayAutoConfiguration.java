@@ -2,7 +2,7 @@ package io.mango.infra.persistence.starter;
 
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration;
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceRegistry;
-import io.mango.infra.persistence.starter.datasource.PersistenceModuleDataSourceResolver;
+import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;

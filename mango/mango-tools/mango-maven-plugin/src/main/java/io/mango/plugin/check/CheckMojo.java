@@ -910,16 +910,24 @@ public class CheckMojo extends AbstractMojo {
         }
 
         List<DependencyIssue> issues = new ArrayList<>();
+        List<Path> scopedPomFiles = resolveCheckPomFiles(rootPath);
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (file.toString().endsWith("/pom.xml")) {
-                        analyzePomDependency(file, issues);
+            if (scopedPomFiles.isEmpty()) {
+                Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        if (file.toString().endsWith("/pom.xml")) {
+                            analyzePomDependency(file, issues);
+                        }
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
+                });
+            } else {
+                getLog().info("Dependency check scope: " + scopedPomFiles.size() + " Maven reactor project(s)");
+                for (Path pomFile : scopedPomFiles) {
+                    analyzePomDependency(pomFile, issues);
                 }
-            });
+            }
         } catch (IOException e) {
             getLog().error("Error walking file tree", e);
         }
@@ -934,6 +942,28 @@ public class CheckMojo extends AbstractMojo {
         } else {
             getLog().info("All dependency checks passed");
         }
+    }
+
+    private List<Path> resolveCheckPomFiles(Path rootPath) {
+        if (session == null || session.getProjects() == null || session.getProjects().isEmpty()) {
+            return List.of();
+        }
+        Path normalizedRoot = rootPath.toAbsolutePath().normalize();
+        List<Path> pomFiles = new ArrayList<>();
+        Set<Path> seen = new HashSet<>();
+        for (MavenProject project : session.getProjects()) {
+            if (project == null || project.getFile() == null) {
+                continue;
+            }
+            Path pomFile = project.getFile().toPath().toAbsolutePath().normalize();
+            if (!pomFile.startsWith(normalizedRoot) || !Files.exists(pomFile)) {
+                continue;
+            }
+            if (seen.add(pomFile)) {
+                pomFiles.add(pomFile);
+            }
+        }
+        return pomFiles;
     }
 
     private void analyzePomDependency(Path pomFile, List<DependencyIssue> issues) {

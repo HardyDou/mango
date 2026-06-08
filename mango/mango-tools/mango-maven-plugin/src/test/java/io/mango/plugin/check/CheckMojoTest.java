@@ -442,6 +442,86 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkDependency_withSessionReactor_scansOnlySessionProjects() throws Exception {
+        Path sessionDir = tempDir.resolve("mango-platform/mango-job/mango-job-core");
+        Path historicalDir = tempDir.resolve("mango-platform/mango-file/mango-file-core");
+        Files.createDirectories(sessionDir);
+        Files.createDirectories(historicalDir);
+        Files.writeString(sessionDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.job</groupId>
+                    <artifactId>mango-job-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-api</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+        Files.writeString(historicalDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.file</groupId>
+                    <artifactId>mango-file-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        MavenSession session = mock(MavenSession.class);
+        MavenProject sessionProject = new MavenProject();
+        sessionProject.setFile(sessionDir.resolve("pom.xml").toFile());
+        when(session.getProjects()).thenReturn(List.of(sessionProject));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", session);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSessionReactor_reportsViolationInsideSession() throws Exception {
+        Path sessionDir = tempDir.resolve("mango-platform/mango-job/mango-job-core");
+        Files.createDirectories(sessionDir);
+        Files.writeString(sessionDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.job</groupId>
+                    <artifactId>mango-job-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        MavenSession session = mock(MavenSession.class);
+        MavenProject sessionProject = new MavenProject();
+        sessionProject.setFile(sessionDir.resolve("pom.xml").toFile());
+        when(session.getProjects()).thenReturn(List.of(sessionProject));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", session);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void checkWebBoundary_withApiDependingOnWebApi_passes() throws Exception {
         Path projectDir = tempDir.resolve("mango-demo-api");
         Files.createDirectories(projectDir);

@@ -8,25 +8,34 @@
 
 | 子模块 | artifactId | 职责 |
 |--------|------------|------|
-| `mango-infra-persistence-starter` | `mango-infra-persistence-starter` | 持久化基础能力：实体基类、分页对象、查询注解、CRUD Service 基类、审计填充、Flyway、MyBatis-Plus、结构校验 |
+| `mango-infra-persistence-api` | `mango-infra-persistence-api` | 持久化轻量契约：实体基类、分页对象、查询注解、CRUD Service 接口、数据源上下文和 Resolver 接口 |
+| `mango-infra-persistence-starter` | `mango-infra-persistence-starter` | 持久化运行时能力：CRUD Service 实现、审计填充、Flyway、MyBatis-Plus、结构校验、多数据源自动配置 |
 | `mango-infra-persistence-web-starter` | `mango-infra-persistence-web-starter` | Web CRUD 基础能力：标准 Controller、Query/Command 参数约定、导入导出扩展点 |
 
 推荐依赖方式：
 
-- core/service 模块只需要数据库能力时，依赖 `mango-infra-persistence-starter`。
+- core/service 模块只需要实体、查询注解、CRUD Service 契约或数据源路由契约时，依赖 `mango-infra-persistence-api`。
+- starter/app 装配模块需要 MyBatis-Plus、Flyway、审计填充、多数据源自动配置等运行时能力时，依赖 `mango-infra-persistence-starter`。
 - starter/web 模块需要默认 CRUD Controller 时，依赖 `mango-infra-persistence-web-starter`。
 - `mango-infra-persistence-web-starter` 已依赖 `mango-infra-persistence-starter`，业务 Web 模块不需要重复声明。
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.infra.persistence</groupId>
+    <artifactId>mango-infra-persistence-api</artifactId>
+</dependency>
+```
+
+```xml
+<dependency>
+    <groupId>io.mango.infra.persistence</groupId>
     <artifactId>mango-infra-persistence-starter</artifactId>
 </dependency>
 ```
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.infra.persistence</groupId>
     <artifactId>mango-infra-persistence-web-starter</artifactId>
 </dependency>
 ```
@@ -126,6 +135,8 @@ public void saveJobDefinition(...) {
 ```
 
 ```java
+import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
+
 try (PersistenceDataSourceContext.Scope ignored = PersistenceDataSourceContext.use("job")) {
     mapper.insert(entity);
 }

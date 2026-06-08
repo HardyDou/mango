@@ -1,5 +1,7 @@
 package io.mango.infra.persistence.starter.datasource;
 
+import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
+
 import org.springframework.util.StringUtils;
 
 import java.util.Optional;

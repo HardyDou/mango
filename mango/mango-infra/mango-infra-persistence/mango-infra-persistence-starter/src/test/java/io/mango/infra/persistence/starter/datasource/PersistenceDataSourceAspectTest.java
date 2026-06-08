@@ -1,5 +1,7 @@
 package io.mango.infra.persistence.starter.datasource;
 
+import io.mango.infra.persistence.api.datasource.PersistenceDataSourceContext;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
