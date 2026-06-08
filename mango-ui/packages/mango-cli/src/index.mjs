@@ -284,6 +284,7 @@ function main(argv = process.argv.slice(2)) {
 
   const variables = buildVariables(options);
   copyTemplate(templateRoot, targetDir, variables);
+  chmodSync(join(targetDir, 'scripts/dev-workspace.sh'), 0o755);
   chmodSync(join(targetDir, 'scripts/backend-dev.sh'), 0o755);
   writeMangoConfig(targetDir, variables);
   printNextSteps(targetDir, variables);
@@ -399,6 +400,7 @@ function buildVariables(options) {
   );
   const variables = {
     projectKebab: options.project,
+    projectKebabSnake: toSnakeCase(options.project),
     projectPascal: toPascalCase(options.project),
     projectVersion: options.version,
     groupId: options.groupId,
@@ -1251,7 +1253,7 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write(`  cd ${relativeTarget}\n`);
   process.stdout.write('  npm --prefix frontend install\n');
   process.stdout.write('  npm --prefix frontend run build\n');
-  process.stdout.write('  scripts/backend-dev.sh\n');
+  process.stdout.write('  scripts/dev-workspace.sh backend\n');
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
 }
 
