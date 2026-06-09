@@ -523,16 +523,16 @@
             @change="setLocalThemeConfig"
           >
             <el-option
-              label="风格1"
-              value="tags-style-one"
+              label="胶囊"
+              value="tags-style-capsule"
             />
             <el-option
-              label="风格4"
-              value="tags-style-four"
+              label="卡片"
+              value="tags-style-card"
             />
             <el-option
-              label="风格5"
-              value="tags-style-five"
+              label="经典"
+              value="tags-style-classic"
             />
           </el-select>
         </div>
@@ -568,7 +568,7 @@ import { nextTick, onMounted, onUnmounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeStore } from '../../../stores/theme';
 import { useLayoutStore } from '../../../stores/layout';
-import { usePreferencesStore } from '../../../stores/preferences';
+import { normalizeTagsStyle, usePreferencesStore } from '../../../stores/preferences';
 import { mittBus } from '@mango/common/utils/mitt';
 import { useChangeColor } from '@mango/common/utils/theme';
 import { Setting, RefreshRight } from '@element-plus/icons-vue';
@@ -732,6 +732,7 @@ const openDrawer = () => {
 
 // 存储配置到本地
 const setLocalThemeConfig = () => {
+  preferencesStore.tagsStyle = normalizeTagsStyle(preferencesStore.tagsStyle);
   // 合并三个 store 的状态保存到 localStorage
   const combined = {
     ...themeStore.$state,

@@ -33,7 +33,7 @@ const goHome = () => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
   background: var(--mango-bg-color);
 }
 
