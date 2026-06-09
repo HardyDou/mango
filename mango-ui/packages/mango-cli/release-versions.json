@@ -3,20 +3,21 @@
     "mangoBackend": "1.0.0-SNAPSHOT"
   },
   "npm": {
-    "@mango/admin": "1.0.13",
-    "@mango/admin-pages": "1.0.6",
-    "@mango/admin-shell": "1.0.12",
+    "@mango/admin": "1.0.14",
+    "@mango/admin-pages": "1.0.7",
+    "@mango/admin-shell": "1.0.13",
     "@mango/app-runtime": "1.0.2",
-    "@mango/auth": "1.0.5",
-    "@mango/calendar": "1.0.7",
-    "@mango/common": "1.0.7",
-    "@mango/file": "1.0.7",
-    "@mango/notice": "1.0.7",
-    "@mango/numgen": "1.0.7",
-    "@mango/rbac": "1.0.5",
-    "@mango/system": "1.0.5",
-    "@mango/template": "1.0.7",
-    "@mango/workflow": "1.0.7",
-    "@mango/workflow-business-example": "1.0.7"
+    "@mango/auth": "1.0.6",
+    "@mango/calendar": "1.0.8",
+    "@mango/common": "1.0.8",
+    "@mango/file": "1.0.8",
+    "@mango/job": "1.0.0",
+    "@mango/notice": "1.0.8",
+    "@mango/numgen": "1.0.8",
+    "@mango/rbac": "1.0.6",
+    "@mango/system": "1.0.6",
+    "@mango/template": "1.0.8",
+    "@mango/workflow": "1.0.8",
+    "@mango/workflow-business-example": "1.0.8"
   }
 }

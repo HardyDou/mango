@@ -20,6 +20,7 @@ const uiDependencyLocks = {
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length);
 const checkRegistry = process.argv.includes('--check-registry');
+const effectiveRegistry = registry || process.env.npm_config_registry || process.env.NPM_CONFIG_REGISTRY || 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/';
 const mismatches = [];
 
 for (const [packageName, lockedVersion] of Object.entries(releaseVersions.npm ?? {})) {
@@ -28,15 +29,13 @@ for (const [packageName, lockedVersion] of Object.entries(releaseVersions.npm ??
     mismatches.push(`${packageName}: missing local package under packages/*`);
     continue;
   }
-  if (workspacePackage.version !== lockedVersion) {
-    mismatches.push(`${packageName}: release lock ${lockedVersion} != local package ${workspacePackage.version}`);
+  const publishedVersion = npmViewVersion(packageName, effectiveRegistry);
+  if (!checkRegistry && workspacePackage.version !== lockedVersion && publishedVersion !== lockedVersion) {
+    mismatches.push(
+      `${packageName}: release lock ${lockedVersion} != local package ${workspacePackage.version} or registry ${publishedVersion || '<not found>'}`,
+    );
   }
   if (checkRegistry) {
-    if (!registry) {
-      mismatches.push(`${packageName}: --check-registry requires --registry=<npm-registry-url>`);
-      continue;
-    }
-    const publishedVersion = npmViewVersion(packageName, registry);
     if (publishedVersion !== lockedVersion) {
       mismatches.push(`${packageName}: release lock ${lockedVersion} != registry ${publishedVersion || '<not found>'}`);
     }
@@ -71,7 +70,8 @@ for (const packageJsonPath of collectPackageJsonFiles([
     const dependencies = packageJson[dependencyType] ?? {};
     for (const [dependencyName, lockedVersion] of Object.entries(uiDependencyLocks)) {
       const declaredVersion = dependencies[dependencyName];
-      if (declaredVersion && declaredVersion !== lockedVersion) {
+      const resolvedVersion = resolveTemplateVersion(declaredVersion);
+      if (resolvedVersion && resolvedVersion !== lockedVersion) {
         mismatches.push(
           `${relativePath(packageJsonPath)}: ${dependencyType}.${dependencyName} ${declaredVersion} != ${lockedVersion}`,
         );
@@ -85,9 +85,22 @@ if (mismatches.length > 0) {
   process.exit(1);
 }
 
-console.log(`release-versions.json matches ${Object.keys(releaseVersions.npm ?? {}).length} local package versions.`);
+console.log(`release-versions.json matches ${Object.keys(releaseVersions.npm ?? {}).length} package versions.`);
 if (checkRegistry) {
-  console.log(`release-versions.json also matches registry ${registry}.`);
+  console.log(`release-versions.json also matches registry ${effectiveRegistry}.`);
+}
+
+function resolveTemplateVersion(version) {
+  if (!version || typeof version !== 'string') {
+    return version;
+  }
+  if (version === '{{elementPlusVersion}}') {
+    return uiDependencyLocks['element-plus'];
+  }
+  if (version === '{{iconsVueVersion}}') {
+    return uiDependencyLocks['@element-plus/icons-vue'];
+  }
+  return version;
 }
 
 function indexWorkspacePackages() {

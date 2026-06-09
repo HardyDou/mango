@@ -36,7 +36,7 @@ scripts/dev-workspace.sh backend
 curl http://127.0.0.1:5555/actuator/health
 ```
 
-The script reads `.mango/dev-workspace.env`, creates the configured local database when `MANGO_DB_AUTO_CREATE=true`, installs backend reactor modules, and starts `backend/app` with Maven `spring-boot:run`.
+The script reads `.mango/dev-workspace.env`, creates the configured local database when `MANGO_DB_AUTO_CREATE=true`, installs backend reactor modules, and starts `backend/app` with the explicit Spring Boot Maven plugin goal.
 
 Deployment packaging is separate from development startup. Use `package + java -jar` or Docker only in deployment runbooks, not for local development.
 

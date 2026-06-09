@@ -10,6 +10,7 @@ REGISTRY_FILE="${MANGO_WORKSPACE_REGISTRY:-${HOME:-${LOCAL_DIR}}/.mango/workspac
 BACKEND_ROOT="${REPO_ROOT}/mango"
 FRONTEND_ROOT="${REPO_ROOT}/mango-ui"
 START_BACKEND_PID=""
+SPRING_BOOT_PLUGIN="org.springframework.boot:spring-boot-maven-plugin:3.5.14:run"
 
 usage() {
   cat <<'EOF'
@@ -295,7 +296,7 @@ run_backend() {
   echo "Starting backend on http://127.0.0.1:${MANGO_BACKEND_PORT}"
   echo "Using database ${MANGO_DB_HOST}:${MANGO_DB_PORT}/${MANGO_DB_NAME}"
   cd "${BACKEND_ROOT}"
-  mvn -pl :mango-monolith-app -am spring-boot:run \
+  mvn -pl :mango-monolith-app -am "${SPRING_BOOT_PLUGIN}" \
     "-Dspring-boot.run.arguments=$(backend_arguments)"
 }
 

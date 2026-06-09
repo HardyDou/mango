@@ -82,7 +82,7 @@ try {
   }
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
-  for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice']) {
+  for (const dependency of ['@mango/admin', '@mango/file', '@mango/job', '@mango/workflow', '@mango/template', '@mango/notice']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
     }
@@ -96,6 +96,7 @@ try {
     '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
     '@mango/common': readReleasedPackageVersion('@mango/common'),
     '@mango/file': readReleasedPackageVersion('@mango/file'),
+    '@mango/job': readReleasedPackageVersion('@mango/job'),
     '@mango/notice': readReleasedPackageVersion('@mango/notice'),
     '@mango/numgen': readReleasedPackageVersion('@mango/numgen'),
     '@mango/rbac': readReleasedPackageVersion('@mango/rbac'),
@@ -138,6 +139,9 @@ try {
   if (!applicationYml.includes('enabled: ${MANGO_SEED_ENABLED:false}')
     || !applicationYml.includes('initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}')) {
     throw new Error('full backend application.yml must keep Mango seed disabled by default with explicit admin password');
+  }
+  if (!applicationYml.includes('default-tenant-id: ${MANGO_DEFAULT_TENANT_ID:1}')) {
+    throw new Error('full backend application.yml must configure the startup default tenant for non-web tasks');
   }
   assertYamlFlywayModuleEnabled(applicationYml, 'domain');
   assertYamlFlywayModuleEnabled(applicationYml, 'workflow');

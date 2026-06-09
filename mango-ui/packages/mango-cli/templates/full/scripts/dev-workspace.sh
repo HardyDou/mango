@@ -17,7 +17,7 @@ Usage: scripts/dev-workspace.sh <command>
 Commands:
   init       Create .mango/dev-workspace.env if it does not exist
   print      Print current workspace backend configuration
-  backend    Start backend using Maven spring-boot:run
+  backend    Start backend using the explicit Spring Boot Maven plugin goal
   stop       Stop backend process listening on MANGO_BACKEND_PORT
 
 Use this script as the only backend development startup entry.

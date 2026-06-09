@@ -24,7 +24,7 @@
     "@mango/rbac": "{{mangoRbacVersion}}",
     "@mango/system": "{{mangoSystemVersion}}",
 {{frontendModuleDependencies}}
-    "element-plus": "2.14.1",
+    "element-plus": "{{elementPlusVersion}}",
     "pinia": "{{piniaVersion}}",
     "vue": "{{vueVersion}}",
     "vue-i18n": "{{vueI18nVersion}}",
