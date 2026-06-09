@@ -26,8 +26,8 @@
   ],
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
-    "@mango/admin-pages": "1.0.6",
-    "@mango/common": "1.0.7"
+    "@mango/admin-pages": "1.0.7",
+    "@mango/common": "1.0.8"
   },
   "peerDependencies": {
     "element-plus": "2.14.1",
