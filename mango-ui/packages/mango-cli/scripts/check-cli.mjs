@@ -139,6 +139,9 @@ try {
     || !applicationYml.includes('initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}')) {
     throw new Error('full backend application.yml must keep Mango seed disabled by default with explicit admin password');
   }
+  assertYamlFlywayModuleEnabled(applicationYml, 'domain');
+  assertYamlFlywayModuleEnabled(applicationYml, 'workflow');
+  assertYamlFlywayModuleEnabled(applicationYml, 'mango-job');
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
   }
@@ -523,6 +526,18 @@ function assertIncludes(values, expected, field) {
   if (!values.includes(expected)) {
     throw new Error(`${field} expected to include ${expected}`);
   }
+}
+
+function assertYamlFlywayModuleEnabled(applicationYml, moduleName) {
+  const escapedModuleName = escapeRegExp(moduleName);
+  const pattern = new RegExp(`\\n\\s{8}${escapedModuleName}:\\n\\s{10}enabled: true\\n`);
+  if (!pattern.test(applicationYml)) {
+    throw new Error(`full backend application.yml must enable ${moduleName} Flyway module`);
+  }
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function assertNotIncludes(values, unexpected, field) {
