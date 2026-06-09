@@ -1,6 +1,7 @@
 package io.mango.file.core.service.impl;
 
 import io.mango.file.core.config.FileProperties;
+import io.mango.file.core.entity.FileStorageConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,16 @@ public class FileAccessUrlAssembler {
             return url;
         }
         return joinBaseAndPath(externalBaseUrl, url.trim());
+    }
+
+    public String directAccessUrl(FileStorageConfig storageConfig, String url) {
+        if (!StringUtils.hasText(url) || isAbsoluteUrl(url)) {
+            return url;
+        }
+        if (storageConfig != null && "LOCAL".equalsIgnoreCase(storageConfig.getStorageType())) {
+            return externalize(url);
+        }
+        return url;
     }
 
     private String externalBaseUrl() {

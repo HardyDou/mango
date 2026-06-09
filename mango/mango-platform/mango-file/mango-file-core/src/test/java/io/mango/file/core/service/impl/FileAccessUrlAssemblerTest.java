@@ -1,6 +1,7 @@
 package io.mango.file.core.service.impl;
 
 import io.mango.file.core.config.FileProperties;
+import io.mango.file.core.entity.FileStorageConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.junit.jupiter.api.AfterEach;
@@ -100,6 +101,56 @@ class FileAccessUrlAssemblerTest {
         String url = assembler.externalize("/api/file/local-objects/local/mango-file/a.txt");
 
         assertThat(url).isEqualTo("/api/file/local-objects/local/mango-file/a.txt");
+    }
+
+    @Test
+    void directAccessUrl_localRelativePath_usesExternalProxyAddress() {
+        FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(new FileProperties());
+        TestHttpServletRequest request = new TestHttpServletRequest();
+        request.header("X-Forwarded-Proto", "https");
+        request.header("X-Forwarded-Host", "files.example.com");
+        request.header("X-Forwarded-Port", "443");
+        request.header("X-Forwarded-Prefix", "/api");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        FileStorageConfig config = storageConfig("LOCAL");
+
+        String url = assembler.directAccessUrl(config, "/api/file/local-objects/local/mango-file/a.txt");
+
+        assertThat(url).isEqualTo("https://files.example.com/api/file/local-objects/local/mango-file/a.txt");
+    }
+
+    @Test
+    void directAccessUrl_nonLocalRelativePath_keepsStorageUrl() {
+        FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(new FileProperties());
+        TestHttpServletRequest request = new TestHttpServletRequest();
+        request.header("X-Forwarded-Proto", "https");
+        request.header("X-Forwarded-Host", "files.example.com");
+        request.header("X-Forwarded-Port", "443");
+        request.header("X-Forwarded-Prefix", "/api");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+        FileStorageConfig config = storageConfig("MINIO");
+
+        String url = assembler.directAccessUrl(config, "/mango-file/a.txt");
+
+        assertThat(url).isEqualTo("/mango-file/a.txt");
+    }
+
+    @Test
+    void directAccessUrl_absoluteStorageUrl_keepsStorageEndpoint() {
+        FileProperties properties = new FileProperties();
+        properties.setPublicBaseUrl("https://files.example.com/api/");
+        FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(properties);
+        FileStorageConfig config = storageConfig("MINIO");
+
+        String url = assembler.directAccessUrl(config, "http://file.mango.io:9000/mango-file/a.txt");
+
+        assertThat(url).isEqualTo("http://file.mango.io:9000/mango-file/a.txt");
+    }
+
+    private FileStorageConfig storageConfig(String storageType) {
+        FileStorageConfig config = new FileStorageConfig();
+        config.setStorageType(storageType);
+        return config;
     }
 
     private static final class TestHttpServletRequest extends HttpServletRequestWrapper {

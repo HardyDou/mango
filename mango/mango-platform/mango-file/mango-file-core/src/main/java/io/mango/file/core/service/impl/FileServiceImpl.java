@@ -701,14 +701,14 @@ public class FileServiceImpl implements IFileService {
         if (!shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
-                        String externalUrl = fileAccessUrlAssembler.externalize(url);
+                        String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                         vo.setDirectAccess(true);
                         vo.setPreviewUrl(externalUrl);
                         vo.setDirectPreviewUrl(externalUrl);
                     });
             fileStorageRouter.publicDownloadUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
-                        String externalUrl = fileAccessUrlAssembler.externalize(url);
+                        String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                         vo.setDirectAccess(true);
                         vo.setDownloadUrl(externalUrl);
                         vo.setDirectDownloadUrl(externalUrl);
@@ -721,7 +721,7 @@ public class FileServiceImpl implements IFileService {
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                 .ifPresent(url -> {
-                    String externalUrl = fileAccessUrlAssembler.externalize(url);
+                    String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                     vo.setDirectAccess(true);
                     vo.setPreviewUrl(externalUrl);
                     vo.setDirectPreviewUrl(externalUrl);
@@ -730,7 +730,7 @@ public class FileServiceImpl implements IFileService {
         fileStorageRouter.presignedDownloadUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(downloadExpireSeconds))
                 .ifPresent(url -> {
-                    String externalUrl = fileAccessUrlAssembler.externalize(url);
+                    String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                     vo.setDirectAccess(true);
                     vo.setDownloadUrl(externalUrl);
                     vo.setDirectDownloadUrl(externalUrl);
@@ -768,7 +768,7 @@ public class FileServiceImpl implements IFileService {
         if (!shouldUsePresignedUrl(record, settings)) {
             fileStorageRouter.publicGetUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
-                        String externalUrl = fileAccessUrlAssembler.externalize(url);
+                        String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                         vo.setDirectAccess(true);
                         vo.setUrl(externalUrl);
                         vo.setPreviewUrl(externalUrl);
@@ -776,7 +776,7 @@ public class FileServiceImpl implements IFileService {
                     });
             fileStorageRouter.publicDownloadUrl(storageConfig, objectName, record.getFileName())
                     .ifPresent(url -> {
-                        String externalUrl = fileAccessUrlAssembler.externalize(url);
+                        String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                         vo.setDirectAccess(true);
                         vo.setDownloadUrl(externalUrl);
                         vo.setDirectDownloadUrl(externalUrl);
@@ -788,7 +788,7 @@ public class FileServiceImpl implements IFileService {
         fileStorageRouter.presignedGetUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(previewExpireSeconds))
                     .ifPresent(url -> {
-                        String externalUrl = fileAccessUrlAssembler.externalize(url);
+                        String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                         vo.setDirectAccess(true);
                         vo.setUrl(externalUrl);
                         vo.setPreviewUrl(externalUrl);
@@ -798,7 +798,7 @@ public class FileServiceImpl implements IFileService {
         fileStorageRouter.presignedDownloadUrl(storageConfig, objectName, record.getFileName(),
                         Duration.ofSeconds(downloadExpireSeconds))
                 .ifPresent(url -> {
-                    String externalUrl = fileAccessUrlAssembler.externalize(url);
+                    String externalUrl = fileAccessUrlAssembler.directAccessUrl(storageConfig, url);
                     vo.setDirectAccess(true);
                     vo.setDownloadUrl(externalUrl);
                     vo.setDirectDownloadUrl(externalUrl);

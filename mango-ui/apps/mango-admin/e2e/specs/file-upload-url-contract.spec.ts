@@ -46,16 +46,16 @@ function authHeaders(token: string) {
   };
 }
 
-function expectExternalUrls(record: Pick<FileRecord, 'url' | 'previewUrl' | 'downloadUrl' | 'directPreviewUrl' | 'directDownloadUrl'>) {
+function expectRuntimeUrls(record: Pick<FileRecord, 'url' | 'previewUrl' | 'downloadUrl' | 'directPreviewUrl' | 'directDownloadUrl'>) {
   for (const value of [record.url, record.previewUrl, record.downloadUrl, record.directPreviewUrl, record.directDownloadUrl]) {
     if (!value) {
       continue;
     }
-    expect(value).toMatch(/^https:\/\/files\.example\.com\/api\//);
+    expect(value).toMatch(/^https:\/\/files\.example\.com\/api\/(file\/(files\/download|local-objects)\b|file-preview\/files\/preview\b)/);
   }
 }
 
-test('file upload/detail/preview responses return external proxy urls', async ({ request }) => {
+test('file upload/detail/preview responses return runtime access urls from storage config', async ({ request }) => {
   const token = await loginToken(request);
   const suffix = `${Date.now()}-${test.info().workerIndex}`;
   const formData = {
@@ -75,14 +75,14 @@ test('file upload/detail/preview responses return external proxy urls', async ({
   expect(uploadResponse.status()).toBe(200);
   const uploadBody = await uploadResponse.json() as ApiResponse<FileRecord>;
   expect(uploadBody.success || uploadBody.code === 200).toBeTruthy();
-  expectExternalUrls(uploadBody.data);
+  expectRuntimeUrls(uploadBody.data);
 
   const detailResponse = await request.get(e2eApi(`/file/files/detail?id=${uploadBody.data.id}`), {
     headers: authHeaders(token),
   });
   expect(detailResponse.status()).toBe(200);
   const detailBody = await detailResponse.json() as ApiResponse<FileRecord>;
-  expectExternalUrls(detailBody.data);
+  expectRuntimeUrls(detailBody.data);
 
   const previewResponse = await request.get(e2eApi(`/file/files/preview?id=${uploadBody.data.id}`), {
     headers: authHeaders(token),
@@ -90,7 +90,7 @@ test('file upload/detail/preview responses return external proxy urls', async ({
   expect(previewResponse.status()).toBe(200);
   const previewBody = await previewResponse.json() as ApiResponse<FileRecord>;
   expect(previewBody.success || previewBody.code === 200).toBeTruthy();
-  expectExternalUrls(previewBody.data);
+  expectRuntimeUrls(previewBody.data);
   expect(previewBody.data.downloadUrl).toBe(uploadBody.data.downloadUrl);
 
   const batchResponse = await request.post(e2eApi('/file/files/batch'), {
@@ -109,5 +109,5 @@ test('file upload/detail/preview responses return external proxy urls', async ({
   const batchBody = await batchResponse.json() as ApiResponse<FileRecord[]>;
   expect(batchBody.success || batchBody.code === 200).toBeTruthy();
   expect(batchBody.data).toHaveLength(1);
-  expectExternalUrls(batchBody.data[0]);
+  expectRuntimeUrls(batchBody.data[0]);
 });

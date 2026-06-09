@@ -33,6 +33,18 @@ class LocalFileStorageTest {
         assertThat(url).doesNotContain("/file/files/download");
     }
 
+    @Test
+    void publicGetUrl_withPublicEndpoint_usesConfiguredLocalAccessEndpoint() {
+        LocalFileStorage storage = new LocalFileStorage(properties());
+        FileStorageConfig config = localConfig();
+        config.setPublicEndpoint("local-files.example.com/static");
+        config.setSslEnabled(1);
+
+        String url = storage.publicGetUrl(config, "2026/05/test file.txt", "test file.txt").orElseThrow();
+
+        assertThat(url).isEqualTo("https://local-files.example.com/static/local/2026/05/test%20file.txt");
+    }
+
     private FileProperties properties() {
         FileProperties properties = new FileProperties();
         properties.getLocal().setPublicPath("/api/file/local-objects");
