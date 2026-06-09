@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Issue 126 Regression Report</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #1f2937;
+        background: #f7f8fa;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+      }
+      h2 {
+        margin-top: 28px;
+        font-size: 20px;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 24px 0;
+      }
+      .metric {
+        border: 1px solid #d8dee9;
+        border-radius: 6px;
+        background: #fff;
+        padding: 14px;
+      }
+      .label {
+        color: #6b7280;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      .value {
+        margin-top: 6px;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border: 1px solid #d8dee9;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #eef2f7;
+      }
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      pre {
+        background: #111827;
+        color: #f9fafb;
+        border-radius: 6px;
+        padding: 14px;
+        overflow: auto;
+      }
+      .pass {
+        color: #047857;
+        font-weight: 700;
+      }
+      .note {
+        border-left: 4px solid #2563eb;
+        background: #eff6ff;
+        padding: 12px 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Issue 126 Regression Report</h1>
+      <p>Generated full/monolith business project backend startup validation.</p>
+
+      <section class="summary">
+        <div class="metric">
+          <div class="label">Backend</div>
+          <div class="value">127.0.0.1:18587</div>
+        </div>
+        <div class="metric">
+          <div class="label">Database</div>
+          <div class="value">mango_dev_issue126</div>
+        </div>
+        <div class="metric">
+          <div class="label">Health</div>
+          <div class="value pass">UP</div>
+        </div>
+      </section>
+
+      <h2>Acceptance</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>CLI full/custom/add/module regression</td><td class="pass">PASS</td></tr>
+          <tr><td>Generated project <code>scripts/dev-workspace.sh backend</code></td><td class="pass">PASS</td></tr>
+          <tr><td><code>/actuator/health</code></td><td class="pass">PASS, status UP</td></tr>
+          <tr><td><code>biz_domain</code> table</td><td class="pass">PASS, 8 rows</td></tr>
+          <tr><td><code>mango_job_schedule_cursor</code> table</td><td class="pass">PASS</td></tr>
+          <tr><td><code>mango_job_definition</code> table</td><td class="pass">PASS, 2 default sample jobs</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Generated Flyway Modules</h2>
+      <pre>domain:
+  enabled: true
+workflow:
+  enabled: true
+mango-job:
+  enabled: true</pre>
+
+      <h2>Runtime Evidence</h2>
+      <pre>{"status":"UP","components":{"db":{"status":"UP","details":{"database":"MySQL","validationQuery":"isValid()"}}}}</pre>
+
+      <div class="note">
+        Maven <code>spring-boot:run</code> was stopped after validation, which produced exit code 143 during shutdown. This happened after startup, health, table, and seed assertions had passed.
+      </div>
+    </main>
+  </body>
+</html>
