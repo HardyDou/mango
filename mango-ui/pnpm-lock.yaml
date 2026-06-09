@@ -479,7 +479,7 @@ importers:
         specifier: 1.0.7
         version: link:../admin-pages
       '@mango/admin-shell':
-        specifier: 1.0.13
+        specifier: 1.0.14
         version: link:../admin-shell
       '@mango/app-runtime':
         specifier: 1.0.2
