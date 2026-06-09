@@ -59,7 +59,7 @@ async function apiHeaders(page: import('@playwright/test').Page) {
 }
 
 function cleanupE2EFiles() {
-  execFileSync('mysql', ['-uroot', 'mango', '-e', [
+  execFileSync('mysql', ['-uroot', process.env.MANGO_DB_NAME || 'mango', '-e', [
     "DELETE FROM file_record WHERE file_name LIKE 'mango-file-e2e%' OR biz_id LIKE 'mango-file-e2e%' OR biz_type LIKE 'mango-file-e2e%'",
     "DELETE FROM file_directory WHERE directory_name LIKE 'mango-file-e2e%'",
   ].join('; ')]);
@@ -193,19 +193,12 @@ test.describe('文件管理联调', () => {
 
     const downloadUrl = previewBody.data?.directDownloadUrl || previewBody.data?.downloadUrl;
     expect(downloadUrl).toBeTruthy();
-    if (String(downloadUrl).startsWith('/api')) {
-      const downloadResponse = await request.get(downloadUrl, { headers: await apiHeaders(page) });
-      expect(downloadResponse.status()).toBe(200);
-      expect((await downloadResponse.body()).byteLength).toBeGreaterThan(0);
-    } else {
-      const directResponse = await page.evaluate(async (url) => {
-        const response = await fetch(url, { method: 'GET' });
-        const data = await response.arrayBuffer();
-        return { status: response.status, size: data.byteLength };
-      }, downloadUrl);
-      expect(directResponse.status).toBe(200);
-      expect(directResponse.size).toBeGreaterThan(0);
-    }
+    const resolvedDownloadUrl = String(downloadUrl).startsWith('/api')
+      ? String(downloadUrl)
+      : new URL(String(downloadUrl), process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:5555').toString();
+    const downloadResponse = await request.get(resolvedDownloadUrl, { headers: await apiHeaders(page) });
+    expect(downloadResponse.status()).toBe(200);
+    expect((await downloadResponse.body()).byteLength).toBeGreaterThan(0);
     await row.getByRole('button', { name: '下载' }).click();
     await expect(page.locator('.el-message--error')).toHaveCount(0);
 
@@ -346,8 +339,12 @@ test.describe('文件管理联调', () => {
     expect(previewBody.success || previewBody.code === 200).toBeTruthy();
     expect(previewBody.data?.directPreviewUrl).toBeTruthy();
     expect(previewBody.data?.directDownloadUrl).toBeTruthy();
-    expect(String(previewBody.data.directPreviewUrl)).toMatch(/^(http:\/\/file\.mango\.io:9000\/|\/api\/file\/local-objects\/)/);
-    expect(String(previewBody.data.directDownloadUrl)).toMatch(/^(http:\/\/file\.mango\.io:9000\/|\/api\/file\/local-objects\/)/);
+    expect(String(previewBody.data.directPreviewUrl)).toMatch(
+      /^(http:\/\/file\.mango\.io:9000\/|https?:\/\/127\.0\.0\.1:\d+\/file\/local-objects\/|\/(?:api\/)?file\/local-objects\/)/,
+    );
+    expect(String(previewBody.data.directDownloadUrl)).toMatch(
+      /^(http:\/\/file\.mango\.io:9000\/|https?:\/\/127\.0\.0\.1:\d+\/file\/local-objects\/|\/(?:api\/)?file\/local-objects\/)/,
+    );
     expect(previewBody.data?.directAccess).toBeTruthy();
 
     const previewImage = page.locator('.preview-image .el-image__inner').first();

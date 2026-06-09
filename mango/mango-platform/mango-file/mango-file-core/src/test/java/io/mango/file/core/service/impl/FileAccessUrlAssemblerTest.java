@@ -63,7 +63,7 @@ class FileAccessUrlAssemblerTest {
         properties.setPublicBaseUrl("https://files.example.com/api/");
         FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(properties);
 
-        String url = assembler.externalize("/api/file/local-objects/local/mango-file/a.txt");
+        String url = assembler.externalize("/file/local-objects/local/mango-file/a.txt");
 
         assertThat(url).isEqualTo("https://files.example.com/api/file/local-objects/local/mango-file/a.txt");
     }
@@ -78,7 +78,7 @@ class FileAccessUrlAssemblerTest {
         request.header("X-Forwarded-Prefix", "/api");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
-        String url = assembler.externalize("/api/file/local-objects/local/mango-file/a.txt");
+        String url = assembler.externalize("/file/local-objects/local/mango-file/a.txt");
 
         assertThat(url).isEqualTo("https://files.example.com/api/file/local-objects/local/mango-file/a.txt");
     }
@@ -98,9 +98,9 @@ class FileAccessUrlAssemblerTest {
     void externalize_noExternalBase_keepsRelativePath() {
         FileAccessUrlAssembler assembler = new FileAccessUrlAssembler(new FileProperties());
 
-        String url = assembler.externalize("/api/file/local-objects/local/mango-file/a.txt");
+        String url = assembler.externalize("/file/local-objects/local/mango-file/a.txt");
 
-        assertThat(url).isEqualTo("/api/file/local-objects/local/mango-file/a.txt");
+        assertThat(url).isEqualTo("/file/local-objects/local/mango-file/a.txt");
     }
 
     @Test
@@ -114,7 +114,7 @@ class FileAccessUrlAssemblerTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         FileStorageConfig config = storageConfig("LOCAL");
 
-        String url = assembler.directAccessUrl(config, "/api/file/local-objects/local/mango-file/a.txt");
+        String url = assembler.directAccessUrl(config, "/file/local-objects/local/mango-file/a.txt");
 
         assertThat(url).isEqualTo("https://files.example.com/api/file/local-objects/local/mango-file/a.txt");
     }
