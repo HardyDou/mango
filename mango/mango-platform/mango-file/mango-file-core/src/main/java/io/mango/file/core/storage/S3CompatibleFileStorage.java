@@ -268,7 +268,7 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey())));
         if (StringUtils.hasText(config.getEndpoint())) {
-            builder.endpointOverride(URI.create(config.getEndpoint()));
+            builder.endpointOverride(URI.create(endpointWithScheme(config.getEndpoint(), config)));
         }
         return builder.build();
     }
@@ -282,11 +282,19 @@ public class S3CompatibleFileStorage extends AbstractCloudFileStorage {
                 .serviceConfiguration(serviceConfig)
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey())));
-        String endpoint = StringUtils.hasText(config.getPublicEndpoint()) ? config.getPublicEndpoint() : config.getEndpoint();
+        String endpoint = publicAccessEndpoint(config);
         if (StringUtils.hasText(endpoint)) {
-            builder.endpointOverride(URI.create(endpoint.trim()));
+            builder.endpointOverride(URI.create(endpoint));
         }
         return builder.build();
+    }
+
+    private String endpointWithScheme(String endpoint, FileStorageConfig config) {
+        String normalized = StringUtils.trimTrailingCharacter(endpoint.trim(), '/');
+        if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+            return normalized;
+        }
+        return (enabled(config.getSslEnabled()) ? "https://" : "http://") + normalized;
     }
 
     private String contentDisposition(String fileName) {

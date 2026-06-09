@@ -79,9 +79,17 @@ public class LocalFileStorage implements FileStorage {
             String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
             return Optional.of(localObjectUrl(bucket, objectName));
         }
-        String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
+        String endpoint = publicEndpoint(config);
         String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
         return Optional.of(endpoint + "/" + encode(bucket) + "/" + encodeObjectName(objectName));
+    }
+
+    private String publicEndpoint(FileStorageConfig config) {
+        String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
+        if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+            return endpoint;
+        }
+        return (Integer.valueOf(1).equals(config.getSslEnabled()) ? "https://" : "http://") + endpoint;
     }
 
     private Path resolvePath(String bucketName, String objectName) {

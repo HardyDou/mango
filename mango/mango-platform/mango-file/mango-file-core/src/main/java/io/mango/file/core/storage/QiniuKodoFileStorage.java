@@ -49,7 +49,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
         Require.notBlank(config.getPublicEndpoint(), FileCode.STORAGE_CONFIG_INVALID);
         try {
             FileInfo info = bucketManager(config).stat(config.getBucketName(), objectName);
-            String url = normalizePublicEndpoint(config.getPublicEndpoint()) + "/" + objectName;
+            String url = publicAccessEndpoint(config) + "/" + objectName;
             String signedUrl = auth(config).privateDownloadUrl(url);
             URLConnection connection = new URL(signedUrl).openConnection();
             return new FileObject(connection.getInputStream(), info.fsize, info.mimeType);
@@ -105,7 +105,7 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
         if (!StringUtils.hasText(objectName) || expires == null || expires.isNegative() || expires.isZero()) {
             return Optional.empty();
         }
-        String url = normalizePublicEndpoint(config.getPublicEndpoint()) + "/" + encodeObjectName(objectName);
+        String url = publicAccessEndpoint(config) + "/" + encodeObjectName(objectName);
         return Optional.of(auth(config).privateDownloadUrl(url, expires.getSeconds()));
     }
 
@@ -137,11 +137,4 @@ public class QiniuKodoFileStorage extends AbstractCloudFileStorage {
         return new Configuration(Region.autoRegion());
     }
 
-    private String normalizePublicEndpoint(String endpoint) {
-        String value = StringUtils.trimTrailingCharacter(endpoint.trim(), '/');
-        if (value.startsWith("http://") || value.startsWith("https://")) {
-            return value;
-        }
-        return "https://" + value;
-    }
 }
