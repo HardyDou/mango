@@ -234,6 +234,11 @@ export function fileRuntimeUrl(record?: Partial<FileRecord | FilePreview> | null
   return candidates.find(item => Boolean(item && !isProtectedApiUrl(item))) || '';
 }
 
+export function isFileDisplayUrl(value?: string): boolean {
+  if (!value) return false;
+  return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/');
+}
+
 export function isFileAccessUrl(value?: string): boolean {
   if (!value) return false;
   return /^(https?:|data:|blob:)/i.test(value) || value.startsWith('/') || isProtectedApiUrl(value);

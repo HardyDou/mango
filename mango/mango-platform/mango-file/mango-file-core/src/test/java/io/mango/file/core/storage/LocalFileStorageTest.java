@@ -17,7 +17,7 @@ class LocalFileStorageTest {
 
         String url = storage.publicGetUrl(config, "2026/05/test file.txt", "test file.txt").orElseThrow();
 
-        assertThat(url).isEqualTo("/api/file/local-objects/local/2026/05/test%20file.txt");
+        assertThat(url).isEqualTo("/file/local-objects/local/2026/05/test%20file.txt");
         assertThat(url).doesNotContain("/file/files/download");
     }
 
@@ -29,7 +29,18 @@ class LocalFileStorageTest {
         String url = storage.presignedGetUrl(config, "2026/05/test.txt", "test.txt", Duration.ofMinutes(10))
                 .orElseThrow();
 
-        assertThat(url).isEqualTo("/api/file/local-objects/local/2026/05/test.txt");
+        assertThat(url).isEqualTo("/file/local-objects/local/2026/05/test.txt");
+        assertThat(url).doesNotContain("/file/files/download");
+    }
+
+    @Test
+    void publicDownloadUrl_withoutPublicEndpoint_usesLocalObjectDownloadPath() {
+        LocalFileStorage storage = new LocalFileStorage(properties());
+        FileStorageConfig config = localConfig();
+
+        String url = storage.publicDownloadUrl(config, "2026/05/test.txt", "test.txt").orElseThrow();
+
+        assertThat(url).isEqualTo("/file/local-objects/local/2026/05/test.txt?download=1");
         assertThat(url).doesNotContain("/file/files/download");
     }
 
@@ -45,9 +56,21 @@ class LocalFileStorageTest {
         assertThat(url).isEqualTo("https://local-files.example.com/static/local/2026/05/test%20file.txt");
     }
 
+    @Test
+    void publicDownloadUrl_withPublicEndpoint_keepsConfiguredLocalAccessEndpointAndDownloadFlag() {
+        LocalFileStorage storage = new LocalFileStorage(properties());
+        FileStorageConfig config = localConfig();
+        config.setPublicEndpoint("local-files.example.com/static");
+        config.setSslEnabled(1);
+
+        String url = storage.publicDownloadUrl(config, "2026/05/test file.txt", "test file.txt").orElseThrow();
+
+        assertThat(url).isEqualTo("https://local-files.example.com/static/local/2026/05/test%20file.txt?download=1");
+    }
+
     private FileProperties properties() {
         FileProperties properties = new FileProperties();
-        properties.getLocal().setPublicPath("/api/file/local-objects");
+        properties.getLocal().setPublicPath("/file/local-objects");
         return properties;
     }
 

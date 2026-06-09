@@ -107,6 +107,7 @@ import {
   fileApi,
   fileToken,
   isFileAccessUrl,
+  isFileDisplayUrl,
   normalizeFileId,
   type FileRecord,
   type FileBizMeta,
@@ -499,8 +500,7 @@ function displayUrl(record: Partial<FileRecord>) {
 
 function directDisplayUrl(value?: string) {
   if (!value) return false;
-  if (/^(blob|data):/i.test(value)) return true;
-  return /^(https?:)?\/\//i.test(value) ? value : false;
+  return isFileDisplayUrl(value) ? value : false;
 }
 
 async function hydratePreviewUrl(record: FileRecord, shouldSyncValue = false) {

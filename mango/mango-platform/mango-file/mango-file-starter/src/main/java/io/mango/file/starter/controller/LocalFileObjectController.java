@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriUtils;
 
@@ -39,6 +40,7 @@ public class LocalFileObjectController {
     public ResponseEntity<InputStreamResource> get(
             @Parameter(description = "存储桶", required = true)
             @PathVariable String bucket,
+            @RequestParam(required = false, defaultValue = "false") boolean download,
             jakarta.servlet.http.HttpServletRequest request) {
         String objectName = objectName(request, bucket);
         FileStorageConfig config = localConfig(bucket);
@@ -47,11 +49,13 @@ public class LocalFileObjectController {
         if (object.contentType() != null && !object.contentType().isBlank()) {
             mediaType = MediaType.parseMediaType(object.contentType());
         }
+        ContentDisposition disposition = download
+                ? ContentDisposition.attachment().filename(fileName(objectName), StandardCharsets.UTF_8).build()
+                : ContentDisposition.inline().filename(fileName(objectName), StandardCharsets.UTF_8).build();
         return ResponseEntity.ok()
                 .contentLength(object.contentLength())
                 .contentType(mediaType)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.inline().filename(fileName(objectName), StandardCharsets.UTF_8).build().toString())
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(new InputStreamResource(object.inputStream()));
     }
 
