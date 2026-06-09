@@ -3,24 +3,19 @@
     <ColumnsAside />
     <el-container class="layout-columns-warp layout-container-view h100">
       <LayoutAside />
-      <el-scrollbar
-        ref="layoutScrollbarRef"
-        class="layout-backtop"
-      >
+      <div class="layout-backtop layout-backtop--fixed-shell">
         <LayoutHeader />
         <LayoutWorkspaceNav :tags-view="isTagsview" />
         <LayoutMain ref="layoutMainRef" />
-      </el-scrollbar>
+      </div>
     </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts" name="layoutColumns">
-import { defineAsyncComponent, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { defineAsyncComponent, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useLayoutStore } from '../../stores/layout';
-import { useScrollbar } from '../../composables/useScrollbar';
 
 const LayoutAside = defineAsyncComponent(() => import('../component/aside.vue'));
 const LayoutHeader = defineAsyncComponent(() => import('../component/header.vue'));
@@ -28,34 +23,9 @@ const LayoutMain = defineAsyncComponent(() => import('../component/main.vue'));
 const ColumnsAside = defineAsyncComponent(() => import('../component/columnsAside.vue'));
 const LayoutWorkspaceNav = defineAsyncComponent(() => import('../navBars/workspaceNav/index.vue'));
 
-const layoutScrollbarRef = ref();
 const layoutMainRef = ref();
-const route = useRoute();
 const layoutStore = useLayoutStore();
-const { isCollapse, isFixedHeader, isTagsview, layout } = storeToRefs(layoutStore);
-
-const { updateScrollbar, initScrollHeight } = useScrollbar(layoutMainRef, layoutScrollbarRef);
-
-watch(
-  () => route.path,
-  () => {
-    initScrollHeight();
-  },
-  { immediate: true }
-);
-
-// Watch only properties that affect scrollbar layout
-watch(
-  () => [
-    isCollapse.value,
-    isFixedHeader.value,
-    isTagsview.value,
-    layout.value
-  ],
-  () => {
-    updateScrollbar();
-  }
-);
+const { isTagsview } = storeToRefs(layoutStore);
 </script>
 
 <style scoped lang="scss">
@@ -86,8 +56,15 @@ watch(
 }
 
 .layout-backtop {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+.layout-backtop--fixed-shell {
+  height: 100%;
 }
 </style>

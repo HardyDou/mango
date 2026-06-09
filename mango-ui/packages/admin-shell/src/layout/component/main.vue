@@ -1,31 +1,64 @@
 <template>
   <el-main
     class="layout-main"
+    :class="{ 'layout-main--fixed-shell': enableFixedShell }"
+    :style="layoutMainStyle"
   >
     <el-scrollbar
+      v-if="!enableFixedShell"
       ref="layoutMainScrollbarRef"
       class="layout-main-scroll layout-backtop-header-fixed"
       wrap-class="layout-main-scroll"
       view-class="layout-main-scroll"
     >
       <div class="layout-main-body">
-        <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
-        <LayoutParentView v-else />
+        <div class="layout-main-content">
+          <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
+          <LayoutParentView v-else />
+        </div>
+        <LayoutFooter v-if="showFooter" />
       </div>
     </el-scrollbar>
+    <div
+      v-else
+      class="layout-main-body layout-main-body--fixed-shell"
+    >
+      <el-scrollbar
+        ref="layoutMainScrollbarRef"
+        class="layout-main-scroll layout-main-scroll--content layout-backtop-header-fixed"
+        wrap-class="layout-main-scroll"
+        view-class="layout-main-scroll"
+      >
+        <div class="layout-main-content">
+          <ShellRuntimeOutlet v-if="contentMode === 'runtime-outlet'" />
+          <LayoutParentView v-else />
+        </div>
+      </el-scrollbar>
+      <LayoutFooter v-if="showFooter" />
+    </div>
     <el-backtop :target="setBacktopClass" />
   </el-main>
 </template>
 
 <script setup lang="ts" name="layoutMain">
 import { computed, defineAsyncComponent, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { getMangoAdminShellOptions } from '../../config';
+import { useLayoutStore } from '../../stores/layout';
 import ShellRuntimeOutlet from '../../runtime/ShellRuntimeOutlet.vue';
 
 const LayoutParentView = defineAsyncComponent(() => import('../routerView/parent.vue'));
+const LayoutFooter = defineAsyncComponent(() => import('./footer.vue'));
 const contentMode = computed(() => getMangoAdminShellOptions().contentMode || 'router-view');
+const layoutStore = useLayoutStore();
+const { isFooter, layout } = storeToRefs(layoutStore);
 
 const layoutMainScrollbarRef = ref();
+const showFooter = computed(() => isFooter.value);
+const enableFixedShell = computed(() => layout.value === 'defaults' || layout.value === 'columns');
+const layoutMainStyle = computed(() => ({
+  '--mango-layout-footer-height': showFooter.value ? '40px' : '0px',
+}));
 
 const setBacktopClass = computed(() => {
   const wrapRef = layoutMainScrollbarRef.value?.wrapRef;
@@ -63,13 +96,34 @@ const setBacktopClass = computed(() => {
   min-height: 100%;
   padding: var(--layout-content-space);
   background: var(--mango-bg-main);
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-main-body--fixed-shell {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.layout-main-content {
+  flex: 1;
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
+}
+
+.layout-main-scroll--content {
+  min-height: 0;
 }
 
 :deep(.router-view-parent.is-root) {
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
 }
 
 .layout-backtop-header-fixed {
   height: 100% !important;
+}
+
+.layout-main--fixed-shell {
+  min-height: 0;
 }
 </style>
