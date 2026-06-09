@@ -6,7 +6,7 @@
 import { useThemeStore } from '@/stores/theme';
 import { useLayoutStore } from '@/stores/layout';
 import { usePreferencesStore } from '@/stores/preferences';
-import { normalizeTagsStyle } from '@/utils/tagsStyle';
+import { normalizeTagsStyle } from '@mango/admin-shell';
 import { Local } from '@mango/common';
 
 const STORAGE_KEY = 'themeConfig';
