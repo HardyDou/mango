@@ -96,6 +96,7 @@ try {
     '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
     '@mango/common': readReleasedPackageVersion('@mango/common'),
     '@mango/file': readReleasedPackageVersion('@mango/file'),
+    '@mango/job': readReleasedPackageVersion('@mango/job'),
     '@mango/notice': readReleasedPackageVersion('@mango/notice'),
     '@mango/numgen': readReleasedPackageVersion('@mango/numgen'),
     '@mango/rbac': readReleasedPackageVersion('@mango/rbac'),
