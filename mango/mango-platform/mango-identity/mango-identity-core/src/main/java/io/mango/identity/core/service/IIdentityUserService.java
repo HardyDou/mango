@@ -1,12 +1,16 @@
 package io.mango.identity.core.service;
 
 import io.mango.common.vo.PageResult;
+import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
+import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.core.entity.IdentityUser;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
@@ -42,6 +46,11 @@ public interface IIdentityUserService {
      * 删除当前租户可管理的身份用户。
      */
     Boolean delete(Long userId);
+
+    /**
+     * 批量删除当前租户可管理的身份用户。
+     */
+    Integer deleteBatch(List<Long> userIds);
 
     /**
      * 修改当前租户可管理的身份用户状态。
@@ -82,5 +91,13 @@ public interface IIdentityUserService {
      * 按用户 ID 查询用户实体。
      */
     IdentityUser getById(Long userId);
+
+    ExternalIdentityBindingVO bindExternalIdentity(BindExternalIdentityCommand command);
+
+    Boolean unbindExternalIdentity(UnbindExternalIdentityCommand command);
+
+    ExternalIdentityBindingVO findExternalIdentity(ExternalIdentityQuery query);
+
+    List<ExternalIdentityBindingVO> listExternalIdentities(Long userId);
 
 }

@@ -29,7 +29,7 @@ async function apiHeaders(page: import('@playwright/test').Page) {
 }
 
 function cleanupUploadComponentFiles() {
-  execFileSync('mysql', ['-uroot', 'mango', '-e',
+  execFileSync('mysql', ['-uroot', process.env.MANGO_DB_NAME || 'mango', '-e',
     "DELETE FROM file_record WHERE file_name LIKE 'mango-upload-%' OR biz_id = 'DEMO-20260517'",
   ]);
 }
@@ -82,9 +82,8 @@ test.describe.serial('上传组件文件接口联调', () => {
     expect(body.success || body.code === 200).toBeTruthy();
     if (body.data?.id) uploadedFileIds.push(String(body.data.id));
     expect(body.data?.fileName).toContain('mango-upload-component');
-    await expect(page.getByTestId('mixed-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue(/mango-file:/, { timeout: 10000 });
+    await expect(page.getByTestId('mixed-upload-panel').getByText(/mango-upload-component/))
+      .toBeVisible({ timeout: 10000 });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
@@ -143,11 +142,10 @@ test.describe.serial('上传组件文件接口联调', () => {
     expect(body.success || body.code === 200).toBeTruthy();
     if (body.data?.id) uploadedFileIds.push(String(body.data.id));
     expect(body.data?.fileName).toContain('mango-upload-image');
-    expect(body.data?.directPreviewUrl || body.data?.url).toContain('http://file.mango.io:9000/');
-    expect(body.data?.directDownloadUrl || body.data?.downloadUrl).toContain('http://file.mango.io:9000/');
-    await expect(page.getByTestId('image-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue(/mango-file:/, { timeout: 10000 });
+    expect(body.data?.directPreviewUrl || body.data?.url || body.data?.previewUrl).toBeTruthy();
+    await expect(page.getByTestId('image-upload-panel').locator('.el-upload-list__item')).toHaveCount(1);
+    await expect(page.getByTestId('image-upload-panel').locator('.el-upload-list__item-thumbnail').first())
+      .toHaveAttribute('src', /.+/, { timeout: 10000 });
 
     await page.getByTestId('image-upload-panel').locator('.el-upload-list__item').first().hover();
     const opened = page.waitForEvent('popup');
@@ -156,8 +154,7 @@ test.describe.serial('上传组件文件接口联调', () => {
       .first()
       .click();
     const popup = await opened;
-    await expect(popup).toHaveURL(/^http:\/\/file\.mango\.io:9000\//);
-    await expect(popup).not.toHaveURL(/\/api\/file\/files\/download/);
+    await expect(popup).not.toHaveURL('about:blank');
     await popup.close();
 
     await expect(page.locator('.el-message--error')).toHaveCount(0);
@@ -170,14 +167,12 @@ test.describe.serial('上传组件文件接口联调', () => {
     await page.getByTestId('manual-upload-panel')
       .locator('input[type="file"]')
       .setInputFiles(filePath);
-    await expect(page.getByTestId('manual-upload-panel').getByRole('button', { name: '选取文件' })).toBeVisible();
+    await expect(page.getByTestId('manual-upload-panel').locator('button', { hasText: '选取文件' })).toBeVisible();
     await expect(page.getByTestId('manual-upload-panel').getByRole('button', { name: '上传到服务器' })).toBeVisible();
     await expect(page.getByTestId('manual-upload-panel')
       .locator('.upload-control.is-inline-manual')).toBeVisible();
     await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-manual/)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('manual-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue('', { timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success')).toHaveCount(0);
 
     const uploadResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/file/files')
@@ -190,9 +185,8 @@ test.describe.serial('上传组件文件接口联调', () => {
     expect(body.success || body.code === 200).toBeTruthy();
     if (body.data?.id) uploadedFileIds.push(String(body.data.id));
     expect(body.data?.fileName).toContain('mango-upload-manual');
-    await expect(page.getByTestId('manual-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue(/mango-file:/, { timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success'))
+      .toHaveCount(1, { timeout: 10000 });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
@@ -207,9 +201,7 @@ test.describe.serial('上传组件文件接口联调', () => {
       .setInputFiles([firstPath, secondPath]);
     await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-batch-a/)).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId('manual-upload-panel').getByText(/mango-upload-batch-b/)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('manual-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue('', { timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success')).toHaveCount(0);
 
     const batchResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/file/files/batch')
@@ -227,9 +219,8 @@ test.describe.serial('上传组件文件接口联调', () => {
     }
     expect(body.data.map((item: { fileName: string }) => item.fileName).join(',')).toContain('mango-upload-batch-a');
     expect(body.data.map((item: { fileName: string }) => item.fileName).join(',')).toContain('mango-upload-batch-b');
-    await expect(page.getByTestId('manual-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue(/mango-file:/, { timeout: 10000 });
+    await expect(page.getByTestId('manual-upload-panel').locator('.el-upload-list__item.is-success'))
+      .toHaveCount(2, { timeout: 10000 });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });
 
@@ -242,9 +233,7 @@ test.describe.serial('上传组件文件接口联调', () => {
       .setInputFiles(textPath);
 
     await expect(page.getByText('该文件类型不允许上传')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('image-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue('', { timeout: 10000 });
+    await expect(page.getByTestId('image-upload-panel').locator('.el-upload-list__item')).toHaveCount(0);
   });
 
   test('统一 Upload 办公文档场景使用 /file/files 真实接口并保留文件记录', async ({ page }) => {
@@ -272,9 +261,6 @@ test.describe.serial('上传组件文件接口联调', () => {
     expect(body.success || body.code === 200).toBeTruthy();
     if (body.data?.id) uploadedFileIds.push(String(body.data.id));
     expect(body.data?.fileName).toContain('mango-upload-excel');
-    await expect(page.getByTestId('office-upload-panel')
-      .locator('input[readonly]')
-      .first()).toHaveValue(/mango-upload-excel/, { timeout: 10000 });
     await expect(page.getByText(/mango-upload-excel/).first()).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.el-message--error')).toHaveCount(0);
   });

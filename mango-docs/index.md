@@ -6,6 +6,10 @@
 
 - [mango-pmo](../mango-pmo/)
 
+文档资产归档边界：
+
+- [mango-pmo/rules/06-document-assets.md](../mango-pmo/rules/06-document-assets.md)
+
 ## 顶层设计
 
 | 文档 | 说明 |

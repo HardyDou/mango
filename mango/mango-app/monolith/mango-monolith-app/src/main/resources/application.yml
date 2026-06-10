@@ -94,6 +94,9 @@ mango:
       token-store: true
       outbox: true
   persistence:
+    mybatis-plus:
+      tenant:
+        default-tenant-id: ${MANGO_DEFAULT_TENANT_ID:1}
     flyway:
       modules:
         system:
@@ -112,6 +115,8 @@ mango:
           enabled: true
         workflow:
           enabled: true
+        mango-job:
+          enabled: true
         kv:
           enabled: true
         notification:
@@ -125,6 +130,8 @@ mango:
         payment:
           enabled: true
           ignore-missing-migrations: true
+        domain:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region
@@ -146,6 +153,8 @@ mango:
     local:
       root-path: ${MANGO_FILE_ROOT:./data/files}
   workflow:
+    enabled: true
+  job:
     enabled: true
   authorization:
     resource-sync:
@@ -240,6 +249,8 @@ springdoc:
         url: /v3/api-docs/mango-file
       - name: mango-numgen
         url: /v3/api-docs/mango-numgen
+      - name: mango-domain
+        url: /v3/api-docs/mango-domain
       - name: mango-infra-realtime
         url: /v3/api-docs/mango-infra-realtime
   api-docs:

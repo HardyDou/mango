@@ -28,6 +28,12 @@
                 number-value
               />
             </el-form-item>
+            <el-form-item label="业务域">
+              <DomainSelector
+                v-model="paramQuery.domainCode"
+                placeholder="业务域"
+              />
+            </el-form-item>
             <el-form-item>
               <el-button
                 type="primary"
@@ -78,6 +84,11 @@
                 />
               </template>
             </el-table-column>
+            <el-table-column
+              prop="domainCode"
+              label="业务域"
+              width="130"
+            />
             <el-table-column
               prop="description"
               label="描述"
@@ -154,6 +165,12 @@
                 any-option-label="不限"
               />
             </el-form-item>
+            <el-form-item label="业务域">
+              <DomainSelector
+                v-model="configQuery.domainCode"
+                placeholder="业务域"
+              />
+            </el-form-item>
             <el-form-item>
               <el-button
                 type="primary"
@@ -203,6 +220,11 @@
                 />
               </template>
             </el-table-column>
+            <el-table-column
+              prop="domainCode"
+              label="业务域"
+              width="130"
+            />
             <el-table-column
               prop="description"
               label="描述"
@@ -306,6 +328,15 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item
+          label="业务域"
+          prop="domainCode"
+        >
+          <DomainSelector
+            v-model="paramForm.domainCode"
+            placeholder="请选择业务域"
+          />
+        </el-form-item>
+        <el-form-item
           label="描述"
           prop="description"
         >
@@ -392,6 +423,15 @@
           </el-select>
         </el-form-item>
         <el-form-item
+          label="业务域"
+          prop="domainCode"
+        >
+          <DomainSelector
+            v-model="configForm.domainCode"
+            placeholder="请选择业务域"
+          />
+        </el-form-item>
+        <el-form-item
           label="描述"
           prop="description"
         >
@@ -437,6 +477,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { DictSelect, DictTag, formatDate, useDict } from '@mango/common';
 import { paramApi, type SysParam } from '../../api/param';
 import { configApi, type SysConfig } from '../../api/config';
+import DomainSelector from '../../components/DomainSelector/index.vue';
 
 const { options: statusOptions } = useDict('sys_normal_disable');
 const { options: paramTypeOptions } = useDict('system_param_type');
@@ -450,6 +491,7 @@ const paramTableData = ref<SysParam[]>([]);
 const paramQuery = reactive({
   keyword: '',
   paramType: undefined as number | undefined,
+  domainCode: '',
 });
 const paramDialogVisible = ref(false);
 const paramFormRef = ref<FormInstance>();
@@ -458,6 +500,7 @@ const paramForm = reactive<SysParam>({
   paramKey: '',
   paramValue: '',
   paramType: 1,
+  domainCode: 'COMMON',
   description: '',
   status: 1,
 });
@@ -486,6 +529,7 @@ function handleSearchParam() {
 function handleResetParam() {
   paramQuery.keyword = '';
   paramQuery.paramType = undefined;
+  paramQuery.domainCode = '';
   loadParamData();
 }
 
@@ -494,6 +538,7 @@ function handleAddParam() {
   paramForm.paramKey = '';
   paramForm.paramValue = '';
   paramForm.paramType = 1;
+  paramForm.domainCode = 'COMMON';
   paramForm.description = '';
   paramForm.status = 1;
   paramDialogVisible.value = true;
@@ -540,6 +585,7 @@ const configTableData = ref<SysConfig[]>([]);
 const configQuery = reactive({
   keyword: '',
   configGroup: '',
+  domainCode: '',
 });
 const configDialogVisible = ref(false);
 const configFormRef = ref<FormInstance>();
@@ -548,6 +594,7 @@ const configForm = reactive<SysConfig>({
   configKey: '',
   configValue: '',
   configGroup: 'system',
+  domainCode: 'COMMON',
   description: '',
   status: 1,
 });
@@ -578,6 +625,7 @@ function handleSearchConfig() {
 function handleResetConfig() {
   configQuery.keyword = '';
   configQuery.configGroup = '';
+  configQuery.domainCode = '';
   loadConfigData();
 }
 
@@ -586,6 +634,7 @@ function handleAddConfig() {
   configForm.configKey = '';
   configForm.configValue = '';
   configForm.configGroup = 'system';
+  configForm.domainCode = 'COMMON';
   configForm.description = '';
   configForm.status = 1;
   configDialogVisible.value = true;

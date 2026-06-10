@@ -21,6 +21,10 @@ public class DictTypePo {
     @Size(max = 100, message = "dictName长度不能超过100")
     private String dictName;
 
+    @Schema(description = "业务域编码")
+    @Size(max = 64, message = "domainCode长度不能超过64")
+    private String domainCode;
+
     @Schema(description = "状态：0-禁用，1-启用")
     private Integer status;
     @Schema(description = "备注")

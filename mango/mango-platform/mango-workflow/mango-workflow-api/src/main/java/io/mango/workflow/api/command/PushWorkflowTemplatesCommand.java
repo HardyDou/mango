@@ -19,20 +19,15 @@ public class PushWorkflowTemplatesCommand {
     @NotEmpty(message = "目标租户不能为空")
     private List<Long> targetTenantIds;
 
-    @Schema(description = "目标流程分类编码。目标租户不存在该分类时自动创建")
-    @NotBlank(message = "目标流程分类编码不能为空")
-    @Size(max = 64, message = "目标流程分类编码最多64个字符")
-    private String categoryCode;
-
-    @Schema(description = "目标流程分类名称。目标租户不存在该分类时自动创建")
-    @NotBlank(message = "目标流程分类名称不能为空")
-    @Size(max = 64, message = "目标流程分类名称最多64个字符")
-    private String categoryName;
+    @Schema(description = "目标业务域编码")
+    @NotBlank(message = "业务域编码不能为空")
+    @Size(max = 64, message = "业务域编码最多64个字符")
+    private String domainCode;
 
     @Schema(description = "所属组织ID")
     private Long orgId;
 
-    @Schema(description = "模板分类ID。按分类推送时传入")
+    @Schema(description = "历史模板分类ID，业务域替换后前台不再使用")
     private Long templateCategoryId;
 
     @Schema(description = "模板ID列表。选择具体模板推送时传入")

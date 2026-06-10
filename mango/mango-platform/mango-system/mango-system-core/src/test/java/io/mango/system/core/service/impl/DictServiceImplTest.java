@@ -57,7 +57,7 @@ class DictServiceImplTest {
         DictType type2 = createDictType(2L, "type2", "Type 2");
         when(dictTypeMapper.selectList(any())).thenReturn(Arrays.asList(type1, type2));
 
-        R<List<DictTypeVO>> result = dictService.listTypes();
+        R<List<DictTypeVO>> result = dictService.listTypes(null);
 
         assertTrue(result.isSuccess());
         assertEquals(2, result.getData().size());
@@ -173,6 +173,7 @@ class DictServiceImplTest {
         type.setId(id);
         type.setDictType(dictType);
         type.setDictName(dictName);
+        type.setDomainCode("COMMON");
         type.setStatus(1);
         return type;
     }

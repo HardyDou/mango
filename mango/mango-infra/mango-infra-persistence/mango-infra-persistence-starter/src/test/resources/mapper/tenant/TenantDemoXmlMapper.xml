@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.infra.persistence.starter.tenant.TenantIsolationIntegrationTest$TenantDemoXmlMapper">
+
+    <resultMap id="TenantDemoVOMap"
+               type="io.mango.infra.persistence.starter.tenant.TenantIsolationIntegrationTest$TenantDemoVO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="status" property="status"/>
+        <result column="tenant_id" property="tenantId"/>
+    </resultMap>
+
+    <sql id="TenantDemoColumns">
+        id,
+        name,
+        status,
+        tenant_id
+    </sql>
+
+    <select id="selectByStatus" resultMap="TenantDemoVOMap">
+        SELECT
+        <include refid="TenantDemoColumns"/>
+        FROM tenant_demo
+        WHERE status = #{status}
+        ORDER BY id ASC
+    </select>
+
+    <select id="pageByStatus" resultMap="TenantDemoVOMap">
+        SELECT
+        <include refid="TenantDemoColumns"/>
+        FROM tenant_demo
+        WHERE status = #{status}
+        ORDER BY id ASC
+    </select>
+</mapper>

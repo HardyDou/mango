@@ -27,27 +27,34 @@ Use `npm run dev` for backend integration. `VITE_ADMIN_PROXY_PATH` must point to
 
 ## Backend
 
-The backend consumes `io.mango:mango-admin-starter` and the optional `io.mango.platform.seed:mango-seed-starter`.
+The backend consumes `io.mango:mango-admin-starter`. `io.mango.platform.seed:mango-seed-starter` is an optional startup seed capability and is not required by the default generated app.
 
-Create the local database before first startup:
-
-```sql
-CREATE DATABASE IF NOT EXISTS `{{projectKebab}}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-```
+Development startup has one entry:
 
 ```bash
-scripts/backend-dev.sh
+scripts/dev-workspace.sh backend
 curl http://127.0.0.1:5555/actuator/health
 ```
 
-`scripts/backend-dev.sh` installs local backend modules before starting the app. Use this script after `mango module add`, otherwise Maven may try to resolve local business starters from the remote repository.
+The script reads `.mango/dev-workspace.env`, creates the configured local database when `MANGO_DB_AUTO_CREATE=true`, installs backend reactor modules, and starts `backend/app` with Maven `spring-boot:run`.
 
-Official seed data is disabled by default. Enable it only for an empty or prepared database, and provide the initial administrator password explicitly:
+Deployment packaging is separate from development startup. Use `package + java -jar` or Docker only in deployment runbooks, not for local development.
+
+To inspect or initialize local backend settings:
+
+```bash
+scripts/dev-workspace.sh init
+scripts/dev-workspace.sh print
+```
+
+`scripts/backend-dev.sh` is kept only as a compatibility wrapper and delegates to `scripts/dev-workspace.sh backend`.
+
+Official seed data is disabled by default and requires adding `io.mango.platform.seed:mango-seed-starter` to the backend app dependencies. Enable it only for an empty or prepared database, and provide the initial administrator password explicitly:
 
 ```bash
 MANGO_SEED_ENABLED=true \
 MANGO_SEED_ADMIN_PASSWORD='replace-with-a-strong-password' \
-scripts/backend-dev.sh
+scripts/dev-workspace.sh backend
 ```
 
 The seed runner is idempotent: repeated startup does not duplicate the default tenant, administrator, member, role, application binding or role menu grants. Existing administrator passwords are not overwritten. In `prod` or `production` profiles, weak default passwords are rejected during startup.

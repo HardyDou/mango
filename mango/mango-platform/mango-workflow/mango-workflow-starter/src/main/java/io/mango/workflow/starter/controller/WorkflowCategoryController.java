@@ -48,8 +48,10 @@ public class WorkflowCategoryController {
     @Operation(summary = "查询流程分类选项", description = "权限接口。查询流程分类轻量列表，用于流程定义筛选和表单选择")
     public R<List<WorkflowCategoryVO>> list(
             @Parameter(description = "状态：0-停用，1-启用")
-            @RequestParam(required = false) Integer status) {
-        return workflowCategoryService.list(status);
+            @RequestParam(required = false) Integer status,
+            @Parameter(description = "业务域编码")
+            @RequestParam(required = false) String domainCode) {
+        return workflowCategoryService.list(status, domainCode);
     }
 
     @GetMapping("/detail")

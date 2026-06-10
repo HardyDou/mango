@@ -72,7 +72,7 @@ PO2026060900000001
 
 支付中心接入 `mango-numgen` 时，需要登记的是 `numgen_generator` 编号生成器及其生效规则，不新增新的“编码分发器”领域对象。
 
-支付中心编号统一登记到 `numgen_business_domain` 的 `PAYMENT` 支付域下；非支付模块继续使用各自业务域或默认 `GENERAL` 通用域。
+支付中心编号统一登记到统一业务域 `biz_domain` 的 `PAYMENT` 支付域下；非支付模块继续使用各自业务域。
 
 每个 `genKey` 应登记一套生效规则：
 

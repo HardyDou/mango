@@ -30,8 +30,10 @@ public class SysDictController {
     @GetMapping("/type/list")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:dict:type:list")
     @Operation(summary = "获取字典类型列表", description = "权限接口。查询全部字典类型")
-    public R<List<DictTypeVO>> listTypes() {
-        return dictService.listTypes();
+    public R<List<DictTypeVO>> listTypes(
+            @Parameter(description = "业务域编码")
+            @RequestParam(required = false) String domainCode) {
+        return dictService.listTypes(domainCode);
     }
 
     @GetMapping("/type/detail")

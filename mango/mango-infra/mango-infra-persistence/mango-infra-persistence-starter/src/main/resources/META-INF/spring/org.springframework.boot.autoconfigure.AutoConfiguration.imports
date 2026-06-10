@@ -1,3 +1,4 @@
+io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoConfiguration
 io.mango.infra.persistence.starter.PersistenceAutoConfiguration
 io.mango.infra.persistence.starter.PersistenceFlywayAutoConfiguration
 io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration

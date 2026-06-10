@@ -70,7 +70,17 @@
 - 禁止用本地启动脚本替代正式 migration。
 - 禁止把本地数据库名写死到应用配置或代码中。
 
-## 6. Agent 执行要求
+## 6. 运行时临时目录
+
+- 仓库内运行时临时文件统一放到 `<repo>/.runtime/`。
+- `.runtime/` 必须被 Git 忽略，禁止提交。
+- 测试 `mango-cli` 生成的新项目必须放到 `.runtime/projects/`。
+- 临时包缓存必须放到 `.runtime/package-store/`。
+- 临时启动日志、浏览器脚本中间产物、下载文件和非证据截图必须放到 `.runtime/` 下的子目录。
+- `mango-docs/evidence/` 只保存最终验收截图、报告和可复核脚本，禁止放生成项目、依赖缓存、构建产物和运行日志。
+- 任务结束后应清理 `.runtime/` 中与本次任务相关且不再需要的内容。
+
+## 7. Agent 执行要求
 
 - 需要启动本地服务时，Agent 必须优先使用 `scripts/dev-workspace.sh`。
 - 需要删除本地开发 worktree 时，Agent 必须优先使用 `scripts/dev-workspace.sh worktree-remove`。

@@ -35,6 +35,10 @@
 - `starter-remote` 的 Feign 能力必须通过 `mango-infra-feign-starter` 引入，禁止直接依赖 `spring-cloud-starter-openfeign`；其它 Spring、Web 等技术依赖按需使用外部框架坐标。
 - 安全入口类聚合模块例外：`mango-security-starter-remote` 只允许聚合 `mango-infra-security-starter`、`mango-auth-starter-remote`、`mango-identity-starter-remote`、`mango-authorization-starter-remote`，不得新增业务实现。
 - `api` 不依赖业务实现。
+- `mango-infra` 的轻量基础设施契约应拆到 `*-api`，例如注解、实体基类、分页模型、运行期上下文句柄和 Provider/Resolver 接口。
+- `mango-infra` 的 `*-starter` 只承载自动配置、Spring Boot 装配、扫描器、运行时实现、Flyway/MyBatis 等具体基础设施。
+- `core` 可依赖 infra `*-api` 和本域 `support`，禁止为了使用轻量契约依赖 infra/platform/business `*-starter`。
+- 已存在的 `core -> *-starter` 历史依赖必须通过拆分契约到 `*-api` 后逐模块迁移，禁止放松 checker 规则。
 
 ## 5. 边界规则
 

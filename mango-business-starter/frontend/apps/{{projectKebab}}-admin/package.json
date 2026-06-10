@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@{{projectKebab}}/{{moduleKebab}}": "{{projectVersion}}",
-    "@mango/admin": "1.0.9",
-    "element-plus": "2.5.5",
+    "@mango/admin": "1.0.14",
+    "element-plus": "2.14.1",
     "pinia": "2.0.32",
     "vue": "3.5.13",
     "vue-i18n": "9.2.2",

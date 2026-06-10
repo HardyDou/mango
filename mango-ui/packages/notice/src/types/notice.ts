@@ -137,6 +137,7 @@ export interface NoticeBusinessType {
   bizType: string;
   bizName: string;
   bizGroup?: string;
+  domainCode?: string;
   description?: string;
   paramsSchema?: string;
   enabled: boolean;
@@ -150,6 +151,13 @@ export interface NoticeBusinessType {
   draftVersion?: number;
   lastPublishTime?: string;
   enabledChannels?: string;
+}
+
+export interface NoticeDomainOption {
+  id?: string;
+  domainCode: string;
+  domainName: string;
+  children?: NoticeDomainOption[];
 }
 
 export interface NoticeBusinessConfigVersion {

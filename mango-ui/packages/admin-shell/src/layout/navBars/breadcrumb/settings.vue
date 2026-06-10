@@ -476,6 +476,7 @@
           />
         </div>
       </div>
+      <!--
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">水印</span>
         <div class="layout-settings-value">
@@ -486,6 +487,7 @@
           />
         </div>
       </div>
+      -->
 
       <!-- 其它设置 -->
       <el-divider content-position="left">
@@ -523,16 +525,16 @@
             @change="setLocalThemeConfig"
           >
             <el-option
-              label="风格1"
-              value="tags-style-one"
+              label="胶囊"
+              value="tags-style-capsule"
             />
             <el-option
-              label="风格4"
-              value="tags-style-four"
+              label="卡片"
+              value="tags-style-card"
             />
             <el-option
-              label="风格5"
-              value="tags-style-five"
+              label="经典"
+              value="tags-style-classic"
             />
           </el-select>
         </div>
@@ -568,7 +570,7 @@ import { nextTick, onMounted, onUnmounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeStore } from '../../../stores/theme';
 import { useLayoutStore } from '../../../stores/layout';
-import { usePreferencesStore } from '../../../stores/preferences';
+import { normalizeTagsStyle, usePreferencesStore } from '../../../stores/preferences';
 import { mittBus } from '@mango/common/utils/mitt';
 import { useChangeColor } from '@mango/common/utils/theme';
 import { Setting, RefreshRight } from '@element-plus/icons-vue';
@@ -693,10 +695,10 @@ const onAddDarkChange = () => {
   setLocalThemeConfig();
 };
 
-// 水印
-const onWartermarkChange = () => {
-  setLocalThemeConfig();
-};
+// 水印功能暂不开放，保留配置项逻辑，后续实现水印渲染后再恢复入口。
+// const onWartermarkChange = () => {
+//   setLocalThemeConfig();
+// };
 
 // 布局切换
 const onSetLayout = (layout: 'defaults' | 'classic' | 'transverse' | 'columns') => {
@@ -732,6 +734,7 @@ const openDrawer = () => {
 
 // 存储配置到本地
 const setLocalThemeConfig = () => {
+  preferencesStore.tagsStyle = normalizeTagsStyle(preferencesStore.tagsStyle);
   // 合并三个 store 的状态保存到 localStorage
   const combined = {
     ...themeStore.$state,

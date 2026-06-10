@@ -7,6 +7,7 @@ const externalPackages = [
   '@mango/calendar/admin-pages',
   '@mango/common',
   '@mango/file/admin-pages',
+  '@mango/job/admin-pages',
   '@mango/notice/admin-pages',
   '@mango/notice/admin-shell',
   '@mango/numgen/admin-pages',

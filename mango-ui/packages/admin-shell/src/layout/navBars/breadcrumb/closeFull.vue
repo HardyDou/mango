@@ -4,9 +4,10 @@
     @click="toggleFullscreen"
   >
     <el-icon :size="20">
-      <component
-        :is="CloseIcon"
+      <span
         v-if="isFullscreen"
+        class="fullscreen-exit-icon"
+        :style="fullscreenExitIconStyle"
       />
       <component
         :is="FullScreenIcon"
@@ -18,21 +19,27 @@
 
 <script setup lang="ts" name="breadcrumbCloseFull">
 import { ref, onMounted, onUnmounted, markRaw } from 'vue';
-import { FullScreen, Close } from '@element-plus/icons-vue';
+import type { CSSProperties } from 'vue';
+import { FullScreen } from '@element-plus/icons-vue';
+import fullscreenExitIconUrl from '../../../assets/icons/fullscreen-exit.svg';
 
 const isFullscreen = ref(false);
-
-// 使用 markRaw 包装图标组件
-const CloseIcon = markRaw(Close);
 const FullScreenIcon = markRaw(FullScreen);
+const fullscreenExitIconStyle: CSSProperties = {
+  '--fullscreen-exit-icon': `url(${fullscreenExitIconUrl})`,
+};
 
-const toggleFullscreen = () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-    isFullscreen.value = true;
-  } else {
-    document.exitFullscreen();
-    isFullscreen.value = false;
+const toggleFullscreen = async () => {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen?.();
+      return;
+    }
+    if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen();
+    }
+  } finally {
+    handleFullscreenChange();
   }
 };
 
@@ -62,5 +69,14 @@ onUnmounted(() => {
   &:hover {
     opacity: 0.8;
   }
+}
+
+.fullscreen-exit-icon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  background-color: currentColor;
+  -webkit-mask: var(--fullscreen-exit-icon) center / contain no-repeat;
+  mask: var(--fullscreen-exit-icon) center / contain no-repeat;
 }
 </style>

@@ -14,6 +14,7 @@ public final class NoticeBusinessTypeConvert {
  vo.setBizType(entity.getBizType());
  vo.setBizName(entity.getBizName());
  vo.setBizGroup(entity.getBizGroup());
+ vo.setDomainCode(entity.getDomainCode());
  vo.setDescription(entity.getDescription());
  vo.setParamsSchema(entity.getParamsSchema());
  vo.setEnabled(entity.getEnabled());

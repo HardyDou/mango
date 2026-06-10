@@ -78,6 +78,8 @@ mango:
       modules:
         system:
           enabled: true
+        domain:
+          enabled: true
         authorization:
           enabled: true
         identity:
@@ -91,6 +93,8 @@ mango:
         template:
           enabled: true
         workflow:
+          enabled: true
+        mango-job:
           enabled: true
         kv:
           enabled: true

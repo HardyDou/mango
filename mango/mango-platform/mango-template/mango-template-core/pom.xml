@@ -17,6 +17,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.domain</groupId>
+            <artifactId>mango-domain-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.infra.context</groupId>
             <artifactId>mango-infra-context-core</artifactId>
             <version>${project.version}</version>

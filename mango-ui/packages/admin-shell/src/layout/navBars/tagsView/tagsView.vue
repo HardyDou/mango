@@ -1,5 +1,5 @@
 <template>
-  <div class="tags-view-container">
+  <div :class="containerClasses">
     <el-scrollbar
       class="tags-view-scrollbar"
       @scroll="onScroll"
@@ -8,10 +8,16 @@
         v-for="tag in visitedViews"
         :key="tag.path"
         :to="{ path: tag.path, query: tag.query }"
-        :class="isActive(tag) ? 'tags-view-item active' : 'tags-view-item'"
+        :class="getTagItemClasses(tag)"
         @contextmenu.prevent="openContextMenu($event, tag)"
       >
-        <span>{{ tag.meta?.title || tag.name }}</span>
+        <el-icon
+          v-if="showTagIcon && resolveTagIcon(tag)"
+          class="tag-icon"
+        >
+          <component :is="resolveTagIcon(tag)" />
+        </el-icon>
+        <span class="tag-title">{{ tag.meta?.title || tag.name }}</span>
         <el-icon
           v-if="!tag.meta?.isAffix"
           class="close-icon"
@@ -33,18 +39,25 @@
 
 <script setup lang="ts" name="tagsView">
 import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, type RouteRecordRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { Close } from '@element-plus/icons-vue';
+import { iconMap } from '@mango/common/utils/iconConfig';
 import { useTagsViewRoutes } from '../../../stores/tagsViewRoutes';
+import { useLayoutStore } from '../../../stores/layout';
+import { DEFAULT_TAGS_STYLE, normalizeTagsStyle, usePreferencesStore } from '../../../stores/preferences';
 import { isHomeTag } from '@mango/common/utils/tagsView';
-import { resolveClosedTagFallback, resolveTagLocation } from '../../../runtime/tagNavigation';
+import { resolveClosedTagFallback } from '../../../runtime/tagNavigation';
 import ContextMenu from './contextmenu.vue';
 
 const route = useRoute();
 const router = useRouter();
 const storesTagsViewRoutes = useTagsViewRoutes();
+const layoutStore = useLayoutStore();
+const preferencesStore = usePreferencesStore();
 const { tagsViewRoutes } = storeToRefs(storesTagsViewRoutes);
+const { isTagsviewIcon } = storeToRefs(layoutStore);
+const { tagsStyle } = storeToRefs(preferencesStore);
 
 const contextMenuVisible = ref(false);
 const contextMenuLeft = ref(0);
@@ -52,6 +65,9 @@ const contextMenuTop = ref(0);
 const contextMenuTag = ref<any>(null);
 
 const visitedViews = computed(() => tagsViewRoutes.value);
+const showTagIcon = computed(() => isTagsviewIcon.value);
+const resolvedTagsStyle = computed(() => normalizeTagsStyle(tagsStyle.value));
+const containerClasses = computed(() => ['tags-view-container', resolvedTagsStyle.value || DEFAULT_TAGS_STYLE]);
 
 const addCurrentRoute = () => {
   if (!route.name || route.meta?.isHide) {
@@ -75,6 +91,22 @@ const addCurrentRoute = () => {
 
 const isActive = (tag: any) => {
   return tag.path === route.path;
+};
+
+const getTagItemClasses = (tag: RouteRecordRaw) => {
+  return [
+    'tags-view-item',
+    resolvedTagsStyle.value || DEFAULT_TAGS_STYLE,
+    {
+      active: isActive(tag),
+      'has-icon': showTagIcon.value && Boolean(resolveTagIcon(tag)),
+    },
+  ];
+};
+
+const resolveTagIcon = (tag: RouteRecordRaw) => {
+  const iconName = typeof tag.meta?.icon === 'string' ? tag.meta.icon : '';
+  return iconName ? iconMap[iconName] : undefined;
 };
 
 const openContextMenu = (e: MouseEvent, tag: any) => {
@@ -148,6 +180,7 @@ watch(
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
+    gap: 6px;
 
     &:hover {
       background: var(--mango-bg-main);
@@ -173,17 +206,86 @@ watch(
       background: var(--mango-bg-main);
     }
 
+    .tag-icon {
+      flex-shrink: 0;
+      font-size: 13px;
+    }
+
+    .tag-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .close-icon {
       width: 14px;
       height: 14px;
-      margin-left: 6px;
+      margin-left: 2px;
       font-size: 10px;
       border-radius: 50%;
+      flex-shrink: 0;
 
       &:hover {
         background: rgba(0, 0, 0, 0.08);
       }
     }
+  }
+
+  .tags-view-item.tags-style-capsule {
+    height: 30px;
+    margin-top: 5px;
+    border-bottom: 1px solid transparent;
+    border-radius: 16px;
+    background: var(--mango-bg-color);
+    border-color: var(--mango-border-color);
+
+    &:hover {
+      background: var(--mango-bg-overlay);
+      border-color: color-mix(in srgb, var(--mango-color-primary) 20%, var(--mango-border-color));
+    }
+
+    &.active {
+      color: #fff;
+      background: var(--mango-color-primary);
+      border-color: var(--mango-color-primary);
+      box-shadow: none;
+    }
+
+    &.active::after {
+      display: none;
+    }
+
+    .close-icon:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+  }
+
+  .tags-view-item.tags-style-card {
+    height: 30px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border-bottom: 1px solid var(--mango-border-color);
+    background: var(--mango-bg-color);
+
+    &:hover {
+      border-color: var(--mango-color-primary);
+      color: var(--mango-color-primary);
+    }
+
+    &.active {
+      border-color: var(--mango-color-primary);
+      background: color-mix(in srgb, var(--mango-color-primary) 8%, var(--mango-bg-main));
+      box-shadow: inset 3px 0 0 var(--mango-color-primary);
+      color: var(--mango-color-primary);
+    }
+
+    &.active::after {
+      display: none;
+    }
+  }
+
+  .tags-view-item.tags-style-classic {
+    border-radius: 6px 6px 0 0;
   }
 }
 </style>

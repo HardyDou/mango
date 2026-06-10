@@ -1,0 +1,69 @@
+{
+  "baseURL": "http://127.0.0.1:19081",
+  "projectRoot": "/tmp/mango-enterprise-cli-1.0.17-172024/procurement-platform",
+  "startedAt": "2026-06-03T09:43:11.395Z",
+  "checks": [
+    {
+      "name": "login-home",
+      "assertions": [
+        "首页",
+        "芒果集团"
+      ],
+      "result": "FAIL"
+    },
+    {
+      "name": "home-shell",
+      "assertions": [
+        "home is not 404",
+        "tenant name visible",
+        "notice entry visible"
+      ],
+      "details": {
+        "noticeIconCount": 0
+      },
+      "screenshot": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.17-runtime/screenshots/01-home-shell.png",
+      "result": "FAIL"
+    },
+    {
+      "name": "procurement-parent-redirect",
+      "assertions": [
+        "parent menu redirects to child page",
+        "no 404",
+        "business table visible"
+      ],
+      "url": "http://127.0.0.1:19081/#/procurement/orders",
+      "screenshot": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.17-runtime/screenshots/02-procurement-parent-redirect.png",
+      "result": "PASS"
+    },
+    {
+      "name": "procurement-order-crud",
+      "assertions": [
+        "create request succeeds",
+        "created row appears",
+        "query filters and keeps row visible"
+      ],
+      "testData": {
+        "recordName": "采购验收订单-1780479794368"
+      },
+      "screenshots": [
+        "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.17-runtime/screenshots/03-procurement-order-after-create.png",
+        "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.17-runtime/screenshots/04-procurement-order-after-search.png"
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "tag-close-fallback-smoke",
+      "assertions": [
+        "closing a tag does not leave blank shell",
+        "no system error text"
+      ],
+      "closeButtonCount": 0,
+      "url": "http://127.0.0.1:19081/#/procurement/orders",
+      "screenshot": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-03-enterprise-cli-1.0.17-runtime/screenshots/05-tag-close-fallback.png",
+      "result": "FAIL"
+    }
+  ],
+  "console": [],
+  "network": [],
+  "finishedAt": "2026-06-03T09:43:16.560Z"
+}

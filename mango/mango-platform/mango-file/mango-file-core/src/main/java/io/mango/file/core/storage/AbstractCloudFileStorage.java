@@ -36,16 +36,42 @@ abstract class AbstractCloudFileStorage implements FileStorage {
     }
 
     protected Optional<String> publicObjectUrl(FileStorageConfig config, String objectName) {
-        if (!StringUtils.hasText(config.getPublicEndpoint()) || !StringUtils.hasText(objectName)) {
+        if (!StringUtils.hasText(objectName)) {
             return Optional.empty();
         }
-        String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
-        return Optional.of(endpoint + "/" + encodeObjectName(objectName));
+        String endpoint = publicAccessEndpoint(config);
+        if (!StringUtils.hasText(endpoint)) {
+            return Optional.empty();
+        }
+        String path = encodeObjectName(objectName);
+        if (enabled(config.getPathStyleAccess()) && StringUtils.hasText(config.getBucketName())) {
+            path = encode(config.getBucketName().trim()) + "/" + path;
+        }
+        return Optional.of(endpoint + "/" + path);
+    }
+
+    protected String publicAccessEndpoint(FileStorageConfig config) {
+        String endpoint = StringUtils.hasText(config.getPublicEndpoint())
+                ? config.getPublicEndpoint().trim()
+                : config.getEndpoint();
+        if (!StringUtils.hasText(endpoint)) {
+            return null;
+        }
+        String normalized = StringUtils.trimTrailingCharacter(endpoint.trim(), '/');
+        if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+            return normalized;
+        }
+        String scheme = enabled(config.getSslEnabled()) ? "https://" : "http://";
+        return scheme + normalized;
     }
 
     protected String encodeObjectName(String objectName) {
         return URLEncoder.encode(objectName, StandardCharsets.UTF_8)
                 .replace("+", "%20")
                 .replace("%2F", "/");
+    }
+
+    protected String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@mango/system",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -21,15 +21,15 @@
     "package.json"
   ],
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "2.3.2",
     "@form-create/element-ui": "3.2.16",
     "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.7",
-    "@mango/rbac": "1.0.5",
+    "@mango/common": "1.0.8",
+    "@mango/rbac": "1.0.6",
     "form-create-designer": "3.2.11-oem"
   },
   "peerDependencies": {
-    "element-plus": "2.5.5",
+    "element-plus": "2.14.1",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
   },

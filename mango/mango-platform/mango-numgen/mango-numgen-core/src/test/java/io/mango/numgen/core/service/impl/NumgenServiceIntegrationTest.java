@@ -1,5 +1,8 @@
 package io.mango.numgen.core.service.impl;
 
+import io.mango.common.result.R;
+import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.numgen.api.command.NumgenNextCommand;
@@ -118,6 +121,7 @@ class NumgenServiceIntegrationTest {
         command.setId(1L);
         command.setGenKey("ORDER_NO");
         command.setGenName("订单号规则新版");
+        command.setDomainCode("NUMGEN");
         command.setStatus(1);
 
         assertThat(generatorService.updateGenerator(command).getData()).isTrue();
@@ -135,6 +139,7 @@ class NumgenServiceIntegrationTest {
         command.setId(1L);
         command.setGenKey("ORDER_NO_NEW");
         command.setGenName("订单号规则新版");
+        command.setDomainCode("NUMGEN");
         command.setStatus(1);
 
         assertThatThrownBy(() -> generatorService.updateGenerator(command))
@@ -305,35 +310,12 @@ class NumgenServiceIntegrationTest {
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_rule_segment");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_rule");
         jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_generator");
-        jdbcTemplate.execute("DROP TABLE IF EXISTS numgen_business_domain");
-        jdbcTemplate.execute("""
-                CREATE TABLE numgen_business_domain (
-                    id BIGINT NOT NULL,
-                    domain_code VARCHAR(64) NOT NULL,
-                    domain_name VARCHAR(128) NOT NULL,
-                    status TINYINT NOT NULL DEFAULT 1,
-                    tenant_id BIGINT NOT NULL DEFAULT 0,
-                    created_by BIGINT,
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_by BIGINT,
-                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    del_flag TINYINT NOT NULL DEFAULT 0,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY uk_numgen_business_domain_code (tenant_id, domain_code, del_flag)
-                )
-                """);
-        jdbcTemplate.update("""
-                INSERT INTO numgen_business_domain
-                (id, domain_code, domain_name, status, tenant_id, del_flag)
-                VALUES
-                (1, 'GENERAL', '通用域', 1, 1, 0)
-                """);
         jdbcTemplate.execute("""
                 CREATE TABLE numgen_generator (
                     id BIGINT NOT NULL,
                     gen_key VARCHAR(128) NOT NULL,
                     gen_name VARCHAR(128) NOT NULL,
-                    domain_code VARCHAR(64) NOT NULL DEFAULT 'GENERAL',
+                    domain_code VARCHAR(64) NOT NULL DEFAULT 'NUMGEN',
                     status TINYINT NOT NULL DEFAULT 1,
                     current_rule_version INT,
                     current_publish_status TINYINT NOT NULL DEFAULT 0,
@@ -427,6 +409,59 @@ class NumgenServiceIntegrationTest {
         @Bean
         PlatformTransactionManager transactionManager(DataSource dataSource) {
             return new DataSourceTransactionManager(dataSource);
+        }
+
+        @Bean
+        DomainApi domainApi() {
+            return new DomainApi() {
+                @Override
+                public R<DomainVO> detailByCode(String domainCode) {
+                    DomainVO vo = new DomainVO();
+                    vo.setDomainCode(domainCode);
+                    vo.setStatus(1);
+                    return R.ok(vo);
+                }
+
+                @Override
+                public R<io.mango.common.vo.PageResult<DomainVO>> page(io.mango.domain.api.query.DomainPageQuery query) {
+                    return R.ok(io.mango.common.vo.PageResult.of(java.util.List.of(), 0, 1, 10));
+                }
+
+                @Override
+                public R<java.util.List<DomainVO>> tree(io.mango.domain.api.query.DomainPageQuery query) {
+                    return R.ok(java.util.List.of());
+                }
+
+                @Override
+                public R<java.util.List<DomainVO>> enabledTree() {
+                    return R.ok(java.util.List.of());
+                }
+
+                @Override
+                public R<DomainVO> detail(Long id) {
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<Long> create(io.mango.domain.api.command.CreateDomainCommand command) {
+                    return R.ok(1L);
+                }
+
+                @Override
+                public R<Boolean> update(io.mango.domain.api.command.UpdateDomainCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Boolean> updateStatus(io.mango.domain.api.command.UpdateDomainStatusCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Boolean> delete(Long id) {
+                    return R.ok(true);
+                }
+            };
         }
     }
 }

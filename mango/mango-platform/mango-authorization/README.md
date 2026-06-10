@@ -90,6 +90,8 @@ mango:
         mode: write # write 注册到授权服务；read 只解析并输出日志
 ```
 
+模块菜单初始化的长期归口规则见 `mango-pmo/rules/backend/11-module-menu.md`。authorization 负责消费资源清单和维护授权基础资产，功能模块通过资源清单声明自身菜单、页面路由和按钮权限。
+
 资源清单示例：
 
 ```json
@@ -97,6 +99,12 @@ mango:
   "appCode": "internal-admin",
   "moduleCode": "contract",
   "moduleName": "合同模块",
+  "packageCodes": [
+    "internal-admin-default"
+  ],
+  "roleCodes": [
+    "ROLE_ADMIN"
+  ],
   "menus": [
     {
       "menuType": 1,
@@ -131,6 +139,8 @@ mango:
 - `appCode + moduleCode + menuCode` 作为菜单幂等更新键。
 - `menus` 写入目录或页面菜单。
 - `permissionItems` 写入 `menuType=3` 的按钮菜单，运行时权限仍由按钮菜单 `menuCode` 提供。
+- `packageCodes` 引用已存在菜单包，注册时把清单菜单幂等加入套餐。
+- `roleCodes` 引用已存在角色，注册时把清单菜单幂等授权给角色。
 - 不自动删除清单中不存在的历史菜单，避免启动时误删授权资产。
 
 ## 核心实体

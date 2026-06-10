@@ -23,6 +23,9 @@ public class NoticeBusinessTypePageQuery implements Serializable {
     @Schema(description = "业务分组")
     private String bizGroup;
 
+    @Schema(description = "业务域编码")
+    private String domainCode;
+
     @Schema(description = "是否启用")
     private Boolean enabled;
 }

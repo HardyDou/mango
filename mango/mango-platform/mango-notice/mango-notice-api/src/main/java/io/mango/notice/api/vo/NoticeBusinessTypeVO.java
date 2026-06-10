@@ -26,6 +26,9 @@ public class NoticeBusinessTypeVO implements Serializable {
     @Schema(description = "业务分组")
     private String bizGroup;
 
+    @Schema(description = "业务域编码")
+    private String domainCode;
+
     @Schema(description = "说明")
     private String description;
 

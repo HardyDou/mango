@@ -6,13 +6,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
 import io.mango.numgen.api.command.SaveNumgenGeneratorCommand;
 import io.mango.numgen.api.command.UpdateNumgenGeneratorStatusCommand;
 import io.mango.numgen.api.query.NumgenGeneratorPageQuery;
 import io.mango.numgen.api.vo.NumgenGeneratorVO;
-import io.mango.numgen.core.entity.NumgenBusinessDomain;
 import io.mango.numgen.core.entity.NumgenGenerator;
-import io.mango.numgen.core.mapper.NumgenBusinessDomainMapper;
 import io.mango.numgen.core.mapper.NumgenGeneratorMapper;
 import io.mango.numgen.core.mapper.NumgenRuleMapper;
 import io.mango.numgen.core.service.INumgenGeneratorService;
@@ -28,11 +28,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
 
-    private static final String DEFAULT_DOMAIN_CODE = "GENERAL";
-
-    private final NumgenBusinessDomainMapper businessDomainMapper;
     private final NumgenGeneratorMapper generatorMapper;
     private final NumgenRuleMapper ruleMapper;
+    private final DomainApi domainApi;
 
     @Override
     public R<PageResult<NumgenGeneratorVO>> pageGenerators(NumgenGeneratorPageQuery query) {
@@ -121,18 +119,19 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         }
         Require.notBlank(command.getGenKey(), "业务 Key 不能为空");
         Require.notBlank(command.getGenName(), "名称不能为空");
+        validateDomain(command.getDomainCode());
         Require.notNull(command.getStatus(), "状态不能为空");
     }
 
     private void copy(SaveNumgenGeneratorCommand command, NumgenGenerator entity) {
         entity.setGenKey(command.getGenKey().trim());
         entity.setGenName(command.getGenName().trim());
-        entity.setDomainCode(resolveDomain(command.getDomainCode(), entity.getTenantId()).getDomainCode());
+        entity.setDomainCode(validateDomain(command.getDomainCode()).getDomainCode());
         entity.setStatus(command.getStatus());
     }
 
     private NumgenGeneratorVO toVO(NumgenGenerator entity) {
-        NumgenBusinessDomain domain = selectDomain(entity.getDomainCode(), entity.getTenantId());
+        DomainVO domain = getDomain(entity.getDomainCode());
         NumgenGeneratorVO vo = new NumgenGeneratorVO();
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
@@ -148,29 +147,28 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         return vo;
     }
 
-    private NumgenBusinessDomain resolveDomain(String domainCode, Long tenantId) {
-        String resolvedDomainCode = NumgenContextSupport.trimToNull(domainCode);
-        if (!StringUtils.hasText(resolvedDomainCode)) {
-            resolvedDomainCode = DEFAULT_DOMAIN_CODE;
-        }
-        NumgenBusinessDomain domain = selectDomain(resolvedDomainCode, tenantId);
-        Require.notNull(domain, "业务域不存在：" + resolvedDomainCode);
-        Require.isTrue(domain.getStatus() == null || domain.getStatus() == 1, "业务域已停用：" + resolvedDomainCode);
-        return domain;
-    }
-
     private NumgenGenerator selectByKey(String genKey, Long tenantId) {
         return generatorMapper.selectOne(new LambdaQueryWrapper<NumgenGenerator>()
                 .eq(NumgenGenerator::getGenKey, genKey)
                 .eq(NumgenGenerator::getTenantId, tenantId));
     }
 
-    private NumgenBusinessDomain selectDomain(String domainCode, Long tenantId) {
-        if (!StringUtils.hasText(domainCode) || tenantId == null) {
+    private DomainVO validateDomain(String domainCode) {
+        Require.notBlank(domainCode, "业务域不能为空");
+        DomainVO domain = getDomain(domainCode);
+        Require.notNull(domain, "业务域不存在");
+        Require.isTrue(Integer.valueOf(1).equals(domain.getStatus()), "业务域已停用");
+        return domain;
+    }
+
+    private DomainVO getDomain(String domainCode) {
+        if (!StringUtils.hasText(domainCode)) {
             return null;
         }
-        return businessDomainMapper.selectOne(new LambdaQueryWrapper<NumgenBusinessDomain>()
-                .eq(NumgenBusinessDomain::getDomainCode, domainCode)
-                .eq(NumgenBusinessDomain::getTenantId, tenantId));
+        R<DomainVO> response = domainApi.detailByCode(domainCode.trim());
+        if (response == null || !response.isSuccess()) {
+            return null;
+        }
+        return response.getData();
     }
 }

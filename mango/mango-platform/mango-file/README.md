@@ -165,6 +165,18 @@ mango:
 
 上传校验以后端策略为准，前端只做提前提示。高频上传路径读取的是按机构缓存的策略，策略保存后会清理对应机构缓存。
 
+文件运行时访问地址按实际存储配置生成。代理下载地址和 LOCAL 缺省对象入口可使用 `mango.file.public-base-url` 作为 Java 服务外部基准地址，例如：
+
+```yaml
+mango:
+  file:
+    public-base-url: https://mango.example.com/api
+```
+
+未配置时，文件服务会使用 `X-Forwarded-Proto`、`X-Forwarded-Host`、`X-Forwarded-Port`、`X-Forwarded-Prefix` 或当前请求上下文组装代理下载地址和 LOCAL 缺省对象入口。没有请求上下文且未配置外部基准地址时，代理下载才降级为相对 `/file/files/download?id=...`，LOCAL 对象入口才降级为相对 `/file/local-objects/{bucket}/...`。
+
+MinIO/S3/OSS/COS/Kodo 等对象存储的直连公开地址和预签名地址由对应 `file_storage_config` 决定。浏览器访问入口优先使用 `public_endpoint`；未配置时才使用该存储的 `endpoint`，并按 `ssl_enabled` 补齐协议。Java 服务不会再把对象存储直连地址改写成 `mango.file.public-base-url` 或反向代理地址。这些地址仍只属于运行时响应，不允许业务系统持久化。
+
 ## 物理对象、秒传与分片上传
 
 文件服务把业务文件记录和底层物理对象拆开：

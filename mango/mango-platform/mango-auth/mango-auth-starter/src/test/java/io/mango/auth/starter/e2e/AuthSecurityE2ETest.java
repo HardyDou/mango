@@ -10,6 +10,7 @@ import io.mango.authorization.api.AuthorizationSnapshot;
 import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.core.service.impl.AuthServiceImpl;
 import io.mango.auth.core.service.TokenRevocationService;
+import io.mango.auth.core.service.WecomLoginClient;
 import io.mango.auth.starter.config.AuthSecurityConfig;
 import io.mango.auth.starter.controller.AuthController;
 import io.mango.common.result.R;
@@ -24,6 +25,8 @@ import io.mango.identity.api.AuthUserProvider;
 import io.mango.identity.api.IdentityUserApi;
 import io.mango.identity.api.vo.AuthUserInfo;
 import io.mango.identity.api.vo.IdentityUserInfo;
+import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -89,6 +92,33 @@ class AuthSecurityE2ETest {
                                 {
                                   "username": "admin",
                                   "password": "admin123",
+                                  "tenantId": "1"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String accessToken = body.path("data").path("accessToken").asText();
+
+        mockMvc.perform(get("/e2e/secured")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("1:admin"));
+    }
+
+    @Test
+    @DisplayName("WeCom login should issue token for bound identity")
+    void wecomLoginShouldIssueTokenForBoundIdentity() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/auth/wecom/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "code": "mock-wecom-code",
+                                  "channelConfigId": 1,
                                   "tenantId": "1"
                                 }
                                 """))
@@ -251,6 +281,37 @@ class AuthSecurityE2ETest {
         IdentityUserApi identityUserApi() {
             return new IdentityUserApi() {
                 @Override
+                public R<io.mango.common.vo.PageResult<io.mango.identity.api.vo.IdentityUserVO>> page(
+                        io.mango.identity.api.query.IdentityUserPageQuery query) {
+                    return R.ok(io.mango.common.vo.PageResult.of(List.of(), 0, 1, 10));
+                }
+
+                @Override
+                public R<io.mango.identity.api.vo.IdentityUserVO> detail(Long userId) {
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<Long> create(io.mango.identity.api.command.CreateIdentityUserCommand command) {
+                    return R.ok(1L);
+                }
+
+                @Override
+                public R<Boolean> update(io.mango.identity.api.command.UpdateIdentityUserCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Boolean> delete(Long userId) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<Integer> deleteBatch(io.mango.identity.api.command.BatchDeleteIdentityUserCommand command) {
+                    return R.ok(0);
+                }
+
+                @Override
                 public R<IdentityUserInfo> getUserInfo(String username) {
                     return R.ok("admin".equals(username) ? identityUser() : null);
                 }
@@ -266,6 +327,41 @@ class AuthSecurityE2ETest {
                             ? List.of(identityUser()) : List.of());
                 }
 
+                @Override
+                public R<io.mango.identity.api.vo.ExternalIdentityBindingVO> bindExternalIdentity(
+                        io.mango.identity.api.command.BindExternalIdentityCommand command) {
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<Boolean> unbindExternalIdentity(io.mango.identity.api.command.UnbindExternalIdentityCommand command) {
+                    return R.ok(true);
+                }
+
+                @Override
+                public R<io.mango.identity.api.vo.ExternalIdentityBindingVO> findExternalIdentity(
+                        io.mango.identity.api.query.ExternalIdentityQuery query) {
+                    if (query != null
+                            && "WECOM".equals(query.getProvider())
+                            && "mock-corp".equals(query.getCorpId())
+                            && "wecom-admin".equals(query.getExternalUserId())) {
+                        io.mango.identity.api.vo.ExternalIdentityBindingVO binding =
+                                new io.mango.identity.api.vo.ExternalIdentityBindingVO();
+                        binding.setUserId(1L);
+                        binding.setProvider("WECOM");
+                        binding.setCorpId("mock-corp");
+                        binding.setExternalUserId("wecom-admin");
+                        binding.setBindStatus("BOUND");
+                        return R.ok(binding);
+                    }
+                    return R.ok(null);
+                }
+
+                @Override
+                public R<List<io.mango.identity.api.vo.ExternalIdentityBindingVO>> listExternalIdentities(Long userId) {
+                    return R.ok(List.of());
+                }
+
                 private IdentityUserInfo identityUser() {
                     IdentityUserInfo user = new IdentityUserInfo();
                     user.setUserId(1L);
@@ -277,6 +373,25 @@ class AuthSecurityE2ETest {
                     return user;
                 }
             };
+        }
+
+        @Bean
+        NoticeApi noticeApi() {
+            NoticeApi api = org.mockito.Mockito.mock(NoticeApi.class);
+            NoticeWecomLoginConfigVO config = new NoticeWecomLoginConfigVO();
+            config.setChannelConfigId(1L);
+            config.setCorpId("mock-corp");
+            config.setAgentId("1000003");
+            config.setSecret("mock-secret");
+            config.setRedirectUri("http://127.0.0.1:8550/login");
+            org.mockito.Mockito.when(api.getWecomLoginConfig(org.mockito.ArgumentMatchers.any()))
+                    .thenReturn(R.ok(config));
+            return api;
+        }
+
+        @Bean
+        WecomLoginClient wecomLoginClient() {
+            return (corpId, secret, code) -> "mock-wecom-code".equals(code) ? "wecom-admin" : null;
         }
 
         @Bean
@@ -308,7 +423,10 @@ class AuthSecurityE2ETest {
                 IAuthorizationProvider authorizationProvider) {
             return (authenticationSupplier, context) -> {
                 String requestUri = context.getRequest().getRequestURI();
-                if ("/auth/login".equals(requestUri) || "/auth/refresh".equals(requestUri)) {
+                if ("/auth/login".equals(requestUri)
+                        || "/auth/refresh".equals(requestUri)
+                        || "/auth/wecom/login".equals(requestUri)
+                        || "/auth/wecom/login-config".equals(requestUri)) {
                     return new AuthorizationDecision(true);
                 }
                 var authentication = authenticationSupplier.get();

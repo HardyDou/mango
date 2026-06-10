@@ -10,6 +10,7 @@ export interface SysParam {
   paramKey: string;
   paramValue: string;
   paramType: number;
+  domainCode?: string;
   description?: string;
   status?: number;
   createTime?: string;
@@ -21,6 +22,7 @@ export interface SysParamQuery {
   pageSize?: number;
   keyword?: string;
   paramType?: number;
+  domainCode?: string;
 }
 
 export interface PageResult<T> {
@@ -53,8 +55,9 @@ export const paramApi = {
 };
 
 function toBackendQuery(params?: SysParamQuery) {
-  return {
+    return {
     type: params?.paramType ? toBackendType(params.paramType) : undefined,
+    domainCode: params?.domainCode || undefined,
   };
 }
 
@@ -68,6 +71,7 @@ function fromConfig(item: any): SysParam {
     paramKey: item.configKey,
     paramValue: item.configValue,
     paramType: item.type === 'SYSTEM' ? 1 : 2,
+    domainCode: item.domainCode ?? 'COMMON',
     description: item.remark || item.configName,
     status: item.status,
     createTime: item.createTime,
@@ -82,6 +86,7 @@ function toConfig(item: SysParam) {
     configValue: item.paramValue,
     configName: item.paramKey,
     type: toBackendType(item.paramType),
+    domainCode: item.domainCode || 'COMMON',
     remark: item.description,
     status: item.status,
     sort: 0,

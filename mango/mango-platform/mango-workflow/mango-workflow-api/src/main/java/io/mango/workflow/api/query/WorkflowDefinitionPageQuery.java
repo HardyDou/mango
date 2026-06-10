@@ -19,6 +19,9 @@ public class WorkflowDefinitionPageQuery extends PageQuery {
     @Schema(description = "流程分类ID")
     private Long categoryId;
 
+    @Schema(description = "业务域编码")
+    private String domainCode;
+
     @Schema(description = "所属组织ID")
     private Long orgId;
 

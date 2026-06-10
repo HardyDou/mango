@@ -71,17 +71,40 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
+    public Optional<String> presignedDownloadUrl(FileStorageConfig config, String objectName, String fileName, Duration expires) {
+        return publicDownloadUrl(config, objectName, fileName);
+    }
+
+    @Override
     public Optional<String> publicGetUrl(FileStorageConfig config, String objectName, String fileName) {
         if (!StringUtils.hasText(objectName)) {
             return Optional.empty();
         }
         if (!StringUtils.hasText(config.getPublicEndpoint()) || !StringUtils.hasText(objectName)) {
-            String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
+            String bucket = StringUtils.hasText(config.getBucketName())
+                    ? config.getBucketName().trim()
+                    : properties.getDefaultBucket();
             return Optional.of(localObjectUrl(bucket, objectName));
         }
-        String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
-        String bucket = StringUtils.hasText(config.getBucketName()) ? config.getBucketName().trim() : properties.getDefaultBucket();
+        String endpoint = publicEndpoint(config);
+        String bucket = StringUtils.hasText(config.getBucketName())
+                ? config.getBucketName().trim()
+                : properties.getDefaultBucket();
         return Optional.of(endpoint + "/" + encode(bucket) + "/" + encodeObjectName(objectName));
+    }
+
+    @Override
+    public Optional<String> publicDownloadUrl(FileStorageConfig config, String objectName, String fileName) {
+        return publicGetUrl(config, objectName, fileName)
+                .map(this::withDownloadDisposition);
+    }
+
+    private String publicEndpoint(FileStorageConfig config) {
+        String endpoint = StringUtils.trimTrailingCharacter(config.getPublicEndpoint().trim(), '/');
+        if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+            return endpoint;
+        }
+        return (Integer.valueOf(1).equals(config.getSslEnabled()) ? "https://" : "http://") + endpoint;
     }
 
     private Path resolvePath(String bucketName, String objectName) {
@@ -104,11 +127,15 @@ public class LocalFileStorage implements FileStorage {
 
     private String localObjectUrl(String bucket, String objectName) {
         String path = properties.getLocal().getPublicPath();
-        String prefix = StringUtils.hasText(path) ? path.trim() : "/api/file/local-objects";
+        String prefix = StringUtils.hasText(path) ? path.trim() : "/file/local-objects";
         prefix = StringUtils.trimTrailingCharacter(prefix, '/');
         if (!prefix.startsWith("/")) {
             prefix = "/" + prefix;
         }
         return prefix + "/" + encode(bucket) + "/" + encodeObjectName(objectName);
+    }
+
+    private String withDownloadDisposition(String url) {
+        return url + (url.contains("?") ? "&" : "?") + "download=1";
     }
 }

@@ -2,6 +2,8 @@
   "appCode": "internal-admin",
   "moduleCode": "contract",
   "moduleName": "合同模块",
+  "packageCodes": ["internal-admin-default"],
+  "roleCodes": ["ROLE_ADMIN"],
   "menus": [
     {
       "menuType": 1,

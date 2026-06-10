@@ -6,6 +6,7 @@
 import { useThemeStore } from '@/stores/theme';
 import { useLayoutStore } from '@/stores/layout';
 import { usePreferencesStore } from '@/stores/preferences';
+import { normalizeTagsStyle } from '@mango/admin-shell';
 import { Local } from '@mango/common';
 
 const STORAGE_KEY = 'themeConfig';
@@ -143,6 +144,7 @@ export function initThemeBeforeRender(): void {
         (preferencesStore.$state as Record<string, unknown>)[key] = data[key];
       }
     });
+    preferencesStore.tagsStyle = normalizeTagsStyle(preferencesStore.tagsStyle);
     preferencesStore.isDrawer = false;
 
     // 应用 CSS 变量

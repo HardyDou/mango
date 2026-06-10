@@ -17,6 +17,12 @@
     <description>Mango Infra Persistence Starter - relational persistence infrastructure</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- MyBatis-Plus 集成 -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -31,6 +37,10 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid-spring-boot-3-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
         <!-- H2 测试数据库 -->
@@ -59,11 +69,6 @@
             <groupId>io.mango.common</groupId>
             <artifactId>mango-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
-        </dependency>
-
         <!-- Mango 运行时上下文 -->
         <dependency>
             <groupId>io.mango.infra.context</groupId>

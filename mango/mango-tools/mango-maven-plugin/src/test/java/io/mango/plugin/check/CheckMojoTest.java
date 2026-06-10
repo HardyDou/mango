@@ -1,14 +1,23 @@
 package io.mango.plugin.check;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.project.MavenProject;
 
+import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * CheckMojo 单元测试
@@ -199,6 +208,87 @@ class CheckMojoTest {
     }
 
     @Test
+    void resolveStaticAnalysisProjects_withSessionReactor_usesCurrentProjectsInsteadOfFullTree() throws Exception {
+        // given
+        Path rootPom = tempDir.resolve("pom.xml");
+        Files.writeString(rootPom, """
+                <project>
+                    <modules>
+                        <module>mango-platform</module>
+                        <module>mango-infra</module>
+                    </modules>
+                </project>
+                """);
+        Path jobRoot = tempDir.resolve("mango-platform/mango-job");
+        Path jobSupport = jobRoot.resolve("mango-job-support");
+        Path jobCore = jobRoot.resolve("mango-job-core");
+        Path infraKv = tempDir.resolve("mango-infra/mango-infra-kv");
+        Files.createDirectories(jobSupport);
+        Files.createDirectories(jobCore);
+        Files.createDirectories(infraKv);
+        Files.writeString(jobSupport.resolve("pom.xml"), "<project/>");
+        Files.writeString(jobCore.resolve("pom.xml"), "<project/>");
+        Files.writeString(infraKv.resolve("pom.xml"), "<project/>");
+
+        MavenSession session = mock(MavenSession.class);
+        MavenProject rootProject = new MavenProject();
+        rootProject.setFile(rootPom.toFile());
+        MavenProject supportProject = new MavenProject();
+        supportProject.setFile(jobSupport.resolve("pom.xml").toFile());
+        MavenProject coreProject = new MavenProject();
+        coreProject.setFile(jobCore.resolve("pom.xml").toFile());
+        when(session.getProjects()).thenReturn(List.of(rootProject, supportProject, coreProject));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", session);
+
+        Method method = CheckMojo.class.getDeclaredMethod("resolveStaticAnalysisProjects", Path.class);
+        method.setAccessible(true);
+
+        // when
+        @SuppressWarnings("unchecked")
+        List<String> projects = (List<String>) method.invoke(mojo, tempDir);
+
+        // then
+        assertEquals(List.of(
+                "mango-platform/mango-job/mango-job-support",
+                "mango-platform/mango-job/mango-job-core"
+        ), projects);
+    }
+
+    @Test
+    void invokeSingleGoal_whenDelegatedMavenCommandHangs_timesOut() throws Exception {
+        // given
+        Files.writeString(tempDir.resolve("pom.xml"), "<project/>");
+        Path slowMaven = tempDir.resolve("slow-mvn.sh");
+        Files.writeString(slowMaven, """
+                #!/bin/sh
+                sleep 5
+                """);
+        assertTrue(slowMaven.toFile().setExecutable(true));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "staticTimeoutSeconds", 1L);
+
+        Method method = CheckMojo.class.getDeclaredMethod(
+                "invokeSingleGoal", File.class, Path.class, String.class, List.class);
+        method.setAccessible(true);
+
+        // when
+        long startedAt = System.nanoTime();
+        InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+                () -> method.invoke(mojo, slowMaven.toFile(), tempDir, "pmd:check", List.of()));
+        long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
+
+        // then
+        assertTrue(elapsedMillis < 4_000, "timeout should not wait for the full child process sleep");
+        assertInstanceOf(MojoExecutionException.class, exception.getCause());
+        assertTrue(exception.getCause().getMessage().contains("timed out after 1s"));
+        assertTrue(exception.getCause().getMessage().contains("pmd:check"));
+    }
+
+    @Test
     void checkDependency_withValidPom_passes() throws Exception {
         // given
         Path projectDir = tempDir.resolve("mango-user");
@@ -349,6 +439,86 @@ class CheckMojoTest {
         setField(mojo, "session", null);
 
         assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSessionReactor_scansOnlySessionProjects() throws Exception {
+        Path sessionDir = tempDir.resolve("mango-platform/mango-job/mango-job-core");
+        Path historicalDir = tempDir.resolve("mango-platform/mango-file/mango-file-core");
+        Files.createDirectories(sessionDir);
+        Files.createDirectories(historicalDir);
+        Files.writeString(sessionDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.job</groupId>
+                    <artifactId>mango-job-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-api</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+        Files.writeString(historicalDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.file</groupId>
+                    <artifactId>mango-file-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        MavenSession session = mock(MavenSession.class);
+        MavenProject sessionProject = new MavenProject();
+        sessionProject.setFile(sessionDir.resolve("pom.xml").toFile());
+        when(session.getProjects()).thenReturn(List.of(sessionProject));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", session);
+
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkDependency_withSessionReactor_reportsViolationInsideSession() throws Exception {
+        Path sessionDir = tempDir.resolve("mango-platform/mango-job/mango-job-core");
+        Files.createDirectories(sessionDir);
+        Files.writeString(sessionDir.resolve("pom.xml"), """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <groupId>io.mango.platform.job</groupId>
+                    <artifactId>mango-job-core</artifactId>
+                    <version>1.0.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.mango.infra.persistence</groupId>
+                            <artifactId>mango-infra-persistence-starter</artifactId>
+                        </dependency>
+                    </dependencies>
+                </project>
+                """);
+
+        MavenSession session = mock(MavenSession.class);
+        MavenProject sessionProject = new MavenProject();
+        sessionProject.setFile(sessionDir.resolve("pom.xml").toFile());
+        when(session.getProjects()).thenReturn(List.of(sessionProject));
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "dependency");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", session);
+
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
     }
 
     @Test

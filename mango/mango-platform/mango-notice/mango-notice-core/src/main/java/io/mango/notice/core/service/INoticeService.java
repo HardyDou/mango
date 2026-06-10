@@ -13,6 +13,7 @@ import io.mango.notice.api.command.SaveNoticeReceivePreferenceCommand;
 import io.mango.notice.api.command.SaveNoticeRecipientAccountCommand;
 import io.mango.notice.api.command.SaveNoticeSettingsCommand;
 import io.mango.notice.api.command.SendNoticeCommand;
+import io.mango.notice.api.command.SyncWecomUsersCommand;
 import io.mango.notice.api.command.UpdateNoticeBusinessTypeCommand;
 import io.mango.notice.api.enums.NoticeChannelType;
 import io.mango.notice.api.query.NoticeBusinessTypePageQuery;
@@ -34,6 +35,8 @@ import io.mango.notice.api.vo.NoticeSettingsVO;
 import io.mango.notice.api.vo.NoticeSiteMessageVO;
 import io.mango.notice.api.vo.NoticeTaskVO;
 import io.mango.notice.api.vo.NoticeUnreadCountVO;
+import io.mango.notice.api.vo.NoticeWecomLoginConfigVO;
+import io.mango.notice.api.vo.WecomUserSyncResultVO;
 
 import java.util.List;
 
@@ -80,6 +83,8 @@ public interface INoticeService {
 
  NoticeChannelConfigVO saveChannelConfig(SaveNoticeChannelConfigCommand command);
 
+ NoticeWecomLoginConfigVO getWecomLoginConfig(Long channelConfigId);
+
  boolean deleteChannelConfig(Long id);
 
  PageResult<NoticeTaskVO> listTasks(NoticeTaskPageQuery query);
@@ -105,6 +110,8 @@ public interface INoticeService {
  List<NoticeRecipientAccountVO> listRecipientAccounts(Long currentUserId, NoticeRecipientAccountQuery query);
 
  NoticeRecipientAccountVO saveRecipientAccount(Long currentUserId, SaveNoticeRecipientAccountCommand command);
+
+ WecomUserSyncResultVO syncWecomUsers(SyncWecomUsersCommand command);
 
  boolean disableRecipientAccount(Long currentUserId, Long id, Long userId);
 

@@ -1,22 +1,7 @@
 SET @schema_name = DATABASE();
 
-CREATE TABLE IF NOT EXISTS `numgen_business_domain` (
-  `id` bigint NOT NULL COMMENT '主键',
-  `domain_code` varchar(64) NOT NULL COMMENT '业务域编码',
-  `domain_name` varchar(128) NOT NULL COMMENT '业务域名称',
-  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：0-停用，1-启用',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT '租户ID',
-  `created_by` bigint DEFAULT NULL COMMENT '创建人',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_by` bigint DEFAULT NULL COMMENT '更新人',
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `del_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记：0-正常，1-已删除',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_numgen_business_domain_code` (`tenant_id`, `domain_code`, `del_flag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='编号业务域';
-
 SET @add_generator_domain_code = (
-  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `numgen_generator` ADD COLUMN `domain_code` varchar(64) NOT NULL DEFAULT ''GENERAL'' COMMENT ''业务域编码'' AFTER `gen_name`', 'SELECT 1')
+  SELECT IF(COUNT(*) = 0, 'ALTER TABLE `numgen_generator` ADD COLUMN `domain_code` varchar(64) NOT NULL DEFAULT ''NUMGEN'' COMMENT ''业务域编码'' AFTER `gen_name`', 'SELECT 1')
   FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = @schema_name AND TABLE_NAME = 'numgen_generator' AND COLUMN_NAME = 'domain_code'
 );
@@ -34,19 +19,8 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 UPDATE `numgen_generator`
-SET `domain_code` = 'GENERAL'
+SET `domain_code` = 'NUMGEN'
 WHERE `domain_code` IS NULL OR `domain_code` = '';
-
-INSERT INTO `numgen_business_domain`
-  (`id`, `domain_code`, `domain_name`, `status`, `tenant_id`, `created_by`, `updated_by`, `created_at`, `updated_at`, `del_flag`)
-VALUES
-  (900000100001, 'GENERAL', '通用域', 1, 1, 0, 0, NOW(), NOW(), 0),
-  (900000100002, 'PAYMENT', '支付域', 1, 1, 0, 0, NOW(), NOW(), 0)
-ON DUPLICATE KEY UPDATE
-  `domain_name` = VALUES(`domain_name`),
-  `status` = VALUES(`status`),
-  `updated_by` = VALUES(`updated_by`),
-  `updated_at` = NOW();
 
 CREATE TEMPORARY TABLE `tmp_numgen_payment_seed` (
   `row_no` int NOT NULL,

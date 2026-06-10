@@ -23,6 +23,7 @@ const defaultVersions = {
   mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
   mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
+  mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
   mangoRbac: readReleasedMangoPackageVersion('rbac', '1.0.4'),
@@ -63,6 +64,7 @@ const CORE_FRONTEND_PACKAGES = [
 const ADMIN_OPTIONAL_PEER_PACKAGES = [
   { name: '@mango/calendar', versionKey: 'mangoCalendar' },
   { name: '@mango/file', versionKey: 'mangoFile' },
+  { name: '@mango/job', versionKey: 'mangoJob' },
   { name: '@mango/notice', versionKey: 'mangoNotice' },
   { name: '@mango/numgen', versionKey: 'mangoNumgen' },
   { name: '@mango/template', versionKey: 'mangoTemplate' },
@@ -224,6 +226,7 @@ Usage:
   mango init <project> --preset full [options]
   mango init <project> --preset custom --modules workflow,template [options]
   mango add <module...> [options]
+  mango pmo sync --project-dir <dir> [--dry-run] [--write-agents]
   mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
@@ -241,6 +244,9 @@ Options:
   --aggregate <name>       Business aggregate name for mango module add
   --aggregate-name <name>  Business aggregate display name for mango module add
   --module-name <name>     Business module display name for mango module add
+  --project-dir <dir>      Existing project directory for add/module/pmo commands
+  --dry-run                Print PMO sync plan without modifying files
+  --write-agents           Update root AGENTS.md during PMO sync when it points to an external mango-pmo
   --force                  Overwrite existing target directory
   --help                   Show help
 
@@ -264,6 +270,15 @@ function main(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (args[0] === 'pmo') {
+    const subCommand = args[1];
+    if (subCommand !== 'sync') {
+      fail(`unknown pmo command: ${subCommand || ''}`);
+    }
+    syncPmoBaseline(args.slice(2));
+    return;
+  }
+
   const command = args[0] === 'add' ? 'add' : 'init';
   const commandArgs = command === 'add' ? args.slice(1) : args;
 
@@ -284,6 +299,7 @@ function main(argv = process.argv.slice(2)) {
 
   const variables = buildVariables(options);
   copyTemplate(templateRoot, targetDir, variables);
+  chmodSync(join(targetDir, 'scripts/dev-workspace.sh'), 0o755);
   chmodSync(join(targetDir, 'scripts/backend-dev.sh'), 0o755);
   writeMangoConfig(targetDir, variables);
   printNextSteps(targetDir, variables);
@@ -399,6 +415,7 @@ function buildVariables(options) {
   );
   const variables = {
     projectKebab: options.project,
+    projectKebabSnake: toSnakeCase(options.project),
     projectPascal: toPascalCase(options.project),
     projectVersion: options.version,
     groupId: options.groupId,
@@ -419,6 +436,7 @@ function buildVariables(options) {
     mangoCalendarVersion: defaultVersions.mangoCalendar,
     mangoCommonVersion: defaultVersions.mangoCommon,
     mangoFileVersion: defaultVersions.mangoFile,
+    mangoJobVersion: defaultVersions.mangoJob,
     mangoNoticeVersion: defaultVersions.mangoNotice,
     mangoNumgenVersion: defaultVersions.mangoNumgen,
     mangoRbacVersion: defaultVersions.mangoRbac,
@@ -446,6 +464,8 @@ function buildVariables(options) {
     npmRegistry: ensureTrailingSlash(options.npmRegistry),
     mavenRepository: ensureTrailingSlash(options.mavenRepository),
     mangoBaselineCommit: readMangoBaselineCommit(),
+    mangoCliVersion: readCliVersion(),
+    mangoBaselineSyncedAt: new Date().toISOString(),
   };
   return {
     ...variables,
@@ -588,6 +608,209 @@ function addBusinessModule(argv) {
   updateFrontendBusinessIntegration(targetDir, variables);
   updateBusinessConfig(targetDir, config, variables);
   process.stdout.write(`Added business module: ${moduleKebab} (${aggregateKebab})\n`);
+}
+
+function syncPmoBaseline(argv) {
+  const options = parsePmoSyncArgs(argv);
+  const targetDir = resolve(process.cwd(), options.projectDir);
+  if (!existsSync(targetDir) || !statSync(targetDir).isDirectory()) {
+    fail(`project directory not found: ${targetDir}`);
+  }
+  const variables = buildVariables({
+    project: basename(targetDir),
+    preset: 'custom',
+    topology: 'monolith',
+    packageName: 'com.example.mango',
+    groupId: 'com.example.mango',
+    version: '1.0.0-SNAPSHOT',
+    mangoVersion: defaultVersions.mangoBackend,
+    npmRegistry: 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/',
+    mavenRepository: 'http://nexus.inner.yunxinbaokeji.com/repository/maven-public/',
+    modules: 'none',
+  });
+  const plan = [
+    ...planTemplateSync('business-pmo/mango-baseline', targetDir, variables),
+    ...planTemplateSync('business-pmo/README.md', targetDir, variables),
+    ...planBusinessDocsSync(targetDir, variables),
+    planAgentsSync(targetDir, variables, options.writeAgents),
+  ].filter(Boolean);
+
+  const summary = summarizeSyncPlan(plan);
+  printPmoSyncPlan(targetDir, plan, options.dryRun);
+  if (options.dryRun) {
+    return;
+  }
+  for (const item of plan) {
+    if (item.action === 'skip' || item.action === 'warn') {
+      continue;
+    }
+    writePlannedFile(item);
+  }
+  const synced = summary.add + summary.update;
+  process.stdout.write(`PMO baseline sync complete: ${synced} files written, ${summary.skip} skipped.\n`);
+}
+
+function parsePmoSyncArgs(argv) {
+  const result = {
+    projectDir: '.',
+    dryRun: false,
+    writeAgents: false,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--dry-run') {
+      result.dryRun = true;
+      continue;
+    }
+    if (arg === '--write-agents') {
+      result.writeAgents = true;
+      continue;
+    }
+    if (arg === '--project-dir') {
+      const next = argv[index + 1];
+      if (!next || next.startsWith('--')) {
+        fail(`missing value for ${arg}`);
+      }
+      result.projectDir = next;
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      fail(`unknown option: ${arg}`);
+    }
+    fail(`unexpected argument: ${arg}`);
+  }
+  return result;
+}
+
+function planTemplateSync(templateRelativePath, targetDir, variables) {
+  const source = join(templateRoot, templateRelativePath);
+  const plan = [];
+  const sourceFiles = statSync(source).isDirectory() ? walkFiles(source) : [source];
+  for (const sourceFile of sourceFiles) {
+    const relativeSource = relative(templateRoot, sourceFile);
+    const targetRelative = renderTemplateFileName(relativeSource, variables);
+    const targetPath = join(targetDir, targetRelative);
+    const content = readRenderedTemplateFile(sourceFile, variables);
+    plan.push(buildFilePlanItem(targetRelative, targetPath, content));
+  }
+  return plan;
+}
+
+function planBusinessDocsSync(targetDir, variables) {
+  const source = join(templateRoot, 'business-docs/plans');
+  if (!existsSync(source)) {
+    return [];
+  }
+  const plan = [];
+  for (const sourceFile of walkFiles(source)) {
+    const relativeSource = relative(templateRoot, sourceFile);
+    const targetRelative = renderTemplateFileName(relativeSource, variables);
+    const targetPath = join(targetDir, targetRelative);
+    if (existsSync(targetPath)) {
+      plan.push({
+        action: 'skip',
+        reason: 'business-doc exists',
+        path: targetRelative,
+        targetPath,
+      });
+      continue;
+    }
+    plan.push(buildFilePlanItem(targetRelative, targetPath, readRenderedTemplateFile(sourceFile, variables)));
+  }
+  return plan;
+}
+
+function planAgentsSync(targetDir, variables, writeAgents) {
+  const targetPath = join(targetDir, 'AGENTS.md');
+  if (!existsSync(targetPath)) {
+    return buildFilePlanItem('AGENTS.md', targetPath, renderBusinessAgents(variables));
+  }
+  const content = readFileSync(targetPath, 'utf8');
+  if (!containsExternalMangoPmoReference(content)) {
+    return {
+      action: 'skip',
+      reason: 'AGENTS.md already business-owned',
+      path: 'AGENTS.md',
+      targetPath,
+    };
+  }
+  if (!writeAgents) {
+    return {
+      action: 'warn',
+      reason: 'AGENTS.md references external mango-pmo; rerun with --write-agents to migrate',
+      path: 'AGENTS.md',
+      targetPath,
+    };
+  }
+  return buildFilePlanItem('AGENTS.md', targetPath, renderBusinessAgents(variables));
+}
+
+function readRenderedTemplateFile(sourceFile, variables) {
+  const buffer = readFileSync(sourceFile);
+  return isTextFile(sourceFile) ? render(buffer.toString('utf8'), variables) : buffer;
+}
+
+function renderBusinessAgents(variables) {
+  const source = join(templateRoot, 'AGENTS.md');
+  return render(readFileSync(source, 'utf8'), variables);
+}
+
+function containsExternalMangoPmoReference(content) {
+  return /\/Users\/[^\s`'"]*\/mango-pmo/.test(content)
+    || /\b[A-Za-z]:\\Users\\[^\s`'"]*\\mango-pmo/.test(content);
+}
+
+function buildFilePlanItem(path, targetPath, content) {
+  if (!existsSync(targetPath)) {
+    return {
+      action: 'add',
+      path,
+      targetPath,
+      content,
+    };
+  }
+  const current = readFileSync(targetPath);
+  const next = Buffer.isBuffer(content) ? content : Buffer.from(content, 'utf8');
+  if (Buffer.compare(current, next) === 0) {
+    return {
+      action: 'skip',
+      reason: 'unchanged',
+      path,
+      targetPath,
+    };
+  }
+  return {
+    action: 'update',
+    path,
+    targetPath,
+    content,
+  };
+}
+
+function writePlannedFile(item) {
+  mkdirSync(dirname(item.targetPath), { recursive: true });
+  writeFileSync(item.targetPath, item.content);
+  if (item.path.endsWith('/tools/pmo-preflight.mjs') || item.path.endsWith('/tools/acceptance-evidence-check.mjs')) {
+    chmodSync(item.targetPath, 0o755);
+  }
+}
+
+function summarizeSyncPlan(plan) {
+  return plan.reduce((summary, item) => {
+    summary[item.action] = (summary[item.action] || 0) + 1;
+    return summary;
+  }, { add: 0, update: 0, skip: 0, warn: 0 });
+}
+
+function printPmoSyncPlan(targetDir, plan, dryRun) {
+  const summary = summarizeSyncPlan(plan);
+  process.stdout.write(`${dryRun ? 'PMO baseline dry-run plan' : 'PMO baseline sync plan'} for ${relativeOrAbsolute(process.cwd(), targetDir)}\n`);
+  process.stdout.write(`  add: ${summary.add}, update: ${summary.update}, skip: ${summary.skip}, warn: ${summary.warn}\n`);
+  for (const item of plan) {
+    const reason = item.reason ? ` (${item.reason})` : '';
+    process.stdout.write(`  ${item.action.padEnd(6)} ${item.path}${reason}\n`);
+  }
 }
 
 function parseBusinessModuleArgs(argv) {
@@ -976,7 +1199,6 @@ function renderBackendManagedDependencies(preset, selectedModules) {
     return renderDependencyXml(
       [
         { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
-        { groupId: 'io.mango.platform.seed', artifactId: 'mango-seed-starter' },
         ...BUSINESS_BACKEND_MANAGED_DEPENDENCIES,
       ],
       true,
@@ -994,7 +1216,6 @@ function renderBackendDependencies(preset, selectedModules) {
   if (preset === 'full') {
     return renderDependencyXml([
       { groupId: 'io.mango', artifactId: 'mango-admin-starter' },
-      { groupId: 'io.mango.platform.seed', artifactId: 'mango-seed-starter' },
     ], false, 8);
   }
   return renderDependencyXml(
@@ -1143,6 +1364,14 @@ function readReleasedMangoPackageVersion(packageName, fallback) {
   return releaseVersions.npm?.[`@mango/${packageName}`] || fallback;
 }
 
+function readCliVersion() {
+  const packagePath = join(packageRoot, 'package.json');
+  if (!existsSync(packagePath)) {
+    return 'unknown';
+  }
+  return JSON.parse(readFileSync(packagePath, 'utf8')).version || 'unknown';
+}
+
 function readMangoBaselineCommit() {
   const gitDir = resolveGitDir();
   if (!gitDir) {
@@ -1253,7 +1482,7 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write(`  cd ${relativeTarget}\n`);
   process.stdout.write('  npm --prefix frontend install\n');
   process.stdout.write('  npm --prefix frontend run build\n');
-  process.stdout.write('  scripts/backend-dev.sh\n');
+  process.stdout.write('  scripts/dev-workspace.sh backend\n');
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@mango/auth",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": false,
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -21,12 +21,12 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
-    "@mango/common": "1.0.7",
+    "@element-plus/icons-vue": "2.3.2",
+    "@mango/common": "1.0.8",
     "@mango/api-schema": "1.0.2"
   },
   "peerDependencies": {
-    "element-plus": "2.5.5",
+    "element-plus": "2.14.1",
     "pinia": "2.0.32",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"

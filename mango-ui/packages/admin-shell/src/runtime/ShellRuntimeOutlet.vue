@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .shell-runtime-outlet {
   position: relative;
-  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - 32px);
+  min-height: calc(100vh - var(--mango-header-height) - var(--mango-tags-view-height) - var(--mango-layout-footer-height) - 32px);
 }
 
 .shell-runtime-content {

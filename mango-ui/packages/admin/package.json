@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin",
-  "version": "1.0.13",
+  "version": "1.0.16",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -21,7 +21,7 @@
   "scripts": {
     "prepack": "pnpm run build",
     "build": "pnpm run build:style-deps && pnpm run generate:styles && vite build",
-    "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build",
+    "build:style-deps": "pnpm --dir ../.. -F @mango/common build && pnpm --dir ../.. -F @mango/admin-shell build && pnpm --dir ../.. -F @mango/auth build && pnpm --dir ../.. -F @mango/rbac build && pnpm --dir ../.. -F @mango/system build && pnpm --dir ../.. -F @mango/job build",
     "check:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
     "generate:styles": "node ../../scripts/generate-package-styles.mjs --root ../.. --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css"
   },
@@ -36,24 +36,25 @@
     "package.json"
   ],
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
-    "@mango/admin-pages": "1.0.6",
-    "@mango/admin-shell": "1.0.12",
+    "@element-plus/icons-vue": "2.3.2",
+    "@mango/admin-pages": "1.0.7",
+    "@mango/admin-shell": "1.0.15",
     "@mango/app-runtime": "1.0.2",
-    "@mango/auth": "1.0.5",
-    "@mango/common": "1.0.7",
-    "@mango/rbac": "1.0.5",
-    "@mango/system": "1.0.5",
-    "element-plus": "2.5.5"
+    "@mango/auth": "1.0.6",
+    "@mango/common": "1.0.8",
+    "@mango/rbac": "1.0.6",
+    "@mango/system": "1.0.6",
+    "element-plus": "2.14.1"
   },
   "peerDependencies": {
-    "@mango/calendar": "1.0.7",
-    "@mango/file": "1.0.7",
-    "@mango/notice": "1.0.7",
-    "@mango/numgen": "1.0.7",
-    "@mango/template": "1.0.7",
-    "@mango/workflow": "1.0.7",
-    "@mango/workflow-business-example": "1.0.7",
+    "@mango/calendar": "1.0.8",
+    "@mango/file": "1.0.8",
+    "@mango/job": "1.0.0",
+    "@mango/notice": "1.0.8",
+    "@mango/numgen": "1.0.8",
+    "@mango/template": "1.0.8",
+    "@mango/workflow": "1.0.8",
+    "@mango/workflow-business-example": "1.0.8",
     "pinia": "2.0.32",
     "vue": "3.5.13",
     "vue-i18n": "9.2.2",
@@ -64,6 +65,9 @@
       "optional": true
     },
     "@mango/file": {
+      "optional": true
+    },
+    "@mango/job": {
       "optional": true
     },
     "@mango/notice": {

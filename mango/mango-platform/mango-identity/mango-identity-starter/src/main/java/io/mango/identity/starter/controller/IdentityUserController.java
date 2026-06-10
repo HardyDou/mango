@@ -3,14 +3,19 @@ package io.mango.identity.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.vo.PageResult;
+import io.mango.identity.api.command.BatchDeleteIdentityUserCommand;
+import io.mango.identity.api.command.BindExternalIdentityCommand;
 import io.mango.identity.api.command.CreateIdentityUserCommand;
 import io.mango.identity.api.command.ResetIdentityUserPasswordCommand;
+import io.mango.identity.api.command.UnbindExternalIdentityCommand;
 import io.mango.identity.api.command.UpdateIdentityUserCommand;
 import io.mango.identity.api.command.UpdateIdentityUserStatusCommand;
+import io.mango.identity.api.query.ExternalIdentityQuery;
 import io.mango.identity.api.query.IdentityUserPageQuery;
 import io.mango.identity.api.query.IdentityUserTargetQuery;
 import io.mango.common.result.R;
 import io.mango.identity.api.IdentityUserApi;
+import io.mango.identity.api.vo.ExternalIdentityBindingVO;
 import io.mango.identity.api.vo.IdentityUserInfo;
 import io.mango.identity.api.vo.IdentityUserVO;
 import io.mango.identity.core.service.IIdentityUserService;
@@ -45,6 +50,7 @@ public class IdentityUserController implements IdentityUserApi {
     @GetMapping("/users/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:list")
     @Operation(summary = "分页查询机构成员", description = "权限接口。分页查询当前机构可管理的成员账号")
+    @Override
     public R<PageResult<IdentityUserVO>> page(@ParameterObject IdentityUserPageQuery query) {
         return R.ok(identityUserService.page(query));
     }
@@ -52,6 +58,7 @@ public class IdentityUserController implements IdentityUserApi {
     @GetMapping("/users/detail")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:query")
     @Operation(summary = "获取机构成员详情", description = "权限接口。按用户ID查询当前机构可管理的成员账号详情")
+    @Override
     public R<IdentityUserVO> detail(
             @Parameter(description = "用户ID")
             @RequestParam Long userId) {
@@ -62,6 +69,7 @@ public class IdentityUserController implements IdentityUserApi {
     @PostMapping("/users")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:add")
     @Operation(summary = "新增机构成员", description = "权限接口。创建当前机构下的成员账号")
+    @Override
     public R<Long> create(@Valid @RequestBody CreateIdentityUserCommand command) {
         try {
             return R.ok(identityUserService.create(command));
@@ -73,6 +81,7 @@ public class IdentityUserController implements IdentityUserApi {
     @PutMapping("/users")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:edit")
     @Operation(summary = "修改机构成员", description = "权限接口。更新当前机构可管理的成员账号")
+    @Override
     public R<Boolean> update(@Valid @RequestBody UpdateIdentityUserCommand command) {
         Boolean success = identityUserService.update(command);
         return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(404, "成员不存在");
@@ -81,11 +90,21 @@ public class IdentityUserController implements IdentityUserApi {
     @DeleteMapping("/users")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:delete")
     @Operation(summary = "移除机构成员", description = "权限接口。按用户ID移除当前机构成员身份，不删除全局账号")
+    @Override
     public R<Boolean> delete(
             @Parameter(description = "用户ID")
             @RequestParam Long userId) {
         Boolean success = identityUserService.delete(userId);
         return Boolean.TRUE.equals(success) ? R.ok(true) : R.fail(403, "无权移除该成员");
+    }
+
+    @PostMapping("/users/delete-batch")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:delete")
+    @Operation(summary = "批量移除机构成员", description = "权限接口。按用户ID批量移除当前机构成员身份，不删除全局账号")
+    @Override
+    public R<Integer> deleteBatch(@Valid @RequestBody BatchDeleteIdentityUserCommand command) {
+        Integer count = identityUserService.deleteBatch(command.getUserIds());
+        return count > 0 ? R.ok(count) : R.fail(403, "无可移除成员");
     }
 
     @PutMapping("/users/status")
@@ -127,6 +146,42 @@ public class IdentityUserController implements IdentityUserApi {
     @Operation(summary = "按接收目标解析用户资料", description = "内部接口。按用户、部门、岗位或角色解析当前租户内可接收通知的身份用户资料")
     public R<List<IdentityUserInfo>> listUserInfosByTarget(@ParameterObject @Valid IdentityUserTargetQuery query) {
         return R.ok(identityUserService.listUserInfosByTarget(query));
+    }
+
+    @Override
+    @PostMapping("/users/external-identities")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:edit")
+    @Operation(summary = "绑定第三方登录身份", description = "权限接口。为成员绑定企业微信等第三方登录身份")
+    public R<ExternalIdentityBindingVO> bindExternalIdentity(@Valid @RequestBody BindExternalIdentityCommand command) {
+        try {
+            return R.ok(identityUserService.bindExternalIdentity(command));
+        } catch (IllegalArgumentException e) {
+            return R.fail(400, e.getMessage());
+        }
+    }
+
+    @Override
+    @DeleteMapping("/users/external-identities")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:edit")
+    @Operation(summary = "解绑第三方登录身份", description = "权限接口。解绑成员的企业微信等第三方登录身份")
+    public R<Boolean> unbindExternalIdentity(@Valid @RequestBody UnbindExternalIdentityCommand command) {
+        return R.ok(identityUserService.unbindExternalIdentity(command));
+    }
+
+    @Override
+    @GetMapping("/users/external-identity")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:query")
+    @Operation(summary = "查询第三方登录身份", description = "权限接口。按 provider/corpId/userid 查询第三方登录身份绑定")
+    public R<ExternalIdentityBindingVO> findExternalIdentity(@ParameterObject @Valid ExternalIdentityQuery query) {
+        return R.ok(identityUserService.findExternalIdentity(query));
+    }
+
+    @Override
+    @GetMapping("/users/external-identities")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "system:user:query")
+    @Operation(summary = "查询成员第三方登录身份", description = "权限接口。查询成员已绑定的企业微信等登录身份")
+    public R<List<ExternalIdentityBindingVO>> listExternalIdentities(@RequestParam Long userId) {
+        return R.ok(identityUserService.listExternalIdentities(userId));
     }
 
 }

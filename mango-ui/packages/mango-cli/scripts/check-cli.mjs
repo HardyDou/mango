@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -46,6 +46,7 @@ try {
     'frontend/src/mango-common.d.ts',
     'frontend/tsconfig.app.json',
     'frontend/public/runtime-config.json',
+    'scripts/dev-workspace.sh',
     'scripts/backend-dev.sh',
     'backend/pom.xml',
     'backend/app/pom.xml',
@@ -95,6 +96,7 @@ try {
     '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
     '@mango/common': readReleasedPackageVersion('@mango/common'),
     '@mango/file': readReleasedPackageVersion('@mango/file'),
+    '@mango/job': readReleasedPackageVersion('@mango/job'),
     '@mango/notice': readReleasedPackageVersion('@mango/notice'),
     '@mango/numgen': readReleasedPackageVersion('@mango/numgen'),
     '@mango/rbac': readReleasedPackageVersion('@mango/rbac'),
@@ -122,26 +124,41 @@ try {
 
   const pom = readFileSync(join(projectRoot, 'backend/pom.xml'), 'utf8');
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
+  const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
   if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>')
-    || !appPom.includes('<artifactId>mango-seed-starter</artifactId>')
-    || !pom.includes('<artifactId>mango-seed-starter</artifactId>')
     || pom.includes('{{')
     || appPom.includes('{{')) {
     throw new Error('backend poms were not rendered as Mango full backend');
+  }
+  if (appPom.includes('<artifactId>mango-seed-starter</artifactId>')
+    || pom.includes('<artifactId>mango-seed-starter</artifactId>')) {
+    throw new Error('full backend must not require optional mango-seed-starter by default');
   }
   const applicationYml = readFileSync(join(projectRoot, 'backend/app/src/main/resources/application.yml'), 'utf8');
   if (!applicationYml.includes('enabled: ${MANGO_SEED_ENABLED:false}')
     || !applicationYml.includes('initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}')) {
     throw new Error('full backend application.yml must keep Mango seed disabled by default with explicit admin password');
   }
+  assertYamlFlywayModuleEnabled(applicationYml, 'domain');
+  assertYamlFlywayModuleEnabled(applicationYml, 'workflow');
+  assertYamlFlywayModuleEnabled(applicationYml, 'mango-job');
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
   }
-  if (!backendDevScript.includes('mvn -f backend/pom.xml -DskipTests install')
-    || !backendDevScript.includes('mvn -f backend/app/pom.xml')
-    || !backendDevScript.includes('MANGO_BACKEND_PORT')) {
-    throw new Error('generated backend dev script must install local modules before starting app');
+  if (!devWorkspaceScript.includes('SPRING_BOOT_PLUGIN="org.springframework.boot:spring-boot-maven-plugin:')
+    || !devWorkspaceScript.includes('mvn -f backend/pom.xml -DskipTests install')
+    || !devWorkspaceScript.includes('-Dspring-boot.run.arguments="$(backend_arguments)"')
+    || !devWorkspaceScript.includes('diagnose_backend_failure')
+    || !devWorkspaceScript.includes('DEFAULT_DB_NAME="mango_full_acceptance"')) {
+    throw new Error('generated dev-workspace script must own backend development startup and diagnostics');
+  }
+  if (!backendDevScript.includes('Use scripts/dev-workspace.sh backend')
+    || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
+    throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
+  }
+  if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0) {
+    throw new Error('generated dev-workspace script must be executable');
   }
   if ((statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
     throw new Error('generated backend dev script must be executable');
@@ -205,6 +222,7 @@ try {
     throw new Error(`generated PMO preflight did not include frontend test rules:\n${baselinePreflight.stdout}`);
   }
   assertBusinessAcceptanceBaseline(projectRoot);
+  assertPmoSyncCommand(tempRoot);
 
   const customResult = spawnSync(process.execPath, [
     cli,
@@ -494,7 +512,7 @@ try {
   }
   assertNoUnrenderedPlaceholders(customRoot);
 
-  console.log('mango-cli full/custom/add/module checks passed.');
+  console.log('mango-cli full/custom/add/module/pmo sync checks passed.');
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }
@@ -509,6 +527,18 @@ function assertIncludes(values, expected, field) {
   if (!values.includes(expected)) {
     throw new Error(`${field} expected to include ${expected}`);
   }
+}
+
+function assertYamlFlywayModuleEnabled(applicationYml, moduleName) {
+  const escapedModuleName = escapeRegExp(moduleName);
+  const pattern = new RegExp(`\\n\\s{8}${escapedModuleName}:\\n\\s{10}enabled: true\\n`);
+  if (!pattern.test(applicationYml)) {
+    throw new Error(`full backend application.yml must enable ${moduleName} Flyway module`);
+  }
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function assertNotIncludes(values, unexpected, field) {
@@ -606,6 +636,137 @@ function assertBusinessAcceptanceBaseline(projectRoot) {
   });
   if (weakEvidenceCheck.status === 0 || !weakEvidenceCheck.stdout.includes('weak acceptance wording')) {
     throw new Error(`generated acceptance evidence check should reject weak evidence:\n${weakEvidenceCheck.stdout}\n${weakEvidenceCheck.stderr}`);
+  }
+}
+
+function assertPmoSyncCommand(tempRoot) {
+  const dryRunRoot = join(tempRoot, 'existing-business-dry-run');
+  mkdirSync(dryRunRoot, { recursive: true });
+  const dryRunResult = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    dryRunRoot,
+    '--dry-run',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (dryRunResult.status !== 0) {
+    throw new Error(`pmo sync dry-run failed:\n${dryRunResult.stdout}\n${dryRunResult.stderr}`);
+  }
+  if (!dryRunResult.stdout.includes('PMO baseline dry-run plan')
+    || !dryRunResult.stdout.includes('add')
+    || existsSync(join(dryRunRoot, 'business-pmo'))) {
+    throw new Error(`pmo sync dry-run should print a plan without writing files:\n${dryRunResult.stdout}`);
+  }
+
+  const syncRoot = join(tempRoot, 'existing-business-sync');
+  mkdirSync(join(syncRoot, 'business-pmo/rules/domain'), { recursive: true });
+  mkdirSync(join(syncRoot, 'business-docs/plans'), { recursive: true });
+  const businessRulePath = join(syncRoot, 'business-pmo/rules/domain/01-owned.md');
+  const businessDocPath = join(syncRoot, 'business-docs/plans/example-ledger.md');
+  const ownedBusinessRule = '# owned business rule\n';
+  const ownedBusinessDoc = '# owned business plan\n';
+  writeFileSync(businessRulePath, ownedBusinessRule);
+  writeFileSync(businessDocPath, ownedBusinessDoc);
+  writeFileSync(
+    join(syncRoot, 'AGENTS.md'),
+    [
+      '# Legacy business entry',
+      '',
+      'Run `/Users/hardy/Work/mango/mango-pmo/tools/pmo-preflight.mjs` before delivery.',
+      '',
+    ].join('\n'),
+  );
+
+  const warnOnlyResult = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    syncRoot,
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (warnOnlyResult.status !== 0) {
+    throw new Error(`pmo sync warn-only failed:\n${warnOnlyResult.stdout}\n${warnOnlyResult.stderr}`);
+  }
+  if (!warnOnlyResult.stdout.includes('warn   AGENTS.md')
+    || !readFileSync(join(syncRoot, 'AGENTS.md'), 'utf8').includes('/Users/hardy/Work/mango/mango-pmo')) {
+    throw new Error(`pmo sync should only warn about external AGENTS.md without --write-agents:\n${warnOnlyResult.stdout}`);
+  }
+
+  const syncResult = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    syncRoot,
+    '--write-agents',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (syncResult.status !== 0) {
+    throw new Error(`pmo sync failed:\n${syncResult.stdout}\n${syncResult.stderr}`);
+  }
+  for (const file of [
+    'business-pmo/README.md',
+    'business-pmo/mango-baseline/README.md',
+    'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    'business-pmo/mango-baseline/rules/backend/07-persistence.md',
+    'business-docs/plans/example-contract.md',
+  ]) {
+    if (!existsSync(join(syncRoot, file))) {
+      throw new Error(`pmo sync missing generated file: ${file}`);
+    }
+  }
+  assertEqual(readFileSync(businessRulePath, 'utf8'), ownedBusinessRule, 'business-owned PMO rule after sync');
+  assertEqual(readFileSync(businessDocPath, 'utf8'), ownedBusinessDoc, 'business-owned plan after sync');
+  const syncedAgents = readFileSync(join(syncRoot, 'AGENTS.md'), 'utf8');
+  if (!syncedAgents.includes('business-pmo/mango-baseline/tools/pmo-preflight.mjs')
+    || syncedAgents.includes('/Users/hardy/Work/mango/mango-pmo')) {
+    throw new Error('pmo sync --write-agents did not migrate AGENTS.md to project-local baseline');
+  }
+  const syncedReadme = readFileSync(join(syncRoot, 'business-pmo/mango-baseline/README.md'), 'utf8');
+  for (const expected of ['Mango commit:', 'Mango CLI version:', 'Synced at:']) {
+    if (!syncedReadme.includes(expected) || syncedReadme.includes('{{')) {
+      throw new Error(`pmo sync baseline README missing rendered source info: ${expected}`);
+    }
+  }
+  const persistenceRule = readFileSync(join(syncRoot, 'business-pmo/mango-baseline/rules/backend/07-persistence.md'), 'utf8');
+  for (const expected of [
+    '数据库命名规则',
+    'Mango 模块独立数据库统一使用 `mango_{module}`',
+    '禁止新增 `job`、`system`、`file`',
+  ]) {
+    if (!persistenceRule.includes(expected)) {
+      throw new Error(`pmo sync baseline persistence rule missing latest DB naming rule: ${expected}`);
+    }
+  }
+  const baselinePreflight = spawnSync(process.execPath, [
+    'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    '--role',
+    'dev',
+    '--phase',
+    'develop',
+    '--task',
+    '验证 baseline 同步',
+    '--paths',
+    'backend/**,frontend/**',
+  ], {
+    cwd: syncRoot,
+    encoding: 'utf8',
+  });
+  if (baselinePreflight.status !== 0) {
+    throw new Error(`synced PMO preflight failed:\n${baselinePreflight.stdout}\n${baselinePreflight.stderr}`);
+  }
+  if (!baselinePreflight.stdout.includes('rules/backend/10-dev-flow.md')
+    || !baselinePreflight.stdout.includes('rules/frontend/04-test.md')) {
+    throw new Error(`synced PMO preflight did not include expected rules:\n${baselinePreflight.stdout}`);
   }
 }
 

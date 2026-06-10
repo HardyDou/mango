@@ -1,0 +1,46 @@
+{
+  "baseUrl": "http://127.0.0.1:19081",
+  "backendUrl": "http://127.0.0.1:19080",
+  "checks": [
+    {
+      "name": "login-home",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/home",
+      "textSample": "Mango\nadmin\n芒果集团\n\n暂无可访问菜单\n\n登录成功"
+    },
+    {
+      "name": "procurement-parent-redirect",
+      "passed": true,
+      "url": "http://127.0.0.1:19081/#/procurement/orders",
+      "hasOrderText": true
+    },
+    {
+      "name": "order-create-inputs-present",
+      "passed": true,
+      "inputCount": 1
+    },
+    {
+      "name": "order-create-visible",
+      "passed": true,
+      "orderName": "验收采购订单-1780482919637"
+    },
+    {
+      "name": "order-create-persisted",
+      "passed": true,
+      "orderName": "验收采购订单-1780482919637",
+      "dbCount": "1"
+    },
+    {
+      "name": "order-search-visible",
+      "passed": true,
+      "orderName": "验收采购订单-1780482919637"
+    },
+    {
+      "name": "no-network-failures",
+      "passed": true,
+      "failedRequests": []
+    }
+  ],
+  "console": [],
+  "failedRequests": []
+}

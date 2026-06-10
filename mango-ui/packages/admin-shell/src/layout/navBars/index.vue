@@ -68,9 +68,7 @@
       <el-icon :size="20">
         <Search />
       </el-icon>
-      <el-icon :size="20">
-        <FullScreen />
-      </el-icon>
+      <CloseFull />
       <component
         v-if="noticeClientEnabled"
         :is="noticeBellComponent"
@@ -93,7 +91,7 @@ import { useLayoutStore } from '../../stores/layout';
 import { useRoutesList } from '../../stores/routesList';
 import { iconMap } from '@mango/common/utils/iconConfig';
 import { containsMenuPath, resolveFirstMenuPath, type MangoMenuTreeNode } from '@mango/common/utils/menuTree';
-import { Fold, Expand, Search, FullScreen, Close } from '@element-plus/icons-vue';
+import { Fold, Expand, Search, Close } from '@element-plus/icons-vue';
 import { Session } from '@mango/common/utils/storage';
 import type { RealtimeOptions } from '@mango/common/utils/realtime/types';
 import { resolveMangoAdminFeatures } from '@mango/admin-pages/features';
@@ -102,6 +100,7 @@ import { getMangoAdminShellOptions } from '../../config';
 
 const Logo = defineAsyncComponent(() => import('../logo/index.vue'));
 const BreadcrumbIndex = defineAsyncComponent(() => import('./breadcrumb/breadcrumb.vue'));
+const CloseFull = defineAsyncComponent(() => import('./breadcrumb/closeFull.vue'));
 const User = defineAsyncComponent(() => import('./breadcrumb/user.vue'));
 const Settings = defineAsyncComponent(() => import('./breadcrumb/settings.vue'));
 

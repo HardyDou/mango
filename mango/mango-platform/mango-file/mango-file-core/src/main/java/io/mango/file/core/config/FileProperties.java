@@ -22,6 +22,9 @@ public class FileProperties {
     /** 默认本地存储桶。 */
     private String defaultBucket = "local";
 
+    /** 文件代理访问外部基准地址，例如 https://example.com/api。 */
+    private String publicBaseUrl;
+
     /** 本地存储配置。 */
     private Local local = new Local();
 
@@ -40,8 +43,8 @@ public class FileProperties {
         /** 本地存储根目录。 */
         private String rootPath = "./data/files";
 
-        /** 本地对象客户端访问路径。 */
-        private String publicPath = "/api/file/local-objects";
+        /** 本地对象 Java 服务访问路径。 */
+        private String publicPath = "/file/local-objects";
     }
 
     @Data

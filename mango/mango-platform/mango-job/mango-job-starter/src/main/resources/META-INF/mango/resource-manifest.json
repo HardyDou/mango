@@ -1,0 +1,107 @@
+{
+  "appCode": "internal-admin",
+  "moduleCode": "mango-job",
+  "moduleName": "任务调度模块",
+  "sort": 9,
+  "packageCodes": ["internal-admin-default", "internal-admin-ops"],
+  "roleCodes": ["ROLE_ADMIN"],
+  "menus": [
+    {
+      "menuType": 1,
+      "menuName": "任务管理",
+      "menuCode": "job",
+      "path": "/job",
+      "icon": "Timer",
+      "sort": 9,
+      "redirect": "/job/definition",
+      "remark": "Mango 原生任务调度管理入口",
+      "children": [
+        {
+          "menuType": 2,
+          "menuName": "任务定义",
+          "menuCode": "job:definition",
+          "path": "/job/definition",
+          "icon": "List",
+          "component": "job/definition/index",
+          "sort": 1,
+          "permissions": ["job:definition:list"],
+          "remark": "任务定义、调度表达式、处理器和引擎同步状态管理",
+          "permissionItems": [
+            {"permissionCode": "job:definition:list", "permissionName": "任务查询", "sort": 1},
+            {"permissionCode": "job:definition:query", "permissionName": "任务详情", "sort": 2},
+            {"permissionCode": "job:definition:add", "permissionName": "新增任务", "sort": 3},
+            {"permissionCode": "job:definition:edit", "permissionName": "编辑任务", "sort": 4},
+            {"permissionCode": "job:definition:delete", "permissionName": "删除任务", "sort": 5},
+            {"permissionCode": "job:definition:status", "permissionName": "调整状态", "sort": 6},
+            {"permissionCode": "job:definition:trigger", "permissionName": "手动触发", "sort": 7}
+          ]
+        },
+        {
+          "menuType": 2,
+          "menuName": "执行实例",
+          "menuCode": "job:instance",
+          "path": "/job/instance",
+          "icon": "Tickets",
+          "component": "job/instance/index",
+          "sort": 2,
+          "permissions": ["job:instance:list"],
+          "remark": "任务执行实例查询",
+          "permissionItems": [
+            {"permissionCode": "job:instance:list", "permissionName": "实例查询", "sort": 1},
+            {"permissionCode": "job:instance:sync", "permissionName": "同步实例", "sort": 2},
+            {"permissionCode": "job:log:list", "permissionName": "执行日志查询", "sort": 3}
+          ]
+        },
+        {
+          "menuType": 2,
+          "menuName": "Worker 节点",
+          "menuCode": "job:worker",
+          "path": "/job/worker",
+          "icon": "Monitor",
+          "component": "job/worker/index",
+          "sort": 3,
+          "permissions": ["job:worker:list"],
+          "remark": "任务执行 Worker 节点查询和治理",
+          "permissionItems": [
+            {"permissionCode": "job:worker:list", "permissionName": "Worker 查询", "sort": 1},
+            {"permissionCode": "job:worker:add", "permissionName": "Worker 登记", "sort": 2},
+            {"permissionCode": "job:worker:status", "permissionName": "Worker 状态", "sort": 3}
+          ]
+        },
+        {
+          "menuType": 2,
+          "menuName": "告警规则",
+          "menuCode": "job:alarm",
+          "path": "/job/alarm",
+          "icon": "Bell",
+          "component": "job/alarm/index",
+          "sort": 4,
+          "permissions": ["job:alarm:list"],
+          "remark": "Mango Job 失败实例告警规则管理",
+          "permissionItems": [
+            {"permissionCode": "job:alarm:list", "permissionName": "告警查询", "sort": 1},
+            {"permissionCode": "job:alarm:query", "permissionName": "告警详情", "sort": 2},
+            {"permissionCode": "job:alarm:add", "permissionName": "新增告警", "sort": 3},
+            {"permissionCode": "job:alarm:edit", "permissionName": "编辑告警", "sort": 4},
+            {"permissionCode": "job:alarm:status", "permissionName": "告警状态", "sort": 5},
+            {"permissionCode": "job:alarm:delete", "permissionName": "删除告警", "sort": 6}
+          ]
+        },
+        {
+          "menuType": 2,
+          "menuName": "运行状态",
+          "menuCode": "job:engine",
+          "path": "/job/engine",
+          "icon": "Cpu",
+          "component": "job/engine/index",
+          "sort": 5,
+          "permissions": ["job:engine:list"],
+          "remark": "Mango 原生任务调度运行状态汇总",
+          "permissionItems": [
+            {"permissionCode": "job:engine:list", "permissionName": "引擎状态查询", "sort": 1}
+          ]
+        }
+      ]
+    }
+  ]
+}

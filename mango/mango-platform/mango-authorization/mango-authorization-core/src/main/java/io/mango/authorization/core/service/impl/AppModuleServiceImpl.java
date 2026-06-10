@@ -7,9 +7,17 @@ import io.mango.authorization.api.vo.AppModuleVO;
 import io.mango.authorization.core.entity.AuthorizationAppModule;
 import io.mango.authorization.core.entity.FrontendMenuRuntimeConfig;
 import io.mango.authorization.core.entity.Menu;
+import io.mango.authorization.core.entity.MenuPackage;
+import io.mango.authorization.core.entity.MenuPackageItem;
+import io.mango.authorization.core.entity.Role;
+import io.mango.authorization.core.entity.RoleMenu;
 import io.mango.authorization.core.mapper.AuthorizationAppModuleMapper;
 import io.mango.authorization.core.mapper.FrontendMenuRuntimeConfigMapper;
 import io.mango.authorization.core.mapper.MenuMapper;
+import io.mango.authorization.core.mapper.MenuPackageItemMapper;
+import io.mango.authorization.core.mapper.MenuPackageMapper;
+import io.mango.authorization.core.mapper.RoleMapper;
+import io.mango.authorization.core.mapper.RoleMenuMapper;
 import io.mango.authorization.core.service.IAppModuleService;
 import io.mango.common.result.Require;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +40,10 @@ public class AppModuleServiceImpl implements IAppModuleService {
     private final AuthorizationAppModuleMapper appModuleMapper;
     private final MenuMapper menuMapper;
     private final FrontendMenuRuntimeConfigMapper menuRuntimeConfigMapper;
+    private final MenuPackageMapper menuPackageMapper;
+    private final MenuPackageItemMapper menuPackageItemMapper;
+    private final RoleMapper roleMapper;
+    private final RoleMenuMapper roleMenuMapper;
 
     @Override
     public List<AppModuleVO> list(String appCode, Integer status) {
@@ -146,6 +158,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
             menuMapper.updateById(menu);
         }
         saveRuntimeConfig(menu, item.getPageType(), item.getExternalUrl());
+        assignManifestMenu(context, menu);
         int changed = 1;
         changed += upsertPermissionMenus(context, item, menu.getMenuId());
         if (item.getChildren() != null) {
@@ -212,6 +225,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
                 menuMapper.updateById(menu);
             }
             ensureMenuRuntimeConfig(menu);
+            assignManifestMenu(context, menu);
             changed++;
         }
         return changed;
@@ -286,6 +300,73 @@ public class AppModuleServiceImpl implements IAppModuleService {
         saveRuntimeConfig(menu, defaultPageType(menu), null);
     }
 
+    private void assignManifestMenu(ManifestContext context, Menu menu) {
+        assignMenuPackages(context, menu);
+        assignRoleMenus(context, menu);
+    }
+
+    private void assignMenuPackages(ManifestContext context, Menu menu) {
+        for (String packageCode : context.packageCodes()) {
+            MenuPackage menuPackage = findMenuPackage(context.appCode(), packageCode);
+            if (menuPackage == null) {
+                continue;
+            }
+            MenuPackageItem existing = menuPackageItemMapper.selectOne(new LambdaQueryWrapper<MenuPackageItem>()
+                    .eq(MenuPackageItem::getPackageId, menuPackage.getPackageId())
+                    .eq(MenuPackageItem::getMenuId, menu.getMenuId())
+                    .last("LIMIT 1"));
+            if (existing != null) {
+                continue;
+            }
+            MenuPackageItem item = new MenuPackageItem();
+            item.setPackageId(menuPackage.getPackageId());
+            item.setMenuId(menu.getMenuId());
+            item.setSort(menu.getSort());
+            menuPackageItemMapper.insert(item);
+        }
+    }
+
+    private void assignRoleMenus(ManifestContext context, Menu menu) {
+        for (String roleCode : context.roleCodes()) {
+            Role role = findRole(context.appCode(), roleCode);
+            if (role == null) {
+                continue;
+            }
+            RoleMenu existing = roleMenuMapper.selectOne(new LambdaQueryWrapper<RoleMenu>()
+                    .eq(RoleMenu::getRoleId, role.getRoleId())
+                    .eq(RoleMenu::getMenuId, menu.getMenuId())
+                    .last("LIMIT 1"));
+            if (existing != null) {
+                continue;
+            }
+            RoleMenu roleMenu = new RoleMenu();
+            roleMenu.setTenantId(role.getTenantId());
+            roleMenu.setRoleId(role.getRoleId());
+            roleMenu.setMenuId(menu.getMenuId());
+            roleMenuMapper.insert(roleMenu);
+        }
+    }
+
+    private MenuPackage findMenuPackage(String appCode, String packageCode) {
+        if (!StringUtils.hasText(appCode) || !StringUtils.hasText(packageCode)) {
+            return null;
+        }
+        return menuPackageMapper.selectOne(new LambdaQueryWrapper<MenuPackage>()
+                .eq(MenuPackage::getAppCode, appCode)
+                .eq(MenuPackage::getPackageCode, packageCode)
+                .last("LIMIT 1"));
+    }
+
+    private Role findRole(String appCode, String roleCode) {
+        if (!StringUtils.hasText(appCode) || !StringUtils.hasText(roleCode)) {
+            return null;
+        }
+        return roleMapper.selectOne(new LambdaQueryWrapper<Role>()
+                .eq(Role::getAppCode, appCode)
+                .eq(Role::getRoleCode, roleCode)
+                .last("LIMIT 1"));
+    }
+
     private void saveRuntimeConfig(Menu menu, String pageType, String externalUrl) {
         FrontendMenuRuntimeConfig config = menuRuntimeConfigMapper.selectOne(
                 new LambdaQueryWrapper<FrontendMenuRuntimeConfig>()
@@ -335,11 +416,15 @@ public class AppModuleServiceImpl implements IAppModuleService {
 
         private final String appCode;
         private final String moduleCode;
+        private final List<String> packageCodes;
+        private final List<String> roleCodes;
         private int count;
 
         private ManifestContext(AppModuleResourceManifestCommand command) {
             this.appCode = command.getAppCode();
             this.moduleCode = command.getModuleCode();
+            this.packageCodes = cleanCodes(command.getPackageCodes());
+            this.roleCodes = cleanCodes(command.getRoleCodes());
         }
 
         private String appCode() {
@@ -350,12 +435,31 @@ public class AppModuleServiceImpl implements IAppModuleService {
             return moduleCode;
         }
 
+        private List<String> packageCodes() {
+            return packageCodes;
+        }
+
+        private List<String> roleCodes() {
+            return roleCodes;
+        }
+
         private void increment(int value) {
             count += value;
         }
 
         private int count() {
             return count;
+        }
+
+        private static List<String> cleanCodes(List<String> values) {
+            if (values == null || values.isEmpty()) {
+                return List.of();
+            }
+            return values.stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .distinct()
+                    .toList();
         }
     }
 }

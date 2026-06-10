@@ -42,3 +42,13 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 ```
 
 禁止只用“接口 200”“页面无异常”“截图正常”声明验收通过。
+
+## 5. 本地开发启动
+
+后端开发只使用：
+
+```bash
+scripts/dev-workspace.sh backend
+```
+
+不要用 `java -jar` 或手写 Maven reactor 命令作为开发启动入口；这些细节由脚本封装。

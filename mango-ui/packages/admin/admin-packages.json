@@ -20,6 +20,10 @@
     {
       "name": "@mango/system",
       "style": "@mango/system/style.css"
+    },
+    {
+      "name": "@mango/job",
+      "style": "@mango/job/style.css"
     }
   ]
 }

@@ -1,0 +1,267 @@
+{
+  "baseURL": "http://127.0.0.1:8244",
+  "startedAt": "2026-06-04T07:34:26.020Z",
+  "finishedAt": "2026-06-04T07:34:51.395Z",
+  "result": "PASS",
+  "checks": [
+    {
+      "name": "登录",
+      "status": "PASS",
+      "assertions": [
+        "admin/admin123 登录成功",
+        "租户芒果集团可见",
+        "进入 /home",
+        "菜单接口返回成功"
+      ]
+    },
+    {
+      "name": "首页",
+      "status": "PASS",
+      "assertions": [
+        "首页三块能力入口可见",
+        "顶部导航可见",
+        "左侧首页菜单可见"
+      ]
+    },
+    {
+      "name": "菜单跳转-系统管理-成员管理",
+      "status": "PASS",
+      "route": "/system/user",
+      "assertions": [
+        "成员管理",
+        "新增成员",
+        "用户名"
+      ],
+      "textSample": "Mango Admin 首页 系统管理 审批中心 平台能力 通知中心 开发中心 1 admin 芒果集团 权限管理 套餐管理 机构管理 组织架构 岗位管理 成员管理 角色管理 菜单管理 应用管理 字典管理 参数配置 行政区划 日志管理 首页 套餐管理 成员管理 部门组织 刷新 芒果集团 集团 A公司 公司 技术研发部 部门 后端开发组 小组 前端开发组 小组 测试组 小组 运维组 小组 产品设计部 部门 产品策划组 小组 UI设计组 小组 交互设计组 小组 市场营销部 部门 人力资源部 部门 财务部 部门 B公司 公司 风险管理部 部门 信贷管理部 部门 财务部 部门 C公司 公司 项目管理部 部门 成本合约部 部门 财务部 部门 全部成员 请选择左侧部门查看部门成员 用户名 昵称 手机号 状态 不限 查询 重置 新增成员 用户名 昵称 登录域 操作者类型 手机号 邮箱 状态 创建时间 操作 admin Administrator 内部 内部用户 18701445644 1012404303@qq.com 启用 2026-05-10 00:04:23 分配角色 编辑 重置密码 禁用 删"
+    },
+    {
+      "name": "系统管理-成员查询",
+      "status": "PASS",
+      "assertions": [
+        "输入 admin 查询",
+        "接口返回成功",
+        "表格回显 admin"
+      ]
+    },
+    {
+      "name": "菜单跳转-审批中心-发起流程",
+      "status": "PASS",
+      "route": "/workflow/start-process",
+      "assertions": [
+        "发起流程",
+        "已发布流程",
+        "请假申请"
+      ],
+      "textSample": "Mango Admin 首页 系统管理 审批中心 平台能力 通知中心 开发中心 1 admin 芒果集团 流程办理 发起流程 我的待办 我的申请 我的已办 抄送给我 流程管理 业务示例 首页 套餐管理 成员管理 发起流程 发起流程 已发布流程 关键词 查询 重置 通用流程 请假申请 通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。 合同用印审批 合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。 费用报销审批 费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。"
+    },
+    {
+      "name": "审批中心-流程发起弹窗",
+      "status": "PASS",
+      "assertions": [
+        "请假申请卡片可点击",
+        "动态表单弹窗打开",
+        "请假天数/日期字段可见"
+      ]
+    },
+    {
+      "name": "菜单跳转-平台能力-日历管理",
+      "status": "PASS",
+      "route": "/data/calendar",
+      "assertions": [
+        "日历管理",
+        "中国标准工作日历",
+        "日期明细"
+      ],
+      "textSample": "Mango Admin 首页 系统管理 审批中心 平台能力 通知中心 开发中心 1 admin 芒果集团 日历管理 编号规则 文件管理 模板管理 首页 套餐管理 成员管理 发起流程 日历管理 日历 当前租户工作日历 新增 状态 查询 日历 状态 操作 中国标准工作日历 CN_STANDARD 启用 1 日历管理 中国标准工作日历 / CN_STANDARD 初始化年度 批量设置 工具 年度 日期明细 年度 启用状态 全部 查询 重置 年度 日历名称 总天数 工作日 休息日 法定节假日 调休补班 状态 操作 No Data Total 0 10/page 1 Go to"
+    },
+    {
+      "name": "平台能力-日历查询",
+      "status": "PASS",
+      "assertions": [
+        "日期明细 Tab 可切换",
+        "日期查询接口成功",
+        "日期表格回显真实日期行"
+      ]
+    },
+    {
+      "name": "菜单跳转-平台能力-文件管理",
+      "status": "PASS",
+      "route": "/file/files",
+      "assertions": [
+        "平台能力文件管理菜单可见",
+        "文件管理页面可打开",
+        "目录树接口成功"
+      ]
+    },
+    {
+      "name": "平台能力-文件上传",
+      "status": "PASS",
+      "assertions": [
+        "选择本地 txt 文件",
+        "POST /api/file/files 成功",
+        "按文件名查询后表格回显 mango-main-regression-1780558485430.txt"
+      ]
+    },
+    {
+      "name": "菜单跳转-通知中心-我的消息",
+      "status": "PASS",
+      "route": "/notice/site-message",
+      "assertions": [
+        "通知中心我的消息菜单可见",
+        "我的消息页面可打开",
+        "消息列表接口成功"
+      ]
+    },
+    {
+      "name": "通知中心-小喇叭",
+      "status": "PASS",
+      "assertions": [
+        "通知中心页面可打开",
+        "右上角小喇叭可点击",
+        "消息弹层显示我的消息"
+      ]
+    },
+    {
+      "name": "页签关闭",
+      "status": "PASS",
+      "hash": "#/workflow/start-process",
+      "assertions": [
+        "关闭当前页签后未出现 404/系统错误"
+      ],
+      "textSample": "Mango Admin 首页 系统管理 审批中心 平台能力 通知中心 开发中心 1 admin 芒果集团 流程办理 发起流程 我的待办 我的申请 我的已办 抄送给我 流程管理 业务示例 首页 套餐管理 成员管理 发起流程 文件管理 我的消息 发起流程 已发布流程 关键词 查询 重置 通用流程 请假申请 通用动态表单示例，适合验证发起流程和审批任务的标准动态表单能力。 合同用印审批 合同用印业务示例，使用类 Word 表格申请页，覆盖多节点业务审批。 费用报销审批 费用报销业务示例，采用自定义申请页和自定义审批页，适合展示业务接入工作流。"
+    },
+    {
+      "name": "根路径跳转",
+      "status": "PASS",
+      "assertions": [
+        "/ 默认跳转到 /home",
+        "首页内容可见"
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "01-home",
+      "description": "首页能力入口、顶部导航和左侧首页菜单",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/01-home.png"
+    },
+    {
+      "name": "02-system-user",
+      "description": "系统管理 / 成员管理",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/02-system-user.png"
+    },
+    {
+      "name": "03-system-user-search",
+      "description": "成员管理查询 admin 后表格回显",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/03-system-user-search.png"
+    },
+    {
+      "name": "04-workflow-start",
+      "description": "审批中心 / 发起流程",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/04-workflow-start.png"
+    },
+    {
+      "name": "05-workflow-leave-dialog",
+      "description": "发起请假流程弹窗和动态表单",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/05-workflow-leave-dialog.png"
+    },
+    {
+      "name": "06-calendar-page",
+      "description": "平台能力 / 日历管理",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/06-calendar-page.png"
+    },
+    {
+      "name": "07-calendar-date-query",
+      "description": "日历日期明细按年度查询",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/07-calendar-date-query.png"
+    },
+    {
+      "name": "08-file-page",
+      "description": "平台能力 / 文件管理",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/08-file-page.png"
+    },
+    {
+      "name": "09-file-upload",
+      "description": "文件管理上传 txt 文件后表格回显",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/09-file-upload.png"
+    },
+    {
+      "name": "10-notice-messages",
+      "description": "通知中心 / 我的消息",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/10-notice-messages.png"
+    },
+    {
+      "name": "11-notice-bell",
+      "description": "右上角小喇叭消息弹层",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/11-notice-bell.png"
+    },
+    {
+      "name": "12-tags-before-close",
+      "description": "关闭日历页签前",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/12-tags-before-close.png"
+    },
+    {
+      "name": "13-tags-after-close",
+      "description": "关闭日历页签后应切换到其它有效页签或首页",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/13-tags-after-close.png"
+    },
+    {
+      "name": "14-root-redirect",
+      "description": "/ 默认跳转首页",
+      "file": "/Users/hardy/Work/mango/mango-docs/evidence/2026-06-04-main-framework-regression/screenshots/14-root-redirect.png"
+    }
+  ],
+  "console": [],
+  "failedRequests": [],
+  "badResponses": [],
+  "uiFindings": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "findings": [
+        {
+          "selector": ".el-card",
+          "width": 329,
+          "height": 206,
+          "overflowX": false,
+          "overflowY": false,
+          "text": "权限与组织用户、角色、菜单、租户基础能力"
+        },
+        {
+          "selector": ".el-card",
+          "width": 329,
+          "height": 206,
+          "overflowX": false,
+          "overflowY": false,
+          "text": "流程与协同审批、任务、通知等流程能力"
+        },
+        {
+          "selector": ".el-card",
+          "width": 329,
+          "height": 206,
+          "overflowX": false,
+          "overflowY": false,
+          "text": "平台基础能力文件、模板、编号、日历等通用能力"
+        },
+        {
+          "selector": ".el-card",
+          "width": 679,
+          "height": 399,
+          "overflowX": false,
+          "overflowY": false,
+          "text": "平台状态请选择左侧菜单进入具体能力"
+        },
+        {
+          "selector": ".el-card",
+          "width": 329,
+          "height": 303,
+          "overflowX": false,
+          "overflowY": false,
+          "text": "常用能力系统设置菜单管理文件中心工作日历"
+        }
+      ]
+    }
+  ]
+}

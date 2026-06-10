@@ -147,6 +147,7 @@ MANGO_DB_USERNAME=root
 MANGO_DB_PASSWORD=''
 MANGO_DB_AUTO_CREATE=true
 MANGO_OFFICE_PLUGIN_ENABLED=false
+MANGO_BACKEND_ADDITIONAL_ARGS=''
 EOF
 
   echo "Created workspace env: ${ENV_FILE}"
@@ -174,6 +175,7 @@ load_workspace_env() {
   : "${MANGO_DB_PASSWORD:=}"
   : "${MANGO_DB_AUTO_CREATE:=true}"
   : "${MANGO_OFFICE_PLUGIN_ENABLED:=false}"
+  : "${MANGO_BACKEND_ADDITIONAL_ARGS:=}"
 }
 
 print_config() {
@@ -281,6 +283,9 @@ backend_arguments() {
     "--spring.datasource.url=${db_url}" \
     "--spring.datasource.username=${MANGO_DB_USERNAME}" \
     "--spring.datasource.password=${MANGO_DB_PASSWORD} --office.plugin.enabled=${MANGO_OFFICE_PLUGIN_ENABLED}"
+  if [[ -n "${MANGO_BACKEND_ADDITIONAL_ARGS}" ]]; then
+    printf ' %s' "${MANGO_BACKEND_ADDITIONAL_ARGS}"
+  fi
 }
 
 run_backend() {

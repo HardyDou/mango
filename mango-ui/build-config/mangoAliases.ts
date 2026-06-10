@@ -98,6 +98,13 @@ const PACKAGE_ENTRIES: PackageEntry[] = [
     },
   },
   {
+    name: 'job',
+    entries: {
+      '.': 'src/index.ts',
+      'admin-pages': 'src/admin-pages.ts',
+    },
+  },
+  {
     name: 'notice',
     entries: {
       '.': 'src/index.ts',
@@ -146,6 +153,7 @@ const STYLE_PACKAGES = [
   'workflow',
   'workflow-business-example',
   'file',
+  'job',
   'calendar',
   'numgen',
   'template',

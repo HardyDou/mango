@@ -7,6 +7,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -14,6 +15,7 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +30,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -114,6 +120,12 @@ public class CheckMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "${session}", readonly = true)
     private org.apache.maven.execution.MavenSession session;
+
+    /**
+     * Timeout in seconds for each delegated PMD/Checkstyle/SpotBugs Maven command.
+     */
+    @Parameter(property = "mango.check.staticTimeoutSeconds", defaultValue = "120")
+    private long staticTimeoutSeconds;
 
     /**
      * Retained for backward-compatible tests and configuration migration.
@@ -246,7 +258,12 @@ public class CheckMojo extends AbstractMojo {
             return;
         }
 
-        List<String> reactorProjects = discoverReactorProjects(rootPath);
+        List<String> reactorProjects = resolveStaticAnalysisProjects(rootPath);
+        if (reactorProjects.isEmpty()) {
+            getLog().info("Aggregated static analysis scope: execution root project");
+        } else {
+            getLog().info("Aggregated static analysis scope: " + String.join(",", reactorProjects));
+        }
         for (String goal : goals) {
             invokeSingleGoal(mavenExecutable, rootPath, goal, reactorProjects);
         }
@@ -266,6 +283,7 @@ public class CheckMojo extends AbstractMojo {
             command.add("-am");
         }
         command.add(goal);
+        getLog().info("Delegating static analysis goal: " + String.join(" ", command));
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.directory(rootPath.toFile());
@@ -273,11 +291,24 @@ public class CheckMojo extends AbstractMojo {
 
         try {
             Process process = processBuilder.start();
-            String output = readProcessOutput(process.getInputStream());
-            int exitCode = process.waitFor();
+            CompletableFuture<String> outputFuture = readProcessOutputAsync(process.getInputStream());
+            boolean completed = process.waitFor(staticTimeoutSeconds, TimeUnit.SECONDS);
+            if (!completed) {
+                process.destroyForcibly();
+                process.waitFor(5, TimeUnit.SECONDS);
+                String output = awaitProcessOutput(outputFuture, 5);
+                throw new MojoExecutionException("Static-analysis delegation timed out after "
+                        + staticTimeoutSeconds + "s while running " + goal + System.lineSeparator()
+                        + "Command: " + String.join(" ", command) + System.lineSeparator()
+                        + output);
+            }
+            int exitCode = process.exitValue();
+            String output = awaitProcessOutput(outputFuture, 5);
             if (exitCode != 0) {
                 throw new MojoExecutionException("Static-analysis delegation failed with exit code "
-                        + exitCode + System.lineSeparator() + output);
+                        + exitCode + " while running " + goal + System.lineSeparator()
+                        + "Command: " + String.join(" ", command) + System.lineSeparator()
+                        + output);
             }
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to start delegated static-analysis goals", e);
@@ -285,6 +316,68 @@ public class CheckMojo extends AbstractMojo {
             Thread.currentThread().interrupt();
             throw new MojoExecutionException("Delegated static-analysis goals were interrupted", e);
         }
+    }
+
+    private CompletableFuture<String> readProcessOutputAsync(InputStream inputStream) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return readProcessOutput(inputStream);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    private String awaitProcessOutput(CompletableFuture<String> outputFuture, long timeoutSeconds)
+            throws MojoExecutionException {
+        try {
+            return outputFuture.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MojoExecutionException("Interrupted while reading delegated static-analysis output", e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof UncheckedIOException uncheckedIOException) {
+                throw new MojoExecutionException("Failed to read delegated static-analysis output",
+                        uncheckedIOException.getCause());
+            }
+            throw new MojoExecutionException("Failed to read delegated static-analysis output", cause);
+        } catch (TimeoutException e) {
+            throw new MojoExecutionException("Timed out while reading delegated static-analysis output", e);
+        }
+    }
+
+    private List<String> resolveStaticAnalysisProjects(Path rootPath) throws MojoExecutionException {
+        List<String> sessionProjects = resolveSessionReactorProjects(rootPath);
+        if (!sessionProjects.isEmpty()) {
+            return sessionProjects;
+        }
+        return discoverReactorProjects(rootPath);
+    }
+
+    private List<String> resolveSessionReactorProjects(Path rootPath) {
+        if (session == null || session.getProjects() == null || session.getProjects().isEmpty()) {
+            return List.of();
+        }
+        List<String> projects = new ArrayList<>();
+        for (MavenProject project : session.getProjects()) {
+            if (project == null || project.getBasedir() == null) {
+                continue;
+            }
+            Path projectPath = project.getBasedir().toPath().toAbsolutePath().normalize();
+            Path normalizedRoot = rootPath.toAbsolutePath().normalize();
+            if (projectPath.equals(normalizedRoot)) {
+                continue;
+            }
+            if (!projectPath.startsWith(normalizedRoot)) {
+                continue;
+            }
+            String relativePath = normalizedRoot.relativize(projectPath).toString();
+            if (!relativePath.isBlank()) {
+                projects.add(relativePath);
+            }
+        }
+        return projects;
     }
 
     private String readProcessOutput(InputStream inputStream) throws IOException {
@@ -817,16 +910,24 @@ public class CheckMojo extends AbstractMojo {
         }
 
         List<DependencyIssue> issues = new ArrayList<>();
+        List<Path> scopedPomFiles = resolveCheckPomFiles(rootPath);
         try {
-            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (file.toString().endsWith("/pom.xml")) {
-                        analyzePomDependency(file, issues);
+            if (scopedPomFiles.isEmpty()) {
+                Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        if (file.toString().endsWith("/pom.xml")) {
+                            analyzePomDependency(file, issues);
+                        }
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
+                });
+            } else {
+                getLog().info("Dependency check scope: " + scopedPomFiles.size() + " Maven reactor project(s)");
+                for (Path pomFile : scopedPomFiles) {
+                    analyzePomDependency(pomFile, issues);
                 }
-            });
+            }
         } catch (IOException e) {
             getLog().error("Error walking file tree", e);
         }
@@ -841,6 +942,28 @@ public class CheckMojo extends AbstractMojo {
         } else {
             getLog().info("All dependency checks passed");
         }
+    }
+
+    private List<Path> resolveCheckPomFiles(Path rootPath) {
+        if (session == null || session.getProjects() == null || session.getProjects().isEmpty()) {
+            return List.of();
+        }
+        Path normalizedRoot = rootPath.toAbsolutePath().normalize();
+        List<Path> pomFiles = new ArrayList<>();
+        Set<Path> seen = new HashSet<>();
+        for (MavenProject project : session.getProjects()) {
+            if (project == null || project.getFile() == null) {
+                continue;
+            }
+            Path pomFile = project.getFile().toPath().toAbsolutePath().normalize();
+            if (!pomFile.startsWith(normalizedRoot) || !Files.exists(pomFile)) {
+                continue;
+            }
+            if (seen.add(pomFile)) {
+                pomFiles.add(pomFile);
+            }
+        }
+        return pomFiles;
     }
 
     private void analyzePomDependency(Path pomFile, List<DependencyIssue> issues) {

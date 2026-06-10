@@ -19,6 +19,7 @@
     <description>Mango Infra Persistence - relational persistence starters</description>
 
     <modules>
+        <module>mango-infra-persistence-api</module>
         <module>mango-infra-persistence-starter</module>
         <module>mango-infra-persistence-web-starter</module>
     </modules>

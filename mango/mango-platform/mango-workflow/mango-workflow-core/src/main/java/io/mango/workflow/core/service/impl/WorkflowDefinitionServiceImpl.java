@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
+import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.workflow.api.WorkflowCode;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
@@ -21,13 +23,13 @@ import io.mango.workflow.api.vo.WorkflowDefinitionVersionVO;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
 import io.mango.workflow.api.vo.WorkflowNodeCatalogVO;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
+import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.entity.WorkflowDefinition;
 import io.mango.workflow.core.entity.WorkflowDefinitionVersion;
-import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.entity.WorkflowNodeDefinition;
+import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
-import io.mango.workflow.core.mapper.WorkflowCategoryMapper;
 import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
 import io.mango.workflow.core.service.IWorkflowDefinitionService;
 import lombok.RequiredArgsConstructor;
@@ -42,11 +44,9 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * 流程定义服务实现。
@@ -59,9 +59,10 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     };
 
     private final WorkflowDefinitionMapper mapper;
-    private final WorkflowDefinitionVersionMapper versionMapper;
     private final WorkflowCategoryMapper categoryMapper;
+    private final WorkflowDefinitionVersionMapper versionMapper;
     private final WorkflowNodeDefinitionMapper nodeDefinitionMapper;
+    private final DomainApi domainApi;
     private final RepositoryService repositoryService;
     private final WorkflowDesignerBpmnConverter bpmnConverter;
     private final ObjectMapper objectMapper;
@@ -75,9 +76,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         IPage<WorkflowDefinition> page = mapper.selectPage(
                 new Page<>(resolved.getPage(), resolved.getSize()),
                 wrapper(resolved));
-        Map<Long, String> categoryNames = categoryNames(page.getRecords());
         List<WorkflowDefinitionVO> records = page.getRecords().stream()
-                .map(item -> toVO(item, categoryNames.get(item.getCategoryId())))
+                .map(this::toVO)
                 .toList();
         return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
     }
@@ -86,9 +86,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         IPage<WorkflowDefinition> page = mapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()),
                 publishedWrapper(query));
-        Map<Long, String> categoryNames = categoryNames(page.getRecords());
         List<WorkflowDefinitionVO> records = page.getRecords().stream()
-                .map(entity -> publishedSnapshotVO(entity, categoryNames.get(entity.getCategoryId())))
+                .map(this::publishedSnapshotVO)
                 .toList();
         return R.ok(PageResult.of(records, page.getTotal(), page.getCurrent(), page.getSize()));
     }
@@ -96,8 +95,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     @Override
     public R<WorkflowDefinitionVO> get(Long id) {
         WorkflowDefinition entity = selectRequired(id);
-        WorkflowCategory category = categoryMapper.selectById(entity.getCategoryId());
-        return R.ok(toVO(entity, category == null ? null : category.getCategoryName()));
+        return R.ok(toVO(entity));
     }
 
     @Override
@@ -163,6 +161,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         WorkflowDefinitionVersion latest = latestSuccessfulVersion(entity.getId());
         Require.notNull(latest, WorkflowCode.VERSION_NOT_FOUND.getCode(), "暂无可回滚的已发布版本");
         entity.setCategoryId(latest.getCategoryId());
+        entity.setDomainCode(latest.getDomainCode());
         entity.setOrgId(latest.getOrgId());
         entity.setAdminUsers(latest.getAdminUsers());
         entity.setIcon(latest.getIcon());
@@ -201,6 +200,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
             version.setDefinitionId(entity.getId());
             version.setVersionNo(nextVersionNo);
             version.setCategoryId(entity.getCategoryId());
+            version.setDomainCode(entity.getDomainCode());
             version.setOrgId(entity.getOrgId());
             version.setAdminUsers(entity.getAdminUsers());
             version.setIcon(entity.getIcon());
@@ -316,6 +316,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                         .or()
                         .like(WorkflowDefinition::getDefinitionKey, keyword))
                 .eq(query.getCategoryId() != null, WorkflowDefinition::getCategoryId, query.getCategoryId())
+                .eq(StringUtils.hasText(query.getDomainCode()), WorkflowDefinition::getDomainCode, trimToNull(query.getDomainCode()))
                 .eq(query.getOrgId() != null, WorkflowDefinition::getOrgId, query.getOrgId())
                 .eq(StringUtils.hasText(query.getStatus()), WorkflowDefinition::getStatus, query.getStatus())
                 .orderByDesc(WorkflowDefinition::getUpdatedTime);
@@ -329,6 +330,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
                         .or()
                         .like(WorkflowDefinition::getDefinitionKey, keyword))
                 .eq(query.getCategoryId() != null, WorkflowDefinition::getCategoryId, query.getCategoryId())
+                .eq(StringUtils.hasText(query.getDomainCode()), WorkflowDefinition::getDomainCode, trimToNull(query.getDomainCode()))
                 .eq(query.getOrgId() != null, WorkflowDefinition::getOrgId, query.getOrgId())
                 .eq(WorkflowDefinition::getStatus, WorkflowDefinitionStatus.PUBLISHED.name())
                 .isNotNull(WorkflowDefinition::getPublishedVersionNo)
@@ -344,9 +346,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     }
 
     private void validate(SaveWorkflowDefinitionCommand command, boolean update) {
-        Require.notNull(command.getCategoryId(), WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
-        Require.isTrue(command.getCategoryId() > 0, WorkflowCode.CATEGORY_INVALID.getCode(), "流程分类不能为空");
-        Require.notNull(categoryMapper.selectById(command.getCategoryId()), WorkflowCode.CATEGORY_NOT_FOUND);
+        validateDomain(command.getDomainCode());
+        validateCategory(command.getCategoryId(), command.getDomainCode());
         Require.notBlank(command.getDefinitionName(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程名称不能为空");
         Require.notBlank(command.getDefinitionKey(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程编码不能为空");
         Require.notBlank(command.getDesignerJson(), WorkflowCode.DESIGNER_INVALID.getCode(), "设计器JSON不能为空");
@@ -360,7 +361,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     }
 
     private void copy(SaveWorkflowDefinitionCommand command, WorkflowDefinition entity) {
-        entity.setCategoryId(command.getCategoryId());
+        entity.setCategoryId(command.getCategoryId() == null ? 0L : command.getCategoryId());
+        entity.setDomainCode(command.getDomainCode().trim());
         entity.setOrgId(command.getOrgId());
         entity.setAdminUsers(toJsonList(command.getAdminUsers()));
         entity.setIcon(trimToNull(command.getIcon()));
@@ -384,25 +386,12 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         }
     }
 
-    private Map<Long, String> categoryNames(List<WorkflowDefinition> definitions) {
-        Map<Long, String> result = new HashMap<>();
-        List<Long> categoryIds = definitions.stream()
-                .map(WorkflowDefinition::getCategoryId)
-                .filter(item -> item != null && !result.containsKey(item))
-                .distinct()
-                .toList();
-        if (categoryIds.isEmpty()) {
-            return result;
-        }
-        categoryMapper.selectBatchIds(categoryIds).forEach(item -> result.put(item.getId(), item.getCategoryName()));
-        return result;
-    }
-
-    private WorkflowDefinitionVO toVO(WorkflowDefinition entity, String categoryName) {
+    private WorkflowDefinitionVO toVO(WorkflowDefinition entity) {
         WorkflowDefinitionVO vo = new WorkflowDefinitionVO();
         vo.setId(entity.getId());
         vo.setCategoryId(entity.getCategoryId());
-        vo.setCategoryName(categoryName);
+        vo.setCategoryName(resolveCategoryName(entity.getCategoryId()));
+        vo.setDomainCode(entity.getDomainCode());
         vo.setOrgId(entity.getOrgId());
         vo.setAdminUsers(parseStringList(entity.getAdminUsers()));
         vo.setIcon(entity.getIcon());
@@ -430,13 +419,14 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         return vo;
     }
 
-    private WorkflowDefinitionVO publishedSnapshotVO(WorkflowDefinition entity, String categoryName) {
+    private WorkflowDefinitionVO publishedSnapshotVO(WorkflowDefinition entity) {
         WorkflowDefinitionVersion version = latestSuccessfulVersion(entity.getId());
         Require.notNull(version, WorkflowCode.VERSION_NOT_FOUND.getCode(), "已发布流程缺少发布版本快照");
         WorkflowDefinitionVO vo = new WorkflowDefinitionVO();
         vo.setId(entity.getId());
         vo.setCategoryId(version.getCategoryId());
-        vo.setCategoryName(categoryName);
+        vo.setCategoryName(resolveCategoryName(version.getCategoryId()));
+        vo.setDomainCode(version.getDomainCode());
         vo.setOrgId(version.getOrgId());
         vo.setAdminUsers(parseStringList(version.getAdminUsers()));
         vo.setIcon(version.getIcon());
@@ -470,6 +460,35 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
 
     private String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private void validateDomain(String domainCode) {
+        Require.notBlank(domainCode, WorkflowCode.DEFINITION_INVALID.getCode(), "业务域不能为空");
+        R<DomainVO> response = domainApi.detailByCode(domainCode.trim());
+        Require.isTrue(response != null && response.isSuccess() && response.getData() != null,
+                WorkflowCode.DEFINITION_INVALID.getCode(), "业务域不存在");
+        Require.isTrue(Integer.valueOf(1).equals(response.getData().getStatus()),
+                WorkflowCode.DEFINITION_INVALID.getCode(), "业务域已停用");
+    }
+
+    private void validateCategory(Long categoryId, String domainCode) {
+        Require.notNull(categoryId, WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类不能为空");
+        WorkflowCategory category = categoryMapper.selectById(categoryId);
+        Require.notNull(category, WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类不存在");
+        Require.isTrue(Integer.valueOf(1).equals(category.getStatus()),
+                WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类已停用");
+        if (StringUtils.hasText(domainCode) && StringUtils.hasText(category.getDomainCode())) {
+            Require.isTrue(domainCode.trim().equals(category.getDomainCode().trim()),
+                    WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类不属于当前业务域");
+        }
+    }
+
+    private String resolveCategoryName(Long categoryId) {
+        if (categoryId == null || categoryId == 0L) {
+            return null;
+        }
+        WorkflowCategory category = categoryMapper.selectById(categoryId);
+        return category == null ? null : category.getCategoryName();
     }
 
     private String toJsonList(Collection<String> values) {
@@ -527,8 +546,8 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
             return List.of();
         }
         List<String> reasons = new ArrayList<>();
-        if (!sameNumber(entity.getCategoryId(), latest.getCategoryId())) {
-            reasons.add("流程分类");
+        if (!sameText(entity.getDomainCode(), latest.getDomainCode())) {
+            reasons.add("业务域");
         }
         if (!sameNumber(entity.getOrgId(), latest.getOrgId())) {
             reasons.add("所属组织");
@@ -587,6 +606,7 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         vo.setDefinitionId(entity.getDefinitionId());
         vo.setVersionNo(entity.getVersionNo());
         vo.setCategoryId(entity.getCategoryId());
+        vo.setDomainCode(entity.getDomainCode());
         vo.setOrgId(entity.getOrgId());
         vo.setAdminUsers(entity.getAdminUsers());
         vo.setIcon(entity.getIcon());

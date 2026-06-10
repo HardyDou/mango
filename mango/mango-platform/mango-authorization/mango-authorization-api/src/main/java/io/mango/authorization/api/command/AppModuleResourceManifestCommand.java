@@ -35,6 +35,12 @@ public class AppModuleResourceManifestCommand implements Serializable {
     @Schema(description = "排序号")
     private Integer sort;
 
+    @Schema(description = "菜单同步到的套餐编码列表；为空时不自动加入套餐")
+    private List<String> packageCodes = new ArrayList<>();
+
+    @Schema(description = "菜单默认授权到的角色编码列表；为空时不自动授权角色")
+    private List<String> roleCodes = new ArrayList<>();
+
     @Valid
     @Schema(description = "菜单树")
     private List<Menu> menus = new ArrayList<>();
