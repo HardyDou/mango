@@ -676,6 +676,51 @@ class PaymentReadonlyResourceServiceTest {
     }
 
     @Test
+    @DisplayName("handleExceptionOrder should not couple payment order number to fixed length")
+    void handleExceptionOrder_activeQueryVariableLengthPaymentOrder_triggersChannelQuery() {
+        PaymentExceptionOrderEntity entity = new PaymentExceptionOrderEntity();
+        entity.setId(400013L);
+        entity.setExceptionNo("EX202606101780896910696123456");
+        entity.setRelatedOrderNo("PO202606101780896910696123456");
+        entity.setExceptionType(PaymentExceptionOrderService.TYPE_PAY_TIMEOUT);
+        entity.setTenantId(1L);
+        entity.setHandleStatus("PENDING");
+        entity.setDelFlag(0);
+        when(exceptionOrderMapper.selectById(400013L)).thenReturn(entity);
+        when(channelOrderQueryService.queryChannelPayment("PO202606101780896910696123456"))
+                .thenReturn(new PaymentChannelOrderQueryService.QueryResult(
+                        "PO202606101780896910696123456",
+                        "PAYING",
+                        null,
+                        false,
+                        0L,
+                        "NO_CHANGE"));
+        PaymentExceptionOrderVO detail = new PaymentExceptionOrderVO();
+        detail.setId(400013L);
+        detail.setExceptionNo("EX202606101780896910696123456");
+        detail.setHandleStatus("HANDLED");
+        when(exceptionOrderMapper.handleExceptionOrder(eq(1L), eq(400013L), eq("HANDLED"), eq("ACTIVE_QUERY"),
+                eq("支付超时后主动查单"),
+                eq("根据通道查单结果处理异常；查单结果：支付订单 PO202606101780896910696123456 当前状态 PAYING，本地状态未变化"),
+                eq(null), eq(1001L), eq("admin"), any(LocalDateTime.class))).thenReturn(1);
+        when(exceptionOrderMapper.selectExceptionOrderDetail(1L, 400013L)).thenReturn(detail);
+
+        HandlePaymentExceptionOrderCommand command = new HandlePaymentExceptionOrderCommand();
+        command.setId(400013L);
+        command.setHandleAction("ACTIVE_QUERY");
+        command.setHandleReason("支付超时后主动查单");
+        command.setHandleResult("根据通道查单结果处理异常");
+
+        service.handleExceptionOrder(command);
+
+        verify(channelOrderQueryService).queryChannelPayment("PO202606101780896910696123456");
+        verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400013L), eq("HANDLED"), eq("ACTIVE_QUERY"),
+                eq("支付超时后主动查单"),
+                eq("根据通道查单结果处理异常；查单结果：支付订单 PO202606101780896910696123456 当前状态 PAYING，本地状态未变化"),
+                eq(null), eq(1001L), eq("admin"), any(LocalDateTime.class));
+    }
+
+    @Test
     @DisplayName("handleExceptionOrder should reject active query for non payment order reference")
     void handleExceptionOrder_activeQueryNonPaymentReference_rejects() {
         PaymentExceptionOrderEntity entity = new PaymentExceptionOrderEntity();

@@ -7,9 +7,9 @@ import { resolve } from 'node:path';
 import { expect, test, type APIResponse, type Locator, type Page } from '@playwright/test';
 import * as XLSX from 'xlsx';
 
-const PAY_ORDER_NO_PATTERN = /^PO\d{16}$/;
-const EXCEPTION_ORDER_NO_PATTERN = /^EX\d{16}$/;
-const OFFLINE_REFUND_NO_PATTERN = /^OF\d{16}$/;
+const PAY_ORDER_NO_PATTERN = /^PO\d+$/;
+const EXCEPTION_ORDER_NO_PATTERN = /^EX\d+$/;
+const OFFLINE_REFUND_NO_PATTERN = /^OF\d+$/;
 
 type ApiBody<T> = {
   code?: number;

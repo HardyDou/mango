@@ -73,9 +73,9 @@ public class PaymentReadonlyResourceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentReadonlyResourceService.class);
 
-    private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d{16}$");
+    private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d+$");
 
-    private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d{16}$");
+    private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d+$");
 
     private static final Set<String> EXCEPTION_ORDER_HANDLE_ACTIONS = Set.of(
             "ACTIVE_QUERY",
