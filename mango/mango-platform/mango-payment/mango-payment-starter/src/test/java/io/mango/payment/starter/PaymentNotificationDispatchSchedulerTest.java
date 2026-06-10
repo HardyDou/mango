@@ -84,7 +84,7 @@ class PaymentNotificationDispatchSchedulerTest {
         private final List<Long> limits = new ArrayList<>();
 
         TestPaymentNotificationService() {
-            super(null, null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null, null);
         }
 
         PaymentNotificationService proxy() {
