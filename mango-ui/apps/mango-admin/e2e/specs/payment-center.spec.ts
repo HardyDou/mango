@@ -3906,7 +3906,7 @@ test.describe('支付中心 E2E', () => {
 
       await drawer.locator('.el-drawer__close-btn').click();
 
-      setMangoPayScenario('SUCCESS');
+      setMangoPayRefundScenario('SUCCESS');
       const queryResponsePromise = page.waitForResponse(response =>
         response.url().includes('/api/payment/refund-orders/query-channel') && response.request().method() === 'POST'
       );
