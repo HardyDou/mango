@@ -476,6 +476,7 @@
           />
         </div>
       </div>
+      <!--
       <div class="layout-settings-item mt15">
         <span class="layout-settings-label">水印</span>
         <div class="layout-settings-value">
@@ -486,6 +487,7 @@
           />
         </div>
       </div>
+      -->
 
       <!-- 其它设置 -->
       <el-divider content-position="left">
@@ -693,10 +695,10 @@ const onAddDarkChange = () => {
   setLocalThemeConfig();
 };
 
-// 水印
-const onWartermarkChange = () => {
-  setLocalThemeConfig();
-};
+// 水印功能暂不开放，保留配置项逻辑，后续实现水印渲染后再恢复入口。
+// const onWartermarkChange = () => {
+//   setLocalThemeConfig();
+// };
 
 // 布局切换
 const onSetLayout = (layout: 'defaults' | 'classic' | 'transverse' | 'columns') => {
