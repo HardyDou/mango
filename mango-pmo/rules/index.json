@@ -130,6 +130,26 @@
     "product.sprint": {
       "path": "rules/product/02-sprint.md",
       "reason": "Sprint 规范"
+    },
+    "frontend.adminUiCommon": {
+      "path": "rules/frontend/07-admin-ui-common.md",
+      "reason": "Admin UI 通用规范"
+    },
+    "frontend.listPage": {
+      "path": "rules/frontend/08-list-page.md",
+      "reason": "列表页 UI 规范"
+    },
+    "frontend.detailPage": {
+      "path": "rules/frontend/09-detail-page.md",
+      "reason": "详情页 UI 规范"
+    },
+    "frontend.formPage": {
+      "path": "rules/frontend/10-form-page.md",
+      "reason": "表单页 UI 规范"
+    },
+    "frontend.dialogDrawer": {
+      "path": "rules/frontend/11-dialog-drawer.md",
+      "reason": "弹框与抽屉 UI 规范"
     }
   },
   "roles": {
@@ -210,8 +230,8 @@
     "frontendUi": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/apps/**/views/**", "mango-ui/packages/**/views/**"],
-      "keywords": ["UI", "Element Plus", "列表", "搜索", "表格", "表单", "弹窗", "抽屉", "状态标签", "下拉", "筛选"],
-      "include": ["frontend.elementPlusUi"]
+      "keywords": ["UI", "Element Plus", "列表", "搜索", "表格", "表单", "弹窗", "抽屉", "状态标签", "下拉", "筛选", "详情", "详情页", "编辑页", "配置页", "删除确认", "底部操作栏"],
+      "include": ["frontend.elementPlusUi", "frontend.adminUiCommon", "frontend.listPage", "frontend.detailPage", "frontend.formPage", "frontend.dialogDrawer"]
     },
     "frontendComponent": {
       "roles": ["tech-lead", "dev", "qa"],
