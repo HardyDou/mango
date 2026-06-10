@@ -107,6 +107,10 @@
       "path": "rules/frontend/06-monorepo-architecture.md",
       "reason": "前端 Monorepo 架构规范"
     },
+    "frontend.formLayout": {
+      "path": "rules/frontend/07-form-layout.md",
+      "reason": "表单 UI 布局规范"
+    },
     "product.prd": {
       "path": "rules/product/01-prd-template.md",
       "reason": "PRD 模板规范"
@@ -189,7 +193,7 @@
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango-ui/apps/**/views/**", "mango-ui/packages/**/views/**"],
       "keywords": ["UI", "Element Plus", "列表", "搜索", "表格", "表单", "弹窗", "抽屉", "状态标签", "下拉", "筛选"],
-      "include": ["frontend.elementPlusUi"]
+      "include": ["frontend.elementPlusUi", "frontend.formLayout"]
     },
     "frontendComponent": {
       "roles": ["tech-lead", "dev", "qa"],

@@ -37,8 +37,8 @@ mango:
     jwt:
       secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
   crypto:
-    sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
-    sm4-iv:
+    sm4:
+      secret-key: 00112233445566778899aabbccddeeff
   flyway:
     enabled: false
 

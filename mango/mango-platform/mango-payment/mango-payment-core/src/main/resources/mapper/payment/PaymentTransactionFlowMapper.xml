@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentTransactionFlowMapper">
+
+    <sql id="transactionFlowFrom">
+        from payment_transaction_flow tf
+        left join payment_business_order bo
+          on bo.id = tf.business_order_id and bo.tenant_id = tf.tenant_id
+        left join payment_order po
+          on po.id = tf.payment_order_id and po.tenant_id = tf.tenant_id
+        left join payment_refund_order ro
+          on ro.id = tf.refund_order_id and ro.tenant_id = tf.tenant_id
+    </sql>
+
+    <sql id="transactionFlowWhere">
+        where tf.tenant_id = #{tenantId}
+        <if test="keyword != null and keyword != ''">
+            and (
+              tf.flow_no like concat('%', #{keyword}, '%')
+              or tf.flow_type like concat('%', #{keyword}, '%')
+              or bo.biz_order_no like concat('%', #{keyword}, '%')
+              or po.pay_order_no like concat('%', #{keyword}, '%')
+              or ro.refund_order_no like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="transactionFlowSelect">
+        select tf.id,
+               tf.flow_no as flowNo,
+               tf.business_order_id as businessOrderId,
+               bo.biz_order_no as bizOrderNo,
+               tf.payment_order_id as paymentOrderId,
+               po.pay_order_no as payOrderNo,
+               tf.refund_order_id as refundOrderId,
+               ro.refund_order_no as refundOrderNo,
+               tf.flow_type as flowType,
+               tf.amount,
+               bo.currency,
+               tf.created_at as createTime,
+               tf.updated_at as updateTime
+    </sql>
+
+    <select id="countTransactionFlows" resultType="long">
+        select count(1)
+        <include refid="transactionFlowFrom"/>
+        <include refid="transactionFlowWhere"/>
+    </select>
+
+    <select id="selectTransactionFlowPage" resultType="io.mango.payment.api.vo.PaymentTransactionFlowVO">
+        <include refid="transactionFlowSelect"/>
+        <include refid="transactionFlowFrom"/>
+        <include refid="transactionFlowWhere"/>
+        order by tf.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectTransactionFlowDetail" resultType="io.mango.payment.api.vo.PaymentTransactionFlowVO">
+        <include refid="transactionFlowSelect"/>
+        <include refid="transactionFlowFrom"/>
+        where tf.tenant_id = #{tenantId}
+          and tf.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectChannelFeeFlowByPaymentOrder" resultType="io.mango.payment.core.entity.PaymentTransactionFlowEntity">
+        select id,
+               flow_no as flowNo,
+               business_order_id as businessOrderId,
+               payment_order_id as paymentOrderId,
+               refund_order_id as refundOrderId,
+               flow_type as flowType,
+               amount,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt
+        from payment_transaction_flow
+        where tenant_id = #{tenantId}
+          and payment_order_id = #{paymentOrderId}
+          and refund_order_id is null
+          and flow_type = 'CHANNEL_FEE'
+        order by created_at desc
+        limit 1
+    </select>
+
+    <select id="selectChannelFeeFlowByRefundOrder" resultType="io.mango.payment.core.entity.PaymentTransactionFlowEntity">
+        select id,
+               flow_no as flowNo,
+               business_order_id as businessOrderId,
+               payment_order_id as paymentOrderId,
+               refund_order_id as refundOrderId,
+               flow_type as flowType,
+               amount,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt
+        from payment_transaction_flow
+        where tenant_id = #{tenantId}
+          and refund_order_id = #{refundOrderId}
+          and flow_type = 'CHANNEL_FEE'
+        order by created_at desc
+        limit 1
+    </select>
+</mapper>

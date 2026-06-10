@@ -64,6 +64,17 @@ public class PersistenceFlywayProperties {
          * 未配置时使用应用主数据源。
          */
         private DataSourceConfig datasource = new DataSourceConfig();
+
+        /**
+         * 是否在迁移前校验历史记录。
+         */
+        private boolean validateOnMigrate = true;
+
+        /**
+         * 是否忽略数据库中存在但当前代码已移除的历史迁移。
+         * 仅用于模块重构后接管存量历史，默认关闭。
+         */
+        private boolean ignoreMissingMigrations = false;
     }
 
     @Data

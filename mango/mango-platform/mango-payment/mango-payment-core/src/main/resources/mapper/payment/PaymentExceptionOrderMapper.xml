@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentExceptionOrderMapper">
+
+    <sql id="exceptionOrderWhere">
+        where eo.tenant_id = #{tenantId}
+          and eo.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+          and eo.handle_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (
+            eo.exception_no like concat('%', #{keyword}, '%')
+            or eo.related_order_no like concat('%', #{keyword}, '%')
+            or eo.exception_type like concat('%', #{keyword}, '%')
+            or eo.handle_status like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="exceptionOrderSelect">
+        select eo.id,
+               eo.exception_no as exceptionNo,
+               eo.related_order_no as relatedOrderNo,
+               eo.exception_type as exceptionType,
+               eo.severity,
+               eo.handle_status as handleStatus,
+               eo.reason,
+               eo.handle_action as handleAction,
+               eo.handle_reason as handleReason,
+               eo.handle_result as handleResult,
+               eo.handle_evidence as handleEvidence,
+               eo.handler_id as handlerId,
+               eo.handler_name as handlerName,
+               eo.handle_time as handleTime,
+               eo.created_at as createTime,
+               eo.updated_at as updateTime
+    </sql>
+
+    <select id="countExceptionOrders" resultType="long">
+        select count(1)
+        from payment_exception_order eo
+        <include refid="exceptionOrderWhere"/>
+    </select>
+
+    <select id="countCallbackFailureExceptionOrders" resultType="long">
+        select count(1)
+        from payment_exception_order eo
+        where eo.tenant_id = #{tenantId}
+          and eo.del_flag = 0
+          and eo.exception_type in ('CHANNEL_CALLBACK_FAILED', 'AMOUNT_MISMATCH', 'STATUS_MISMATCH', 'REFUND_MISMATCH')
+          and eo.handle_status in ('PENDING', 'PROCESSING')
+    </select>
+
+    <select id="selectExceptionOrderPage" resultType="io.mango.payment.api.vo.PaymentExceptionOrderVO">
+        <include refid="exceptionOrderSelect"/>
+        from payment_exception_order eo
+        <include refid="exceptionOrderWhere"/>
+        order by eo.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectExceptionOrderDetail" resultType="io.mango.payment.api.vo.PaymentExceptionOrderVO">
+        <include refid="exceptionOrderSelect"/>
+        from payment_exception_order eo
+        where eo.tenant_id = #{tenantId}
+          and eo.id = #{id}
+          and eo.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectActiveByBusinessKey" resultType="io.mango.payment.core.entity.PaymentExceptionOrderEntity">
+        select *
+        from payment_exception_order
+        where tenant_id = #{tenantId}
+          and related_order_no = #{relatedOrderNo}
+          and exception_type = #{exceptionType}
+          and del_flag = 0
+        limit 1
+    </select>
+
+    <update id="handleExceptionOrder">
+        update payment_exception_order
+        set handle_status = #{handleStatus},
+            handle_action = #{handleAction},
+            handle_reason = #{handleReason},
+            handle_result = #{handleResult},
+            handle_evidence = #{handleEvidence},
+            handler_id = #{handlerId},
+            handler_name = #{handlerName},
+            handle_time = #{handleTime},
+            updated_by = #{handlerId},
+            updated_at = #{handleTime}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+          and handle_status in ('PENDING', 'PROCESSING')
+    </update>
+</mapper>

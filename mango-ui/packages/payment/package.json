@@ -1,0 +1,25 @@
+{
+  "name": "@mango/payment",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin-pages": "./src/admin-pages.ts",
+    "./style.css": "./style.css"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.0.10",
+    "@mango/admin-pages": "1.0.6",
+    "@mango/api-schema": "1.0.2",
+    "@mango/common": "1.0.7",
+    "@mango/file": "1.0.6",
+    "element-plus": "2.5.5",
+    "qrcode": "1.5.4",
+    "vue": "3.5.13",
+    "vue-router": "^4.1.6"
+  },
+  "devDependencies": {
+    "@types/qrcode": "1.5.5"
+  }
+}

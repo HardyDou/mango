@@ -29,6 +29,10 @@ public class SaveNumgenGeneratorCommand implements Serializable {
     @Schema(description = "名称", requiredMode = Schema.RequiredMode.REQUIRED)
     private String genName;
 
+    @Size(max = 64, message = "业务域编码不能超过64个字符")
+    @Schema(description = "业务域编码。不传默认 GENERAL")
+    private String domainCode;
+
     @NotNull(message = "状态不能为空")
     @Schema(description = "状态：1-启用，0-停用", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer status;

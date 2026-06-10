@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentOrderMapper">
+
+    <sql id="paymentOrderFrom">
+        from payment_order po
+        join payment_business_order bo
+          on bo.id = po.business_order_id and bo.tenant_id = po.tenant_id
+        left join payment_enterprise_subject s
+          on s.id = bo.subject_id and s.tenant_id = bo.tenant_id
+        left join payment_method m
+          on m.id = po.method_id and m.tenant_id = po.tenant_id
+        left join payment_channel c
+          on c.id = po.channel_id and c.tenant_id = po.tenant_id
+        left join payment_cashier_config cfg
+          on cfg.id = po.cashier_config_id and cfg.tenant_id = po.tenant_id
+        left join payment_channel_contract cc
+          on cc.id = po.contract_id and cc.tenant_id = po.tenant_id
+    </sql>
+
+    <sql id="paymentOrderWhere">
+        where po.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            and po.status = #{statusCode}
+        </if>
+        <if test="channelId != null">
+            and po.channel_id = #{channelId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              po.pay_order_no like concat('%', #{keyword}, '%')
+              or bo.biz_order_no like concat('%', #{keyword}, '%')
+              or bo.title like concat('%', #{keyword}, '%')
+              or po.channel_trade_no like concat('%', #{keyword}, '%')
+              or m.method_name like concat('%', #{keyword}, '%')
+              or m.method_code like concat('%', #{keyword}, '%')
+              or c.channel_code like concat('%', #{keyword}, '%')
+              or c.channel_name like concat('%', #{keyword}, '%')
+              or po.channel_merchant_no like concat('%', #{keyword}, '%')
+              or cc.merchant_no like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="paymentOrderSelect">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               bo.biz_order_no as bizOrderNo,
+               bo.title,
+               bo.app_code as appId,
+               bo.subject_id as subjectId,
+               s.subject_name as subjectName,
+               po.cashier_config_id as cashierConfigId,
+               cfg.cashier_name as cashierName,
+               po.method_id as methodId,
+               m.method_code as methodCode,
+               m.method_name as methodName,
+               po.channel_id as channelId,
+               coalesce(po.channel_code, c.channel_code) as channelCode,
+               c.channel_name as channelName,
+               coalesce(po.channel_merchant_no, cc.merchant_no) as channelMerchantNo,
+               po.contract_id as contractId,
+               cc.contract_name as contractName,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.amount,
+               bo.refunded_amount as refundedAmount,
+               bo.currency,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.created_at as createTime,
+               po.updated_at as updateTime
+    </sql>
+
+    <select id="countPaymentOrders" resultType="long">
+        select count(1)
+        <include refid="paymentOrderFrom"/>
+        <include refid="paymentOrderWhere"/>
+    </select>
+
+    <select id="countPaymentOrdersByStatus" resultType="long">
+        select count(1)
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+        <if test="status != null and status != ''">
+          and po.status = #{status}
+        </if>
+    </select>
+
+    <select id="countProcessingPaymentBacklog" resultType="long">
+        select count(1)
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.status = 'PAYING'
+    </select>
+
+    <select id="selectChannelFailureMetrics" resultType="io.mango.payment.core.model.PaymentChannelFailureMetric">
+        select coalesce(po.channel_code, c.channel_code, 'UNKNOWN') as channelCode,
+               count(1) as totalCount,
+               sum(case when po.status = 'FAILED' then 1 else 0 end) as failedCount
+        from payment_order po
+        left join payment_channel c
+          on c.id = po.channel_id
+         and c.tenant_id = po.tenant_id
+        where po.tenant_id = #{tenantId}
+          and po.channel_id is not null
+        group by coalesce(po.channel_code, c.channel_code, 'UNKNOWN')
+    </select>
+
+    <select id="selectPaymentOrderPage" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+        <include refid="paymentOrderSelect"/>
+        <include refid="paymentOrderFrom"/>
+        <include refid="paymentOrderWhere"/>
+        order by po.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectPaymentOrderDetail" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+        <include refid="paymentOrderSelect"/>
+        <include refid="paymentOrderFrom"/>
+        where po.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and po.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectPaymentOrderById" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+        <include refid="paymentOrderSelect"/>
+        <include refid="paymentOrderFrom"/>
+        where po.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and po.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectOpenPaymentOrder" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+        <include refid="paymentOrderSelect"/>
+        <include refid="paymentOrderFrom"/>
+        where po.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and bo.app_code = #{appId}
+          and po.pay_order_no = #{payOrderNo}
+        limit 1
+    </select>
+
+    <select id="selectSuccessfulOpenPaymentOrder" resultType="io.mango.payment.api.vo.PaymentOrderVO">
+        <include refid="paymentOrderSelect"/>
+        <include refid="paymentOrderFrom"/>
+        where po.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and bo.app_code = #{appId}
+          and bo.biz_order_no = #{bizOrderNo}
+          and po.status = 'SUCCESS'
+          and po.success_flag = 1
+        order by po.pay_time desc, po.created_at desc
+        limit 1
+    </select>
+
+    <select id="lockSuccessfulOpenPaymentOrder" resultType="long">
+        select id
+        from payment_order
+        where tenant_id = #{tenantId}
+          and id = #{paymentOrderId}
+          and status = 'SUCCESS'
+          and success_flag = 1
+        for update
+    </select>
+
+    <select id="selectLatestFlowNo" resultType="string">
+        select flow_no
+        from payment_transaction_flow
+        where tenant_id = #{tenantId}
+          and payment_order_id = #{paymentOrderId}
+        order by created_at desc
+        limit 1
+    </select>
+
+    <select id="selectByTenantAndChannelTradeNo" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.channel_code = #{channelCode}
+          and po.channel_trade_no = #{channelTradeNo}
+        order by po.created_at desc
+        limit 1
+    </select>
+
+    <select id="selectByTenantAndPayOrderNo" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.pay_order_no = #{payOrderNo}
+        limit 1
+    </select>
+
+    <select id="selectEntityByTenantAndId" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectExpiredOpenPaymentOrders" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        join payment_business_order bo
+          on bo.id = po.business_order_id
+         and bo.tenant_id = po.tenant_id
+         and bo.del_flag = 0
+        where po.tenant_id = #{tenantId}
+          and po.status in ('CREATED', 'PAYING')
+          and coalesce(po.success_flag, 0) = 0
+          and po.channel_code != 'OFFLINE_COLLECTION'
+          and bo.status in ('TO_PAY', 'PAYING')
+          and coalesce(bo.paid_amount, 0) = 0
+          and bo.expire_time is not null
+          and bo.expire_time &lt;= #{now}
+        order by bo.expire_time asc, po.created_at asc, po.id asc
+        limit #{limit}
+    </select>
+
+    <select id="selectProcessingPaymentOrders" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        join payment_business_order bo
+          on bo.id = po.business_order_id
+         and bo.tenant_id = po.tenant_id
+         and bo.del_flag = 0
+        where po.tenant_id = #{tenantId}
+          and po.status = 'PAYING'
+          and coalesce(po.success_flag, 0) = 0
+          and bo.status = 'PAYING'
+        order by po.updated_at asc, po.created_at asc, po.id asc
+        limit #{limit}
+    </select>
+
+    <select id="selectSuccessfulChannelOrdersMissingInBill" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.channel_code = #{channelCode}
+          and po.status = 'SUCCESS'
+          and po.success_flag = 1
+          and po.channel_trade_no is not null
+          and po.pay_time &gt;= #{billDate}
+          and po.pay_time &lt; #{nextBillDate}
+        <if test="channelTradeNos != null and channelTradeNos.size() > 0">
+          and po.channel_trade_no not in
+          <foreach collection="channelTradeNos" item="channelTradeNo" open="(" separator="," close=")">
+              #{channelTradeNo}
+          </foreach>
+        </if>
+        order by po.pay_time asc, po.channel_trade_no asc
+    </select>
+
+    <update id="updatePayingQueryResult">
+        update payment_order
+        set status = #{status},
+            success_flag = #{successFlag},
+            pay_time = #{payTime},
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'PAYING'
+    </update>
+
+    <update id="updatePayingCallbackResult">
+        update payment_order
+        set status = #{status},
+            success_flag = #{successFlag},
+            pay_time = #{payTime},
+            channel_trade_no = coalesce(channel_trade_no, #{channelTradeNo}),
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'PAYING'
+    </update>
+
+    <update id="updateOfflineCollectionSuccess">
+        update payment_order
+        set status = 'SUCCESS',
+            success_flag = 1,
+            pay_time = #{payTime},
+            channel_trade_no = coalesce(channel_trade_no, #{channelTradeNo}),
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and channel_code = 'OFFLINE_COLLECTION'
+          and status = 'PAYING'
+          and coalesce(success_flag, 0) = 0
+    </update>
+
+    <update id="markDuplicatePaymentSuccess">
+        update payment_order
+        set status = 'SUCCESS',
+            success_flag = 0,
+            pay_time = #{payTime},
+            channel_trade_no = coalesce(channel_trade_no, #{channelTradeNo}),
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'PAYING'
+    </update>
+
+    <update id="markDuplicatePaymentRefunding">
+        update payment_order
+        set status = 'DUPLICATE_REFUNDING',
+            success_flag = 0,
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'SUCCESS'
+          and coalesce(success_flag, 0) = 0
+    </update>
+
+    <update id="markDuplicatePaymentRefunded">
+        update payment_order
+        set status = 'DUPLICATE_REFUNDED',
+            success_flag = 0,
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'DUPLICATE_REFUNDING'
+          and coalesce(success_flag, 0) = 0
+    </update>
+
+    <update id="closeOpenPaymentOrder">
+        update payment_order
+        set status = 'CLOSED',
+            success_flag = 0,
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status in ('CREATED', 'PAYING')
+          and coalesce(success_flag, 0) = 0
+    </update>
+
+    <select id="countSuccessfulCashierOrders" resultType="long">
+        select count(1)
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.business_order_id = #{businessOrderId}
+          and po.status = 'SUCCESS'
+    </select>
+
+    <select id="selectProcessingPayOrderNo" resultType="string">
+        select po.pay_order_no
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.business_order_id = #{businessOrderId}
+          and po.method_id = #{methodId}
+          and po.status = 'PAYING'
+        order by po.created_at desc
+        limit 1
+    </select>
+
+    <select id="selectCashierPayResult" resultType="io.mango.payment.core.model.PaymentCashierPayResultRow">
+        select po.id as paymentOrderId,
+               po.pay_order_no as payOrderNo,
+               po.amount,
+               po.status,
+               po.updated_at as updatedAt,
+               po.channel_code as channelCode,
+               po.payment_material_json as paymentMaterialJson,
+               channel.channel_name as channelName,
+               pm.method_code as methodCode,
+               pm.method_name as methodName,
+               pm.payment_material_type as paymentMaterialType,
+               bo.id as businessOrderId,
+               bo.biz_order_no as bizOrderNo,
+               bo.app_code as appCode,
+               bo.title as title,
+               bo.subject_id as subjectId,
+               bo.currency,
+               bo.expire_time as expireTime
+        from payment_order po
+        join payment_method pm
+          on pm.id = po.method_id
+         and pm.tenant_id = po.tenant_id
+        left join payment_channel channel
+          on channel.id = po.channel_id
+         and channel.tenant_id = po.tenant_id
+        join payment_business_order bo
+          on bo.id = po.business_order_id
+         and bo.tenant_id = po.tenant_id
+        where po.tenant_id = #{tenantId}
+          and po.pay_order_no = #{payOrderNo}
+        limit 1
+    </select>
+</mapper>

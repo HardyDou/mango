@@ -10,7 +10,9 @@ import io.mango.numgen.api.command.SaveNumgenGeneratorCommand;
 import io.mango.numgen.api.command.UpdateNumgenGeneratorStatusCommand;
 import io.mango.numgen.api.query.NumgenGeneratorPageQuery;
 import io.mango.numgen.api.vo.NumgenGeneratorVO;
+import io.mango.numgen.core.entity.NumgenBusinessDomain;
 import io.mango.numgen.core.entity.NumgenGenerator;
+import io.mango.numgen.core.mapper.NumgenBusinessDomainMapper;
 import io.mango.numgen.core.mapper.NumgenGeneratorMapper;
 import io.mango.numgen.core.mapper.NumgenRuleMapper;
 import io.mango.numgen.core.service.INumgenGeneratorService;
@@ -26,6 +28,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
 
+    private static final String DEFAULT_DOMAIN_CODE = "GENERAL";
+
+    private final NumgenBusinessDomainMapper businessDomainMapper;
     private final NumgenGeneratorMapper generatorMapper;
     private final NumgenRuleMapper ruleMapper;
 
@@ -48,12 +53,12 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         Require.notNull(command, "编号生成器不能为空");
         validate(command, false);
         Long tenantId = NumgenContextSupport.currentTenantId();
-        Require.isTrue(generatorMapper.selectByKey(command.getGenKey().trim(), tenantId) == null, "业务 Key 已存在");
+        Require.isTrue(selectByKey(command.getGenKey().trim(), tenantId) == null, "业务 Key 已存在");
         NumgenGenerator entity = new NumgenGenerator();
+        entity.setTenantId(tenantId);
         copy(command, entity);
         entity.setCurrentPublishStatus(0);
         entity.setCurrentRuleVersion(null);
-        entity.setTenantId(tenantId);
         generatorMapper.insert(entity);
         return R.ok(entity.getId());
     }
@@ -90,11 +95,13 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
 
     private LambdaQueryWrapper<NumgenGenerator> wrapper(NumgenGeneratorPageQuery query) {
         String keyword = NumgenContextSupport.trimToNull(query.getKeyword());
+        String domainCode = NumgenContextSupport.trimToNull(query.getDomainCode());
         return new LambdaQueryWrapper<NumgenGenerator>()
                 .and(StringUtils.hasText(keyword), nested -> nested
                         .like(NumgenGenerator::getGenKey, keyword)
                         .or()
                         .like(NumgenGenerator::getGenName, keyword))
+                .eq(StringUtils.hasText(domainCode), NumgenGenerator::getDomainCode, domainCode)
                 .eq(query.getStatus() != null, NumgenGenerator::getStatus, query.getStatus())
                 .eq(NumgenGenerator::getTenantId, NumgenContextSupport.currentTenantId())
                 .orderByDesc(NumgenGenerator::getUpdateTime);
@@ -120,14 +127,18 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
     private void copy(SaveNumgenGeneratorCommand command, NumgenGenerator entity) {
         entity.setGenKey(command.getGenKey().trim());
         entity.setGenName(command.getGenName().trim());
+        entity.setDomainCode(resolveDomain(command.getDomainCode(), entity.getTenantId()).getDomainCode());
         entity.setStatus(command.getStatus());
     }
 
     private NumgenGeneratorVO toVO(NumgenGenerator entity) {
+        NumgenBusinessDomain domain = selectDomain(entity.getDomainCode(), entity.getTenantId());
         NumgenGeneratorVO vo = new NumgenGeneratorVO();
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
         vo.setGenName(entity.getGenName());
+        vo.setDomainCode(entity.getDomainCode());
+        vo.setDomainName(domain == null ? null : domain.getDomainName());
         vo.setStatus(entity.getStatus());
         vo.setCurrentRuleVersion(entity.getCurrentRuleVersion());
         vo.setCurrentPublishStatus(entity.getCurrentPublishStatus());
@@ -135,5 +146,31 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         vo.setCreateTime(entity.getCreateTime());
         vo.setUpdateTime(entity.getUpdateTime());
         return vo;
+    }
+
+    private NumgenBusinessDomain resolveDomain(String domainCode, Long tenantId) {
+        String resolvedDomainCode = NumgenContextSupport.trimToNull(domainCode);
+        if (!StringUtils.hasText(resolvedDomainCode)) {
+            resolvedDomainCode = DEFAULT_DOMAIN_CODE;
+        }
+        NumgenBusinessDomain domain = selectDomain(resolvedDomainCode, tenantId);
+        Require.notNull(domain, "业务域不存在：" + resolvedDomainCode);
+        Require.isTrue(domain.getStatus() == null || domain.getStatus() == 1, "业务域已停用：" + resolvedDomainCode);
+        return domain;
+    }
+
+    private NumgenGenerator selectByKey(String genKey, Long tenantId) {
+        return generatorMapper.selectOne(new LambdaQueryWrapper<NumgenGenerator>()
+                .eq(NumgenGenerator::getGenKey, genKey)
+                .eq(NumgenGenerator::getTenantId, tenantId));
+    }
+
+    private NumgenBusinessDomain selectDomain(String domainCode, Long tenantId) {
+        if (!StringUtils.hasText(domainCode) || tenantId == null) {
+            return null;
+        }
+        return businessDomainMapper.selectOne(new LambdaQueryWrapper<NumgenBusinessDomain>()
+                .eq(NumgenBusinessDomain::getDomainCode, domainCode)
+                .eq(NumgenBusinessDomain::getTenantId, tenantId));
     }
 }

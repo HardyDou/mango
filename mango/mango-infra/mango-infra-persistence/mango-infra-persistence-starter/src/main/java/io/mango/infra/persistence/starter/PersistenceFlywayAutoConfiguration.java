@@ -1,6 +1,7 @@
 package io.mango.infra.persistence.starter;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -83,16 +84,18 @@ public class PersistenceFlywayAutoConfiguration {
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
                     DataSource moduleDataSource = resolveDataSource(dataSource, module.config());
                     try {
-                        Flyway.configure()
+                        FluentConfiguration configuration = Flyway.configure()
                                 .dataSource(moduleDataSource)
                                 .locations(module.location())
                                 .table(resolveHistoryTable(module))
                                 .baselineOnMigrate(module.config().isBaselineOnMigrate())
                                 .baselineVersion("0")
-                                .validateOnMigrate(true)
-                                .outOfOrder(false)
-                                .load()
-                                .migrate();
+                                .validateOnMigrate(module.config().isValidateOnMigrate())
+                                .outOfOrder(false);
+                        if (module.config().isIgnoreMissingMigrations()) {
+                            configuration.ignoreMigrationPatterns("*:missing");
+                        }
+                        configuration.load().migrate();
                     } finally {
                         closeModuleDataSource(dataSource, moduleDataSource);
                     }

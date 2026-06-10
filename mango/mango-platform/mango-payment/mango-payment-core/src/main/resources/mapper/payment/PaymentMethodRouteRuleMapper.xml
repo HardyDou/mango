@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentMethodRouteRuleMapper">
+
+    <select id="countDeleteRelations" resultType="long">
+        select count(1)
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.route_rule_id = #{routeRuleId}
+    </select>
+
+    <select id="selectRouteCandidates" resultType="io.mango.payment.core.model.PaymentMethodRouteCandidate">
+        select rr.id as routeRuleId,
+               rr.rule_code as ruleCode,
+               rr.rule_name as ruleName,
+               rr.app_id as appId,
+               pa.app_name as appName,
+               rr.subject_id as subjectId,
+               pes.subject_name as subjectName,
+               rr.method_code as methodCode,
+               pm.method_name as methodName,
+               rr.terminal_type as terminalType,
+               rr.environment as environment,
+               rr.route_mode as routeMode,
+               rr.fallback_enabled as fallbackEnabled,
+               rri.id as routeItemId,
+               rri.contract_capability_id as contractCapabilityId,
+               cc.id as contractId,
+               cc.contract_name as contractName,
+               c.id as channelId,
+               c.channel_name as channelName,
+               rri.priority as itemPriority,
+               rri.weight as itemWeight,
+               rri.min_amount as itemMinAmount,
+               rri.max_amount as itemMaxAmount,
+               rri.status as itemStatus,
+               ccc.min_amount as capabilityMinAmount,
+               ccc.max_amount as capabilityMaxAmount,
+               ccc.status as capabilityStatus,
+               cc.status as contractStatus,
+               c.status as channelStatus
+        from payment_method_route_rule rr
+        join payment_method_route_rule_item rri
+          on rri.rule_id = rr.id
+         and rri.tenant_id = rr.tenant_id
+         and rri.del_flag = 0
+        join payment_channel_contract_capability ccc
+          on ccc.id = rri.contract_capability_id
+         and ccc.tenant_id = rr.tenant_id
+         and ccc.del_flag = 0
+         and ccc.method_code = rr.method_code
+         and ccc.terminal_type = rr.terminal_type
+        join payment_channel_capability pc
+          on pc.id = ccc.channel_capability_id
+         and pc.tenant_id = rr.tenant_id
+         and pc.method_code = rr.method_code
+         and pc.terminal_type = rr.terminal_type
+         and pc.environment = rr.environment
+         and pc.del_flag = 0
+        join payment_channel_contract cc
+          on cc.id = ccc.contract_id
+         and cc.tenant_id = rr.tenant_id
+         and cc.del_flag = 0
+         and cc.environment = rr.environment
+        join payment_channel c
+          on c.id = cc.channel_id
+         and c.tenant_id = rr.tenant_id
+         and c.del_flag = 0
+        left join payment_application pa
+          on pa.id = rr.app_id
+         and pa.tenant_id = rr.tenant_id
+         and pa.del_flag = 0
+        left join payment_enterprise_subject pes
+          on pes.id = rr.subject_id
+         and pes.tenant_id = rr.tenant_id
+         and pes.del_flag = 0
+        left join payment_method pm
+          on pm.method_code = rr.method_code
+         and pm.tenant_id = rr.tenant_id
+         and pm.del_flag = 0
+        where rr.tenant_id = #{tenantId}
+          and rr.del_flag = 0
+          and rr.status = 1
+          and (rr.app_id is null or rr.app_id = #{applicationId})
+          and (rr.subject_id is null or rr.subject_id = #{subjectId})
+          and rr.method_code = #{methodCode}
+          and rr.terminal_type = #{terminalType}
+          and rr.environment = #{environment}
+        order by case when rr.app_id = #{applicationId} then 0 else 1 end,
+                 case when rr.subject_id = #{subjectId} then 0 else 1 end,
+                 rri.priority asc,
+                 ccc.priority asc,
+                 rri.id asc
+    </select>
+</mapper>

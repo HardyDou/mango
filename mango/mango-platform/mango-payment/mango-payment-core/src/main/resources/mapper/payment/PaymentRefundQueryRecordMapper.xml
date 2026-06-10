@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentRefundQueryRecordMapper">
+
+    <select id="countByTenantAndRefundOrderNo" resultType="long">
+        select count(1)
+        from payment_refund_query_record
+        where tenant_id = #{tenantId}
+          and refund_order_no = #{refundOrderNo}
+          and del_flag = 0
+    </select>
+
+    <select id="selectLastByTenantAndRefundOrderNo" resultType="io.mango.payment.core.entity.PaymentRefundQueryRecordEntity">
+        select id,
+               query_no as queryNo,
+               refund_order_no as refundOrderNo,
+               biz_refund_no as bizRefundNo,
+               pay_order_no as payOrderNo,
+               channel_refund_no as channelRefundNo,
+               refund_order_id as refundOrderId,
+               payment_order_id as paymentOrderId,
+               business_order_id as businessOrderId,
+               query_type as queryType,
+               request_payload as requestPayload,
+               response_payload as responsePayload,
+               before_status as beforeStatus,
+               channel_status as channelStatus,
+               result_status as resultStatus,
+               process_result as processResult,
+               process_message as processMessage,
+               query_time as queryTime,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_refund_query_record
+        where tenant_id = #{tenantId}
+          and refund_order_no = #{refundOrderNo}
+          and del_flag = 0
+        order by query_time desc, id desc
+        limit 1
+    </select>
+</mapper>

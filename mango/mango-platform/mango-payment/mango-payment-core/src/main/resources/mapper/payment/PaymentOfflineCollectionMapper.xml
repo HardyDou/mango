@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentOfflineCollectionMapper">
+
+    <sql id="offlineCollectionFrom">
+        from payment_offline_collection oc
+        left join payment_business_order bo
+          on bo.id = oc.business_order_id and bo.tenant_id = oc.tenant_id
+        left join payment_channel c
+          on c.id = oc.channel_id and c.tenant_id = oc.tenant_id
+        left join payment_channel_contract cc
+          on cc.id = oc.contract_id and cc.tenant_id = oc.tenant_id
+    </sql>
+
+    <sql id="offlineCollectionWhere">
+        where oc.tenant_id = #{tenantId}
+          and oc.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            and oc.collection_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              oc.offline_collection_no like concat('%', #{keyword}, '%')
+              or oc.pay_order_no like concat('%', #{keyword}, '%')
+              or oc.biz_order_no like concat('%', #{keyword}, '%')
+              or oc.subject_name like concat('%', #{keyword}, '%')
+              or oc.reconciliation_code like concat('%', #{keyword}, '%')
+              or oc.transfer_remark like concat('%', #{keyword}, '%')
+              or oc.account_name like concat('%', #{keyword}, '%')
+              or oc.bank_name like concat('%', #{keyword}, '%')
+              or c.channel_name like concat('%', #{keyword}, '%')
+              or c.channel_code like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="offlineCollectionSelect">
+        select oc.id,
+               oc.offline_collection_no as offlineCollectionNo,
+               oc.payment_order_id as paymentOrderId,
+               oc.pay_order_no as payOrderNo,
+               oc.business_order_id as businessOrderId,
+               oc.biz_order_no as bizOrderNo,
+               bo.title,
+               bo.app_code as appId,
+               oc.channel_id as channelId,
+               coalesce(oc.channel_code, c.channel_code) as channelCode,
+               c.channel_name as channelName,
+               oc.contract_id as contractId,
+               cc.contract_name as contractName,
+               oc.contract_capability_id as contractCapabilityId,
+               oc.subject_id as subjectId,
+               oc.subject_name as subjectName,
+               oc.bank_account_id as bankAccountId,
+               oc.account_name as accountName,
+               oc.account_no_mask as accountNoMask,
+               oc.bank_name as bankName,
+               oc.amount,
+               oc.currency,
+               oc.transfer_amount as transferAmount,
+               oc.voucher_file_ids as voucherFileIds,
+               oc.submitted_time as submittedTime,
+               oc.submit_remark as submitRemark,
+               oc.confirmed_amount as confirmedAmount,
+               oc.reconciliation_code as reconciliationCode,
+               oc.transfer_remark as transferRemark,
+               oc.voucher_count as voucherCount,
+               oc.collection_status as collectionStatus,
+               oc.expire_time as expireTime,
+               oc.confirmed_time as confirmedTime,
+               oc.confirmed_by as confirmedBy,
+               oc.confirmed_by_name as confirmedByName,
+               oc.confirm_remark as confirmRemark,
+               oc.created_at as createTime,
+               oc.updated_at as updateTime
+    </sql>
+
+    <select id="countOfflineCollections" resultType="long">
+        select count(1)
+        <include refid="offlineCollectionFrom"/>
+        <include refid="offlineCollectionWhere"/>
+    </select>
+
+    <select id="selectOfflineCollectionPage" resultType="io.mango.payment.api.vo.PaymentOfflineCollectionVO">
+        <include refid="offlineCollectionSelect"/>
+        <include refid="offlineCollectionFrom"/>
+        <include refid="offlineCollectionWhere"/>
+        order by oc.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectOfflineCollectionDetail" resultType="io.mango.payment.api.vo.PaymentOfflineCollectionVO">
+        <include refid="offlineCollectionSelect"/>
+        <include refid="offlineCollectionFrom"/>
+        where oc.tenant_id = #{tenantId}
+          and oc.del_flag = 0
+          and oc.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectByPayOrderNoForUpdate" resultType="io.mango.payment.core.entity.PaymentOfflineCollectionEntity">
+        select id,
+               offline_collection_no as offlineCollectionNo,
+               payment_order_id as paymentOrderId,
+               pay_order_no as payOrderNo,
+               business_order_id as businessOrderId,
+               biz_order_no as bizOrderNo,
+               channel_id as channelId,
+               channel_code as channelCode,
+               contract_id as contractId,
+               contract_capability_id as contractCapabilityId,
+               subject_id as subjectId,
+               subject_name as subjectName,
+               bank_account_id as bankAccountId,
+               account_name as accountName,
+               account_no_mask as accountNoMask,
+               bank_name as bankName,
+               amount,
+               currency,
+               transfer_amount as transferAmount,
+               voucher_file_ids as voucherFileIds,
+               submitted_time as submittedTime,
+               submit_remark as submitRemark,
+               confirmed_amount as confirmedAmount,
+               reconciliation_code as reconciliationCode,
+               transfer_remark as transferRemark,
+               voucher_count as voucherCount,
+               collection_status as collectionStatus,
+               expire_time as expireTime,
+               confirmed_time as confirmedTime,
+               confirmed_by as confirmedBy,
+               confirmed_by_name as confirmedByName,
+               confirm_remark as confirmRemark,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_offline_collection
+        where tenant_id = #{tenantId}
+          and pay_order_no = #{payOrderNo}
+          and del_flag = 0
+        limit 1
+        for update
+    </select>
+
+    <select id="selectEntityForUpdate" resultType="io.mango.payment.core.entity.PaymentOfflineCollectionEntity">
+        select id,
+               offline_collection_no as offlineCollectionNo,
+               payment_order_id as paymentOrderId,
+               pay_order_no as payOrderNo,
+               business_order_id as businessOrderId,
+               biz_order_no as bizOrderNo,
+               channel_id as channelId,
+               channel_code as channelCode,
+               contract_id as contractId,
+               contract_capability_id as contractCapabilityId,
+               subject_id as subjectId,
+               subject_name as subjectName,
+               bank_account_id as bankAccountId,
+               account_name as accountName,
+               account_no_mask as accountNoMask,
+               bank_name as bankName,
+               amount,
+               currency,
+               transfer_amount as transferAmount,
+               voucher_file_ids as voucherFileIds,
+               submitted_time as submittedTime,
+               submit_remark as submitRemark,
+               confirmed_amount as confirmedAmount,
+               reconciliation_code as reconciliationCode,
+               transfer_remark as transferRemark,
+               voucher_count as voucherCount,
+               collection_status as collectionStatus,
+               expire_time as expireTime,
+               confirmed_time as confirmedTime,
+               confirmed_by as confirmedBy,
+               confirmed_by_name as confirmedByName,
+               confirm_remark as confirmRemark,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_offline_collection
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+        limit 1
+        for update
+    </select>
+
+    <select id="selectByReconciliationCodeForUpdate" resultType="io.mango.payment.core.entity.PaymentOfflineCollectionEntity">
+        select id,
+               offline_collection_no as offlineCollectionNo,
+               payment_order_id as paymentOrderId,
+               pay_order_no as payOrderNo,
+               business_order_id as businessOrderId,
+               biz_order_no as bizOrderNo,
+               channel_id as channelId,
+               channel_code as channelCode,
+               contract_id as contractId,
+               contract_capability_id as contractCapabilityId,
+               subject_id as subjectId,
+               subject_name as subjectName,
+               bank_account_id as bankAccountId,
+               account_name as accountName,
+               account_no_mask as accountNoMask,
+               bank_name as bankName,
+               amount,
+               currency,
+               transfer_amount as transferAmount,
+               voucher_file_ids as voucherFileIds,
+               submitted_time as submittedTime,
+               submit_remark as submitRemark,
+               confirmed_amount as confirmedAmount,
+               reconciliation_code as reconciliationCode,
+               transfer_remark as transferRemark,
+               voucher_count as voucherCount,
+               collection_status as collectionStatus,
+               expire_time as expireTime,
+               confirmed_time as confirmedTime,
+               confirmed_by as confirmedBy,
+               confirmed_by_name as confirmedByName,
+               confirm_remark as confirmRemark,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_offline_collection
+        where tenant_id = #{tenantId}
+          and reconciliation_code = #{reconciliationCode}
+          and del_flag = 0
+        limit 1
+        for update
+    </select>
+
+    <update id="submitTransferVoucher">
+        update payment_offline_collection
+        set transfer_amount = #{transferAmount},
+            voucher_file_ids = #{voucherFileIds},
+            voucher_count = #{voucherCount},
+            submitted_time = now(),
+            submit_remark = #{submitRemark},
+            collection_status = 'PENDING_CONFIRM',
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+          and collection_status in ('WAITING_TRANSFER', 'PENDING_CONFIRM')
+    </update>
+
+    <update id="confirmCollection">
+        update payment_offline_collection
+        set confirmed_amount = #{confirmedAmount},
+            confirmed_time = #{confirmedTime},
+            confirmed_by = #{confirmedBy},
+            confirmed_by_name = #{confirmedByName},
+            confirm_remark = #{confirmRemark},
+            collection_status = #{nextStatus},
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+          and collection_status = #{requiredStatus}
+    </update>
+</mapper>

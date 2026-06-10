@@ -115,9 +115,21 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
       name: 'Layout',
       component: MangoAdminLayout,
       redirect: '/home',
-      children: menuItems.map((item) => menuItemToRoute(item)),
+      children: [
+        ...menuItems.map((item) => menuItemToRoute(item)),
+        paymentCashierRoute(),
+      ],
     },
   ];
+}
+
+function paymentCashierRoute(): RouteRecordRaw {
+  return {
+    path: '/payment/cashier-configs/:cashierId/cashier',
+    name: 'PaymentCashier',
+    component: componentsMap['payment/cashier/index'] as NonNullable<RouteRecordRaw['component']>,
+    meta: { title: '收银台', isHide: true },
+  };
 }
 
 /**
