@@ -47,6 +47,7 @@ import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import io.mango.job.support.service.IMangoJobHandlerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -123,6 +124,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                                  MangoJobIdempotencyKeyService idempotencyKeyService,
                                  MangoJobLeaseService leaseService,
                                  MangoNativeJobProperties properties,
+                                 Environment environment,
                                  MangoJobWorkerTransportRegistry transportRegistry,
                                  IMangoJobHandlerRegistry handlerRegistry,
                                  IMangoJobWorkerRegistryService workerRegistryService,
@@ -140,12 +142,12 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         this.idempotencyKeyService = idempotencyKeyService;
         this.leaseService = leaseService;
         this.properties = properties;
+        this.workerAddress = resolveWorkerAddress(environment);
+        this.workerInstanceId = resolveWorkerInstanceId(environment, workerAddress);
         this.transportRegistry = transportRegistry;
         this.handlerRegistry = handlerRegistry;
         this.workerRegistryService = workerRegistryService;
         this.alarmNotificationService = alarmNotificationService;
-        this.workerInstanceId = "embedded-" + ManagementFactory.getRuntimeMXBean().getName();
-        this.workerAddress = "in-memory://" + hostName() + "/" + workerInstanceId;
     }
 
     @Override
@@ -620,7 +622,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         Require.isTrue(!workerIds.isEmpty(), "未找到可执行任务的 Worker 能力："
                 + ownerService(definition) + "/" + workerGroup(definition) + "/"
                 + definition.getAppCode() + "/" + definition.getHandlerName() + "/" + definition.getJobCode());
-        MangoJobWorkerSnapshotEntity worker = workerSnapshotMapper.selectOne(
+        List<MangoJobWorkerSnapshotEntity> workers = workerSnapshotMapper.selectList(
                 new LambdaQueryWrapper<MangoJobWorkerSnapshotEntity>()
                         .eq(MangoJobWorkerSnapshotEntity::getTenantId, definition.getTenantId())
                         .eq(MangoJobWorkerSnapshotEntity::getServiceCode, ownerService(definition))
@@ -628,12 +630,20 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
                         .eq(MangoJobWorkerSnapshotEntity::getEngineType, JobEngineType.MANGO_NATIVE.name())
                         .eq(MangoJobWorkerSnapshotEntity::getStatus, JobWorkerStatus.ONLINE.name())
                         .in(MangoJobWorkerSnapshotEntity::getId, workerIds)
-                        .orderByDesc(MangoJobWorkerSnapshotEntity::getLastHeartbeatAt)
-                        .last("limit 1"));
+                        .orderByDesc(MangoJobWorkerSnapshotEntity::getLastHeartbeatAt));
+        MangoJobWorkerSnapshotEntity worker = workers.stream()
+                .filter(this::canDispatchFromCurrentRuntime)
+                .findFirst()
+                .orElse(null);
         Require.notNull(worker, "未找到可执行任务的在线 Worker："
                 + ownerService(definition) + "/" + workerGroup(definition) + "/"
                 + definition.getAppCode() + "/" + definition.getHandlerName());
         return worker;
+    }
+
+    private boolean canDispatchFromCurrentRuntime(MangoJobWorkerSnapshotEntity worker) {
+        JobTransportType transportType = resolveTransportType(worker);
+        return transportType != JobTransportType.IN_MEMORY || workerAddress.equals(worker.getWorkerAddress());
     }
 
     private JobTransportType resolveTransportType(MangoJobWorkerSnapshotEntity worker) {
@@ -642,7 +652,7 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         }
         String address = worker.getWorkerAddress();
         Require.notBlank(address, "Worker 地址不能为空");
-        if (MangoJobTransportAddresses.isInMemory(address)) {
+        if (MangoJobTransportAddresses.isEmbedded(address)) {
             return JobTransportType.IN_MEMORY;
         }
         if (MangoJobTransportAddresses.isHttpInternal(address)) {
@@ -780,11 +790,54 @@ public class MangoNativeJobRuntime implements IMangoNativeJobRuntime {
         return StringUtils.hasText(first) ? first : second;
     }
 
-    private String hostName() {
+    private String resolveWorkerAddress(Environment environment) {
+        if (StringUtils.hasText(properties.getWorkerAddress())) {
+            return properties.getWorkerAddress().trim();
+        }
+        return MangoJobTransportAddresses.EMBEDDED_PREFIX + localIp() + portSuffix(environment);
+    }
+
+    private String resolveWorkerInstanceId(Environment environment, String address) {
+        String serviceName = environment.getProperty("spring.application.name");
+        if (!StringUtils.hasText(serviceName)) {
+            serviceName = "mango-job";
+        }
+        return serviceName.trim() + "@" + addressIdentity(address)
+                + "#" + ManagementFactory.getRuntimeMXBean().getName();
+    }
+
+    private String addressIdentity(String address) {
+        if (!StringUtils.hasText(address)) {
+            return "unknown";
+        }
+        if (address.startsWith(MangoJobTransportAddresses.EMBEDDED_PREFIX)) {
+            return address.substring(MangoJobTransportAddresses.EMBEDDED_PREFIX.length());
+        }
+        if (address.startsWith(MangoJobTransportAddresses.IN_MEMORY_PREFIX)) {
+            return address.substring(MangoJobTransportAddresses.IN_MEMORY_PREFIX.length());
+        }
+        if (address.startsWith(MangoJobTransportAddresses.HTTP_PREFIX)) {
+            return address.substring(MangoJobTransportAddresses.HTTP_PREFIX.length());
+        }
+        if (address.startsWith(MangoJobTransportAddresses.HTTPS_PREFIX)) {
+            return address.substring(MangoJobTransportAddresses.HTTPS_PREFIX.length());
+        }
+        return address;
+    }
+
+    private String portSuffix(Environment environment) {
+        String port = firstText(environment.getProperty("local.server.port"), environment.getProperty("server.port"));
+        if (!StringUtils.hasText(port) || "0".equals(port.trim())) {
+            return ":8080";
+        }
+        return ":" + port.trim();
+    }
+
+    private String localIp() {
         try {
-            return InetAddress.getLocalHost().getHostName();
+            return InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException ex) {
-            return "unknown-host";
+            return "127.0.0.1";
         }
     }
 }

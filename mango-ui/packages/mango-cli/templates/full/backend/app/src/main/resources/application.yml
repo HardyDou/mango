@@ -137,6 +137,9 @@ mango:
       office-to-pdf-enabled: ${MANGO_OFFICE_PLUGIN_ENABLED:false}
   workflow:
     enabled: true
+  job:
+    probe:
+      enabled: ${MANGO_JOB_PROBE_ENABLED:true}
   seed:
     enabled: ${MANGO_SEED_ENABLED:false}
     profile: official

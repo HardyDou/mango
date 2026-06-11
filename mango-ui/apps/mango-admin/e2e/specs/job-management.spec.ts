@@ -831,7 +831,7 @@ test.describe('Job 管理 E2E', () => {
     await expect(instanceRow).toBeVisible();
     await expect(instanceRow).toContainText('示例 手动内置任务');
     await expect(instanceRow).toContainText(manualCode);
-    await expect(instanceRow).toContainText('in-memory://');
+    await expect(instanceRow).toContainText('embedded://');
     await expect(instanceRow).toContainText('成功');
     await saveEvidenceScreenshot(page, '07-instance-filtered-trigger-batch.png');
     await saveEvidenceScreenshot(page, '08-execution-instance-log-entry.png', instanceRow);
@@ -907,7 +907,7 @@ test.describe('Job 管理 E2E', () => {
         item.appCode === 'mango-job'
         && item.engineType === 'MANGO_NATIVE'
         && item.status === 'ONLINE'
-        && Boolean(item.workerAddress?.includes('in-memory://'))
+        && Boolean(item.workerAddress?.includes('embedded://'))
       ),
       'Worker 快照必须来自真实 Mango Native Worker 注册',
     ).toBeTruthy();
@@ -980,8 +980,8 @@ test.describe('Job 管理 E2E', () => {
       }
       if (item.path === '/job/worker') {
         const workers = await listWorkers(page, headers);
-        expect(workers.some(worker => Boolean(worker.workerAddress?.includes('in-memory://')))).toBeTruthy();
-        await expect(page.locator('.el-table')).toContainText('in-memory://');
+        expect(workers.some(worker => Boolean(worker.workerAddress?.includes('embedded://')))).toBeTruthy();
+        await expect(page.locator('.el-table')).toContainText('embedded://');
         await expect(page.locator('.el-table')).toContainText('在线');
       }
       await expect(page.locator('.el-message--error')).toHaveCount(0);
