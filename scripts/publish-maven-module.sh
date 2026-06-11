@@ -12,6 +12,7 @@ Usage: scripts/publish-maven-module.sh <artifactId|module-path> [options]
 Options:
   --also-make       Also build and deploy required upstream reactor modules
   --run-tests       Run tests; default is -DskipTests
+  --skip-verify     Skip clean-repository dependency:get verification after deploy
   --dry-run         Print the Maven command without running it
   -h, --help        Show help
 
@@ -32,6 +33,7 @@ target=""
 also_make=false
 skip_tests=true
 dry_run=false
+verify_publish=true
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +45,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       dry_run=true
+      ;;
+    --skip-verify)
+      verify_publish=false
       ;;
     -h|--help)
       usage
@@ -102,3 +107,48 @@ fi
 
 cd "${MAVEN_ROOT}"
 mvn "${mvn_args[@]}"
+
+if [[ "${verify_publish}" == "true" ]]; then
+  module_dir=""
+  if [[ "${target}" != :* && -d "${MAVEN_ROOT}/${target}" ]]; then
+    module_dir="${MAVEN_ROOT}/${target}"
+  else
+    artifact_id="${target#:}"
+    while IFS= read -r -d '' pom_file; do
+      pom_artifact_id="$(mvn -q -f "${pom_file}" help:evaluate -Dexpression=project.artifactId -DforceStdout)"
+      if [[ "${pom_artifact_id}" == "${artifact_id}" ]]; then
+        module_dir="$(dirname "${pom_file}")"
+        break
+      fi
+    done < <(find "${MAVEN_ROOT}" -name pom.xml -not -path '*/target/*' -print0)
+  fi
+  if [[ -z "${module_dir}" || ! -f "${module_dir}/pom.xml" ]]; then
+    echo "Unable to resolve module directory for publish verification: ${target}" >&2
+    exit 1
+  fi
+  group_id="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.groupId -DforceStdout)"
+  artifact_id="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.artifactId -DforceStdout)"
+  version="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.version -DforceStdout)"
+  packaging="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.packaging -DforceStdout)"
+  verify_repo="${REPO_ROOT}/.runtime/maven-publish-verify-${artifact_id}"
+  rm -rf "${verify_repo}"
+  mkdir -p "${verify_repo}"
+  echo "Verifying published Maven artifact: ${group_id}:${artifact_id}:${version}"
+  mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get \
+    -Dmaven.repo.local="${verify_repo}" \
+    -Dartifact="${group_id}:${artifact_id}:${version}" \
+    -Dtransitive=false
+  if [[ "${packaging}" == "jar" ]]; then
+    artifact_path="$(find "${verify_repo}" -path "*/${artifact_id}/${version}/*.jar" -print | sort | tail -n 1)"
+    if [[ -z "${artifact_path}" || ! -f "${artifact_path}" ]]; then
+      echo "Published Maven jar was not downloaded for ${group_id}:${artifact_id}:${version}" >&2
+      exit 1
+    fi
+    if [[ -f "${module_dir}/src/main/resources/META-INF/mango/resource-manifest.json" ]]; then
+      if ! jar tf "${artifact_path}" | grep -q '^META-INF/mango/resource-manifest.json$'; then
+        echo "Published Maven jar is missing META-INF/mango/resource-manifest.json: ${artifact_path}" >&2
+        exit 1
+      fi
+    fi
+  fi
+fi
