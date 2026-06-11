@@ -55,6 +55,10 @@
       "path": "rules/06-document-assets.md",
       "reason": "文档资产归档边界"
     },
+    "process.releaseReadiness": {
+      "path": "rules/07-release-readiness.md",
+      "reason": "发布就绪门禁"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -144,7 +148,7 @@
     "design": ["agent.techLead"],
     "develop": ["agent.dev", "process.devEnvironment", "process.aiDeliveryQuality"],
     "verify": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
-    "release": ["process.aiDeliveryQuality"],
+    "release": ["process.aiDeliveryQuality", "process.releaseReadiness"],
     "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
   },
   "bundles": {
@@ -254,12 +258,12 @@
     "releaseBackend": {
       "paths": [],
       "keywords": ["Maven 发布", "maven 发布", "发布 jar", "发布后端", "deploy maven"],
-      "include": ["backend.versioning", "process.aiDeliveryQuality"]
+      "include": ["backend.versioning", "process.aiDeliveryQuality", "process.releaseReadiness"]
     },
     "releaseFrontend": {
       "paths": [],
       "keywords": ["npm 发布", "发布 npm", "发布前端组件", "发布组件", "Nexus npm", "npm 仓库"],
-      "include": ["frontend.componentDevelopment", "frontend.monorepo", "process.aiDeliveryQuality"]
+      "include": ["frontend.componentDevelopment", "frontend.monorepo", "process.aiDeliveryQuality", "process.releaseReadiness"]
     }
   }
 }

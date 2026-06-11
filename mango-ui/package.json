@@ -12,7 +12,8 @@
     "admin:styles:check": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint",
-    "publish:pkg": "node ./scripts/publish-package.mjs"
+    "publish:pkg": "node ./scripts/publish-package.mjs",
+    "release:check": "node ../scripts/check-release-readiness.mjs"
   },
   "devDependencies": {
     "typescript": "^5.3.3",

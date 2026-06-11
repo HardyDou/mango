@@ -289,6 +289,33 @@ backend_arguments() {
   fi
 }
 
+diagnose_backend_failure() {
+  local exit_code="$1"
+  local output="$2"
+  echo
+  echo "Backend startup failed with exit code ${exit_code}."
+  echo "Diagnostics:"
+  if grep -Eiq "Address already in use|Port .* already in use|Web server failed to start" "${output}"; then
+    echo "- Port ${MANGO_BACKEND_PORT} is occupied. Run 'scripts/dev-workspace.sh stop' or edit ${ENV_FILE}."
+  fi
+  if grep -Eiq "Communications link failure|Connection refused|Access denied for user|Unknown database|Could not create connection" "${output}"; then
+    echo "- Database connection failed. Check MANGO_DB_HOST, MANGO_DB_PORT, MANGO_DB_NAME, MANGO_DB_USERNAME and MANGO_DB_PASSWORD in ${ENV_FILE}."
+  fi
+  if grep -Eiq "Flyway|Migration|Validate failed|Schema.*version" "${output}"; then
+    echo "- Flyway migration failed. Check backend migration files and the configured database state."
+  fi
+  if grep -Eiq "Unable to find a suitable main class|mainClass|ClassNotFoundException.*Application" "${output}"; then
+    echo "- Spring Boot mainClass was not resolved. Check mango-app/monolith/mango-monolith-app configuration."
+  fi
+  if grep -Eiq "No plugin found for prefix 'spring-boot'|Unknown lifecycle phase|Could not find goal" "${output}"; then
+    echo "- Maven Spring Boot goal resolution failed. This script uses ${SPRING_BOOT_PLUGIN}; check Maven repository access and Spring Boot plugin version."
+  fi
+  if grep -Eiq "Could not resolve dependencies|Could not find artifact|Non-resolvable parent POM" "${output}"; then
+    echo "- Maven dependency resolution failed. Check Maven repository settings and reactor module coordinates."
+  fi
+  echo "- Re-run with 'scripts/dev-workspace.sh print' to confirm the active workspace configuration."
+}
+
 run_backend() {
   load_workspace_env
   require_port_free "backend" "${MANGO_BACKEND_PORT}"
@@ -296,8 +323,19 @@ run_backend() {
   echo "Starting backend on http://127.0.0.1:${MANGO_BACKEND_PORT}"
   echo "Using database ${MANGO_DB_HOST}:${MANGO_DB_PORT}/${MANGO_DB_NAME}"
   cd "${BACKEND_ROOT}"
+
+  local output_file exit_code
+  output_file="$(mktemp "${LOG_DIR}/backend-start.XXXXXX.log")"
+  set +e
   mvn -pl :mango-monolith-app -am "${SPRING_BOOT_PLUGIN}" \
-    "-Dspring-boot.run.arguments=$(backend_arguments)"
+    "-Dspring-boot.run.arguments=$(backend_arguments)" 2>&1 | tee "${output_file}"
+  exit_code=${PIPESTATUS[0]}
+  set -e
+
+  if [[ "${exit_code}" -ne 0 ]]; then
+    diagnose_backend_failure "${exit_code}" "${output_file}"
+    exit "${exit_code}"
+  fi
 }
 
 ensure_frontend_dependencies() {

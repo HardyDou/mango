@@ -13,6 +13,23 @@ const customProjectName = 'mango-custom-acceptance';
 try {
   assertNoWorkspacePackageJsonInTemplates();
 
+  const helpResult = spawnSync(process.execPath, [cli, '--help'], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (helpResult.status !== 0 || !helpResult.stdout.includes('mango changelog')) {
+    throw new Error(`CLI help must expose changelog command:\n${helpResult.stdout}\n${helpResult.stderr}`);
+  }
+  const changelogResult = spawnSync(process.execPath, [cli, 'changelog'], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (changelogResult.status !== 0
+    || !changelogResult.stdout.includes('## 1.0.28 - 2026-06-11')
+    || !changelogResult.stdout.includes('Upgrade Notes')) {
+    throw new Error(`CLI changelog must show release notes and upgrade guidance:\n${changelogResult.stdout}\n${changelogResult.stderr}`);
+  }
+
   const result = spawnSync(process.execPath, [
     cli,
     'init',
@@ -153,8 +170,12 @@ try {
     || !devWorkspaceScript.includes('mvn -f backend/pom.xml -DskipTests install')
     || !devWorkspaceScript.includes('-Dspring-boot.run.arguments="$(backend_arguments)"')
     || !devWorkspaceScript.includes('diagnose_backend_failure')
+    || !devWorkspaceScript.includes('run_frontend()')
+    || !devWorkspaceScript.includes('start_all()')
+    || !devWorkspaceScript.includes('VITE_ADMIN_PROXY_PATH="http://127.0.0.1:${MANGO_BACKEND_PORT}"')
+    || !devWorkspaceScript.includes('npm run dev -- --host "${MANGO_FRONTEND_HOST}" --port "${MANGO_FRONTEND_PORT}"')
     || !devWorkspaceScript.includes('DEFAULT_DB_NAME="mango_full_acceptance"')) {
-    throw new Error('generated dev-workspace script must own backend development startup and diagnostics');
+    throw new Error('generated dev-workspace script must own frontend/backend development startup and diagnostics');
   }
   if (!backendDevScript.includes('Use scripts/dev-workspace.sh backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
@@ -165,6 +186,81 @@ try {
   }
   if ((statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
     throw new Error('generated backend dev script must be executable');
+  }
+  const legacyDevWorkspace = [
+    '#!/usr/bin/env bash',
+    'set -euo pipefail',
+    'mvn spring-boot:run',
+    '',
+  ].join('\n');
+  const legacyBackendDev = [
+    '#!/usr/bin/env bash',
+    'set -euo pipefail',
+    'mvn spring-boot:run',
+    '',
+  ].join('\n');
+  writeFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), legacyDevWorkspace);
+  writeFileSync(join(projectRoot, 'scripts/backend-dev.sh'), legacyBackendDev);
+  const syncWithoutShell = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    projectRoot,
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (syncWithoutShell.status !== 0) {
+    throw new Error(`pmo sync failed:\n${syncWithoutShell.stdout}\n${syncWithoutShell.stderr}`);
+  }
+  if (readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8') !== legacyDevWorkspace) {
+    throw new Error('pmo sync without --sync-shell must not overwrite generated startup shell');
+  }
+  const syncShellDryRun = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    projectRoot,
+    '--sync-shell',
+    '--dry-run',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (syncShellDryRun.status !== 0
+    || !syncShellDryRun.stdout.includes('update scripts/dev-workspace.sh')
+    || !syncShellDryRun.stdout.includes('update scripts/backend-dev.sh')) {
+    throw new Error(`pmo sync --sync-shell dry-run must plan shell updates:\n${syncShellDryRun.stdout}\n${syncShellDryRun.stderr}`);
+  }
+  const syncShellResult = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    projectRoot,
+    '--sync-shell',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (syncShellResult.status !== 0) {
+    throw new Error(`pmo sync --sync-shell failed:\n${syncShellResult.stdout}\n${syncShellResult.stderr}`);
+  }
+  const syncedDevWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
+  if (!syncedDevWorkspaceScript.includes('SPRING_BOOT_PLUGIN="org.springframework.boot:spring-boot-maven-plugin:')
+    || !syncedDevWorkspaceScript.includes('wait_for_backend')
+    || !syncedDevWorkspaceScript.includes('VITE_ADMIN_PROXY_PATH')) {
+    throw new Error('pmo sync --sync-shell did not restore generated startup script');
+  }
+  if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0
+    || (statSync(join(projectRoot, 'scripts/backend-dev.sh')).mode & 0o111) === 0) {
+    throw new Error('pmo sync --sync-shell must keep startup scripts executable');
+  }
+  if (!result.stdout.includes('scripts/dev-workspace.sh start')
+    || result.stdout.includes('scripts/dev-workspace.sh backend')) {
+    throw new Error('CLI next steps must guide developers to the unified frontend/backend startup entry');
   }
 
   const npmrc = readFileSync(join(projectRoot, 'frontend/.npmrc'), 'utf8');
@@ -178,6 +274,9 @@ try {
   const businessAgents = readFileSync(join(projectRoot, 'AGENTS.md'), 'utf8');
   if (!businessAgents.includes('mango-cli init --preset full')) {
     throw new Error('generated full AGENTS.md should record full preset');
+  }
+  if (!businessAgents.includes('scripts/dev-workspace.sh start')) {
+    throw new Error('generated AGENTS.md should guide local startup through scripts/dev-workspace.sh start');
   }
   if (!businessAgents.includes('acceptance-evidence-check.mjs')) {
     throw new Error('generated AGENTS.md should mention acceptance evidence check');
