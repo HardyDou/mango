@@ -110,6 +110,7 @@ mango:
       "menuType": 1,
       "menuName": "合同管理",
       "menuCode": "contract",
+      "parentCode": "data",
       "path": "/contract",
       "children": [
         {
@@ -138,6 +139,7 @@ mango:
 
 - `appCode + moduleCode + menuCode` 作为菜单幂等更新键。
 - `menus` 写入目录或页面菜单。
+- `parentCode` 可把清单菜单挂到同一 `appCode` 下已有目录菜单；为空时使用清单树父节点，根节点默认为一级菜单。
 - `permissionItems` 写入 `menuType=3` 的按钮菜单，运行时权限仍由按钮菜单 `menuCode` 提供。
 - `packageCodes` 引用已存在菜单包，注册时把清单菜单幂等加入套餐。
 - `roleCodes` 引用已存在角色，注册时把清单菜单幂等授权给角色。

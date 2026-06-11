@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -90,7 +91,7 @@ class AppModuleServiceImplTest {
 
         assertEquals(3, registered);
         ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
-        verify(menuMapper, org.mockito.Mockito.times(3)).insert(menuCaptor.capture());
+        verify(menuMapper, times(3)).insert(menuCaptor.capture());
         List<Menu> menus = menuCaptor.getAllValues();
         Menu directory = menus.get(0);
         Menu page = menus.get(1);
@@ -109,7 +110,7 @@ class AppModuleServiceImplTest {
         assertEquals("contract:archive:create", button.getPermissions());
         ArgumentCaptor<FrontendMenuRuntimeConfig> configCaptor =
                 ArgumentCaptor.forClass(FrontendMenuRuntimeConfig.class);
-        verify(menuRuntimeConfigMapper, org.mockito.Mockito.times(3)).insert(configCaptor.capture());
+        verify(menuRuntimeConfigMapper, times(3)).insert(configCaptor.capture());
         assertEquals("LOCAL_ROUTE", configCaptor.getAllValues().get(1).getPageType());
         assertNotNull(configCaptor.getAllValues().get(1).getMenuId());
     }
@@ -150,14 +151,53 @@ class AppModuleServiceImplTest {
 
         assertEquals(3, registered);
         ArgumentCaptor<MenuPackageItem> packageItemCaptor = ArgumentCaptor.forClass(MenuPackageItem.class);
-        verify(menuPackageItemMapper, org.mockito.Mockito.times(3)).insert(packageItemCaptor.capture());
+        verify(menuPackageItemMapper, times(3)).insert(packageItemCaptor.capture());
         assertEquals(1L, packageItemCaptor.getAllValues().get(0).getPackageId());
         assertEquals(201L, packageItemCaptor.getAllValues().get(0).getMenuId());
         ArgumentCaptor<RoleMenu> roleMenuCaptor = ArgumentCaptor.forClass(RoleMenu.class);
-        verify(roleMenuMapper, org.mockito.Mockito.times(3)).insert(roleMenuCaptor.capture());
+        verify(roleMenuMapper, times(3)).insert(roleMenuCaptor.capture());
         assertEquals(1L, roleMenuCaptor.getAllValues().get(0).getTenantId());
         assertEquals(1L, roleMenuCaptor.getAllValues().get(0).getRoleId());
         assertEquals(201L, roleMenuCaptor.getAllValues().get(0).getMenuId());
+    }
+
+    @Test
+    @DisplayName("registerResourceManifest should attach root menu to declared parent code")
+    void registerResourceManifest_parentCode_attachesRootMenuToExistingParent() {
+        AtomicLong ids = new AtomicLong(300);
+        Menu platform = new Menu();
+        platform.setMenuId(2700L);
+        platform.setAppCode("internal-admin");
+        platform.setModuleCode("mango-calendar");
+        platform.setMenuCode("data");
+        platform.setMenuType(1);
+        when(appModuleMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(appModuleMapper.insert(any(AuthorizationAppModule.class))).thenReturn(1);
+        when(menuMapper.selectOne(any(LambdaQueryWrapper.class)))
+                .thenReturn(platform)
+                .thenReturn(null)
+                .thenReturn(null)
+                .thenReturn(null);
+        when(menuMapper.insert(any(Menu.class))).thenAnswer(invocation -> {
+            Menu menu = invocation.getArgument(0);
+            menu.setMenuId(ids.incrementAndGet());
+            return 1;
+        });
+        when(menuRuntimeConfigMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(menuRuntimeConfigMapper.insert(any(FrontendMenuRuntimeConfig.class))).thenReturn(1);
+
+        AppModuleResourceManifestCommand manifest = createManifest();
+        manifest.getMenus().get(0).setParentCode("data");
+
+        int registered = appModuleService.registerResourceManifest(manifest);
+
+        assertEquals(3, registered);
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuMapper, times(3)).insert(menuCaptor.capture());
+        List<Menu> menus = menuCaptor.getAllValues();
+        assertEquals(2700L, menus.get(0).getParentId());
+        assertEquals(menus.get(0).getMenuId(), menus.get(1).getParentId());
+        assertEquals(menus.get(1).getMenuId(), menus.get(2).getParentId());
     }
 
     @Test
