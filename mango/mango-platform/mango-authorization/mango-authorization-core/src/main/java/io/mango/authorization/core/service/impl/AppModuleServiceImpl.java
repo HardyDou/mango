@@ -117,7 +117,7 @@ public class AppModuleServiceImpl implements IAppModuleService {
         }
         ManifestContext context = new ManifestContext(command);
         for (AppModuleResourceManifestCommand.Menu menu : command.getMenus()) {
-            context.increment(upsertManifestMenu(context, menu, 0L));
+            context.increment(upsertManifestMenu(context, menu, resolveManifestParentId(context, menu, 0L)));
         }
         return context.count();
     }
@@ -163,10 +163,24 @@ public class AppModuleServiceImpl implements IAppModuleService {
         changed += upsertPermissionMenus(context, item, menu.getMenuId());
         if (item.getChildren() != null) {
             for (AppModuleResourceManifestCommand.Menu child : item.getChildren()) {
-                changed += upsertManifestMenu(context, child, menu.getMenuId());
+                changed += upsertManifestMenu(context, child, resolveManifestParentId(context, child, menu.getMenuId()));
             }
         }
         return changed;
+    }
+
+    private Long resolveManifestParentId(
+            ManifestContext context,
+            AppModuleResourceManifestCommand.Menu item,
+            Long defaultParentId) {
+        if (item == null || !StringUtils.hasText(item.getParentCode())) {
+            return defaultParentId == null ? 0L : defaultParentId;
+        }
+        String parentCode = item.getParentCode().trim();
+        Menu parent = findManifestParentMenu(context.appCode(), parentCode);
+        Require.notNull(parent, "资源清单父菜单不存在：" + parentCode);
+        Require.isTrue(!parentCode.equals(item.getMenuCode()), "资源清单父菜单不能指向自身：" + parentCode);
+        return parent.getMenuId();
     }
 
     private void fillManifestMenu(
@@ -264,6 +278,19 @@ public class AppModuleServiceImpl implements IAppModuleService {
                 .eq(Menu::getAppCode, appCode)
                 .eq(Menu::getModuleCode, moduleCode)
                 .eq(Menu::getMenuCode, menuCode)
+                .last("LIMIT 1"));
+    }
+
+    private Menu findManifestParentMenu(String appCode, String menuCode) {
+        if (!StringUtils.hasText(appCode) || !StringUtils.hasText(menuCode)) {
+            return null;
+        }
+        return menuMapper.selectOne(new LambdaQueryWrapper<Menu>()
+                .eq(Menu::getTenantId, 1L)
+                .eq(Menu::getAppCode, appCode)
+                .eq(Menu::getMenuCode, menuCode)
+                .eq(Menu::getMenuType, 1)
+                .eq(Menu::getDelFlag, 0)
                 .last("LIMIT 1"));
     }
 

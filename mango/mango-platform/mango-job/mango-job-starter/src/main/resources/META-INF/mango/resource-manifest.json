@@ -10,6 +10,7 @@
       "menuType": 1,
       "menuName": "任务管理",
       "menuCode": "job",
+      "parentCode": "data",
       "path": "/job",
       "icon": "Timer",
       "sort": 9,
