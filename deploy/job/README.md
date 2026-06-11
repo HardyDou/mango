@@ -53,7 +53,7 @@ scripts/dev-workspace.sh backend
 | `MANGO_JOB_WORKER_ADDRESS` | `mango.job.native.worker-address` | empty | Remote Worker process | Required for remote Worker registration, for example `http://worker-a:8080`. |
 | `MANGO_JOB_CENTER_ADDRESS` | `mango.job.native.job-center-address` | empty | Remote Worker process | Required when Worker must register to an external JobCenter. |
 | `MANGO_JOB_WORKER_HEARTBEAT_INTERVAL_MILLIS` | `mango.job.native.worker-heartbeat-interval-millis` | `15000` | Remote Worker process | Worker registration heartbeat interval. |
-| `MANGO_JOB_PROBE_ENABLED` | `mango.job.probe.enabled` | `false` | Test or demo process | Enables built-in probe handler for acceptance scenarios. Keep disabled in production unless explicitly needed. |
+| `MANGO_JOB_PROBE_ENABLED` | `mango.job.probe.enabled` | `true` | Job process | Enables built-in probe handler so a default embedded worker is visible after startup. Set `false` when the process must only expose business handlers. |
 
 ## Cluster Rules
 

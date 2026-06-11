@@ -29,4 +29,4 @@ mango:
       job-center-address: ${MANGO_JOB_CENTER_ADDRESS:}
       worker-heartbeat-interval-millis: ${MANGO_JOB_WORKER_HEARTBEAT_INTERVAL_MILLIS:15000}
     probe:
-      enabled: ${MANGO_JOB_PROBE_ENABLED:false}
+      enabled: ${MANGO_JOB_PROBE_ENABLED:true}

@@ -153,6 +153,8 @@ mango:
     enabled: true
   job:
     enabled: true
+    probe:
+      enabled: ${MANGO_JOB_PROBE_ENABLED:true}
   authorization:
     resource-sync:
       resources:
