@@ -243,6 +243,7 @@ class PaymentMangoPayChannelAdapterTest {
                 "PO202606060001",
                 "BIZ202606060001",
                 "MPPO202606060001",
+                9900L,
                 3900L,
                 "CNY",
                 "用户申请退款");

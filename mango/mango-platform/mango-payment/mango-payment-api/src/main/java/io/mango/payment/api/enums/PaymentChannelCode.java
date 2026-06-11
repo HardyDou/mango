@@ -8,6 +8,7 @@ public enum PaymentChannelCode {
     MANGO_PAY,
     OFFLINE_COLLECTION,
     ALLINPAY,
+    FUIOU_PAY,
     HUAXIA_BANK,
     WECHAT_PAY,
     ALIPAY,

@@ -130,6 +130,7 @@ public interface IPaymentChannelAdapter {
      * @param payOrderNo 原支付订单号
      * @param bizOrderNo 业务订单号
      * @param channelTradeNo 原通道交易号
+     * @param payAmount 原支付金额，单位分
      * @param amount 退款金额，单位分
      * @param currency 币种
      * @param reason 退款原因
@@ -143,6 +144,7 @@ public interface IPaymentChannelAdapter {
             String payOrderNo,
             String bizOrderNo,
             String channelTradeNo,
+            Long payAmount,
             Long amount,
             String currency,
             String reason) {

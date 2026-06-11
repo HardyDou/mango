@@ -133,6 +133,7 @@ class PaymentOfflineCollectionChannelAdapterTest {
                 "BO202606060001",
                 "OCPO202606060001",
                 9900L,
+                9900L,
                 "CNY",
                 "线下退款");
 

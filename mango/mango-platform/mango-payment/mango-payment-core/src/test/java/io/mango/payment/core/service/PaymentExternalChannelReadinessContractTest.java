@@ -25,7 +25,8 @@ class PaymentExternalChannelReadinessContractTest {
             "ALLINPAY",
             "HUAXIA_BANK",
             "WECHAT_PAY",
-            "ALIPAY"
+            "ALIPAY",
+            "LIANLIAN_PAY"
     );
     private static final List<String> UNFINISHED_LEDGER_ITEMS = List.of(
             "PAY-CHANNEL-003",
@@ -66,6 +67,7 @@ class PaymentExternalChannelReadinessContractTest {
                 .extracting(path -> path.getFileName().toString())
                 .containsExactlyInAnyOrder(
                         "PaymentMangoPayChannelAdapter.java",
+                        "PaymentFuiouPayChannelAdapter.java",
                         "PaymentOfflineCollectionChannelAdapter.java");
         for (String channelCode : UNFINISHED_EXTERNAL_CHANNELS) {
             assertThat(adapterImplementations)
