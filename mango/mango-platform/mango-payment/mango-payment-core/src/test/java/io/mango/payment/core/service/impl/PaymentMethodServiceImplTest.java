@@ -201,8 +201,6 @@ class PaymentMethodServiceImplTest {
         command.setCashierGroupName("微信支付");
         command.setCashierGroupSort(10);
         command.setRequiresQrRefresh(1);
-        command.setMinAmount(1L);
-        command.setMaxAmount(5000000L);
         command.setSort(100);
         command.setStatus(1);
         return command;

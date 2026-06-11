@@ -28,6 +28,8 @@ public class PaymentChannel extends AuditableEntity {
 
     private String capabilitySummary;
 
+    private String billFetchModes;
+
     private Integer status;
 
     private Long tenantId;

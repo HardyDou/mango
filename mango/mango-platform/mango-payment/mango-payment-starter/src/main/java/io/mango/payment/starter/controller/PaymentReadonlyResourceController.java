@@ -11,18 +11,21 @@ import io.mango.payment.api.command.CreateOfflineRefundCommand;
 import io.mango.payment.api.command.CreateMangoPayScenarioControlCommand;
 import io.mango.payment.api.command.CreatePaymentBusinessOrderCommand;
 import io.mango.payment.api.command.CreatePaymentRefundApprovalCommand;
+import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
 import io.mango.payment.api.command.GeneratePaymentSettlementSummaryCommand;
 import io.mango.payment.api.command.HandlePaymentDifferenceCommand;
 import io.mango.payment.api.command.HandlePaymentExceptionOrderCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
 import io.mango.payment.api.command.QueryPaymentRefundOrderCommand;
-import io.mango.payment.api.command.ReviewPaymentRefundApprovalCommand;
 import io.mango.payment.api.command.RetryPaymentNotificationRecordCommand;
 import io.mango.payment.api.command.VoidPaymentSettlementSummaryCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentBusinessOrderStatusVO;
 import io.mango.payment.api.vo.PaymentBusinessOrderVO;
+import io.mango.payment.api.vo.PaymentChannelBillFetchBatchVO;
+import io.mango.payment.api.vo.PaymentChannelBillFetchModeVO;
+import io.mango.payment.api.vo.PaymentChannelBillSourceVO;
 import io.mango.payment.api.vo.PaymentChannelCapabilityVO;
 import io.mango.payment.api.vo.PaymentDifferenceActionVO;
 import io.mango.payment.api.vo.PaymentDifferenceStatusVO;
@@ -298,13 +301,6 @@ public class PaymentReadonlyResourceController {
         return R.ok(refundApprovalService.createRefundApproval(command));
     }
 
-    @PostMapping("/refund-approvals/review")
-    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:refund-approval:review")
-    @Operation(summary = "审核退款审批", description = "审核通过后按既有退款链路发起退款，审核拒绝只关闭审批单；申请人不能审核自己的退款申请")
-    public R<PaymentRefundApprovalVO> reviewRefundApproval(@Valid @RequestBody ReviewPaymentRefundApprovalCommand command) {
-        return R.ok(refundApprovalService.reviewRefundApproval(command));
-    }
-
     @GetMapping("/transaction-flows/page")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:transaction-flow:list")
     @Operation(summary = "分页查询交易流水", description = "查询支付成功、退款成功、手续费等支付域资金事件")
@@ -426,6 +422,13 @@ public class PaymentReadonlyResourceController {
         return R.ok(reconciliationService.listReconciliationStatuses());
     }
 
+    @GetMapping("/reconciliations/bill-fetch-modes")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:list")
+    @Operation(summary = "查询通道账单获取方式选项", description = "返回手动、FTP、FTPS、HTTP 等通道账单获取方式契约")
+    public R<List<PaymentChannelBillFetchModeVO>> listBillFetchModes() {
+        return R.ok(reconciliationService.listBillFetchModes());
+    }
+
     @PostMapping("/reconciliations/import")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
     @Operation(summary = "导入通道账单", description = "导入通道账单形成对账批次，同一通道、日期、文件摘要只能导入一次，并执行支付成功金额核对")
@@ -438,6 +441,34 @@ public class PaymentReadonlyResourceController {
     @Operation(summary = "生成芒果支付账单", description = "按账单日期从芒果支付真实支付和退款订单生成通道账单批次，并执行对账核对")
     public R<PaymentReconciliationVO> generateMangoPayVirtualBill(@Valid @RequestBody GenerateMangoPayVirtualBillCommand command) {
         return R.ok(reconciliationService.generateMangoPayVirtualBill(command));
+    }
+
+    @GetMapping("/reconciliations/bill-sources/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:list")
+    @Operation(summary = "分页查询通道账单获取源", description = "查询手动、FTP、FTPS、HTTP 等通道账单获取方式配置")
+    public R<PageResult<PaymentChannelBillSourceVO>> pageBillSources(@ParameterObject PaymentConfigPageQuery query) {
+        return R.ok(reconciliationService.pageBillSources(query));
+    }
+
+    @GetMapping("/reconciliations/bill-sources/detail")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:query")
+    @Operation(summary = "查询通道账单获取源详情", description = "按配置 ID 查询通道账单获取源")
+    public R<PaymentChannelBillSourceVO> detailBillSource(@Parameter(description = "账单获取源 ID", required = true) @RequestParam Long id) {
+        return R.ok(reconciliationService.detailBillSource(id));
+    }
+
+    @GetMapping("/reconciliations/bill-fetch-batches/page")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:list")
+    @Operation(summary = "分页查询通道账单获取批次", description = "查询通道账单自动获取执行记录、响应摘要和关联对账批次")
+    public R<PageResult<PaymentChannelBillFetchBatchVO>> pageBillFetchBatches(@ParameterObject PaymentConfigPageQuery query) {
+        return R.ok(reconciliationService.pageBillFetchBatches(query));
+    }
+
+    @PostMapping("/reconciliations/bill-fetch")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
+    @Operation(summary = "发起通道账单获取", description = "按通道账单获取源拉取原始账单并进入统一对账导入流程")
+    public R<PaymentReconciliationVO> fetchChannelBill(@Valid @RequestBody FetchPaymentChannelBillCommand command) {
+        return R.ok(reconciliationService.fetchChannelBill(command));
     }
 
     @PostMapping("/mango-pay/virtual/scenario-controls")

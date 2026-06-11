@@ -358,7 +358,7 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
                 continue;
             }
             PaymentMethod method = selectMethod(methodCode);
-            if (method == null || !Integer.valueOf(1).equals(method.getStatus()) || !amountAllowed(method, amount)) {
+            if (method == null || !Integer.valueOf(1).equals(method.getStatus())) {
                 continue;
             }
             PaymentCashierRouteMatch route = routeMatch(application, subject, method, amount);
@@ -483,14 +483,6 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
                     PaymentCode.PAYMENT_BUSINESS_ORDER_ALREADY_PAID.getMessage(),
                     ex);
         }
-    }
-
-    private boolean amountAllowed(PaymentMethod method, Long amount) {
-        if (amount == null) {
-            return true;
-        }
-        return (method.getMinAmount() == null || method.getMinAmount() <= amount)
-                && (method.getMaxAmount() == null || method.getMaxAmount() >= amount);
     }
 
     private ChannelPaymentApply applyChannelPayment(

@@ -29,8 +29,7 @@ public class PaymentMethodRouteTrialCommand implements Serializable {
     @Schema(description = "终端类型：WEB/H5", requiredMode = Schema.RequiredMode.REQUIRED)
     private String terminalType;
 
-    @NotBlank(message = "接入场景不能为空")
-    @Schema(description = "接入场景", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "内部路由域，服务端可自动试算全部路由域")
     private String environment;
 
     @NotNull(message = "金额不能为空")

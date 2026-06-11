@@ -16,12 +16,12 @@
             +
             (select count(1)
                from payment_order po
-               join payment_business_order bo
-                 on bo.id = po.business_order_id
-                and bo.tenant_id = po.tenant_id
+               left join payment_channel_contract_capability ccc
+                 on ccc.id = po.contract_capability_id
+                and ccc.tenant_id = po.tenant_id
               where po.tenant_id = #{tenantId}
-                and po.channel_id = #{channelId}
-                and bo.subject_id = #{subjectId})
+                and (po.contract_id = #{contractId}
+                  or ccc.contract_id = #{contractId}))
         )
     </select>
 

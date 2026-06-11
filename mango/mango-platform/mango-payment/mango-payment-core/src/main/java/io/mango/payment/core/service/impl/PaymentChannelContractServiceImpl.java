@@ -712,7 +712,7 @@ public class PaymentChannelContractServiceImpl implements IPaymentChannelContrac
     }
 
     private long countDeleteRelations(PaymentChannelContract entity) {
-        return contractMapper.countDeleteRelations(entity.getTenantId(), entity.getId(), entity.getChannelId(), entity.getSubjectId());
+        return contractMapper.countDeleteRelations(entity.getTenantId(), entity.getId());
     }
 
     private long countCapabilityRouteRelations(Long contractCapabilityId, Long tenantId) {

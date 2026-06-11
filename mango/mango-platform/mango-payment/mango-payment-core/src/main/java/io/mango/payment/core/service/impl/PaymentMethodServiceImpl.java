@@ -15,7 +15,6 @@ import io.mango.payment.core.entity.PaymentMethodCategory;
 import io.mango.payment.core.entity.PaymentMethod;
 import io.mango.payment.core.mapper.PaymentMethodCategoryMapper;
 import io.mango.payment.core.mapper.PaymentMethodMapper;
-import io.mango.payment.core.model.Money;
 import io.mango.payment.core.service.IPaymentMethodService;
 import io.mango.payment.core.service.PaymentContextSupport;
 import io.mango.payment.core.service.PaymentOperationAuditService;
@@ -182,7 +181,6 @@ public class PaymentMethodServiceImpl implements IPaymentMethodService {
         validateCategoryPath(command);
         validateTerminalScope(command.getTerminalScope());
         validateUniqueMethodCode(command, update);
-        Money.requireRange(command.getMinAmount(), command.getMaxAmount(), "支付方式");
     }
 
     private void validateCategoryPath(SavePaymentMethodCommand command) {
@@ -249,10 +247,6 @@ public class PaymentMethodServiceImpl implements IPaymentMethodService {
         entity.setRequiresBankSelection(command.getRequiresBankSelection() == null ? 0 : command.getRequiresBankSelection());
         entity.setRequiresQrRefresh(command.getRequiresQrRefresh() == null ? 0 : command.getRequiresQrRefresh());
         entity.setDescription(PaymentContextSupport.trimToNull(command.getDescription()));
-        entity.setVisibleScope(PaymentContextSupport.trimToNull(command.getVisibleScope()));
-        entity.setRouteStrategy(PaymentContextSupport.trimToNull(command.getRouteStrategy()));
-        entity.setMinAmount(command.getMinAmount());
-        entity.setMaxAmount(command.getMaxAmount());
         entity.setSort(command.getSort() == null ? 0 : command.getSort());
         entity.setStatus(command.getStatus());
     }
@@ -274,10 +268,6 @@ public class PaymentMethodServiceImpl implements IPaymentMethodService {
         vo.setRequiresBankSelection(entity.getRequiresBankSelection());
         vo.setRequiresQrRefresh(entity.getRequiresQrRefresh());
         vo.setDescription(entity.getDescription());
-        vo.setVisibleScope(entity.getVisibleScope());
-        vo.setRouteStrategy(entity.getRouteStrategy());
-        vo.setMinAmount(entity.getMinAmount());
-        vo.setMaxAmount(entity.getMaxAmount());
         vo.setSort(entity.getSort());
         vo.setStatus(entity.getStatus());
         vo.setCreateTime(entity.getCreatedAt());

@@ -26,6 +26,12 @@ public interface PaymentChannelContractCapabilityMapper extends BaseMapper<Payme
             @Param("terminalType") String terminalType,
             @Param("environment") String environment);
 
+    String selectRouteEnvironment(
+            @Param("tenantId") Long tenantId,
+            @Param("contractCapabilityId") Long contractCapabilityId,
+            @Param("methodCode") String methodCode,
+            @Param("terminalType") String terminalType);
+
     PaymentCashierRouteMatch selectRoutedCashierCapability(
             @Param("tenantId") Long tenantId,
             @Param("applicationId") Long applicationId,

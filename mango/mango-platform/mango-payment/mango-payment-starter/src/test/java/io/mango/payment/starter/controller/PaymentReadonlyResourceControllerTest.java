@@ -157,8 +157,7 @@ class PaymentReadonlyResourceControllerTest {
                         "payment:refund-approval:list",
                         "payment:refund-approval:query",
                         "payment:refund-approval:list",
-                        "payment:refund-approval:create",
-                        "payment:refund-approval:review");
+                        "payment:refund-approval:create");
     }
 
     @Test
@@ -167,7 +166,6 @@ class PaymentReadonlyResourceControllerTest {
         Map<String, String> expectedPermissions = Map.ofEntries(
                 Map.entry("queryRefundOrder", "payment:refund-order:query-channel"),
                 Map.entry("createRefundApproval", "payment:refund-approval:create"),
-                Map.entry("reviewRefundApproval", "payment:refund-approval:review"),
                 Map.entry("listExceptionOrderActions", "payment:exception-order:handle"),
                 Map.entry("handleExceptionOrder", "payment:exception-order:handle"),
                 Map.entry("retryNotificationRecord", "payment:notification-record:retry"),
@@ -199,7 +197,6 @@ class PaymentReadonlyResourceControllerTest {
         List<String> requiredPermissions = List.of(
                 "payment:refund-order:query-channel",
                 "payment:refund-approval:create",
-                "payment:refund-approval:review",
                 "payment:exception-order:handle",
                 "payment:notification-record:retry",
                 "payment:notification-record:deliver-due",
@@ -254,6 +251,15 @@ class PaymentReadonlyResourceControllerTest {
                 .reduce("", (left, right) -> left + "\n" + right);
 
         assertThat(migrationSql).contains("payment:observability:query");
+    }
+
+    @Test
+    @DisplayName("bill fetch mode endpoint should be read only and use reconciliation list permission")
+    void billFetchModeEndpoint_usesReadonlyPermission() throws NoSuchMethodException {
+        Method method = PaymentReadonlyResourceController.class.getDeclaredMethod("listBillFetchModes");
+
+        assertThat(method.getAnnotation(GetMapping.class).value()).containsExactly("/reconciliations/bill-fetch-modes");
+        assertThat(method.getAnnotation(ApiAccess.class).permission()).isEqualTo("payment:reconciliation:list");
     }
 
     @Test

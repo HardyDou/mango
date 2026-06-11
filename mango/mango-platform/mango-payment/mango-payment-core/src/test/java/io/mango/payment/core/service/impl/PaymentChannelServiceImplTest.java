@@ -67,13 +67,15 @@ class PaymentChannelServiceImplTest {
         assertThat(channelCaptor.getValue().getChannelCode()).isEqualTo("LIANLIAN_PAY");
         assertThat(capabilityCaptor.getValue().getMethodCode()).isEqualTo("PERSONAL_WECHAT_QR");
         assertThat(capabilityCaptor.getValue().getTerminalType()).isEqualTo("WEB");
-        assertThat(capabilityCaptor.getValue().getEnvironment()).isEqualTo("MANGO_PAY");
+        assertThat(channelCaptor.getValue().getEnvironment()).isEqualTo("PROD");
+        assertThat(capabilityCaptor.getValue().getEnvironment()).isEqualTo("PROD");
         assertThat(capabilityCaptor.getValue().getMinAmount()).isEqualTo(1L);
         verify(auditService).record(
                 PaymentOperationAuditService.ACTION_CREATE_CHANNEL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL,
                 "LIANLIAN_PAY",
                 PaymentOperationAuditService.RESULT_SUCCESS);
+        assertThat(channelCaptor.getValue().getBillFetchModes()).isEqualTo("MANUAL,FTP");
     }
 
     @Test
@@ -183,6 +185,7 @@ class PaymentChannelServiceImplTest {
                 [{"name":"merchantNo","label":"商户号","component":"input","dataType":"string","required":true}]
                 """);
         command.setCapabilitySummary("微信扫码、退款、查单、账单、对账");
+        command.setBillFetchModes(List.of("MANUAL", "FTP"));
         command.setCapabilities(List.of(capabilityCommand()));
         command.setStatus(1);
         return command;
@@ -192,7 +195,6 @@ class PaymentChannelServiceImplTest {
         SavePaymentChannelCapabilityCommand command = new SavePaymentChannelCapabilityCommand();
         command.setMethodCode("PERSONAL_WECHAT_QR");
         command.setTerminalType("WEB");
-        command.setEnvironment("MANGO_PAY");
         command.setSupportsRefund(1);
         command.setSupportsQuery(1);
         command.setSupportsClose(1);
@@ -223,7 +225,7 @@ class PaymentChannelServiceImplTest {
         capability.setChannelId(330009L);
         capability.setMethodCode("PERSONAL_WECHAT_QR");
         capability.setTerminalType("WEB");
-        capability.setEnvironment("MANGO_PAY");
+        capability.setEnvironment("PROD");
         capability.setStatus(1);
         return capability;
     }

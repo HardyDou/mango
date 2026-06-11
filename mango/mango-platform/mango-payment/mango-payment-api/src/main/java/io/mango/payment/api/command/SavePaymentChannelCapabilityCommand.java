@@ -24,8 +24,7 @@ public class SavePaymentChannelCapabilityCommand implements Serializable {
     @Schema(description = "终端类型，例如 WEB/H5/APP/MP", requiredMode = Schema.RequiredMode.REQUIRED)
     private String terminalType;
 
-    @NotBlank(message = "接入场景不能为空")
-    @Schema(description = "接入场景，例如 MANGO_PAY/PROD", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "内部路由域，服务端按支付通道派生，保存时无需传入")
     private String environment;
 
     @Schema(description = "是否支持退款：1-支持，0-不支持")

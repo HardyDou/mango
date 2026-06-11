@@ -6,7 +6,6 @@ import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.command.CreatePaymentOpenRefundCommand;
 import io.mango.payment.api.command.CreatePaymentRefundApprovalCommand;
-import io.mango.payment.api.command.ReviewPaymentRefundApprovalCommand;
 import io.mango.payment.api.vo.PaymentOpenRefundOrderVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundApprovalVO;
@@ -16,6 +15,8 @@ import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.mapper.PaymentRefundApprovalMapper;
 import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
+import io.mango.workflow.api.WorkflowBusinessApplyApi;
+import io.mango.workflow.api.WorkflowProcessApi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +43,8 @@ class PaymentRefundApprovalServiceTest {
     private PaymentOrderStateService orderStateService;
     private PaymentOperationAuditService auditService;
     private PaymentNumberService numberService;
+    private WorkflowProcessApi workflowProcessApi;
+    private WorkflowBusinessApplyApi workflowBusinessApplyApi;
     private PaymentRefundApprovalService service;
 
     @BeforeEach
@@ -55,6 +57,8 @@ class PaymentRefundApprovalServiceTest {
         orderStateService = new PaymentOrderStateService();
         auditService = mock(PaymentOperationAuditService.class);
         numberService = mock(PaymentNumberService.class);
+        workflowProcessApi = mock(WorkflowProcessApi.class);
+        workflowBusinessApplyApi = mock(WorkflowBusinessApplyApi.class);
         when(numberService.next(PaymentNumberService.PAY_BIZ_REFUND_NO)).thenReturn("BR2026060600000001");
         when(numberService.next(PaymentNumberService.PAY_REFUND_APPROVAL_NO)).thenReturn("RA2026060600000001");
         service = new PaymentRefundApprovalService(
@@ -65,7 +69,9 @@ class PaymentRefundApprovalServiceTest {
                 refundApplyService,
                 orderStateService,
                 auditService,
-                numberService);
+                numberService,
+                workflowProcessApi,
+                workflowBusinessApplyApi);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "applicant", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -76,93 +82,38 @@ class PaymentRefundApprovalServiceTest {
     }
 
     @Test
-    @DisplayName("createRefundApproval should validate refundable amount and record audit")
-    void createRefundApproval_validCommand_recordsAudit() {
+    @DisplayName("createRefundApproval should include pending approvals in refundable validation")
+    void createRefundApproval_pendingApprovalsOccupyRefundableAmount() {
         PaymentOrderVO paymentOrder = paymentOrder();
         when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
         when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(1000L);
-        PaymentRefundApprovalVO detail = approvalDetail("PENDING");
-        doAnswer(invocation -> {
-            PaymentRefundApprovalEntity entity = invocation.getArgument(0);
-            entity.setId(390001L);
-            return 1;
-        }).when(refundApprovalMapper).insert(any(PaymentRefundApprovalEntity.class));
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(detail);
-        ArgumentCaptor<PaymentRefundApprovalEntity> approvalCaptor = ArgumentCaptor.forClass(PaymentRefundApprovalEntity.class);
+        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(5000L);
+        when(refundApprovalMapper.sumPendingApprovalAmount(1L, 370001L)).thenReturn(1000L);
 
-        PaymentRefundApprovalVO result = service.createRefundApproval(createCommand());
-
-        assertThat(result.getStatusName()).isEqualTo("待审核");
-        verify(refundApprovalMapper).insert(approvalCaptor.capture());
-        PaymentRefundApprovalEntity entity = approvalCaptor.getValue();
-        assertThat(entity.getPaymentOrderId()).isEqualTo(370001L);
-        assertThat(entity.getBizRefundNo()).isEqualTo("MANUAL-REFUND-001");
-        assertThat(entity.getRefundAmount()).isEqualTo(3000L);
-        assertThat(entity.getRemark()).isEqualTo("退款备注");
-        assertThat(entity.getStatus()).isEqualTo("PENDING");
-        verify(auditService).record(
-                PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
-                PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
-                entity.getApprovalNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
-    }
-
-    @Test
-    @DisplayName("createRefundApproval should generate biz refund number on server when omitted")
-    void createRefundApproval_withoutBizRefundNo_generatesServerNumber() {
-        PaymentOrderVO paymentOrder = paymentOrder();
-        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrder);
-        when(applicationMapper.selectOne(any())).thenReturn(application());
-        when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(1000L);
-        doAnswer(invocation -> {
-            PaymentRefundApprovalEntity entity = invocation.getArgument(0);
-            entity.setId(390001L);
-            return 1;
-        }).when(refundApprovalMapper).insert(any(PaymentRefundApprovalEntity.class));
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("PENDING"));
-        CreatePaymentRefundApprovalCommand command = createCommand();
-        command.setBizRefundNo(null);
-        ArgumentCaptor<PaymentRefundApprovalEntity> approvalCaptor = ArgumentCaptor.forClass(PaymentRefundApprovalEntity.class);
-
-        service.createRefundApproval(command);
-
-        verify(refundApprovalMapper).insert(approvalCaptor.capture());
-        assertThat(approvalCaptor.getValue().getBizRefundNo()).startsWith("BR");
-    }
-
-    @Test
-    @DisplayName("reviewRefundApproval should reject self review")
-    void reviewRefundApproval_selfReview_rejects() {
-        PaymentRefundApprovalEntity entity = approvalEntity("PENDING");
-        entity.setApplicantId(1001L);
-        when(refundApprovalMapper.selectEntityForUpdate(1L, 390001L)).thenReturn(entity);
-
-        assertThatThrownBy(() -> service.reviewRefundApproval(reviewCommand("APPROVE")))
+        assertThatThrownBy(() -> service.createRefundApproval(createCommand()))
                 .isInstanceOf(BizException.class)
-                .hasMessage("退款审批申请人不能审核自己的申请");
+                .extracting("code")
+                .isEqualTo(PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED.getCode());
     }
 
     @Test
-    @DisplayName("reviewRefundApproval approve should create refund through shared refund service")
-    void reviewRefundApproval_approve_appliesRefundAndRecordsAudit() {
+    @DisplayName("approveByWorkflow should create refund through shared refund service")
+    void approveByWorkflow_appliesRefundAndRecordsAudit() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
-                2002L, "1", "reviewer", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
-        PaymentRefundApprovalEntity entity = approvalEntity("PENDING");
+                null, "1", "workflow", "INTERNAL", "SYSTEM", "SYSTEM", null, "internal-admin"));
+        PaymentRefundApprovalEntity entity = approvalEntity("IN_APPROVAL");
         entity.setApplicantId(1001L);
-        when(refundApprovalMapper.selectEntityForUpdate(1L, 390001L)).thenReturn(entity);
+        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate(1L, "RFA202606070001")).thenReturn(entity);
         when(applicationMapper.selectOne(any())).thenReturn(application());
         PaymentOpenRefundOrderVO refundOrder = new PaymentOpenRefundOrderVO();
         refundOrder.setId(380001L);
         refundOrder.setRefundOrderNo("RO202606070001");
         when(refundApplyService.applyRefund(any(), any(), eq(PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL), eq("RFA202606070001"), eq(true)))
                 .thenReturn(refundOrder);
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("APPROVED"));
         ArgumentCaptor<CreatePaymentOpenRefundCommand> refundCommandCaptor = ArgumentCaptor.forClass(CreatePaymentOpenRefundCommand.class);
 
-        PaymentRefundApprovalVO result = service.reviewRefundApproval(reviewCommand("APPROVE"));
+        service.approveByWorkflow(1L, "RFA202606070001", "PROC-1");
 
-        assertThat(result.getStatusName()).isEqualTo("已通过");
         verify(refundApplyService).applyRefund(
                 any(),
                 refundCommandCaptor.capture(),
@@ -181,21 +132,19 @@ class PaymentRefundApprovalServiceTest {
     }
 
     @Test
-    @DisplayName("reviewRefundApproval reject should close approval and record audit")
-    void reviewRefundApproval_reject_recordsAudit() {
+    @DisplayName("rejectByWorkflow should close approval and record audit")
+    void rejectByWorkflow_recordsAudit() {
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
-                2002L, "1", "reviewer", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
-        PaymentRefundApprovalEntity entity = approvalEntity("PENDING");
+                null, "1", "workflow", "INTERNAL", "SYSTEM", "SYSTEM", null, "internal-admin"));
+        PaymentRefundApprovalEntity entity = approvalEntity("IN_APPROVAL");
         entity.setApplicantId(1001L);
-        when(refundApprovalMapper.selectEntityForUpdate(1L, 390001L)).thenReturn(entity);
-        when(refundApprovalMapper.selectRefundApprovalDetail(1L, 390001L)).thenReturn(approvalDetail("REJECTED"));
+        when(refundApprovalMapper.selectEntityByApprovalNoForUpdate(1L, "RFA202606070001")).thenReturn(entity);
 
-        PaymentRefundApprovalVO result = service.reviewRefundApproval(reviewCommand("REJECT"));
+        service.rejectByWorkflow(1L, "RFA202606070001", "PROC-1", "资料不完整");
 
-        assertThat(result.getStatusName()).isEqualTo("已拒绝");
         assertThat(entity.getStatus()).isEqualTo("REJECTED");
-        assertThat(entity.getReviewerId()).isEqualTo(2002L);
-        assertThat(entity.getReviewerName()).isEqualTo("reviewer");
+        assertThat(entity.getReviewerName()).isEqualTo("workflow");
+        assertThat(entity.getReviewReason()).isEqualTo("资料不完整");
         verify(refundApprovalMapper).updateById(entity);
         verify(auditService).record(
                 PaymentOperationAuditService.ACTION_REJECT_REFUND_APPROVAL,
@@ -211,14 +160,6 @@ class PaymentRefundApprovalServiceTest {
         command.setRefundAmount(3000L);
         command.setReason("后台受控退款");
         command.setRemark("退款备注");
-        return command;
-    }
-
-    private ReviewPaymentRefundApprovalCommand reviewCommand(String action) {
-        ReviewPaymentRefundApprovalCommand command = new ReviewPaymentRefundApprovalCommand();
-        command.setId(390001L);
-        command.setAction(action);
-        command.setReviewReason("审批通过");
         return command;
     }
 

@@ -9,6 +9,7 @@ import java.util.List;
 public enum PaymentRefundApprovalStatusEnum {
 
     PENDING("PENDING", "待审核"),
+    IN_APPROVAL("IN_APPROVAL", "审批中"),
     APPROVED("APPROVED", "已通过"),
     REJECTED("REJECTED", "已拒绝");
 

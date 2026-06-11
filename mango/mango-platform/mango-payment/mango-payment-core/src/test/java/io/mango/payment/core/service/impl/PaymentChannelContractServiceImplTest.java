@@ -94,7 +94,7 @@ class PaymentChannelContractServiceImplTest {
         service = service(auditService);
         PaymentChannelContract contract = contract();
         when(contractMapper.selectById(331002L)).thenReturn(contract);
-        when(contractMapper.countDeleteRelations(1L, 331002L, 330002L, 320001L)).thenReturn(1L);
+        when(contractMapper.countDeleteRelations(1L, 331002L)).thenReturn(1L);
 
         assertThatThrownBy(() -> service.deleteChannelContract(331002L))
                 .isInstanceOf(BizException.class)
@@ -115,7 +115,7 @@ class PaymentChannelContractServiceImplTest {
         service = service(auditService);
         PaymentChannelContract contract = contract();
         when(contractMapper.selectById(331002L)).thenReturn(contract);
-        when(contractMapper.countDeleteRelations(1L, 331002L, 330002L, 320001L)).thenReturn(0L);
+        when(contractMapper.countDeleteRelations(1L, 331002L)).thenReturn(0L);
         when(contractMapper.deleteById(331002L)).thenReturn(1);
 
         service.deleteChannelContract(331002L);

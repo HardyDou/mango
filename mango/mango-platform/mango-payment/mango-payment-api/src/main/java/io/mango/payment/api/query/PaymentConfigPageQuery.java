@@ -27,4 +27,7 @@ public class PaymentConfigPageQuery extends PageQuery {
 
     @Schema(description = "支付通道 ID")
     private Long channelId;
+
+    @Schema(description = "通道签约配置 ID")
+    private Long contractId;
 }

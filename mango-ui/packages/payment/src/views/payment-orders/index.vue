@@ -311,9 +311,12 @@ const emptyDescription = computed(() => {
   return query.keyword || query.statusCode ? '未查询到匹配的支付订单' : '暂无支付订单';
 });
 const refundAvailableAmount = computed(() => {
+  if (refundOrder.value?.refundableAmount !== undefined && refundOrder.value?.refundableAmount !== null) {
+    return Math.max(Number(refundOrder.value.refundableAmount || 0), 0);
+  }
   const amount = Number(refundOrder.value?.amount || 0);
-  const refundedAmount = Number(refundOrder.value?.refundedAmount || 0);
-  return Math.max(amount - refundedAmount, 0);
+  const occupyingAmount = Number(refundOrder.value?.occupyingRefundAmount ?? refundOrder.value?.refundedAmount ?? 0);
+  return Math.max(amount - occupyingAmount, 0);
 });
 
 onMounted(async () => {
@@ -365,7 +368,10 @@ async function openDetail(row: PaymentOrder) {
 }
 
 function canRefund(row: PaymentOrder) {
-  return row.status === 'SUCCESS' && row.successFlag === 1 && Number(row.amount || 0) > 0;
+  const refundableAmount = row.refundableAmount === undefined || row.refundableAmount === null
+    ? Number(row.amount || 0) - Number(row.occupyingRefundAmount ?? row.refundedAmount ?? 0)
+    : Number(row.refundableAmount || 0);
+  return row.status === 'SUCCESS' && row.successFlag === 1 && refundableAmount > 0;
 }
 
 function openRefund(row: PaymentOrder) {

@@ -6,6 +6,7 @@
         <p>管理通道账单导入、批次结果和支付成功金额核对。</p>
       </div>
       <div class="payment-reconciliations__header-actions">
+        <el-button @click="openFetchDialog">发起获取</el-button>
         <el-button @click="openGenerateDialog">生成芒果支付账单</el-button>
         <el-button type="primary" @click="openImportDialog">导入账单</el-button>
       </div>
@@ -176,6 +177,53 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="fetchDialogVisible" title="发起通道账单获取" width="560px" destroy-on-close>
+      <el-form ref="fetchFormRef" :model="fetchForm" :rules="fetchRules" label-width="110px" class="payment-dialog-form">
+        <el-form-item label="账单源" prop="sourceId">
+          <el-select v-model="fetchForm.sourceId" filterable placeholder="请选择启用的账单获取源">
+            <el-option
+              v-for="item in enabledSourceRows"
+              :key="item.id"
+              :label="sourceOptionLabel(item)"
+              :value="item.id || ''"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="账单日期" prop="billDate">
+          <el-date-picker v-model="fetchForm.billDate" type="date" value-format="YYYY-MM-DD" placeholder="选择账单日期" />
+        </el-form-item>
+        <el-form-item label="开始时间">
+          <el-date-picker v-model="fetchForm.startTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="默认账单日 00:00:00" />
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker v-model="fetchForm.endTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" placeholder="默认次日 00:00:00" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="fetchDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="fetchingBill" @click="submitFetch">发起获取</el-button>
+      </template>
+      <div class="payment-reconciliations__line-header">
+        <span>最近获取批次</span>
+      </div>
+      <el-table :data="fetchBatchRows" row-key="id" stripe class="payment-reconciliations__fetch-table">
+        <el-table-column prop="batchNo" label="获取批次" min-width="170" />
+        <el-table-column prop="reconciliationNo" label="对账批次" min-width="170" />
+        <el-table-column prop="channelCode" label="通道" width="120" />
+        <el-table-column label="方式" width="120">
+          <template #default="{ row }">{{ row.fetchModeName || row.fetchMode }}</template>
+        </el-table-column>
+        <el-table-column prop="billDate" label="账单日期" width="120" />
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.fetchStatus === 'SUCCESS' ? 'success' : row.fetchStatus === 'FAILED' ? 'danger' : 'warning'">
+              {{ row.fetchStatusName || row.fetchStatus }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
+
     <el-drawer v-model="detailVisible" title="对账批次详情" size="720px">
       <div v-if="currentDetail" class="payment-reconciliations__detail">
         <el-descriptions :column="2" border>
@@ -224,11 +272,14 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import {
   paymentReconciliationApi,
+  type FetchPaymentChannelBillCommand,
   type GenerateMangoPayVirtualBillCommand,
   type ImportPaymentReconciliationCommand,
+  type PaymentChannelBillFetchBatch,
+  type PaymentChannelBillSource,
   type PaymentPageQuery,
   type PaymentReconciliation,
   type PaymentReconciliationStatus,
@@ -245,19 +296,25 @@ type ImportForm = Omit<ImportPaymentReconciliationCommand, 'items'> & {
 };
 
 type GenerateForm = GenerateMangoPayVirtualBillCommand;
+type FetchForm = FetchPaymentChannelBillCommand;
 
 const loading = ref(false);
 const importing = ref(false);
 const generating = ref(false);
+const fetchingBill = ref(false);
 const importDialogVisible = ref(false);
 const generateDialogVisible = ref(false);
+const fetchDialogVisible = ref(false);
 const detailVisible = ref(false);
 const total = ref(0);
 const rows = ref<PaymentReconciliation[]>([]);
+const sourceRows = ref<PaymentChannelBillSource[]>([]);
+const fetchBatchRows = ref<PaymentChannelBillFetchBatch[]>([]);
 const statuses = ref<PaymentReconciliationStatus[]>([]);
 const currentDetail = ref<PaymentReconciliation>();
 const importFormRef = ref<FormInstance>();
 const generateFormRef = ref<FormInstance>();
+const fetchFormRef = ref<FormInstance>();
 
 const query = reactive<PaymentPageQuery>({
   pageNum: 1,
@@ -281,6 +338,15 @@ const generateForm = reactive<GenerateForm>({
   billDate: '',
 });
 
+const fetchForm = reactive<FetchForm>({
+  sourceId: '',
+  billDate: '',
+  startTime: '',
+  endTime: '',
+});
+
+const enabledSourceRows = computed(() => sourceRows.value.filter(item => item.enabled === 1));
+
 const importRules: FormRules<ImportForm> = {
   channelCode: [{ required: true, message: '请输入通道编码', trigger: 'blur' }],
   billDate: [{ required: true, message: '请选择账单日期', trigger: 'change' }],
@@ -290,6 +356,11 @@ const importRules: FormRules<ImportForm> = {
 
 const generateRules: FormRules<GenerateForm> = {
   channelCode: [{ required: true, message: '请输入通道编码', trigger: 'blur' }],
+  billDate: [{ required: true, message: '请选择账单日期', trigger: 'change' }],
+};
+
+const fetchRules: FormRules<FetchForm> = {
+  sourceId: [{ required: true, message: '请选择获取方式', trigger: 'change' }],
   billDate: [{ required: true, message: '请选择账单日期', trigger: 'change' }],
 };
 
@@ -329,6 +400,12 @@ function openGenerateDialog() {
   generateDialogVisible.value = true;
 }
 
+async function openFetchDialog() {
+  await loadBillSources();
+  resetFetchForm();
+  fetchDialogVisible.value = true;
+}
+
 function resetImportForm() {
   importForm.channelCode = '';
   importForm.billDate = '';
@@ -342,6 +419,23 @@ function resetGenerateForm() {
   generateForm.channelCode = 'MANGO_PAY';
   generateForm.contractId = '';
   generateForm.billDate = new Date().toISOString().slice(0, 10);
+}
+
+function resetFetchForm() {
+  fetchForm.sourceId = enabledSourceRows.value[0]?.id || '';
+  fetchForm.billDate = new Date().toISOString().slice(0, 10);
+  fetchForm.startTime = '';
+  fetchForm.endTime = '';
+}
+
+async function loadBillSources() {
+  const page = await paymentReconciliationApi.billSources({ pageNum: 1, pageSize: 50, keyword: '' });
+  sourceRows.value = page.list;
+}
+
+async function loadFetchBatches() {
+  const page = await paymentReconciliationApi.billFetchBatches({ pageNum: 1, pageSize: 10, keyword: '' });
+  fetchBatchRows.value = page.list;
 }
 
 function addBillItem() {
@@ -401,6 +495,25 @@ async function submitGenerate() {
     await loadPage();
   } finally {
     generating.value = false;
+  }
+}
+
+async function submitFetch() {
+  const valid = await fetchFormRef.value?.validate();
+  if (!valid) return;
+  fetchingBill.value = true;
+  try {
+    await paymentReconciliationApi.fetchBill({
+      sourceId: fetchForm.sourceId,
+      billDate: fetchForm.billDate,
+      startTime: fetchForm.startTime || undefined,
+      endTime: fetchForm.endTime || undefined,
+    });
+    ElMessage.success('账单获取并对账完成');
+    fetchDialogVisible.value = false;
+    await Promise.all([loadPage(), loadFetchBatches()]);
+  } finally {
+    fetchingBill.value = false;
   }
 }
 

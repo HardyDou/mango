@@ -42,14 +42,6 @@ public class PaymentMethod extends AuditableEntity {
 
     private String description;
 
-    private String visibleScope;
-
-    private String routeStrategy;
-
-    private Long minAmount;
-
-    private Long maxAmount;
-
     private Integer sort;
 
     private Integer status;

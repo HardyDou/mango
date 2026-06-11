@@ -79,6 +79,12 @@ public class PaymentOrderVO {
     @Schema(description = "业务订单已退款金额，单位分")
     private Long refundedAmount;
 
+    @Schema(description = "退款占用金额，单位分，包含成功、退款中和待审核审批")
+    private Long occupyingRefundAmount;
+
+    @Schema(description = "当前可申请退款金额，单位分")
+    private Long refundableAmount;
+
     @Schema(description = "币种")
     private String currency;
 

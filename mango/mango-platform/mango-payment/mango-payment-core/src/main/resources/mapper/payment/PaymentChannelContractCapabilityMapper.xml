@@ -69,6 +69,32 @@
         limit 1
     </select>
 
+    <select id="selectRouteEnvironment" resultType="string">
+        select cc.environment
+        from payment_channel_contract_capability ccc
+        join payment_channel_capability pc
+          on pc.id = ccc.channel_capability_id
+         and pc.tenant_id = ccc.tenant_id
+         and pc.method_code = ccc.method_code
+         and pc.terminal_type = ccc.terminal_type
+         and pc.status = 1
+         and pc.del_flag = 0
+        join payment_channel_contract cc
+          on cc.id = ccc.contract_id
+         and cc.tenant_id = ccc.tenant_id
+         and cc.channel_id = pc.channel_id
+         and cc.environment = pc.environment
+         and cc.status = 1
+         and cc.del_flag = 0
+        where ccc.tenant_id = #{tenantId}
+          and ccc.id = #{contractCapabilityId}
+          and ccc.method_code = #{methodCode}
+          and ccc.terminal_type = #{terminalType}
+          and ccc.status = 1
+          and ccc.del_flag = 0
+        limit 1
+    </select>
+
     <select id="selectRoutedCashierCapability" resultType="io.mango.payment.core.model.PaymentCashierRouteMatch">
         select cc.id as contractId,
                cc.contract_name as contractName,

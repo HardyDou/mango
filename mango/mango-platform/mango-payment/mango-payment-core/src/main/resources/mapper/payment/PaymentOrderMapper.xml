@@ -68,6 +68,40 @@
                po.route_rule_id as routeRuleId,
                po.amount,
                bo.refunded_amount as refundedAmount,
+               (
+                 coalesce((
+                   select sum(ro.refund_amount)
+                   from payment_refund_order ro
+                   where ro.tenant_id = po.tenant_id
+                     and ro.payment_order_id = po.id
+                     and ro.status in ('CREATED', 'REFUNDING', 'PROCESSING', 'SUCCESS')
+                 ), 0)
+                 + coalesce((
+                   select sum(approval.refund_amount)
+                   from payment_refund_approval approval
+                   where approval.tenant_id = po.tenant_id
+                     and approval.payment_order_id = po.id
+                     and approval.status = 'PENDING'
+                     and approval.del_flag = 0
+                 ), 0)
+               ) as occupyingRefundAmount,
+               greatest(po.amount - (
+                 coalesce((
+                   select sum(ro.refund_amount)
+                   from payment_refund_order ro
+                   where ro.tenant_id = po.tenant_id
+                     and ro.payment_order_id = po.id
+                     and ro.status in ('CREATED', 'REFUNDING', 'PROCESSING', 'SUCCESS')
+                 ), 0)
+                 + coalesce((
+                   select sum(approval.refund_amount)
+                   from payment_refund_approval approval
+                   where approval.tenant_id = po.tenant_id
+                     and approval.payment_order_id = po.id
+                     and approval.status = 'PENDING'
+                     and approval.del_flag = 0
+                 ), 0)
+               ), 0) as refundableAmount,
                bo.currency,
                po.status,
                po.channel_trade_no as channelTradeNo,

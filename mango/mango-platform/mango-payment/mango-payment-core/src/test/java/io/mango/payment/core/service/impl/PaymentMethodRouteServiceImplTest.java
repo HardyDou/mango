@@ -72,6 +72,7 @@ class PaymentMethodRouteServiceImplTest {
         when(subjectMapper.selectById(320001L)).thenReturn(subject());
         when(methodMapper.selectOne(any())).thenReturn(method());
         when(contractCapabilityMapper.selectRouteCapability(1L, 333001L, "PERSONAL_WECHAT_QR", "WEB", "MANGO_PAY")).thenReturn(capability());
+        when(contractCapabilityMapper.selectRouteEnvironment(1L, 333001L, "PERSONAL_WECHAT_QR", "WEB")).thenReturn("MANGO_PAY");
     }
 
     @AfterEach
@@ -93,6 +94,7 @@ class PaymentMethodRouteServiceImplTest {
         assertThat(rule.getTenantId()).isEqualTo(1L);
         assertThat(rule.getRuleCode()).isEqualTo("ORDER_CENTER_WECHAT_MANGO_PAY_TEST");
         assertThat(rule.getMethodCode()).isEqualTo("PERSONAL_WECHAT_QR");
+        assertThat(rule.getEnvironment()).isEqualTo("MANGO_PAY");
         verify(routeRuleItemMapper).insert(itemCaptor.capture());
         assertThat(itemCaptor.getValue().getContractCapabilityId()).isEqualTo(333001L);
         verify(auditService).record(
@@ -125,7 +127,7 @@ class PaymentMethodRouteServiceImplTest {
     @Test
     @DisplayName("trialRoute should return matched rule and item when candidate is enabled and in amount range")
     void trialRoute_matchedCandidate_returnsMatch() {
-        when(routeRuleMapper.selectRouteCandidates(1L, 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", "MANGO_PAY"))
+        when(routeRuleMapper.selectRouteCandidates(1L, 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", null))
                 .thenReturn(List.of(candidate(1L, 500000L, 1)));
 
         PaymentMethodRouteTrialVO result = service.trialRoute(trialCommand(9900L)).getData();
@@ -139,7 +141,7 @@ class PaymentMethodRouteServiceImplTest {
     @Test
     @DisplayName("trialRoute should return filter reason when amount exceeds capability range")
     void trialRoute_amountExceeded_returnsFilterReason() {
-        when(routeRuleMapper.selectRouteCandidates(1L, 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", "MANGO_PAY"))
+        when(routeRuleMapper.selectRouteCandidates(1L, 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", null))
                 .thenReturn(List.of(candidate(1L, 100L, 1)));
 
         PaymentMethodRouteTrialVO result = service.trialRoute(trialCommand(9900L)).getData();
@@ -154,12 +156,15 @@ class PaymentMethodRouteServiceImplTest {
     }
 
     @Test
-    @DisplayName("createRouteRule should reject when contract capability does not match route environment")
+    @DisplayName("createRouteRule should reject when contract capability cannot resolve route environment")
     void createRouteRule_environmentMismatch_rejects() {
         when(routeRuleMapper.selectCount(any())).thenReturn(0L);
         when(contractCapabilityMapper.selectRouteCapability(1L, 333001L, "PERSONAL_WECHAT_QR", "WEB", "MANGO_PAY")).thenReturn(null);
+        when(contractCapabilityMapper.selectRouteEnvironment(1L, 333001L, "PERSONAL_WECHAT_QR", "WEB")).thenReturn(null);
+        SavePaymentMethodRouteRuleCommand command = command();
+        command.setEnvironment(null);
 
-        assertThatThrownBy(() -> service.createRouteRule(command()))
+        assertThatThrownBy(() -> service.createRouteRule(command))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_CHANNEL_CONTRACT_CAPABILITY_INVALID.getMessage());
 
@@ -175,7 +180,6 @@ class PaymentMethodRouteServiceImplTest {
         command.setSubjectId(320001L);
         command.setMethodCode("PERSONAL_WECHAT_QR");
         command.setTerminalType("WEB");
-        command.setEnvironment("MANGO_PAY");
         command.setRouteMode("PRIORITY");
         command.setFallbackEnabled(1);
         command.setStatus(1);
@@ -200,7 +204,6 @@ class PaymentMethodRouteServiceImplTest {
         command.setSubjectId(320001L);
         command.setMethodCode("PERSONAL_WECHAT_QR");
         command.setTerminalType("WEB");
-        command.setEnvironment("MANGO_PAY");
         command.setAmount(amount);
         return command;
     }

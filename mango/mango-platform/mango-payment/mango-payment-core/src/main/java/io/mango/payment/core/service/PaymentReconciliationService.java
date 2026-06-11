@@ -1,27 +1,46 @@
 package io.mango.payment.core.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
+import io.mango.payment.api.command.SavePaymentChannelBillSourceCommand;
 import io.mango.payment.api.enums.PaymentBusinessOrderStatusEnum;
+import io.mango.payment.api.enums.PaymentChannelBillFetchModeEnum;
+import io.mango.payment.api.enums.PaymentChannelBillFetchStatusEnum;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
+import io.mango.payment.api.vo.PaymentChannelBillFetchBatchVO;
+import io.mango.payment.api.vo.PaymentChannelBillFetchModeVO;
+import io.mango.payment.api.vo.PaymentChannelBillSourceVO;
 import io.mango.payment.api.vo.PaymentChannelBillDetailVO;
 import io.mango.payment.api.vo.PaymentRefundOrderVO;
 import io.mango.payment.api.vo.PaymentReconciliationStatusVO;
 import io.mango.payment.api.vo.PaymentReconciliationVO;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
+import io.mango.payment.core.entity.PaymentChannelBillBatchEntity;
+import io.mango.payment.core.entity.PaymentChannelBillFetchBatchEntity;
+import io.mango.payment.core.entity.PaymentChannelBillSourceEntity;
 import io.mango.payment.core.entity.PaymentChannelBillDetailEntity;
+import io.mango.payment.core.entity.PaymentChannel;
+import io.mango.payment.core.entity.PaymentChannelContract;
 import io.mango.payment.core.entity.PaymentDifferenceEntity;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
 import io.mango.payment.core.entity.PaymentReconciliationEntity;
 import io.mango.payment.core.entity.PaymentTransactionFlowEntity;
+import io.mango.payment.core.mapper.PaymentChannelBillBatchMapper;
+import io.mango.payment.core.mapper.PaymentChannelBillFetchBatchMapper;
+import io.mango.payment.core.mapper.PaymentChannelBillSourceMapper;
 import io.mango.payment.core.mapper.PaymentChannelBillDetailMapper;
+import io.mango.payment.core.mapper.PaymentChannelContractMapper;
+import io.mango.payment.core.mapper.PaymentChannelMapper;
 import io.mango.payment.core.mapper.PaymentDifferenceMapper;
 import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -34,14 +53,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -55,9 +82,17 @@ public class PaymentReconciliationService {
     private static final String STATUS_IMPORTED = "IMPORTED";
     private static final String MANGO_PAY_CHANNEL_CODE = "MANGO_PAY";
     private static final String FLOW_TYPE_CHANNEL_FEE = "CHANNEL_FEE";
+    private static final String FETCH_STATUS_SUCCESS = "SUCCESS";
+    private static final String FETCH_STATUS_FAILED = "FAILED";
+    private static final String FETCH_STATUS_PROCESSING = "PROCESSING";
 
     private final PaymentReconciliationMapper reconciliationMapper;
+    private final PaymentChannelBillBatchMapper billBatchMapper;
+    private final PaymentChannelBillSourceMapper billSourceMapper;
+    private final PaymentChannelBillFetchBatchMapper billFetchBatchMapper;
     private final PaymentChannelBillDetailMapper billDetailMapper;
+    private final PaymentChannelContractMapper channelContractMapper;
+    private final PaymentChannelMapper channelMapper;
     private final PaymentDifferenceMapper differenceMapper;
     private final PaymentBusinessOrderMapper businessOrderMapper;
     private final PaymentOrderMapper paymentOrderMapper;
@@ -70,6 +105,8 @@ public class PaymentReconciliationService {
     private final PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private final PaymentObservabilityService observabilityService;
     private final PaymentNumberService numberService;
+    private final PaymentChannelBillFileClient billFileClient;
+    private final ObjectMapper objectMapper;
 
     public PageResult<PaymentReconciliationVO> pageReconciliations(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
@@ -103,6 +140,167 @@ public class PaymentReconciliationService {
                 reconciliationStatus(STATUS_DIFFERENCE));
     }
 
+    public List<PaymentChannelBillFetchModeVO> listBillFetchModes() {
+        return PaymentChannelBillFetchModeEnum.options().stream().map(mode -> {
+            PaymentChannelBillFetchModeVO vo = new PaymentChannelBillFetchModeVO();
+            vo.setFetchMode(mode.getCode());
+            vo.setFetchModeName(mode.getLabel());
+            return vo;
+        }).toList();
+    }
+
+    public PageResult<PaymentChannelBillSourceVO> pageBillSources(PaymentConfigPageQuery query) {
+        PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
+        String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        long total = billSourceMapper.countBillSources(tenantId, keyword, resolved.getContractId());
+        long page = resolved.getPage();
+        long size = resolved.getSize();
+        List<PaymentChannelBillSourceVO> rows = billSourceMapper.selectBillSourcePage(
+                tenantId, keyword, resolved.getContractId(), size, (page - 1) * size);
+        rows.forEach(this::fillBillSourceSummary);
+        return PageResult.of(rows, total, page, size);
+    }
+
+    public PaymentChannelBillSourceVO detailBillSource(Long id) {
+        Require.notNull(id, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源 ID 不能为空");
+        PaymentChannelBillSourceVO vo = billSourceMapper.selectBillSourceDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(vo, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+        fillBillSourceSummary(vo);
+        return vo;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentChannelBillSourceVO saveBillSource(SavePaymentChannelBillSourceCommand command) {
+        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
+        Require.notNull(command.getContractId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "签约通道不能为空");
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        PaymentChannelContract contract = selectBillSourceContract(command.getContractId(), tenantId);
+        PaymentChannel channel = selectBillSourceChannel(contract, tenantId);
+        String channelCode = normalizeCode(channel.getChannelCode());
+        String fetchMode = normalizeCode(command.getFetchMode());
+        String endpoint = PaymentContextSupport.trimToNull(command.getEndpoint());
+        String remotePath = PaymentContextSupport.trimToNull(command.getRemotePath());
+        String credentialRef = PaymentContextSupport.trimToNull(command.getCredentialRef());
+        String pageMode = normalizeCode(command.getPageMode());
+        Require.notBlank(fetchMode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "获取方式不能为空");
+        Require.isTrue(PaymentChannelBillFetchModeEnum.contains(fetchMode), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "获取方式仅支持 MANUAL、FTP、FTPS、HTTP");
+        Require.isTrue(channelBillFetchModes(channel).contains(fetchMode),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道未声明支持该账单获取方式");
+        Require.isTrue(command.getEnabled() != null && (command.getEnabled() == 0 || command.getEnabled() == 1),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "启用状态只能是 0 或 1");
+        if ("HTTP".equals(fetchMode)) {
+            Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 获取地址不能为空");
+            Require.isTrue(pageMode == null || "PAGE".equals(pageMode) || "CURSOR".equals(pageMode),
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 分页模式仅支持 PAGE、CURSOR");
+        }
+        if ("FTP".equals(fetchMode) || "FTPS".equals(fetchMode)) {
+            Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 服务器地址不能为空");
+            Require.notBlank(remotePath, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "FTP/FTPS 远端路径不能为空");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Long operatorId = PaymentContextSupport.currentUserId();
+        PaymentChannelBillSourceEntity entity = command.getId() == null ? new PaymentChannelBillSourceEntity() : billSourceMapper.selectById(command.getId());
+        if (command.getId() != null) {
+            Require.notNull(entity, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+            Require.isTrue(tenantId.equals(entity.getTenantId()) && Integer.valueOf(0).equals(entity.getDelFlag()),
+                PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+        } else {
+            entity.setId(IdWorker.getId());
+            entity.setTenantId(tenantId);
+            entity.setCreatedBy(operatorId);
+            entity.setCreatedAt(now);
+        }
+        entity.setContractId(contract.getId());
+        entity.setChannelCode(channelCode);
+        entity.setFetchMode(fetchMode);
+        entity.setEndpoint(endpoint);
+        entity.setRemotePath(remotePath);
+        entity.setCredentialRef(credentialRef);
+        entity.setPageMode(pageMode);
+        entity.setEnabled(command.getEnabled());
+        entity.setUpdatedBy(operatorId);
+        entity.setUpdatedAt(now);
+        if (command.getId() == null) {
+            billSourceMapper.insert(entity);
+        } else {
+            billSourceMapper.updateById(entity);
+        }
+        auditService.record(
+                PaymentOperationAuditService.ACTION_SAVE_CHANNEL_BILL_SOURCE,
+                PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL_BILL_SOURCE,
+                String.valueOf(entity.getId()),
+                PaymentOperationAuditService.RESULT_SUCCESS);
+        return detailBillSource(entity.getId());
+    }
+
+    public PageResult<PaymentChannelBillFetchBatchVO> pageBillFetchBatches(PaymentConfigPageQuery query) {
+        PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
+        String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        long total = billFetchBatchMapper.countFetchBatches(tenantId, keyword);
+        long page = resolved.getPage();
+        long size = resolved.getSize();
+        List<PaymentChannelBillFetchBatchVO> rows = billFetchBatchMapper.selectFetchBatchPage(tenantId, keyword, size, (page - 1) * size);
+        rows.forEach(this::fillFetchBatchSummary);
+        return PageResult.of(rows, total, page, size);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentReconciliationVO fetchChannelBill(FetchPaymentChannelBillCommand command) {
+        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
+        Require.notNull(command.getSourceId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源 ID 不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        PaymentChannelBillSourceEntity source = billSourceMapper.selectById(command.getSourceId());
+        Require.notNull(source, PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+        Require.isTrue(tenantId.equals(source.getTenantId()) && Integer.valueOf(0).equals(source.getDelFlag()),
+                PaymentCode.PAYMENT_RECONCILIATION_NOT_FOUND.getCode(), "账单获取源不存在");
+        Require.isTrue(Integer.valueOf(1).equals(source.getEnabled()),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源未启用");
+        if ("MANUAL".equals(source.getFetchMode())) {
+            throw new IllegalArgumentException("手动获取方式请使用导入账单入口");
+        }
+        Require.isTrue("HTTP".equals(source.getFetchMode()) || "FTP".equals(source.getFetchMode()) || "FTPS".equals(source.getFetchMode()),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "当前仅支持 HTTP、FTP、FTPS 自动获取执行");
+
+        LocalDateTime started = LocalDateTime.now();
+        PaymentChannelBillFetchBatchEntity fetchBatch = createFetchBatch(source, command, tenantId, started);
+        billFetchBatchMapper.insert(fetchBatch);
+        try {
+            ImportPaymentReconciliationCommand importCommand = fetchBill(source, command);
+            PaymentReconciliationVO reconciliation = createReconciliation(
+                    importCommand,
+                    tenantId,
+                    normalizeCode(source.getChannelCode()),
+                    importCommand.getBillFileName(),
+                    importCommand.getFileDigest(),
+                    PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL);
+            fetchBatch.setReconciliationId(reconciliation.getId());
+            fetchBatch.setResponseDigest(importCommand.getFileDigest());
+            fetchBatch.setTotalCount(importCommand.getItems().size());
+            fetchBatch.setFetchStatus(FETCH_STATUS_SUCCESS);
+            fetchBatch.setFetchResult(fetchModeName(source.getFetchMode()) + "通道账单获取并对账完成");
+            fetchBatch.setFetchEndTime(LocalDateTime.now());
+            fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
+            billFetchBatchMapper.updateById(fetchBatch);
+            auditService.record(
+                    PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL,
+                    PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL_BILL_FETCH_BATCH,
+                    fetchBatch.getBatchNo(),
+                    PaymentOperationAuditService.RESULT_SUCCESS);
+            return reconciliation;
+        } catch (RuntimeException ex) {
+            fetchBatch.setFetchStatus(FETCH_STATUS_FAILED);
+            fetchBatch.setFetchResult(truncate(ex.getMessage(), 512));
+            fetchBatch.setFetchEndTime(LocalDateTime.now());
+            fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
+            billFetchBatchMapper.updateById(fetchBatch);
+            throw ex;
+        }
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public PaymentReconciliationVO importReconciliation(ImportPaymentReconciliationCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
@@ -121,6 +319,39 @@ public class PaymentReconciliationService {
         Long tenantId = PaymentContextSupport.currentTenantId();
         return createReconciliation(command, tenantId, channelCode, billFileName, fileDigest,
                 PaymentOperationAuditService.ACTION_IMPORT_RECONCILIATION);
+    }
+
+    private PaymentChannelContract selectBillSourceContract(Long contractId, Long tenantId) {
+        PaymentChannelContract contract = channelContractMapper.selectById(contractId);
+        Require.notNull(contract, PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND.getCode(), "签约通道不存在");
+        Require.isTrue(tenantId.equals(contract.getTenantId()) && Integer.valueOf(0).equals(contract.getDelFlag()),
+                PaymentCode.PAYMENT_CHANNEL_CONTRACT_NOT_FOUND.getCode(), "签约通道不存在");
+        Require.isTrue(Integer.valueOf(1).equals(contract.getStatus()),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "签约通道未启用");
+        return contract;
+    }
+
+    private PaymentChannel selectBillSourceChannel(PaymentChannelContract contract, Long tenantId) {
+        PaymentChannel channel = channelMapper.selectById(contract.getChannelId());
+        Require.notNull(channel, PaymentCode.PAYMENT_CHANNEL_NOT_FOUND.getCode(), "支付通道不存在");
+        Require.isTrue(tenantId.equals(channel.getTenantId()) && Integer.valueOf(0).equals(channel.getDelFlag()),
+                PaymentCode.PAYMENT_CHANNEL_NOT_FOUND.getCode(), "支付通道不存在");
+        Require.isTrue(Integer.valueOf(1).equals(channel.getStatus()),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道未启用");
+        Require.notBlank(channel.getChannelCode(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道编码不能为空");
+        return channel;
+    }
+
+    private Set<String> channelBillFetchModes(PaymentChannel channel) {
+        String modes = PaymentContextSupport.trimToNull(channel.getBillFetchModes());
+        Require.notBlank(modes, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道未配置账单获取方式");
+        Set<String> result = new LinkedHashSet<>();
+        Arrays.stream(modes.split(","))
+                .map(this::normalizeCode)
+                .filter(item -> item != null && PaymentChannelBillFetchModeEnum.contains(item))
+                .forEach(result::add);
+        Require.isTrue(!result.isEmpty(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "支付通道账单获取方式配置无效");
+        return result;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -197,6 +428,7 @@ public class PaymentReconciliationService {
                 ? "通道账单与本地支付成功订单金额一致"
                 : "发现 " + summary.differenceCount() + " 条对账差异，需进入差异处理");
         reconciliationMapper.insert(reconciliation);
+        insertBillBatch(command, reconciliation, summary, now, operatorId, tenantId, channelCode, batchNo);
 
         auditService.record(
                 auditAction,
@@ -207,6 +439,39 @@ public class PaymentReconciliationService {
                 reconciliation.getMatchStatus(), reconciliation.getTotalAmount(), channelCode,
                 elapsedMillis(startedAt), PaymentOperationAuditService.RESULT_SUCCESS);
         return detailReconciliation(reconciliation.getId());
+    }
+
+    private void insertBillBatch(
+            ImportPaymentReconciliationCommand command,
+            PaymentReconciliationEntity reconciliation,
+            ReconciliationSummary summary,
+            LocalDateTime now,
+            Long operatorId,
+            Long tenantId,
+            String channelCode,
+            String batchNo) {
+        PaymentChannelBillBatchEntity batch = new PaymentChannelBillBatchEntity();
+        batch.setId(IdWorker.getId());
+        batch.setBatchNo(batchNo);
+        batch.setReconciliationId(reconciliation.getId());
+        batch.setChannelCode(channelCode);
+        batch.setBillDate(command.getBillDate());
+        batch.setFileDigest(reconciliation.getFileDigest());
+        batch.setBillFileId(command.getBillFileId());
+        batch.setBillFileName(reconciliation.getBillFileName());
+        batch.setTotalCount(command.getItems().size());
+        batch.setTotalAmount(summary.totalAmount());
+        batch.setTotalFee(summary.totalFee());
+        batch.setImportStatus(reconciliation.getMatchStatus());
+        batch.setImporterId(operatorId);
+        batch.setImporterName(PaymentContextSupport.currentPrincipalName());
+        batch.setImportTime(now);
+        batch.setTenantId(tenantId);
+        batch.setCreatedBy(operatorId);
+        batch.setCreatedAt(now);
+        batch.setUpdatedBy(operatorId);
+        batch.setUpdatedAt(now);
+        billBatchMapper.insert(batch);
     }
 
     private ReconciliationSummary persistBillDetailsAndDifferences(
@@ -279,6 +544,150 @@ public class PaymentReconciliationService {
                 differences);
         differences.forEach(differenceMapper::insert);
         return new ReconciliationSummary(totalAmount, totalFee, differenceCount);
+    }
+
+    private PaymentChannelBillFetchBatchEntity createFetchBatch(
+            PaymentChannelBillSourceEntity source,
+            FetchPaymentChannelBillCommand command,
+            Long tenantId,
+            LocalDateTime started) {
+        LocalDateTime requestStart = command.getStartTime() == null
+                ? command.getBillDate().atStartOfDay()
+                : command.getStartTime();
+        LocalDateTime requestEnd = command.getEndTime() == null
+                ? command.getBillDate().plusDays(1).atStartOfDay()
+                : command.getEndTime();
+        Require.isTrue(requestEnd.isAfter(requestStart),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "请求结束时间必须晚于开始时间");
+        Long operatorId = PaymentContextSupport.currentUserId();
+        PaymentChannelBillFetchBatchEntity batch = new PaymentChannelBillFetchBatchEntity();
+        batch.setId(IdWorker.getId());
+        batch.setSourceId(source.getId());
+        batch.setBatchNo(numberService.next(PaymentNumberService.PAY_RECON_BATCH_NO));
+        batch.setChannelCode(normalizeCode(source.getChannelCode()));
+        batch.setFetchMode(source.getFetchMode());
+        batch.setBillDate(command.getBillDate());
+        batch.setRequestStartTime(requestStart);
+        batch.setRequestEndTime(requestEnd);
+        batch.setRequestPage("PAGE".equals(source.getPageMode()) ? 1 : null);
+        batch.setPageSize(200);
+        batch.setTotalCount(0);
+        batch.setFetchStatus(FETCH_STATUS_PROCESSING);
+        batch.setOperatorId(operatorId);
+        batch.setOperatorName(PaymentContextSupport.currentPrincipalName());
+        batch.setFetchStartTime(started);
+        batch.setTenantId(tenantId);
+        batch.setCreatedBy(operatorId);
+        batch.setCreatedAt(started);
+        batch.setUpdatedBy(operatorId);
+        batch.setUpdatedAt(started);
+        return batch;
+    }
+
+    private ImportPaymentReconciliationCommand fetchHttpBill(
+            PaymentChannelBillSourceEntity source,
+            FetchPaymentChannelBillCommand command) {
+        String endpoint = PaymentContextSupport.trimToNull(source.getEndpoint());
+        Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 获取地址不能为空");
+        LocalDateTime startTime = command.getStartTime() == null ? command.getBillDate().atStartOfDay() : command.getStartTime();
+        LocalDateTime endTime = command.getEndTime() == null ? command.getBillDate().plusDays(1).atStartOfDay() : command.getEndTime();
+        try {
+            String url = appendQuery(endpoint, startTime, endTime, command.getBillDate());
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(java.time.Duration.ofSeconds(15))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            Require.isTrue(response.statusCode() >= 200 && response.statusCode() < 300,
+                    PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 账单获取失败，状态码：" + response.statusCode());
+            return parseBillResponse(source, command, httpBillFileName(source.getChannelCode(), command.getBillDate()), response.body());
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("HTTP 账单获取失败：" + ex.getMessage(), ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalArgumentException("HTTP 账单获取被中断", ex);
+        }
+    }
+
+    private ImportPaymentReconciliationCommand fetchBill(
+            PaymentChannelBillSourceEntity source,
+            FetchPaymentChannelBillCommand command) {
+        if ("HTTP".equals(source.getFetchMode())) {
+            return fetchHttpBill(source, command);
+        }
+        PaymentChannelBillFileClient.RemoteBillFile file = billFileClient.fetch(source);
+        try {
+            return parseBillResponse(source, command, file.fileName(), file.body());
+        } catch (IOException ex) {
+            throw new IllegalArgumentException(source.getFetchMode() + " 账单解析失败：" + ex.getMessage(), ex);
+        }
+    }
+
+    private ImportPaymentReconciliationCommand parseBillResponse(
+            PaymentChannelBillSourceEntity source,
+            FetchPaymentChannelBillCommand command,
+            String billFileName,
+            String body) throws IOException {
+        JsonNode root = objectMapper.readTree(body);
+        JsonNode itemsNode = root.isArray() ? root : root.get("items");
+        Require.isTrue(itemsNode != null && itemsNode.isArray() && !itemsNode.isEmpty(),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单响应必须包含非空 items 数组");
+        List<ImportPaymentReconciliationCommand.BillItem> items = new ArrayList<>();
+        for (JsonNode node : itemsNode) {
+            ImportPaymentReconciliationCommand.BillItem item = new ImportPaymentReconciliationCommand.BillItem();
+            item.setChannelTradeNo(requiredText(node, "channelTradeNo"));
+            item.setTradeType(requiredText(node, "tradeType"));
+            item.setAmount(requiredLong(node, "amount"));
+            item.setFee(requiredLong(node, "fee"));
+            item.setTradeTime(LocalDateTime.parse(requiredText(node, "tradeTime").replace(' ', 'T')));
+            items.add(item);
+        }
+        String digest = sha256(body);
+        ImportPaymentReconciliationCommand importCommand = new ImportPaymentReconciliationCommand();
+        importCommand.setChannelCode(source.getChannelCode());
+        importCommand.setBillDate(command.getBillDate());
+        importCommand.setBillFileName(PaymentContextSupport.trimToNull(billFileName));
+        importCommand.setFileDigest(digest);
+        importCommand.setItems(items);
+        return importCommand;
+    }
+
+    private String appendQuery(String endpoint, LocalDateTime startTime, LocalDateTime endTime, LocalDate billDate) {
+        String separator = endpoint.contains("?") ? "&" : "?";
+        return endpoint + separator
+                + "billDate=" + encode(billDate.toString())
+                + "&startTime=" + encode(startTime.toString())
+                + "&endTime=" + encode(endTime.toString())
+                + "&page=1&pageSize=200";
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String requiredText(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        Require.isTrue(value != null && !value.asText().isBlank(),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单明细缺少字段：" + field);
+        return value.asText();
+    }
+
+    private Long requiredLong(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        Require.isTrue(value != null && value.canConvertToLong(),
+                PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单明细金额字段无效：" + field);
+        return value.asLong();
+    }
+
+    private String httpBillFileName(String channelCode, LocalDate billDate) {
+        return normalizeCode(channelCode) + "-" + billDate + "-http.bill";
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     private void collectBillTradeNo(
@@ -715,6 +1124,16 @@ public class PaymentReconciliationService {
         vo.setMatchStatusName(reconciliationStatusName(vo.getMatchStatus()));
     }
 
+    private void fillBillSourceSummary(PaymentChannelBillSourceVO vo) {
+        vo.setFetchModeName(fetchModeName(vo.getFetchMode()));
+        vo.setEnabledName(Integer.valueOf(1).equals(vo.getEnabled()) ? "启用" : "停用");
+    }
+
+    private void fillFetchBatchSummary(PaymentChannelBillFetchBatchVO vo) {
+        vo.setFetchModeName(fetchModeName(vo.getFetchMode()));
+        vo.setFetchStatusName(fetchStatusName(vo.getFetchStatus()));
+    }
+
     private void fillBillDetailSummary(PaymentChannelBillDetailVO vo) {
         vo.setTradeTypeName(tradeTypeName(vo.getTradeType()));
         vo.setMatchStatusName(reconciliationStatusName(vo.getMatchStatus()));
@@ -751,6 +1170,14 @@ public class PaymentReconciliationService {
             return "手续费";
         }
         return tradeType;
+    }
+
+    private String fetchModeName(String fetchMode) {
+        return PaymentChannelBillFetchModeEnum.labelOf(fetchMode);
+    }
+
+    private String fetchStatusName(String status) {
+        return PaymentChannelBillFetchStatusEnum.labelOf(status);
     }
 
     private String normalizeCode(String value) {
@@ -794,6 +1221,15 @@ public class PaymentReconciliationService {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(builder.toString().getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 algorithm is unavailable", ex);
+        }
+    }
+
+    private String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 algorithm is unavailable", ex);
         }

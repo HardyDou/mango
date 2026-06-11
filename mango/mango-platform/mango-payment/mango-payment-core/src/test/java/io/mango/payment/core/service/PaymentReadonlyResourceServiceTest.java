@@ -512,7 +512,7 @@ class PaymentReadonlyResourceServiceTest {
 
         assertThat(actions)
                 .extracting(action -> action.getActionCode())
-                .containsExactly("ACTIVE_QUERY", "CLOSE_PAYMENT_ORDER", "ADD_EVIDENCE", "MANUAL_CLOSE")
+                .containsExactly("ACTIVE_QUERY", "CLOSE_PAYMENT_ORDER", "ACTIVE_REFUND_QUERY", "ADD_EVIDENCE", "MANUAL_CLOSE")
                 .doesNotContain("REFUND_COMPENSATE", "NOTIFY_RETRY");
         assertThat(actions.stream()
                 .filter(action -> "ACTIVE_QUERY".equals(action.getActionCode()))
@@ -521,6 +521,12 @@ class PaymentReadonlyResourceServiceTest {
                 .getAllowedExceptionTypes())
                 .containsExactlyInAnyOrder("DUPLICATE_PAYMENT", "PAY_TIMEOUT", "CHANNEL_FAILED")
                 .doesNotContain("REFUND_MISMATCH");
+        assertThat(actions.stream()
+                .filter(action -> "ACTIVE_REFUND_QUERY".equals(action.getActionCode()))
+                .findFirst()
+                .orElseThrow()
+                .getAllowedExceptionTypes())
+                .containsExactly("REFUND_MISMATCH");
         assertThat(actions.stream()
                 .filter(action -> "ADD_EVIDENCE".equals(action.getActionCode()))
                 .findFirst()
@@ -676,8 +682,8 @@ class PaymentReadonlyResourceServiceTest {
     }
 
     @Test
-    @DisplayName("handleExceptionOrder should not couple payment order number to fixed length")
-    void handleExceptionOrder_activeQueryVariableLengthPaymentOrder_triggersChannelQuery() {
+    @DisplayName("handleExceptionOrder should reject non numgen payment order number")
+    void handleExceptionOrder_activeQueryNonNumgenPaymentOrder_rejects() {
         PaymentExceptionOrderEntity entity = new PaymentExceptionOrderEntity();
         entity.setId(400013L);
         entity.setExceptionNo("EX202606101780896910696123456");
@@ -687,23 +693,6 @@ class PaymentReadonlyResourceServiceTest {
         entity.setHandleStatus("PENDING");
         entity.setDelFlag(0);
         when(exceptionOrderMapper.selectById(400013L)).thenReturn(entity);
-        when(channelOrderQueryService.queryChannelPayment("PO202606101780896910696123456"))
-                .thenReturn(new PaymentChannelOrderQueryService.QueryResult(
-                        "PO202606101780896910696123456",
-                        "PAYING",
-                        null,
-                        false,
-                        0L,
-                        "NO_CHANGE"));
-        PaymentExceptionOrderVO detail = new PaymentExceptionOrderVO();
-        detail.setId(400013L);
-        detail.setExceptionNo("EX202606101780896910696123456");
-        detail.setHandleStatus("HANDLED");
-        when(exceptionOrderMapper.handleExceptionOrder(eq(1L), eq(400013L), eq("HANDLED"), eq("ACTIVE_QUERY"),
-                eq("支付超时后主动查单"),
-                eq("根据通道查单结果处理异常；查单结果：支付订单 PO202606101780896910696123456 当前状态 PAYING，本地状态未变化"),
-                eq(null), eq(1001L), eq("admin"), any(LocalDateTime.class))).thenReturn(1);
-        when(exceptionOrderMapper.selectExceptionOrderDetail(1L, 400013L)).thenReturn(detail);
 
         HandlePaymentExceptionOrderCommand command = new HandlePaymentExceptionOrderCommand();
         command.setId(400013L);
@@ -711,13 +700,13 @@ class PaymentReadonlyResourceServiceTest {
         command.setHandleReason("支付超时后主动查单");
         command.setHandleResult("根据通道查单结果处理异常");
 
-        service.handleExceptionOrder(command);
+        assertThatThrownBy(() -> service.handleExceptionOrder(command))
+                .isInstanceOf(BizException.class)
+                .hasMessage("主动查单动作必须关联支付订单号");
 
-        verify(channelOrderQueryService).queryChannelPayment("PO202606101780896910696123456");
-        verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400013L), eq("HANDLED"), eq("ACTIVE_QUERY"),
-                eq("支付超时后主动查单"),
-                eq("根据通道查单结果处理异常；查单结果：支付订单 PO202606101780896910696123456 当前状态 PAYING，本地状态未变化"),
-                eq(null), eq(1001L), eq("admin"), any(LocalDateTime.class));
+        verify(channelOrderQueryService, never()).queryChannelPayment("PO202606101780896910696123456");
+        verify(exceptionOrderMapper, never()).handleExceptionOrder(
+                any(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), anyString(), any());
     }
 
     @Test
@@ -774,6 +763,53 @@ class PaymentReadonlyResourceServiceTest {
         verifyNoInteractions(channelOrderQueryService, channelOrderCloseService);
         verify(exceptionOrderMapper, never()).handleExceptionOrder(
                 any(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), anyString(), any());
+    }
+
+    @Test
+    @DisplayName("handleExceptionOrder should trigger refund query for refund mismatch")
+    void handleExceptionOrder_activeRefundQuery_triggersChannelRefundQuery() {
+        PaymentExceptionOrderEntity entity = new PaymentExceptionOrderEntity();
+        entity.setId(400014L);
+        entity.setExceptionNo("EX-REFUND-QUERY");
+        entity.setRelatedOrderNo("RO2026061000000014");
+        entity.setExceptionType(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH);
+        entity.setTenantId(1L);
+        entity.setHandleStatus("PENDING");
+        entity.setDelFlag(0);
+        when(exceptionOrderMapper.selectById(400014L)).thenReturn(entity);
+        when(channelRefundQueryService.queryChannelRefund("RO2026061000000014"))
+                .thenReturn(new PaymentChannelRefundQueryService.QueryResult(
+                        "RO2026061000000014",
+                        "SUCCESS",
+                        "RFLOW2026061000000014",
+                        true,
+                        2L,
+                        "UPDATED"));
+        PaymentExceptionOrderVO detail = new PaymentExceptionOrderVO();
+        detail.setId(400014L);
+        detail.setExceptionNo("EX-REFUND-QUERY");
+        detail.setHandleStatus("HANDLED");
+        when(exceptionOrderMapper.handleExceptionOrder(eq(1L), eq(400014L), eq("HANDLED"), eq("ACTIVE_REFUND_QUERY"),
+                eq("查退款确认通道结果"),
+                eq("根据通道查退款结果处理异常；查退款结果：退款订单 RO2026061000000014 当前状态 SUCCESS，已按通道结果推进"),
+                eq("refund-query-evidence"), eq(1001L), eq("admin"), any(LocalDateTime.class))).thenReturn(1);
+        when(exceptionOrderMapper.selectExceptionOrderDetail(1L, 400014L)).thenReturn(detail);
+
+        HandlePaymentExceptionOrderCommand command = new HandlePaymentExceptionOrderCommand();
+        command.setId(400014L);
+        command.setHandleAction("ACTIVE_REFUND_QUERY");
+        command.setHandleReason("查退款确认通道结果");
+        command.setHandleResult("根据通道查退款结果处理异常");
+        command.setHandleEvidence("refund-query-evidence");
+
+        service.handleExceptionOrder(command);
+
+        verify(channelRefundQueryService).queryChannelRefund("RO2026061000000014");
+        verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400014L), eq("HANDLED"), eq("ACTIVE_REFUND_QUERY"),
+                eq("查退款确认通道结果"),
+                eq("根据通道查退款结果处理异常；查退款结果：退款订单 RO2026061000000014 当前状态 SUCCESS，已按通道结果推进"),
+                eq("refund-query-evidence"), eq(1001L), eq("admin"), any(LocalDateTime.class));
+        verifyNoInteractions(channelOrderQueryService, channelOrderCloseService);
     }
 
     @Test

@@ -12,6 +12,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.command.SavePaymentChannelCapabilityCommand;
 import io.mango.payment.api.command.SavePaymentChannelCommand;
+import io.mango.payment.api.enums.PaymentChannelBillFetchModeEnum;
 import io.mango.payment.api.enums.PaymentChannelCode;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentChannelCapabilityVO;
@@ -42,6 +43,10 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
 
     private static final TypeReference<List<Map<String, Object>>> FIELD_TEMPLATE_TYPE = new TypeReference<>() {
     };
+    private static final String ROUTE_ENV_MANGO_PAY = "MANGO_PAY";
+    private static final String ROUTE_ENV_OFFLINE_COLLECTION = "OFFLINE_COLLECTION";
+    private static final String ROUTE_ENV_PROD = "PROD";
+    private static final String CHANNEL_PRODUCT_ENV = "CHANNEL_PRODUCT";
     private static final Set<String> CHANNEL_TYPES = Set.of("BUILTIN_VIRTUAL", "BUILTIN_OFFLINE", "AGGREGATOR", "BANK", "DIRECT");
     private static final Set<String> BUILTIN_CHANNEL_CODES = Set.of("MANGO_PAY", "OFFLINE_COLLECTION");
     private static final Set<String> TERMINAL_TYPES = Set.of("WEB", "H5", "APP", "MP");
@@ -173,6 +178,7 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
         Require.notBlank(command.getAdapterType(), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "适配器类型不能为空");
         Require.notNull(command.getStatus(), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "状态不能为空");
         validateFieldTemplate(command.getFieldTemplateJson());
+        validateBillFetchModes(command.getBillFetchModes());
         validateCapabilities(command.getCapabilities());
     }
 
@@ -226,11 +232,25 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
             Require.notBlank(command.getMethodCode(), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "标准支付方式编码不能为空");
             Require.notBlank(command.getTerminalType(), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "终端类型不能为空");
             Require.isTrue(TERMINAL_TYPES.contains(command.getTerminalType().trim()), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "终端类型不正确");
-            Require.notBlank(command.getEnvironment(), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "接入场景不能为空");
             Require.notNull(command.getStatus(), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "通道能力状态不能为空");
             Money.requireRange(command.getMinAmount(), command.getMaxAmount(), "通道能力");
-            String key = command.getMethodCode().trim() + "|" + command.getTerminalType().trim() + "|" + command.getEnvironment().trim();
+            String key = command.getMethodCode().trim() + "|" + command.getTerminalType().trim();
             Require.isTrue(keys.add(key), PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "通道能力不能重复");
+        }
+    }
+
+    private void validateBillFetchModes(List<String> modes) {
+        if (modes == null || modes.isEmpty()) {
+            return;
+        }
+        Set<String> normalizedModes = new LinkedHashSet<>();
+        for (String mode : modes) {
+            String normalized = normalizeCode(mode);
+            Require.notBlank(normalized, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "账单获取方式不能为空");
+            Require.isTrue(PaymentChannelBillFetchModeEnum.contains(normalized),
+                    PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "账单获取方式仅支持 MANUAL、FTP、FTPS、HTTP");
+            Require.isTrue(normalizedModes.add(normalized),
+                    PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "账单获取方式不能重复");
         }
     }
 
@@ -242,7 +262,8 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
         entity.setGatewayBaseUrl(PaymentContextSupport.trimToNull(command.getGatewayBaseUrl()));
         entity.setFieldTemplateJson(PaymentContextSupport.trimToNull(command.getFieldTemplateJson()));
         entity.setCapabilitySummary(PaymentContextSupport.trimToNull(command.getCapabilitySummary()));
-        entity.setEnvironment("CHANNEL_PRODUCT");
+        entity.setBillFetchModes(joinBillFetchModes(command.getBillFetchModes()));
+        entity.setEnvironment(routeEnvironment(command.getChannelCode()));
         entity.setStatus(command.getStatus());
     }
 
@@ -259,11 +280,11 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
                     capability = new PaymentChannelCapability();
                     capability.setChannelId(channel.getId());
                     capability.setTenantId(channel.getTenantId());
-                    copyCapability(command, capability);
+                    copyCapability(channel, command, capability);
                     capabilityMapper.insert(capability);
                 } else {
                     retainedIds.add(capability.getId());
-                    copyCapability(command, capability);
+                    copyCapability(channel, command, capability);
                     capabilityMapper.updateById(capability);
                 }
                 retainedIds.add(capability.getId());
@@ -277,10 +298,10 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
         }
     }
 
-    private void copyCapability(SavePaymentChannelCapabilityCommand command, PaymentChannelCapability capability) {
+    private void copyCapability(PaymentChannel channel, SavePaymentChannelCapabilityCommand command, PaymentChannelCapability capability) {
         capability.setMethodCode(command.getMethodCode().trim());
         capability.setTerminalType(command.getTerminalType().trim());
-        capability.setEnvironment(command.getEnvironment().trim());
+        capability.setEnvironment(routeEnvironment(channel.getChannelCode()));
         capability.setSupportsRefund(defaultSwitch(command.getSupportsRefund()));
         capability.setSupportsQuery(defaultSwitch(command.getSupportsQuery()));
         capability.setSupportsClose(defaultSwitch(command.getSupportsClose()));
@@ -293,6 +314,27 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
 
     private int defaultSwitch(Integer value) {
         return value == null ? 1 : value;
+    }
+
+    private String routeEnvironment(PaymentChannelCode channelCode) {
+        if (PaymentChannelCode.MANGO_PAY == channelCode) {
+            return ROUTE_ENV_MANGO_PAY;
+        }
+        if (PaymentChannelCode.OFFLINE_COLLECTION == channelCode) {
+            return ROUTE_ENV_OFFLINE_COLLECTION;
+        }
+        return ROUTE_ENV_PROD;
+    }
+
+    private String routeEnvironment(String channelCode) {
+        if (!StringUtils.hasText(channelCode)) {
+            return CHANNEL_PRODUCT_ENV;
+        }
+        try {
+            return routeEnvironment(PaymentChannelCode.valueOf(channelCode));
+        } catch (IllegalArgumentException ex) {
+            return CHANNEL_PRODUCT_ENV;
+        }
     }
 
     private void ensureCapabilityRemovable(PaymentChannelCapability capability) {
@@ -323,6 +365,7 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
         vo.setGatewayBaseUrl(entity.getGatewayBaseUrl());
         vo.setFieldTemplateJson(entity.getFieldTemplateJson());
         vo.setCapabilitySummary(entity.getCapabilitySummary());
+        vo.setBillFetchModes(splitBillFetchModes(entity.getBillFetchModes()));
         vo.setStatus(entity.getStatus());
         vo.setCreateTime(entity.getCreatedAt());
         vo.setUpdateTime(entity.getUpdatedAt());
@@ -351,5 +394,33 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
 
     private String trimToNull(Object value) {
         return PaymentContextSupport.trimToNull(value == null ? null : String.valueOf(value));
+    }
+
+    private String normalizeCode(String value) {
+        String text = PaymentContextSupport.trimToNull(value);
+        return text == null ? null : text.toUpperCase();
+    }
+
+    private String joinBillFetchModes(List<String> modes) {
+        if (modes == null || modes.isEmpty()) {
+            return null;
+        }
+        return modes.stream()
+                .map(this::normalizeCode)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .collect(Collectors.joining(","));
+    }
+
+    private List<String> splitBillFetchModes(String modes) {
+        String text = PaymentContextSupport.trimToNull(modes);
+        if (text == null) {
+            return List.of();
+        }
+        return List.of(text.split(",")).stream()
+                .map(this::normalizeCode)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
     }
 }

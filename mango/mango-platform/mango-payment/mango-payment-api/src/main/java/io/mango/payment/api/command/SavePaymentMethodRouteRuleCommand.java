@@ -46,9 +46,8 @@ public class SavePaymentMethodRouteRuleCommand implements Serializable {
     @Schema(description = "终端类型：WEB/H5", requiredMode = Schema.RequiredMode.REQUIRED)
     private String terminalType;
 
-    @NotBlank(message = "接入场景不能为空")
-    @Size(max = 32, message = "接入场景不能超过32个字符")
-    @Schema(description = "接入场景，例如 MANGO_PAY/PROD", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Size(max = 32, message = "内部路由域不能超过32个字符")
+    @Schema(description = "内部路由域，服务端按签约能力派生，保存时无需传入")
     private String environment;
 
     @NotBlank(message = "路由模式不能为空")

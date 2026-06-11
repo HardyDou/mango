@@ -86,7 +86,9 @@
           and (rr.subject_id is null or rr.subject_id = #{subjectId})
           and rr.method_code = #{methodCode}
           and rr.terminal_type = #{terminalType}
+          <if test="environment != null and environment != ''">
           and rr.environment = #{environment}
+          </if>
         order by case when rr.app_id = #{applicationId} then 0 else 1 end,
                  case when rr.subject_id = #{subjectId} then 0 else 1 end,
                  rri.priority asc,

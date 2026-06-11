@@ -135,13 +135,14 @@ public class PaymentMethodRouteServiceImpl implements IPaymentMethodRouteService
     public R<PaymentMethodRouteTrialVO> trialRoute(PaymentMethodRouteTrialCommand command) {
         validateTrial(command);
         Long tenantId = PaymentContextSupport.currentTenantId();
-        List<PaymentMethodRouteCandidate> candidates = routeRuleMapper.selectRouteCandidates(
+        String environment = PaymentContextSupport.trimToNull(command.getEnvironment());
+        var candidates = routeRuleMapper.selectRouteCandidates(
                 tenantId,
                 command.getApplicationId(),
                 command.getSubjectId(),
                 command.getMethodCode().trim(),
                 command.getTerminalType().trim(),
-                command.getEnvironment().trim());
+                environment);
         PaymentMethodRouteTrialVO result = new PaymentMethodRouteTrialVO();
         for (PaymentMethodRouteCandidate candidate : candidates) {
             String reason = filterReason(candidate, command.getAmount());
@@ -206,7 +207,7 @@ public class PaymentMethodRouteServiceImpl implements IPaymentMethodRouteService
         Require.notBlank(command.getRuleName(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "路由规则名称不能为空");
         Require.notBlank(command.getMethodCode(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "标准支付方式不能为空");
         Require.notBlank(command.getTerminalType(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "终端类型不能为空");
-        Require.notBlank(command.getEnvironment(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "接入场景不能为空");
+        resolveRouteEnvironment(command);
         Require.notBlank(command.getRouteMode(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "路由模式不能为空");
         Require.notNull(command.getFallbackEnabled(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "失败降级开关不能为空");
         Require.notNull(command.getStatus(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "状态不能为空");
@@ -228,7 +229,6 @@ public class PaymentMethodRouteServiceImpl implements IPaymentMethodRouteService
         Require.notNull(command.getSubjectId(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "企业主体不能为空");
         Require.notBlank(command.getMethodCode(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "标准支付方式不能为空");
         Require.notBlank(command.getTerminalType(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "终端类型不能为空");
-        Require.notBlank(command.getEnvironment(), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "接入场景不能为空");
         Money.cents(command.getAmount()).toPositiveCents("试算金额");
         Require.isTrue(TERMINAL_TYPES.contains(command.getTerminalType().trim()), PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "终端类型仅支持 WEB、H5");
         validateApplication(command.getApplicationId());
@@ -290,6 +290,24 @@ public class PaymentMethodRouteServiceImpl implements IPaymentMethodRouteService
                     command.getEnvironment().trim());
             Require.notNull(capability, PaymentCode.PAYMENT_CHANNEL_CONTRACT_CAPABILITY_INVALID);
         }
+    }
+
+    private void resolveRouteEnvironment(SavePaymentMethodRouteRuleCommand command) {
+        if (StringUtils.hasText(command.getEnvironment())) {
+            command.setEnvironment(command.getEnvironment().trim());
+            return;
+        }
+        Require.isTrue(command.getItems() != null && !command.getItems().isEmpty(),
+                PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "路由明细不能为空");
+        Long capabilityId = command.getItems().get(0).getContractCapabilityId();
+        Require.notNull(capabilityId, PaymentCode.PAYMENT_METHOD_ROUTE_INVALID.getCode(), "签约能力不能为空");
+        String environment = contractCapabilityMapper.selectRouteEnvironment(
+                PaymentContextSupport.currentTenantId(),
+                capabilityId,
+                command.getMethodCode().trim(),
+                command.getTerminalType().trim());
+        Require.notBlank(environment, PaymentCode.PAYMENT_CHANNEL_CONTRACT_CAPABILITY_INVALID);
+        command.setEnvironment(environment);
     }
 
     private void copy(SavePaymentMethodRouteRuleCommand command, PaymentMethodRouteRule entity) {

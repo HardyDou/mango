@@ -9,6 +9,7 @@ export { default as PaymentOrderView } from './views/payment-orders/index.vue';
 export { default as PaymentOfflineCollectionView } from './views/offline-collections/index.vue';
 export { default as PaymentOfflineRefundView } from './views/offline-refunds/index.vue';
 export { default as PaymentRefundOrderView } from './views/refund-orders/index.vue';
+export { default as PaymentRefundApprovalView } from './views/refund-approvals/index.vue';
 export { default as PaymentTransactionFlowView } from './views/transaction-flows/index.vue';
 export { default as PaymentExceptionOrderView } from './views/exception-orders/index.vue';
 export { default as PaymentNotificationRecordView } from './views/notification-records/index.vue';

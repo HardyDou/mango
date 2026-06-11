@@ -16,9 +16,6 @@
           <template #default="{ row }">{{ row.subjectName || valueText(row.subjectId) }}</template>
         </el-table-column>
         <el-table-column prop="terminalType" label="终端" width="90" />
-        <el-table-column label="接入场景" width="110">
-          <template #default="{ row }">{{ environmentText(row.environment) }}</template>
-        </el-table-column>
         <el-table-column label="模式" width="110">
           <template #default="{ row }">{{ routeModeText(row.routeMode) }}</template>
         </el-table-column>
@@ -75,7 +72,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="终端" prop="terminalType">
               <el-select v-model="editorForm.terminalType">
                 <el-option label="Web" value="WEB" />
@@ -83,15 +80,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="接入场景" prop="environment">
-              <el-select v-model="editorForm.environment">
-                <el-option label="芒果支付" value="MANGO_PAY" />
-                <el-option label="生产" value="PROD" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="路由模式" prop="routeMode">
               <el-select v-model="editorForm.routeMode">
                 <el-option label="优先级" value="PRIORITY" />
@@ -188,7 +177,7 @@
               <PaymentEntitySelect v-model="trialForm.subjectId" :api="paymentEnterpriseSubjectApi" label-field="subjectName" description-field="creditCodeMask" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="终端" prop="terminalType">
               <el-select v-model="trialForm.terminalType">
                 <el-option label="Web" value="WEB" />
@@ -196,15 +185,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="接入场景" prop="environment">
-              <el-select v-model="trialForm.environment">
-                <el-option label="芒果支付" value="MANGO_PAY" />
-                <el-option label="生产" value="PROD" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="金额（元）" prop="amountYuan">
               <el-input-number v-model="trialForm.amountYuan" :min="0.01" :precision="2" :step="1" controls-position="right" />
             </el-form-item>
@@ -276,7 +257,6 @@ const trialResult = ref<PaymentMethodRouteTrialResult>();
 const editorForm = reactive<RouteForm>({
   methodCode: '',
   terminalType: 'WEB',
-  environment: 'MANGO_PAY',
   routeMode: 'PRIORITY',
   fallbackEnabled: 1,
   status: 1,
@@ -287,7 +267,6 @@ const trialForm = reactive<TrialForm>({
   subjectId: '',
   methodCode: '',
   terminalType: 'WEB',
-  environment: 'MANGO_PAY',
   amountYuan: 0.01,
 });
 
@@ -298,7 +277,6 @@ const editorRules: FormRules = {
   ruleCode: [{ required: true, message: '请输入规则编码', trigger: 'blur' }],
   ruleName: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
   terminalType: [{ required: true, message: '请选择终端', trigger: 'change' }],
-  environment: [{ required: true, message: '请选择接入场景', trigger: 'change' }],
   routeMode: [{ required: true, message: '请选择路由模式', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
@@ -306,7 +284,6 @@ const trialRules: FormRules = {
   applicationId: [{ required: true, message: '请选择应用', trigger: 'change' }],
   subjectId: [{ required: true, message: '请选择企业主体', trigger: 'change' }],
   terminalType: [{ required: true, message: '请选择终端', trigger: 'change' }],
-  environment: [{ required: true, message: '请选择接入场景', trigger: 'change' }],
   amountYuan: [{ required: true, type: 'number', min: 0.01, message: '请输入金额', trigger: 'blur' }],
 };
 
@@ -368,7 +345,6 @@ async function openEditor(row?: PaymentMethodRouteRule) {
       ruleName: `${currentMethod.value?.methodName || currentMethod.value?.methodCode || '支付方式'}路由`,
       methodCode: currentMethod.value?.methodCode || '',
       terminalType: defaultTerminal(),
-      environment: 'MANGO_PAY',
       routeMode: 'PRIORITY',
       fallbackEnabled: 1,
       status: 1,
@@ -449,7 +425,6 @@ function openTrial() {
   trialResult.value = undefined;
   trialForm.methodCode = currentMethod.value?.methodCode || '';
   trialForm.terminalType = defaultTerminal();
-  trialForm.environment = 'MANGO_PAY';
   trialForm.amountYuan = 0.01;
   trialVisible.value = true;
 }
@@ -463,7 +438,6 @@ async function submitTrial() {
       subjectId: trialForm.subjectId,
       methodCode: trialForm.methodCode,
       terminalType: trialForm.terminalType,
-      environment: trialForm.environment,
       amount: yuanToCents(trialForm.amountYuan),
     });
   } finally {
@@ -480,7 +454,6 @@ function toRoutePayload(): PaymentMethodRouteRule {
     subjectId: emptyToUndefined(editorForm.subjectId),
     methodCode: currentMethod.value?.methodCode || String(editorForm.methodCode || ''),
     terminalType: String(editorForm.terminalType || 'WEB'),
-    environment: String(editorForm.environment || 'MANGO_PAY'),
     routeMode: String(editorForm.routeMode || 'PRIORITY'),
     fallbackEnabled: Number(editorForm.fallbackEnabled ?? 1),
     status: Number(editorForm.status ?? 1),
@@ -536,12 +509,6 @@ function routeModeText(value?: string) {
     HEALTH: '健康状态',
   };
   return map[String(value || '')] || value || '-';
-}
-
-function environmentText(value?: string) {
-  if (value === 'MANGO_PAY') return '芒果支付';
-  if (value === 'PROD') return '生产';
-  return value || '-';
 }
 
 function valueText(value: unknown) {

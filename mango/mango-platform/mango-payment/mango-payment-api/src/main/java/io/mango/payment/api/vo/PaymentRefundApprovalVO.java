@@ -51,6 +51,30 @@ public class PaymentRefundApprovalVO {
     @Schema(description = "审批状态名称")
     private String statusName;
 
+    @Schema(description = "工作流申请 ID")
+    private Long workflowApplyId;
+
+    @Schema(description = "工作流流程实例 ID")
+    private String workflowProcessInstanceId;
+
+    @Schema(description = "工作流流程定义编码")
+    private String workflowProcessDefinitionKey;
+
+    @Schema(description = "工作流申请状态")
+    private String workflowApplyStatus;
+
+    @Schema(description = "工作流申请状态名称")
+    private String workflowApplyStatusName;
+
+    @Schema(description = "工作流当前节点名称")
+    private String workflowCurrentTaskNames;
+
+    @Schema(description = "工作流当前处理人名称")
+    private String workflowCurrentAssigneeNames;
+
+    @Schema(description = "工作流状态同步时间")
+    private LocalDateTime workflowSyncedAt;
+
     @Schema(description = "申请人 ID")
     private Long applicantId;
 

@@ -35,7 +35,7 @@ public class SavePaymentChannelContractCommand implements Serializable {
     @Schema(description = "支付通道 ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long channelId;
 
-    @Size(max = 32, message = "接入场景不能超过32个字符")
+    @Size(max = 32, message = "内部路由域不能超过32个字符")
     @Schema(description = "路由域，服务端按支付通道派生，保存时无需传入")
     private String environment;
 

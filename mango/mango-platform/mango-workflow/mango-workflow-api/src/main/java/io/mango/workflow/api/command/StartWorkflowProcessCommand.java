@@ -2,7 +2,6 @@ package io.mango.workflow.api.command;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.mango.workflow.api.enums.WorkflowApplyRenderMode;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -16,8 +15,11 @@ import java.util.Map;
 public class StartWorkflowProcessCommand {
 
     @Schema(description = "Mango流程定义ID")
-    @NotNull(message = "流程定义ID不能为空")
     private Long definitionId;
+
+    @Schema(description = "流程定义编码，definitionId 为空时按编码发起最新已发布流程")
+    @Size(max = 128, message = "流程定义编码最多128个字符")
+    private String definitionKey;
 
     @Schema(description = "业务主键，可为空；为空时后端生成")
     @Size(max = 128, message = "业务主键最多128个字符")

@@ -57,18 +57,6 @@ public class PaymentMethodVO implements Serializable {
     @Schema(description = "收银台说明")
     private String description;
 
-    @Schema(description = "可见范围")
-    private String visibleScope;
-
-    @Schema(description = "路由策略说明")
-    private String routeStrategy;
-
-    @Schema(description = "单笔最小金额，单位分")
-    private Long minAmount;
-
-    @Schema(description = "单笔最大金额，单位分")
-    private Long maxAmount;
-
     @Schema(description = "排序")
     private Integer sort;
 

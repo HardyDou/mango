@@ -3,9 +3,9 @@
 ## 1. 验收范围
 
 - 页面：支付中心 / 对账结算 / 对账管理
-- 接口：`GET /payment/reconciliations/page`、`GET /payment/reconciliations/detail`、`GET /payment/reconciliations/statuses`、`POST /payment/reconciliations/import`
+- 接口：`GET /payment/reconciliations/page`、`GET /payment/reconciliations/detail`、`GET /payment/reconciliations/statuses`、`POST /payment/reconciliations/import`、`GET /payment/reconciliations/bill-sources/page`、`POST /payment/reconciliations/bill-sources`、`GET /payment/reconciliations/bill-fetch-batches/page`、`POST /payment/reconciliations/bill-fetch`
 - 权限：`payment:reconciliation:list`、`payment:reconciliation:query`、`payment:reconciliation:import`
-- 数据：`payment_reconciliation`、`payment_channel_bill_detail`、`payment_difference`、`payment_operation_audit`
+- 数据：`payment_reconciliation`、`payment_channel_bill_detail`、`payment_channel_bill_source`、`payment_channel_bill_fetch_batch`、`payment_difference`、`payment_operation_audit`
 - 部署形态：本地单体后端 + Mango Admin 单体前端
 
 ## 2. 执行环境
@@ -31,6 +31,11 @@
 | PAY-RECON-002 | `PaymentReconciliationService.importReconciliation` | 本地成功但通道账单缺失差异识别 | 本地成功支付 `PO-MISSING`、本地成功退款 `RO-MISSING`，账单仅包含 `CASHIER-PO001` | 导入账单后追加查询本地当天成功支付和成功退款；账单交易号集合未包含的本地成功支付生成 `LOCAL_SUCCESS_CHANNEL_MISSING`，本地成功退款生成 `LOCAL_REFUND_CHANNEL_MISSING`；差异金额分别为支付金额和退款金额，处理状态 `PENDING` | 后端服务测试，不涉及页面布局 | Maven Surefire 通过，差异由服务写入 `payment_difference` mapper | `PaymentReconciliationServiceTest.importReconciliation_localSuccessfulOrdersMissingFromBill_createsDifferences` | DONE |
 | PAY-DOMAIN-001 / PAY-DOMAIN-002 / PAY-DOMAIN-003 | `PaymentReconciliationService.importReconciliation` | 对账账单作为通道依据补偿推进状态机 | 本地支付订单 `PO-COMP` 为 `PAYING` 且通道账单 `PAYMENT` 金额一致；本地退款订单 `RO-COMP` 为 `REFUNDING` 且通道账单 `REFUND` 金额一致；金额不一致支付订单 `PO-MISMATCH` | 对账导入匹配到本地 `PAYING` 支付订单且金额一致时，通过 `PaymentOrderMapper.updatePayingQueryResult` CAS 推进 `PAYING -> SUCCESS`，写 `PAY_SUCCESS` 流水，推进业务订单成功并写支付/业务订单状态流；匹配到本地 `REFUNDING/PROCESSING` 退款订单且金额一致时，通过 `PaymentRefundOrderMapper.updateRefundingQueryResult` CAS 推进 `REFUNDING -> SUCCESS`，更新业务订单退款进度，写 `REFUND_SUCCESS` 流水并写退款/业务订单状态流；金额不一致时只生成差异，不执行补偿推进 | 后端服务测试；详情页通过状态流来源显示“对账补偿” | 状态机/对账聚焦测试 45 个通过 | `PaymentReconciliationServiceTest.importReconciliation_payingPaymentBillMatched_compensatesSuccessState`、`PaymentReconciliationServiceTest.importReconciliation_refundingBillMatched_compensatesSuccessState`、`PaymentReconciliationServiceTest.importReconciliation_payingPaymentAmountMismatch_createsDifferenceOnly` | DONE |
 | PAY-RECON-002 | `PaymentOrderMapper.selectSuccessfulChannelOrdersMissingInBill`、`PaymentRefundOrderMapper.selectSuccessfulChannelRefundsMissingInBill` | 本地成功缺账单的数据库级查询 | H2 MySQL 模式最小真实表：同日成功且未在账单集合中的支付/退款、同日已匹配、失败、次日、其他通道数据 | MyBatis 加载生产 `PaymentOrderMapper.xml`、`PaymentRefundOrderMapper.xml` 执行真实 XML SQL；仅返回同租户、同通道、同账单日、成功状态且不在账单交易号集合中的支付 `PO-MISSING` 和退款 `RO-MISSING`；不返回失败、其他日期、其他通道和已匹配数据 | 后端 mapper 集成测试，不涉及页面布局 | Maven Surefire 通过，验证生产 mapper XML 可执行；日期上界由 Java 传入 `nextBillDate`，SQL 不依赖数据库方言函数 | `PaymentReconciliationMapperIntegrationTest.selectSuccessfulChannelRecordsMissingInBill_returnsOnlyMissingRows` | DONE |
+| PAY-RECON-004 | `/payment/channels`、`/payment/channel-contracts/bill-sources/page`、`/payment/channel-contracts/bill-sources` | 通道账单获取源配置 | `MANGO_PAY`、获取方式 `MANUAL/FTP/FTPS/HTTP` | 支付通道声明支持的账单获取方式；签约通道维护具体获取源参数，包括服务端点、远端路径、分页参数和认证引用；保存时后端校验签约通道所属支付通道已声明该获取方式；认证引用只保存 `credentialRef`，不在业务表保存账号密码 | 签约通道“账单配置”弹窗只显示当前支付通道已声明的获取方式；对账管理页只选择已配置获取源发起获取和查看批次 | 后端聚焦测试通过，接口由真实后端返回 | `PaymentChannelServiceImplTest`、`PaymentReconciliationServiceTest.listBillFetchModes_returnsEnumBackedOptions`、`PaymentReconciliationServiceTest.saveBillSource_unsupportedChannelFetchMode_rejects` | DONE |
+| PAY-RECON-004 | `/payment/reconciliations/bill-fetch`、`/payment/reconciliations/bill-fetch-batches/page` | HTTP 接口按时间区间和分页参数拉取账单 | 账单日期、请求起止时间、页码、每页数量、接口响应 JSON | 获取批次记录开始/结束时间、请求参数、响应摘要、状态和错误信息；HTTP 响应解析后复用统一账单导入、匹配、差异和审计路径 | 对账管理页可从获取源发起拉取，并在获取批次列表查看结果 | E2E 全量支付中心通过；后端聚焦测试覆盖状态和解析链路 | `payment-center.spec.ts`、`PaymentReconciliationServiceTest` | DONE |
+| PAY-RECON-004 | `PaymentChannelBillFileClient`、`PaymentReconciliationService.fetchChannelBill` | FTP 远端账单文件拉取并导入对账 | 本地真实 FTP 协议服务，远端文件 `/bills/2026-06-06.json`，账单交易号 `FTP-PO001` | 通过 Commons Net `FTPClient` 连接、匿名登录、被动模式读取远端 JSON；读取成功后生成获取批次、对账批次和账单明细，匹配真实支付订单，批次状态为 `SUCCESS` | 后端协议测试，不涉及页面布局 | Maven Surefire 通过；断言 FTP 服务收到真实协议请求，账单明细和对账批次入库 mapper 被调用 | `PaymentReconciliationServiceTest.fetchChannelBill_ftpSource_fetchesRemoteBillAndImports` | DONE |
+| PAY-RECON-004 | `PaymentChannelBillFileClient` | FTP/FTPS 认证引用边界 | `credentialRef=credential:payment-bill-ftp` | FTP/FTPS 不允许在 endpoint 中携带账号密码；有 `credentialRef` 但没有认证 Provider 解析时，获取在导入前失败，不生成对账批次和账单明细 | 后端边界测试，不涉及页面布局 | Maven Surefire 通过；断言失败时未写入对账和账单明细 | `PaymentReconciliationServiceTest.fetchChannelBill_ftpCredentialRefWithoutProvider_rejectsBeforeImport` | DONE |
+| PAY-RECON-004 | `paymentChannelBillFetchJobHandler`、`payment_channel_bill_fetch_yesterday` | 通道账单定时拉取昨天账单 | 已启用且非手动的签约通道账单获取源 | 通过 `mango-job` 内置 Java Handler 调用统一 `fetchChannelBill`；默认任务每天 00:10 拉取昨天账单，参数可传 `billDate` 补跑；同一获取源同一账单日已有成功批次时跳过，失败时记录失败结果并继续其他获取源 | 不在支付模块自建定时任务；任务 SQL 默认 `DISABLED`，需运维启用 | 后端聚焦测试通过 | `PaymentChannelBillFetchScheduleServiceTest`、`PaymentChannelBillFetchJobHandlerTest` | DONE |
 
 ## 4. 回归抽查记录
 
@@ -44,8 +49,11 @@
 mvn -pl mango-platform/mango-payment/mango-payment-core,mango-platform/mango-payment/mango-payment-starter -am -Dtest=PaymentReadonlyResourceServiceTest -Dsurefire.failIfNoSpecifiedTests=false test -DskipTests=false
 mvn -f mango/pom.xml -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentReconciliationServiceTest,PaymentReconciliationMapperIntegrationTest,PaymentMangoPayChannelAdapterTest -Dsurefire.failIfNoSpecifiedTests=false test -DskipTests=false
 mvn -f mango/pom.xml -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentReconciliationServiceTest,PaymentChannelOrderQueryServiceTest,PaymentChannelRefundQueryServiceTest,PaymentChannelCallbackServiceTest,PaymentDuplicatePaymentServiceTest,PaymentOrderStatusFlowServiceTest,PaymentOrderStateServiceTest -Dsurefire.failIfNoSpecifiedTests=false test -DskipTests=false
+mvn -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentReconciliationServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+mvn -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentReadonlyResourceServiceTest,PaymentReconciliationServiceTest,PaymentRefundApprovalServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
 pnpm -F mango-admin build
 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:7808 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18118 pnpm -F mango-admin exec playwright test e2e/specs/payment-center.spec.ts --project=chromium --workers=1 --grep "对账管理"
+PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true E2E_BASE_URL=http://127.0.0.1:7808 E2E_API_BASE_URL=http://127.0.0.1:18118 pnpm exec playwright test e2e/specs/payment-center.spec.ts --project=chromium --workers=1
 node mango-pmo/tools/acceptance-evidence-check.mjs --evidence mango-docs/plans/evidence/payment-reconciliation-acceptance.md
 ```
 
@@ -53,5 +61,6 @@ node mango-pmo/tools/acceptance-evidence-check.mjs --evidence mango-docs/plans/e
 
 | 项目 | 原因 | 影响 | 后续处理 | 用户确认 |
 |---|---|---|---|---|
-| 外部通道账单获取源和解析 | 本轮覆盖统一手动导入、芒果支付账单生成和差异识别；通联、华夏、微信、支付宝、连连等外部机构账单的 FTP/FTPS 拉取、HTTP 接口按时间区间加分页或游标拉取、文件解析和接口响应解析属于对应外部通道交付项 | 不影响 `PAY-RECON-002` 对账差异识别在统一导入模型内完成；不能据此声明外部通道账单获取、外部通道解析或外部通道接入完成 | 后续按 `PAY-CHANNEL-003/005/007/008` 和 `PAY-RECON-004` 在具备联调资料后逐通道验证真实账单获取源、解析和对账 | 不适用 |
+| 外部通道账单获取源和解析 | 本轮已覆盖统一手动导入、芒果支付账单生成、HTTP 获取模型、FTP 本地真实协议拉取、签约通道获取源配置、`mango-job` 定时拉取和统一差异识别；通联、华夏、微信、支付宝、连连等外部机构的真实 FTP/FTPS 账号、证书、目录、文件格式、HTTP 签名、分页或游标响应仍未拿到联调资料 | 不影响 `PAY-RECON-002` 对账差异识别在统一导入模型内完成；不能据此声明外部通道账单获取、外部通道解析或外部通道接入完成 | 后续按 `PAY-CHANNEL-003/005/007/008` 和 `PAY-RECON-004` 在具备联调资料后逐通道验证真实账单获取源、解析和对账 | 不适用 |
+| FTPS 外部联调 | 当前代码已接入 Commons Net `FTPSClient`，但没有外部机构 FTPS 服务、证书策略和真实目录联调证据 | 不能声明 FTPS 外部生产通道已完成，只能声明客户端代码路径已接入 | 拿到机构资料后补 FTPS 联调、证书校验策略和通道级验收记录 | 不适用 |
 | 差异处理闭环 | 本轮只生成差异单，不覆盖查单、补单、退款、忽略、关闭等受控处理动作 | 不能据此声明 `PAY-MENU-014` 或 `PAY-RECON-003` 完成 | 后续进入差异处理列表页和受控处理接口开发 | 不适用 |

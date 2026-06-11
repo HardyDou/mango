@@ -34,7 +34,7 @@ public class PaymentChannelContractVO implements Serializable {
     @Schema(description = "支付通道名称")
     private String channelName;
 
-    @Schema(description = "接入场景")
+    @Schema(description = "内部路由域")
     private String environment;
 
     @Schema(description = "商户号")

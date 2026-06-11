@@ -43,7 +43,7 @@ public class PaymentMethodRouteRuleVO implements Serializable {
     @Schema(description = "终端类型")
     private String terminalType;
 
-    @Schema(description = "接入场景")
+    @Schema(description = "内部路由域")
     private String environment;
 
     @Schema(description = "路由模式")

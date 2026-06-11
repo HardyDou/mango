@@ -5,19 +5,28 @@ import io.mango.common.exception.BizException;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
 import io.mango.payment.api.vo.PaymentReconciliationVO;
+import io.mango.payment.core.entity.PaymentChannelBillFetchBatchEntity;
+import io.mango.payment.core.entity.PaymentChannelBillSourceEntity;
 import io.mango.payment.core.entity.PaymentChannelBillDetailEntity;
+import io.mango.payment.core.entity.PaymentChannel;
 import io.mango.payment.core.entity.PaymentDifferenceEntity;
 import io.mango.payment.core.entity.PaymentBusinessOrderEntity;
+import io.mango.payment.core.entity.PaymentChannelContract;
 import io.mango.payment.core.entity.PaymentOrderEntity;
 import io.mango.payment.core.entity.PaymentRefundOrderEntity;
 import io.mango.payment.core.entity.PaymentReconciliationEntity;
 import io.mango.payment.core.entity.PaymentMangoPayScenarioControl;
 import io.mango.payment.core.entity.PaymentTransactionFlowEntity;
+import io.mango.payment.core.mapper.PaymentChannelBillBatchMapper;
 import io.mango.payment.core.mapper.PaymentChannelBillDetailMapper;
+import io.mango.payment.core.mapper.PaymentChannelBillFetchBatchMapper;
+import io.mango.payment.core.mapper.PaymentChannelBillSourceMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
+import io.mango.payment.core.mapper.PaymentChannelMapper;
 import io.mango.payment.core.mapper.PaymentDifferenceMapper;
 import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
@@ -31,9 +40,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,6 +67,10 @@ class PaymentReconciliationServiceTest {
 
     private PaymentReconciliationMapper reconciliationMapper;
     private PaymentChannelContractMapper channelContractMapper;
+    private PaymentChannelMapper channelMapper;
+    private PaymentChannelBillBatchMapper billBatchMapper;
+    private PaymentChannelBillSourceMapper billSourceMapper;
+    private PaymentChannelBillFetchBatchMapper billFetchBatchMapper;
     private PaymentChannelBillDetailMapper billDetailMapper;
     private PaymentDifferenceMapper differenceMapper;
     private PaymentBusinessOrderMapper businessOrderMapper;
@@ -67,6 +89,10 @@ class PaymentReconciliationServiceTest {
     void setUp() {
         reconciliationMapper = mock(PaymentReconciliationMapper.class);
         channelContractMapper = mock(PaymentChannelContractMapper.class);
+        channelMapper = mock(PaymentChannelMapper.class);
+        billBatchMapper = mock(PaymentChannelBillBatchMapper.class);
+        billSourceMapper = mock(PaymentChannelBillSourceMapper.class);
+        billFetchBatchMapper = mock(PaymentChannelBillFetchBatchMapper.class);
         billDetailMapper = mock(PaymentChannelBillDetailMapper.class);
         differenceMapper = mock(PaymentDifferenceMapper.class);
         businessOrderMapper = mock(PaymentBusinessOrderMapper.class);
@@ -89,7 +115,12 @@ class PaymentReconciliationServiceTest {
         });
         service = new PaymentReconciliationService(
                 reconciliationMapper,
+                billBatchMapper,
+                billSourceMapper,
+                billFetchBatchMapper,
                 billDetailMapper,
+                channelContractMapper,
+                channelMapper,
                 differenceMapper,
                 businessOrderMapper,
                 paymentOrderMapper,
@@ -105,18 +136,156 @@ class PaymentReconciliationServiceTest {
                 statusFlowService,
                 duplicateRefundCompletionService,
                 observabilityService,
-                numberService);
+                numberService,
+                new PaymentChannelBillFileClient(List.of()),
+                new ObjectMapper());
         when(paymentOrderMapper.selectSuccessfulChannelOrdersMissingInBill(any(), anyString(), any(), any(), any()))
                 .thenReturn(List.of());
         when(refundOrderMapper.selectSuccessfulChannelRefundsMissingInBill(any(), anyString(), any(), any(), any()))
                 .thenReturn(List.of());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
+        PaymentChannelContract contract = new PaymentChannelContract();
+        contract.setId(331001L);
+        contract.setTenantId(1L);
+        contract.setChannelId(330001L);
+        contract.setStatus(1);
+        contract.setDelFlag(0);
+        when(channelContractMapper.selectById(331001L)).thenReturn(contract);
+        PaymentChannel channel = new PaymentChannel();
+        channel.setId(330001L);
+        channel.setTenantId(1L);
+        channel.setChannelCode("MANGO_PAY");
+        channel.setStatus(1);
+        channel.setDelFlag(0);
+        channel.setBillFetchModes("MANUAL,FTP,FTPS,HTTP");
+        when(channelMapper.selectById(330001L)).thenReturn(channel);
     }
 
     @AfterEach
     void tearDown() {
         MangoContextHolder.clear();
+    }
+
+    @Test
+    @DisplayName("listBillFetchModes should expose enum backed bill fetch mode options")
+    void listBillFetchModes_returnsEnumBackedOptions() {
+        assertThat(service.listBillFetchModes())
+                .extracting(option -> option.getFetchMode() + ":" + option.getFetchModeName())
+                .containsExactly("MANUAL:手动上传", "FTP:FTP 拉取", "FTPS:FTPS 拉取", "HTTP:HTTP 接口");
+    }
+
+    @Test
+    @DisplayName("saveBillSource should reject fetch mode unsupported by channel definition")
+    void saveBillSource_unsupportedChannelFetchMode_rejects() {
+        PaymentChannel channel = new PaymentChannel();
+        channel.setId(330001L);
+        channel.setTenantId(1L);
+        channel.setChannelCode("MANGO_PAY");
+        channel.setStatus(1);
+        channel.setDelFlag(0);
+        channel.setBillFetchModes("MANUAL,HTTP");
+        when(channelMapper.selectById(330001L)).thenReturn(channel);
+
+        io.mango.payment.api.command.SavePaymentChannelBillSourceCommand command =
+                new io.mango.payment.api.command.SavePaymentChannelBillSourceCommand();
+        command.setContractId(331001L);
+        command.setFetchMode("FTP");
+        command.setEndpoint("ftp://127.0.0.1");
+        command.setRemotePath("/bills");
+        command.setEnabled(1);
+
+        assertThatThrownBy(() -> service.saveBillSource(command))
+                .isInstanceOf(BizException.class)
+                .hasMessage("支付通道未声明支持该账单获取方式");
+    }
+
+    @Test
+    @DisplayName("fetchChannelBill should fetch FTP bill through real protocol and import reconciliation")
+    void fetchChannelBill_ftpSource_fetchesRemoteBillAndImports() throws Exception {
+        LocalDate billDate = LocalDate.of(2026, 6, 6);
+        String billBody = """
+                {"items":[{"channelTradeNo":"FTP-PO001","tradeType":"PAYMENT","amount":9900,"fee":12,"tradeTime":"2026-06-06T10:00:00"}]}
+                """;
+        try (SimpleFtpServer ftpServer = new SimpleFtpServer("/bills/2026-06-06.json", billBody)) {
+            PaymentChannelBillSourceEntity source = new PaymentChannelBillSourceEntity();
+            source.setId(900001L);
+            source.setTenantId(1L);
+            source.setDelFlag(0);
+            source.setEnabled(1);
+            source.setChannelCode("MANGO_PAY");
+            source.setFetchMode("FTP");
+            source.setEndpoint("127.0.0.1:" + ftpServer.port());
+            source.setRemotePath("/bills/2026-06-06.json");
+            when(billSourceMapper.selectById(900001L)).thenReturn(source);
+            when(reconciliationMapper.countImportedFile(eq(1L), eq("MANGO_PAY"), eq(billDate), anyString()))
+                    .thenReturn(0L);
+            PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
+            paymentOrder.setId(200001L);
+            paymentOrder.setPayOrderNo("PO001");
+            paymentOrder.setBusinessOrderId(100001L);
+            paymentOrder.setAmount(9900L);
+            paymentOrder.setStatus("SUCCESS");
+            when(paymentOrderMapper.selectByTenantAndChannelTradeNo(1L, "MANGO_PAY", "FTP-PO001")).thenReturn(paymentOrder);
+            when(reconciliationMapper.selectReconciliationDetail(eq(1L), any())).thenReturn(reconciliationVO("MATCHED"));
+            when(billDetailMapper.selectBillDetails(eq(1L), any())).thenReturn(List.of());
+
+            FetchPaymentChannelBillCommand command = new FetchPaymentChannelBillCommand();
+            command.setSourceId(900001L);
+            command.setBillDate(billDate);
+
+            PaymentReconciliationVO result = service.fetchChannelBill(command);
+
+            assertThat(result.getMatchStatusName()).isEqualTo("已平账");
+            ArgumentCaptor<PaymentChannelBillFetchBatchEntity> fetchBatchCaptor = ArgumentCaptor.forClass(PaymentChannelBillFetchBatchEntity.class);
+            verify(billFetchBatchMapper).insert(fetchBatchCaptor.capture());
+            assertThat(fetchBatchCaptor.getValue().getFetchMode()).isEqualTo("FTP");
+            ArgumentCaptor<PaymentChannelBillDetailEntity> detailCaptor = ArgumentCaptor.forClass(PaymentChannelBillDetailEntity.class);
+            verify(billDetailMapper).insert(detailCaptor.capture());
+            assertThat(detailCaptor.getValue().getChannelTradeNo()).isEqualTo("FTP-PO001");
+            assertThat(detailCaptor.getValue().getMatchStatus()).isEqualTo("MATCHED");
+            ArgumentCaptor<PaymentReconciliationEntity> reconciliationCaptor = ArgumentCaptor.forClass(PaymentReconciliationEntity.class);
+            verify(reconciliationMapper).insert(reconciliationCaptor.capture());
+            assertThat(reconciliationCaptor.getValue().getBillFileName()).isEqualTo("2026-06-06.json");
+            assertThat(reconciliationCaptor.getValue().getTotalAmount()).isEqualTo(9900L);
+            assertThat(reconciliationCaptor.getValue().getTotalFee()).isEqualTo(12L);
+            ArgumentCaptor<PaymentChannelBillFetchBatchEntity> updateBatchCaptor = ArgumentCaptor.forClass(PaymentChannelBillFetchBatchEntity.class);
+            verify(billFetchBatchMapper).updateById(updateBatchCaptor.capture());
+            assertThat(updateBatchCaptor.getValue().getFetchStatus()).isEqualTo("SUCCESS");
+            assertThat(updateBatchCaptor.getValue().getFetchResult()).isEqualTo("FTP 拉取通道账单获取并对账完成");
+            assertThat(updateBatchCaptor.getValue().getTotalCount()).isEqualTo(1);
+            assertThat(ftpServer.awaitRequest()).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("fetchChannelBill should reject FTP credential reference when no provider resolves it")
+    void fetchChannelBill_ftpCredentialRefWithoutProvider_rejectsBeforeImport() {
+        LocalDate billDate = LocalDate.of(2026, 6, 6);
+        try (SimpleFtpServer ftpServer = new SimpleFtpServer("/bills/2026-06-06.json", "{\"items\":[]}")) {
+            PaymentChannelBillSourceEntity source = new PaymentChannelBillSourceEntity();
+            source.setId(900002L);
+            source.setTenantId(1L);
+            source.setDelFlag(0);
+            source.setEnabled(1);
+            source.setChannelCode("MANGO_PAY");
+            source.setFetchMode("FTP");
+            source.setEndpoint("127.0.0.1:" + ftpServer.port());
+            source.setRemotePath("/bills/2026-06-06.json");
+            source.setCredentialRef("credential:payment-bill-ftp");
+            when(billSourceMapper.selectById(900002L)).thenReturn(source);
+
+            FetchPaymentChannelBillCommand command = new FetchPaymentChannelBillCommand();
+            command.setSourceId(900002L);
+            command.setBillDate(billDate);
+
+            assertThatThrownBy(() -> service.fetchChannelBill(command))
+                    .hasMessageContaining("未找到 FTP/FTPS 认证配置引用");
+            verify(reconciliationMapper, never()).insert(any(PaymentReconciliationEntity.class));
+            verify(billDetailMapper, never()).insert(any(PaymentChannelBillDetailEntity.class));
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
     }
 
     @Test
@@ -702,5 +871,98 @@ class PaymentReconciliationServiceTest {
         vo.setId(500001L);
         vo.setMatchStatus(status);
         return vo;
+    }
+
+    private static class SimpleFtpServer implements AutoCloseable {
+
+        private final String remotePath;
+        private final String body;
+        private final ServerSocket controlSocket;
+        private final CountDownLatch requestLatch = new CountDownLatch(1);
+        private final Thread worker;
+        private volatile boolean running = true;
+
+        SimpleFtpServer(String remotePath, String body) throws IOException {
+            this.remotePath = remotePath;
+            this.body = body;
+            this.controlSocket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+            this.worker = new Thread(this::serve, "payment-test-ftp-server");
+            this.worker.start();
+        }
+
+        int port() {
+            return controlSocket.getLocalPort();
+        }
+
+        boolean awaitRequest() throws InterruptedException {
+            return requestLatch.await(5, TimeUnit.SECONDS);
+        }
+
+        private void serve() {
+            try (Socket socket = controlSocket.accept();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                 OutputStream output = socket.getOutputStream()) {
+                ServerSocket dataSocket = null;
+                reply(output, "220 Mango payment test FTP ready");
+                String line;
+                while (running && (line = reader.readLine()) != null) {
+                    String command = line.toUpperCase(java.util.Locale.ROOT);
+                    if (command.startsWith("USER")) {
+                        reply(output, "331 Password required");
+                    } else if (command.startsWith("PASS")) {
+                        reply(output, "230 Login successful");
+                    } else if (command.startsWith("TYPE")) {
+                        reply(output, "200 Type set");
+                    } else if (command.startsWith("SYST")) {
+                        reply(output, "215 UNIX Type: L8");
+                    } else if (command.startsWith("PWD")) {
+                        reply(output, "257 \"/\" is current directory");
+                    } else if (command.startsWith("PASV")) {
+                        closeDataSocket(dataSocket);
+                        dataSocket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+                        int dataPort = dataSocket.getLocalPort();
+                        reply(output, "227 Entering Passive Mode (127,0,0,1," + (dataPort / 256) + "," + (dataPort % 256) + ")");
+                    } else if (command.startsWith("RETR")) {
+                        String requestedPath = line.substring(4).trim();
+                        if (!remotePath.equals(requestedPath) || dataSocket == null) {
+                            reply(output, "550 File unavailable");
+                            continue;
+                        }
+                        reply(output, "150 Opening binary mode data connection");
+                        try (Socket data = dataSocket.accept()) {
+                            data.getOutputStream().write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            data.getOutputStream().flush();
+                        }
+                        requestLatch.countDown();
+                        reply(output, "226 Transfer complete");
+                    } else if (command.startsWith("QUIT")) {
+                        reply(output, "221 Goodbye");
+                        break;
+                    } else {
+                        reply(output, "200 OK");
+                    }
+                }
+                closeDataSocket(dataSocket);
+            } catch (IOException ignored) {
+            }
+        }
+
+        private void reply(OutputStream output, String line) throws IOException {
+            output.write((line + "\r\n").getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+            output.flush();
+        }
+
+        private void closeDataSocket(ServerSocket dataSocket) throws IOException {
+            if (dataSocket != null && !dataSocket.isClosed()) {
+                dataSocket.close();
+            }
+        }
+
+        @Override
+        public void close() throws Exception {
+            running = false;
+            controlSocket.close();
+            worker.join(TimeUnit.SECONDS.toMillis(2));
+        }
     }
 }

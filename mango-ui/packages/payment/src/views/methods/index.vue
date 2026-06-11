@@ -1,18 +1,16 @@
 <template>
   <PaymentResourcePage
     title="支付方式"
-    description="维护标准支付方式三级分类、Web/H5 交互形态、支付物料、展示属性和跨通道路由策略。"
+    description="维护标准支付方式、收银台展示属性和支付物料；通道差异、商户配置和路由命中在签约通道与路由策略中维护。"
     :columns="columns"
     :api="paymentMethodApi"
     :defaults="defaults"
     :rules="rules"
     :to-save-payload="toSavePayload"
     :on-editor-opened="handleEditorOpened"
+    :row-actions="buildRowActions"
     editor-width="860px"
   >
-    <template #row-actions="{ row }">
-      <el-button link type="primary" @click="openRoutePanel(row)">路由策略</el-button>
-    </template>
     <template #form="{ form }">
       <el-form-item label="方式编码" prop="methodCode">
         <el-input v-model="form.methodCode" placeholder="例如 PERSONAL_WECHAT_QR" />
@@ -85,20 +83,8 @@
       <el-form-item label="二维码可刷新">
         <el-switch v-model="form.requiresQrRefresh" :active-value="1" :inactive-value="0" />
       </el-form-item>
-      <el-form-item label="说明">
-        <el-input v-model="form.description" type="textarea" :rows="2" />
-      </el-form-item>
-      <el-form-item label="可见范围">
-        <el-input v-model="form.visibleScope" type="textarea" :rows="2" placeholder="租户、应用、企业主体可见范围说明" />
-      </el-form-item>
-      <el-form-item label="路由策略">
-        <el-input v-model="form.routeStrategy" type="textarea" :rows="3" placeholder="说明该支付方式如何通过路由策略命中签约能力" />
-      </el-form-item>
-      <el-form-item label="最小金额（元）">
-        <el-input-number v-model="form.minAmountYuan" :min="0" :precision="2" :step="1" />
-      </el-form-item>
-      <el-form-item label="最大金额（元）">
-        <el-input-number v-model="form.maxAmountYuan" :min="0" :precision="2" :step="1" />
+      <el-form-item label="产品说明">
+        <el-input v-model="form.description" type="textarea" :rows="2" placeholder="用于收银台展示该支付方式的产品说明" />
       </el-form-item>
       <el-form-item label="排序">
         <el-input-number v-model="form.sort" :min="0" :precision="0" />
@@ -119,6 +105,7 @@ import { onMounted, ref } from 'vue';
 import type { CascaderProps, FormRules } from 'element-plus';
 import { MUpload } from '@mango/file';
 import PaymentResourcePage from '../../components/PaymentResourcePage.vue';
+import type { PaymentRowAction } from '../../components/PaymentRowActions';
 import PaymentMethodRoutePanel from './PaymentMethodRoutePanel.vue';
 import {
   paymentMethodApi,
@@ -136,8 +123,6 @@ interface CategoryOption {
 type MethodForm = Partial<PaymentMethod> & {
   categoryPath?: string[];
   terminalScopes?: string[];
-  minAmountYuan?: number;
-  maxAmountYuan?: number;
 };
 
 const cashierGroupNames: Record<string, string> = {
@@ -181,8 +166,7 @@ const columns: PaymentTableColumn[] = [
   { prop: 'cashierGroupName', label: '收银台分组', width: 130 },
   { prop: 'terminalScope', label: '终端范围', width: 120 },
   { prop: 'paymentMaterialType', label: '支付物料', width: 130 },
-  { prop: 'minAmount', label: '最小金额', width: 120, money: true },
-  { prop: 'maxAmount', label: '最大金额', width: 120, money: true },
+  { prop: 'description', label: '产品说明', minWidth: 180 },
 ];
 
 const rules: FormRules = {
@@ -219,8 +203,6 @@ async function handleEditorOpened(form: MethodForm) {
   form.cashierGroupSort = form.cashierGroupSort ?? defaults.cashierGroupSort;
   form.requiresBankSelection = form.requiresBankSelection ?? 0;
   form.requiresQrRefresh = form.requiresQrRefresh ?? 0;
-  form.minAmountYuan = centsToYuan(form.minAmount);
-  form.maxAmountYuan = centsToYuan(form.maxAmount);
 }
 
 function applyCategoryPath(form: MethodForm) {
@@ -255,10 +237,6 @@ function toSavePayload(form: MethodForm) {
     requiresBankSelection: form.requiresBankSelection ?? 0,
     requiresQrRefresh: form.requiresQrRefresh ?? 0,
     description: optionalString(form.description),
-    visibleScope: optionalString(form.visibleScope),
-    routeStrategy: optionalString(form.routeStrategy),
-    minAmount: form.minAmountYuan === undefined || form.minAmountYuan === null ? undefined : yuanToCents(form.minAmountYuan),
-    maxAmount: form.maxAmountYuan === undefined || form.maxAmountYuan === null ? undefined : yuanToCents(form.maxAmountYuan),
     sort: optionalNumber(form.sort) ?? 0,
     status: optionalNumber(form.status) ?? 1,
   };
@@ -310,16 +288,16 @@ function optionalNumber(value: unknown) {
   return Number.isFinite(numberValue) ? numberValue : undefined;
 }
 
-function centsToYuan(value?: number | null) {
-  if (value === undefined || value === null) return undefined;
-  return Number((Number(value) / 100).toFixed(2));
-}
-
-function yuanToCents(value: number) {
-  return Math.round(Number(value || 0) * 100);
-}
-
 function openRoutePanel(row: PaymentMethod) {
   routePanelRef.value?.open(row);
+}
+
+function buildRowActions(row: PaymentMethod): PaymentRowAction[] {
+  return [{
+    key: 'routes',
+    label: '路由策略',
+    type: 'primary',
+    onClick: () => openRoutePanel(row),
+  }];
 }
 </script>

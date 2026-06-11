@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentChannelBillFetchBatchMapper">
+
+    <sql id="fetchBatchWhere">
+        where b.tenant_id = #{tenantId}
+          and b.del_flag = 0
+        <if test="keyword != null and keyword != ''">
+          and (
+            b.batch_no like concat('%', #{keyword}, '%')
+            or b.channel_code like concat('%', #{keyword}, '%')
+            or b.fetch_mode like concat('%', #{keyword}, '%')
+            or r.reconciliation_no like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="fetchBatchSelect">
+        select b.id,
+               b.source_id as sourceId,
+               b.batch_no as batchNo,
+               b.reconciliation_id as reconciliationId,
+               r.reconciliation_no as reconciliationNo,
+               b.channel_code as channelCode,
+               b.fetch_mode as fetchMode,
+               b.bill_date as billDate,
+               b.request_start_time as requestStartTime,
+               b.request_end_time as requestEndTime,
+               b.request_cursor as requestCursor,
+               b.request_page as requestPage,
+               b.page_size as pageSize,
+               b.response_digest as responseDigest,
+               b.total_count as totalCount,
+               b.fetch_status as fetchStatus,
+               b.fetch_result as fetchResult,
+               b.operator_id as operatorId,
+               b.operator_name as operatorName,
+               b.fetch_start_time as fetchStartTime,
+               b.fetch_end_time as fetchEndTime,
+               b.created_at as createTime
+    </sql>
+
+    <select id="countFetchBatches" resultType="long">
+        select count(1)
+        from payment_channel_bill_fetch_batch b
+        left join payment_reconciliation r
+          on r.id = b.reconciliation_id
+         and r.tenant_id = b.tenant_id
+         and r.del_flag = 0
+        <include refid="fetchBatchWhere"/>
+    </select>
+
+    <select id="selectFetchBatchPage" resultType="io.mango.payment.api.vo.PaymentChannelBillFetchBatchVO">
+        <include refid="fetchBatchSelect"/>
+        from payment_channel_bill_fetch_batch b
+        left join payment_reconciliation r
+          on r.id = b.reconciliation_id
+         and r.tenant_id = b.tenant_id
+         and r.del_flag = 0
+        <include refid="fetchBatchWhere"/>
+        order by b.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="countSuccessfulFetch" resultType="long">
+        select count(1)
+        from payment_channel_bill_fetch_batch
+        where tenant_id = #{tenantId}
+          and source_id = #{sourceId}
+          and bill_date = #{billDate}
+          and fetch_status = 'SUCCESS'
+          and del_flag = 0
+    </select>
+</mapper>

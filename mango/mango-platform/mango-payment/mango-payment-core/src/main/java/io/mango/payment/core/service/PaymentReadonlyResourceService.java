@@ -73,12 +73,13 @@ public class PaymentReadonlyResourceService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentReadonlyResourceService.class);
 
-    private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d+$");
+    private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d{16}$");
 
-    private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d+$");
+    private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d{16}$");
 
     private static final Set<String> EXCEPTION_ORDER_HANDLE_ACTIONS = Set.of(
             "ACTIVE_QUERY",
+            "ACTIVE_REFUND_QUERY",
             "CLOSE_PAYMENT_ORDER",
             "ADD_EVIDENCE",
             "MANUAL_CLOSE");
@@ -410,6 +411,9 @@ public class PaymentReadonlyResourceService {
                 exceptionOrderAction("CLOSE_PAYMENT_ORDER", "关闭支付订单",
                         List.copyOf(PAYMENT_EXCEPTION_TYPES),
                         "仅适用于关联支付订单的异常，系统会关闭未支付或支付中的支付订单和业务订单"),
+                exceptionOrderAction("ACTIVE_REFUND_QUERY", "主动查退款",
+                        List.of(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
+                        "仅适用于关联退款订单的异常，系统会向通道查退款并按通道结果推进退款订单状态"),
                 exceptionOrderAction("ADD_EVIDENCE", "补充凭据",
                         allExceptionTypes(),
                         "记录人工核对材料，异常单进入处理中，不直接修改支付或退款状态"),
@@ -454,6 +458,19 @@ public class PaymentReadonlyResourceService {
                     + " 当前状态 "
                     + channelQueryResult.status()
                     + (channelQueryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化");
+            Require.isTrue(handleResult.length() <= 512,
+                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
+        }
+        PaymentChannelRefundQueryService.QueryResult refundQueryResult = activeQueryRefund(handleAction, entity.getRelatedOrderNo());
+        if (refundQueryResult != null) {
+            nextHandleStatus = PaymentRefundOrderStatusEnum.REFUNDING.getCode().equals(normalizeRefundStatus(refundQueryResult.status()))
+                    ? "PROCESSING"
+                    : "HANDLED";
+            handleResult = handleResult + "；查退款结果：退款订单 "
+                    + refundQueryResult.refundOrderNo()
+                    + " 当前状态 "
+                    + refundQueryResult.status()
+                    + (refundQueryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化");
             Require.isTrue(handleResult.length() <= 512,
                     PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
         }
@@ -502,6 +519,16 @@ public class PaymentReadonlyResourceService {
         return channelOrderQueryService.queryChannelPayment(payOrderNo);
     }
 
+    private PaymentChannelRefundQueryService.QueryResult activeQueryRefund(String handleAction, String relatedOrderNo) {
+        if (!"ACTIVE_REFUND_QUERY".equals(handleAction)) {
+            return null;
+        }
+        String refundOrderNo = PaymentContextSupport.trimToNull(relatedOrderNo);
+        Require.isTrue(isRefundOrderNo(refundOrderNo),
+                PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "主动查退款动作必须关联退款订单号");
+        return channelRefundQueryService.queryChannelRefund(refundOrderNo);
+    }
+
     private PaymentChannelOrderCloseService.CloseResult closePaymentOrder(String handleAction, String relatedOrderNo) {
         if (!"CLOSE_PAYMENT_ORDER".equals(handleAction)) {
             return null;
@@ -533,6 +560,9 @@ public class PaymentReadonlyResourceService {
     private boolean isActionAllowedForExceptionType(String handleAction, String exceptionType) {
         if ("ACTIVE_QUERY".equals(handleAction) || "CLOSE_PAYMENT_ORDER".equals(handleAction)) {
             return exceptionType != null && PAYMENT_EXCEPTION_TYPES.contains(exceptionType);
+        }
+        if ("ACTIVE_REFUND_QUERY".equals(handleAction)) {
+            return PaymentExceptionOrderService.TYPE_REFUND_MISMATCH.equals(exceptionType);
         }
         return "ADD_EVIDENCE".equals(handleAction) || "MANUAL_CLOSE".equals(handleAction);
     }

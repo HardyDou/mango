@@ -35,4 +35,14 @@ public interface PaymentRefundApprovalMapper extends BaseMapper<PaymentRefundApp
     PaymentRefundApprovalEntity selectEntityForUpdate(
             @Param("tenantId") Long tenantId,
             @Param("id") Long id);
+
+    @InterceptorIgnore(tenantLine = "true")
+    PaymentRefundApprovalEntity selectEntityByApprovalNoForUpdate(
+            @Param("tenantId") Long tenantId,
+            @Param("approvalNo") String approvalNo);
+
+    @InterceptorIgnore(tenantLine = "true")
+    Long sumPendingApprovalAmount(
+            @Param("tenantId") Long tenantId,
+            @Param("paymentOrderId") Long paymentOrderId);
 }

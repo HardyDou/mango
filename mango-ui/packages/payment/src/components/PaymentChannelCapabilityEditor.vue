@@ -33,14 +33,6 @@
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="接入场景" width="128">
-        <template #default="{ row }">
-          <el-select v-model="row.environment" placeholder="接入场景">
-            <el-option label="芒果支付" value="MANGO_PAY" />
-            <el-option label="生产" value="PROD" />
-          </el-select>
-        </template>
-      </el-table-column>
       <el-table-column label="退款" width="76" align="center">
         <template #default="{ row }">
           <el-switch
@@ -150,7 +142,6 @@ function addRow() {
     {
       methodCode: '',
       terminalType: 'WEB',
-      environment: 'MANGO_PAY',
       supportsRefund: 1,
       supportsQuery: 1,
       supportsClose: 1,

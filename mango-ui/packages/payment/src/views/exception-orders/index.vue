@@ -173,6 +173,9 @@
         <el-descriptions-item label="主动查单">
           仅支付类异常可用。系统会按关联支付订单向通道查单，并按通道结果推进支付订单状态。
         </el-descriptions-item>
+        <el-descriptions-item label="主动查退款">
+          仅退款类异常可用。系统会按关联退款订单向通道查退款，并按通道结果推进退款订单状态。
+        </el-descriptions-item>
         <el-descriptions-item label="关闭支付订单">
           仅支付类异常可用。系统只允许关闭未支付或支付中的支付订单，并同步关闭对应业务订单。
         </el-descriptions-item>

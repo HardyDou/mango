@@ -4,7 +4,7 @@
     description="维护芒果支付、通联支付、华夏银行等通道产品定义、适配器、签约字段模板和通道能力摘要。"
     :columns="columns"
     :api="paymentChannelApi"
-    :defaults="{ status: 1, channelCode: 'MANGO_PAY', channelName: '芒果支付', channelType: 'BUILTIN_VIRTUAL', adapterType: 'MANGO_PAY' }"
+    :defaults="{ status: 1, channelCode: 'MANGO_PAY', channelName: '芒果支付', channelType: 'BUILTIN_VIRTUAL', adapterType: 'MANGO_PAY', billFetchModes: ['MANUAL'] }"
     :rules="rules"
     editor-width="1180px"
     :to-save-payload="toSavePayload"
@@ -50,6 +50,14 @@
       <el-form-item label="能力摘要">
         <el-input v-model="form.capabilitySummary" type="textarea" :rows="3" placeholder="例如：微信扫码、支付宝 H5、退款、查单、账单、对账" />
       </el-form-item>
+      <el-form-item label="账单获取">
+        <el-checkbox-group v-model="form.billFetchModes">
+          <el-checkbox label="MANUAL">手动上传</el-checkbox>
+          <el-checkbox label="FTP">FTP 拉取</el-checkbox>
+          <el-checkbox label="FTPS">FTPS 拉取</el-checkbox>
+          <el-checkbox label="HTTP">HTTP 接口</el-checkbox>
+        </el-checkbox-group>
+      </el-form-item>
       <el-form-item label="通道能力">
         <PaymentChannelCapabilityEditor v-model="form.capabilities" />
       </el-form-item>
@@ -75,6 +83,7 @@ const columns: PaymentTableColumn[] = [
   { prop: 'channelName', label: '通道名称', minWidth: 170 },
   { prop: 'channelType', label: '通道类型', width: 140, formatter: (_row, value) => channelTypeText(String(value || '')) },
   { prop: 'adapterType', label: '适配器', minWidth: 160, formatter: (_row, value) => adapterTypeText(String(value || '')) },
+  { prop: 'billFetchModes', label: '账单获取', minWidth: 180, formatter: row => formatBillFetchModes(row.billFetchModes) },
   { prop: 'capabilities', label: '通道能力', minWidth: 260, formatter: row => formatCapabilities(row.capabilities, row.capabilitySummary) },
 ];
 
@@ -93,6 +102,7 @@ async function onEditorOpened(form: PaymentRecord, row?: PaymentRecord) {
   const detail = await paymentChannelApi.detail(row.id);
   Object.assign(form, detail, {
     capabilities: Array.isArray(detail.capabilities) ? detail.capabilities : [],
+    billFetchModes: Array.isArray(detail.billFetchModes) ? detail.billFetchModes : [],
   });
 }
 
@@ -106,9 +116,14 @@ function toSavePayload(form: PaymentRecord): PaymentChannel {
     gatewayBaseUrl: optionalString(form.gatewayBaseUrl),
     fieldTemplateJson: optionalString(form.fieldTemplateJson),
     capabilitySummary: optionalString(form.capabilitySummary),
+    billFetchModes: toBillFetchModes(form.billFetchModes),
     capabilities: toCapabilities(form.capabilities),
     status: Number(form.status ?? 1),
   };
+}
+
+function toBillFetchModes(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
 }
 
 function toCapabilities(value: unknown): PaymentChannelCapability[] {
@@ -117,7 +132,6 @@ function toCapabilities(value: unknown): PaymentChannelCapability[] {
     id: item.id,
     methodCode: item.methodCode,
     terminalType: item.terminalType,
-    environment: item.environment,
     supportsRefund: item.supportsRefund,
     supportsQuery: item.supportsQuery,
     supportsClose: item.supportsClose,
@@ -133,11 +147,25 @@ function optionalString(value: unknown) {
   return value === undefined || value === null || value === '' ? undefined : String(value);
 }
 
+function formatBillFetchModes(value: unknown) {
+  const modes = Array.isArray(value) ? value.map(String) : [];
+  if (!modes.length) return '-';
+  return modes.map(fetchModeText).join('、');
+}
+
+function fetchModeText(value: string) {
+  if (value === 'MANUAL') return '手动上传';
+  if (value === 'FTP') return 'FTP 拉取';
+  if (value === 'FTPS') return 'FTPS 拉取';
+  if (value === 'HTTP') return 'HTTP 接口';
+  return value || '-';
+}
+
 function formatCapabilities(value: unknown, fallback?: unknown) {
   const rows = Array.isArray(value) ? value as PaymentChannelCapability[] : [];
   if (!rows.length) return String(fallback || '-');
   return rows
-    .map(item => `${item.methodName || item.methodCode}/${terminalText(item.terminalType)}/${environmentText(item.environment)}`)
+    .map(item => `${item.methodName || item.methodCode}/${terminalText(item.terminalType)}`)
     .join('、');
 }
 
@@ -146,12 +174,6 @@ function terminalText(value?: string) {
   if (value === 'H5') return 'H5';
   if (value === 'APP') return 'App';
   if (value === 'MP') return '小程序';
-  return value || '-';
-}
-
-function environmentText(value?: string) {
-  if (value === 'MANGO_PAY') return '芒果支付';
-  if (value === 'PROD') return '生产';
   return value || '-';
 }
 

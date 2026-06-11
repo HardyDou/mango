@@ -48,6 +48,9 @@ public class SavePaymentChannelCommand implements Serializable {
     @Schema(description = "通道能力摘要")
     private String capabilitySummary;
 
+    @Schema(description = "支持的账单获取方式：MANUAL、FTP、FTPS、HTTP")
+    private List<String> billFetchModes;
+
     @Schema(description = "通道能力列表")
     private List<SavePaymentChannelCapabilityCommand> capabilities;
 

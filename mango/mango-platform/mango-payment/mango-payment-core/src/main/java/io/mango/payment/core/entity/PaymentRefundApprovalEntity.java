@@ -35,6 +35,22 @@ public class PaymentRefundApprovalEntity extends AuditableEntity {
 
     private String status;
 
+    private Long workflowApplyId;
+
+    private String workflowProcessInstanceId;
+
+    private String workflowProcessDefinitionKey;
+
+    private String workflowApplyStatus;
+
+    private String workflowApplyStatusName;
+
+    private String workflowCurrentTaskNames;
+
+    private String workflowCurrentAssigneeNames;
+
+    private LocalDateTime workflowSyncedAt;
+
     private Long applicantId;
 
     private String applicantName;

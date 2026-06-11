@@ -17,6 +17,7 @@ export interface PaymentPageQuery {
   applicationId?: ApiId | '';
   enterpriseSubjectId?: ApiId | '';
   channelId?: ApiId | '';
+  contractId?: ApiId | '';
   channelCode?: string;
 }
 
@@ -68,6 +69,7 @@ export interface PaymentChannel {
   gatewayBaseUrl?: string;
   fieldTemplateJson?: string;
   capabilitySummary?: string;
+  billFetchModes?: string[];
   capabilities?: PaymentChannelCapability[];
   status?: number;
   createTime?: string;
@@ -82,7 +84,6 @@ export interface PaymentChannelContract {
   subjectName?: string;
   channelId: ApiId;
   channelName?: string;
-  environment?: string;
   merchantNo: string;
   appId?: string;
   configValuesJson?: string;
@@ -100,7 +101,7 @@ export interface PaymentChannelCapability {
   methodCode: string;
   methodName?: string;
   terminalType: string;
-  environment: string;
+  environment?: string;
   supportsRefund?: number;
   supportsQuery?: number;
   supportsClose?: number;
@@ -138,7 +139,7 @@ export interface PaymentMethodRouteRule {
   methodCode: string;
   methodName?: string;
   terminalType: string;
-  environment: string;
+  environment?: string;
   routeMode: string;
   fallbackEnabled?: number;
   status?: number;
@@ -169,7 +170,7 @@ export interface PaymentMethodRouteTrialCommand {
   subjectId: ApiId;
   methodCode: string;
   terminalType: string;
-  environment: string;
+  environment?: string;
   amount: number;
 }
 
@@ -196,10 +197,6 @@ export interface PaymentMethod {
   requiresBankSelection?: number;
   requiresQrRefresh?: number;
   description?: string;
-  visibleScope?: string;
-  routeStrategy?: string;
-  minAmount?: number;
-  maxAmount?: number;
   sort?: number;
   status?: number;
   createTime?: string;
@@ -321,6 +318,8 @@ export interface PaymentOrder {
   routeRuleId?: ApiId;
   amount?: number;
   refundedAmount?: number;
+  occupyingRefundAmount?: number;
+  refundableAmount?: number;
   currency?: string;
   status?: string;
   statusName?: string;
@@ -551,13 +550,24 @@ export interface PaymentRefundApproval {
   businessOrderId?: ApiId;
   paymentOrderId?: ApiId;
   refundOrderId?: ApiId;
+  payOrderNo?: string;
+  refundOrderNo?: string;
   bizOrderNo?: string;
   bizRefundNo?: string;
   appId?: string;
   refundAmount?: number;
   reason?: string;
+  remark?: string;
   status?: string;
   statusName?: string;
+  workflowApplyId?: ApiId;
+  workflowProcessInstanceId?: string;
+  workflowProcessDefinitionKey?: string;
+  workflowApplyStatus?: string;
+  workflowApplyStatusName?: string;
+  workflowCurrentTaskNames?: string;
+  workflowCurrentAssigneeNames?: string;
+  workflowSyncedAt?: string;
   applicantId?: ApiId;
   applicantName?: string;
   reviewerId?: ApiId;
@@ -788,6 +798,77 @@ export interface GenerateMangoPayVirtualBillCommand {
   channelCode: string;
   contractId?: ApiId | '';
   billDate: string;
+}
+
+export interface PaymentChannelBillSource {
+  id?: ApiId;
+  contractId?: ApiId;
+  contractName?: string;
+  channelId?: ApiId;
+  channelName?: string;
+  subjectId?: ApiId;
+  subjectName?: string;
+  merchantNo?: string;
+  channelCode?: string;
+  fetchMode?: string;
+  fetchModeName?: string;
+  endpoint?: string;
+  remotePath?: string;
+  credentialRef?: string;
+  pageMode?: string;
+  enabled?: number;
+  enabledName?: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export interface PaymentChannelBillFetchMode {
+  fetchMode: string;
+  fetchModeName: string;
+}
+
+export interface SavePaymentChannelBillSourceCommand {
+  id?: ApiId;
+  contractId: ApiId;
+  fetchMode: string;
+  endpoint?: string;
+  remotePath?: string;
+  credentialRef?: string;
+  pageMode?: string;
+  enabled: number;
+}
+
+export interface FetchPaymentChannelBillCommand {
+  sourceId: ApiId;
+  billDate: string;
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface PaymentChannelBillFetchBatch {
+  id?: ApiId;
+  sourceId?: ApiId;
+  batchNo?: string;
+  reconciliationId?: ApiId;
+  reconciliationNo?: string;
+  channelCode?: string;
+  fetchMode?: string;
+  fetchModeName?: string;
+  billDate?: string;
+  requestStartTime?: string;
+  requestEndTime?: string;
+  requestCursor?: string;
+  requestPage?: number;
+  pageSize?: number;
+  responseDigest?: string;
+  totalCount?: number;
+  fetchStatus?: string;
+  fetchStatusName?: string;
+  fetchResult?: string;
+  operatorName?: string;
+  fetchStartTime?: string;
+  fetchEndTime?: string;
+  createTime?: string;
 }
 
 export interface PaymentSettlementSummary {
@@ -1033,7 +1114,13 @@ export const paymentApplicationApi: PaymentResourceApi<PaymentApplication> & {
 };
 export const paymentEnterpriseSubjectApi = createPaymentResourceApi<PaymentEnterpriseSubject>('/payment/enterprise-subjects');
 export const paymentChannelApi = createPaymentResourceApi<PaymentChannel>('/payment/channels');
-export const paymentChannelContractApi = createPaymentResourceApi<PaymentChannelContract>('/payment/channel-contracts');
+export const paymentChannelContractApi = {
+  ...createPaymentResourceApi<PaymentChannelContract>('/payment/channel-contracts'),
+  billSources: (params?: PaymentPageQuery) =>
+    get<unknown>('/payment/channel-contracts/bill-sources/page', { params: toBackendPageParams(params) })
+      .then(data => fromBackendPageResult<PaymentChannelBillSource>(data, params)),
+  saveBillSource: (data: SavePaymentChannelBillSourceCommand) => post<PaymentChannelBillSource>('/payment/channel-contracts/bill-sources', data),
+};
 export const paymentChannelCapabilityApi = createPaymentResourceApi<PaymentChannelCapability>('/payment/channel-capabilities');
 export const paymentMethodApi = {
   ...createPaymentResourceApi<PaymentMethod>('/payment/methods'),
@@ -1109,8 +1196,16 @@ export const paymentNotificationRecordApi = {
 export const paymentReconciliationApi = {
   ...createPaymentResourceApi<PaymentReconciliation>('/payment/reconciliations'),
   statuses: () => get<PaymentReconciliationStatus[]>('/payment/reconciliations/statuses'),
+  billFetchModes: () => get<PaymentChannelBillFetchMode[]>('/payment/reconciliations/bill-fetch-modes'),
   importBill: (data: ImportPaymentReconciliationCommand) => post<PaymentReconciliation>('/payment/reconciliations/import', data),
   generateMangoPayVirtualBill: (data: GenerateMangoPayVirtualBillCommand) => post<PaymentReconciliation>('/payment/reconciliations/mango-pay/virtual/generate', data),
+  billSources: (params?: PaymentPageQuery) =>
+    get<unknown>('/payment/reconciliations/bill-sources/page', { params: toBackendPageParams(params) })
+      .then(data => fromBackendPageResult<PaymentChannelBillSource>(data, params)),
+  billFetchBatches: (params?: PaymentPageQuery) =>
+    get<unknown>('/payment/reconciliations/bill-fetch-batches/page', { params: toBackendPageParams(params) })
+      .then(data => fromBackendPageResult<PaymentChannelBillFetchBatch>(data, params)),
+  fetchBill: (data: FetchPaymentChannelBillCommand) => post<PaymentReconciliation>('/payment/reconciliations/bill-fetch', data),
 };
 export const paymentDifferenceApi = {
   ...createPaymentResourceApi<PaymentDifference>('/payment/differences'),

@@ -10,9 +10,7 @@ public interface PaymentChannelContractMapper extends BaseMapper<PaymentChannelC
 
     long countDeleteRelations(
             @Param("tenantId") Long tenantId,
-            @Param("contractId") Long contractId,
-            @Param("channelId") Long channelId,
-            @Param("subjectId") Long subjectId);
+            @Param("contractId") Long contractId);
 
     String selectActiveConfigValuesJson(@Param("tenantId") Long tenantId, @Param("contractId") Long contractId);
 }

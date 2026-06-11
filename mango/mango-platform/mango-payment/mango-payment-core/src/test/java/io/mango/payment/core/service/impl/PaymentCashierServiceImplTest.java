@@ -396,8 +396,6 @@ class PaymentCashierServiceImplTest {
         method.setCashierGroupCode("WECHAT_PAY");
         method.setCashierGroupName("微信支付");
         method.setCashierGroupSort(10);
-        method.setMinAmount(1L);
-        method.setMaxAmount(5000000L);
         method.setStatus(1);
         return method;
     }

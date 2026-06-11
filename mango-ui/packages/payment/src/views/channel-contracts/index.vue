@@ -7,6 +7,7 @@
     :defaults="{ status: 1 }"
     :rules="rules"
     :to-save-payload="toSavePayload"
+    :row-actions="contractRowActions"
     :on-editor-opened="onEditorOpened"
   >
     <template #form="{ form }">
@@ -165,25 +166,126 @@
       </el-form-item>
     </template>
   </PaymentResourcePage>
+
+  <el-dialog
+    v-model="billSourceDialogVisible"
+    title="账单获取配置"
+    width="880px"
+    destroy-on-close
+    append-to-body
+  >
+    <section class="bill-source-config">
+      <div class="bill-source-config__summary">
+        <span>{{ currentContract?.subjectName || subjectLabels.labelOf(currentContract?.subjectId) }}</span>
+        <span>{{ currentContract?.channelName || channelLabels.labelOf(currentContract?.channelId) }}</span>
+        <span>{{ currentContract?.merchantNo || '-' }}</span>
+      </div>
+      <el-alert
+        v-if="!fetchModeOptions.length"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="当前支付通道尚未声明账单获取方式，请先在支付通道中配置。"
+      />
+      <el-form ref="billSourceFormRef" :model="billSourceForm" :rules="billSourceRules" label-width="112px" class="payment-dialog-form">
+        <el-row :gutter="16">
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="获取方式" prop="fetchMode">
+              <el-select v-model="billSourceForm.fetchMode" placeholder="请选择获取方式">
+                <el-option
+                  v-for="item in fetchModeOptions"
+                  :key="item.fetchMode"
+                  :label="item.fetchModeName"
+                  :value="item.fetchMode"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="启用状态" prop="enabled">
+              <el-switch
+                v-model="billSourceEnabled"
+                active-text="启用"
+                inactive-text="停用"
+                inline-prompt
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="接口/服务器" prop="endpoint">
+              <el-input v-model="billSourceForm.endpoint" clearable placeholder="HTTP 地址或 FTP/FTPS 服务器" />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="远端路径">
+              <el-input v-model="billSourceForm.remotePath" clearable placeholder="FTP/FTPS 远端文件路径" />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="认证引用">
+              <el-input v-model="billSourceForm.credentialRef" clearable placeholder="认证配置引用，不填写明文密钥" />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="分页模式">
+              <el-select v-model="billSourceForm.pageMode" clearable placeholder="HTTP 获取时可选">
+                <el-option label="分页" value="PAGE" />
+                <el-option label="游标" value="CURSOR" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <div class="bill-source-config__actions">
+        <el-button @click="resetBillSourceForm">清空</el-button>
+        <el-button type="primary" :loading="savingBillSource" @click="submitBillSource">保存配置</el-button>
+      </div>
+      <el-table :data="billSourceRows" row-key="id" stripe class="bill-source-config__table">
+        <el-table-column label="获取方式" width="120">
+          <template #default="{ row }">{{ row.fetchModeName || row.fetchMode }}</template>
+        </el-table-column>
+        <el-table-column prop="endpoint" label="接口/服务器" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="remotePath" label="远端路径" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="credentialRef" label="认证引用" min-width="150" show-overflow-tooltip />
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.enabled === 1 ? 'success' : 'info'">{{ row.enabled === 1 ? '启用' : '停用' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="90" align="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="editBillSource(row)">编辑</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </section>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { ApiId } from '@mango/api-schema';
-import type { FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import PaymentResourcePage from '../../components/PaymentResourcePage.vue';
 import PaymentEntitySelect from '../../components/PaymentEntitySelect.vue';
 import PaymentChannelConfigValuesForm from '../../components/PaymentChannelConfigValuesForm.vue';
 import { usePaymentEntityLabels } from '../../components/PaymentEntityLabels';
+import type { PaymentRowAction } from '../../components/PaymentRowActions';
 import {
   paymentChannelApi,
   paymentChannelCapabilityApi,
   paymentChannelContractApi,
+  paymentReconciliationApi,
   paymentEnterpriseSubjectApi,
+  type PaymentChannelBillFetchMode,
+  type PaymentChannelBillSource,
+  type PaymentChannel,
   type PaymentChannelCapability,
   type PaymentChannelContractCapability,
   type PaymentChannelContract,
   type PaymentRecord,
+  type SavePaymentChannelBillSourceCommand,
   type PaymentTableColumn,
 } from '../../api/payment';
 
@@ -191,11 +293,35 @@ const subjectLabels = usePaymentEntityLabels();
 const channelLabels = usePaymentEntityLabels();
 const selectedChannelTemplate = ref<string>();
 const channelCapabilities = ref<PaymentChannelCapability[]>([]);
+const billSourceDialogVisible = ref(false);
+const savingBillSource = ref(false);
+const currentContract = ref<PaymentChannelContract>();
+const billSourceRows = ref<PaymentChannelBillSource[]>([]);
+const fetchModeOptions = ref<PaymentChannelBillFetchMode[]>([]);
+const currentChannel = ref<PaymentChannel>();
+const billSourceFormRef = ref<FormInstance>();
 
 type PaymentChannelContractSavePayload = Omit<PaymentChannelContract, 'contractCode' | 'environment'> & PaymentRecord;
 type PaymentChannelCapabilityOption = Omit<PaymentChannelCapability, 'environment'> & {
   environment?: string;
 };
+type BillSourceForm = SavePaymentChannelBillSourceCommand;
+
+const billSourceForm = reactive<BillSourceForm>({
+  id: undefined,
+  contractId: '',
+  fetchMode: 'MANUAL',
+  endpoint: '',
+  remotePath: '',
+  credentialRef: '',
+  pageMode: '',
+  enabled: 1,
+});
+
+const billSourceEnabled = computed({
+  get: () => billSourceForm.enabled === 1,
+  set: value => { billSourceForm.enabled = value ? 1 : 0; },
+});
 
 const columns: PaymentTableColumn[] = [
   { prop: 'subjectName', label: '企业主体', minWidth: 190, formatter: (row, value) => String(value || subjectLabels.labelOf(row.subjectId)) },
@@ -209,6 +335,89 @@ const rules: FormRules = {
   channelId: [{ required: true, message: '请选择支付通道', trigger: 'change' }],
   merchantNo: [{ required: true, message: '请输入商户号', trigger: 'blur' }],
 };
+
+const billSourceRules: FormRules<BillSourceForm> = {
+  fetchMode: [{ required: true, message: '请选择获取方式', trigger: 'change' }],
+  enabled: [{ required: true, message: '请选择启用状态', trigger: 'change' }],
+};
+
+function contractRowActions(row: PaymentRecord): PaymentRowAction[] {
+  return [
+    {
+      key: 'bill-source',
+      label: '账单配置',
+      type: 'primary',
+      onClick: () => openBillSourceDialog(row as PaymentChannelContract),
+    },
+  ];
+}
+
+async function openBillSourceDialog(row: PaymentChannelContract) {
+  currentContract.value = row;
+  currentChannel.value = row.channelId ? await paymentChannelApi.detail(row.channelId) : undefined;
+  billSourceDialogVisible.value = true;
+  await Promise.all([loadFetchModes(), loadBillSources(row.id)]);
+  resetBillSourceForm();
+}
+
+async function loadFetchModes() {
+  const options = await paymentReconciliationApi.billFetchModes();
+  const supportedModes = currentChannel.value?.billFetchModes || [];
+  fetchModeOptions.value = options.filter(item => supportedModes.includes(item.fetchMode));
+}
+
+async function loadBillSources(contractId?: ApiId) {
+  if (!contractId) {
+    billSourceRows.value = [];
+    return;
+  }
+  const page = await paymentChannelContractApi.billSources({ pageNum: 1, pageSize: 20, contractId });
+  billSourceRows.value = page.list;
+}
+
+function resetBillSourceForm() {
+  billSourceForm.id = undefined;
+  billSourceForm.contractId = currentContract.value?.id || '';
+  billSourceForm.fetchMode = fetchModeOptions.value[0]?.fetchMode || '';
+  billSourceForm.endpoint = '';
+  billSourceForm.remotePath = '';
+  billSourceForm.credentialRef = '';
+  billSourceForm.pageMode = '';
+  billSourceForm.enabled = 1;
+}
+
+function editBillSource(row: PaymentChannelBillSource) {
+  billSourceForm.id = row.id;
+  billSourceForm.contractId = row.contractId || currentContract.value?.id || '';
+  billSourceForm.fetchMode = row.fetchMode || 'MANUAL';
+  billSourceForm.endpoint = row.endpoint || '';
+  billSourceForm.remotePath = row.remotePath || '';
+  billSourceForm.credentialRef = row.credentialRef || '';
+  billSourceForm.pageMode = row.pageMode || '';
+  billSourceForm.enabled = row.enabled === 0 ? 0 : 1;
+}
+
+async function submitBillSource() {
+  await billSourceFormRef.value?.validate();
+  savingBillSource.value = true;
+  try {
+    await paymentChannelContractApi.saveBillSource({
+      id: billSourceForm.id,
+      contractId: billSourceForm.contractId,
+      fetchMode: billSourceForm.fetchMode,
+      endpoint: optionalString(billSourceForm.endpoint),
+      remotePath: optionalString(billSourceForm.remotePath),
+      credentialRef: optionalString(billSourceForm.credentialRef),
+      pageMode: optionalString(billSourceForm.pageMode),
+      enabled: billSourceForm.enabled,
+    });
+    ElMessage.success('账单获取配置已保存');
+    await loadBillSources(currentContract.value?.id);
+    resetBillSourceForm();
+  } finally {
+    savingBillSource.value = false;
+  }
+}
 
 async function onChannelChange(form: PaymentRecord, value: ApiId | ApiId[] | string) {
   const channelId = Array.isArray(value) ? value[0] : value;
@@ -371,6 +580,32 @@ function yuanToCents(value: number) {
 
 .contract-capability-editor :deep(.el-input-number),
 .contract-capability-editor :deep(.el-date-editor) {
+  width: 100%;
+}
+
+.bill-source-config {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bill-source-config__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color-light);
+  border-radius: 6px;
+}
+
+.bill-source-config__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.bill-source-config__table {
   width: 100%;
 }
 </style>

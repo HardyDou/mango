@@ -21,6 +21,7 @@ export function registerMangoPaymentAdminPages() {
       'payment/offline-collections/index': () => import('./index').then(m => m.PaymentOfflineCollectionView),
       'payment/offline-refunds/index': () => import('./index').then(m => m.PaymentOfflineRefundView),
       'payment/refund-orders/index': () => import('./index').then(m => m.PaymentRefundOrderView),
+      'payment/refund-approvals/index': () => import('./index').then(m => m.PaymentRefundApprovalView),
       'payment/transaction-flows/index': () => import('./index').then(m => m.PaymentTransactionFlowView),
       'payment/exception-orders/index': () => import('./index').then(m => m.PaymentExceptionOrderView),
       'payment/notification-records/index': () => import('./index').then(m => m.PaymentNotificationRecordView),
