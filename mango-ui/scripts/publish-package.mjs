@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 
 const HOSTED_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/';
 const GROUP_REGISTRY = 'http://nexus.inner.yunxinbaokeji.com/repository/npm-group/';
@@ -64,6 +65,77 @@ function npmView(packageName, registry) {
     stdio: 'pipe',
     encoding: 'utf8',
   });
+}
+
+function verifyPublishedPackage(packageName, version, foundPackage) {
+  const tempDir = mkdtempSync(join(tmpdir(), 'mango-npm-publish-verify-'));
+  try {
+    console.log(`Verifying published tarball ${packageName}@${version}`);
+    run('npm', [
+      'pack',
+      `${packageName}@${version}`,
+      `--registry=${HOSTED_REGISTRY}`,
+      '--pack-destination',
+      tempDir,
+    ]);
+    const tarball = readdirSync(tempDir).find((file) => file.endsWith('.tgz'));
+    if (!tarball) {
+      console.error(`Published tarball not found for ${packageName}@${version}.`);
+      process.exit(1);
+    }
+    run('tar', ['-xzf', join(tempDir, tarball), '-C', tempDir]);
+    const packageRoot = join(tempDir, 'package');
+    const publishedPackageJsonPath = join(packageRoot, 'package.json');
+    if (!existsSync(publishedPackageJsonPath)) {
+      console.error(`Published tarball for ${packageName}@${version} does not contain package.json.`);
+      process.exit(1);
+    }
+    const publishedPackageJson = JSON.parse(readFileSync(publishedPackageJsonPath, 'utf8'));
+    if (publishedPackageJson.name !== packageName || publishedPackageJson.version !== version) {
+      console.error(
+        `Published tarball metadata mismatch: expected ${packageName}@${version}, got ${publishedPackageJson.name}@${publishedPackageJson.version}.`,
+      );
+      process.exit(1);
+    }
+    verifyPublishedFiles(packageName, packageRoot, foundPackage.packageJson);
+    if (packageName === '@mango/cli') {
+      verifyPublishedCliLocks(packageRoot, foundPackage);
+    }
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+function verifyPublishedFiles(packageName, packageRoot, sourcePackageJson) {
+  for (const entry of sourcePackageJson.files ?? []) {
+    if (!existsSync(join(packageRoot, entry))) {
+      console.error(`Published tarball for ${packageName} is missing files entry: ${entry}`);
+      process.exit(1);
+    }
+  }
+  if (sourcePackageJson.exports?.['./style.css'] && !existsSync(join(packageRoot, 'style.css'))) {
+    console.error(`Published tarball for ${packageName} is missing exported style.css.`);
+    process.exit(1);
+  }
+}
+
+function verifyPublishedCliLocks(packageRoot, foundPackage) {
+  const publishedLocksPath = join(packageRoot, 'release-versions.json');
+  const sourceLocksPath = join(process.cwd(), 'packages', foundPackage.dir, 'release-versions.json');
+  if (!existsSync(publishedLocksPath)) {
+    console.error('Published @mango/cli tarball is missing release-versions.json.');
+    process.exit(1);
+  }
+  const publishedLocks = JSON.parse(readFileSync(publishedLocksPath, 'utf8'));
+  const sourceLocks = JSON.parse(readFileSync(sourceLocksPath, 'utf8'));
+  if (JSON.stringify(publishedLocks) !== JSON.stringify(sourceLocks)) {
+    console.error('Published @mango/cli release-versions.json does not match source release lock.');
+    process.exit(1);
+  }
+  if (!existsSync(join(packageRoot, 'CHANGELOG.md'))) {
+    console.error('Published @mango/cli tarball is missing CHANGELOG.md.');
+    process.exit(1);
+  }
 }
 
 const args = process.argv.slice(2);
@@ -144,6 +216,14 @@ if (!dryRun) {
       console.error(`Published, but ${name} verification failed for ${packageName}.`);
       process.exit(1);
     }
-    console.log(`${name}: ${packageName}@${result.stdout.trim()}`);
+    const publishedVersion = result.stdout.trim();
+    if (publishedVersion !== version) {
+      console.error(
+        `Published, but ${name} resolved ${packageName}@${publishedVersion}; expected ${packageName}@${version}.`,
+      );
+      process.exit(1);
+    }
+    console.log(`${name}: ${packageName}@${publishedVersion}`);
   }
+  verifyPublishedPackage(packageName, version, found);
 }

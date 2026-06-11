@@ -25,7 +25,10 @@
           </el-icon>
           <span>{{ val.meta?.title || val.name }}</span>
         </template>
-        <SubItem :chil="val.children" />
+        <SubItem
+          :chil="val.children"
+          :level="2"
+        />
       </el-sub-menu>
       <el-menu-item
         v-else
@@ -105,8 +108,9 @@ watch(
     background-color: var(--mango-color-menu-active-bg) !important;
   }
 
-  :deep(.el-sub-menu .el-menu-item) {
-    padding-left: 44px !important;
+  :deep(.el-menu-item),
+  :deep(.el-sub-menu__title) {
+    padding-left: var(--mango-nav-menu-indent, 20px) !important;
   }
 
   // 收起状态时图标居中
