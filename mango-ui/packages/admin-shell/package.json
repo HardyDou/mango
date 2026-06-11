@@ -1,6 +1,6 @@
 {
   "name": "@mango/admin-shell",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "private": false,
   "type": "module",
   "main": "dist/index.js",

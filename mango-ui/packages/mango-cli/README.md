@@ -11,6 +11,38 @@ npm install -g @mango/cli --registry=http://nexus.inner.yunxinbaokeji.com/reposi
 mango init mango-admin-demo --preset full --topology monolith
 ```
 
+## Upgrade
+
+Check the latest published CLI version:
+
+```bash
+npm view @mango/cli version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+```
+
+Upgrade the global CLI:
+
+```bash
+npm install -g @mango/cli@latest --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
+```
+
+Read version changes in [CHANGELOG.md](./CHANGELOG.md) before upgrading a business project.
+
+After upgrading, show the same release notes directly from the installed CLI:
+
+```bash
+mango changelog
+```
+
+Existing generated projects are not modified automatically by upgrading the global CLI. For generated project template changes, either regenerate the project with the new CLI or copy the affected generated files from a clean project created by the target CLI version.
+
+For `1.0.27`, existing generated projects should specifically review:
+
+- `scripts/dev-workspace.sh`
+- `scripts/backend-dev.sh`
+- `README.md`
+- `AGENTS.md`
+- `frontend/package.json`
+
 ## Init
 
 ```bash
@@ -72,6 +104,19 @@ mango pmo sync --project-dir ./claim-admin
 - missing `business-docs/plans/` examples
 
 It writes the Mango commit, CLI version, and sync time into the baseline README. It does not overwrite business-owned `business-pmo/rules/**` files, and it leaves existing business docs in place.
+
+Sync generated startup shell scripts at the same time:
+
+```bash
+mango pmo sync --project-dir ./claim-admin --sync-shell
+```
+
+`--sync-shell` updates:
+
+- `scripts/dev-workspace.sh`
+- `scripts/backend-dev.sh`
+
+Use `--dry-run` first to review the files that will change.
 
 Preview changes without writing files:
 

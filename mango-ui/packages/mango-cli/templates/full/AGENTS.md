@@ -48,7 +48,7 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 后端开发只使用：
 
 ```bash
-scripts/dev-workspace.sh backend
+scripts/dev-workspace.sh start
 ```
 
 不要用 `java -jar` 或手写 Maven reactor 命令作为开发启动入口；这些细节由脚本封装。
