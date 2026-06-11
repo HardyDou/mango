@@ -44,13 +44,13 @@ scripts/dev-workspace.sh backend
 | Environment | Property | Default | Applies to | Notes |
 |---|---|---:|---|---|
 | `MANGO_JOB_EMBEDDED_WORKER_ENABLED` | `mango.job.native.embedded-worker-enabled` | `true` | JobCenter process | Enable in-process `IN_MEMORY` Worker for monolith layouts. Set `false` for pure JobCenter. |
-| `MANGO_JOB_TRANSPORT` | `mango.job.native.transport` | `IN_MEMORY` | JobCenter process | Default dispatch transport. Worker address still takes precedence when it is `in-memory://` or `http(s)://`. |
+| `MANGO_JOB_TRANSPORT` | `mango.job.native.transport` | `IN_MEMORY` | JobCenter process | Default dispatch transport. Worker address still takes precedence when it is `embedded://`, legacy `in-memory://`, or `http(s)://`. |
 | `MANGO_JOB_SCHEDULER_ENABLED` | `mango.job.native.scheduler-enabled` | `true` | JobCenter process | Disable on pure Worker nodes. |
 | `MANGO_JOB_SCAN_INTERVAL_MILLIS` | `mango.job.native.scan-interval-millis` | `5000` | JobCenter process | Scheduler scan interval. |
 | `MANGO_JOB_SCHEDULER_TENANT_ID` | `mango.job.native.scheduler-tenant-id` | `1` | JobCenter process | Tenant context used by the scheduler thread. |
 | `MANGO_JOB_SCAN_LIMIT` | `mango.job.native.scan-limit` | `50` | JobCenter process | Max due cursors scanned per tick. |
 | `MANGO_JOB_LEASE_SECONDS` | `mango.job.native.lease-seconds` | `300` | JobCenter process | Attempt lease seconds. Must be longer than normal dispatch latency. |
-| `MANGO_JOB_WORKER_ADDRESS` | `mango.job.native.worker-address` | empty | Remote Worker process | Required for remote Worker registration, for example `http://worker-a:8080`. |
+| `MANGO_JOB_WORKER_ADDRESS` | `mango.job.native.worker-address` | empty | Worker process | Optional for embedded workers; when empty Mango generates `embedded://{ip}:{server.port}`. Required for remote Worker registration, for example `http://worker-a:8080`. |
 | `MANGO_JOB_CENTER_ADDRESS` | `mango.job.native.job-center-address` | empty | Remote Worker process | Required when Worker must register to an external JobCenter. |
 | `MANGO_JOB_WORKER_HEARTBEAT_INTERVAL_MILLIS` | `mango.job.native.worker-heartbeat-interval-millis` | `15000` | Remote Worker process | Worker registration heartbeat interval. |
 | `MANGO_JOB_PROBE_ENABLED` | `mango.job.probe.enabled` | `true` | Job process | Enables built-in probe handler so a default embedded worker is visible after startup. Set `false` when the process must only expose business handlers. |
@@ -59,7 +59,8 @@ scripts/dev-workspace.sh backend
 
 - All JobCenter nodes must share the same `mango_job` database.
 - Do not point nodes in one deployment to isolated Job databases.
-- Embedded workers are allowed on multiple nodes; the scheduler still uses the shared cursor and idempotency controls.
+- Embedded workers are allowed on multiple nodes. Their stable identity address is `embedded://{ip}:{server.port}` and dispatch stays in the current JVM.
+- The scheduler uses shared database cursors and idempotency controls so one task instance is leased by one runtime only.
 - Remote workers must register their app code, address, transport and handler capabilities before receiving tasks.
 - Production deployments must verify Cron stability, restart recovery, Worker expiration and log retention before enabling critical scheduled tasks.
 

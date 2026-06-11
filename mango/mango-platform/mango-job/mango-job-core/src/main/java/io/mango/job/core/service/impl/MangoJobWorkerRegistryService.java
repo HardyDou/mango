@@ -127,8 +127,9 @@ public class MangoJobWorkerRegistryService implements IMangoJobWorkerRegistrySer
         if (command.getTransportType() == JobTransportType.IN_MEMORY) {
             Require.isTrue(command.getRegisterSource() == JobWorkerRegisterSource.EMBEDDED_AUTO,
                     "IN_MEMORY Worker 只能由系统自动注册");
-            Require.isTrue(MangoJobTransportAddresses.isInMemory(command.getWorkerAddress()),
-                    "IN_MEMORY Worker 地址必须使用 " + MangoJobTransportAddresses.IN_MEMORY_PREFIX);
+            Require.isTrue(MangoJobTransportAddresses.isEmbedded(command.getWorkerAddress()),
+                    "IN_MEMORY Worker 地址必须使用 " + MangoJobTransportAddresses.EMBEDDED_PREFIX
+                            + " 或兼容旧地址 " + MangoJobTransportAddresses.IN_MEMORY_PREFIX);
         }
         if (command.getTransportType() == JobTransportType.HTTP_INTERNAL) {
             Require.isTrue(MangoJobTransportAddresses.isHttpInternal(command.getWorkerAddress()),

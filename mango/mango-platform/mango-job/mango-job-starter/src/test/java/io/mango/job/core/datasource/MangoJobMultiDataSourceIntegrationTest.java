@@ -62,6 +62,7 @@ import io.mango.job.core.service.IMangoJobQueryService;
 import io.mango.job.core.service.IMangoJobWorkerRegistryService;
 import io.mango.job.core.service.nativeengine.IMangoNativeJobRuntime;
 import io.mango.job.support.nativeengine.IMangoJobWorkerTransport;
+import io.mango.job.support.nativeengine.MangoJobTransportAddresses;
 import io.mango.job.support.nativeengine.MangoJobWorkerDispatchRequest;
 import io.mango.job.support.nativeengine.MangoNativeJobProperties;
 import io.mango.job.starter.MangoEmbeddedWorkerRegistrar;
@@ -334,7 +335,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .singleElement()
                 .extracting("workerAddress")
                 .asString()
-                .startsWith("in-memory://");
+                .startsWith("embedded://");
 
         MangoContextHolder.set(MangoContextSnapshot.request("req-3", "trace-3", "tenant-c", "internal-admin", "127.0.0.1")
                 .withSecurity(202L, "tenant-c", "job-admin", "test", "user", "tenant", 202L, "internal-admin"));
@@ -383,8 +384,8 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(jobQueryService.pageWorkers(new MangoJobWorkerPageQuery()).getList())
                 .singleElement()
                 .satisfies(worker -> {
-                    assertThat(worker.getWorkerAddress()).startsWith("in-memory://");
-                    assertThat(worker.getRuntimeAddress()).startsWith("in-memory://");
+                    assertThat(worker.getWorkerAddress()).startsWith("embedded://");
+                    assertThat(worker.getRuntimeAddress()).startsWith("embedded://");
                     assertThat(worker.getTransportType()).isEqualTo(JobTransportType.IN_MEMORY.name());
                     assertThat(worker.getRegisterSource()).isEqualTo(JobWorkerRegisterSource.EMBEDDED_AUTO.name());
                     assertThat(worker.getServiceCode()).isEqualTo("internal-admin");
@@ -402,7 +403,7 @@ class MangoJobMultiDataSourceIntegrationTest {
     }
 
     @Test
-    void nativeRuntime_shouldExecuteInMemoryWorkerAndPersistLogsOnJobDatasource() {
+    void nativeRuntime_shouldExecuteEmbeddedWorkerAndPersistLogsOnJobDatasource() {
         MangoContextHolder.set(MangoContextSnapshot.request("req-native", "trace-native", "tenant-b",
                         "internal-admin", "127.0.0.1")
                 .withSecurity(208L, "tenant-b", "job-admin", "test", "user", "tenant", 208L, "internal-admin"));
@@ -436,7 +437,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         assertThat(detail.getContent()).contains("handlerResult=ok");
         assertThat(detail.getContent()).contains("syncOrderHandler System.out");
         assertThat(detail.getContent()).contains("syncOrderHandler logger");
-        assertThat(detail.getContent()).contains("Job attempt leased by in-memory://");
+        assertThat(detail.getContent()).contains("Job attempt leased by embedded://");
         assertThat(query("job", () -> logChunkMapper.selectList(
                 new LambdaQueryWrapper<>()).stream()
                 .filter(log -> "System.out".equals(log.getLoggerName()))
@@ -453,7 +454,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .singleElement()
                 .satisfies(worker -> {
                     assertThat(worker.getEngineType()).isEqualTo(JobEngineType.MANGO_NATIVE.name());
-                    assertThat(worker.getWorkerAddress()).startsWith("in-memory://");
+                    assertThat(worker.getWorkerAddress()).startsWith("embedded://");
                     assertThat(worker.getServiceCode()).isEqualTo("internal-admin");
                     assertThat(worker.getWorkerGroup()).isEqualTo("internal-admin");
                     assertThat(worker.getTransportType()).isEqualTo(JobTransportType.IN_MEMORY.name());
@@ -617,7 +618,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                     assertThat(instance.getTriggerType()).isEqualTo("SCHEDULED");
                     assertThat(instance.getStatus()).isEqualTo("SUCCESS");
                     assertThat(instance.getJobCode()).isEqualTo("native-cron-stability");
-                    assertThat(instance.getWorkerAddress()).startsWith("in-memory://");
+                    assertThat(instance.getWorkerAddress()).startsWith("embedded://");
                 });
         assertThat(instances.stream().map(MangoJobInstanceVO::getScheduledFireTime).sorted().toList())
                 .containsExactlyElementsOf(expectedFireTimes);
@@ -689,16 +690,16 @@ class MangoJobMultiDataSourceIntegrationTest {
     }
 
     @Test
-    void embeddedWorkers_shouldRegisterMultipleInMemoryInstancesAndDispatchOnlyByCapability() {
+    void embeddedWorkers_shouldRegisterMultipleInstancesAndDispatchOnlyCurrentRuntimeByCapability() {
         MangoContextHolder.set(MangoContextSnapshot.request("req-embedded-multi", "trace-embedded-multi",
                         "tenant-b", "internal-admin", "127.0.0.1")
                 .withSecurity(225L, "tenant-b", "job-admin", "test", "user", "tenant", 225L, "internal-admin"));
 
         nativeProperties.setSchedulerTenantId("tenant-b");
         embeddedWorkerRegistrar.registerOnReady();
-        registerEmbeddedWorker("in-memory://test-node/embedded-second-instance",
+        registerEmbeddedWorker("embedded://127.0.0.2:19091",
                 "embedded-second-instance", "syncOrderHandler", "internal-admin", "internal-admin");
-        registerEmbeddedWorker("in-memory://test-node/embedded-service-b-instance",
+        registerEmbeddedWorker("embedded://127.0.0.3:19092",
                 "embedded-service-b-instance", "syncOrderHandler", "service-b", "service-b");
 
         List<MangoJobWorkerSnapshotEntity> embeddedWorkers = query("job", () -> workerSnapshotMapper.selectList(
@@ -713,7 +714,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .hasSize(3)
                 .allSatisfy(worker -> {
                     assertThat(worker.getStatus()).isEqualTo(JobWorkerStatus.ONLINE.name());
-                    assertThat(worker.getWorkerAddress()).startsWith("in-memory://");
+                    assertThat(worker.getWorkerAddress()).startsWith("embedded://");
                 });
         assertThat(embeddedWorkers)
                 .filteredOn(worker -> "internal-admin".equals(worker.getServiceCode()))
@@ -741,7 +742,7 @@ class MangoJobMultiDataSourceIntegrationTest {
                 .satisfies(instance -> {
                     assertThat(instance.getId()).isEqualTo(instanceId);
                     assertThat(instance.getStatus()).isEqualTo("SUCCESS");
-                    assertThat(instance.getWorkerAddress()).startsWith("in-memory://");
+                    assertThat(instance.getWorkerAddress()).startsWith("embedded://");
                 });
         Long workerId = query("job", () -> jdbcTemplate().queryForObject(
                 "SELECT worker_id FROM mango_job_attempt WHERE instance_id = ?",
@@ -1477,7 +1478,7 @@ class MangoJobMultiDataSourceIntegrationTest {
         worker.setInstanceId(workerAddress);
         worker.setWorkerAddress(workerAddress);
         worker.setRuntimeAddress(workerAddress);
-        worker.setTransportType(workerAddress.startsWith("in-memory://")
+        worker.setTransportType(MangoJobTransportAddresses.isEmbedded(workerAddress)
                 ? JobTransportType.IN_MEMORY.name() : JobTransportType.HTTP_INTERNAL.name());
         worker.setRegisterSource(JobWorkerRegisterSource.REMOTE_AUTO.name());
         worker.setStatus(status);

@@ -1,3 +1,6 @@
+server:
+  port: ${MANGO_BACKEND_PORT:5555}
+
 mango:
   persistence:
     datasources:

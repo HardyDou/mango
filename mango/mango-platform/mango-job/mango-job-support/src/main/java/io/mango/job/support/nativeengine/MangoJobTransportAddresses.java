@@ -6,7 +6,12 @@ package io.mango.job.support.nativeengine;
 public final class MangoJobTransportAddresses {
 
     /**
-     * 内嵌 Worker 内存通信地址前缀。
+     * 内嵌 Worker 稳定地址前缀。
+     */
+    public static final String EMBEDDED_PREFIX = "embedded://";
+
+    /**
+     * 内嵌 Worker 旧版内存通信地址前缀。
      */
     public static final String IN_MEMORY_PREFIX = "in-memory://";
 
@@ -24,13 +29,13 @@ public final class MangoJobTransportAddresses {
     }
 
     /**
-     * 判断是否为内存 Worker 地址。
+     * 判断是否为内嵌 Worker 地址。
      *
      * @param address Worker 地址
-     * @return true 表示内存 Worker 地址
+     * @return true 表示内嵌 Worker 地址
      */
-    public static boolean isInMemory(String address) {
-        return address != null && address.startsWith(IN_MEMORY_PREFIX);
+    public static boolean isEmbedded(String address) {
+        return address != null && (address.startsWith(EMBEDDED_PREFIX) || address.startsWith(IN_MEMORY_PREFIX));
     }
 
     /**
