@@ -16,6 +16,10 @@ const uiDependencyLocks = {
   'element-plus': '2.14.1',
   '@element-plus/icons-vue': '2.3.2',
 };
+const uiDependencyTemplateLocks = {
+  'element-plus': '{{elementPlusVersion}}',
+  '@element-plus/icons-vue': '{{iconsVueVersion}}',
+};
 
 const registryArg = process.argv.find((arg) => arg.startsWith('--registry='));
 const registry = registryArg?.slice('--registry='.length);
@@ -71,7 +75,12 @@ for (const packageJsonPath of collectPackageJsonFiles([
     const dependencies = packageJson[dependencyType] ?? {};
     for (const [dependencyName, lockedVersion] of Object.entries(uiDependencyLocks)) {
       const declaredVersion = dependencies[dependencyName];
-      if (declaredVersion && declaredVersion !== lockedVersion) {
+      const templateLockedVersion = uiDependencyTemplateLocks[dependencyName];
+      if (
+        declaredVersion
+        && declaredVersion !== lockedVersion
+        && declaredVersion !== templateLockedVersion
+      ) {
         mismatches.push(
           `${relativePath(packageJsonPath)}: ${dependencyType}.${dependencyName} ${declaredVersion} != ${lockedVersion}`,
         );

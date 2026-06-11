@@ -65,6 +65,9 @@ public class AppModuleResourceManifestCommand implements Serializable {
         @Schema(description = "菜单编码或权限码")
         private String menuCode;
 
+        @Schema(description = "父级菜单编码；为空时使用清单树父节点，根节点默认为一级菜单")
+        private String parentCode;
+
         @Schema(description = "前端路由路径")
         private String path;
 

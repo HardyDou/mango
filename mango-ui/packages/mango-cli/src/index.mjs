@@ -35,8 +35,8 @@ const defaultVersions = {
   vueRouter: '^4.1.6',
   vueI18n: '9.2.2',
   pinia: '2.0.32',
-  elementPlus: '2.5.5',
-  iconsVue: '^2.0.10',
+  elementPlus: '2.14.1',
+  iconsVue: '2.3.2',
   vite: '^4.3.3',
   viteVue: '^4.0.0',
   typescript: '^5.9.3',
@@ -226,7 +226,8 @@ Usage:
   mango init <project> --preset full [options]
   mango init <project> --preset custom --modules workflow,template [options]
   mango add <module...> [options]
-  mango pmo sync --project-dir <dir> [--dry-run] [--write-agents]
+  mango changelog
+  mango pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]
   mango module add <module> --aggregate <name> [--aggregate-name <name>] [options]
   mango-cli init <project> --preset full [options]
   mango-cli add <module...> [options]
@@ -247,8 +248,12 @@ Options:
   --project-dir <dir>      Existing project directory for add/module/pmo commands
   --dry-run                Print PMO sync plan without modifying files
   --write-agents           Update root AGENTS.md during PMO sync when it points to an external mango-pmo
+  --sync-shell             Sync generated startup shell scripts during PMO sync
   --force                  Overwrite existing target directory
   --help                   Show help
+
+Upgrade:
+  Run "mango changelog" after upgrading to review new features, upgrade notes, and verification steps.
 
 Modules:
   ${OPTIONAL_MODULES.map(module => `${module.code.padEnd(16)} ${module.label}`).join('\n  ')}
@@ -258,6 +263,11 @@ function main(argv = process.argv.slice(2)) {
   const args = normalizeArgs(argv);
   if (args.includes('--help') || args.includes('-h')) {
     process.stdout.write(usage.trimStart());
+    return;
+  }
+
+  if (args[0] === 'changelog' || args[0] === 'changes' || args[0] === 'release-notes') {
+    printChangelog();
     return;
   }
 
@@ -633,6 +643,7 @@ function syncPmoBaseline(argv) {
     ...planTemplateSync('business-pmo/README.md', targetDir, variables),
     ...planBusinessDocsSync(targetDir, variables),
     planAgentsSync(targetDir, variables, options.writeAgents),
+    ...planShellSync(targetDir, variables, options.syncShell),
   ].filter(Boolean);
 
   const summary = summarizeSyncPlan(plan);
@@ -655,6 +666,7 @@ function parsePmoSyncArgs(argv) {
     projectDir: '.',
     dryRun: false,
     writeAgents: false,
+    syncShell: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -664,6 +676,10 @@ function parsePmoSyncArgs(argv) {
     }
     if (arg === '--write-agents') {
       result.writeAgents = true;
+      continue;
+    }
+    if (arg === '--sync-shell') {
+      result.syncShell = true;
       continue;
     }
     if (arg === '--project-dir') {
@@ -681,6 +697,26 @@ function parsePmoSyncArgs(argv) {
     fail(`unexpected argument: ${arg}`);
   }
   return result;
+}
+
+function planShellSync(targetDir, variables, syncShell) {
+  const shellFiles = [
+    'scripts/dev-workspace.sh',
+    'scripts/backend-dev.sh',
+  ];
+  if (!syncShell) {
+    return shellFiles.map(path => ({
+      action: 'skip',
+      reason: 'rerun with --sync-shell to update generated startup shell',
+      path,
+      targetPath: join(targetDir, path),
+    }));
+  }
+  return shellFiles.map(path => {
+    const sourceFile = join(templateRoot, path);
+    const targetPath = join(targetDir, path);
+    return buildFilePlanItem(path, targetPath, readRenderedTemplateFile(sourceFile, variables));
+  });
 }
 
 function planTemplateSync(templateRelativePath, targetDir, variables) {
@@ -792,6 +828,9 @@ function writePlannedFile(item) {
   mkdirSync(dirname(item.targetPath), { recursive: true });
   writeFileSync(item.targetPath, item.content);
   if (item.path.endsWith('/tools/pmo-preflight.mjs') || item.path.endsWith('/tools/acceptance-evidence-check.mjs')) {
+    chmodSync(item.targetPath, 0o755);
+  }
+  if (item.path === 'scripts/dev-workspace.sh' || item.path === 'scripts/backend-dev.sh') {
     chmodSync(item.targetPath, 0o755);
   }
 }
@@ -1360,6 +1399,15 @@ function readReleaseVersions() {
   return JSON.parse(readFileSync(releaseVersionsPath, 'utf8'));
 }
 
+function printChangelog() {
+  const changelogPath = join(packageRoot, 'CHANGELOG.md');
+  if (!existsSync(changelogPath)) {
+    fail('CHANGELOG.md is missing from @mango/cli package');
+  }
+  process.stdout.write(readFileSync(changelogPath, 'utf8').trimEnd());
+  process.stdout.write('\n');
+}
+
 function readReleasedMangoPackageVersion(packageName, fallback) {
   return releaseVersions.npm?.[`@mango/${packageName}`] || fallback;
 }
@@ -1480,9 +1528,8 @@ function printNextSteps(targetDir, variables) {
   process.stdout.write(`Created Mango ${variables.preset} project: ${relativeTarget}\n\n`);
   process.stdout.write('Next steps:\n');
   process.stdout.write(`  cd ${relativeTarget}\n`);
-  process.stdout.write('  npm --prefix frontend install\n');
-  process.stdout.write('  npm --prefix frontend run build\n');
-  process.stdout.write('  scripts/dev-workspace.sh backend\n');
+  process.stdout.write('  scripts/dev-workspace.sh init\n');
+  process.stdout.write('  scripts/dev-workspace.sh start\n');
   process.stdout.write(`  Review topologies/${variables.topology}/README.md\n`);
 }
 

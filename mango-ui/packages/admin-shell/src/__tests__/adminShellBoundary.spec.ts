@@ -65,7 +65,11 @@ describe('@mango/admin-shell package boundary', () => {
       dependencies?: Record<string, string>;
     };
 
-    expect(packageJson.dependencies?.['@mango/common']).toBe('1.0.7');
+    const releaseVersions = JSON.parse(readFile('../mango-cli/release-versions.json')) as {
+      npm?: Record<string, string>;
+    };
+
+    expect(packageJson.dependencies?.['@mango/common']).toBe(releaseVersions.npm?.['@mango/common']);
   });
 
   it('does not depend on app-private source paths', () => {
