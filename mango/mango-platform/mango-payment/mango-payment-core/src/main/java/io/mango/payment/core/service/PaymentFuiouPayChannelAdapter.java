@@ -146,7 +146,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
                 "富友网银退款查单接口资料未配置，当前仅开放微信扫码和支付宝扫码退款查单");
         PaymentFuiouPayConfig config = configParser.parse(requiredContractConfig(command.tenantId(), command.refundOrder().getContractId()));
         configParser.validateForScanpay(config);
-        Map<String, String> response = call(config, "/commonQuery", refundQueryRequest(command, config));
+        Map<String, String> response = call(config, "/refundQuery", refundQueryRequest(command, config));
         String status = mapRefundQueryStatus(response);
         return new RefundQueryResult("FUIOU_REFUND_QUERY", response.get("result_code"), response.get("trans_stat"), status);
     }
@@ -224,11 +224,10 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         return fields;
     }
 
-    private Map<String, String> refundQueryRequest(RefundQueryCommand command, PaymentFuiouPayConfig config) {
+    Map<String, String> refundQueryRequest(RefundQueryCommand command, PaymentFuiouPayConfig config) {
         Map<String, String> fields = baseFields(config);
-        fields.put("version", "1");
-        fields.put("order_type", orderType(command.refundOrder().getMethodCode()));
-        fields.put("mchnt_order_no", command.refundOrder().getPayOrderNo());
+        fields.put("version", "1.0");
+        fields.put("refund_order_no", command.refundOrder().getRefundOrderNo());
         fields.put("sign", signService.sign(fields, config.privateKey()));
         return fields;
     }
@@ -488,9 +487,21 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
                 .replace(">", "&gt;");
     }
 
-    private String mapRefundQueryStatus(Map<String, String> response) {
-        if ("REFUND".equals(response.get("trans_stat"))) {
+    String mapRefundQueryStatus(Map<String, String> response) {
+        String resultCode = response.get("result_code");
+        String transStat = response.get("trans_stat");
+        if (RESULT_SUCCESS.equals(resultCode) && "SUCCESS".equals(transStat)) {
             return PaymentRefundOrderStatusEnum.SUCCESS.getCode();
+        }
+        if (RESULT_SUCCESS.equals(resultCode) && "PAYERROR".equals(transStat)) {
+            return PaymentRefundOrderStatusEnum.FAILED.getCode();
+        }
+        if ((RESULT_SUCCESS.equals(resultCode) && ("USERPAYING".equals(transStat) || "PROCESSING".equals(transStat)))
+                || "9999".equals(resultCode)) {
+            return PaymentRefundOrderStatusEnum.REFUNDING.getCode();
+        }
+        if (!RESULT_SUCCESS.equals(resultCode)) {
+            return PaymentRefundOrderStatusEnum.FAILED.getCode();
         }
         return PaymentRefundOrderStatusEnum.REFUNDING.getCode();
     }

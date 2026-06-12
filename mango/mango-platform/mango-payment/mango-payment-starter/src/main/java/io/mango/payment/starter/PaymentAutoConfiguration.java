@@ -5,21 +5,24 @@ import io.mango.payment.core.service.PaymentNotificationService;
 import io.mango.payment.core.service.PaymentObservabilityProperties;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-@Configuration
+@AutoConfiguration
+@AutoConfigureAfter(name = "io.mango.workflow.starter.WorkflowAutoConfiguration")
 @ConditionalOnProperty(prefix = "mango.payment", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(PaymentProperties.class)
 @MapperScan("io.mango.payment.core.mapper")
 @ComponentScan({
         "io.mango.payment.core.service",
-        "io.mango.payment.starter.controller"
+        "io.mango.payment.starter.controller",
+        "io.mango.payment.starter.workflow"
 })
 public class PaymentAutoConfiguration {
 

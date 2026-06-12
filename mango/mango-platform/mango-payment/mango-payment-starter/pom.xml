@@ -17,6 +17,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.workflow</groupId>
+            <artifactId>mango-workflow-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
         </dependency>

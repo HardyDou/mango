@@ -1,4 +1,4 @@
-package io.mango.workflow.core.support;
+package io.mango.payment.starter.workflow;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.flowable.engine.RepositoryService;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -30,13 +32,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 初始化支付域内置工作流定义。
+ * Initializes payment-owned workflow definitions.
  */
 @Slf4j
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
 @RequiredArgsConstructor
-public class WorkflowPaymentDefinitionInitializer implements ApplicationRunner {
+@ConditionalOnBean({
+        WorkflowCategoryMapper.class,
+        WorkflowDefinitionMapper.class,
+        IWorkflowDefinitionService.class,
+        RepositoryService.class
+})
+@ConditionalOnProperty(prefix = "mango.payment.workflow", name = "refund-approval-initializer-enabled",
+        havingValue = "true", matchIfMissing = true)
+public class PaymentRefundApprovalWorkflowDefinitionInitializer implements ApplicationRunner {
 
     public static final String PAYMENT_DOMAIN_CODE = "PAYMENT";
     public static final String REFUND_APPROVAL_DEFINITION_KEY = "PAYMENT_REFUND_APPROVAL";

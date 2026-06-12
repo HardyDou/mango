@@ -68,23 +68,21 @@ class PaymentFuiouPayMigrationTest {
 
     private void assertFuiouCallbackHttps1443(String sql) {
         assertThat(sql)
-                .contains("'notifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
-                .contains("'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
-                .contains("'gatewayBackNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
-                .contains("c.`channel_code` = 'FUIOU_PAY'")
-                .contains("cc.`del_flag` = 0")
+                .contains("No-op by design")
+                .contains("not overwritten by formal Flyway migration")
+                .doesNotContain("UPDATE `payment_channel_contract`")
+                .doesNotContain("JSON_MERGE_PATCH")
                 .doesNotContain("27.185.20.146")
-                .doesNotContain("douxy.inner.yunxinbaokeji.com:7775");
+                .doesNotContain("douxy.inner.yunxinbaokeji.com");
     }
 
     private void assertFuiouGatewayPageNotifyUrl(String sql) {
         assertThat(sql)
-                .contains("'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/#/payment/gateway-result'")
-                .contains("'gatewayBackNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
-                .contains("'notifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
-                .contains("c.`channel_code` = 'FUIOU_PAY'")
-                .contains("cc.`del_flag` = 0")
-                .doesNotContain("'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'");
+                .contains("No-op by design")
+                .contains("not overwritten by formal Flyway migration")
+                .doesNotContain("UPDATE `payment_channel_contract`")
+                .doesNotContain("JSON_MERGE_PATCH")
+                .doesNotContain("douxy.inner.yunxinbaokeji.com");
     }
 
     private void assertFuiouScanpayConfiguration(String sql) {

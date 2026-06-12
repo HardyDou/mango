@@ -1,7 +1,9 @@
 package io.mango.payment.core.service;
 
-import io.mango.payment.api.enums.PaymentOrderStatusEnum;
 import io.mango.common.exception.BizException;
+import io.mango.payment.api.enums.PaymentOrderStatusEnum;
+import io.mango.payment.api.enums.PaymentRefundOrderStatusEnum;
+import io.mango.payment.api.vo.PaymentRefundOrderVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -138,6 +140,39 @@ class PaymentFuiouPayChannelAdapterTest {
     }
 
     @Test
+    @DisplayName("refundQueryRequest should query by refund order number only")
+    void refundQueryRequest_usesRefundOrderNo() {
+        when(signService.sign(any(), eq("merchant-private-key"))).thenReturn("signed-value");
+
+        Map<String, String> request = adapter.refundQueryRequest(
+                new IPaymentChannelAdapter.RefundQueryCommand(1L, refundOrder()),
+                config());
+
+        assertThat(request)
+                .containsEntry("version", "1.0")
+                .containsEntry("refund_order_no", "RO202606060001")
+                .containsEntry("sign", "signed-value")
+                .doesNotContainKeys("mchnt_order_no", "order_type");
+    }
+
+    @Test
+    @DisplayName("mapRefundQueryStatus should map refund query states")
+    void mapRefundQueryStatus_mapsStates() {
+        assertThat(adapter.mapRefundQueryStatus(Map.of(
+                "result_code", "000000",
+                "trans_stat", "SUCCESS")))
+                .isEqualTo(PaymentRefundOrderStatusEnum.SUCCESS.getCode());
+        assertThat(adapter.mapRefundQueryStatus(Map.of(
+                "result_code", "000000",
+                "trans_stat", "PAYERROR")))
+                .isEqualTo(PaymentRefundOrderStatusEnum.FAILED.getCode());
+        assertThat(adapter.mapRefundQueryStatus(Map.of(
+                "result_code", "9999",
+                "trans_stat", "USERPAYING")))
+                .isEqualTo(PaymentRefundOrderStatusEnum.REFUNDING.getCode());
+    }
+
+    @Test
     @DisplayName("mapPcGatewayPaymentQuery should map paid status to success")
     void mapPcGatewayPaymentQuery_success() {
         IPaymentChannelAdapter.PaymentQueryResult result = adapter.mapPcGatewayPaymentQuery(Map.of(
@@ -205,6 +240,14 @@ class PaymentFuiouPayChannelAdapterTest {
                 "6222000000000000",
                 "测试用户",
                 "192.0.2.10");
+    }
+
+    private PaymentRefundOrderVO refundOrder() {
+        PaymentRefundOrderVO order = new PaymentRefundOrderVO();
+        order.setRefundOrderNo("RO202606060001");
+        order.setPayOrderNo("PO202606060001");
+        order.setMethodCode("PERSONAL_WECHAT_QR");
+        return order;
     }
 
     private PaymentFuiouPayConfig config() {

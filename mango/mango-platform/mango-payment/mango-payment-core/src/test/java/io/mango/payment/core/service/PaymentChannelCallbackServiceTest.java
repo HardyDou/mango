@@ -192,6 +192,30 @@ class PaymentChannelCallbackServiceTest {
     }
 
     @Test
+    @DisplayName("handle should register exception when payment terminal callback conflicts with local terminal status")
+    void handle_paymentTerminalConflict_registersExceptionAndAcknowledges() {
+        LocalDateTime eventTime = LocalDateTime.now();
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder("SUCCESS"));
+        when(paymentOrderMapper.selectLatestFlowNo(1L, 370001L)).thenReturn("FLOW202606060001");
+
+        PaymentChannelCallbackResultVO result = service.handle(paymentCommand("FAILED", eventTime));
+
+        assertThat(result.getChanged()).isFalse();
+        assertThat(result.getStatus()).isEqualTo("SUCCESS");
+        assertThat(result.getFlowNo()).isEqualTo("FLOW202606060001");
+        assertThat(result.getMessage()).contains("已登记异常订单");
+        verify(exceptionOrderService).createIfAbsent(
+                eq(1L),
+                eq("PO202606060001"),
+                eq(PaymentExceptionOrderService.TYPE_CHANNEL_FAILED),
+                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq("通道支付回调终态与本地支付订单终态不一致，本地状态：SUCCESS，通道状态：FAILED"),
+                eq(eventTime));
+        verify(paymentOrderMapper, never()).updatePayingCallbackResult(any(), any(), any(), any(), any(), any());
+        verify(notificationService, never()).notifyPaymentAfterCommit(any(), any(), any());
+    }
+
+    @Test
     @DisplayName("handle should process duplicate successful payment instead of throwing duplicate key error")
     void handle_paymentDuplicateSuccess_processesDuplicatePayment() {
         LocalDateTime eventTime = LocalDateTime.now();
@@ -347,6 +371,30 @@ class PaymentChannelCallbackServiceTest {
                 eq("通道退款回调返回失败状态，退款订单已失败并等待人工核对退款结果"),
                 eq(eventTime));
         verify(notificationService).notifyRefundAfterCommit(any(PaymentApplication.class), any(PaymentBusinessOrderEntity.class), any(PaymentRefundOrderVO.class));
+    }
+
+    @Test
+    @DisplayName("handle should register exception when refund terminal callback conflicts with local terminal status")
+    void handle_refundTerminalConflict_registersExceptionAndAcknowledges() {
+        LocalDateTime eventTime = LocalDateTime.now();
+        when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder("SUCCESS"));
+        when(refundOrderMapper.selectLatestFlowNo(1L, 380001L)).thenReturn("RFLOW202606060001");
+
+        PaymentChannelCallbackResultVO result = service.handle(refundCommand("FAILED", eventTime));
+
+        assertThat(result.getChanged()).isFalse();
+        assertThat(result.getStatus()).isEqualTo("SUCCESS");
+        assertThat(result.getFlowNo()).isEqualTo("RFLOW202606060001");
+        assertThat(result.getMessage()).contains("已登记异常订单");
+        verify(exceptionOrderService).createIfAbsent(
+                eq(1L),
+                eq("RO202606060001"),
+                eq(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
+                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq("通道退款回调终态与本地退款订单终态不一致，本地状态：SUCCESS，通道状态：FAILED"),
+                eq(eventTime));
+        verify(refundOrderMapper, never()).updateRefundingQueryResult(any(), any(), any(), any());
+        verify(notificationService, never()).notifyRefundAfterCommit(any(), any(), any());
     }
 
     @Test

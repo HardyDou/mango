@@ -1,8 +1,9 @@
 package io.mango.payment.core.service;
 
+import io.mango.common.result.R;
 import io.mango.common.result.Require;
+import io.mango.numgen.api.NumgenApi;
 import io.mango.numgen.api.command.NumgenNextCommand;
-import io.mango.numgen.core.service.INumgenService;
 import io.mango.payment.api.PaymentCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ public class PaymentNumberService {
     public static final String PAY_MANGO_VIRTUAL_NO = "PAY_MANGO_VIRTUAL_NO";
     public static final String PAY_MANGO_SCENARIO_NO = "PAY_MANGO_SCENARIO_NO";
 
-    private final INumgenService numgenService;
+    private final NumgenApi numgenApi;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String next(String genKey) {
@@ -44,6 +45,10 @@ public class PaymentNumberService {
         NumgenNextCommand command = new NumgenNextCommand();
         command.setGenKey(genKey);
         command.setParams(Map.of("bizKey", genKey));
-        return numgenService.nextValue(command);
+        R<String> result = numgenApi.nextValue(command);
+        Require.isTrue(result != null && result.isSuccess(),
+                PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID.getCode(),
+                result == null ? "支付编号生成失败" : result.getMsg());
+        return result.getData();
     }
 }

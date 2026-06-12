@@ -51,7 +51,9 @@ import io.mango.payment.core.model.Money;
 import io.mango.payment.core.model.PaymentChannelBillItemRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.net.URI;
@@ -72,6 +74,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -107,6 +110,7 @@ public class PaymentReconciliationService {
     private final PaymentNumberService numberService;
     private final PaymentChannelBillFileClient billFileClient;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     public PageResult<PaymentReconciliationVO> pageReconciliations(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
@@ -247,7 +251,6 @@ public class PaymentReconciliationService {
         return PageResult.of(rows, total, page, size);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public PaymentReconciliationVO fetchChannelBill(FetchPaymentChannelBillCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
         Require.notNull(command.getSourceId(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单获取源 ID 不能为空");
@@ -267,38 +270,65 @@ public class PaymentReconciliationService {
 
         LocalDateTime started = LocalDateTime.now();
         PaymentChannelBillFetchBatchEntity fetchBatch = createFetchBatch(source, command, tenantId, started);
-        billFetchBatchMapper.insert(fetchBatch);
+        inTransaction(() -> {
+            billFetchBatchMapper.insert(fetchBatch);
+            return null;
+        });
         try {
             ImportPaymentReconciliationCommand importCommand = fetchBill(source, command);
-            PaymentReconciliationVO reconciliation = createReconciliation(
+            return inTransaction(() -> completeFetchedBill(
+                    source,
+                    fetchBatch,
                     importCommand,
                     tenantId,
-                    normalizeCode(source.getChannelCode()),
                     importCommand.getBillFileName(),
-                    importCommand.getFileDigest(),
-                    PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL);
-            fetchBatch.setReconciliationId(reconciliation.getId());
-            fetchBatch.setResponseDigest(importCommand.getFileDigest());
-            fetchBatch.setTotalCount(importCommand.getItems().size());
-            fetchBatch.setFetchStatus(FETCH_STATUS_SUCCESS);
-            fetchBatch.setFetchResult(fetchModeName(source.getFetchMode()) + "通道账单获取并对账完成");
-            fetchBatch.setFetchEndTime(LocalDateTime.now());
-            fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
-            billFetchBatchMapper.updateById(fetchBatch);
-            auditService.record(
-                    PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL,
-                    PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL_BILL_FETCH_BATCH,
-                    fetchBatch.getBatchNo(),
-                    PaymentOperationAuditService.RESULT_SUCCESS);
-            return reconciliation;
+                    importCommand.getFileDigest()));
         } catch (RuntimeException ex) {
-            fetchBatch.setFetchStatus(FETCH_STATUS_FAILED);
-            fetchBatch.setFetchResult(truncate(ex.getMessage(), 512));
-            fetchBatch.setFetchEndTime(LocalDateTime.now());
-            fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
-            billFetchBatchMapper.updateById(fetchBatch);
+            inTransaction(() -> {
+                fetchBatch.setFetchStatus(FETCH_STATUS_FAILED);
+                fetchBatch.setFetchResult(truncate(ex.getMessage(), 512));
+                fetchBatch.setFetchEndTime(LocalDateTime.now());
+                fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
+                billFetchBatchMapper.updateById(fetchBatch);
+                return null;
+            });
             throw ex;
         }
+    }
+
+    private PaymentReconciliationVO completeFetchedBill(
+            PaymentChannelBillSourceEntity source,
+            PaymentChannelBillFetchBatchEntity fetchBatch,
+            ImportPaymentReconciliationCommand importCommand,
+            Long tenantId,
+            String billFileName,
+            String fileDigest) {
+        PaymentReconciliationVO reconciliation = createReconciliation(
+                importCommand,
+                tenantId,
+                normalizeCode(source.getChannelCode()),
+                billFileName,
+                fileDigest,
+                PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL);
+        fetchBatch.setReconciliationId(reconciliation.getId());
+        fetchBatch.setResponseDigest(fileDigest);
+        fetchBatch.setTotalCount(importCommand.getItems().size());
+        fetchBatch.setFetchStatus(FETCH_STATUS_SUCCESS);
+        fetchBatch.setFetchResult(fetchModeName(source.getFetchMode()) + "通道账单获取并对账完成");
+        fetchBatch.setFetchEndTime(LocalDateTime.now());
+        fetchBatch.setUpdatedAt(fetchBatch.getFetchEndTime());
+        billFetchBatchMapper.updateById(fetchBatch);
+        auditService.record(
+                PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL,
+                PaymentOperationAuditService.RESOURCE_PAYMENT_CHANNEL_BILL_FETCH_BATCH,
+                fetchBatch.getBatchNo(),
+                PaymentOperationAuditService.RESULT_SUCCESS);
+        return reconciliation;
+    }
+
+    private <T> T inTransaction(Supplier<T> action) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        return template.execute(status -> action.get());
     }
 
     @Transactional(rollbackFor = Exception.class)

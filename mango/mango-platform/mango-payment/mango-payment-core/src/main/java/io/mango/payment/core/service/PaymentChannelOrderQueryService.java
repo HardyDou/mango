@@ -22,10 +22,12 @@ import lombok.RequiredArgsConstructor;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +47,8 @@ public class PaymentChannelOrderQueryService {
     private final PaymentObservabilityService observabilityService;
     private final PaymentExceptionOrderService exceptionOrderService;
     private final PaymentNumberService numberService;
+    private final PlatformTransactionManager transactionManager;
 
-    @Transactional(rollbackFor = Exception.class)
     public QueryResult queryChannelPayment(String payOrderNo) {
         long startedAt = System.nanoTime();
         Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
@@ -56,7 +58,7 @@ public class PaymentChannelOrderQueryService {
         String currentStatus = order.getStatus();
         LocalDateTime queryTime = LocalDateTime.now();
         if (isTerminal(currentStatus)) {
-            QueryRecordSummary summary = recordQuery(
+            QueryRecordSummary summary = inTransaction(() -> recordQuery(
                     tenantId,
                     order,
                     currentStatus,
@@ -64,7 +66,7 @@ public class PaymentChannelOrderQueryService {
                     "NO_QUERY_TERMINAL",
                     "本地支付订单已是终态，主动查单不再覆盖本地终态",
                     null,
-                    queryTime);
+                    queryTime));
             logSummary(order, currentStatus, startedAt, "NO_QUERY_TERMINAL");
             return result(order.getPayOrderNo(), currentStatus, selectFlowNo(tenantId, order.getId()), false, summary);
         }
@@ -74,7 +76,7 @@ public class PaymentChannelOrderQueryService {
         IPaymentChannelAdapter.PaymentQueryResult channelResponse = queryTargetStatus(tenantId, order);
         String targetStatus = channelResponse.status();
         if (PaymentOrderStatusEnum.PAYING.getCode().equals(targetStatus)) {
-            QueryRecordSummary summary = recordQuery(
+            QueryRecordSummary summary = inTransaction(() -> recordQuery(
                     tenantId,
                     order,
                     currentStatus,
@@ -82,11 +84,29 @@ public class PaymentChannelOrderQueryService {
                     "NO_CHANGE_PROCESSING",
                     "通道返回处理中，本地支付订单保持支付中",
                     channelResponse,
-                    queryTime);
+                    queryTime));
             logSummary(order, currentStatus, startedAt, "NO_CHANGE_PROCESSING");
             return result(order.getPayOrderNo(), currentStatus, selectFlowNo(tenantId, order.getId()), false, summary);
         }
 
+        QueryResult result = inTransaction(() -> applyChannelQueryResult(
+                tenantId,
+                order,
+                currentStatus,
+                channelResponse,
+                targetStatus,
+                queryTime));
+        logSummary(order, result.status(), startedAt, result.lastQueryResult());
+        return result;
+    }
+
+    private QueryResult applyChannelQueryResult(
+            Long tenantId,
+            PaymentOrderEntity order,
+            String currentStatus,
+            IPaymentChannelAdapter.PaymentQueryResult channelResponse,
+            String targetStatus,
+            LocalDateTime queryTime) {
         orderStateService.requirePaymentTransition(currentStatus, targetStatus);
         LocalDateTime payTime = PaymentOrderStatusEnum.SUCCESS.getCode().equals(targetStatus) ? queryTime : null;
         int updated = updatePayingQueryResult(tenantId, order, targetStatus, payTime);
@@ -107,8 +127,6 @@ public class PaymentChannelOrderQueryService {
                     duplicateResult.refunded() ? "重复成功支付已自动退款" : "重复成功支付已挂起异常处理",
                     channelResponse,
                     queryTime);
-            logSummary(order, duplicateResult.status(), startedAt,
-                    duplicateResult.refunded() ? "DUPLICATE_REFUNDED" : "DUPLICATE_EXCEPTION");
             return result(order.getPayOrderNo(), duplicateResult.status(), selectFlowNo(tenantId, order.getId()), true, summary);
         }
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "支付订单状态已变化，请刷新后重试");
@@ -168,8 +186,12 @@ public class PaymentChannelOrderQueryService {
                 "已按通道查单结果推进支付订单状态",
                 channelResponse,
                 queryTime);
-        logSummary(order, targetStatus, startedAt, "UPDATED");
         return result(order.getPayOrderNo(), targetStatus, flowNo, true, summary);
+    }
+
+    private <T> T inTransaction(Supplier<T> action) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        return template.execute(status -> action.get());
     }
 
     private void logSummary(PaymentOrderEntity order, String status, long startedAt, String result) {

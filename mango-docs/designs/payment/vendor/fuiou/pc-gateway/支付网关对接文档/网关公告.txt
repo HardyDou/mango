@@ -12,4 +12,3 @@ mchnt_key: vau6p7ldawpezyaugc0kopdrrwm4gkpu
 
 网关商户测试地址
 网关商户测试地址根路径为：http://www-2.wg.fuiou.com:13195/，根据交易的不同，具体的路径参考接口文档
-

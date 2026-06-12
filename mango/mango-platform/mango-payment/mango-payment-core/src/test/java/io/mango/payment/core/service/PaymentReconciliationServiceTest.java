@@ -39,6 +39,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -138,7 +141,8 @@ class PaymentReconciliationServiceTest {
                 observabilityService,
                 numberService,
                 new PaymentChannelBillFileClient(List.of()),
-                new ObjectMapper());
+                new ObjectMapper(),
+                new TestTransactionManager());
         when(paymentOrderMapper.selectSuccessfulChannelOrdersMissingInBill(any(), anyString(), any(), any(), any()))
                 .thenReturn(List.of());
         when(refundOrderMapper.selectSuccessfulChannelRefundsMissingInBill(any(), anyString(), any(), any(), any()))
@@ -963,6 +967,26 @@ class PaymentReconciliationServiceTest {
             running = false;
             controlSocket.close();
             worker.join(TimeUnit.SECONDS.toMillis(2));
+        }
+    }
+
+    private static class TestTransactionManager extends AbstractPlatformTransactionManager {
+
+        @Override
+        protected Object doGetTransaction() {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, TransactionDefinition definition) {
+        }
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) {
+        }
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus status) {
         }
     }
 }

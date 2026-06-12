@@ -1,14 +1,4 @@
-UPDATE `payment_channel_contract` cc
-JOIN `payment_channel` c
-  ON c.id = cc.channel_id
-SET cc.`config_values_json` = JSON_MERGE_PATCH(
-      COALESCE(cc.`config_values_json`, JSON_OBJECT()),
-      JSON_OBJECT(
-        'notifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay',
-        'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay',
-        'gatewayBackNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'
-      )
-    ),
-    cc.`updated_at` = NOW()
-WHERE c.`channel_code` = 'FUIOU_PAY'
-  AND cc.`del_flag` = 0;
+-- No-op by design.
+-- FUIOU callback URLs are environment-specific signing configuration values.
+-- They must be maintained through payment channel contract configuration,
+-- not overwritten by formal Flyway migration.

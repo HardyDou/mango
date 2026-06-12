@@ -76,8 +76,22 @@ public class PaymentChannelCallbackService {
         String currentStatus = order.getStatus();
         String targetStatus = paymentTargetStatus(command.getChannelStatus());
         if (isPaymentTerminal(currentStatus)) {
+            if (currentStatus.equals(targetStatus)) {
+                return result(false, order.getPayOrderNo(), currentStatus, paymentOrderMapper.selectLatestFlowNo(tenantId, order.getId()),
+                        "本地支付订单已是终态，回调幂等返回");
+            }
+            LocalDateTime eventTime = command.getEventTime() == null ? LocalDateTime.now() : command.getEventTime();
+            exceptionOrderService.createIfAbsent(
+                    tenantId,
+                    order.getPayOrderNo(),
+                    PaymentExceptionOrderService.TYPE_CHANNEL_FAILED,
+                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    "通道支付回调终态与本地支付订单终态不一致，本地状态：" + currentStatus + "，通道状态：" + targetStatus,
+                    eventTime);
+            observabilityService.logSummary("CHANNEL_PAYMENT_CALLBACK", order.getPayOrderNo(), targetStatus,
+                    order.getAmount(), channelCode, elapsedMillis(startedAt), "TERMINAL_CONFLICT");
             return result(false, order.getPayOrderNo(), currentStatus, paymentOrderMapper.selectLatestFlowNo(tenantId, order.getId()),
-                    "本地支付订单已是终态，回调幂等返回");
+                    "通道支付回调终态与本地终态不一致，已登记异常订单");
         }
         orderStateService.requirePaymentTransition(currentStatus, targetStatus);
         LocalDateTime eventTime = command.getEventTime() == null ? LocalDateTime.now() : command.getEventTime();
@@ -160,8 +174,22 @@ public class PaymentChannelCallbackService {
         String currentStatus = normalizeRefundStatus(refundOrder.getStatus());
         String targetStatus = refundTargetStatus(command.getChannelStatus());
         if (isRefundTerminal(currentStatus)) {
+            if (currentStatus.equals(targetStatus)) {
+                return result(false, refundOrder.getRefundOrderNo(), currentStatus,
+                        refundOrderMapper.selectLatestFlowNo(tenantId, refundOrder.getId()), "本地退款订单已是终态，回调幂等返回");
+            }
+            LocalDateTime eventTime = command.getEventTime() == null ? LocalDateTime.now() : command.getEventTime();
+            exceptionOrderService.createIfAbsent(
+                    tenantId,
+                    refundOrder.getRefundOrderNo(),
+                    PaymentExceptionOrderService.TYPE_REFUND_MISMATCH,
+                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    "通道退款回调终态与本地退款订单终态不一致，本地状态：" + currentStatus + "，通道状态：" + targetStatus,
+                    eventTime);
+            observabilityService.logSummary("CHANNEL_REFUND_CALLBACK", refundOrder.getRefundOrderNo(), targetStatus,
+                    refundOrder.getRefundAmount(), channelCode, elapsedMillis(startedAt), "TERMINAL_CONFLICT");
             return result(false, refundOrder.getRefundOrderNo(), currentStatus,
-                    refundOrderMapper.selectLatestFlowNo(tenantId, refundOrder.getId()), "本地退款订单已是终态，回调幂等返回");
+                    refundOrderMapper.selectLatestFlowNo(tenantId, refundOrder.getId()), "通道退款回调终态与本地终态不一致，已登记异常订单");
         }
         Require.isTrue(PaymentRefundOrderStatusEnum.REFUNDING.getCode().equals(currentStatus),
                 PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode(), "只有退款中的订单允许回调推进");

@@ -12,7 +12,7 @@
 
 *测试地址：* `https://fundwx.payfuiouo2o.com/micropay`
 
-*生产地址：* 
+*生产地址：*
 
 #### 场景说明
 ![被扫流程图](_images/micropay-process.jpg '被扫流程图')
@@ -921,7 +921,7 @@ curr_type=CNY&ins_cd=08M0026557&mchnt_cd=0005840F2316822&mchnt_order_no=14202019
 
 *测试地址：* `https://fundwx.payfuiouo2o.com/commonRefund`
 
-*正式地址：* 
+*正式地址：*
 
 #### 场景说明
 
@@ -1048,7 +1048,7 @@ ins_cd=08A9999999&mchnt_cd=0002900F0370542&mchnt_order_no=2020120115294222446445
 
 *测试地址：* `https://fundwx.payfuiouo2o.com/closeorder`
 
-*正式地址：* 
+*正式地址：*
 
 #### 场景说明
 
@@ -1566,12 +1566,12 @@ addn_inf=&buyer_id=oUpF8uDQU2VTS1pmCQbWT8fcOP64&ins_cd=08A9999999&mchnt_cd=00029
 #### 重定向响应
 > redirect_url+appid+openid+state+`access_token`
 
-*示例* 
+*示例*
 ```text
 https://m.baidu.com/from=844b/s?b=2&a=1&word=%D6%D0%CE%C4&state=wxfa089da95020ba1a&openid=ooIeqs4nrFiC634N2Spt3caubrUM&appid=wxfa089da95020ba1a`&access_token=ACCESS_TOKEN`
 ```
 
-!> 说明：为了兼容众多合作方的代码，appid和state均填写的是appid的值，openid为appid对应的，公众号交易下单时，`使用重定向返回的appid+openid的值填入到公众号下单接口中的sub_appid和sub_openid`。 
+!> 说明：为了兼容众多合作方的代码，appid和state均填写的是appid的值，openid为appid对应的，公众号交易下单时，`使用重定向返回的appid+openid的值填入到公众号下单接口中的sub_appid和sub_openid`。
 
 *示例代码(Java)*
 
@@ -1657,7 +1657,7 @@ https://m.baidu.com/from=844b/s?b=2&a=1&word=%D6%D0%CE%C4&state=wxfa089da95020ba
 
 *测试地址：* `https://fundwx.payfuiouo2o.com/withhold`
 
-*生产地址：* 
+*生产地址：*
 
 #### 场景说明
 
@@ -1965,7 +1965,7 @@ https://m.baidu.com/from=844b/s?b=2&a=1&word=%D6%D0%CE%C4&state=wxfa089da95020ba
 
 ### 3.15 交易手续费推送接口
 !> `注：sign及reserved开头字段除外的其他非必填字段也需要参与验签。我司会根据后期业务需求，新增reserved开头字段,请提前做好兼容(简而言之，我们会新增reserved开头字段的字段，这些字段都不参与验签)。`
-#### 请求地址 
+#### 请求地址
 
 ​	合作方回调地址
 
@@ -2016,7 +2016,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCsNPi5LbtX0qteBsDqRfS2qNij9rxjR+eAnvDmTBKQ
  报文示例：
 
 ```
-<?xml  version="1.0"  encoding="GBK"  standalone="yes"?> 
+<?xml  version="1.0"  encoding="GBK"  standalone="yes"?>
 <xml>
 <channel_order_no>4200000742202012028596001565</channel_order_no>
 <fee_amt>0</fee_amt>
@@ -2026,55 +2026,20 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCsNPi5LbtX0qteBsDqRfS2qNij9rxjR+eAnvDmTBKQ
 <mchnt_order_no>E20201202171223382229376/TX003542</mchnt_order_no>
 <orig_mchnt_order_no></orig_mchnt_order_no>
 <reserved_fas_settle_dt>20201202</reserved_fas_settle_dt>
-<sign>CMymXF1lxXQJC2f3ISX6TLZhjRdi/IwJpA3jG4TDYuUHUmvsCtIt0y4G0/I+hzoHhE 
-XXD+ev78/3ETR4Q222ra575u43aHiEKiyHNaNb7iGyphGr7t9Av70EbU7B3MEzO3eB96HWrez 
+<sign>CMymXF1lxXQJC2f3ISX6TLZhjRdi/IwJpA3jG4TDYuUHUmvsCtIt0y4G0/I+hzoHhE
+XXD+ev78/3ETR4Q222ra575u43aHiEKiyHNaNb7iGyphGr7t9Av70EbU7B3MEzO3eB96HWrez
 6lCxc7cqT0eJzdcPRthYeIf5cNvnz3fk=</sign>
 <txn_amt>1</txn_amt>
-<txn_fin_ts>20201202173828</txn_fin_ts> 
+<txn_fin_ts>20201202173828</txn_fin_ts>
 </xml>
 ```
 
 
 
 签名原文：
-channel_order_no=4200000742202012028596001565&fee_amt=0&ins_cd=08K0023029&kb 
-ps_trace_no=120497549430&mchnt_cd=0004510F3217505&mchnt_order_no=E202012021 
-71223382229376/TX003542&orig_mchnt_order_no=&txn_amt=1&txn_fin_ts=202012021738 
+channel_order_no=4200000742202012028596001565&fee_amt=0&ins_cd=08K0023029&kb
+ps_trace_no=120497549430&mchnt_cd=0004510F3217505&mchnt_order_no=E202012021
+71223382229376/TX003542&orig_mchnt_order_no=&txn_amt=1&txn_fin_ts=202012021738
 28
-交易手续费推送响应报文： 
+交易手续费推送响应报文：
 对请求body中的数据进行URLDecode既可获得请求参数xml报文
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

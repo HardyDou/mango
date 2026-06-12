@@ -107,7 +107,7 @@ URLEncoder.encode(rspXml,"GBK");
 
 #### 签名实例
 参数：
-```xml 
+```xml
 <?xml version="1.0" encoding="GBK" standalone="yes"?>
 <xml>
     <reserved_fy_term_sn></reserved_fy_term_sn>
@@ -163,7 +163,7 @@ RSA密钥对生成工具，可以快速生成非对称加密的RSA密钥对（RS
 针对接口第一次请求接口不支付，第二次请求相同订单报“商户订单号重复的解决办法”：接口加上Reserved_repeat_order=1这个字段，支持重复幂等下单。
 *富友测试私钥--用于请求报文签名原文加密*
 ```text
-PRIVATE KEY : 
+PRIVATE KEY :
 MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAJgAzD8fEvBHQTyxUEeK963mjziM
 WG7nxpi+pDMdtWiakc6xVhhbaipLaHo4wVI92A2wr3ptGQ1/YsASEHm3m2wGOpT2vrb2Ln/S7lz1
 ShjTKaT8U6rKgCdpQNHUuLhBQlpJer2mcYEzG/nGzcyalOCgXC/6CySiJCWJmPyR45bJAgMBAAEC
@@ -180,7 +180,7 @@ vsnx13tWqg==
 
 *富友测试公钥--用于响应报文签名原文解密*
 ```text
-PUBLIC KEY : 
+PUBLIC KEY :
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCBv9K+jiuHqXIehX81oyNSD2RfVn+KTPb7NRT5HDPFE35CjZJd7Fu40r0U2Cp7Eyhayv/mRS6ZqvBT/8tQqwpUExTQQBbdZjfk+efb9bF9a+uCnAg0RsuqxeJ2r/rRTsORzVLJy+4GKcv06/p6CcBc5BI1gqSKmyyNBlgfkxLYewIDAQAB
 ```
 
@@ -324,70 +324,3 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCBv9K+jiuHqXIehX81oyNSD2RfVn+KTPb7NRT5HDPF
     "address": "科技园中一路腾讯大厦" }
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
