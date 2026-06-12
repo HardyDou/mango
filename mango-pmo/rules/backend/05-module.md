@@ -52,6 +52,7 @@
 - `XxxController` 必须实现对应 `XxxApi`，只能持有 `IXxxService` 或等效内部服务接口，禁止持有 `XxxApi` 自调用。
 - `XxxFeignClient` 必须实现对应 `XxxApi`，只能放在 `starter-remote`。
 - `XxxService` 必须实现 `IXxxService`，禁止直接实现 `XxxApi`。
+- `IXxxService` 和 `XxxService` 方法签名必须遵守后端 API 规范中的 Service 入参规则。
 - `core` 不放 `Controller`。
 - `Mapper` 禁止跨域访问其他模块表。
 - 跨域调用必须走 `XxxApi`。

@@ -23,6 +23,15 @@
 - 路径参数和查询参数必须声明校验约束。
 - Controller 或 `Api` 必须使用 `@Validated` 或等效机制开启参数校验。
 
+## 2.1 Service 入参规则
+
+- `XxxApi`、Controller、`IXxxService` 和 `XxxServiceImpl` 的核心业务方法必须保持同一入参模型。
+- 创建、更新、查询、批量操作和复杂业务动作必须使用 `Command`、`Query` 或专用请求对象。
+- Service 方法超过 2 个业务字段入参时，必须收敛为 `Command`、`Query` 或专用请求对象。
+- 允许直接展开的参数仅限 `id`、状态枚举、布尔控制位等 1-2 个简单控制参数。
+- Controller 调 Service 时直接传 `Command`、`Query` 或专用请求对象；Service 负责校验后的业务编排和模型转换。
+- Service 调 Mapper 时不得继续传 API 协议模型，必须转换为 Entity、id、Wrapper、分页对象或 core 内部持久化查询对象。
+
 ## 2.2 文件字段规则
 
 - 业务 API 的创建、更新入参禁止接收需要持久化的文件访问地址字段，例如 `url`、`previewUrl`、`downloadUrl`、`directPreviewUrl`、`directDownloadUrl`。
@@ -50,6 +59,14 @@
 - 分页：`R<PageResult<XxxVO>>`
 - 简单状态：`R<Boolean>`
 - 简单标识：`R<Long>`、`R<String>`
+
+## 3.1 数据来源规则
+
+- API 返回的数据必须来自数据库、配置、枚举契约、字典服务、远程 API 或明确的运行时计算。
+- 本应由数据库维护的数据，禁止在 Controller、Service、Converter 或 VO 组装逻辑中写死。
+- 菜单、权限、公共路径、租户默认数据、字典、业务状态、流程配置、计费规则等可运营数据必须有数据库、migration、配置中心或后台维护入口。
+- 临时调试数据和 mock 数据禁止进入最终 API 实现。
+- 接口尚未接入真实数据源时，必须标记为未完成或阻塞，禁止声明可供前端替换 mock。
 
 ## 4. 分层规则
 
@@ -89,3 +106,4 @@
 - 在 `*-api` 中写 `@FeignClient`
 - 在 API 契约中硬编码服务发现名
 - 业务 API 用文件访问地址代替文件 ID
+- API 写死本应来自数据库、配置、字典服务或真实接口的数据

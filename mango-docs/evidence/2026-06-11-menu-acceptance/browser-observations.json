@@ -1,0 +1,89 @@
+{
+  "consoleEntries": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "log",
+      "text": "[Router] doInitRoutes called, isRequestRoutes: true (useMock: false )"
+    },
+    {
+      "type": "log",
+      "text": "[Router] Current routes: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] 从后端加载菜单配置..."
+    },
+    {
+      "type": "log",
+      "text": "[MenuLoader] 从后端加载菜单成功，共 8 个菜单（前端: 3 后端: 4 ）"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] 菜单加载成功，共 8 个菜单"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Layout route already exists"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Cleared Layout children"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] tabBarRoutes: [Object, Object, Object, Object, Object, Object, Object, Object]"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /home Home"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /system system"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /workflow workflow"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /data data"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /notice notice"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /workflow/task/detail WorkflowTaskDetail"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /workflow/custom-apply WorkflowCustomApply"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Adding route to Layout: /develop DevelopCenter"
+    },
+    {
+      "type": "log",
+      "text": "[backEnd] Final routes: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]"
+    },
+    {
+      "type": "log",
+      "text": "[Router] After backEnd init: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]"
+    },
+    {
+      "type": "warning",
+      "text": "ElementPlusError: [el-pagination] [API] small is about to be deprecated in version 3.0.0, please use size instead.\nFor more detail, please visit: https://element-plus.org/zh-CN/component/pagination.html\n\n    at debugWarn (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-T4UGNIOX.js?v=5ac2c3fa:9194:37)\n    at watch.immediate (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-T4UGNIOX.js?v=5ac2c3fa:10353:7)\n    at callWithErrorHandling (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:2501:19)\n    at callWithAsyncErrorHandling (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:2508:17)\n    at baseWatchOptions.call (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:7466:47)\n    at job (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:1547:18)\n    at watch (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:1584:7)\n    at doWatch (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:7494:23)\n    at watch2 (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-FKV7HCUM.js?v=5ac2c3fa:7426:10)\n    at useDeprecated (http://127.0.0.1:8244/node_modules/.vite/deps/chunk-T4UGNIOX.js?v=5ac2c3fa:10351:3)"
+    }
+  ],
+  "failedRequests": []
+}
