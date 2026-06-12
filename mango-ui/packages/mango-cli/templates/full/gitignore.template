@@ -2,6 +2,7 @@ node_modules/
 dist/
 target/
 .runtime/
+.mango/
 .pnpm-store/
 .DS_Store
 *.log
