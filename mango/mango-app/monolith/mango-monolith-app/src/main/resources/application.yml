@@ -84,8 +84,10 @@ mango:
             - 172.16.0.0/12
             - 192.168.0.0/16
   crypto:
-    sm4-key: MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=
-    sm4-iv:
+    sm4:
+      secret-key: ${MANGO_CRYPTO_SM4_SECRET_KEY:}
+      mode: CBC
+      padding: PKCS5Padding
   kv:
     store:
       type: jdbc

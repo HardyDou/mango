@@ -89,24 +89,46 @@ public class PersistenceFlywayAutoConfiguration {
                 PersistenceDataSourceRegistry registry = registryProvider.getIfAvailable();
                 PersistenceModuleDataSourceResolver resolver = resolverProvider.getIfAvailable();
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
-                    ResolvedDataSource resolvedDataSource = resolveDataSource(dataSource, module, registry, resolver);
-                    DataSource moduleDataSource = resolvedDataSource.dataSource();
+                    ResolvedDataSource resolvedDataSource = null;
+                    String historyTable = "<unresolved>";
+                    boolean outOfOrder = module.config().isOutOfOrder();
+                    String datasource = resolveDataSourceDescription(module, resolver);
                     try {
+                        resolvedDataSource = resolveDataSource(dataSource, module, registry, datasource);
+                        DataSource moduleDataSource = resolvedDataSource.dataSource();
+                        datasource = resolvedDataSource.description();
+                        historyTable = resolveHistoryTable(module);
                         Flyway.configure()
                                 .dataSource(moduleDataSource)
                                 .locations(module.location())
-                                .table(resolveHistoryTable(module))
+                                .table(historyTable)
                                 .baselineOnMigrate(module.config().isBaselineOnMigrate())
                                 .baselineVersion("0")
                                 .validateOnMigrate(true)
-                                .outOfOrder(false)
+                                .outOfOrder(outOfOrder)
                                 .load()
                                 .migrate();
+                    } catch (Exception e) {
+                        throw new IllegalStateException(
+                                "Mango Flyway module migration failed: module=" + module.name()
+                                        + ", historyTable=" + historyTable
+                                        + ", location=" + module.location()
+                                        + ", datasource=" + datasource
+                                        + ", validateOnMigrate=true"
+                                        + ", outOfOrder=" + outOfOrder,
+                                e);
                     } finally {
-                        closeModuleDataSource(resolvedDataSource);
+                        if (resolvedDataSource != null) {
+                            closeModuleDataSource(resolvedDataSource);
+                        }
                     }
                 }
             } catch (Exception e) {
+                if (e instanceof IllegalStateException illegalStateException
+                        && illegalStateException.getMessage() != null
+                        && illegalStateException.getMessage().startsWith("Mango Flyway module migration failed:")) {
+                    throw illegalStateException;
+                }
                 throw new IllegalStateException("Mango Flyway module migration failed", e);
             }
         });
@@ -172,17 +194,14 @@ public class PersistenceFlywayAutoConfiguration {
     private ResolvedDataSource resolveDataSource(DataSource defaultDataSource,
                                                  ModuleMigration module,
                                                  PersistenceDataSourceRegistry registry,
-                                                 PersistenceModuleDataSourceResolver resolver) {
-        if (registry != null && resolver != null) {
-            String dataSourceName = resolver.resolveDataSource(module.name()).orElse("");
-            if (StringUtils.hasText(dataSourceName)) {
-                return new ResolvedDataSource(registry.get(dataSourceName), false);
-            }
+                                                 String dataSourceName) {
+        if (registry != null && StringUtils.hasText(dataSourceName)) {
+            return new ResolvedDataSource(registry.get(dataSourceName), false, dataSourceName);
         }
 
         PersistenceFlywayProperties.DataSourceConfig datasource = module.config().getDatasource();
         if (datasource == null || !StringUtils.hasText(datasource.getUrl())) {
-            return new ResolvedDataSource(defaultDataSource, false);
+            return new ResolvedDataSource(defaultDataSource, false, "default");
         }
 
         DataSourceBuilder<?> builder = DataSourceBuilder.create()
@@ -192,7 +211,15 @@ public class PersistenceFlywayAutoConfiguration {
         if (StringUtils.hasText(datasource.getDriverClassName())) {
             builder.driverClassName(datasource.getDriverClassName());
         }
-        return new ResolvedDataSource(builder.build(), true);
+        return new ResolvedDataSource(builder.build(), true, "module-config");
+    }
+
+    private String resolveDataSourceDescription(ModuleMigration module,
+                                                PersistenceModuleDataSourceResolver resolver) {
+        if (resolver == null) {
+            return "default";
+        }
+        return resolver.resolveDataSource(module.name()).orElse("default");
     }
 
     private void closeModuleDataSource(ResolvedDataSource resolvedDataSource) throws Exception {
@@ -207,6 +234,6 @@ public class PersistenceFlywayAutoConfiguration {
                                    PersistenceFlywayProperties.ModuleConfig config) {
     }
 
-    private record ResolvedDataSource(DataSource dataSource, boolean closeAfterUse) {
+    private record ResolvedDataSource(DataSource dataSource, boolean closeAfterUse, String description) {
     }
 }
