@@ -37,6 +37,29 @@
 - 简单问答、只读定位、状态查看、日志查看、目录查看、worktree 列表不触发正式流程。
 - 规范、设计文档、交付记录等不影响服务代码的治理改动，可在 `main` 直接修改提交；仍需执行 PMO preflight。
 
+### 3.0.2 工作区策略
+
+PMO preflight 必须输出本次任务的工作区策略：
+
+- `worktree-required`：必须使用任务专用 Git worktree 和任务分支。
+- `main-direct-allowed`：可在主工作区直接修改并提交。
+- `needs-human-check`：影响范围不足，必须先确认路径或任务边界。
+
+以下改动必须使用任务 worktree：
+
+- 代码、接口、数据库、测试、前端页面、构建配置。
+- `mango/**`、`mango-ui/**`、`mango-business-starter/**`、`scripts/**`、`.github/**`。
+- `package.json`、`pnpm-lock.yaml`、`pom.xml`、migration、`src/**`。
+- 发布脚本、启动脚本、CLI、starter、模板和发布物料。
+
+以下改动可在主工作区直接提交：
+
+- `mango-pmo/**` 规范、流程、Agent 定义和 PMO 工具治理。
+- `mango-docs/**` 设计文档、Sprint 计划、交付记录和历史材料。
+- `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 入口路由。
+
+只要同一任务同时触及必须 worktree 的文件，整项任务必须使用 worktree。
+
 ### 3.1 需求
 
 必须完成：

@@ -46,6 +46,62 @@ function splitPaths(value) {
     .filter(Boolean);
 }
 
+const directMainPathPatterns = [
+  'mango-pmo/**',
+  'mango-docs/**',
+  'AGENTS.md',
+  'CLAUDE.md',
+  'GEMINI.md'
+];
+
+const worktreeRequiredPathPatterns = [
+  'mango/**',
+  'mango-ui/**',
+  'mango-business-starter/**',
+  'scripts/**',
+  '.github/**',
+  'package.json',
+  'pnpm-lock.yaml',
+  'pom.xml',
+  '**/package.json',
+  '**/pom.xml',
+  '**/src/**',
+  '**/db/migration/**'
+];
+
+const directMainKeywords = [
+  '规范',
+  '规则',
+  '流程治理',
+  '规范治理',
+  'agent 入口',
+  'agent入口',
+  '文档资产',
+  '归档边界',
+  '交付记录',
+  '复盘'
+];
+
+const worktreeRequiredKeywords = [
+  '代码',
+  '接口',
+  '数据库',
+  'migration',
+  '前端页面',
+  '页面',
+  '构建配置',
+  '测试',
+  '发布脚本',
+  '启动脚本',
+  '模板',
+  'starter',
+  'cli',
+  'npm',
+  'maven',
+  'pom',
+  'package.json'
+];
+
 function pathMatches(inputPath, pattern) {
   const normalizedPath = inputPath.replaceAll('\\', '/');
   const normalizedPattern = pattern.replaceAll('\\', '/');
@@ -58,6 +114,69 @@ function pathMatches(inputPath, pattern) {
     return regex.test(normalizedPath);
   }
   return normalizedPath === normalizedPattern || normalizedPath.startsWith(`${normalizedPattern}/`);
+}
+
+function anyKeywordMatches(task, keywords) {
+  const normalizedTask = normalizeText(task);
+  return keywords.some((keyword) => normalizedTask.includes(normalizeText(keyword)));
+}
+
+function classifyWorkspacePolicy(args) {
+  const inputPaths = splitPaths(args.paths);
+  const requiredHits = [];
+  const directHits = [];
+
+  if (args.role === 'pmo' || args.phase === 'governance') {
+    directHits.push('role/phase is PMO governance');
+  }
+  if (anyKeywordMatches(args.task, directMainKeywords)) {
+    directHits.push('task matches governance/document keywords');
+  }
+  for (const inputPath of inputPaths) {
+    if (worktreeRequiredPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) {
+      requiredHits.push(`path ${inputPath}`);
+    }
+    if (directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern))) {
+      directHits.push(`path ${inputPath}`);
+    }
+  }
+  if (anyKeywordMatches(args.task, worktreeRequiredKeywords)) {
+    requiredHits.push('task matches service/code/build keywords');
+  }
+
+  if (requiredHits.length > 0) {
+    return {
+      mode: 'worktree-required',
+      summary: '必须使用任务专用 Git worktree 和任务分支。',
+      reason: unique(requiredHits).join('; ')
+    };
+  }
+
+  if (inputPaths.length > 0 && inputPaths.every((inputPath) => directMainPathPatterns.some((pattern) => pathMatches(inputPath, pattern)))) {
+    return {
+      mode: 'main-direct-allowed',
+      summary: '可在主工作区直接修改并提交。',
+      reason: `all paths are governance/document entry paths: ${inputPaths.join(', ')}`
+    };
+  }
+
+  if (directHits.length > 0 && inputPaths.length === 0) {
+    return {
+      mode: 'main-direct-allowed',
+      summary: '可在主工作区直接修改并提交；若实际影响服务代码、接口、数据库、测试、前端页面或构建配置，必须改用任务 worktree。',
+      reason: unique(directHits).join('; ')
+    };
+  }
+
+  return {
+    mode: 'needs-human-check',
+    summary: '影响范围不足，先确认路径；一旦涉及服务代码、接口、数据库、测试、前端页面或构建配置，必须使用任务 worktree。',
+    reason: 'no decisive path or keyword match'
+  };
+}
+
+function unique(items) {
+  return [...new Set(items)];
 }
 
 function globToRegExp(pattern) {
@@ -124,6 +243,7 @@ function buildResult(index, args) {
     phase: args.phase || 'auto',
     task: args.task || '',
     paths: splitPaths(args.paths),
+    workspacePolicy: classifyWorkspacePolicy(args),
     mustRead: [],
     errors: [],
     seen: new Set()
@@ -177,6 +297,8 @@ function printText(result) {
   if (result.paths.length > 0) {
     console.log(`Paths: ${result.paths.join(', ')}`);
   }
+  console.log(`Workspace: ${result.workspacePolicy.mode} - ${result.workspacePolicy.summary}`);
+  console.log(`Workspace reason: ${result.workspacePolicy.reason}`);
   console.log('');
   console.log('Must read:');
   result.mustRead.forEach((item, index) => {
