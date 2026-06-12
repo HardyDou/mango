@@ -45,6 +45,9 @@ public class SystemEventService {
     public boolean reconsume(ReconsumeSystemEventCommand command) {
         Require.notNull(command, "重新投递命令不能为空");
         Require.notBlank(command.getMessageId(), "消息 ID 不能为空");
+        if (outboxStore.findById(command.getMessageId()) == null) {
+            return false;
+        }
         outboxStore.requeue(command.getMessageId(), clock.instant(), clock.instant());
         return true;
     }

@@ -110,14 +110,15 @@ mango:
     transport: redis-stream
     redis-stream:
       stream-name: mango:domain-event
-      group: mango-domain-event
+      group: payment-service
       consumer: ${spring.application.name:${HOSTNAME:domain-event-consumer}}
       batch-size: 50
       read-timeout-millis: 200
+      pending-idle-timeout-millis: 60000
       consume-enabled: true
 ```
 
-开启 `transport=redis-stream` 后，生产者仍先写 KV Outbox；Outbox dispatcher 将事件发布到 Redis Stream 并 `ack` 本地 Outbox。消费方通过 Redis Stream consumer group 拉取事件，再交给本地 `DomainEventSubscriber` 处理，处理成功后确认 stream 消息。Redis Pub/Sub 不具备离线保留和 consumer group ack 语义，本模块不支持。
+开启 `transport=redis-stream` 后，生产者仍先写 KV Outbox；Outbox dispatcher 将事件发布到 Redis Stream 并 `ack` 本地 Outbox。消费方通过 Redis Stream consumer group 拉取事件，再交给本地 `DomainEventSubscriber` 处理，处理成功后确认 stream 消息。不同微服务需要使用不同 `group`，同一微服务的多实例共享同一个 `group` 并使用不同 `consumer`。消费者在处理成功前宕机时，消息会进入 Redis Stream pending list；超过 `pending-idle-timeout-millis` 后可被其它 consumer 自动认领并继续投递。Redis Pub/Sub 不具备离线保留和 consumer group ack 语义，本模块不支持。
 
 ## 与 Outbox 的关系
 

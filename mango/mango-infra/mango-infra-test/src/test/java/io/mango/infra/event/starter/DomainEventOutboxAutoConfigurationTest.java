@@ -141,6 +141,10 @@ class DomainEventOutboxAutoConfigurationTest {
                     command.setMessageId(event.getEventId());
                     assertThat(service.reconsume(command)).isTrue();
                     assertThat(store.findById(event.getEventId()).getStatus()).isEqualTo(OutboxStatus.PENDING);
+
+                    ReconsumeSystemEventCommand missingCommand = new ReconsumeSystemEventCommand();
+                    missingCommand.setMessageId("missing-system-event");
+                    assertThat(service.reconsume(missingCommand)).isFalse();
                 });
     }
 

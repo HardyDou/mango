@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Redis Stream based domain event transport.
@@ -36,6 +37,7 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
     private final String consumer;
     private final int batchSize;
     private final Duration readTimeout;
+    private final Duration pendingIdleTimeout;
 
     public RedisStreamDomainEventTransport(
             RedissonClient redissonClient,
@@ -46,6 +48,28 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
             String consumer,
             int batchSize,
             Duration readTimeout) {
+        this(
+                redissonClient,
+                eventBus,
+                objectMapper,
+                streamName,
+                group,
+                consumer,
+                batchSize,
+                readTimeout,
+                Duration.ofMinutes(1));
+    }
+
+    public RedisStreamDomainEventTransport(
+            RedissonClient redissonClient,
+            IDomainEventBus eventBus,
+            ObjectMapper objectMapper,
+            String streamName,
+            String group,
+            String consumer,
+            int batchSize,
+            Duration readTimeout,
+            Duration pendingIdleTimeout) {
         Require.notNull(redissonClient, "Redisson 客户端不能为空");
         Require.notNull(eventBus, "事件总线不能为空");
         Require.notNull(objectMapper, "ObjectMapper 不能为空");
@@ -54,6 +78,8 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
         Require.notBlank(consumer, "Redis Stream 消费者不能为空");
         Require.isTrue(batchSize > 0, "Redis Stream 批量大小必须大于 0");
         Require.notNull(readTimeout, "Redis Stream 读取超时不能为空");
+        Require.notNull(pendingIdleTimeout, "Redis Stream Pending 空闲时间不能为空");
+        Require.isTrue(!pendingIdleTimeout.isNegative(), "Redis Stream Pending 空闲时间不能为负数");
         this.stream = redissonClient.getStream(streamName.trim(), StringCodec.INSTANCE);
         this.eventBus = eventBus;
         this.objectMapper = objectMapper;
@@ -61,6 +87,7 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
         this.consumer = consumer.trim();
         this.batchSize = batchSize;
         this.readTimeout = readTimeout;
+        this.pendingIdleTimeout = pendingIdleTimeout;
         ensureGroup();
     }
 
@@ -73,12 +100,34 @@ public class RedisStreamDomainEventTransport implements DomainEventTransport {
 
     @Override
     public int consumeOnce() {
+        int recovered = consumePending();
+        if (recovered >= batchSize) {
+            return recovered;
+        }
         Map<StreamMessageId, Map<String, String>> messages = stream.readGroup(
                 group,
                 consumer,
                 StreamReadGroupArgs.neverDelivered()
-                        .count(batchSize)
+                        .count(batchSize - recovered)
                         .timeout(readTimeout));
+        return recovered + handleMessages(messages);
+    }
+
+    private int consumePending() {
+        if (pendingIdleTimeout.isZero()) {
+            return 0;
+        }
+        Map<StreamMessageId, Map<String, String>> messages = stream.autoClaim(
+                group,
+                consumer,
+                pendingIdleTimeout.toMillis(),
+                TimeUnit.MILLISECONDS,
+                StreamMessageId.MIN,
+                batchSize).getMessages();
+        return handleMessages(messages);
+    }
+
+    private int handleMessages(Map<StreamMessageId, Map<String, String>> messages) {
         if (messages == null || messages.isEmpty()) {
             return 0;
         }

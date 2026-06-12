@@ -103,6 +103,11 @@ public class DomainEventProperties {
         private long readTimeoutMillis = 200L;
 
         /**
+         * Idle time before pending messages can be claimed by another consumer.
+         */
+        private long pendingIdleTimeoutMillis = 60000L;
+
+        /**
          * Whether the starter runs an in-process transport consumer.
          */
         private boolean consumeEnabled = true;

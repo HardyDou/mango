@@ -101,7 +101,8 @@ public class DomainEventAutoConfiguration {
                 redisStream.getGroup(),
                 redisStream.getConsumer(),
                 redisStream.getBatchSize(),
-                Duration.ofMillis(redisStream.getReadTimeoutMillis()));
+                Duration.ofMillis(redisStream.getReadTimeoutMillis()),
+                Duration.ofMillis(redisStream.getPendingIdleTimeoutMillis()));
     }
 
     @Bean("domainEventOutboxDispatcher")

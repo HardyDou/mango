@@ -32,7 +32,7 @@ KV Outbox
                                                          -> DomainEventSubscriber
 ```
 
-`InMemoryDomainEventBus` 只负责当前 JVM 内订阅者调用。handler 异常必须向上抛出，Outbox dispatcher 才能把消息标记为重试或失败终态。
+`InMemoryDomainEventBus` 只负责当前 JVM 内订阅者调用。handler 异常必须向上抛出，Outbox dispatcher 才能把消息标记为重试或失败终态。Redis Stream 的 `group` 表示一个微服务订阅主体：不同微服务使用不同 group 才能各自收到同一事件；同一微服务的多实例共享同一 group，并通过不同 consumer 名称竞争消费。
 
 ## 4. 模块升级
 
@@ -93,10 +93,11 @@ mango:
     transport: redis-stream
     redis-stream:
       stream-name: mango:domain-event
-      group: mango-domain-event
+      group: payment-service
       consumer: ${spring.application.name:${HOSTNAME:domain-event-consumer}}
       batch-size: 50
       read-timeout-millis: 200
+      pending-idle-timeout-millis: 60000
       consume-enabled: true
 ```
 
@@ -106,6 +107,8 @@ mango:
 - 投递重试：dispatcher 领取消息后投递；失败后 `nack` 并按 `retry-delay-seconds` 延迟重试。
 - 失败终态：领取投递次数达到 `max-attempts` 后进入 `FAILED`，不再自动重试。
 - 人工补偿：系统事件页面或 API 可将异常事件重新放回 `PENDING`。
+- 跨服务广播：每个目标微服务配置独立 Redis Stream group，各服务分别拉取同一 Stream 消息；服务内多实例共享 group 做竞争消费。
+- Pending 恢复：Redis Stream 消费成功后才 ACK；如果消费者在 ACK 前异常退出，消息会留在 pending list，超过 `pending-idle-timeout-millis` 后可由其它 consumer 自动认领并继续处理。
 - 消费幂等：业务消费者必须按 `eventId`、`businessType`、`businessKey` 或业务幂等键自行保证幂等。
 
 ## 7. 运维入口
