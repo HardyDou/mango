@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${1:-$ROOT_DIR/.env.development}"
+SPRING_BOOT_PLUGIN="org.springframework.boot:spring-boot-maven-plugin:3.5.14:run"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Env file not found: $ENV_FILE" >&2
@@ -21,7 +22,7 @@ export VITE_ADMIN_PROXY_PATH="${VITE_ADMIN_PROXY_PATH:-${MANGO_BACKEND_URL:-http
 case "${2:-all}" in
   backend)
     cd "$ROOT_DIR/mango"
-    exec mvn -pl :mango-monolith-app -am spring-boot:run
+    exec mvn -pl :mango-monolith-app -am "${SPRING_BOOT_PLUGIN}"
     ;;
   frontend)
     cd "$ROOT_DIR/mango-ui"
