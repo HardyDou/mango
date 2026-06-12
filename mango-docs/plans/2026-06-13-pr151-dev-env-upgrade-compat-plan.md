@@ -13,6 +13,8 @@
 - PMO preflight PR 触发词和回归用例。
 - PMO Mango Issue 规则唯一源治理。
 - crypto starter 对历史 `mango.crypto.sm4-key` 错误默认值的迁移诊断。
+- 业务 full 模板 PMO baseline PR 触发词同步。
+- 真实应用配置和模板移除公开固定 SM4 key 默认值，开发环境按工作区生成并回填本地 SM4 key。
 - 本 PR 交付台账。
 
 ## 不做范围
@@ -31,6 +33,8 @@
 - PMO PR 相关任务必须触发 `rules/01-delivery-contract.md`。
 - Mango Issue 长期细则只维护在 `rules/07-mango-issue-runbook.md`，`rules/00-dev-flow.md` 只保留流程入口和链接。
 - 历史 full 模板曾把 SM2 示例值写入 `mango.crypto.sm4-key`。该值不能作为 SM4 密钥，不做静默兼容；starter 必须识别该值并给出明确迁移提示，新字段 `mango.crypto.sm4.secret-key` 优先。
+- 业务模板携带的 PMO baseline 必须同步主 PMO PR 触发词，保证生成项目中“评审 PR / 提交 PR”场景仍加载交付契约。
+- 公开固定 SM4 key 不能作为真实配置默认值发布。应用配置只读取 `MANGO_CRYPTO_SM4_SECRET_KEY`，新工作区生成随机 key，旧工作区首次启动自动回填一次并保持稳定。
 
 ## 验收方式
 

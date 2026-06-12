@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { appendFileSync, chmodSync, closeSync, copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -855,6 +856,7 @@ function defaultDevWorkspaceEnv(root) {
   return [
     '# Mango local workspace configuration.',
     '# This file is generated once per workspace and must not be committed.',
+    `MANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}`,
     'MANGO_BACKEND_PORT=5555',
     'MANGO_FRONTEND_PORT=5176',
     'MANGO_FRONTEND_HOST=127.0.0.1',
@@ -890,6 +892,9 @@ function defaultBusinessDevManifest(projectName) {
         portEnv: 'MANGO_BACKEND_PORT',
         port: 5555,
         health: '/actuator/health',
+        env: {
+          MANGO_CRYPTO_SM4_SECRET_KEY: '${env.MANGO_CRYPTO_SM4_SECRET_KEY}',
+        },
         args: [
           '--server.port=${port}',
           '--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai',
@@ -1100,6 +1105,12 @@ function ensureDevWorkspaceEnv(context) {
   const envPath = join(context.root, '.mango/dev-workspace.env');
   if (!existsSync(envPath)) {
     initDevWorkspace(context);
+    return;
+  }
+  const env = readEnvFile(envPath);
+  if (!env.MANGO_CRYPTO_SM4_SECRET_KEY) {
+    appendFileSync(envPath, `\nMANGO_CRYPTO_SM4_SECRET_KEY=${randomBytes(16).toString('hex')}\n`);
+    process.stdout.write(`Added MANGO_CRYPTO_SM4_SECRET_KEY to local workspace env: ${relativeOrAbsolute(process.cwd(), envPath)}\n`);
   }
 }
 

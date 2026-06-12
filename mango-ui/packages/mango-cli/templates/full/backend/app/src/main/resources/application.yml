@@ -65,7 +65,7 @@ mango:
             - 192.168.0.0/16
   crypto:
     sm4:
-      secret-key: 00112233445566778899aabbccddeeff
+      secret-key: ${MANGO_CRYPTO_SM4_SECRET_KEY:}
       mode: CBC
       padding: PKCS5Padding
   kv:

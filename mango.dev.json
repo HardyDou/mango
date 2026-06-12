@@ -30,6 +30,9 @@
       "portEnv": "MANGO_BACKEND_PORT",
       "port": 18080,
       "health": "/actuator/health",
+      "env": {
+        "MANGO_CRYPTO_SM4_SECRET_KEY": "${env.MANGO_CRYPTO_SM4_SECRET_KEY}"
+      },
       "args": [
         "--server.port=${port}",
         "--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",

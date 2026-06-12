@@ -28,9 +28,25 @@ The actual runner lives in the mango CLI. This shell file is a compatibility ent
 EOF
 }
 
+generate_sm4_key() {
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 16
+    return
+  fi
+  cksum <<<"${REPO_ROOT}:$(date +%s):$$" | awk '{printf "%032x\n", $1}'
+}
+
+ensure_sm4_key_env() {
+  if [[ -f "${ENV_FILE}" ]] && ! grep -q '^MANGO_CRYPTO_SM4_SECRET_KEY=' "${ENV_FILE}"; then
+    printf '\nMANGO_CRYPTO_SM4_SECRET_KEY=%s\n' "$(generate_sm4_key)" >>"${ENV_FILE}"
+    echo "Added MANGO_CRYPTO_SM4_SECRET_KEY to existing workspace env: ${ENV_FILE}"
+  fi
+}
+
 write_default_env() {
   mkdir -p "${LOCAL_DIR}"
   if [[ -f "${ENV_FILE}" ]]; then
+    ensure_sm4_key_env
     echo "Workspace env already exists: ${ENV_FILE}"
     return
   fi
@@ -38,6 +54,7 @@ write_default_env() {
   cat >"${ENV_FILE}" <<EOF
 # Mango business project local workspace configuration.
 # This file is generated once per workspace and must not be committed.
+MANGO_CRYPTO_SM4_SECRET_KEY=$(generate_sm4_key)
 MANGO_BACKEND_PORT=5555
 MANGO_FRONTEND_PORT=5176
 MANGO_FRONTEND_HOST=127.0.0.1

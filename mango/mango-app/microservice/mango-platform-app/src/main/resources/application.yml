@@ -38,7 +38,7 @@ mango:
       secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
   crypto:
     sm4:
-      secret-key: 00112233445566778899aabbccddeeff
+      secret-key: ${MANGO_CRYPTO_SM4_SECRET_KEY:}
       mode: CBC
       padding: PKCS5Padding
   flyway:

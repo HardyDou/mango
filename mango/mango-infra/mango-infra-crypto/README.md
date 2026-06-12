@@ -42,10 +42,12 @@ SM4 示例配置：
 mango:
   crypto:
     sm4:
-      secret-key: "00112233445566778899aabbccddeeff"
+      secret-key: "${MANGO_CRYPTO_SM4_SECRET_KEY:}"
       mode: CBC
       padding: PKCS5Padding
 ```
+
+`secret-key` 必须通过环境变量、密钥管理系统或部署配置提供，不应把公开示例值写入真实配置。
 
 SM2 示例配置：
 
@@ -63,4 +65,3 @@ mango:
 `IAsymmetricCryptoService` 只表示公钥加密能力，不再承诺私钥解密。需要私钥解密时，应新增独立接口和明确的密钥托管策略。
 
 `IDigester` 只表示无密钥摘要能力。HMAC 应使用 `IKeyedDigester`，调用方必须显式提供 key。
-

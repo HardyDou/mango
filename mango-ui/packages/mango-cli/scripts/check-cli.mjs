@@ -145,10 +145,11 @@ try {
     || !applicationYml.includes('initial-password: ${MANGO_SEED_ADMIN_PASSWORD:}')) {
     throw new Error('full backend application.yml must keep Mango seed disabled by default with explicit admin password');
   }
-  if (!applicationYml.includes('    sm4:\n      secret-key: 00112233445566778899aabbccddeeff')
+  if (!applicationYml.includes('    sm4:\n      secret-key: ${MANGO_CRYPTO_SM4_SECRET_KEY:}')
     || applicationYml.includes('sm4-key')
-    || applicationYml.includes('sm4-iv')) {
-    throw new Error('full backend application.yml must use current mango.crypto.sm4.secret-key config');
+    || applicationYml.includes('sm4-iv')
+    || applicationYml.includes('00112233445566778899aabbccddeeff')) {
+    throw new Error('full backend application.yml must use current mango.crypto.sm4.secret-key env config without a public default');
   }
   assertYamlFlywayModuleEnabled(applicationYml, 'domain');
   assertYamlFlywayModuleEnabled(applicationYml, 'workflow');
@@ -159,8 +160,9 @@ try {
   if (!devManifest.apps['mango-full-acceptance-service']
     || !devManifest.apps['mango-full-acceptance-admin']
     || devManifest.apps['mango-full-acceptance-service'].goal !== 'org.springframework.boot:spring-boot-maven-plugin:3.5.14:run'
+    || devManifest.apps['mango-full-acceptance-service'].env?.MANGO_CRYPTO_SM4_SECRET_KEY !== '${env.MANGO_CRYPTO_SM4_SECRET_KEY}'
     || devManifest.apps['mango-full-acceptance-admin'].dependsOn[0] !== 'mango-full-acceptance-service') {
-    throw new Error('generated mango.dev.json must describe backend/frontend startup with explicit Spring Boot plugin');
+    throw new Error('generated mango.dev.json must describe backend/frontend startup with explicit Spring Boot plugin and SM4 env propagation');
   }
   if (!devWorkspaceScript.includes('The actual runner lives in the mango CLI')
     || !devWorkspaceScript.includes('run_mango "${command}" "$@"')
@@ -174,6 +176,8 @@ try {
     throw new Error('generated dev-workspace script must be a thin mango CLI shim');
   }
   assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot);
+  assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot);
+  assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot);
   if (!backendDevScript.includes('mango backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -249,6 +253,7 @@ try {
   if (!baselinePreflight.stdout.includes('rules/frontend/04-test.md')) {
     throw new Error(`generated PMO preflight did not include frontend test rules:\n${baselinePreflight.stdout}`);
   }
+  assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot);
   assertBusinessAcceptanceBaseline(projectRoot);
   assertPmoSyncCommand(tempRoot);
 
@@ -598,8 +603,94 @@ function assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot) {
   const output = `${result.stdout}\n${result.stderr}`;
   if (result.status === 0
     || !output.includes('global mango CLI not found')
-    || !output.includes('npm install -g @mango/cli@')) {
+    || !output.includes('npm install -g @mango/cli@')
+    || !output.includes('--registry http://nexus.inner.yunxinbaokeji.com/repository/npm-group/')) {
     throw new Error(`generated dev-workspace should fail clearly without global mango:\n${output}`);
+  }
+}
+
+function assertGeneratedDevWorkspaceCreatesLocalSecretKey(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/init-fake-bin');
+  mkdirSync(fakeBinDir, { recursive: true });
+  const fakeMangoPath = join(fakeBinDir, 'mango');
+  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
+  chmodExecutable(fakeMangoPath);
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  const result = spawnSync('env', [
+    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    'scripts/dev-workspace.sh',
+    'init',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`generated dev-workspace init should succeed with global mango:\n${result.stdout}\n${result.stderr}`);
+  }
+  const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
+  const match = envFile.match(/^MANGO_CRYPTO_SM4_SECRET_KEY=([0-9a-f]{32})$/m);
+  if (!match) {
+    throw new Error(`generated dev-workspace env must contain a random 16-byte SM4 key:\n${envFile}`);
+  }
+  if (match[1] === '00112233445566778899aabbccddeeff') {
+    throw new Error('generated dev-workspace env must not use the public fixed SM4 key');
+  }
+}
+
+function assertGeneratedDevWorkspaceBackfillsLocalSecretKey(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/backfill-fake-bin');
+  mkdirSync(fakeBinDir, { recursive: true });
+  const fakeMangoPath = join(fakeBinDir, 'mango');
+  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
+  chmodExecutable(fakeMangoPath);
+  rmSync(join(projectRoot, '.mango'), { recursive: true, force: true });
+  mkdirSync(join(projectRoot, '.mango'), { recursive: true });
+  writeFileSync(join(projectRoot, '.mango/dev-workspace.env'), [
+    'MANGO_BACKEND_PORT=5555',
+    'MANGO_FRONTEND_PORT=5176',
+    'MANGO_DB_NAME=mango_full_acceptance',
+    '',
+  ].join('\n'));
+  const result = spawnSync('env', [
+    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    'scripts/dev-workspace.sh',
+    'init',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`generated dev-workspace init should backfill SM4 key for existing env:\n${result.stdout}\n${result.stderr}`);
+  }
+  const envFile = readFileSync(join(projectRoot, '.mango/dev-workspace.env'), 'utf8');
+  if (!/^MANGO_CRYPTO_SM4_SECRET_KEY=[0-9a-f]{32}$/m.test(envFile)) {
+    throw new Error(`generated dev-workspace env must backfill a random 16-byte SM4 key:\n${envFile}`);
+  }
+}
+
+function assertGeneratedBaselineLoadsDeliveryContractForPr(projectRoot) {
+  const result = spawnSync(process.execPath, [
+    'business-pmo/mango-baseline/tools/pmo-preflight.mjs',
+    '--role',
+    'dev',
+    '--phase',
+    'develop',
+    '--task',
+    '评审 PR #151 并提交 PR 修复',
+    '--paths',
+    'frontend',
+    '--json',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`generated PMO PR preflight failed:\n${result.stdout}\n${result.stderr}`);
+  }
+  const output = JSON.parse(result.stdout);
+  const mustRead = output.mustRead || [];
+  if (!mustRead.some(entry => entry.path === 'rules/01-delivery-contract.md')) {
+    throw new Error(`generated PMO PR preflight must load delivery contract:\n${result.stdout}`);
   }
 }
 
@@ -747,6 +838,34 @@ function assertDevWorkspaceRunnerScenarios(tempRoot) {
   assertCommandFails([cli, 'validate'], join(negativeRoot, 'cycle'), 'cycle validation', 'cyclic app dependency');
   assertCommandFails([cli, 'validate'], join(negativeRoot, 'spring-prefix'), 'spring prefix validation', 'explicit Spring Boot Maven plugin coordinate');
   assertCommandFails([cli, 'validate'], join(negativeRoot, 'missing-pom'), 'missing pom validation', 'pom not found');
+
+  const legacyEnvRoot = join(tempRoot, 'dev-workspace-legacy-env');
+  mkdirSync(join(legacyEnvRoot, 'app'), { recursive: true });
+  mkdirSync(join(legacyEnvRoot, '.mango'), { recursive: true });
+  writeFileSync(join(legacyEnvRoot, 'mango.dev.json'), `${JSON.stringify({
+    version: 1,
+    groups: { default: ['legacy-env-app'] },
+    apps: {
+      'legacy-env-app': {
+        type: 'command',
+        cwd: 'app',
+        command: 'node',
+        args: ['--version'],
+      },
+    },
+  }, null, 2)}\n`);
+  writeFileSync(join(legacyEnvRoot, '.mango/dev-workspace.env'), [
+    'MANGO_BACKEND_PORT=5555',
+    'MANGO_FRONTEND_PORT=5176',
+    'MANGO_DB_NAME=legacy_env',
+    '',
+  ].join('\n'));
+  assertCommandOk([cli, 'start'], legacyEnvRoot, 'legacy env start backfills SM4 key');
+  const legacyEnvFile = readFileSync(join(legacyEnvRoot, '.mango/dev-workspace.env'), 'utf8');
+  if (!/^MANGO_CRYPTO_SM4_SECRET_KEY=[0-9a-f]{32}$/m.test(legacyEnvFile)) {
+    throw new Error(`CLI start must backfill SM4 key for legacy workspace env:\n${legacyEnvFile}`);
+  }
+  assertCommandOk([cli, 'stop'], legacyEnvRoot, 'legacy env stop');
 
   const occupiedRoot = join(tempRoot, 'dev-workspace-occupied-port');
   mkdirSync(join(occupiedRoot, 'app'), { recursive: true });
