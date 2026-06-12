@@ -113,9 +113,13 @@ function verifyPublishedFiles(packageName, packageRoot, sourcePackageJson) {
       process.exit(1);
     }
   }
-  if (sourcePackageJson.exports?.['./style.css'] && !existsSync(join(packageRoot, 'style.css'))) {
-    console.error(`Published tarball for ${packageName} is missing exported style.css.`);
-    process.exit(1);
+  const styleExport = sourcePackageJson.exports?.['./style.css'];
+  if (styleExport) {
+    const stylePath = typeof styleExport === 'string' ? styleExport : styleExport.import;
+    if (!stylePath || !existsSync(join(packageRoot, stylePath.replace(/^\.\//, '')))) {
+      console.error(`Published tarball for ${packageName} is missing exported style.css: ${stylePath || '<unknown>'}.`);
+      process.exit(1);
+    }
   }
 }
 
