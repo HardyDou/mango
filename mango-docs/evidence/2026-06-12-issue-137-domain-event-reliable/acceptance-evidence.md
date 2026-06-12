@@ -18,9 +18,10 @@
 | EVT-002 | `GET /system/events/detail`、`POST /system/events/reconsume` | 系统事件详情与补偿入口 | 同一条真实 JDBC KV Outbox `FAILED` 事件 | 详情 API 返回 `messageId=e2e-system-event-issue-137`；详情弹框展示事件头、载荷、错误信息；点击“重新投递”后 `POST /system/events/reconsume` 返回成功 | 弹框使用 Element Plus `el-dialog`、`el-descriptions`，长 JSON 可滚动；确认框和成功提示可见 | 真实 API 完成详情查询和重投；E2E 结束清理测试 Outbox 键 | `system-event-detail.png` | PASS |
 | EVT-003 | 后端 Outbox / Redis Stream 配置 | 可靠投递、失败转终态、补偿回放、Redis Stream transport bean | `DomainEventOutboxAutoConfigurationTest`、`OutboxAutoConfigurationTest` | 10 个目标测试全部通过；失败消费进入 `FAILED`，`reconsume` 回到 `PENDING`；Redis Stream transport 可装配 | 不涉及 UI | Maven 输出 `BUILD SUCCESS` | 命令输出记录于本轮执行结果 | PASS |
 | EVT-004 | 前端包构建 | 系统事件页面和默认页面注册 | `@mango/system`、`@mango/admin-pages` | 两个包构建成功，页面组件可被 `system/event/index` 加载 | Element Plus 表单、表格、弹框结构通过人工走查 | Vite build 成功 | 命令输出记录于本轮执行结果 | PASS |
+| EVT-005 | Redis Stream transport | 真实 Redis Stream 发布、消费组消费、ACK | 本机真实 Redis `127.0.0.1:6379`；测试 stream `mango:test:domain-event:*` | `redis-cli -h 127.0.0.1 -p 6379 ping` 返回 `PONG`；`RedisStreamDomainEventTransportIntegrationTest` 连接真实 Redis；`publish` 后 stream size=1；`consumeOnce` 返回 1；订阅者收到业务键 `ISSUE-137-REDIS-STREAM`；ACK 后 pending 为空 | 不涉及 UI | Redisson 日志显示连接 `localhost/127.0.0.1:6379`；无 mock、无 Mockito | Maven 输出 `Tests run: 1, Failures: 0, Errors: 0` | PASS |
 
 ## 未验证项和风险
 
-- Redis Stream 使用 Mockito 装配测试验证 bean 与配置，未连接真实 Redis 集群做跨进程消费压测。
+- Redis Stream 已连接本机真实 Redis 单实例完成发布、消费和 ACK 验证；未做 Redis 集群、多消费者竞争和长时间压测。
 - KV Outbox 的全量索引用于系统事件查询，只覆盖新写入或状态变更后的消息；历史无索引消息不会自动出现在系统事件列表。
 - E2E 为了覆盖详情和补偿，向本地工作区 JDBC KV 写入专用测试事件，并在结束后清理；没有引入测试后门接口。
