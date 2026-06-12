@@ -125,7 +125,7 @@ pnpm playwright test
 | 2026-06-07 | 租户业务定义未确认 | `PAY-CONFIRM-004` | 请确认租户代表内部事业部、外部客户，还是两者都支持；是否影响默认角色、菜单授权和数据隔离 | 不能把权限、菜单授权和数据隔离模型调整为单一假设 |
 | 2026-06-07 | 交付台账仍有未完成项 | `PAY-TEST-004` | 请先关闭外部通道和用户确认项，或明确哪些项作为本期用户确认 `EXCEPTION` | 不能通过最终 `delivery-contract-check --mode verify`，不能声明支付模块整体投产完成 |
 
-当前阻塞详情见：`mango-docs/plans/evidence/payment-production-blockers-acceptance.md`。
+当前阻塞详情见：`mango-docs/plans/evidence/payment-delivery-evidence-summary.md`。
 
 ## 6. PR 合并门禁
 

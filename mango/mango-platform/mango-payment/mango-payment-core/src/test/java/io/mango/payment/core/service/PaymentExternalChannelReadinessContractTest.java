@@ -20,7 +20,7 @@ class PaymentExternalChannelReadinessContractTest {
     private static final Path PAYMENT_MODULE_DIR = Path.of("..");
     private static final Path LEDGER = Path.of("../../../../mango-docs/plans/2026-05-25-payment-delivery-ledger.md");
     private static final Path BLOCKER_EVIDENCE =
-            Path.of("../../../../mango-docs/plans/evidence/payment-production-blockers-acceptance.md");
+            Path.of("../../../../mango-docs/plans/evidence/payment-delivery-evidence-summary.md");
     private static final List<String> UNFINISHED_EXTERNAL_CHANNELS = List.of(
             "ALLINPAY",
             "HUAXIA_BANK",
