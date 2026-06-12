@@ -17,17 +17,17 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.mango.platform.workflow</groupId>
-            <artifactId>mango-workflow-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.mango.platform.authorization</groupId>
             <artifactId>mango-authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.mango.infra.web</groupId>
             <artifactId>mango-infra-web-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mango.infra.persistence</groupId>
+            <artifactId>mango-infra-persistence-starter</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
