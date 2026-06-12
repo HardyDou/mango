@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
@@ -83,6 +83,7 @@ try {
   }
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
+  assertEqual(frontendPackage.devDependencies['@mango/cli'], readCliPackageVersion(), '@mango/cli devDependency');
   for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
@@ -161,11 +162,14 @@ try {
   }
   if (!devWorkspaceScript.includes('The actual runner lives in the mango CLI')
     || !devWorkspaceScript.includes('run_mango "${command}" "$@"')
-    || !devWorkspaceScript.includes('mango-ui/packages/mango-cli/src/index.mjs')
+    || !devWorkspaceScript.includes('frontend/node_modules/.bin/mango')
+    || !devWorkspaceScript.includes('npx --yes "@mango/cli@')
+    || devWorkspaceScript.includes('mango-ui/packages/mango-cli/src/index.mjs')
     || devWorkspaceScript.includes('spring-boot:run')
     || devWorkspaceScript.includes('diagnose_backend_failure')) {
     throw new Error('generated dev-workspace script must be a thin mango CLI shim');
   }
+  assertGeneratedDevWorkspaceUsesLocalCli(projectRoot);
   if (!backendDevScript.includes('mango backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -561,6 +565,32 @@ function assertCommandOk(args, cwd, label) {
   return result;
 }
 
+function assertGeneratedDevWorkspaceUsesLocalCli(projectRoot) {
+  const localBinDir = join(projectRoot, 'frontend/node_modules/.bin');
+  mkdirSync(localBinDir, { recursive: true });
+  const localMangoPath = join(localBinDir, 'mango');
+  writeFileSync(localMangoPath, '#!/usr/bin/env sh\necho local-mango-runner \"$@\"\n');
+  chmodExecutable(localMangoPath);
+  const result = spawnSync('env', [
+    'PATH=/usr/bin:/bin:/usr/sbin:/sbin',
+    'scripts/dev-workspace.sh',
+    'validate',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0 || !result.stdout.includes('local-mango-runner validate')) {
+    throw new Error(`generated dev-workspace should use local @mango/cli without global mango:\n${result.stdout}\n${result.stderr}`);
+  }
+}
+
+function chmodExecutable(path) {
+  chmodSync(path, 0o755);
+  if ((statSync(path).mode & 0o111) === 0) {
+    throw new Error(`failed to make executable: ${path}`);
+  }
+}
+
 function assertCommandFails(args, cwd, label, expectedText) {
   const result = spawnSync(process.execPath, args, {
     cwd,
@@ -764,6 +794,11 @@ function readReleasedPackageVersion(packageName) {
     throw new Error(`release-versions.json missing npm version for ${packageName}`);
   }
   return version;
+}
+
+function readCliPackageVersion() {
+  const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+  return cliPackage.version;
 }
 
 function assertBusinessAcceptanceBaseline(projectRoot) {

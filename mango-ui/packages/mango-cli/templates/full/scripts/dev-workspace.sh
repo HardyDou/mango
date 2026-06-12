@@ -57,20 +57,21 @@ EOF
 }
 
 run_mango() {
+  local local_mango="${REPO_ROOT}/frontend/node_modules/.bin/mango"
+  if [[ -x "${local_mango}" ]]; then
+    exec "${local_mango}" "$@"
+  fi
+
   if command -v mango >/dev/null 2>&1; then
     exec mango "$@"
   fi
 
-  local repo_cli="${REPO_ROOT}/mango-ui/packages/mango-cli/src/index.mjs"
-  if [[ -f "${repo_cli}" ]]; then
-    if ! command -v node >/dev/null 2>&1; then
-      echo "node not found; cannot run repository mango CLI: ${repo_cli}"
-      exit 1
-    fi
-    exec node "${repo_cli}" "$@"
+  if command -v npx >/dev/null 2>&1; then
+    exec npx --yes "@mango/cli@{{mangoCliVersion}}" "$@"
   fi
 
   echo "mango CLI not found. Install or upgrade @mango/cli, then retry."
+  echo "Examples: cd frontend && pnpm install"
   echo "Example: npm install -g @mango/cli"
   exit 1
 }

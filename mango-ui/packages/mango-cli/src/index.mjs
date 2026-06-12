@@ -1008,9 +1008,9 @@ function validateDevWorkspace(context, { verbose }) {
 
 function doctorDevWorkspace(context) {
   validateDevWorkspace(context, { verbose: true });
+  process.stdout.write(`ok      mango runner ${currentFile}\n`);
   const checks = [
     ['node', process.execPath],
-    ['mango', 'mango'],
     ['mvn', 'mvn'],
     ['npm', 'npm'],
     ['pnpm', 'pnpm'],
@@ -1028,6 +1028,13 @@ function doctorDevWorkspace(context) {
     } else {
       process.stdout.write(`missing ${label}\n`);
     }
+  }
+  const globalMango = spawnSync('mango', ['--version'], { encoding: 'utf8' });
+  if (globalMango.status === 0) {
+    const firstLine = `${globalMango.stdout || globalMango.stderr}`.split(/\r?\n/).find(Boolean) || 'available';
+    process.stdout.write(`ok      global mango ${firstLine}\n`);
+  } else {
+    process.stdout.write('optional global mango not found; current runner is available\n');
   }
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
