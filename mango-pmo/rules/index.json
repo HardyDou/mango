@@ -194,13 +194,13 @@
     "backendApi": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango/**/*Api.java", "mango/**/*Command.java", "mango/**/*Query.java", "mango/**/*VO.java", "mango/**/controller/**"],
-      "keywords": ["接口", "API", "OpenAPI", "Knife4j", "Command", "Query", "VO", "Controller", "参数校验", "Bean Validation"],
+      "keywords": ["接口", "API", "OpenAPI", "Knife4j", "Command", "Query", "VO", "Controller", "Service", "IXxxService", "ServiceImpl", "参数校验", "Bean Validation", "方法入参", "参数展开"],
       "include": ["backend.api"]
     },
     "backendDb": {
       "roles": ["tech-lead", "dev", "qa"],
       "paths": ["mango/**/db/migration/**", "mango/**/*Mapper.java", "mango/**/*Entity.java"],
-      "keywords": ["数据库设计", "数据库变更", "数据库表", "数据库字段", "migration", "Flyway", "数据表", "表结构", "建表", "改表", "索引", "DDL", "SQL", "Mapper", "Entity", "CRUD", "持久化", "租户隔离", "租户自动注入", "租户自动过滤", "tenantId", "tenant_id", "TenantLineInnerInterceptor", "MetaObjectHandler", "MangoCrudService", "BaseCrudController", "MyBatis-Plus"],
+      "keywords": ["数据库设计", "数据库变更", "数据库表", "数据库字段", "migration", "Flyway", "数据表", "表结构", "建表", "改表", "索引", "DDL", "SQL", "Mapper", "mapper.xml", "Entity", "CRUD", "持久化", "JdbcTemplate", "JDBC", "@Select", "@Insert", "@Update", "@Delete", "租户隔离", "租户自动注入", "租户自动过滤", "tenantId", "tenant_id", "TenantLineInnerInterceptor", "MetaObjectHandler", "MangoCrudService", "BaseCrudController", "MyBatis-Plus"],
       "include": ["backend.db", "backend.persistence"]
     },
     "backendSecurity": {

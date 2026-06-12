@@ -138,7 +138,7 @@
   "bundles": {
     "backend": {
       "paths": ["backend/**", "mango/**", "mango-platform/**", "mango-app/**"],
-      "keywords": ["后端", "Java", "Spring", "接口", "数据库", "migration", "Flyway", "API", "CRUD", "持久化", "Service", "Mapper", "Entity", "MangoCrudService", "BaseCrudController", "MyBatis-Plus"],
+      "keywords": ["后端", "Java", "Spring", "接口", "数据库", "migration", "Flyway", "API", "CRUD", "持久化", "Service", "IXxxService", "ServiceImpl", "方法入参", "参数展开", "Mapper", "mapper.xml", "Entity", "JdbcTemplate", "JDBC", "@Select", "@Insert", "@Update", "@Delete", "MangoCrudService", "BaseCrudController", "MyBatis-Plus"],
       "include": ["backend.devFlow", "backend.code", "backend.naming", "backend.module", "backend.api", "backend.db", "backend.persistence", "backend.test"]
     },
     "frontend": {

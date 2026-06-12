@@ -23,6 +23,15 @@
 - 路径参数和查询参数必须声明校验约束。
 - Controller 或 `Api` 必须使用 `@Validated` 或等效机制开启参数校验。
 
+## 2.1 Service 入参规则
+
+- `XxxApi`、Controller、`IXxxService` 和 `XxxServiceImpl` 的核心业务方法必须保持同一入参模型。
+- 创建、更新、查询、批量操作和复杂业务动作必须使用 `Command`、`Query` 或专用请求对象。
+- Service 方法超过 2 个业务字段入参时，必须收敛为 `Command`、`Query` 或专用请求对象。
+- 允许直接展开的参数仅限 `id`、状态枚举、布尔控制位等 1-2 个简单控制参数。
+- Controller 调 Service 时直接传 `Command`、`Query` 或专用请求对象；Service 负责校验后的业务编排和模型转换。
+- Service 调 Mapper 时不得继续传 API 协议模型，必须转换为 Entity、id、Wrapper、分页对象或 core 内部持久化查询对象。
+
 ## 2.2 文件字段规则
 
 - 业务 API 的创建、更新入参禁止接收需要持久化的文件访问地址字段，例如 `url`、`previewUrl`、`downloadUrl`、`directPreviewUrl`、`directDownloadUrl`。
