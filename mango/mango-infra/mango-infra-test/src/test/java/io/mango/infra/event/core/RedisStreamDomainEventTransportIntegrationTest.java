@@ -233,9 +233,115 @@ class RedisStreamDomainEventTransportIntegrationTest {
                 .listPending(groupName("payment-service"), StreamMessageId.MIN, StreamMessageId.MAX, 10)).isEmpty();
     }
 
+    @Test
+    void microservicesWithMultipleInstances_shouldBroadcastAcrossServicesAndCompeteWithinService() {
+        InMemoryDomainEventBus paymentFirstBus = new InMemoryDomainEventBus();
+        InMemoryDomainEventBus paymentSecondBus = new InMemoryDomainEventBus();
+        InMemoryDomainEventBus noticeFirstBus = new InMemoryDomainEventBus();
+        InMemoryDomainEventBus noticeSecondBus = new InMemoryDomainEventBus();
+        List<DomainEvent> paymentFirstHandled = new ArrayList<>();
+        List<DomainEvent> paymentSecondHandled = new ArrayList<>();
+        List<DomainEvent> noticeFirstHandled = new ArrayList<>();
+        List<DomainEvent> noticeSecondHandled = new ArrayList<>();
+        paymentFirstBus.subscribe("workflow.process.rejected", paymentFirstHandled::add);
+        paymentSecondBus.subscribe("workflow.process.rejected", paymentSecondHandled::add);
+        noticeFirstBus.subscribe("workflow.process.rejected", noticeFirstHandled::add);
+        noticeSecondBus.subscribe("workflow.process.rejected", noticeSecondHandled::add);
+
+        RedisStreamDomainEventTransport paymentFirst = transport(
+                paymentFirstBus, "payment-service", "payment-instance-a");
+        RedisStreamDomainEventTransport paymentSecond = transport(
+                paymentSecondBus, "payment-service", "payment-instance-b");
+        RedisStreamDomainEventTransport noticeFirst = transport(
+                noticeFirstBus, "notice-service", "notice-instance-a");
+        RedisStreamDomainEventTransport noticeSecond = transport(
+                noticeSecondBus, "notice-service", "notice-instance-b");
+
+        DomainEvent event = DomainEvent.builder()
+                .eventType("workflow.process.rejected")
+                .businessType("PAYMENT_REFUND_APPROVAL")
+                .businessKey("REFUND-ISSUE-137-MULTI")
+                .aggregateId("workflow-137-multi")
+                .build();
+        transport(new InMemoryDomainEventBus(), "relay", "publisher").publish(event);
+
+        int paymentCount = paymentFirst.consumeOnce() + paymentSecond.consumeOnce();
+        int noticeCount = noticeFirst.consumeOnce() + noticeSecond.consumeOnce();
+
+        assertThat(paymentCount).isEqualTo(1);
+        assertThat(noticeCount).isEqualTo(1);
+        assertThat(paymentFirstHandled.size() + paymentSecondHandled.size()).isEqualTo(1);
+        assertThat(noticeFirstHandled.size() + noticeSecondHandled.size()).isEqualTo(1);
+        assertThat(redisson.getStream(STREAM_NAME)
+                .listPending(groupName("payment-service"), StreamMessageId.MIN, StreamMessageId.MAX, 10)).isEmpty();
+        assertThat(redisson.getStream(STREAM_NAME)
+                .listPending(groupName("notice-service"), StreamMessageId.MIN, StreamMessageId.MAX, 10)).isEmpty();
+    }
+
+    @Test
+    void restartedConsumerClient_shouldClaimPendingMessageAndContinueDelivery() {
+        RedissonClient crashedClient = newRedisClient();
+        try {
+            InMemoryDomainEventBus failingBus = new InMemoryDomainEventBus();
+            failingBus.subscribe("issue137.restart-recovery", ignored -> {
+                throw new IllegalStateException("consumer process stopped before ack");
+            });
+            RedisStreamDomainEventTransport crashedConsumer = transport(
+                    crashedClient,
+                    failingBus,
+                    "payment-service",
+                    "payment-instance-a");
+
+            DomainEvent event = DomainEvent.builder()
+                    .eventType("issue137.restart-recovery")
+                    .businessType("ISSUE")
+                    .businessKey("ISSUE-137-RESTART")
+                    .aggregateId("137")
+                    .build();
+            transport(new InMemoryDomainEventBus(), "relay", "publisher").publish(event);
+
+            assertThatThrownBy(crashedConsumer::consumeOnce)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("consumer process stopped before ack");
+            assertThat(redisson.getStream(STREAM_NAME)
+                    .listPending(groupName("payment-service"), StreamMessageId.MIN, StreamMessageId.MAX, 10)).hasSize(1);
+        } finally {
+            crashedClient.shutdown();
+        }
+
+        RedissonClient restartedClient = newRedisClient();
+        try {
+            InMemoryDomainEventBus restartedBus = new InMemoryDomainEventBus();
+            List<DomainEvent> restartedHandled = new ArrayList<>();
+            restartedBus.subscribe("issue137.restart-recovery", restartedHandled::add);
+            RedisStreamDomainEventTransport restartedConsumer = transport(
+                    restartedClient,
+                    restartedBus,
+                    "payment-service",
+                    "payment-instance-b");
+
+            awaitPendingIdleTimeout();
+            assertThat(restartedConsumer.consumeOnce()).isEqualTo(1);
+            assertThat(restartedHandled).hasSize(1);
+            assertThat(restartedHandled.get(0).getBusinessKey()).isEqualTo("ISSUE-137-RESTART");
+            assertThat(redisson.getStream(STREAM_NAME)
+                    .listPending(groupName("payment-service"), StreamMessageId.MIN, StreamMessageId.MAX, 10)).isEmpty();
+        } finally {
+            restartedClient.shutdown();
+        }
+    }
+
     private RedisStreamDomainEventTransport transport(InMemoryDomainEventBus eventBus, String group, String consumer) {
+        return transport(redisson, eventBus, group, consumer);
+    }
+
+    private RedisStreamDomainEventTransport transport(
+            RedissonClient client,
+            InMemoryDomainEventBus eventBus,
+            String group,
+            String consumer) {
         return new RedisStreamDomainEventTransport(
-                redisson,
+                client,
                 eventBus,
                 objectMapper,
                 STREAM_NAME,
@@ -244,6 +350,18 @@ class RedisStreamDomainEventTransportIntegrationTest {
                 10,
                 READ_TIMEOUT,
                 PENDING_IDLE_TIMEOUT);
+    }
+
+    private static RedissonClient newRedisClient() {
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://localhost:6379")
+                .setDatabase(0)
+                .setConnectTimeout(5000)
+                .setTimeout(3000)
+                .setConnectionMinimumIdleSize(1)
+                .setConnectionPoolSize(4);
+        return Redisson.create(config);
     }
 
     private String groupName(String group) {
