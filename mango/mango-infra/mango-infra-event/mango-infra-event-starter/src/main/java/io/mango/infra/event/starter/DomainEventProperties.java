@@ -16,9 +16,19 @@ public class DomainEventProperties {
     private String type = "memory";
 
     /**
+     * Cross-process transport. none or redis-stream.
+     */
+    private String transport = "none";
+
+    /**
      * Reliable publishing backed by KV outbox.
      */
     private Outbox outbox = new Outbox();
+
+    /**
+     * Redis Stream transport options.
+     */
+    private RedisStream redisStream = new RedisStream();
 
     @Data
     public static class Outbox {
@@ -44,6 +54,11 @@ public class DomainEventProperties {
         private long retryDelaySeconds = 60L;
 
         /**
+         * Max attempts before an outbox message becomes final failed.
+         */
+        private int maxAttempts = 5;
+
+        /**
          * Whether the starter runs an in-process dispatch scheduler.
          */
         private boolean dispatchEnabled = true;
@@ -57,5 +72,54 @@ public class DomainEventProperties {
          * Initial delay before the first dispatch attempt.
          */
         private long dispatchInitialDelayMillis = 1000L;
+    }
+
+    @Data
+    public static class RedisStream {
+
+        /**
+         * Redis Stream key name.
+         */
+        private String streamName = "mango:domain-event";
+
+        /**
+         * Redis consumer group.
+         */
+        private String group = "mango-domain-event";
+
+        /**
+         * Redis consumer name.
+         */
+        private String consumer = "domain-event-consumer";
+
+        /**
+         * Batch size per consume.
+         */
+        private int batchSize = 50;
+
+        /**
+         * Read timeout in milliseconds.
+         */
+        private long readTimeoutMillis = 200L;
+
+        /**
+         * Idle time before pending messages can be claimed by another consumer.
+         */
+        private long pendingIdleTimeoutMillis = 60000L;
+
+        /**
+         * Whether the starter runs an in-process transport consumer.
+         */
+        private boolean consumeEnabled = true;
+
+        /**
+         * Fixed delay between consume attempts.
+         */
+        private long consumeIntervalMillis = 1000L;
+
+        /**
+         * Initial delay before the first consume attempt.
+         */
+        private long consumeInitialDelayMillis = 1000L;
     }
 }
