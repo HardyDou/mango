@@ -294,7 +294,7 @@ public class PaymentFuiouPayChannelAdapter implements IPaymentChannelAdapter {
         fields.put("iss_ins_cd", command.payerBankCode());
         fields.put("goods_name", truncate(command.title(), 60));
         fields.put("goods_display_url", "");
-        fields.put("rem", String.valueOf(command.tenantId()));
+        fields.put("rem", "");
         fields.put("ver", PC_GATEWAY_VERSION);
         fields.put("md5", gatewaySignService.signPay(fields, config.gatewayMerchantKey()));
         return fields;

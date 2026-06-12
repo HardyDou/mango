@@ -24,6 +24,10 @@ class PaymentFuiouPayMigrationTest {
             "src/main/resources/db/migration/payment/V97__payment_fuiou_scanpay_public_key_fix.sql");
     private static final Path CALLBACK_ROUTE_UNIFICATION_MIGRATION = Path.of(
             "src/main/resources/db/migration/payment/V98__payment_channel_callback_route_unification.sql");
+    private static final Path CALLBACK_HTTPS_1443_MIGRATION = Path.of(
+            "src/main/resources/db/migration/payment/V99__payment_fuiou_callback_https_1443.sql");
+    private static final Path GATEWAY_PAGE_NOTIFY_URL_MIGRATION = Path.of(
+            "src/main/resources/db/migration/payment/V100__payment_fuiou_gateway_page_notify_url.sql");
 
     @Test
     @DisplayName("migration should move fuiou from legacy seed to business signing configuration")
@@ -35,6 +39,8 @@ class PaymentFuiouPayMigrationTest {
         String gatewayCapabilitySql = Files.readString(GATEWAY_CAPABILITY_MIGRATION);
         String scanpayPublicKeyFixSql = Files.readString(SCANPAY_PUBLIC_KEY_FIX_MIGRATION);
         String callbackRouteUnificationSql = Files.readString(CALLBACK_ROUTE_UNIFICATION_MIGRATION);
+        String callbackHttps1443Sql = Files.readString(CALLBACK_HTTPS_1443_MIGRATION);
+        String gatewayPageNotifyUrlSql = Files.readString(GATEWAY_PAGE_NOTIFY_URL_MIGRATION);
 
         assertFuiouScanpayConfiguration(configurationSql);
         assertFuiouScanpayConfiguration(cleanupSql);
@@ -42,6 +48,8 @@ class PaymentFuiouPayMigrationTest {
         assertFuiouGatewayConfiguration(gatewayCapabilitySql);
         assertFuiouScanpayPublicKeyFix(scanpayPublicKeyFixSql);
         assertFuiouCallbackRouteUnification(callbackRouteUnificationSql);
+        assertFuiouCallbackHttps1443(callbackHttps1443Sql);
+        assertFuiouGatewayPageNotifyUrl(gatewayPageNotifyUrlSql);
         assertThat(seedSql)
                 .contains("\"field\":\"termId\"")
                 .contains("\"field\":\"termIp\"");
@@ -56,6 +64,27 @@ class PaymentFuiouPayMigrationTest {
                 .contains("'/api/payment/channel-callbacks/fuiou'")
                 .contains("'/api/payment/channel-callbacks/fuiou_pay'")
                 .contains("`channel_code` = 'FUIOU_PAY'");
+    }
+
+    private void assertFuiouCallbackHttps1443(String sql) {
+        assertThat(sql)
+                .contains("'notifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
+                .contains("'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
+                .contains("'gatewayBackNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
+                .contains("c.`channel_code` = 'FUIOU_PAY'")
+                .contains("cc.`del_flag` = 0")
+                .doesNotContain("27.185.20.146")
+                .doesNotContain("douxy.inner.yunxinbaokeji.com:7775");
+    }
+
+    private void assertFuiouGatewayPageNotifyUrl(String sql) {
+        assertThat(sql)
+                .contains("'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/#/payment/gateway-result'")
+                .contains("'gatewayBackNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
+                .contains("'notifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'")
+                .contains("c.`channel_code` = 'FUIOU_PAY'")
+                .contains("cc.`del_flag` = 0")
+                .doesNotContain("'gatewayPageNotifyUrl', 'https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay'");
     }
 
     private void assertFuiouScanpayConfiguration(String sql) {

@@ -111,6 +111,12 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
       meta: { title: '401', isAffix: true },
     },
     {
+      path: '/payment/gateway-result',
+      name: 'PaymentGatewayResult',
+      component: componentsMap['payment/gateway-result/index'] as NonNullable<RouteRecordRaw['component']>,
+      meta: { title: '支付结果确认', isAffix: false },
+    },
+    {
       path: '/',
       name: 'Layout',
       component: MangoAdminLayout,

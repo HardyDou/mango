@@ -130,6 +130,9 @@ class PaymentFuiouPayChannelAdapterTest {
                 .containsEntry("order_amt", "1")
                 .containsEntry("order_pay_type", "B2C")
                 .containsEntry("iss_ins_cd", "0803030000")
+                .containsEntry("page_notify_url", "https://douxy.inner.yunxinbaokeji.com:1443/#/payment/gateway-result")
+                .containsEntry("back_notify_url", "https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay")
+                .containsEntry("rem", "")
                 .containsEntry("ver", "1.0.1")
                 .containsKey("md5");
     }
@@ -217,7 +220,7 @@ class PaymentFuiouPayChannelAdapterTest {
                 "vau6p7ldawpezyaugc0kopdrrwm4gkpu",
                 "http://www-2.wg.fuiou.com:13195/smpGate.do",
                 "http://www-2.wg.fuiou.com:13195/smpAQueryGate.do",
-                "http://27.185.20.146:7775/api/payment/channel-callbacks/fuiou_pay",
-                "http://27.185.20.146:7775/api/payment/channel-callbacks/fuiou_pay");
+                "https://douxy.inner.yunxinbaokeji.com:1443/#/payment/gateway-result",
+                "https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay");
     }
 }

@@ -128,8 +128,8 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       host: env.VITE_HOST || '127.0.0.1',
       port: (env.VITE_PORT as unknown as number) || 5173,
       open: env.VITE_OPEN === 'true',
-      // SECURITY: Restrict allowed hosts in production
-      allowedHosts: isDev ? ['localhost', '127.0.0.1', 'douxy.inner.yunxinbaokeji.com'] : false,
+      // Development workspaces may be accessed through LAN IPs or temporary domains during payment callback testing.
+      allowedHosts: isDev ? true : false,
       hmr: true,
       proxy: {
         // Mock 模式下跳过 /api/* 路径，由 MSW 处理

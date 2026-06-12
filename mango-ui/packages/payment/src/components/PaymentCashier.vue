@@ -121,17 +121,21 @@
                   </div>
                 </el-form-item>
                 <template v-if="selectedMethod && bankPaymentForm.bankCode">
-                  <el-form-item :label="bankAccountLabel" prop="accountNo">
-                    <el-input v-model="bankPaymentForm.accountNo" placeholder="请输入账号或卡号" clearable />
-                  </el-form-item>
-                  <el-form-item label="付款户名" prop="payerName">
-                    <el-input v-model="bankPaymentForm.payerName" placeholder="请输入付款户名" clearable />
-                  </el-form-item>
-                  <el-form-item v-if="selectedMethod?.accountNature === 'CORPORATE'" label="企业授权">
-                    <el-checkbox v-model="bankPaymentForm.enterpriseAuthorized">
-                      已完成企业网银授权准备
-                    </el-checkbox>
-                  </el-form-item>
+                  <div class="bank-selection-summary">
+                    <div>
+                      <span>已选择银行</span>
+                      <strong>{{ selectedBankOption?.name || bankPaymentForm.bankName }}</strong>
+                    </div>
+                    <div v-if="selectedBankOption?.limits.length" class="bank-limit-tags">
+                      <el-tag
+                        v-for="limit in selectedBankOption.limits"
+                        :key="`${selectedBankOption.code}-${limit.label}`"
+                        effect="plain"
+                      >
+                        {{ limit.label }}：{{ limit.value }}
+                      </el-tag>
+                    </div>
+                  </div>
                   <el-form-item>
                     <el-button
                       type="primary"
@@ -360,7 +364,7 @@
                     <el-button type="primary" size="large" :disabled="!payMaterial.htmlForm" @click="submitHtmlForm">
                       打开网银支付
                     </el-button>
-                    <el-button link type="primary" @click="refreshCurrentPayResult">查询支付结果</el-button>
+                    <el-button link type="primary" :loading="gatewaySyncing" @click="syncCurrentPayResult">同步支付状态</el-button>
                   </div>
                   <el-button
                     v-if="mangoPayActionVisible"
@@ -512,6 +516,7 @@ import {
   type PaymentCashierPayResult,
   type PaymentCashierSession,
 } from '../api/payment';
+import { paymentBankOptions, type PaymentBankOption } from '../config/paymentBankOptions';
 
 interface MethodGroup {
   code: string;
@@ -523,15 +528,6 @@ interface MethodGroup {
 interface BankPaymentForm {
   bankCode: string;
   bankName: string;
-  accountNo: string;
-  payerName: string;
-  enterpriseAuthorized: boolean;
-}
-
-interface BankBannerOption {
-  code: string;
-  name: string;
-  shortName: string;
 }
 
 const props = withDefaults(defineProps<{
@@ -553,6 +549,7 @@ const loading = ref(false);
 const paying = ref(false);
 const mangoPaying = ref(false);
 const qrManualChecking = ref(false);
+const gatewaySyncing = ref(false);
 const qrResultDialogVisible = ref(false);
 const submittingOfflineVoucher = ref(false);
 const polling = ref(false);
@@ -582,21 +579,9 @@ const offlineVoucherForm = ref<{
 const bankPaymentForm = ref<BankPaymentForm>({
   bankCode: '',
   bankName: '',
-  accountNo: '',
-  payerName: '',
-  enterpriseAuthorized: false,
 });
 
-const bankBannerOptions: BankBannerOption[] = [
-  { code: 'ICBC', name: '中国工商银行', shortName: '工行' },
-  { code: 'ABC', name: '中国农业银行', shortName: '农行' },
-  { code: 'BOC', name: '中国银行', shortName: '中行' },
-  { code: 'CCB', name: '中国建设银行', shortName: '建行' },
-  { code: 'CMB', name: '招商银行', shortName: '招行' },
-  { code: 'BOCOM', name: '交通银行', shortName: '交行' },
-  { code: 'CIB', name: '兴业银行', shortName: '兴业' },
-  { code: 'SPDB', name: '浦发银行', shortName: '浦发' },
-];
+const bankBannerOptions: PaymentBankOption[] = paymentBankOptions;
 
 let expireTimer: number | undefined;
 
@@ -713,7 +698,7 @@ const previewQrContent = computed(() => {
 });
 const activeQrContent = computed(() => payMaterial.value?.qrContent || previewQrContent.value);
 const orderNotPayableTitle = computed(() => orderExpired.value ? '当前订单已超时，不允许发起支付。' : '当前订单状态不可发起支付，可查看订单和支付方式信息。');
-const bankAccountLabel = computed(() => selectedMethod.value?.accountNature === 'CORPORATE' ? '企业账号' : '银行卡号');
+const selectedBankOption = computed(() => paymentBankOptions.find(bank => bank.code === bankPaymentForm.value.bankCode));
 const transferDeadlineText = computed(() => {
   if (previewMode.value) {
     return `请你于 ${formatChineseDateTime(previewTransferDeadline.value)} 之前完成转账`;
@@ -760,8 +745,6 @@ const offlineVoucherRules: FormRules = {
 };
 const bankPaymentRules: FormRules = {
   bankCode: [{ required: true, message: '请选择银行', trigger: 'change' }],
-  accountNo: [{ required: true, message: '请输入账号或卡号', trigger: 'blur' }],
-  payerName: [{ required: true, message: '请输入付款户名', trigger: 'blur' }],
 };
 const resultIcon = computed(() => {
   if (payResult.value?.status === 'SUCCESS') return 'success';
@@ -786,6 +769,7 @@ onMounted(() => {
   expireTimer = window.setInterval(() => {
     expireNow.value = Date.now();
   }, 1000);
+  window.addEventListener('message', handleGatewayResultMessage);
   void loadSession();
 });
 
@@ -794,6 +778,7 @@ onBeforeUnmount(() => {
   if (expireTimer) {
     window.clearInterval(expireTimer);
   }
+  window.removeEventListener('message', handleGatewayResultMessage);
 });
 
 watch([resolvedCashierConfigId, resolvedBusinessOrderId], () => {
@@ -886,7 +871,7 @@ function selectBankMethod(methodCode: string) {
   resetBankPaymentFormWithDefaultBank();
 }
 
-function selectBankBanner(bank: BankBannerOption) {
+function selectBankBanner(bank: PaymentBankOption) {
   bankPaymentForm.value.bankCode = bank.code;
   bankPaymentForm.value.bankName = bank.name;
   bankPaymentFormRef.value?.clearValidate('bankCode');
@@ -912,8 +897,6 @@ async function submitPayment() {
       methodCode: selectedMethod.value.methodCode,
       bankCode: selectedMethodIsBank.value ? bankPaymentForm.value.bankCode : undefined,
       bankName: selectedMethodIsBank.value ? bankPaymentForm.value.bankName : undefined,
-      payerAccountNo: selectedMethodIsBank.value ? bankPaymentForm.value.accountNo : undefined,
-      payerName: selectedMethodIsBank.value ? bankPaymentForm.value.payerName : undefined,
     });
     resetOfflineVoucherForm();
     if (payResult.value.status === 'SUCCESS') {
@@ -988,9 +971,6 @@ function resetBankPaymentForm() {
   bankPaymentForm.value = {
     bankCode: '',
     bankName: '',
-    accountNo: '',
-    payerName: '',
-    enterpriseAuthorized: false,
   };
   bankPaymentFormRef.value?.clearValidate();
 }
@@ -1086,6 +1066,30 @@ async function refreshCurrentPayResult() {
   }
 }
 
+async function syncCurrentPayResult() {
+  if (!payResult.value?.payOrderNo || gatewaySyncing.value) {
+    return;
+  }
+  gatewaySyncing.value = true;
+  try {
+    payResult.value = await paymentCashierApi.syncPayResult(payResult.value.payOrderNo);
+    if (payResult.value?.status === 'SUCCESS') {
+      polling.value = false;
+      pollVersion.value += 1;
+      handlePaymentSuccess();
+      return;
+    }
+    if (terminalPayResult.value) {
+      polling.value = false;
+      pollVersion.value += 1;
+      return;
+    }
+    startResultPolling(payResult.value.payOrderNo);
+  } finally {
+    gatewaySyncing.value = false;
+  }
+}
+
 async function confirmQrPaymentCompleted() {
   if (!payResult.value?.payOrderNo || qrManualLocked.value || completionHandled.value) {
     return;
@@ -1175,13 +1179,33 @@ function submitHtmlForm() {
     ElMessage.error('网银表单格式不正确');
     return;
   }
-  form.setAttribute('target', '_blank');
+  const payOrderNo = payResult.value?.payOrderNo || '';
+  const targetName = `mango_payment_gateway_${payOrderNo || Date.now()}`;
+  window.open('', targetName);
+  form.setAttribute('target', targetName);
   form.submit();
+  if (payOrderNo) {
+    startResultPolling(payOrderNo);
+  }
   window.setTimeout(() => {
     if (container.parentNode) {
       container.parentNode.removeChild(container);
     }
   }, 1000);
+}
+
+function handleGatewayResultMessage(event: MessageEvent) {
+  if (event.origin !== window.location.origin) {
+    return;
+  }
+  const data = event.data as { type?: string; payOrderNo?: string };
+  if (data?.type !== 'MANGO_PAYMENT_GATEWAY_RESULT') {
+    return;
+  }
+  if (!payResult.value?.payOrderNo || data.payOrderNo !== payResult.value.payOrderNo) {
+    return;
+  }
+  void syncCurrentPayResult();
 }
 
 async function copyText(value: string | undefined, label: string) {
@@ -1657,6 +1681,36 @@ function formatExpire(value: string, now: number) {
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.bank-selection-summary {
+  display: grid;
+  gap: 10px;
+  margin: 2px 0 16px;
+  padding: 12px 14px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+
+.bank-selection-summary span {
+  display: block;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.bank-selection-summary strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.bank-limit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .transfer-material {

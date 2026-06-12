@@ -30,10 +30,10 @@ public class PaymentCashierPayCommand implements Serializable {
     @Schema(description = "网银银行名称")
     private String bankName;
 
-    @Schema(description = "付款账号或卡号")
+    @Schema(description = "付款账号或卡号。仅部分需要在收银台预采集付款信息的通道使用")
     private String payerAccountNo;
 
-    @Schema(description = "付款户名")
+    @Schema(description = "付款户名。仅部分需要在收银台预采集付款信息的通道使用")
     private String payerName;
 
     @Schema(description = "付款人请求 IP。由服务端根据 HTTP 请求写入，前端不需要传")

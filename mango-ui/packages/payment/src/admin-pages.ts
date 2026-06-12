@@ -30,6 +30,7 @@ export function registerMangoPaymentAdminPages() {
       'payment/settlement-summaries/index': () => import('./index').then(m => m.PaymentSettlementSummaryView),
       'payment/operation-audits/index': () => import('./index').then(m => m.PaymentOperationAuditView),
       'payment/cashier/index': () => import('./index').then(m => m.PaymentCashierView),
+      'payment/gateway-result/index': () => import('./index').then(m => m.PaymentGatewayResultView),
     },
   });
 }

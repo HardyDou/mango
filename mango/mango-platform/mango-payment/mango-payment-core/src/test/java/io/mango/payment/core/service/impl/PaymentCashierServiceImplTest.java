@@ -88,6 +88,7 @@ class PaymentCashierServiceImplTest {
         sensitiveValueService = mock(PaymentSensitiveValueService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_ORDER_NO)).thenReturn("PO2026060600000001");
+        when(paymentOrderMapper.updateCreatedApplyResult(any(), any(), any(), any(), any())).thenReturn(1);
         service = new PaymentCashierServiceImpl(
                 cashierConfigMapper,
                 applicationMapper,
@@ -106,6 +107,7 @@ class PaymentCashierServiceImplTest {
                 numberService);
         when(channelContractMapper.selectById(any())).thenAnswer(invocation ->
                 contract(invocation.getArgument(0), "{}"));
+        when(cashierConfigMapper.selectByIdIgnoreTenant(350001L)).thenReturn(cashierConfig());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }

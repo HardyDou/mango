@@ -19,5 +19,6 @@ export { default as PaymentSettlementSummaryView } from './views/settlement-summ
 export { default as PaymentOperationAuditView } from './views/operation-audits/index.vue';
 export { default as PaymentCashier } from './components/PaymentCashier.vue';
 export { default as PaymentCashierView } from './views/cashier/index.vue';
+export { default as PaymentGatewayResultView } from './views/gateway-result/index.vue';
 
 export * from './api/payment';

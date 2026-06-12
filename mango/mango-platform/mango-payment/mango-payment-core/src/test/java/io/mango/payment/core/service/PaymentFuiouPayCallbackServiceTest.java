@@ -112,7 +112,7 @@ class PaymentFuiouPayCallbackServiceTest {
                   "insCd": "08A9999999",
                   "merchantNo": "0002900F0370542",
                   "scanpayGatewayBaseUrl": "https://fundwx.payfuiouo2o.com",
-                  "notifyUrl": "http://douxy.inner.yunxinbaokeji.com:7775/api/payment/channel-callbacks/fuiou_pay",
+                  "notifyUrl": "https://douxy.inner.yunxinbaokeji.com:1443/api/payment/channel-callbacks/fuiou_pay",
                   "privateKey": "merchant-private-key",
                   "fuiouPublicKey": "%s"
                 }

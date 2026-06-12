@@ -657,8 +657,6 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
         }
         Require.notBlank(command.getBankCode(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "请选择支付银行");
         Require.notBlank(command.getBankName(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "请选择支付银行");
-        Require.notBlank(command.getPayerAccountNo(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "请输入付款账号或卡号");
-        Require.notBlank(command.getPayerName(), PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "请输入付款户名");
     }
 
     private String contractConfigValuesJson(Long contractId) {
