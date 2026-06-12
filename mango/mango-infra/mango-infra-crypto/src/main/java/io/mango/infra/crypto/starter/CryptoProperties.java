@@ -10,6 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "mango.crypto")
 public class CryptoProperties {
 
+    private static final String LEGACY_SM2_SAMPLE_AS_SM4_KEY = "MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgA=";
+
     /**
      * 是否启用 crypto 自动配置，默认启用。
      */
@@ -67,6 +69,12 @@ public class CryptoProperties {
     public void setSm4Key(String sm4Key) {
         this.legacySm4Key = sm4Key;
         if (this.sm4.getSecretKey() == null || this.sm4.getSecretKey().isBlank()) {
+            if (LEGACY_SM2_SAMPLE_AS_SM4_KEY.equals(sm4Key)) {
+                throw new IllegalStateException(
+                        "历史配置 mango.crypto.sm4-key 使用了 SM2 示例值，不能作为 SM4 密钥。"
+                                + "请迁移为 mango.crypto.sm4.secret-key，并配置 16 字节 SM4 密钥，"
+                                + "例如 00112233445566778899aabbccddeeff。");
+            }
             this.sm4.setSecretKey(sm4Key);
         }
     }

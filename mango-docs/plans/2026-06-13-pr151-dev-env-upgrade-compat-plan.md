@@ -11,6 +11,8 @@
 - `@mango/cli` 开发工作区回归脚本。
 - persistence starter Flyway 模块迁移异常上下文。
 - PMO preflight PR 触发词和回归用例。
+- PMO Mango Issue 规则唯一源治理。
+- crypto starter 对历史 `mango.crypto.sm4-key` 错误默认值的迁移诊断。
 - 本 PR 交付台账。
 
 ## 不做范围
@@ -27,6 +29,8 @@
 - Flyway 模块迁移从数据源解析开始进入模块级异常包装，确保失败信息包含模块、location、historyTable、datasource、outOfOrder。
 - occupied-port 回归同时覆盖 `status`、`doctor` 和 `start`。
 - PMO PR 相关任务必须触发 `rules/01-delivery-contract.md`。
+- Mango Issue 长期细则只维护在 `rules/07-mango-issue-runbook.md`，`rules/00-dev-flow.md` 只保留流程入口和链接。
+- 历史 full 模板曾把 SM2 示例值写入 `mango.crypto.sm4-key`。该值不能作为 SM4 密钥，不做静默兼容；starter 必须识别该值并给出明确迁移提示，新字段 `mango.crypto.sm4.secret-key` 优先。
 
 ## 验收方式
 
@@ -35,6 +39,7 @@
 - PMO 回归：`node mango-pmo/tools/check-pmo-preflight.mjs`。
 - 脚本语法：`bash -n scripts/dev-workspace.sh && bash -n mango-ui/packages/mango-cli/templates/full/scripts/dev-workspace.sh`。
 - 交付台账：`node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-06-13-pr151-dev-env-upgrade-compat-plan.md --ledger mango-docs/plans/2026-06-13-pr151-dev-env-upgrade-compat-ledger.md --mode verify`。
+- Crypto 回归：`mvn -pl mango-infra/mango-infra-crypto -Dtest=CryptoAutoConfigurationTest,Sm4CryptoServiceTest test`。
 
 ## 风险与限制
 
