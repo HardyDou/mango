@@ -1,5 +1,41 @@
 # @mango/cli Changelog
 
+## Unreleased
+
+### New
+
+- Added `mango.dev.json` based development workspace commands:
+  - `mango init-dev`
+  - `mango validate`
+  - `mango doctor`
+  - `mango plan [group|app...]`
+  - `mango start [group|app...]`
+  - `mango stop [app...]`
+  - `mango status`
+  - `mango logs <app>`
+- New generated projects include `mango.dev.json` as the committed app startup manifest.
+- `scripts/dev-workspace.sh` is now a compatibility shim; the real startup runner lives in the Mango CLI.
+- `mango pmo sync --sync-shell` now installs `mango.dev.json` when missing and does not overwrite a business-owned manifest.
+
+### Fixed
+
+- Backend development startup now uses the explicit Spring Boot Maven plugin coordinate from `mango.dev.json`, avoiding Maven prefix resolution failures.
+- App stop/status/logs now use `.mango/run/pids` and `.mango/run/logs` instead of killing by port, reducing the risk of stopping unrelated local services.
+
+### Upgrade Notes
+
+- Upgrade CLI first, then run `mango changelog`.
+- Existing business projects should run `mango pmo sync --project-dir <project> --sync-shell`.
+- Keep project-specific app names, folders, groups and extra apps in `mango.dev.json`.
+- Keep local ports, database settings and secrets in `.mango/dev-workspace.env`.
+
+### Verification
+
+- `mango validate`
+- `mango plan`
+- `mango pmo sync --project-dir <dir> --sync-shell --dry-run`
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.30 - 2026-06-11
 
 ### Fixed
