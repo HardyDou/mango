@@ -16,7 +16,7 @@
     "mango-backend": {
       "type": "spring-boot-maven",
       "cwd": "mango",
-      "pom": "mango-monolith/mango-monolith-app/pom.xml",
+      "pom": "mango-app/monolith/mango-monolith-app/pom.xml",
       "goal": "org.springframework.boot:spring-boot-maven-plugin:3.5.14:run",
       "portEnv": "MANGO_BACKEND_PORT",
       "port": 18080,
