@@ -44,7 +44,7 @@ public class RegisterMangoJobWorkerCommand implements Serializable {
 
     @NotBlank(message = "Worker 地址不能为空")
     @Size(max = 256, message = "Worker 地址不能超过256个字符")
-    @Schema(description = "Worker 执行地址。内嵌为 in-memory://，远程为 http(s)://", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Worker 执行地址。内嵌为 embedded://，兼容旧 in-memory://，远程为 http(s)://", requiredMode = Schema.RequiredMode.REQUIRED)
     private String workerAddress;
 
     @Size(max = 256, message = "运行地址不能超过256个字符")

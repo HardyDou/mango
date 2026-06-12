@@ -97,7 +97,8 @@ mango:
 特点：
 
 - JobCenter 和 Worker 在同一个 JVM 内。
-- Worker 由系统自动注册，地址形如 `in-memory://host/embedded-...`。
+- Worker 由系统自动注册，默认稳定地址形如 `embedded://192.168.1.20:18554`。
+- `embedded://` 是内嵌执行身份地址，不是 HTTP 外部调用地址；旧 `in-memory://` 仅保留兼容。
 - 不需要为 Worker 暴露独立执行端口。
 - 管理后台不要手动新增 `IN_MEMORY` Worker。
 
@@ -110,7 +111,8 @@ mango:
 - 所有节点连接同一个 `mango_job` 数据库。
 - 每个节点可启用内嵌 Worker。
 - 调度扫描通过数据库游标和幂等键控制，不依赖随机抢任务。
-- Worker 列表会看到多个内嵌 Worker，每个 JVM 一个 Worker 地址。
+- Worker 列表会看到多个内嵌 Worker，每个 JVM 一个 `embedded://ip:port` 地址。
+- 内嵌 Worker 只在当前 JVM 内执行；需要跨进程派发时使用 `HTTP_INTERNAL` 远程 Worker。
 
 ### 3.3 独立 JobCenter + 远程 Worker
 

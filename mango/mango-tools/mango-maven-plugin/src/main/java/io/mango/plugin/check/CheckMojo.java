@@ -72,6 +72,24 @@ public class CheckMojo extends AbstractMojo {
     private static final Pattern API_METHOD_PATTERN = Pattern.compile(
             "\\bR\\s*<[^;]+?>\\s+([A-Za-z0-9_]+)\\s*\\(([^;{}]*)\\)\\s*;",
             Pattern.DOTALL);
+    private static final Pattern SERVICE_INTERFACE_METHOD_PATTERN = Pattern.compile(
+            "(?:^|[\\n\\r])\\s*(?:@[A-Za-z0-9_$.]+(?:\\s*\\([^;{}]*?\\))?\\s*)*"
+                    + "(?:public\\s+)?(?:default\\s+)?(?:[A-Za-z0-9_$.<>?,\\[\\]\\s]+)\\s+"
+                    + "([A-Za-z0-9_]+)\\s*\\(([^;{}]*)\\)\\s*(?:;|\\{)",
+            Pattern.DOTALL);
+    private static final Pattern SERVICE_IMPL_PUBLIC_METHOD_PATTERN = Pattern.compile(
+            "(?:^|[\\n\\r])\\s*(?:@[A-Za-z0-9_$.]+(?:\\s*\\([^;{}]*?\\))?\\s*)*"
+                    + "public\\s+(?:[A-Za-z0-9_$.<>?,\\[\\]\\s]+)\\s+"
+                    + "([A-Za-z0-9_]+)\\s*\\(([^;{}]*)\\)\\s*\\{",
+            Pattern.DOTALL);
+    private static final Pattern JAVA_METHOD_PATTERN = Pattern.compile(
+            "(?:^|[\\n\\r])\\s*(?:@[A-Za-z0-9_$.]+(?:\\s*\\([^;{}]*?\\))?\\s*)*"
+                    + "(?:public\\s+)?(?:default\\s+)?(?:[A-Za-z0-9_$.<>?,\\[\\]\\s]+)\\s+"
+                    + "([A-Za-z0-9_]+)\\s*\\(([^;{}]*)\\)\\s*(?:;|\\{)",
+            Pattern.DOTALL);
+    private static final Pattern MAPPER_SQL_ANNOTATION_PATTERN = Pattern.compile(
+            "@(?:org\\.apache\\.ibatis\\.annotations\\.)?"
+                    + "(Select|Insert|Update|Delete|SelectProvider|InsertProvider|UpdateProvider|DeleteProvider)\\b");
     private static final Pattern TYPE_DECLARATION_PATTERN = Pattern.compile(
             "\\b(?:public\\s+)?(?:sealed\\s+)?(?:abstract\\s+)?(?:class|interface|record|enum)\\s+([A-Za-z0-9_]+)");
     private static final Pattern API_FIELD_PATTERN = Pattern.compile(
@@ -89,10 +107,13 @@ public class CheckMojo extends AbstractMojo {
     private static final Set<String> DEFAULT_PERSISTENCE_EXCLUDED_TABLES = Set.of(
             "flyway_schema_history", "databasechangelog", "databasechangeloglock",
             "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log");
+    private static final List<String> DIRECT_JDBC_TYPES = List.of(
+            "Connection", "Statement", "PreparedStatement", "ResultSet");
 
     /**
      * Check rule: all, static, naming, dependency, module-boundary, module-info, remote-adapter,
-     * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema.
+     * api-contract, path-param, permission-param, kv-key, test-fixture, persistence-schema,
+     * persistence-access, mapper-sql-style, service-contract.
      */
     @Parameter(property = "rule", defaultValue = "all")
     private String rule;
@@ -171,6 +192,9 @@ public class CheckMojo extends AbstractMojo {
             case "permission-param" -> checkPermissionParam();
             case "kv-key" -> checkKvKey();
             case "persistence-schema" -> checkPersistenceSchema();
+            case "persistence-access" -> checkPersistenceAccess();
+            case "mapper-sql-style" -> checkMapperSqlStyle();
+            case "service-contract" -> checkServiceContract();
             case "test-fixture" -> checkTestFixture();
             case "web-boundary" -> checkWebBoundary();
             case "all" -> {
@@ -184,6 +208,14 @@ public class CheckMojo extends AbstractMojo {
                 checkPermissionParam();
                 checkKvKey();
                 checkPersistenceSchema();
+                if (isBusinessProject(resolveBasePath())) {
+                    checkPersistenceAccess();
+                    checkMapperSqlStyle();
+                    checkServiceContract();
+                } else {
+                    getLog().info("Skip business backend style checks in mango:check all; run "
+                            + "-Drule=persistence-access, mapper-sql-style or service-contract explicitly for governance scans.");
+                }
                 checkTestFixture();
                 checkWebBoundary();
             }
@@ -1505,7 +1537,15 @@ public class CheckMojo extends AbstractMojo {
         if (parameters == null || parameters.isBlank()) {
             return 0;
         }
-        int count = 1;
+        return splitTopLevelParameters(parameters).size();
+    }
+
+    private List<String> splitTopLevelParameters(String parameters) {
+        if (parameters == null || parameters.isBlank()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        StringBuilder currentParameter = new StringBuilder();
         int angleDepth = 0;
         int parenDepth = 0;
         for (int i = 0; i < parameters.length(); i++) {
@@ -1519,10 +1559,53 @@ public class CheckMojo extends AbstractMojo {
             } else if (current == ')' && parenDepth > 0) {
                 parenDepth--;
             } else if (current == ',' && angleDepth == 0 && parenDepth == 0) {
-                count++;
+                String value = currentParameter.toString().trim();
+                if (!value.isEmpty()) {
+                    result.add(value);
+                }
+                currentParameter.setLength(0);
+                continue;
             }
+            currentParameter.append(current);
         }
-        return count;
+        String value = currentParameter.toString().trim();
+        if (!value.isEmpty()) {
+            result.add(value);
+        }
+        return result;
+    }
+
+    private String parameterType(String parameter) {
+        String normalized = parameter
+                .replaceAll("@[A-Za-z0-9_$.]+(?:\\s*\\([^)]*\\))?", " ")
+                .replace("final ", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        if (normalized.isEmpty()) {
+            return "";
+        }
+        String[] parts = normalized.split("\\s+");
+        if (parts.length == 1) {
+            return simpleTypeName(parts[0]);
+        }
+        String type = parts[parts.length - 2];
+        if (type.endsWith("...")) {
+            type = type.substring(0, type.length() - 3);
+        }
+        return simpleTypeName(type);
+    }
+
+    private String simpleTypeName(String type) {
+        String value = type.trim();
+        int genericStart = value.indexOf('<');
+        if (genericStart >= 0) {
+            value = value.substring(0, genericStart);
+        }
+        while (value.endsWith("[]")) {
+            value = value.substring(0, value.length() - 2);
+        }
+        int dot = value.lastIndexOf('.');
+        return dot >= 0 ? value.substring(dot + 1) : value;
     }
 
     private void analyzeApiLayerContract(Path file, List<ApiContractIssue> issues) {
@@ -1947,6 +2030,275 @@ public class CheckMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Rules:
+     * 1. Business main code must not access relational persistence through direct JDBC.
+     * 2. Tests are excluded; production code must use Mango persistence/MyBatis mapper boundaries.
+     */
+    private void checkPersistenceAccess() {
+        getLog().info("Checking persistence access style...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<PersistenceStyleIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file) && !isMangoToolingFile(file)) {
+                        analyzePersistenceAccess(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (PersistenceStyleIssue issue : issues) {
+                result.addIssue("PERSISTENCE_ACCESS", issue.severity, issue.file, issue.line,
+                        issue.description, "PERSISTENCE_ACCESS", DOC_PERSISTENCE_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description
+                        + " at " + issue.file + ":" + issue.line);
+            }
+            getLog().warn("Found " + issues.size() + " persistence access violation(s)");
+        } else {
+            getLog().info("All persistence access checks passed");
+        }
+    }
+
+    private void analyzePersistenceAccess(Path file, List<PersistenceStyleIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            String code = stripStringLiterals(content);
+            int jdbcTemplateIndex = code.indexOf("org.springframework.jdbc.core.JdbcTemplate");
+            if (jdbcTemplateIndex < 0) {
+                jdbcTemplateIndex = findWord(code, "JdbcTemplate");
+            }
+            if (jdbcTemplateIndex >= 0) {
+                issues.add(new PersistenceStyleIssue("CRITICAL", file.toString(),
+                        lineNumber(content, jdbcTemplateIndex),
+                        "业务代码禁止直接使用 JdbcTemplate，请通过 mango-infra-persistence、Mapper XML 或 Mango CRUD 基线访问数据库"));
+                return;
+            }
+            for (String type : DIRECT_JDBC_TYPES) {
+                int index = findDirectJdbcType(code, type);
+                if (index >= 0) {
+                    issues.add(new PersistenceStyleIssue("CRITICAL", file.toString(),
+                            lineNumber(content, index),
+                            "业务代码禁止直接使用 java.sql." + type
+                                    + "，请通过 mango-infra-persistence、Mapper XML 或 Mango CRUD 基线访问数据库"));
+                    return;
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new PersistenceStyleIssue("MAJOR", file.toString(), 0,
+                    "持久化访问检查失败: " + e.getMessage()));
+        }
+    }
+
+    private int findDirectJdbcType(String code, String type) {
+        int qualifiedIndex = code.indexOf("java.sql." + type);
+        if (qualifiedIndex >= 0) {
+            return qualifiedIndex;
+        }
+        boolean imported = Pattern.compile("(?m)^\\s*import\\s+java\\.sql\\." + type + "\\s*;").matcher(code).find()
+                || Pattern.compile("(?m)^\\s*import\\s+java\\.sql\\.\\*\\s*;").matcher(code).find();
+        return imported ? findWord(code, type) : -1;
+    }
+
+    private int findWord(String content, String word) {
+        Matcher matcher = Pattern.compile("(?<![A-Za-z0-9_$])" + Pattern.quote(word)
+                + "(?![A-Za-z0-9_$])").matcher(content);
+        return matcher.find() ? matcher.start() : -1;
+    }
+
+    /**
+     * Rules:
+     * 1. Business mapper SQL must live in mapper.xml.
+     * 2. Mapper method annotation SQL is forbidden in main code.
+     */
+    private void checkMapperSqlStyle() {
+        getLog().info("Checking mapper SQL style...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<PersistenceStyleIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file) && isMapperJavaFile(file)) {
+                        analyzeMapperSqlStyle(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (PersistenceStyleIssue issue : issues) {
+                result.addIssue("MAPPER_SQL_STYLE", issue.severity, issue.file, issue.line,
+                        issue.description, "MAPPER_SQL_STYLE", DOC_PERSISTENCE_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description
+                        + " at " + issue.file + ":" + issue.line);
+            }
+            getLog().warn("Found " + issues.size() + " mapper SQL style violation(s)");
+        } else {
+            getLog().info("All mapper SQL style checks passed");
+        }
+    }
+
+    private boolean isMapperJavaFile(Path file) {
+        String normalized = file.toString().replace('\\', '/');
+        return normalized.endsWith("Mapper.java");
+    }
+
+    private void analyzeMapperSqlStyle(Path file, List<PersistenceStyleIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            String code = stripStringLiterals(content);
+            Matcher matcher = MAPPER_SQL_ANNOTATION_PATTERN.matcher(code);
+            while (matcher.find()) {
+                issues.add(new PersistenceStyleIssue("CRITICAL", file.toString(),
+                        lineNumber(content, matcher.start()),
+                        "业务 Mapper 禁止使用 @" + matcher.group(1) + " 注解 SQL，请迁移到 mapper.xml"));
+            }
+            Matcher methodMatcher = JAVA_METHOD_PATTERN.matcher(code);
+            while (methodMatcher.find()) {
+                for (String parameter : splitTopLevelParameters(methodMatcher.group(2))) {
+                    String type = parameterType(parameter);
+                    if (isApiProtocolModel(type)) {
+                        issues.add(new PersistenceStyleIssue("CRITICAL", file.toString(),
+                                lineNumber(content, methodMatcher.start(1)),
+                                "Mapper 入参禁止使用 API 协议模型 " + type
+                                        + "，Service 应先转换为 Entity、id、Wrapper、分页对象或 core 内部持久化查询对象"));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new PersistenceStyleIssue("MAJOR", file.toString(), 0,
+                    "Mapper SQL 风格检查失败: " + e.getMessage()));
+        }
+    }
+
+    private boolean isApiProtocolModel(String type) {
+        return type.endsWith("Command")
+                || type.endsWith("Query")
+                || type.endsWith("VO")
+                || type.endsWith("Request");
+    }
+
+    /**
+     * Rules:
+     * 1. I*Service and *ServiceImpl public business methods must not expand more than two business parameters.
+     * 2. Complex create/update/query/batch actions must use Command, Query or request objects.
+     */
+    private void checkServiceContract() {
+        getLog().info("Checking service method contracts...");
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return;
+        }
+
+        List<ServiceContractIssue> issues = new ArrayList<>();
+        try {
+            Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (isMainJavaFile(file) && isServiceContractFile(file) && !isMangoToolingFile(file)) {
+                        analyzeServiceContract(file, issues);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            getLog().error("Error walking file tree", e);
+        }
+
+        if (!issues.isEmpty()) {
+            for (ServiceContractIssue issue : issues) {
+                result.addIssue("SERVICE_CONTRACT", issue.severity, issue.file, issue.line,
+                        issue.description, "SERVICE_CONTRACT", DOC_API_RULES, SOURCE_MANGO_CHECK);
+                getLog().warn("  [" + issue.severity + "] " + issue.description
+                        + " at " + issue.file + ":" + issue.line);
+            }
+            getLog().warn("Found " + issues.size() + " service contract violation(s)");
+        } else {
+            getLog().info("All service contract checks passed");
+        }
+    }
+
+    private boolean isServiceContractFile(Path file) {
+        String fileName = file.getFileName().toString();
+        String normalized = file.toString().replace('\\', '/');
+        return (fileName.matches("I[A-Za-z0-9_]+Service\\.java") || fileName.endsWith("ServiceImpl.java"))
+                && !normalized.contains("/src/main/java/io/mango/plugin/");
+    }
+
+    private boolean isServiceImplFile(Path file) {
+        return file.getFileName().toString().endsWith("ServiceImpl.java");
+    }
+
+    private void analyzeServiceContract(Path file, List<ServiceContractIssue> issues) {
+        try {
+            String content = Files.readString(file);
+            String code = stripStringLiterals(content);
+            Pattern pattern = isServiceImplFile(file)
+                    ? SERVICE_IMPL_PUBLIC_METHOD_PATTERN
+                    : SERVICE_INTERFACE_METHOD_PATTERN;
+            Matcher matcher = pattern.matcher(code);
+            while (matcher.find()) {
+                String methodName = matcher.group(1);
+                if (isIgnorableServiceMethod(methodName)) {
+                    continue;
+                }
+                List<String> parameters = splitTopLevelParameters(matcher.group(2));
+                int businessParameterCount = 0;
+                for (String parameter : parameters) {
+                    if (!parameter.isBlank() && !isInfrastructureParameter(parameter)) {
+                        businessParameterCount++;
+                    }
+                }
+                if (businessParameterCount > 2 && !hasContractObjectParameter(parameters)) {
+                    issues.add(new ServiceContractIssue("CRITICAL", file.toString(),
+                            lineNumber(content, matcher.start(1)),
+                            "Service 方法超过 2 个业务入参时必须收敛为 Command/Query/Request 对象: "
+                                    + methodName + " 入参数=" + businessParameterCount));
+                }
+            }
+        } catch (IOException e) {
+            issues.add(new ServiceContractIssue("MAJOR", file.toString(), 0,
+                    "Service 入参契约检查失败: " + e.getMessage()));
+        }
+    }
+
+    private boolean isIgnorableServiceMethod(String methodName) {
+        return Set.of("equals", "hashCode", "toString").contains(methodName);
+    }
+
+    private boolean hasContractObjectParameter(List<String> parameters) {
+        for (String parameter : parameters) {
+            String type = parameterType(parameter);
+            if (type.endsWith("Command") || type.endsWith("Query") || type.endsWith("Request")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isInfrastructureParameter(String parameter) {
+        String type = parameterType(parameter);
+        return Set.of("HttpServletRequest", "HttpServletResponse", "ServletRequest", "ServletResponse").contains(type);
+    }
+
     private int findStatementEnd(String content, int offset) {
         int index = content.indexOf(';', offset);
         return index >= 0 ? index + 1 : content.length();
@@ -2140,6 +2492,14 @@ public class CheckMojo extends AbstractMojo {
             return null;
         }
         return rootPath;
+    }
+
+    private boolean isBusinessProject(Path rootPath) {
+        if (rootPath == null) {
+            return false;
+        }
+        return Files.exists(rootPath.resolve("business-pmo"))
+                || Files.exists(rootPath.resolve("backend"));
     }
 
     private String extractArtifactId(String content) {
@@ -2416,6 +2776,34 @@ public class CheckMojo extends AbstractMojo {
         private final String description;
 
         private PersistenceSchemaIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
+    private static class PersistenceStyleIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private PersistenceStyleIssue(String severity, String file, int line, String description) {
+            this.severity = severity;
+            this.file = file;
+            this.line = line;
+            this.description = description;
+        }
+    }
+
+    private static class ServiceContractIssue {
+        private final String severity;
+        private final String file;
+        private final int line;
+        private final String description;
+
+        private ServiceContractIssue(String severity, String file, int line, String description) {
             this.severity = severity;
             this.file = file;
             this.line = line;

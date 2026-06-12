@@ -19,11 +19,16 @@ Commands:
   init       Create .mango/dev-workspace.env if it does not exist
   install-hooks
              Configure Git hooks so new worktrees auto-run init
-  print      Print current workspace ports and database name
-  backend    Start backend only
-  frontend   Start frontend only
-  start      Start backend, wait until ready, then start frontend
-  stop       Stop backend/frontend processes listening on workspace ports
+  print      Delegate to mango print
+  backend    Delegate to mango backend
+  frontend   Delegate to mango frontend
+  start      Delegate to mango start
+  stop       Delegate to mango stop
+  status     Delegate to mango status
+  logs       Delegate to mango logs <app>
+  doctor     Delegate to mango doctor
+  validate   Delegate to mango validate
+  plan       Delegate to mango plan
   worktree-remove <path> [--drop-db] [--force]
              Stop a worktree's services, optionally drop its local DB, then remove it
 
@@ -295,7 +300,7 @@ run_backend() {
   echo "Starting backend on http://127.0.0.1:${MANGO_BACKEND_PORT}"
   echo "Using database ${MANGO_DB_HOST}:${MANGO_DB_PORT}/${MANGO_DB_NAME}"
   cd "${BACKEND_ROOT}"
-  mvn -pl :mango-monolith-app -am spring-boot:run \
+  mvn -pl :mango-monolith-app -am org.springframework.boot:spring-boot-maven-plugin:3.5.14:run \
     "-Dspring-boot.run.arguments=$(backend_arguments)"
 }
 
@@ -553,19 +558,12 @@ case "${command}" in
     install_hooks
     ;;
   print)
-    print_config
+    shift || true
+    exec mango print "$@"
     ;;
-  backend)
-    run_backend
-    ;;
-  frontend)
-    run_frontend
-    ;;
-  start)
-    start_all
-    ;;
-  stop)
-    stop_workspace
+  backend|frontend|start|stop|status|logs|doctor|validate|plan)
+    shift || true
+    exec mango "${command}" "$@"
     ;;
   worktree-remove|remove-worktree)
     shift || true

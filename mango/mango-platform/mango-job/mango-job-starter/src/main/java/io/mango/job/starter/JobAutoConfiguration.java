@@ -58,7 +58,7 @@ public class JobAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "mango.job.probe", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "mango.job.probe", name = "enabled", havingValue = "true", matchIfMissing = true)
     MangoJobRuntimeProbeHandler mangoJobRuntimeProbeHandler() {
         return new MangoJobRuntimeProbeHandler();
     }

@@ -37,6 +37,7 @@ try {
   const projectRoot = join(tempRoot, fullProjectName);
   const requiredFiles = [
     'mango.config.json',
+    'mango.dev.json',
     'AGENTS.md',
     '.gitignore',
     'frontend/package.json',
@@ -126,6 +127,7 @@ try {
   const appPom = readFileSync(join(projectRoot, 'backend/app/pom.xml'), 'utf8');
   const devWorkspaceScript = readFileSync(join(projectRoot, 'scripts/dev-workspace.sh'), 'utf8');
   const backendDevScript = readFileSync(join(projectRoot, 'scripts/backend-dev.sh'), 'utf8');
+  const devManifest = JSON.parse(readFileSync(join(projectRoot, 'mango.dev.json'), 'utf8'));
   if (!appPom.includes('<artifactId>mango-admin-starter</artifactId>')
     || pom.includes('{{')
     || appPom.includes('{{')) {
@@ -146,16 +148,28 @@ try {
   if (pom.includes('<password>') || pom.includes('_authToken') || appPom.includes('<password>') || appPom.includes('_authToken')) {
     throw new Error('generated backend contains repository credentials');
   }
-  if (!devWorkspaceScript.includes('SPRING_BOOT_PLUGIN="org.springframework.boot:spring-boot-maven-plugin:')
-    || !devWorkspaceScript.includes('mvn -f backend/pom.xml -DskipTests install')
-    || !devWorkspaceScript.includes('-Dspring-boot.run.arguments="$(backend_arguments)"')
-    || !devWorkspaceScript.includes('diagnose_backend_failure')
-    || !devWorkspaceScript.includes('DEFAULT_DB_NAME="mango_full_acceptance"')) {
-    throw new Error('generated dev-workspace script must own backend development startup and diagnostics');
+  if (!devManifest.apps['mango-full-acceptance-service']
+    || !devManifest.apps['mango-full-acceptance-admin']
+    || devManifest.apps['mango-full-acceptance-service'].goal !== 'org.springframework.boot:spring-boot-maven-plugin:3.5.14:run'
+    || devManifest.apps['mango-full-acceptance-admin'].dependsOn[0] !== 'mango-full-acceptance-service') {
+    throw new Error('generated mango.dev.json must describe backend/frontend startup with explicit Spring Boot plugin');
   }
-  if (!backendDevScript.includes('Use scripts/dev-workspace.sh backend')
+  if (!devWorkspaceScript.includes('The actual runner lives in the mango CLI')
+    || !devWorkspaceScript.includes('run_mango "${command}" "$@"')
+    || devWorkspaceScript.includes('spring-boot:run')
+    || devWorkspaceScript.includes('diagnose_backend_failure')) {
+    throw new Error('generated dev-workspace script must be a thin mango CLI shim');
+  }
+  if (!backendDevScript.includes('mango backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
+  }
+  assertCommandOk([cli, 'validate'], projectRoot, 'generated mango validate');
+  const planResult = assertCommandOk([cli, 'plan'], projectRoot, 'generated mango plan');
+  if (!planResult.stdout.includes('mango-full-acceptance-service')
+    || !planResult.stdout.includes('org.springframework.boot:spring-boot-maven-plugin:3.5.14:run')
+    || !planResult.stdout.includes('mango-full-acceptance-admin')) {
+    throw new Error(`generated mango plan did not include resolved backend/frontend apps:\n${planResult.stdout}`);
   }
   if ((statSync(join(projectRoot, 'scripts/dev-workspace.sh')).mode & 0o111) === 0) {
     throw new Error('generated dev-workspace script must be executable');
@@ -511,6 +525,7 @@ try {
     throw new Error('module add did not configure frontend workspaces');
   }
   assertNoUnrenderedPlaceholders(customRoot);
+  assertDevWorkspaceRunnerScenarios(tempRoot);
 
   console.log('mango-cli full/custom/add/module/pmo sync checks passed.');
 } finally {
@@ -527,6 +542,152 @@ function assertIncludes(values, expected, field) {
   if (!values.includes(expected)) {
     throw new Error(`${field} expected to include ${expected}`);
   }
+}
+
+function assertCommandOk(args, cwd, label) {
+  const result = spawnSync(process.execPath, args, {
+    cwd,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`${label} failed:\n${result.stdout}\n${result.stderr}`);
+  }
+  return result;
+}
+
+function assertCommandFails(args, cwd, label, expectedText) {
+  const result = spawnSync(process.execPath, args, {
+    cwd,
+    encoding: 'utf8',
+  });
+  if (result.status === 0) {
+    throw new Error(`${label} should fail`);
+  }
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (!output.includes(expectedText)) {
+    throw new Error(`${label} did not report expected text "${expectedText}":\n${output}`);
+  }
+  return result;
+}
+
+function assertDevWorkspaceRunnerScenarios(tempRoot) {
+  const businessRoot = join(tempRoot, 'business-custom-app-path');
+  mkdirSync(join(businessRoot, 'services/guarantee-service'), { recursive: true });
+  mkdirSync(join(businessRoot, 'web/admin-console'), { recursive: true });
+  mkdirSync(join(businessRoot, 'web/cashier-console'), { recursive: true });
+  mkdirSync(join(businessRoot, '.mango'), { recursive: true });
+  writeFileSync(join(businessRoot, 'mango.dev.json'), `${JSON.stringify({
+    version: 1,
+    groups: {
+      default: ['guarantee-service', 'admin-console'],
+      cashier: ['guarantee-service', 'cashier-console'],
+    },
+    apps: {
+      'guarantee-service': {
+        type: 'command',
+        cwd: 'backend/default-service',
+        command: 'node',
+        args: ['-e', "setInterval(() => console.log('guarantee-service alive'), 1000)"],
+      },
+      'admin-console': {
+        type: 'command',
+        cwd: 'frontend/default-admin',
+        dependsOn: ['guarantee-service'],
+        command: 'node',
+        args: ['-e', "setInterval(() => console.log('admin-console alive'), 1000)"],
+      },
+      'cashier-console': {
+        type: 'command',
+        cwd: 'frontend/default-cashier',
+        dependsOn: ['guarantee-service'],
+        command: 'node',
+        args: ['-e', "setInterval(() => console.log('cashier-console alive'), 1000)"],
+      },
+    },
+  }, null, 2)}\n`);
+  writeFileSync(join(businessRoot, '.mango/dev-workspace.local.json'), `${JSON.stringify({
+    apps: {
+      'guarantee-service': { cwd: 'services/guarantee-service' },
+      'admin-console': { cwd: 'web/admin-console' },
+      'cashier-console': { cwd: 'web/cashier-console' },
+    },
+  }, null, 2)}\n`);
+
+  const nestedCwd = join(businessRoot, 'web/admin-console');
+  assertCommandOk([cli, 'validate'], nestedCwd, 'nested business validate');
+  const plan = assertCommandOk([cli, 'plan', 'cashier'], nestedCwd, 'custom cashier plan');
+  if (!plan.stdout.includes('services/guarantee-service')
+    || !plan.stdout.includes('web/cashier-console')
+    || plan.stdout.includes('web/admin-console')) {
+    throw new Error(`custom app/path plan did not resolve expected local overrides:\n${plan.stdout}`);
+  }
+  assertCommandOk([cli, 'start', 'cashier'], nestedCwd, 'custom cashier start');
+  const statusRunning = assertCommandOk([cli, 'status'], nestedCwd, 'custom cashier status running');
+  if (!statusRunning.stdout.includes('running  guarantee-service')
+    || !statusRunning.stdout.includes('running  cashier-console')
+    || !statusRunning.stdout.includes('stopped  admin-console')) {
+    throw new Error(`custom cashier status mismatch:\n${statusRunning.stdout}`);
+  }
+  const logs = assertCommandOk([cli, 'logs', 'cashier-console'], nestedCwd, 'custom cashier logs');
+  if (!logs.stdout.includes('cashier-console')) {
+    throw new Error(`custom cashier logs missing app output:\n${logs.stdout}`);
+  }
+  assertCommandOk([cli, 'stop', 'cashier'], nestedCwd, 'custom cashier stop');
+  const statusStopped = assertCommandOk([cli, 'status'], nestedCwd, 'custom cashier status stopped');
+  if (statusStopped.stdout.includes('running')) {
+    throw new Error(`custom cashier apps should be stopped:\n${statusStopped.stdout}`);
+  }
+
+  const renamedRoot = join(tempRoot, 'business-renamed-committed-paths');
+  mkdirSync(join(renamedRoot, 'apps/api-server'), { recursive: true });
+  mkdirSync(join(renamedRoot, 'apps/backoffice-web'), { recursive: true });
+  mkdirSync(join(renamedRoot, 'apps/portal-web'), { recursive: true });
+  writeFileSync(join(renamedRoot, 'mango.dev.json'), `${JSON.stringify({
+    version: 1,
+    groups: {
+      default: ['api-server', 'backoffice-web'],
+      portal: ['api-server', 'portal-web'],
+    },
+    apps: {
+      'api-server': {
+        type: 'command',
+        cwd: 'apps/api-server',
+        command: 'node',
+        args: ['--version'],
+      },
+      'backoffice-web': {
+        type: 'command',
+        cwd: 'apps/backoffice-web',
+        dependsOn: ['api-server'],
+        command: 'node',
+        args: ['--version'],
+      },
+      'portal-web': {
+        type: 'command',
+        cwd: 'apps/portal-web',
+        dependsOn: ['api-server'],
+        command: 'node',
+        args: ['--version'],
+      },
+    },
+  }, null, 2)}\n`);
+  const renamedPlan = assertCommandOk([cli, 'plan', 'portal'], join(renamedRoot, 'apps/portal-web'), 'renamed committed path plan');
+  if (!renamedPlan.stdout.includes('apps/api-server')
+    || !renamedPlan.stdout.includes('apps/portal-web')
+    || renamedPlan.stdout.includes('apps/backoffice-web')) {
+    throw new Error(`renamed committed paths did not resolve expected group:\n${renamedPlan.stdout}`);
+  }
+
+  const negativeRoot = join(tempRoot, 'dev-workspace-negative');
+  mkdirSync(join(negativeRoot, 'bad-path'), { recursive: true });
+  mkdirSync(join(negativeRoot, 'cycle'), { recursive: true });
+  mkdirSync(join(negativeRoot, 'spring-prefix/app'), { recursive: true });
+  writeFileSync(join(negativeRoot, 'bad-path/mango.dev.json'), '{"version":1,"groups":{"default":["bad"]},"apps":{"bad":{"type":"command","cwd":"missing-dir","command":"node","args":["--version"]}}}\n');
+  writeFileSync(join(negativeRoot, 'cycle/mango.dev.json'), '{"version":1,"groups":{"default":["a"]},"apps":{"a":{"type":"command","cwd":".","dependsOn":["b"],"command":"node","args":["--version"]},"b":{"type":"command","cwd":".","dependsOn":["a"],"command":"node","args":["--version"]}}}\n');
+  writeFileSync(join(negativeRoot, 'spring-prefix/mango.dev.json'), '{"version":1,"groups":{"default":["app"]},"apps":{"app":{"type":"spring-boot-maven","cwd":"app","goal":"spring-boot:run","port":5555}}}\n');
+  assertCommandFails([cli, 'validate'], join(negativeRoot, 'bad-path'), 'bad path validation', 'cwd not found');
+  assertCommandFails([cli, 'validate'], join(negativeRoot, 'cycle'), 'cycle validation', 'cyclic app dependency');
+  assertCommandFails([cli, 'validate'], join(negativeRoot, 'spring-prefix'), 'spring prefix validation', 'explicit Spring Boot Maven plugin coordinate');
 }
 
 function assertYamlFlywayModuleEnabled(applicationYml, moduleName) {
@@ -768,6 +929,49 @@ function assertPmoSyncCommand(tempRoot) {
     || !baselinePreflight.stdout.includes('rules/frontend/04-test.md')) {
     throw new Error(`synced PMO preflight did not include expected rules:\n${baselinePreflight.stdout}`);
   }
+
+  const shellSyncRoot = join(tempRoot, 'existing-business-shell-sync');
+  mkdirSync(join(shellSyncRoot, 'backend'), { recursive: true });
+  mkdirSync(join(shellSyncRoot, 'frontend'), { recursive: true });
+  const shellSyncResult = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    shellSyncRoot,
+    '--sync-shell',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (shellSyncResult.status !== 0) {
+    throw new Error(`pmo sync --sync-shell failed:\n${shellSyncResult.stdout}\n${shellSyncResult.stderr}`);
+  }
+  if (!existsSync(join(shellSyncRoot, 'mango.dev.json'))
+    || !readFileSync(join(shellSyncRoot, 'scripts/dev-workspace.sh'), 'utf8').includes('The actual runner lives in the mango CLI')) {
+    throw new Error('pmo sync --sync-shell should install mango.dev.json and CLI shim scripts');
+  }
+  assertCommandOk([cli, 'validate'], shellSyncRoot, 'synced mango validate');
+
+  const ownedManifestRoot = join(tempRoot, 'existing-business-owned-manifest');
+  mkdirSync(ownedManifestRoot, { recursive: true });
+  const ownedManifest = '{"version":1,"groups":{"default":["custom-app"]},"apps":{"custom-app":{"type":"command","cwd":".","command":"node","args":["--version"]}}}\n';
+  writeFileSync(join(ownedManifestRoot, 'mango.dev.json'), ownedManifest);
+  const ownedSyncResult = spawnSync(process.execPath, [
+    cli,
+    'pmo',
+    'sync',
+    '--project-dir',
+    ownedManifestRoot,
+    '--sync-shell',
+  ], {
+    cwd: tempRoot,
+    encoding: 'utf8',
+  });
+  if (ownedSyncResult.status !== 0) {
+    throw new Error(`pmo sync --sync-shell with owned manifest failed:\n${ownedSyncResult.stdout}\n${ownedSyncResult.stderr}`);
+  }
+  assertEqual(readFileSync(join(ownedManifestRoot, 'mango.dev.json'), 'utf8'), ownedManifest, 'business-owned mango.dev.json after sync');
 }
 
 function assertNoUnrenderedPlaceholders(projectRoot) {

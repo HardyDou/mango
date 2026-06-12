@@ -35,13 +35,58 @@ mango changelog
 
 Existing generated projects are not modified automatically by upgrading the global CLI. For generated project template changes, either regenerate the project with the new CLI or copy the affected generated files from a clean project created by the target CLI version.
 
-For `1.0.27`, existing generated projects should specifically review:
+For startup runner upgrades, existing generated projects should run:
 
-- `scripts/dev-workspace.sh`
-- `scripts/backend-dev.sh`
-- `README.md`
-- `AGENTS.md`
-- `frontend/package.json`
+```bash
+mango pmo sync --project-dir ./claim-admin --sync-shell
+mango validate
+mango plan
+```
+
+`--sync-shell` updates compatibility shell scripts and adds `mango.dev.json` when it is missing. It does not overwrite an existing business-owned `mango.dev.json`.
+
+## Development Workspace
+
+`mango` searches upward from the current directory for `mango.dev.json`.
+
+Committed project file:
+
+- `mango.dev.json`: app list, groups, dependencies, folders, startup commands, health checks.
+
+Local private files:
+
+- `.mango/dev-workspace.env`: local ports, database, credentials and switches.
+- `.mango/dev-workspace.local.json`: optional local override for app paths or commands.
+
+Common commands:
+
+```bash
+mango init-dev
+mango validate
+mango doctor
+mango plan
+mango start
+mango status
+mango logs <app>
+mango stop
+```
+
+Compatibility scripts still work:
+
+```bash
+scripts/dev-workspace.sh start
+scripts/dev-workspace.sh backend
+scripts/dev-workspace.sh frontend
+```
+
+For multiple applications, edit only `mango.dev.json`:
+
+- add each backend/frontend under `apps`
+- put common startup sets under `groups`
+- use `dependsOn` to start dependencies first
+- use `health` so dependent apps wait for backend readiness
+
+Backend Maven startup should use an explicit Spring Boot plugin coordinate, for example `org.springframework.boot:spring-boot-maven-plugin:3.5.14:run`, not the `spring-boot:run` prefix.
 
 ## Init
 
@@ -115,6 +160,7 @@ mango pmo sync --project-dir ./claim-admin --sync-shell
 
 - `scripts/dev-workspace.sh`
 - `scripts/backend-dev.sh`
+- missing `mango.dev.json`
 
 Use `--dry-run` first to review the files that will change.
 

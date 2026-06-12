@@ -1,0 +1,23 @@
+[
+  {
+    "text": "系统管理",
+    "className": "layout-top-system-item active",
+    "left": 296,
+    "paddingLeft": "14px",
+    "width": 106
+  },
+  {
+    "text": "平台能力",
+    "className": "layout-top-system-item",
+    "left": 512,
+    "paddingLeft": "14px",
+    "width": 106
+  },
+  {
+    "text": "业务域",
+    "className": "el-menu-item",
+    "left": 0,
+    "paddingLeft": "20px",
+    "width": 220
+  }
+]

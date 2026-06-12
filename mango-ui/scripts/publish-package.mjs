@@ -14,6 +14,7 @@ Examples:
   pnpm publish:pkg common
   pnpm publish:pkg @mango/file
   pnpm publish:pkg workflow --dry-run
+  pnpm publish:pkg cli --release-tag=v2026.06.12-mango-platform-release
 `);
 }
 
@@ -67,6 +68,17 @@ function npmView(packageName, registry) {
   });
 }
 
+function checkReleaseNotes(packageName, version, options = {}) {
+  const args = ['./scripts/check-release-notes.mjs', `--package=${packageName}`, `--version=${version}`];
+  if (options.releaseTag) {
+    args.push(`--tag=${options.releaseTag}`);
+  }
+  if (options.checkGithubRelease) {
+    args.push('--check-github-release');
+  }
+  run('node', args);
+}
+
 function verifyPublishedPackage(packageName, version, foundPackage) {
   const tempDir = mkdtempSync(join(tmpdir(), 'mango-npm-publish-verify-'));
   try {
@@ -113,9 +125,13 @@ function verifyPublishedFiles(packageName, packageRoot, sourcePackageJson) {
       process.exit(1);
     }
   }
-  if (sourcePackageJson.exports?.['./style.css'] && !existsSync(join(packageRoot, 'style.css'))) {
-    console.error(`Published tarball for ${packageName} is missing exported style.css.`);
-    process.exit(1);
+  const styleExport = sourcePackageJson.exports?.['./style.css'];
+  if (styleExport) {
+    const stylePath = typeof styleExport === 'string' ? styleExport : styleExport.import;
+    if (!stylePath || !existsSync(join(packageRoot, stylePath.replace(/^\.\//, '')))) {
+      console.error(`Published tarball for ${packageName} is missing exported style.css: ${stylePath || '<unknown>'}.`);
+      process.exit(1);
+    }
   }
 }
 
@@ -140,6 +156,8 @@ function verifyPublishedCliLocks(packageRoot, foundPackage) {
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
+const releaseTagArg = args.find((arg) => arg.startsWith('--release-tag='));
+const releaseTag = releaseTagArg?.slice('--release-tag='.length) || '';
 const packageArg = args.find((arg) => !arg.startsWith('--'));
 
 if (args.includes('--help') || args.includes('-h')) {
@@ -161,6 +179,15 @@ if (!found) {
 }
 
 const version = found.packageJson.version;
+if (!dryRun && !releaseTag) {
+  console.error('Real publish requires --release-tag=<tag> so GitHub Release notes can be verified.');
+  process.exit(1);
+}
+console.log('Checking platform release notes before publish');
+checkReleaseNotes(packageName, version, {
+  releaseTag,
+  checkGithubRelease: !dryRun,
+});
 if (packageName === '@mango/cli') {
   console.log('Checking CLI release version lock before publish');
   run('pnpm', ['--filter', packageName, 'run', 'check:release-versions']);

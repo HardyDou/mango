@@ -13,6 +13,7 @@
 - 所有代码、接口、数据库、测试、前端页面或构建配置改动必须在任务专用 Git worktree 中进行。
 - 任务 worktree 必须从最新 `main` 新建，并使用独立任务分支。
 - 主工作区只用于拉取 `main`、创建 worktree、查看状态和执行清理，不承载任务改动。
+- 只修改 PMO 规范、流程、Agent 入口、设计文档、Sprint 计划、交付记录或历史材料，且不影响服务代码、接口、数据库、测试、前端页面或构建配置时，可按 preflight 的 `main-direct-allowed` 结果在主工作区直接提交。
 - 本地配置文件固定为 `.mango/dev-workspace.env`。
 - `.mango/dev-workspace.env` 只属于当前工作区，禁止提交到 Git。
 - 脚本应维护本机工作区注册表，避免同一台机器上不同工作区分配到相同端口或数据库名。

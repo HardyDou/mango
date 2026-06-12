@@ -14,7 +14,21 @@
 
 ## 3. 标准流程
 
-### 3.0 PMO 加载原则
+### 3.0 业务消费 Mango 问题处理
+
+业务开发者使用 Mango 时发现疑似 Mango 框架问题，必须先归因，不得直接在业务项目中修改 Mango 框架、starter、CLI、模板或前端包源码。
+
+确认由 Mango 框架缺陷引起时：
+
+1. 必须向 Mango 提交 Issue，记录 Issue 地址、复现路径、影响范围、证据、当前 Mango 版本和建议优先级。
+2. 必须在当前业务任务记录中登记 Issue 地址和阻塞状态。
+3. 业务侧不得私自修复 Mango 缺陷；只允许采用不破坏业务架构且不掩盖缺陷的业务侧替代方案。
+4. 如果 Mango 缺陷阻塞当前业务模块，且没有同等质量的业务侧替代方案，必须告知开发者具体原因，暂停当前模块开发。
+5. 当前任务全部结束时，必须再次提醒开发者根据 Issue 结论决定升级 Mango、更换方案或调整业务计划。
+
+非缺陷类建议也必须通过 Mango Issue 提交，并标记为建议，不得伪装成业务缺陷。
+
+### 3.0.1 PMO 加载原则
 
 - preflight 只加载本次任务必须遵守的最小规范集。
 - `rules/00-dev-flow.md` 和 `rules/03-ai-coding-redlines.md` 是正式任务基线。
@@ -22,6 +36,29 @@
 - 领域规范只在路径或任务关键词命中时加载；禁止因为“前端”“后端”泛词一次性加载整套规范。
 - 简单问答、只读定位、状态查看、日志查看、目录查看、worktree 列表不触发正式流程。
 - 规范、设计文档、交付记录等不影响服务代码的治理改动，可在 `main` 直接修改提交；仍需执行 PMO preflight。
+
+### 3.0.2 工作区策略
+
+PMO preflight 必须输出本次任务的工作区策略：
+
+- `worktree-required`：必须使用任务专用 Git worktree 和任务分支。
+- `main-direct-allowed`：可在主工作区直接修改并提交。
+- `needs-human-check`：影响范围不足，必须先确认路径或任务边界。
+
+以下改动必须使用任务 worktree：
+
+- 代码、接口、数据库、测试、前端页面、构建配置。
+- `mango/**`、`mango-ui/**`、`mango-business-starter/**`、`scripts/**`、`.github/**`。
+- `package.json`、`pnpm-lock.yaml`、`pom.xml`、migration、`src/**`。
+- 发布脚本、启动脚本、CLI、starter、模板和发布物料。
+
+以下改动可在主工作区直接提交：
+
+- `mango-pmo/**` 规范、流程、Agent 定义和 PMO 工具治理。
+- `mango-docs/**` 设计文档、Sprint 计划、交付记录和历史材料。
+- `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 入口路由。
+
+只要同一任务同时触及必须 worktree 的文件，整项任务必须使用 worktree。
 
 ### 3.1 需求
 

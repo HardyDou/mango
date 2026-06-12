@@ -5,7 +5,9 @@
 - Mango 关系型持久化统一通过 `mango-infra-persistence-starter` 接入。
 - 当前 `mango-infra-persistence-starter` 的实现基于 MyBatis-Plus，但业务代码和业务模板必须优先使用 Mango 暴露的实体、CRUD Service 和 Controller 抽象。
 - Mango 开发者可以维护 MyBatis-Plus 适配、`MangoCrudService`、`MangoCrudServiceImpl`、`BaseCrudController`、审计、租户、Flyway 和 schema validation 等框架能力。
-- 业务开发者不得在普通 CRUD 场景直接继承 MyBatis-Plus `ServiceImpl` 绕过 Mango CRUD 基线；复杂查询可以使用自定义 Mapper 或 XML，但必须保留租户、权限和事务边界。
+- 业务开发者不得在普通 CRUD 场景直接继承 MyBatis-Plus `ServiceImpl` 绕过 Mango CRUD 基线；复杂查询可以使用自定义 Mapper 和 XML，但必须保留租户、权限和事务边界。
+- 业务代码禁止直接使用 JDBC，包括 `JdbcTemplate`、`java.sql.Connection`、`Statement`、`PreparedStatement`、`ResultSet`。
+- 业务 Mapper 禁止使用注解 SQL，包括 `@Select`、`@Insert`、`@Update`、`@Delete`、`@*Provider`；自定义 SQL 必须写在 `mapper.xml`。
 - Mango CLI、starter 和业务模块模板必须生成真实数据库 CRUD 骨架，禁止生成内存 mock、固定返回值或未接数据库的接口壳。
 
 ## 0.1 业务 CRUD 模板要求
@@ -63,6 +65,8 @@
 - 持久化层只做数据访问。
 - 业务判断放业务层。
 - 跨域数据不通过跨表 join 解决。
+- Mapper 入参不得使用 API 协议模型，包括 `Command`、`Query`、`VO` 和 Controller 请求对象。
+- Service 调 Mapper 前必须完成协议模型到持久化模型的转换。
 
 ## 4. 设计要求
 
@@ -75,3 +79,5 @@
 - 在事务里做无关长耗时操作
 - 把事务注解贴满所有方法
 - 用数据库实现跨模块业务耦合
+- 业务代码直接使用 JDBC 或 `JdbcTemplate`
+- Mapper 方法使用注解 SQL

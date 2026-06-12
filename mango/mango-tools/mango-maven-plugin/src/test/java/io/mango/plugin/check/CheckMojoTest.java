@@ -1480,6 +1480,136 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkPersistenceAccess_withJdbcTemplate_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoServiceImpl.java"), """
+                package io.mango.demo.core.service;
+
+                import org.springframework.jdbc.core.JdbcTemplate;
+
+                public class DemoServiceImpl {
+                    private JdbcTemplate jdbcTemplate;
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "persistence-access");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkMapperSqlStyle_withAnnotationSqlAndCommandParam_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/mapper");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoMapper.java"), """
+                package io.mango.demo.core.mapper;
+
+                import io.mango.demo.api.command.CreateDemoCommand;
+                import org.apache.ibatis.annotations.Select;
+
+                public interface DemoMapper {
+                    @Select("select * from demo where id = #{id}")
+                    DemoEntity selectByCommand(CreateDemoCommand command);
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "mapper-sql-style");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkServiceContract_withExpandedBusinessParams_reportsIssue() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("IDemoService.java"), """
+                package io.mango.demo.core.service;
+
+                public interface IDemoService {
+                    void create(String name, String code, Integer sort);
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "service-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
+    void checkServiceContract_withCommandParam_passes() throws Exception {
+        // given
+        Path sourceDir = tempDir.resolve("demo/src/main/java/io/mango/demo/core/service");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("IDemoService.java"), """
+                package io.mango.demo.core.service;
+
+                import io.mango.demo.api.command.CreateDemoCommand;
+                import io.mango.demo.api.query.DemoPageQuery;
+
+                public interface IDemoService {
+                    Long create(CreateDemoCommand command);
+                    Object page(DemoPageQuery query);
+                    boolean updateStatus(Long id, Boolean enabled);
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "service-contract");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertDoesNotThrow(() -> mojo.execute());
+    }
+
+    @Test
+    void checkAll_inBusinessProject_runsBusinessBackendStyleChecks() throws Exception {
+        // given
+        Files.createDirectories(tempDir.resolve("business-pmo"));
+        Path sourceDir = tempDir.resolve("backend/demo/src/main/java/io/mango/demo/core/mapper");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("DemoMapper.java"), """
+                package io.mango.demo.core.mapper;
+
+                import org.apache.ibatis.annotations.Select;
+
+                public interface DemoMapper {
+                    @Select("select * from demo")
+                    Object selectOne();
+                }
+                """);
+
+        // when
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "all");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "session", null);
+
+        // then
+        assertThrows(org.apache.maven.plugin.MojoExecutionException.class, () -> mojo.execute());
+    }
+
+    @Test
     void extractSignature_withValidMethod_returnsSignature() throws Exception {
         // given
         Path javaFile = tempDir.resolve("Test.java");

@@ -45,12 +45,21 @@ public class InMemoryDomainEventBus implements IDomainEventBus {
         if (eventHandlers == null || eventHandlers.isEmpty()) {
             return;
         }
+        RuntimeException failure = null;
         for (DomainEventHandler handler : eventHandlers) {
             try {
                 handler.handle(event);
             } catch (RuntimeException ex) {
                 LOGGER.error("Domain event handler failed. eventType={}, eventId={}", event.getEventType(), event.getEventId(), ex);
+                if (failure == null) {
+                    failure = ex;
+                } else {
+                    failure.addSuppressed(ex);
+                }
             }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 
