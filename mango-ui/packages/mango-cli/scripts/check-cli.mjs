@@ -83,7 +83,9 @@ try {
   }
 
   const frontendPackage = JSON.parse(readFileSync(join(projectRoot, 'frontend/package.json'), 'utf8'));
-  assertEqual(frontendPackage.devDependencies['@mango/cli'], readCliPackageVersion(), '@mango/cli devDependency');
+  if (frontendPackage.devDependencies['@mango/cli']) {
+    throw new Error('business frontend must not install @mango/cli as a project dependency; use global mango CLI');
+  }
   for (const dependency of ['@mango/admin', '@mango/file', '@mango/workflow', '@mango/template', '@mango/notice']) {
     if (!frontendPackage.dependencies[dependency]) {
       throw new Error(`frontend package missing dependency: ${dependency}`);
@@ -162,14 +164,16 @@ try {
   }
   if (!devWorkspaceScript.includes('The actual runner lives in the mango CLI')
     || !devWorkspaceScript.includes('run_mango "${command}" "$@"')
-    || !devWorkspaceScript.includes('frontend/node_modules/.bin/mango')
-    || !devWorkspaceScript.includes('npx --yes "@mango/cli@')
+    || !devWorkspaceScript.includes('command -v mango')
+    || !devWorkspaceScript.includes('npm install -g @mango/cli@')
+    || devWorkspaceScript.includes('frontend/node_modules/.bin/mango')
+    || devWorkspaceScript.includes('npx --yes')
     || devWorkspaceScript.includes('mango-ui/packages/mango-cli/src/index.mjs')
     || devWorkspaceScript.includes('spring-boot:run')
     || devWorkspaceScript.includes('diagnose_backend_failure')) {
     throw new Error('generated dev-workspace script must be a thin mango CLI shim');
   }
-  assertGeneratedDevWorkspaceUsesLocalCli(projectRoot);
+  assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot);
   if (!backendDevScript.includes('mango backend')
     || !backendDevScript.includes('exec "${ROOT_DIR}/scripts/dev-workspace.sh" backend')) {
     throw new Error('generated backend-dev script must delegate to dev-workspace backend entry');
@@ -565,12 +569,24 @@ function assertCommandOk(args, cwd, label) {
   return result;
 }
 
-function assertGeneratedDevWorkspaceUsesLocalCli(projectRoot) {
-  const localBinDir = join(projectRoot, 'frontend/node_modules/.bin');
-  mkdirSync(localBinDir, { recursive: true });
-  const localMangoPath = join(localBinDir, 'mango');
-  writeFileSync(localMangoPath, '#!/usr/bin/env sh\necho local-mango-runner \"$@\"\n');
-  chmodExecutable(localMangoPath);
+function assertGeneratedDevWorkspaceRequiresGlobalCli(projectRoot) {
+  const fakeBinDir = join(projectRoot, '.runtime/fake-bin');
+  mkdirSync(fakeBinDir, { recursive: true });
+  const fakeMangoPath = join(fakeBinDir, 'mango');
+  writeFileSync(fakeMangoPath, '#!/usr/bin/env sh\necho global-mango-runner \"$@\"\n');
+  chmodExecutable(fakeMangoPath);
+  const globalResult = spawnSync('env', [
+    `PATH=${fakeBinDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+    'scripts/dev-workspace.sh',
+    'validate',
+  ], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+  if (globalResult.status !== 0 || !globalResult.stdout.includes('global-mango-runner validate')) {
+    throw new Error(`generated dev-workspace should use global mango CLI:\n${globalResult.stdout}\n${globalResult.stderr}`);
+  }
+
   const result = spawnSync('env', [
     'PATH=/usr/bin:/bin:/usr/sbin:/sbin',
     'scripts/dev-workspace.sh',
@@ -579,8 +595,11 @@ function assertGeneratedDevWorkspaceUsesLocalCli(projectRoot) {
     cwd: projectRoot,
     encoding: 'utf8',
   });
-  if (result.status !== 0 || !result.stdout.includes('local-mango-runner validate')) {
-    throw new Error(`generated dev-workspace should use local @mango/cli without global mango:\n${result.stdout}\n${result.stderr}`);
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0
+    || !output.includes('global mango CLI not found')
+    || !output.includes('npm install -g @mango/cli@')) {
+    throw new Error(`generated dev-workspace should fail clearly without global mango:\n${output}`);
   }
 }
 
@@ -761,6 +780,24 @@ function assertDevWorkspaceRunnerScenarios(tempRoot) {
       || !occupiedStatus.stdout.includes('command=node')) {
       throw new Error(`status should report unmanaged port occupant:\n${occupiedStatus.stdout}`);
     }
+    const occupiedDoctor = assertCommandOk([cli, 'doctor'], occupiedRoot, 'occupied doctor');
+    if (!occupiedDoctor.stdout.includes(`warn    legacy-owned port ${occupiedPort} is already in use`)
+      || !occupiedDoctor.stdout.includes(`pid=${legacyProcess.pid}`)
+      || !occupiedDoctor.stdout.includes('command=node')) {
+      throw new Error(`doctor should report unmanaged port occupant:\n${occupiedDoctor.stdout}`);
+    }
+    const occupiedStart = assertCommandFails(
+      [cli, 'start'],
+      occupiedRoot,
+      'occupied start',
+      '.mango/dev-workspace.env'
+    );
+    const occupiedStartOutput = `${occupiedStart.stdout}\n${occupiedStart.stderr}`;
+    if (!occupiedStartOutput.includes(`legacy-owned port ${occupiedPort} is already in use`)
+      || !occupiedStartOutput.includes(`pid=${legacyProcess.pid}`)
+      || !occupiedStartOutput.includes('command=node')) {
+      throw new Error(`start should fail with unmanaged port occupant detail:\n${occupiedStartOutput}`);
+    }
   } finally {
     try {
       process.kill(legacyProcess.pid, 'SIGTERM');
@@ -794,11 +831,6 @@ function readReleasedPackageVersion(packageName) {
     throw new Error(`release-versions.json missing npm version for ${packageName}`);
   }
   return version;
-}
-
-function readCliPackageVersion() {
-  const cliPackage = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
-  return cliPackage.version;
 }
 
 function assertBusinessAcceptanceBaseline(projectRoot) {

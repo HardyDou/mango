@@ -549,10 +549,6 @@ remove_worktree() {
 }
 
 run_mango() {
-  if command -v mango >/dev/null 2>&1; then
-    exec mango "$@"
-  fi
-
   local repo_cli="${REPO_ROOT}/mango-ui/packages/mango-cli/src/index.mjs"
   if [[ -f "${repo_cli}" ]]; then
     if ! command -v node >/dev/null 2>&1; then
@@ -560,6 +556,10 @@ run_mango() {
       exit 1
     fi
     exec node "${repo_cli}" "$@"
+  fi
+
+  if command -v mango >/dev/null 2>&1; then
+    exec mango "$@"
   fi
 
   echo "mango CLI not found."

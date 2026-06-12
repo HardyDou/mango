@@ -156,6 +156,31 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
+    void missingMappedDatasource_shouldReportModuleAndDatasourceContext() {
+        String primaryUrl = "jdbc:h2:mem:flyway_primary_missing_mapping;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        multiDataSourceContextRunner
+                .withPropertyValues(
+                        "mango.persistence.datasources.primary.primary=true",
+                        "mango.persistence.datasources.primary.url=" + primaryUrl,
+                        "mango.persistence.datasources.primary.username=sa",
+                        "mango.persistence.datasources.primary.password=",
+                        "mango.persistence.datasources.primary.driver-class-name=org.h2.Driver",
+                        "mango.persistence.modules.persistence-test.datasource=missing",
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasFailed();
+                    assertThat(ctx.getStartupFailure())
+                            .hasMessageContaining("Mango Flyway module migration failed: module=persistence-test")
+                            .hasMessageContaining("historyTable=<unresolved>")
+                            .hasMessageContaining("location=classpath:db/migration/persistence-test")
+                            .hasMessageContaining("datasource=missing")
+                            .hasMessageContaining("outOfOrder=false");
+                });
+    }
+
+    @Test
     void moduleDatasource_shouldRunMigrationAgainstIndependentDatabase() {
         String moduleUrl = "jdbc:h2:mem:module_flyway_independent;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
         contextRunner

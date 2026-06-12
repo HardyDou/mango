@@ -57,22 +57,12 @@ EOF
 }
 
 run_mango() {
-  local local_mango="${REPO_ROOT}/frontend/node_modules/.bin/mango"
-  if [[ -x "${local_mango}" ]]; then
-    exec "${local_mango}" "$@"
-  fi
-
   if command -v mango >/dev/null 2>&1; then
     exec mango "$@"
   fi
 
-  if command -v npx >/dev/null 2>&1; then
-    exec npx --yes "@mango/cli@{{mangoCliVersion}}" "$@"
-  fi
-
-  echo "mango CLI not found. Install or upgrade @mango/cli, then retry."
-  echo "Examples: cd frontend && pnpm install"
-  echo "Example: npm install -g @mango/cli"
+  echo "global mango CLI not found. Business projects must use a global mango CLI."
+  echo "Install: npm install -g @mango/cli@{{mangoCliVersion}} --registry {{npmRegistry}}"
   exit 1
 }
 

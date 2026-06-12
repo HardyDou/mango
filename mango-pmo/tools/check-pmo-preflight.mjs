@@ -31,6 +31,12 @@ const cases = [
     name: 'unknown scope needs human check',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '处理问题', '--paths', 'unknown/path'],
     mode: 'needs-human-check'
+  },
+  {
+    name: 'pr review loads delivery contract',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '评审 PR #151 并提交 PR 修复', '--paths', 'mango-ui/packages/mango-cli'],
+    mode: 'worktree-required',
+    mustRead: ['rules/01-delivery-contract.md']
   }
 ];
 
@@ -48,6 +54,12 @@ for (const item of cases) {
   const output = JSON.parse(result.stdout);
   if (output.workspacePolicy?.mode !== item.mode) {
     failures.push(`${item.name}: expected ${item.mode}, got ${output.workspacePolicy?.mode || '<missing>'}`);
+  }
+  for (const expectedPath of item.mustRead || []) {
+    const hasPath = (output.mustRead || []).some((entry) => entry.path === expectedPath);
+    if (!hasPath) {
+      failures.push(`${item.name}: expected mustRead ${expectedPath}`);
+    }
   }
 }
 

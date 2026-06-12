@@ -34,7 +34,6 @@
     "@playwright/test": "{{playwrightVersion}}",
     "@types/node": "{{nodeTypesVersion}}",
     "@vitejs/plugin-vue": "{{viteVueVersion}}",
-    "@mango/cli": "{{mangoCliVersion}}",
     "typescript": "{{typescriptVersion}}",
     "vite": "{{viteVersion}}",
     "vue-tsc": "{{vueTscVersion}}"

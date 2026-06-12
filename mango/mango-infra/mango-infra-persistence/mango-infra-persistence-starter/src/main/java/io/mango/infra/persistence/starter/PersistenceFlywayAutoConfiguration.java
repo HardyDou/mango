@@ -89,11 +89,15 @@ public class PersistenceFlywayAutoConfiguration {
                 PersistenceDataSourceRegistry registry = registryProvider.getIfAvailable();
                 PersistenceModuleDataSourceResolver resolver = resolverProvider.getIfAvailable();
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
-                    ResolvedDataSource resolvedDataSource = resolveDataSource(dataSource, module, registry, resolver);
-                    DataSource moduleDataSource = resolvedDataSource.dataSource();
-                    String historyTable = resolveHistoryTable(module);
+                    ResolvedDataSource resolvedDataSource = null;
+                    String historyTable = "<unresolved>";
                     boolean outOfOrder = module.config().isOutOfOrder();
+                    String datasource = resolveDataSourceDescription(module, resolver);
                     try {
+                        resolvedDataSource = resolveDataSource(dataSource, module, registry, datasource);
+                        DataSource moduleDataSource = resolvedDataSource.dataSource();
+                        datasource = resolvedDataSource.description();
+                        historyTable = resolveHistoryTable(module);
                         Flyway.configure()
                                 .dataSource(moduleDataSource)
                                 .locations(module.location())
@@ -109,12 +113,14 @@ public class PersistenceFlywayAutoConfiguration {
                                 "Mango Flyway module migration failed: module=" + module.name()
                                         + ", historyTable=" + historyTable
                                         + ", location=" + module.location()
-                                        + ", datasource=" + resolvedDataSource.description()
+                                        + ", datasource=" + datasource
                                         + ", validateOnMigrate=true"
                                         + ", outOfOrder=" + outOfOrder,
                                 e);
                     } finally {
-                        closeModuleDataSource(resolvedDataSource);
+                        if (resolvedDataSource != null) {
+                            closeModuleDataSource(resolvedDataSource);
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -188,12 +194,9 @@ public class PersistenceFlywayAutoConfiguration {
     private ResolvedDataSource resolveDataSource(DataSource defaultDataSource,
                                                  ModuleMigration module,
                                                  PersistenceDataSourceRegistry registry,
-                                                 PersistenceModuleDataSourceResolver resolver) {
-        if (registry != null && resolver != null) {
-            String dataSourceName = resolver.resolveDataSource(module.name()).orElse("");
-            if (StringUtils.hasText(dataSourceName)) {
-                return new ResolvedDataSource(registry.get(dataSourceName), false, dataSourceName);
-            }
+                                                 String dataSourceName) {
+        if (registry != null && StringUtils.hasText(dataSourceName)) {
+            return new ResolvedDataSource(registry.get(dataSourceName), false, dataSourceName);
         }
 
         PersistenceFlywayProperties.DataSourceConfig datasource = module.config().getDatasource();
@@ -209,6 +212,14 @@ public class PersistenceFlywayAutoConfiguration {
             builder.driverClassName(datasource.getDriverClassName());
         }
         return new ResolvedDataSource(builder.build(), true, "module-config");
+    }
+
+    private String resolveDataSourceDescription(ModuleMigration module,
+                                                PersistenceModuleDataSourceResolver resolver) {
+        if (resolver == null) {
+            return "default";
+        }
+        return resolver.resolveDataSource(module.name()).orElse("default");
     }
 
     private void closeModuleDataSource(ResolvedDataSource resolvedDataSource) throws Exception {
