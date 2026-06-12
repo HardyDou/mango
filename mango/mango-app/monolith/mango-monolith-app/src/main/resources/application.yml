@@ -93,6 +93,9 @@ mango:
       enabled: true
       token-store: true
       outbox: true
+  event:
+    outbox:
+      enabled: true
   persistence:
     mybatis-plus:
       tenant:

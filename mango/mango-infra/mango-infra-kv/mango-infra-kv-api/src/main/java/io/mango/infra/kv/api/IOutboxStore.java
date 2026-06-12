@@ -36,4 +36,39 @@ public interface IOutboxStore {
      * Mark a message failed and schedule next retry.
      */
     void nack(String messageId, String workerId, String errorMessage, Instant nextAttemptAt, Instant now);
+
+    /**
+     * Mark a message as final failed.
+     */
+    default void fail(String messageId, String workerId, String errorMessage, Instant now) {
+        nack(messageId, workerId, errorMessage, now, now);
+    }
+
+    /**
+     * Requeue one failed or delayed message.
+     */
+    default void requeue(String messageId, Instant nextAttemptAt, Instant now) {
+        throw new UnsupportedOperationException("Outbox requeue is not supported by this store");
+    }
+
+    /**
+     * Find one message by id.
+     */
+    default OutboxMessage findById(String messageId) {
+        return null;
+    }
+
+    /**
+     * Query messages.
+     */
+    default List<OutboxMessage> query(OutboxMessageQuery query) {
+        return List.of();
+    }
+
+    /**
+     * Count messages.
+     */
+    default long count(OutboxMessageQuery query) {
+        return 0L;
+    }
 }
