@@ -120,6 +120,42 @@ class PersistenceFlywayAutoConfigurationTest {
     }
 
     @Test
+    void outOfOrder_shouldBeAcceptedByModuleInitializer() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.out-of-order=true"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate(ctx.getBean(DataSource.class));
+                    assertThat(tableExists(jdbcTemplate, "persistence_flyway_user")).isTrue();
+                });
+    }
+
+    @Test
+    void migrationFailure_shouldReportModuleLocationAndHistoryTable() {
+        contextRunner
+                .withPropertyValues(
+                        "mango.persistence.flyway.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.enabled=true",
+                        "mango.persistence.flyway.modules.persistence-test.history-table=flyway_history_shared_test",
+                        "mango.persistence.flyway.modules.another-test.enabled=true",
+                        "mango.persistence.flyway.modules.another-test.history-table=flyway_history_shared_test"
+                )
+                .withUserConfiguration(H2DataSourceConfig.class)
+                .run(ctx -> {
+                    assertThat(ctx).hasFailed();
+                    assertThat(ctx.getStartupFailure())
+                            .hasMessageContaining("Mango Flyway module migration failed: module=another-test")
+                            .hasMessageContaining("historyTable=flyway_history_shared_test")
+                            .hasMessageContaining("location=classpath:db/migration/another-test")
+                            .hasMessageContaining("outOfOrder=false");
+                });
+    }
+
+    @Test
     void moduleDatasource_shouldRunMigrationAgainstIndependentDatabase() {
         String moduleUrl = "jdbc:h2:mem:module_flyway_independent;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
         contextRunner

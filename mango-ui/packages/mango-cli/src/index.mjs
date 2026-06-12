@@ -957,14 +957,22 @@ function validateDevWorkspace(context, { verbose }) {
     if (!['spring-boot-maven', 'vite', 'command'].includes(app.type)) {
       errors.push(`${name}: unsupported type ${app.type || ''}`);
     }
+    const cwdPath = app.cwd ? resolve(context.root, app.cwd) : '';
     if (!app.cwd) {
       errors.push(`${name}: cwd is required`);
-    } else if (!existsSync(resolve(context.root, app.cwd))) {
+    } else if (!existsSync(cwdPath)) {
       errors.push(`${name}: cwd not found: ${app.cwd}`);
     }
     for (const dependency of app.dependsOn || []) {
       if (!manifest.apps[dependency]) {
         errors.push(`${name}: unknown dependency ${dependency}`);
+      }
+    }
+    if (app.type === 'spring-boot-maven' && app.cwd && existsSync(cwdPath)) {
+      const pom = app.pom || 'pom.xml';
+      const pomPath = resolve(cwdPath, pom);
+      if (!existsSync(pomPath)) {
+        errors.push(`${name}: pom not found: ${relativeOrAbsolute(context.root, pomPath)}`);
       }
     }
     if (app.type === 'spring-boot-maven' && app.goal && app.goal === 'spring-boot:run') {
@@ -1002,6 +1010,7 @@ function doctorDevWorkspace(context) {
   validateDevWorkspace(context, { verbose: true });
   const checks = [
     ['node', process.execPath],
+    ['mango', 'mango'],
     ['mvn', 'mvn'],
     ['npm', 'npm'],
     ['pnpm', 'pnpm'],
@@ -1022,8 +1031,16 @@ function doctorDevWorkspace(context) {
   }
   for (const [name, app] of Object.entries(context.manifest.apps || {})) {
     const resolved = resolveDevApp(context, name, app);
+    if (resolved.type === 'spring-boot-maven') {
+      const pomPath = resolve(resolved.cwd, resolved.pom || 'pom.xml');
+      if (existsSync(pomPath)) {
+        process.stdout.write(`ok      ${name} pom ${relativeOrAbsolute(context.root, pomPath)}\n`);
+      } else {
+        process.stdout.write(`missing ${name} pom ${relativeOrAbsolute(context.root, pomPath)}\n`);
+      }
+    }
     if (resolved.port && isPortInUse(resolved.port)) {
-      process.stdout.write(`warn    ${name} port ${resolved.port} is already in use\n`);
+      process.stdout.write(`warn    ${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}\n`);
     } else if (resolved.port) {
       process.stdout.write(`ok      ${name} port ${resolved.port} is free\n`);
     }
@@ -1063,7 +1080,7 @@ async function startDevWorkspace(context, targets) {
       continue;
     }
     if (resolved.port && isPortInUse(resolved.port)) {
-      fail(`${name} port ${resolved.port} is already in use. Stop the conflicting process or edit .mango/dev-workspace.env.`);
+      fail(`${name} port ${resolved.port} is already in use${formatPortOccupants(resolved.port)}. Stop the conflicting process or edit .mango/dev-workspace.env.`);
     }
     startDevApp(context, name, resolved);
     if (resolved.health) {
@@ -1183,10 +1200,12 @@ function printDevWorkspaceStatus(context) {
     const resolved = resolveDevApp(context, name, app);
     const pidInfo = readPidFile(context, name);
     const alive = pidInfo && isProcessAlive(pidInfo.pid);
-    const status = alive ? 'running' : 'stopped';
+    const occupied = !alive && resolved.port && isPortInUse(resolved.port);
+    const status = alive ? 'running' : occupied ? 'occupied' : 'stopped';
     const pidText = alive ? ` pid=${pidInfo.pid}` : '';
     const urlText = resolved.url ? ` ${resolved.url}` : '';
-    process.stdout.write(`${status.padEnd(8)} ${name}${pidText}${urlText}\n`);
+    const occupantText = occupied ? formatPortOccupants(resolved.port) : '';
+    process.stdout.write(`${status.padEnd(8)} ${name}${pidText}${urlText}${occupantText}\n`);
   }
 }
 
@@ -1476,6 +1495,46 @@ function isPortInUse(port) {
   }
   const result = spawnSync('sh', ['-c', `lsof -nP -iTCP:${Number(port)} -sTCP:LISTEN >/dev/null 2>&1`], { stdio: 'ignore' });
   return result.status === 0;
+}
+
+function getPortOccupants(port) {
+  if (!port) {
+    return [];
+  }
+  const result = spawnSync('lsof', ['-nP', `-iTCP:${Number(port)}`, '-sTCP:LISTEN', '-F', 'pc'], { encoding: 'utf8' });
+  if (result.status !== 0) {
+    return [];
+  }
+  const occupants = [];
+  let current = {};
+  for (const line of result.stdout.split(/\r?\n/)) {
+    if (!line) {
+      continue;
+    }
+    if (line.startsWith('p')) {
+      if (current.pid) {
+        occupants.push(current);
+      }
+      current = { pid: line.slice(1) };
+    } else if (line.startsWith('c')) {
+      current.command = line.slice(1);
+    }
+  }
+  if (current.pid) {
+    occupants.push(current);
+  }
+  return occupants;
+}
+
+function formatPortOccupants(port) {
+  const occupants = getPortOccupants(port);
+  if (occupants.length === 0) {
+    return '';
+  }
+  const text = occupants
+    .map(item => `pid=${item.pid}${item.command ? ` command=${item.command}` : ''}`)
+    .join(', ');
+  return ` (${text})`;
 }
 
 function httpOk(url) {

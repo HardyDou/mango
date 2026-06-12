@@ -91,22 +91,38 @@ public class PersistenceFlywayAutoConfiguration {
                 for (ModuleMigration module : resolveModuleMigrations(properties)) {
                     ResolvedDataSource resolvedDataSource = resolveDataSource(dataSource, module, registry, resolver);
                     DataSource moduleDataSource = resolvedDataSource.dataSource();
+                    String historyTable = resolveHistoryTable(module);
+                    boolean outOfOrder = module.config().isOutOfOrder();
                     try {
                         Flyway.configure()
                                 .dataSource(moduleDataSource)
                                 .locations(module.location())
-                                .table(resolveHistoryTable(module))
+                                .table(historyTable)
                                 .baselineOnMigrate(module.config().isBaselineOnMigrate())
                                 .baselineVersion("0")
                                 .validateOnMigrate(true)
-                                .outOfOrder(false)
+                                .outOfOrder(outOfOrder)
                                 .load()
                                 .migrate();
+                    } catch (Exception e) {
+                        throw new IllegalStateException(
+                                "Mango Flyway module migration failed: module=" + module.name()
+                                        + ", historyTable=" + historyTable
+                                        + ", location=" + module.location()
+                                        + ", datasource=" + resolvedDataSource.description()
+                                        + ", validateOnMigrate=true"
+                                        + ", outOfOrder=" + outOfOrder,
+                                e);
                     } finally {
                         closeModuleDataSource(resolvedDataSource);
                     }
                 }
             } catch (Exception e) {
+                if (e instanceof IllegalStateException illegalStateException
+                        && illegalStateException.getMessage() != null
+                        && illegalStateException.getMessage().startsWith("Mango Flyway module migration failed:")) {
+                    throw illegalStateException;
+                }
                 throw new IllegalStateException("Mango Flyway module migration failed", e);
             }
         });
@@ -176,13 +192,13 @@ public class PersistenceFlywayAutoConfiguration {
         if (registry != null && resolver != null) {
             String dataSourceName = resolver.resolveDataSource(module.name()).orElse("");
             if (StringUtils.hasText(dataSourceName)) {
-                return new ResolvedDataSource(registry.get(dataSourceName), false);
+                return new ResolvedDataSource(registry.get(dataSourceName), false, dataSourceName);
             }
         }
 
         PersistenceFlywayProperties.DataSourceConfig datasource = module.config().getDatasource();
         if (datasource == null || !StringUtils.hasText(datasource.getUrl())) {
-            return new ResolvedDataSource(defaultDataSource, false);
+            return new ResolvedDataSource(defaultDataSource, false, "default");
         }
 
         DataSourceBuilder<?> builder = DataSourceBuilder.create()
@@ -192,7 +208,7 @@ public class PersistenceFlywayAutoConfiguration {
         if (StringUtils.hasText(datasource.getDriverClassName())) {
             builder.driverClassName(datasource.getDriverClassName());
         }
-        return new ResolvedDataSource(builder.build(), true);
+        return new ResolvedDataSource(builder.build(), true, "module-config");
     }
 
     private void closeModuleDataSource(ResolvedDataSource resolvedDataSource) throws Exception {
@@ -207,6 +223,6 @@ public class PersistenceFlywayAutoConfiguration {
                                    PersistenceFlywayProperties.ModuleConfig config) {
     }
 
-    private record ResolvedDataSource(DataSource dataSource, boolean closeAfterUse) {
+    private record ResolvedDataSource(DataSource dataSource, boolean closeAfterUse, String description) {
     }
 }

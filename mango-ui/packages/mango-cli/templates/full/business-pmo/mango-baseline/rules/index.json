@@ -55,6 +55,10 @@
       "path": "rules/06-document-assets.md",
       "reason": "文档资产归档边界"
     },
+    "process.mangoIssueRunbook": {
+      "path": "rules/07-mango-issue-runbook.md",
+      "reason": "Mango Issue 登记 Runbook"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -158,6 +162,12 @@
       "paths": ["backend/**", "mango/**", "mango-platform/**", "mango-app/**"],
       "keywords": ["后端", "Java", "Spring", "service", "Controller", "Mapper"],
       "include": ["backend.devFlow", "backend.code", "backend.naming"]
+    },
+    "mangoIssueRegistration": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["business-pmo/**", "mango-pmo/**"],
+      "keywords": ["Mango Issue", "提交ISSUE", "提交 Issue", "登记 Issue", "mango缺陷", "Mango缺陷", "框架问题", "业务消费 Mango"],
+      "include": ["process.mangoIssueRunbook"]
     },
     "backendModule": {
       "roles": ["tech-lead", "dev", "qa"],

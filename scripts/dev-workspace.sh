@@ -548,6 +548,26 @@ remove_worktree() {
   echo "Removed worktree: ${target_root}"
 }
 
+run_mango() {
+  if command -v mango >/dev/null 2>&1; then
+    exec mango "$@"
+  fi
+
+  local repo_cli="${REPO_ROOT}/mango-ui/packages/mango-cli/src/index.mjs"
+  if [[ -f "${repo_cli}" ]]; then
+    if ! command -v node >/dev/null 2>&1; then
+      echo "node not found; cannot run repository mango CLI: ${repo_cli}"
+      exit 1
+    fi
+    exec node "${repo_cli}" "$@"
+  fi
+
+  echo "mango CLI not found."
+  echo "Install @mango/cli globally or run from a Mango source checkout that contains mango-ui/packages/mango-cli/src/index.mjs."
+  echo "Example: npm install -g @mango/cli"
+  exit 1
+}
+
 command="${1:-start}"
 case "${command}" in
   init)
@@ -559,11 +579,11 @@ case "${command}" in
     ;;
   print)
     shift || true
-    exec mango print "$@"
+    run_mango print "$@"
     ;;
   backend|frontend|start|stop|status|logs|doctor|validate|plan)
     shift || true
-    exec mango "${command}" "$@"
+    run_mango "${command}" "$@"
     ;;
   worktree-remove|remove-worktree)
     shift || true

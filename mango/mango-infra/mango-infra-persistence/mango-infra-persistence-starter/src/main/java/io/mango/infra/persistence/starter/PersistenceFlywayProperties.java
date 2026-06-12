@@ -54,6 +54,12 @@ public class PersistenceFlywayProperties {
         private boolean baselineOnMigrate = true;
 
         /**
+         * 是否允许当前模块按非顺序版本补跑迁移。
+         * 默认关闭；仅用于明确的历史库兼容或升级补偿场景。
+         */
+        private boolean outOfOrder = false;
+
+        /**
          * 当前模块 Flyway history table。
          * 未配置时使用 flyway_schema_history_{module}。
          */
