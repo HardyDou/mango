@@ -27,6 +27,7 @@ import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.model.PaymentCashierRouteMatch;
 import io.mango.payment.core.service.IPaymentChannelAdapter;
 import io.mango.payment.core.service.PaymentChannelAdapterRegistry;
+import io.mango.payment.core.service.PaymentChannelOrderQueryService;
 import io.mango.payment.core.service.PaymentNumberService;
 import io.mango.payment.core.service.PaymentOrderStateService;
 import io.mango.payment.core.service.PaymentOrderStatusFlowService;
@@ -64,6 +65,7 @@ class PaymentCashierServiceImplTest {
     private TestPaymentChannelAdapter channelAdapter;
     private TestPaymentChannelAdapter offlineChannelAdapter;
     private PaymentOrderStatusFlowService statusFlowService;
+    private PaymentChannelOrderQueryService channelOrderQueryService;
     private PaymentSensitiveValueService sensitiveValueService;
     private PaymentNumberService numberService;
     private PaymentCashierServiceImpl service;
@@ -82,6 +84,7 @@ class PaymentCashierServiceImplTest {
         offlineChannelAdapter = new TestPaymentChannelAdapter();
         offlineChannelAdapter.channelCode = "OFFLINE_COLLECTION";
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
+        channelOrderQueryService = mock(PaymentChannelOrderQueryService.class);
         sensitiveValueService = mock(PaymentSensitiveValueService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_ORDER_NO)).thenReturn("PO2026060600000001");
@@ -97,6 +100,7 @@ class PaymentCashierServiceImplTest {
                 new PaymentChannelAdapterRegistry(List.of(channelAdapter, offlineChannelAdapter)),
                 new PaymentOrderStateService(),
                 statusFlowService,
+                channelOrderQueryService,
                 new ObjectMapper(),
                 sensitiveValueService,
                 numberService);

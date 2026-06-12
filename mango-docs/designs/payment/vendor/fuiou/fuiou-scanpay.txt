@@ -1,0 +1,2618 @@
+上海富友支付服务有限公司
+
+
+           普通线下扫码标准接口
+
+               第 1.18.9 版
+
+
+
+
+       上海富友支付服务股份有限公司
+Shanghai Fuiou Network Technology Co., Ltd.
+                          文档状态
+文件状态：            文件密级：   [ ]绝密
+ [ ] 草稿                  [ ]公司机密
+ [√]正式发布                 [*]部门机密
+ [ ] 正在修改                [ ]可公开
+                 使用范围：   公司内部
+                 当前版本：   1.18.8
+                 作  者：   刘海鹏
+
+                         版本控制信息
+
+                      拟稿和修
+ 版本         日期                            说明
+                        改
+ 0.10    2016-08-16    何巍    初稿
+ 1.01    2016-09-23    何巍    增加微信统一下单接口
+ 1.02    2016-09-29    何巍    接口字段优化
+ 1.03    2016-10-12    何巍    增加提现类接口
+ 1.04    2016-10-25    何巍    接口字段优化
+ 1.05    2016-11-04    何巍    增加交易关闭时间
+ 1.06    2016-11-25    何巍    增加富友终端号字段
+                             微信统一下单修改为公众号/服务窗统
+ 1.07    2016-12-13   何巍
+                             一下单
+                             统一下单,条码支付增加支持京东和 QQ
+ 1.08    2016-12-16   何巍
+                             钱包
+ 1.09    2017-04-05   何巍     增加银联主/被扫,查询,退款
+ 1.10    2017-05-10   何巍     增加扫码 wap/app 下单
+ 1.11    2017-05-25   何巍     增加返回字段
+                             WAP 下单中新增 reserved_device_info
+                             字段
+ 1.12    2017-07-17   刘海鹏    除了退款以外的其他扫码交易接口返回
+                             报文增加条码流水号字段
+                             新增小程序支付
+ 1.13    2017-09-05   刘海鹏    修改文档结构
+ 1.14    2017-11-28   刘海鹏    新增信用卡支付标记
+                             新增终端类型、终端序列号字段、新增
+ 1.16    2018-02-28   刘海鹏
+                             翼支付（主被扫）交易类型
+ 1.17    2018-06-20   刘海鹏    增加支付完成时间，和附加信息
+ 1.18    2018-07-01   刘海鹏    整理返回码，修改接口说明
+                             修改 3.12 资金划拨查询结果，增加字段
+1.18.2   2018-08-24   刘海鹏
+                             行 6-12
+                      拟稿和修
+ 版本         日期                           说明
+                       改
+                             条码支付返回报文，查询返回报文，支
+                             付回调请求报文中新增
+1.18.3   2018-09-30   刘海鹏
+                             reserved_settlement_amt 应结算订单
+                             金额字段
+                             条码支付响应报文、订单查询响应报文、
+1.18.4   2018-10-25   刘海鹏           支付回调请求报文中新增
+                                    reserved_bank_type 字段
+                                退款申请请求报文中新增原交易日
+1.18.5   2019-01-31   刘海鹏     期:reserved_origi_dt （不填支持 30
+                                   天退款，填入支持 90 天）
+1.18.6   2019-05-05   刘海鹏      3.5 接口场景描述中，新增重要提示
+                             新增花呗分期字段。新增微信单品券核
+1.18.7   2019-05-13   刘海鹏    销的设备信息字段。新增微信营销详情
+                                            字段。
+                             新增支付宝拓展字段，移动花呗分期相
+1.18.8   2019-07-12   刘海鹏
+                                    关参数到花呗拓展字段中
+1.18.9   2019-07-30   刘海鹏      3.2 接口，移除 WECHAT 交易类型。
+本文档中的所有内容为上海富友网络技术有限公司的机密和专属所有。未经上海
+富友网络技术有限公司的明确书面许可，任何组织或个人不得以任何目的、任何
+形式及任何手段复制或传播本文档部分或全部内容。
+
+
+
+
+1. 引言
+   1.1 文档概述
+  本文件描述富友支付为商户提供的支付解决方案。供内部相关开发和技术
+支持人员使用。文档分别从通讯方式、签名、接口、注意事项等方面详细介绍
+了富友扫码系统的工作方式和开发过程，可以帮助开发人员快速入门并掌握开
+发技能，同时也可以作为日后接口参数以及参数类型的速查手册。
+
+
+   1.2 阅读对象
+   供富友商户方技术或业务人员参考和查询
+
+
+   1.3 测试注意(重要重要！！！必看！！！！！)
+注意：测试环境提供的银行间连生产测试账号是生产环境用来进行支付业务体验的账
+号，交易中产生的一切信息均为生产环境数据。用户支付需使用正式版微信、支付宝登
+陆用户的支付账号，使用用户的账号余额或绑定的银行卡等支付渠道进行支付。由于测
+试账号业务特点，不会产生清算资金划拨。所以使用测试账号时请务必使用小于 0.1 元
+的小金额，并请务必在支付当日完成退款。否则因隔日退款失败造成的测试资金损失由
+测试机构承担，并视为放弃资金。由于该账号为测试体验账号，所以禁止将该账号用于
+生产业务用途，禁止在商户真实业务中使用。对于将测试账号误用在商户真实业务造成
+的商户、用户等资金损失，由测试机构承担。
+使用该测试账号则视为同意上述使用协议。
+
+
+
+
+2. 接口说明
+  2.1 通讯方式
+    通信采用 HTTP 协议,POST 表单发送/接收 xml 格式的报文,post 参数名为
+req。参数值为以下接口中各个字段组成的 xml 报文,xml 在发送之前先进行一
+次 URLencode.接收来自富友的返回报文时也需先做一个 URLdecode
+    java 参考代码：
+    URLDecoder.decode(reqXml,"GBK")//解码
+    URLEncoder.encode(rspXml, "GBK")//编码
+
+  2.2 签名
+  采用 1024bit 长度密钥的 RSA 签名方式,加密算法使用 MD5WithRSA，计算
+签名和验签的时候的需要使用 GBK 编码。
+
+计算方法
+  1.将接口中每一个字段(sign 及 reserved 开头字段除外),以字典顺序排
+序之后,按照 key1=value1&key2=value2.....的顺序,进行拼接。
+  2.对得到的字符串进行 RSA 签名/验签
+  注：sign 及 reserved 开头字段除外的其他非必填字段也需要参与验签。
+    我司会根据后期业务需求，新增 reserved 开头字段,请提前做好兼容
+ (简而言之，我们会新增 reserved 开头字段的字段，这些字段都不参与验
+ 签)。
+
+
+签名实例
+
+    参数：
+    <?xml version="1.0" encoding="GBK" standalone="yes"?>
+    <xml>
+        <addn_inf></addn_inf>
+        <curr_type>CNY</curr_type>
+        <goods_des>Cold Drink 100ml</goods_des>
+        <goods_detail></goods_detail>
+        <goods_tag></goods_tag>
+        <ins_cd>08M0061520</ins_cd>
+        <mchnt_cd>0002230F0348879</mchnt_cd>
+        <mchnt_order_no>991501572645</mchnt_order_no>
+    <notify_url>http://www-1.fuiou.com:28090/gpay/wg/atCallback.f
+   uiou</notify_url>
+       <order_amt>1</order_amt>
+       <order_type>ALIPAY</order_type>
+       <random_str>2059802e25d44a9</random_str>
+   <sign>oy7XfQzNEInzlt2nfmbyL20pjkXkTcApCq0MbPL3rs0IEkHnDiccJqb
+   9DR68BYYvRKQzZEzUyKyB3YDOoy8hpVFv+a8ht8jGOf9f2oMMfBpz2Ihjv0vp
+   9Zbex1kEhwJmiU1RKY+S8FzXYlW+rCttt51XMu0NQfQlLf0e6ZhVO3c=
+       </sign>
+       <term_id></term_id>
+       <term_ip>115.112.59.162</term_ip>
+       <txn_begin_ts>20170801152328</txn_begin_ts>
+       <version>1.0</version>
+   </xml>
+
+   经过字典序排序后的字符串 (签名原文)string1 为：
+   addn_inf=&curr_type=CNY&goods_des=Cold Drink
+   100ml&goods_detail=&goods_tag=&ins_cd=08M0061520&mchnt_cd=000
+   2230F0348879&mchnt_order_no=991501572645&notify_url=http://ww
+   w-1.fuiou.com:28090/gpay/wg/atCallback.fuiou&order_amt=1&orde
+   r_type=ALIPAY&random_str=2059802e25d44a9&term_id=I7HhL0fM&ter
+   m_ip=115.112.59.162&txn_begin_ts=20170801152328&version=1.0
+
+
+ 2.3 术语及定义
+ 交易金额: 金额以分为单位，不带小数点
+ 主扫：用户主动扫付款二维码，也叫扫码支付，动态二维码支付
+ 被扫：商家扫用户，也叫条码支付
+ 固码支付：台卡、桌贴。使用公众号、服务窗统一下单
+
+ 2.4 接口说明
+1. 被扫模式(商户扫用户微信/支付宝支付二维码):调用<条码支付>接口
+2. 台卡模式(用户使用微信/支付宝扫商户二维码):支付宝支付调用 3.3 接口
+    (trade_type ==FWC)，微信支付调用 3.3 接口(trade_type==JSAPI)
+3. 下单成功之后请轮询调用订单查询接口查询订单状态,订单可能处于正在支付
+    或取消状态,请轮询订单查询接口根据订单的状态执行相应的操作
+4. 订单状态请以查询为主，回调为辅
+5. 回调成功，请返回数字 1 说明收到回调，不然回调会继续发起，回调间隔时间
+    30S，共回调 5 次
+6. 退款只有当商户账户有资金才能退款，开通 D0 的商户不允许退款
+7. 提现交易的步骤为:查询可提现资金信息->查询提现手续费->发起提现
+8. 新开通提现和退货的商户,15 分钟后才能进行交易，不然会报无效商户
+9. 余额查询接口显示余额请使用账面余额字段，账面余额为已结算金额和未结算
+    金额之和
+10. 订单查询可查询 3 天内的订单，超过 3 天的交易记录使用《历史查询接口
+     v1.14 .docx》文档中的历史查询接口查询。
+ 11. 使用公众号支付请注意以下几点:
+      1、 入网，商户名称必须跟公众号主体名称一致
+       2、进去 https://mp.weixin.qq.com/设置相关开发参数 AppSecret，
+         获取 AppID
+      3、 关于如何获取 openid,建议采取静默模式
+          https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=4_4
+      4、 关于微信版本号获取，5.0 以上才支持微信支付
+          https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=7_5
+      5、 H5 调起支付 API
+          https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=7_7&ind
+          ex=6
+ 12. 支付宝交易，如何获取 buyer_id（即 user_id）:
+      https://doc.open.alipay.com/docs/doc.htm?spm=a219a.7629140.0.0.cPv%
+ 201DX&treeId=193&articleId=105193&docType=1#s10
+ 13. 银联商户出资，查询、回调的订单金额与原交易金额会不一致，此时返回的是
+     实际清算金额
+ 14. 服务窗如何调起支付：https://docs.open.alipay.com/common/105591
+    使用接口返回的 reserved_transaction_id 调起支付即可
+ 15. 接口 3.3 公众号/服务窗统一下单 ，交易类型为小程序和公众号时，填写
+     sub_appid 和 sub_openid。
+ 16. 微信 APP 下单使用“3.3 公众号/服务窗统一下单”接口，app 支付时，prepayid
+     字段取响应报文中的 session_id 字段的值
+
+
+3. 支付接口
+  注：以下报文中的 mchnt_order_no, refund_order_no 必须全局永远唯一(不
+区分商户、日期)。
+  流水号规则：机构编码（富友提供，4 位）+日期（yyyyMMdd，8 位）+其他
+随机数（8-18 位，只能包含字母和数字，区分大小写，保证不重复）。如果流水号
+重复，会直接拒绝交易！！！
+
+  3.1 条码支付，商户扫用户二维码收款
+请求地址
+
+  测试                     https://fundwx.fuiou.com/micropay
+  生产
+
+
+
+场景说明
+步骤 1：用户和商户确认订单金额
+步骤 2：用户向商户展示支付二维码(微信、支付宝等)
+步骤 3：商户使用扫码枪，扫描用户二维码并提交到富友扫码，并实时返回支付
+结果
+
+注：条码支付存在需要用户输入支付密码的场景(实时返回用户支付中)，是否需
+要输入支付密码，与支付宝、微信的风控规则有关。此时需要商户主动发起查询
+来确定最好的订单状态。(建议：交易发起 5S 以后开始查询。查询间隔 5S 以上)
+
+
+条码支付请求报文
+序   参数名        出现要求 型态       长度    说明
+号
+
+1   version    必填   String   8     1.0
+
+
+2   ins_cd     必填   String   13    机构号,接入机构在富友的唯一代码
+
+
+3   mchnt_cd   必填   String   15    商户号, 富友分配给二级商户的商户号
+
+
+4   term_id    必填   String   8     终端号(没有真实终端号统一填 88888888)
+
+
+5   random_str 必填   String   32    随机字符串
+
+
+6   sign       必填   String   512   签名, 详见签名生成算法
+7    order_type 必填     String   20     订单类型:ALIPAY，WECHAT，UNIONPAY(银联二
+                                       维码），BESTPAY(翼支付)
+
+8    goods_des   必填    String   128    商品描述, 商品或支付单简要描述
+
+
+9    goods_deta 非必填    String   6000   单品优惠功能字段(暂不支持,填错影响交易)
+     il
+
+10   addn_inf    非必填   String   50     附加数据
+
+
+11   mchnt_orde 必填     String   30     商户订单号, 商户系统内部的订单号（5 到 30
+     r_no                              个字符、 只能包含字母数字,区分大小写)
+
+12   curr_type   非必填   String   3      货币类型,默认人民币：CNY
+
+
+13   order_amt   必填    Number   16     总金额, 订单总金额，单位为分
+
+
+14   term_ip     必填    String   16     终端 IP
+
+
+15   txn_begin_ 必填     String   14     交易起始时间, 订单生成时间，格式为
+     ts                                yyyyMMddHHmmss
+
+16   goods_tag   非必填   String   32     商品标记
+
+
+17   auth_code   必填    String   128    扫码支付授权码，设备读取用户的条码或者二
+                                       维码信息.
+
+18   sence       非必填   String   1      支付场景,默认 1；
+                                       1: 条码支付
+                                       2: 声波支付
+                                       3: 刷脸支付
+
+19   reserved_s 非必填    String   32     子商户公众号 id
+     ub_appid
+
+20   reserved_l 非必填    String   32     限制支付,no_credit:不能使用信用
+     imit_pay                          卡,credit_group：不能使用花呗以及信用卡
+
+21   reserved_e 非必填    Number   8      交易关闭时间,如不设置，默认填 0 单位:分钟
+     xpire_minu                        最大值为 1440 例如:1 天=1440
+     te
+22   reserved_f 非必填     String   20    富友终端号
+     y_term_id
+
+23   reserved_f 非必填     String   1     0:其他
+     y_term_typ                        1:富友终端
+     e                                 2:POS 机
+                                       3:台卡
+                                       4:PC 软件
+
+24   reserved_f 非必填     String   20    终端序列号
+     y_term_sn
+
+25   reserved_h 非必填     Number   8     已废弃，请使用 Reserved_ali_extend_params
+     b_fq_num                          字段
+
+26   reserved_h 非必填     Number   3     已废弃，请使用 Reserved_ali_extend_params
+     b_fq_selle                        字段
+     r_percent
+
+27   reserved_d 非必填     String   32    设备信息，托传给微信。用于单品券核销。
+     evice_info
+
+28   reserved_a 非必填     String         JSON 串，示例值：
+     li_extend_                        {"dynamic_token_out_biz_no":"66666666666
+     params                            666","hb_fq_num":"3","industry_reflux_in
+                                       fo":"{\"scene_code\":\"metro_tradeorder\
+                                       ",\"channel\":\"xxxx\",\"scene_data\":{\
+                                       "asset_name\":\"ALIPAY\"}} "}
+
+     └            非必填   String   3     花呗分期期数：仅支持 3、6、12
+     hb_fq_num
+
+     └            非必填   String   3     花呗分期商家手续费比例，目前仅支持用户出
+     hb_fq_sell                        资，如需使用，请填写 0！
+     er_percent                        目前该字段未生效，我司会默认当 0 处理。
+
+     └            非必填   String   512   行业数据回流信息。示例值：
+     industry_r                        {\"scene_code\":\"metro_tradeorder\",
+     eflux_info                        \"channel\":\"xxxx\",\"scene_data\":{
+                                       \"asset_name\":\"ALIPAY\"}}
+
+     └            非必填   String   128   条码支付中，目前支持的用法为：sence_no
+     dynamic_to
+     ken_out_bi
+     z_no
+条码支付响应报文
+序    参数名        出现要求 型态        长度    说明
+号
+
+1    result_cod 必填    String   16    错误代码, 000000 成功,其他详细参见错误列表
+     e
+
+2    result _msg 必填   String   128   错误代码描述
+
+
+3    ins_cd     必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+4    mchnt_cd   必填    String   15    商户号, 富友分配的商户号
+
+
+5    term_id    非必填   String   8     终端号(没有真实终端号统一填 88888888)
+
+
+6    random_str 必填    String   32    随机字符串
+
+
+7    sign       必填    String   32    签名, 详见签名生成算法
+
+
+8    order_type 必填    String   20    订单类型:ALIPAY , WECHAT,UNIONPAY(银联二维
+                                     码）,BESTPAY(翼支付)
+
+9    total_amou 必填    Number   16    订单金额，分为单位的整数
+     nt
+
+10   buyer_id   非必填   String   128   买家在渠道账号
+
+
+11   transactio 必填    String   64    渠道交易流水号
+     n_id
+
+12   addn_inf   非必填   String   50    附加数据
+
+
+13   reserved_f 非必填   String   30    富友生成的订单号,需要商户与商户订单号进行
+     y_order_no                      关联
+
+14   reserved_m 必填    String   30    商户订单号, 商户系统内部的订单号
+     chnt_order
+     _no
+15   reserved_f 必填      String    8      富友清算日
+     y_settle_d
+     t
+
+16   reserved_c 非必填     String    10     优惠金额（分）
+     oupon_fee
+
+17   reserved_b 非必填     String    128    买家在渠道登录账号
+     uyer_logon
+     _id
+
+18   reserved_f 非必填     String    不定长 支付宝交易资金渠道,详细渠道
+     und_bill_l
+     ist
+
+19   reserved_f 必填      String    12     富友系统内部追踪号
+     y_trace_no
+
+20   reserved_c 非必填     String    64     条码流水号，用户账单二维码对应的流水
+     hannel_ord
+     er_id
+
+21   reserved_i 非必填     Strin g   8      1 表示信用卡或者花呗，0 表示其他(非信用方
+     s_credit                            式) 不填，表示未知
+
+22   reserved_t 非必填     String    14     用户支付时间 yyyyMMddHHmmss
+     xn_fin_ts
+
+23   reserved_s 非必填     Number    16     应结算订单金额，分为单位的整数
+     ettlement_                          只有成功交易才会返回
+     amt
+                                         如果使用了商户免充值优惠券，该值为 订单金
+                                         额-商户免充值
+                                         如果没有使用商户免充值，该值等于订单金额
+
+24   reserved_b 非必填     String    16     付款方式
+     ank_type
+
+25   reserved_p 非必填     String    6000   微信营销详情
+     romotion_d
+     etail
+
+
+报文示例：
+请求报文
+       <?xml version="1.0" encoding="GBK" standalone="yes"?>
+       <xml>
+           <term_id>88888888</term_id>
+    <random_str>aGBW8rPVlTjRac8U8jaozOQ639SJ6bBE</random_str>
+    <order_amt>1</order_amt>
+    <goods_des>被扫</goods_des>
+    <ins_cd>08M0061071</ins_cd>
+    <curr_type>CNY</curr_type>
+    <txn_begin_ts>20190512163351</txn_begin_ts>
+    <version>1.0</version>
+
+<sign>jc4bk2TgcWKDqZ0VqS7ZAc8AlHYiVwV1Djt9QHkv21t9x1VYJ39T0uc
+Zod4/BSRdJCr1FeaxHcFN
+
+ZFOLC46ccx4qKnQFX9Di7p+aKS0VU2oAwu7KMAxR44vhvX483Mj5Kv8b2+YZR
+7I0D31ElGcdhm2R
+        FZEiDRfSG26YpNiuVKo=
+    </sign>
+    <goods_tag></goods_tag>
+    <goods_detail>穿裤子被扫</goods_detail>
+    <addn_inf></addn_inf>
+    <auth_code>134597091827811461</auth_code>
+    <mchnt_cd>0002900F0468631</mchnt_cd>
+    <reserved_expire_minute>5</reserved_expire_minute>
+    <mchnt_order_no>Order2017113058SA9QNV1Y</mchnt_order_no>
+    <term_ip>127.0.0.1</term_ip>
+    <sence>1</sence>
+    <order_type>WECHAT</order_type>
+</xml>
+
+请求报文签名原文：
+addn_inf=&auth_code=134597091827811461&curr_type=CNY&goods_de
+s=被扫&goods_detail=穿裤子被扫
+&goods_tag=&ins_cd=08M0061071&mchnt_cd=0002900F0468631&mchnt_
+order_no=Order2017113058SA9QNV1Y&order_amt=1&order_type=WECHA
+T&random_str=aGBW8rPVlTjRac8U8jaozOQ639SJ6bBE&sence=1&term_id
+=88888888&term_ip=127.0.0.1&txn_begin_ts=20190512163351&versi
+on=1.0
+
+响应报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+    <addn_inf></addn_inf>
+    <buyer_id></buyer_id>
+    <ins_cd>08M0061071</ins_cd>
+    <mchnt_cd>0002900F0468631</mchnt_cd>
+    <order_type>WECHAT</order_type>
+         <random_str>I84CO378KO5QZG882CHHWF9Z8IDYY5AP</random_str>
+         <reserved_buyer_logon_id></reserved_buyer_logon_id>
+         <reserved_channel_order_id></reserved_channel_order_id>
+         <reserved_coupon_fee></reserved_coupon_fee>
+         <reserved_fund_bill_list></reserved_fund_bill_list>
+         <reserved_fy_order_no></reserved_fy_order_no>
+         <reserved_fy_settle_dt>20190512</reserved_fy_settle_dt>
+         <reserved_fy_trace_no>900337185089</reserved_fy_trace_no>
+         <reserved_is_credit></reserved_is_credit>
+
+      <reserved_mchnt_order_no>Order2017113058SA9QNV1Y</reserved_mc
+      hnt_order_no>
+          <reserved_txn_fin_ts></reserved_txn_fin_ts>
+          <result_code>030010</result_code>
+          <result_msg>等待用户支付中</result_msg>
+          <sign>
+
+      5SnTs0jsQcLRWq6+8BXdchNgf1jEvvsNbp6VprlI2FkO50h2KxBr1pi0DqrJ/
+      XTqgwDS20WmIdqaKke/TnXtOjjr20SF3lKHtThgUMQxNjoGWnbecJHjUJXMag
+      bJS77HcGJw4L0TyZjuaQHo3YuVSXw3VHivJppm+oZnXIh7aT0=
+          </sign>
+          <term_id></term_id>
+          <total_amount>1</total_amount>
+          <transaction_id></transaction_id>
+      </xml>
+
+      响应报文签名原文：
+      addn_inf=&buyer_id=&ins_cd=08M0061071&mchnt_cd=0002900F046863
+      1&order_type=WECHAT&random_str=I84CO378KO5QZG882CHHWF9Z8IDYY5
+      AP&result_code=030010&result_msg=等待用户支付中
+      &term_id=&total_amount=1&transaction_id=
+
+
+ 3.2 主扫统一下单
+请求地址
+
+ 测试                     https://fundwx.fuiou.com/preCreate
+ 生产
+
+
+场景说明
+步骤 1：商户发送报文至富友进行下单，实时返回下单后的支付二维码地址。
+步骤 2：商户展示二维码给用户，用户使用微信、支付宝等扫码支付。
+步骤 3：支付结果以回调(3.5)的方式通知到商户
+注意：下单成功之后开始查询。建议：查询间隔 5S 以上。如主动发起查询请在
+下单成功之后发起查询
+说明：2019 年 7 月 23 日开始，微信新增商户不再具有主扫下单权限；2019 年 9
+月 15 日开始，存量商户的主扫下单权限也将被关闭。请合作方使用其他支付模
+式代替。
+
+
+统一下单请求报文
+序   参数名        出现要求 型态       长度   说明
+号
+
+1   version    必填   String   8    1.0
+
+
+2   ins_cd     必填   String   20   机构号,接入机构在富友的唯一代码
+
+
+3   mchnt_cd   必填   String   15   商户号, 富友分配给二级商户的商户号
+
+
+4   term_id    必填   String   8    终端号(没有真实终端号统一填 88888888)
+
+
+5   random_str 必填   String   32   随机字符串
+
+
+6   sign       必填   String   32   签名, 详见签名生成算法
+
+
+7   order_type 必填   String   20   订 单 类 型 :ALIPAY,UNIONPAY( 银 联 二 维
+                                  码）,BESTPAY(翼支付暂不支持)注：不支持微信
+8    goods_des   必填    String   128    商品描述, 商品或支付单简要描述
+
+
+9    goods_deta 非必填    String   6000   单品优惠功能字段(暂不支持,填错影响交易)
+     il
+
+10   addn_inf    非必填   String   50     附加数据
+
+
+11   mchnt_orde 必填     String   30     商户订单号, 商户系统内部的订单号（5 到 30
+     r_no                              个字符、 只能包含字母数字,区分大小写)
+
+12   curr_type   非必填   String   3      货币类型,默认人民币：CNY
+
+
+13   order_amt   必填    Number   16     总金额, 订单总金额，单位为分
+
+
+14   term_ip     必填    String   16     终端 IP
+
+
+15   txn_begin_ 必填     String   14     交易起始时间, 订单生成时间，格式为
+     ts                                yyyyMMddHHmmss
+
+16   goods_tag   非必填   String   32     商品标记
+
+
+17   notify_url 必填     String   256    通知地址, 接收富友异步通知回调地址，通知
+                                       url 必须为直接可访问的 url，不能携带参数
+
+18   reserved_s 非必填    String   32     子商户公众号 id(后期拓展字段，请先不要填
+     ub_appid                          写)
+
+19   reserved_l 非必填    String   32     限 制 支 付 ,no_credit: 不 能 使 用 信 用
+     imit_pay                          卡,credit_group：不能使用花呗以及信用卡
+
+20   reserved_e 必填     Number   8      交易关闭时间,如不设置，默认填 0（2 小时）单
+     xpire_minu                        位:分钟 最大值为 1440 例如:1 天=1440
+     te
+
+21   reserved_f 非必填    String   20     富友终端号
+     y_term_id
+
+22   reserved_f 非必填    String   1      富友终端类型
+     y_term_typ                        0:其他
+     e                                 1:富友终端
+                                       2:POS 机
+                                       3:台卡
+                                       4:PC 软件
+
+
+23   reserved_f 非必填     String   20    终端序列号
+     y_term_sn
+
+24   reserved_h 非必填     Number   8     已废弃，请使用 Reserved_ali_extend_params
+     b_fq_num                          字段
+
+25   reserved_h 非必填     Number   3     已废弃，请使用 Reserved_ali_extend_params
+     b_fq_selle                        字段
+     r_percent
+
+26   reserved_d 非必填     String   32    设备信息，托传给微信。用于单品券核销。
+     evice_info
+
+27   reserved_a 非必填     String         JSON 串，示例值：
+     li_extend_                        {"dynamic_token_out_biz_no":"66666666666
+     params                            666","hb_fq_num":"3","industry_reflux_in
+                                       fo":"{\"scene_code\":\"metro_tradeorder\
+                                       ",\"channel\":\"xxxx\",\"scene_data\":{\
+                                       "asset_name\":\"ALIPAY\"}} "}
+
+     └            非必填   String   3     花呗分期期数：仅支持 3、6、12
+     hb_fq_num
+
+     └            非必填   String   3     花呗分期商家手续费比例，目前仅支持用户出
+     hb_fq_sell                        资，如需使用，请填写 0！
+     er_percent                        目前该字段未生效，我司会默认当 0 处理。
+
+     └            非必填   String   512   行业数据回流信息。示例值：
+     industry_r                        {\"scene_code\":\"metro_tradeorder\",\"c
+     eflux_info                        hannel\":\"xxxx\",\"scene_data\":{\"asse
+                                       t_name\":\"ALIPAY\"}}
+
+
+
+
+统一下单响应报文
+序    参数名          出现要求 型态        长度    说明
+号
+
+
+1    result_cod 必填      String   16    错误代码, 000000 成功,其他详细参见错误列表
+     e
+2    result _msg 必填   String   128   错误代码描述
+
+
+
+3    ins_cd     必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+
+4    mchnt_cd   必填    String   15    商户号, 富友分配的商户号
+
+
+
+5    term_id    非必填   String   8     终端号
+
+
+
+6    random_str 必填    String   32    随机字符串
+
+
+
+7    sign       必填    String   32    签名, 详见签名生成算法
+
+
+
+8    order_type 必填    String   20    订单类型:ALIPAY , WECHAT,UNIONPAY(银联二维
+                                     码）,BESTPAY(翼支付)
+
+
+9    session_id 非必填   String   64    预支付交易会话标识, 富友返回支付宝生成的
+                                     预支付回话标识，用于后续接口调用中使用，该
+                                     值有效期为 2 小时
+
+10   qr_code    非必填   String   64    二维码链接
+
+
+
+11   reserved_f 非必填   String   30    富友生成的订单号,需要商户与商户订单号进行
+     y_order_no                      关联
+
+
+12   reserved_f 非必填   String   12    富友系统内部追踪号
+     y_trace_no
+
+
+13   reserved_c 非必填   String   64    条码流水号，用户账单二维码对应的流水
+     hannel_ord
+     er_id
+报文示例：
+请求报文：
+<?xml version="1.0" encoding="GBK" ?>
+<xml>
+    <notify_url>www.muiou.com</notify_url>
+    <term_id>12345678</term_id>
+    <random_str>aGBW8rPVlTjRac8U8jaozOQ639SJ6bBE</random_str>
+    <reserved_sub_appid></reserved_sub_appid>
+    <order_amt>1</order_amt>
+    <goods_des>a</goods_des>
+    <ins_cd>08M0061071</ins_cd>
+    <curr_type></curr_type>
+    <txn_begin_ts>20190512161327</txn_begin_ts>
+    <version>1.0</version>
+
+<sign>KRU7ljLtbEGugc+JsusixNbnvAxXaiWPSSvuMCxYIrqU7VMh4Ve2wdT
+I/lIPQD4weqElJs0SYuPZ
+
+aOIXPRLoR4VMcC4/UvW7jLOt5FXoG4KNpclptgmv/+cFowQIDnL5Yse28V5HZ
+JnRUF41PlPK4SQu
+        sJvWh+JiO72PMijrg2Y=
+    </sign>
+    <goods_tag></goods_tag>
+    <goods_detail></goods_detail>
+    <addn_inf></addn_inf>
+    <mchnt_cd>0002900F0468631</mchnt_cd>
+    <reserved_expire_minute>6</reserved_expire_minute>
+    <mchnt_order_no>Order20171130A4YIWTJFJA</mchnt_order_no>
+    <term_ip>127.0.0.1</term_ip>
+    <order_type>WECHAT</order_type>
+</xml>
+
+请求报文签名原文：
+addn_inf=&curr_type=&goods_des=a&goods_detail=&goods_tag=&ins
+_cd=08M0061071&mchnt_cd=0002900F0468631&mchnt_order_no=Order2
+0171130A4YIWTJFJA&notify_url=www.muiou.com&order_amt=1&order_
+type=WECHAT&random_str=aGBW8rPVlTjRac8U8jaozOQ639SJ6bBE&term_
+id=12345678&term_ip=127.0.0.1&txn_begin_ts=20190512161327&ver
+sion=1.0
+
+响应报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+         <ins_cd>08M0061071</ins_cd>
+         <mchnt_cd>0002900F0468631</mchnt_cd>
+         <order_type>WECHAT</order_type>
+         <qr_code>weixin://wxpay/bizpayurl?pr=bZTJqYq</qr_code>
+         <random_str>18D2HZY6P5TF1IZU62G4KIFEK77ZEVHO</random_str>
+         <reserved_addn_inf></reserved_addn_inf>
+         <reserved_channel_order_id></reserved_channel_order_id>
+         <reserved_fy_order_no></reserved_fy_order_no>
+         <reserved_fy_trace_no>900337222056</reserved_fy_trace_no>
+         <result_code>000000</result_code>
+         <result_msg>SUCCESS</result_msg>
+
+      <session_id>wx121630197144217dc9aaca112793948238</session_id>
+          <sign>
+
+      AKoUNj1H3rPDGLQI0Vg3PFlVZBLKML3cMDJGUdCJrZ4Leudechae0Ao5jeyQh
+      kPMqxSbo+xzqfvTty4PcUW4F6yZzKf39OYBb6kETYAm6NPPx2/nsItRhCH98p
+      4XkcYx1ebiHtMe8qO4cJGlSjH94gGuCDRMg7YlmKe7L0YCyPk=
+          </sign>
+          <term_id></term_id>
+      </xml>
+
+      响应报文签名原文：
+      ins_cd=08M0061071&mchnt_cd=0002900F0468631&order_type=WECHAT&
+      qr_code=weixin://wxpay/bizpayurl?pr=bZTJqYq&random_str=18D2HZ
+      Y6P5TF1IZU62G4KIFEK77ZEVHO&result_code=000000&result_msg=SUCC
+      ESS&session_id=wx121630197144217dc9aaca112793948238&term_id=
+
+ 3.3 公众号/服务窗统一下单
+请求地址
+
+ 测试                    https://fundwx.fuiou.com/wxPreCreate
+ 生产
+
+
+场景说明
+该接口常应用于聚合二维码（静态二维码、统一收款码、台卡等不同叫法），用户扫二
+维码进入微信公众号/支付宝服务窗/QQJS 页面，页面调此接口生成订单，接受订单参数
+后调起官方支付接口支付。详见公众号/服务窗对接流程
+
+步骤 1：用户通过支付宝(服务窗)、微信(公众号)进入到商户 H5 页面，或者是
+通过扫描台卡进入。
+步骤 2：用户选择商品、输入支付金额等进行下单支付
+步骤 3：商户将单信息发送给富友，返回支付信息(用于调起支付宝、微信的参
+数)。
+步骤 4：商户拿到支付信息后调起微信或者支付宝进行支付
+步骤 5：支付结果以回调(3.5)的方式通知到商户
+
+
+下单请求报文
+序   参数名         出现要求 型态       长度    说明
+号
+
+1   version     必填   String   8     1.0
+
+2   ins_cd      必填   String   20    机构号,接入机构在富友的唯一代码
+
+3   mchnt_cd    必填   String   15    商户号, 富友分配给二级商户的商户号
+
+4   term_id     必填   String   8     终端号(没有真实终端号统一填 88888888)
+
+5   random_str 必填    String   32    随机字符串
+
+6   sign        必填   String   32    签名, 详见签名生成算法
+
+7   goods_des   必填   String   128   商品描述, 商品或支付单简要描述
+8    goods_deta 非必填    String   6000   单品优惠功能字段(填错影响交易)
+     il
+
+9    goods_tag   非必填   String   32     商品标记
+
+10   product_id 非必填    String   32     商品标识
+
+11   addn_inf    非必填   String   50     附加数据
+
+12   mchnt_orde 必填     String   30     商户订单号, 商户系统内部的订单号（5 到 30
+     r_no                              个字符、 只能包含字母数字,区分大小写)
+
+13   curr_type   非必填   String   3      货币类型,默认人民币：CNY
+
+14   order_amt   必填    Number   16     总金额, 订单总金额，单位为分
+
+15   term_ip     必填    String   16     终端 IP
+
+16   txn_begin_ 必填     String   14     交易起始时间, 订单生成时间，格式为
+     ts                                yyyyMMddHHmmss
+
+17   notify_url 必填     String   256    通知地址, 接收富友异步通知回调地址，通知
+                                       url 必须为直接可访问的 url，不能携带参数
+
+18   limit_pay   非必填   String   32     限 制 支 付 ,no_credit: 不 能 使 用 信 用
+                                       卡,credit_group：不能使用花呗以及信用卡
+
+19   trade_type 必填     String   16     订单类型:JSAPI--公众号支付、FWC--支付宝服
+                                       务窗、LETPAY-小程序、BESTPAY--翼支付 js
+
+20   openid      非必填   String   128    用户标识(暂以废弃，不影响已对接完成的)
+
+21   sub_openid 非必填    String   128    子商户用户标识，支付宝服务窗为用户buyer_id
+                                       （此场景必填）微信公众号为用户的 openid（小
+                                       程序，公众号，服务窗必填）
+
+22   sub_appid   非必填   String   32     子商户公众号 id,微信交易为商户的 appid（小
+                                       程序，公众号必填）
+
+23   reserved_e 非必填    Number   8      交易关闭时间,如不设置，   默认填 0(即 120 分钟)
+     xpire_minu                        单位:分钟 最大值为 1440 例如:1 天=1440
+     te
+
+24   reserved_f 非必填    String   20     富友终端号
+     y_term_id
+
+25   reserved_f 非必填    String   1      富友终端类型
+     y_term_typ                        0:其他
+     e                                 1:富友终端
+                                       2:POS 机
+                                       3:台卡
+                                       4:PC 软件
+
+26   reserved_t 非必填     Number   16    积分抵扣金额,单位为分
+     xn_bonus
+
+27   reserved_f 非必填     String   20    终端序列号
+     y_term_sn
+
+28   reserved_h 非必填     Number   8     已废弃，请使用 Reserved_ali_extend_params
+     b_fq_num                          字段
+
+29   reserved_h 非必填     Number   3     已废弃，请使用 Reserved_ali_extend_params
+     b_fq_selle                        字段
+     r_percent
+
+30   reserved_d 非必填     String   32    设备信息，托传给微信。用于单品券核销。
+     evice_info
+
+31   reserved_a 非必填     String         JSON 串，示例值：
+     li_extend_                        {"dynamic_token_out_biz_no":"66666666666
+     params                            666","hb_fq_num":"3","industry_reflux_in
+                                       fo":"{\"scene_code\":\"metro_tradeorder\
+                                       ",\"channel\":\"xxxx\",\"scene_data\":{\
+                                       "asset_name\":\"ALIPAY\"}} "}
+
+     └            非必填   String   3     花呗分期期数：仅支持 3、6、12
+     hb_fq_num
+
+     └            非必填   String   3     花呗分期商家手续费比例，目前仅支持用户出
+     hb_fq_sell                        资，如需使用，请填写 0！
+     er_percent                        目前该字段未生效，我司会默认当 0 处理。
+
+     └            非必填   String   512   行业数据回流信息。示例值：
+     industry_r                        {\"scene_code\":\"metro_tradeorder\",\"c
+     eflux_info                        hannel\":\"xxxx\",\"scene_data\":{\"asse
+                                       t_name\":\"ALIPAY\"}}
+
+
+下单响应报文（sdk 开头的参数用于调起 H5 支付）
+序号 参数名            出现要求 型态        长度    说明
+
+
+1    result_cod 必填      String   16    错误代码, 000000 成功,其他详细参见错误列表
+     e
+2    result_msg 必填     String   128   错误代码描述
+
+
+3    ins_cd      必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+4    mchnt_cd    必填    String   15    商户号, 富友分配的商户号
+
+
+5    term_id     非必填   String   8     终端号
+
+
+6    random_str 必填     String   32    随机字符串
+
+
+7    sign        必填    String   32    签名, 详见签名生成算法
+
+
+8    sub_mer_id 非必填    String         支付通道对应的子商户识别码
+
+
+9    session_id 非必填    String   64    预支付交易会话标识
+
+
+10   qr_code     非必填   String   64    二维码链接
+
+
+11   sub_appid   非必填   String   32    子商户公众号 id
+
+
+12   sub_openid 非必填    String   128   子商户用户标识
+
+
+13   sdk_appid   非必填   String   16    公众号 id
+
+
+14   sdk_timest 非必填    String   32    时间戳，自 1970 年 1 月 1 日 0 点 0 分 0 秒以来
+     amp                              的秒数
+
+15   sdk_nonces 非必填    String   32    随机字符串
+     tr
+
+16   sdk_packag 非必填    String   128   订单性情扩展字符串
+     e
+
+17   sdk_signty 非必填    String   32    签名方式, trade_type 为 JSAPI、LETPAY 时才
+     pe                               返回
+18   sdk_paysig 非必填    String    64    签名
+     n
+
+19   sdk_partne 非必填    String    32    trade_type 为 APP 时才返回
+     rid
+
+20   reserved_f 非必填    String    30    富友生成的订单号,需要商户与商户订单号进行
+     y_order_no                        关联
+
+21   reserved_f 非必填    String    8     富友清算日
+     y_settle_d
+     t
+
+22   reserved_t 非必填    String    64    渠道交易流水号, trade_type 为 FWC 时返回（用
+     ransaction                        于调起支付）
+     _id
+
+23   reserved_f 非必填    String    12    富友系统内部追踪号
+     y_trace_no
+
+24   reserved_p 非必填    String    不定长 支付参数
+     ay_info
+
+25   reserved_c 非必填    String    64    条码流水号，用户账单二维码对应的流水
+     hannel_ord
+     er_id
+
+26   reserved_a 非必填    String    50    附加数据
+     ddn_inf
+       报文示例
+       请求报文：
+       <?xml version="1.0" encoding="GBK" ?>
+       <xml>
+           <limit_pay></limit_pay>
+           <product_id></product_id>
+           <sub_openid>ooIeqs5VwPJnDUYfLweOKcR5AxpE</sub_openid>
+           <notify_url>http://www.muiou.com</notify_url>
+           <term_id>02020208</term_id>
+           <random_str>aGBW8rPVlTjRac8U8jaozOQ639SJ6bBE</random_str>
+           <order_amt>1</order_amt>
+           <goods_des>aaa</goods_des>
+           <trade_type>JSAPI</trade_type>
+           <ins_cd>08M0061071</ins_cd>
+           <curr_type></curr_type>
+           <txn_begin_ts>20171130143333</txn_begin_ts>
+           <version>1.0</version>
+<sign>UTdCtREq8/YF4PJaqWbDZb6Au/swRsJI0lfFI1ioh3y62TH/wcURUkn
+zqTywDqIRwg3kw+Ls7cCHtNdqOuZ7DpKJjUi/aviybTDqIbrjcAYaTutSlk36
+Uroh44gV692I00Z/1zw919QSPD4z+dwk6q+AOZ+8nvVpjWjkh935ixc=
+    </sign>
+    <goods_detail>bbb</goods_detail>
+    <goods_tag></goods_tag>
+    <sub_appid>wxfa089da95020ba1a</sub_appid>
+    <addn_inf></addn_inf>
+    <mchnt_cd>0001000F2214654</mchnt_cd>
+    <openid></openid>
+    <mchnt_order_no>Order20171130DJ649PBWLG</mchnt_order_no>
+    <term_ip>127.0.0.1</term_ip>
+</xml>
+
+请求报文签名原文：
+addn_inf=&curr_type=&goods_des=aaa&goods_detail=bbb&goods_tag
+=&ins_cd=08M0061071&limit_pay=&mchnt_cd=0001000F2214654&mchnt
+_order_no=Order20171130DJ649PBWLG&notify_url=http://www.muiou.
+com&openid=&order_amt=1&product_id=&random_str=aGBW8rPVlTjRac
+8U8jaozOQ639SJ6bBE&sub_appid=wxfa089da95020ba1a&sub_openid=oo
+Ieqs5VwPJnDUYfLweOKcR5AxpE&term_id=02020208&term_ip=127.0.0.1
+&trade_type=JSAPI&txn_begin_ts=20171130143333&version=1.0
+
+响应报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+    <ins_cd>08M0061071</ins_cd>
+    <mchnt_cd>0001000F2214654</mchnt_cd>
+    <qr_code></qr_code>
+    <random_str>O4H5M1CXV1L24D0IS4NIIDMREYBN9I9U</random_str>
+    <reserved_addn_inf></reserved_addn_inf>
+    <reserved_channel_order_id></reserved_channel_order_id>
+    <reserved_fy_order_no></reserved_fy_order_no>
+    <reserved_fy_settle_dt></reserved_fy_settle_dt>
+    <reserved_fy_trace_no>900337123423</reserved_fy_trace_no>
+    <reserved_pay_info>
+
+{"appId":"wxfa089da95020ba1a","timeStamp":"1557649678","signT
+ype":"RSA","package":"prepay_id=wx121627586241613c7d311e00308
+7612412","nonceStr":"683cedb4a5894ca9a681d4172ee6dab0","paySi
+gn":"hvMJreiPBOCrG45XppgPxmZnxL/mojcgv4aKKU0OGJNB5Cf/0e9CwhF8
+Uy4OOmjuwv4l/65xvCbom0UcNwJpQ9DQUc8lMRwYUwgKWsXgVcpDW0rw3yZLX
+7otQJQi8JGBagq3si55yIyca+1Pjg1sOXuRnh+/2yRHPj3wR2A+tqSM1Rl5Q0
+PrKmWgDocIU/5wIC4B/8uK7Kf+K/HtImaag/TTNsEKg/TEzzEshfhEVl5dYvM
+coq1D4FkH/938eVmpUMqGI3DQMnBa1Oj6T12sjF9p/aPdV7S9OyVxPHUGNMqD
+oouXnACTd4HmkU3+G7/7oyYyozi2V+JDPX1lrO+Y1w=="}
+    </reserved_pay_info>
+    <reserved_transaction_id></reserved_transaction_id>
+    <result_code>000000</result_code>
+    <result_msg>SUCCESS</result_msg>
+    <sdk_appid>wxfa089da95020ba1a</sdk_appid>
+
+<sdk_noncestr>683cedb4a5894ca9a681d4172ee6dab0</sdk_noncestr>
+
+<sdk_package>prepay_id=wx121627586241613c7d311e003087612412</
+sdk_package>
+    <sdk_partnerid></sdk_partnerid>
+    <sdk_paysign>
+
+hvMJreiPBOCrG45XppgPxmZnxL/mojcgv4aKKU0OGJNB5Cf/0e9CwhF8Uy4OO
+mjuwv4l/65xvCbom0UcNwJpQ9DQUc8lMRwYUwgKWsXgVcpDW0rw3yZLX7otQJ
+Qi8JGBagq3si55yIyca+1Pjg1sOXuRnh+/2yRHPj3wR2A+tqSM1Rl5Q0PrKmW
+gDocIU/5wIC4B/8uK7Kf+K/HtImaag/TTNsEKg/TEzzEshfhEVl5dYvMcoq1D
+4FkH/938eVmpUMqGI3DQMnBa1Oj6T12sjF9p/aPdV7S9OyVxPHUGNMqDoouXn
+ACTd4HmkU3+G7/7oyYyozi2V+JDPX1lrO+Y1w==
+    </sdk_paysign>
+    <sdk_signtype>RSA</sdk_signtype>
+    <sdk_timestamp>1557649678</sdk_timestamp>
+
+<session_id>wx121627586241613c7d311e003087612412</session_id>
+    <sign>
+
+KUWssvgIiL0AyYnVKigZY66xyHX25RWDKRMCukR2uRt9WA2MUIDu0Yp+PTGpF
+34XJj5Z575l77229vTNn1jzEJjupRWZDfGFziQk4OVneSEk6IEFz7d/Mpygzg
+pc8kRQlN1EtNy8eZaLwv0nVDyopVBuVQDQFkzNMjSN5q/Ba8s=
+    </sign>
+    <sub_appid>wxfa089da95020ba1a</sub_appid>
+    <sub_mer_id>281826820</sub_mer_id>
+    <sub_openid>ooIeqs5VwPJnDUYfLweOKcR5AxpE</sub_openid>
+    <term_id></term_id>
+</xml>
+
+响应报文签名原文：
+ins_cd=08M0061071&mchnt_cd=0001000F2214654&qr_code=&random_st
+r=O4H5M1CXV1L24D0IS4NIIDMREYBN9I9U&result_code=000000&result_
+msg=SUCCESS&sdk_appid=wxfa089da95020ba1a&sdk_noncestr=683cedb
+4a5894ca9a681d4172ee6dab0&sdk_package=prepay_id=wx12162758624
+1613c7d311e003087612412&sdk_partnerid=&sdk_paysign=hvMJreiPBO
+          CrG45XppgPxmZnxL/mojcgv4aKKU0OGJNB5Cf/0e9CwhF8Uy4OOmjuwv4l/65
+          xvCbom0UcNwJpQ9DQUc8lMRwYUwgKWsXgVcpDW0rw3yZLX7otQJQi8JGBagq3
+          si55yIyca+1Pjg1sOXuRnh+/2yRHPj3wR2A+tqSM1Rl5Q0PrKmWgDocIU/5wI
+          C4B/8uK7Kf+K/HtImaag/TTNsEKg/TEzzEshfhEVl5dYvMcoq1D4FkH/938eV
+          mpUMqGI3DQMnBa1Oj6T12sjF9p/aPdV7S9OyVxPHUGNMqDoouXnACTd4HmkU3
+          +G7/7oyYyozi2V+JDPX1lrO+Y1w==&sdk_signtype=RSA&sdk_timestamp=
+          1557649678&session_id=wx121627586241613c7d311e003087612412&su
+          b_appid=wxfa089da95020ba1a&sub_mer_id=281826820&sub_openid=oo
+          Ieqs5VwPJnDUYfLweOKcR5AxpE&term_id=
+
+     3.4 订单查询
+    请求地址
+
+     测试                    https://fundwx.fuiou.com/commonQuery
+     生产
+
+
+    场景说明
+由于不可抗因素导致交易超时，或者状态不明确时，需要商户主动发起交易查询。来确
+定交易的最终状态。目前系统支持往前查询 3 日的交易。即 T-3 到 T 日的交易才能查询
+到记录。
+
+
+    查询请求报文
+序号 参数名            出现要求 型态           长度      说明
+
+
+
+
+1    version      必填      String    8       1
+
+
+2    ins_cd       必填      String    20      机构号,接入机构在富友的唯一代码
+
+
+3    mchnt_cd     必填      String    15      富友分配的商户号
+
+
+4    term_id      必填      String    8       终端号(没有真实终端号统一填 88888888)
+
+
+5    order_type   必填      String    20      订单类型:ALIPAY (统一下单、条码支付、服务窗
+                                            支付), WECHAT(统一下单、条码支付，公众号支
+                                            付,小程序),UNIONPAY,BESTPAY(翼支付)
+6   mchnt_orde 必填    String   30    商户订单号, 商户系统内部的订单号（5 到 30
+    r_no                            个字符、 只能包含字母数字,区分大小写)
+
+7   random_str 必填    String   32    随机字符串，不长于 32 位
+
+
+8   sign       必填    String   128   签名，详见签名生成算法
+
+
+
+
+查询响应报文
+序   参数名        出现要求 型态        长度    说明
+号
+
+1   result_cod 必填    String   16    错误代码, 000000 成功,其他详细参见错误列表
+    e
+
+
+2   result_msg 必填    String   128   错误代码描述
+
+
+
+3   ins_cd     必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+
+4   mchnt_cd   必填    String   15    商户号, 富友分配的商户号
+
+
+
+5   term_id    非必填   String   8     终端号
+
+
+
+6   random_str 必填    String   32    随机字符串
+
+
+
+7   sign       必填    String   32    签名, 详见签名生成算法
+
+
+
+8   buyer_id   非必填   String   128   用户在商户的 id
+9    order_type 必填    String   20    订单类型:ALIPAY , WECHAT
+
+
+
+10   trans_stat 必填    String   32    查询状态，详见 4.应答码表 中“查询应答码”
+
+
+
+11   order_amt 必填     Number   16    订单金额, 单位为分
+
+
+
+12   transactio 必填    String   64    渠道订单号
+     n_id
+
+
+13   mchnt_orde 必填    String   30    商户订单号, 商户系统内部的订单号（5 到 30
+     r_no                            个字符、 只能包含字母数字,区分大小写)
+
+
+14   addn_inf   非必填   String   50    附加数据
+
+
+
+15   reserved_ 必填     String   8     富友清算日
+     fy_settle_
+     dt
+
+16   reserved_c 非必填   String   10    优惠金额（分）
+     oupon_fee
+
+
+17   reserved_b 非必填   String   128   买家在渠道登录账号
+     uyer_logon
+     _id
+
+18   reserved_f 非必填   String   不定长 支付宝交易资金渠道,详细渠道
+     und_bill_l
+     ist
+
+19   reserved_f 必填    String   12    富友系统内部追踪号
+     y_trace_no
+
+
+20   reserved_c 非必填   String   64    条码流水号，用户账单二维码对应的流水
+     hannel_ord
+     er_id
+21    reserved_f 非必填       String    20      富友终端号
+      y_term_id
+
+
+22    reserved_i 非必填       String    8       1 表示信用卡或者花呗，0 表示其他(非信用方
+      s_credit                               式) 不填，表示未知
+
+
+23    reserved_t 非必填       String    14      用户支付时间 yyyyMMddHHmmss
+      xn_fin_ts
+
+
+24    reserved_s 非必填       Number    16     应结算订单金额，分为单位的整数
+      ettlement_                            只有成功交易才会返回
+      amt
+                                            如果使用了商户免充值优惠券，该值为 订单金
+                                            额-商户免充值
+                                            如果没有使用商户免充值，该值等于订单金额
+
+25    reserved_b 非必填       String    16     付款方式
+      ank_type
+
+26    reserved_p 非必填       String    6000   微信营销详情
+      romotion_d
+      etail
+         报文示例：
+         请求报文：
+         <?xml version="1.0" encoding="GBK" standalone="yes"?>
+         <xml>
+             <sign>iYN2mk1Ei7UjHaDy2PapjDgXWdKg0g0hRvnuCoR43/pVK/8yswWbDX06mJ
+         6CWlYRCh/e+03HS6xVQMD6mkp/Lu4E9tnNEf+ICNZG3nhQpu591BF/NOxmoB8oXHx8/
+         1hYfD+NZdDbNn2NiAL6oPZpOI0oD2oyWdv/WcDweQRj7EM=
+             </sign>
+             <random_str>20190403000300020000559344</random_str>
+             <term_id>12345678</term_id>
+             <mchnt_cd>0008870F8000732</mchnt_cd>
+             <mchnt_order_no>1244380701764624384</mchnt_order_no>
+             <ins_cd>08A9999999</ins_cd>
+             <order_type>WECHAT</order_type>
+             <version>1.0</version>
+         </xml>
+         请求报文签名原文：
+         ins_cd=08A9999999&mchnt_cd=0008870F8000732&mchnt_order_no=124438070
+     1764624384&order_type=WECHAT&random_str=20190403000300020000559344&term
+     _id=12345678&version=1.0
+    响应报文：
+    <?xml version="1.0" encoding="GBK" standalone="yes"?>
+    <xml>
+        <addn_inf></addn_inf>
+        <buyer_id></buyer_id>
+        <ins_cd>08A9999999</ins_cd>
+        <mchnt_cd></mchnt_cd>
+        <mchnt_order_no></mchnt_order_no>
+        <order_amt></order_amt>
+        <order_type></order_type>
+        <random_str></random_str>
+        <result_code>1010</result_code>
+        <result_msg>找不到交易</result_msg>
+        <sign>
+    EPylr99TYfDLj+qa2sAoea2mDSmLRpGOz89gmXNjo45qk+KpSU1g0dswC5mEQnWR4ef
+n8YiT6Jk9Gs60FJrsB77Hg49ghOeJsm05h/ymOeAikQdToGCfvew9TKuaXGFm7I4oa3+sb8
+JdtmQhSOrR+hrVPhlqjVO8uCBmYKIW1ns=
+        </sign>
+        <term_id></term_id>
+        <trans_stat></trans_stat>
+        <transaction_id></transaction_id>
+    </xml>
+    响应报文签名原文：
+    addn_inf=&buyer_id=&ins_cd=08A9999999&mchnt_cd=&mchnt_order_no=&ord
+er_amt=&order_type=&random_str=&result_code=1010&result_msg=找不到交易
+&term_id=&trans_stat=&transaction_id=
+
+ 3.5 支付结果通知
+请求地址
+
+测试                                商户报文所填
+生产                                商户报文所填
+
+
+场景说明
+  如图 6 中异步回调，下单(主扫)交易的结果是以异步的形式进行回调的。富友在接
+受到支付宝等支付通道的回调结果以后再回调商户。商户接收回调成功处理成功后返回
+字符串 1 , 后富友停止回调给商户。最多回调 5 次，每次间隔 30S。
+
+    （重要~重要~重要：不保证通知最终一定能成功，在订单状态不明或者没有收到支付
+
+结果通知的情况下，建议商户主动调用【3.4 订单查询】确认订单状态）
+
+    只有主扫、公众号/服务窗支付会通过此接口发异步通知，条码支付没有异步通知。
+
+
+通知请求报文
+
+序   参数名        出现要求 型态        长度    说明
+号
+
+1   result_cod 必填    String   16    错误代码, 000000 成功,其他详细参见错误列表
+    e
+
+2   result_msg 非必填   String   128   返回信息, 返回错误原因
+
+
+3   ins_cd     必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+4   mchnt_cd   必填    String   15    商户号, 富友分配的商户号
+
+
+5   term_id    非必填   String   8     终端号,富友分配的终端设备号
+
+
+6   random_str 必填    String   32    随机字符串
+7    sign        必填    String   32    签名, 详见签名生成算法
+
+
+8    user_id     非必填   String   128   用户在商户的 id
+
+
+9    order_amt   必填    Number   16    订单金额, 单位为分
+
+
+10   settle_ord 必填     Number   16    应结订单金额
+     er_amt
+
+11   curr_type   非必填   String   3     货币种类
+
+
+12   transactio 非必填    String   64    渠道交易流水号
+     n_id
+
+13   mchnt_orde 必填     String   30    商户订单号, 商户系统内部的订单号（5 到 30
+     r_no                             个字符、 只能包含字母数字,区分大小写)）
+
+14   order_type 非必填    String   20
+
+
+15   txn_fin_ts 必填     String   14    支付完成时间, 订单支付时间，格式为
+                                      yyyyMMddHHmmss
+
+16   reserved_ 必填      String   8     富友清算日
+     fy_settle_
+     dt
+
+17   reserved_c 非必填    String   10    优惠金额（分）
+     oupon_fee
+
+18   reserved_b 非必填    String   128   买家在渠道登录账号
+     uyer_logon
+     _id
+
+19   reserved_f 非必填    String   不定长 支付宝交易资金渠道,详细渠道
+     und_bill_l
+     ist
+
+20   reserved_f 必填     String   12    富友系统内部追踪号
+     y_trace_no
+
+21   reserved_c 非必填    String   64    条码流水号，用户账单二维码对应的流水
+     hannel_ord
+     er_id
+22   reserved_i 非必填   String    8       1 表示信用卡或者花呗，0 表示其他(非信用方
+     s_credit                           式) 不填，表示未知
+
+23   reserved_a 非必填   String    50      附加数据
+     ddn_inf
+
+24   reserved_s 非必填   Number    16      应结算订单金额，分为单位的整数
+     ettlement_                         只有成功交易才会返回
+     amt
+                                        如果使用了商户免充值优惠券，该值为 订单金
+                                        额-商户免充值
+                                        如果没有使用商户免充值，该值等于订单金额
+
+25   reserved_b 非必填   String    16      付款方式
+     ank_type
+
+26   reserved_p 非必填   String    6000    微信营销详情
+     romotion_d
+     etail
+
+
+通知响应报文
+     直接往流里写入数字：1
+
+
+     3.6 退款申请
+请求地址
+
+     测试               https://fundwx.fuiou.com/commonRefund
+     生产
+
+
+场景说明
+  当交易发生之后一段时间内，由于买家或者卖家的原因需要退款时，卖家可以通过
+退款接口将支付款退还给买家，扫码支付平台将在收到退款请求并且验证成功之后，按
+照退款规则将支付款按原路退到买家帐号上。总退款金额不能超过订单总金额。
+     注：
+     1.目前支持对 90 天以内的交易进行退款，支持全额或者是多次部分退款。
+
+退款请求报文
+序    参数名       出现要求 型态          长度      说明
+号
+
+1    version   必填     String    8       1.0
+2    ins_cd      必填   String   20    机构号,接入机构在富友的唯一代码
+
+3    mchnt_cd    必填   String   15    富友分配的商户号
+
+4    term_id     必填   String   8     终端号(没有真实终端号统一填 88888888)
+
+5    mchnt_orde 必填    String   30    商户原交易订单号, 商户系统内部的订单号（5
+     r_no                            到 30 个字符、只能包含字母数字,区分大小写)
+
+6    random_str 必填    String   32    随机字符串，不长于 32 位
+
+7    sign        必填   String   128   签名，详见签名生成算法
+
+8    order_type 必填    String   20    订单类型:ALIPAY (统一下单、条码支付、服务
+                                     窗支付), WECHAT(统一下单、条码支付，公众号
+                                     支付),UNIONPAY,BESTPAY(翼支付)
+
+9    refund_ord 必填    String   30    商户退款单号（5 到 30 个字符、 只能包含字母
+     er_no                           数字或者下划线，区分大小写）
+
+10   total_amt   必填   Number   16    总金额
+
+11   refund_amt 必填    Number   16    退款金额
+
+12   operator_i 非必填   String   32    操作员
+     d
+
+13   reserved_f 非必填   String   20    富友终端号
+     y_term_id
+
+14   reserved_o 非必填   String   8     原交易日期（yyyyMMdd）！该值必定等于 reserved_
+     rigi_dt                         fy_settle_dt(富友接收交易时间。理论和合作方下单
+                                     时间一致。微量夸日交易会不一致)。
+                                     不填该值支持 30 天内的交易进行退款。
+                                     填写该值，支持 90 天。
+
+
+退款响应报文
+序    参数名         出现要求 型态       长度    说明
+号
+
+1    result_cod 必填    String   16    错误代码, 000000 成功,其他详细参见错误列表
+     e
+
+2    result_msg 非必填   String   128   返回信息, 返回错误原因
+
+
+3    ins_cd      必填   String   20    机构号,接入机构在富友的唯一代码
+4    mchnt_cd    必填     String   15    商户号, 富友分配的商户号
+
+
+5    term_id     非必填    String   8     终端号
+
+
+6    random_str 必填      String   32    随机字符串
+
+
+7    sign        必填     String   32    签名, 详见签名生成算法
+
+
+8    order_type 必填      String   20    订单类型:ALIPAY , WECHAT,
+                                       BESTPAY, UNIONPAY
+
+9    mchnt_orde 必填      String   30    商户订单号, 商户系统内部的订单号（5 到 30
+     r_no                              个字符、 只能包含字母数字,区分大小写)
+
+10   refund_ord 必填      String   30    商户退款单号
+     er_no
+
+11   transactio 非必填     String   64    渠道交易流水号
+     n_id
+
+12   refund_id   非必填    String   64    渠道退款流水号
+
+
+13   reserved_ 必填       String   8     富友清算日
+     fy_settle_
+     dt
+
+14   reserved_r 非必填     Number   16    退款金额
+     efund_amt
+
+
+
+报文示例
+       请求报文：
+       <?xml version="1.0" encoding="GBK" ?>
+       <xml>
+           <version>1.0</version>
+           <ins_cd>08A0000000</ins_cd>
+           <mchnt_cd>A003310F0002085</mchnt_cd>
+           <term_id>76668886</term_id>
+           <reserved_fy_term_id></reserved_fy_term_id>
+           <random_str>011521154798</random_str>
+           <order_type>ALIPAY</order_type>
+   <mchnt_order_no>201708011520154796</mchnt_order_no>
+   <refund_order_no>011521154798</refund_order_no>
+   <total_amt>1</total_amt>
+   <refund_amt>1</refund_amt>
+   <sign>
+
+C/1pyIaO87m6iGNujcAWuR0GLcj+0OK0sGmPVUXsoF+t5bQXXGHN28F1/Fgto
+XWRvVsnU5P9oHvLVtVjvjq8hdttLlrs5Rq0M/n1VNX67BajNylQbffankltBV
+Ljo1WvcwjLKdDd/s/XHUQPnmeb/ggE7tmbQ8bhGgMXuSRpLGY=
+    </sign>
+</xml>
+
+签名原文：
+ins_cd=08A0000000&mchnt_cd=A003310F0002085&mchnt_order_no=201
+708011520154796&operator_id=&order_type=ALIPAY&random_str=011
+521154798&refund_amt=1&refund_order_no=011521154798&term_id=7
+6668886&total_amt=1&version=1.0
+
+响应报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+    <ins_cd>08A0000000</ins_cd>
+    <mchnt_cd>A003310F0002085</mchnt_cd>
+    <mchnt_order_no>201708011520154796</mchnt_order_no>
+    <order_type>ALIPAY</order_type>
+    <random_str>HLGOWRUVZFJC568FIMBQ32LI2O35F4CT</random_str>
+    <refund_id>7551000001201708011232400015</refund_id>
+    <refund_order_no>011521154798</refund_order_no>
+    <reserved_fy_settle_dt>20170801</reserved_fy_settle_dt>
+    <reserved_fy_trace_no>900000040960</reserved_fy_trace_no>
+    <result_code>000000</result_code>
+    <result_msg>SUCCESS</result_msg>
+
+<sign>2/Xtq3ZY5r8Cc8ATdCRyLLRW8l26D2Gyu4uhHE4ttI/Jgd8ok++01Ev
+GFUKtsxxjHVP62awJ2Zvt
+3NpQB4ksMgc53vDG8DlFGi6MlppzY2EbdHstSf3nSry+xbRIQ4IzNX7kHH1Ex
+gVaIIh6nnnhb9YK
+CkcBC4v2Y98K3VMz1RI=
+</sign>
+    <term_id>76668886</term_id>
+
+<transaction_id>7551000001201708011232397885</transaction_id>
+</xml>
+         签名原文：
+         ins_cd=08A0000000&mchnt_cd=A003310F0002085&mchnt_order_no=201
+         708011520154796&order_type=ALIPAY&random_str=HLGOWRUVZFJC568F
+         IMBQ32LI2O35F4CT&refund_id=7551000001201708011232400015&refun
+         d_order_no=011521154798&result_code=000000&result_msg=SUCCESS
+         &term_id=76668886&transaction_id=7551000001201708011232397885
+
+    3.7 关闭订单
+
+请求地址
+
+    测试                    https://fundwx.fuiou.com/closeorder
+    生产
+
+
+场景说明
+  本接口支持微信、支付宝各种下单类交易(order_type)的关闭。只有未支付
+的订单才能发起关闭。
+  注意：订单生成后不能马上调用关单接口，最短调用时间间隔为 5 分钟。
+
+关单请求报文
+序   参数名          出现要求 型态           长度      说明
+号
+
+1   version      必填       String   8       1.0
+
+
+2   ins_cd       必填       String   20      机构号,接入机构在富友的唯一代码
+
+
+3   mchnt_cd     必填       String   15      商户号, 富友分配给二级商户的商户号
+
+
+4   term_id      必填       String   8       终端号
+
+
+5   mchnt_orde 必填         String   30      商户订单号, 商户系统内部的订单号
+    r_no
+
+6   random_str 必填         String   32      随机字符串
+
+
+7   sign         必填       String   32      签名, 详见签名生成算法
+8   order_type 必填      String   20    订单类型: WECHAT(统一下单、公众号、小程序),
+                                      WXAPP(微信 app),WXH5(微信 h5),ALIPAY(统一
+                                      下单，服务窗)
+
+9   sub_appid   非必填    String   32    子商户公众号 id, 子商户配置多个公众号时必
+                                      填
+
+
+关单响应报文
+序   参数名         出现要求 型态         长度    说明
+号
+
+1   result_cod 必填      String   16    错误代码, 000000 成功,其他详细参见错误列表
+    e
+
+2   result_msg 必填      String   128   错误代码描述
+
+
+3   ins_cd      必填     String   20    机构号,接入机构在富友的唯一代码
+
+
+4   mchnt_cd    必填     String   15    商户号, 富友分配给二级商户的商户号
+
+
+5   term_id     必填     String   8     终端号
+
+
+6   random_str 必填      String   32    随机字符串
+
+
+7   sign        必填     String   32    签名, 详见签名生成算法
+
+
+8   order_type 非必填     String   20    订单类型
+
+
+9   mchnt_orde 必填      String   30    商户订单号, 商户系统内部的订单号
+    r_no
+
+
+
+      请求报文：
+      <?xml version="1.0" encoding="GBK" standalone="yes"?>
+      <xml>
+          <ins_cd>08A9999999</ins_cd>
+          <mchnt_cd>0002900F0476612</mchnt_cd>
+
+      <mchnt_order_no>Order201708044134221122215</mchnt_order_no>
+    <order_type>WECHAT</order_type>
+    <random_str>200952951946</random_str>
+
+<sign>dD5Rm83J+0ElBVyIm+Ca8D2I0ySVNtTPL4KpeFuUY3lT5JjbsyxiIVq
+YrYAg2/FvIvTTwCgBpSV4
+LgkdkhK3hfGODLONK7e3sqKHcnmIDzcS7idmEC7b1IwJqKfXRHlA3Zz6iKM/d
+hjhqpLx6+znpoB7
+crGWk27K2IrLi6n+rGk=
+</sign>
+    <sub_appid>wx50a357f01487f9c7</sub_appid>
+    <term_id>WEB</term_id>
+    <version>1.0</version>
+</xml>
+
+签名原文：
+ins_cd=08A9999999&mchnt_cd=0002900F0476612&mchnt_order_no=Ord
+er201708044134221122215&order_type=WECHAT&random_str=20095295
+1946&term_id=WEB&version=1.0&sub_appid=wx50a357f01487f9c7
+
+响应报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+    <ins_cd>08A9999999</ins_cd>
+    <mchnt_cd>0002900F0476612</mchnt_cd>
+
+<mchnt_order_no>Order201708044134221122215</mchnt_order_no>
+    <order_type></order_type>
+    <random_str>ED3QXFQ88HX5D04P7UHQH8YLHYIE2BTE</random_str>
+    <result_code>000000</result_code>
+    <result_msg>CLOSED</result_msg>
+
+<sign>hdRbXzRhlRfH2y33wWFLuK883K45AgbIMUIzZ4EphwznFfWHLjLq2NS
+JHFlNRhoCyyzTh7DqH9hl
+I9Ws9hpslmJevPLNtQREKOxPbixfWumQOfmLu4LZfFX678jBVfac8AWiAzUG8
+c8efK3NLUt3STI9
+WqML+YZQwNIwF+pkrfg=
+</sign>
+    <term_id>WEB</term_id>
+</xml>
+
+签名原文：
+ins_cd=08A9999999&mchnt_cd=0002900F0476612&mchnt_order_no=Ord
+er201708044134221122215&order_type=&random_str=ED3QXFQ88HX5D0
+4P7UHQH8YLHYIE2BTE&result_code=000000&result_msg=CLOSED&term_
+         id=WEB
+
+
+3.8 撤销接口
+请求地址
+
+    测试                  https://fundwx.fuiou.com/cancelorder
+    生产
+
+
+场景说明
+  本接口支持微信、支付宝条码支付撤销。建议先发起查询确认订单状态未支
+付（或者支付中）后发起撤销。如果原交易成功，建议使用退款接口。建议：原
+交易请求完至少 15S 后发起撤销。如果原交易是未支付，目前仅支持撤销当日交
+易。
+
+撤销请求报文
+序   参数名           出现要求 型态         长度     说明
+号
+
+1   version       必填    String    8      1.0
+
+
+2   ins_cd        必填    String    20     机构号,接入机构在富友的唯一代码
+
+
+3   mchnt_cd      必填    String    15     富友分配的商户号
+
+
+4   term_id       非必填   String    8      商户终端号
+
+
+5   mchnt_orde 必填       String    30     原交易商户订单号
+    r_no
+
+6   random_str 必填       String    32     随机字符串，不长于 32 位
+
+
+7   sign          必填    String    128    签名，详见签名生成算法
+
+
+8   order_type 必填       String    20     订单类型:ALIPAY (条码支付), WECHAT(条码支
+                                         付)
+
+9   cancel_ord 必填       String    30     商户撤销单号
+    er_no
+10   operator_i 非必填    String   32    操作员
+     d
+
+11   reserved_f 非必填    String   20    富友终端号(非富友终端请勿填写)
+     y_term_id
+
+
+撤销响应报文
+序    参数名         出现要求 型态        长度    说明
+号
+
+1    result_cod 必填     String   16    错误代码, 000000 成功,其他详细参见错误列表
+     e
+
+2    result_msg 非必填    String   128   返回信息, 返回错误原因
+
+
+3    ins_cd      必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+4    mchnt_cd    必填    String   15    商户号, 富友分配的商户号
+
+
+5    term_id     非必填   String   8     终端号
+
+
+6    random_str 必填     String   32    随机字符串
+
+
+7    sign        必填    String   32    签名, 详见签名生成算法
+
+
+8    order_type 非必填    String   20    订单类型
+
+
+9    mchnt_orde 必填     String   30    原交易商户订单号
+     r_no
+
+10   cancel_ord 必填     String   30    商户撤销单号
+     er_no
+
+11   transactio 非必填    String   32    渠道交易流水号
+     n_id
+
+12   cancel_id   非必填   String   32    渠道撤销流水号
+
+
+13   fund_chang 非必填    String   8     是否有资金流向(只有支付宝有该字段)
+     e
+14    recall     非必填      String   8      是否需要新调用撤销(当为 Y 时，需要重新调用
+                                          撤销接口)
+
+15    reserved_ 非必填       String   8      富友清算日
+      fy_settle_
+      dt
+
+16    reserved_f 非必填      String   12     富友系统内部追踪号
+      y_trace_no
+
+    请求报文：
+    <?xml version="1.0" encoding="GBK" ?>
+    <xml>
+       <operator_id>lln</operator_id>
+       <random_str>N13NF18ZST</random_str>
+       <term_id>12345678</term_id>
+       <mchnt_cd>0004950F0650723</mchnt_cd>
+       <cancel_order_no>Order20180103K9D6VJQAP4</cancel_order_no>
+       <mchnt_order_no>Order20171130ZJFSUHVMJE</mchnt_order_no>
+       <ins_cd>08A9999999</ins_cd>
+       <order_type>ALIPAY</order_type>
+       <version>1.0</version>
+        <sign>S6RyRuPlx1nj3nO9A8lckIpEdUBVhSgqWSpzSCqrKq4B78T3jBs71l+O
+    OUhWZ2CdPJf/t/W7LdMYl/cik+joYMWeQr6IETu4GGm4xpueq02vZMjON7xBOukwo
+f5GuybVJD0yQ1mqfH9X5wgniOpaVv5z
+       UFBZ2nfxZvL8WhYL5ls=
+       </sign>
+    </xml>
+
+    签名原文：
+    cancel_order_no=Order20180103K9D6VJQAP4&ins_cd=08A9999999&mchnt_c
+d=0004950F0650723&mchnt_order_no=Order20171130ZJFSUHVMJE&operator_id=
+lln&order_type=ALIPAY&random_str=N13NF18ZST&term_id=12345678&version=
+1.0
+
+     响应报文：
+     <?xml version="1.0" encoding="GBK" standalone="yes"?>
+     <xml>
+           <cancel_id></cancel_id>
+           <cancel_order_no>Order20180103K9D6VJQAP4</cancel_order_no>
+           <fund_change></fund_change>
+           <ins_cd>08A9999999</ins_cd>
+           <mchnt_cd>0004950F0650723</mchnt_cd>
+           <mchnt_order_no>Order20171130ZJFSUHVMJE</mchnt_order_no>
+           <order_type>ALIPAY</order_type>
+         <random_str>YKUQHKIS1O7KENPJQFZCWJTMC4TOX2S4</random_str>
+         <recall>N</recall>
+         <reserved_fy_settle_dt>20180425</reserved_fy_settle_dt>
+         <reserved_fy_trace_no>910000040810</reserved_fy_trace_no>
+         <result_code>000000</result_code>
+         <result_msg>订单已撤销</result_msg>
+
+<sign>Tus84TtQfPwFirGWujot7LrdJ1whp6MvBuM/FgMSDWeHR+WQllDXkYSJH/Vygx4
+bCHIfq09CWtU2
+
+wMcAwu8424UyHYhylP++fldAO7mUQFnf8vfhk9mtcP5cJp1CED+alisiuZgYgXx4bUd1G
+k8GvY2c
+         6eLUFvbQW3bLfF3gWOg=
+         </sign>
+         <term_id></term_id>
+         <transaction_id></transaction_id>
+    </xml>
+
+    3.9 查询可提现资金信息
+ 请求地址
+
+    测试                https://fundwx.fuiou.com/queryWithdrawAmt
+    生产
+
+
+ 场景说明
+    查询商户在富友账户中的已结算资金、未结算资金、账户总资金。
+
+ 查询请求报文
+序    参数名        出 现 要 型态          长度      说明
+号               求
+
+1    ins_cd     必填      String    20      机构号,接入机构在富友的唯一代码
+
+2    mchnt_cd   必填      String    15      商户号
+
+3    random_str 必填      String    32      随机字符串，不长于 32 位
+
+4    sign       必填      String    128     签名，详见签名生成算法
+
+
+ 查询响应报文
+序    参数名        出 现 要 型态          长度      说明
+号               求
+1    return_cod 必填    String   16    返回状态码, SUCCESS/FAIL，此字段是通信标
+     e                               识，非交易标识，交易是否成功需要查看
+                                     result_code 来判断
+
+2    return_msg 必填    String   128   返回信息, 返回错误原因
+
+
+
+3    ins_cd     必填    String   20    机构号,接入机构在富友的唯一代码
+
+
+
+4    mchnt_cd   必填    String   15    商户号
+
+
+
+5    random_str 必填    String   32    随机字符串，不长于 32 位
+
+
+
+6    sign       必填    String   128   签名
+
+
+
+7    result_cod 必填    String   16    业务结果, SUCCESS/FAIL
+     e
+
+
+8    err_code   非必填   String   32    错误代码, 0000 成功,其他详细参见错误列表
+
+
+
+9    err_code_d 非必填   String   128   错误代码描述
+     es
+
+
+10   settled_am 必填    Number   16    已结算金额（就是银行已经结算到商户富友账户
+     t                               上的金额）
+
+
+11   not_settle 必填    Number   16    未结算金额（就是银行还未结算到商户富友账户
+     _amt                            上，如果需要提现，就需要富友垫付资金，所以
+                                     就需要收取一定的手续费的）
+
+12   reserved_b 必填    Number   16    账面余额（就是已结算金额+未结算金额）
+     ook_balanc
+     e
+请求报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+    <ins_cd>08A9999999</ins_cd>
+    <mchnt_cd>0002900F0647308</mchnt_cd>
+    <random_str>D4U4YL</random_str>
+    <sign>
+
+ykiio6p1pL9dbu14scO8AQKurrouwfiV3CU1BtzSwrwcKcIFFRLGttO3OKngR
+Uu1favZ0u7I60BYyxMfbJpmG5i4L/a04ebxXRp5s/0fO6FRchplg1MNOga2Yj
+z4hq8+0Xz14/aNCrPBUMQzilnrBJI4l1WkrFhaTOGxgMWA/54=
+    </sign>
+</xml>
+
+签名原文：
+ins_cd=08A9999999&mchnt_cd=0002900F0647308&random_str=D4U4YL
+
+响应报文：
+<?xml version="1.0" encoding="GBK" standalone="yes"?>
+<xml>
+    <err_code>0000</err_code>
+    <err_code_des>成功</err_code_des>
+    <ins_cd>08M0065111</ins_cd>
+    <mchnt_cd>0005210F0438301</mchnt_cd>
+    <not_settle_amt>001175131803</not_settle_amt>
+    <random_str>4HJMNRMV16LRK94K93PQP8TXE3MO21BV</random_str>
+
+<reserved_book_balance>002383803030</reserved_book_balance>
+<result_code>SUCCESS</result_code>
+<return_code>SUCCESS</return_code>
+<return_msg></return_msg>
+<settled_amt>000198278332</settled_amt>
+
+<sign>KST7MiVxAM0kpSvwPTdTkeSVMoDBFw2GtkZk886CM34GNXw+rYo9HAD
+kfzF73QL5f0jrxV0v6/W2
+1j63PbK+17iKTzDFiOeBtCVX78ZlLTxEKlOXP2ZYR3Gu2MrrTHcVPG1T+ritf
+P82yXr7uc9jO75B
+o2aP33vkq1RmqPqOycM=
+</sign>
+</xml>
+
+签名原文：
+err_code=0000&err_code_des=成功
+         &ins_cd=08M0065111&mchnt_cd=0005210F0438301&not_settle_amt=00
+         1175131803&random_str=4HJMNRMV16LRK94K93PQP8TXE3MO21BV&result
+         _code=SUCCESS&return_code=SUCCESS&return_msg=&settled_amt=000
+         198278332
+
+
+    3.10 查询手续费信息
+请求地址
+
+    测试                    https://fundwx.fuiou.com/queryFeeAmt
+    生产
+
+
+场景说明
+    提现金额的手续费查询，根据需提现金额计算相应手续费。
+
+
+查询请求报文
+序   参数名          出现要求 型态            长度     说明
+号
+
+1   ins_cd       必填       String    20     机构号,接入机构在富友的唯一代码
+
+2   mchnt_cd     必填       String    15     商户号
+
+3   random_str 必填         String    32     随机字符串，不长于 32 位
+
+4   sign         必填       String    128    签名，详见签名生成算法
+
+5   amt          必填       Number    12     待提现金额
+
+
+查询响应报文
+序   参数名          出现要求 型态            长度     说明
+号
+
+1   return_cod 必填         String    16     返回状态码, SUCCESS/FAIL，此字段是通信标
+    e                                      识，非交易标识，交易是否成功需要查看
+                                           result_code 来判断
+
+2   return_msg 必填         String    128    返回信息, 返回错误原因
+
+
+3   ins_cd       必填       String    20     机构号,接入机构在富友的唯一代码
+4    mchnt_cd   必填      String   15    商户号,可选
+
+
+5    random_str 必填      String   32    随机字符串，不长于 32 位
+
+
+6    sign       必填      String   128   签名
+
+
+7    result_cod 必填      String   16    业务结果, SUCCESS/FAIL
+     e
+
+8    err_code   非必填     String   32    错误代码, 0000 成功,其他详细参见错误列表
+
+
+9    err_code_d 非必填     String   128   错误代码描述
+     es
+
+10   fee_amt    必填      Number   16    手续费金额
+
+
+11   fee_desc   非必填     String   100   手续费描述
+
+
+
+       请求报文：
+       <?xml version="1.0" encoding="GBK" standalone="no"?>
+       <xml>
+           <ins_cd>08A9999999</ins_cd>
+           <mchnt_cd>0002900F0370586</mchnt_cd>
+           <random_str>abc123</random_str>
+
+       <sign>bItQMud6J3v9C5CI7h65GUOv/m/2zatUcXHmiYGBrvUZ1TG0Mbpp6aI
+       y4sGOo1eTn+x/YQODTreK
+
+       VOIFT2KCd2c5yo9Y2ywmLu8AqKmCO6md6iX1wNQUWFDXvailsm4j8M7n/UHeR
+       3fHXBPz3psa5vCE
+               VKl3Wz6Wy1T1fVmn5UY=
+           </sign>
+           <amt>9997</amt>
+       </xml>
+
+       签名原文：
+       amt=9997&ins_cd=08A9999999&mchnt_cd=0002900F0370586&random_st
+       r=abc123
+
+       响应报文：
+       <?xml version="1.0" encoding="GBK" standalone="yes"?>
+         <xml>
+             <err_code>0000</err_code>
+             <err_code_des>成功</err_code_des>
+             <fee_amt>000000000060</fee_amt>
+             <fee_desc>0.6，无封顶</fee_desc>
+             <ins_cd>08A9999999</ins_cd>
+             <mchnt_cd>0002900F0370586</mchnt_cd>
+             <random_str>DDVW5YU88CQ0ZBRL81PUK68AY017VLWL</random_str>
+             <result_code>SUCCESS</result_code>
+             <return_code>SUCCESS</return_code>
+             <return_msg></return_msg>
+
+         <sign>YTeWsu7NvlypR/d/UvOFh4YNgxvLbK0kpD4rGrVRAWS0qDCNsLzIagz
+         y1BLk1IALt79S7OZBLHPK
+         OkYvI5KVIal+/6M15PpcL70gFbM6EzJfkdWwgJ+z/jCdyTF/B6iLk7Czc1sHD
+         szm1Br0LGfbOd6T
+         J3z3MEvrHmfwyC9HgBI=
+         </sign>
+         </xml>
+
+         签名原文：
+         err_code=0000&err_code_des=成功
+         &fee_amt=000000000060&fee_desc=0.6，无封顶
+         &ins_cd=08A9999999&mchnt_cd=0002900F0370586&random_str=DDVW5Y
+         U88CQ0ZBRL81PUK68AY017VLWL&result_code=SUCCESS&return_code=SU
+         CCESS&return_msg=
+
+
+    3.11 发起提现
+请求地址
+
+    测试                     https://fundwx.fuiou.com/withdraw
+    生产
+
+
+场景说明
+    将商户在富友虚拟户中的资金提现到商户在富友绑定的银行卡中。
+
+提现请求报文
+序   参数名          出现要求 型态           长度      说明
+号
+1   ins_cd     必填   String   20    机构号,接入机构在富友的唯一代码
+
+
+2   mchnt_cd   必填   String   15    商户号
+
+
+3   random_str 必填   String   32    随机字符串，不长于 32 位
+
+
+4   sign       必填   String   128   签名，详见签名生成算法
+
+
+5   amt        必填   Number   12    待提现金额
+
+
+6   fee_amt    必填   Number   16    手续费金额
+
+
+7   txn_type   必填   String   1     1:未结提现
+                                   2:已结提现
+
+
+
+
+提现响应报文
+序   参数名        出 现 要 型态      长度    说明
+号              求
+
+1   return_cod 必填   String   16    返回状态码, SUCCESS/FAIL，此字段是通信标
+    e                              识，非交易标识，交易是否成功需要查看
+                                   result_code 来判断
+
+2   return_msg 必填   String   128   返回信息, 返回错误原因
+
+
+
+3   ins_cd     必填   String   20    机构号,接入机构在富友的唯一代码
+
+
+
+4   mchnt_cd   必填   String   15    商户号,可选
+
+
+
+5   random_str 必填   String   32    随机字符串，不长于 32 位
+6   sign       必填      String   128   签名
+
+
+
+7   result_cod 必填      String   16    业务结果, SUCCESS/FAIL
+    e
+
+
+8   err_code   非必填     String   32    错误代码, 0000 成功,其他详细参见错误列表
+
+
+
+9   err_code_d 非必填     String   128   错误代码描述
+    es
+
+
+
+      请求报文：
+      <?xml version="1.0" encoding="GBK"
+      standalone="yes"?><xml><ins_cd>08M0063596</ins_cd><txn_type>1
+      </txn_type><sign>jZvn0l8PKXdROtcL1+mG/Ji5mmb4fNEhEDWHMJXCfYHE
+      a+g4qY+U7ftySvNhWlhpqcTclkEHzXT5
+      fSMdY5q8q5rSqlmkmSITpk8HNGsbkeCS4SaH0Kxtp5D+zZw6rA/OMV9Fl1HHW
+      XDzgKsb3L6Z00f3
+      r9dWTGeW6ihKSNnC6Oc=
+      </sign><amt>000000994701</amt><random_str>d8fd98eeacb22ecdff5
+      ea961bc8331b3</random_str><mchnt_cd>0005280F0435423</mchnt_cd
+      ><fee_amt>000000000298</fee_amt></xml>
+
+      签名原文：
+      amt=000000994701&fee_amt=000000000298&ins_cd=08M0063596&mchnt
+      _cd=0005280F0435423&random_str=d8fd98eeacb22ecdff5ea961bc8331
+      b3&txn_type=1
+
+      响应报文：
+      <?xml version="1.0" encoding="GBK" standalone="yes"?>
+      <xml>
+          <err_code>0000</err_code>
+          <err_code_des>成功</err_code_des>
+          <ins_cd>08M0063596</ins_cd>
+          <mchnt_cd>0005280F0435423</mchnt_cd>
+          <random_str>XHWWPAMARPPY7UWDKKVZYX3FR363HALK</random_str>
+          <result_code>SUCCESS</result_code>
+          <return_code>SUCCESS</return_code>
+          <return_msg></return_msg>
+         <sign>daBT5rIAkEvdvY7FVZQ+nygl0uge7kkiT9qxggn4DT1dCN3GjtF8WFP
+         xwccWV0mYHkvNL+h5OAFR
+         donoKwddiSe82AByO5v9yut2yGt2PCWQOT8MKw5q5WK18UNk2T7lk6kTvAUvo
+         fbqdU1fhv3UEWpV
+         MYCT9hYPwfhadtzuEfQ=
+         </sign>
+         </xml>
+
+         签名原文：
+         err_code=0000&err_code_des=成功
+         &ins_cd=08M0063596&mchnt_cd=0005280F0435423&random_str=XHWWPA
+         MARPPY7UWDKKVZYX3FR363HALK&result_code=SUCCESS&return_code=SU
+         CCESS&return_msg=
+
+
+    3.12 资金划拨查询
+请求地址
+
+    测试                  https://fundwx.fuiou.com/queryChnlPayAmt
+    生产
+
+
+场景说明
+    查询商户在某段时间内自动结算（t+1）的笔数及金额信息。
+    20180904 起支持 D1 查询
+
+资金划拨请求报文
+序   参数名          出 现 要 型态           长度     说明
+号                求
+
+1   ins_cd       必填       String    20     机构号,接入机构在富友的唯一代码
+
+2   mchnt_cd     必填       String    15     商户号
+
+3   random_str 必填         String    32     随机字符串，不长于 32 位
+
+4   sign         必填       String    128    签名，详见签名生成算法
+
+5   start_date 必填         String    8      查询开始日期（yyyyMMdd）
+
+6   end_date     必填       String    8      查询结束日期（yyyyMMdd）
+
+7   start_inde 必填         Number    8      分页开始序号
+    x
+
+8   end_index    必填       Number    8      分页结束序号
+资金划拨响应报文
+序   参数名         出现要求 型态        长度    说明
+号
+
+基本参数
+
+1   ins_cd      必填    String   20    机构号
+
+
+2   count       必填    Number   10    笔数 不参与验签
+
+
+3   random_str 必填     String   32    随机字符串，不长于 32 位
+
+
+4   sign        必填    String   128   签名，详见签名生成算法
+
+
+5   mchntList   非必填   String   不 定 mchnt 列表 不参与验签
+                               长
+
+资金划拨信息 mchnt     不参与验签
+
+1   mchnt_cd    必填    String   15    商户号
+
+
+2   settle_dt   必填    String   8     清算日期
+
+
+3   pay_amt     必填    Number   16    金额（分）
+
+
+4   pay_st      必填    String   2     划拨状态:
+                                     1,成功
+                                     2,失败
+                                     3,划款中
+                                     4,已划款,状态未知
+                                     5,转入小宝金库
+
+5   pay_st_des 必填     String   64    划拨状态描述
+    c
+
+6   pay_txn_cd 必填     String   4     划款交易类型
+                                     3022: T1 划款
+                                     9004: D1 划款
+                                       9002: 划款至小宝理财
+
+
+7    repay_tag   非必填    String   1     重新划款标识
+
+
+8    repay_dt    非必填    String   8     重新划款日期
+
+
+9    d1_fee      必填     Number   16    提现手续费
+
+
+10   addn_fee    非必填    Number   16    附加手续费（原结算交易手续费）
+                                       暂时没有值，启用时间待定
+
+11   settle_acn 必填      String   128   划款户名
+     t_nm
+
+12   settle_acn 必填      String   40    划款账号(前六后四，中间三个***)
+     t_no
+
+
+       请求报文：
+       <?xml version="1.0" encoding="GBK" standalone="yes"?>
+       <xml>
+           <ins_cd>08M0065111</ins_cd>
+           <mchnt_cd>0004520F0435160</mchnt_cd>
+           <start_date>20160601</start_date>
+           <end_date>20991229</end_date>
+           <start_index>0</start_index>
+           <end_index>100000</end_index>
+           <random_str>D4U4YL</random_str>
+           <sign>
+
+       v/C9KPsvYOeS0w2DaR96hU8PioZG8dpes6Sb+Jtjv2gSVxlBCTCilcxQI6dDQ
+       r7n3x2K4WqBHiH4qZgdXFhtYIop3LlOuNkrjMsqcIjq407YnpShTRCDq8ff58
+       0ff9Tpf10eGKipRoVTvVwHDnYmPvFXSjHptJwqUrb5Jt2MKko=
+           </sign>
+       </xml>
+
+       签名原文：
+       end_date=20991229&end_index=100000&ins_cd=08M0065111&mchnt_cd
+       =0004520F0435160&random_str=D4U4YL&start_date=20160601&start_
+       index=0
+
+       响应报文：
+      <?xml version="1.0" encoding="GBK" standalone="yes"?>
+      <xml>
+          <count>18363</count>
+          <ins_cd>08A9999999</ins_cd>
+          <mchntList>
+              <mchnt>
+                  <addn_fee>0</addn_fee>
+                  <d1_fee>0</d1_fee>
+                  <mchnt_cd>0002900F0370586</mchnt_cd>
+                  <pay_amt>6958</pay_amt>
+                  <pay_st>1</pay_st>
+                  <pay_st_desc>成功</pay_st_desc>
+                  <pay_txn_cd>9006</pay_txn_cd>
+                  <repay_dt></repay_dt>
+                  <repay_tag></repay_tag>
+                  <settle_acnt_nm>郭玉亮</settle_acnt_nm>
+                  <settle_acnt_no>622848***0771</settle_acnt_no>
+                  <settle_dt>20180815</settle_dt>
+              </mchnt>
+          </mchntList>
+          <random_str>EFF0IZOHEYMFXZZY22E289BLRJHNHZ2L</random_str>
+
+      <sign>Ph9V/vwnCmss4PCcYLPMpgZvz35qoBsC6QZbwiH2HL1nPFQFGMUvlak
+      j1u6j16LorhV0LvwgQHIM
+
+      7ye4tEtJdFmBRNFgz4i83M4tDg0GNKQbhMwH0+YGUJz6rRUPJhpoFdOs+XiKP
+      arozvnnpWu5J/b6
+              eMJO7anz+tp5ODBKUjE=
+          </sign>
+      </xml>
+      签名原文：
+      ins_cd=08M0065111&random_str=0CG02QEUSWCHBQESGTO3WVKQ28Z63QU
+      Q
+      说明：该接口验签只有 ins_cd 和 random_str 需要参数签名
+
+
+ 3.13 D1 查询(已废弃，D1 查询请使用 3.12)
+请求地址
+
+ 测试                   https://fundwx.fuiou.com /queryD1Data
+ 生产
+
+
+场景说明
+  查询商户在某段时间内自动结算（t+1）的笔数及金额信息。
+  机构号（只允许查询一天的 D1 数据，如果查询当天 D1 的交易数据，中午 12 点之
+后才可以查询）、商户号（非必填，如果不填，按机构号查询，如果商户号填了，按商
+户号去查询，商户号查询时，可以允许查询多天的 D1 数据）、查询开始日期、查询结
+束日期。
+
+D1 查询请求报文
+序   参数名         出现要   型态       长度    说明
+号               求
+
+1   ins_cd      必填    String   13    机构号,接入机构在富友的唯一代码
+
+
+2   mchnt_cd    非必填   String   15    商户号
+
+
+3   random_str 必填     String   32    随机字符串，不长于 32 位
+
+
+4   sign        必填    String   256   签名，详见签名生成算法
+
+
+5   start_date 必填     String   8     查询开始日期（yyyyMMdd）
+
+
+6   end_date    必填    String   8     查询结束日期（yyyyMMdd）
+
+
+7   start_inde 必填     Number   8     分页开始序号 从 1 开始
+    x
+
+8   end_index   必填    Number   8     分页结束序号
+                                     开始和结束序号差不超过 100
+
+
+D1 查询响应报文
+序   参数名         出现要   型态       长度    说明
+号               求
+
+基本参数
+
+1   return_cod 必填     String   16    错误代码, 000000 成功,其他详细参见错误列表
+    e
+
+2   return_msg 非必填    String   128   错误代码描述
+3   ins_cd       必填     String   20    机构号
+
+
+4   count        必填     String   10    笔数
+
+
+5   random_str 必填       String   32    随机字符串，不长于 32 位
+
+
+6   sign         必填     String   128   签名，详见签名生成算法
+
+
+7   mchntList    非必填    String   不定    mchnt 列表 不参与验签
+                                 长
+
+D1 信息 mchnt     不参与验签
+
+1   mchnt_cd     必填     String   15    商户号
+
+2   settle_dt    必填     String   8     清算日期
+
+3   pay_amt      必填     Number   20    金额（分）
+
+4   pay_st       必填     String   2     D1 状态
+                                       1:成功
+                                       2:失败
+                                       7:划款中
+
+5   pay_st_des 非必填      String   64    划拨状态描述
+    c
+
+
+      请求报文：
+      <?xml version="1.0" encoding="GBK" standalone="yes"?>
+      <xml>
+          <ins_cd>08M0063654</ins_cd>
+          <mchnt_cd></mchnt_cd>
+          <start_date>20180601</start_date>
+          <end_date>201806006</end_date>
+          <start_index>1</start_index>
+          <end_index>100</end_index>
+          <random_str>D4U4YL</random_str>
+          <sign>
+      v/C9KPsvYOeS0w2DaR96hU8PioZG8dpes6Sb+Jtjv2gSVxlBCTCilcxQI6dDQ
+      r7n3x2K4WqBHiH4qZgdXFhtYIop3LlOuNkrjMsqcIjq407YnpShTRCDq8ff58
+      0ff9Tpf10eGKipRoVTvVwHDnYmPvFXSjHptJwqUrb5Jt2MKko=
+          </sign>
+       </xml>
+
+
+       签名原文：
+       end_date=20991229&end_index=100000&ins_cd=08M0065111&mchnt_cd
+       =&random_str=D4U4YL&start_date=20160601&start_index=0
+
+       响应报文：
+           <?xml version="1.0" encoding="GBK" standalone="yes"?>
+       <xml>
+           <count>2580</count>
+           <ins_cd>08M0063654</ins_cd>
+           <mchntList>
+               <mchnt>
+                   <mchnt_cd>0001000F0506892</mchnt_cd>
+                   <pay_amt>4832</pay_amt>
+                   <pay_st>1</pay_st>
+                   <pay_st_desc>成功</pay_st_desc>
+                   <settle_dt>20180602</settle_dt>
+               </mchnt>
+               ......
+               <mchnt>
+                   <mchnt_cd>0001000F0512507</mchnt_cd>
+                   <pay_amt>20690</pay_amt>
+                   <pay_st>1</pay_st>
+                   <pay_st_desc>成功</pay_st_desc>
+                   <settle_dt>20180602</settle_dt>
+               </mchnt>
+           </mchntList>
+           <random_str>CIT3VIBACJZ0LS5IS1VQ7GP5N57UX3C3</random_str>
+           <return_code>000000</return_code>
+           <return_msg>SUCCESS</return_msg>
+           <sign>
+
+       cm7fekXwAsh3UyarLLDyfoUbFKIY4tvMeq0wLummU8X6vIu8Qht3+47HetKMs
+       rAZlBUheWZIoGqrjSKCVgLrZZOEwQPBMzUppIyVc1p/gBe4WYlLkrZgw6ECgm
+       xoXzLqYpbBurzpLhb5XGsxhI2/YWGwTz41HweeW62WbQ1wLvE=
+           </sign>
+       </xml>
+
+       签名原文：
+count=2580&ins_cd=08M0063654&random_str=RO389I090HFL30SCZJ8TP7KFEKI92JPC&r
+eturn_code=000000&return_msg=SUCCESS
+4. 应答码表
+  应答码         描述信息          解决方案
+
+  000000        成功
+               系统类
+  010001        超时
+  010002       系统异常
+  010003    当前服务不可用
+  010005      系统维护中
+  010006       系统繁忙
+  010007      渠道不可用
+  010008     机构受理异常
+               报文类
+                         格式不正确、必填字段非空
+  020001      报文错误
+                              等等
+              交易类
+  030001      其他错误
+                         授权码不合法、授权码已过
+  030002     授权码不正确
+                          期、授权码校验错误等
+  030003     订单已重复
+  030004     订单已支付
+  030005     商户不存在       商户未在渠道开通商户
+  030006     订单已撤销
+  030007     订单已关闭
+  030008     订单不存在
+  030009     商户无权限
+  030010     用户支付中
+  030011     订单已退款
+  030012    退款订单不存在
+                         商户正交易不足以支持撤
+  030013      头寸不足
+                              销
+           退款金额超过原订单总金
+  030014
+                 额
+  030015        余额不足
+  030016      原订单不存在        退货才有
+  030017      订单不可退款
+  030018       商户已入驻
+  030020    商户经营类目不存在
+  1001      非空字段出现空值         检查报文
+  1002          验签错误        提交方式、编码
+  1003        字段内容错误         检查报文
+          商户号不存在|XX 交易未开
+  1009
+                 通
+  1010         找不到交易       找不到|交易状态异常
+  1011     金额超限不允许退款
+          余额不足不允许退款|银联
+  1012
+             主扫不允许退款
+  1013       商户订单号重复
+  1014         报文格式错
+  1015      请求功能尚不支持
+  2001         目标方超时
+  2002       目标方连接失败
+  9999          系统错误
+
+          条码支付应答码/退款应答码
+ 000000        成功
+ 030010       正常支付中
+ 010002
+              系统异常
+  9999
+                           支付结果未知，需发查询
+ 010001
+  2001        网络异常
+  2002
+  其他            失败
+
+             下单类应答码
+ 000000       下单成功
+  其他           失败
+
+              查询应答码
+ 返回码          trans_stat       状态
+ 000000         SUCCESS        成功
+错误码(多个)        PAYERROR        失败
+ 000000       USERPAYING
+                              支付中
+ 000000        NOTPAY
+  9999                     系统错误，需要继续查询
+ 000000        CLOSED          已关闭
+ 000000        REVOKED         已撤销
+ 000000        REFUND          已退款
+  1010           空            找不到交易
+5. 主备切换
+ 5.1 交易主备切换
+场景说明
+  由于不可控因素，导致单机房故障请求不可达，富友提供主备双活机房
+  供合作方访问。合作方可以选择其中一个机房作为主机房，启用主机房
+  进行心跳检测，如果出现检测异常，能够进行自动或者是手动切换线路
+  至备用机房。
+
+  详情请参考附件。
+  注：demo 仅提供参考！(域名切换 demo 及 readme.rar)
+

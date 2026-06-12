@@ -5,6 +5,7 @@
         <h3>业务订单</h3>
         <p>查询业务系统提交到支付平台的支付意图、金额、通知地址和支付状态。</p>
       </div>
+      <el-button type="primary" plain :icon="Plus" @click="openCreateDialog">新增</el-button>
     </section>
 
     <section class="payment-business-orders__toolbar">
@@ -209,7 +210,66 @@
         :cashier-config-id="cashierOrder.cashierConfigId"
         :business-order-id="cashierOrder.id"
         embedded
+        @success="handleCashierSuccess"
+        @close="closeCashierDialog"
       />
+    </el-dialog>
+
+    <el-dialog
+      v-model="createVisible"
+      title="新增业务订单"
+      width="520px"
+      append-to-body
+      destroy-on-close
+      :close-on-click-modal="false"
+      :before-close="beforeCloseCreateDialog"
+      class="payment-business-orders__create-dialog"
+    >
+      <el-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createRules"
+        label-width="108px"
+        class="payment-business-orders__create-form"
+      >
+        <el-row :gutter="16">
+          <el-col :span="24">
+            <el-form-item label="收银台" prop="cashierConfigId">
+              <PaymentEntitySelect
+                v-model="createForm.cashierConfigId"
+                :api="paymentCashierConfigApi"
+                label-field="cashierName"
+                description-field="enterpriseSubjectNames"
+                placeholder="请选择收银台"
+                class="payment-business-orders__create-select"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="商品名称" prop="title">
+              <el-input v-model="createForm.title" maxlength="128" show-word-limit placeholder="请输入商品或业务名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="应付金额" prop="amountYuan">
+              <div class="payment-business-orders__amount-input">
+                <el-input-number
+                  v-model="createForm.amountYuan"
+                  :min="0.01"
+                  :precision="2"
+                  :step="0.01"
+                  controls-position="right"
+                />
+                <span>元</span>
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <el-button :disabled="creating" @click="requestCloseCreateDialog">取消</el-button>
+        <el-button type="primary" :loading="creating" @click="submitCreateOrder">保存</el-button>
+      </template>
     </el-dialog>
 
   </div>
@@ -217,8 +277,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { CreditCard, Refresh, Search, Tickets } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import { CreditCard, Plus, Refresh, Search, Tickets } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import Pagination from '@mango/common/components/Pagination/index.vue';
 import PaymentCashier from '../../components/PaymentCashier.vue';
 import PaymentEntitySelect from '../../components/PaymentEntitySelect.vue';
@@ -227,11 +287,27 @@ import type { PaymentRowAction } from '../../components/PaymentRowActions';
 import {
   paymentApplicationApi,
   paymentBusinessOrderApi,
+  paymentCashierConfigApi,
   paymentEnterpriseSubjectApi,
   type PaymentBusinessOrder,
   type PaymentBusinessOrderStatus,
+  type PaymentCashierConfig,
+  type PaymentCashierPayResult,
+  type CreatePaymentBusinessOrderCommand,
   type PaymentPageQuery,
 } from '../../api/payment';
+
+interface CreateBusinessOrderForm {
+  cashierConfigId: string;
+  title: string;
+  amountYuan: number;
+}
+
+interface ResolvedCreateDefaults {
+  cashier: PaymentCashierConfig;
+  appId: string;
+  subjectId: string;
+}
 
 const query = reactive<PaymentPageQuery>({
   pageNum: 1,
@@ -251,12 +327,30 @@ const detail = ref<PaymentBusinessOrder>();
 const cashierVisible = ref(false);
 const cashierOrder = ref<PaymentBusinessOrder>();
 const errorMessage = ref('');
+const createVisible = ref(false);
+const creating = ref(false);
+const createFormRef = ref<FormInstance>();
+const createForm = reactive<CreateBusinessOrderForm>(defaultCreateForm());
 
 const emptyDescription = computed(() => {
   if (errorMessage.value) return '业务订单加载失败';
   return query.keyword || query.statusCode || query.applicationId || query.enterpriseSubjectId ? '未查询到匹配的业务订单' : '暂无业务订单';
 });
 const cashierDialogTitle = computed(() => cashierOrder.value?.bizOrderNo ? `收银台 - ${cashierOrder.value.bizOrderNo}` : '收银台');
+const createDirty = computed(() => JSON.stringify(createForm) !== JSON.stringify(defaultCreateForm()));
+
+const createRules: FormRules<CreateBusinessOrderForm> = {
+  title: [
+    { required: true, message: '请输入商品名称', trigger: 'blur' },
+    { max: 128, message: '商品名称长度不能超过 128 个字符', trigger: 'blur' },
+  ],
+  cashierConfigId: [
+    { required: true, message: '请选择收银台', trigger: 'change' },
+  ],
+  amountYuan: [
+    { required: true, type: 'number', min: 0.01, message: '请输入大于 0 的应付金额', trigger: 'blur' },
+  ],
+};
 
 onMounted(async () => {
   await Promise.all([loadStatuses(), loadRows()]);
@@ -321,6 +415,56 @@ function openCashier(row: PaymentBusinessOrder) {
   cashierVisible.value = true;
 }
 
+function closeCashierDialog() {
+  cashierVisible.value = false;
+  cashierOrder.value = undefined;
+}
+
+async function handleCashierSuccess(_result: PaymentCashierPayResult) {
+  closeCashierDialog();
+  await loadRows();
+}
+
+function openCreateDialog() {
+  resetCreateForm();
+  createVisible.value = true;
+}
+
+async function beforeCloseCreateDialog(done?: () => void) {
+  if (!creating.value && createDirty.value) {
+    try {
+      await ElMessageBox.confirm('当前新增业务订单尚未保存，确认关闭？', '关闭确认', {
+        confirmButtonText: '确认关闭',
+        cancelButtonText: '继续编辑',
+        type: 'warning',
+      });
+    } catch {
+      return;
+    }
+  }
+  createVisible.value = false;
+  done?.();
+}
+
+function requestCloseCreateDialog() {
+  void beforeCloseCreateDialog();
+}
+
+async function submitCreateOrder() {
+  await createFormRef.value?.validate();
+  creating.value = true;
+  try {
+    const created = await paymentBusinessOrderApi.create(await toCreatePayload());
+    ElMessage.success(`已新增业务订单 ${created.bizOrderNo || ''}`.trim());
+    createVisible.value = false;
+    query.pageNum = 1;
+    query.keyword = created.bizOrderNo || '';
+    await loadRows();
+  } finally {
+    creating.value = false;
+  }
+}
+
 function businessOrderRowActions(row: PaymentBusinessOrder): PaymentRowAction[] {
   return [
     {
@@ -377,6 +521,10 @@ function formatMoney(value?: number) {
   return amount ? `￥${(amount / 100).toFixed(2)}` : '-';
 }
 
+function yuanToCents(value: number) {
+  return Math.round(Number(value || 0) * 100);
+}
+
 function valueText(value?: string | number) {
   return value === undefined || value === null || value === '' ? '-' : String(value);
 }
@@ -389,9 +537,68 @@ function formatExtendInfo(value?: string) {
     return value;
   }
 }
+
+function defaultCreateForm(): CreateBusinessOrderForm {
+  return {
+    cashierConfigId: '',
+    title: '',
+    amountYuan: 0.01,
+  };
+}
+
+function resetCreateForm() {
+  Object.assign(createForm, defaultCreateForm());
+  createFormRef.value?.clearValidate();
+}
+
+async function toCreatePayload(): Promise<CreatePaymentBusinessOrderCommand> {
+  const defaults = await resolveCreateDefaults();
+  return {
+    appId: defaults.appId,
+    subjectId: defaults.subjectId,
+    title: createForm.title.trim(),
+    amount: yuanToCents(createForm.amountYuan),
+    currency: 'CNY',
+    returnUrl: defaults.cashier.resultReturnUrl || '/payment/cashier-result',
+  };
+}
+
+async function resolveCreateDefaults(): Promise<ResolvedCreateDefaults> {
+  const cashier = await paymentCashierConfigApi.detail(createForm.cashierConfigId);
+  if (!cashier?.applicationId) {
+    throw new Error('所选收银台未关联接入应用');
+  }
+  const subjectId = String(cashier.enterpriseSubjectIds || '')
+    .split(',')
+    .map(item => item.trim())
+    .find(Boolean);
+  if (!subjectId) {
+    throw new Error('默认收银台未配置签约主体');
+  }
+  const application = await paymentApplicationApi.detail(cashier.applicationId);
+  if (!application.appId) {
+    throw new Error('默认收银台关联应用缺少 AppId');
+  }
+  return {
+    cashier,
+    appId: application.appId,
+    subjectId,
+  };
+}
 </script>
 
 <style scoped>
+.payment-business-orders__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.payment-business-orders__header .el-button {
+  flex: 0 0 auto;
+}
+
 .payment-business-orders__entity-select,
 .payment-business-orders__status-select {
   width: 180px;
@@ -436,6 +643,22 @@ function formatExtendInfo(value?: string) {
 :global(.payment-cashier-dialog) {
   max-height: 86vh;
   overflow: hidden;
+}
+
+.payment-business-orders__amount-input {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-regular);
+}
+
+.payment-business-orders__amount-input :deep(.el-input-number) {
+  flex: 1;
+}
+
+.payment-business-orders__create-select {
+  width: 100%;
 }
 
 </style>

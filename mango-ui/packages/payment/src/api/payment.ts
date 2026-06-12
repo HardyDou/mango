@@ -338,6 +338,16 @@ export interface PaymentOrderStatus {
   statusName: string;
 }
 
+export interface PaymentOrderSyncStatusResult {
+  payOrderNo?: string;
+  status?: string;
+  statusName?: string;
+  flowNo?: string;
+  changed?: boolean;
+  queryCount?: number;
+  lastQueryResult?: string;
+}
+
 export interface PaymentOfflineCollection {
   id?: ApiId;
   offlineCollectionNo?: string;
@@ -971,6 +981,7 @@ export interface PaymentCashierOrder {
   amount?: number | string;
   currency?: string;
   status?: string;
+  returnUrl?: string;
   expireTime?: string;
 }
 
@@ -1010,6 +1021,7 @@ export interface PaymentCashierSession {
   preview?: boolean;
   status?: string;
   defaultMethodCode?: string;
+  returnUrl?: string;
   serverTime?: string;
   display?: PaymentCashierDisplay;
   application?: PaymentCashierApplication;
@@ -1140,6 +1152,9 @@ export const paymentBusinessOrderApi = {
 export const paymentOrderApi = {
   ...createPaymentResourceApi<PaymentOrder>('/payment/payment-orders'),
   statuses: () => get<PaymentOrderStatus[]>('/payment/payment-orders/statuses'),
+  syncStatus: (payOrderNo: string) => post<PaymentOrderSyncStatusResult>('/payment/payment-orders/sync-status', null, {
+    params: { payOrderNo },
+  }),
 };
 export const paymentOfflineCollectionApi = {
   ...createPaymentReadonlyResourceApi<PaymentOfflineCollection>('/payment/offline-collections'),
@@ -1235,6 +1250,7 @@ export const paymentCashierApi = {
   }),
   pay: (data: PaymentCashierPayCommand) => post<PaymentCashierPayResult>('/payment/cashier/pay', data),
   payResult: (payOrderNo: string) => get<PaymentCashierPayResult>('/payment/cashier/pay-result', { params: { payOrderNo } }),
+  syncPayResult: (payOrderNo: string) => post<PaymentCashierPayResult>('/payment/cashier/pay-result/sync', null, { params: { payOrderNo } }),
   submitOfflineTransferVoucher: (data: SubmitOfflineTransferVoucherCommand) =>
     post<PaymentOfflineCollection>('/payment/cashier/offline-collections/transfer-voucher', data),
   mangoPayVirtualPay: (data: MangoPayVirtualPaymentCommand) => post<MangoPayVirtualPaymentResult>('/payment/mango-pay/virtual/pay', data),

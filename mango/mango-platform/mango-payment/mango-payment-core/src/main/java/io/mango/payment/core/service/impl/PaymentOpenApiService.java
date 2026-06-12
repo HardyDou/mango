@@ -35,6 +35,7 @@ import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
 import io.mango.payment.core.service.IPaymentCashierService;
 import io.mango.payment.core.service.IPaymentOpenApiService;
+import io.mango.payment.core.service.PaymentContextSupport;
 import io.mango.payment.core.service.PaymentOrderStatusFlowService;
 import io.mango.payment.core.service.PaymentOrderStateService;
 import io.mango.payment.core.service.PaymentRefundApplyService;
@@ -146,7 +147,8 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             String timestamp,
             String nonce,
             String signature,
-            String requestPath) {
+            String requestPath,
+            String clientIp) {
         PaymentApplication application = authenticate(appId, tenantId, timestamp, nonce, signature, "GET", requestPath, EMPTY_BODY);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
@@ -197,7 +199,8 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             String timestamp,
             String nonce,
             String signature,
-            String requestPath) {
+            String requestPath,
+            String clientIp) {
         PaymentApplication application = authenticate(appId, tenantId, timestamp, nonce, signature, "POST", requestPath, body);
         MangoContextSnapshot previous = MangoContextHolder.get();
         try {
@@ -210,6 +213,7 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
             cashierCommand.setCashierConfigId(cashierConfig.getId());
             cashierCommand.setBusinessOrderId(order.getId());
             cashierCommand.setMethodCode(command.getMethodCode().trim());
+            cashierCommand.setClientIp(PaymentContextSupport.trimToNull(clientIp));
             PaymentCashierPayResultVO payResult = cashierService.pay(cashierCommand).getData();
             Require.notNull(payResult, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付结果不能为空");
             PaymentOrderVO paymentOrder = selectRequiredOpenPaymentOrder(application, payResult.getPayOrderNo());

@@ -175,6 +175,41 @@ class PaymentChannelContractServiceImplTest {
     }
 
     @Test
+    @DisplayName("detailChannelContract should display non-sensitive fuiou public key and mask private key")
+    void detailChannelContract_fuiouPublicKeyVisible_privateKeyMasked() {
+        PaymentChannel fuiouChannel = new PaymentChannel();
+        fuiouChannel.setId(330005L);
+        fuiouChannel.setTenantId(1L);
+        fuiouChannel.setChannelCode("FUIOU_PAY");
+        fuiouChannel.setChannelName("富友支付");
+        fuiouChannel.setEnvironment("PROD");
+        fuiouChannel.setFieldTemplateJson("""
+                [
+                  {"name":"privateKey","label":"商户 RSA 私钥","component":"textarea","dataType":"string","required":true,"sensitive":true,"encrypted":true,"masked":true,"sort":1},
+                  {"name":"fuiouPublicKey","label":"富友 RSA 公钥","component":"textarea","dataType":"string","required":true,"sensitive":false,"encrypted":false,"masked":false,"sort":2}
+                ]
+                """);
+        PaymentChannelMapper channelMapper = mock(PaymentChannelMapper.class);
+        when(channelMapper.selectById(330005L)).thenReturn(fuiouChannel);
+        service = service(auditService(), channelCapabilityMapper, channelMapper);
+        PaymentChannelContract contract = contract();
+        contract.setChannelId(330005L);
+        contract.setConfigValuesJson("""
+                {
+                  "privateKey": "enc:private-ciphertext",
+                  "fuiouPublicKey": "fuiou-public-key"
+                }
+                """);
+        when(contractMapper.selectById(331002L)).thenReturn(contract);
+
+        String configValuesJson = service.detailChannelContract(331002L).getData().getConfigValuesJson();
+
+        assertThat(configValuesJson).contains("\"privateKey\":\"******\"");
+        assertThat(configValuesJson).contains("\"fuiouPublicKey\":\"fuiou-public-key\"");
+        assertThat(configValuesJson).doesNotContain("private-ciphertext");
+    }
+
+    @Test
     @DisplayName("createChannelContract should store file template values as file id only")
     void createChannelContract_storesFileIdValues() {
         org.mockito.ArgumentCaptor<PaymentChannelContractValueEntity> valueCaptor =

@@ -96,6 +96,7 @@ public interface IPaymentChannelAdapter {
      * @param payerBankName 网银付款银行名称
      * @param payerAccountNo 网银付款账号或卡号
      * @param payerName 网银付款户名
+     * @param clientIp 付款人请求 IP
      */
     record PaymentApplyCommand(
             Long tenantId,
@@ -116,7 +117,8 @@ public interface IPaymentChannelAdapter {
             String payerBankCode,
             String payerBankName,
             String payerAccountNo,
-            String payerName) {
+            String payerName,
+            String clientIp) {
     }
 
     /**
@@ -129,6 +131,7 @@ public interface IPaymentChannelAdapter {
      * @param bizRefundNo 业务退款单号
      * @param payOrderNo 原支付订单号
      * @param bizOrderNo 业务订单号
+     * @param methodCode 原支付方式编码
      * @param channelTradeNo 原通道交易号
      * @param payAmount 原支付金额，单位分
      * @param amount 退款金额，单位分
@@ -143,6 +146,7 @@ public interface IPaymentChannelAdapter {
             String bizRefundNo,
             String payOrderNo,
             String bizOrderNo,
+            String methodCode,
             String channelTradeNo,
             Long payAmount,
             Long amount,

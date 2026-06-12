@@ -29,6 +29,9 @@ public class PaymentCashierSessionVO implements Serializable {
     @Schema(description = "默认支付方式编码")
     private String defaultMethodCode;
 
+    @Schema(description = "支付成功后返回地址。优先业务订单返回地址，其次收银台结果返回地址")
+    private String returnUrl;
+
     @Schema(description = "服务端当前时间")
     private LocalDateTime serverTime;
 

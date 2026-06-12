@@ -119,18 +119,72 @@ public class AccessService {
 
     private ApiResourceAccessDecisionVO resolveDecision(String httpMethod, String path) {
         try {
-            ApiResourceAccessDecisionQuery query = new ApiResourceAccessDecisionQuery();
-            query.setHttpMethod(httpMethod);
-            query.setPath(path);
-            R<ApiResourceAccessDecisionVO> response = apiResourceApi.resolveAccessDecision(query);
-            if (response != null && response.isSuccess() && response.getData() != null) {
-                return response.getData();
+            ApiResourceAccessDecisionVO decision = resolveDecisionOnce(httpMethod, path);
+            if (isMatchedDecision(decision)) {
+                return decision;
+            }
+            String applicationPath = stripExternalApiPrefix(path);
+            if (applicationPath != null) {
+                ApiResourceAccessDecisionVO applicationDecision = resolveDecisionOnce(httpMethod, applicationPath);
+                if (isMatchedDecision(applicationDecision)) {
+                    return applicationDecision;
+                }
             }
         } catch (Exception e) {
             log.warn("解析 API 访问策略失败，按登录访问处理: method={}, path={}, reason={}",
                     httpMethod, path, e.getMessage());
         }
         return ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN);
+    }
+
+    private ApiResourceAccessDecisionVO resolveDecisionOnce(String httpMethod, String path) {
+        ApiResourceAccessDecisionQuery query = new ApiResourceAccessDecisionQuery();
+        query.setHttpMethod(httpMethod);
+        query.setPath(path);
+        R<ApiResourceAccessDecisionVO> response = apiResourceApi.resolveAccessDecision(query);
+        if (response != null && response.isSuccess() && response.getData() != null) {
+            return response.getData();
+        }
+        return ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN);
+    }
+
+    private boolean isMatchedDecision(ApiResourceAccessDecisionVO decision) {
+        return decision != null && decision.matched();
+    }
+
+    private String stripExternalApiPrefix(String path) {
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        List<String> prefixes = properties.getExternalApiPrefixes();
+        if (prefixes == null || prefixes.isEmpty()) {
+            return null;
+        }
+        for (String prefix : prefixes) {
+            String normalizedPrefix = normalizePrefix(prefix);
+            if (normalizedPrefix == null || !path.startsWith(normalizedPrefix + "/")) {
+                continue;
+            }
+            String stripped = path.substring(normalizedPrefix.length());
+            if (!stripped.isBlank()) {
+                return stripped;
+            }
+        }
+        return null;
+    }
+
+    private String normalizePrefix(String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            return null;
+        }
+        String normalized = prefix.trim();
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        while (normalized.length() > 1 && normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return "/".equals(normalized) ? null : normalized;
     }
 
     private AccessPrincipal resolvePrincipal(String token) {

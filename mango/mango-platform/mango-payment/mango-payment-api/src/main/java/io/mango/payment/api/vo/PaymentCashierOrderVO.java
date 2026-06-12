@@ -30,6 +30,9 @@ public class PaymentCashierOrderVO implements Serializable {
     @Schema(description = "订单状态")
     private String status;
 
+    @Schema(description = "业务订单返回地址")
+    private String returnUrl;
+
     @Schema(description = "过期时间")
     private LocalDateTime expireTime;
 }

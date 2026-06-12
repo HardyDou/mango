@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
 import io.mango.common.result.Require;
+import io.mango.infra.context.core.MangoContextHolder;
+import io.mango.infra.context.core.MangoContextSnapshot;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.command.PaymentCashierPayCommand;
 import io.mango.payment.api.enums.PaymentOrderStatusEnum;
@@ -39,6 +41,7 @@ import io.mango.payment.core.model.Money;
 import io.mango.payment.core.service.IPaymentCashierService;
 import io.mango.payment.core.service.IPaymentChannelAdapter;
 import io.mango.payment.core.service.PaymentChannelAdapterRegistry;
+import io.mango.payment.core.service.PaymentChannelOrderQueryService;
 import io.mango.payment.core.service.PaymentContextSupport;
 import io.mango.payment.core.service.PaymentNumberService;
 import io.mango.payment.core.service.PaymentOrderStatusFlowService;
@@ -57,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -73,12 +77,17 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
     private final PaymentChannelAdapterRegistry channelAdapterRegistry;
     private final PaymentOrderStateService orderStateService;
     private final PaymentOrderStatusFlowService statusFlowService;
+    private final PaymentChannelOrderQueryService channelOrderQueryService;
     private final ObjectMapper objectMapper;
     private final PaymentSensitiveValueService sensitiveValueService;
     private final PaymentNumberService numberService;
 
     @Override
     public R<PaymentCashierSessionVO> detailSession(Long cashierConfigId, Long businessOrderId) {
+        return withTenantContext(resolveTenantIdByCashierConfig(cashierConfigId), () -> detailSessionInContext(cashierConfigId, businessOrderId));
+    }
+
+    private R<PaymentCashierSessionVO> detailSessionInContext(Long cashierConfigId, Long businessOrderId) {
         PaymentCashierConfig config = selectCashierConfig(cashierConfigId);
         PaymentApplication application = selectApplication(config.getApplicationId());
         BusinessOrderRow order = businessOrderId == null ? selectLatestPayableOrder(application, config) : selectBusinessOrder(businessOrderId);
@@ -91,6 +100,10 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
     @Transactional(rollbackFor = Exception.class)
     public R<PaymentCashierPayResultVO> pay(PaymentCashierPayCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "收银台支付命令不能为空");
+        return withTenantContext(resolveTenantIdByCashierConfig(command.getCashierConfigId()), () -> payInContext(command));
+    }
+
+    private R<PaymentCashierPayResultVO> payInContext(PaymentCashierPayCommand command) {
         PaymentCashierConfig config = selectCashierConfig(command.getCashierConfigId());
         PaymentApplication application = selectApplication(config.getApplicationId());
         BusinessOrderRow order = command.getBusinessOrderId() == null ? selectLatestPayableOrder(application, config) : selectBusinessOrder(command.getBusinessOrderId());
@@ -108,39 +121,30 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
         Require.isTrue(countSuccessfulPaymentOrders(order.id()) == 0, PaymentCode.PAYMENT_BUSINESS_ORDER_ALREADY_PAID);
         String processingPayOrderNo = selectProcessingPayOrderNo(order.id(), methodId);
         if (processingPayOrderNo != null) {
-            return payResult(processingPayOrderNo);
+            return payResultInContext(processingPayOrderNo);
         }
 
         LocalDateTime requestTime = LocalDateTime.now();
         String payOrderNo = numberService.next(PaymentNumberService.PAY_ORDER_NO);
-        ChannelPaymentApply channelApply = applyChannelPayment(command, method, subject, order, payOrderNo);
+        PaymentOrderEntity paymentOrder = newPaymentOrder(config, method, order, methodId, paymentAmount, payOrderNo);
+        insertPaymentOrder(paymentOrder);
+        recordPaymentCreatedFlow(paymentOrder, payOrderNo, requestTime);
+
+        ChannelPaymentApply channelApply;
+        try {
+            channelApply = applyChannelPayment(command, method, subject, order, payOrderNo);
+        } catch (BizException ex) {
+            markPaymentApplyFailed(paymentOrder, payOrderNo, requestTime, ex.getMessage());
+            return R.fail(ex.getCode(), ex.getMessage());
+        }
         IPaymentChannelAdapter.PaymentApplyResult channelResult = channelApply.result();
         String status = normalizeInitialPaymentStatus(channelResult.status());
         orderStateService.requireNewPaymentResultStatus(status);
         PaymentCashierPayMaterialVO material = channelResult.material();
         Require.notNull(material, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "通道支付物料不能为空");
-        PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
-        paymentOrder.setPayOrderNo(payOrderNo);
-        paymentOrder.setBusinessOrderId(order.id());
-        paymentOrder.setCashierConfigId(config.getId());
-        paymentOrder.setChannelId(method.getChannelId());
-        paymentOrder.setChannelCode(method.getChannelCode());
-        paymentOrder.setChannelMerchantNo(method.getChannelMerchantNo());
-        paymentOrder.setContractId(method.getContractId());
-        paymentOrder.setContractCapabilityId(method.getContractCapabilityId());
-        paymentOrder.setRouteRuleId(method.getRouteRuleId());
-        paymentOrder.setMethodId(methodId);
-        paymentOrder.setAmount(paymentAmount);
-        paymentOrder.setStatus(status);
-        paymentOrder.setChannelTradeNo(channelResult.channelTradeNo());
-        paymentOrder.setPaymentMaterialJson(writeMaterial(material));
-        paymentOrder.setSuccessFlag(0);
-        paymentOrder.setPayTime(null);
-        paymentOrder.setExpireTime(order.expireTime());
-        paymentOrder.setTenantId(PaymentContextSupport.currentTenantId());
-        insertPaymentOrder(paymentOrder);
+        updatePaymentApplyResult(paymentOrder, payOrderNo, channelResult, status, material);
         channelApply.adapter().afterPaymentOrderCreated(channelApply.command(), channelResult, paymentOrder);
-        recordPaymentStatusFlows(paymentOrder, payOrderNo, requestTime, status);
+        recordPaymentApplyStatusFlow(paymentOrder, payOrderNo, requestTime, status);
         int updated = businessOrderMapper.touchCashierPayingOrder(PaymentContextSupport.currentTenantId(), order.id());
         Require.isTrue(updated == 1, PaymentCode.PAYMENT_BUSINESS_ORDER_STATE_CHANGED);
 
@@ -158,11 +162,73 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
         return R.ok(result);
     }
 
-    private void recordPaymentStatusFlows(
+    private PaymentOrderEntity newPaymentOrder(
+            PaymentCashierConfig config,
+            PaymentCashierMethodVO method,
+            BusinessOrderRow order,
+            Long methodId,
+            long paymentAmount,
+            String payOrderNo) {
+        PaymentOrderEntity paymentOrder = new PaymentOrderEntity();
+        paymentOrder.setPayOrderNo(payOrderNo);
+        paymentOrder.setBusinessOrderId(order.id());
+        paymentOrder.setCashierConfigId(config.getId());
+        paymentOrder.setChannelId(method.getChannelId());
+        paymentOrder.setChannelCode(method.getChannelCode());
+        paymentOrder.setChannelMerchantNo(method.getChannelMerchantNo());
+        paymentOrder.setContractId(method.getContractId());
+        paymentOrder.setContractCapabilityId(method.getContractCapabilityId());
+        paymentOrder.setRouteRuleId(method.getRouteRuleId());
+        paymentOrder.setMethodId(methodId);
+        paymentOrder.setAmount(paymentAmount);
+        paymentOrder.setStatus(PaymentOrderStatusEnum.CREATED.getCode());
+        paymentOrder.setSuccessFlag(0);
+        paymentOrder.setPayTime(null);
+        paymentOrder.setExpireTime(order.expireTime());
+        paymentOrder.setTenantId(PaymentContextSupport.currentTenantId());
+        return paymentOrder;
+    }
+
+    private void updatePaymentApplyResult(
             PaymentOrderEntity paymentOrder,
             String payOrderNo,
-            LocalDateTime paidTime,
-            String status) {
+            IPaymentChannelAdapter.PaymentApplyResult channelResult,
+            String status,
+            PaymentCashierPayMaterialVO material) {
+        int updated = paymentOrderMapper.updateCreatedApplyResult(
+                PaymentContextSupport.currentTenantId(),
+                paymentOrder.getId(),
+                status,
+                channelResult.channelTradeNo(),
+                writeMaterial(material));
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "支付订单状态已变化");
+        paymentOrder.setStatus(status);
+        paymentOrder.setChannelTradeNo(channelResult.channelTradeNo());
+        paymentOrder.setPaymentMaterialJson(writeMaterial(material));
+    }
+
+    private void markPaymentApplyFailed(PaymentOrderEntity paymentOrder, String payOrderNo, LocalDateTime requestTime, String message) {
+        int updated = paymentOrderMapper.markCreatedApplyFailed(
+                PaymentContextSupport.currentTenantId(),
+                paymentOrder.getId());
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_ORDER_STATE_INVALID.getCode(), "支付订单状态已变化");
+        statusFlowService.record(
+                PaymentContextSupport.currentTenantId(),
+                PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT,
+                paymentOrder.getId(),
+                payOrderNo,
+                PaymentOrderStatusEnum.CREATED.getCode(),
+                PaymentOrderStatusEnum.FAILED.getCode(),
+                PaymentOrderStatusFlowService.SOURCE_CASHIER_PAY,
+                payOrderNo,
+                requestTime,
+                "收银台支付请求提交通道失败：" + PaymentContextSupport.trimToNull(message));
+    }
+
+    private void recordPaymentCreatedFlow(
+            PaymentOrderEntity paymentOrder,
+            String payOrderNo,
+            LocalDateTime requestTime) {
         statusFlowService.record(
                 PaymentContextSupport.currentTenantId(),
                 PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT,
@@ -172,8 +238,15 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
                 PaymentOrderStatusEnum.CREATED.getCode(),
                 PaymentOrderStatusFlowService.SOURCE_CASHIER_PAY,
                 payOrderNo,
-                paidTime,
+                requestTime,
                 "收银台生成支付订单");
+    }
+
+    private void recordPaymentApplyStatusFlow(
+            PaymentOrderEntity paymentOrder,
+            String payOrderNo,
+            LocalDateTime requestTime,
+            String status) {
         if (!PaymentOrderStatusEnum.CREATED.getCode().equals(status)) {
             statusFlowService.record(
                     PaymentContextSupport.currentTenantId(),
@@ -184,7 +257,7 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
                     PaymentOrderStatusEnum.PAYING.getCode(),
                     PaymentOrderStatusFlowService.SOURCE_CASHIER_PAY,
                     payOrderNo,
-                    paidTime,
+                    requestTime,
                     "收银台支付请求已提交，等待通道回调、主动查单或对账补偿推进");
         }
     }
@@ -192,6 +265,10 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
     @Override
     public R<PaymentCashierPayResultVO> payResult(String payOrderNo) {
         Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
+        return withTenantContext(resolveTenantIdByPayOrderNo(payOrderNo), () -> payResultInContext(payOrderNo));
+    }
+
+    private R<PaymentCashierPayResultVO> payResultInContext(String payOrderNo) {
         PaymentCashierPayResultRow row = paymentOrderMapper.selectCashierPayResult(PaymentContextSupport.currentTenantId(), payOrderNo);
         Require.notNull(row, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
         PaymentCashierMethodVO method = new PaymentCashierMethodVO();
@@ -213,6 +290,48 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
         }
         result.setMaterial(readMaterial(row.getPaymentMaterialJson()));
         return R.ok(result);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<PaymentCashierPayResultVO> syncPayResult(String payOrderNo) {
+        Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
+        return withTenantContext(resolveTenantIdByPayOrderNo(payOrderNo), () -> syncPayResultInContext(payOrderNo));
+    }
+
+    private R<PaymentCashierPayResultVO> syncPayResultInContext(String payOrderNo) {
+        PaymentCashierPayResultVO current = payResultInContext(payOrderNo).getData();
+        if (!PaymentOrderStatusEnum.SUCCESS.getCode().equals(current.getStatus())
+                && !PaymentOrderStatusEnum.FAILED.getCode().equals(current.getStatus())
+                && !PaymentOrderStatusEnum.CLOSED.getCode().equals(current.getStatus())) {
+            channelOrderQueryService.queryChannelPayment(payOrderNo);
+        }
+        return payResultInContext(payOrderNo);
+    }
+
+    private <T> T withTenantContext(Long tenantId, Supplier<T> supplier) {
+        Require.notNull(tenantId, PaymentCode.PAYMENT_CASHIER_CONFIG_NOT_FOUND.getCode(), "收银台租户上下文不存在");
+        MangoContextSnapshot previous = MangoContextHolder.get();
+        try {
+            MangoContextHolder.set(previous.withTenantId(String.valueOf(tenantId)));
+            return supplier.get();
+        } finally {
+            MangoContextHolder.set(previous);
+        }
+    }
+
+    private Long resolveTenantIdByCashierConfig(Long cashierConfigId) {
+        Require.notNull(cashierConfigId, PaymentCode.PAYMENT_CASHIER_CONFIG_INVALID.getCode(), "收银台配置 ID 不能为空");
+        PaymentCashierConfig config = cashierConfigMapper.selectByIdIgnoreTenant(cashierConfigId);
+        Require.notNull(config, PaymentCode.PAYMENT_CASHIER_CONFIG_NOT_FOUND);
+        return config.getTenantId();
+    }
+
+    private Long resolveTenantIdByPayOrderNo(String payOrderNo) {
+        Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
+        PaymentOrderEntity order = paymentOrderMapper.selectByPayOrderNo(payOrderNo);
+        Require.notNull(order, PaymentCode.PAYMENT_ORDER_NOT_FOUND);
+        return order.getTenantId();
     }
 
     private PaymentCashierConfig selectCashierConfig(Long id) {
@@ -275,6 +394,7 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
                 entity.getAmount(),
                 entity.getCurrency(),
                 entity.getStatus(),
+                entity.getReturnUrl(),
                 entity.getExpireTime());
     }
 
@@ -290,6 +410,7 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
         session.setPreview(order == null);
         session.setStatus(order == null ? "PREVIEW" : order.status());
         session.setDefaultMethodCode(config.getDefaultMethodCode());
+        session.setReturnUrl(resolveReturnUrl(order, config));
         session.setServerTime(LocalDateTime.now());
         session.setDisplay(display(config));
         session.setApplication(application(application));
@@ -341,8 +462,17 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
         vo.setAmount(order.amount());
         vo.setCurrency(order.currency());
         vo.setStatus(order.status());
+        vo.setReturnUrl(order.returnUrl());
         vo.setExpireTime(order.expireTime());
         return vo;
+    }
+
+    private String resolveReturnUrl(BusinessOrderRow order, PaymentCashierConfig config) {
+        String orderReturnUrl = order == null ? null : PaymentContextSupport.trimToNull(order.returnUrl());
+        if (orderReturnUrl != null) {
+            return orderReturnUrl;
+        }
+        return PaymentContextSupport.trimToNull(config.getResultReturnUrl());
     }
 
     private List<PaymentCashierMethodVO> availableMethods(
@@ -514,7 +644,8 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
                 isEbankMethod(method) ? PaymentContextSupport.trimToNull(cashierCommand.getBankCode()) : null,
                 isEbankMethod(method) ? PaymentContextSupport.trimToNull(cashierCommand.getBankName()) : null,
                 isEbankMethod(method) ? PaymentContextSupport.trimToNull(cashierCommand.getPayerAccountNo()) : null,
-                isEbankMethod(method) ? PaymentContextSupport.trimToNull(cashierCommand.getPayerName()) : null);
+                isEbankMethod(method) ? PaymentContextSupport.trimToNull(cashierCommand.getPayerName()) : null,
+                PaymentContextSupport.trimToNull(cashierCommand.getClientIp()));
         IPaymentChannelAdapter.PaymentApplyResult channelResult = adapter.applyPayment(command);
         Require.notNull(channelResult, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "通道支付结果不能为空");
         return new ChannelPaymentApply(adapter, command, channelResult);
@@ -641,6 +772,7 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
             Long amount,
             String currency,
             String status,
+            String returnUrl,
             LocalDateTime expireTime
     ) {
     }

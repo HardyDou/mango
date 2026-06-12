@@ -28,6 +28,7 @@ import io.mango.payment.api.vo.PaymentNotificationStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import io.mango.payment.api.vo.PaymentOperationAuditVO;
+import io.mango.payment.api.vo.PaymentOrderSyncStatusVO;
 import io.mango.payment.api.vo.PaymentOrderStatusFlowVO;
 import io.mango.payment.api.vo.PaymentOrderStatusVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
@@ -269,6 +270,26 @@ public class PaymentReadonlyResourceService {
         Require.notNull(vo, PaymentCode.PAYMENT_READONLY_RESOURCE_NOT_FOUND);
         fillPaymentOrderSummary(vo);
         vo.setStatusFlows(listStatusFlows(PaymentOrderStatusFlowService.ORDER_TYPE_PAYMENT, id, this::paymentStatusName));
+        return vo;
+    }
+
+    public PaymentOrderSyncStatusVO syncPaymentOrderStatus(String payOrderNo) {
+        String resolvedPayOrderNo = PaymentContextSupport.trimToNull(payOrderNo);
+        Require.notBlank(resolvedPayOrderNo, PaymentCode.PAYMENT_ORDER_NOT_FOUND.getCode(), "支付订单号不能为空");
+        PaymentChannelOrderQueryService.QueryResult queryResult = channelOrderQueryService.queryChannelPayment(resolvedPayOrderNo);
+        auditService.record(
+                PaymentOperationAuditService.ACTION_SYNC_PAYMENT_ORDER_STATUS,
+                PaymentOperationAuditService.RESOURCE_PAYMENT_ORDER,
+                resolvedPayOrderNo,
+                PaymentOperationAuditService.RESULT_SUCCESS);
+        PaymentOrderSyncStatusVO vo = new PaymentOrderSyncStatusVO();
+        vo.setPayOrderNo(queryResult.payOrderNo());
+        vo.setStatus(queryResult.status());
+        vo.setStatusName(PaymentOrderStatusEnum.labelOf(queryResult.status()));
+        vo.setFlowNo(queryResult.flowNo());
+        vo.setChanged(queryResult.changed());
+        vo.setQueryCount(queryResult.queryCount());
+        vo.setLastQueryResult(queryResult.lastQueryResult());
         return vo;
     }
 

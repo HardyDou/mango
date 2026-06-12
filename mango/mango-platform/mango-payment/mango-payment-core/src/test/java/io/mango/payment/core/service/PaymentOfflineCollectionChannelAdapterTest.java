@@ -131,6 +131,7 @@ class PaymentOfflineCollectionChannelAdapterTest {
                 "BR202606060001",
                 "PO202606060001",
                 "BO202606060001",
+                "OFFLINE_TRANSFER",
                 "OCPO202606060001",
                 9900L,
                 9900L,
@@ -176,7 +177,8 @@ class PaymentOfflineCollectionChannelAdapterTest {
                 null,
                 null,
                 null,
-                null);
+                null,
+                "127.0.0.1");
     }
 
     private PaymentOrderEntity paymentOrder() {

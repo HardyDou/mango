@@ -339,9 +339,10 @@
                     <el-button
                       type="primary"
                       :loading="qrManualChecking"
+                      :disabled="qrManualLocked"
                       @click="confirmQrPaymentCompleted"
                     >
-                      我已完成支付
+                      {{ qrManualButtonText }}
                     </el-button>
                   </div>
 
@@ -543,6 +544,11 @@ const props = withDefaults(defineProps<{
   embedded: false,
 });
 
+const emit = defineEmits<{
+  success: [result: PaymentCashierPayResult];
+  close: [];
+}>();
+
 const loading = ref(false);
 const paying = ref(false);
 const mangoPaying = ref(false);
@@ -557,6 +563,8 @@ const payResult = ref<PaymentCashierPayResult>();
 const qrImageUrl = ref('');
 const pollVersion = ref(0);
 const resultRefreshCountdown = ref(5);
+const qrManualLockSeconds = ref(0);
+const completionHandled = ref(false);
 const expireNow = ref(Date.now());
 const serverTimeDelta = ref(0);
 const offlineVoucherFormVisible = ref(false);
@@ -643,7 +651,7 @@ const showBankMethodTabs = computed(() => bankMethods.value.length > 1);
 const payMaterial = computed(() => payResult.value?.material);
 const payableOrder = computed(() => (session.value?.order?.status === 'TO_PAY' || session.value?.order?.status === 'PAYING') && !orderExpired.value);
 const terminalPayResult = computed(() => payResult.value?.status === 'SUCCESS' || payResult.value?.status === 'FAILED' || payResult.value?.status === 'CLOSED');
-const terminalResultVisible = computed(() => Boolean(payResult.value && terminalPayResult.value && payMaterial.value?.materialType !== 'QR'));
+const terminalResultVisible = computed(() => Boolean(payResult.value && terminalPayResult.value));
 const previewMode = computed(() => Boolean(session.value && !resolvedBusinessOrderId.value));
 const mangoPayActionVisible = computed(() => payResult.value?.status === 'PAYING' && payResult.value.channelCode === 'MANGO_PAY');
 const offlineVoucherVisible = computed(() => payResult.value?.status === 'PAYING' && payResult.value.channelCode === 'OFFLINE_COLLECTION');
@@ -680,6 +688,8 @@ const qrManualResultDescription = computed(() => {
   if (payResult.value?.status === 'CLOSED') return '当前支付订单已关闭。';
   return '暂未查询到成功结果，请确认付款完成后稍后再试。';
 });
+const qrManualLocked = computed(() => qrManualChecking.value || qrManualLockSeconds.value > 0);
+const qrManualButtonText = computed(() => qrManualLockSeconds.value > 0 ? `请稍候 ${qrManualLockSeconds.value}s` : '我已完成支付');
 const selectedMethodIsBank = computed(() => isBankMethod(selectedMethod.value));
 const selectedMethodIsOffline = computed(() => isOfflineMethod(selectedMethod.value));
 const selectedMethodIsQr = computed(() => isQrMethod(selectedMethod.value));
@@ -908,7 +918,7 @@ async function submitPayment() {
     resetOfflineVoucherForm();
     if (payResult.value.status === 'SUCCESS') {
       await refreshPayResult(payResult.value.payOrderNo);
-      ElMessage.success('支付成功');
+      handlePaymentSuccess();
     } else {
       startResultPolling(payResult.value.payOrderNo);
     }
@@ -955,7 +965,9 @@ function resetPayInteraction() {
   qrImageUrl.value = '';
   polling.value = false;
   qrManualChecking.value = false;
+  qrManualLockSeconds.value = 0;
   qrResultDialogVisible.value = false;
+  completionHandled.value = false;
   resultRefreshCountdown.value = 5;
   offlineVoucherFormVisible.value = false;
   pollVersion.value += 1;
@@ -1020,7 +1032,7 @@ async function pollPayResult(payOrderNo: string, remaining: number, version: num
   await refreshPayResult(payOrderNo);
   if (payResult.value?.status === 'SUCCESS') {
     polling.value = false;
-    ElMessage.success('支付成功');
+    handlePaymentSuccess();
     return;
   }
   if (payResult.value?.status === 'FAILED' || payResult.value?.status === 'CLOSED') {
@@ -1051,7 +1063,7 @@ async function submitMangoPayVirtualPayment() {
     if (payResult.value?.status === 'SUCCESS') {
       polling.value = false;
       pollVersion.value += 1;
-      ElMessage.success('支付成功');
+      handlePaymentSuccess();
     }
   } finally {
     mangoPaying.value = false;
@@ -1066,26 +1078,76 @@ async function refreshCurrentPayResult() {
   if (terminalPayResult.value) {
     polling.value = false;
     pollVersion.value += 1;
+    if (payResult.value?.status === 'SUCCESS') {
+      handlePaymentSuccess();
+    }
   } else {
     startResultPolling(payResult.value.payOrderNo);
   }
 }
 
 async function confirmQrPaymentCompleted() {
-  if (!payResult.value?.payOrderNo) {
+  if (!payResult.value?.payOrderNo || qrManualLocked.value || completionHandled.value) {
     return;
   }
+  const payOrderNo = payResult.value.payOrderNo;
   qrManualChecking.value = true;
+  qrManualLockSeconds.value = 5;
   try {
-    await refreshPayResult(payResult.value.payOrderNo);
-    qrResultDialogVisible.value = true;
-    if (terminalPayResult.value) {
+    payResult.value = await paymentCashierApi.syncPayResult(payOrderNo);
+    if (payResult.value?.status === 'SUCCESS') {
       polling.value = false;
       pollVersion.value += 1;
+      handlePaymentSuccess();
+    } else if (terminalPayResult.value) {
+      polling.value = false;
+      pollVersion.value += 1;
+      qrResultDialogVisible.value = true;
+    } else {
+      startResultPolling(payOrderNo);
+    }
+    while (qrManualLockSeconds.value > 0) {
+      await delay(1000);
+      qrManualLockSeconds.value -= 1;
+      if (!payResult.value?.payOrderNo) {
+        continue;
+      }
+      await refreshPayResult(payResult.value.payOrderNo);
+      if (payResult.value?.status === 'SUCCESS') {
+        handlePaymentSuccess();
+        break;
+      }
     }
   } finally {
     qrManualChecking.value = false;
+    qrManualLockSeconds.value = 0;
   }
+}
+
+function handlePaymentSuccess() {
+  if (!payResult.value || completionHandled.value) {
+    return;
+  }
+  completionHandled.value = true;
+  polling.value = false;
+  pollVersion.value += 1;
+  qrResultDialogVisible.value = false;
+  ElMessage.success('支付成功');
+  emit('success', payResult.value);
+  const returnUrl = successReturnUrl();
+  window.setTimeout(() => {
+    if (returnUrl) {
+      window.location.href = returnUrl;
+      return;
+    }
+    if (props.embedded) {
+      emit('close');
+    }
+  }, 800);
+}
+
+function successReturnUrl() {
+  return session.value?.order?.returnUrl || session.value?.returnUrl || '';
 }
 
 function openRedirectUrl() {

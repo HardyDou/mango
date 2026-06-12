@@ -12,8 +12,10 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +31,8 @@ public class PaymentFuiouHttpClient {
     public Map<String, String> post(String url, Map<String, String> signedFields) {
         Require.notBlank(url, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友接口地址不能为空");
         String xml = xmlCodec.encode(signedFields);
-        String body = "req=" + URLEncoder.encode(xml, PaymentFuiouSignService.FUIOU_CHARSET);
+        String encodedXml = URLEncoder.encode(xml, PaymentFuiouSignService.FUIOU_CHARSET);
+        String body = "req=" + URLEncoder.encode(encodedXml, PaymentFuiouSignService.FUIOU_CHARSET);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).
                 timeout(REQUEST_TIMEOUT).
                 header("Content-Type", "application/x-www-form-urlencoded; charset=GBK").
@@ -49,5 +52,36 @@ public class PaymentFuiouHttpClient {
             Thread.currentThread().interrupt();
             throw new BizException(PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友接口调用被中断", ex);
         }
+    }
+
+    public String postForm(String url, Map<String, String> fields) {
+        Require.notBlank(url, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友接口地址不能为空");
+        Require.notNull(fields, PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友表单字段不能为空");
+        String body = fields.entrySet().stream()
+                .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
+                .collect(Collectors.joining("&"));
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url)).
+                timeout(REQUEST_TIMEOUT).
+                header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").
+                POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)).
+                build();
+        try {
+            HttpResponse<String> response = HttpClient.newBuilder().
+                    connectTimeout(CONNECT_TIMEOUT).
+                    build().
+                    send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            Require.isTrue(response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MAX,
+                    PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友接口 HTTP 响应异常");
+            return response.body();
+        } catch (IOException ex) {
+            throw new BizException(PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友接口调用失败", ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new BizException(PaymentCode.PAYMENT_CHANNEL_INVALID.getCode(), "富友接口调用被中断", ex);
+        }
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
 }

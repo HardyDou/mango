@@ -1,12 +1,15 @@
 package io.mango.payment.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
+import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -136,11 +139,27 @@ class PaymentReadonlyResourceControllerTest {
     void paymentTaskEndpoints_useIndependentPermissions() throws NoSuchMethodException {
         Method expireMethod = PaymentReadonlyResourceController.class.getDeclaredMethod("expireOpenPaymentOrders", long.class);
         Method queryMethod = PaymentReadonlyResourceController.class.getDeclaredMethod("queryProcessingPaymentOrders", long.class);
+        Method syncMethod = PaymentReadonlyResourceController.class.getDeclaredMethod("syncPaymentOrderStatus", String.class);
 
         assertThat(expireMethod.getAnnotation(PostMapping.class).value()).containsExactly("/tasks/expire-open-orders");
         assertThat(expireMethod.getAnnotation(ApiAccess.class).permission()).isEqualTo("payment:task:expire-open-orders");
         assertThat(queryMethod.getAnnotation(PostMapping.class).value()).containsExactly("/tasks/query-processing-orders");
         assertThat(queryMethod.getAnnotation(ApiAccess.class).permission()).isEqualTo("payment:task:query-processing-orders");
+        assertThat(syncMethod.getAnnotation(PostMapping.class).value()).containsExactly("/payment-orders/sync-status");
+        assertThat(syncMethod.getAnnotation(ApiAccess.class).permission()).isEqualTo("payment:payment-order:sync-status");
+    }
+
+    @Test
+    @DisplayName("payment channel public callback endpoint should not require login token")
+    void paymentChannelPublicCallbackEndpoint_shouldNotRequireLoginToken() throws NoSuchMethodException {
+        Method method = PaymentChannelCallbackController.class.getDeclaredMethod("handlePublic", String.class, HttpServletRequest.class);
+
+        RequestMapping mapping = method.getAnnotation(RequestMapping.class);
+
+        assertThat(mapping.value())
+                .containsExactly("/payment/channel-callbacks/{channelCode}", "/api/payment/channel-callbacks/{channelCode}");
+        assertThat(mapping.method()).containsExactly(RequestMethod.POST, RequestMethod.GET);
+        assertThat(method.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
     }
 
     @Test
@@ -170,6 +189,7 @@ class PaymentReadonlyResourceControllerTest {
                 Map.entry("handleExceptionOrder", "payment:exception-order:handle"),
                 Map.entry("retryNotificationRecord", "payment:notification-record:retry"),
                 Map.entry("deliverDueNotificationRecords", "payment:notification-record:deliver-due"),
+                Map.entry("syncPaymentOrderStatus", "payment:payment-order:sync-status"),
                 Map.entry("expireOpenPaymentOrders", "payment:task:expire-open-orders"),
                 Map.entry("queryProcessingPaymentOrders", "payment:task:query-processing-orders"),
                 Map.entry("importReconciliation", "payment:reconciliation:import"),

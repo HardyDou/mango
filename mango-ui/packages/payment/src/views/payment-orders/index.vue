@@ -118,9 +118,19 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="156" fixed="right" align="left" class-name="payment-table__operation-cell">
+      <el-table-column label="操作" width="230" fixed="right" align="left" class-name="payment-table__operation-cell">
         <template #default="{ row }">
           <div class="payment-table__actions">
+            <el-button
+              link
+              type="primary"
+              :icon="Refresh"
+              :loading="syncingPayOrderNo === row.payOrderNo"
+              :disabled="!canSyncStatus(row)"
+              @click="syncStatus(row)"
+            >
+              同步状态
+            </el-button>
             <el-button link type="primary" :icon="RefreshLeft" :disabled="!canRefund(row)" @click="openRefund(row)">退款</el-button>
             <el-button link type="primary" :icon="Tickets" @click="openDetail(row)">详情</el-button>
           </div>
@@ -295,6 +305,7 @@ const refundSubmitting = ref(false);
 const refundOrder = ref<PaymentOrder>();
 const refundFormRef = ref<FormInstance>();
 const errorMessage = ref('');
+const syncingPayOrderNo = ref('');
 const refundForm = reactive({
   bizRefundNo: '',
   refundAmountYuan: 0.01,
@@ -372,6 +383,26 @@ function canRefund(row: PaymentOrder) {
     ? Number(row.amount || 0) - Number(row.occupyingRefundAmount ?? row.refundedAmount ?? 0)
     : Number(row.refundableAmount || 0);
   return row.status === 'SUCCESS' && row.successFlag === 1 && refundableAmount > 0;
+}
+
+function canSyncStatus(row: PaymentOrder) {
+  return Boolean(row.payOrderNo) && row.status === 'PAYING';
+}
+
+async function syncStatus(row: PaymentOrder) {
+  if (!canSyncStatus(row) || !row.payOrderNo) return;
+  syncingPayOrderNo.value = row.payOrderNo;
+  try {
+    const result = await paymentOrderApi.syncStatus(row.payOrderNo);
+    const statusText = result.statusName || result.status || '未知状态';
+    ElMessage.success(result.changed ? `已同步为${statusText}` : `通道返回${statusText}，本地状态未变化`);
+    await loadRows();
+    if (detailVisible.value && detail.value?.payOrderNo === row.payOrderNo && detail.value?.id) {
+      detail.value = await paymentOrderApi.detail(detail.value.id);
+    }
+  } finally {
+    syncingPayOrderNo.value = '';
+  }
 }
 
 function openRefund(row: PaymentOrder) {

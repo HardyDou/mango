@@ -275,6 +275,35 @@
         limit 1
     </select>
 
+    <select id="selectByPayOrderNo" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        where po.pay_order_no = #{payOrderNo}
+        order by po.created_at desc
+        limit 1
+    </select>
+
     <select id="selectEntityByTenantAndId" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
         select po.id,
                po.pay_order_no as payOrderNo,
@@ -429,6 +458,27 @@
         where tenant_id = #{tenantId}
           and id = #{id}
           and status = 'PAYING'
+    </update>
+
+    <update id="updateCreatedApplyResult">
+        update payment_order
+        set status = #{status},
+            channel_trade_no = #{channelTradeNo},
+            payment_material_json = #{paymentMaterialJson},
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'CREATED'
+    </update>
+
+    <update id="markCreatedApplyFailed">
+        update payment_order
+        set status = 'FAILED',
+            success_flag = 0,
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'CREATED'
     </update>
 
     <update id="updatePayingCallbackResult">

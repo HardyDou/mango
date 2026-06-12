@@ -242,6 +242,7 @@ class PaymentMangoPayChannelAdapterTest {
                 "RF202606060001",
                 "PO202606060001",
                 "BIZ202606060001",
+                "PERSONAL_WECHAT_QR",
                 "MPPO202606060001",
                 9900L,
                 3900L,
@@ -269,7 +270,8 @@ class PaymentMangoPayChannelAdapterTest {
                 null,
                 null,
                 null,
-                null);
+                null,
+                "127.0.0.1");
     }
 
     private PaymentRefundOrderVO refundOrder() {

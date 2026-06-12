@@ -199,7 +199,8 @@ class PaymentOpenApiServiceTest {
         assertThatThrownBy(() -> service.detailOrder(
                 "BIZ_OPENAPI_001", APP_ID, TENANT_ID, timestamp, nonce,
                 signature("GET", "/openapi/pay/orders/BIZ_OPENAPI_001", "", timestamp, nonce),
-                "/openapi/pay/orders/BIZ_OPENAPI_001"))
+                "/openapi/pay/orders/BIZ_OPENAPI_001",
+                "192.0.2.20"))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage());
     }
@@ -234,7 +235,8 @@ class PaymentOpenApiServiceTest {
         PaymentOpenPaymentOrderVO result = service.pay(
                 "BIZ_OPENAPI_001", body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/orders/BIZ_OPENAPI_001/pay", body, timestamp, nonce),
-                "/openapi/pay/orders/BIZ_OPENAPI_001/pay").getData();
+                "/openapi/pay/orders/BIZ_OPENAPI_001/pay",
+                "192.0.2.20").getData();
 
         assertThat(result.getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(result.getBizOrderNo()).isEqualTo("BIZ_OPENAPI_001");

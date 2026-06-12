@@ -35,4 +35,7 @@ public class PaymentCashierPayCommand implements Serializable {
 
     @Schema(description = "付款户名")
     private String payerName;
+
+    @Schema(description = "付款人请求 IP。由服务端根据 HTTP 请求写入，前端不需要传")
+    private String clientIp;
 }

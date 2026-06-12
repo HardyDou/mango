@@ -138,6 +138,7 @@ public class PaymentRefundApplyService {
                         command.getBizRefundNo().trim(),
                         paymentOrder.getPayOrderNo(),
                         paymentOrder.getBizOrderNo(),
+                        paymentOrder.getMethodCode(),
                         paymentOrder.getChannelTradeNo(),
                         paymentOrder.getAmount(),
                         command.getRefundAmount(),

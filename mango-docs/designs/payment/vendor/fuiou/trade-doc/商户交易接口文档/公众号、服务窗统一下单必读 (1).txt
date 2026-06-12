@@ -1,0 +1,33 @@
+﻿微信公众号：
+	合作方没有自有渠道
+		1.使用商户公众号（非服务商模式即子商户模式）
+		2.使用富友公众号（服务商模式）
+		
+		
+		1.1 使用“商户公众号”获取openid的方法就直接使用微信官方方式即可。
+			https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=4_4
+		
+		2.1 使用“富友公众号”获取openid的方法直接调用以下接口：
+			详见“富友扫码服务商模式获取openid” 接口文档
+		
+	
+		将获取到的appid和openid填写到请求报文中相应的sub_appid和sub_openid字段中
+		
+
+	                小程序填写：sub_appid，sub_openid  补充说明：不能使用服务商模式
+		H5直接用返回的qr_code重定向到这个地址就行
+	
+
+支付宝服务窗：
+	一：支付宝服务窗，如何获取buyer_id（即user_id）:
+	https://doc.open.alipay.com/docs/doc.htm?spm=a219a.7629140.0.0.cPv%201DX&treeId=193&articleId=105193&docType=1#s10
+	
+	获取到user_id后，将此值填写到sub_openid 字段即可，openid和sub_appid不需要填写
+	
+	二：服务窗如何调起支付：
+         https://docs.open.alipay.com/common/105591
+	使用接口返回的reserved_transaction_id 调起支付即可
+
+
+
+

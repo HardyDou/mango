@@ -75,7 +75,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                resolveClientIp(servletRequest));
     }
 
     @Override
@@ -123,7 +124,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                resolveClientIp(servletRequest));
     }
 
     @Override
@@ -216,5 +218,39 @@ public class PaymentOpenApiController implements PaymentOpenApi {
 
     private String firstText(String first, String second) {
         return first == null || first.isBlank() ? second : first;
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String forwarded = firstHeaderValue(request.getHeader("X-Forwarded-For"));
+        if (forwarded != null) {
+            return forwarded;
+        }
+        String realIp = firstText(request.getHeader("X-Real-IP"));
+        if (realIp != null) {
+            return realIp;
+        }
+        return firstText(request.getRemoteAddr());
+    }
+
+    private String firstHeaderValue(String value) {
+        String text = firstText(value);
+        if (text == null) {
+            return null;
+        }
+        int commaIndex = text.indexOf(',');
+        if (commaIndex < 0) {
+            return text;
+        }
+        return firstText(text.substring(0, commaIndex));
+    }
+
+    private String firstText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

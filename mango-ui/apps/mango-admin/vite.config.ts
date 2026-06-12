@@ -68,6 +68,24 @@ const createManualChunks = (id: string): string | undefined => {
   return undefined;
 };
 
+const paymentChannelCallbackAccessLogger = () => ({
+  name: 'payment-channel-callback-access-logger',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url?.startsWith('/api/payment/channel-callbacks/')) {
+        console.log('[payment-channel-callback]', {
+          method: req.method,
+          url: req.url,
+          host: req.headers.host,
+          remoteAddress: req.socket.remoteAddress,
+          contentType: req.headers['content-type'],
+        });
+      }
+      next();
+    });
+  },
+});
+
 const viteConfig = defineConfig((mode: ConfigEnv) => {
   assertMangoPackageModeDist(__dirname, { command: mode.command });
   const env = loadEnv(mode.mode, process.cwd());
@@ -81,6 +99,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
 
   return {
     plugins: [
+      paymentChannelCallbackAccessLogger(),
       vue(),
       // vueSetupExtend(), // Temporarily disabled due to TypeScript type import issue
       AutoImport({
@@ -110,7 +129,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       port: (env.VITE_PORT as unknown as number) || 5173,
       open: env.VITE_OPEN === 'true',
       // SECURITY: Restrict allowed hosts in production
-      allowedHosts: isDev ? ['localhost', '127.0.0.1'] : false,
+      allowedHosts: isDev ? ['localhost', '127.0.0.1', 'douxy.inner.yunxinbaokeji.com'] : false,
       hmr: true,
       proxy: {
         // Mock 模式下跳过 /api/* 路径，由 MSW 处理

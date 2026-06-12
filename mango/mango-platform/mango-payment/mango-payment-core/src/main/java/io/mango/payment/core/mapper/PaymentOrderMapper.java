@@ -76,6 +76,10 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
             @Param("payOrderNo") String payOrderNo);
 
     @InterceptorIgnore(tenantLine = "true")
+    PaymentOrderEntity selectByPayOrderNo(
+            @Param("payOrderNo") String payOrderNo);
+
+    @InterceptorIgnore(tenantLine = "true")
     PaymentOrderEntity selectEntityByTenantAndId(
             @Param("tenantId") Long tenantId,
             @Param("id") Long id);
@@ -106,6 +110,19 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
             @Param("status") String status,
             @Param("successFlag") Integer successFlag,
             @Param("payTime") LocalDateTime payTime);
+
+    @InterceptorIgnore(tenantLine = "true")
+    int updateCreatedApplyResult(
+            @Param("tenantId") Long tenantId,
+            @Param("id") Long id,
+            @Param("status") String status,
+            @Param("channelTradeNo") String channelTradeNo,
+            @Param("paymentMaterialJson") String paymentMaterialJson);
+
+    @InterceptorIgnore(tenantLine = "true")
+    int markCreatedApplyFailed(
+            @Param("tenantId") Long tenantId,
+            @Param("id") Long id);
 
     @InterceptorIgnore(tenantLine = "true")
     int updatePayingCallbackResult(

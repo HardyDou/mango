@@ -25,7 +25,8 @@ public interface IPaymentOpenApiService {
             String timestamp,
             String nonce,
             String signature,
-            String requestPath);
+            String requestPath,
+            String clientIp);
 
     R<PaymentOpenCashierVO> cashier(
             String bizOrderNo,
@@ -45,7 +46,8 @@ public interface IPaymentOpenApiService {
             String timestamp,
             String nonce,
             String signature,
-            String requestPath);
+            String requestPath,
+            String clientIp);
 
     R<PaymentOpenPaymentOrderVO> detailPaymentOrder(
             String payOrderNo,

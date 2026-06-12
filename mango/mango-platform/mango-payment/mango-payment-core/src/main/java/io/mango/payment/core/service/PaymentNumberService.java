@@ -6,6 +6,8 @@ import io.mango.numgen.core.service.INumgenService;
 import io.mango.payment.api.PaymentCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -36,6 +38,7 @@ public class PaymentNumberService {
 
     private final INumgenService numgenService;
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String next(String genKey) {
         Require.notBlank(genKey, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID.getCode(), "支付编号规则键不能为空");
         NumgenNextCommand command = new NumgenNextCommand();

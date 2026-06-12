@@ -44,6 +44,7 @@ import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundVO;
 import io.mango.payment.api.vo.PaymentOperationAuditVO;
+import io.mango.payment.api.vo.PaymentOrderSyncStatusVO;
 import io.mango.payment.api.vo.PaymentOrderStatusVO;
 import io.mango.payment.api.vo.PaymentOrderVO;
 import io.mango.payment.api.vo.PaymentRefundApprovalStatusVO;
@@ -69,8 +70,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -84,6 +87,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/payment")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "支付资源查询", description = "支付订单、流水、对账、审计等后台查询接口")
 public class PaymentReadonlyResourceController {
 
@@ -143,6 +147,14 @@ public class PaymentReadonlyResourceController {
     @Operation(summary = "查询支付订单状态选项", description = "返回支付订单后台筛选使用的状态契约")
     public R<List<PaymentOrderStatusVO>> listPaymentOrderStatuses() {
         return R.ok(resourceService.listPaymentOrderStatuses());
+    }
+
+    @PostMapping("/payment-orders/sync-status")
+    @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:payment-order:sync-status")
+    @Operation(summary = "同步支付订单状态", description = "按支付订单号调用支付通道查单，并通过统一支付状态机推进后续流水、业务订单和通知流程")
+    public R<PaymentOrderSyncStatusVO> syncPaymentOrderStatus(
+            @Parameter(description = "支付订单号", required = true) @NotBlank(message = "支付订单号不能为空") @RequestParam String payOrderNo) {
+        return R.ok(resourceService.syncPaymentOrderStatus(payOrderNo));
     }
 
     @GetMapping("/offline-collections/page")

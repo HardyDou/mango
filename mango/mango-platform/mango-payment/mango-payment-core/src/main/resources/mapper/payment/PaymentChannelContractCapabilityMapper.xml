@@ -128,6 +128,7 @@
         join payment_channel_contract cc
           on cc.id = ccc.contract_id
          and cc.tenant_id = rr.tenant_id
+         and cc.channel_id = capability.channel_id
          and cc.status = 1
          and cc.del_flag = 0
          and cc.environment = rr.environment
@@ -175,6 +176,7 @@
         join payment_channel_capability capability
           on capability.id = ccc.channel_capability_id
          and capability.tenant_id = cc.tenant_id
+         and capability.channel_id = cc.channel_id
          and capability.method_code = ccc.method_code
          and capability.terminal_type = ccc.terminal_type
          and capability.environment = cc.environment

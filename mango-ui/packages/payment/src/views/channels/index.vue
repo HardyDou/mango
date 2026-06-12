@@ -16,6 +16,7 @@
           <el-option label="芒果支付" value="MANGO_PAY" />
           <el-option label="线下收款" value="OFFLINE_COLLECTION" />
           <el-option label="通联支付" value="ALLINPAY" />
+          <el-option label="富友支付" value="FUIOU_PAY" />
           <el-option label="华夏银行" value="HUAXIA_BANK" />
           <el-option label="微信支付" value="WECHAT_PAY" />
           <el-option label="支付宝" value="ALIPAY" />
@@ -52,10 +53,10 @@
       </el-form-item>
       <el-form-item label="账单获取">
         <el-checkbox-group v-model="form.billFetchModes">
-          <el-checkbox label="MANUAL">手动上传</el-checkbox>
-          <el-checkbox label="FTP">FTP 拉取</el-checkbox>
-          <el-checkbox label="FTPS">FTPS 拉取</el-checkbox>
-          <el-checkbox label="HTTP">HTTP 接口</el-checkbox>
+          <el-checkbox value="MANUAL">手动上传</el-checkbox>
+          <el-checkbox value="FTP">FTP 拉取</el-checkbox>
+          <el-checkbox value="FTPS">FTPS 拉取</el-checkbox>
+          <el-checkbox value="HTTP">HTTP 接口</el-checkbox>
         </el-checkbox-group>
       </el-form-item>
       <el-form-item label="通道能力">
@@ -63,8 +64,8 @@
       </el-form-item>
       <el-form-item label="状态">
         <el-radio-group v-model="form.status">
-          <el-radio :label="1">启用</el-radio>
-          <el-radio :label="0">停用</el-radio>
+          <el-radio :value="1">启用</el-radio>
+          <el-radio :value="0">停用</el-radio>
         </el-radio-group>
       </el-form-item>
     </template>
@@ -190,6 +191,7 @@ function adapterTypeText(value: string) {
   if (value === 'MANGO_PAY') return '芒果支付适配器';
   if (value === 'OFFLINE_COLLECTION') return '线下收款适配器';
   if (value === 'ALLINPAY') return '通联支付适配器';
+  if (value === 'FUIOU_PAY') return '富友支付适配器';
   if (value === 'HUAXIA_BANK') return '华夏银行适配器';
   if (value === 'WECHAT_PAY') return '微信支付适配器';
   if (value === 'ALIPAY') return '支付宝适配器';

@@ -12,4 +12,6 @@ public interface IPaymentCashierService {
     R<PaymentCashierPayResultVO> pay(PaymentCashierPayCommand command);
 
     R<PaymentCashierPayResultVO> payResult(String payOrderNo);
+
+    R<PaymentCashierPayResultVO> syncPayResult(String payOrderNo);
 }
