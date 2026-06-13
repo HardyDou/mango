@@ -65,6 +65,7 @@ class PaymentTenantIsolationContractTest {
             contract("PaymentRefundOrderMapper", "selectByTenantAndRefundOrderNo", true),
             contract("PaymentRefundOrderMapper", "selectByTenantAndChannelRefundNo", true),
             contract("PaymentRefundOrderMapper", "updateRefundingQueryResult", true),
+            contract("PaymentRefundOrderMapper", "updateRefundApplyResult", true),
             contract("PaymentRefundOrderMapper", "sumOccupyingRefundAmount", true),
             contract("PaymentRefundOrderMapper", "selectLatestFlowNo", true),
             contract("PaymentRefundOrderMapper", "selectEntityByTenantAndChannelRefundNo", true),

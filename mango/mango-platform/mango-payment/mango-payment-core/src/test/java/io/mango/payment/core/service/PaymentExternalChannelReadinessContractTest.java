@@ -88,16 +88,16 @@ class PaymentExternalChannelReadinessContractTest {
     }
 
     @Test
-    @DisplayName("unfinished external channels should stay blocked in delivery evidence")
-    void unfinishedExternalChannels_shouldStayBlockedInDeliveryEvidence() throws IOException {
+    @DisplayName("unfinished external channels should stay exception-scoped in delivery evidence")
+    void unfinishedExternalChannels_shouldStayExceptionScopedInDeliveryEvidence() throws IOException {
         String ledger = read(LEDGER);
         String blockerEvidence = read(BLOCKER_EVIDENCE);
 
         for (String item : UNFINISHED_LEDGER_ITEMS) {
             assertThat(ledger).contains("| " + item + " |");
-            assertThat(ledger).contains(item + " |").contains("| IN_PROGRESS |");
+            assertThat(ledger).contains(item + " |").contains("| EXCEPTION |");
             assertThat(blockerEvidence).contains("| " + item + " |");
-            assertThat(blockerEvidence).contains("| BLOCKED |");
+            assertThat(blockerEvidence).contains("| EXCEPTION |");
         }
     }
 

@@ -29,7 +29,9 @@ import io.mango.workflow.api.vo.WorkflowBusinessApplyProgressVO;
 import io.mango.workflow.api.vo.WorkflowProcessInstanceVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -54,6 +56,7 @@ public class PaymentRefundApprovalService {
     private final PaymentNumberService numberService;
     private final WorkflowProcessApi workflowProcessApi;
     private final WorkflowBusinessApplyApi workflowBusinessApplyApi;
+    private final PlatformTransactionManager transactionManager;
 
     public PageResult<PaymentRefundApprovalVO> pageRefundApprovals(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
@@ -86,8 +89,22 @@ public class PaymentRefundApprovalService {
         }).toList();
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public PaymentRefundApprovalVO createRefundApproval(CreatePaymentRefundApprovalCommand command) {
+        PaymentRefundApprovalCreateContext context = inTransaction(() -> createRefundApprovalRecord(command));
+        WorkflowProcessInstanceVO process = startRefundApprovalWorkflow(context.approval(), context.paymentOrder());
+        inTransaction(() -> {
+            updateWorkflowStartProjection(context.approval().getId(), process);
+            auditService.record(
+                    PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
+                    PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
+                    context.approval().getApprovalNo(),
+                    PaymentOperationAuditService.RESULT_SUCCESS);
+            return null;
+        });
+        return detailRefundApproval(context.approval().getId());
+    }
+
+    private PaymentRefundApprovalCreateContext createRefundApprovalRecord(CreatePaymentRefundApprovalCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "创建退款审批命令不能为空");
         Require.notNull(command.getPaymentOrderId(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "原支付订单 ID 不能为空");
         Require.notNull(command.getRefundAmount(), PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款金额不能为空");
@@ -133,18 +150,9 @@ public class PaymentRefundApprovalService {
         entity.setUpdatedAt(now);
         entity.setDelFlag(0);
         refundApprovalMapper.insert(entity);
-        WorkflowProcessInstanceVO process = startRefundApprovalWorkflow(entity, paymentOrder);
-        updateWorkflowStartProjection(entity.getId(), process);
-        syncWorkflowProjection(tenantId, entity.getApprovalNo());
-        auditService.record(
-                PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
-                PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
-                entity.getApprovalNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
-        return detailRefundApproval(entity.getId());
+        return new PaymentRefundApprovalCreateContext(entity, paymentOrder);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void syncWorkflowProjection(Long tenantId, String approvalNo) {
         Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "租户 ID 不能为空");
         Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批单号不能为空");
@@ -155,31 +163,56 @@ public class PaymentRefundApprovalService {
         if (progress == null) {
             return;
         }
-        refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
-                .eq("tenant_id", tenantId)
-                .eq("approval_no", approvalNo)
-                .eq("del_flag", 0)
-                .set("workflow_apply_id", progress.getApplyId())
-                .set("workflow_process_instance_id",
-                        PaymentContextSupport.trimToNull(progress.getProcessInstanceId()))
-                .set("workflow_apply_status",
-                        progress.getApplyStatus() == null ? null : progress.getApplyStatus().name())
-                .set("workflow_apply_status_name",
-                        PaymentContextSupport.trimToNull(progress.getApplyStatusName()))
-                .set("workflow_current_task_names",
-                        PaymentContextSupport.trimToNull(progress.getCurrentTaskNames()))
-                .set("workflow_current_assignee_names",
-                        PaymentContextSupport.trimToNull(progress.getCurrentAssigneeNames()))
-                .set("workflow_synced_at", LocalDateTime.now()));
+        inTransaction(() -> {
+            updateWorkflowProgressProjection(tenantId, approvalNo, progress);
+            return null;
+        });
     }
 
     public void approveByWorkflow(Long tenantId, String approvalNo, String processInstanceId) {
         Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "租户 ID 不能为空");
         Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批单号不能为空");
+        PaymentRefundApprovalEntity approval = inTransaction(() -> markApprovalWorkflowApproved(tenantId, approvalNo, processInstanceId));
+        if (approval == null) {
+            return;
+        }
+
+        PaymentApplication application = selectRequiredApplication(tenantId, approval.getAppId());
+        CreatePaymentOpenRefundCommand refundCommand = new CreatePaymentOpenRefundCommand();
+        refundCommand.setTenantId(tenantId);
+        refundCommand.setAppId(application.getAppId());
+        refundCommand.setBizOrderNo(approval.getBizOrderNo());
+        refundCommand.setBizRefundNo(approval.getBizRefundNo());
+        refundCommand.setRefundAmount(approval.getRefundAmount());
+        refundCommand.setReason(approval.getReason());
+        PaymentOpenRefundOrderVO refundOrder = refundApplyService.applyRefund(
+                application,
+                refundCommand,
+                PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL,
+                approval.getApprovalNo(),
+                true);
+        inTransaction(() -> {
+            PaymentRefundApprovalEntity locked = refundApprovalMapper.selectEntityByApprovalNoForUpdate(tenantId, approvalNo);
+            Require.notNull(locked, PaymentCode.PAYMENT_REFUND_APPROVAL_NOT_FOUND);
+            locked.setRefundOrderId(refundOrder.getId());
+            locked.setStatus(PaymentRefundApprovalStatusEnum.APPROVED.getCode());
+            locked.setUpdatedBy(PaymentContextSupport.currentUserId());
+            locked.setUpdatedAt(LocalDateTime.now());
+            refundApprovalMapper.updateById(locked);
+            auditService.record(
+                    PaymentOperationAuditService.ACTION_APPROVE_REFUND_APPROVAL,
+                    PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
+                    approvalNo,
+                    PaymentOperationAuditService.RESULT_SUCCESS);
+            return null;
+        });
+    }
+
+    private PaymentRefundApprovalEntity markApprovalWorkflowApproved(Long tenantId, String approvalNo, String processInstanceId) {
         PaymentRefundApprovalEntity approval = refundApprovalMapper.selectEntityByApprovalNoForUpdate(tenantId, approvalNo);
         Require.notNull(approval, PaymentCode.PAYMENT_REFUND_APPROVAL_NOT_FOUND);
         if (PaymentRefundApprovalStatusEnum.APPROVED.getCode().equals(approval.getStatus())) {
-            return;
+            return null;
         }
         Require.isTrue(PaymentRefundApprovalStatusEnum.IN_APPROVAL.getCode().equals(approval.getStatus())
                         || PaymentRefundApprovalStatusEnum.PENDING.getCode().equals(approval.getStatus()),
@@ -197,29 +230,8 @@ public class PaymentRefundApprovalService {
         approval.setWorkflowCurrentTaskNames(null);
         approval.setWorkflowCurrentAssigneeNames(null);
         approval.setWorkflowSyncedAt(now);
-
-        PaymentApplication application = selectRequiredApplication(tenantId, approval.getAppId());
-        CreatePaymentOpenRefundCommand refundCommand = new CreatePaymentOpenRefundCommand();
-        refundCommand.setTenantId(tenantId);
-        refundCommand.setAppId(application.getAppId());
-        refundCommand.setBizOrderNo(approval.getBizOrderNo());
-        refundCommand.setBizRefundNo(approval.getBizRefundNo());
-        refundCommand.setRefundAmount(approval.getRefundAmount());
-        refundCommand.setReason(approval.getReason());
-        PaymentOpenRefundOrderVO refundOrder = refundApplyService.applyRefund(
-                application,
-                refundCommand,
-                PaymentOrderStatusFlowService.SOURCE_MANUAL_REFUND_APPROVAL,
-                approval.getApprovalNo(),
-                true);
-        approval.setRefundOrderId(refundOrder.getId());
-        approval.setStatus(PaymentRefundApprovalStatusEnum.APPROVED.getCode());
         refundApprovalMapper.updateById(approval);
-        auditService.record(
-                PaymentOperationAuditService.ACTION_APPROVE_REFUND_APPROVAL,
-                PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
-                approval.getApprovalNo(),
-                PaymentOperationAuditService.RESULT_SUCCESS);
+        return approval;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -314,6 +326,38 @@ public class PaymentRefundApprovalService {
                 .set("workflow_current_task_names",
                         PaymentContextSupport.trimToNull(process.getCurrentTaskName()))
                 .set("workflow_synced_at", LocalDateTime.now()));
+    }
+
+    private void updateWorkflowProgressProjection(
+            Long tenantId,
+            String approvalNo,
+            WorkflowBusinessApplyProgressVO progress) {
+        refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
+                .eq("tenant_id", tenantId)
+                .eq("approval_no", approvalNo)
+                .eq("del_flag", 0)
+                .set("workflow_apply_id", progress.getApplyId())
+                .set("workflow_process_instance_id",
+                        PaymentContextSupport.trimToNull(progress.getProcessInstanceId()))
+                .set("workflow_apply_status",
+                        progress.getApplyStatus() == null ? null : progress.getApplyStatus().name())
+                .set("workflow_apply_status_name",
+                        PaymentContextSupport.trimToNull(progress.getApplyStatusName()))
+                .set("workflow_current_task_names",
+                        PaymentContextSupport.trimToNull(progress.getCurrentTaskNames()))
+                .set("workflow_current_assignee_names",
+                        PaymentContextSupport.trimToNull(progress.getCurrentAssigneeNames()))
+                .set("workflow_synced_at", LocalDateTime.now()));
+    }
+
+    private <T> T inTransaction(java.util.function.Supplier<T> action) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        return template.execute(status -> action.get());
+    }
+
+    private record PaymentRefundApprovalCreateContext(
+            PaymentRefundApprovalEntity approval,
+            PaymentOrderVO paymentOrder) {
     }
 
 }

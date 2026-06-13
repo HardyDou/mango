@@ -44,7 +44,10 @@ import io.mango.payment.core.service.PaymentSensitiveValueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.Mac;
@@ -83,6 +86,7 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
     private final PaymentRefundApplyService refundApplyService;
     private final PaymentSensitiveValueService sensitiveValueService;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -307,21 +311,25 @@ public class PaymentOpenApiService implements IPaymentOpenApiService {
     }
 
     private void recordNonce(PaymentApplication application, String nonce, long timestampSeconds) {
-        nonceMapper.delete(new LambdaQueryWrapper<PaymentOpenApiNonceEntity>()
-                .eq(PaymentOpenApiNonceEntity::getTenantId, application.getTenantId())
-                .eq(PaymentOpenApiNonceEntity::getAppId, application.getAppId())
-                .lt(PaymentOpenApiNonceEntity::getExpireTime, LocalDateTime.now()));
-        PaymentOpenApiNonceEntity entity = new PaymentOpenApiNonceEntity();
-        entity.setTenantId(application.getTenantId());
-        entity.setAppId(application.getAppId());
-        entity.setNonce(nonce);
-        entity.setExpireTime(LocalDateTime.ofInstant(
-                Instant.ofEpochSecond(timestampSeconds + SIGNATURE_WINDOW_SECONDS), ZoneId.systemDefault()));
-        try {
-            nonceMapper.insert(entity);
-        } catch (DuplicateKeyException ex) {
-            throw new BizException(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getCode(), PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage(), ex);
-        }
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        template.executeWithoutResult(status -> {
+            nonceMapper.delete(new LambdaQueryWrapper<PaymentOpenApiNonceEntity>()
+                    .eq(PaymentOpenApiNonceEntity::getTenantId, application.getTenantId())
+                    .eq(PaymentOpenApiNonceEntity::getAppId, application.getAppId())
+                    .lt(PaymentOpenApiNonceEntity::getExpireTime, LocalDateTime.now()));
+            PaymentOpenApiNonceEntity entity = new PaymentOpenApiNonceEntity();
+            entity.setTenantId(application.getTenantId());
+            entity.setAppId(application.getAppId());
+            entity.setNonce(nonce);
+            entity.setExpireTime(LocalDateTime.ofInstant(
+                    Instant.ofEpochSecond(timestampSeconds + SIGNATURE_WINDOW_SECONDS), ZoneId.systemDefault()));
+            try {
+                nonceMapper.insert(entity);
+            } catch (DuplicateKeyException ex) {
+                throw new BizException(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getCode(), PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage(), ex);
+            }
+        });
     }
 
     private String canonical(String method, String requestPath, String body, String timestamp, String nonce) {

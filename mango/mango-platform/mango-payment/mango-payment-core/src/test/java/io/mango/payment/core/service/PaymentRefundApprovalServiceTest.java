@@ -22,6 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +75,8 @@ class PaymentRefundApprovalServiceTest {
                 auditService,
                 numberService,
                 workflowProcessApi,
-                workflowBusinessApplyApi);
+                workflowBusinessApplyApi,
+                new TestTransactionManager());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "applicant", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -123,7 +128,7 @@ class PaymentRefundApprovalServiceTest {
         assertThat(refundCommandCaptor.getValue().getBizRefundNo()).isEqualTo("MANUAL-REFUND-001");
         assertThat(entity.getRefundOrderId()).isEqualTo(380001L);
         assertThat(entity.getStatus()).isEqualTo("APPROVED");
-        verify(refundApprovalMapper).updateById(entity);
+        verify(refundApprovalMapper, times(2)).updateById(entity);
         verify(auditService).record(
                 PaymentOperationAuditService.ACTION_APPROVE_REFUND_APPROVAL,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
@@ -208,5 +213,25 @@ class PaymentRefundApprovalServiceTest {
         vo.setApprovalNo("RFA202606070001");
         vo.setStatus(status);
         return vo;
+    }
+
+    private static class TestTransactionManager extends AbstractPlatformTransactionManager {
+
+        @Override
+        protected Object doGetTransaction() {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, TransactionDefinition definition) {
+        }
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) {
+        }
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus status) {
+        }
     }
 }

@@ -55,15 +55,8 @@ public class PaymentRefundApplyService {
                     command,
                     context.refundOrderNo());
         } catch (RuntimeException ex) {
-            log.warn("退款通道申请失败，tenantId={}, appId={}, bizRefundNo={}, refundOrderNo={}",
+            log.warn("退款通道申请结果不确定，保留本地退款单为退款中以便后续查单/回调/对账推进，tenantId={}, appId={}, bizRefundNo={}, refundOrderNo={}",
                     application.getTenantId(), application.getAppId(), command.getBizRefundNo(), context.refundOrderNo(), ex);
-            try {
-                markRefundApplyFailed(application, context, triggerSource, triggerNo);
-            } catch (RuntimeException markException) {
-                ex.addSuppressed(markException);
-                log.error("退款通道申请失败后标记本地退款单失败异常，tenantId={}, appId={}, bizRefundNo={}, refundOrderNo={}",
-                        application.getTenantId(), application.getAppId(), command.getBizRefundNo(), context.refundOrderNo(), markException);
-            }
             throw ex;
         }
         String initialStatus = resolveInitialRefundStatus(channelResult);
@@ -129,29 +122,6 @@ public class PaymentRefundApplyService {
                 now,
                 statusFlowRemark(triggerSource));
         return RefundApplyContext.created(paymentOrder, refundOrder, refundOrderNo);
-    }
-
-    private void markRefundApplyFailed(
-            PaymentApplication application,
-            RefundApplyContext context,
-            String triggerSource,
-            String triggerNo) {
-        inTransaction(() -> {
-            int updated = refundOrderMapper.markRefundApplyFailed(application.getTenantId(), context.refundOrder().getId());
-            Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode(), "退款订单状态已变化");
-            statusFlowService.record(
-                    application.getTenantId(),
-                    PaymentOrderStatusFlowService.ORDER_TYPE_REFUND,
-                    context.refundOrder().getId(),
-                    context.refundOrderNo(),
-                    PaymentRefundOrderStatusEnum.REFUNDING.getCode(),
-                    PaymentRefundOrderStatusEnum.FAILED.getCode(),
-                    triggerSource,
-                    triggerNo,
-                    LocalDateTime.now(),
-                    "退款通道申请失败");
-            return null;
-        });
     }
 
     private void validateRefundCommand(CreatePaymentOpenRefundCommand command, PaymentApplication application) {

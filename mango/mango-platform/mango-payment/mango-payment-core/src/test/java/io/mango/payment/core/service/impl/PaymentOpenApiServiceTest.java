@@ -53,7 +53,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -85,6 +87,7 @@ class PaymentOpenApiServiceTest {
     private PaymentOrderStatusFlowService statusFlowService;
     private PaymentSensitiveValueService sensitiveValueService;
     private PaymentNumberService numberService;
+    private TestTransactionManager transactionManager;
     private PaymentOpenApiService service;
 
     @BeforeEach
@@ -103,6 +106,7 @@ class PaymentOpenApiServiceTest {
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
         sensitiveValueService = mock(PaymentSensitiveValueService.class);
         numberService = mock(PaymentNumberService.class);
+        transactionManager = new TestTransactionManager();
         service = new PaymentOpenApiService(
                 applicationMapper,
                 businessOrderMapper,
@@ -127,7 +131,8 @@ class PaymentOpenApiServiceTest {
                         numberService,
                         new TestTransactionManager()),
                 sensitiveValueService,
-                new ObjectMapper());
+                new ObjectMapper(),
+                transactionManager);
         when(applicationMapper.selectOne(any())).thenReturn(application());
         when(sensitiveValueService.decrypt("enc:openapi-secret-ciphertext")).thenReturn(APP_SECRET);
         when(cashierConfigMapper.selectOne(any())).thenReturn(cashierConfig());
@@ -165,6 +170,21 @@ class PaymentOpenApiServiceTest {
         assertThat(entity.getStatus()).isEqualTo("TO_PAY");
         assertThat(result.getAppId()).isEqualTo(APP_ID);
         assertThat(result.getAmount()).isEqualTo(8800L);
+    }
+
+    @Test
+    @DisplayName("createOrder should record nonce in independent transaction")
+    void createOrder_nonceUsesRequiresNewTransaction() {
+        String body = createOrderBody(8800L);
+        String timestamp = timestamp();
+        String nonce = "nonce-create-requires-new";
+
+        service.createOrder(openRequest(
+                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
+                "/openapi/pay/orders", null, null, null, null));
+
+        assertThat(transactionManager.propagationBehaviors())
+                .contains(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Test
@@ -710,6 +730,12 @@ class PaymentOpenApiServiceTest {
 
     private static class TestTransactionManager extends AbstractPlatformTransactionManager {
 
+        private final List<Integer> propagationBehaviors = new ArrayList<>();
+
+        private List<Integer> propagationBehaviors() {
+            return propagationBehaviors;
+        }
+
         @Override
         protected Object doGetTransaction() {
             return new Object();
@@ -717,6 +743,7 @@ class PaymentOpenApiServiceTest {
 
         @Override
         protected void doBegin(Object transaction, TransactionDefinition definition) {
+            propagationBehaviors.add(definition.getPropagationBehavior());
         }
 
         @Override

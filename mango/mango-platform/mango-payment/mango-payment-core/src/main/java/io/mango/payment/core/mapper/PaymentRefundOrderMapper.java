@@ -69,11 +69,6 @@ public interface PaymentRefundOrderMapper extends BaseMapper<PaymentRefundOrderE
             @Param("status") String status);
 
     @InterceptorIgnore(tenantLine = "true")
-    int markRefundApplyFailed(
-            @Param("tenantId") Long tenantId,
-            @Param("id") Long id);
-
-    @InterceptorIgnore(tenantLine = "true")
     Long sumOccupyingRefundAmount(
             @Param("tenantId") Long tenantId,
             @Param("paymentOrderId") Long paymentOrderId);

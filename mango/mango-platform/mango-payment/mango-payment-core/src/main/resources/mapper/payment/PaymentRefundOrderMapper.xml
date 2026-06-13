@@ -156,16 +156,6 @@
           and channel_refund_no is null
     </update>
 
-    <update id="markRefundApplyFailed">
-        update payment_refund_order
-        set status = 'FAILED',
-            updated_at = now()
-        where tenant_id = #{tenantId}
-          and id = #{id}
-          and status = 'REFUNDING'
-          and channel_refund_no is null
-    </update>
-
     <select id="sumOccupyingRefundAmount" resultType="long">
         select coalesce(sum(ro.refund_amount), 0)
         from payment_refund_order ro
