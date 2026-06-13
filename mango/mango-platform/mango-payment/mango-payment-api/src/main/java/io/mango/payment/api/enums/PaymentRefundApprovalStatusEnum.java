@@ -10,6 +10,7 @@ public enum PaymentRefundApprovalStatusEnum {
 
     PENDING("PENDING", "待审核"),
     IN_APPROVAL("IN_APPROVAL", "审批中"),
+    WORKFLOW_START_FAILED("WORKFLOW_START_FAILED", "流程启动失败"),
     APPROVED("APPROVED", "已通过"),
     REJECTED("REJECTED", "已拒绝");
 

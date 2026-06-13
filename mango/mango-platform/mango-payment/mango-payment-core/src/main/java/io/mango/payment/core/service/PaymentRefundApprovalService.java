@@ -91,9 +91,15 @@ public class PaymentRefundApprovalService {
 
     public PaymentRefundApprovalVO createRefundApproval(CreatePaymentRefundApprovalCommand command) {
         PaymentRefundApprovalCreateContext context = inTransaction(() -> createRefundApprovalRecord(command));
-        WorkflowProcessInstanceVO process = startRefundApprovalWorkflow(context.approval(), context.paymentOrder());
+        WorkflowProcessInstanceVO process;
+        try {
+            process = startRefundApprovalWorkflow(context.approval(), context.paymentOrder());
+        } catch (RuntimeException ex) {
+            markWorkflowStartFailedAfterWorkflowException(context, ex);
+            throw ex;
+        }
         inTransaction(() -> {
-            updateWorkflowStartProjection(context.approval().getId(), process);
+            updateWorkflowStartProjection(context.approval().getTenantId(), context.approval().getApprovalNo(), process);
             auditService.record(
                     PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
                     PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
@@ -138,7 +144,7 @@ public class PaymentRefundApprovalService {
         entity.setRefundAmount(command.getRefundAmount());
         entity.setReason(command.getReason().trim());
         entity.setRemark(PaymentContextSupport.trimToNull(command.getRemark()));
-        entity.setStatus(PaymentRefundApprovalStatusEnum.IN_APPROVAL.getCode());
+        entity.setStatus(PaymentRefundApprovalStatusEnum.PENDING.getCode());
         entity.setWorkflowProcessDefinitionKey(WORKFLOW_DEFINITION_KEY);
         entity.setApplicantId(PaymentContextSupport.currentUserId());
         entity.setApplicantName(PaymentContextSupport.currentPrincipalName());
@@ -317,15 +323,60 @@ public class PaymentRefundApprovalService {
         return process;
     }
 
-    private void updateWorkflowStartProjection(Long approvalId, WorkflowProcessInstanceVO process) {
-        refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
-                .eq("id", approvalId)
+    private void updateWorkflowStartProjection(Long tenantId, String approvalNo, WorkflowProcessInstanceVO process) {
+        int updated = refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
+                .eq("tenant_id", tenantId)
+                .eq("approval_no", approvalNo)
+                .eq("del_flag", 0)
+                .eq("status", PaymentRefundApprovalStatusEnum.PENDING.getCode())
+                .set("status", PaymentRefundApprovalStatusEnum.IN_APPROVAL.getCode())
                 .set("workflow_process_instance_id", process.getProcessInstanceId())
                 .set("workflow_apply_id", process.getApplyId())
                 .set("workflow_process_definition_key", WORKFLOW_DEFINITION_KEY)
                 .set("workflow_current_task_names",
                         PaymentContextSupport.trimToNull(process.getCurrentTaskName()))
                 .set("workflow_synced_at", LocalDateTime.now()));
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
+                "退款审批工作流启动状态更新失败");
+    }
+
+    private void markWorkflowStartFailedAfterWorkflowException(
+            PaymentRefundApprovalCreateContext context,
+            RuntimeException workflowException) {
+        try {
+            inTransaction(() -> {
+                markWorkflowStartFailed(context.approval().getTenantId(),
+                        context.approval().getApprovalNo(),
+                        workflowException.getMessage());
+                auditService.record(
+                        PaymentOperationAuditService.ACTION_CREATE_REFUND_APPROVAL,
+                        PaymentOperationAuditService.RESOURCE_PAYMENT_REFUND_APPROVAL,
+                        context.approval().getApprovalNo(),
+                        PaymentOperationAuditService.RESULT_REJECTED);
+                return null;
+            });
+        } catch (RuntimeException compensationException) {
+            workflowException.addSuppressed(compensationException);
+        }
+    }
+
+    private void markWorkflowStartFailed(Long tenantId, String approvalNo, String reason) {
+        int updated = refundApprovalMapper.update(null, new UpdateWrapper<PaymentRefundApprovalEntity>()
+                .eq("tenant_id", tenantId)
+                .eq("approval_no", approvalNo)
+                .eq("del_flag", 0)
+                .eq("status", PaymentRefundApprovalStatusEnum.PENDING.getCode())
+                .set("status", PaymentRefundApprovalStatusEnum.WORKFLOW_START_FAILED.getCode())
+                .set("reviewer_id", PaymentContextSupport.currentUserId())
+                .set("reviewer_name", PaymentContextSupport.currentPrincipalName())
+                .set("review_reason", PaymentContextSupport.trimToNull(reason) == null
+                        ? "退款审批工作流启动失败"
+                        : reason)
+                .set("review_time", LocalDateTime.now())
+                .set("updated_by", PaymentContextSupport.currentUserId())
+                .set("updated_at", LocalDateTime.now()));
+        Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(),
+                "退款审批工作流启动失败状态更新失败");
     }
 
     private void updateWorkflowProgressProjection(
