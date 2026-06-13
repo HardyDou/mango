@@ -45,6 +45,7 @@ public class CryptoAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(ISignService.class)
+    @ConditionalOnProperty(prefix = "mango.crypto.sm2", name = "private-key")
     public ISignService sm2SignService(CryptoProperties properties) {
         return new Sm2SignService(properties);
     }

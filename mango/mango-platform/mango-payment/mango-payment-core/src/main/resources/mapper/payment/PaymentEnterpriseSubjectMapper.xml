@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentEnterpriseSubjectMapper">
+
+    <select id="countDeleteRelations" resultType="long">
+        select
+          (
+            select count(1)
+            from payment_cashier_config c
+            where c.tenant_id = #{tenantId}
+              and c.del_flag = 0
+              and find_in_set(#{subjectId}, c.enterprise_subject_ids)
+          )
+          + (
+            select count(1)
+            from payment_channel_contract cc
+            where cc.tenant_id = #{tenantId}
+              and cc.del_flag = 0
+              and cc.subject_id = #{subjectId}
+          )
+          + (
+            select count(1)
+            from payment_business_order bo
+            where bo.tenant_id = #{tenantId}
+              and bo.del_flag = 0
+              and bo.subject_id = #{subjectId}
+          )
+          + (
+            select count(1)
+            from payment_order po
+            join payment_business_order bo
+              on bo.id = po.business_order_id
+             and bo.tenant_id = po.tenant_id
+            where po.tenant_id = #{tenantId}
+              and bo.del_flag = 0
+              and bo.subject_id = #{subjectId}
+          )
+          + (
+            select count(1)
+            from payment_refund_order ro
+            join payment_order po
+              on po.id = ro.payment_order_id
+             and po.tenant_id = ro.tenant_id
+            join payment_business_order bo
+              on bo.id = po.business_order_id
+             and bo.tenant_id = po.tenant_id
+            where ro.tenant_id = #{tenantId}
+              and bo.del_flag = 0
+              and bo.subject_id = #{subjectId}
+          )
+          + (
+            select count(distinct tf.id)
+            from payment_transaction_flow tf
+            left join payment_business_order bo1
+              on bo1.id = tf.business_order_id
+             and bo1.tenant_id = tf.tenant_id
+            left join payment_order po
+              on po.id = tf.payment_order_id
+             and po.tenant_id = tf.tenant_id
+            left join payment_business_order bo2
+              on bo2.id = po.business_order_id
+             and bo2.tenant_id = po.tenant_id
+            left join payment_refund_order ro
+              on ro.id = tf.refund_order_id
+             and ro.tenant_id = tf.tenant_id
+            left join payment_order rpo
+              on rpo.id = ro.payment_order_id
+             and rpo.tenant_id = ro.tenant_id
+            left join payment_business_order bo3
+              on bo3.id = rpo.business_order_id
+             and bo3.tenant_id = rpo.tenant_id
+            where tf.tenant_id = #{tenantId}
+              and (
+                bo1.subject_id = #{subjectId}
+                or bo2.subject_id = #{subjectId}
+                or bo3.subject_id = #{subjectId}
+              )
+          )
+          + (
+            select count(1)
+            from payment_exception_order eo
+            where eo.tenant_id = #{tenantId}
+              and eo.del_flag = 0
+              and (
+                exists (
+                  select 1
+                  from payment_business_order bo
+                  where bo.tenant_id = eo.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and bo.biz_order_no = eo.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_order po
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where po.tenant_id = eo.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and po.pay_order_no = eo.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_refund_order ro
+                  join payment_order po
+                    on po.id = ro.payment_order_id
+                   and po.tenant_id = ro.tenant_id
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where ro.tenant_id = eo.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and ro.refund_order_no = eo.related_order_no
+                )
+              )
+          )
+          + (
+            select count(1)
+            from payment_notification_record nr
+            where nr.tenant_id = #{tenantId}
+              and nr.del_flag = 0
+              and (
+                exists (
+                  select 1
+                  from payment_business_order bo
+                  where bo.tenant_id = nr.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and bo.biz_order_no = nr.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_order po
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where po.tenant_id = nr.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and po.pay_order_no = nr.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_refund_order ro
+                  join payment_order po
+                    on po.id = ro.payment_order_id
+                   and po.tenant_id = ro.tenant_id
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where ro.tenant_id = nr.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and ro.refund_order_no = nr.related_order_no
+                )
+              )
+          )
+          + (
+            select count(1)
+            from payment_difference pd
+            where pd.tenant_id = #{tenantId}
+              and pd.del_flag = 0
+              and (
+                exists (
+                  select 1
+                  from payment_business_order bo
+                  where bo.tenant_id = pd.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and bo.biz_order_no = pd.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_order po
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where po.tenant_id = pd.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and po.pay_order_no = pd.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_refund_order ro
+                  join payment_order po
+                    on po.id = ro.payment_order_id
+                   and po.tenant_id = ro.tenant_id
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where ro.tenant_id = pd.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and ro.refund_order_no = pd.related_order_no
+                )
+              )
+          )
+          + (
+            select count(1)
+            from payment_difference pd
+            join payment_notification_record nr
+              on nr.notification_no = pd.related_order_no
+             and nr.tenant_id = pd.tenant_id
+            where pd.tenant_id = #{tenantId}
+              and pd.del_flag = 0
+              and nr.del_flag = 0
+              and (
+                exists (
+                  select 1
+                  from payment_order po
+                  join payment_business_order bo
+                    on bo.id = po.business_order_id
+                   and bo.tenant_id = po.tenant_id
+                  where po.tenant_id = nr.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and po.pay_order_no = nr.related_order_no
+                )
+                or exists (
+                  select 1
+                  from payment_business_order bo
+                  where bo.tenant_id = nr.tenant_id
+                    and bo.del_flag = 0
+                    and bo.subject_id = #{subjectId}
+                    and bo.biz_order_no = nr.related_order_no
+                )
+              )
+          )
+          + (
+            select count(1)
+            from payment_settlement_summary ss
+            where ss.tenant_id = #{tenantId}
+              and ss.del_flag = 0
+              and ss.enterprise_subject_id = #{subjectId}
+          )
+    </select>
+</mapper>

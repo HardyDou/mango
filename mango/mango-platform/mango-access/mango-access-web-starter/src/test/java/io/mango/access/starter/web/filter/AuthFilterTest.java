@@ -55,6 +55,22 @@ class AuthFilterTest {
     }
 
     @Test
+    @DisplayName("带外部 /api 前缀的 PUBLIC 资源应按应用内路径匹配后匿名放行")
+    void doFilter_shouldStripExternalApiPrefixWhenResolvingPublicResource() throws Exception {
+        apiResourceApi.decisions = Map.of(
+                "POST /api/payment/channel-callbacks/fuiou", ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN),
+                "POST /payment/channel-callbacks/fuiou", new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null));
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/payment/channel-callbacks/fuiou");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        newFilter().doFilter(request, response, new MockFilterChain());
+
+        assertEquals(200, response.getStatus());
+        assertEquals(2, apiResourceApi.resolveCount);
+        assertNull(request.getAttribute("userId"));
+    }
+
+    @Test
     @DisplayName("LOGIN 资源缺少 Token 时应返回 401")
     void doFilter_shouldRejectLoginWhenTokenMissing() throws Exception {
         apiResourceApi.accessMode = ApiResourceAccessMode.LOGIN;
@@ -172,6 +188,7 @@ class AuthFilterTest {
         private ApiResourceAccessMode accessMode = ApiResourceAccessMode.LOGIN;
         private String permissionCode;
         private int resolveCount;
+        private Map<String, ApiResourceAccessDecisionVO> decisions = Map.of();
 
         @Override
         public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
@@ -181,6 +198,10 @@ class AuthFilterTest {
         @Override
         public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
             resolveCount++;
+            ApiResourceAccessDecisionVO configuredDecision = decisions.get(query.getHttpMethod() + " " + query.getPath());
+            if (configuredDecision != null) {
+                return R.ok(configuredDecision);
+            }
             return R.ok(new ApiResourceAccessDecisionVO(true, accessMode, permissionCode));
         }
 

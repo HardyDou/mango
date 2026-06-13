@@ -26,6 +26,11 @@ public class AccessProperties {
     private boolean requirePermissionCode = false;
 
     /**
+     * 外部网关或前端代理暴露的 API 前缀，鉴权匹配资源失败时会剥离这些前缀后重试。
+     */
+    private List<String> externalApiPrefixes = new ArrayList<>(List.of("/api"));
+
+    /**
      * 来源 IP 白名单配置。
      */
     private IpWhitelist ipWhitelist = new IpWhitelist();

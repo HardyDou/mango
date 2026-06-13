@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS `payment_channel_certificate_rotation_record` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `contract_id` bigint NOT NULL COMMENT '通道签约ID',
+  `contract_capability_id` bigint NOT NULL COMMENT '签约能力ID',
+  `certificate_field_code` varchar(64) NOT NULL COMMENT '证书文件字段编码',
+  `old_certificate_file_id` bigint DEFAULT NULL COMMENT '旧证书文件ID',
+  `new_certificate_file_id` bigint NOT NULL COMMENT '新证书文件ID',
+  `old_certificate_expire_time` datetime DEFAULT NULL COMMENT '旧证书有效期',
+  `new_certificate_expire_time` datetime NOT NULL COMMENT '新证书有效期',
+  `rotate_reason` varchar(512) NOT NULL COMMENT '轮换原因',
+  `operator_id` bigint DEFAULT NULL COMMENT '操作人ID',
+  `operator_name` varchar(128) DEFAULT NULL COMMENT '操作人名称',
+  `rotate_time` datetime NOT NULL COMMENT '轮换时间',
+  `tenant_id` bigint NOT NULL COMMENT '租户ID',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记：0-正常，1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_payment_channel_cert_rotation_contract` (`tenant_id`, `contract_id`, `rotate_time`),
+  KEY `idx_payment_channel_cert_rotation_capability` (`tenant_id`, `contract_capability_id`, `rotate_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='支付通道签约证书轮换记录';

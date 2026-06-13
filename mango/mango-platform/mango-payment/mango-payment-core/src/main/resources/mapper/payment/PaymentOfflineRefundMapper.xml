@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentOfflineRefundMapper">
+
+    <sql id="offlineRefundFrom">
+        from payment_offline_refund_process ofr
+        left join payment_business_order bo
+          on bo.id = ofr.business_order_id and bo.tenant_id = ofr.tenant_id
+        left join payment_refund_order ro
+          on ro.id = ofr.refund_order_id and ro.tenant_id = ofr.tenant_id
+        left join payment_channel c
+          on c.id = ofr.channel_id and c.tenant_id = ofr.tenant_id
+    </sql>
+
+    <sql id="offlineRefundWhere">
+        where ofr.tenant_id = #{tenantId}
+          and ofr.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            and ofr.refund_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              ofr.offline_refund_no like concat('%', #{keyword}, '%')
+              or ofr.offline_collection_no like concat('%', #{keyword}, '%')
+              or ro.refund_order_no like concat('%', #{keyword}, '%')
+              or ofr.pay_order_no like concat('%', #{keyword}, '%')
+              or ofr.biz_order_no like concat('%', #{keyword}, '%')
+              or ofr.refund_account_name like concat('%', #{keyword}, '%')
+              or ofr.refund_bank_name like concat('%', #{keyword}, '%')
+              or ofr.reason like concat('%', #{keyword}, '%')
+              or c.channel_name like concat('%', #{keyword}, '%')
+              or c.channel_code like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="offlineRefundSelect">
+        select ofr.id,
+               ofr.offline_refund_no as offlineRefundNo,
+               ofr.offline_collection_id as offlineCollectionId,
+               ofr.offline_collection_no as offlineCollectionNo,
+               ofr.refund_order_id as refundOrderId,
+               ro.refund_order_no as refundOrderNo,
+               ofr.payment_order_id as paymentOrderId,
+               ofr.pay_order_no as payOrderNo,
+               ofr.business_order_id as businessOrderId,
+               ofr.biz_order_no as bizOrderNo,
+               bo.title,
+               bo.app_code as appId,
+               ofr.channel_id as channelId,
+               coalesce(ofr.channel_code, c.channel_code) as channelCode,
+               c.channel_name as channelName,
+               ofr.refund_amount as refundAmount,
+               ofr.currency,
+               ofr.refund_account_name as refundAccountName,
+               ofr.refund_account_no_mask as refundAccountNoMask,
+               ofr.refund_bank_name as refundBankName,
+               ofr.refund_voucher_file_ids as refundVoucherFileIds,
+               ofr.refund_voucher_count as refundVoucherCount,
+               ofr.reason,
+               ofr.remark,
+               ofr.refund_status as refundStatus,
+               ofr.refunded_time as refundedTime,
+               ofr.operator_id as operatorId,
+               ofr.operator_name as operatorName,
+               ofr.created_at as createTime,
+               ofr.updated_at as updateTime
+    </sql>
+
+    <select id="countOfflineRefunds" resultType="long">
+        select count(1)
+        <include refid="offlineRefundFrom"/>
+        <include refid="offlineRefundWhere"/>
+    </select>
+
+    <select id="selectOfflineRefundPage" resultType="io.mango.payment.api.vo.PaymentOfflineRefundVO">
+        <include refid="offlineRefundSelect"/>
+        <include refid="offlineRefundFrom"/>
+        <include refid="offlineRefundWhere"/>
+        order by ofr.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectOfflineRefundDetail" resultType="io.mango.payment.api.vo.PaymentOfflineRefundVO">
+        <include refid="offlineRefundSelect"/>
+        <include refid="offlineRefundFrom"/>
+        where ofr.tenant_id = #{tenantId}
+          and ofr.del_flag = 0
+          and ofr.id = #{id}
+        limit 1
+    </select>
+
+    <select id="sumRefundedAmountByCollection" resultType="long">
+        select coalesce(sum(refund_amount), 0)
+        from payment_offline_refund_process
+        where tenant_id = #{tenantId}
+          and offline_collection_id = #{offlineCollectionId}
+          and refund_status = 'REFUNDED'
+          and del_flag = 0
+    </select>
+</mapper>

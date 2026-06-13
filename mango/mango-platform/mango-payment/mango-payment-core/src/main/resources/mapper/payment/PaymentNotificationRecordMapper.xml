@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentNotificationRecordMapper">
+
+    <sql id="notificationRecordWhere">
+        where nr.tenant_id = #{tenantId}
+          and nr.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+          and nr.notify_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (
+            nr.notification_no like concat('%', #{keyword}, '%')
+            or nr.related_order_no like concat('%', #{keyword}, '%')
+            or nr.notification_type like concat('%', #{keyword}, '%')
+            or nr.notify_status like concat('%', #{keyword}, '%')
+            or nr.target_url like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="notificationRecordSelect">
+        select nr.id,
+               nr.notification_no as notificationNo,
+               nr.related_order_no as relatedOrderNo,
+               nr.notification_type as notificationType,
+               nr.target_url as targetUrl,
+               nr.notify_status as notifyStatus,
+               nr.retry_times as retryTimes,
+               nr.scheduled_notify_time as scheduledNotifyTime,
+               nr.next_retry_time as nextRetryTime,
+               nr.payload_json as payloadJson,
+               nr.response_code as responseCode,
+               nr.response_message as responseMessage,
+               nr.last_manual_retry_time as lastManualRetryTime,
+               nr.last_manual_retry_reason as lastManualRetryReason,
+               nr.last_manual_retry_result as lastManualRetryResult,
+               nr.last_manual_retry_operator_id as lastManualRetryOperatorId,
+               nr.last_manual_retry_operator_name as lastManualRetryOperatorName,
+               nr.created_at as createTime,
+               nr.updated_at as updateTime
+    </sql>
+
+    <select id="countNotificationRecords" resultType="long">
+        select count(1)
+        from payment_notification_record nr
+        <include refid="notificationRecordWhere"/>
+    </select>
+
+    <select id="countFailedNotificationRecords" resultType="long">
+        select count(1)
+        from payment_notification_record nr
+        where nr.tenant_id = #{tenantId}
+          and nr.del_flag = 0
+          and nr.notification_type in ('PAYMENT_SUCCESS', 'PAYMENT_FAILED', 'PAYMENT_CLOSED', 'REFUND_SUCCESS', 'REFUND_FAILED')
+          and nr.notify_status = 'FAILED'
+    </select>
+
+    <select id="selectNotificationRecordPage" resultType="io.mango.payment.api.vo.PaymentNotificationRecordVO">
+        <include refid="notificationRecordSelect"/>
+        from payment_notification_record nr
+        <include refid="notificationRecordWhere"/>
+        order by nr.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectNotificationRecordDetail" resultType="io.mango.payment.api.vo.PaymentNotificationRecordVO">
+        <include refid="notificationRecordSelect"/>
+        from payment_notification_record nr
+        where nr.tenant_id = #{tenantId}
+          and nr.id = #{id}
+          and nr.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectDueNotificationRecords" resultType="io.mango.payment.core.entity.PaymentNotificationRecordEntity">
+        select nr.id,
+               nr.notification_no as notificationNo,
+               nr.related_order_no as relatedOrderNo,
+               nr.notification_type as notificationType,
+               nr.target_url as targetUrl,
+               nr.notify_status as notifyStatus,
+               nr.retry_times as retryTimes,
+               nr.scheduled_notify_time as scheduledNotifyTime,
+               nr.next_retry_time as nextRetryTime,
+               nr.payload_json as payloadJson,
+               nr.response_code as responseCode,
+               nr.response_message as responseMessage,
+               nr.last_manual_retry_time as lastManualRetryTime,
+               nr.last_manual_retry_reason as lastManualRetryReason,
+               nr.last_manual_retry_result as lastManualRetryResult,
+               nr.last_manual_retry_operator_id as lastManualRetryOperatorId,
+               nr.last_manual_retry_operator_name as lastManualRetryOperatorName,
+               nr.tenant_id as tenantId,
+               nr.created_by as createdBy,
+               nr.created_at as createdAt,
+               nr.updated_by as updatedBy,
+               nr.updated_at as updatedAt,
+               nr.del_flag as delFlag
+        from payment_notification_record nr
+        where nr.tenant_id = #{tenantId}
+          and nr.del_flag = 0
+          and nr.notify_status in ('PENDING', 'RETRYING', 'FAILED')
+          and nr.next_retry_time is not null
+          and nr.next_retry_time &lt;= #{now}
+          and nr.payload_json is not null
+        order by nr.next_retry_time asc,
+                 nr.id asc
+        limit #{limit}
+    </select>
+
+    <select id="selectDueNotificationTenantIds" resultType="long">
+        select nr.tenant_id
+        from payment_notification_record nr
+        where nr.del_flag = 0
+          and nr.notify_status in ('PENDING', 'RETRYING', 'FAILED')
+          and nr.next_retry_time is not null
+          and nr.next_retry_time &lt;= #{now}
+          and nr.payload_json is not null
+        group by nr.tenant_id
+        order by min(nr.next_retry_time) asc,
+                 nr.tenant_id asc
+        limit #{limit}
+    </select>
+
+    <update id="claimDueNotificationRecord">
+        update payment_notification_record
+        set notify_status = 'RETRYING',
+            retry_times = retry_times + 1,
+            response_code = 'AUTO_RETRY',
+            response_message = '到期通知投递已登记',
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+          and notify_status in ('PENDING', 'RETRYING', 'FAILED')
+          and next_retry_time is not null
+          and next_retry_time &lt;= #{now}
+          and payload_json is not null
+    </update>
+
+    <update id="updateDeliveryResult">
+        update payment_notification_record
+        set notify_status = #{notifyStatus},
+            response_code = #{responseCode},
+            response_message = #{responseMessage},
+            next_retry_time = #{nextRetryTime},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+    </update>
+
+    <update id="manualRetryNotificationRecord">
+        update payment_notification_record
+        set notify_status = 'RETRYING',
+            retry_times = retry_times + 1,
+            next_retry_time = #{now},
+            response_code = 'MANUAL_RETRY',
+            response_message = '人工补偿重推已登记',
+            last_manual_retry_time = #{now},
+            last_manual_retry_reason = #{retryReason},
+            last_manual_retry_result = #{retryResult},
+            last_manual_retry_operator_id = #{operatorId},
+            last_manual_retry_operator_name = #{operatorName},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+          and notify_status in ('PENDING', 'RETRYING', 'FAILED')
+          and payload_json is not null
+    </update>
+</mapper>

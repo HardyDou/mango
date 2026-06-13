@@ -89,6 +89,13 @@ export async function initBackEndControlRoutes(): Promise<void> {
       }
     });
 
+    menuLoader.getHiddenRuntimeRoutes().forEach((route) => {
+      if (import.meta.env.DEV) console.log('[backEnd] Adding hidden runtime route to Layout:', route.path, route.name);
+      if (!route.name || !router.hasRoute(route.name)) {
+        router.addRoute('Layout', route);
+      }
+    });
+
     // 添加通配符路由捕获未匹配的路由，等动态路由加载完成后再处理。
     // 必须在业务路由之后注册，避免动态子路由被 LayoutNotFound 先匹配。
     router.addRoute('Layout', {

@@ -189,7 +189,7 @@ public class NumgenRuleServiceImpl implements INumgenRuleService {
 
     private NumgenGenerator selectGeneratorRequired(String genKey, Long tenantId) {
         Require.notBlank(genKey, "业务 Key 不能为空");
-        NumgenGenerator generator = generatorMapper.selectByKey(genKey.trim(), tenantId);
+        NumgenGenerator generator = selectGenerator(genKey.trim(), tenantId);
         Require.notNull(generator, "编号生成器不存在：" + genKey);
         Require.isTrue(generator.getStatus() == null || generator.getStatus() == 1, "编号生成器已停用：" + genKey);
         return generator;
@@ -206,7 +206,7 @@ public class NumgenRuleServiceImpl implements INumgenRuleService {
         NumgenRuleVO vo = new NumgenRuleVO();
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
-        NumgenGenerator generator = generatorMapper.selectByKey(entity.getGenKey(), entity.getTenantId());
+        NumgenGenerator generator = selectGenerator(entity.getGenKey(), entity.getTenantId());
         vo.setGenName(generator == null ? null : generator.getGenName());
         vo.setRuleName(entity.getRuleName());
         vo.setVersion(entity.getVersion());
@@ -277,5 +277,11 @@ public class NumgenRuleServiceImpl implements INumgenRuleService {
                 .filter(version -> version != null)
                 .max(Integer::compareTo)
                 .orElse(0) + 1;
+    }
+
+    private NumgenGenerator selectGenerator(String genKey, Long tenantId) {
+        return generatorMapper.selectOne(new LambdaQueryWrapper<NumgenGenerator>()
+                .eq(NumgenGenerator::getGenKey, genKey)
+                .eq(NumgenGenerator::getTenantId, tenantId));
     }
 }

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentRefundApprovalMapper">
+
+    <sql id="refundApprovalSelect">
+        select approval.id,
+               approval.approval_no as approvalNo,
+               approval.app_id as appId,
+               approval.biz_order_no as bizOrderNo,
+               approval.biz_refund_no as bizRefundNo,
+               approval.payment_order_id as paymentOrderId,
+               po.pay_order_no as payOrderNo,
+               approval.refund_order_id as refundOrderId,
+               ro.refund_order_no as refundOrderNo,
+               approval.refund_amount as refundAmount,
+               approval.reason,
+               approval.remark,
+               approval.status,
+               approval.workflow_apply_id as workflowApplyId,
+               approval.workflow_process_instance_id as workflowProcessInstanceId,
+               approval.workflow_process_definition_key as workflowProcessDefinitionKey,
+               approval.workflow_apply_status as workflowApplyStatus,
+               approval.workflow_apply_status_name as workflowApplyStatusName,
+               approval.workflow_current_task_names as workflowCurrentTaskNames,
+               approval.workflow_current_assignee_names as workflowCurrentAssigneeNames,
+               approval.workflow_synced_at as workflowSyncedAt,
+               approval.applicant_id as applicantId,
+               approval.applicant_name as applicantName,
+               approval.apply_time as applyTime,
+               approval.reviewer_id as reviewerId,
+               approval.reviewer_name as reviewerName,
+               approval.review_reason as reviewReason,
+               approval.review_time as reviewTime,
+               approval.created_at as createTime,
+               approval.updated_at as updateTime
+    </sql>
+
+    <sql id="refundApprovalFrom">
+        from payment_refund_approval approval
+        join payment_order po
+          on po.id = approval.payment_order_id and po.tenant_id = approval.tenant_id
+        left join payment_refund_order ro
+          on ro.id = approval.refund_order_id and ro.tenant_id = approval.tenant_id
+    </sql>
+
+    <sql id="refundApprovalWhere">
+        where approval.tenant_id = #{tenantId}
+          and approval.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            and approval.status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              approval.approval_no like concat('%', #{keyword}, '%')
+              or approval.biz_order_no like concat('%', #{keyword}, '%')
+              or approval.biz_refund_no like concat('%', #{keyword}, '%')
+              or approval.app_id like concat('%', #{keyword}, '%')
+              or po.pay_order_no like concat('%', #{keyword}, '%')
+              or ro.refund_order_no like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <select id="countRefundApprovals" resultType="long">
+        select count(1)
+        <include refid="refundApprovalFrom"/>
+        <include refid="refundApprovalWhere"/>
+    </select>
+
+    <select id="selectRefundApprovalPage" resultType="io.mango.payment.api.vo.PaymentRefundApprovalVO">
+        <include refid="refundApprovalSelect"/>
+        <include refid="refundApprovalFrom"/>
+        <include refid="refundApprovalWhere"/>
+        order by approval.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectRefundApprovalDetail" resultType="io.mango.payment.api.vo.PaymentRefundApprovalVO">
+        <include refid="refundApprovalSelect"/>
+        <include refid="refundApprovalFrom"/>
+        where approval.tenant_id = #{tenantId}
+          and approval.del_flag = 0
+          and approval.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectEntityForUpdate" resultType="io.mango.payment.core.entity.PaymentRefundApprovalEntity">
+        select id,
+               approval_no as approvalNo,
+               business_order_id as businessOrderId,
+               payment_order_id as paymentOrderId,
+               refund_order_id as refundOrderId,
+               biz_order_no as bizOrderNo,
+               biz_refund_no as bizRefundNo,
+               app_id as appId,
+               refund_amount as refundAmount,
+               reason,
+               remark,
+               status,
+               workflow_apply_id as workflowApplyId,
+               workflow_process_instance_id as workflowProcessInstanceId,
+               workflow_process_definition_key as workflowProcessDefinitionKey,
+               workflow_apply_status as workflowApplyStatus,
+               workflow_apply_status_name as workflowApplyStatusName,
+               workflow_current_task_names as workflowCurrentTaskNames,
+               workflow_current_assignee_names as workflowCurrentAssigneeNames,
+               workflow_synced_at as workflowSyncedAt,
+               applicant_id as applicantId,
+               applicant_name as applicantName,
+               apply_time as applyTime,
+               reviewer_id as reviewerId,
+               reviewer_name as reviewerName,
+               review_reason as reviewReason,
+               review_time as reviewTime,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_refund_approval
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+        for update
+    </select>
+
+    <select id="selectEntityByApprovalNoForUpdate" resultType="io.mango.payment.core.entity.PaymentRefundApprovalEntity">
+        select id,
+               approval_no as approvalNo,
+               business_order_id as businessOrderId,
+               payment_order_id as paymentOrderId,
+               refund_order_id as refundOrderId,
+               biz_order_no as bizOrderNo,
+               biz_refund_no as bizRefundNo,
+               app_id as appId,
+               refund_amount as refundAmount,
+               reason,
+               remark,
+               status,
+               workflow_apply_id as workflowApplyId,
+               workflow_process_instance_id as workflowProcessInstanceId,
+               workflow_process_definition_key as workflowProcessDefinitionKey,
+               workflow_apply_status as workflowApplyStatus,
+               workflow_apply_status_name as workflowApplyStatusName,
+               workflow_current_task_names as workflowCurrentTaskNames,
+               workflow_current_assignee_names as workflowCurrentAssigneeNames,
+               workflow_synced_at as workflowSyncedAt,
+               applicant_id as applicantId,
+               applicant_name as applicantName,
+               apply_time as applyTime,
+               reviewer_id as reviewerId,
+               reviewer_name as reviewerName,
+               review_reason as reviewReason,
+               review_time as reviewTime,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_refund_approval
+        where tenant_id = #{tenantId}
+          and approval_no = #{approvalNo}
+          and del_flag = 0
+        for update
+    </select>
+
+    <select id="selectEntityByBizRefundNoForUpdate" resultType="io.mango.payment.core.entity.PaymentRefundApprovalEntity">
+        select id,
+               approval_no as approvalNo,
+               business_order_id as businessOrderId,
+               payment_order_id as paymentOrderId,
+               refund_order_id as refundOrderId,
+               biz_order_no as bizOrderNo,
+               biz_refund_no as bizRefundNo,
+               app_id as appId,
+               refund_amount as refundAmount,
+               reason,
+               remark,
+               status,
+               workflow_apply_id as workflowApplyId,
+               workflow_process_instance_id as workflowProcessInstanceId,
+               workflow_process_definition_key as workflowProcessDefinitionKey,
+               workflow_apply_status as workflowApplyStatus,
+               workflow_apply_status_name as workflowApplyStatusName,
+               workflow_current_task_names as workflowCurrentTaskNames,
+               workflow_current_assignee_names as workflowCurrentAssigneeNames,
+               workflow_synced_at as workflowSyncedAt,
+               applicant_id as applicantId,
+               applicant_name as applicantName,
+               apply_time as applyTime,
+               reviewer_id as reviewerId,
+               reviewer_name as reviewerName,
+               review_reason as reviewReason,
+               review_time as reviewTime,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_refund_approval
+        where tenant_id = #{tenantId}
+          and app_id = #{appId}
+          and biz_refund_no = #{bizRefundNo}
+          and del_flag = 0
+        for update
+    </select>
+
+    <select id="sumPendingApprovalAmount" resultType="long">
+        select coalesce(sum(refund_amount), 0)
+        from payment_refund_approval
+        where tenant_id = #{tenantId}
+          and payment_order_id = #{paymentOrderId}
+          and status in ('PENDING', 'IN_APPROVAL')
+          and del_flag = 0
+    </select>
+</mapper>

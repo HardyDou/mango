@@ -75,4 +75,3 @@ rg -n "scripts/backend-dev\\.sh|java -jar|mvn -f backend/app|mvn -pl|spring-boot
 - 未连接真实 MySQL 和 Maven 仓库执行完整 `spring-boot:run` 到健康检查；本次验证聚焦模板生成、入口唯一性和失败诊断。
 - `java -jar` 仍会在 README 中以“部署形态，不用于本地开发”的方式出现。
 - `scripts/backend-dev.sh` 为兼容旧项目保留，不作为推荐开发入口。
-

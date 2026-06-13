@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentMangoPayScenarioControlMapper">
+
+    <select id="selectNextActive" resultType="io.mango.payment.core.entity.PaymentMangoPayScenarioControl">
+        select sc.id,
+               sc.control_no as controlNo,
+               sc.channel_code as channelCode,
+               sc.contract_id as contractId,
+               sc.scenario_type as scenarioType,
+               sc.scenario_code as scenarioCode,
+               sc.bill_difference_type as billDifferenceType,
+               sc.difference_amount as differenceAmount,
+               sc.callback_delay_minutes as callbackDelayMinutes,
+               sc.effective_count as effectiveCount,
+               sc.consumed_count as consumedCount,
+               sc.status,
+               sc.consumed_at as consumedAt,
+               sc.remark,
+               sc.tenant_id as tenantId,
+               sc.created_by as createdBy,
+               sc.created_at as createdAt,
+               sc.updated_by as updatedBy,
+               sc.updated_at as updatedAt,
+               sc.del_flag as delFlag
+        from payment_mango_pay_scenario_control sc
+        where sc.tenant_id = #{tenantId}
+          and sc.channel_code = #{channelCode}
+          and sc.scenario_type = #{scenarioType}
+          and sc.status = 'ACTIVE'
+          and sc.consumed_count &lt; sc.effective_count
+          and sc.del_flag = 0
+          and (
+            sc.contract_id is null
+            or sc.contract_id = #{contractId}
+          )
+          and (
+            #{contractId} is null
+            or exists (
+              select 1
+                from payment_channel_contract cc
+                join payment_channel c
+                  on c.id = cc.channel_id
+                 and c.tenant_id = cc.tenant_id
+                 and c.channel_code = #{channelCode}
+                 and c.status = 1
+                 and c.del_flag = 0
+               where cc.tenant_id = #{tenantId}
+                 and cc.id = #{contractId}
+                 and cc.status = 1
+                 and cc.del_flag = 0
+            )
+          )
+        order by case when sc.contract_id = #{contractId} then 0 else 1 end,
+                 sc.created_at asc,
+                 sc.id asc
+        limit 1
+    </select>
+
+    <update id="consume">
+        update payment_mango_pay_scenario_control
+        set consumed_count = consumed_count + 1,
+            consumed_at = now(),
+            status = case when consumed_count + 1 &gt;= effective_count then 'CONSUMED' else 'ACTIVE' end,
+            updated_by = #{operatorId},
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'ACTIVE'
+          and consumed_count &lt; effective_count
+          and del_flag = 0
+    </update>
+</mapper>

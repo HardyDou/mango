@@ -1,0 +1,122 @@
+[
+  {
+    "code": "ICBC",
+    "name": "中国工商银行",
+    "shortName": "工行",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "ABC",
+    "name": "中国农业银行",
+    "shortName": "农行",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "BOC",
+    "name": "中国银行",
+    "shortName": "中行",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "CCB",
+    "name": "中国建设银行",
+    "shortName": "建行",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "CMB",
+    "name": "招商银行",
+    "shortName": "招行",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "BOCOM",
+    "name": "交通银行",
+    "shortName": "交行",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "CIB",
+    "name": "兴业银行",
+    "shortName": "兴业",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  },
+  {
+    "code": "SPDB",
+    "name": "浦发银行",
+    "shortName": "浦发",
+    "limits": [
+      {
+        "label": "个人网银",
+        "value": "以银行页面展示为准"
+      },
+      {
+        "label": "企业网银",
+        "value": "以企业网银授权限额为准"
+      }
+    ]
+  }
+]

@@ -2,8 +2,10 @@ package io.mango.infra.web.starter;
 
 import io.mango.common.exception.BizException;
 import io.mango.common.result.R;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -69,6 +71,14 @@ public class GlobalExceptionHandler {
         return R.fail(400, "参数类型错误: " + e.getName());
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public R<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e, HttpServletRequest request) {
+        log.warn("请求体解析失败, method={}, uri={}, query={}, exception={}",
+                request.getMethod(), request.getRequestURI(), request.getQueryString(), e.getClass().getName(), e);
+        return R.fail(400, "请求体格式错误，请检查 JSON 字段类型和日期时间格式");
+    }
+
     // ==================== 404 ====================
 
     @ExceptionHandler(NoResourceFoundException.class)
@@ -93,8 +103,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(SQLException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public R<Void> handleSqlException(SQLException e) {
-        log.warn("数据库异常: {}", e.getMessage());
+    public R<Void> handleSqlException(SQLException e, HttpServletRequest request) {
+        log.warn("数据库异常, method={}, uri={}, query={}, exception={}",
+                request.getMethod(), request.getRequestURI(), request.getQueryString(), e.getClass().getName(), e);
         return R.fail(500, "数据库操作异常");
     }
 
@@ -102,8 +113,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public R<Void> handleException(Exception e) {
-        log.warn("系统异常: {}", e.getMessage());
+    public R<Void> handleException(Exception e, HttpServletRequest request) {
+        log.warn("系统异常, method={}, uri={}, query={}, exception={}",
+                request.getMethod(), request.getRequestURI(), request.getQueryString(), e.getClass().getName(), e);
         return R.fail(500, "系统异常");
     }
 }

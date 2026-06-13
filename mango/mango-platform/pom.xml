@@ -33,6 +33,7 @@
         <module>mango-calendar</module>
         <module>mango-job</module>
         <module>mango-numgen</module>
+        <module>mango-payment</module>
         <module>mango-org</module>
         <module>mango-seed</module>
         <module>mango-system</module>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentOfflineBankStatementBatchMapper">
+
+    <sql id="batchWhere">
+        where b.tenant_id = #{tenantId}
+          and b.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            and b.batch_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              b.batch_no like concat('%', #{keyword}, '%')
+              or b.statement_file_name like concat('%', #{keyword}, '%')
+              or b.file_digest like concat('%', #{keyword}, '%')
+              or b.importer_name like concat('%', #{keyword}, '%')
+              or b.bank_account_no_mask like concat('%', #{keyword}, '%')
+              or b.bank_name like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="batchSelect">
+        select b.id,
+               b.batch_no as batchNo,
+               b.bank_account_no_mask as bankAccountNoMask,
+               b.bank_name as bankName,
+               b.statement_file_id as statementFileId,
+               b.statement_file_name as statementFileName,
+               b.file_digest as fileDigest,
+               b.total_count as totalCount,
+               b.matched_count as matchedCount,
+               b.confirmed_count as confirmedCount,
+               b.difference_count as differenceCount,
+               b.batch_status as batchStatus,
+               b.importer_name as importerName,
+               b.import_time as importTime,
+               b.created_at as createTime,
+               b.updated_at as updateTime
+    </sql>
+
+    <select id="countBatches" resultType="long">
+        select count(1)
+        from payment_offline_bank_statement_batch b
+        <include refid="batchWhere"/>
+    </select>
+
+    <select id="selectBatchPage" resultType="io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO">
+        <include refid="batchSelect"/>
+        from payment_offline_bank_statement_batch b
+        <include refid="batchWhere"/>
+        order by b.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectBatchDetail" resultType="io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO">
+        <include refid="batchSelect"/>
+        from payment_offline_bank_statement_batch b
+        where b.tenant_id = #{tenantId}
+          and b.del_flag = 0
+          and b.id = #{id}
+        limit 1
+    </select>
+
+    <select id="countImportedFile" resultType="long">
+        select count(1)
+        from payment_offline_bank_statement_batch b
+        where b.tenant_id = #{tenantId}
+          and b.file_digest = #{fileDigest}
+          and b.del_flag = 0
+    </select>
+
+    <update id="refreshSummary">
+        update payment_offline_bank_statement_batch b
+        set b.total_count = (
+                select count(1)
+                from payment_offline_bank_statement_item i
+                where i.tenant_id = #{tenantId}
+                  and i.batch_id = #{id}
+                  and i.del_flag = 0
+            ),
+            b.matched_count = (
+                select count(1)
+                from payment_offline_bank_statement_item i
+                where i.tenant_id = #{tenantId}
+                  and i.batch_id = #{id}
+                  and i.del_flag = 0
+                  and i.match_status in ('MATCHED_PENDING_CONFIRM', 'CONFIRMED')
+            ),
+            b.confirmed_count = (
+                select count(1)
+                from payment_offline_bank_statement_item i
+                where i.tenant_id = #{tenantId}
+                  and i.batch_id = #{id}
+                  and i.del_flag = 0
+                  and i.match_status = 'CONFIRMED'
+            ),
+            b.difference_count = (
+                select count(1)
+                from payment_offline_bank_statement_item i
+                where i.tenant_id = #{tenantId}
+                  and i.batch_id = #{id}
+                  and i.del_flag = 0
+                  and i.match_status not in ('MATCHED_PENDING_CONFIRM', 'CONFIRMED')
+            ),
+            b.batch_status = case
+                when (
+                    select count(1)
+                    from payment_offline_bank_statement_item i
+                    where i.tenant_id = #{tenantId}
+                      and i.batch_id = #{id}
+                      and i.del_flag = 0
+                      and i.match_status not in ('MATCHED_PENDING_CONFIRM', 'CONFIRMED')
+                ) > 0 then 'DIFFERENCE'
+                when (
+                    select count(1)
+                    from payment_offline_bank_statement_item i
+                    where i.tenant_id = #{tenantId}
+                      and i.batch_id = #{id}
+                      and i.del_flag = 0
+                      and i.match_status = 'MATCHED_PENDING_CONFIRM'
+                ) = 0 then 'CONFIRMED'
+                else 'MATCHED'
+            end,
+            b.updated_at = now()
+        where b.tenant_id = #{tenantId}
+          and b.id = #{id}
+          and b.del_flag = 0
+    </update>
+</mapper>
