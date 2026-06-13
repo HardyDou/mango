@@ -2510,6 +2510,9 @@ async function expectOnlySemanticTags(scope: Locator, allowed: RegExp[], message
 }
 
 test.describe('支付中心 E2E', () => {
+  test.describe.configure({ mode: 'serial' });
+  test.skip(({ browserName }) => browserName !== 'chromium', '支付中心 E2E 使用共享测试库数据，仅在 Chromium 串行执行');
+
   test('支付中心搜索区、列表区和分页区样式结构一致', async ({ page }) => {
     const runtimeErrors = collectRuntimeErrors(page);
     await login(page);

@@ -16,6 +16,8 @@ import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
 import io.mango.payment.core.mapper.PaymentChannelQueryRecordMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
+import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
+import io.mango.payment.core.mapper.PaymentRefundQueryRecordMapper;
 import io.mango.payment.core.mapper.PaymentTransactionFlowMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,36 +41,42 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PaymentChannelOrderQueryServiceTest {
+class PaymentChannelSyncServiceTest {
 
     private PaymentOrderMapper paymentOrderMapper;
+    private PaymentRefundOrderMapper refundOrderMapper;
     private PaymentBusinessOrderMapper businessOrderMapper;
     private PaymentApplicationMapper applicationMapper;
     private PaymentTransactionFlowMapper transactionFlowMapper;
     private PaymentChannelContractMapper channelContractMapper;
     private PaymentChannelQueryRecordMapper channelQueryRecordMapper;
+    private PaymentRefundQueryRecordMapper refundQueryRecordMapper;
     private PaymentNotificationService notificationService;
     private PaymentMangoPayScenarioControlService scenarioControlService;
     private PaymentChannelAdapterRegistry channelAdapterRegistry;
     private PaymentOrderStatusFlowService statusFlowService;
     private PaymentDuplicatePaymentService duplicatePaymentService;
+    private PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private PaymentObservabilityService observabilityService;
     private PaymentExceptionOrderService exceptionOrderService;
     private PaymentNumberService numberService;
-    private PaymentChannelOrderQueryService service;
+    private PaymentChannelSyncService service;
 
     @BeforeEach
     void setUp() {
         paymentOrderMapper = mock(PaymentOrderMapper.class);
+        refundOrderMapper = mock(PaymentRefundOrderMapper.class);
         businessOrderMapper = mock(PaymentBusinessOrderMapper.class);
         applicationMapper = mock(PaymentApplicationMapper.class);
         transactionFlowMapper = mock(PaymentTransactionFlowMapper.class);
         channelContractMapper = mock(PaymentChannelContractMapper.class);
         channelQueryRecordMapper = mock(PaymentChannelQueryRecordMapper.class);
+        refundQueryRecordMapper = mock(PaymentRefundQueryRecordMapper.class);
         notificationService = mock(PaymentNotificationService.class);
         scenarioControlService = mock(PaymentMangoPayScenarioControlService.class);
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
         duplicatePaymentService = mock(PaymentDuplicatePaymentService.class);
+        duplicateRefundCompletionService = mock(PaymentDuplicateRefundCompletionService.class);
         observabilityService = mock(PaymentObservabilityService.class);
         exceptionOrderService = mock(PaymentExceptionOrderService.class);
         numberService = mock(PaymentNumberService.class);
@@ -79,16 +87,19 @@ class PaymentChannelOrderQueryServiceTest {
                 mock(io.mango.payment.core.mapper.PaymentReconciliationMapper.class),
                 scenarioControlService,
                 new PaymentMangoPayResultMappingService())));
-        service = new PaymentChannelOrderQueryService(
+        service = new PaymentChannelSyncService(
                 paymentOrderMapper,
+                refundOrderMapper,
                 businessOrderMapper,
                 applicationMapper,
                 transactionFlowMapper,
                 channelQueryRecordMapper,
+                refundQueryRecordMapper,
                 new PaymentOrderStateService(),
                 notificationService,
                 statusFlowService,
                 duplicatePaymentService,
+                duplicateRefundCompletionService,
                 channelAdapterRegistry,
                 new ObjectMapper(),
                 observabilityService,
@@ -105,8 +116,8 @@ class PaymentChannelOrderQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelPayment should advance PAYING order to SUCCESS and create payment flow")
-    void queryChannelPayment_success_advancesOrderAndCreatesFlow() {
+    @DisplayName("syncPaymentStatus should advance PAYING order to SUCCESS and create payment flow")
+    void syncPaymentStatus_success_advancesOrderAndCreatesFlow() {
         PaymentOrderEntity order = paymentOrder("PAYING");
         when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(order);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"SUCCESS\"}");
@@ -122,7 +133,7 @@ class PaymentChannelOrderQueryServiceTest {
         ArgumentCaptor<PaymentTransactionFlowEntity> flowCaptor = ArgumentCaptor.forClass(PaymentTransactionFlowEntity.class);
         ArgumentCaptor<PaymentChannelQueryRecordEntity> queryRecordCaptor = ArgumentCaptor.forClass(PaymentChannelQueryRecordEntity.class);
 
-        PaymentChannelOrderQueryService.QueryResult result = service.queryChannelPayment("PO202606060001");
+        PaymentChannelSyncService.PaymentSyncResult result = service.syncPaymentStatus("PO202606060001");
 
         assertThat(result.payOrderNo()).isEqualTo("PO202606060001");
         assertThat(result.status()).isEqualTo("SUCCESS");
@@ -187,8 +198,8 @@ class PaymentChannelOrderQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelPayment should keep PAYING order unchanged when channel still processing")
-    void queryChannelPayment_processing_keepsOrderUnchanged() {
+    @DisplayName("syncPaymentStatus should keep PAYING order unchanged when channel still processing")
+    void syncPaymentStatus_processing_keepsOrderUnchanged() {
         PaymentOrderEntity order = paymentOrder("PAYING");
         when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(order);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"PROCESSING\"}");
@@ -197,7 +208,7 @@ class PaymentChannelOrderQueryServiceTest {
         when(channelQueryRecordMapper.selectLastByTenantAndPayOrderNo(1L, "PO202606060001"))
                 .thenReturn(queryRecord("NO_CHANGE_PROCESSING"));
 
-        PaymentChannelOrderQueryService.QueryResult result = service.queryChannelPayment("PO202606060001");
+        PaymentChannelSyncService.PaymentSyncResult result = service.syncPaymentStatus("PO202606060001");
 
         assertThat(result.status()).isEqualTo("PAYING");
         assertThat(result.changed()).isFalse();
@@ -212,8 +223,8 @@ class PaymentChannelOrderQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelPayment should advance PAYING order to FAILED without creating success flow")
-    void queryChannelPayment_failed_advancesPaymentOrderOnly() {
+    @DisplayName("syncPaymentStatus should advance PAYING order to FAILED without creating success flow")
+    void syncPaymentStatus_failed_advancesPaymentOrderOnly() {
         PaymentOrderEntity order = paymentOrder("PAYING");
         when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(order);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"FAIL\"}");
@@ -225,7 +236,7 @@ class PaymentChannelOrderQueryServiceTest {
         when(channelQueryRecordMapper.selectLastByTenantAndPayOrderNo(1L, "PO202606060001"))
                 .thenReturn(queryRecord("UPDATED"));
 
-        PaymentChannelOrderQueryService.QueryResult result = service.queryChannelPayment("PO202606060001");
+        PaymentChannelSyncService.PaymentSyncResult result = service.syncPaymentStatus("PO202606060001");
 
         assertThat(result.status()).isEqualTo("FAILED");
         assertThat(result.changed()).isTrue();
@@ -247,8 +258,8 @@ class PaymentChannelOrderQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelPayment should handle duplicate effective success through duplicate payment service")
-    void queryChannelPayment_duplicateSuccess_handlesDuplicatePayment() {
+    @DisplayName("syncPaymentStatus should handle duplicate effective success through duplicate payment service")
+    void syncPaymentStatus_duplicateSuccess_handlesDuplicatePayment() {
         PaymentOrderEntity order = paymentOrder("PAYING");
         when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(order);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayScenario\":\"SUCCESS\"}");
@@ -268,7 +279,7 @@ class PaymentChannelOrderQueryServiceTest {
         when(channelQueryRecordMapper.selectLastByTenantAndPayOrderNo(1L, "PO202606060001"))
                 .thenReturn(queryRecord("DUPLICATE_REFUNDED"));
 
-        PaymentChannelOrderQueryService.QueryResult result = service.queryChannelPayment("PO202606060001");
+        PaymentChannelSyncService.PaymentSyncResult result = service.syncPaymentStatus("PO202606060001");
 
         assertThat(result.status()).isEqualTo("DUPLICATE_REFUNDED");
         assertThat(result.flowNo()).isEqualTo("RFLOW202606060001");
@@ -280,8 +291,8 @@ class PaymentChannelOrderQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelPayment should return terminal order result without mutating it")
-    void queryChannelPayment_terminal_returnsCurrentResult() {
+    @DisplayName("syncPaymentStatus should return terminal order result without mutating it")
+    void syncPaymentStatus_terminal_returnsCurrentResult() {
         PaymentOrderEntity order = paymentOrder("SUCCESS");
         when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(order);
         when(paymentOrderMapper.selectLatestFlowNo(1L, 370001L)).thenReturn("FLOW202606060001");
@@ -289,7 +300,7 @@ class PaymentChannelOrderQueryServiceTest {
         when(channelQueryRecordMapper.selectLastByTenantAndPayOrderNo(1L, "PO202606060001"))
                 .thenReturn(queryRecord("NO_QUERY_TERMINAL"));
 
-        PaymentChannelOrderQueryService.QueryResult result = service.queryChannelPayment("PO202606060001");
+        PaymentChannelSyncService.PaymentSyncResult result = service.syncPaymentStatus("PO202606060001");
 
         assertThat(result.status()).isEqualTo("SUCCESS");
         assertThat(result.flowNo()).isEqualTo("FLOW202606060001");

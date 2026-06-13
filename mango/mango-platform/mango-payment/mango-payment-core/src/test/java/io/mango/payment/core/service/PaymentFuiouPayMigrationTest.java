@@ -20,6 +20,8 @@ class PaymentFuiouPayMigrationTest {
             "src/main/resources/db/migration/payment/V93__payment_fuiou_config_display_cleanup.sql");
     private static final Path GATEWAY_CAPABILITY_MIGRATION = Path.of(
             "src/main/resources/db/migration/payment/V94__payment_fuiou_gateway_capabilities.sql");
+    private static final Path CALLBACK_DOMAIN_MIGRATION = Path.of(
+            "src/main/resources/db/migration/payment/V96__payment_fuiou_callback_domain.sql");
     private static final Path SCANPAY_PUBLIC_KEY_FIX_MIGRATION = Path.of(
             "src/main/resources/db/migration/payment/V97__payment_fuiou_scanpay_public_key_fix.sql");
     private static final Path CALLBACK_ROUTE_UNIFICATION_MIGRATION = Path.of(
@@ -37,15 +39,18 @@ class PaymentFuiouPayMigrationTest {
         String cleanupSql = Files.readString(CONTRACT_CONFIGURATION_CLEANUP_MIGRATION);
         String displayCleanupSql = Files.readString(CONFIG_DISPLAY_CLEANUP_MIGRATION);
         String gatewayCapabilitySql = Files.readString(GATEWAY_CAPABILITY_MIGRATION);
+        String callbackDomainSql = Files.readString(CALLBACK_DOMAIN_MIGRATION);
         String scanpayPublicKeyFixSql = Files.readString(SCANPAY_PUBLIC_KEY_FIX_MIGRATION);
         String callbackRouteUnificationSql = Files.readString(CALLBACK_ROUTE_UNIFICATION_MIGRATION);
         String callbackHttps1443Sql = Files.readString(CALLBACK_HTTPS_1443_MIGRATION);
         String gatewayPageNotifyUrlSql = Files.readString(GATEWAY_PAGE_NOTIFY_URL_MIGRATION);
 
+        assertFuiouSeedDoesNotDeclareBillCapability(seedSql);
         assertFuiouScanpayConfiguration(configurationSql);
         assertFuiouScanpayConfiguration(cleanupSql);
         assertFuiouDisplayConfiguration(displayCleanupSql);
         assertFuiouGatewayConfiguration(gatewayCapabilitySql);
+        assertFuiouCallbackDomain(callbackDomainSql);
         assertFuiouScanpayPublicKeyFix(scanpayPublicKeyFixSql);
         assertFuiouCallbackRouteUnification(callbackRouteUnificationSql);
         assertFuiouCallbackHttps1443(callbackHttps1443Sql);
@@ -76,6 +81,16 @@ class PaymentFuiouPayMigrationTest {
                 .doesNotContain("douxy.inner.yunxinbaokeji.com");
     }
 
+    private void assertFuiouCallbackDomain(String sql) {
+        assertThat(sql)
+                .contains("No-op by design")
+                .contains("not overwritten by formal Flyway migration")
+                .doesNotContain("UPDATE `payment_channel_contract`")
+                .doesNotContain("JSON_MERGE_PATCH")
+                .doesNotContain("27.185.20.146")
+                .doesNotContain("douxy.inner.yunxinbaokeji.com");
+    }
+
     private void assertFuiouGatewayPageNotifyUrl(String sql) {
         assertThat(sql)
                 .contains("No-op by design")
@@ -93,12 +108,15 @@ class PaymentFuiouPayMigrationTest {
                 .contains("\"masked\":false,\"sort\":21")
                 .contains("\"name\":\"gatewayBaseUrl\"")
                 .contains("报文终端号由系统按线上收款接口规则处理")
-                .contains("'HTTP'")
                 .contains("'fuiouPublicKey', 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDz2fCOYaaU6sztFql4cOmiFRq2LRk1XuGfrJnMFa09QMXMXOEn9YNYC44zV1AE/q9b0BKGbM74YPoge/7qsW+Heao76Drv6HujP+rXLFbsXT5f9rcID2GCzDc+DXjb+NfwSa8vS9KJ3dau2xm87zpjdQ9zER6VH4UcZTgj7LbzgwIDAQAB'")
                 .contains("PERSONAL_WECHAT_QR")
                 .contains("0.0020000000")
                 .contains("PERSONAL_ALIPAY_QR")
+                .contains("富友账单获取协议未完成适配前不声明通道账单能力")
                 .doesNotContain("`bill_fetch_modes` = 'MANUAL,FTP,FTPS,HTTP'")
+                .doesNotContain("`bill_fetch_modes` = 'HTTP'")
+                .doesNotContain("PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1")
+                .doesNotContain("PERSONAL_WECHAT_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1")
                 .doesNotContain("\"name\":\"interfaceMode\"")
                 .doesNotContain("\"name\":\"termId\"")
                 .doesNotContain("\"name\":\"termIp\"")
@@ -116,6 +134,17 @@ class PaymentFuiouPayMigrationTest {
                 .doesNotContain("CORPORATE_EBANK_REDIRECT")
                 .doesNotContain("CORPORATE_OFFLINE_ACCOUNT")
                 .doesNotContain("MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJc");
+    }
+
+    private void assertFuiouSeedDoesNotDeclareBillCapability(String sql) {
+        assertThat(sql)
+                .contains("'FUIOU_PAY'")
+                .contains("富友账单获取协议未完成适配前不声明通道账单能力")
+                .contains("NULL, 1, 1, NULL, NOW(), NULL, NOW(), 0)")
+                .contains("PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 0, 0, 0")
+                .doesNotContain("'MANUAL,FTP,FTPS,HTTP'")
+                .doesNotContain("'HTTP', 1, 1")
+                .doesNotContain("PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 0, 1, 1");
     }
 
     private void assertFuiouDisplayConfiguration(String sql) {
@@ -155,7 +184,14 @@ class PaymentFuiouPayMigrationTest {
                 .contains("'gatewayMerchantKey', 'vau6p7ldawpezyaugc0kopdrrwm4gkpu'")
                 .contains("http://www-2.wg.fuiou.com:13195/smpGate.do")
                 .contains("http://www-2.wg.fuiou.com:13195/smpAQueryGate.do")
-                .contains("网银退款接口资料未确认前不开放网银退款能力")
+                .contains("网银退款和富友账单接口资料未确认前不开放对应能力")
+                .contains("`bill_fetch_modes` = NULL")
+                .contains("'https://payment.example.com/api/payment/channel-callbacks/fuiou'")
+                .contains("'gatewayPageNotifyUrl', 'https://payment.example.com/payment/fuiou/return'")
+                .contains("'gatewayBackNotifyUrl', 'https://payment.example.com/api/payment/channel-callbacks/fuiou'")
+                .doesNotContain("27.185.20.146")
+                .doesNotContain("douxy.inner.yunxinbaokeji.com")
+                .doesNotContain("supports_bill`, `supports_reconcile`, `min_amount`, `max_amount`, `status`, `tenant_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `del_flag`)\nVALUES\n  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1")
                 .doesNotContain("\"name\":\"xmlRsa\"")
                 .doesNotContain("\"name\":\"interfaceMode\"")
                 .doesNotContain("\"name\":\"termId\"")

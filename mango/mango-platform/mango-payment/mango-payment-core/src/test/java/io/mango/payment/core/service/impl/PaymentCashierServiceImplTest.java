@@ -27,7 +27,7 @@ import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.model.PaymentCashierRouteMatch;
 import io.mango.payment.core.service.IPaymentChannelAdapter;
 import io.mango.payment.core.service.PaymentChannelAdapterRegistry;
-import io.mango.payment.core.service.PaymentChannelOrderQueryService;
+import io.mango.payment.core.service.PaymentChannelSyncService;
 import io.mango.payment.core.service.PaymentNumberService;
 import io.mango.payment.core.service.PaymentOrderStateService;
 import io.mango.payment.core.service.PaymentOrderStatusFlowService;
@@ -38,8 +38,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,10 +69,11 @@ class PaymentCashierServiceImplTest {
     private TestPaymentChannelAdapter channelAdapter;
     private TestPaymentChannelAdapter offlineChannelAdapter;
     private PaymentOrderStatusFlowService statusFlowService;
-    private PaymentChannelOrderQueryService channelOrderQueryService;
+    private PaymentChannelSyncService channelSyncService;
     private PaymentSensitiveValueService sensitiveValueService;
     private PaymentNumberService numberService;
     private PaymentCashierServiceImpl service;
+    private List<String> transactionEvents;
 
     @BeforeEach
     void setUp() {
@@ -83,8 +88,11 @@ class PaymentCashierServiceImplTest {
         channelAdapter = new TestPaymentChannelAdapter();
         offlineChannelAdapter = new TestPaymentChannelAdapter();
         offlineChannelAdapter.channelCode = "OFFLINE_COLLECTION";
+        transactionEvents = new ArrayList<>();
+        channelAdapter.events = transactionEvents;
+        offlineChannelAdapter.events = transactionEvents;
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
-        channelOrderQueryService = mock(PaymentChannelOrderQueryService.class);
+        channelSyncService = mock(PaymentChannelSyncService.class);
         sensitiveValueService = mock(PaymentSensitiveValueService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_ORDER_NO)).thenReturn("PO2026060600000001");
@@ -101,10 +109,11 @@ class PaymentCashierServiceImplTest {
                 new PaymentChannelAdapterRegistry(List.of(channelAdapter, offlineChannelAdapter)),
                 new PaymentOrderStateService(),
                 statusFlowService,
-                channelOrderQueryService,
+                channelSyncService,
                 new ObjectMapper(),
                 sensitiveValueService,
-                numberService);
+                numberService,
+                new TestTransactionManager(transactionEvents));
         when(channelContractMapper.selectById(any())).thenAnswer(invocation ->
                 contract(invocation.getArgument(0), "{}"));
         when(cashierConfigMapper.selectByIdIgnoreTenant(350001L)).thenReturn(cashierConfig());
@@ -203,6 +212,29 @@ class PaymentCashierServiceImplTest {
         assertThat(offlineChannelAdapter.lastPaymentCommand.subjectName()).isEqualTo("芒果科技有限公司");
         assertThat(offlineChannelAdapter.afterCreatedCalled).isTrue();
         assertThat(offlineChannelAdapter.createdOrder.getChannelCode()).isEqualTo("OFFLINE_COLLECTION");
+    }
+
+    @Test
+    @DisplayName("pay should call channel outside local database transaction")
+    void pay_callsChannelBetweenLocalTransactions() {
+        when(cashierConfigMapper.selectById(350001L)).thenReturn(cashierConfig());
+        when(applicationMapper.selectById(310001L)).thenReturn(application());
+        when(businessOrderMapper.selectCashierBusinessOrder(1L, 360001L)).thenReturn(businessOrder());
+        when(subjectMapper.selectById(320001L)).thenReturn(subject());
+        when(methodMapper.selectOne(any())).thenReturn(method());
+        when(contractCapabilityMapper.selectRoutedCashierCapability(1L, 310001L, 320001L, "PERSONAL_WECHAT_QR", "WEB", 9900L))
+                .thenReturn(route());
+        when(paymentOrderMapper.countSuccessfulCashierOrders(1L, 360001L)).thenReturn(0L);
+        when(paymentOrderMapper.selectProcessingPayOrderNo(1L, 360001L, 340001L)).thenReturn(null);
+        when(businessOrderMapper.touchCashierPayingOrder(1L, 360001L)).thenReturn(1);
+        PaymentCashierPayCommand command = new PaymentCashierPayCommand();
+        command.setCashierConfigId(350001L);
+        command.setBusinessOrderId(360001L);
+        command.setMethodCode("PERSONAL_WECHAT_QR");
+
+        service.pay(command);
+
+        assertThat(transactionEvents).containsSubsequence("begin", "commit", "applyPayment", "begin", "commit");
     }
 
     @AfterEach
@@ -481,6 +513,7 @@ class PaymentCashierServiceImplTest {
         private String materialType = "QR";
         private String channelCode = "MANGO_PAY";
         private boolean afterCreatedCalled;
+        private List<String> events = List.of();
 
         @Override
         public String channelCode() {
@@ -489,6 +522,7 @@ class PaymentCashierServiceImplTest {
 
         @Override
         public PaymentApplyResult applyPayment(PaymentApplyCommand command) {
+            events.add("applyPayment");
             this.lastPaymentCommand = command;
             PaymentCashierPayMaterialVO material = new PaymentCashierPayMaterialVO();
             material.setMaterialType(materialType);
@@ -533,6 +567,36 @@ class PaymentCashierServiceImplTest {
         @Override
         public RefundQueryResult queryRefund(RefundQueryCommand command) {
             throw new AssertionError("查退款不属于本测试适配器覆盖范围");
+        }
+    }
+
+    private static class TestTransactionManager extends AbstractPlatformTransactionManager {
+
+        private final List<String> events;
+
+        private TestTransactionManager(List<String> events) {
+            this.events = events;
+        }
+
+        @Override
+        protected Object doGetTransaction() throws TransactionException {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, org.springframework.transaction.TransactionDefinition definition)
+                throws TransactionException {
+            events.add("begin");
+        }
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) throws TransactionException {
+            events.add("commit");
+        }
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus status) throws TransactionException {
+            events.add("rollback");
         }
     }
 }

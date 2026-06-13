@@ -15,8 +15,8 @@ SET `channel_name` = '富友支付',
       {"name":"privateKey","label":"商户 RSA 私钥","component":"textarea","dataType":"string","required":true,"sensitive":true,"encrypted":true,"masked":true,"sort":20,"group":"密钥证书","description":"富友扫码 XML/RSA 签名使用，保存后加密并脱敏展示"},
       {"name":"fuiouPublicKey","label":"富友 RSA 公钥","component":"textarea","dataType":"string","required":true,"sensitive":false,"encrypted":false,"masked":false,"sort":21,"group":"密钥证书","description":"富友扫码 XML/RSA 响应验签使用"}
     ]',
-    `capability_summary` = '富友支付通道：当前已接入扫码 XML/RSA 主扫统一下单，支持微信扫码、支付宝扫码、查单、退款；商户号、机构号、RSA 密钥和通知地址在签约通道动态维护。富友报文终端号由系统按线上收款接口规则处理，不作为商户签约维护项；被扫、支付宝账号支付、网银等能力需完成对应适配器后再开放。',
-    `bill_fetch_modes` = 'HTTP',
+    `capability_summary` = '富友支付通道：当前已接入扫码 XML/RSA 主扫统一下单，支持微信扫码、支付宝扫码、查单、退款；商户号、机构号、RSA 密钥和通知地址在签约通道动态维护。富友报文终端号由系统按线上收款接口规则处理，不作为商户签约维护项；被扫、支付宝账号支付、网银等能力需完成对应适配器后再开放；富友账单获取协议未完成适配前不声明通道账单能力。',
+    `bill_fetch_modes` = NULL,
     `status` = 1,
     `del_flag` = 0,
     `updated_at` = NOW()
@@ -26,8 +26,8 @@ WHERE `id` = 330005
 INSERT INTO `payment_channel_capability`
   (`id`, `channel_id`, `method_code`, `terminal_type`, `environment`, `supports_refund`, `supports_query`, `supports_close`, `supports_bill`, `supports_reconcile`, `min_amount`, `max_amount`, `status`, `tenant_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `del_flag`)
 VALUES
-  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
-  (332017, 330005, 'PERSONAL_WECHAT_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0)
+  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 1, 0, 0, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
+  (332017, 330005, 'PERSONAL_WECHAT_QR', 'WEB', 'PROD', 1, 1, 1, 0, 0, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0)
 ON DUPLICATE KEY UPDATE
   `method_code` = VALUES(`method_code`),
   `terminal_type` = VALUES(`terminal_type`),
@@ -54,7 +54,7 @@ SET `contract_name` = '芒果科技富友支付签约',
       'insCd', '08A9999999',
       'merchantNo', '0002900F0370542',
       'gatewayBaseUrl', 'https://fundwx.payfuiouo2o.com',
-      'notifyUrl', 'http://27.185.20.146:7775/api/payment/channel-callbacks/fuiou',
+      'notifyUrl', 'https://payment.example.com/api/payment/channel-callbacks/fuiou',
       'operatorId', 'mango',
       'fuiouPublicKey', 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDz2fCOYaaU6sztFql4cOmiFRq2LRk1XuGfrJnMFa09QMXMXOEn9YNYC44zV1AE/q9b0BKGbM74YPoge/7qsW+Heao76Drv6HujP+rXLFbsXT5f9rcID2GCzDc+DXjb+NfwSa8vS9KJ3dau2xm87zpjdQ9zER6VH4UcZTgj7LbzgwIDAQAB'
     ),

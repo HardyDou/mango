@@ -6,7 +6,6 @@ import io.mango.payment.api.vo.PaymentOpenCashierVO;
 import io.mango.payment.api.vo.PaymentOpenPaymentOrderVO;
 import io.mango.payment.api.vo.PaymentOpenReceiptVO;
 import io.mango.payment.api.vo.PaymentOpenRefundOrderVO;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.validation.annotation.Validated;
 
@@ -19,8 +18,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenBusinessOrderVO> detailOrder(
             @NotBlank(message = "业务订单号不能为空") String bizOrderNo,
@@ -28,8 +26,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenCashierVO> cashier(
             @NotBlank(message = "业务订单号不能为空") String bizOrderNo,
@@ -38,8 +35,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenPaymentOrderVO> pay(
             @NotBlank(message = "业务订单号不能为空") String bizOrderNo,
@@ -48,8 +44,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenPaymentOrderVO> detailPaymentOrder(
             @NotBlank(message = "支付订单号不能为空") String payOrderNo,
@@ -57,8 +52,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenRefundOrderVO> refund(
             @NotBlank(message = "请求体不能为空") String body,
@@ -66,8 +60,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenRefundOrderVO> detailRefund(
             @NotBlank(message = "业务退款单号不能为空") String bizRefundNo,
@@ -75,8 +68,7 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 
     R<PaymentOpenReceiptVO> receipt(
             @NotBlank(message = "业务订单号不能为空") String bizOrderNo,
@@ -84,6 +76,5 @@ public interface PaymentOpenApi {
             String tenantId,
             String timestamp,
             String nonce,
-            String signature,
-            HttpServletRequest servletRequest);
+            String signature);
 }

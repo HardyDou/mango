@@ -13,6 +13,8 @@ import io.mango.payment.core.entity.PaymentTransactionFlowEntity;
 import io.mango.payment.core.mapper.PaymentApplicationMapper;
 import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
 import io.mango.payment.core.mapper.PaymentChannelContractMapper;
+import io.mango.payment.core.mapper.PaymentChannelQueryRecordMapper;
+import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
 import io.mango.payment.core.mapper.PaymentRefundQueryRecordMapper;
 import io.mango.payment.core.mapper.PaymentTransactionFlowMapper;
@@ -21,6 +23,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.time.LocalDateTime;
 
@@ -35,35 +41,41 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PaymentChannelRefundQueryServiceTest {
+class PaymentChannelSyncRefundServiceTest {
 
+    private PaymentOrderMapper paymentOrderMapper;
     private PaymentRefundOrderMapper refundOrderMapper;
     private PaymentRefundQueryRecordMapper refundQueryRecordMapper;
     private PaymentBusinessOrderMapper businessOrderMapper;
     private PaymentTransactionFlowMapper transactionFlowMapper;
     private PaymentChannelContractMapper channelContractMapper;
+    private PaymentChannelQueryRecordMapper channelQueryRecordMapper;
     private PaymentApplicationMapper applicationMapper;
     private PaymentNotificationService notificationService;
     private PaymentMangoPayScenarioControlService scenarioControlService;
     private PaymentChannelAdapterRegistry channelAdapterRegistry;
     private PaymentOrderStatusFlowService statusFlowService;
+    private PaymentDuplicatePaymentService duplicatePaymentService;
     private PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private PaymentObservabilityService observabilityService;
     private PaymentExceptionOrderService exceptionOrderService;
     private PaymentNumberService numberService;
-    private PaymentChannelRefundQueryService service;
+    private PaymentChannelSyncService service;
 
     @BeforeEach
     void setUp() {
+        paymentOrderMapper = mock(PaymentOrderMapper.class);
         refundOrderMapper = mock(PaymentRefundOrderMapper.class);
         refundQueryRecordMapper = mock(PaymentRefundQueryRecordMapper.class);
         businessOrderMapper = mock(PaymentBusinessOrderMapper.class);
         transactionFlowMapper = mock(PaymentTransactionFlowMapper.class);
         channelContractMapper = mock(PaymentChannelContractMapper.class);
+        channelQueryRecordMapper = mock(PaymentChannelQueryRecordMapper.class);
         applicationMapper = mock(PaymentApplicationMapper.class);
         notificationService = mock(PaymentNotificationService.class);
         scenarioControlService = mock(PaymentMangoPayScenarioControlService.class);
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
+        duplicatePaymentService = mock(PaymentDuplicatePaymentService.class);
         duplicateRefundCompletionService = mock(PaymentDuplicateRefundCompletionService.class);
         observabilityService = mock(PaymentObservabilityService.class);
         exceptionOrderService = mock(PaymentExceptionOrderService.class);
@@ -75,21 +87,25 @@ class PaymentChannelRefundQueryServiceTest {
                 mock(io.mango.payment.core.mapper.PaymentReconciliationMapper.class),
                 scenarioControlService,
                 new PaymentMangoPayResultMappingService())));
-        service = new PaymentChannelRefundQueryService(
+        service = new PaymentChannelSyncService(
+                paymentOrderMapper,
                 refundOrderMapper,
-                refundQueryRecordMapper,
                 businessOrderMapper,
-                transactionFlowMapper,
-                new PaymentOrderStateService(),
                 applicationMapper,
+                transactionFlowMapper,
+                channelQueryRecordMapper,
+                refundQueryRecordMapper,
+                new PaymentOrderStateService(),
                 notificationService,
                 statusFlowService,
+                duplicatePaymentService,
+                duplicateRefundCompletionService,
                 channelAdapterRegistry,
                 new ObjectMapper(),
-                duplicateRefundCompletionService,
                 observabilityService,
                 exceptionOrderService,
-                numberService);
+                numberService,
+                new NoopTransactionManager());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -100,8 +116,8 @@ class PaymentChannelRefundQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelRefund should advance refunding order to success and create refund flow")
-    void queryChannelRefund_success_advancesRefundAndCreatesFlow() {
+    @DisplayName("syncRefundStatus should advance refunding order to success and create refund flow")
+    void syncRefundStatus_success_advancesRefundAndCreatesFlow() {
         PaymentRefundOrderVO refundOrder = refundOrder("REFUNDING");
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayRefundScenario\":\"SUCCESS\"}");
@@ -114,7 +130,7 @@ class PaymentChannelRefundQueryServiceTest {
         ArgumentCaptor<PaymentTransactionFlowEntity> flowCaptor = ArgumentCaptor.forClass(PaymentTransactionFlowEntity.class);
         ArgumentCaptor<PaymentRefundQueryRecordEntity> queryRecordCaptor = ArgumentCaptor.forClass(PaymentRefundQueryRecordEntity.class);
 
-        PaymentChannelRefundQueryService.QueryResult result = service.queryChannelRefund("RO202606060001");
+        PaymentChannelSyncService.RefundSyncResult result = service.syncRefundStatus("RO202606060001");
 
         assertThat(result.refundOrderNo()).isEqualTo("RO202606060001");
         assertThat(result.status()).isEqualTo("SUCCESS");
@@ -147,8 +163,8 @@ class PaymentChannelRefundQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelRefund should reject success when business refund progress CAS fails")
-    void queryChannelRefund_successBusinessCasFailed_rejectsWithoutFlowOrNotification() {
+    @DisplayName("syncRefundStatus should reject success when business refund progress CAS fails")
+    void syncRefundStatus_successBusinessCasFailed_rejectsWithoutFlowOrNotification() {
         PaymentRefundOrderVO refundOrder = refundOrder("REFUNDING");
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayRefundScenario\":\"SUCCESS\"}");
@@ -156,7 +172,7 @@ class PaymentChannelRefundQueryServiceTest {
         when(businessOrderMapper.selectCashierBusinessOrder(1L, 360001L)).thenReturn(businessOrder());
         when(businessOrderMapper.updateRefundProgress(1L, 360001L, 3300L)).thenReturn(0);
 
-        assertThatThrownBy(() -> service.queryChannelRefund("RO202606060001"))
+        assertThatThrownBy(() -> service.syncRefundStatus("RO202606060001"))
                 .isInstanceOf(BizException.class)
                 .extracting("code")
                 .isEqualTo(PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED.getCode());
@@ -166,10 +182,12 @@ class PaymentChannelRefundQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelRefund should allow only one success side effect when refund query races")
-    void queryChannelRefund_successRace_allowsOnlyOneSuccessSideEffect() {
+    @DisplayName("syncRefundStatus should allow only one success side effect when refund query races")
+    void syncRefundStatus_successRace_allowsOnlyOneSuccessSideEffect() {
+        PaymentRefundOrderVO successOrder = refundOrder("SUCCESS");
+        successOrder.setFlowNo("RF2026060600000001");
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001"))
-                .thenReturn(refundOrder("REFUNDING"), refundOrder("REFUNDING"));
+                .thenReturn(refundOrder("REFUNDING"), refundOrder("REFUNDING"), successOrder);
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L))
                 .thenReturn("{\"mangoPayRefundScenario\":\"SUCCESS\"}");
         when(refundOrderMapper.updateRefundingQueryResult(eq(1L), eq(380001L), eq("SUCCESS"), any(LocalDateTime.class)))
@@ -178,16 +196,17 @@ class PaymentChannelRefundQueryServiceTest {
         when(applicationMapper.selectOne(any())).thenReturn(application());
         when(businessOrderMapper.selectCashierBusinessOrder(1L, 360001L)).thenReturn(businessOrder());
         when(refundQueryRecordMapper.countByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(1L);
-        when(refundQueryRecordMapper.selectLastByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(queryRecord("UPDATED"));
+        when(refundQueryRecordMapper.selectLastByTenantAndRefundOrderNo(1L, "RO202606060001"))
+                .thenReturn(queryRecord("UPDATED"), queryRecord("IDEMPOTENT_TERMINAL"));
 
-        PaymentChannelRefundQueryService.QueryResult result = service.queryChannelRefund("RO202606060001");
+        PaymentChannelSyncService.RefundSyncResult result = service.syncRefundStatus("RO202606060001");
 
         assertThat(result.status()).isEqualTo("SUCCESS");
         assertThat(result.changed()).isTrue();
-        assertThatThrownBy(() -> service.queryChannelRefund("RO202606060001"))
-                .isInstanceOf(BizException.class)
-                .extracting("code")
-                .isEqualTo(PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode());
+        PaymentChannelSyncService.RefundSyncResult idempotentResult = service.syncRefundStatus("RO202606060001");
+        assertThat(idempotentResult.status()).isEqualTo("SUCCESS");
+        assertThat(idempotentResult.changed()).isFalse();
+        assertThat(idempotentResult.flowNo()).isEqualTo("RF2026060600000001");
         verify(refundOrderMapper, times(2)).updateRefundingQueryResult(
                 eq(1L),
                 eq(380001L),
@@ -199,18 +218,18 @@ class PaymentChannelRefundQueryServiceTest {
                 any(PaymentApplication.class),
                 any(PaymentBusinessOrderEntity.class),
                 any(PaymentRefundOrderVO.class));
-        verify(refundQueryRecordMapper, times(1)).insert(any(PaymentRefundQueryRecordEntity.class));
+        verify(refundQueryRecordMapper, times(2)).insert(any(PaymentRefundQueryRecordEntity.class));
     }
 
     @Test
-    @DisplayName("queryChannelRefund should keep refunding order unchanged when channel still processing")
-    void queryChannelRefund_processing_keepsRefundUnchanged() {
+    @DisplayName("syncRefundStatus should keep refunding order unchanged when channel still processing")
+    void syncRefundStatus_processing_keepsRefundUnchanged() {
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder("REFUNDING"));
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayRefundScenario\":\"PROCESSING\"}");
         when(refundQueryRecordMapper.countByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(1L);
         when(refundQueryRecordMapper.selectLastByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(queryRecord("NO_CHANGE_PROCESSING"));
 
-        PaymentChannelRefundQueryService.QueryResult result = service.queryChannelRefund("RO202606060001");
+        PaymentChannelSyncService.RefundSyncResult result = service.syncRefundStatus("RO202606060001");
 
         assertThat(result.status()).isEqualTo("REFUNDING");
         assertThat(result.changed()).isFalse();
@@ -223,8 +242,8 @@ class PaymentChannelRefundQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelRefund should advance refunding order to failed without success side effects")
-    void queryChannelRefund_failed_advancesRefundOnly() {
+    @DisplayName("syncRefundStatus should advance refunding order to failed without success side effects")
+    void syncRefundStatus_failed_advancesRefundOnly() {
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder("REFUNDING"));
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayRefundScenario\":\"FAIL\"}");
         when(refundOrderMapper.updateRefundingQueryResult(1L, 380001L, "FAILED", null)).thenReturn(1);
@@ -233,7 +252,7 @@ class PaymentChannelRefundQueryServiceTest {
         when(refundQueryRecordMapper.countByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(3L);
         when(refundQueryRecordMapper.selectLastByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(queryRecord("UPDATED"));
 
-        PaymentChannelRefundQueryService.QueryResult result = service.queryChannelRefund("RO202606060001");
+        PaymentChannelSyncService.RefundSyncResult result = service.syncRefundStatus("RO202606060001");
 
         assertThat(result.status()).isEqualTo("FAILED");
         assertThat(result.changed()).isTrue();
@@ -253,15 +272,15 @@ class PaymentChannelRefundQueryServiceTest {
     }
 
     @Test
-    @DisplayName("queryChannelRefund should record terminal refund query without mutating it")
-    void queryChannelRefund_terminal_recordsOnly() {
+    @DisplayName("syncRefundStatus should record terminal refund query without mutating it")
+    void syncRefundStatus_terminal_recordsOnly() {
         PaymentRefundOrderVO refundOrder = refundOrder("SUCCESS");
         refundOrder.setFlowNo("RFLOW202606060001");
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder);
         when(refundQueryRecordMapper.countByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(4L);
         when(refundQueryRecordMapper.selectLastByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(queryRecord("NO_QUERY_TERMINAL"));
 
-        PaymentChannelRefundQueryService.QueryResult result = service.queryChannelRefund("RO202606060001");
+        PaymentChannelSyncService.RefundSyncResult result = service.syncRefundStatus("RO202606060001");
 
         assertThat(result.status()).isEqualTo("SUCCESS");
         assertThat(result.changed()).isFalse();
@@ -322,5 +341,21 @@ class PaymentChannelRefundQueryServiceTest {
         PaymentRefundQueryRecordEntity record = new PaymentRefundQueryRecordEntity();
         record.setProcessResult(processResult);
         return record;
+    }
+
+    private static final class NoopTransactionManager implements PlatformTransactionManager {
+
+        @Override
+        public TransactionStatus getTransaction(TransactionDefinition definition) {
+            return new SimpleTransactionStatus();
+        }
+
+        @Override
+        public void commit(TransactionStatus status) {
+        }
+
+        @Override
+        public void rollback(TransactionStatus status) {
+        }
     }
 }

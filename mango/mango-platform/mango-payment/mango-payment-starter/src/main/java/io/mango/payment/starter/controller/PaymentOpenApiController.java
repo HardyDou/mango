@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Validated
 @RestController
@@ -44,8 +46,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.createOrder(
                 body,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
@@ -66,8 +68,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.detailOrder(
                 bizOrderNo,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
@@ -90,8 +92,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.cashier(
                 bizOrderNo,
                 body,
@@ -114,8 +116,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.pay(
                 bizOrderNo,
                 body,
@@ -138,8 +140,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.detailPaymentOrder(
                 payOrderNo,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
@@ -160,8 +162,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.refund(
                 body,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
@@ -182,8 +184,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.detailRefund(
                 bizRefundNo,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
@@ -204,8 +206,8 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "租户 ID", required = true) @RequestHeader(value = "tenantId", required = false) String tenantId,
             @Parameter(description = "请求时间戳，Unix 秒", required = true) @RequestHeader(value = "timestamp", required = false) String timestamp,
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
-            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature,
-            HttpServletRequest servletRequest) {
+            @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
+        HttpServletRequest servletRequest = currentRequest();
         return openApiService.receipt(
                 bizOrderNo,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
@@ -214,6 +216,11 @@ public class PaymentOpenApiController implements PaymentOpenApi {
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
                 servletRequest.getRequestURI());
+    }
+
+    private HttpServletRequest currentRequest() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return attributes.getRequest();
     }
 
     private String firstText(String first, String second) {

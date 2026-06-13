@@ -76,9 +76,8 @@ class PaymentReadonlyResourceServiceTest {
     private PaymentOfflineCollectionMapper offlineCollectionMapper;
     private PaymentOperationAuditMapper operationAuditMapper;
     private PaymentOperationAuditService auditService;
-    private PaymentChannelOrderQueryService channelOrderQueryService;
+    private PaymentChannelSyncService channelSyncService;
     private PaymentChannelOrderCloseService channelOrderCloseService;
-    private PaymentChannelRefundQueryService channelRefundQueryService;
     private PaymentOrderStatusFlowService statusFlowService;
     private PaymentNotificationService notificationService;
     private PaymentNumberService numberService;
@@ -99,15 +98,14 @@ class PaymentReadonlyResourceServiceTest {
         offlineCollectionMapper = mock(PaymentOfflineCollectionMapper.class);
         operationAuditMapper = mock(PaymentOperationAuditMapper.class);
         auditService = mock(PaymentOperationAuditService.class);
-        channelOrderQueryService = mock(PaymentChannelOrderQueryService.class);
+        channelSyncService = mock(PaymentChannelSyncService.class);
         channelOrderCloseService = mock(PaymentChannelOrderCloseService.class);
-        channelRefundQueryService = mock(PaymentChannelRefundQueryService.class);
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
         notificationService = mock(PaymentNotificationService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_BIZ_ORDER_NO)).thenReturn("BO2026060600000001");
         when(numberService.next(PaymentNumberService.PAY_ADJUST_FLOW_NO)).thenReturn("AF2026060600000001");
-        service = new PaymentReadonlyResourceService(applicationMapper, enterpriseSubjectMapper, businessOrderMapper, paymentOrderMapper, refundOrderMapper, transactionFlowMapper, channelCapabilityMapper, exceptionOrderMapper, notificationRecordMapper, differenceMapper, offlineCollectionMapper, operationAuditMapper, auditService, channelOrderQueryService, channelOrderCloseService, channelRefundQueryService, statusFlowService, notificationService, numberService);
+        service = new PaymentReadonlyResourceService(applicationMapper, enterpriseSubjectMapper, businessOrderMapper, paymentOrderMapper, refundOrderMapper, transactionFlowMapper, channelCapabilityMapper, exceptionOrderMapper, notificationRecordMapper, differenceMapper, offlineCollectionMapper, operationAuditMapper, auditService, channelSyncService, channelOrderCloseService, statusFlowService, notificationService, numberService);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -395,8 +393,8 @@ class PaymentReadonlyResourceServiceTest {
         after.setStatus("SUCCESS");
         after.setRefundTime(LocalDateTime.of(2026, 6, 1, 10, 10));
         when(refundOrderMapper.selectRefundOrderDetail(1L, 380002L)).thenReturn(before, after);
-        when(channelRefundQueryService.queryChannelRefund("RO2026061000000001"))
-                .thenReturn(new PaymentChannelRefundQueryService.QueryResult(
+        when(channelSyncService.syncRefundStatus("RO2026061000000001"))
+                .thenReturn(new PaymentChannelSyncService.RefundSyncResult(
                         "RO2026061000000001",
                         "SUCCESS",
                         "RFLOW202606100002",
@@ -410,7 +408,7 @@ class PaymentReadonlyResourceServiceTest {
 
         assertThat(result.getStatus()).isEqualTo("SUCCESS");
         assertThat(result.getStatusName()).isEqualTo("退款成功");
-        verify(channelRefundQueryService).queryChannelRefund("RO2026061000000001");
+        verify(channelSyncService).syncRefundStatus("RO2026061000000001");
     }
 
     @Test
@@ -590,7 +588,7 @@ class PaymentReadonlyResourceServiceTest {
         verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400008L), eq("PROCESSING"), eq("ADD_EVIDENCE"),
                 eq("补充通道凭据"), eq("已补充凭据，等待继续复核"), eq("mango-file:900008"),
                 eq(1001L), eq("admin"), any(LocalDateTime.class));
-        verifyNoInteractions(channelOrderQueryService, channelOrderCloseService, channelRefundQueryService);
+        verifyNoInteractions(channelOrderCloseService);
     }
 
     @Test
@@ -632,7 +630,7 @@ class PaymentReadonlyResourceServiceTest {
                 "EX-MANUAL-CLOSE",
                 PaymentOperationAuditService.RESULT_SUCCESS);
         verifyNoInteractions(paymentOrderMapper, refundOrderMapper, businessOrderMapper,
-                channelOrderQueryService, channelOrderCloseService, channelRefundQueryService);
+                channelSyncService, channelOrderCloseService);
     }
 
     @Test
@@ -647,8 +645,8 @@ class PaymentReadonlyResourceServiceTest {
         entity.setHandleStatus("PENDING");
         entity.setDelFlag(0);
         when(exceptionOrderMapper.selectById(400012L)).thenReturn(entity);
-        when(channelOrderQueryService.queryChannelPayment("PO2026061000000001"))
-                .thenReturn(new PaymentChannelOrderQueryService.QueryResult(
+        when(channelSyncService.syncPaymentStatus("PO2026061000000001"))
+                .thenReturn(new PaymentChannelSyncService.PaymentSyncResult(
                         "PO2026061000000001",
                         "FAILED",
                         null,
@@ -674,7 +672,7 @@ class PaymentReadonlyResourceServiceTest {
 
         service.handleExceptionOrder(command);
 
-        verify(channelOrderQueryService).queryChannelPayment("PO2026061000000001");
+        verify(channelSyncService).syncPaymentStatus("PO2026061000000001");
         verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400012L), eq("HANDLED"), eq("ACTIVE_QUERY"),
                 eq("查单确认支付失败"),
                 eq("根据通道查单结果处理异常；查单结果：支付订单 PO2026061000000001 当前状态 FAILED，本地状态未变化"),
@@ -704,7 +702,7 @@ class PaymentReadonlyResourceServiceTest {
                 .isInstanceOf(BizException.class)
                 .hasMessage("主动查单动作必须关联支付订单号");
 
-        verify(channelOrderQueryService, never()).queryChannelPayment("PO202606101780896910696123456");
+        verify(channelSyncService, never()).syncPaymentStatus("PO202606101780896910696123456");
         verify(exceptionOrderMapper, never()).handleExceptionOrder(
                 any(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), anyString(), any());
     }
@@ -732,7 +730,7 @@ class PaymentReadonlyResourceServiceTest {
                 .isInstanceOf(BizException.class)
                 .hasMessage("主动查单动作必须关联支付订单号");
 
-        verify(channelOrderQueryService, never()).queryChannelPayment("PO-EX-E2E-202606060001");
+        verify(channelSyncService, never()).syncPaymentStatus("PO-EX-E2E-202606060001");
         verify(exceptionOrderMapper, never()).handleExceptionOrder(
                 any(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), anyString(), any());
     }
@@ -760,7 +758,7 @@ class PaymentReadonlyResourceServiceTest {
                 .isInstanceOf(BizException.class)
                 .hasMessage("处理动作不适用于当前异常类型");
 
-        verifyNoInteractions(channelOrderQueryService, channelOrderCloseService);
+        verifyNoInteractions(channelOrderCloseService);
         verify(exceptionOrderMapper, never()).handleExceptionOrder(
                 any(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), anyString(), any());
     }
@@ -777,8 +775,8 @@ class PaymentReadonlyResourceServiceTest {
         entity.setHandleStatus("PENDING");
         entity.setDelFlag(0);
         when(exceptionOrderMapper.selectById(400014L)).thenReturn(entity);
-        when(channelRefundQueryService.queryChannelRefund("RO2026061000000014"))
-                .thenReturn(new PaymentChannelRefundQueryService.QueryResult(
+        when(channelSyncService.syncRefundStatus("RO2026061000000014"))
+                .thenReturn(new PaymentChannelSyncService.RefundSyncResult(
                         "RO2026061000000014",
                         "SUCCESS",
                         "RFLOW2026061000000014",
@@ -804,12 +802,12 @@ class PaymentReadonlyResourceServiceTest {
 
         service.handleExceptionOrder(command);
 
-        verify(channelRefundQueryService).queryChannelRefund("RO2026061000000014");
+        verify(channelSyncService).syncRefundStatus("RO2026061000000014");
         verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400014L), eq("HANDLED"), eq("ACTIVE_REFUND_QUERY"),
                 eq("查退款确认通道结果"),
                 eq("根据通道查退款结果处理异常；查退款结果：退款订单 RO2026061000000014 当前状态 SUCCESS，已按通道结果推进"),
                 eq("refund-query-evidence"), eq(1001L), eq("admin"), any(LocalDateTime.class));
-        verifyNoInteractions(channelOrderQueryService, channelOrderCloseService);
+        verifyNoInteractions(channelOrderCloseService);
     }
 
     @Test
@@ -848,7 +846,7 @@ class PaymentReadonlyResourceServiceTest {
         service.handleExceptionOrder(command);
 
         verify(channelOrderCloseService).closePaymentOrder("PO2026061000000002");
-        verify(channelOrderQueryService, never()).queryChannelPayment("PO2026061000000002");
+        verify(channelSyncService, never()).syncPaymentStatus("PO2026061000000002");
         verify(exceptionOrderMapper).handleExceptionOrder(eq(1L), eq(400004L), eq("CLOSED"), eq("CLOSE_PAYMENT_ORDER"),
                 eq("通道确认未支付，执行关单"),
                 eq("按通道结果关闭支付订单；关单结果：支付订单 PO2026061000000002 当前状态 CLOSED，已关闭"),
@@ -1146,11 +1144,11 @@ class PaymentReadonlyResourceServiceTest {
         PaymentOrderEntity changed = paymentOrder("PO2026061000000015");
         PaymentOrderEntity skipped = paymentOrder("PO2026061000000016");
         when(paymentOrderMapper.selectProcessingPaymentOrders(1L, 20L)).thenReturn(List.of(changed, skipped));
-        when(channelOrderQueryService.queryChannelPayment("PO2026061000000015"))
-                .thenReturn(new PaymentChannelOrderQueryService.QueryResult(
+        when(channelSyncService.syncPaymentStatus("PO2026061000000015"))
+                .thenReturn(new PaymentChannelSyncService.PaymentSyncResult(
                         "PO2026061000000015", "SUCCESS", "FLOW202606100002", true, 1L, "UPDATED"));
-        when(channelOrderQueryService.queryChannelPayment("PO2026061000000016"))
-                .thenReturn(new PaymentChannelOrderQueryService.QueryResult(
+        when(channelSyncService.syncPaymentStatus("PO2026061000000016"))
+                .thenReturn(new PaymentChannelSyncService.PaymentSyncResult(
                         "PO2026061000000016", "PAYING", null, false, 1L, "NO_CHANGE_PROCESSING"));
 
         var result = service.queryProcessingPaymentOrders(20L);
@@ -1159,8 +1157,8 @@ class PaymentReadonlyResourceServiceTest {
         assertThat(result.getSuccessCount()).isEqualTo(1);
         assertThat(result.getSkippedCount()).isEqualTo(1);
         assertThat(result.getFailedCount()).isZero();
-        verify(channelOrderQueryService).queryChannelPayment("PO2026061000000015");
-        verify(channelOrderQueryService).queryChannelPayment("PO2026061000000016");
+        verify(channelSyncService).syncPaymentStatus("PO2026061000000015");
+        verify(channelSyncService).syncPaymentStatus("PO2026061000000016");
         verify(auditService).record(
                 PaymentOperationAuditService.ACTION_QUERY_PROCESSING_PAYMENT_ORDERS,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_ORDER,
@@ -1346,7 +1344,7 @@ class PaymentReadonlyResourceServiceTest {
                 "DIFF-SUPPLEMENT",
                 PaymentOperationAuditService.RESULT_SUCCESS);
         verifyNoInteractions(paymentOrderMapper, refundOrderMapper, businessOrderMapper,
-                channelOrderQueryService, channelOrderCloseService, channelRefundQueryService, notificationService);
+                channelSyncService, channelOrderCloseService, channelSyncService, notificationService);
     }
 
     @Test
@@ -1410,8 +1408,8 @@ class PaymentReadonlyResourceServiceTest {
         entity.setProcessStatus("PENDING");
         entity.setDelFlag(0);
         when(differenceMapper.selectById(420004L)).thenReturn(entity);
-        when(channelOrderQueryService.queryChannelPayment("PO2026061000000002"))
-                .thenReturn(new PaymentChannelOrderQueryService.QueryResult(
+        when(channelSyncService.syncPaymentStatus("PO2026061000000002"))
+                .thenReturn(new PaymentChannelSyncService.PaymentSyncResult(
                         "PO2026061000000002",
                         "SUCCESS",
                         "FLOW202606100002",
@@ -1439,7 +1437,7 @@ class PaymentReadonlyResourceServiceTest {
         PaymentDifferenceVO result = service.handleDifference(command);
 
         assertThat(result.getProcessStatusName()).isEqualTo("已处理");
-        verify(channelOrderQueryService).queryChannelPayment("PO2026061000000002");
+        verify(channelSyncService).syncPaymentStatus("PO2026061000000002");
         verify(differenceMapper).handleDifference(
                 eq(1L),
                 eq(420004L),
@@ -1476,7 +1474,7 @@ class PaymentReadonlyResourceServiceTest {
         assertThatThrownBy(() -> service.handleDifference(command))
                 .isInstanceOf(BizException.class)
                 .hasMessage("主动查单需要关联本地支付单号或退款单号");
-        verifyNoInteractions(channelOrderQueryService, channelRefundQueryService);
+        verifyNoInteractions(channelSyncService);
         verify(transactionFlowMapper, never()).insert(any(PaymentTransactionFlowEntity.class));
         verify(differenceMapper, never()).handleDifference(
                 any(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), anyString(), any(), anyString(), any());

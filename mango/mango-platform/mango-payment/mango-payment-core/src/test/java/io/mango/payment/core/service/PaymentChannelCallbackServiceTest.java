@@ -207,7 +207,7 @@ class PaymentChannelCallbackServiceTest {
         verify(exceptionOrderService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_CHANNEL_FAILED),
+                eq(PaymentExceptionOrderService.TYPE_STATUS_MISMATCH),
                 eq(PaymentExceptionOrderService.SEVERITY_HIGH),
                 eq("通道支付回调终态与本地支付订单终态不一致，本地状态：SUCCESS，通道状态：FAILED"),
                 eq(eventTime));
@@ -246,16 +246,58 @@ class PaymentChannelCallbackServiceTest {
     }
 
     @Test
-    @DisplayName("handle should reject mismatched payment callback amount")
-    void handle_paymentAmountMismatch_rejects() {
+    @DisplayName("handle should return idempotent payment result when concurrent callback already reached target status")
+    void handle_paymentSuccessRace_allowsOnlyOneSuccessSideEffect() {
+        LocalDateTime eventTime = LocalDateTime.now();
+        when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001"))
+                .thenReturn(paymentOrder("PAYING"), paymentOrder("PAYING"), paymentOrder("SUCCESS"));
+        when(paymentOrderMapper.updatePayingCallbackResult(1L, 370001L, "SUCCESS", 1, eventTime, "CH202606060001"))
+                .thenReturn(1, 0);
+        when(paymentOrderMapper.selectLatestFlowNo(1L, 370001L)).thenReturn("FLOW202606060001");
+        when(businessOrderMapper.markCashierPaySuccess(1L, 360001L, 9900L)).thenReturn(1);
+        when(businessOrderMapper.selectCashierBusinessOrder(1L, 360001L)).thenReturn(businessOrder());
+        when(applicationMapper.selectOne(any())).thenReturn(application());
+        when(paymentOrderMapper.selectPaymentOrderById(1L, 370001L)).thenReturn(paymentOrderVO("SUCCESS"));
+
+        PaymentChannelCallbackResultVO result = service.handle(paymentCommand("SUCCESS", eventTime));
+
+        assertThat(result.getChanged()).isTrue();
+        assertThat(result.getStatus()).isEqualTo("SUCCESS");
+        PaymentChannelCallbackResultVO duplicateResult = service.handle(paymentCommand("SUCCESS", eventTime));
+        assertThat(duplicateResult.getChanged()).isFalse();
+        assertThat(duplicateResult.getStatus()).isEqualTo("SUCCESS");
+        assertThat(duplicateResult.getFlowNo()).isEqualTo("FLOW202606060001");
+        assertThat(duplicateResult.getMessage()).contains("幂等返回");
+        verify(paymentOrderMapper, times(2)).updatePayingCallbackResult(1L, 370001L, "SUCCESS", 1, eventTime, "CH202606060001");
+        verify(businessOrderMapper, times(1)).markCashierPaySuccess(1L, 360001L, 9900L);
+        verify(transactionFlowMapper, times(1)).insert(any(PaymentTransactionFlowEntity.class));
+        verify(notificationService, times(1)).notifyPaymentAfterCommit(
+                any(PaymentApplication.class),
+                any(PaymentBusinessOrderEntity.class),
+                any(PaymentOrderVO.class));
+    }
+
+    @Test
+    @DisplayName("handle should register exception and acknowledge mismatched payment callback amount")
+    void handle_paymentAmountMismatch_registersExceptionAndAcknowledges() {
+        LocalDateTime eventTime = LocalDateTime.now();
         PaymentChannelCallbackCommand command = paymentCommand("SUCCESS", LocalDateTime.now());
         command.setAmount(8800L);
         when(paymentOrderMapper.selectByTenantAndPayOrderNo(1L, "PO202606060001")).thenReturn(paymentOrder("PAYING"));
+        when(paymentOrderMapper.selectLatestFlowNo(1L, 370001L)).thenReturn("FLOW202606060001");
 
-        assertThatThrownBy(() -> service.handle(command))
-                .isInstanceOf(BizException.class)
-                .extracting("code")
-                .isEqualTo(PaymentCode.PAYMENT_AMOUNT_INVALID.getCode());
+        PaymentChannelCallbackResultVO result = service.handle(command);
+
+        assertThat(result.getChanged()).isFalse();
+        assertThat(result.getStatus()).isEqualTo("PAYING");
+        assertThat(result.getMessage()).contains("已登记异常订单");
+        verify(exceptionOrderService).createIfAbsent(
+                eq(1L),
+                eq("PO202606060001"),
+                eq(PaymentExceptionOrderService.TYPE_AMOUNT_MISMATCH),
+                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq("通道回调金额与支付订单金额不一致"),
+                any(LocalDateTime.class));
         verify(paymentOrderMapper, never()).updatePayingCallbackResult(any(), any(), any(), any(), any(), any());
     }
 
@@ -301,17 +343,27 @@ class PaymentChannelCallbackServiceTest {
     }
 
     @Test
-    @DisplayName("handle should reject refund callback when channel refund number mismatches")
-    void handle_refundChannelRefundNoMismatch_rejectsBeforeStateChange() {
+    @DisplayName("handle should register exception and acknowledge refund callback when channel refund number mismatches")
+    void handle_refundChannelRefundNoMismatch_registersExceptionAndAcknowledges() {
         PaymentRefundOrderVO refundOrder = refundOrder("REFUNDING");
         refundOrder.setChannelRefundNo("CRF202606060001");
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001")).thenReturn(refundOrder);
+        when(refundOrderMapper.selectLatestFlowNo(1L, 380001L)).thenReturn("RFLOW202606060001");
         PaymentChannelCallbackCommand command = refundCommand("SUCCESS", LocalDateTime.now());
         command.setChannelRefundNo("CRF_WRONG");
 
-        assertThatThrownBy(() -> service.handle(command))
-                .isInstanceOf(BizException.class)
-                .hasMessage("通道退款单号不匹配");
+        PaymentChannelCallbackResultVO result = service.handle(command);
+
+        assertThat(result.getChanged()).isFalse();
+        assertThat(result.getStatus()).isEqualTo("REFUNDING");
+        assertThat(result.getMessage()).contains("已登记异常订单");
+        verify(exceptionOrderService).createIfAbsent(
+                eq(1L),
+                eq("RO202606060001"),
+                eq(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
+                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq("通道退款单号不匹配"),
+                any(LocalDateTime.class));
         verify(refundOrderMapper, never()).updateRefundingQueryResult(any(), any(), any(), any());
         verify(businessOrderMapper, never()).updateRefundProgress(any(), any(), any());
         verify(transactionFlowMapper, never()).insert(any(PaymentTransactionFlowEntity.class));
@@ -323,9 +375,10 @@ class PaymentChannelCallbackServiceTest {
     void handle_refundSuccessRace_allowsOnlyOneSuccessSideEffect() {
         LocalDateTime eventTime = LocalDateTime.now();
         when(refundOrderMapper.selectByTenantAndRefundOrderNo(1L, "RO202606060001"))
-                .thenReturn(refundOrder("REFUNDING"), refundOrder("REFUNDING"));
+                .thenReturn(refundOrder("REFUNDING"), refundOrder("REFUNDING"), refundOrder("SUCCESS"));
         when(refundOrderMapper.updateRefundingQueryResult(1L, 380001L, "SUCCESS", eventTime))
                 .thenReturn(1, 0);
+        when(refundOrderMapper.selectLatestFlowNo(1L, 380001L)).thenReturn("RFLOW202606060001");
         when(businessOrderMapper.updateRefundProgress(1L, 360001L, 3300L)).thenReturn(1);
         when(applicationMapper.selectOne(any())).thenReturn(application());
         when(businessOrderMapper.selectCashierBusinessOrder(1L, 360001L)).thenReturn(businessOrder());
@@ -334,10 +387,10 @@ class PaymentChannelCallbackServiceTest {
 
         assertThat(result.getChanged()).isTrue();
         assertThat(result.getStatus()).isEqualTo("SUCCESS");
-        assertThatThrownBy(() -> service.handle(refundCommand("SUCCESS", eventTime)))
-                .isInstanceOf(BizException.class)
-                .extracting("code")
-                .isEqualTo(PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode());
+        PaymentChannelCallbackResultVO duplicateResult = service.handle(refundCommand("SUCCESS", eventTime));
+        assertThat(duplicateResult.getChanged()).isFalse();
+        assertThat(duplicateResult.getStatus()).isEqualTo("SUCCESS");
+        assertThat(duplicateResult.getMessage()).contains("幂等返回");
         verify(refundOrderMapper, times(2)).updateRefundingQueryResult(1L, 380001L, "SUCCESS", eventTime);
         verify(businessOrderMapper, times(1)).updateRefundProgress(1L, 360001L, 3300L);
         verify(transactionFlowMapper, times(1)).insert(any(PaymentTransactionFlowEntity.class));
@@ -389,7 +442,7 @@ class PaymentChannelCallbackServiceTest {
         verify(exceptionOrderService).createIfAbsent(
                 eq(1L),
                 eq("RO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
+                eq(PaymentExceptionOrderService.TYPE_STATUS_MISMATCH),
                 eq(PaymentExceptionOrderService.SEVERITY_HIGH),
                 eq("通道退款回调终态与本地退款订单终态不一致，本地状态：SUCCESS，通道状态：FAILED"),
                 eq(eventTime));

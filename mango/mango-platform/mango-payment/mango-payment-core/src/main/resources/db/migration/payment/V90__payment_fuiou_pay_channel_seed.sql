@@ -13,8 +13,8 @@ VALUES
       {"field":"termIp","label":"终端 IP","required":true,"sensitive":false},
       {"field":"operatorId","label":"操作员","required":false,"sensitive":false}
     ]',
-   '富友支付真实通道，当前已接入支付宝扫码、支付查单和退款申请；微信、网银等能力需按富友补充资料另行开通后配置',
-   'MANUAL,FTP,FTPS,HTTP', 1, 1, NULL, NOW(), NULL, NOW(), 0)
+   '富友支付真实通道，当前已接入支付宝扫码、支付查单和退款申请；微信、网银等能力需按富友补充资料另行开通后配置；富友账单获取协议未完成适配前不声明通道账单能力',
+   NULL, 1, 1, NULL, NOW(), NULL, NOW(), 0)
 ON DUPLICATE KEY UPDATE
   `channel_name` = VALUES(`channel_name`),
   `environment` = VALUES(`environment`),
@@ -33,7 +33,7 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO `payment_channel_capability`
   (`id`, `channel_id`, `method_code`, `terminal_type`, `environment`, `supports_refund`, `supports_query`, `supports_close`, `supports_bill`, `supports_reconcile`, `min_amount`, `max_amount`, `status`, `tenant_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `del_flag`)
 VALUES
-  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 0, 1, 1, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0)
+  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 0, 0, 0, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0)
 ON DUPLICATE KEY UPDATE
   `supports_refund` = VALUES(`supports_refund`),
   `supports_query` = VALUES(`supports_query`),

@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Validated
 @RestController
@@ -51,7 +53,8 @@ public class PaymentCashierController implements PaymentCashierApi {
     @PostMapping("/pay")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "付款人提交收银台支付")
     @Operation(summary = "提交收银台支付", description = "按收银台会话重新校验订单、主体、支付方式和签约能力后发起支付")
-    public R<PaymentCashierPayResultVO> pay(@Valid @RequestBody PaymentCashierPayCommand command, HttpServletRequest request) {
+    public R<PaymentCashierPayResultVO> pay(@Valid @RequestBody PaymentCashierPayCommand command) {
+        HttpServletRequest request = currentRequest();
         command.setClientIp(resolveClientIp(request));
         return cashierService.pay(command);
     }
@@ -81,6 +84,11 @@ public class PaymentCashierController implements PaymentCashierApi {
     public R<PaymentOfflineCollectionVO> submitOfflineTransferVoucher(
             @Valid @RequestBody SubmitOfflineTransferVoucherCommand command) {
         return R.ok(offlineChannelService.submitTransferVoucher(command));
+    }
+
+    private HttpServletRequest currentRequest() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return attributes.getRequest();
     }
 
     private String resolveClientIp(HttpServletRequest request) {

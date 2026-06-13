@@ -1,25 +1,49 @@
 {
   "name": "@mango/payment",
   "version": "1.0.0",
-  "private": true,
-  "main": "src/index.ts",
+  "private": false,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./admin-pages": "./src/admin-pages.ts",
-    "./style.css": "./style.css"
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin-pages": {
+      "types": "./src/admin-pages.ts",
+      "import": "./dist/admin-pages.js"
+    },
+    "./style.css": "./dist/style.css"
   },
+  "scripts": {
+    "build": "vite build"
+  },
+  "files": [
+    "dist",
+    "src",
+    "package.json"
+  ],
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
-    "@mango/admin-pages": "1.0.6",
+    "@element-plus/icons-vue": "2.3.2",
+    "@mango/admin-pages": "1.0.8",
     "@mango/api-schema": "1.0.2",
-    "@mango/common": "1.0.7",
-    "@mango/file": "1.0.6",
-    "element-plus": "2.5.5",
-    "qrcode": "1.5.4",
+    "@mango/common": "1.0.8",
+    "@mango/file": "1.0.9",
+    "qrcode": "1.5.4"
+  },
+  "peerDependencies": {
+    "element-plus": "2.14.1",
     "vue": "3.5.13",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
-    "@types/qrcode": "1.5.5"
+    "@types/qrcode": "1.5.5",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.3"
+  },
+  "publishConfig": {
+    "registry": "http://nexus.inner.yunxinbaokeji.com/repository/npm-hosted/"
   }
 }

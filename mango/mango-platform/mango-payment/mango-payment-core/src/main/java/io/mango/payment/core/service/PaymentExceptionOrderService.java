@@ -19,6 +19,9 @@ public class PaymentExceptionOrderService {
     public static final String TYPE_PAY_TIMEOUT = "PAY_TIMEOUT";
     public static final String TYPE_CHANNEL_FAILED = "CHANNEL_FAILED";
     public static final String TYPE_REFUND_MISMATCH = "REFUND_MISMATCH";
+    public static final String TYPE_CHANNEL_CALLBACK_FAILED = "CHANNEL_CALLBACK_FAILED";
+    public static final String TYPE_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
+    public static final String TYPE_STATUS_MISMATCH = "STATUS_MISMATCH";
 
     public static final String SEVERITY_MEDIUM = "MEDIUM";
     public static final String SEVERITY_HIGH = "HIGH";

@@ -17,8 +17,8 @@ SET
       {"name":"gatewayPageNotifyUrl","label":"页面跳转地址","component":"url","dataType":"url","required":true,"sensitive":false,"encrypted":false,"masked":false,"sort":24,"group":"网银支付"},
       {"name":"gatewayBackNotifyUrl","label":"后台通知地址","component":"url","dataType":"url","required":true,"sensitive":false,"encrypted":false,"masked":false,"sort":25,"group":"网银支付"}
     ]',
-  `capability_summary` = '富友支付通道：扫码支付已接入微信扫码、支付宝扫码、查单和退款；网银支付已接入个人网银、企业网银发起支付和查单。扫码商户资料与网关商户资料在签约通道动态维护；通道内部参数由系统适配器处理，不作为商户维护项。网银退款接口资料未确认前不开放网银退款能力。',
-  `bill_fetch_modes` = 'HTTP',
+  `capability_summary` = '富友支付通道：扫码支付已接入微信扫码、支付宝扫码、查单和退款；网银支付已接入个人网银、企业网银发起支付和查单。扫码商户资料与网关商户资料在签约通道动态维护；通道内部参数由系统适配器处理，不作为商户维护项。网银退款和富友账单接口资料未确认前不开放对应能力。',
+  `bill_fetch_modes` = NULL,
   `updated_at` = NOW()
 WHERE `tenant_id` = 1
   AND `channel_code` = 'FUIOU_PAY'
@@ -27,10 +27,10 @@ WHERE `tenant_id` = 1
 INSERT INTO `payment_channel_capability`
   (`id`, `channel_id`, `method_code`, `terminal_type`, `environment`, `supports_refund`, `supports_query`, `supports_close`, `supports_bill`, `supports_reconcile`, `min_amount`, `max_amount`, `status`, `tenant_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `del_flag`)
 VALUES
-  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
-  (332017, 330005, 'PERSONAL_WECHAT_QR', 'WEB', 'PROD', 1, 1, 1, 1, 1, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
-  (332018, 330005, 'PERSONAL_EBANK_REDIRECT', 'WEB', 'PROD', 0, 1, 0, 1, 1, 1, 20000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
-  (332019, 330005, 'CORPORATE_EBANK_REDIRECT', 'WEB', 'PROD', 0, 1, 0, 1, 1, 1, 20000000, 1, 1, NULL, NOW(), NULL, NOW(), 0)
+  (332016, 330005, 'PERSONAL_ALIPAY_QR', 'WEB', 'PROD', 1, 1, 1, 0, 0, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
+  (332017, 330005, 'PERSONAL_WECHAT_QR', 'WEB', 'PROD', 1, 1, 1, 0, 0, 1, 1000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
+  (332018, 330005, 'PERSONAL_EBANK_REDIRECT', 'WEB', 'PROD', 0, 1, 0, 0, 0, 1, 20000000, 1, 1, NULL, NOW(), NULL, NOW(), 0),
+  (332019, 330005, 'CORPORATE_EBANK_REDIRECT', 'WEB', 'PROD', 0, 1, 0, 0, 0, 1, 20000000, 1, 1, NULL, NOW(), NULL, NOW(), 0)
 ON DUPLICATE KEY UPDATE
   `method_code` = VALUES(`method_code`),
   `terminal_type` = VALUES(`terminal_type`),
@@ -54,15 +54,15 @@ SET
       'scanpayGatewayBaseUrl', 'https://fundwx.payfuiouo2o.com',
       'insCd', '08A9999999',
       'merchantNo', '0002900F0370542',
-      'notifyUrl', 'http://27.185.20.146:7775/api/payment/channel-callbacks/fuiou',
+      'notifyUrl', 'https://payment.example.com/api/payment/channel-callbacks/fuiou',
       'operatorId', 'mango',
       'fuiouPublicKey', 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDz2fCOYaaU6sztFql4cOmiFRq2LRk1XuGfrJnMFa09QMXMXOEn9YNYC44zV1AE/q9b0BKGbM74YPoge/7qsW+Heao76Drv6HujP+rXLFbsXT5f9rcID2GCzDc+DXjb+NfwSa8vS9KJ3dau2xm87zpjdQ9zER6VH4UcZTgj7LbzgwIDAQAB',
       'gatewayMerchantNo', '0001000F0040992',
       'gatewayMerchantKey', 'vau6p7ldawpezyaugc0kopdrrwm4gkpu',
       'gatewayPayUrl', 'http://www-2.wg.fuiou.com:13195/smpGate.do',
       'gatewayQueryUrl', 'http://www-2.wg.fuiou.com:13195/smpAQueryGate.do',
-      'gatewayPageNotifyUrl', 'http://27.185.20.146:7775/api/payment/channel-callbacks/fuiou',
-      'gatewayBackNotifyUrl', 'http://27.185.20.146:7775/api/payment/channel-callbacks/fuiou'
+      'gatewayPageNotifyUrl', 'https://payment.example.com/payment/fuiou/return',
+      'gatewayBackNotifyUrl', 'https://payment.example.com/api/payment/channel-callbacks/fuiou'
     ),
     JSON_REMOVE(
       COALESCE(`config_values_json`, JSON_OBJECT()),

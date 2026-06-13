@@ -102,9 +102,8 @@ public class PaymentReadonlyResourceService {
     private final PaymentOfflineCollectionMapper offlineCollectionMapper;
     private final PaymentOperationAuditMapper operationAuditMapper;
     private final PaymentOperationAuditService auditService;
-    private final PaymentChannelOrderQueryService channelOrderQueryService;
+    private final PaymentChannelSyncService channelSyncService;
     private final PaymentChannelOrderCloseService channelOrderCloseService;
-    private final PaymentChannelRefundQueryService channelRefundQueryService;
     private final PaymentOrderStatusFlowService statusFlowService;
     private final PaymentNotificationService notificationService;
     private final PaymentNumberService numberService;
@@ -276,7 +275,7 @@ public class PaymentReadonlyResourceService {
     public PaymentOrderSyncStatusVO syncPaymentOrderStatus(String payOrderNo) {
         String resolvedPayOrderNo = PaymentContextSupport.trimToNull(payOrderNo);
         Require.notBlank(resolvedPayOrderNo, PaymentCode.PAYMENT_ORDER_NOT_FOUND.getCode(), "支付订单号不能为空");
-        PaymentChannelOrderQueryService.QueryResult queryResult = channelOrderQueryService.queryChannelPayment(resolvedPayOrderNo);
+        PaymentChannelSyncService.PaymentSyncResult queryResult = channelSyncService.syncPaymentStatus(resolvedPayOrderNo);
         auditService.record(
                 PaymentOperationAuditService.ACTION_SYNC_PAYMENT_ORDER_STATUS,
                 PaymentOperationAuditService.RESOURCE_PAYMENT_ORDER,
@@ -365,12 +364,11 @@ public class PaymentReadonlyResourceService {
         }).toList();
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public PaymentRefundOrderVO queryRefundOrder(QueryPaymentRefundOrderCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "主动查询退款订单命令不能为空");
         Require.notNull(command.getId(), PaymentCode.PAYMENT_REFUND_ORDER_INVALID.getCode(), "退款订单 ID 不能为空");
         PaymentRefundOrderVO refundOrder = detailRefundOrder(command.getId());
-        channelRefundQueryService.queryChannelRefund(refundOrder.getRefundOrderNo());
+        channelSyncService.syncRefundStatus(refundOrder.getRefundOrderNo());
         return detailRefundOrder(command.getId());
     }
 
@@ -443,7 +441,6 @@ public class PaymentReadonlyResourceService {
                         "人工确认无需系统动作后关闭异常单，不直接修改支付或退款状态"));
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public PaymentExceptionOrderVO handleExceptionOrder(HandlePaymentExceptionOrderCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID);
         Require.notNull(command.getId(), PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "异常订单 ID 不能为空");
@@ -471,7 +468,7 @@ public class PaymentReadonlyResourceService {
         Require.isTrue(isActionAllowedForExceptionType(handleAction, entity.getExceptionType()),
                 PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理动作不适用于当前异常类型");
         String nextHandleStatus = nextExceptionOrderHandleStatus(handleAction);
-        PaymentChannelOrderQueryService.QueryResult channelQueryResult = activeQueryPayment(handleAction, entity.getRelatedOrderNo());
+        PaymentChannelSyncService.PaymentSyncResult channelQueryResult = activeQueryPayment(handleAction, entity.getRelatedOrderNo());
         if (channelQueryResult != null) {
             nextHandleStatus = "HANDLED";
             handleResult = handleResult + "；查单结果：支付订单 "
@@ -482,7 +479,7 @@ public class PaymentReadonlyResourceService {
             Require.isTrue(handleResult.length() <= 512,
                     PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "处理结果不能超过 512 个字符");
         }
-        PaymentChannelRefundQueryService.QueryResult refundQueryResult = activeQueryRefund(handleAction, entity.getRelatedOrderNo());
+        PaymentChannelSyncService.RefundSyncResult refundQueryResult = activeQueryRefund(handleAction, entity.getRelatedOrderNo());
         if (refundQueryResult != null) {
             nextHandleStatus = PaymentRefundOrderStatusEnum.REFUNDING.getCode().equals(normalizeRefundStatus(refundQueryResult.status()))
                     ? "PROCESSING"
@@ -530,24 +527,24 @@ public class PaymentReadonlyResourceService {
         return detailExceptionOrder(command.getId());
     }
 
-    private PaymentChannelOrderQueryService.QueryResult activeQueryPayment(String handleAction, String relatedOrderNo) {
+    private PaymentChannelSyncService.PaymentSyncResult activeQueryPayment(String handleAction, String relatedOrderNo) {
         if (!"ACTIVE_QUERY".equals(handleAction)) {
             return null;
         }
         String payOrderNo = PaymentContextSupport.trimToNull(relatedOrderNo);
         Require.isTrue(isPaymentOrderNo(payOrderNo),
                 PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "主动查单动作必须关联支付订单号");
-        return channelOrderQueryService.queryChannelPayment(payOrderNo);
+        return channelSyncService.syncPaymentStatus(payOrderNo);
     }
 
-    private PaymentChannelRefundQueryService.QueryResult activeQueryRefund(String handleAction, String relatedOrderNo) {
+    private PaymentChannelSyncService.RefundSyncResult activeQueryRefund(String handleAction, String relatedOrderNo) {
         if (!"ACTIVE_REFUND_QUERY".equals(handleAction)) {
             return null;
         }
         String refundOrderNo = PaymentContextSupport.trimToNull(relatedOrderNo);
         Require.isTrue(isRefundOrderNo(refundOrderNo),
                 PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "主动查退款动作必须关联退款订单号");
-        return channelRefundQueryService.queryChannelRefund(refundOrderNo);
+        return channelSyncService.syncRefundStatus(refundOrderNo);
     }
 
     private PaymentChannelOrderCloseService.CloseResult closePaymentOrder(String handleAction, String relatedOrderNo) {
@@ -717,8 +714,8 @@ public class PaymentReadonlyResourceService {
                 continue;
             }
             try {
-                PaymentChannelOrderQueryService.QueryResult queryResult =
-                        channelOrderQueryService.queryChannelPayment(order.getPayOrderNo());
+                PaymentChannelSyncService.PaymentSyncResult queryResult =
+                        channelSyncService.syncPaymentStatus(order.getPayOrderNo());
                 if (queryResult.changed()) {
                     result.setSuccessCount(result.getSuccessCount() + 1);
                 } else {
@@ -788,7 +785,6 @@ public class PaymentReadonlyResourceService {
                 differenceAction("CLOSE", "关闭差异"));
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public PaymentDifferenceVO handleDifference(HandlePaymentDifferenceCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_DIFFERENCE_INVALID);
         Require.notNull(command.getId(), PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "对账差异 ID 不能为空");
@@ -959,8 +955,8 @@ public class PaymentReadonlyResourceService {
         String relatedOrderNo = PaymentContextSupport.trimToNull(entity.getRelatedOrderNo());
         Require.notBlank(relatedOrderNo, PaymentCode.PAYMENT_DIFFERENCE_INVALID.getCode(), "主动查单需要关联订单号");
         if (isPaymentOrderNo(relatedOrderNo)) {
-            PaymentChannelOrderQueryService.QueryResult queryResult =
-                    channelOrderQueryService.queryChannelPayment(relatedOrderNo);
+            PaymentChannelSyncService.PaymentSyncResult queryResult =
+                    channelSyncService.syncPaymentStatus(relatedOrderNo);
             return new DifferenceActionResult(
                     paymentQueryNextStatus(queryResult.status()),
                     "主动查单结果：支付订单 " + queryResult.payOrderNo()
@@ -968,8 +964,8 @@ public class PaymentReadonlyResourceService {
                             + (queryResult.changed() ? "，已按通道结果推进" : "，本地状态未变化"));
         }
         if (isRefundOrderNo(relatedOrderNo)) {
-            PaymentChannelRefundQueryService.QueryResult queryResult =
-                    channelRefundQueryService.queryChannelRefund(relatedOrderNo);
+            PaymentChannelSyncService.RefundSyncResult queryResult =
+                    channelSyncService.syncRefundStatus(relatedOrderNo);
             return new DifferenceActionResult(
                     refundQueryNextStatus(queryResult.status()),
                     "主动查退款结果：退款订单 " + queryResult.refundOrderNo()
