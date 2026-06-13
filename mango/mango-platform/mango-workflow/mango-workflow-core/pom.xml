@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.mango.platform.workflow</groupId>
         <artifactId>mango-workflow</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>mango-workflow-core</artifactId>
     <name>Mango Workflow Core</name>

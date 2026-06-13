@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.mango.app.microservice</groupId>
         <artifactId>mango-app-microservice</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

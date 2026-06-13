@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.mango.platform.captcha</groupId>
         <artifactId>mango-captcha</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>mango-captcha-api</artifactId>
