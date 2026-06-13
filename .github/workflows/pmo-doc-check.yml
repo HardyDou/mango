@@ -1,0 +1,37 @@
+name: PMO Documentation Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  pmo-doc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Write PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s' "$PR_BODY" > .pr-body.md
+
+      - name: Check PMO preflight routing
+        run: node mango-pmo/tools/check-pmo-preflight.mjs
+
+      - name: Check governance intent
+        run: node mango-pmo/tools/check-governance-intent.mjs
+
+      - name: Audit module README quality
+        run: node mango-pmo/tools/audit-module-readmes.mjs
+
+      - name: Check capability docs governance
+        env:
+          PR_BODY_FILE: .pr-body.md
+        run: |
+          node mango-pmo/tools/check-capability-docs.mjs \
+            --base ${{ github.event.pull_request.base.sha }} \
+            --head ${{ github.event.pull_request.head.sha }}

@@ -59,6 +59,10 @@
       "path": "rules/07-mango-issue-runbook.md",
       "reason": "Mango Issue 登记 Runbook"
     },
+    "process.capabilityDocs": {
+      "path": "rules/08-capability-docs.md",
+      "reason": "能力说明维护规范"
+    },
     "backend.code": {
       "path": "rules/backend/01-code.md",
       "reason": "后端代码规范"
@@ -161,7 +165,7 @@
     "tech-lead": ["agent.techLead"],
     "dev": ["agent.dev", "process.devEnvironment", "process.testAssets", "process.aiDeliveryQuality"],
     "qa": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
-    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
+    "pmo": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "phases": {
     "requirement": ["product.prd"],
@@ -169,7 +173,7 @@
     "develop": ["agent.dev", "process.devEnvironment", "process.aiDeliveryQuality"],
     "verify": ["agent.qa", "process.testAssets", "process.aiDeliveryQuality"],
     "release": ["process.aiDeliveryQuality"],
-    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets"]
+    "governance": ["agent.pmo", "process.aiDeliveryQuality", "process.documentAssets", "process.capabilityDocs"]
   },
   "bundles": {
     "deliveryContract": {
@@ -270,6 +274,12 @@
       "paths": ["mango-docs/**", "mango-pmo/rules/**", "README.md", "**/README.md"],
       "keywords": ["文档资产", "归档边界", "规范源", "唯一规范源", "使用说明", "设计文档", "交付记录", "开发者指南", "模块 README"],
       "include": ["process.documentAssets"]
+    },
+    "capabilityDocs": {
+      "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
+      "paths": ["mango-docs/capabilities/**", "mango/**/README.md", "mango-ui/packages/**/README.md", "mango-business-starter/**/README.md", "mango/**/src", "mango/**/src/**", "mango-ui/packages/**/src", "mango-ui/packages/**/src/**", "mango-business-starter/**", "mango-ui/packages/mango-cli/**"],
+      "keywords": ["能力说明", "能力地图", "模块 README", "capability", "capabilities", "README", "starter", "模板", "CLI", "公开能力", "接入方式", "配置项", "菜单", "权限", "验收方式"],
+      "include": ["process.capabilityDocs", "process.documentAssets"]
     },
     "devEnvironment": {
       "paths": ["scripts/**", ".mango/**"],

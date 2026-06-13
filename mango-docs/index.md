@@ -10,6 +10,12 @@
 
 - [mango-pmo/rules/06-document-assets.md](../mango-pmo/rules/06-document-assets.md)
 
+## 能力地图
+
+能力地图用于快速定位 Mango 模块能力、README、验证入口和相关 PMO 规则链接；长期规范仍以 `mango-pmo` 为准。
+
+- [Mango 能力地图](./capabilities/README.md)
+
 ## 顶层设计
 
 | 文档 | 说明 |

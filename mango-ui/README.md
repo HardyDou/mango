@@ -43,175 +43,19 @@ mango-ui/
 
 菜单和权限仍来自后端。不要为了切换单体/微前端去改数据库菜单、权限或后端接口。
 
-## 必须遵守的架构规则
-
-下面这些规则不是建议。违反后会直接破坏“单体可用、微前端可组合、代码可复用、部署可切换”的架构特性。
-
-### 1. 部署形态只能由前端配置决定
-
-必须：
-
-- 通过 `runtime-config.json` 或构建环境变量切换 `monolith / hybrid / micro`。
-- 保持后端菜单、权限、租户、业务接口不因部署形态变化而变化。
-
-禁止：
-
-- 为了切换微前端去改数据库菜单。
-- 为了某个子应用创建新的后端逻辑应用。
-- 在后端接口里写死某个模块必须本地或远程加载。
-
-破坏后果：
-
-- 同一套客户数据无法在单体和微前端之间切换。
-- 交付时需要改库才能组合模块，失去灵活部署价值。
-
-### 2. Shell 是唯一后台框架所有者
-
-必须：
-
-- Shell 统一管理登录态、菜单树、权限上下文、主题、顶部、左侧、TagsView。
-- 子应用被 Shell 挂载时只渲染当前业务页面。
-
-禁止：
-
-- 子应用重复渲染主导航、顶部栏、TagsView、全局主题设置。
-- 子应用自己请求全局菜单并决定菜单结构。
-- Shell 里写某个业务模块的页面细节。
-
-破坏后果：
-
-- Shell 和子应用 UI 变成两套系统。
-- 菜单、权限、主题、标签页状态不一致。
-- 子应用无法被任意组合进同一个后台。
-
-### 3. 业务页面只能有一个源码来源
-
-必须：
-
-- RBAC 页面放 `packages/rbac`。
-- Workflow 页面放 `packages/workflow`。
-- System 页面放 `packages/system`。
-- File 页面放 `packages/file`。
-- 认证和个人能力页面放 `packages/auth`。
-- 单体、Shell 本地模式、子应用独立调试都复用这些业务包。
-
-禁止：
-
-- 为了子应用复制一份 RBAC 或 Workflow 页面源码。
-- Shell 和子应用各维护一套页面组件。
-- 把业务页面新增到 `apps/mango-admin-shell`。
-
-破坏后果：
-
-- 同事在原业务包里的改动无法自动进入微前端。
-- 单体和微前端页面行为分叉，后续合并成本失控。
-
-### 4. 页面加载必须经过统一页面注册表
-
-必须：
-
-- 新增菜单页面后，在 `packages/admin-pages/src/defaults.ts` 注册。
-- 保证后端菜单 `component` 能命中页面注册表。
-- 单体、Shell、本地渲染和子应用调试共用同一份映射。
-
-禁止：
-
-- 在 Shell 内临时写一份 `component -> import()` 映射。
-- 在子应用内再写一份不一致的页面映射。
-- 使用 Vite 无法静态分析的动态导入，例如完全变量化的 `import(path)`。
-
-破坏后果：
-
-- 本地能跑，生产构建缺 chunk 或白屏。
-- 同一个菜单在单体、Shell、子应用里打开不同页面。
-
-### 5. 菜单归属按菜单树判断，不按 URL 前缀硬编码
-
-必须：
-
-- 用菜单树父子关系判断当前页面属于哪个一级菜单。
-- 允许父级菜单路径和子页面路径不是同一个前缀。
-
-禁止：
-
-- 用 `route.path.startsWith(topMenu.path)` 作为唯一归属判断。
-- 为了适配前端菜单强行修改后端菜单路径。
-
-破坏后果：
-
-- `开发中心 > 组件库 > /components/*` 这类菜单会跳错顶部或回首页。
-- 旧页面路径无法平滑迁移到新菜单结构下。
-
-### 6. 开发中心只能存在于开发环境
-
-必须：
-
-- `开发中心` 只在 `import.meta.env.DEV` 下追加。
-- 组件库、示例页面、调试页面只能作为开发态辅助入口。
-
-禁止：
-
-- 把开发中心写入后端菜单表。
-- 让开发中心进入测试/生产菜单。
-- 把真实业务模块挂到开发中心。
-
-破坏后果：
-
-- 客户交付菜单被开发调试入口污染。
-- 权限验收和生产菜单结构不一致。
-
-### 7. 子应用接口必须走 Shell 注入上下文
-
-必须：
-
-- 子应用使用 Shell 传入的 `request`、token、tenantId、userInfo、permissions。
-- 业务接口统一走 Shell `/api` 代理。
-
-禁止：
-
-- 子应用自己维护一套登录态。
-- 子应用正式场景直连后端并自行处理跨域、401、租户上下文。
-
-破坏后果：
-
-- token 过期、租户切换、权限按钮表现不一致。
-- 每个子应用都要维护一套后端跨域策略。
-
-### 8. 生产远程入口必须精确白名单
-
-必须：
-
-- 生产使用 `VITE_MANGO_ALLOWED_REMOTE_ORIGINS` 精确声明远程来源。
-- 生产远程入口使用 HTTPS。
-- 子应用 CORS 只允许 Shell origin。
-
-禁止：
-
-- 生产使用 `Access-Control-Allow-Origin: *` 承载后台访问。
-- 生产使用 host 宽泛白名单绕过 exact origin。
-- 在数据库里硬编码远程入口。
-
-破坏后果：
-
-- 后台资源加载边界不清晰，存在安全风险。
-- 同一套构建无法在不同环境通过静态配置替换完成部署。
-
-### 9. 提交不能混入无关自动格式化
-
-必须：
-
-- 运行 `eslint --fix` 后检查 `git diff`。
-- 只提交和任务相关的文件。
-
-禁止：
-
-- 把历史文件的大面积格式化混进功能提交。
-- 为了通过局部任务去重构同事正在开发的业务页面。
-
-破坏后果：
-
-- 与其他同事分支冲突显著增加。
-- 微前端结构改造和业务功能改动混在一起，无法评审和回滚。
+## 规范入口
+
+长期前端规则只维护在 `mango-pmo/rules/frontend/**`。本 README 只说明 `mango-ui` 使用入口和模块定位。
+
+- [Vue 代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
+- [Element Plus UI 规范](../mango-pmo/rules/frontend/02-element-plus-ui.md)
+- [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md)
+- [前端测试规范](../mango-pmo/rules/frontend/04-test.md)
+- [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)
+- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
+- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
+
+模块能力入口见 [Mango 能力地图](../mango-docs/capabilities/README.md#6-前端与-cli-能力) 和各 `packages/*/README.md`。
 
 ## 选择哪种形态
 
@@ -260,11 +104,11 @@ pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
 pnpm -C mango-ui --filter mango-admin build
 ```
 
-适用规范：
+使用说明：
 
 - 单体入口可以直接使用 `@mango/rbac`、`@mango/system`、`@mango/workflow`、`@mango/file` 等业务包。
-- 新增业务页面仍要放在对应业务包，不要放回 `apps/mango-admin` 私有目录。
-- 单体和微前端必须复用 `packages/admin-pages` 的页面注册规则。
+- 业务页面放置和页面注册规则见 [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md) 和 [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)。
+- 页面注册表用法见 [@mango/admin-pages](./packages/admin-pages/README.md)。
 
 ## 微前端方式使用
 
@@ -290,7 +134,7 @@ Workflow: http://127.0.0.1:5182
 VITE_ADMIN_PROXY_PATH=http://127.0.0.1:5555 pnpm -C mango-ui dev:micro
 ```
 
-如果要让同事通过局域网访问，dev server 必须监听 `0.0.0.0`。当前微前端脚本和子应用 Vite 配置已按 `0.0.0.0` 监听，可用你的局域网 IP 访问：
+如果要让同事通过局域网访问，dev server 监听 `0.0.0.0`。当前微前端脚本和子应用 Vite 配置已按 `0.0.0.0` 监听，可用你的局域网 IP 访问：
 
 ```text
 http://192.168.x.x:5176
@@ -325,13 +169,11 @@ pnpm -C mango-ui dev:micro
 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
 ```
 
-适用规范：
+使用说明：
 
-- 用户正式访问 Shell，不直接访问子应用端口。
-- 子应用独立端口只用于研发调试。
-- Shell 管菜单、权限、主题、TagsView 和登录态。
-- 子应用只渲染当前业务页面。
-- 业务接口通过 Shell `/api` 代理统一进入后端。
+- Shell 是微前端形态的正式访问入口；子应用端口用于研发调试。
+- Shell 承载菜单、权限、主题、TagsView 和登录态；子应用渲染当前业务页面。
+- 业务接口通过 Shell `/api` 代理进入后端。
 
 ## 运行配置
 
@@ -361,13 +203,12 @@ PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chr
 }
 ```
 
-约束：
+配置含义：
 
 - `profile=monolith`：全部本地渲染，不请求子应用。
 - `profile=hybrid`：部分模块本地，部分模块远程。
 - `profile=micro`：已拆模块远程，未拆模块可以继续本地。
-- 生产环境只允许 `VITE_MANGO_ALLOWED_REMOTE_ORIGINS` 精确白名单，不允许 host 宽泛白名单。
-- 生产环境远程入口必须使用 HTTPS。
+- 远程入口白名单和 HTTPS 要求见 [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)。
 - 切换部署形态只替换前端静态配置，不改后端、不改数据库。
 
 详细说明见 [微前端运行说明](./docs/micro-frontend-runtime.md)。
@@ -527,13 +368,7 @@ Shell 发布 `runtime-config.json`：
 }
 ```
 
-生产要求：
-
-- `runtime-config.json` 建议 `Cache-Control: no-store`。
-- 子应用静态资源 CORS 只允许 Shell origin。
-- 不使用 `Access-Control-Allow-Origin: *` 承载后台生产访问。
-- 业务接口由 Shell 域名统一代理，子应用不直接暴露后端代理。
-- 切换组合方式只替换 Shell 的 `runtime-config.json`。
+生产部署检查点见 [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md) 和 [微前端运行说明](./docs/micro-frontend-runtime.md)。
 
 ## 开发中心菜单
 
@@ -550,15 +385,13 @@ Shell 发布 `runtime-config.json`：
     └── 示例页面
 ```
 
-规范：
+使用说明：
 
-- 不写入后端菜单表。
-- 不进入测试/生产构建菜单。
-- 只承载组件库、示例页、调试页。
-- 新增开发页必须注册到 `packages/admin-pages`，确保单体和 Shell 使用同一份页面映射。
-- 开发中心可以保留历史页面路径，例如 `/components/editor`，但菜单归属必须按菜单树关系判断，不允许用 URL 前缀硬编码。
+- 开发中心菜单来自前端开发态追加，不写入后端菜单表。
+- 开发中心承载组件库、示例页和调试页。
+- 页面注册入口见 [@mango/admin-pages](./packages/admin-pages/README.md)。
 
-## 页面注册规范
+## 页面注册入口
 
 所有业务页面都通过 `packages/admin-pages` 统一注册：
 
@@ -566,13 +399,11 @@ Shell 发布 `runtime-config.json`：
 moduleCode + componentPath -> page loader
 ```
 
-要求：
+使用入口：
 
-- 单体、本地 Shell、子应用独立运行必须复用同一份页面映射。
-- 不复制业务页面源码。
-- 不在 Shell 和子应用各维护一套不一致映射。
-- 新增菜单组件路径后，必须同步检查 `packages/admin-pages/src/defaults.ts`。
-- 后端菜单返回的 `component` 要能被页面注册表命中。
+- 页面注册表说明见 [@mango/admin-pages](./packages/admin-pages/README.md)。
+- 页面放置、注册和复用规则见 [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md)。
+- Monorepo 依赖边界见 [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)。
 
 ## 主应用与子应用职责
 
@@ -591,14 +422,7 @@ Shell 负责：
 - 使用 Shell 注入的 token、tenantId、userInfo、permissions、theme、request
 - 暴露统一 `mount(container, runtime)` 和 `unmount()` 协议
 
-子应用禁止：
-
-- 重复实现主导航、登录页、TagsView。
-- 直接决定全局菜单结构。
-- 绕过 Shell 自行维护后端跨域和登录跳转。
-- 复制 `@mango/rbac`、`@mango/workflow` 等业务页面源码。
-
-## 代码规范
+## 包边界入口
 
 依赖方向：
 
@@ -608,30 +432,11 @@ packages/rbac|system|workflow|file|auth -> packages/common|api-schema|app-runtim
 packages/common -> packages/api-schema
 ```
 
-禁止：
+包边界、组件归属、共享类型、样式和临时代码处理见：
 
-- `packages/common` 反向依赖 `apps/*`。
-- 业务包直接依赖基座私有路径，如 `@/stores`、`@/api`、`@/config`。
-- 公共组件通过相对路径回跳到应用目录。
-- 为了微前端把同一业务页面复制到多个目录。
-- 用临时 import 后缀、私有中转文件、重复映射表等方式绕过共享能力归属问题。
-- 把只解决当前报错、没有根因说明和验证结论的代码作为最终实现。
-
-组件和 API：
-
-- 跨模块复用组件放 `packages/common/components`。
-- 认证相关页面放 `packages/auth`。
-- RBAC 业务页面放 `packages/rbac`。
-- Workflow 业务页面放 `packages/workflow`。
-- 跨包共享类型优先放 `packages/api-schema`。
-- ID 类型按字符串处理，除页码、数量、金额、排序等真实数值外，不要对 ID 做 `Number(id)` 或 `parseInt(id)`。
-- 单体和微前端共用的菜单树、图标、权限、运行时工具放 `packages/common` 或 `packages/app-runtime`，业务代码直接依赖共享包稳定入口。
-
-临时代码规则：
-
-- 临时代码只能用于本地排查，提交前必须删除或升级为正式方案。
-- 正式方案需要符合依赖方向和模块归属，不能靠局部特殊写法掩盖架构问题。
-- 修复运行态问题时，必须覆盖开发态访问和生产构建验证。
+- [前端代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
+- [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md)
+- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
 
 ## 构建和验证
 
@@ -660,19 +465,11 @@ pnpm -C mango-ui dev:micro
 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
 ```
 
-最小验收：
-
-1. `5175` 单体登录后菜单、主题、TagsView、业务页面正常。
-2. `5176` Shell 登录后菜单和单体一致。
-3. `hybrid` 下点击 RBAC 菜单加载 RBAC 子应用。
-4. `hybrid` 下点击 Workflow 菜单加载 Workflow 子应用。
-5. `monolith` 下不请求 `5181/5182`。
-6. 菜单数量、按钮权限、业务接口和单体一致。
-7. 浏览器控制台无业务 401/404/500 和白屏错误。
+页面、菜单、Shell 和子应用验收口径见 [前端测试规范](../mango-pmo/rules/frontend/04-test.md)。
 
 ## 提交前检查
 
-至少执行和改动范围匹配的检查：
+改动范围对应的检查入口：
 
 ```bash
 pnpm -C mango-ui --filter mango-admin build
@@ -686,7 +483,7 @@ pnpm -C mango-ui build:micro
 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
 ```
 
-如果运行 `lint:eslint --fix`，必须检查是否改到了无关历史文件。无关自动格式化不要混入提交。
+提交前规则见 [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)。
 
 ## 相关文档
 

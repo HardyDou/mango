@@ -1,353 +1,86 @@
-# Mango Captcha 验证码模块
+# Mango Captcha
 
-## 模块职责
+## 1. 能力定位
 
-验证码模块提供**纯能力**，只负责：
-- **生成** - 根据类型生成验证码
-- **存储** - 存储验证码答案（Redis/DB/Memory）
-- **验证** - 核对用户输入的答案
+`mango-captcha` 提供验证码生成、存储和验证能力，支持算术、滑块拼图、点选文字、无感行为、短信和邮件验证码。主要使用者是认证、风控和需要二次校验的业务接口。
 
-**不负责：**
-- 哪些接口需要验证码
-- 何时触发验证码
-- 验证码失败的处理
+## 2. 适用场景
 
-## 架构设计
+- 登录、找回密码、短信发送、邮箱验证等需要验证码校验的接口。
+- 需要通过 `mango-infra-kv` 的 `IKvStore` 统一保存验证码答案和过期时间。
+- 需要统一 HTTP 接口生成和验证图形、行为验证码。
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         验证码模块（纯能力）                       │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐ │
-│  │ CaptchaApi   │  │ Storage      │  │ 类型                │ │
-│  │ - generate() │  │ Redis/DB/   │  │ ARITHMETIC        │ │
-│  │ - verify()   │  │ Memory       │  │ BLOCK_PUZZLE     │ │
-│  │ - getTypes() │  │ 自动检测      │  │ SMS              │ │
-│  └──────────────┘  └──────────────┘  │ EMAIL            │ │
-│                                         └──────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
+## 3. 不适用场景
 
-## 验证码类型
+- 不决定业务接口的验证码启用策略。
+- 不负责验证码失败后的账号锁定、风控策略或审计。
+- 不负责短信和邮件服务商实现，短信/邮件 provider 需要业务接入真实实现。
 
-| 类型 | 说明 |
-|-----|------|
-| ARITHMETIC | 算术验证码（如：1+2=?） |
-| BLOCK_PUZZLE | 滑块验证码 |
-| SMS | 短信验证码 |
-| EMAIL | 邮件验证码 |
+## 4. 模块边界
 
-## 存储策略
+`api` 提供验证码契约、类型和 provider SPI，`core` 提供验证码生成和校验逻辑，`starter` 提供自动配置和 HTTP Controller。业务模块负责触发时机、失败处理、短信/邮件发送 provider 和风控策略。
 
-自动检测优先级：**Redis > DB > Memory**
+## 5. 接入方式
 
-可通过配置切换：
-```yaml
-mango:
-  captcha:
-    storage: auto  # auto/redis/db/memory
+```xml
+<dependency>
+    <groupId>io.mango.platform.captcha</groupId>
+    <artifactId>mango-captcha-starter</artifactId>
+</dependency>
 ```
 
-## 滑块验证码图库
+只使用契约时依赖 `mango-captcha-api`。
 
-滑块验证码默认使用模块内置图库：
+## 6. 配置项
 
-```text
-classpath:captcha/block-puzzle/workspace.jpg
-classpath:captcha/block-puzzle/city.jpg
-classpath:captcha/block-puzzle/garden.jpg
-classpath:captcha/block-puzzle/pears.jpg
-classpath:captcha/block-puzzle/village.jpg
-classpath:captcha/block-puzzle/mountain.jpg
-classpath:captcha/block-puzzle/courtyard.jpg
+配置前缀：`mango.captcha`。
+
+已发现字段包括 `ttl`、`arithmetic`、`blockPuzzle`、`clickWord`、`sms`、`email`。当前核心存储依赖注入的 `IKvStore`，store 选择通过 `mango-infra-kv` 配置完成；不要把历史或预留的 storage 字段理解为当前运行时 store 切换入口。
+
+## 7. 对外接口 / 扩展点
+
+- API：`CaptchaApi`
+- SPI：`SmsProvider`、`EmailProvider`
+- 类型枚举：`CaptchaType`
+- Core 服务：`ArithmeticCaptchaService`、`BlockPuzzleCaptchaService`、`ClickWordCaptchaService`、`BehaviorCaptchaService`
+- Controller 路径 `/captcha`，接口包括 `/types`、`/arithmetic`、`/block-puzzle`、`/click-word`、`/behavior`、`/behavior/verify`、`/verify`
+
+## 8. 数据库 / 初始化数据
+
+Flyway 路径：`mango-captcha-core/src/main/resources/db/migration/captcha`。
+
+`V1__init_captcha.sql` 创建 `captcha_code`，包含唯一键 `uk_code_key` 和过期时间索引 `idx_expire_time`。当前最小运行闭环仍以 infra-kv `IKvStore` 为准，`captcha_code` 表属于历史或预留资产，使用前需要结合代码路径确认是否被当前 store 实现消费。
+
+## 9. 菜单 / 权限 / 租户
+
+本模块不提供管理菜单。验证码通常作为认证或业务接口前置校验能力使用；租户和风控策略由调用方决定并写入业务上下文。
+
+## 10. 验证方式
+
+```bash
+mvn -f mango/pom.xml -pl mango-platform/mango-captcha -am test
 ```
 
-业务项目可以维护自己的图库，并通过配置替换默认图库。支持 `classpath:`、`file:`、`http:`、`https:` 路径；不写协议时按 `classpath:` 处理。
+测试入口位于 `mango-captcha-core/src/test/java/io/mango/captcha/core/service/**` 和 `mango-captcha-starter/src/test/java/io/mango/captcha/starter/**`。
 
-```yaml
-mango:
-  captcha:
-    block-puzzle:
-      width: 280
-      height: 160
-      slider-size: 50
-      image-locations:
-        - classpath:captcha/block-puzzle/office.jpg
-        - classpath:captcha/block-puzzle/street.jpg
-        - file:/data/mango/captcha/gallery/lobby.jpg
-```
+## 11. 业务接入最小闭环
 
-接口仍返回前端可直接渲染的 `backgroundImage`、`sliderImage`、`x`、`y`，前端不需要关心图片来自内置图库还是业务图库。
+业务接口需要验证码时，先生成验证码并把返回的 key 交给前端展示或发送，再在业务动作提交时调用 verify 校验 key 和答案。图形和行为验证码使用 `/captcha/**` HTTP 接口；短信和邮件验证码需要业务实现 `SmsProvider` 或 `EmailProvider` 并接入真实发送服务。
 
-## API 接口
+验证码答案存储通过 infra-kv 的 `IKvStore` 控制，业务只关心 key、过期时间和校验结果。验收断言覆盖：正确答案一次通过，错误答案失败，过期后失败，同一验证码不能被重复消费；验证码通过后仍继续执行登录、权限和风控校验。
 
-### 生成验证码
+## 12. 常见问题
 
-```
-GET /captcha/types
-GET /captcha/arithmetic
-GET /captcha/block-puzzle
-GET /captcha/click-word
-```
+- 验证失败先检查验证码 key、过期时间和存储后端是否一致。
+- 短信或邮件验证码需要实现 `SmsProvider` 或 `EmailProvider`。
+- 验证码通过不代表业务登录或业务操作一定通过，后续仍需业务校验。
 
-| 类型 | URL |
-|-----|-----|
-| 算术验证码 | GET /captcha/arithmetic |
-| 滑块验证码 | GET /captcha/block-puzzle |
-| 点选文字验证码 | GET /captcha/click-word |
+## 13. 关联 PMO 规则
 
-返回：
-```json
-{
-  "code": 200,
-  "data": {
-    "key": "d37af63fb25348619f1e712c526baba2",
-    "type": "ARITHMETIC",
-    "image": "data:image/png;base64,...",
-    "expireTime": 300
-  }
-}
-```
+- [后端安全规范](../../../mango-pmo/rules/backend/06-security.md)
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-### 验证验证码
+## 14. 历史设计 / 交付记录
 
-```
-POST /captcha/verify
-Content-Type: application/json
-
-{
-  "key": "d37af63fb25348619f1e712c526baba2",
-  "type": "ARITHMETIC",
-  "code": "32"
-}
-```
-
-点选文字验证码校验时，前端提交按提示顺序点击的坐标：
-
-```json
-{
-  "key": "d37af63fb25348619f1e712c526baba2",
-  "type": "CLICK_WORD",
-  "pointJson": "{\"points\":[{\"x\":80,\"y\":60},{\"x\":160,\"y\":110},{\"x\":250,\"y\":70}]}"
-}
-```
-
-返回：
-```json
-{
-  "code": 200,
-  "success": true
-}
-```
-
-### 查询支持的类型
-
-```
-GET /captcha/types
-```
-
-返回：
-```json
-{
-  "code": 200,
-  "data": {
-    "types": ["ARITHMETIC", "BLOCK_PUZZLE", "SMS", "EMAIL"],
-    "currentStorage": "REDIS"
-  }
-}
-```
-
-## 短信/邮件发送
-
-```
-POST /captcha/sms/send
-POST /captcha/email/send
-```
-
-请求：
-```json
-{
-  "mobile": "13800138000",
-  "email": "test@example.com"
-}
-```
-
-## 业务无感知集成
-
-验证码模块支持**业务无感知**集成，通过外部配置决定哪些接口需要验证码：
-
-### 流程
-
-```
-请求 → 拦截器（查配置）→ 需要验证码？
-                           │
-              ┌─────────────┴─────────────┐
-              │                           │
-          不需要                       需要
-          放行                     检查 Header
-                                        │
-                           ┌────────────┴────────────┐
-                           │                         │
-                    Header为空                Header有值
-                    返回 428                captchaApi.verify()
-                           │                         │
-                           ▼                         ▼
-                     前端调验证码            验证通过→业务处理
-                     重试请求
-```
-
-### Header 参数
-
-| Header | 说明 |
-|--------|------|
-| X-Captcha-Key | 验证码标识 |
-| X-Captcha-Code | 用户输入的答案 |
-
-### 428 响应
-
-接口需要验证码但未携带时，返回 HTTP 428：
-
-```json
-{
-  "code": "CAPTCHA_REQUIRED",
-  "msg": "请先完成验证",
-  "data": "ARITHMETIC"
-}
-```
-
-前端收到 428 后：
-1. 调用验证码接口获取验证码
-2. 弹出验证码让用户输入
-3. 重新提交请求（带 Header）
-
-## 外部配置接口
-
-验证码模块通过 SPI 接口获取外部配置：
-
-```java
-public interface CaptchaConfigService {
-    CaptchaConfig getConfig(String path);
-}
-```
-
-外部系统（菜单/风控）实现此接口，提供：
-- 哪些接口需要验证码
-- 需要哪种类型的验证码
-
-## 短信/邮件供应商
-
-通过 SPI 接口扩展：
-
-```java
-public interface SmsProvider {
-    void send(String mobile, String code);
-}
-
-public interface EmailProvider {
-    void send(String email, String code);
-}
-```
-
-## 模块结构
-
-```
-mango-captcha/
-├── mango-captcha-api/           # 接口定义
-│   └── spi/                    # SPI接口
-│       ├── CaptchaStorage.java
-│       ├── CaptchaConfigService.java
-│       ├── SmsProvider.java
-│       └── EmailProvider.java
-├── mango-captcha-core/         # 核心实现
-│   ├── service/                # 验证码服务
-│   ├── storage/               # 存储实现
-│   └── provider/              # 默认供应商
-├── mango-captcha-starter/     # Spring Boot Starter
-│   └── config/                # 自动配置
-└── sql/                       # 数据库脚本
-```
-
-## 使用示例
-
-### 后端业务代码（完全无感知）
-
-```java
-@PostMapping("/user/register")
-public R<Void> register(@RequestBody RegisterRequest request) {
-    // 业务代码，不需要知道验证码存在
-    return userService.register(request);
-}
-```
-
-### 前端请求封装
-
-```typescript
-async function request(url, options) {
-  const res = await fetch(url, options);
-
-  if (res.status === 428) {
-    // 需要验证码
-    const data = await res.json();
-    const captchaRes = await fetch(`/captcha/${data.data.toLowerCase()}`);
-    const captchaData = await captchaRes.json();
-
-    // 弹出验证码
-    const userCode = await showCaptchaModal(captchaData.data);
-
-    // 重新提交
-    options.headers = {
-      ...options.headers,
-      'X-Captcha-Key': captchaData.data.key,
-      'X-Captcha-Code': userCode
-    };
-
-    return request(url, options);
-  }
-
-  return res.json();
-}
-
-// 业务调用
-const result = await request('/user/register', {
-  method: 'POST',
-  body: JSON.stringify(formData)
-});
-```
-
-### 菜单配置
-
-```json
-{
-  "path": "/user/register",
-  "meta": {
-    "title": "注册",
-    "captcha": {
-      "type": "ARITHMETIC",
-      "required": true
-    }
-  }
-}
-```
-
-## 配置项
-
-```yaml
-mango:
-  captcha:
-    storage: auto              # 存储策略
-    arithmetic:
-      width: 200              # 图片宽度
-      height: 100             # 图片高度
-      expire: 300              # 过期时间(秒)
-    header:
-      key: X-Captcha-Key      # Header名
-      code: X-Captcha-Code    # Header名
-```
-
-## 错误码
-
-| 错误码 | 说明 |
-|--------|------|
-| CAPTCHA_REQUIRED | 需要验证码（HTTP 428） |
-| CAPTCHA_ERROR | 验证码错误（HTTP 400） |
-| CAPTCHA_EXPIRED | 验证码已过期（HTTP 400） |
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)

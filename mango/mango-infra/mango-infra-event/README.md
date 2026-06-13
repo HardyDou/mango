@@ -1,143 +1,87 @@
-# mango-infra-event
+# Mango Infra Event
 
-`mango-infra-event` 是 Mango 的领域事件基础设施。它提供统一的发布/订阅接口，默认使用进程内事件总线；需要可靠投递时，通过 `mango-infra-kv` 的 Outbox capability 承载，并可选启用 Redis Stream 作为跨服务轻量传输。
+## 1. 能力定位
 
-## 模块结构
+`mango-infra-event` 提供领域事件发布、订阅、本地分发、Outbox 投递、Redis Stream 传输和系统事件运维接口。主要使用者是需要解耦领域动作、异步投递和失败重试的后端模块。
 
-```text
-mango-infra-event/
-├── mango-infra-event-api      # DomainEvent、发布器、事件总线、订阅者接口
-├── mango-infra-event-core     # 进程内事件总线、Outbox dispatcher、Redis Stream transport
-└── mango-infra-event-starter  # 自动配置
+## 2. 适用场景
+
+- 进程内发布和订阅领域事件。
+- 通过 KV Outbox 承载可靠投递。
+- 可选使用 Redis Stream 做跨进程轻量传输。
+- 查询异常系统事件并触发重新消费。
+
+## 3. 不适用场景
+
+- 不替代完整消息队列治理平台。
+- 不负责业务事务边界和业务幂等。
+- 不保存独立事件业务表，可靠投递依赖 `mango-infra-kv` Outbox 能力。
+
+## 4. 模块边界
+
+`api` 提供事件契约，`core` 提供本地事件总线、Outbox dispatcher 和 Redis Stream transport，`starter` 提供自动配置和系统事件 Controller。业务模块负责定义事件类型、payload、订阅者和幂等处理。
+
+## 5. 接入方式
+
+```xml
+<dependency>
+    <groupId>io.mango.infra.event</groupId>
+    <artifactId>mango-infra-event-starter</artifactId>
+</dependency>
 ```
 
-## 当前能力
+只使用契约时可依赖 `mango-infra-event-api`。
 
-- `IDomainEventPublisher`：发布领域事件。
-- `IDomainEventBus`：发布并订阅领域事件。
-- `DomainEventSubscriber`：业务订阅者接口。
-- `InMemoryDomainEventBus`：进程内同步分发，作为本地 subscriber dispatcher；handler 异常会向上抛出，供 Outbox 识别失败。
-- `OutboxDomainEventDispatcher`：把 KV Outbox 消息可靠投递给本进程订阅者。
-- `RedisStreamDomainEventTransport`：可选跨进程传输，使用 Redis Stream consumer group，不使用 Redis Pub/Sub。
-- `SystemEventApi`：系统事件运维接口，查询异常事件并发起重新投递。
+## 6. 配置项
 
-## 事件模型
+配置前缀：`mango.event`。
 
-```json
-{
-  "eventId": "uuid",
-  "eventType": "workflow.process.completed",
-  "businessType": "EXPENSE_REIMBURSEMENT",
-  "businessKey": "EXP-202605-001",
-  "aggregateId": "APPLY-EXP-202605-001-002",
-  "occurredAt": "2026-05-16T07:30:00Z",
-  "payload": {},
-  "headers": {}
-}
+已发现字段包括 `type`、`transport`、`outbox.*`、`redisStream.*`。默认事件总线类型为 memory，默认 transport 为 none。
+
+## 7. 对外接口 / 扩展点
+
+- `IDomainEventPublisher`
+- `IDomainEventBus`
+- `DomainEventSubscriber`
+- `DomainEventHandler`
+- `SystemEventApi`
+- `DomainEventTransport`
+- `SystemEventController` 路径 `/system/events`，接口包括列表、详情和重新消费；仅在 `mango.event.outbox.enabled=true` 等 outbox 条件满足时装配。
+
+## 8. 数据库 / 初始化数据
+
+未发现本模块独立 SQL migration。Outbox 存储依赖 `mango-infra-kv` 的 Outbox/KV 存储接口。
+
+## 9. 菜单 / 权限 / 租户
+
+系统事件菜单和权限资源目前体现为 authorization 历史迁移 `V47__system_event_menu.sql`；这不是 event 模块新增菜单资产的长期归属方式。事件 payload 中的租户、用户和业务上下文由发布方负责写入并由订阅方校验。
+
+## 10. 验证方式
+
+```bash
+mvn -f mango/pom.xml -pl mango-infra/mango-infra-event -am test
 ```
 
-## 订阅示例
+当前未发现该模块独立 `src/test` 测试类；验收时应覆盖发布、订阅、失败重试和系统事件重新消费链路。
 
-```java
-@Component
-class ExpenseWorkflowSubscriber implements DomainEventSubscriber {
+## 11. 业务接入最小闭环
 
-    @Override
-    public String eventType() {
-        return "workflow.process.completed";
-    }
+业务模块定义领域事件类型和 payload 后，通过 `IDomainEventPublisher` 发布事件，订阅方实现 `DomainEventSubscriber` 或 handler，并在 handler 内保证幂等和可重试。需要可靠投递时启用 `mango.event.outbox.enabled=true`，并确认 infra-kv store/outbox 能力已接入。
 
-    @Override
-    public void onEvent(DomainEvent event) {
-        // 根据 businessType、businessKey、aggregateId 幂等更新业务状态
-    }
-}
-```
+跨进程轻量传输可配置 `mango.event.transport=redis-stream` 及 redis-stream 分组。验收断言覆盖：发布后订阅者收到事件，订阅者异常进入失败/重试链路，`/system/events` 在 outbox 启用场景可查询并 reconsume，重复投递不会破坏业务数据。
 
-## 配置
+## 12. 常见问题
 
-默认使用进程内同步事件总线：
+- 订阅者异常会导致投递失败，业务订阅者需要实现幂等和可重试处理。
+- 跨服务投递前先确认 Redis Stream 或 Outbox 配置已启用。
+- 系统事件重试只能重新投递事件，不会自动修复业务数据错误。
 
-```yaml
-mango:
-  event:
-    type: memory
-```
+## 13. 关联 PMO 规则
 
-当前 `type` 仅保留兼容扩展位。需要可靠投递时，开启 `mango.event.outbox.enabled`，并同时开启 KV capability 的 Outbox：
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
+- [持久化规范](../../../mango-pmo/rules/backend/07-persistence.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-```yaml
-mango:
-  kv:
-    type: redis # memory / redis / jdbc，生产多实例建议 redis 或 jdbc
-    capability:
-      enabled: true
-      outbox: true
-  event:
-    type: memory
-    outbox:
-      enabled: true
-      worker-id: workflow-event-worker
-      batch-size: 50
-      retry-delay-seconds: 60
-      max-attempts: 5
-      dispatch-enabled: true
-      dispatch-interval-millis: 1000
-      dispatch-initial-delay-millis: 1000
-```
+## 14. 历史设计 / 交付记录
 
-开启后：
-
-- `IDomainEventPublisher` 写入 KV Outbox，不直接同步触发业务订阅者。
-- `IOutboxDispatcher.dispatchOnce()` 领取待投递事件，发布到 `IDomainEventBus`，成功 `ack`，失败 `nack` 并按 `retry-delay-seconds` 重试。
-- 领取投递次数达到 `max-attempts` 后，消息进入 `FAILED` 终态；可通过系统事件页面或 `SystemEventApi.reconsume` 放回 `PENDING`。
-- 默认创建进程内调度器，按 `dispatch-interval-millis` 周期调用 `dispatchOnce()`；如果应用需要外部 worker 接管，可设置 `dispatch-enabled=false`。
-- 如果只开启 `mango.event.outbox.enabled=true`，但没有开启 KV Outbox capability，应用启动应失败，避免生产环境静默退回进程内发布。
-
-跨服务投递使用 Redis Stream：
-
-```yaml
-mango:
-  kv:
-    store:
-      type: redis
-    capability:
-      enabled: true
-      outbox: true
-  event:
-    outbox:
-      enabled: true
-    transport: redis-stream
-    redis-stream:
-      stream-name: mango:domain-event
-      group: payment-service
-      consumer: ${spring.application.name:${HOSTNAME:domain-event-consumer}}
-      batch-size: 50
-      read-timeout-millis: 200
-      pending-idle-timeout-millis: 60000
-      consume-enabled: true
-```
-
-开启 `transport=redis-stream` 后，生产者仍先写 KV Outbox；Outbox dispatcher 将事件发布到 Redis Stream 并 `ack` 本地 Outbox。消费方通过 Redis Stream consumer group 拉取事件，再交给本地 `DomainEventSubscriber` 处理，处理成功后确认 stream 消息。不同微服务需要使用不同 `group`，同一微服务的多实例共享同一个 `group` 并使用不同 `consumer`。消费者在处理成功前宕机时，消息会进入 Redis Stream pending list；超过 `pending-idle-timeout-millis` 后可被其它 consumer 自动认领并继续投递。Redis Pub/Sub 不具备离线保留和 consumer group ack 语义，本模块不支持。
-
-## 与 Outbox 的关系
-
-- `mango-infra-event` 定义事件语义：事件模型、发布、订阅、业务处理。
-- `mango-infra-kv` 的 Outbox 定义可靠投递底座：`enqueue / claim / ack / nack / fail / requeue / query`。
-- Workflow 等业务模块只发布领域事件，不直接依赖 Redis、DB 或 MQ。
-- 不引入 MQ 时，可用 memory / redis / jdbc store 承载 Outbox；生产多实例优先使用 redis 或 jdbc。
-- 需要跨微服务广播或多实例消费时，启用 Redis Stream transport。更重的 MQ 方案后续可通过 `DomainEventTransport` 扩展，不改变业务发布和订阅代码。
-
-## 系统事件运维
-
-开启 Outbox 后会暴露系统事件接口：
-
-- `GET /system/events`：分页查询事件，默认只返回异常事件。
-- `GET /system/events/detail?messageId=...`：查询事件详情、错误、payload 和 headers。
-- `POST /system/events/reconsume`：将失败或等待重试事件重新放回待投递队列。
-
-管理后台菜单在“系统维护 / 系统事件”，权限码为 `system:event:list`、`system:event:detail`、`system:event:reconsume`。
-
-## 业务接入建议
-
-业务模块只依赖 `IDomainEventPublisher` 发布事件，只实现 `DomainEventSubscriber` 订阅自己关心的事件。事件的 `businessType`、`businessKey`、`aggregateId` 用于幂等更新业务状态；业务详情、审批快照等大对象仍由业务库或工作流业务表维护，不塞进 Outbox。
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
