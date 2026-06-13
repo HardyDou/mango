@@ -138,6 +138,7 @@ class PaymentTenantIsolationContractTest {
             contract("PaymentRefundApprovalMapper", "selectRefundApprovalDetail", true),
             contract("PaymentRefundApprovalMapper", "selectEntityForUpdate", true),
             contract("PaymentRefundApprovalMapper", "selectEntityByApprovalNoForUpdate", true),
+            contract("PaymentRefundApprovalMapper", "selectEntityByBizRefundNoForUpdate", true),
             contract("PaymentRefundApprovalMapper", "sumPendingApprovalAmount", true),
             contract("PaymentChannelQueryRecordMapper", "countByTenantAndPayOrderNo", true),
             contract("PaymentChannelQueryRecordMapper", "selectLastByTenantAndPayOrderNo", true),

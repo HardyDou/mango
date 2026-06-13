@@ -167,6 +167,48 @@
         for update
     </select>
 
+    <select id="selectEntityByBizRefundNoForUpdate" resultType="io.mango.payment.core.entity.PaymentRefundApprovalEntity">
+        select id,
+               approval_no as approvalNo,
+               business_order_id as businessOrderId,
+               payment_order_id as paymentOrderId,
+               refund_order_id as refundOrderId,
+               biz_order_no as bizOrderNo,
+               biz_refund_no as bizRefundNo,
+               app_id as appId,
+               refund_amount as refundAmount,
+               reason,
+               remark,
+               status,
+               workflow_apply_id as workflowApplyId,
+               workflow_process_instance_id as workflowProcessInstanceId,
+               workflow_process_definition_key as workflowProcessDefinitionKey,
+               workflow_apply_status as workflowApplyStatus,
+               workflow_apply_status_name as workflowApplyStatusName,
+               workflow_current_task_names as workflowCurrentTaskNames,
+               workflow_current_assignee_names as workflowCurrentAssigneeNames,
+               workflow_synced_at as workflowSyncedAt,
+               applicant_id as applicantId,
+               applicant_name as applicantName,
+               apply_time as applyTime,
+               reviewer_id as reviewerId,
+               reviewer_name as reviewerName,
+               review_reason as reviewReason,
+               review_time as reviewTime,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt,
+               del_flag as delFlag
+        from payment_refund_approval
+        where tenant_id = #{tenantId}
+          and app_id = #{appId}
+          and biz_refund_no = #{bizRefundNo}
+          and del_flag = 0
+        for update
+    </select>
+
     <select id="sumPendingApprovalAmount" resultType="long">
         select coalesce(sum(refund_amount), 0)
         from payment_refund_approval
