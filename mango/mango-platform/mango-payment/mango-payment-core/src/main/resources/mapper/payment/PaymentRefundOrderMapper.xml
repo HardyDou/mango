@@ -217,4 +217,32 @@
         </if>
         order by ro.refund_time asc, ro.channel_refund_no asc
     </select>
+
+    <select id="selectSuccessfulChannelRefundsForBill" resultType="io.mango.payment.core.entity.PaymentRefundOrderEntity">
+        select ro.id,
+               ro.refund_order_no as refundOrderNo,
+               ro.biz_refund_no as bizRefundNo,
+               ro.payment_order_id as paymentOrderId,
+               ro.channel_refund_no as channelRefundNo,
+               ro.refund_amount as refundAmount,
+               ro.reason,
+               ro.status,
+               ro.refund_time as refundTime,
+               ro.tenant_id as tenantId,
+               ro.created_by as createdBy,
+               ro.created_at as createdAt,
+               ro.updated_by as updatedBy,
+               ro.updated_at as updatedAt
+        from payment_refund_order ro
+        join payment_order po
+          on po.id = ro.payment_order_id
+         and po.tenant_id = ro.tenant_id
+        where ro.tenant_id = #{tenantId}
+          and po.channel_code = #{channelCode}
+          and po.contract_id = #{contractId}
+          and ro.status = 'SUCCESS'
+          and ro.refund_time &gt;= #{billDate}
+          and ro.refund_time &lt; #{nextBillDate}
+        order by ro.refund_time asc, ro.refund_order_no asc
+    </select>
 </mapper>

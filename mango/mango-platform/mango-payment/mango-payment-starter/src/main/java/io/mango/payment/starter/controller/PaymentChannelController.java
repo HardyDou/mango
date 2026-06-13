@@ -5,6 +5,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentChannelApi;
 import io.mango.payment.api.command.SavePaymentChannelCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
+import io.mango.payment.api.vo.PaymentChannelCapabilityVO;
 import io.mango.payment.api.vo.PaymentChannelVO;
 import io.mango.payment.core.service.IPaymentChannelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,5 +65,12 @@ public class PaymentChannelController implements PaymentChannelApi {
     @Operation(summary = "删除支付通道", description = "按 ID 删除支付通道配置")
     public R<Boolean> deleteChannel(@Parameter(description = "通道 ID", required = true) @RequestParam Long id) {
         return channelService.deleteChannel(id);
+    }
+
+    @Override
+    @GetMapping("/capabilities/page")
+    @Operation(summary = "分页查询通道能力")
+    public R<PageResult<PaymentChannelCapabilityVO>> pageChannelCapabilities(@ParameterObject PaymentConfigPageQuery query) {
+        return R.ok(channelService.pageChannelCapabilities(query));
     }
 }

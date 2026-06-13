@@ -8,6 +8,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
+import io.mango.payment.api.command.GeneratePaymentChannelBillCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
 import io.mango.payment.api.command.SavePaymentChannelBillSourceCommand;
 import io.mango.payment.api.enums.PaymentBusinessOrderStatusEnum;
@@ -84,6 +85,8 @@ public class PaymentReconciliationService {
     private static final String STATUS_DIFFERENCE = "DIFFERENCE";
     private static final String STATUS_IMPORTED = "IMPORTED";
     private static final String MANGO_PAY_CHANNEL_CODE = "MANGO_PAY";
+    private static final String FUIOU_PAY_CHANNEL_CODE = "FUIOU_PAY";
+    private static final String PAGE_MODE_ORDER_QUERY = "ORDER_QUERY";
     private static final String FLOW_TYPE_CHANNEL_FEE = "CHANNEL_FEE";
     private static final String FETCH_STATUS_SUCCESS = "SUCCESS";
     private static final String FETCH_STATUS_FAILED = "FAILED";
@@ -384,7 +387,6 @@ public class PaymentReconciliationService {
         return result;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public PaymentReconciliationVO generateMangoPayVirtualBill(GenerateMangoPayVirtualBillCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
         String channelCode = normalizeCode(command.getChannelCode());
@@ -400,19 +402,38 @@ public class PaymentReconciliationService {
                         command.getContractId(),
                         command.getBillDate()))
                 .rows();
-        ImportPaymentReconciliationCommand importCommand = new ImportPaymentReconciliationCommand();
-        importCommand.setChannelCode(channelCode);
-        importCommand.setBillDate(command.getBillDate());
-        importCommand.setBillFileName(mangoPayBillFileName(channelCode, command.getBillDate()));
-        importCommand.setFileDigest(mangoPayBillDigest(channelCode, command.getBillDate(), rows));
-        importCommand.setItems(rows.stream().map(this::toBillItem).toList());
-        return createReconciliation(
+        ImportPaymentReconciliationCommand importCommand = channelBillImportCommand(channelCode, command.getBillDate(), rows);
+        return inTransaction(() -> createReconciliation(
                 importCommand,
                 tenantId,
                 channelCode,
                 importCommand.getBillFileName(),
                 importCommand.getFileDigest(),
-                PaymentOperationAuditService.ACTION_GENERATE_MANGO_PAY_CHANNEL_BILL);
+                PaymentOperationAuditService.ACTION_GENERATE_MANGO_PAY_CHANNEL_BILL));
+    }
+
+    public PaymentReconciliationVO generatePaymentChannelBill(GeneratePaymentChannelBillCommand command) {
+        Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
+        String channelCode = normalizeCode(command.getChannelCode());
+        Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道编码不能为空");
+        Require.notNull(command.getContractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "签约通道 ID 不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        List<PaymentChannelBillItemRow> rows = channelAdapterRegistry.requireAdapter(channelCode)
+                .generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
+                        tenantId,
+                        channelCode,
+                        command.getContractId(),
+                        command.getBillDate()))
+                .rows();
+        ImportPaymentReconciliationCommand importCommand = channelBillImportCommand(channelCode, command.getBillDate(), rows);
+        return inTransaction(() -> createReconciliation(
+                importCommand,
+                tenantId,
+                channelCode,
+                importCommand.getBillFileName(),
+                importCommand.getFileDigest(),
+                PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL));
     }
 
     private PaymentReconciliationVO createReconciliation(
@@ -617,6 +638,9 @@ public class PaymentReconciliationService {
     private ImportPaymentReconciliationCommand fetchHttpBill(
             PaymentChannelBillSourceEntity source,
             FetchPaymentChannelBillCommand command) {
+        if (isAdapterOrderQuerySource(source)) {
+            return fetchAdapterOrderQueryBill(source, command);
+        }
         String endpoint = PaymentContextSupport.trimToNull(source.getEndpoint());
         Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 获取地址不能为空");
         LocalDateTime startTime = command.getStartTime() == null ? command.getBillDate().atStartOfDay() : command.getStartTime();
@@ -637,6 +661,25 @@ public class PaymentReconciliationService {
             Thread.currentThread().interrupt();
             throw new IllegalArgumentException("HTTP 账单获取被中断", ex);
         }
+    }
+
+    private boolean isAdapterOrderQuerySource(PaymentChannelBillSourceEntity source) {
+        return FUIOU_PAY_CHANNEL_CODE.equals(normalizeCode(source.getChannelCode()))
+                && "HTTP".equals(normalizeCode(source.getFetchMode()))
+                && PAGE_MODE_ORDER_QUERY.equals(normalizeCode(source.getPageMode()));
+    }
+
+    private ImportPaymentReconciliationCommand fetchAdapterOrderQueryBill(
+            PaymentChannelBillSourceEntity source,
+            FetchPaymentChannelBillCommand command) {
+        List<PaymentChannelBillItemRow> rows = channelAdapterRegistry.requireAdapter(source.getChannelCode())
+                .generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
+                        source.getTenantId(),
+                        normalizeCode(source.getChannelCode()),
+                        source.getContractId(),
+                        command.getBillDate()))
+                .rows();
+        return channelBillImportCommand(normalizeCode(source.getChannelCode()), command.getBillDate(), rows);
     }
 
     private ImportPaymentReconciliationCommand fetchBill(
@@ -1227,6 +1270,20 @@ public class PaymentReconciliationService {
         item.setFee(row.getFee());
         item.setTradeTime(row.getTradeTime());
         return item;
+    }
+
+    private ImportPaymentReconciliationCommand channelBillImportCommand(
+            String channelCode,
+            LocalDate billDate,
+            List<PaymentChannelBillItemRow> rows) {
+        Require.notEmpty(rows, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道账单明细不能为空");
+        ImportPaymentReconciliationCommand importCommand = new ImportPaymentReconciliationCommand();
+        importCommand.setChannelCode(channelCode);
+        importCommand.setBillDate(billDate);
+        importCommand.setBillFileName(mangoPayBillFileName(channelCode, billDate));
+        importCommand.setFileDigest(mangoPayBillDigest(channelCode, billDate, rows));
+        importCommand.setItems(rows.stream().map(this::toBillItem).toList());
+        return importCommand;
     }
 
     private long differenceAmount(Long channelAmount, Long localAmount) {

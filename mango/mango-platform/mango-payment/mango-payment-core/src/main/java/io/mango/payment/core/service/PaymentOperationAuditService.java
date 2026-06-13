@@ -1,5 +1,8 @@
 package io.mango.payment.core.service;
 
+import io.mango.common.vo.PageResult;
+import io.mango.payment.api.query.PaymentConfigPageQuery;
+import io.mango.payment.api.vo.PaymentOperationAuditVO;
 import io.mango.payment.core.entity.PaymentOperationAudit;
 import io.mango.payment.core.mapper.PaymentOperationAuditMapper;
 import lombok.RequiredArgsConstructor;
@@ -86,6 +89,21 @@ public class PaymentOperationAuditService {
     public static final String RESULT_REJECTED = "REJECTED";
 
     private final PaymentOperationAuditMapper auditMapper;
+
+    public PageResult<PaymentOperationAuditVO> pageOperationAudits(PaymentConfigPageQuery query) {
+        PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
+        String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
+        String operationResult = PaymentContextSupport.trimToNull(resolved.getStatusCode());
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        long total = auditMapper.countOperationAudits(tenantId, keyword, operationResult);
+        long page = resolved.getPage();
+        long size = resolved.getSize();
+        return PageResult.of(
+                auditMapper.selectOperationAuditPage(tenantId, keyword, operationResult, size, (page - 1) * size),
+                total,
+                page,
+                size);
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void record(String operationAction, String resourceType, String resourceId, String operationResult) {

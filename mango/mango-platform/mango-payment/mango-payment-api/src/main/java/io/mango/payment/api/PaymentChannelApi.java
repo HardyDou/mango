@@ -4,6 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.command.SavePaymentChannelCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
+import io.mango.payment.api.vo.PaymentChannelCapabilityVO;
 import io.mango.payment.api.vo.PaymentChannelVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -21,4 +22,6 @@ public interface PaymentChannelApi {
     R<Boolean> updateChannel(@Valid SavePaymentChannelCommand command);
 
     R<Boolean> deleteChannel(@NotNull(message = "通道 ID 不能为空") Long id);
+
+    R<PageResult<PaymentChannelCapabilityVO>> pageChannelCapabilities(@Valid PaymentConfigPageQuery query);
 }

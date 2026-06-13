@@ -104,6 +104,14 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrderEntity> {
             @Param("channelTradeNos") List<String> channelTradeNos);
 
     @InterceptorIgnore(tenantLine = "true")
+    List<PaymentOrderEntity> selectSuccessfulChannelOrdersForBill(
+            @Param("tenantId") Long tenantId,
+            @Param("channelCode") String channelCode,
+            @Param("contractId") Long contractId,
+            @Param("billDate") LocalDate billDate,
+            @Param("nextBillDate") LocalDate nextBillDate);
+
+    @InterceptorIgnore(tenantLine = "true")
     int updatePayingQueryResult(
             @Param("tenantId") Long tenantId,
             @Param("id") Long id,

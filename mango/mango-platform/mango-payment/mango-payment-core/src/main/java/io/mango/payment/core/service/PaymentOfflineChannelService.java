@@ -22,6 +22,7 @@ import io.mango.payment.api.vo.PaymentOfflineBankStatementBatchStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementBatchVO;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementItemVO;
 import io.mango.payment.api.vo.PaymentOfflineBankStatementMatchStatusVO;
+import io.mango.payment.api.vo.PaymentOfflineCollectionStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineCollectionVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundStatusVO;
 import io.mango.payment.api.vo.PaymentOfflineRefundVO;
@@ -107,6 +108,37 @@ public class PaymentOfflineChannelService {
     private final PaymentSensitiveValueService sensitiveValueService;
     private final PaymentOperationAuditService auditService;
     private final PaymentNumberService numberService;
+
+    public PageResult<PaymentOfflineCollectionVO> pageOfflineCollections(PaymentConfigPageQuery query) {
+        PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
+        String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
+        String statusCode = PaymentContextSupport.trimToNull(resolved.getStatusCode());
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        long total = offlineCollectionMapper.countOfflineCollections(tenantId, keyword, statusCode);
+        long page = resolved.getPage();
+        long size = resolved.getSize();
+        List<PaymentOfflineCollectionVO> rows = offlineCollectionMapper.selectOfflineCollectionPage(
+                tenantId, keyword, statusCode, size, (page - 1) * size);
+        rows.forEach(this::fillCollectionSummary);
+        return PageResult.of(rows, total, page, size);
+    }
+
+    public PaymentOfflineCollectionVO detailOfflineCollection(Long id) {
+        Require.notNull(id, PaymentCode.PAYMENT_READONLY_RESOURCE_INVALID.getCode(), "线下收款 ID 不能为空");
+        PaymentOfflineCollectionVO vo = offlineCollectionMapper.selectOfflineCollectionDetail(PaymentContextSupport.currentTenantId(), id);
+        Require.notNull(vo, PaymentCode.PAYMENT_READONLY_RESOURCE_NOT_FOUND);
+        fillCollectionSummary(vo);
+        return vo;
+    }
+
+    public List<PaymentOfflineCollectionStatusVO> listOfflineCollectionStatuses() {
+        return PaymentOfflineCollectionStatusEnum.options().stream().map(status -> {
+            PaymentOfflineCollectionStatusVO vo = new PaymentOfflineCollectionStatusVO();
+            vo.setStatusCode(status.getCode());
+            vo.setStatusName(status.getLabel());
+            return vo;
+        }).toList();
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public PaymentOfflineCollectionVO submitTransferVoucher(SubmitOfflineTransferVoucherCommand command) {
@@ -451,11 +483,8 @@ public class PaymentOfflineChannelService {
         }).toList();
     }
 
-    private PaymentOfflineCollectionVO detailOfflineCollection(Long id) {
-        PaymentOfflineCollectionVO vo = offlineCollectionMapper.selectOfflineCollectionDetail(PaymentContextSupport.currentTenantId(), id);
-        Require.notNull(vo, PaymentCode.PAYMENT_OFFLINE_COLLECTION_NOT_FOUND);
+    private void fillCollectionSummary(PaymentOfflineCollectionVO vo) {
         vo.setCollectionStatusName(PaymentOfflineCollectionStatusEnum.labelOf(vo.getCollectionStatus()));
-        return vo;
     }
 
     private void confirmCollectionProjection(

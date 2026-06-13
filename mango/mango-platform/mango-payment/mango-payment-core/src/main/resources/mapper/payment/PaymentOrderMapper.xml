@@ -449,6 +449,40 @@
         order by po.pay_time asc, po.channel_trade_no asc
     </select>
 
+    <select id="selectSuccessfulChannelOrdersForBill" resultType="io.mango.payment.core.entity.PaymentOrderEntity">
+        select po.id,
+               po.pay_order_no as payOrderNo,
+               po.business_order_id as businessOrderId,
+               po.cashier_config_id as cashierConfigId,
+               po.channel_id as channelId,
+               po.channel_code as channelCode,
+               po.channel_merchant_no as channelMerchantNo,
+               po.contract_id as contractId,
+               po.contract_capability_id as contractCapabilityId,
+               po.route_rule_id as routeRuleId,
+               po.method_id as methodId,
+               po.amount,
+               po.status,
+               po.channel_trade_no as channelTradeNo,
+               po.success_flag as successFlag,
+               po.pay_time as payTime,
+               po.expire_time as expireTime,
+               po.tenant_id as tenantId,
+               po.created_by as createdBy,
+               po.created_at as createdAt,
+               po.updated_by as updatedBy,
+               po.updated_at as updatedAt
+        from payment_order po
+        where po.tenant_id = #{tenantId}
+          and po.channel_code = #{channelCode}
+          and po.contract_id = #{contractId}
+          and po.status = 'SUCCESS'
+          and po.success_flag = 1
+          and po.pay_time &gt;= #{billDate}
+          and po.pay_time &lt; #{nextBillDate}
+        order by po.pay_time asc, po.pay_order_no asc
+    </select>
+
     <update id="updatePayingQueryResult">
         update payment_order
         set status = #{status},

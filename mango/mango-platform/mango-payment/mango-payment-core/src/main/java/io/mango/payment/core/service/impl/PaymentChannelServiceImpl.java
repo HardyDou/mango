@@ -145,6 +145,19 @@ public class PaymentChannelServiceImpl implements IPaymentChannelService {
         return R.ok(true);
     }
 
+    @Override
+    public PageResult<PaymentChannelCapabilityVO> pageChannelCapabilities(PaymentConfigPageQuery query) {
+        PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
+        String keyword = PaymentContextSupport.trimToNull(resolved.getKeyword());
+        Long tenantId = PaymentContextSupport.currentTenantId();
+        long total = capabilityMapper.countChannelCapabilities(tenantId, keyword, resolved.getStatus(), resolved.getChannelId());
+        long page = resolved.getPage();
+        long size = resolved.getSize();
+        List<PaymentChannelCapabilityVO> rows = capabilityMapper.selectChannelCapabilityPage(
+                tenantId, keyword, resolved.getStatus(), resolved.getChannelId(), size, (page - 1) * size);
+        return PageResult.of(rows, total, page, size);
+    }
+
     private LambdaQueryWrapper<PaymentChannel> wrapper(PaymentConfigPageQuery query) {
         String keyword = PaymentContextSupport.trimToNull(query.getKeyword());
         return new LambdaQueryWrapper<PaymentChannel>()

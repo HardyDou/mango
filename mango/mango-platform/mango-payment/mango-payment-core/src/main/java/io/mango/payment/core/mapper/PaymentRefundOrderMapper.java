@@ -83,4 +83,12 @@ public interface PaymentRefundOrderMapper extends BaseMapper<PaymentRefundOrderE
             @Param("billDate") LocalDate billDate,
             @Param("nextBillDate") LocalDate nextBillDate,
             @Param("channelRefundNos") List<String> channelRefundNos);
+
+    @InterceptorIgnore(tenantLine = "true")
+    List<PaymentRefundOrderEntity> selectSuccessfulChannelRefundsForBill(
+            @Param("tenantId") Long tenantId,
+            @Param("channelCode") String channelCode,
+            @Param("contractId") Long contractId,
+            @Param("billDate") LocalDate billDate,
+            @Param("nextBillDate") LocalDate nextBillDate);
 }

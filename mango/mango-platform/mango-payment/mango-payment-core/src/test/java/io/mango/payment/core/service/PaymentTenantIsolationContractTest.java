@@ -42,10 +42,14 @@ class PaymentTenantIsolationContractTest {
             contract("PaymentOrderMapper", "selectLatestFlowNo", true),
             contract("PaymentOrderMapper", "selectByTenantAndChannelTradeNo", true),
             contract("PaymentOrderMapper", "selectByTenantAndPayOrderNo", true),
+            contract("PaymentOrderMapper", "selectByPayOrderNo", "where po.pay_order_no = #{payOrderNo}", "limit 1"),
             contract("PaymentOrderMapper", "selectEntityByTenantAndId", true),
             contract("PaymentOrderMapper", "selectChannelFailureMetrics", true),
             contract("PaymentOrderMapper", "selectSuccessfulChannelOrdersMissingInBill", true),
+            contract("PaymentOrderMapper", "selectSuccessfulChannelOrdersForBill", true),
             contract("PaymentOrderMapper", "updatePayingQueryResult", true),
+            contract("PaymentOrderMapper", "updateCreatedApplyResult", true),
+            contract("PaymentOrderMapper", "markCreatedApplyFailed", true),
             contract("PaymentOrderMapper", "updatePayingCallbackResult", true),
             contract("PaymentOrderMapper", "updateOfflineCollectionSuccess", true),
             contract("PaymentOrderMapper", "markDuplicatePaymentSuccess", true),
@@ -65,6 +69,7 @@ class PaymentTenantIsolationContractTest {
             contract("PaymentRefundOrderMapper", "selectLatestFlowNo", true),
             contract("PaymentRefundOrderMapper", "selectEntityByTenantAndChannelRefundNo", true),
             contract("PaymentRefundOrderMapper", "selectSuccessfulChannelRefundsMissingInBill", true),
+            contract("PaymentRefundOrderMapper", "selectSuccessfulChannelRefundsForBill", true),
             contract("PaymentTransactionFlowMapper", "countTransactionFlows", true),
             contract("PaymentTransactionFlowMapper", "selectTransactionFlowPage", true),
             contract("PaymentTransactionFlowMapper", "selectTransactionFlowDetail", true),
@@ -137,6 +142,7 @@ class PaymentTenantIsolationContractTest {
             contract("PaymentChannelQueryRecordMapper", "selectLastByTenantAndPayOrderNo", true),
             contract("PaymentRefundQueryRecordMapper", "countByTenantAndRefundOrderNo", true),
             contract("PaymentRefundQueryRecordMapper", "selectLastByTenantAndRefundOrderNo", true),
+            contract("PaymentCashierConfigMapper", "selectByIdIgnoreTenant", "where id = #{id}", "and del_flag = 0"),
             contract("PaymentMangoPayScenarioControlMapper", "selectNextActive", true),
             contract("PaymentMangoPayScenarioControlMapper", "consume", true),
             contract("PaymentChannelBillDetailMapper", "selectBillDetails", true)
@@ -148,7 +154,13 @@ class PaymentTenantIsolationContractTest {
         assertThat(contractKeys()).containsExactlyElementsOf(tenantIgnoredMapperMethodKeys());
         for (MapperContract contract : CONTRACTS) {
             String statement = statement(contract.mapperName(), contract.statementId());
-            if (contract.requiresTenantCondition()) {
+            if (contract.requiredSnippets().length > 0) {
+                for (String requiredSnippet : contract.requiredSnippets()) {
+                    assertThat(statement)
+                            .as(contract.mapperName() + "." + contract.statementId())
+                            .contains(requiredSnippet);
+                }
+            } else if (contract.requiresTenantCondition()) {
                 assertThat(statement)
                         .as(contract.mapperName() + "." + contract.statementId())
                         .contains(TENANT_CONDITION);
@@ -167,7 +179,11 @@ class PaymentTenantIsolationContractTest {
     }
 
     private static MapperContract contract(String mapperName, String statementId, boolean requiresTenantCondition) {
-        return new MapperContract(mapperName, statementId, requiresTenantCondition);
+        return new MapperContract(mapperName, statementId, requiresTenantCondition, new String[0]);
+    }
+
+    private static MapperContract contract(String mapperName, String statementId, String... requiredSnippets) {
+        return new MapperContract(mapperName, statementId, false, requiredSnippets);
     }
 
     private Set<String> tenantIgnoredMapperMethodKeys() throws IOException {
@@ -233,7 +249,11 @@ class PaymentTenantIsolationContractTest {
         }
     }
 
-    private record MapperContract(String mapperName, String statementId, boolean requiresTenantCondition) {
+    private record MapperContract(
+            String mapperName,
+            String statementId,
+            boolean requiresTenantCondition,
+            String[] requiredSnippets) {
         private String key() {
             return mapperName + "." + statementId;
         }
