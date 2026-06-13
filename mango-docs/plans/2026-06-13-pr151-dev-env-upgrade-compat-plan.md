@@ -1,0 +1,50 @@
+# PR151 开发环境升级兼容修复设计说明
+
+## 目标
+
+修复 PR #151 复审指出的开发环境升级兼容阻断点，保证业务项目和 Mango 源码仓各自使用正确的 CLI 启动策略，并补齐 Flyway 诊断、端口占用回归和 PMO PR 门禁。
+
+## 范围
+
+- 业务 full 模板 `scripts/dev-workspace.sh`。
+- Mango 源码仓根 `scripts/dev-workspace.sh`。
+- `@mango/cli` 开发工作区回归脚本。
+- persistence starter Flyway 模块迁移异常上下文。
+- PMO preflight PR 触发词和回归用例。
+- PMO Mango Issue 规则唯一源治理。
+- crypto starter 对历史 `mango.crypto.sm4-key` 错误默认值的迁移诊断。
+- 业务 full 模板 PMO baseline PR 触发词同步。
+- 真实应用配置和模板移除公开固定 SM4 key 默认值，开发环境按工作区生成并回填本地 SM4 key。
+- 本 PR 交付台账。
+
+## 不做范围
+
+- 不发布新版本。
+- 不合并 PR。
+- 不修改业务项目代码。
+- 不启动完整业务前后端验收。
+
+## 设计决策
+
+- 业务项目必须使用全局 `mango` CLI。模板脚本不再使用项目内 `node_modules`、`npx` 或 Mango 源码仓路径作为 fallback；缺少全局 CLI 时直接失败并提示固定版本安装命令。
+- Mango 源码仓必须优先使用工程内 `mango-ui/packages/mango-cli/src/index.mjs`，再 fallback 全局 `mango`，避免旧全局 CLI 绕过仓内新能力。
+- Flyway 模块迁移从数据源解析开始进入模块级异常包装，确保失败信息包含模块、location、historyTable、datasource、outOfOrder。
+- occupied-port 回归同时覆盖 `status`、`doctor` 和 `start`。
+- PMO PR 相关任务必须触发 `rules/01-delivery-contract.md`。
+- Mango Issue 长期细则只维护在 `rules/07-mango-issue-runbook.md`，`rules/00-dev-flow.md` 只保留流程入口和链接。
+- 历史 full 模板曾把 SM2 示例值写入 `mango.crypto.sm4-key`。该值不能作为 SM4 密钥，不做静默兼容；starter 必须识别该值并给出明确迁移提示，新字段 `mango.crypto.sm4.secret-key` 优先。
+- 业务模板携带的 PMO baseline 必须同步主 PMO PR 触发词，保证生成项目中“评审 PR / 提交 PR”场景仍加载交付契约。
+- 公开固定 SM4 key 不能作为真实配置默认值发布。应用配置只读取 `MANGO_CRYPTO_SM4_SECRET_KEY`，新工作区生成随机 key，旧工作区首次启动自动回填一次并保持稳定。
+
+## 验收方式
+
+- CLI 回归：`pnpm --filter @mango/cli test`。
+- Flyway 回归：`mvn -pl mango-infra/mango-infra-persistence/mango-infra-persistence-starter -Dtest=PersistenceFlywayAutoConfigurationTest test`。
+- PMO 回归：`node mango-pmo/tools/check-pmo-preflight.mjs`。
+- 脚本语法：`bash -n scripts/dev-workspace.sh && bash -n mango-ui/packages/mango-cli/templates/full/scripts/dev-workspace.sh`。
+- 交付台账：`node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-06-13-pr151-dev-env-upgrade-compat-plan.md --ledger mango-docs/plans/2026-06-13-pr151-dev-env-upgrade-compat-ledger.md --mode verify`。
+- Crypto 回归：`mvn -pl mango-infra/mango-infra-crypto -Dtest=CryptoAutoConfigurationTest,Sm4CryptoServiceTest test`。
+
+## 风险与限制
+
+- 本次只验证 PR 阻断点和相关自动化回归，不替代发布前完整前后端验收。

@@ -40,6 +40,21 @@ hash_seed() {
   cksum <<<"${REPO_ROOT}" | awk '{print $1}'
 }
 
+generate_sm4_key() {
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 16
+    return
+  fi
+  cksum <<<"${REPO_ROOT}:$(date +%s):$$" | awk '{printf "%032x\n", $1}'
+}
+
+ensure_sm4_key_env() {
+  if [[ -f "${ENV_FILE}" ]] && ! grep -q '^MANGO_CRYPTO_SM4_SECRET_KEY=' "${ENV_FILE}"; then
+    printf '\nMANGO_CRYPTO_SM4_SECRET_KEY=%s\n' "$(generate_sm4_key)" >>"${ENV_FILE}"
+    echo "Added MANGO_CRYPTO_SM4_SECRET_KEY to existing workspace env: ${ENV_FILE}"
+  fi
+}
+
 registered_workspace() {
   [[ -f "${REGISTRY_FILE}" ]] || return 1
   awk -F '\t' -v root="${REPO_ROOT}" '$1 == root { print $2 "\t" $3 "\t" $4; found = 1; exit } END { exit found ? 0 : 1 }' "${REGISTRY_FILE}"
@@ -102,6 +117,7 @@ unregister_workspace() {
 write_default_env() {
   mkdir -p "${LOCAL_DIR}" "${LOG_DIR}"
   if [[ -f "${ENV_FILE}" ]]; then
+    ensure_sm4_key_env
     echo "Workspace env already exists: ${ENV_FILE}"
     return
   fi
@@ -139,6 +155,7 @@ write_default_env() {
 # Mango local workspace configuration.
 # This file is generated once per workspace and must not be committed.
 MANGO_WORKSPACE_ID=mango_${db_suffix}
+MANGO_CRYPTO_SM4_SECRET_KEY=$(generate_sm4_key)
 MANGO_BACKEND_PORT=${backend_port}
 MANGO_FRONTEND_PORT=${frontend_port}
 MANGO_FRONTEND_HOST=127.0.0.1
@@ -162,6 +179,7 @@ load_workspace_env() {
   if [[ ! -f "${ENV_FILE}" ]]; then
     write_default_env
   fi
+  ensure_sm4_key_env
   set -a
   # shellcheck disable=SC1090
   . "${ENV_FILE}"
@@ -180,6 +198,7 @@ load_workspace_env() {
   : "${MANGO_DB_PASSWORD:=}"
   : "${MANGO_DB_AUTO_CREATE:=true}"
   : "${MANGO_OFFICE_PLUGIN_ENABLED:=false}"
+  : "${MANGO_CRYPTO_SM4_SECRET_KEY:?Missing MANGO_CRYPTO_SM4_SECRET_KEY in ${ENV_FILE}}"
   : "${MANGO_BACKEND_ADDITIONAL_ARGS:=}"
 }
 
@@ -548,6 +567,26 @@ remove_worktree() {
   echo "Removed worktree: ${target_root}"
 }
 
+run_mango() {
+  local repo_cli="${REPO_ROOT}/mango-ui/packages/mango-cli/src/index.mjs"
+  if [[ -f "${repo_cli}" ]]; then
+    if ! command -v node >/dev/null 2>&1; then
+      echo "node not found; cannot run repository mango CLI: ${repo_cli}"
+      exit 1
+    fi
+    exec node "${repo_cli}" "$@"
+  fi
+
+  if command -v mango >/dev/null 2>&1; then
+    exec mango "$@"
+  fi
+
+  echo "mango CLI not found."
+  echo "Install @mango/cli globally or run from a Mango source checkout that contains mango-ui/packages/mango-cli/src/index.mjs."
+  echo "Example: npm install -g @mango/cli"
+  exit 1
+}
+
 command="${1:-start}"
 case "${command}" in
   init)
@@ -559,11 +598,11 @@ case "${command}" in
     ;;
   print)
     shift || true
-    exec mango print "$@"
+    run_mango print "$@"
     ;;
   backend|frontend|start|stop|status|logs|doctor|validate|plan)
     shift || true
-    exec mango "${command}" "$@"
+    run_mango "${command}" "$@"
     ;;
   worktree-remove|remove-worktree)
     shift || true

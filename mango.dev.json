@@ -17,10 +17,22 @@
       "type": "spring-boot-maven",
       "cwd": "mango",
       "pom": "mango-app/monolith/mango-monolith-app/pom.xml",
+      "install": {
+        "command": "mvn",
+        "args": [
+          "-f",
+          "pom.xml",
+          "-DskipTests",
+          "install"
+        ]
+      },
       "goal": "org.springframework.boot:spring-boot-maven-plugin:3.5.14:run",
       "portEnv": "MANGO_BACKEND_PORT",
       "port": 18080,
       "health": "/actuator/health",
+      "env": {
+        "MANGO_CRYPTO_SM4_SECRET_KEY": "${env.MANGO_CRYPTO_SM4_SECRET_KEY}"
+      },
       "args": [
         "--server.port=${port}",
         "--spring.datasource.url=jdbc:mysql://${env.MANGO_DB_HOST}:${env.MANGO_DB_PORT}/${env.MANGO_DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
