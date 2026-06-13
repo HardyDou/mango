@@ -15,6 +15,7 @@
 - Affected Mango capabilities:
 - Module README: updated / not applicable
 - Capability map: updated / not applicable
+- Business guide: updated / not applicable
 - PMO rules: updated / not applicable
 - `mango-pmo/rules/index.json`: updated / not applicable
 - Not applicable reason: state the concrete impact judgment, for example unchanged public API/configuration/menu/permission/tenant/page/startup/validation/runtime behavior.

@@ -142,7 +142,7 @@ const contentChecks = [
   },
   {
     file: 'topologies/microservice/README.md',
-    patterns: ['<module>-starter-remote', '不允许调用方直接依赖业务模块 `core`'],
+    patterns: ['<module>-starter-remote', '调用方需要通过 `starter-remote` 访问业务服务', '调用方需要直接依赖业务模块 `core` 才能完成调用'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/pom.xml',

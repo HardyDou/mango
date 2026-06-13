@@ -7,6 +7,7 @@
 - 交付记录
 - 历史设计
 - 能力地图索引
+- 业务接入场景手册
 
 不放：
 
@@ -18,6 +19,7 @@
 能力地图用于快速找到模块 README、能力入口和相关 PMO 规则链接，不作为第二套规范源：
 
 - [Mango 能力地图](./capabilities/README.md)
+- [业务接入场景手册](./guides/business-integration/README.md)
 
 规范统一放：
 

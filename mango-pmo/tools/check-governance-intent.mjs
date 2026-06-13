@@ -93,6 +93,25 @@ for (const frontendEntryReadme of [
   assertNoLongTermRuleLanguage(frontendEntryReadme, failures);
 }
 
+function walkMarkdown(dir, results = []) {
+  if (!fs.existsSync(path.join(root, dir))) {
+    return results;
+  }
+  for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+    const relativePath = path.join(dir, entry.name).split(path.sep).join('/');
+    if (entry.isDirectory()) {
+      walkMarkdown(relativePath, results);
+    } else if (entry.name.endsWith('.md')) {
+      results.push(relativePath);
+    }
+  }
+  return results;
+}
+
+for (const guide of walkMarkdown('mango-docs/guides')) {
+  assertNoLongTermRuleLanguage(guide, failures);
+}
+
 assertIncludes('mango-pmo/templates/module-readme.md', [
   '只写本模块的具体表、数据、资源和入口',
   '只写本模块的资源归属、默认授权和租户边界事实',
@@ -111,6 +130,7 @@ assertIncludes('.github/pull_request_template.md', [
 assertIncludes('.github/workflows/pmo-doc-check.yml', [
   'node mango-pmo/tools/check-governance-intent.mjs',
   'node mango-pmo/tools/audit-module-readmes.mjs',
+  'node mango-pmo/tools/audit-readme-source-facts.mjs',
   'github.event.pull_request.base.sha',
   'github.event.pull_request.head.sha',
   'PR_BODY_FILE'

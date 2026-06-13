@@ -17,6 +17,7 @@
 - Affected Mango capabilities: all managed Mango module README docs, selected frontend entry README docs, capability map, PMO capability-doc gates, PR template, business starter templates
 - Module README: updated, 67 managed README files now follow the relevant capability or frontend-entry template and missing module/entry README files are covered
 - Capability map: updated, full platform / infra / frontend / starter index plus combined business integration loops
+- Business guide: updated, five business integration scenarios now cover file upload, approval, menu page, button permission and tenant dictionary troubleshooting
 - PMO rules: updated, capability docs governance and preflight intent routing clarified
 - `mango-pmo/rules/index.json`: updated, capability docs rule is indexed
 - Not applicable reason: runtime behavior, public API, configuration, menu, permission, tenant, page, startup and validation behavior were not changed; this PR changes governance docs, README usage docs, templates and validation gates
@@ -26,6 +27,10 @@
 ```bash
 node mango-pmo/tools/audit-module-readmes.mjs --self-test
 node mango-pmo/tools/audit-module-readmes.mjs
+node mango-pmo/tools/audit-readme-source-facts.mjs --self-test
+node mango-pmo/tools/audit-readme-source-facts.mjs
+node mango-pmo/tools/check-business-guides.mjs --self-test
+node mango-pmo/tools/check-business-guides.mjs
 node mango-pmo/tools/check-capability-docs.mjs --self-test
 node mango-pmo/tools/check-capability-docs.mjs --base main --head HEAD
 node mango-pmo/tools/check-governance-intent.mjs

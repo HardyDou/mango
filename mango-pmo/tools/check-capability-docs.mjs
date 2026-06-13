@@ -21,6 +21,55 @@ const topLevelBackendModules = new Set([
   'mango-parent',
   'mango-tools'
 ]);
+const businessGuideMappings = [
+  {
+    guide: 'mango-docs/guides/business-integration/file-upload-form.md',
+    matches: [
+      /^mango\/mango-platform\/mango-file(\/|$)/,
+      /^mango\/mango-platform\/mango-file-preview(\/|$)/,
+      /^mango\/mango-infra\/mango-infra-fileproc(\/|$)/,
+      /^mango-ui\/packages\/file(\/|$)/
+    ]
+  },
+  {
+    guide: 'mango-docs/guides/business-integration/workflow-business-approval.md',
+    matches: [
+      /^mango\/mango-platform\/mango-workflow(\/|$)/,
+      /^mango-ui\/packages\/workflow(\/|$)/,
+      /^mango-ui\/packages\/workflow-business-example(\/|$)/
+    ]
+  },
+  {
+    guide: 'mango-docs/guides/business-integration/rbac-menu-page-troubleshooting.md',
+    matches: [
+      /^mango\/mango-platform\/mango-authorization(\/|$)/,
+      /^mango-ui\/packages\/rbac(\/|$)/,
+      /^mango-ui\/packages\/admin-shell(\/|$)/,
+      /^mango-ui\/packages\/admin(\/|$)/,
+      /^mango-ui\/packages\/admin-pages(\/|$)/
+    ]
+  },
+  {
+    guide: 'mango-docs/guides/business-integration/permission-button-troubleshooting.md',
+    matches: [
+      /^mango\/mango-platform\/mango-access(\/|$)/,
+      /^mango\/mango-platform\/mango-authorization(\/|$)/,
+      /^mango-ui\/packages\/rbac(\/|$)/,
+      /^mango-ui\/packages\/admin-shell(\/|$)/
+    ]
+  },
+  {
+    guide: 'mango-docs/guides/business-integration/tenant-dict-config-empty.md',
+    matches: [
+      /^mango\/mango-platform\/mango-identity(\/|$)/,
+      /^mango\/mango-platform\/mango-org(\/|$)/,
+      /^mango\/mango-platform\/mango-system(\/|$)/,
+      /^mango\/mango-platform\/mango-seed(\/|$)/,
+      /^mango-ui\/packages\/system(\/|$)/,
+      /^mango-ui\/packages\/admin-shell(\/|$)/
+    ]
+  }
+];
 
 function fileExists(relativePath) {
   return fs.existsSync(path.join(root, relativePath));
@@ -181,7 +230,7 @@ function validatePrBody(prBody, failures) {
     }
   }
 
-  const capabilityFields = ['Affected Mango capabilities', 'Module README', 'Capability map', 'PMO rules', '`mango-pmo/rules/index.json`'];
+  const capabilityFields = ['Affected Mango capabilities', 'Module README', 'Capability map', 'Business guide', 'PMO rules', '`mango-pmo/rules/index.json`'];
   for (const label of capabilityFields) {
     const value = lineValue(prBody, label);
     if (isPlaceholder(value)) {
@@ -226,6 +275,7 @@ function filledPrBody(options = {}) {
 - Affected Mango capabilities: capability docs governance
 - Module README: not applicable, no module behavior changed
 - Capability map: not applicable, no capability index changed
+- Business guide: not applicable, no business integration scenario changed
 - PMO rules: updated, capability docs gate clarified
 - \`mango-pmo/rules/index.json\`: not applicable, no new PMO rule file
 - Not applicable reason: ${notApplicableReason}
@@ -353,6 +403,26 @@ function runSelfTest() {
       body: noReasonBody,
       valid: false,
       expectedFailure: 'mango-business-starter/README.md'
+    },
+    {
+      name: 'file module changes need business upload guide',
+      files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md'],
+      body: noReasonBody,
+      valid: false,
+      expectedFailure: 'file-upload-form.md'
+    },
+    {
+      name: 'file module and business upload guide pass',
+      files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md', 'mango-docs/guides/business-integration/file-upload-form.md'],
+      body: noReasonBody,
+      valid: true
+    },
+    {
+      name: 'explicit not applicable reason does not allow missing business guide',
+      files: ['mango/mango-platform/mango-file/mango-file-api/src/main/java/io/mango/file/api/FileApi.java', 'mango/mango-platform/mango-file/README.md'],
+      body: filledPrBody(),
+      valid: false,
+      expectedFailure: 'file-upload-form.md'
     },
     {
       name: 'PMO rule change needs index json',
@@ -555,6 +625,19 @@ function checkCapabilityDocCoverage(files, prBody, failures, warnings) {
     } else {
       failures.push(`${message}; update docs or fill "Not applicable reason" with a concrete impact judgment, for example unchanged public API/configuration/menu/permission/startup/validation.`);
     }
+  }
+
+  const affectedGuides = new Set();
+  for (const file of files.filter(isCapabilityAffectingFile)) {
+    for (const mapping of businessGuideMappings) {
+      if (mapping.matches.some((pattern) => pattern.test(file))) {
+        affectedGuides.add(mapping.guide);
+      }
+    }
+  }
+  const missingGuides = [...affectedGuides].filter((guide) => !files.includes(guide));
+  if (missingGuides.length > 0) {
+    failures.push(`Business integration scenario files may be affected but were not updated: ${missingGuides.join(', ')}; update the guide with changed usage or an explicit no-impact note for this scenario.`);
   }
 }
 

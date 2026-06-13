@@ -2,21 +2,21 @@
 
 ## 1. 能力定位
 
-提供字典、参数、租户、地区、日志、事件等系统页面、组件和 API。
+提供字典、参数、租户、地区、日志等系统页面、组件和 API，并承载系统事件运维前端页面。
 
 主要使用者：前端开发者、业务开发者和 AI Agent。
 
 ## 2. 适用场景
 
-业务前端需要读取系统配置、字典或租户信息时使用。
+业务前端需要读取系统配置、字典或租户信息时使用；后台需要展示事件 outbox 运维页面时，可复用本包的 `SystemEventView`。
 
 ## 3. 不适用场景
 
-不负责后端系统表初始化。
+不负责后端系统表初始化，也不提供事件后端能力。
 
 ## 4. 模块边界
 
-包名：`@mango/system`。本包只提供前端运行时、页面、组件、API 封装或页面注册能力，不改变后端接口契约。
+包名：`@mango/system`。本包只提供前端运行时、页面、组件、API 封装或页面注册能力，不改变后端接口契约。`SystemEventView` 和 `eventApi` 是事件运维前端入口，后端 `/system/events` 归属 `mango-infra-event`。
 
 ## 5. 接入方式
 
@@ -28,7 +28,7 @@ import { AreaView, ConfigView, DictView, TenantView } from '@mango/system';
 import { dictApi, tenantApi, configApi } from '@mango/system';
 ```
 
-后端需要接入 [System](../../../mango/mango-platform/mango-system/README.md)，事件页面还需要接入 [Event](../../../mango/mango-infra/mango-infra-event/README.md)。
+字典、参数、租户、地区和日志页面需要接入 [System](../../../mango/mango-platform/mango-system/README.md)。事件页面需要接入 [Event](../../../mango/mango-infra/mango-infra-event/README.md)，接口路径是 `/system/events`。
 
 ## 6. 配置项
 
@@ -40,7 +40,7 @@ import { dictApi, tenantApi, configApi } from '@mango/system';
 
 - 页面：`DictView`、`TenantView`、`ConfigView`、`AreaView`、`OperationLogView`、`LoginLogView`、`SystemEventView`。
 - 组件：`ParticipantSelector`、`DomainSelector`、`DomainSideTree`。
-- API：`dictApi`、`tenantApi`、`configApi`、`areaApi`、`eventApi`。
+- API：`dictApi`、`tenantApi`、`configApi`、`areaApi`、`eventApi`。其中 `eventApi` 调用 `mango-infra-event` 暴露的 `/system/events`。
 
 主要 API 前缀：`/system`。
 

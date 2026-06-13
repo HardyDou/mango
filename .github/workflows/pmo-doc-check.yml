@@ -28,6 +28,12 @@ jobs:
       - name: Audit module README quality
         run: node mango-pmo/tools/audit-module-readmes.mjs
 
+      - name: Audit README source facts
+        run: node mango-pmo/tools/audit-readme-source-facts.mjs
+
+      - name: Check business integration guides
+        run: node mango-pmo/tools/check-business-guides.mjs
+
       - name: Check capability docs governance
         env:
           PR_BODY_FILE: .pr-body.md
