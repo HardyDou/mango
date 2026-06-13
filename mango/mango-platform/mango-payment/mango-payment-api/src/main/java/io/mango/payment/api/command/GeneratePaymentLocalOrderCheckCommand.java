@@ -10,8 +10,8 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
-@Schema(description = "生成支付通道账单命令")
-public class GeneratePaymentChannelBillCommand implements Serializable {
+@Schema(description = "生成本地订单通道核验命令")
+public class GeneratePaymentLocalOrderCheckCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -4,7 +4,7 @@ import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
-import io.mango.payment.api.command.GeneratePaymentChannelBillCommand;
+import io.mango.payment.api.command.GeneratePaymentLocalOrderCheckCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentChannelBillFetchBatchVO;
@@ -33,7 +33,7 @@ public interface PaymentReconciliationApi {
 
     R<PaymentReconciliationVO> generateMangoPayVirtualBill(@Valid GenerateMangoPayVirtualBillCommand command);
 
-    R<PaymentReconciliationVO> generatePaymentChannelBill(@Valid GeneratePaymentChannelBillCommand command);
+    R<PaymentReconciliationVO> generateLocalOrderCheck(@Valid GeneratePaymentLocalOrderCheckCommand command);
 
     R<PageResult<PaymentChannelBillSourceVO>> pageBillSources(@Valid PaymentConfigPageQuery query);
 

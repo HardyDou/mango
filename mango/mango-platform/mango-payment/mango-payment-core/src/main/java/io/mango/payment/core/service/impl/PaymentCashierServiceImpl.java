@@ -323,7 +323,6 @@ public class PaymentCashierServiceImpl implements IPaymentCashierService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public R<PaymentCashierPayResultVO> syncPayResult(String payOrderNo) {
         Require.notBlank(payOrderNo, PaymentCode.PAYMENT_CASHIER_PAY_INVALID.getCode(), "支付订单号不能为空");
         return withTenantContext(resolveTenantIdByPayOrderNo(payOrderNo), () -> syncPayResultInContext(payOrderNo));

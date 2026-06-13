@@ -2511,7 +2511,11 @@ async function expectOnlySemanticTags(scope: Locator, allowed: RegExp[], message
 
 test.describe('支付中心 E2E', () => {
   test.describe.configure({ mode: 'serial' });
-  test.skip(({ browserName }) => browserName !== 'chromium', '支付中心 E2E 使用共享测试库数据，仅在 Chromium 串行执行');
+  test.skip(
+    process.env.PAYMENT_E2E_ALLOW_SHARED_DB_MUTATION !== 'true',
+    '支付中心 E2E 会写入隔离测试库；必须显式设置 PAYMENT_E2E_ALLOW_SHARED_DB_MUTATION=true 后运行'
+  );
+  test.skip(({ browserName }) => browserName !== 'chromium', '支付中心 E2E 使用隔离测试库数据，仅在 Chromium 串行执行');
 
   test('支付中心搜索区、列表区和分页区样式结构一致', async ({ page }) => {
     const runtimeErrors = collectRuntimeErrors(page);

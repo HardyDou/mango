@@ -173,7 +173,6 @@ public class PaymentRefundApprovalService {
                 .set("workflow_synced_at", LocalDateTime.now()));
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void approveByWorkflow(Long tenantId, String approvalNo, String processInstanceId) {
         Require.notNull(tenantId, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "租户 ID 不能为空");
         Require.notBlank(approvalNo, PaymentCode.PAYMENT_REFUND_APPROVAL_INVALID.getCode(), "退款审批单号不能为空");

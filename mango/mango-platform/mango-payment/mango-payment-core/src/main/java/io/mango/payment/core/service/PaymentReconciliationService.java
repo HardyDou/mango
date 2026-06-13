@@ -8,7 +8,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentCode;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
-import io.mango.payment.api.command.GeneratePaymentChannelBillCommand;
+import io.mango.payment.api.command.GeneratePaymentLocalOrderCheckCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
 import io.mango.payment.api.command.SavePaymentChannelBillSourceCommand;
 import io.mango.payment.api.enums.PaymentBusinessOrderStatusEnum;
@@ -85,8 +85,6 @@ public class PaymentReconciliationService {
     private static final String STATUS_DIFFERENCE = "DIFFERENCE";
     private static final String STATUS_IMPORTED = "IMPORTED";
     private static final String MANGO_PAY_CHANNEL_CODE = "MANGO_PAY";
-    private static final String FUIOU_PAY_CHANNEL_CODE = "FUIOU_PAY";
-    private static final String PAGE_MODE_ORDER_QUERY = "ORDER_QUERY";
     private static final String FLOW_TYPE_CHANNEL_FEE = "CHANNEL_FEE";
     private static final String FETCH_STATUS_SUCCESS = "SUCCESS";
     private static final String FETCH_STATUS_FAILED = "FAILED";
@@ -412,12 +410,12 @@ public class PaymentReconciliationService {
                 PaymentOperationAuditService.ACTION_GENERATE_MANGO_PAY_CHANNEL_BILL));
     }
 
-    public PaymentReconciliationVO generatePaymentChannelBill(GeneratePaymentChannelBillCommand command) {
+    public PaymentReconciliationVO generateLocalOrderCheck(GeneratePaymentLocalOrderCheckCommand command) {
         Require.notNull(command, PaymentCode.PAYMENT_RECONCILIATION_INVALID);
         String channelCode = normalizeCode(command.getChannelCode());
         Require.notBlank(channelCode, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "通道编码不能为空");
         Require.notNull(command.getContractId(), PaymentCode.PAYMENT_CHANNEL_CONTRACT_INVALID.getCode(), "签约通道 ID 不能为空");
-        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "账单日期不能为空");
+        Require.notNull(command.getBillDate(), PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "核验日期不能为空");
         Long tenantId = PaymentContextSupport.currentTenantId();
         List<PaymentChannelBillItemRow> rows = channelAdapterRegistry.requireAdapter(channelCode)
                 .generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
@@ -433,7 +431,7 @@ public class PaymentReconciliationService {
                 channelCode,
                 importCommand.getBillFileName(),
                 importCommand.getFileDigest(),
-                PaymentOperationAuditService.ACTION_FETCH_CHANNEL_BILL));
+                PaymentOperationAuditService.ACTION_GENERATE_LOCAL_ORDER_CHECK));
     }
 
     private PaymentReconciliationVO createReconciliation(
@@ -638,9 +636,6 @@ public class PaymentReconciliationService {
     private ImportPaymentReconciliationCommand fetchHttpBill(
             PaymentChannelBillSourceEntity source,
             FetchPaymentChannelBillCommand command) {
-        if (isAdapterOrderQuerySource(source)) {
-            return fetchAdapterOrderQueryBill(source, command);
-        }
         String endpoint = PaymentContextSupport.trimToNull(source.getEndpoint());
         Require.notBlank(endpoint, PaymentCode.PAYMENT_RECONCILIATION_INVALID.getCode(), "HTTP 获取地址不能为空");
         LocalDateTime startTime = command.getStartTime() == null ? command.getBillDate().atStartOfDay() : command.getStartTime();
@@ -661,25 +656,6 @@ public class PaymentReconciliationService {
             Thread.currentThread().interrupt();
             throw new IllegalArgumentException("HTTP 账单获取被中断", ex);
         }
-    }
-
-    private boolean isAdapterOrderQuerySource(PaymentChannelBillSourceEntity source) {
-        return FUIOU_PAY_CHANNEL_CODE.equals(normalizeCode(source.getChannelCode()))
-                && "HTTP".equals(normalizeCode(source.getFetchMode()))
-                && PAGE_MODE_ORDER_QUERY.equals(normalizeCode(source.getPageMode()));
-    }
-
-    private ImportPaymentReconciliationCommand fetchAdapterOrderQueryBill(
-            PaymentChannelBillSourceEntity source,
-            FetchPaymentChannelBillCommand command) {
-        List<PaymentChannelBillItemRow> rows = channelAdapterRegistry.requireAdapter(source.getChannelCode())
-                .generateBill(new IPaymentChannelAdapter.ChannelBillCommand(
-                        source.getTenantId(),
-                        normalizeCode(source.getChannelCode()),
-                        source.getContractId(),
-                        command.getBillDate()))
-                .rows();
-        return channelBillImportCommand(normalizeCode(source.getChannelCode()), command.getBillDate(), rows);
     }
 
     private ImportPaymentReconciliationCommand fetchBill(

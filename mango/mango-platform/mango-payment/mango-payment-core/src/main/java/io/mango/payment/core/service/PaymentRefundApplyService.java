@@ -14,13 +14,18 @@ import io.mango.payment.core.mapper.PaymentBusinessOrderMapper;
 import io.mango.payment.core.mapper.PaymentOrderMapper;
 import io.mango.payment.core.mapper.PaymentRefundOrderMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentRefundApplyService {
 
     private final PaymentBusinessOrderMapper businessOrderMapper;
@@ -30,6 +35,7 @@ public class PaymentRefundApplyService {
     private final PaymentOrderStatusFlowService statusFlowService;
     private final PaymentChannelAdapterRegistry channelAdapterRegistry;
     private final PaymentNumberService numberService;
+    private final PlatformTransactionManager transactionManager;
 
     public PaymentOpenRefundOrderVO applyRefund(
             PaymentApplication application,
@@ -37,6 +43,50 @@ public class PaymentRefundApplyService {
             String triggerSource,
             String triggerNo,
             boolean notifyBusiness) {
+        RefundApplyContext context = inTransaction(() -> prepareRefund(application, command, triggerSource, triggerNo));
+        if (context.existingRefundOrder() != null) {
+            return toOpenRefundOrderVO(context.existingRefundOrder());
+        }
+        IPaymentChannelAdapter.RefundApplyResult channelResult;
+        try {
+            channelResult = applyChannelRefund(
+                    application.getTenantId(),
+                    context.paymentOrder(),
+                    command,
+                    context.refundOrderNo());
+        } catch (RuntimeException ex) {
+            log.warn("退款通道申请失败，tenantId={}, appId={}, bizRefundNo={}, refundOrderNo={}",
+                    application.getTenantId(), application.getAppId(), command.getBizRefundNo(), context.refundOrderNo(), ex);
+            try {
+                markRefundApplyFailed(application, context, triggerSource, triggerNo);
+            } catch (RuntimeException markException) {
+                ex.addSuppressed(markException);
+                log.error("退款通道申请失败后标记本地退款单失败异常，tenantId={}, appId={}, bizRefundNo={}, refundOrderNo={}",
+                        application.getTenantId(), application.getAppId(), command.getBizRefundNo(), context.refundOrderNo(), markException);
+            }
+            throw ex;
+        }
+        String initialStatus = resolveInitialRefundStatus(channelResult);
+        orderStateService.requireNewRefundResultStatus(initialStatus);
+        inTransaction(() -> {
+            int updated = refundOrderMapper.updateRefundApplyResult(
+                    application.getTenantId(),
+                    context.refundOrder().getId(),
+                    channelResult.channelRefundNo(),
+                    initialStatus);
+            Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode(), "退款订单状态已变化");
+            return null;
+        });
+
+        PaymentRefundOrderVO detail = selectRequiredOpenRefundOrder(application, command.getBizRefundNo());
+        return toOpenRefundOrderVO(detail);
+    }
+
+    private RefundApplyContext prepareRefund(
+            PaymentApplication application,
+            CreatePaymentOpenRefundCommand command,
+            String triggerSource,
+            String triggerNo) {
         Require.notNull(application, PaymentCode.PAYMENT_APPLICATION_NOT_FOUND);
         validateRefundCommand(command, application);
         PaymentRefundOrderVO existing = refundOrderMapper.selectOpenRefundOrder(
@@ -44,7 +94,7 @@ public class PaymentRefundApplyService {
         if (existing != null) {
             Require.isTrue(isSameRefund(existing, command), PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT);
             existing.setFlowNo(refundOrderMapper.selectLatestFlowNo(application.getTenantId(), existing.getId()));
-            return toOpenRefundOrderVO(existing);
+            return RefundApplyContext.existing(existing);
         }
         PaymentBusinessOrderEntity businessOrder = selectRequiredBusinessOrder(application, command.getBizOrderNo());
         orderStateService.requireBusinessOrderRefundable(businessOrder.getStatus());
@@ -56,18 +106,14 @@ public class PaymentRefundApplyService {
 
         LocalDateTime now = LocalDateTime.now();
         String refundOrderNo = numberService.next(PaymentNumberService.PAY_REFUND_ORDER_NO);
-        IPaymentChannelAdapter.RefundApplyResult channelResult = applyChannelRefund(
-                application.getTenantId(), paymentOrder, command, refundOrderNo);
-        String initialStatus = resolveInitialRefundStatus(channelResult);
         PaymentRefundOrderEntity refundOrder = new PaymentRefundOrderEntity();
         refundOrder.setRefundOrderNo(refundOrderNo);
         refundOrder.setBizRefundNo(command.getBizRefundNo().trim());
         refundOrder.setPaymentOrderId(paymentOrder.getId());
-        refundOrder.setChannelRefundNo(channelResult.channelRefundNo());
+        refundOrder.setChannelRefundNo(null);
         refundOrder.setRefundAmount(command.getRefundAmount());
         refundOrder.setReason(command.getReason().trim());
-        refundOrder.setStatus(initialStatus);
-        orderStateService.requireNewRefundResultStatus(refundOrder.getStatus());
+        refundOrder.setStatus(PaymentRefundOrderStatusEnum.REFUNDING.getCode());
         refundOrder.setRefundTime(null);
         refundOrder.setTenantId(application.getTenantId());
         refundOrderMapper.insert(refundOrder);
@@ -77,14 +123,35 @@ public class PaymentRefundApplyService {
                 refundOrder.getId(),
                 refundOrderNo,
                 null,
-                initialStatus,
+                PaymentRefundOrderStatusEnum.REFUNDING.getCode(),
                 triggerSource,
                 triggerNo,
                 now,
                 statusFlowRemark(triggerSource));
+        return RefundApplyContext.created(paymentOrder, refundOrder, refundOrderNo);
+    }
 
-        PaymentRefundOrderVO detail = selectRequiredOpenRefundOrder(application, command.getBizRefundNo());
-        return toOpenRefundOrderVO(detail);
+    private void markRefundApplyFailed(
+            PaymentApplication application,
+            RefundApplyContext context,
+            String triggerSource,
+            String triggerNo) {
+        inTransaction(() -> {
+            int updated = refundOrderMapper.markRefundApplyFailed(application.getTenantId(), context.refundOrder().getId());
+            Require.isTrue(updated == 1, PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode(), "退款订单状态已变化");
+            statusFlowService.record(
+                    application.getTenantId(),
+                    PaymentOrderStatusFlowService.ORDER_TYPE_REFUND,
+                    context.refundOrder().getId(),
+                    context.refundOrderNo(),
+                    PaymentRefundOrderStatusEnum.REFUNDING.getCode(),
+                    PaymentRefundOrderStatusEnum.FAILED.getCode(),
+                    triggerSource,
+                    triggerNo,
+                    LocalDateTime.now(),
+                    "退款通道申请失败");
+            return null;
+        });
     }
 
     private void validateRefundCommand(CreatePaymentOpenRefundCommand command, PaymentApplication application) {
@@ -194,6 +261,29 @@ public class PaymentRefundApplyService {
 
     private long normalizedAmount(Long amount) {
         return amount == null ? 0L : amount;
+    }
+
+    private <T> T inTransaction(Supplier<T> action) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        return template.execute(status -> action.get());
+    }
+
+    private record RefundApplyContext(
+            PaymentRefundOrderVO existingRefundOrder,
+            PaymentOrderVO paymentOrder,
+            PaymentRefundOrderEntity refundOrder,
+            String refundOrderNo) {
+
+        static RefundApplyContext existing(PaymentRefundOrderVO refundOrder) {
+            return new RefundApplyContext(refundOrder, null, null, null);
+        }
+
+        static RefundApplyContext created(
+                PaymentOrderVO paymentOrder,
+                PaymentRefundOrderEntity refundOrder,
+                String refundOrderNo) {
+            return new RefundApplyContext(null, paymentOrder, refundOrder, refundOrderNo);
+        }
     }
 
 }

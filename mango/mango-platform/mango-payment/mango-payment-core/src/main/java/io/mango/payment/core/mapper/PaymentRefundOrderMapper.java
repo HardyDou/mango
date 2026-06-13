@@ -62,6 +62,18 @@ public interface PaymentRefundOrderMapper extends BaseMapper<PaymentRefundOrderE
             @Param("refundTime") LocalDateTime refundTime);
 
     @InterceptorIgnore(tenantLine = "true")
+    int updateRefundApplyResult(
+            @Param("tenantId") Long tenantId,
+            @Param("id") Long id,
+            @Param("channelRefundNo") String channelRefundNo,
+            @Param("status") String status);
+
+    @InterceptorIgnore(tenantLine = "true")
+    int markRefundApplyFailed(
+            @Param("tenantId") Long tenantId,
+            @Param("id") Long id);
+
+    @InterceptorIgnore(tenantLine = "true")
     Long sumOccupyingRefundAmount(
             @Param("tenantId") Long tenantId,
             @Param("paymentOrderId") Long paymentOrderId);

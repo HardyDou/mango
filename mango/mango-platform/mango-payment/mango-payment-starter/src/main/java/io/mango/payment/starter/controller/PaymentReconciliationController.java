@@ -7,7 +7,7 @@ import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentReconciliationApi;
 import io.mango.payment.api.command.FetchPaymentChannelBillCommand;
 import io.mango.payment.api.command.GenerateMangoPayVirtualBillCommand;
-import io.mango.payment.api.command.GeneratePaymentChannelBillCommand;
+import io.mango.payment.api.command.GeneratePaymentLocalOrderCheckCommand;
 import io.mango.payment.api.command.ImportPaymentReconciliationCommand;
 import io.mango.payment.api.query.PaymentConfigPageQuery;
 import io.mango.payment.api.vo.PaymentChannelBillFetchBatchVO;
@@ -90,11 +90,11 @@ public class PaymentReconciliationController implements PaymentReconciliationApi
     }
 
     @Override
-    @PostMapping("/channel-bill/generate")
+    @PostMapping("/local-order-check/generate")
     @ApiAccess(mode = ApiResourceAccessMode.PERMISSION, permission = "payment:reconciliation:import")
-    @Operation(summary = "生成通道账单", description = "按通道适配器真实账单能力生成通道账单批次，并进入统一对账流程")
-    public R<PaymentReconciliationVO> generatePaymentChannelBill(@Valid @RequestBody GeneratePaymentChannelBillCommand command) {
-        return R.ok(reconciliationService.generatePaymentChannelBill(command));
+    @Operation(summary = "生成本地订单核验", description = "按本地成功订单逐笔查询通道状态，形成核验明细并进入统一对账流程；该能力不等同于机构完整账单下载")
+    public R<PaymentReconciliationVO> generateLocalOrderCheck(@Valid @RequestBody GeneratePaymentLocalOrderCheckCommand command) {
+        return R.ok(reconciliationService.generateLocalOrderCheck(command));
     }
 
     @Override

@@ -2,9 +2,13 @@ package io.mango.payment.starter.controller;
 
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
+import io.mango.payment.api.MangoPayVirtualPaymentApi;
 import io.mango.payment.api.PaymentBusinessOrderApi;
+import io.mango.payment.api.PaymentChannelApi;
 import io.mango.payment.api.PaymentDifferenceApi;
+import io.mango.payment.api.PaymentEnterpriseSubjectApi;
 import io.mango.payment.api.PaymentExceptionOrderApi;
+import io.mango.payment.api.PaymentMethodApi;
 import io.mango.payment.api.PaymentNotificationRecordApi;
 import io.mango.payment.api.PaymentObservabilityApi;
 import io.mango.payment.api.PaymentOfflineCollectionApi;
@@ -44,6 +48,9 @@ class PaymentDomainControllerContractTest {
     @DisplayName("payment admin controllers should be split by business domain and implement api contracts")
     void paymentAdminControllers_areSplitByBusinessDomainAndImplementApiContracts() {
         assertThat(PaymentBusinessOrderApi.class).isAssignableFrom(PaymentBusinessOrderController.class);
+        assertThat(PaymentChannelApi.class).isAssignableFrom(PaymentChannelController.class);
+        assertThat(PaymentEnterpriseSubjectApi.class).isAssignableFrom(PaymentEnterpriseSubjectController.class);
+        assertThat(PaymentMethodApi.class).isAssignableFrom(PaymentMethodController.class);
         assertThat(PaymentOrderApi.class).isAssignableFrom(PaymentOrderController.class);
         assertThat(PaymentOfflineCollectionApi.class).isAssignableFrom(PaymentOfflineCollectionController.class);
         assertThat(PaymentOfflineRefundApi.class).isAssignableFrom(PaymentOfflineRefundController.class);
@@ -59,6 +66,7 @@ class PaymentDomainControllerContractTest {
         assertThat(PaymentOperationAuditApi.class).isAssignableFrom(PaymentOperationAuditController.class);
         assertThat(PaymentSecurityApi.class).isAssignableFrom(PaymentSecurityController.class);
         assertThat(PaymentObservabilityApi.class).isAssignableFrom(PaymentObservabilityController.class);
+        assertThat(MangoPayVirtualPaymentApi.class).isAssignableFrom(MangoPayVirtualPaymentController.class);
     }
 
     @Test
@@ -120,6 +128,57 @@ class PaymentDomainControllerContractTest {
                         "payment:offline-collection:bank-statement:import",
                         "payment:offline-collection:bank-statement:confirm",
                         "payment:offline-collection:refund");
+    }
+
+    @Test
+    @DisplayName("payment config controllers should use dedicated permissions")
+    void paymentConfigControllers_useDedicatedPermissions() {
+        Map<Class<?>, Map<String, String>> expectedPermissions = Map.of(
+                PaymentChannelController.class, Map.of(
+                        "pageChannels", "payment:channel:list",
+                        "detailChannel", "payment:channel:query",
+                        "createChannel", "payment:channel:add",
+                        "updateChannel", "payment:channel:edit",
+                        "deleteChannel", "payment:channel:delete",
+                        "pageChannelCapabilities", "payment:channel:list"),
+                PaymentEnterpriseSubjectController.class, Map.of(
+                        "pageEnterpriseSubjects", "payment:enterprise-subject:list",
+                        "detailEnterpriseSubject", "payment:enterprise-subject:query",
+                        "createEnterpriseSubject", "payment:enterprise-subject:add",
+                        "updateEnterpriseSubject", "payment:enterprise-subject:edit",
+                        "deleteEnterpriseSubject", "payment:enterprise-subject:delete"),
+                PaymentMethodController.class, Map.of(
+                        "pageMethods", "payment:method:list",
+                        "listMethodCategories", "payment:method:list",
+                        "detailMethod", "payment:method:query",
+                        "createMethod", "payment:method:add",
+                        "updateMethod", "payment:method:edit",
+                        "deleteMethod", "payment:method:delete"));
+
+        for (Map.Entry<Class<?>, Map<String, String>> controllerEntry : expectedPermissions.entrySet()) {
+            for (Map.Entry<String, String> methodEntry : controllerEntry.getValue().entrySet()) {
+                Method method = Arrays.stream(controllerEntry.getKey().getDeclaredMethods())
+                        .filter(candidate -> candidate.getName().equals(methodEntry.getKey()))
+                        .findFirst()
+                        .orElseThrow();
+                assertThat(method.getAnnotation(ApiAccess.class).permission())
+                        .as(controllerEntry.getKey().getSimpleName() + "#" + methodEntry.getKey())
+                        .isEqualTo(methodEntry.getValue());
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("mango pay virtual payment should expose public pay and protected scenario control")
+    void mangoPayVirtualPayment_usesPublicPayAndProtectedScenarioControl() throws NoSuchMethodException {
+        Method pay = MangoPayVirtualPaymentController.class.getDeclaredMethod(
+                "pay", io.mango.payment.api.command.MangoPayVirtualPaymentCommand.class);
+        Method scenarioControl = MangoPayVirtualPaymentController.class.getDeclaredMethod(
+                "createMangoPayScenarioControl", io.mango.payment.api.command.CreateMangoPayScenarioControlCommand.class);
+
+        assertThat(pay.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.PUBLIC);
+        assertThat(scenarioControl.getAnnotation(ApiAccess.class).mode()).isEqualTo(ApiResourceAccessMode.PERMISSION);
+        assertThat(scenarioControl.getAnnotation(ApiAccess.class).permission()).isEqualTo("payment:mango-pay:scenario-control");
     }
 
     @Test
@@ -247,6 +306,19 @@ class PaymentDomainControllerContractTest {
                 "payment:offline-collection:bank-statement:query",
                 "payment:offline-collection:bank-statement:import",
                 "payment:offline-collection:bank-statement:confirm",
+                "payment:enterprise-subject:query",
+                "payment:enterprise-subject:add",
+                "payment:enterprise-subject:edit",
+                "payment:enterprise-subject:delete",
+                "payment:channel:query",
+                "payment:channel:add",
+                "payment:channel:edit",
+                "payment:channel:delete",
+                "payment:method:query",
+                "payment:method:add",
+                "payment:method:edit",
+                "payment:method:delete",
+                "payment:mango-pay:scenario-control",
                 "payment:refund-order:query-channel",
                 "payment:refund-approval:create",
                 "payment:exception-order:handle",

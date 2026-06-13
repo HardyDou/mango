@@ -3,7 +3,7 @@ package io.mango.payment.starter.controller;
 import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
-import io.mango.payment.api.PaymentOpenApi;
+import io.mango.payment.api.command.PaymentOpenRequestCommand;
 import io.mango.payment.api.vo.PaymentOpenBusinessOrderVO;
 import io.mango.payment.api.vo.PaymentOpenCashierVO;
 import io.mango.payment.api.vo.PaymentOpenPaymentOrderVO;
@@ -32,11 +32,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RequestMapping("/openapi/pay")
 @RequiredArgsConstructor
 @Tag(name = "支付开放接口", description = "业务系统接入支付中心的签名开放接口")
-public class PaymentOpenApiController implements PaymentOpenApi {
+public class PaymentOpenApiController {
 
     private final IPaymentOpenApiService openApiService;
 
-    @Override
     @PostMapping("/orders")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口创建业务订单")
     @Operation(summary = "创建业务订单", description = "业务系统通过 AppId、tenantId、timestamp、nonce、signature 创建支付业务订单")
@@ -48,17 +47,20 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.createOrder(
+        return openApiService.createOrder(openRequest(
                 body,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                null,
+                null,
+                null,
+                null));
     }
 
-    @Override
     @GetMapping("/orders/{bizOrderNo}")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口查询业务订单")
     @Operation(summary = "查询业务订单", description = "业务系统按业务订单号查询本应用下的支付业务订单")
@@ -70,18 +72,20 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.detailOrder(
-                bizOrderNo,
+        return openApiService.detailOrder(openRequest(
+                null,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
                 servletRequest.getRequestURI(),
-                resolveClientIp(servletRequest));
+                resolveClientIp(servletRequest),
+                bizOrderNo,
+                null,
+                null));
     }
 
-    @Override
     @PostMapping("/orders/{bizOrderNo}/cashier")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口获取收银台地址")
     @Operation(summary = "获取收银台地址", description = "业务系统按未过期业务订单获取 Web/H5 收银台入口")
@@ -94,18 +98,20 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.cashier(
-                bizOrderNo,
+        return openApiService.cashier(openRequest(
                 body,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                null,
+                bizOrderNo,
+                null,
+                null));
     }
 
-    @Override
     @PostMapping("/orders/{bizOrderNo}/pay")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口发起支付")
     @Operation(summary = "发起支付", description = "业务系统按未过期业务订单和标准支付方式发起真实支付订单")
@@ -118,8 +124,7 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.pay(
-                bizOrderNo,
+        return openApiService.pay(openRequest(
                 body,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
@@ -127,10 +132,12 @@ public class PaymentOpenApiController implements PaymentOpenApi {
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
                 servletRequest.getRequestURI(),
-                resolveClientIp(servletRequest));
+                resolveClientIp(servletRequest),
+                bizOrderNo,
+                null,
+                null));
     }
 
-    @Override
     @GetMapping("/payment-orders/{payOrderNo}")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口查询支付订单")
     @Operation(summary = "查询支付订单", description = "业务系统按支付订单号查询本应用下的支付订单")
@@ -142,17 +149,20 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.detailPaymentOrder(
-                payOrderNo,
+        return openApiService.detailPaymentOrder(openRequest(
+                null,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                null,
+                null,
+                payOrderNo,
+                null));
     }
 
-    @Override
     @PostMapping("/refunds")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口发起退款")
     @Operation(summary = "发起退款", description = "业务系统按业务退款单号幂等发起原支付订单退款")
@@ -164,17 +174,20 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.refund(
+        return openApiService.refund(openRequest(
                 body,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                null,
+                null,
+                null,
+                null));
     }
 
-    @Override
     @GetMapping("/refunds/{bizRefundNo}")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口查询退款")
     @Operation(summary = "查询退款", description = "业务系统按业务退款单号查询本应用下的退款订单")
@@ -186,17 +199,20 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.detailRefund(
-                bizRefundNo,
+        return openApiService.detailRefund(openRequest(
+                null,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                null,
+                null,
+                null,
+                bizRefundNo));
     }
 
-    @Override
     @GetMapping("/receipts/{bizOrderNo}")
     @ApiAccess(mode = ApiResourceAccessMode.PUBLIC, desc = "支付开放接口获取支付凭证")
     @Operation(summary = "获取支付凭证", description = "业务系统按业务订单号获取本应用成功支付订单的交易流水、通道交易号和付款时间等支付域凭证信息")
@@ -208,14 +224,45 @@ public class PaymentOpenApiController implements PaymentOpenApi {
             @Parameter(description = "随机串", required = true) @RequestHeader(value = "nonce", required = false) String nonce,
             @Parameter(description = "Base64 HMAC-SHA256 签名", required = true) @RequestHeader(value = "signature", required = false) String signature) {
         HttpServletRequest servletRequest = currentRequest();
-        return openApiService.receipt(
-                bizOrderNo,
+        return openApiService.receipt(openRequest(
+                null,
                 firstText(appId, servletRequest.getHeader("X-Mango-Payment-App-Id")),
                 firstText(tenantId, servletRequest.getHeader("X-Mango-Payment-Tenant-Id")),
                 firstText(timestamp, servletRequest.getHeader("X-Mango-Payment-Timestamp")),
                 firstText(nonce, servletRequest.getHeader("X-Mango-Payment-Nonce")),
                 firstText(signature, servletRequest.getHeader("X-Mango-Payment-Signature")),
-                servletRequest.getRequestURI());
+                servletRequest.getRequestURI(),
+                null,
+                bizOrderNo,
+                null,
+                null));
+    }
+
+    private PaymentOpenRequestCommand openRequest(
+            String body,
+            String appId,
+            String tenantId,
+            String timestamp,
+            String nonce,
+            String signature,
+            String requestPath,
+            String clientIp,
+            String bizOrderNo,
+            String payOrderNo,
+            String bizRefundNo) {
+        PaymentOpenRequestCommand command = new PaymentOpenRequestCommand();
+        command.setBody(body);
+        command.setAppId(appId);
+        command.setTenantId(tenantId);
+        command.setTimestamp(timestamp);
+        command.setNonce(nonce);
+        command.setSignature(signature);
+        command.setRequestPath(requestPath);
+        command.setClientIp(clientIp);
+        command.setBizOrderNo(bizOrderNo);
+        command.setPayOrderNo(payOrderNo);
+        command.setBizRefundNo(bizRefundNo);
+        return command;
     }
 
     private HttpServletRequest currentRequest() {

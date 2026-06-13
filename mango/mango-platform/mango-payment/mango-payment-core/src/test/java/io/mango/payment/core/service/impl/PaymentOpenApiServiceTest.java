@@ -3,6 +3,7 @@ package io.mango.payment.core.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.exception.BizException;
 import io.mango.payment.api.PaymentCode;
+import io.mango.payment.api.command.PaymentOpenRequestCommand;
 import io.mango.payment.api.vo.PaymentCashierPayResultVO;
 import io.mango.payment.api.vo.PaymentOpenBusinessOrderVO;
 import io.mango.payment.api.vo.PaymentOpenCashierVO;
@@ -42,6 +43,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -57,6 +61,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,8 +123,9 @@ class PaymentOpenApiServiceTest {
                                 channelContractMapper,
                                 mock(io.mango.payment.core.mapper.PaymentReconciliationMapper.class),
                                 scenarioControlService,
-                                new PaymentMangoPayResultMappingService()))),
-                        numberService),
+                        new PaymentMangoPayResultMappingService()))),
+                        numberService,
+                        new TestTransactionManager()),
                 sensitiveValueService,
                 new ObjectMapper());
         when(applicationMapper.selectOne(any())).thenReturn(application());
@@ -130,6 +136,7 @@ class PaymentOpenApiServiceTest {
         when(paymentOrderMapper.lockSuccessfulOpenPaymentOrder(1L, 370001L)).thenReturn(370001L);
         when(paymentOrderMapper.selectLatestFlowNo(1L, 370001L)).thenReturn("FLOW202606060001");
         when(refundOrderMapper.sumOccupyingRefundAmount(1L, 370001L)).thenReturn(0L);
+        when(refundOrderMapper.updateRefundApplyResult(any(), any(), any(), any())).thenReturn(1);
         when(refundOrderMapper.selectLatestFlowNo(1L, 380001L)).thenReturn("RFLOW202606060001");
         when(channelContractMapper.selectActiveConfigValuesJson(1L, 331001L)).thenReturn("{\"mangoPayRefundScenario\":\"SUCCESS\"}");
         when(numberService.next(PaymentNumberService.PAY_REFUND_ORDER_NO)).thenReturn("RO2026060600000001");
@@ -143,8 +150,9 @@ class PaymentOpenApiServiceTest {
         String nonce = "nonce-create";
         ArgumentCaptor<PaymentBusinessOrderEntity> orderCaptor = ArgumentCaptor.forClass(PaymentBusinessOrderEntity.class);
 
-        PaymentOpenBusinessOrderVO result = service.createOrder(
-                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce), "/openapi/pay/orders").getData();
+        PaymentOpenBusinessOrderVO result = service.createOrder(openRequest(
+                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
+                "/openapi/pay/orders", null, null, null, null)).getData();
 
         verify(nonceMapper).insert(any(PaymentOpenApiNonceEntity.class));
         verify(businessOrderMapper).insert(orderCaptor.capture());
@@ -168,8 +176,9 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-idempotent";
 
-        PaymentOpenBusinessOrderVO result = service.createOrder(
-                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce), "/openapi/pay/orders").getData();
+        PaymentOpenBusinessOrderVO result = service.createOrder(openRequest(
+                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
+                "/openapi/pay/orders", null, null, null, null)).getData();
 
         assertThat(result.getId()).isEqualTo(360001L);
         assertThat(result.getAmount()).isEqualTo(8800L);
@@ -183,8 +192,9 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-conflict";
 
-        assertThatThrownBy(() -> service.createOrder(
-                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce), "/openapi/pay/orders"))
+        assertThatThrownBy(() -> service.createOrder(openRequest(
+                body, APP_ID, TENANT_ID, timestamp, nonce, signature("POST", "/openapi/pay/orders", body, timestamp, nonce),
+                "/openapi/pay/orders", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT.getMessage());
     }
@@ -196,11 +206,11 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-replay";
 
-        assertThatThrownBy(() -> service.detailOrder(
-                "BIZ_OPENAPI_001", APP_ID, TENANT_ID, timestamp, nonce,
+        assertThatThrownBy(() -> service.detailOrder(openRequest(
+                null, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("GET", "/openapi/pay/orders/BIZ_OPENAPI_001", "", timestamp, nonce),
                 "/openapi/pay/orders/BIZ_OPENAPI_001",
-                "192.0.2.20"))
+                "192.0.2.20", "BIZ_OPENAPI_001", null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_OPENAPI_NONCE_REPLAY.getMessage());
     }
@@ -212,10 +222,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-cashier";
 
-        PaymentOpenCashierVO result = service.cashier(
-                "BIZ_OPENAPI_001", "", APP_ID, TENANT_ID, timestamp, nonce,
+        PaymentOpenCashierVO result = service.cashier(openRequest(
+                "", APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/orders/BIZ_OPENAPI_001/cashier", "", timestamp, nonce),
-                "/openapi/pay/orders/BIZ_OPENAPI_001/cashier").getData();
+                "/openapi/pay/orders/BIZ_OPENAPI_001/cashier", null, "BIZ_OPENAPI_001", null, null)).getData();
 
         assertThat(result.getCashierConfigId()).isEqualTo(350001L);
         assertThat(result.getBusinessOrderId()).isEqualTo(360001L);
@@ -232,11 +242,11 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-pay";
 
-        PaymentOpenPaymentOrderVO result = service.pay(
-                "BIZ_OPENAPI_001", body, APP_ID, TENANT_ID, timestamp, nonce,
+        PaymentOpenPaymentOrderVO result = service.pay(openRequest(
+                body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/orders/BIZ_OPENAPI_001/pay", body, timestamp, nonce),
                 "/openapi/pay/orders/BIZ_OPENAPI_001/pay",
-                "192.0.2.20").getData();
+                "192.0.2.20", "BIZ_OPENAPI_001", null, null)).getData();
 
         assertThat(result.getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(result.getBizOrderNo()).isEqualTo("BIZ_OPENAPI_001");
@@ -254,10 +264,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-payment-detail";
 
-        PaymentOpenPaymentOrderVO result = service.detailPaymentOrder(
-                "PO202606060001", APP_ID, TENANT_ID, timestamp, nonce,
+        PaymentOpenPaymentOrderVO result = service.detailPaymentOrder(openRequest(
+                null, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("GET", "/openapi/pay/payment-orders/PO202606060001", "", timestamp, nonce),
-                "/openapi/pay/payment-orders/PO202606060001").getData();
+                "/openapi/pay/payment-orders/PO202606060001", null, null, "PO202606060001", null)).getData();
 
         assertThat(result.getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(result.getBizOrderNo()).isEqualTo("BIZ_OPENAPI_001");
@@ -272,10 +282,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-receipt";
 
-        PaymentOpenReceiptVO result = service.receipt(
-                "BIZ_OPENAPI_001", APP_ID, TENANT_ID, timestamp, nonce,
+        PaymentOpenReceiptVO result = service.receipt(openRequest(
+                null, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("GET", "/openapi/pay/receipts/BIZ_OPENAPI_001", "", timestamp, nonce),
-                "/openapi/pay/receipts/BIZ_OPENAPI_001").getData();
+                "/openapi/pay/receipts/BIZ_OPENAPI_001", null, "BIZ_OPENAPI_001", null, null)).getData();
 
         assertThat(result.getReceiptNo()).isEqualTo("RCPT-BIZ_OPENAPI_001-PO202606060001");
         assertThat(result.getBizOrderNo()).isEqualTo("BIZ_OPENAPI_001");
@@ -302,10 +312,10 @@ class PaymentOpenApiServiceTest {
         String nonce = "nonce-refund";
         ArgumentCaptor<PaymentRefundOrderEntity> refundCaptor = ArgumentCaptor.forClass(PaymentRefundOrderEntity.class);
 
-        PaymentOpenRefundOrderVO result = service.refund(
+        PaymentOpenRefundOrderVO result = service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds").getData();
+                "/openapi/pay/refunds", null, null, null, null)).getData();
 
         verify(refundOrderMapper).insert(refundCaptor.capture());
         PaymentRefundOrderEntity refundEntity = refundCaptor.getValue();
@@ -314,7 +324,8 @@ class PaymentOpenApiServiceTest {
         assertThat(refundEntity.getRefundAmount()).isEqualTo(3300L);
         assertThat(refundEntity.getStatus()).isEqualTo("REFUNDING");
         assertThat(refundEntity.getRefundTime()).isNull();
-        assertThat(refundEntity.getChannelRefundNo()).isEqualTo("MR" + refundEntity.getRefundOrderNo());
+        assertThat(refundEntity.getChannelRefundNo()).isNull();
+        verify(refundOrderMapper).updateRefundApplyResult(1L, null, "MRRO2026060600000001", "REFUNDING");
         assertThat(result.getBizRefundNo()).isEqualTo("RF_OPENAPI_001");
         assertThat(result.getBizOrderNo()).isEqualTo("BIZ_OPENAPI_001");
         assertThat(result.getRefundAmount()).isEqualTo(3300L);
@@ -339,10 +350,10 @@ class PaymentOpenApiServiceTest {
         String nonce = "nonce-refund-processing";
         ArgumentCaptor<PaymentRefundOrderEntity> refundCaptor = ArgumentCaptor.forClass(PaymentRefundOrderEntity.class);
 
-        PaymentOpenRefundOrderVO result = service.refund(
+        PaymentOpenRefundOrderVO result = service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds").getData();
+                "/openapi/pay/refunds", null, null, null, null)).getData();
 
         verify(refundOrderMapper).insert(refundCaptor.capture());
         assertThat(refundCaptor.getValue().getStatus()).isEqualTo("REFUNDING");
@@ -365,14 +376,15 @@ class PaymentOpenApiServiceTest {
         String nonce = "nonce-refund-failed";
         ArgumentCaptor<PaymentRefundOrderEntity> refundCaptor = ArgumentCaptor.forClass(PaymentRefundOrderEntity.class);
 
-        PaymentOpenRefundOrderVO result = service.refund(
+        PaymentOpenRefundOrderVO result = service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds").getData();
+                "/openapi/pay/refunds", null, null, null, null)).getData();
 
         verify(refundOrderMapper).insert(refundCaptor.capture());
-        assertThat(refundCaptor.getValue().getStatus()).isEqualTo("FAILED");
+        assertThat(refundCaptor.getValue().getStatus()).isEqualTo("REFUNDING");
         assertThat(refundCaptor.getValue().getRefundTime()).isNull();
+        verify(refundOrderMapper).updateRefundApplyResult(eq(1L), any(), eq("MRRO2026060600000001"), eq("FAILED"));
         assertThat(result.getStatus()).isEqualTo("FAILED");
         assertThat(result.getFlowNo()).isNull();
         verify(businessOrderMapper, never()).updateRefundProgress(any(), any(), any());
@@ -390,10 +402,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-refund-conflict";
 
-        assertThatThrownBy(() -> service.refund(
+        assertThatThrownBy(() -> service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds"))
+                "/openapi/pay/refunds", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_OPENAPI_IDEMPOTENT_CONFLICT.getMessage());
     }
@@ -407,10 +419,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-refund-exceeded";
 
-        assertThatThrownBy(() -> service.refund(
+        assertThatThrownBy(() -> service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds"))
+                "/openapi/pay/refunds", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage(PaymentCode.PAYMENT_REFUND_AMOUNT_EXCEEDED.getMessage());
         verify(refundOrderMapper, never()).insert(any(PaymentRefundOrderEntity.class));
@@ -427,10 +439,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-refund-lock-missing";
 
-        assertThatThrownBy(() -> service.refund(
+        assertThatThrownBy(() -> service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds"))
+                "/openapi/pay/refunds", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage("原成功支付订单不存在");
         verify(refundOrderMapper, never()).sumOccupyingRefundAmount(any(), any());
@@ -448,10 +460,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-refund-progress-cas";
 
-        PaymentOpenRefundOrderVO result = service.refund(
+        PaymentOpenRefundOrderVO result = service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds").getData();
+                "/openapi/pay/refunds", null, null, null, null)).getData();
 
         assertThat(result.getStatus()).isEqualTo("REFUNDING");
         verify(refundOrderMapper).insert(any(PaymentRefundOrderEntity.class));
@@ -469,10 +481,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-refund-occupied-invalid";
 
-        assertThatThrownBy(() -> service.refund(
+        assertThatThrownBy(() -> service.refund(openRequest(
                 body, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("POST", "/openapi/pay/refunds", body, timestamp, nonce),
-                "/openapi/pay/refunds"))
+                "/openapi/pay/refunds", null, null, null, null)))
                 .isInstanceOf(BizException.class)
                 .hasMessage("金额不能小于 0 分");
     }
@@ -484,10 +496,10 @@ class PaymentOpenApiServiceTest {
         String timestamp = timestamp();
         String nonce = "nonce-refund-detail";
 
-        PaymentOpenRefundOrderVO result = service.detailRefund(
-                "RF_OPENAPI_001", APP_ID, TENANT_ID, timestamp, nonce,
+        PaymentOpenRefundOrderVO result = service.detailRefund(openRequest(
+                null, APP_ID, TENANT_ID, timestamp, nonce,
                 signature("GET", "/openapi/pay/refunds/RF_OPENAPI_001", "", timestamp, nonce),
-                "/openapi/pay/refunds/RF_OPENAPI_001").getData();
+                "/openapi/pay/refunds/RF_OPENAPI_001", null, null, null, "RF_OPENAPI_001")).getData();
 
         assertThat(result.getRefundOrderNo()).isEqualTo("RO202606060001");
         assertThat(result.getBizRefundNo()).isEqualTo("RF_OPENAPI_001");
@@ -649,6 +661,33 @@ class PaymentOpenApiServiceTest {
         return String.valueOf(Instant.now().getEpochSecond());
     }
 
+    private PaymentOpenRequestCommand openRequest(
+            String body,
+            String appId,
+            String tenantId,
+            String timestamp,
+            String nonce,
+            String signature,
+            String requestPath,
+            String clientIp,
+            String bizOrderNo,
+            String payOrderNo,
+            String bizRefundNo) {
+        PaymentOpenRequestCommand command = new PaymentOpenRequestCommand();
+        command.setBody(body);
+        command.setAppId(appId);
+        command.setTenantId(tenantId);
+        command.setTimestamp(timestamp);
+        command.setNonce(nonce);
+        command.setSignature(signature);
+        command.setRequestPath(requestPath);
+        command.setClientIp(clientIp);
+        command.setBizOrderNo(bizOrderNo);
+        command.setPayOrderNo(payOrderNo);
+        command.setBizRefundNo(bizRefundNo);
+        return command;
+    }
+
     private String signature(String method, String path, String body, String timestamp, String nonce) {
         try {
             String canonical = method + "\n" + path + "\n" + sha256Hex(body) + "\n" + timestamp + "\n" + nonce;
@@ -667,5 +706,25 @@ class PaymentOpenApiServiceTest {
             builder.append(String.format("%02x", item));
         }
         return builder.toString();
+    }
+
+    private static class TestTransactionManager extends AbstractPlatformTransactionManager {
+
+        @Override
+        protected Object doGetTransaction() {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, TransactionDefinition definition) {
+        }
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) {
+        }
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus status) {
+        }
     }
 }
