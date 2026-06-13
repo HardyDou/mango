@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentRefundOrderMapper">
+
+    <sql id="refundOrderFrom">
+        from payment_refund_order ro
+        join payment_order po
+          on po.id = ro.payment_order_id and po.tenant_id = ro.tenant_id
+        join payment_business_order bo
+          on bo.id = po.business_order_id and bo.tenant_id = po.tenant_id
+        left join payment_method m
+          on m.id = po.method_id and m.tenant_id = po.tenant_id
+        left join payment_channel c
+          on c.id = po.channel_id and c.tenant_id = po.tenant_id
+        left join payment_channel_contract cc
+          on cc.id = po.contract_id and cc.tenant_id = po.tenant_id
+    </sql>
+
+    <sql id="refundOrderWhere">
+        where ro.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            <choose>
+                <when test="statusCode == 'REFUNDING'">
+                    and ro.status in ('REFUNDING', 'PROCESSING')
+                </when>
+                <otherwise>
+                    and ro.status = #{statusCode}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              ro.refund_order_no like concat('%', #{keyword}, '%')
+              or ro.biz_refund_no like concat('%', #{keyword}, '%')
+              or ro.status like concat('%', #{keyword}, '%')
+              or ro.channel_refund_no like concat('%', #{keyword}, '%')
+              or po.pay_order_no like concat('%', #{keyword}, '%')
+              or po.channel_trade_no like concat('%', #{keyword}, '%')
+              or bo.biz_order_no like concat('%', #{keyword}, '%')
+              or bo.app_code like concat('%', #{keyword}, '%')
+              or m.method_name like concat('%', #{keyword}, '%')
+              or m.method_code like concat('%', #{keyword}, '%')
+              or c.channel_code like concat('%', #{keyword}, '%')
+              or c.channel_name like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="refundOrderSelect">
+        select ro.id,
+               ro.refund_order_no as refundOrderNo,
+               ro.biz_refund_no as bizRefundNo,
+               ro.payment_order_id as paymentOrderId,
+               po.contract_id as contractId,
+               bo.id as businessOrderId,
+               po.pay_order_no as payOrderNo,
+               bo.biz_order_no as bizOrderNo,
+               bo.title,
+               bo.app_code as appId,
+               m.method_code as methodCode,
+               m.method_name as methodName,
+               c.channel_code as channelCode,
+               c.channel_name as channelName,
+               coalesce(po.channel_merchant_no, cc.merchant_no) as channelMerchantNo,
+               po.channel_trade_no as channelTradeNo,
+               ro.channel_refund_no as channelRefundNo,
+               ro.refund_amount as refundAmount,
+               bo.currency,
+               ro.reason,
+               ro.status,
+               ro.refund_time as refundTime,
+               ro.created_at as createTime,
+               ro.updated_at as updateTime
+    </sql>
+
+    <select id="countRefundOrders" resultType="long">
+        select count(1)
+        <include refid="refundOrderFrom"/>
+        <include refid="refundOrderWhere"/>
+    </select>
+
+    <select id="countRefundOrdersByStatus" resultType="long">
+        select count(1)
+        from payment_refund_order ro
+        where ro.tenant_id = #{tenantId}
+        <if test="status != null and status != ''">
+          and ro.status = #{status}
+        </if>
+    </select>
+
+    <select id="selectRefundOrderPage" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+        <include refid="refundOrderSelect"/>
+        <include refid="refundOrderFrom"/>
+        <include refid="refundOrderWhere"/>
+        order by ro.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectRefundOrderDetail" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+        <include refid="refundOrderSelect"/>
+        <include refid="refundOrderFrom"/>
+        where ro.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and ro.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectOpenRefundOrder" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+        <include refid="refundOrderSelect"/>
+        <include refid="refundOrderFrom"/>
+        where ro.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and bo.app_code = #{appId}
+          and ro.biz_refund_no = #{bizRefundNo}
+        limit 1
+    </select>
+
+    <select id="selectByTenantAndRefundOrderNo" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+        <include refid="refundOrderSelect"/>
+        <include refid="refundOrderFrom"/>
+        where ro.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and ro.refund_order_no = #{refundOrderNo}
+        limit 1
+    </select>
+
+    <select id="selectByTenantAndChannelRefundNo" resultType="io.mango.payment.api.vo.PaymentRefundOrderVO">
+        <include refid="refundOrderSelect"/>
+        <include refid="refundOrderFrom"/>
+        where ro.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and ro.channel_refund_no = #{channelRefundNo}
+        limit 1
+    </select>
+
+    <update id="updateRefundingQueryResult">
+        update payment_refund_order
+        set status = #{status},
+            refund_time = #{refundTime},
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status in ('REFUNDING', 'PROCESSING')
+    </update>
+
+    <update id="updateRefundApplyResult">
+        update payment_refund_order
+        set channel_refund_no = #{channelRefundNo},
+            status = #{status},
+            updated_at = now()
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'REFUNDING'
+          and channel_refund_no is null
+    </update>
+
+    <select id="sumOccupyingRefundAmount" resultType="long">
+        select coalesce(sum(ro.refund_amount), 0)
+        from payment_refund_order ro
+        where ro.tenant_id = #{tenantId}
+          and ro.payment_order_id = #{paymentOrderId}
+          and ro.status in ('CREATED', 'REFUNDING', 'PROCESSING', 'SUCCESS')
+    </select>
+
+    <select id="selectLatestFlowNo" resultType="string">
+        select flow_no
+        from payment_transaction_flow
+        where tenant_id = #{tenantId}
+          and refund_order_id = #{refundOrderId}
+        order by created_at desc
+        limit 1
+    </select>
+
+    <select id="selectEntityByTenantAndChannelRefundNo" resultType="io.mango.payment.core.entity.PaymentRefundOrderEntity">
+        select ro.id,
+               ro.refund_order_no as refundOrderNo,
+               ro.biz_refund_no as bizRefundNo,
+               ro.payment_order_id as paymentOrderId,
+               ro.channel_refund_no as channelRefundNo,
+               ro.refund_amount as refundAmount,
+               ro.reason,
+               ro.status,
+               ro.refund_time as refundTime,
+               ro.tenant_id as tenantId,
+               ro.created_by as createdBy,
+               ro.created_at as createdAt,
+               ro.updated_by as updatedBy,
+               ro.updated_at as updatedAt
+        from payment_refund_order ro
+        where ro.tenant_id = #{tenantId}
+          and ro.channel_refund_no = #{channelRefundNo}
+        order by ro.created_at desc
+        limit 1
+    </select>
+
+    <select id="selectSuccessfulChannelRefundsMissingInBill" resultType="io.mango.payment.core.entity.PaymentRefundOrderEntity">
+        select ro.id,
+               ro.refund_order_no as refundOrderNo,
+               ro.biz_refund_no as bizRefundNo,
+               ro.payment_order_id as paymentOrderId,
+               ro.channel_refund_no as channelRefundNo,
+               ro.refund_amount as refundAmount,
+               ro.reason,
+               ro.status,
+               ro.refund_time as refundTime,
+               ro.tenant_id as tenantId,
+               ro.created_by as createdBy,
+               ro.created_at as createdAt,
+               ro.updated_by as updatedBy,
+               ro.updated_at as updatedAt
+        from payment_refund_order ro
+        join payment_order po
+          on po.id = ro.payment_order_id
+         and po.tenant_id = ro.tenant_id
+        where ro.tenant_id = #{tenantId}
+          and po.channel_code = #{channelCode}
+          and ro.status = 'SUCCESS'
+          and ro.channel_refund_no is not null
+          and ro.refund_time &gt;= #{billDate}
+          and ro.refund_time &lt; #{nextBillDate}
+        <if test="channelRefundNos != null and channelRefundNos.size() > 0">
+          and ro.channel_refund_no not in
+          <foreach collection="channelRefundNos" item="channelRefundNo" open="(" separator="," close=")">
+              #{channelRefundNo}
+          </foreach>
+        </if>
+        order by ro.refund_time asc, ro.channel_refund_no asc
+    </select>
+
+    <select id="selectSuccessfulChannelRefundsForBill" resultType="io.mango.payment.core.entity.PaymentRefundOrderEntity">
+        select ro.id,
+               ro.refund_order_no as refundOrderNo,
+               ro.biz_refund_no as bizRefundNo,
+               ro.payment_order_id as paymentOrderId,
+               ro.channel_refund_no as channelRefundNo,
+               ro.refund_amount as refundAmount,
+               ro.reason,
+               ro.status,
+               ro.refund_time as refundTime,
+               ro.tenant_id as tenantId,
+               ro.created_by as createdBy,
+               ro.created_at as createdAt,
+               ro.updated_by as updatedBy,
+               ro.updated_at as updatedAt
+        from payment_refund_order ro
+        join payment_order po
+          on po.id = ro.payment_order_id
+         and po.tenant_id = ro.tenant_id
+        where ro.tenant_id = #{tenantId}
+          and po.channel_code = #{channelCode}
+          and po.contract_id = #{contractId}
+          and ro.status = 'SUCCESS'
+          and ro.refund_time &gt;= #{billDate}
+          and ro.refund_time &lt; #{nextBillDate}
+        order by ro.refund_time asc, ro.refund_order_no asc
+    </select>
+</mapper>

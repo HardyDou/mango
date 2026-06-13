@@ -51,12 +51,12 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         Require.notNull(command, "编号生成器不能为空");
         validate(command, false);
         Long tenantId = NumgenContextSupport.currentTenantId();
-        Require.isTrue(generatorMapper.selectByKey(command.getGenKey().trim(), tenantId) == null, "业务 Key 已存在");
+        Require.isTrue(selectByKey(command.getGenKey().trim(), tenantId) == null, "业务 Key 已存在");
         NumgenGenerator entity = new NumgenGenerator();
+        entity.setTenantId(tenantId);
         copy(command, entity);
         entity.setCurrentPublishStatus(0);
         entity.setCurrentRuleVersion(null);
-        entity.setTenantId(tenantId);
         generatorMapper.insert(entity);
         return R.ok(entity.getId());
     }
@@ -93,12 +93,13 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
 
     private LambdaQueryWrapper<NumgenGenerator> wrapper(NumgenGeneratorPageQuery query) {
         String keyword = NumgenContextSupport.trimToNull(query.getKeyword());
+        String domainCode = NumgenContextSupport.trimToNull(query.getDomainCode());
         return new LambdaQueryWrapper<NumgenGenerator>()
                 .and(StringUtils.hasText(keyword), nested -> nested
-                .like(NumgenGenerator::getGenKey, keyword)
-                .or()
-                .like(NumgenGenerator::getGenName, keyword))
-                .eq(StringUtils.hasText(query.getDomainCode()), NumgenGenerator::getDomainCode, NumgenContextSupport.trimToNull(query.getDomainCode()))
+                        .like(NumgenGenerator::getGenKey, keyword)
+                        .or()
+                        .like(NumgenGenerator::getGenName, keyword))
+                .eq(StringUtils.hasText(domainCode), NumgenGenerator::getDomainCode, domainCode)
                 .eq(query.getStatus() != null, NumgenGenerator::getStatus, query.getStatus())
                 .eq(NumgenGenerator::getTenantId, NumgenContextSupport.currentTenantId())
                 .orderByDesc(NumgenGenerator::getUpdateTime);
@@ -130,11 +131,13 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
     }
 
     private NumgenGeneratorVO toVO(NumgenGenerator entity) {
+        DomainVO domain = getDomain(entity.getDomainCode());
         NumgenGeneratorVO vo = new NumgenGeneratorVO();
         vo.setId(entity.getId());
         vo.setGenKey(entity.getGenKey());
         vo.setGenName(entity.getGenName());
         vo.setDomainCode(entity.getDomainCode());
+        vo.setDomainName(domain == null ? null : domain.getDomainName());
         vo.setStatus(entity.getStatus());
         vo.setCurrentRuleVersion(entity.getCurrentRuleVersion());
         vo.setCurrentPublishStatus(entity.getCurrentPublishStatus());
@@ -144,11 +147,28 @@ public class NumgenGeneratorServiceImpl implements INumgenGeneratorService {
         return vo;
     }
 
+    private NumgenGenerator selectByKey(String genKey, Long tenantId) {
+        return generatorMapper.selectOne(new LambdaQueryWrapper<NumgenGenerator>()
+                .eq(NumgenGenerator::getGenKey, genKey)
+                .eq(NumgenGenerator::getTenantId, tenantId));
+    }
+
     private DomainVO validateDomain(String domainCode) {
         Require.notBlank(domainCode, "业务域不能为空");
+        DomainVO domain = getDomain(domainCode);
+        Require.notNull(domain, "业务域不存在");
+        Require.isTrue(Integer.valueOf(1).equals(domain.getStatus()), "业务域已停用");
+        return domain;
+    }
+
+    private DomainVO getDomain(String domainCode) {
+        if (!StringUtils.hasText(domainCode)) {
+            return null;
+        }
         R<DomainVO> response = domainApi.detailByCode(domainCode.trim());
-        Require.isTrue(response != null && response.isSuccess() && response.getData() != null, "业务域不存在");
-        Require.isTrue(Integer.valueOf(1).equals(response.getData().getStatus()), "业务域已停用");
+        if (response == null || !response.isSuccess()) {
+            return null;
+        }
         return response.getData();
     }
 }

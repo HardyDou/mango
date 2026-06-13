@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentChannelBillSourceMapper">
+
+    <sql id="sourceWhere">
+        where s.tenant_id = #{tenantId}
+          and s.del_flag = 0
+        <if test="contractId != null">
+          and s.contract_id = #{contractId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (
+            s.channel_code like concat('%', #{keyword}, '%')
+            or s.fetch_mode like concat('%', #{keyword}, '%')
+            or s.endpoint like concat('%', #{keyword}, '%')
+            or s.remote_path like concat('%', #{keyword}, '%')
+            or c.contract_name like concat('%', #{keyword}, '%')
+            or c.merchant_no like concat('%', #{keyword}, '%')
+            or ch.channel_name like concat('%', #{keyword}, '%')
+            or es.subject_name like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="sourceSelect">
+        select s.id,
+               s.contract_id as contractId,
+               c.contract_name as contractName,
+               c.channel_id as channelId,
+               ch.channel_name as channelName,
+               c.subject_id as subjectId,
+               es.subject_name as subjectName,
+               c.merchant_no as merchantNo,
+               s.channel_code as channelCode,
+               s.fetch_mode as fetchMode,
+               s.endpoint,
+               s.remote_path as remotePath,
+               s.credential_ref as credentialRef,
+               s.page_mode as pageMode,
+               s.enabled,
+               s.created_at as createTime,
+               s.updated_at as updateTime
+    </sql>
+
+    <select id="countBillSources" resultType="long">
+        select count(1)
+        from payment_channel_bill_source s
+        left join payment_channel_contract c
+          on c.id = s.contract_id
+         and c.tenant_id = s.tenant_id
+         and c.del_flag = 0
+        left join payment_channel ch
+          on ch.id = c.channel_id
+         and ch.tenant_id = c.tenant_id
+         and ch.del_flag = 0
+        left join payment_enterprise_subject es
+          on es.id = c.subject_id
+         and es.tenant_id = c.tenant_id
+         and es.del_flag = 0
+        <include refid="sourceWhere"/>
+    </select>
+
+    <select id="selectBillSourcePage" resultType="io.mango.payment.api.vo.PaymentChannelBillSourceVO">
+        <include refid="sourceSelect"/>
+        from payment_channel_bill_source s
+        left join payment_channel_contract c
+          on c.id = s.contract_id
+         and c.tenant_id = s.tenant_id
+         and c.del_flag = 0
+        left join payment_channel ch
+          on ch.id = c.channel_id
+         and ch.tenant_id = c.tenant_id
+         and ch.del_flag = 0
+        left join payment_enterprise_subject es
+          on es.id = c.subject_id
+         and es.tenant_id = c.tenant_id
+         and es.del_flag = 0
+        <include refid="sourceWhere"/>
+        order by c.contract_name asc, s.fetch_mode asc, s.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectBillSourceDetail" resultType="io.mango.payment.api.vo.PaymentChannelBillSourceVO">
+        <include refid="sourceSelect"/>
+        from payment_channel_bill_source s
+        left join payment_channel_contract c
+          on c.id = s.contract_id
+         and c.tenant_id = s.tenant_id
+         and c.del_flag = 0
+        left join payment_channel ch
+          on ch.id = c.channel_id
+         and ch.tenant_id = c.tenant_id
+         and ch.del_flag = 0
+        left join payment_enterprise_subject es
+          on es.id = c.subject_id
+         and es.tenant_id = c.tenant_id
+         and es.del_flag = 0
+        where s.tenant_id = #{tenantId}
+          and s.id = #{id}
+          and s.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectEnabledAutomaticSources" resultType="io.mango.payment.core.entity.PaymentChannelBillSourceEntity">
+        select s.id,
+               s.contract_id as contractId,
+               s.channel_code as channelCode,
+               s.fetch_mode as fetchMode,
+               s.endpoint,
+               s.remote_path as remotePath,
+               s.credential_ref as credentialRef,
+               s.page_mode as pageMode,
+               s.enabled,
+               s.tenant_id as tenantId,
+               s.created_by as createdBy,
+               s.created_at as createdAt,
+               s.updated_by as updatedBy,
+               s.updated_at as updatedAt,
+               s.del_flag as delFlag
+        from payment_channel_bill_source s
+        join payment_channel_contract c
+          on c.id = s.contract_id
+         and c.tenant_id = s.tenant_id
+         and c.del_flag = 0
+         and c.status = 1
+        join payment_channel ch
+          on ch.id = c.channel_id
+         and ch.tenant_id = c.tenant_id
+         and ch.del_flag = 0
+         and ch.status = 1
+        where s.tenant_id = #{tenantId}
+          and s.del_flag = 0
+          and s.enabled = 1
+          and s.fetch_mode in ('FTP', 'FTPS', 'HTTP')
+        order by s.channel_code asc, s.id asc
+    </select>
+</mapper>

@@ -107,7 +107,7 @@ router.beforeEach(async (to, from, next) => {
   document.title = title ? `${title} - Mango Admin` : 'Mango Admin';
 
   // 白名单路由直接放行
-  const whiteList = ['/login', '/404', '/401'];
+  const whiteList = ['/login', '/404', '/401', '/payment/gateway-result'];
   if (whiteList.includes(to.path)) {
     next();
     return;

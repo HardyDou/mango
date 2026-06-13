@@ -18,6 +18,9 @@ public class WorkflowProcessInstanceVO {
     @Schema(description = "业务主键")
     private String businessKey;
 
+    @Schema(description = "业务申请ID")
+    private Long applyId;
+
     @Schema(description = "流程定义ID")
     private Long definitionId;
 

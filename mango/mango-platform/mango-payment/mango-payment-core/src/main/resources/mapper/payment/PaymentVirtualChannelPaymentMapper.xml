@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentVirtualChannelPaymentMapper">
+
+    <select id="selectByTenantAndPayOrderNo" resultType="io.mango.payment.core.entity.PaymentVirtualChannelPayment">
+        select id,
+               virtual_payment_no as virtualPaymentNo,
+               pay_order_no as payOrderNo,
+               channel_trade_no as channelTradeNo,
+               cashier_config_id as cashierConfigId,
+               payment_method_id as paymentMethodId,
+               payment_method_code as paymentMethodCode,
+               title,
+               amount,
+               payer_name as payerName,
+               status,
+               paid_time as paidTime,
+               tenant_id as tenantId,
+               created_by as createdBy,
+               created_at as createdAt,
+               updated_by as updatedBy,
+               updated_at as updatedAt
+        from payment_virtual_channel_payment
+        where tenant_id = #{tenantId}
+          and pay_order_no = #{payOrderNo}
+        order by created_at desc
+        limit 1
+    </select>
+</mapper>

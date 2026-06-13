@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentChannelContractCapabilityMapper">
+
+    <delete id="deletePhysicallyByContractId">
+        delete from payment_channel_contract_capability
+        where contract_id = #{contractId}
+          and tenant_id = #{tenantId}
+    </delete>
+
+    <delete id="deletePhysicallyById">
+        delete from payment_channel_contract_capability
+        where id = #{id}
+          and tenant_id = #{tenantId}
+    </delete>
+
+    <select id="countRouteRelations" resultType="long">
+        select count(1)
+          from payment_method_route_rule_item rri
+         where rri.tenant_id = #{tenantId}
+           and rri.status = 1
+           and rri.del_flag = 0
+           and rri.contract_capability_id = #{contractCapabilityId}
+    </select>
+
+    <select id="selectRouteCapability" resultType="io.mango.payment.core.entity.PaymentChannelContractCapability">
+        select ccc.id,
+               ccc.contract_id as contractId,
+               ccc.channel_capability_id as channelCapabilityId,
+               ccc.method_code as methodCode,
+               ccc.terminal_type as terminalType,
+               ccc.fee_rate as feeRate,
+               ccc.min_amount as minAmount,
+               ccc.max_amount as maxAmount,
+               ccc.priority,
+               ccc.certificate_expire_time as certificateExpireTime,
+               ccc.status,
+               ccc.tenant_id as tenantId,
+               ccc.created_by as createdBy,
+               ccc.created_at as createdAt,
+               ccc.updated_by as updatedBy,
+               ccc.updated_at as updatedAt,
+               ccc.del_flag as delFlag
+        from payment_channel_contract_capability ccc
+        join payment_channel_capability cc
+          on cc.id = ccc.channel_capability_id
+         and cc.tenant_id = ccc.tenant_id
+         and cc.method_code = ccc.method_code
+         and cc.terminal_type = ccc.terminal_type
+         and cc.method_code = #{methodCode}
+         and cc.terminal_type = #{terminalType}
+         and cc.environment = #{environment}
+         and cc.status = 1
+         and cc.del_flag = 0
+        join payment_channel_contract contract
+          on contract.id = ccc.contract_id
+         and contract.tenant_id = ccc.tenant_id
+         and contract.channel_id = cc.channel_id
+         and contract.environment = #{environment}
+         and contract.status = 1
+         and contract.del_flag = 0
+        where ccc.tenant_id = #{tenantId}
+          and ccc.id = #{contractCapabilityId}
+          and ccc.method_code = #{methodCode}
+          and ccc.terminal_type = #{terminalType}
+          and ccc.status = 1
+          and ccc.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectRouteEnvironment" resultType="string">
+        select cc.environment
+        from payment_channel_contract_capability ccc
+        join payment_channel_capability pc
+          on pc.id = ccc.channel_capability_id
+         and pc.tenant_id = ccc.tenant_id
+         and pc.method_code = ccc.method_code
+         and pc.terminal_type = ccc.terminal_type
+         and pc.status = 1
+         and pc.del_flag = 0
+        join payment_channel_contract cc
+          on cc.id = ccc.contract_id
+         and cc.tenant_id = ccc.tenant_id
+         and cc.channel_id = pc.channel_id
+         and cc.environment = pc.environment
+         and cc.status = 1
+         and cc.del_flag = 0
+        where ccc.tenant_id = #{tenantId}
+          and ccc.id = #{contractCapabilityId}
+          and ccc.method_code = #{methodCode}
+          and ccc.terminal_type = #{terminalType}
+          and ccc.status = 1
+          and ccc.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectRoutedCashierCapability" resultType="io.mango.payment.core.model.PaymentCashierRouteMatch">
+        select cc.id as contractId,
+               cc.contract_name as contractName,
+               cc.merchant_no as channelMerchantNo,
+               c.id as channelId,
+               c.channel_code as channelCode,
+               c.channel_name as channelName,
+               ccc.id as contractCapabilityId,
+               rr.id as routeRuleId
+        from payment_method_route_rule rr
+        join payment_method_route_rule_item rri
+          on rri.rule_id = rr.id
+         and rri.tenant_id = rr.tenant_id
+         and rri.status = 1
+         and rri.del_flag = 0
+        join payment_channel_contract_capability ccc
+          on ccc.id = rri.contract_capability_id
+         and ccc.tenant_id = rr.tenant_id
+         and ccc.status = 1
+         and ccc.del_flag = 0
+         and ccc.method_code = rr.method_code
+         and ccc.terminal_type = rr.terminal_type
+        join payment_channel_capability capability
+          on capability.id = ccc.channel_capability_id
+         and capability.tenant_id = rr.tenant_id
+         and capability.method_code = rr.method_code
+         and capability.terminal_type = rr.terminal_type
+         and capability.environment = rr.environment
+         and capability.status = 1
+         and capability.del_flag = 0
+        join payment_channel_contract cc
+          on cc.id = ccc.contract_id
+         and cc.tenant_id = rr.tenant_id
+         and cc.channel_id = capability.channel_id
+         and cc.status = 1
+         and cc.del_flag = 0
+         and cc.environment = rr.environment
+        join payment_channel c
+          on c.id = cc.channel_id
+         and c.tenant_id = rr.tenant_id
+         and c.status = 1
+         and c.del_flag = 0
+        where rr.tenant_id = #{tenantId}
+          and rr.status = 1
+          and rr.del_flag = 0
+          and (rr.app_id is null or rr.app_id = #{applicationId})
+          and (rr.subject_id is null or rr.subject_id = #{subjectId})
+          and rr.method_code = #{methodCode}
+          and rr.terminal_type = #{terminalType}
+          and (rri.min_amount is null or rri.min_amount &lt;= #{amount})
+          and (rri.max_amount is null or rri.max_amount &gt;= #{amount})
+          and (ccc.min_amount is null or ccc.min_amount &lt;= #{amount})
+          and (ccc.max_amount is null or ccc.max_amount &gt;= #{amount})
+          and (cc.enabled_method_codes is null or find_in_set(#{methodCode}, cc.enabled_method_codes) &gt; 0)
+        order by rri.priority asc, ccc.priority asc
+        limit 1
+    </select>
+
+    <select id="selectFallbackCashierCapability" resultType="io.mango.payment.core.model.PaymentCashierRouteMatch">
+        select cc.id as contractId,
+               cc.contract_name as contractName,
+               cc.merchant_no as channelMerchantNo,
+               c.id as channelId,
+               c.channel_code as channelCode,
+               c.channel_name as channelName,
+               ccc.id as contractCapabilityId,
+               null as routeRuleId
+        from payment_channel_contract cc
+        join payment_channel c
+          on c.id = cc.channel_id
+         and c.tenant_id = cc.tenant_id
+         and c.status = 1
+         and c.del_flag = 0
+        join payment_channel_contract_capability ccc
+          on ccc.contract_id = cc.id
+         and ccc.tenant_id = cc.tenant_id
+         and ccc.status = 1
+         and ccc.del_flag = 0
+        join payment_channel_capability capability
+          on capability.id = ccc.channel_capability_id
+         and capability.tenant_id = cc.tenant_id
+         and capability.channel_id = cc.channel_id
+         and capability.method_code = ccc.method_code
+         and capability.terminal_type = ccc.terminal_type
+         and capability.environment = cc.environment
+         and capability.status = 1
+         and capability.del_flag = 0
+        where cc.tenant_id = #{tenantId}
+          and cc.del_flag = 0
+          and cc.status = 1
+          and cc.subject_id = #{subjectId}
+          and ccc.method_code = #{methodCode}
+          and ccc.terminal_type = #{terminalType}
+          and (ccc.min_amount is null or ccc.min_amount &lt;= #{amount})
+          and (ccc.max_amount is null or ccc.max_amount &gt;= #{amount})
+          and (cc.enabled_method_codes is null or find_in_set(#{methodCode}, cc.enabled_method_codes) &gt; 0)
+        order by ccc.priority asc, cc.updated_at desc
+        limit 1
+    </select>
+
+    <select id="countFallbackDisabledRouteRules" resultType="long">
+        select count(1)
+        from payment_method_route_rule rr
+        where rr.tenant_id = #{tenantId}
+          and rr.status = 1
+          and (rr.app_id is null or rr.app_id = #{applicationId})
+          and (rr.subject_id is null or rr.subject_id = #{subjectId})
+          and rr.method_code = #{methodCode}
+          and rr.terminal_type = #{terminalType}
+          and rr.fallback_enabled = 0
+          and rr.del_flag = 0
+    </select>
+
+    <select id="selectExpiringCertificates" resultType="io.mango.payment.api.vo.PaymentChannelCertificateExpiryVO">
+        select cc.id as contractId,
+               cc.contract_name as contractName,
+               ccc.id as contractCapabilityId,
+               channel.channel_code as channelCode,
+               channel.channel_name as channelName,
+               subject.id as subjectId,
+               subject.subject_name as subjectName,
+               ccc.method_code as methodCode,
+               ccc.terminal_type as terminalType,
+               ccc.certificate_expire_time as certificateExpireTime,
+               timestampdiff(day, #{now}, ccc.certificate_expire_time) as daysToExpire
+        from payment_channel_contract_capability ccc
+        join payment_channel_contract cc
+          on cc.id = ccc.contract_id
+         and cc.tenant_id = ccc.tenant_id
+         and cc.del_flag = 0
+        join payment_channel channel
+          on channel.id = cc.channel_id
+         and channel.tenant_id = ccc.tenant_id
+         and channel.del_flag = 0
+        join payment_enterprise_subject subject
+          on subject.id = cc.subject_id
+         and subject.tenant_id = ccc.tenant_id
+         and subject.del_flag = 0
+        where ccc.tenant_id = #{tenantId}
+          and ccc.del_flag = 0
+          and ccc.status = 1
+          and cc.status = 1
+          and channel.status = 1
+          and ccc.certificate_expire_time is not null
+          and ccc.certificate_expire_time &lt;= #{deadline}
+        order by ccc.certificate_expire_time asc, cc.id asc, ccc.id asc
+    </select>
+</mapper>

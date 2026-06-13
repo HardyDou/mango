@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentReconciliationMapper">
+
+    <sql id="reconciliationWhere">
+        where r.tenant_id = #{tenantId}
+          and r.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+          and r.match_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (
+            r.reconciliation_no like concat('%', #{keyword}, '%')
+            or r.channel_code like concat('%', #{keyword}, '%')
+            or r.bill_file_name like concat('%', #{keyword}, '%')
+            or r.file_digest like concat('%', #{keyword}, '%')
+            or r.importer_name like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="reconciliationSelect">
+        select r.id,
+               r.reconciliation_no as reconciliationNo,
+               r.channel_code as channelCode,
+               r.bill_date as billDate,
+               r.total_count as totalCount,
+               r.total_amount as totalAmount,
+               r.total_fee as totalFee,
+               r.match_status as matchStatus,
+               r.bill_file_id as billFileId,
+               r.bill_file_name as billFileName,
+               r.file_digest as fileDigest,
+               r.importer_id as importerId,
+               r.importer_name as importerName,
+               r.import_time as importTime,
+               r.reconcile_result as reconcileResult,
+               r.created_at as createTime,
+               r.updated_at as updateTime
+    </sql>
+
+    <select id="countReconciliations" resultType="long">
+        select count(1)
+        from payment_reconciliation r
+        <include refid="reconciliationWhere"/>
+    </select>
+
+    <select id="selectReconciliationPage" resultType="io.mango.payment.api.vo.PaymentReconciliationVO">
+        <include refid="reconciliationSelect"/>
+        from payment_reconciliation r
+        <include refid="reconciliationWhere"/>
+        order by r.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectReconciliationDetail" resultType="io.mango.payment.api.vo.PaymentReconciliationVO">
+        <include refid="reconciliationSelect"/>
+        from payment_reconciliation r
+        where r.tenant_id = #{tenantId}
+          and r.id = #{id}
+          and r.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="countImportedFile" resultType="long">
+        select count(1)
+        from payment_reconciliation r
+        where r.tenant_id = #{tenantId}
+          and r.channel_code = #{channelCode}
+          and r.bill_date = #{billDate}
+          and r.file_digest = #{fileDigest}
+          and r.del_flag = 0
+    </select>
+
+    <select id="selectMangoPayBillItems" resultType="io.mango.payment.core.model.PaymentChannelBillItemRow">
+        select po.channel_trade_no as channelTradeNo,
+               'PAYMENT' as tradeType,
+               po.amount as amount,
+               0 as fee,
+               po.pay_time as tradeTime
+        from payment_order po
+        join payment_channel c
+          on c.id = po.channel_id
+         and c.tenant_id = po.tenant_id
+        where po.tenant_id = #{tenantId}
+          and c.channel_code = #{channelCode}
+          and po.status = 'SUCCESS'
+          and po.success_flag = 1
+          and po.channel_trade_no is not null
+          and po.pay_time &gt;= #{billDate}
+          and po.pay_time &lt; #{nextBillDate}
+        union all
+        select ro.channel_refund_no as channelTradeNo,
+               'REFUND' as tradeType,
+               ro.refund_amount as amount,
+               0 as fee,
+               ro.refund_time as tradeTime
+        from payment_refund_order ro
+        join payment_order po
+          on po.id = ro.payment_order_id
+         and po.tenant_id = ro.tenant_id
+        join payment_channel c
+          on c.id = po.channel_id
+         and c.tenant_id = po.tenant_id
+        where ro.tenant_id = #{tenantId}
+          and c.channel_code = #{channelCode}
+          and ro.status = 'SUCCESS'
+          and ro.channel_refund_no is not null
+          and ro.refund_time &gt;= #{billDate}
+          and ro.refund_time &lt; #{nextBillDate}
+        order by tradeTime asc, channelTradeNo asc
+    </select>
+</mapper>

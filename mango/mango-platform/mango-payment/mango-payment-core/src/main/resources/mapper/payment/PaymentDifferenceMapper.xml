@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentDifferenceMapper">
+
+    <sql id="differenceWhere">
+        where d.tenant_id = #{tenantId}
+          and d.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+          and d.process_status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (
+            d.difference_no like concat('%', #{keyword}, '%')
+            or d.related_order_no like concat('%', #{keyword}, '%')
+            or d.difference_type like concat('%', #{keyword}, '%')
+            or d.process_status like concat('%', #{keyword}, '%')
+            or r.reconciliation_no like concat('%', #{keyword}, '%')
+            or r.channel_code like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="differenceSelect">
+        select d.id,
+               d.difference_no as differenceNo,
+               d.reconciliation_id as reconciliationId,
+               r.reconciliation_no as reconciliationNo,
+               r.channel_code as channelCode,
+               r.bill_date as billDate,
+               d.related_order_no as relatedOrderNo,
+               d.difference_type as differenceType,
+               d.difference_amount as differenceAmount,
+               d.process_status as processStatus,
+               d.process_action as processAction,
+               d.process_reason as processReason,
+               d.process_result as processResult,
+               d.process_evidence as processEvidence,
+               d.adjust_flow_id as adjustFlowId,
+               d.adjust_flow_no as adjustFlowNo,
+               d.processor_id as processorId,
+               d.processor_name as processorName,
+               d.process_time as processTime,
+               d.created_at as createTime,
+               d.updated_at as updateTime
+    </sql>
+
+    <select id="countDifferences" resultType="long">
+        select count(1)
+        from payment_difference d
+        left join payment_reconciliation r
+          on r.id = d.reconciliation_id
+         and r.tenant_id = d.tenant_id
+         and r.del_flag = 0
+        <include refid="differenceWhere"/>
+    </select>
+
+    <select id="selectDifferencePage" resultType="io.mango.payment.api.vo.PaymentDifferenceVO">
+        <include refid="differenceSelect"/>
+        from payment_difference d
+        left join payment_reconciliation r
+          on r.id = d.reconciliation_id
+         and r.tenant_id = d.tenant_id
+         and r.del_flag = 0
+        <include refid="differenceWhere"/>
+        order by d.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectDifferenceDetail" resultType="io.mango.payment.api.vo.PaymentDifferenceVO">
+        <include refid="differenceSelect"/>
+        from payment_difference d
+        left join payment_reconciliation r
+          on r.id = d.reconciliation_id
+         and r.tenant_id = d.tenant_id
+         and r.del_flag = 0
+        where d.tenant_id = #{tenantId}
+          and d.id = #{id}
+          and d.del_flag = 0
+        limit 1
+    </select>
+
+    <update id="handleDifference">
+        update payment_difference
+        set process_status = #{processStatus},
+            process_action = #{processAction},
+            process_reason = #{processReason},
+            process_result = #{processResult},
+            process_evidence = #{processEvidence},
+            adjust_flow_id = #{adjustFlowId},
+            adjust_flow_no = #{adjustFlowNo},
+            processor_id = #{processorId},
+            processor_name = #{processorName},
+            process_time = #{processTime},
+            updated_by = #{processorId},
+            updated_at = #{processTime}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and del_flag = 0
+          and process_status in ('PENDING', 'PROCESSING')
+    </update>
+</mapper>

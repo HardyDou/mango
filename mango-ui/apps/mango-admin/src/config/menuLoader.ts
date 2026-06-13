@@ -366,7 +366,10 @@ export class MenuLoader {
         name: 'Layout',
         component: MangoAdminLayout,
         redirect: '/home',
-        children: menuItems.map((item) => this.menuItemToRoute(item)),
+        children: [
+          ...menuItems.map((item) => this.menuItemToRoute(item)),
+          this.paymentCashierRoute(),
+        ],
       },
     ];
 
@@ -434,9 +437,27 @@ export class MenuLoader {
         path: '/',
         name: 'Layout',
         meta: { title: '主布局', permissions: ['admin'] },
-        children: menuItems.map(menuToRouteWithPermissions),
+        children: [
+          ...menuItems.map(menuToRouteWithPermissions),
+          this.paymentCashierRoute(),
+        ],
       },
     ] as RouteRecordRaw[];
+  }
+
+  getHiddenRuntimeRoutes(): RouteRecordRaw[] {
+    return [
+      this.paymentCashierRoute(),
+    ];
+  }
+
+  private paymentCashierRoute(): RouteRecordRaw {
+    return {
+      path: '/payment/cashier-configs/:cashierId/cashier',
+      name: 'PaymentCashier',
+      component: componentsMap['payment/cashier/index'],
+      meta: { title: '收银台', isHide: true },
+    };
   }
 
   /**

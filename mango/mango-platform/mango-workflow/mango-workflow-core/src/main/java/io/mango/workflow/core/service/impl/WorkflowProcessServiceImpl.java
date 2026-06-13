@@ -85,8 +85,7 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
     @Transactional(rollbackFor = Exception.class)
     public R<WorkflowProcessInstanceVO> start(StartWorkflowProcessCommand command) {
         Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
-        Require.notNull(command.getDefinitionId(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
-        WorkflowDefinition definition = definitionMapper.selectById(command.getDefinitionId());
+        WorkflowDefinition definition = selectDefinition(command);
         Require.notNull(definition, WorkflowCode.DEFINITION_NOT_FOUND);
         Require.isTrue(WorkflowDefinitionStatus.PUBLISHED.name().equals(definition.getStatus()),
                 WorkflowCode.DEFINITION_STATUS_INVALID.getCode(), "只有已发布流程可以发起");
@@ -130,19 +129,61 @@ public class WorkflowProcessServiceImpl implements IWorkflowProcessService, Work
         workflowBusinessApplyService.markProcessStarted(applyId, definition.getId(), definition.getDefinitionKey(),
                 definition.getProcessDefinitionId(), definition.getDefinitionName(), instance.getProcessInstanceId());
         workflowTaskRuntimeService.advanceRuntimeTasks(instance.getProcessInstanceId());
+        boolean ended = isProcessEnded(instance.getProcessInstanceId());
+        if (ended) {
+            WorkflowFormInstance formInstance = formInstanceMapper.selectOne(new LambdaQueryWrapper<WorkflowFormInstance>()
+                    .eq(WorkflowFormInstance::getProcessInstanceId, instance.getProcessInstanceId())
+                    .last("limit 1"));
+            updateCompletedFormInstance(formInstance);
+            workflowEventPublisher.publishProcessCompleted(instance.getProcessInstanceId(), formInstance, variables);
+            workflowBusinessApplyService.markApproved(instance.getProcessInstanceId());
+        }
 
         WorkflowProcessInstanceVO vo = new WorkflowProcessInstanceVO();
         vo.setProcessInstanceId(instance.getProcessInstanceId());
         vo.setBusinessKey(instance.getBusinessKey());
+        vo.setApplyId(applyId);
         vo.setDefinitionId(definition.getId());
         vo.setProcessName(definition.getDefinitionName());
         vo.setProcessKey(definition.getDefinitionKey());
         vo.setProcessDefinitionId(definition.getProcessDefinitionId());
         vo.setInitiatorName(initiator);
         fillCurrentTask(instance.getProcessInstanceId(), vo);
-        vo.setStatus(WorkflowInstanceStatus.RUNNING.getLabel());
+        vo.setStatus(ended ? WorkflowInstanceStatus.COMPLETED.getLabel() : WorkflowInstanceStatus.RUNNING.getLabel());
         vo.setStartTime(LocalDateTime.now());
         return R.ok(vo);
+    }
+
+    private WorkflowDefinition selectDefinition(StartWorkflowProcessCommand command) {
+        if (command.getDefinitionId() != null) {
+            return definitionMapper.selectById(command.getDefinitionId());
+        }
+        Require.notBlank(command.getDefinitionKey(), WorkflowCode.DEFINITION_INVALID.getCode(),
+                "流程定义ID和流程定义编码不能同时为空");
+        return definitionMapper.selectOne(new LambdaQueryWrapper<WorkflowDefinition>()
+                .eq(WorkflowDefinition::getDefinitionKey, command.getDefinitionKey().trim())
+                .eq(WorkflowDefinition::getStatus, WorkflowDefinitionStatus.PUBLISHED.name())
+                .orderByDesc(WorkflowDefinition::getPublishedVersionNo)
+                .orderByDesc(WorkflowDefinition::getUpdatedAt)
+                .last("limit 1"));
+    }
+
+    private boolean isProcessEnded(String processInstanceId) {
+        return runtimeService.createProcessInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .singleResult() == null;
+    }
+
+    private void updateCompletedFormInstance(WorkflowFormInstance formInstance) {
+        if (formInstance == null || WorkflowInstanceStatus.COMPLETED.name().equals(formInstance.getStatus())) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        formInstance.setStatus(WorkflowInstanceStatus.COMPLETED.name());
+        formInstance.setUpdatedBy(MangoContextHolder.userId());
+        formInstance.setUpdatedTime(now);
+        formInstance.setUpdatedAt(now);
+        formInstanceMapper.updateById(formInstance);
     }
 
     @Override

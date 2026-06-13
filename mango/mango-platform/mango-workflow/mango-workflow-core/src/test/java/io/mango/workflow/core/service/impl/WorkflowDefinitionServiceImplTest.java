@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
+import io.mango.domain.api.vo.DomainVO;
+import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
 import io.mango.workflow.api.vo.WorkflowDefinitionVO;
+import io.mango.workflow.api.vo.WorkflowDeployVO;
 import io.mango.workflow.core.engine.WorkflowDesignerBpmnConverter;
 import io.mango.workflow.core.entity.WorkflowCategory;
 import io.mango.workflow.core.entity.WorkflowDefinition;
@@ -18,15 +21,27 @@ import io.mango.workflow.core.mapper.WorkflowDefinitionMapper;
 import io.mango.workflow.core.mapper.WorkflowDefinitionVersionMapper;
 import io.mango.workflow.core.mapper.WorkflowNodeDefinitionMapper;
 import org.flowable.engine.RepositoryService;
+import org.flowable.engine.repository.Deployment;
+import org.flowable.engine.repository.DeploymentBuilder;
+import org.flowable.engine.repository.ProcessDefinition;
+import org.flowable.engine.repository.ProcessDefinitionQuery;
+import org.flowable.bpmn.model.BpmnModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class WorkflowDefinitionServiceImplTest {
@@ -119,5 +134,152 @@ class WorkflowDefinitionServiceImplTest {
         assertThat(vo.getProcessDefinitionId()).isEqualTo("proc-published");
         assertThat(vo.getCategoryName()).isEqualTo("通用流程");
         assertThat(vo.getHasUnpublishedChanges()).isFalse();
+    }
+
+    @Test
+    void ensurePublished_existingPublishedDeployableDefinition_returnsPublishedSnapshotWithoutCreatingOrDeploying() {
+        WorkflowCategory category = new WorkflowCategory();
+        category.setId(20L);
+        category.setStatus(1);
+        when(categoryMapper.selectOne(any(Wrapper.class))).thenReturn(category);
+
+        WorkflowDefinition definition = new WorkflowDefinition();
+        definition.setId(1002L);
+        definition.setStatus(WorkflowDefinitionStatus.PUBLISHED.name());
+        definition.setDeploymentId("deploy-existing");
+        definition.setProcessDefinitionId("proc-existing");
+        definition.setProcessDefinitionVersion(7);
+        definition.setPublishedVersionNo(3);
+        when(definitionMapper.selectOne(any(Wrapper.class))).thenReturn(definition);
+
+        ProcessDefinitionQuery query = org.mockito.Mockito.mock(ProcessDefinitionQuery.class);
+        ProcessDefinition processDefinition = org.mockito.Mockito.mock(ProcessDefinition.class);
+        when(repositoryService.createProcessDefinitionQuery()).thenReturn(query);
+        when(query.processDefinitionId("proc-existing")).thenReturn(query);
+        when(query.singleResult()).thenReturn(processDefinition);
+        when(domainApi.detailByCode("PAYMENT")).thenReturn(R.ok(enabledDomain()));
+
+        R<WorkflowDeployVO> result = service.ensurePublished(ensureCommand());
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getData().getDeploymentId()).isEqualTo("deploy-existing");
+        assertThat(result.getData().getProcessDefinitionId()).isEqualTo("proc-existing");
+        assertThat(result.getData().getProcessDefinitionVersion()).isEqualTo(7);
+        assertThat(result.getData().getVersionNo()).isEqualTo(3);
+        verify(categoryMapper, never()).insert(any(WorkflowCategory.class));
+        verify(definitionMapper, never()).insert(any(WorkflowDefinition.class));
+        verify(repositoryService, never()).createDeployment();
+    }
+
+    @Test
+    void ensurePublished_missingDefinition_createsCategoryAndDefinitionThenDeploys() {
+        when(categoryMapper.selectOne(any(Wrapper.class))).thenReturn(null);
+        when(definitionMapper.selectOne(any(Wrapper.class))).thenReturn(null);
+        when(domainApi.detailByCode("PAYMENT")).thenReturn(R.ok(enabledDomain()));
+        when(categoryMapper.selectById(2001L)).thenAnswer(invocation -> {
+            WorkflowCategory category = new WorkflowCategory();
+            category.setId(invocation.getArgument(0));
+            category.setDomainCode("PAYMENT");
+            category.setStatus(1);
+            return category;
+        });
+        doAnswer(invocation -> {
+            WorkflowCategory category = invocation.getArgument(0);
+            category.setId(2001L);
+            return 1;
+        }).when(categoryMapper).insert(any(WorkflowCategory.class));
+        doAnswer(invocation -> {
+            WorkflowDefinition definition = invocation.getArgument(0);
+            definition.setId(3001L);
+            return 1;
+        }).when(definitionMapper).insert(any(WorkflowDefinition.class));
+        when(definitionMapper.selectById(3001L)).thenAnswer(invocation -> {
+            WorkflowDefinition definition = insertedDefinition();
+            definition.setId(invocation.getArgument(0));
+            return definition;
+        });
+        when(versionMapper.selectOne(any(Wrapper.class))).thenReturn(null);
+        doAnswer(invocation -> {
+            WorkflowDefinitionVersion version = invocation.getArgument(0);
+            version.setId(4001L);
+            return 1;
+        }).when(versionMapper).insert(any(WorkflowDefinitionVersion.class));
+
+        BpmnModel bpmnModel = new BpmnModel();
+        when(bpmnConverter.toModel(anyString(), eq("PAYMENT_REFUND_APPROVAL"), eq("退款审批")))
+                .thenReturn(bpmnModel);
+        when(bpmnConverter.toXml(anyString(), eq("PAYMENT_REFUND_APPROVAL"), eq("退款审批")))
+                .thenReturn("<definitions />");
+        DeploymentBuilder builder = org.mockito.Mockito.mock(DeploymentBuilder.class);
+        Deployment deployment = org.mockito.Mockito.mock(Deployment.class);
+        ProcessDefinitionQuery processDefinitionQuery = org.mockito.Mockito.mock(ProcessDefinitionQuery.class);
+        ProcessDefinition processDefinition = org.mockito.Mockito.mock(ProcessDefinition.class);
+        when(repositoryService.createDeployment()).thenReturn(builder);
+        when(builder.name("退款审批")).thenReturn(builder);
+        when(builder.key("PAYMENT_REFUND_APPROVAL")).thenReturn(builder);
+        when(builder.tenantId("1")).thenReturn(builder);
+        when(builder.addBpmnModel("PAYMENT_REFUND_APPROVAL.bpmn20.xml", bpmnModel)).thenReturn(builder);
+        when(builder.deploy()).thenReturn(deployment);
+        when(deployment.getId()).thenReturn("deploy-created");
+        when(repositoryService.createProcessDefinitionQuery()).thenReturn(processDefinitionQuery);
+        when(processDefinitionQuery.deploymentId("deploy-created")).thenReturn(processDefinitionQuery);
+        when(processDefinitionQuery.processDefinitionKey("PAYMENT_REFUND_APPROVAL")).thenReturn(processDefinitionQuery);
+        when(processDefinitionQuery.latestVersion()).thenReturn(processDefinitionQuery);
+        when(processDefinitionQuery.singleResult()).thenReturn(processDefinition);
+        when(processDefinition.getId()).thenReturn("proc-created");
+        when(processDefinition.getVersion()).thenReturn(1);
+
+        R<WorkflowDeployVO> result = service.ensurePublished(ensureCommand());
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getData().getDeploymentId()).isEqualTo("deploy-created");
+        assertThat(result.getData().getProcessDefinitionId()).isEqualTo("proc-created");
+        assertThat(result.getData().getProcessDefinitionVersion()).isEqualTo(1);
+        assertThat(result.getData().getVersionNo()).isEqualTo(1);
+        ArgumentCaptor<WorkflowCategory> categoryCaptor = ArgumentCaptor.forClass(WorkflowCategory.class);
+        verify(categoryMapper).insert(categoryCaptor.capture());
+        assertThat(categoryCaptor.getValue().getDomainCode()).isEqualTo("PAYMENT");
+        assertThat(categoryCaptor.getValue().getCategoryCode()).isEqualTo("PAYMENT_BUILTIN");
+        ArgumentCaptor<WorkflowDefinition> definitionCaptor = ArgumentCaptor.forClass(WorkflowDefinition.class);
+        verify(definitionMapper).insert(definitionCaptor.capture());
+        assertThat(definitionCaptor.getValue().getDefinitionKey()).isEqualTo("PAYMENT_REFUND_APPROVAL");
+        assertThat(definitionCaptor.getValue().getCategoryId()).isEqualTo(2001L);
+        verify(versionMapper).insert(any(WorkflowDefinitionVersion.class));
+        verify(versionMapper).updateById(any(WorkflowDefinitionVersion.class));
+        verify(definitionMapper).updateById(any(WorkflowDefinition.class));
+    }
+
+    private EnsureWorkflowDefinitionCommand ensureCommand() {
+        EnsureWorkflowDefinitionCommand command = new EnsureWorkflowDefinitionCommand();
+        command.setDomainCode("PAYMENT");
+        command.setCategoryCode("PAYMENT_BUILTIN");
+        command.setCategoryName("支付内置流程");
+        command.setCategorySort(20);
+        command.setDefinitionName("退款审批");
+        command.setDefinitionKey("PAYMENT_REFUND_APPROVAL");
+        command.setDesignerJson("{\"id\":\"startEvent\"}");
+        command.setFormCode("payment_refund_approval");
+        command.setFormJson("{\"mode\":\"CUSTOM\"}");
+        command.setAdminUsers(List.of("admin"));
+        return command;
+    }
+
+    private DomainVO enabledDomain() {
+        DomainVO domain = new DomainVO();
+        domain.setDomainCode("PAYMENT");
+        domain.setStatus(1);
+        return domain;
+    }
+
+    private WorkflowDefinition insertedDefinition() {
+        WorkflowDefinition definition = new WorkflowDefinition();
+        definition.setCategoryId(2001L);
+        definition.setDomainCode("PAYMENT");
+        definition.setDefinitionName("退款审批");
+        definition.setDefinitionKey("PAYMENT_REFUND_APPROVAL");
+        definition.setDesignerJson("{\"id\":\"startEvent\"}");
+        definition.setFormJson("{\"mode\":\"CUSTOM\"}");
+        definition.setStatus(WorkflowDefinitionStatus.DRAFT.name());
+        return definition;
     }
 }

@@ -1,0 +1,4 @@
+-- No-op by design.
+-- FUIOU page notify and back notify URLs are deployment-specific values.
+-- They must be maintained through payment channel contract configuration,
+-- not overwritten by formal Flyway migration.

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentChannelCapabilityMapper">
+
+    <sql id="channelCapabilityFrom">
+        from payment_channel_capability cc
+        left join payment_method m
+          on m.method_code = cc.method_code
+         and m.tenant_id = cc.tenant_id
+         and m.del_flag = 0
+        left join payment_channel c
+          on c.id = cc.channel_id
+         and c.tenant_id = cc.tenant_id
+         and c.del_flag = 0
+    </sql>
+
+    <sql id="channelCapabilityWhere">
+        where cc.tenant_id = #{tenantId}
+        <if test="status != null">
+            and cc.status = #{status}
+        </if>
+        <if test="channelId != null">
+            and cc.channel_id = #{channelId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              cc.method_code like concat('%', #{keyword}, '%')
+              or cc.terminal_type like concat('%', #{keyword}, '%')
+              or cc.environment like concat('%', #{keyword}, '%')
+              or m.method_name like concat('%', #{keyword}, '%')
+              or c.channel_name like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <select id="countChannelCapabilities" resultType="long">
+        select count(1)
+        <include refid="channelCapabilityFrom"/>
+        <include refid="channelCapabilityWhere"/>
+    </select>
+
+    <select id="selectChannelCapabilityPage" resultType="io.mango.payment.api.vo.PaymentChannelCapabilityVO">
+        select cc.id,
+               cc.channel_id as channelId,
+               c.channel_name as channelName,
+               cc.method_code as methodCode,
+               m.method_name as methodName,
+               cc.terminal_type as terminalType,
+               cc.environment,
+               cc.supports_refund as supportsRefund,
+               cc.supports_query as supportsQuery,
+               cc.supports_close as supportsClose,
+               cc.supports_bill as supportsBill,
+               cc.supports_reconcile as supportsReconcile,
+               cc.min_amount as minAmount,
+               cc.max_amount as maxAmount,
+               cc.status,
+               cc.created_at as createTime,
+               cc.updated_at as updateTime
+        <include refid="channelCapabilityFrom"/>
+        <include refid="channelCapabilityWhere"/>
+        order by cc.created_at desc, cc.id desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectChannelCapabilityDetail" resultType="io.mango.payment.api.vo.PaymentChannelCapabilityVO">
+        select cc.id,
+               cc.channel_id as channelId,
+               c.channel_name as channelName,
+               cc.method_code as methodCode,
+               m.method_name as methodName,
+               cc.terminal_type as terminalType,
+               cc.environment,
+               cc.supports_refund as supportsRefund,
+               cc.supports_query as supportsQuery,
+               cc.supports_close as supportsClose,
+               cc.supports_bill as supportsBill,
+               cc.supports_reconcile as supportsReconcile,
+               cc.min_amount as minAmount,
+               cc.max_amount as maxAmount,
+               cc.status,
+               cc.created_at as createTime,
+               cc.updated_at as updateTime
+        <include refid="channelCapabilityFrom"/>
+        where cc.tenant_id = #{tenantId}
+          and cc.id = #{id}
+          and cc.del_flag = 0
+    </select>
+
+    <delete id="deletePhysicallyById">
+        delete from payment_channel_capability
+        where id = #{id}
+          and tenant_id = #{tenantId}
+    </delete>
+
+    <select id="countDeleteRelations" resultType="long">
+        select (
+            (select count(1)
+               from payment_channel_contract_capability ccc
+              where ccc.tenant_id = #{tenantId}
+                and ccc.channel_capability_id = #{capabilityId})
+            +
+            (select count(1)
+               from payment_method_route_rule_item rri
+               join payment_channel_contract_capability ccc
+                 on ccc.id = rri.contract_capability_id
+                and ccc.tenant_id = rri.tenant_id
+              where rri.tenant_id = #{tenantId}
+                and ccc.channel_capability_id = #{capabilityId})
+        )
+    </select>
+</mapper>

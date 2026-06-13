@@ -24,6 +24,7 @@
     "@mango/job": "workspace:*",
     "@mango/numgen": "workspace:*",
     "@mango/notice": "workspace:*",
+    "@mango/payment": "workspace:*",
     "@mango/rbac": "workspace:*",
     "@mango/system": "workspace:*",
     "@mango/workflow": "workspace:*",

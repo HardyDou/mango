@@ -4,6 +4,7 @@ import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceAutoCo
 import io.mango.infra.persistence.starter.datasource.PersistenceDataSourceRegistry;
 import io.mango.infra.persistence.api.datasource.PersistenceModuleDataSourceResolver;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -92,30 +93,35 @@ public class PersistenceFlywayAutoConfiguration {
                     ResolvedDataSource resolvedDataSource = null;
                     String historyTable = "<unresolved>";
                     boolean outOfOrder = module.config().isOutOfOrder();
+                    boolean validateOnMigrate = module.config().isValidateOnMigrate();
                     String datasource = resolveDataSourceDescription(module, resolver);
                     try {
+                        FluentConfiguration configuration = Flyway.configure();
                         resolvedDataSource = resolveDataSource(dataSource, module, registry, datasource);
                         DataSource moduleDataSource = resolvedDataSource.dataSource();
                         datasource = resolvedDataSource.description();
                         historyTable = resolveHistoryTable(module);
-                        Flyway.configure()
+                        configuration
                                 .dataSource(moduleDataSource)
                                 .locations(module.location())
                                 .table(historyTable)
                                 .baselineOnMigrate(module.config().isBaselineOnMigrate())
                                 .baselineVersion("0")
-                                .validateOnMigrate(true)
-                                .outOfOrder(outOfOrder)
-                                .load()
-                                .migrate();
+                                .validateOnMigrate(validateOnMigrate)
+                                .outOfOrder(outOfOrder);
+                        if (module.config().isIgnoreMissingMigrations()) {
+                            configuration.ignoreMigrationPatterns("*:missing");
+                        }
+                        configuration.load().migrate();
                     } catch (Exception e) {
                         throw new IllegalStateException(
                                 "Mango Flyway module migration failed: module=" + module.name()
                                         + ", historyTable=" + historyTable
                                         + ", location=" + module.location()
                                         + ", datasource=" + datasource
-                                        + ", validateOnMigrate=true"
-                                        + ", outOfOrder=" + outOfOrder,
+                                        + ", validateOnMigrate=" + validateOnMigrate
+                                        + ", outOfOrder=" + outOfOrder
+                                        + ", ignoreMissingMigrations=" + module.config().isIgnoreMissingMigrations(),
                                 e);
                     } finally {
                         if (resolvedDataSource != null) {

@@ -4,6 +4,9 @@ import io.mango.authorization.api.annotation.ApiAccess;
 import io.mango.authorization.api.enums.ApiResourceAccessMode;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
+import io.mango.infra.web.api.Inner;
+import io.mango.workflow.api.WorkflowDefinitionApi;
+import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
@@ -37,7 +40,7 @@ import java.util.List;
 @RequestMapping("/workflow/definitions")
 @RequiredArgsConstructor
 @Tag(name = "工作流定义", description = "流程定义列表、详情、新增、修改、删除、启停与发布接口")
-public class WorkflowDefinitionController {
+public class WorkflowDefinitionController implements WorkflowDefinitionApi {
 
     private final IWorkflowDefinitionService workflowDefinitionService;
 
@@ -109,6 +112,17 @@ public class WorkflowDefinitionController {
             @Parameter(description = "流程定义ID", required = true)
             @RequestParam Long id) {
         return workflowDefinitionService.deploy(id);
+    }
+
+    @Override
+    @PostMapping("/internal/ensure-published")
+    @Inner
+    @ApiAccess(mode = ApiResourceAccessMode.INTERNAL)
+    @Operation(summary = "确保流程定义已发布", description = "内部接口。用于业务域初始化或同步内置流程定义")
+    public R<WorkflowDeployVO> ensurePublished(
+            @Parameter(description = "确保流程定义已发布命令", required = true)
+            @Valid @RequestBody EnsureWorkflowDefinitionCommand command) {
+        return workflowDefinitionService.ensurePublished(command);
     }
 
     @GetMapping("/versions")

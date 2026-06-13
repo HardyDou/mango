@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentSettlementSummaryMapper">
+
+    <sql id="settlementWhere">
+        where ss.tenant_id = #{tenantId}
+          and ss.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+          and ss.status = #{statusCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          and (
+            ss.app_code like concat('%', #{keyword}, '%')
+            or a.app_name like concat('%', #{keyword}, '%')
+            or ss.channel_code like concat('%', #{keyword}, '%')
+            or c.channel_name like concat('%', #{keyword}, '%')
+            or s.subject_name like concat('%', #{keyword}, '%')
+            or ss.status like concat('%', #{keyword}, '%')
+          )
+        </if>
+    </sql>
+
+    <sql id="settlementSelect">
+        select ss.id,
+               ss.settlement_date as settlementDate,
+               ss.app_code as appCode,
+               a.app_name as appName,
+               ss.enterprise_subject_id as enterpriseSubjectId,
+               s.subject_name as subjectName,
+               ss.channel_code as channelCode,
+               c.channel_name as channelName,
+               ss.trade_amount as tradeAmount,
+               ss.refund_amount as refundAmount,
+               ss.fee_amount as feeAmount,
+               ss.net_amount as netAmount,
+               ss.trade_count as tradeCount,
+               ss.refund_count as refundCount,
+               ss.unresolved_difference_count as unresolvedDifferenceCount,
+               ss.unresolved_difference_amount as unresolvedDifferenceAmount,
+               ss.status,
+               ss.generated_by as generatedBy,
+               ss.generated_by_name as generatedByName,
+               ss.generated_at as generatedAt,
+               ss.confirmed_by as confirmedBy,
+               ss.confirmed_by_name as confirmedByName,
+               ss.confirmed_at as confirmedAt,
+               ss.voided_by as voidedBy,
+               ss.voided_by_name as voidedByName,
+               ss.voided_at as voidedAt,
+               ss.void_reason as voidReason,
+               ss.created_at as createTime,
+               ss.updated_at as updateTime
+    </sql>
+
+    <sql id="settlementFrom">
+        from payment_settlement_summary ss
+        left join payment_application a
+          on (a.app_id = ss.app_code or ss.app_code = case
+             when a.app_id = 'app_order_center' then 'ORDER_CENTER'
+             when a.app_id = 'app_member_center' then 'MEMBER_CENTER'
+             else a.app_id
+          end)
+         and a.tenant_id = ss.tenant_id
+         and a.del_flag = 0
+        left join payment_enterprise_subject s
+          on s.id = ss.enterprise_subject_id
+         and s.tenant_id = ss.tenant_id
+         and s.del_flag = 0
+        left join payment_channel c
+          on c.channel_code = ss.channel_code
+         and c.tenant_id = ss.tenant_id
+         and c.del_flag = 0
+    </sql>
+
+    <select id="countSettlementSummaries" resultType="long">
+        select count(1)
+        <include refid="settlementFrom"/>
+        <include refid="settlementWhere"/>
+    </select>
+
+    <select id="selectSettlementSummaryPage" resultType="io.mango.payment.api.vo.PaymentSettlementSummaryVO">
+        <include refid="settlementSelect"/>
+        <include refid="settlementFrom"/>
+        <include refid="settlementWhere"/>
+        order by ss.settlement_date desc, ss.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectSettlementSummaryDetail" resultType="io.mango.payment.api.vo.PaymentSettlementSummaryVO">
+        <include refid="settlementSelect"/>
+        <include refid="settlementFrom"/>
+        where ss.tenant_id = #{tenantId}
+          and ss.id = #{id}
+          and ss.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectByScope" resultType="io.mango.payment.core.entity.PaymentSettlementSummaryEntity">
+        select ss.id,
+               ss.settlement_date as settlementDate,
+               ss.app_code as appCode,
+               ss.enterprise_subject_id as enterpriseSubjectId,
+               ss.channel_code as channelCode,
+               ss.trade_amount as tradeAmount,
+               ss.refund_amount as refundAmount,
+               ss.fee_amount as feeAmount,
+               ss.net_amount as netAmount,
+               ss.trade_count as tradeCount,
+               ss.refund_count as refundCount,
+               ss.unresolved_difference_count as unresolvedDifferenceCount,
+               ss.unresolved_difference_amount as unresolvedDifferenceAmount,
+               ss.status,
+               ss.generated_by as generatedBy,
+               ss.generated_by_name as generatedByName,
+               ss.generated_at as generatedAt,
+               ss.confirmed_by as confirmedBy,
+               ss.confirmed_by_name as confirmedByName,
+               ss.confirmed_at as confirmedAt,
+               ss.voided_by as voidedBy,
+               ss.voided_by_name as voidedByName,
+               ss.voided_at as voidedAt,
+               ss.void_reason as voidReason,
+               ss.tenant_id as tenantId,
+               ss.created_by as createdBy,
+               ss.created_at as createdAt,
+               ss.updated_by as updatedBy,
+               ss.updated_at as updatedAt,
+               ss.del_flag as delFlag
+        from payment_settlement_summary ss
+        where ss.tenant_id = #{tenantId}
+          and ss.settlement_date = #{settlementDate}
+          and ss.app_code = #{appCode}
+          and ss.enterprise_subject_id = #{enterpriseSubjectId}
+          and ss.channel_code = #{channelCode}
+          and ss.status != 'VOIDED'
+          and ss.del_flag = 0
+        order by ss.created_at desc
+        limit 1
+    </select>
+
+    <select id="selectSettlementCalculation" resultType="io.mango.payment.core.mapper.PaymentSettlementSummaryMapper$SettlementCalculation">
+        select coalesce(sum(case when bd.trade_type = 'PAYMENT' then bd.amount else 0 end), 0) as tradeAmount,
+               coalesce(sum(case when bd.trade_type = 'REFUND' then bd.amount else 0 end), 0) as refundAmount,
+               coalesce(sum(bd.fee), 0) as feeAmount,
+               coalesce(sum(case when bd.trade_type = 'PAYMENT' then 1 else 0 end), 0) as tradeCount,
+               coalesce(sum(case when bd.trade_type = 'REFUND' then 1 else 0 end), 0) as refundCount
+        from payment_channel_bill_detail bd
+        left join payment_order po
+          on po.channel_trade_no = bd.channel_trade_no
+         and po.tenant_id = bd.tenant_id
+        left join payment_refund_order ro
+          on ro.channel_refund_no = bd.channel_trade_no
+         and ro.tenant_id = bd.tenant_id
+        left join payment_order rpo
+          on rpo.id = ro.payment_order_id
+         and rpo.tenant_id = ro.tenant_id
+        left join payment_business_order bo
+          on bo.id = coalesce(po.business_order_id, rpo.business_order_id)
+         and bo.tenant_id = bd.tenant_id
+        where bd.tenant_id = #{tenantId}
+          and bd.bill_date = #{settlementDate}
+          and bd.channel_code = #{channelCode}
+          and bd.del_flag = 0
+          and bo.app_code = #{appCode}
+          and bo.subject_id = #{enterpriseSubjectId}
+          and (
+            (bd.trade_type = 'PAYMENT' and po.status = 'SUCCESS')
+            or (bd.trade_type = 'REFUND' and ro.status = 'SUCCESS')
+            or bd.trade_type = 'FEE'
+          )
+    </select>
+
+    <select id="countCompletedReconciliation" resultType="long">
+        select count(1)
+        from payment_reconciliation r
+        where r.tenant_id = #{tenantId}
+          and r.bill_date = #{settlementDate}
+          and r.channel_code = #{channelCode}
+          and r.match_status in ('MATCHED', 'DIFFERENCE')
+          and r.del_flag = 0
+    </select>
+
+    <select id="selectUnresolvedDifferenceCalculation" resultType="io.mango.payment.core.mapper.PaymentSettlementSummaryMapper$DifferenceCalculation">
+        select coalesce(count(1), 0) as unresolvedDifferenceCount,
+               coalesce(sum(d.difference_amount), 0) as unresolvedDifferenceAmount
+        from payment_difference d
+        join payment_reconciliation r
+          on r.id = d.reconciliation_id
+         and r.tenant_id = d.tenant_id
+         and r.del_flag = 0
+        where d.tenant_id = #{tenantId}
+          and r.bill_date = #{settlementDate}
+          and r.channel_code = #{channelCode}
+          and d.process_status in ('PENDING', 'PROCESSING')
+          and d.del_flag = 0
+    </select>
+
+    <update id="confirmGeneratedSummary">
+        update payment_settlement_summary
+        set trade_amount = #{tradeAmount},
+            refund_amount = #{refundAmount},
+            fee_amount = #{feeAmount},
+            net_amount = #{netAmount},
+            trade_count = #{tradeCount},
+            refund_count = #{refundCount},
+            unresolved_difference_count = #{unresolvedDifferenceCount},
+            unresolved_difference_amount = #{unresolvedDifferenceAmount},
+            status = 'CONFIRMED',
+            confirmed_by = #{confirmedBy},
+            confirmed_by_name = #{confirmedByName},
+            confirmed_at = #{confirmedAt},
+            updated_by = #{confirmedBy},
+            updated_at = #{confirmedAt}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'GENERATED'
+          and del_flag = 0
+    </update>
+
+    <update id="voidConfirmedSummary">
+        update payment_settlement_summary
+        set status = 'VOIDED',
+            voided_by = #{voidedBy},
+            voided_by_name = #{voidedByName},
+            voided_at = #{voidedAt},
+            void_reason = #{voidReason},
+            updated_by = #{voidedBy},
+            updated_at = #{voidedAt}
+        where tenant_id = #{tenantId}
+          and id = #{id}
+          and status = 'CONFIRMED'
+          and del_flag = 0
+    </update>
+</mapper>

@@ -1,5 +1,49 @@
 # Mango Changelog
 
+## v2026.06.13-payment-platform - 2026-06-13
+
+### New
+
+- Added the Payment platform module on the backend `1.0.0-SNAPSHOT` line, including payment applications, cashier configuration, payment orders, refunds, refund approvals, reconciliations, differences, settlement summaries, operation audit, notifications, offline collections/refunds, and channel contract management.
+- Added Fuiou payment channel support, including scan-pay/gateway flow, callback handling, refund query, channel bill fetching, and test callback development host support.
+- Added the `@mango/payment@1.0.0` frontend package with payment admin pages, cashier UI, payment APIs, package styles, and admin feature registration.
+- Added payment authorization menus, permissions, numgen seeds, workflow integration, and delivery evidence for the payment sprint.
+
+### Fixed
+
+- Closed PR #149 payment review blockers around channel callback consistency, transaction boundaries, Flyway migration ordering, refund workflow startup compensation, synchronous workflow completion, and fixed `bizRefundNo` recovery after workflow startup failure.
+- Kept payment callback `allowedHosts` support for test callback scenarios.
+- Kept backend Maven artifacts on the Mango `1.0.0-SNAPSHOT` line and added payment modules to the reactor.
+
+### Published Packages
+
+- `@mango/payment@1.0.0`
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.platform.payment:mango-payment`
+  - `io.mango.platform.payment:mango-payment-api`
+  - `io.mango.platform.payment:mango-payment-core`
+  - `io.mango.platform.payment:mango-payment-starter`
+  - `io.mango.platform.payment:mango-payment-starter-remote`
+
+### Upgrade Notes
+
+- Existing business projects should refresh backend Mango `1.0.0-SNAPSHOT` dependencies from the Maven repository.
+- Frontend consumers that need the payment center should install `@mango/payment@1.0.0` and import `@mango/payment/style.css`.
+- Admin applications should register `registerMangoPaymentAdminPages` from `@mango/payment/admin-pages` when enabling the payment center.
+- Run payment Flyway migrations in order before enabling payment menus or payment APIs.
+- Configure real payment channel credentials, callback domains, and sensitive values per environment; the included Fuiou values are for confirmed test callback scenarios.
+
+### Verification
+
+- `git diff --check origin/main...HEAD`
+- Payment and authorization Flyway duplicate version check
+- `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-25-payment-sprint-01.md --ledger mango-docs/plans/2026-05-25-payment-delivery-ledger.md --mode verify`
+- `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/plans/2026-05-25-payment-sprint-01.md --ledger mango-docs/plans/2026-05-25-payment-app-cashier-boundary-ledger.md --mode verify`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-payment/mango-payment-core -am -Dtest=PaymentRefundApprovalServiceTest,PaymentRefundApprovalMapperContractTest,PaymentTenantIsolationContractTest -Dsurefire.failIfNoSpecifiedTests=false test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-payment/mango-payment-core,mango-platform/mango-payment/mango-payment-starter -am test -DskipTests=false`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-payment/mango-payment-core -am checkstyle:check -DskipTests`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-payment/mango-payment-core -am pmd:check -DskipTests`
+
 ## v2026.06.12-mango-platform-release - 2026-06-12
 
 ### New

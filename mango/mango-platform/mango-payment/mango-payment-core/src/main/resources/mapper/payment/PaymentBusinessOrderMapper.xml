@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentBusinessOrderMapper">
+
+    <sql id="businessOrderFrom">
+        from payment_business_order bo
+        left join payment_enterprise_subject s
+          on s.id = bo.subject_id and s.tenant_id = bo.tenant_id
+        left join payment_application app
+          on app.tenant_id = bo.tenant_id
+         and app.del_flag = 0
+         and (app.app_id = bo.app_code or bo.app_code = case
+           when app.app_id = 'app_order_center' then 'ORDER_CENTER'
+           when app.app_id = 'app_member_center' then 'MEMBER_CENTER'
+           else app.app_id
+         end)
+    </sql>
+
+    <sql id="businessOrderWhere">
+        where bo.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+        <if test="statusCode != null and statusCode != ''">
+            <choose>
+                <when test="statusCode == 'PAID'">
+                    and bo.status in ('PAID', 'SUCCESS')
+                </when>
+                <otherwise>
+                    and bo.status = #{statusCode}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="applicationId != null">
+            and app.id = #{applicationId}
+        </if>
+        <if test="enterpriseSubjectId != null">
+            and bo.subject_id = #{enterpriseSubjectId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (
+              bo.biz_order_no like concat('%', #{keyword}, '%')
+              or bo.app_code like concat('%', #{keyword}, '%')
+              or app.app_name like concat('%', #{keyword}, '%')
+              or bo.title like concat('%', #{keyword}, '%')
+              or s.subject_name like concat('%', #{keyword}, '%')
+              or bo.status like concat('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <sql id="cashierConfigIdColumn">
+        (select c.id
+         from payment_application app
+         join payment_cashier_config c
+           on c.application_id = app.id
+          and c.tenant_id = app.tenant_id
+          and c.del_flag = 0
+          and c.status = 1
+         where app.tenant_id = bo.tenant_id
+           and app.del_flag = 0
+           and app.status = 1
+           and (app.app_id = bo.app_code or bo.app_code = case
+             when app.app_id = 'app_order_center' then 'ORDER_CENTER'
+             when app.app_id = 'app_member_center' then 'MEMBER_CENTER'
+             else app.app_id
+           end)
+           and find_in_set(cast(bo.subject_id as char), c.enterprise_subject_ids)
+         order by c.default_cashier desc, c.updated_at desc, c.id desc
+         limit 1)
+    </sql>
+
+    <sql id="cashierNameColumn">
+        (select c.cashier_name
+         from payment_application app
+         join payment_cashier_config c
+           on c.application_id = app.id
+          and c.tenant_id = app.tenant_id
+          and c.del_flag = 0
+          and c.status = 1
+         where app.tenant_id = bo.tenant_id
+           and app.del_flag = 0
+           and app.status = 1
+           and (app.app_id = bo.app_code or bo.app_code = case
+             when app.app_id = 'app_order_center' then 'ORDER_CENTER'
+             when app.app_id = 'app_member_center' then 'MEMBER_CENTER'
+             else app.app_id
+           end)
+           and find_in_set(cast(bo.subject_id as char), c.enterprise_subject_ids)
+         order by c.default_cashier desc, c.updated_at desc, c.id desc
+         limit 1)
+    </sql>
+
+    <sql id="businessOrderSelect">
+        select bo.id,
+               bo.biz_order_no as bizOrderNo,
+               bo.app_code as appId,
+               app.app_name as appName,
+               bo.title,
+               bo.subject_id as subjectId,
+               s.subject_name as subjectName,
+               <include refid="cashierConfigIdColumn"/> as cashierConfigId,
+               <include refid="cashierNameColumn"/> as cashierName,
+               bo.amount,
+               bo.paid_amount as paidAmount,
+               bo.refunded_amount as refundedAmount,
+               bo.currency,
+               bo.status,
+               bo.expire_time as expireTime,
+               bo.notify_url as notifyUrl,
+               bo.return_url as returnUrl,
+               bo.extend_info as extendInfo,
+               bo.created_at as createTime,
+               bo.updated_at as updateTime,
+               (select count(1)
+                from payment_order po
+                where po.tenant_id = bo.tenant_id and po.business_order_id = bo.id) as paymentOrderCount,
+               (select count(1)
+                from payment_refund_order ro
+                join payment_order po
+                  on po.id = ro.payment_order_id and po.tenant_id = ro.tenant_id
+                where ro.tenant_id = bo.tenant_id and po.business_order_id = bo.id) as refundOrderCount
+    </sql>
+
+    <select id="countBusinessOrders" resultType="long">
+        select count(1)
+        <include refid="businessOrderFrom"/>
+        <include refid="businessOrderWhere"/>
+    </select>
+
+    <select id="selectBusinessOrderPage" resultType="io.mango.payment.api.vo.PaymentBusinessOrderVO">
+        <include refid="businessOrderSelect"/>
+        <include refid="businessOrderFrom"/>
+        <include refid="businessOrderWhere"/>
+        order by bo.created_at desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="selectBusinessOrderDetail" resultType="io.mango.payment.api.vo.PaymentBusinessOrderVO">
+        <include refid="businessOrderSelect"/>
+        <include refid="businessOrderFrom"/>
+        where bo.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and bo.id = #{id}
+        limit 1
+    </select>
+
+    <select id="selectCashierBusinessOrder" resultType="io.mango.payment.core.entity.PaymentBusinessOrderEntity">
+        select bo.id,
+               bo.biz_order_no as bizOrderNo,
+               bo.app_code as appCode,
+               bo.title,
+               bo.subject_id as subjectId,
+               bo.amount,
+               bo.paid_amount as paidAmount,
+               bo.refunded_amount as refundedAmount,
+               bo.currency,
+               bo.status,
+               bo.expire_time as expireTime,
+               bo.notify_url as notifyUrl,
+               bo.return_url as returnUrl,
+               bo.extend_info as extendInfo,
+               bo.tenant_id as tenantId,
+               bo.created_by as createdBy,
+               bo.created_at as createdAt,
+               bo.updated_by as updatedBy,
+               bo.updated_at as updatedAt,
+               bo.del_flag as delFlag
+        from payment_business_order bo
+        where bo.id = #{id}
+          and bo.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="selectLatestPayableCashierOrder" resultType="io.mango.payment.core.entity.PaymentBusinessOrderEntity">
+        select bo.id,
+               bo.biz_order_no as bizOrderNo,
+               bo.app_code as appCode,
+               bo.title,
+               bo.subject_id as subjectId,
+               bo.amount,
+               bo.paid_amount as paidAmount,
+               bo.refunded_amount as refundedAmount,
+               bo.currency,
+               bo.status,
+               bo.expire_time as expireTime,
+               bo.notify_url as notifyUrl,
+               bo.return_url as returnUrl,
+               bo.extend_info as extendInfo,
+               bo.tenant_id as tenantId,
+               bo.created_by as createdBy,
+               bo.created_at as createdAt,
+               bo.updated_by as updatedBy,
+               bo.updated_at as updatedAt,
+               bo.del_flag as delFlag
+        from payment_business_order bo
+        where bo.tenant_id = #{tenantId}
+          and bo.del_flag = 0
+          and bo.app_code in (#{appId}, #{legacyAppCode})
+          and bo.subject_id in
+          <foreach collection="subjectIds" item="subjectId" open="(" separator="," close=")">
+              #{subjectId}
+          </foreach>
+          and bo.status in ('TO_PAY', 'PAYING')
+          and (bo.expire_time is null or bo.expire_time > now())
+        order by bo.created_at desc
+        limit 1
+    </select>
+
+    <update id="markCashierPaySuccess">
+        update payment_business_order
+        set status = 'PAID',
+            paid_amount = #{paidAmount},
+            updated_at = now()
+        where id = #{id}
+          and tenant_id = #{tenantId}
+          and del_flag = 0
+          and status = 'PAYING'
+    </update>
+
+    <update id="touchCashierPayingOrder">
+        update payment_business_order
+        set status = 'PAYING',
+            updated_at = now()
+        where id = #{id}
+          and tenant_id = #{tenantId}
+          and del_flag = 0
+          and status in ('TO_PAY', 'PAYING')
+    </update>
+
+    <update id="closeOpenBusinessOrder">
+        update payment_business_order
+        set status = 'CLOSED',
+            updated_at = now()
+        where id = #{id}
+          and tenant_id = #{tenantId}
+          and del_flag = 0
+          and status in ('TO_PAY', 'PAYING')
+          and coalesce(paid_amount, 0) = 0
+    </update>
+
+    <update id="updateRefundProgress">
+        update payment_business_order
+        set refunded_amount = refunded_amount + #{refundAmount},
+            status = case
+                when refunded_amount + #{refundAmount} >= amount then 'REFUNDED'
+                else 'PARTIAL_REFUNDED'
+            end,
+            updated_at = now()
+        where id = #{id}
+          and tenant_id = #{tenantId}
+          and del_flag = 0
+          and status in ('PAID', 'SUCCESS', 'PARTIAL_REFUNDED')
+          and refunded_amount + #{refundAmount} &lt;= amount
+    </update>
+</mapper>

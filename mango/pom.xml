@@ -482,6 +482,26 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.payment</groupId>
+                <artifactId>mango-payment-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.payment</groupId>
+                <artifactId>mango-payment-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.payment</groupId>
+                <artifactId>mango-payment-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.mango.platform.payment</groupId>
+                <artifactId>mango-payment-starter-remote</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.org</groupId>
                 <artifactId>mango-org-starter</artifactId>
                 <version>${project.version}</version>

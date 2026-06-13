@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentOrderStatusFlowMapper">
+
+    <select id="selectStatusFlows" resultType="io.mango.payment.api.vo.PaymentOrderStatusFlowVO">
+        select from_status as fromStatus,
+               to_status as toStatus,
+               to_status as statusCode,
+               trigger_source as triggerSource,
+               trigger_source as source,
+               trigger_no as triggerNo,
+               operator_id as operatorId,
+               operator_name as operatorName,
+               happen_time as happenTime,
+               remark
+        from payment_order_status_flow
+        where tenant_id = #{tenantId}
+          and order_type = #{orderType}
+          and order_id = #{orderId}
+          and del_flag = 0
+        order by happen_time asc, id asc
+    </select>
+</mapper>

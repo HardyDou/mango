@@ -111,13 +111,31 @@ export function generateStaticRoutes(): RouteRecordRaw[] {
       meta: { title: '401', isAffix: true },
     },
     {
+      path: '/payment/gateway-result',
+      name: 'PaymentGatewayResult',
+      component: componentsMap['payment/gateway-result/index'] as NonNullable<RouteRecordRaw['component']>,
+      meta: { title: '支付结果确认', isAffix: false },
+    },
+    {
       path: '/',
       name: 'Layout',
       component: MangoAdminLayout,
       redirect: '/home',
-      children: menuItems.map((item) => menuItemToRoute(item)),
+      children: [
+        ...menuItems.map((item) => menuItemToRoute(item)),
+        paymentCashierRoute(),
+      ],
     },
   ];
+}
+
+function paymentCashierRoute(): RouteRecordRaw {
+  return {
+    path: '/payment/cashier-configs/:cashierId/cashier',
+    name: 'PaymentCashier',
+    component: componentsMap['payment/cashier/index'] as NonNullable<RouteRecordRaw['component']>,
+    meta: { title: '收银台', isHide: true },
+  };
 }
 
 /**

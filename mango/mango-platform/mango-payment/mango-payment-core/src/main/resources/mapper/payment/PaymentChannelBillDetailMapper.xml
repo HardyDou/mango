@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentChannelBillDetailMapper">
+
+    <select id="selectBillDetails" resultType="io.mango.payment.api.vo.PaymentChannelBillDetailVO">
+        select d.id,
+               d.reconciliation_id as reconciliationId,
+               d.batch_no as batchNo,
+               d.channel_code as channelCode,
+               d.bill_date as billDate,
+               d.channel_trade_no as channelTradeNo,
+               d.trade_type as tradeType,
+               d.amount,
+               d.fee,
+               d.trade_time as tradeTime,
+               d.match_status as matchStatus,
+               d.matched_order_no as matchedOrderNo,
+               d.match_message as matchMessage,
+               d.created_at as createTime
+        from payment_channel_bill_detail d
+        where d.tenant_id = #{tenantId}
+          and d.reconciliation_id = #{reconciliationId}
+          and d.del_flag = 0
+        order by d.trade_time asc, d.id asc
+    </select>
+</mapper>

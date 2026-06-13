@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS `payment_offline_collection_voucher` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `offline_collection_id` bigint NOT NULL COMMENT '线下收款ID',
+  `offline_collection_no` varchar(64) NOT NULL COMMENT '线下收款单号',
+  `pay_order_no` varchar(64) NOT NULL COMMENT '支付订单号',
+  `voucher_file_id` varchar(64) NOT NULL COMMENT '支付凭证文件ID',
+  `upload_source` varchar(32) NOT NULL COMMENT '上传来源：CASHIER/ADMIN/BANK_IMPORT',
+  `uploader_id` bigint DEFAULT NULL COMMENT '上传人ID',
+  `uploader_name` varchar(128) DEFAULT NULL COMMENT '上传人名称',
+  `upload_time` datetime NOT NULL COMMENT '上传时间',
+  `review_status` varchar(32) NOT NULL DEFAULT 'SUBMITTED' COMMENT '审核状态：SUBMITTED/ACCEPTED/REJECTED',
+  `tenant_id` bigint NOT NULL COMMENT '租户ID',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记：0-正常，1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_payment_offline_collection_voucher_file` (`tenant_id`, `offline_collection_id`, `voucher_file_id`, `del_flag`),
+  KEY `idx_payment_offline_collection_voucher_no` (`tenant_id`, `offline_collection_no`),
+  KEY `idx_payment_offline_collection_voucher_pay` (`tenant_id`, `pay_order_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='线下收款支付凭证';

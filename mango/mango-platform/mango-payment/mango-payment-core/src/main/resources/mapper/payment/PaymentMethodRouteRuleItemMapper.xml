@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentMethodRouteRuleItemMapper">
+
+    <delete id="deleteByRuleId">
+        delete from payment_method_route_rule_item
+         where rule_id = #{ruleId}
+           and tenant_id = #{tenantId}
+    </delete>
+
+    <select id="selectItemsByRuleId" resultType="io.mango.payment.api.vo.PaymentMethodRouteRuleItemVO">
+        select rri.id,
+               rri.rule_id as ruleId,
+               rri.contract_capability_id as contractCapabilityId,
+               cc.id as contractId,
+               cc.contract_name as contractName,
+               c.id as channelId,
+               c.channel_name as channelName,
+               ccc.method_code as methodCode,
+               ccc.terminal_type as terminalType,
+               rri.priority,
+               rri.weight,
+               rri.min_amount as minAmount,
+               rri.max_amount as maxAmount,
+               rri.status
+        from payment_method_route_rule_item rri
+        join payment_channel_contract_capability ccc
+          on ccc.id = rri.contract_capability_id
+         and ccc.tenant_id = rri.tenant_id
+         and ccc.del_flag = 0
+        join payment_channel_contract cc
+          on cc.id = ccc.contract_id
+         and cc.tenant_id = rri.tenant_id
+         and cc.del_flag = 0
+        join payment_channel c
+          on c.id = cc.channel_id
+         and c.tenant_id = rri.tenant_id
+         and c.del_flag = 0
+        where rri.tenant_id = #{tenantId}
+          and rri.rule_id = #{ruleId}
+          and rri.del_flag = 0
+        order by rri.priority asc, rri.id asc
+    </select>
+</mapper>

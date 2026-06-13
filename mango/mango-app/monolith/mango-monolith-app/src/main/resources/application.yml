@@ -132,6 +132,9 @@ mango:
           enabled: true
         notice:
           enabled: true
+        payment:
+          enabled: true
+          ignore-missing-migrations: true
         domain:
           enabled: true
   ip-location:

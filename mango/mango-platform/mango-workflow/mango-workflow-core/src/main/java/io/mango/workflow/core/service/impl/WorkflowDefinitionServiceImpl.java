@@ -13,6 +13,7 @@ import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
 import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.workflow.api.WorkflowCode;
+import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
@@ -273,6 +274,27 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command) {
+        Require.notNull(command, WorkflowCode.DEFINITION_INVALID);
+        Long categoryId = ensureCategory(command);
+        WorkflowDefinition definition = mapper.selectOne(new LambdaQueryWrapper<WorkflowDefinition>()
+                .eq(WorkflowDefinition::getTenantId, resolveTenantId())
+                .eq(WorkflowDefinition::getDefinitionKey, command.getDefinitionKey().trim())
+                .last("limit 1"));
+        if (isPublishedAndDeployable(definition)) {
+            WorkflowDeployVO vo = new WorkflowDeployVO();
+            vo.setDeploymentId(definition.getDeploymentId());
+            vo.setProcessDefinitionId(definition.getProcessDefinitionId());
+            vo.setProcessDefinitionVersion(definition.getProcessDefinitionVersion());
+            vo.setVersionNo(definition.getPublishedVersionNo());
+            return R.ok(vo);
+        }
+        Long definitionId = definition == null ? createEnsuredDefinition(command, categoryId) : definition.getId();
+        return deploy(definitionId);
+    }
+
+    @Override
     public R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query) {
         Require.notNull(query, WorkflowCode.DEFINITION_INVALID);
         Require.notNull(query.getDefinitionId(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程定义ID不能为空");
@@ -358,6 +380,72 @@ public class WorkflowDefinitionServiceImpl implements IWorkflowDefinitionService
         if (StringUtils.hasText(command.getStatus())) {
             parseStatus(command.getStatus());
         }
+    }
+
+    private Long ensureCategory(EnsureWorkflowDefinitionCommand command) {
+        Require.notBlank(command.getDomainCode(), WorkflowCode.DEFINITION_INVALID.getCode(), "业务域不能为空");
+        Require.notBlank(command.getCategoryCode(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类编码不能为空");
+        Require.notBlank(command.getCategoryName(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类名称不能为空");
+        Require.notNull(command.getCategorySort(), WorkflowCode.DEFINITION_INVALID.getCode(), "流程分类排序不能为空");
+        validateDomain(command.getDomainCode());
+        String domainCode = command.getDomainCode().trim();
+        String categoryCode = command.getCategoryCode().trim();
+        WorkflowCategory category = categoryMapper.selectOne(new LambdaQueryWrapper<WorkflowCategory>()
+                .eq(WorkflowCategory::getTenantId, resolveTenantId())
+                .eq(WorkflowCategory::getDomainCode, domainCode)
+                .eq(WorkflowCategory::getCategoryCode, categoryCode)
+                .last("limit 1"));
+        if (category != null) {
+            return category.getId();
+        }
+        LocalDateTime now = LocalDateTime.now();
+        WorkflowCategory created = new WorkflowCategory();
+        created.setTenantId(resolveTenantId());
+        created.setCategoryName(command.getCategoryName().trim());
+        created.setCategoryCode(categoryCode);
+        created.setDomainCode(domainCode);
+        created.setSort(command.getCategorySort());
+        created.setStatus(1);
+        created.setRemark(trimToNull(command.getCategoryRemark()));
+        created.setCreatedBy(MangoContextHolder.userId());
+        created.setUpdatedBy(MangoContextHolder.userId());
+        created.setCreatedTime(now);
+        created.setCreatedAt(now);
+        created.setUpdatedTime(now);
+        created.setUpdatedAt(now);
+        categoryMapper.insert(created);
+        return created.getId();
+    }
+
+    private Long createEnsuredDefinition(EnsureWorkflowDefinitionCommand command, Long categoryId) {
+        SaveWorkflowDefinitionCommand definition = new SaveWorkflowDefinitionCommand();
+        definition.setCategoryId(categoryId);
+        definition.setDomainCode(command.getDomainCode());
+        definition.setOrgId(command.getOrgId());
+        definition.setAdminUsers(command.getAdminUsers());
+        definition.setIcon(command.getIcon());
+        definition.setDefinitionName(command.getDefinitionName());
+        definition.setDefinitionKey(command.getDefinitionKey());
+        definition.setDesignerJson(command.getDesignerJson());
+        definition.setFormCode(command.getFormCode());
+        definition.setFormJson(command.getFormJson());
+        definition.setStatus(WorkflowDefinitionStatus.DRAFT.name());
+        definition.setRemark(command.getRemark());
+        R<String> createResult = create(definition);
+        Require.isTrue(createResult != null && createResult.isSuccess(), WorkflowCode.DEFINITION_INVALID.getCode(),
+                createResult == null ? "流程定义创建失败" : createResult.getMsg());
+        return Long.valueOf(createResult.getData());
+    }
+
+    private boolean isPublishedAndDeployable(WorkflowDefinition definition) {
+        if (definition == null
+                || !WorkflowDefinitionStatus.PUBLISHED.name().equals(definition.getStatus())
+                || !StringUtils.hasText(definition.getProcessDefinitionId())) {
+            return false;
+        }
+        return repositoryService.createProcessDefinitionQuery()
+                .processDefinitionId(definition.getProcessDefinitionId())
+                .singleResult() != null;
     }
 
     private void copy(SaveWorkflowDefinitionCommand command, WorkflowDefinition entity) {

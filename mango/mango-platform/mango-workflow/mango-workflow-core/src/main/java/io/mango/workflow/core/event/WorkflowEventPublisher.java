@@ -1,6 +1,7 @@
 package io.mango.workflow.core.event;
 
 import io.mango.common.result.Require;
+import io.mango.infra.context.core.MangoContextHolder;
 import io.mango.infra.event.api.DomainEvent;
 import io.mango.infra.event.api.IDomainEventPublisher;
 import io.mango.workflow.core.entity.WorkflowDefinition;
@@ -134,6 +135,7 @@ public class WorkflowEventPublisher {
         Require.notBlank(processInstanceId, "流程实例ID不能为空");
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("processInstanceId", processInstanceId);
+        payload.put("tenantId", MangoContextHolder.tenantId());
         payload.put("businessType", stringVar(variables, VAR_BUSINESS_TYPE));
         payload.put("businessKey", stringVar(variables, VAR_BUSINESS_KEY));
         payload.put("applyId", stringVar(variables, VAR_APPLY_ID));

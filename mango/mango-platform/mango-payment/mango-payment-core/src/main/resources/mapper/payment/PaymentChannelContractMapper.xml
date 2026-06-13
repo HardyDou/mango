@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.mango.payment.core.mapper.PaymentChannelContractMapper">
+
+    <select id="countDeleteRelations" resultType="long">
+        select (
+            (select count(1)
+               from payment_method_route_rule_item rri
+               join payment_channel_contract_capability ccc
+                 on ccc.id = rri.contract_capability_id
+                and ccc.tenant_id = rri.tenant_id
+              where rri.tenant_id = #{tenantId}
+                and rri.status = 1
+                and ccc.contract_id = #{contractId})
+            +
+            (select count(1)
+               from payment_order po
+               left join payment_channel_contract_capability ccc
+                 on ccc.id = po.contract_capability_id
+                and ccc.tenant_id = po.tenant_id
+              where po.tenant_id = #{tenantId}
+                and (po.contract_id = #{contractId}
+                  or ccc.contract_id = #{contractId}))
+        )
+    </select>
+
+    <select id="selectActiveConfigValuesJson" resultType="string">
+        select config_values_json
+        from payment_channel_contract
+        where tenant_id = #{tenantId}
+          and id = #{contractId}
+          and status = 1
+          and del_flag = 0
+        limit 1
+    </select>
+</mapper>

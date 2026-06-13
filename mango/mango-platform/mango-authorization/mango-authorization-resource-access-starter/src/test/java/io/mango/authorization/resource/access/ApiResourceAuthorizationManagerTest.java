@@ -18,9 +18,11 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("API resource authorization manager tests")
 class ApiResourceAuthorizationManagerTest {
@@ -62,6 +64,36 @@ class ApiResourceAuthorizationManagerTest {
         assertFalse(manager.check(this::authentication, new RequestAuthorizationContext(request)).isGranted());
     }
 
+    @Test
+    @DisplayName("resource decision should use application path without context path")
+    void resourceDecisionShouldUseApplicationPathWithoutContextPath() {
+        CapturingApi api = new CapturingApi(ApiResourceAccessMode.PUBLIC);
+        IAuthorizationProvider authorizationProvider =
+                query -> AuthorizationSnapshot.of(List.of(), List.of(), List.of());
+        ApiResourceAuthorizationManager manager = new ApiResourceAuthorizationManager(api, authorizationProvider);
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/openapi/pay/orders");
+        request.setContextPath("/api");
+        request.setServletPath("/openapi/pay/orders");
+
+        assertTrue(manager.check(() -> null, new RequestAuthorizationContext(request)).isGranted());
+        assertEquals("/openapi/pay/orders", api.path);
+    }
+
+    @Test
+    @DisplayName("external api prefix should be stripped when resource decision is unmatched")
+    void externalApiPrefixShouldBeStrippedWhenResourceDecisionIsUnmatched() {
+        PathDecisionApi api = new PathDecisionApi(Map.of(
+                "POST /api/payment/channel-callbacks/fuiou", ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN),
+                "POST /payment/channel-callbacks/fuiou", new ApiResourceAccessDecisionVO(true, ApiResourceAccessMode.PUBLIC, null)
+        ));
+        IAuthorizationProvider authorizationProvider =
+                query -> AuthorizationSnapshot.of(List.of(), List.of(), List.of());
+        ApiResourceAuthorizationManager manager = new ApiResourceAuthorizationManager(api, authorizationProvider);
+
+        assertTrue(manager.check(() -> null, context("POST", "/api/payment/channel-callbacks/fuiou")).isGranted());
+        assertEquals(2, api.resolveCount);
+    }
+
     private ApiResourceAuthorizationManager manager(
             ApiResourceAccessMode accessMode,
             String permissionCode,
@@ -94,6 +126,60 @@ class ApiResourceAuthorizationManagerTest {
         @Override
         public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
             return R.ok(new ApiResourceAccessDecisionVO(true, accessMode, permissionCode));
+        }
+
+        @Override
+        public R<Void> refreshApiResourceCache() {
+            return R.ok();
+        }
+    }
+
+    private static class CapturingApi implements ApiResourceApi {
+
+        private final ApiResourceAccessMode accessMode;
+        private String path;
+
+        CapturingApi(ApiResourceAccessMode accessMode) {
+            this.accessMode = accessMode;
+        }
+
+        @Override
+        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
+            return R.ok(ApiResourceRegisterResultVO.empty());
+        }
+
+        @Override
+        public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
+            this.path = query.getPath();
+            return R.ok(new ApiResourceAccessDecisionVO(true, accessMode, null));
+        }
+
+        @Override
+        public R<Void> refreshApiResourceCache() {
+            return R.ok();
+        }
+    }
+
+    private static class PathDecisionApi implements ApiResourceApi {
+
+        private final Map<String, ApiResourceAccessDecisionVO> decisions;
+        private int resolveCount;
+
+        PathDecisionApi(Map<String, ApiResourceAccessDecisionVO> decisions) {
+            this.decisions = decisions;
+        }
+
+        @Override
+        public R<ApiResourceRegisterResultVO> registerApiResources(List<ApiResourceRegisterCommand> resources) {
+            return R.ok(ApiResourceRegisterResultVO.empty());
+        }
+
+        @Override
+        public R<ApiResourceAccessDecisionVO> resolveAccessDecision(ApiResourceAccessDecisionQuery query) {
+            resolveCount++;
+            return R.ok(decisions.getOrDefault(
+                    query.getHttpMethod() + " " + query.getPath(),
+                    ApiResourceAccessDecisionVO.unmatched(ApiResourceAccessMode.LOGIN)));
         }
 
         @Override
