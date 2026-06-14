@@ -1,0 +1,207 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+
+function read(relativePath) {
+  return fs.readFileSync(path.join(root, relativePath), 'utf8');
+}
+
+function assertIncludes(file, patterns, failures) {
+  const text = read(file);
+  for (const pattern of patterns) {
+    if (!text.includes(pattern)) {
+      failures.push(`${file}: missing expected text "${pattern}"`);
+    }
+  }
+}
+
+function assertNotIncludes(file, patterns, failures) {
+  const text = read(file);
+  for (const pattern of patterns) {
+    if (text.includes(pattern)) {
+      failures.push(`${file}: should not contain "${pattern}"`);
+    }
+  }
+}
+
+function assertNoLongTermRuleLanguage(file, failures) {
+  const allowedLines = [
+    '长期规范只维护在 `mango-pmo/rules/**`',
+    '长期规则只维护在 `mango-pmo`，不要在入口文件复制规则正文。',
+    '长期前端规则只维护在 `mango-pmo/rules/frontend/**`',
+    '长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。'
+  ];
+  const ruleTerms = ['必须', '禁止', '不允许', '不得', '不应', '只允许'];
+  const lines = read(file).split(/\r?\n/);
+  lines.forEach((line, index) => {
+    if (allowedLines.includes(line.trim())) {
+      return;
+    }
+    for (const term of ruleTerms) {
+      if (line.includes(term)) {
+        failures.push(`${file}:${index + 1}: entry or guide file should link PMO rules instead of carrying long-term rule wording "${term}"`);
+      }
+    }
+  });
+}
+
+const failures = [];
+const entryFiles = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
+
+assertIncludes('AGENTS.md', [
+  '只做入口和路由',
+  '[mango-pmo/rules/00-dev-flow.md]',
+  '[mango-pmo/rules/06-document-assets.md]',
+  '[mango-pmo/rules/08-capability-docs.md]',
+  'node mango-pmo/tools/pmo-preflight.mjs'
+], failures);
+
+assertIncludes('CLAUDE.md', [
+  '只做 Claude 入口和路由',
+  'mango-pmo/rules/00-dev-flow.md',
+  'mango-pmo/rules/06-document-assets.md',
+  'mango-pmo/rules/08-capability-docs.md',
+  'node mango-pmo/tools/pmo-preflight.mjs'
+], failures);
+
+assertIncludes('GEMINI.md', [
+  '只做 Gemini 入口和路由',
+  'mango-pmo/rules/00-dev-flow.md',
+  'mango-pmo/rules/06-document-assets.md',
+  'mango-pmo/rules/08-capability-docs.md',
+  'node mango-pmo/tools/pmo-preflight.mjs'
+], failures);
+
+for (const entryFile of entryFiles) {
+  assertNoLongTermRuleLanguage(entryFile, failures);
+  // These legacy fragments are negative regression sentinels for entry files only.
+  assertNotIncludes(entryFile, [
+    '以下情况必须执行',
+    '以下情况不需要执行',
+    '开工回显',
+    '交付报告',
+    'PMO preflight 的首要目的不是审批命令',
+    '简单问答、概念解释、使用说明',
+    'git pull --ff-only',
+    '解决冲突、修复问题或形成交付结论'
+  ], failures);
+}
+
+assertIncludes('mango-docs/README.md', [
+  'Mango 能力地图',
+  '业务接入场景手册',
+  '文档资产归档边界',
+  'mango-pmo'
+], failures);
+assertNotIncludes('mango-docs/README.md', [
+  '只放：',
+  '不放：',
+  '规范统一放：',
+  '规范\n- 流程',
+  'Agent 定义',
+  'Skill 规则'
+], failures);
+
+assertIncludes('mango-pmo/rules/00-dev-flow.md', ['# Mango PMO 总流程'], failures);
+assertIncludes('mango-pmo/rules/08-capability-docs.md', ['# 能力说明维护规范'], failures);
+
+assertIncludes('mango-docs/capabilities/README.md', [
+  '本文只做能力索引，不复制规范正文',
+  '正式交付规则以 preflight 输出和 `mango-pmo/rules/**` 为准',
+  '[验证方式](../../mango/mango-platform/mango-auth/README.md#10-验证方式)'
+], failures);
+assertNotIncludes('mango-docs/capabilities/README.md', ['必须', '禁止'], failures);
+
+for (const entryReadme of ['README.md', 'mango/README.md', 'mango-ui/README.md', 'mango-business-starter/README.md']) {
+  assertNoLongTermRuleLanguage(entryReadme, failures);
+}
+
+for (const frontendEntryReadme of [
+  'mango-ui/packages/auth/src/views/README.md',
+  'mango-ui/packages/file/src/components/README.md',
+  'mango-ui/packages/job/src/views/README.md',
+  'mango-ui/packages/rbac/src/views/README.md',
+  'mango-ui/packages/system/src/components/README.md',
+  'mango-ui/packages/workflow/src/components/README.md'
+]) {
+  assertNoLongTermRuleLanguage(frontendEntryReadme, failures);
+}
+
+function walkMarkdown(dir, results = []) {
+  if (!fs.existsSync(path.join(root, dir))) {
+    return results;
+  }
+  for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+    const relativePath = path.join(dir, entry.name).split(path.sep).join('/');
+    if (entry.isDirectory()) {
+      walkMarkdown(relativePath, results);
+    } else if (entry.name.endsWith('.md')) {
+      results.push(relativePath);
+    }
+  }
+  return results;
+}
+
+for (const guide of walkMarkdown('mango-docs/guides')) {
+  assertNoLongTermRuleLanguage(guide, failures);
+}
+
+assertIncludes('mango-pmo/templates/module-readme.md', [
+  '## 1. 能力定位',
+  '## 4. 模块边界',
+  '## 10. 验证方式',
+  '## 13. 关联 PMO 规则'
+], failures);
+
+assertIncludes('.github/pull_request_template.md', [
+  '## PMO / Scope',
+  '## Capability Docs',
+  'Not applicable reason',
+  '## Validation',
+  '## PMO Exceptions'
+], failures);
+
+assertIncludes('.github/workflows/pmo-doc-check.yml', [
+  'node mango-pmo/tools/check-governance-intent.mjs',
+  'node mango-pmo/tools/audit-module-readmes.mjs',
+  'node mango-pmo/tools/audit-readme-source-facts.mjs',
+  'github.event.pull_request.base.sha',
+  'github.event.pull_request.head.sha',
+  'PR_BODY_FILE'
+], failures);
+
+const index = JSON.parse(read('mango-pmo/rules/index.json'));
+if (!index.rules?.['process.capabilityDocs']) {
+  failures.push('mango-pmo/rules/index.json: missing process.capabilityDocs');
+}
+if (!index.roles?.pmo?.includes('process.capabilityDocs')) {
+  failures.push('mango-pmo/rules/index.json: pmo role must include process.capabilityDocs');
+}
+if (!index.phases?.governance?.includes('process.capabilityDocs')) {
+  failures.push('mango-pmo/rules/index.json: governance phase must include process.capabilityDocs');
+}
+const capabilityBundle = index.bundles?.capabilityDocs;
+if (!capabilityBundle) {
+  failures.push('mango-pmo/rules/index.json: missing capabilityDocs bundle');
+} else {
+  for (const expectedPath of ['mango-docs/capabilities/**', 'mango/**/README.md', 'mango/**/src/**', 'mango-ui/packages/**/src/**', 'mango-business-starter/**']) {
+    if (!capabilityBundle.paths?.includes(expectedPath)) {
+      failures.push(`mango-pmo/rules/index.json: capabilityDocs bundle missing path ${expectedPath}`);
+    }
+  }
+  for (const expectedRule of ['process.capabilityDocs', 'process.documentAssets']) {
+    if (!capabilityBundle.include?.includes(expectedRule)) {
+      failures.push(`mango-pmo/rules/index.json: capabilityDocs bundle missing include ${expectedRule}`);
+    }
+  }
+}
+
+if (failures.length > 0) {
+  console.error(`Governance intent check failed:\n${failures.map((failure) => `- ${failure}`).join('\n')}`);
+  process.exit(1);
+}
+
+console.log('Governance intent checks passed');

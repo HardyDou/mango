@@ -1,21 +1,21 @@
 # Mango Gemini 入口
 
-@./mango-pmo/rules/00-dev-flow.md
-@./mango-pmo/agents/01-pm-agent.md
-@./mango-pmo/agents/02-tech-lead-agent.md
-@./mango-pmo/agents/03-dev-agent.md
-@./mango-pmo/agents/04-qa-agent.md
-@./mango-pmo/agents/05-pmo-agent.md
+本文件只做 Gemini 入口和路由。长期规则只维护在 `mango-pmo`，不要在入口文件复制规则正文。
 
-## 1. 唯一规范源
+## 1. 规范源
 
-- `mango-pmo` 是唯一长期规范源。
-- `mango-docs` 只放设计文档、Sprint 计划、交付记录和历史设计，不作为规范源。
-- 本文件只做 Gemini 入口，不复制长期规则正文。
+- PMO 总流程：@./mango-pmo/rules/00-dev-flow.md
+- 文档资产边界：@./mango-pmo/rules/06-document-assets.md
+- 能力说明维护：@./mango-pmo/rules/08-capability-docs.md
+- PM Agent：@./mango-pmo/agents/01-pm-agent.md
+- Tech Lead Agent：@./mango-pmo/agents/02-tech-lead-agent.md
+- Dev Agent：@./mango-pmo/agents/03-dev-agent.md
+- QA Agent：@./mango-pmo/agents/04-qa-agent.md
+- PMO Agent：@./mango-pmo/agents/05-pmo-agent.md
 
-## 2. 开工前强制步骤
+## 2. Preflight
 
-开始实质分析、计划或改文件前，必须执行 PMO preflight：
+按 PMO 总流程判断是否执行 preflight。需要执行时使用：
 
 ```bash
 node mango-pmo/tools/pmo-preflight.mjs \

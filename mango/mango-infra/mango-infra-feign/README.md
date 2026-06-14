@@ -1,72 +1,87 @@
-# mango-infra-feign
+# Mango Infra Feign
 
-> OpenFeign RPC 基础设施 - 服务间声明式调用
+## 1. 能力定位
 
-## 已实现
+`mango-infra-feign` 提供 OpenFeign RPC 基础设施，负责服务间声明式调用的重试、日志、上下文透传、内部调用标记和模块目标路由。
 
-- **OpenFeign 自动配置** - 超时、重试、日志、请求拦截器
-- **FeignProperties** - `mango.feign.*` 配置属性
-- **FeignRequestInterceptor** - 透传 MangoContext 与 Authorization token
-- **Retryer** - 可配置重试机制
+## 2. 适用场景
 
-## 依赖
+- 微服务模块通过 Feign 调用平台或业务服务。
+- 需要透传 MangoContext、Authorization token 或内部调用标记。
+- 需要按模块目标补充 Feign 调用上下文。
+
+## 3. 不适用场景
+
+- 不定义具体业务 Feign Client。
+- 不负责服务注册发现、网关路由或业务鉴权。
+- 不替代接口契约测试和超时重试的业务幂等设计。
+
+## 4. 模块边界
+
+本模块只提供 Feign starter 和拦截器。业务模块负责定义自己的 Feign Client、fallback、API 契约和调用幂等。
+
+## 5. 接入方式
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.infra.feign</groupId>
     <artifactId>mango-infra-feign-starter</artifactId>
 </dependency>
 ```
 
-## 配置
+自动配置入口为 `FeignAutoConfiguration`。
 
-```yaml
-mango:
-  feign:
-    enabled: true
-    connect-timeout: 5000      # 连接超时 (ms)
-    read-timeout: 10000       # 读取超时 (ms)
-    retry: 3                   # 重试次数
-    logger-level: BASIC       # 日志级别: NONE/BASIC/HEADERS/FULL
-    interceptor-enabled: true # 启用请求拦截器
+## 6. 配置项
+
+配置前缀：`mango.feign`。
+
+已发现字段包括 `enabled`、`connectTimeout`、`readTimeout`、`retry`、`loggerLevel`、`interceptorEnabled`、`moduleTargetEnabled`、`internal-call-enabled`、`token-propagation-enabled`。
+
+当前代码中 `connectTimeout`、`readTimeout` 用于重试器参数，不等同于全局 Feign `Request.Options` 超时 Bean；需要全局请求超时时应结合 OpenFeign 原生配置确认。
+
+## 7. 对外接口 / 扩展点
+
+- `FeignRequestInterceptor`
+- `ModuleTargetFeignInterceptor`
+- `InternalCallFeignInterceptor`
+- `FeignTokenFilter`
+
+本模块未发现业务 Controller 或业务 Feign Client。
+
+## 8. 数据库 / 初始化数据
+
+未发现数据库 migration 或初始化数据。
+
+## 9. 菜单 / 权限 / 租户
+
+本模块不提供菜单或权限资源。租户、用户和内部调用上下文通过请求头透传，具体解释由接收方和安全模块负责。
+
+## 10. 验证方式
+
+```bash
+mvn -f mango/pom.xml -pl mango-infra/mango-infra-feign -am test
 ```
 
-## 使用方式
+代表性测试入口：`ModuleTargetFeignInterceptorTest`。
 
-### Feign 声明式调用
+## 11. 业务接入最小闭环
 
-```java
-@FeignClient(name = "user-service", path = "/user")
-public interface UserFeignClient {
+业务 remote starter 中定义 `@FeignClient(name = "<module-name>", path = "/<module-path>")`，并让接口继承 api 模块契约。启用 `mango.feign.interceptor-enabled` 后会透传 Mango 上下文；启用 `mango.feign.internal-call-enabled` 后会附加内部调用签名 header；启用 `mango.feign.token-propagation-enabled` 后会捕获并透传入口 token。
 
-    @GetMapping("/detail")
-    R<User> getById(@RequestParam Long id);
+验收断言覆盖：调用方 Feign 能解析目标服务，接收方可读取用户/租户上下文，内部接口只接受带有效内部调用标记的请求，重试不会破坏非幂等写接口。
 
-    @GetMapping("/by-username")
-    R<User> getByUsername(@RequestParam String username);
-}
-```
+## 12. 常见问题
 
-### Fallback 降级
+- 调用方拿不到上下文时检查 Feign 拦截器开关和请求头是否被覆盖。
+- 重试会放大非幂等接口风险，业务写接口需要明确幂等策略。
+- fallback 逻辑应留在业务模块，不放入 infra feign。
 
-```java
-@Component
-public class UserFeignClientFallback implements UserFeignClient {
-    @Override
-    public R<User> getById(Long id) {
-        return R.fail("User service unavailable");
-    }
-}
+## 13. 关联 PMO 规则
 
-@FeignClient(name = "user-service", path = "/user", fallback = UserFeignClientFallback.class)
-public interface UserFeignClient {
-    // ...
-}
-```
+- [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 设计决策
+## 14. 历史设计 / 交付记录
 
-- OpenFeign 是服务间 RPC 的主要方式，注解驱动，类型安全
-- 重试机制基于 Retryer.Default，支持指数退避
-- 请求拦截器用于传递 MangoContext 请求头（`X-Mango-*`）与 `Authorization`
-- 日志级别默认 BASIC，生产环境按需调整为 FULL
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)

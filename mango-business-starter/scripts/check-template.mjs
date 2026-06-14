@@ -138,11 +138,11 @@ const contentChecks = [
   },
   {
     file: 'topologies/monolith/README.md',
-    patterns: ['{{moduleKebab}}-starter', '单体 app 不依赖 `{{moduleKebab}}-starter-remote`'],
+    patterns: ['<module>-starter', '不应依赖业务模块的 remote starter', '<module>/<aggregate>/index'],
   },
   {
     file: 'topologies/microservice/README.md',
-    patterns: ['{{moduleKebab}}-starter-remote', '调用方不得依赖 `{{moduleKebab}}-core`'],
+    patterns: ['<module>-starter-remote', '调用方需要通过 `starter-remote` 访问业务服务', '调用方需要直接依赖业务模块 `core` 才能完成调用'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/pom.xml',
@@ -158,7 +158,7 @@ const contentChecks = [
   },
   {
     file: 'business-pmo/README.md',
-    patterns: ['business-pmo/mango-baseline/tools/pmo-preflight.mjs', '业务团队不得在普通业务需求中直接修改 `mango-baseline`'],
+    patterns: ['business-pmo/mango-baseline/tools/pmo-preflight.mjs', '不随普通业务需求直接修改 `mango-baseline/**`'],
   },
   {
     file: 'business-pmo/mango-baseline/rules/index.json',

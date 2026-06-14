@@ -10,6 +10,18 @@
 
 - [mango-pmo/rules/06-document-assets.md](../mango-pmo/rules/06-document-assets.md)
 
+## 能力地图
+
+能力地图用于快速定位 Mango 模块能力、README、验证入口和相关 PMO 规则链接；长期规范仍以 `mango-pmo` 为准。
+
+- [Mango 能力地图](./capabilities/README.md)
+
+## 业务接入场景
+
+面向业务开发者的接入和排障手册：
+
+- [业务接入场景手册](./guides/business-integration/README.md)
+
 ## 顶层设计
 
 | 文档 | 说明 |
@@ -24,8 +36,8 @@
 | 计划 | 状态 | 说明 |
 |------|------|------|
 | [sprint-00](./plans/2026-04-07-sprint-00-mango-module-architecture-plan.md) | 已完成 | 模块架构总纲 |
-| [sprint-03](./plans/2026-04-08-sprint-03-mango-infra-kv-iucase-refactor.md) | 已完成 | mango-infra-kv IUCASE 重构 |
-| [sprint-04](./plans/2026-04-08-sprint-04-mango-infra-kv-memoryxistore-fix.md) | 已完成 | kv MemoryXistore 修复 |
+| [sprint-03](./plans/2026-04-08-sprint-03-mango-infra-dal-iucase-refactor.md) | 已完成 | mango-infra-kv IUCASE 重构 |
+| [sprint-04](./plans/2026-04-08-sprint-04-mango-infra-dal-memoryxistore-fix.md) | 已完成 | kv MemoryXistore 修复 |
 | [sprint-04b](./plans/2026-04-08-sprint-04b-dal-naming-fix.md) | 已完成 | kv 命名修复 |
 | [sprint-05](./plans/2026-04-08-sprint-05-mango-infra-crypto.md) | 已完成 | 国密算法实现 |
 | [sprint-06](./plans/2026-04-08-sprint-06-mango-infra-security.md) | 已完成 | 权限注解、AOP 切面 |

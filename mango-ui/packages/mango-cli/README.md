@@ -1,67 +1,51 @@
 # @mango/cli
 
-Mango project CLI.
+## 1. 能力定位
 
-## Install
+`@mango/cli` 是 Mango 项目初始化、业务模块追加、PMO baseline 同步、开发工作区校验和启动编排的命令行入口。主要使用者是业务项目开发者、Mango 维护者和需要生成模板项目的 Agent。
 
-The CLI package is published as `@mango/cli` to avoid collisions with the public `mango-cli` package name. The installed command names remain `mango` and `mango-cli`.
+代码事实：
+
+- 包名 `@mango/cli`，bin 命令为 `mango` 和 `mango-cli`。
+- 命令入口 `src/index.mjs`。
+- 项目模板目录 `templates/full`。
+- 业务模块模板目录 `templates/business-module`。
+- 版本锁文件 `release-versions.json`。
+
+## 2. 适用场景
+
+- `mango init` 生成 full/custom 业务项目。
+- `mango add` 或 `mango module add` 追加业务模块和聚合页面。
+- `mango pmo sync` 同步业务 PMO baseline、Agent 入口和兼容脚本。
+- `mango validate`、`mango doctor`、`mango plan` 校验开发工作区。
+- `mango start`、`mango stop`、`mango status`、`mango logs` 管理本地开发应用。
+
+## 3. 不适用场景
+
+- 不负责运行 Mango 后端服务本身。
+- 不替代 Maven、pnpm、Vite 和浏览器端验收。
+- 不自动修改业务项目中已有的业务自定义代码。
+- 不作为前端运行时依赖引入业务应用。
+
+## 4. 模块边界
+
+CLI 负责模板生成、静态契约检查、工作区命令编排和 PMO baseline 同步。模板内容来自 `mango-business-starter` 和 CLI 内置模板；生成后的业务项目由业务仓库维护。
+
+## 5. 接入方式
+
+安装：
 
 ```bash
 npm install -g @mango/cli --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-mango init mango-admin-demo --preset full --topology monolith
 ```
 
-## Upgrade
-
-Check the latest published CLI version:
+常用命令：
 
 ```bash
-npm view @mango/cli version --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-```
-
-Upgrade the global CLI:
-
-```bash
-npm install -g @mango/cli@latest --registry=http://nexus.inner.yunxinbaokeji.com/repository/npm-group/
-```
-
-Read version changes in [CHANGELOG.md](./CHANGELOG.md) before upgrading a business project.
-
-After upgrading, show the same release notes directly from the installed CLI:
-
-```bash
-mango changelog
-```
-
-Existing generated projects are not modified automatically by upgrading the global CLI. For generated project template changes, either regenerate the project with the new CLI or copy the affected generated files from a clean project created by the target CLI version.
-
-For startup runner upgrades, existing generated projects should run:
-
-```bash
-mango pmo sync --project-dir ./claim-admin --sync-shell
-mango validate
-mango plan
-```
-
-`--sync-shell` updates compatibility shell scripts and adds `mango.dev.json` when it is missing. It does not overwrite an existing business-owned `mango.dev.json`.
-
-## Development Workspace
-
-`mango` searches upward from the current directory for `mango.dev.json`.
-
-Committed project file:
-
-- `mango.dev.json`: app list, groups, dependencies, folders, startup commands, health checks.
-
-Local private files:
-
-- `.mango/dev-workspace.env`: local ports, database, credentials and switches.
-- `.mango/dev-workspace.local.json`: optional local override for app paths or commands.
-
-Common commands:
-
-```bash
-mango init-dev
+mango init <project> --preset full --topology monolith
+mango add <module>
+mango module add <module> --aggregate <name>
+mango pmo sync --project-dir <dir> --sync-shell
 mango validate
 mango doctor
 mango plan
@@ -69,146 +53,79 @@ mango start
 mango status
 mango logs <app>
 mango stop
+mango changelog
 ```
 
-Compatibility scripts still work:
+## 6. 配置项
+
+CLI 向上查找 `mango.dev.json` 作为开发工作区配置。
+
+本地私有配置：
+
+- `.mango/dev-workspace.env`
+- `.mango/dev-workspace.local.json`
+
+版本锁来源：
+
+- `release-versions.json`，包含 Maven `mangoBackend` 和 NPM `@mango/*` 包版本。
+
+## 7. 对外接口 / 扩展点
+
+命令面：
+
+- `init <project> --preset full|custom`
+- `add <module...>`
+- `module add <module> --aggregate <name>`
+- `pmo sync --project-dir <dir> [--dry-run] [--write-agents] [--sync-shell]`
+- `init-dev`、`validate`、`doctor`、`plan`、`start`、`stop`、`status`、`logs`、`changelog`
+
+模板扩展点：
+
+- `templates/full`
+- `templates/business-module`
+- `release-versions.json`
+- `scripts/check-cli.mjs`
+- `scripts/check-release-versions.mjs`
+
+## 8. 数据库 / 初始化数据
+
+本包不包含数据库 migration。数据库结构来自生成项目中的后端模块模板和 Mango 后端平台模块。
+
+## 9. 菜单 / 权限 / 租户
+
+CLI 只生成或同步菜单、权限和 PMO 相关模板文件，不在运行时管理权限和租户。生成后的菜单权限应由业务模块资源清单、authorization migration 或业务 PMO 交付记录维护。
+
+## 10. 验证方式
+
+CLI 自测：
 
 ```bash
-scripts/dev-workspace.sh start
-scripts/dev-workspace.sh backend
-scripts/dev-workspace.sh frontend
+pnpm -F @mango/cli test
 ```
 
-For multiple applications, edit only `mango.dev.json`:
+该脚本执行 `check:release-versions` 和 `scripts/check-cli.mjs`，会临时生成项目并检查 full/custom 项目、版本、PMO preflight、`mango validate`、`mango plan`、PMO sync 等契约。
 
-- add each backend/frontend under `apps`
-- put common startup sets under `groups`
-- use `dependsOn` to start dependencies first
-- use `health` so dependent apps wait for backend readiness
+## 11. 业务接入最小闭环
 
-Backend Maven startup should use an explicit Spring Boot plugin coordinate, for example `org.springframework.boot:spring-boot-maven-plugin:3.5.14:run`, not the `spring-boot:run` prefix.
+full 项目路径：安装 CLI，执行 `mango init <project> --preset full --topology monolith|microservice`，进入生成目录安装依赖，执行 `mango validate`、`mango plan`、`mango start`，再分别做后端和前端构建验收。
 
-## Init
+custom 项目或已有项目追加模块时使用 `mango module add <module> --aggregate <name>`；full preset 下部分 `mango add` 路径会被保护性拒绝，应根据错误提示改用 module 命令或同步模板。验收断言覆盖：生成项目 PMO preflight 可执行，业务模块 api/core/starter/starter-remote 和前端页面包齐全，菜单 component key 与 resource manifest 对齐。
 
-```bash
-mango init mango-admin-demo --preset full --topology monolith
-```
+## 12. 常见问题
 
-`full` preset generates a standalone Mango Admin consumer project. The generated frontend consumes published Mango npm packages through `@mango/admin/full` and `@mango/admin/style-full.css`; the generated backend consumes the Maven `mango-admin-starter`.
+- 升级全局 CLI 不会自动改写已有业务项目，需要运行 `mango pmo sync` 或按新模板迁移。
+- 修改模板后，同步检查 `release-versions.json` 和 CLI 自测。
+- `mango validate` 失败时先检查 `mango.dev.json`、本地 env 和应用路径是否匹配。
 
-Use `custom` when the business project only needs selected optional modules:
+## 13. 关联 PMO 规则
 
-```bash
-mango init claim-admin --preset custom --modules workflow,template --topology monolith
-```
+- [开发流程规范](../../../mango-pmo/rules/00-dev-flow.md)
+- [交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
+- [文档资产规范](../../../mango-pmo/rules/06-document-assets.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-`custom` always keeps the required authorization/system group and only adds the optional modules listed in `--modules`. `workflow-example` automatically adds `workflow`.
+## 14. 历史设计 / 交付记录
 
-Supported optional modules:
-
-- `file`: 文件中心
-- `template`: 模板管理
-- `notice`: 通知中心
-- `numgen`: 编号规则
-- `calendar`: 工作日历
-- `workflow`: 审批中心
-- `workflow-example`: 审批示例
-
-`--modules all` selects every optional module. `--modules none` creates only the required core group.
-
-## Add
-
-Add optional modules to an existing generated project:
-
-```bash
-mango add notice --project-dir ./claim-admin
-```
-
-`add` updates CLI-managed integration files only:
-
-- `mango.config.json`
-- `frontend/package.json`
-- `frontend/src/main.ts`
-- `frontend/public/runtime-config*.json`
-- `backend/pom.xml`
-
-Business-owned files are not rewritten by `add`.
-
-## PMO Baseline Sync
-
-Sync or upgrade the Mango PMO baseline in an existing business project:
-
-```bash
-mango pmo sync --project-dir ./claim-admin
-```
-
-`pmo sync` creates or updates:
-
-- `business-pmo/mango-baseline/**`
-- `business-pmo/README.md`
-- missing `business-docs/plans/` examples
-
-It writes the Mango commit, CLI version, and sync time into the baseline README. It does not overwrite business-owned `business-pmo/rules/**` files, and it leaves existing business docs in place.
-
-Sync generated startup shell scripts at the same time:
-
-```bash
-mango pmo sync --project-dir ./claim-admin --sync-shell
-```
-
-`--sync-shell` updates:
-
-- `scripts/dev-workspace.sh`
-- `scripts/backend-dev.sh`
-- missing `mango.dev.json`
-
-Use `--dry-run` first to review the files that will change.
-
-Preview changes without writing files:
-
-```bash
-mango pmo sync --project-dir ./claim-admin --dry-run
-```
-
-When a root `AGENTS.md` points to an external `/Users/.../mango-pmo`, migrate it to the project-local baseline entry with:
-
-```bash
-mango pmo sync --project-dir ./claim-admin --write-agents
-```
-
-## Business Module
-
-Generate an enterprise-owned business module in an existing generated project:
-
-```bash
-mango module add contract --aggregate seal --module-name 合同管理 --project-dir ./claim-admin
-```
-
-`module add` renders the business starter backend module and frontend packages, then updates:
-
-- `backend/pom.xml`
-- `backend/app/pom.xml`
-- `backend/app/src/main/resources/application.yml`
-- `frontend/package.json`
-- `frontend/src/main.ts`
-- `mango.config.json`
-
-The generated backend module uses Mango persistence (`mango-infra-persistence-starter`) and MyBatis-Plus through the framework starter. It enables the business module Flyway migration in the generated app configuration, creates a real table, and is not a fixed-response demo.
-
-## Registry Credentials
-
-Credentials are not written into generated files. Maven credentials stay in the user's Maven `settings.xml`; npm credentials stay in user-level npm config or CI secrets.
-
-## Scope
-
-The CLI generates Mango consumer projects from released Maven and npm materials:
-
-- full stack frontend and backend project generation
-- monolith and microservice topology skeletons
-- private Maven and npm registry configuration without credentials
-- unified Mango framework versions rendered into generated files
-- Mango PMO baseline documents in generated projects
-- Mango PMO baseline sync and upgrade for existing business projects
-- optional Mango module selection for custom business projects
-- additive optional module integration through `mango add`
-- enterprise-owned business module generation through `mango module add`
+- [CHANGELOG](./CHANGELOG.md)
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+- [Business Starter](../../../mango-business-starter/README.md)

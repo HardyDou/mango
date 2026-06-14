@@ -41,3 +41,56 @@
 | 富友微信/支付宝扫码真实付款闭环 | 原因：当前真实返回存在“未找到路由”，数据库失败记录显示富友侧未给该商户路由到对应扫码能力 | 1 分钱微信/支付宝扫码付款仍需富友确认商户能力/路由后复测 | 工作日向富友确认商户号 `0002900F0370542`、机构号 `08A9999999` 的微信/支付宝扫码路由配置 | 用户已要求登记并工作日咨询富友工作人员 |
 | 富友网银真实付款完成与后台回调 | 原因：已验证表单生成和 PAYING 状态，但未在富友网银页面真实完成付款 | 网银最终成功回调和查单推进仍需真实银行测试动作 | 使用 1 分钱订单真实跳转富友网银完成付款后，检查 `payment_order_status_flow.trigger_source` 是否为回调或主动查单 | 未最终人工付款 |
 | 支付中心 E2E 数据隔离 | 当前 E2E 依赖隔离测试库并直接写入 tenant `1` 测试数据；已加 `PAYMENT_E2E_ALLOW_SHARED_DB_MUTATION=true` 显式运行保护 | 不能把该用例作为共享开发库或多租户隔离证明 | 后续应迁移为独立测试库/独立租户 fixture，并补 teardown 和重复执行验证 | 未最终完成隔离改造 |
+
+## 6. 2026-06-13 富友测试数据基线记录
+
+本节记录 2026-06-13 回归后实际使用的富友测试数据基线。本次回归未新增其它富友临时测试物料。
+
+### 6.1 基线对象
+
+| 对象 | 基线值 | 说明 |
+|---|---|---|
+| 租户 | `1` | 本地回归测试租户 |
+| 富友通道 | `FUIOU_PAY` / `330005` | 内置富友支付通道 |
+| 富友测试签约 | `FUIOU_PAY_MANGO_TECH` / `331009` | 当前唯一富友测试签约基线 |
+| 富友测试商户号 | `0002900F0370542` | 富友公开 demo 商户物料 |
+| 富友测试机构号 | `08A9999999` | 富友公开 demo 机构物料 |
+| 私钥记录口径 | 只校验存在性、长度和摘要，不在证据中输出原文 | 运行库校验 `privateKey` 存在，长度 `848`，sha256 `d38e589ddf28a5cacd638d3e251497aa0d19c5d620ff05005401c51826f060dc` |
+
+### 6.2 本轮回归结论
+
+| 能力 | 结果 | 证据 |
+|---|---|---|
+| 富友扫码创建订单 | PASS | `POST /payment/cashier/pay` 返回 `code=200`，订单 `PO2026061300000007`，状态 `PAYING`，物料 `QR` |
+| 富友扫码结果查询 | PASS | `GET /payment/cashier/pay-result?payOrderNo=PO2026061300000007` 返回 `code=200`，状态 `PAYING` |
+| 富友扫码同步查单 | PASS | `POST /payment/cashier/pay-result/sync?payOrderNo=PO2026061300000007` 返回 `code=200`，状态保持 `PAYING` |
+| 富友网银创建订单 | PASS | `POST /payment/cashier/pay` 返回 `code=200`，订单 `PO2026061300000008`，状态 `PAYING`，物料 `HTML_FORM` |
+| 富友网银结果查询 | PASS | `GET /payment/cashier/pay-result?payOrderNo=PO2026061300000008` 返回 `code=200`，状态 `PAYING` |
+| 富友网银同步查单 | BASELINE_EXCEPTION | `POST /payment/cashier/pay-result/sync?payOrderNo=PO2026061300000008` 返回 `code=3731`、`msg=富友接口调用失败`。该问题作为当前基线已知限制记录，不再归因于商户私钥缺失。 |
+| 富友退款成功链路 | BLOCKED | 当前测试订单均为 `PAYING`，没有富友确认成功支付订单；网银能力本身 `supports_refund=0`，扫码退款需成功支付后复测。 |
+| 富友本地订单核验 | BASELINE_EXCEPTION | 后台 token 调用 `/payment/reconciliations/local-order-check/generate` 返回 `code=3781`、`msg=账单日期内没有富友确认成功的支付或退款订单`。 |
+| 富友完整账单和对账 | BASELINE_EXCEPTION | 当前能力表 `supports_bill=0`、`supports_reconcile=0`，`payment_channel_bill_source` 数量为 `0`，不声明完整机构账单下载或完整对账通过。 |
+
+### 6.3 验证命令
+
+```bash
+mvn -pl mango-platform/mango-payment/mango-payment-core \
+  -Dtest=PaymentFuiouPayMigrationTest,PaymentFuiouPayConfigParserTest,PaymentFuiouPayChannelAdapterTest test
+```
+
+```bash
+.runtime/fuiou-regression/run-fuiou-regression.sh
+```
+
+```bash
+curl -H 'Authorization: Bearer <masked>' \
+  -H 'Content-Type: application/json' \
+  -X POST http://127.0.0.1:18918/payment/reconciliations/local-order-check/generate \
+  --data '{"channelCode":"FUIOU_PAY","contractId":331009,"billDate":"2026-06-13"}'
+```
+
+### 6.4 基线说明
+
+- `V101__payment_fuiou_public_demo_private_key_restore.sql` 已恢复公开 demo 商户私钥，并只在 `privateKey` 为空或缺失时生效，不覆盖人工维护值。
+- 运行态数据库已验证 `FUIOU_PAY_MANGO_TECH` 的 `privateKey` 非空；本次回归记录的数据库状态为 V101 执行后的状态。
+- 本次回归实际使用 `FUIOU_PAY_MANGO_TECH / 0002900F0370542` 作为富友测试物料；未使用其它临时富友测试数据作为本次验收依据。

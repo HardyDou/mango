@@ -1,159 +1,95 @@
-# mango-infra-web
+# Mango Infra Web
 
-> Mango Web 基础设施，分为轻量契约 `api` 和 Spring Web 实现 `starter`。
+## 1. 能力定位
 
-## 模块结构
+`mango-infra-web` 提供 HTTP API 契约和 Spring Web 启动器，覆盖请求上下文、内部调用标记、MDC、CORS、全局异常处理和内部路径扫描。
 
-```text
-mango-infra-web/
-├── mango-infra-web-api       # @Inner、IInternalPathProvider、IRequestContextProvider、RequestContextSnapshot
-└── mango-infra-web-starter   # 过滤器、扫描器、Servlet 提供器、MDC、异常处理、CORS 配置
-```
+## 2. 适用场景
 
-## 职责边界
+- 业务 API 需要声明内部接口。
+- Web 应用需要把请求头转换为 Mango 上下文。
+- 需要全局异常处理、trace id、MDC 和 CORS 基础配置。
+- 需要扫描 `@Inner` 接口并提供内部路径集合。
 
-- `api`：只放 Web 入口边界契约，不依赖 Spring Boot starter。
-- `starter`：封装 Spring Web 入口横切能力，兼容 Spring Boot 原生配置。
-- 不负责：登录、JWT 解析、权限判断、租户业务规则、网关路由决策。
+## 3. 不适用场景
 
-## 依赖方式
+- 不负责登录、JWT 解析或 token 签发。
+- 不负责角色权限判断和 API 资源策略。
+- 不负责网关路由和服务间 Feign 调用。
+- 不替代业务 Controller 的参数校验和领域异常建模。
 
-业务 API 如需声明内部接口：
+## 4. 模块边界
+
+`mango-infra-web-api` 提供轻量契约，`mango-infra-web-starter` 提供 Spring Web 过滤器、异常处理、上下文 Provider 和扫描器。认证、授权和访问控制由 auth、authorization、access 模块负责。
+
+## 5. 接入方式
+
+声明内部接口或使用 Web 契约：
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.infra.web</groupId>
     <artifactId>mango-infra-web-api</artifactId>
 </dependency>
 ```
 
-暴露 HTTP Controller 的 starter：
+Web 应用接入 starter：
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.infra.web</groupId>
     <artifactId>mango-infra-web-starter</artifactId>
 </dependency>
 ```
 
-依赖 `mango-infra-web-starter` 后不要重复声明 `spring-boot-starter-web`。
+## 6. 配置项
 
-## Spring Boot 配置兼容
+配置前缀：`mango.web`。
 
-`mango-infra-web` 不重新包装 Spring Boot 原生 Web 配置。以下配置继续按 Spring Boot 原生方式使用：
+已发现配置分组包括 `cors`、`inner`、`mdc`、`requestContext`，来源 `MangoWebProperties`。自动配置还使用 `mango.web.context.enabled` 控制 `MangoContextWebFilter`，`mango.web.request-context.enabled` 只控制 `IRequestContextProvider` 装配。
 
-- `server.*`
-- `spring.mvc.*`
-- `spring.web.*`
-- `spring.servlet.multipart.*`
-- `spring.jackson.*`
-- `spring.messages.*`
-- `server.error.*`
-- `management.endpoints.web.*`
+## 7. 对外接口 / 扩展点
 
-Mango 只新增项目横切能力配置：
+- 注解：`@Inner`
+- API：`IRequestContextProvider`、`IInternalPathProvider`、`RequestContextSnapshot`
+- 过滤器：`InternalCallFilter`、`MangoContextWebFilter`、`WebMdcFilter`
+- 支撑组件：`GlobalExceptionHandler`、`ServletRequestContextProvider`、`InnerMappingScanner`、`AggregatingInternalPathProvider`、`InnerMappingInternalPathProvider`、`WebTraceIdResolver`
 
-```yaml
-mango:
-  web:
-    request-context:
-      enabled: true
-    mdc:
-      enabled: true
-    inner:
-      enabled: true
-      secret: ""
-      timestamp-tolerance-seconds: 300
-      nonce-ttl-seconds: 300
-      path-refresh-interval-seconds: 300
-    cors:
-      enabled: true
-      allowed-origin-patterns:
-        - "*"
-      allowed-methods:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - OPTIONS
-      allowed-headers:
-        - "*"
-      allow-credentials: true
-      max-age: 3600
-```
+## 8. 数据库 / 初始化数据
 
-内部调用相关配置只使用 `mango.web.inner.*`。
+未发现数据库 migration 或初始化数据。
 
-## 请求上下文
+## 9. 菜单 / 权限 / 租户
 
-`IRequestContextProvider` 统一提供：
+本模块不提供菜单或权限资源。请求上下文中可包含租户、用户和 trace 信息，但权限解释由上层模块负责。
 
-| 字段 | 来源 |
-|------|------|
-| `requestId` | `X-Mango-Request-Id`，缺省使用 Servlet request id |
-| `traceId` | SkyWalking TraceContext、W3C `traceparent`、`X-Mango-Trace-Id`、`X-Mango-Request-Id` |
-| `clientIp` | `X-Forwarded-For` 首个 IP，其次 `X-Real-IP`，最后 `remoteAddr` |
-| `headers` | 当前 HTTP headers |
-| `cookies` | 当前 HTTP cookies |
-| `request` | 当前 Servlet request，历史兼容变量 |
-
-`MangoContextWebFilter` 会把 HTTP 请求事实初始化到 `MangoContextHolder`，后续认证过滤器补齐主体字段，Feign 再统一透传 `X-Mango-*` 请求头。
-
-## @Inner 内部接口
-
-`@Inner` 放在 `mango-infra-web-api`：
-
-```java
-@Inner
-@PostMapping("/rbac/user/sync")
-R<Void> syncUser(@RequestBody SyncUserCommand command);
-```
-
-支持标注位置：
-
-- `XxxApi` 类
-- `XxxApi` 方法
-- Controller 类
-- Controller 方法
-
-启动后 `InnerMappingScanner` 会扫描 Spring MVC handler，将最终路径写入内部路径 provider。
-
-## 内部路径聚合
-
-`InternalCallFilter` 只消费聚合后的 `IInternalPathProvider`：
-
-- `@Inner` 扫描结果
-- 模块自定义 `IInternalPathProvider`
-- 数据库配置 provider
-
-命中内部路径时才要求内部调用 Header 与签名：
-
-- `X-Internal-Call: true`
-- `X-Internal-Timestamp`
-- `X-Internal-Nonce`
-- `X-Internal-Signature`
-- 可选 `X-Internal-Secret-Version`
-
-## MDC / Trace
-
-`WebMdcFilter` 在请求生命周期内写入：
-
-- `requestId`
-- `traceId`
-- `clientIp`
-
-请求结束后自动清理 MDC，避免线程复用污染。
-
-## 禁止事项
-
-- 禁止 `api` 依赖 `mango-infra-web-starter`。
-- 禁止依赖 `mango-infra-web-starter` 的模块重复声明 `spring-boot-starter-web`。
-- 禁止在 `infra-web` 实现认证、权限、租户业务规则。
-
-## 验证命令
+## 10. 验证方式
 
 ```bash
-cd mango
-mvn -q test -pl mango-infra/mango-infra-web -am
-mvn -q mango:check -Drule=web-boundary
+mvn -f mango/pom.xml -pl mango-infra/mango-infra-web -am test
 ```
+
+测试入口位于 `mango-infra-web-starter/src/test/java/io/mango/infra/web/**`。
+
+## 11. 业务接入最小闭环
+
+Web 应用接入 starter 后，入口请求头会被转换为 Mango 请求上下文；需要声明内部接口时在 Controller 或 API 方法上使用 `@Inner`。CORS、MDC、request-context、context 和 inner 按环境配置开启或关闭。
+
+内部调用保护需要配置 `mango.web.inner.secret`，并依赖 infra-kv 存储 nonce 防重放。验收断言覆盖：请求上下文可读取用户/租户/trace，`@Inner` 路径被扫描到，缺失或错误内部签名会被拒绝，trace id 在日志中连续。
+
+## 12. 常见问题
+
+- 下游拿不到上下文时检查入口是否经过 `MangoContextWebFilter`。
+- 内部接口未识别时检查 `@Inner` 注解位置和 `InnerMappingScanner` 扫描结果。
+- 内部调用保护不生效时检查 infra-kv、`mango.web.inner.secret` 和 nonce 配置。
+- trace id 不连续时检查网关、Feign 和 Web MDC 配置是否一致。
+
+## 13. 关联 PMO 规则
+
+- [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 历史设计 / 交付记录
+
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)

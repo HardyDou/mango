@@ -1,117 +1,130 @@
 # Mango Access
 
-> 外部流量入口、Token 初筛、运行时上下文头注入、网关暴露面同步。
+## 1. 能力定位
 
-## 模块职责
+`mango-access` 提供边界入口访问控制能力，主要服务于网关应用、单体 Web 应用和需要在请求进入业务模块前完成认证初筛的 Mango 开发者。
 
-| 职责 | 说明 |
-|------|------|
-| 外部入口 | 微服务拓扑下统一承接外部 HTTP 请求 |
-| Token 初筛 | 校验 `Authorization` 中的 access token，拒绝无效 token 和 refresh token |
-| API 访问策略 | 通过 `ApiResourceApi` 读取已同步的 `@ApiAccess` 资源策略，支持 PUBLIC / LOGIN / PERMISSION / INTERNAL |
-| 权限鉴权 | PERMISSION 接口使用服务端已注册资源中的 `permissionCode` 鉴权 |
-| 上下文注入 | 校验通过后向下游注入 `X-Mango-*` 运行时上下文头 |
-| 暴露面同步 | 边界入口应用可通过 `mango-authorization-resource-sync-starter` 同步 Spring Cloud Gateway route Path 到 authorization |
+代码事实：
 
-认证业务、权限模型、资源存储由 `mango-auth`、`mango-authorization` 承担。边界入口不维护公共路径白名单表。
+- 聚合模块 `io.mango.platform.access:mango-access`。
+- 子模块包括 `mango-access-core`、`mango-access-web-starter`、`mango-access-gateway-starter`。
+- 核心配置类为 `AccessProperties`，配置前缀是 `mango.access`。
+- 单体入口为 Servlet `AuthFilter`，网关入口为 `AuthGlobalFilter`。
 
-## 子模块
+## 2. 适用场景
 
-```text
-mango-access/
-├── mango-access-core            # 访问决策核心
-├── mango-access-web-starter     # 单体模式 Servlet Filter 自动配置
-└── mango-access-gateway-starter # 微服务模式 Spring Cloud Gateway 自动配置
-```
+- 微服务拓扑下，在 Spring Cloud Gateway 入口统一拦截外部 HTTP 请求。
+- 单体应用中，在 Servlet Filter 阶段完成 token 校验、访问策略判断，并写入 request attributes 与 `MangoContextHolder`。
+- 需要根据 `mango-authorization` 已同步的 API 资源策略判断 PUBLIC、LOGIN、PERMISSION、INTERNAL 访问模式。
+- 需要把认证后的用户、租户、应用入口等上下文传递给下游服务。
 
-## 访问策略
+## 3. 不适用场景
 
-| 访问模式 | 边界入口行为 |
-|----------|----------|
-| PUBLIC | 直接放行 |
-| LOGIN | 必须校验 access token，校验通过后转发 |
-| PERMISSION | 必须校验 access token 和权限码，校验通过后转发 |
-| INTERNAL | 直接返回 403，不允许外部访问 |
+- 不负责登录、刷新 token、注销 token，这些能力属于 `mango-auth`。
+- 不维护账号资料、机构成员或外部身份绑定，这些能力属于 `mango-identity`。
+- 不维护角色、菜单、权限码和 API 资源表，这些能力属于 `mango-authorization`。
+- 不替代业务服务内部的数据权限和领域校验。
 
-访问策略来自 `mango-authorization` 的 `ApiResourceApi`。业务接口通过 `@ApiAccess` 声明策略，并由 `mango-authorization-resource-sync-starter` 同步到 `authorization_api_resource`。
+## 4. 模块边界
 
-PERMISSION 接口必须在服务端注解中声明权限码，例如：
+`mango-access` 负责请求进入边界时的访问决策和上下文传递；认证事实来自 `mango-auth`，资源策略和权限快照来自 `mango-authorization`，请求上下文落地依赖 `mango-infra-web`。
 
-```java
-@PermissionAccess("system:user:list")
-@GetMapping("/system/users/list")
-public R<Page<UserVO>> list(UserPageQuery query) {
-    ...
-}
-```
+访问模式边界：
 
-边界入口只信任 `mango-authorization` 已同步资源中的 `permissionCode`。客户端 query 参数中的 `permissionCode` 不参与最终鉴权，避免人为组装或借用其它权限码绕过接口真实访问策略。
+- PUBLIC：匿名放行。
+- LOGIN：要求 access token 有效。
+- PERMISSION：要求 access token 有效且具备资源声明的权限码。
+- INTERNAL：外部入口拒绝访问。
 
-## 上下文头
+## 5. 接入方式
 
-边界入口校验 token 通过后，会向下游服务注入 Mango 运行时上下文头：
-
-| Header | 来源 |
-|--------|------|
-| `X-Mango-User-Id` | token userId |
-| `X-Mango-Principal-Name` | token username |
-| `X-Mango-Tenant-Id` | token `tenantId` claim |
-| `X-Mango-Realm` | token `realm` claim |
-| `X-Mango-Actor-Type` | token `actorType` claim |
-| `X-Mango-Party-Type` | token `partyType` claim |
-| `X-Mango-Party-Id` | token `partyId` claim |
-| `X-Mango-App-Code` | token `appCode` claim |
-
-下游服务由 `mango-infra-web` 初始化 `MangoContext`，由 `mango-auth-starter` / `mango-authorization-support` 写入 Spring Security 上下文。
-
-## 单体模式
-
-单体模式使用 `mango-access-web-starter`，注册 Servlet `AuthFilter`。
+单体 Web 应用接入：
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.platform.access</groupId>
     <artifactId>mango-access-web-starter</artifactId>
 </dependency>
 ```
 
-单体应用内应存在 `ApiResourceApi` Bean。通常由 `mango-authorization-starter` 的 `ApiResourceController` 提供。
-
-## 微服务模式
-
-微服务网关模式使用 `mango-access-gateway-starter`，注册 Spring Cloud Gateway `AuthGlobalFilter`。
+网关应用接入：
 
 ```xml
 <dependency>
-    <groupId>io.mango</groupId>
+    <groupId>io.mango.platform.access</groupId>
     <artifactId>mango-access-gateway-starter</artifactId>
 </dependency>
 ```
 
-`mango-access-gateway-starter` 依赖远程安全聚合能力，通过 Feign 读取 API 访问策略和用户权限。该模块不是 remote starter，不暴露 Feign 客户端。
+应用内应同时具备可调用的 token provider、`ApiResourceApi` 和授权快照提供者实现，具体由本地 starter 或 remote starter 装配。
 
-## 配置
+## 6. 配置项
 
-```yaml
-mango:
-  access:
-    auth-enabled: true
-    require-permission-code: false
-  security:
-    jwt:
-      secret: ${JWT_SECRET:mango-secret-key-change-in-production-must-be-at-least-32-chars}
+配置前缀：`mango.access`。
+
+已发现配置入口：
+
+- `AccessProperties`：访问控制总配置。
+- `mango.access.auth-enabled`：访问控制总开关。
+- `mango.access.require-permission-code`：PERMISSION 模式下权限码缺失时是否拒绝。
+- token 入口覆盖 Authorization header、query token 和 cookie token。
+- IP 白名单匹配由 `IpWhitelistMatcher` 承担。
+
+具体字段以 `mango-access-core/src/main/java/io/mango/access/core/config/AccessProperties.java` 为准；README 不复制长期默认值规则。
+
+## 7. 对外接口 / 扩展点
+
+- `AccessService`：访问决策核心服务。
+- `AccessContextValidator`：请求上下文校验。
+- `AccessPrincipal`：访问主体模型。
+- `AuthFilter`：Servlet 单体模式过滤器，写入 request attributes 和 `MangoContextHolder`。
+- `AuthGlobalFilter`：Gateway 微服务模式过滤器，以 `X-Mango-*` 头传递用户、租户、登录域、主体类型和应用入口。
+
+## 8. 数据库 / 初始化数据
+
+本模块未发现独立 Flyway migration。API 资源、权限码、角色和菜单数据由 `mango-authorization` 维护。
+
+## 9. 菜单 / 权限 / 租户
+
+本模块不提供管理菜单。权限判断读取 `mango-authorization` 的 API 资源策略和授权快照；租户上下文来自 token claim 和 Mango 请求上下文。
+
+## 10. 验证方式
+
+最小验证命令：
+
+```bash
+mvn -f mango/pom.xml -pl mango-platform/mango-access -am test
 ```
 
-`mango-access-gateway-starter` 不注册业务路由。网关路由统一使用 Spring Cloud Gateway 原生配置 `spring.cloud.gateway.routes`，可写在本地 `application.yml`，也可由 Nacos 配置中心下发。
+当前代码中可见的单测主要覆盖 `mango-access-web-starter` 的 Servlet Filter 行为。Gateway starter 的 `AuthGlobalFilter` 需要在网关集成环境或专门测试中补充验收，不能只用 Servlet Filter 单测代表网关链路。
 
-## Gateway 路由资源同步
+代表性验收：
 
-`mango-authorization-resource-sync-starter` 会在检测到 `RouteDefinitionLocator` 和 `ApiResourceApi` 时同步 `spring.cloud.gateway.routes` 中的 `Path` 路由：
+- PUBLIC 接口无 token 可通过。
+- LOGIN 接口无 token 被拒绝，有效 access token 可通过。
+- PERMISSION 接口无权限码授权时被拒绝。
+- INTERNAL 接口从外部入口访问被拒绝。
+- IP 白名单、`auth-enabled=false`、缺权限码强校验、refresh token 拒绝访问、Servlet 与 Gateway 上下文传递差异需要分别覆盖。
 
-- 每个 Path pattern 注册为一条资源。
-- `httpMethod=ALL`。
-- `resourceCode=GATEWAY:/path/pattern`。
-- 默认 `accessMode=LOGIN`。
-- 可通过 route metadata `apiAccessMode` 覆盖为 `PUBLIC / LOGIN / INTERNAL`。
+## 11. 业务接入最小闭环
 
-该能力只用于外部入口暴露面治理和审计，不替代业务服务内的 `@ApiAccess` 资源同步。业务接口是否公开、是否登录、是否需要权限，仍以服务内接口同步到 `authorization_api_resource` 的访问策略为准。
+单体应用接入 `mango-access-web-starter`，网关接入 `mango-access-gateway-starter`，并确认 token provider、`ApiResourceApi` 和授权快照提供者已装配。业务接口通过 authorization 注解或资源清单声明 PUBLIC、LOGIN、PERMISSION、INTERNAL，access 只消费同步后的资源策略。
+
+验收时至少准备四类接口分别验证匿名放行、登录态要求、权限码要求和外部拒绝。下游只信任入口写入的 request attributes、`MangoContextHolder` 或网关传递的 `X-Mango-*` 头，不信任客户端自带权限码或租户声明。
+
+## 12. 常见问题
+
+- 如果资源策略不符合预期，先检查业务接口是否通过 `mango-authorization-resource-sync-starter` 完成同步。
+- 如果下游拿不到用户或租户上下文，检查边界入口是否接入对应 starter，并检查 `X-Mango-*` 头是否被代理层剥离。
+- 如果单体模式和网关模式行为不一致，优先对照 `AuthFilter` 和 `AuthGlobalFilter` 的装配路径。
+
+## 13. 关联 PMO 规则
+
+- [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
+- [后端安全规范](../../../mango-pmo/rules/backend/06-security.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 历史设计 / 交付记录
+
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
