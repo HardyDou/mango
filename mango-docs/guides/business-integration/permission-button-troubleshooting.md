@@ -62,3 +62,7 @@ pnpm -F @mango/admin-shell build
 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)
+
+## 8. 变更影响记录
+
+- PR #153 Maven revision 支持只调整构建和发布版本解析，不改变按钮权限的公开 API、配置、权限、租户、页面和运行时行为。
