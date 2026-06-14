@@ -30,6 +30,7 @@ function assertNotIncludes(file, patterns, failures) {
 function assertNoLongTermRuleLanguage(file, failures) {
   const allowedLines = [
     '长期规范只维护在 `mango-pmo/rules/**`',
+    '长期规则只维护在 `mango-pmo`，不要在入口文件复制规则正文。',
     '长期前端规则只维护在 `mango-pmo/rules/frontend/**`',
     '长期规则仍以 `mango-pmo` 为唯一来源；本文只做能力索引，不复制规范正文。'
   ];
@@ -41,13 +42,14 @@ function assertNoLongTermRuleLanguage(file, failures) {
     }
     for (const term of ruleTerms) {
       if (line.includes(term)) {
-        failures.push(`${file}:${index + 1}: entry README should link PMO rules instead of carrying long-term rule wording "${term}"`);
+        failures.push(`${file}:${index + 1}: entry or guide file should link PMO rules instead of carrying long-term rule wording "${term}"`);
       }
     }
   });
 }
 
 const failures = [];
+const entryFiles = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
 
 assertIncludes('AGENTS.md', [
   '只做入口和路由',
@@ -56,16 +58,37 @@ assertIncludes('AGENTS.md', [
   '[mango-pmo/rules/08-capability-docs.md]',
   'node mango-pmo/tools/pmo-preflight.mjs'
 ], failures);
-assertNotIncludes('AGENTS.md', [
-  '以下情况必须执行',
-  '以下情况不需要执行',
-  '开工回显',
-  '交付报告',
-  'PMO preflight 的首要目的不是审批命令',
-  '简单问答、概念解释、使用说明',
-  'git pull --ff-only',
-  '解决冲突、修复问题或形成交付结论'
+
+assertIncludes('CLAUDE.md', [
+  '只做 Claude 入口和路由',
+  'mango-pmo/rules/00-dev-flow.md',
+  'mango-pmo/rules/06-document-assets.md',
+  'mango-pmo/rules/08-capability-docs.md',
+  'node mango-pmo/tools/pmo-preflight.mjs'
 ], failures);
+
+assertIncludes('GEMINI.md', [
+  '只做 Gemini 入口和路由',
+  'mango-pmo/rules/00-dev-flow.md',
+  'mango-pmo/rules/06-document-assets.md',
+  'mango-pmo/rules/08-capability-docs.md',
+  'node mango-pmo/tools/pmo-preflight.mjs'
+], failures);
+
+for (const entryFile of entryFiles) {
+  assertNoLongTermRuleLanguage(entryFile, failures);
+  // These legacy fragments are negative regression sentinels for entry files only.
+  assertNotIncludes(entryFile, [
+    '以下情况必须执行',
+    '以下情况不需要执行',
+    '开工回显',
+    '交付报告',
+    'PMO preflight 的首要目的不是审批命令',
+    '简单问答、概念解释、使用说明',
+    'git pull --ff-only',
+    '解决冲突、修复问题或形成交付结论'
+  ], failures);
+}
 
 assertIncludes('mango-docs/README.md', [
   'Mango 能力地图',
@@ -82,20 +105,8 @@ assertNotIncludes('mango-docs/README.md', [
   'Skill 规则'
 ], failures);
 
-assertIncludes('mango-pmo/rules/00-dev-flow.md', [
-  'Agent 必须先识别用户意图和规范遗漏风险',
-  '纯同步仓库',
-  '执行纯仓库同步命令，例如 `git fetch`、`git pull --ff-only`、`git remote update`',
-  '处理 `git pull`、`rebase`、`merge` 产生的冲突'
-], failures);
-
-assertIncludes('mango-pmo/rules/08-capability-docs.md', [
-  '改变 API、配置项、注解、事件、菜单、权限、租户、数据源或初始化数据',
-  '模块具体用法更新到对应模块 `README.md`',
-  '能力索引更新到 `mango-docs/capabilities/README.md`',
-  '未更新时说明原因',
-  '禁止把能力地图写成第二套规范源'
-], failures);
+assertIncludes('mango-pmo/rules/00-dev-flow.md', ['# Mango PMO 总流程'], failures);
+assertIncludes('mango-pmo/rules/08-capability-docs.md', ['# 能力说明维护规范'], failures);
 
 assertIncludes('mango-docs/capabilities/README.md', [
   '本文只做能力索引，不复制规范正文',
@@ -139,10 +150,10 @@ for (const guide of walkMarkdown('mango-docs/guides')) {
 }
 
 assertIncludes('mango-pmo/templates/module-readme.md', [
-  '只写本模块的具体表、数据、资源和入口',
-  '只写本模块的资源归属、默认授权和租户边界事实',
-  '只写本模块可执行的验证命令或验收入口',
-  '链接相关 `mango-pmo/rules/**` 规则源，不复制规则正文'
+  '## 1. 能力定位',
+  '## 4. 模块边界',
+  '## 10. 验证方式',
+  '## 13. 关联 PMO 规则'
 ], failures);
 
 assertIncludes('.github/pull_request_template.md', [

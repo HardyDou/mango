@@ -23,7 +23,7 @@
 - `mango-payment-api` 提供支付业务码、Command、Query、VO 和模块 API。
 - `mango-payment-core` 提供领域模型、Mapper、Service、通道适配、Flyway 迁移、状态流和编号生成适配。
 - `mango-payment-starter` 提供自动配置、Web Controller、调度入口和模块声明。
-- `mango-payment-starter-remote` 提供远程调用适配。
+- `mango-payment-starter-remote` 提供远程调用依赖装配入口。
 
 支付中心依赖 `mango-numgen` 生成平台编号，依赖 `mango-authorization` 初始化菜单和权限，依赖 `mango-workflow` 支撑退款审批，依赖 `mango-file` 保存证书或凭据类文件。
 
@@ -61,10 +61,14 @@ Maven 依赖：
 - `PaymentChannelContractApi`
 - `PaymentMethodApi`
 - `PaymentMethodRouteApi`
+- `PaymentEnterpriseSubjectApi`
 - `PaymentOrderApi`
 - `PaymentRefundOrderApi`
 - `PaymentRefundApprovalApi`
 - `PaymentReconciliationApi`
+- `PaymentTransactionFlowApi`
+- `PaymentExceptionOrderApi`
+- `PaymentObservabilityApi`
 - `PaymentDifferenceApi`
 - `PaymentSettlementSummaryApi`
 - `PaymentOfflineCollectionApi`

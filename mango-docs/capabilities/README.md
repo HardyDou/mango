@@ -42,6 +42,7 @@
 | 通知 Notice | `mango/mango-platform/mango-notice` | [README](../../mango/mango-platform/mango-notice/README.md) | [验证方式](../../mango/mango-platform/mango-notice/README.md#10-验证方式) |
 | 编号生成 Numgen | `mango/mango-platform/mango-numgen` | [README](../../mango/mango-platform/mango-numgen/README.md) | [验证方式](../../mango/mango-platform/mango-numgen/README.md#10-验证方式) |
 | 组织 Org | `mango/mango-platform/mango-org` | [README](../../mango/mango-platform/mango-org/README.md) | [验证方式](../../mango/mango-platform/mango-org/README.md#10-验证方式) |
+| 支付 Payment | `mango/mango-platform/mango-payment` | [README](../../mango/mango-platform/mango-payment/README.md) | [验证方式](../../mango/mango-platform/mango-payment/README.md#10-验证方式) |
 | 初始化种子 Seed | `mango/mango-platform/mango-seed` | [README](../../mango/mango-platform/mango-seed/README.md) | [验证方式](../../mango/mango-platform/mango-seed/README.md#10-验证方式) |
 | 系统 System | `mango/mango-platform/mango-system` | [README](../../mango/mango-platform/mango-system/README.md) | [验证方式](../../mango/mango-platform/mango-system/README.md#10-验证方式) |
 | 模板 Template | `mango/mango-platform/mango-template` | [README](../../mango/mango-platform/mango-template/README.md) | [验证方式](../../mango/mango-platform/mango-template/README.md#10-验证方式) |
@@ -85,6 +86,7 @@
 | CLI | `@mango/cli` | [README](../../mango-ui/packages/mango-cli/README.md) | [验证方式](../../mango-ui/packages/mango-cli/README.md#10-验证方式) |
 | 通知前端 | `@mango/notice` | [README](../../mango-ui/packages/notice/README.md) | [验证方式](../../mango-ui/packages/notice/README.md#10-验证方式) |
 | 编号前端 | `@mango/numgen` | [README](../../mango-ui/packages/numgen/README.md) | [验证方式](../../mango-ui/packages/numgen/README.md#10-验证方式) |
+| 支付前端 | `@mango/payment` | [README](../../mango-ui/packages/payment/README.md) | [验证方式](../../mango-ui/packages/payment/README.md#10-验证方式) |
 | RBAC API | `@mango/rbac` | [README](../../mango-ui/packages/rbac/README.md) | [验证方式](../../mango-ui/packages/rbac/README.md#10-验证方式) |
 | 系统前端 | `@mango/system` | [README](../../mango-ui/packages/system/README.md) | [验证方式](../../mango-ui/packages/system/README.md#10-验证方式) |
 | 模板前端 | `@mango/template` | [README](../../mango-ui/packages/template/README.md) | [验证方式](../../mango-ui/packages/template/README.md#10-验证方式) |
