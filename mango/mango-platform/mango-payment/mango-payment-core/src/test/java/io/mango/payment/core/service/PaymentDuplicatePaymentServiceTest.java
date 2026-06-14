@@ -28,7 +28,7 @@ class PaymentDuplicatePaymentServiceTest {
     private PaymentOrderMapper paymentOrderMapper;
     private PaymentRefundOrderMapper refundOrderMapper;
     private PaymentTransactionFlowMapper transactionFlowMapper;
-    private PaymentExceptionOrderService exceptionOrderService;
+    private PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private PaymentOrderStatusFlowService statusFlowService;
     private PaymentNumberService numberService;
     private PaymentDuplicatePaymentService service;
@@ -38,7 +38,7 @@ class PaymentDuplicatePaymentServiceTest {
         paymentOrderMapper = mock(PaymentOrderMapper.class);
         refundOrderMapper = mock(PaymentRefundOrderMapper.class);
         transactionFlowMapper = mock(PaymentTransactionFlowMapper.class);
-        exceptionOrderService = mock(PaymentExceptionOrderService.class);
+        exceptionOrderRecordService = mock(PaymentExceptionOrderRecordService.class);
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_FLOW_NO)).thenReturn("PF2026060600000001");
@@ -47,7 +47,7 @@ class PaymentDuplicatePaymentServiceTest {
                 paymentOrderMapper,
                 refundOrderMapper,
                 transactionFlowMapper,
-                exceptionOrderService,
+                exceptionOrderRecordService,
                 new PaymentOrderStateService(),
                 statusFlowService,
                 numberService);
@@ -108,11 +108,11 @@ class PaymentDuplicatePaymentServiceTest {
         io.mango.payment.core.entity.PaymentExceptionOrderEntity exceptionOrder =
                 new io.mango.payment.core.entity.PaymentExceptionOrderEntity();
         exceptionOrder.setExceptionNo("EX2026060600000001");
-        when(exceptionOrderService.createIfAbsent(
+        when(exceptionOrderRecordService.createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_DUPLICATE_PAYMENT),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_DUPLICATE_PAYMENT),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("重复成功支付已落库，当前通道未具备自动退款适配器，已挂起异常处理"),
                 eq(eventTime))).thenReturn(exceptionOrder);
         ArgumentCaptor<PaymentTransactionFlowEntity> flowCaptor = ArgumentCaptor.forClass(PaymentTransactionFlowEntity.class);
@@ -129,11 +129,11 @@ class PaymentDuplicatePaymentServiceTest {
         assertThat(result.refunded()).isFalse();
         assertThat(result.refundOrderNo()).isNull();
         assertThat(result.exceptionNo()).isEqualTo("EX2026060600000001");
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_DUPLICATE_PAYMENT),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_DUPLICATE_PAYMENT),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("重复成功支付已落库，当前通道未具备自动退款适配器，已挂起异常处理"),
                 eq(eventTime));
         verify(transactionFlowMapper).insert(flowCaptor.capture());

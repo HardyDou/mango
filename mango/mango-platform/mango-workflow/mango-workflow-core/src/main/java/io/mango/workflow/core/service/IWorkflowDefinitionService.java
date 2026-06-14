@@ -2,7 +2,6 @@ package io.mango.workflow.core.service;
 
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
-import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.SaveWorkflowDefinitionCommand;
 import io.mango.workflow.api.command.UpdateWorkflowDefinitionStatusCommand;
@@ -18,7 +17,7 @@ import java.util.List;
 /**
  * 流程定义服务。
  */
-public interface IWorkflowDefinitionService extends WorkflowDefinitionApi {
+public interface IWorkflowDefinitionService {
 
     R<PageResult<WorkflowDefinitionVO>> page(WorkflowDefinitionPageQuery query);
 
@@ -36,7 +35,6 @@ public interface IWorkflowDefinitionService extends WorkflowDefinitionApi {
 
     R<WorkflowDeployVO> deploy(Long id);
 
-    @Override
     R<WorkflowDeployVO> ensurePublished(EnsureWorkflowDefinitionCommand command);
 
     R<List<WorkflowDefinitionVersionVO>> versions(WorkflowDefinitionVersionQuery query);

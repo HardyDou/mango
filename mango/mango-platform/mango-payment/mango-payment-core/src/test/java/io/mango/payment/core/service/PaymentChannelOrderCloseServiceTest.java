@@ -34,7 +34,7 @@ class PaymentChannelOrderCloseServiceTest {
     private PaymentOperationAuditService auditService;
     private PaymentNotificationService notificationService;
     private PaymentOrderStatusFlowService statusFlowService;
-    private PaymentExceptionOrderService exceptionOrderService;
+    private PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private PaymentChannelOrderCloseService service;
 
     @BeforeEach
@@ -45,7 +45,7 @@ class PaymentChannelOrderCloseServiceTest {
         auditService = mock(PaymentOperationAuditService.class);
         notificationService = mock(PaymentNotificationService.class);
         statusFlowService = mock(PaymentOrderStatusFlowService.class);
-        exceptionOrderService = mock(PaymentExceptionOrderService.class);
+        exceptionOrderRecordService = mock(PaymentExceptionOrderRecordService.class);
         service = new PaymentChannelOrderCloseService(
                 paymentOrderMapper,
                 businessOrderMapper,
@@ -54,7 +54,7 @@ class PaymentChannelOrderCloseServiceTest {
                 auditService,
                 notificationService,
                 statusFlowService,
-                exceptionOrderService);
+                exceptionOrderRecordService);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
     }
@@ -97,7 +97,7 @@ class PaymentChannelOrderCloseServiceTest {
         assertThat(businessOrderCaptor.getValue().getBizOrderNo()).isEqualTo("BO202606060001");
         assertThat(paymentOrderCaptor.getValue().getPayOrderNo()).isEqualTo("PO202606060001");
         assertThat(paymentOrderCaptor.getValue().getStatus()).isEqualTo("CLOSED");
-        verify(exceptionOrderService, never()).createIfAbsent(any(), any(), any(), any(), any(), any());
+        verify(exceptionOrderRecordService, never()).createIfAbsent(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -115,11 +115,11 @@ class PaymentChannelOrderCloseServiceTest {
         PaymentChannelOrderCloseService.CloseResult result = service.closeExpiredPaymentOrder("PO202606060001");
 
         assertThat(result.changed()).isTrue();
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_PAY_TIMEOUT),
-                eq(PaymentExceptionOrderService.SEVERITY_MEDIUM),
+                eq(PaymentExceptionOrderRecordService.TYPE_PAY_TIMEOUT),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_MEDIUM),
                 eq("支付订单超过有效支付时间未收到通道成功结果，已关闭并等待人工核对"),
                 isNull());
     }

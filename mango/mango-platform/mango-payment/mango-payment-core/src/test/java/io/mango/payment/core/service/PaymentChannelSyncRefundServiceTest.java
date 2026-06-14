@@ -58,7 +58,7 @@ class PaymentChannelSyncRefundServiceTest {
     private PaymentDuplicatePaymentService duplicatePaymentService;
     private PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private PaymentObservabilityService observabilityService;
-    private PaymentExceptionOrderService exceptionOrderService;
+    private PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private PaymentNumberService numberService;
     private PaymentChannelSyncService service;
 
@@ -78,7 +78,7 @@ class PaymentChannelSyncRefundServiceTest {
         duplicatePaymentService = mock(PaymentDuplicatePaymentService.class);
         duplicateRefundCompletionService = mock(PaymentDuplicateRefundCompletionService.class);
         observabilityService = mock(PaymentObservabilityService.class);
-        exceptionOrderService = mock(PaymentExceptionOrderService.class);
+        exceptionOrderRecordService = mock(PaymentExceptionOrderRecordService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_REFUND_FLOW_NO)).thenReturn("RF2026060600000001");
         when(numberService.next(PaymentNumberService.PAY_REFUND_QUERY_NO)).thenReturn("RQ2026060600000001");
@@ -103,7 +103,7 @@ class PaymentChannelSyncRefundServiceTest {
                 channelAdapterRegistry,
                 new ObjectMapper(),
                 observabilityService,
-                exceptionOrderService,
+                exceptionOrderRecordService,
                 numberService,
                 new NoopTransactionManager());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
@@ -260,11 +260,11 @@ class PaymentChannelSyncRefundServiceTest {
         verify(refundOrderMapper).updateRefundingQueryResult(eq(1L), eq(380001L), eq("FAILED"), isNull());
         verify(businessOrderMapper, never()).updateRefundProgress(any(), any(), any());
         verify(transactionFlowMapper, never()).insert(any(PaymentTransactionFlowEntity.class));
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("RO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("主动查退款发现通道退款失败，退款订单已失败并等待人工核对退款结果"),
                 any(LocalDateTime.class));
         verify(notificationService).notifyRefundAfterCommit(any(PaymentApplication.class), any(PaymentBusinessOrderEntity.class), any(PaymentRefundOrderVO.class));

@@ -27,7 +27,7 @@ public class PaymentDuplicatePaymentService {
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentRefundOrderMapper refundOrderMapper;
     private final PaymentTransactionFlowMapper transactionFlowMapper;
-    private final PaymentExceptionOrderService exceptionOrderService;
+    private final PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private final PaymentOrderStateService orderStateService;
     private final PaymentOrderStatusFlowService statusFlowService;
     private final PaymentNumberService numberService;
@@ -67,11 +67,11 @@ public class PaymentDuplicatePaymentService {
         insertFlow(numberService.next(PaymentNumberService.PAY_FLOW_NO), order, null, "PAY_SUCCESS", eventTime, tenantId);
 
         if (!MANGO_PAY_CHANNEL_CODE.equalsIgnoreCase(PaymentContextSupport.trimToNull(order.getChannelCode()))) {
-            String exceptionNo = exceptionOrderService.createIfAbsent(
+            String exceptionNo = exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     order.getPayOrderNo(),
-                    PaymentExceptionOrderService.TYPE_DUPLICATE_PAYMENT,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_DUPLICATE_PAYMENT,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "重复成功支付已落库，当前通道未具备自动退款适配器，已挂起异常处理",
                     eventTime).getExceptionNo();
             return new DuplicatePaymentResult(

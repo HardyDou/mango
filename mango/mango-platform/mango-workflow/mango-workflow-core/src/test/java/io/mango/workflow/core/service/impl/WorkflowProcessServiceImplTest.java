@@ -17,6 +17,7 @@ import org.flowable.engine.HistoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.runtime.ProcessInstance;
+import org.flowable.engine.runtime.ProcessInstanceQuery;
 import org.flowable.task.api.TaskQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,6 +94,10 @@ class WorkflowProcessServiceImplTest {
         when(instance.getProcessInstanceId()).thenReturn("proc-1");
         when(instance.getBusinessKey()).thenReturn("BIZ-1");
         when(runtimeService.startProcessInstanceById(any(), any(), any(Map.class))).thenReturn(instance);
+        ProcessInstanceQuery processInstanceQuery = mock(ProcessInstanceQuery.class);
+        when(runtimeService.createProcessInstanceQuery()).thenReturn(processInstanceQuery);
+        when(processInstanceQuery.processInstanceId("proc-1")).thenReturn(processInstanceQuery);
+        when(processInstanceQuery.singleResult()).thenReturn(instance);
 
         TaskQuery taskQuery = mock(TaskQuery.class);
         when(taskService.createTaskQuery()).thenReturn(taskQuery);

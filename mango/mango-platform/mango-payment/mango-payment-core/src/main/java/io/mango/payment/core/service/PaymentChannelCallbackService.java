@@ -44,7 +44,7 @@ public class PaymentChannelCallbackService {
     private final PaymentDuplicatePaymentService duplicatePaymentService;
     private final PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private final PaymentObservabilityService observabilityService;
-    private final PaymentExceptionOrderService exceptionOrderService;
+    private final PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private final PaymentNumberService numberService;
 
     @Transactional(rollbackFor = Exception.class)
@@ -70,7 +70,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 order,
                 channelCode.equals(normalize(order.getChannelCode())),
-                PaymentExceptionOrderService.TYPE_CHANNEL_CALLBACK_FAILED,
+                PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED,
                 "支付订单通道不匹配");
         if (conflictResult != null) {
             return conflictResult;
@@ -79,7 +79,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 order,
                 sameMerchant(command.getChannelMerchantNo(), order.getChannelMerchantNo()),
-                PaymentExceptionOrderService.TYPE_CHANNEL_CALLBACK_FAILED,
+                PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED,
                 "通道商户号不匹配");
         if (conflictResult != null) {
             return conflictResult;
@@ -89,7 +89,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 order,
                 callbackAmount == Money.cents(order.getAmount()).toPositiveCents("支付订单金额"),
-                PaymentExceptionOrderService.TYPE_AMOUNT_MISMATCH,
+                PaymentExceptionOrderRecordService.TYPE_AMOUNT_MISMATCH,
                 "通道回调金额与支付订单金额不一致");
         if (conflictResult != null) {
             return conflictResult;
@@ -102,11 +102,11 @@ public class PaymentChannelCallbackService {
                 return result(false, order.getPayOrderNo(), currentStatus, paymentOrderMapper.selectLatestFlowNo(tenantId, order.getId()),
                         "本地支付订单已是终态，回调幂等返回");
             }
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     order.getPayOrderNo(),
-                    PaymentExceptionOrderService.TYPE_STATUS_MISMATCH,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "通道支付回调终态与本地支付订单终态不一致，本地状态：" + currentStatus + "，通道状态：" + targetStatus,
                     eventTime);
             observabilityService.logSummary("CHANNEL_PAYMENT_CALLBACK", order.getPayOrderNo(), targetStatus,
@@ -170,11 +170,11 @@ public class PaymentChannelCallbackService {
                     eventTime,
                     "通道支付回调确认支付成功");
         } else if (PaymentOrderStatusEnum.FAILED.getCode().equals(targetStatus)) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     order.getPayOrderNo(),
-                    PaymentExceptionOrderService.TYPE_CHANNEL_FAILED,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_CHANNEL_FAILED,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "通道支付回调返回失败状态，支付订单已失败并等待人工核对失败原因",
                     eventTime);
         }
@@ -194,7 +194,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 refundOrder,
                 channelCode.equals(normalize(refundOrder.getChannelCode())),
-                PaymentExceptionOrderService.TYPE_CHANNEL_CALLBACK_FAILED,
+                PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED,
                 "退款订单通道不匹配");
         if (conflictResult != null) {
             return conflictResult;
@@ -204,7 +204,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 refundOrder,
                 channelRefundNo != null,
-                PaymentExceptionOrderService.TYPE_CHANNEL_CALLBACK_FAILED,
+                PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED,
                 "通道退款单号不能为空");
         if (conflictResult != null) {
             return conflictResult;
@@ -213,7 +213,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 refundOrder,
                 channelRefundNo.equals(PaymentContextSupport.trimToNull(refundOrder.getChannelRefundNo())),
-                PaymentExceptionOrderService.TYPE_REFUND_MISMATCH,
+                PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH,
                 "通道退款单号不匹配");
         if (conflictResult != null) {
             return conflictResult;
@@ -222,7 +222,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 refundOrder,
                 sameMerchant(command.getChannelMerchantNo(), refundOrder.getChannelMerchantNo()),
-                PaymentExceptionOrderService.TYPE_CHANNEL_CALLBACK_FAILED,
+                PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED,
                 "通道商户号不匹配");
         if (conflictResult != null) {
             return conflictResult;
@@ -232,7 +232,7 @@ public class PaymentChannelCallbackService {
                 tenantId,
                 refundOrder,
                 callbackAmount == Money.cents(refundOrder.getRefundAmount()).toPositiveCents("退款订单金额"),
-                PaymentExceptionOrderService.TYPE_AMOUNT_MISMATCH,
+                PaymentExceptionOrderRecordService.TYPE_AMOUNT_MISMATCH,
                 "通道退款回调金额与退款订单金额不一致");
         if (conflictResult != null) {
             return conflictResult;
@@ -245,11 +245,11 @@ public class PaymentChannelCallbackService {
                 return result(false, refundOrder.getRefundOrderNo(), currentStatus,
                         refundOrderMapper.selectLatestFlowNo(tenantId, refundOrder.getId()), "本地退款订单已是终态，回调幂等返回");
             }
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     refundOrder.getRefundOrderNo(),
-                    PaymentExceptionOrderService.TYPE_STATUS_MISMATCH,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "通道退款回调终态与本地退款订单终态不一致，本地状态：" + currentStatus + "，通道状态：" + targetStatus,
                     eventTime);
             observabilityService.logSummary("CHANNEL_REFUND_CALLBACK", refundOrder.getRefundOrderNo(), targetStatus,
@@ -322,11 +322,11 @@ public class PaymentChannelCallbackService {
             refundOrder.setFlowNo(flowNo);
             refundOrder.setRefundTime(eventTime);
         } else if (PaymentRefundOrderStatusEnum.FAILED.getCode().equals(targetStatus)) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     refundOrder.getRefundOrderNo(),
-                    PaymentExceptionOrderService.TYPE_REFUND_MISMATCH,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "通道退款回调返回失败状态，退款订单已失败并等待人工核对退款结果",
                     eventTime);
         }
@@ -346,11 +346,11 @@ public class PaymentChannelCallbackService {
         if (condition) {
             return null;
         }
-        exceptionOrderService.createIfAbsent(
+        exceptionOrderRecordService.createIfAbsent(
                 tenantId,
                 order.getPayOrderNo(),
                 exceptionType,
-                PaymentExceptionOrderService.SEVERITY_HIGH,
+                PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                 reason,
                 LocalDateTime.now());
         return result(false, order.getPayOrderNo(), order.getStatus(),
@@ -366,11 +366,11 @@ public class PaymentChannelCallbackService {
         if (condition) {
             return null;
         }
-        exceptionOrderService.createIfAbsent(
+        exceptionOrderRecordService.createIfAbsent(
                 tenantId,
                 refundOrder.getRefundOrderNo(),
                 exceptionType,
-                PaymentExceptionOrderService.SEVERITY_HIGH,
+                PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                 reason,
                 LocalDateTime.now());
         return result(false, refundOrder.getRefundOrderNo(), normalizeRefundStatus(refundOrder.getStatus()),
@@ -391,11 +391,11 @@ public class PaymentChannelCallbackService {
                     "并发重复支付回调已由其它请求推进到相同终态，幂等返回");
         }
         if (isPaymentTerminal(latestStatus)) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     originalOrder.getPayOrderNo(),
-                    PaymentExceptionOrderService.TYPE_STATUS_MISMATCH,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "并发支付回调后本地支付订单终态与通道状态不一致，本地状态：" + latestStatus + "，通道状态：" + targetStatus,
                     eventTime);
             return result(false, originalOrder.getPayOrderNo(), latestStatus,
@@ -419,11 +419,11 @@ public class PaymentChannelCallbackService {
                     "并发重复退款回调已由其它请求推进到相同终态，幂等返回");
         }
         if (isRefundTerminal(latestStatus)) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     originalRefundOrder.getRefundOrderNo(),
-                    PaymentExceptionOrderService.TYPE_STATUS_MISMATCH,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "并发退款回调后本地退款订单终态与通道状态不一致，本地状态：" + latestStatus + "，通道状态：" + targetStatus,
                     eventTime);
             return result(false, originalRefundOrder.getRefundOrderNo(), latestStatus,

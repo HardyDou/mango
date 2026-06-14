@@ -27,7 +27,7 @@ public class PaymentChannelOrderCloseService {
     private final PaymentOperationAuditService auditService;
     private final PaymentNotificationService notificationService;
     private final PaymentOrderStatusFlowService statusFlowService;
-    private final PaymentExceptionOrderService exceptionOrderService;
+    private final PaymentExceptionOrderRecordService exceptionOrderRecordService;
 
     @Transactional(rollbackFor = Exception.class)
     public CloseResult closePaymentOrder(String payOrderNo) {
@@ -89,11 +89,11 @@ public class PaymentChannelOrderCloseService {
                 null,
                 expiredClose ? "订单超时关闭业务订单" : "受控关单关闭业务订单");
         if (expiredClose) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     payOrderNo,
-                    PaymentExceptionOrderService.TYPE_PAY_TIMEOUT,
-                    PaymentExceptionOrderService.SEVERITY_MEDIUM,
+                    PaymentExceptionOrderRecordService.TYPE_PAY_TIMEOUT,
+                    PaymentExceptionOrderRecordService.SEVERITY_MEDIUM,
                     "支付订单超过有效支付时间未收到通道成功结果，已关闭并等待人工核对",
                     null);
         }
