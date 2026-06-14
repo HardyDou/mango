@@ -126,3 +126,7 @@ pnpm -F @mango/file build
 - [后端代码文件引用规则](../../../mango-pmo/rules/backend/01-code.md#51-文件引用规则)
 - [后端 API 文件字段规则](../../../mango-pmo/rules/backend/03-api.md#22-文件字段规则)
 - [前端文件上传与回显规则](../../../mango-pmo/rules/frontend/01-vue-code.md#41-文件上传与回显规则)
+
+## 10. 变更影响记录
+
+- PR #153 Maven revision 支持只调整构建和发布版本解析，不改变文件上传、下载、预览的公开 API、配置、权限、租户、页面和运行时行为。

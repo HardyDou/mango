@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.mango.platform.file</groupId>
         <artifactId>mango-file</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>mango-file-core</artifactId>
     <name>Mango File Core</name>

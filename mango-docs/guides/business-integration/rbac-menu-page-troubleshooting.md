@@ -71,3 +71,7 @@ pnpm -F @mango/admin-shell build
 
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量规则](../../../mango-pmo/rules/05-ai-delivery-quality.md)
+
+## 9. 变更影响记录
+
+- PR #153 Maven revision 支持只调整构建和发布版本解析，不改变菜单页面、资源授权、页面 key、权限、租户和运行时行为。

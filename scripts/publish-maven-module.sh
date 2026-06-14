@@ -11,6 +11,9 @@ Usage: scripts/publish-maven-module.sh <artifactId|module-path> [options]
 
 Options:
   --also-make       Also build and deploy required upstream reactor modules
+  --revision <ver>  Maven CI-friendly version; default is 1.0.0-SNAPSHOT
+  --release-version <ver>
+                    Alias for --revision; publish a non-SNAPSHOT release version
   --run-tests       Run tests; default is -DskipTests
   --skip-verify     Skip clean-repository dependency:get verification after deploy
   --dry-run         Print the Maven command without running it
@@ -21,6 +24,7 @@ Examples:
   scripts/publish-maven-module.sh :mango-file-api
   scripts/publish-maven-module.sh mango-platform/mango-file/mango-file-api
   scripts/publish-maven-module.sh mango-file-core --also-make
+  scripts/publish-maven-module.sh mango-platform/mango-payment/mango-payment-api --also-make --revision 1.0.0
 EOF
 }
 
@@ -34,6 +38,7 @@ also_make=false
 skip_tests=true
 dry_run=false
 verify_publish=true
+revision="${MANGO_MAVEN_REVISION:-1.0.0-SNAPSHOT}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -42,6 +47,30 @@ while [[ $# -gt 0 ]]; do
       ;;
     --run-tests)
       skip_tests=false
+      ;;
+    --revision)
+      if [[ $# -lt 2 || "$2" == -* ]]; then
+        echo "Missing value for --revision." >&2
+        usage
+        exit 1
+      fi
+      revision="$2"
+      shift
+      ;;
+    --revision=*)
+      revision="${1#--revision=}"
+      ;;
+    --release-version)
+      if [[ $# -lt 2 || "$2" == -* ]]; then
+        echo "Missing value for --release-version." >&2
+        usage
+        exit 1
+      fi
+      revision="$2"
+      shift
+      ;;
+    --release-version=*)
+      revision="${1#--release-version=}"
       ;;
     --dry-run)
       dry_run=true
@@ -75,6 +104,10 @@ if [[ -z "${target}" ]]; then
   usage
   exit 1
 fi
+if [[ -z "${revision}" ]]; then
+  echo "Revision must not be empty." >&2
+  exit 1
+fi
 
 project_list="${target}"
 if [[ "${target}" != :* && ! -d "${MAVEN_ROOT}/${target}" ]]; then
@@ -86,12 +119,14 @@ if [[ "${also_make}" == "true" ]]; then
   mvn_args+=(-am)
 fi
 mvn_args+=(deploy)
+mvn_args+=("-Drevision=${revision}")
 if [[ "${skip_tests}" == "true" ]]; then
   mvn_args+=(-DskipTests)
 fi
 
 echo "Maven root: ${MAVEN_ROOT}"
 echo "Publishing module: ${project_list}"
+echo "Revision: ${revision}"
 if [[ "${also_make}" == "true" ]]; then
   echo "Mode: deploy selected module and required upstream modules"
 else
@@ -109,13 +144,19 @@ cd "${MAVEN_ROOT}"
 mvn "${mvn_args[@]}"
 
 if [[ "${verify_publish}" == "true" ]]; then
+  mvn_eval() {
+    local pom_file="$1"
+    local expression="$2"
+    mvn -q -f "${pom_file}" help:evaluate "-Drevision=${revision}" -Dexpression="${expression}" -DforceStdout
+  }
+
   module_dir=""
   if [[ "${target}" != :* && -d "${MAVEN_ROOT}/${target}" ]]; then
     module_dir="${MAVEN_ROOT}/${target}"
   else
     artifact_id="${target#:}"
     while IFS= read -r -d '' pom_file; do
-      pom_artifact_id="$(mvn -q -f "${pom_file}" help:evaluate -Dexpression=project.artifactId -DforceStdout)"
+      pom_artifact_id="$(mvn_eval "${pom_file}" project.artifactId)"
       if [[ "${pom_artifact_id}" == "${artifact_id}" ]]; then
         module_dir="$(dirname "${pom_file}")"
         break
@@ -126,17 +167,21 @@ if [[ "${verify_publish}" == "true" ]]; then
     echo "Unable to resolve module directory for publish verification: ${target}" >&2
     exit 1
   fi
-  group_id="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.groupId -DforceStdout)"
-  artifact_id="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.artifactId -DforceStdout)"
-  version="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.version -DforceStdout)"
-  packaging="$(mvn -q -f "${module_dir}/pom.xml" help:evaluate -Dexpression=project.packaging -DforceStdout)"
+  group_id="$(mvn_eval "${module_dir}/pom.xml" project.groupId)"
+  artifact_id="$(mvn_eval "${module_dir}/pom.xml" project.artifactId)"
+  version="$(mvn_eval "${module_dir}/pom.xml" project.version)"
+  packaging="$(mvn_eval "${module_dir}/pom.xml" project.packaging)"
   verify_repo="${REPO_ROOT}/.runtime/maven-publish-verify-${artifact_id}"
   rm -rf "${verify_repo}"
   mkdir -p "${verify_repo}"
-  echo "Verifying published Maven artifact: ${group_id}:${artifact_id}:${version}"
+  artifact_coordinates="${group_id}:${artifact_id}:${version}"
+  if [[ "${packaging}" == "pom" ]]; then
+    artifact_coordinates="${artifact_coordinates}:pom"
+  fi
+  echo "Verifying published Maven artifact: ${artifact_coordinates}"
   mvn -U org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get \
     -Dmaven.repo.local="${verify_repo}" \
-    -Dartifact="${group_id}:${artifact_id}:${version}" \
+    -Dartifact="${artifact_coordinates}" \
     -Dtransitive=false
   if [[ "${packaging}" == "jar" ]]; then
     artifact_path="$(find "${verify_repo}" -path "*/${artifact_id}/${version}/*.jar" -print | sort | tail -n 1)"

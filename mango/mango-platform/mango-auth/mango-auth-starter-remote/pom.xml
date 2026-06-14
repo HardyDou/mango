@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.mango.platform.auth</groupId>
         <artifactId>mango-auth</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>mango-auth-starter-remote</artifactId>

@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.mango.platform.template</groupId>
         <artifactId>mango-template</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>mango-template-core</artifactId>
     <name>Mango Template Core</name>

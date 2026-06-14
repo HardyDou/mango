@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.mango.infra</groupId>
         <artifactId>mango-infra</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <groupId>io.mango.infra.context</groupId>

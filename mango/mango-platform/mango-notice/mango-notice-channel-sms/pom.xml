@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.mango.platform.notice</groupId>
         <artifactId>mango-notice</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>mango-notice-channel-sms</artifactId>
     <name>Mango Notice Channel SMS</name>

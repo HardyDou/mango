@@ -13,6 +13,7 @@
 
 # ============ Maven ============
 .mvn/
+.flattened-pom.xml
 mvnw
 mvnw.cmd
 
