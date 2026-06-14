@@ -105,7 +105,7 @@ const worktreeRequiredKeywords = [
 function pathMatches(inputPath, pattern) {
   const normalizedPath = inputPath.replaceAll('\\', '/');
   const normalizedPattern = pattern.replaceAll('\\', '/');
-  if (normalizedPattern.endsWith('/**')) {
+  if (normalizedPattern.endsWith('/**') && !normalizedPattern.slice(0, -3).match(/[*?]/)) {
     const prefix = normalizedPattern.slice(0, -3);
     return normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`);
   }

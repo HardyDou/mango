@@ -14,26 +14,17 @@ Java Spring Cloud Alibaba 微服务开发底座。
 | 分布式事务 | Seata |
 | 国密算法 | SM2/SM3/SM4 |
 
-## 核心规范
+## 规范入口
 
-| 序号 | 规范 | 说明 |
-|------|------|------|
-| 01 | `01-code.md` | 代码规范（C1-C5） |
-| 02 | `02-naming.md` | 命名规范 |
-| 03 | `03-api.md` | API 设计 |
-| 04 | `04-db.md` | 数据库规范 |
-| 05 | `05-module.md` | 模块分层（SPI + Starter） |
-| 06 | `06-security.md` | 安全规范 |
-| 07 | `07-persistence.md` | 事务规范 |
-| 08 | `08-test.md` | 测试规范 |
-| 09 | `09-ui.md` | UI 组件 |
-| 10 | `10-dev-flow.md` | 开发流程 |
+长期规范只维护在 `mango-pmo/rules/**`。后端开发先通过 PMO preflight 获取本次必读规则，再按能力地图定位模块 README。
 
-### 注释与文档
-
-- 新增和修改的代码注释、JavaDoc、README、设计文档、交付记录默认使用中文。
-- 新增 Java 类型如需 `@author`，作者值使用当前系统用户；Mango 代码生成器自动提取系统用户。
-- 不再手写固定作者名；历史代码可在触达时逐步清理。
+- [后端代码规范](../mango-pmo/rules/backend/01-code.md)
+- [后端 API 规范](../mango-pmo/rules/backend/03-api.md)
+- [后端模块规范](../mango-pmo/rules/backend/05-module.md)
+- [后端安全规范](../mango-pmo/rules/backend/06-security.md)
+- [持久化规范](../mango-pmo/rules/backend/07-persistence.md)
+- [后端测试规范](../mango-pmo/rules/backend/08-test.md)
+- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
 
 ## 常用命令
 
@@ -50,10 +41,10 @@ mvn mango:gen-crud -Dmodule=xxx -Dentity=User -Dtable=usr_user
 # 检查迁移脚本是否包含审计字段和租户字段
 mvn mango:check -Drule=persistence-schema
 
-# 禁止 HTTP 路径参数
+# HTTP 路径参数检查
 mvn mango:check -Drule=path-param
 
-# 检查 PERMISSION 接口必须声明权限码
+# PERMISSION 接口权限码声明检查
 mvn mango:check -Drule=permission-param
 ```
 
@@ -111,8 +102,13 @@ mango/
 - `mango-xxx-starter` - 本地调用
 - `mango-xxx-starter-remote` - 远程调用
 
-详情参见 [05-module.md](./.claude/rules/05-module.md)
+详情参见 [后端模块规范](../mango-pmo/rules/backend/05-module.md)。
 
-## 平台能力文档
+## 能力说明
 
-- [任务管理使用说明](./mango-platform/mango-job/README.md)
+- [Mango 能力地图](../mango-docs/capabilities/README.md)
+- [Admin Starter](./mango-admin-starter/README.md)
+- [App 拓扑](./mango-app/README.md)
+- [Common 公共契约](./mango-common/README.md)
+- [Infra 能力目录](../mango-docs/capabilities/README.md#5-后端基础设施能力)
+- [Platform 能力目录](../mango-docs/capabilities/README.md#4-后端平台能力)

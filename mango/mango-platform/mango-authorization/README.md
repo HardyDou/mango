@@ -1,274 +1,154 @@
 # Mango Authorization
 
-> Authorization 模块 - 统一授权、角色、权限、菜单与 API 访问策略管理
+## 1. 能力定位
 
-## 模块职责
+`mango-authorization` 提供授权、角色、权限、菜单、应用入口、租户应用绑定、API 资源同步和运行时访问策略能力。主要使用者是平台权限管理、业务模块资源注册、前端菜单运行时和边界访问控制。
 
-| 职责 | 说明 |
-|------|------|
-| 应用入口 | `appCode`、`realm`、`actorType`，用于区分客户门户、金融机构系统、内部后台等入口 |
-| 菜单管理 | 按 `appCode` 归属的树形菜单、前端路由配置 |
-| 角色管理 | 角色CRUD、角色权限分配 |
-| 权限码 | 权限码 `{model}:{module}:{action}` |
-| 接口资源 | 扫描各 App 的 Spring MVC 接口，注册 HTTP 方法、路径、访问模式和可选权限码 |
-| 授权快照 | 通过 `IAuthorizationProvider` 汇总角色、权限与 Spring Security authorities |
-| 授权缓存 | 基于 `mango-infra-kv` 缓存用户授权快照，微服务网关可通过 Redis 只读鉴权 |
-| 安全基础 | 提供安全上下文、token 抽象和 Spring Security 自动配置 |
-| 访问鉴权 | access/resource-access 直接通过 `IAuthorizationProvider` 读取授权快照，不再保留独立权限 Provider 适配层 |
-| 主体角色绑定 | 保存 subject 到 role 的授权关系，并记录 `appCode`、`realm`、`actorType`、`partyType`、`partyId` 上下文，不保存账号资料 |
+代码事实：
 
-## 子模块
+- 聚合模块 `io.mango.platform.authorization:mango-authorization`。
+- 子模块包括 `mango-authorization-api`、`mango-authorization-core`、`mango-authorization-support`、`mango-authorization-starter`、`mango-authorization-resource-sync-starter`、`mango-authorization-resource-access-starter`、`mango-authorization-starter-remote`。
+- 本地 Controller 路径覆盖 `/authorization`、`/authorization/apps`、`/authorization/app-modules`、`/authorization/roles`、`/authorization/menus`、`/authorization/menu-packages`、`/authorization/tenant-app-bindings`。
+- 远程 Feign Client 服务名为 `mango-authorization`。
 
-```
-mango-authorization/
-├── mango-authorization-api/            # API 定义（接口、查询对象、VO、授权快照）
-├── mango-authorization-core/           # 核心业务（Service、Mapper）
-├── mango-authorization-support/        # Spring Security 集成、安全上下文、token 抽象
-├── mango-authorization-resource-sync-starter/   # 当前 App 接口资源扫描与注册
-├── mango-authorization-resource-access-starter/ # 运行时 URL 访问策略适配
-├── mango-authorization-starter/        # 本地调用启动器
-└── mango-authorization-starter-remote/ # 远程调用启动器（Feign）
-```
+## 2. 适用场景
 
-## 授权 API
+- 管理角色、权限码、菜单树和角色菜单授权。
+- 注册和查询 Spring MVC / Gateway 暴露的 API 资源。
+- 按 `appCode`、登录域和主体上下文组织前端应用入口。
+- 为 `mango-auth`、`mango-access` 和业务模块提供授权快照。
+- 通过资源清单同步模块菜单、权限、前端运行时策略。
 
-| 类型 | 说明 |
-|------|------|
-| `AuthorizationQuery` | 授权查询入参，当前支持 user subject |
-| `AuthorizationSnapshot` | 授权快照，包含 roles、permissions、authorities |
-| `AuthorityContributor` | 授权数据贡献者，按 subject 追加授权事实 |
-| `AuthorizationApi` | 授权快照 Java 契约，HTTP 映射由 starter / starter-remote 承载 |
-| `IAuthorizationProvider` | 统一授权 provider，聚合 contributor 输出快照 |
-| `ApiResourceApi` | 接口资源注册契约 |
-| `AppApi` / `RoleApi` / `MenuApi` / `PermissionApi` / `ApiResourceApi` | 管理类 Java 契约，统一使用 `Command` / `Query` / `VO` 与 `R<T>` 返回 |
+## 3. 不适用场景
 
-API 模块只保留 Java 契约模型，不暴露 Entity、Mapper、MyBatis 注解、Spring Web 注解或数据库表结构；HTTP 路由必须下沉到 `starter` Controller 或 `starter-remote` FeignClient。
+- 不保存账号资料，账号归属 `mango-identity`。
+- 不签发或刷新 token，认证归属 `mango-auth`。
+- 不做文件、任务、流程等业务域数据管理。
+- 不替代业务模块内部的数据权限规则和领域授权判断。
 
-`mango-auth` 登录成功后调用 `IAuthorizationProvider` 获取角色与权限，不再维护 auth 内部权限检查器。账号资料与认证用户事实已抽离到 `mango-identity`。access 和 resource-access 在运行时直接读取 `AuthorizationSnapshot.permissionCodes()` 做权限判断。
+## 4. 模块边界
 
-## 接口资源同步
+`mango-authorization` 是权限事实和资源策略的归口。业务模块负责声明资源和权限，authorization 负责保存、查询和聚合授权快照；边界入口和认证过滤链负责消费这些策略。
 
-`mango-authorization-resource-sync-starter` 在 App 启动时扫描当前 Spring MVC 映射，并调用 `ApiResourceApi` 注册到 `authorization_api_resource`。资源表只保存稳定模块名、HTTP 方法、路径、访问模式和权限码，不保存运行时 `serviceName` 或 `contextPath`。运行时服务定位由 `mango-infra-module` 与 `mango-infra-feign` 负责。
+## 5. 接入方式
 
-`mango-authorization-resource-access-starter` 提供 `apiResourceAuthorizationManager`，供 `mango-auth-starter` 的 Spring Security filter chain 按数据库策略控制访问。资源扫描和运行时访问控制可以独立依赖、独立开关。
+本地授权服务接入：
 
-- 接口访问策略统一使用 `@ApiAccess` 声明，也可使用 `@PublicApi`、`@LoginApi`、`@InternalApi`、`@PermissionAccess` 这几个组合注解；资源同步不再解析 `@Perm` 或 `@Inner`。
-- `moduleName` 优先通过 `mango-infra-module` 的 `module.properties` 按路径反查，保证同一模块部署在不同服务时入库模块名不漂移。
-- 未标注 `@ApiAccess` 的接口默认生成资源码：`HTTP_METHOD:/path/pattern`。
-- 未标注 `@ApiAccess` 的接口默认访问模式为 `LOGIN`，可通过 `mango.authorization.resource-sync.default-access-mode` 调整。
-- `@ApiAccess(mode = PERMISSION, permission = "xxx")` 或 `@PermissionAccess("xxx")` 会将 `xxx` 作为 `permissionCode` 和显式资源码；`PERMISSION` 未填写 `permission` 时启动同步直接失败。
-- `@ApiAccess(mode = PUBLIC / LOGIN / INTERNAL)` 不写权限码，资源码为 `HTTP_METHOD:/path/pattern`。
-- `@PublicApi`、`@LoginApi`、`@InternalApi` 分别等同于 `@ApiAccess(mode = PUBLIC / LOGIN / INTERNAL)`。
-- `mango.authorization.resource-sync.mode=read` 时只扫描并输出日志，不写入注册接口。
-- 本地应用显式依赖 `mango-auth-starter`、`mango-identity-starter`、`mango-authorization-starter`；需要按资源策略控制本地 HTTP 请求时，再依赖 `mango-authorization-resource-access-starter`。
-- 远程业务 App 直接依赖 `mango-authorization-resource-sync-starter`，通过 `mango-authorization-starter-remote` 的 Feign 注册到平台 authorization 服务。
-- 外部入口统一走 `mango-access` 时，`mango-authorization-resource-sync-starter` 会在网关应用内同步 Spring Cloud Gateway 的 Path 路由，作为网关暴露面清单；默认 `accessMode=LOGIN`，`resourceCode=GATEWAY:/path/pattern`。
-- 运行时资源策略由 `mango.authorization.resource-access.enabled` 控制，默认开启。
-
-运行时策略：
-
-- `PUBLIC`：允许匿名访问。
-- `LOGIN`：要求已认证。
-- `PERMISSION`：要求已认证，并拥有 `permissionCode`。
-- `INTERNAL`：当前服务内默认拒绝，后续由 gateway / internal-call 可信规则接管。
-
-## 应用模块资源清单
-
-业务模块可以在 jar 内发布资源清单，由 `mango-authorization-resource-sync-starter` 启动时加载并注册到授权服务。默认扫描路径：
-
-- `META-INF/mango/resource-manifest.json`
-- `META-INF/mango/resource-manifests/*.json`
-
-同步配置：
-
-```yaml
-mango:
-  authorization:
-    resource-sync:
-      manifest:
-        enabled: true
-        mode: write # write 注册到授权服务；read 只解析并输出日志
+```xml
+<dependency>
+    <groupId>io.mango.platform.authorization</groupId>
+    <artifactId>mango-authorization-starter</artifactId>
+</dependency>
 ```
 
-模块菜单初始化的长期归口规则见 `mango-pmo/rules/backend/11-module-menu.md`。authorization 负责消费资源清单和维护授权基础资产，功能模块通过资源清单声明自身菜单、页面路由和按钮权限。
+业务应用同步资源：
 
-资源清单示例：
-
-```json
-{
-  "appCode": "internal-admin",
-  "moduleCode": "contract",
-  "moduleName": "合同模块",
-  "packageCodes": [
-    "internal-admin-default"
-  ],
-  "roleCodes": [
-    "ROLE_ADMIN"
-  ],
-  "menus": [
-    {
-      "menuType": 1,
-      "menuName": "合同管理",
-      "menuCode": "contract",
-      "parentCode": "data",
-      "path": "/contract",
-      "children": [
-        {
-          "menuType": 2,
-          "menuName": "合同列表",
-          "menuCode": "contract:archive:list",
-          "path": "/contract/archives",
-          "component": "contract/archive/index",
-          "permissions": [
-            "contract:archive:create"
-          ],
-          "permissionItems": [
-            {
-              "permissionCode": "contract:archive:create",
-              "permissionName": "新增合同"
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+```xml
+<dependency>
+    <groupId>io.mango.platform.authorization</groupId>
+    <artifactId>mango-authorization-resource-sync-starter</artifactId>
+</dependency>
 ```
 
-注册规则：
+业务应用运行时 URL 策略接入：
 
-- `appCode + moduleCode + menuCode` 作为菜单幂等更新键。
-- `menus` 写入目录或页面菜单。
-- `parentCode` 可把清单菜单挂到同一 `appCode` 下已有目录菜单；为空时使用清单树父节点，根节点默认为一级菜单。
-- `permissionItems` 写入 `menuType=3` 的按钮菜单，运行时权限仍由按钮菜单 `menuCode` 提供。
-- `packageCodes` 引用已存在菜单包，注册时把清单菜单幂等加入套餐。
-- `roleCodes` 引用已存在角色，注册时把清单菜单幂等授权给角色。
-- 不自动删除清单中不存在的历史菜单，避免启动时误删授权资产。
-
-## 核心实体
-
-### App
-
-应用入口实体：
-- `appCode` - 应用编码，如 `internal-admin`、`customer-portal`、`financial-console`
-- `realm` - 登录域，如 `INTERNAL`、`CUSTOMER`、`FINANCIAL`
-- `actorType` - 默认操作者类型，如 `INTERNAL_USER`、`CUSTOMER_USER`、`FINANCIAL_USER`
-
-### Menu
-
-系统菜单实体：
-- `menuId` - 菜单ID
-- `appCode` - 应用编码
-- `parentId` - 父菜单ID（0为根）
-- `menuType` - 菜单类型（1-目录，2-菜单，3-按钮）
-- `menuName` - 菜单名称
-- `menuCode` - 权限标识（如 `system:user:view`）
-- `path` - 前端路由路径
-- `component` - 前端组件路径
-- `icon` - 菜单图标
-- `sort` - 排序号
-- `status` - 状态（0-禁用，1-启用）
-- `visible` - 是否显示
-- `keepAlive` - 路由缓存
-- `embedded` - 内嵌模式
-- `redirect` - 重定向路径
-- `permissions` - 权限标识列表
-- `meta` - 前端Meta信息
-- `createBy` / `updateBy` - 审计字段
-- `createTime` / `updateTime` - 时间戳
-- `delFlag` - 删除标记
-
-### Role / SubjectRole
-
-角色通过 `appCode + realm + actorType` 归属到具体入口和操作者类型。
-
-主体角色绑定通过以下字段限制授权上下文：
-
-- `appCode` - 当前应用入口
-- `realm` - 当前登录域
-- `actorType` - 当前操作者类型
-- `partyType` / `partyId` - 当前数据归属主体
-
-### 菜单 API
-
-| 接口 | 说明 |
-|------|------|
-| `GET /authorization/menus` | 获取菜单树 |
-| `GET /authorization/menus/tree` | 获取完整菜单树 |
-
-## 菜单类型
-
-| 类型 | 值 | 说明 |
-|------|----|------|
-| 目录 | 1 | 菜单树中的目录节点，不对应具体页面 |
-| 菜单 | 2 | 具体页面菜单 |
-| 按钮 | 3 | 页面内操作按钮 |
-
-## 权限码格式
-
-`{model}:{module}:{action}`
-
-示例：
-- `system:user:view` - 查看用户
-- `system:user:create` - 创建用户
-- `system:user:update` - 更新用户
-- `system:user:delete` - 删除用户
-
-## 数据库表
-
-| 表名 | 说明 |
-|------|------|
-| `authorization_app` | 授权应用入口表 |
-| `authorization_menu` | 菜单表 |
-| `authorization_api_resource` | 接口资源表 |
-| `authorization_permission` | 权限定义表 |
-| `authorization_role` | 角色表 |
-| `authorization_role_permission` | 角色权限关联表 |
-| `authorization_subject_permission` | 主体直授权限表 |
-| `authorization_role_menu` | 角色菜单关联表 |
-| `authorization_subject_role` | 主体角色绑定表 |
-
-数据库初始化脚本统一放在 `mango-authorization-core/src/main/resources/db/migration/authorization/`。旧的模块顶层 `sql/` 目录不再作为迁移入口维护。
-
-## 依赖关系
-
-```
-authorization-api
-├── mango-common
-├── spring-core
-└── jakarta.validation-api
-
-authorization-core
-├── authorization-api
-├── mango-infra-persistence-starter
-└── mango-infra-context-core
-
-authorization-starter
-├── authorization-core
-├── mango-authorization-api
-├── mango-infra-web-starter
-└── swagger-annotations
-
-authorization-resource-sync-starter
-├── authorization-api
-└── spring-webmvc
-
-authorization-resource-access-starter
-├── authorization-api
-└── spring-security-web
-
-authorization-starter-remote
-├── authorization-api
-└── mango-infra-feign-starter
-
-mango-access
-├── mango-access-core
-├── mango-access-web-starter
-└── mango-access-gateway-starter
+```xml
+<dependency>
+    <groupId>io.mango.platform.authorization</groupId>
+    <artifactId>mango-authorization-resource-access-starter</artifactId>
+</dependency>
 ```
 
-## 运行时权限判断
+远程调用接入 `mango-authorization-starter-remote`。
 
-运行时权限判断只使用资源表中的 `permissionCode`，不信任请求 query 参数。`mango:check -Drule=permission-param` 会检查 `PERMISSION` 接口必须声明明确权限码。
+## 6. 配置项
 
-当前不内置授权快照缓存，避免角色、菜单、主体授权变更后因缓存失效不完整导致撤权延迟。后续如需减少远程授权查询，应使用服务端签发的可信授权凭证或带精确失效事件的缓存方案，不能信任客户端自行传入的权限码。
+已发现配置前缀：
+
+- `mango.authorization.resource-sync`：API 资源同步配置。
+- `mango.authorization.resource-sync.manifest`：资源清单同步配置。
+- `mango.authorization.resource-sync.enabled`：资源同步开关。
+- `mango.authorization.resource-access.enabled`：运行时 URL 策略接入开关。
+- `mango.frontend`：前端运行时配置。
+- `mango.security.debug-permit-all-filter-chain`：安全调试过滤链开关。
+
+`mango.security.debug-permit-all-filter-chain` 只用于本地调试和问题定位，业务交付验收不能依赖该开关绕过真实认证授权链路。
+
+字段以对应 `@ConfigurationProperties` 类为准。
+
+## 7. 对外接口 / 扩展点
+
+- Java API 契约：`AuthorizationApi`、`ApiResourceApi`、`AppApi`、`AppModuleApi`、`MenuApi`、`PermissionApi`、`RoleApi`、`TenantAppBindingApi`。
+- 注解：`@ApiAccess`、`@PermissionAccess`、`@PublicApi`、`@LoginApi`、`@InternalApi`。
+- Feign 适配：`AuthorizationFeignClient`、`ApiResourceFeignClient`、`AppModuleFeignClient`；并非每个 Java API 都直接暴露 Feign 或 Controller。
+- 资源清单默认扫描 `META-INF/mango/resource-manifest.json` 和 `META-INF/mango/resource-manifests/*.json`。
+
+## 8. 数据库 / 初始化数据
+
+Flyway 路径：`mango-authorization-core/src/main/resources/db/migration/authorization`。
+
+核心表：
+
+- `authorization_api_resource`
+- `authorization_permission`
+- `authorization_role`
+- `authorization_subject_role`
+- `authorization_role_permission`
+- `authorization_subject_permission`
+- `authorization_app`
+- `authorization_app_login_context`
+- `authorization_menu`
+- `authorization_role_menu`
+- `authorization_menu_package`
+- `authorization_menu_package_item`
+- `frontend_app_registry`
+- `frontend_menu_runtime_config`
+- `frontend_tenant_app_binding`
+- `authorization_app_module`
+- `frontend_module_runtime_strategy`
+
+当前迁移目录包含 `V1__init_authorization.sql`，以及 notice、job、business domain、system event 等历史菜单和权限资源调整迁移。新增功能模块的菜单和权限资产应归属功能模块自身的资源清单或 migration，authorization 负责保存、查询和聚合。
+
+## 9. 菜单 / 权限 / 租户
+
+本模块是菜单、权限和租户应用绑定的归口。菜单按应用入口和模块资源组织，权限码通过 API 注解或资源清单注册，租户入口绑定由 `frontend_tenant_app_binding` 和 `TenantAppBindingApi` 管理。
+
+## 10. 验证方式
+
+最小验证命令：
+
+```bash
+mvn -f mango/pom.xml -pl mango-platform/mango-authorization -am test
+```
+
+代表性验收：
+
+- 资源同步后 `authorization_api_resource` 存在对应 HTTP 方法、路径和访问模式。
+- 创建角色并绑定权限后，`AuthorizationApi` 返回的授权快照包含权限码。
+- 用户菜单接口返回当前应用入口可访问菜单。
+- 租户应用绑定后，前端运行时只暴露已绑定应用。
+- resource-access `AuthorizationManager`、manifest 读写同步、缓存刷新、app runtime descriptor 和 runtime strategies 应纳入集成验收。
+
+## 11. 业务接入最小闭环
+
+业务模块先在 Controller 上使用 `@PublicApi`、`@LoginApi`、`@PermissionAccess` 或 `@InternalApi` 声明接口访问模式，再通过 resource manifest 声明菜单、按钮权限、页面 component key 和应用模块信息。服务启动后由 resource-sync starter 把 API 资源和 manifest 写入 authorization。
+
+最小验收链路：资源同步后查询 `authorization_api_resource` 和菜单接口能看到业务资源；角色绑定权限后授权快照包含对应权限码；租户应用绑定后当前租户只看到已绑定应用；缓存刷新后权限变更立即反映到 access 决策。
+
+## 12. 常见问题
+
+- 接口权限不生效时先检查资源同步 starter 是否接入，以及注解访问模式是否正确。
+- 菜单不显示时检查应用入口、菜单包、角色菜单绑定和租户应用绑定。
+- 权限码变更后按功能模块归属更新资源清单或 migration，并同步验证历史角色绑定。
+
+## 13. 关联 PMO 规则
+
+- [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
+- [后端安全规范](../../../mango-pmo/rules/backend/06-security.md)
+- [模块菜单规范](../../../mango-pmo/rules/backend/11-module-menu.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 历史设计 / 交付记录
+
+- [Mango 能力地图](../../../mango-docs/capabilities/README.md)

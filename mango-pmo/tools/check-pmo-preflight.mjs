@@ -15,7 +15,8 @@ const cases = [
   {
     name: 'backend code requires worktree',
     args: ['--role', 'dev', '--phase', 'develop', '--task', '修复后端代码', '--paths', 'mango/mango-platform/mango-job/mango-job-core/src/main/java'],
-    mode: 'worktree-required'
+    mode: 'worktree-required',
+    mustRead: ['rules/08-capability-docs.md']
   },
   {
     name: 'frontend page requires worktree',
@@ -37,6 +38,30 @@ const cases = [
     args: ['--role', 'dev', '--phase', 'develop', '--task', '评审 PR #151 并提交 PR 修复', '--paths', 'mango-ui/packages/mango-cli'],
     mode: 'worktree-required',
     mustRead: ['rules/01-delivery-contract.md']
+  },
+  {
+    name: 'module README change loads capability docs',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '更新 Job 模块 README 能力说明', '--paths', 'mango/mango-platform/mango-job/README.md'],
+    mode: 'worktree-required',
+    mustRead: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
+  },
+  {
+    name: 'capability map governance loads capability docs',
+    args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 Mango 能力地图', '--paths', 'mango-docs/capabilities/README.md'],
+    mode: 'main-direct-allowed',
+    mustRead: ['rules/08-capability-docs.md', 'rules/06-document-assets.md']
+  },
+  {
+    name: 'agent entry governance loads PMO docs',
+    args: ['--role', 'pmo', '--phase', 'governance', '--task', '优化 Agent 入口 PMO 触发边界', '--paths', 'AGENTS.md'],
+    mode: 'main-direct-allowed',
+    mustRead: ['agents/05-pmo-agent.md', 'rules/06-document-assets.md']
+  },
+  {
+    name: 'nested src glob loads capability docs',
+    args: ['--role', 'dev', '--phase', 'develop', '--task', '调整模块实现', '--paths', 'mango/mango-platform/mango-job/mango-job-core/src/main/java/com/example/Job.java'],
+    mode: 'worktree-required',
+    mustRead: ['rules/08-capability-docs.md']
   }
 ];
 

@@ -1,120 +1,113 @@
 # Mango Business Starter
 
-`mango-business-starter` 是 Mango 业务项目的生产起点，不是示例项目。`mango-cli` 和后续 Mango Initializr Web 服务会基于本目录做变量替换和能力选择。
+## 1. 能力定位
 
-命名边界：
+`mango-business-starter` 是 Mango 源仓中的业务项目模板资产和回退模板，面向业务模块模板、业务 PMO baseline 下发和单体/微服务拓扑说明。主要使用者是 `@mango/cli`、Mango 维护者和业务项目开发者。
 
-- `mango-business-starter`：业务项目 starter 资产。
-- `mango-cli`：本地 CLI 初始化和企业业务模块生成入口。
-- `Mango Initializr`：后续 Web 生成服务。
-- `mango-admin-starter`、`mango-file-preview-starter`：Maven starter 依赖，不与业务项目 starter 混用。
+代码事实：
 
-生成项目会携带 `business-pmo/mango-baseline/`，这是当前 Mango PMO 的可执行快照，供业务仓脱离 Mango 源码后继续执行 preflight 和交付台账检查。
+- 后端模板目录：`backend/modules/{{moduleKebab}}`。
+- 前端应用模板：`frontend/apps/{{projectKebab}}-admin`。
+- 前端 API 包模板：`frontend/packages/{{moduleKebab}}-api`。
+- 前端页面包模板：`frontend/packages/{{moduleKebab}}`。
+- 模板校验脚本：`scripts/check-template.mjs`。
+- 业务 PMO baseline：`business-pmo/mango-baseline`。
 
-## 1. 使用方式
+`mango init --preset full` 当前实际读取 `mango-ui/packages/mango-cli/templates/full`；`mango module add` 在存在 `mango-ui/packages/mango-cli/templates/business-module` 时优先使用 CLI 内置业务模块模板，否则回退到本目录。本文描述的是本目录模板资产本身，不等同于所有 CLI full 初始化产物结构。
 
-当前阶段应使用 `mango-cli` 生成业务项目和追加企业业务模块。生成后的项目应按业务命名，例如 `contract-platform`、`order-platform`，不要命名为 `mango-starter`。
+## 2. 适用场景
 
-| 占位符 | 示例 | 说明 |
-|---|---|---|
-| `{{projectKebab}}` | `contract-platform` | 项目名 |
-| `{{projectPascal}}` | `ContractPlatform` | 项目 PascalCase 名 |
-| `{{moduleKebab}}` | `contract` | 业务模块名 |
-| `{{modulePackage}}` | `contract` | Java 包名中的模块段 |
-| `{{modulePascal}}` | `Contract` | Java/TS 类型模块名 |
-| `{{moduleCamel}}` | `contract` | Java/TS 变量模块名 |
-| `{{moduleName}}` | `业务模块` | 菜单展示名 |
-| `{{aggregateKebab}}` | `letter` | 聚合名 |
-| `{{aggregatePascal}}` | `Letter` | 聚合 PascalCase 名 |
-| `{{aggregateCamel}}` | `letter` | Java/TS 变量聚合名 |
-| `{{basePackage}}` | `com.example.business` | Java 基础包名 |
-| `{{basePackagePath}}` | `com/example/business` | Java 基础包路径 |
-| `{{moduleKebabSnake}}` | `contract` | 数据库表名前缀 |
-| `{{aggregateKebabSnake}}` | `letter` | 数据库表名后缀 |
+- 维护业务模块模板资产和 business starter 回退模板。
+- 校验业务模块 `api/core/starter/starter-remote` 模板结构。
+- 校验业务前端 API 包、页面包和后台应用接入模板。
+- 将 Mango PMO baseline 带入业务仓库，使业务项目脱离 Mango 源码后仍可执行 preflight 和交付台账检查。
 
-## 2. 推荐结构
+## 3. 不适用场景
 
-```text
-{{projectKebab}}/
-├── AGENTS.md
-├── backend/
-│   └── modules/{{moduleKebab}}/
-├── frontend/
-│   ├── apps/{{projectKebab}}-admin/
-│   └── packages/
-│       ├── {{moduleKebab}}/
-│       └── {{moduleKebab}}-api/
-├── business-pmo/
-│   ├── mango-baseline/
-│   └── rules/
-├── business-docs/
-├── topologies/
-└── scripts/
-```
+- 不作为运行时 starter 依赖使用。
+- 不承载 Mango 平台模块源码。
+- 不替代业务项目后续的领域建模、数据库设计和验收设计。
+- 不自动修复已生成项目中的业务自定义代码。
 
-业务项目默认使用 product monorepo。人员分工通过 `CODEOWNERS`、任务分支、交付台账和 PR review 控制。
+## 4. 模块边界
 
-## 3. 后端模板
+本目录提供模板资产、回退模板和静态校验。`mango-ui/packages/mango-cli` 负责选择 CLI 内置模板或本目录回退模板、替换变量和执行命令；生成后的业务项目由业务仓库维护。
 
-后端模块按 Mango 分层：
+## 5. 接入方式
 
-```text
-{{moduleKebab}}-api
-{{moduleKebab}}-core
-{{moduleKebab}}-starter
-{{moduleKebab}}-starter-remote
-```
-
-- `api` 只放 `Command`、`Query`、`VO` 和 `{{modulePascal}}Api`。
-- `core` 放实体、服务接口、服务实现、转换和 Flyway migration。
-- `starter` 放 Controller、自动装配、`module.properties` 和资源清单。
-- `starter-remote` 放 Feign adapter。
-
-## 4. 前端模板
-
-前端拆成 API 包和页面包：
-
-```text
-packages/{{moduleKebab}}-api
-packages/{{moduleKebab}}
-apps/{{projectKebab}}-admin
-```
-
-- `{{moduleKebab}}-api` 导出类型和 API client。
-- `{{moduleKebab}}` 导出页面注册函数。
-- admin app 通过 `@mango/admin` 启动并引入 `@mango/admin/style.css`，不复制 Mango app 源码。
-
-## 5. 菜单与权限
-
-后端资源清单中的 `component` 必须与前端 page registry key 一致：
-
-```text
-{{moduleKebab}}/{{aggregateKebab}}/index
-```
-
-starter 引入后，由 Mango 资源同步能力把菜单和按钮权限同步到后台。
-
-## 6. 拓扑
-
-- 单体模式：业务 app 依赖 `{{moduleKebab}}-starter`。
-- 微服务模式：业务服务依赖 `{{moduleKebab}}-starter`，调用方依赖 `{{moduleKebab}}-starter-remote`。
-
-详见 `topologies/monolith/README.md` 和 `topologies/microservice/README.md`。
-
-## 7. 后端本地启动
-
-生成项目后只使用项目内工作区脚本启动后端：
+通过 CLI 使用时，先以 CLI README 和 CLI 内置模板为准：
 
 ```bash
-scripts/dev-workspace.sh backend
+mango init <project> --preset full --topology monolith
+mango add <module>
+mango module add <module> --aggregate <name>
 ```
 
-该脚本读取 `.mango/dev-workspace.env`，统一端口、数据库和本地开关；启动前会安装后端 reactor 模块，再对 `backend/app` 执行 Maven `spring-boot:run`。新增本地业务模块后，不要手写 `mvn -pl ...`、`mvn -f backend/app/pom.xml ...` 或 `java -jar` 作为开发启动入口。
+核心变量包括：
 
-## 8. 验证
+- `{{projectKebab}}`、`{{projectPascal}}`
+- `{{moduleKebab}}`、`{{modulePackage}}`、`{{modulePascal}}`、`{{moduleCamel}}`
+- `{{aggregateKebab}}`、`{{aggregatePascal}}`、`{{aggregateCamel}}`
+- `{{basePackage}}`、`{{basePackagePath}}`
+
+## 6. 配置项
+
+本模板自身未发现运行时配置项。生成后的项目配置由 `mango.dev.json`、`.mango/dev-workspace.env`、各应用 `package.json`、Maven `pom.xml` 和业务配置文件承载。
+
+## 7. 对外接口 / 扩展点
+
+后端模板：
+
+- 聚合模块包含 `{{moduleKebab}}-api`、`{{moduleKebab}}-core`、`{{moduleKebab}}-starter`、`{{moduleKebab}}-starter-remote`。
+- API 模板提供 `create`、`update`、`delete`、`page`、`detail`。
+- Controller 模板路径为 `/{{moduleKebab}}/{{aggregateKebab}}s`，继承 `BaseCrudController`。
+
+前端模板：
+
+- `@{{projectKebab}}/{{moduleKebab}}-api` 导出 CRUD 请求函数。
+- `@{{projectKebab}}/{{moduleKebab}}` 导出 `{{moduleCamel}}PageRegistry` 和 `register{{modulePascal}}Pages()`。
+- 后台应用入口调用 `createMangoAdminApp()` 并注册业务页面。
+
+## 8. 数据库 / 初始化数据
+
+模板为业务模块生成 Flyway migration 入口和表名前缀变量。具体表结构由生成后的业务模块维护。
+
+## 9. 菜单 / 权限 / 租户
+
+模板为业务页面注册组件 key `{{moduleKebab}}/{{aggregateKebab}}/index`。菜单、权限码、租户边界应在生成后的业务模块资源清单、migration 和 authorization 配置中维护。
+
+## 10. 验证方式
+
+模板静态校验：
 
 ```bash
 node mango-business-starter/scripts/check-template.mjs
 ```
 
-该脚本只校验模板资产，不替代生成后项目的 Maven、pnpm 和浏览器验证。
+该脚本检查必备文件、业务 PMO、baseline、后端模板、前端模板和拓扑 README。它不运行 Maven、Vite 或浏览器验收。
+
+## 11. 业务接入最小闭环
+
+业务项目生成后，先在项目根目录执行 PMO preflight，确认 baseline 可读；再执行 `mango validate` 或模板自带 workspace 校验，随后按拓扑运行后端测试、前端构建和本地启动。单体模式验收一个后端进程和一个后台应用；微服务模式还要验收调用方 remote 契约、网关路由和真实后端 API。
+
+模板变更验收分两层：Mango 源仓运行 `node mango-business-starter/scripts/check-template.mjs`；生成项目内运行 PMO preflight、后端 Maven、前端构建和菜单页面打开。模板校验通过不等于生成项目业务链路已通过。
+
+## 12. 常见问题
+
+- 新增模板变量后，需要同步后端、前端、CLI 替换逻辑和模板校验。
+- business-pmo baseline 变更归入 Mango baseline 升级任务；普通业务需求通常只改 baseline 外的业务文件。
+- 生成项目已有业务自定义代码时，升级模板应通过 CLI sync 或人工迁移，不覆盖业务自有文件。
+
+## 13. 关联 PMO 规则
+
+- [开发流程规范](../mango-pmo/rules/00-dev-flow.md)
+- [交付质量门禁](../mango-pmo/rules/05-ai-delivery-quality.md)
+- [文档资产规范](../mango-pmo/rules/06-document-assets.md)
+- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 历史设计 / 交付记录
+
+- [Mango 能力地图](../mango-docs/capabilities/README.md)
+- [业务 PMO 说明](./business-pmo/README.md)
+- [单体拓扑说明](./topologies/monolith/README.md)
+- [微服务拓扑说明](./topologies/microservice/README.md)
