@@ -53,7 +53,7 @@ public class PaymentChannelSyncService {
     private final PaymentChannelAdapterRegistry channelAdapterRegistry;
     private final ObjectMapper objectMapper;
     private final PaymentObservabilityService observabilityService;
-    private final PaymentExceptionOrderService exceptionOrderService;
+    private final PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private final PaymentNumberService numberService;
     private final PlatformTransactionManager transactionManager;
 
@@ -176,11 +176,11 @@ public class PaymentChannelSyncService {
                     queryTime,
                     "主动查单确认支付成功");
         } else if (PaymentOrderStatusEnum.FAILED.getCode().equals(targetStatus)) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     order.getPayOrderNo(),
-                    PaymentExceptionOrderService.TYPE_CHANNEL_FAILED,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_CHANNEL_FAILED,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "主动查单发现通道支付失败，支付订单已失败并等待人工核对失败原因",
                     queryTime);
         }
@@ -326,11 +326,11 @@ public class PaymentChannelSyncService {
             refundOrder.setRefundTime(queryTime);
             refundOrder.setFlowNo(flowNo);
         } else if (PaymentRefundOrderStatusEnum.FAILED.getCode().equals(targetStatus)) {
-            exceptionOrderService.createIfAbsent(
+            exceptionOrderRecordService.createIfAbsent(
                     tenantId,
                     refundOrder.getRefundOrderNo(),
-                    PaymentExceptionOrderService.TYPE_REFUND_MISMATCH,
-                    PaymentExceptionOrderService.SEVERITY_HIGH,
+                    PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH,
+                    PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                     "主动查退款发现通道退款失败，退款订单已失败并等待人工核对退款结果",
                     queryTime);
         }
@@ -380,11 +380,11 @@ public class PaymentChannelSyncService {
                     queryTime);
             return refundResult(latest, targetStatus, false, summary);
         }
-        exceptionOrderService.createIfAbsent(
+        exceptionOrderRecordService.createIfAbsent(
                 tenantId,
                 originalRefundOrder.getRefundOrderNo(),
-                PaymentExceptionOrderService.TYPE_REFUND_MISMATCH,
-                PaymentExceptionOrderService.SEVERITY_HIGH,
+                PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH,
+                PaymentExceptionOrderRecordService.SEVERITY_HIGH,
                 "主动查退款并发处理后本地状态与通道目标状态不一致",
                 queryTime);
         Require.isTrue(false, PaymentCode.PAYMENT_REFUND_ORDER_STATE_INVALID.getCode(), "退款订单状态已变化，请刷新后重试");

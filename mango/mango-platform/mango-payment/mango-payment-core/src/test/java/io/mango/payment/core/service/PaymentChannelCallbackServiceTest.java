@@ -49,7 +49,7 @@ class PaymentChannelCallbackServiceTest {
     private PaymentDuplicatePaymentService duplicatePaymentService;
     private PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private PaymentObservabilityService observabilityService;
-    private PaymentExceptionOrderService exceptionOrderService;
+    private PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private PaymentNumberService numberService;
     private PaymentChannelCallbackService service;
 
@@ -65,7 +65,7 @@ class PaymentChannelCallbackServiceTest {
         duplicatePaymentService = mock(PaymentDuplicatePaymentService.class);
         duplicateRefundCompletionService = mock(PaymentDuplicateRefundCompletionService.class);
         observabilityService = mock(PaymentObservabilityService.class);
-        exceptionOrderService = mock(PaymentExceptionOrderService.class);
+        exceptionOrderRecordService = mock(PaymentExceptionOrderRecordService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_FLOW_NO)).thenReturn("PF2026060600000001");
         when(numberService.next(PaymentNumberService.PAY_REFUND_FLOW_NO)).thenReturn("RF2026060600000001");
@@ -81,7 +81,7 @@ class PaymentChannelCallbackServiceTest {
                 duplicatePaymentService,
                 duplicateRefundCompletionService,
                 observabilityService,
-                exceptionOrderService,
+                exceptionOrderRecordService,
                 numberService);
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
                 1001L, "1", "admin", "INTERNAL", "INTERNAL_USER", "INTERNAL_ORG", 1L, "internal-admin"));
@@ -166,11 +166,11 @@ class PaymentChannelCallbackServiceTest {
         assertThat(result.getFlowNo()).isNull();
         verify(transactionFlowMapper, never()).insert(any(PaymentTransactionFlowEntity.class));
         verify(businessOrderMapper, never()).markCashierPaySuccess(any(), any(), any());
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_CHANNEL_FAILED),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_CHANNEL_FAILED),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("通道支付回调返回失败状态，支付订单已失败并等待人工核对失败原因"),
                 eq(eventTime));
         verify(notificationService).notifyPaymentAfterCommit(any(PaymentApplication.class), any(PaymentBusinessOrderEntity.class), any(PaymentOrderVO.class));
@@ -204,11 +204,11 @@ class PaymentChannelCallbackServiceTest {
         assertThat(result.getStatus()).isEqualTo("SUCCESS");
         assertThat(result.getFlowNo()).isEqualTo("FLOW202606060001");
         assertThat(result.getMessage()).contains("已登记异常订单");
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_STATUS_MISMATCH),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("通道支付回调终态与本地支付订单终态不一致，本地状态：SUCCESS，通道状态：FAILED"),
                 eq(eventTime));
         verify(paymentOrderMapper, never()).updatePayingCallbackResult(any(), any(), any(), any(), any(), any());
@@ -291,11 +291,11 @@ class PaymentChannelCallbackServiceTest {
         assertThat(result.getChanged()).isFalse();
         assertThat(result.getStatus()).isEqualTo("PAYING");
         assertThat(result.getMessage()).contains("已登记异常订单");
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_AMOUNT_MISMATCH),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_AMOUNT_MISMATCH),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("通道回调金额与支付订单金额不一致"),
                 any(LocalDateTime.class));
         verify(paymentOrderMapper, never()).updatePayingCallbackResult(any(), any(), any(), any(), any(), any());
@@ -357,11 +357,11 @@ class PaymentChannelCallbackServiceTest {
         assertThat(result.getChanged()).isFalse();
         assertThat(result.getStatus()).isEqualTo("REFUNDING");
         assertThat(result.getMessage()).contains("已登记异常订单");
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("RO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("通道退款单号不匹配"),
                 any(LocalDateTime.class));
         verify(refundOrderMapper, never()).updateRefundingQueryResult(any(), any(), any(), any());
@@ -416,11 +416,11 @@ class PaymentChannelCallbackServiceTest {
         assertThat(result.getFlowNo()).isNull();
         verify(transactionFlowMapper, never()).insert(any(PaymentTransactionFlowEntity.class));
         verify(businessOrderMapper, never()).updateRefundProgress(any(), any(), any());
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("RO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_REFUND_MISMATCH),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("通道退款回调返回失败状态，退款订单已失败并等待人工核对退款结果"),
                 eq(eventTime));
         verify(notificationService).notifyRefundAfterCommit(any(PaymentApplication.class), any(PaymentBusinessOrderEntity.class), any(PaymentRefundOrderVO.class));
@@ -439,11 +439,11 @@ class PaymentChannelCallbackServiceTest {
         assertThat(result.getStatus()).isEqualTo("SUCCESS");
         assertThat(result.getFlowNo()).isEqualTo("RFLOW202606060001");
         assertThat(result.getMessage()).contains("已登记异常订单");
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("RO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_STATUS_MISMATCH),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("通道退款回调终态与本地退款订单终态不一致，本地状态：SUCCESS，通道状态：FAILED"),
                 eq(eventTime));
         verify(refundOrderMapper, never()).updateRefundingQueryResult(any(), any(), any(), any());

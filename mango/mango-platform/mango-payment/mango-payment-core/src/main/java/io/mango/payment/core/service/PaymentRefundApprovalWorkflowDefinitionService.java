@@ -6,7 +6,7 @@ import io.mango.common.result.R;
 import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class PaymentRefundApprovalWorkflowDefinitionService {
 
     public static final String PAYMENT_DOMAIN_CODE = "PAYMENT";
@@ -24,6 +23,13 @@ public class PaymentRefundApprovalWorkflowDefinitionService {
 
     private final WorkflowDefinitionApi workflowDefinitionApi;
     private final ObjectMapper objectMapper;
+
+    public PaymentRefundApprovalWorkflowDefinitionService(
+            @Qualifier("workflowDefinitionServiceImpl") WorkflowDefinitionApi workflowDefinitionApi,
+            ObjectMapper objectMapper) {
+        this.workflowDefinitionApi = workflowDefinitionApi;
+        this.objectMapper = objectMapper;
+    }
 
     public R<WorkflowDeployVO> ensureRefundApprovalDefinition() {
         return workflowDefinitionApi.ensurePublished(definitionCommand());

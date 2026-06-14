@@ -1,6 +1,5 @@
 package io.mango.payment.core.service;
 
-import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.mango.common.result.Require;
 import io.mango.common.vo.PageResult;
 import io.mango.payment.api.PaymentCode;
@@ -13,7 +12,6 @@ import io.mango.payment.api.vo.PaymentExceptionOrderActionVO;
 import io.mango.payment.api.vo.PaymentExceptionOrderStatusVO;
 import io.mango.payment.api.vo.PaymentExceptionOrderVO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,18 +23,17 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class PaymentExceptionOrderService {
 
-    public static final String TYPE_DUPLICATE_PAYMENT = "DUPLICATE_PAYMENT";
-    public static final String TYPE_PAY_TIMEOUT = "PAY_TIMEOUT";
-    public static final String TYPE_CHANNEL_FAILED = "CHANNEL_FAILED";
-    public static final String TYPE_REFUND_MISMATCH = "REFUND_MISMATCH";
-    public static final String TYPE_CHANNEL_CALLBACK_FAILED = "CHANNEL_CALLBACK_FAILED";
-    public static final String TYPE_AMOUNT_MISMATCH = "AMOUNT_MISMATCH";
-    public static final String TYPE_STATUS_MISMATCH = "STATUS_MISMATCH";
+    public static final String TYPE_DUPLICATE_PAYMENT = PaymentExceptionOrderRecordService.TYPE_DUPLICATE_PAYMENT;
+    public static final String TYPE_PAY_TIMEOUT = PaymentExceptionOrderRecordService.TYPE_PAY_TIMEOUT;
+    public static final String TYPE_CHANNEL_FAILED = PaymentExceptionOrderRecordService.TYPE_CHANNEL_FAILED;
+    public static final String TYPE_REFUND_MISMATCH = PaymentExceptionOrderRecordService.TYPE_REFUND_MISMATCH;
+    public static final String TYPE_CHANNEL_CALLBACK_FAILED = PaymentExceptionOrderRecordService.TYPE_CHANNEL_CALLBACK_FAILED;
+    public static final String TYPE_AMOUNT_MISMATCH = PaymentExceptionOrderRecordService.TYPE_AMOUNT_MISMATCH;
+    public static final String TYPE_STATUS_MISMATCH = PaymentExceptionOrderRecordService.TYPE_STATUS_MISMATCH;
 
-    public static final String SEVERITY_MEDIUM = "MEDIUM";
-    public static final String SEVERITY_HIGH = "HIGH";
+    public static final String SEVERITY_MEDIUM = PaymentExceptionOrderRecordService.SEVERITY_MEDIUM;
+    public static final String SEVERITY_HIGH = PaymentExceptionOrderRecordService.SEVERITY_HIGH;
 
-    private static final String HANDLE_STATUS_PENDING = "PENDING";
     private static final Pattern PAYMENT_ORDER_NO_PATTERN = Pattern.compile("^PO\\d{16}$");
     private static final Pattern REFUND_ORDER_NO_PATTERN = Pattern.compile("^RO\\d{16}$");
     private static final Set<String> EXCEPTION_ORDER_HANDLE_ACTIONS = Set.of(
@@ -51,10 +48,10 @@ public class PaymentExceptionOrderService {
             TYPE_CHANNEL_FAILED);
 
     private final PaymentExceptionOrderMapper exceptionOrderMapper;
-    private final PaymentNumberService numberService;
     private final PaymentOperationAuditService auditService;
     private final PaymentChannelSyncService channelSyncService;
     private final PaymentChannelOrderCloseService channelOrderCloseService;
+    private final PaymentExceptionOrderRecordService exceptionOrderRecordService;
 
     public PageResult<PaymentExceptionOrderVO> pageExceptionOrders(PaymentConfigPageQuery query) {
         PaymentConfigPageQuery resolved = query == null ? new PaymentConfigPageQuery() : query;
@@ -198,43 +195,13 @@ public class PaymentExceptionOrderService {
             String severity,
             String reason,
             LocalDateTime eventTime) {
-        Require.notNull(tenantId, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "租户 ID 不能为空");
-        Require.notBlank(relatedOrderNo, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "关联订单号不能为空");
-        Require.notBlank(exceptionType, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "异常类型不能为空");
-        Require.notBlank(severity, PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(), "异常级别不能为空");
-        LocalDateTime resolvedEventTime = eventTime == null ? LocalDateTime.now() : eventTime;
-
-        PaymentExceptionOrderEntity existing = exceptionOrderMapper.selectActiveByBusinessKey(
-                tenantId, relatedOrderNo, exceptionType);
-        if (existing != null) {
-            return existing;
-        }
-
-        PaymentExceptionOrderEntity entity = new PaymentExceptionOrderEntity();
-        entity.setId(IdWorker.getId());
-        entity.setExceptionNo(numberService.next(PaymentNumberService.PAY_EXCEPTION_NO));
-        entity.setRelatedOrderNo(relatedOrderNo);
-        entity.setExceptionType(exceptionType);
-        entity.setSeverity(severity);
-        entity.setHandleStatus(HANDLE_STATUS_PENDING);
-        entity.setReason(reason);
-        entity.setTenantId(tenantId);
-        entity.setCreatedBy(PaymentContextSupport.currentUserId());
-        entity.setCreatedAt(resolvedEventTime);
-        entity.setUpdatedBy(PaymentContextSupport.currentUserId());
-        entity.setUpdatedAt(resolvedEventTime);
-        entity.setDelFlag(0);
-        try {
-            exceptionOrderMapper.insert(entity);
-            return entity;
-        } catch (DuplicateKeyException ex) {
-            PaymentExceptionOrderEntity existingAfterDuplicate =
-                    exceptionOrderMapper.selectActiveByBusinessKey(tenantId, relatedOrderNo, exceptionType);
-            Require.notNull(existingAfterDuplicate,
-                    PaymentCode.PAYMENT_EXCEPTION_ORDER_INVALID.getCode(),
-                    "异常订单幂等创建冲突，请重试");
-            return existingAfterDuplicate;
-        }
+        return exceptionOrderRecordService.createIfAbsent(
+                tenantId,
+                relatedOrderNo,
+                exceptionType,
+                severity,
+                reason,
+                eventTime);
     }
 
     private PaymentChannelSyncService.PaymentSyncResult activeQueryPayment(String handleAction, String relatedOrderNo) {

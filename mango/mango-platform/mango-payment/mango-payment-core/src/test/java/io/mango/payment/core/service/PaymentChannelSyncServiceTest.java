@@ -58,7 +58,7 @@ class PaymentChannelSyncServiceTest {
     private PaymentDuplicatePaymentService duplicatePaymentService;
     private PaymentDuplicateRefundCompletionService duplicateRefundCompletionService;
     private PaymentObservabilityService observabilityService;
-    private PaymentExceptionOrderService exceptionOrderService;
+    private PaymentExceptionOrderRecordService exceptionOrderRecordService;
     private PaymentNumberService numberService;
     private PaymentChannelSyncService service;
 
@@ -78,7 +78,7 @@ class PaymentChannelSyncServiceTest {
         duplicatePaymentService = mock(PaymentDuplicatePaymentService.class);
         duplicateRefundCompletionService = mock(PaymentDuplicateRefundCompletionService.class);
         observabilityService = mock(PaymentObservabilityService.class);
-        exceptionOrderService = mock(PaymentExceptionOrderService.class);
+        exceptionOrderRecordService = mock(PaymentExceptionOrderRecordService.class);
         numberService = mock(PaymentNumberService.class);
         when(numberService.next(PaymentNumberService.PAY_FLOW_NO)).thenReturn("PF2026060600000001");
         when(numberService.next(PaymentNumberService.PAY_QUERY_NO)).thenReturn("PQ2026060600000001");
@@ -103,7 +103,7 @@ class PaymentChannelSyncServiceTest {
                 channelAdapterRegistry,
                 new ObjectMapper(),
                 observabilityService,
-                exceptionOrderService,
+                exceptionOrderRecordService,
                 numberService,
                 new TestTransactionManager());
         MangoContextHolder.set(MangoContextSnapshot.empty().withSecurity(
@@ -246,11 +246,11 @@ class PaymentChannelSyncServiceTest {
         verify(paymentOrderMapper).updatePayingQueryResult(eq(1L), eq(370001L), eq("FAILED"), eq(0), isNull());
         verify(transactionFlowMapper, never()).insert(any(PaymentTransactionFlowEntity.class));
         verify(businessOrderMapper, never()).markCashierPaySuccess(any(), any(), any());
-        verify(exceptionOrderService).createIfAbsent(
+        verify(exceptionOrderRecordService).createIfAbsent(
                 eq(1L),
                 eq("PO202606060001"),
-                eq(PaymentExceptionOrderService.TYPE_CHANNEL_FAILED),
-                eq(PaymentExceptionOrderService.SEVERITY_HIGH),
+                eq(PaymentExceptionOrderRecordService.TYPE_CHANNEL_FAILED),
+                eq(PaymentExceptionOrderRecordService.SEVERITY_HIGH),
                 eq("主动查单发现通道支付失败，支付订单已失败并等待人工核对失败原因"),
                 any(LocalDateTime.class));
         assertPaymentNotification("FAILED");
