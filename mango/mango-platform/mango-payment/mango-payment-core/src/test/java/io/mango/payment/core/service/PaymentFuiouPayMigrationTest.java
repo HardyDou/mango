@@ -30,6 +30,8 @@ class PaymentFuiouPayMigrationTest {
             "src/main/resources/db/migration/payment/V99__payment_fuiou_callback_https_1443.sql");
     private static final Path GATEWAY_PAGE_NOTIFY_URL_MIGRATION = Path.of(
             "src/main/resources/db/migration/payment/V100__payment_fuiou_gateway_page_notify_url.sql");
+    private static final Path PUBLIC_DEMO_PRIVATE_KEY_RESTORE_MIGRATION = Path.of(
+            "src/main/resources/db/migration/payment/V101__payment_fuiou_public_demo_private_key_restore.sql");
 
     @Test
     @DisplayName("migration should move fuiou from legacy seed to business signing configuration")
@@ -44,6 +46,7 @@ class PaymentFuiouPayMigrationTest {
         String callbackRouteUnificationSql = Files.readString(CALLBACK_ROUTE_UNIFICATION_MIGRATION);
         String callbackHttps1443Sql = Files.readString(CALLBACK_HTTPS_1443_MIGRATION);
         String gatewayPageNotifyUrlSql = Files.readString(GATEWAY_PAGE_NOTIFY_URL_MIGRATION);
+        String publicDemoPrivateKeyRestoreSql = Files.readString(PUBLIC_DEMO_PRIVATE_KEY_RESTORE_MIGRATION);
 
         assertFuiouSeedDoesNotDeclareBillCapability(seedSql);
         assertFuiouScanpayConfiguration(configurationSql);
@@ -55,6 +58,7 @@ class PaymentFuiouPayMigrationTest {
         assertFuiouCallbackRouteUnification(callbackRouteUnificationSql);
         assertFuiouCallbackHttps1443(callbackHttps1443Sql);
         assertFuiouGatewayPageNotifyUrl(gatewayPageNotifyUrlSql);
+        assertFuiouPublicDemoPrivateKeyRestore(publicDemoPrivateKeyRestoreSql);
         assertThat(seedSql)
                 .contains("\"field\":\"termId\"")
                 .contains("\"field\":\"termIp\"");
@@ -98,6 +102,18 @@ class PaymentFuiouPayMigrationTest {
                 .doesNotContain("UPDATE `payment_channel_contract`")
                 .doesNotContain("JSON_MERGE_PATCH")
                 .doesNotContain("douxy.inner.yunxinbaokeji.com");
+    }
+
+    private void assertFuiouPublicDemoPrivateKeyRestore(String sql) {
+        assertThat(sql)
+                .contains("public Fuiou demo merchant signing key")
+                .contains("JSON_SET")
+                .contains("'$.privateKey'")
+                .contains("'FUIOU_PAY_MANGO_TECH'")
+                .contains("'0002900F0370542'")
+                .contains("JSON_UNQUOTE(JSON_EXTRACT(`config_values_json`, '$.privateKey')) = ''")
+                .contains("MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJc")
+                .doesNotContain("gatewayMerchantKey");
     }
 
     private void assertFuiouScanpayConfiguration(String sql) {
