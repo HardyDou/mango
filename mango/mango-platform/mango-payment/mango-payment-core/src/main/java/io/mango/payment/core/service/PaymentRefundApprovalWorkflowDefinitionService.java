@@ -6,7 +6,6 @@ import io.mango.common.result.R;
 import io.mango.workflow.api.WorkflowDefinitionApi;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.vo.WorkflowDeployVO;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -25,7 +24,7 @@ public class PaymentRefundApprovalWorkflowDefinitionService {
     private final ObjectMapper objectMapper;
 
     public PaymentRefundApprovalWorkflowDefinitionService(
-            @Qualifier("workflowDefinitionServiceImpl") WorkflowDefinitionApi workflowDefinitionApi,
+            WorkflowDefinitionApi workflowDefinitionApi,
             ObjectMapper objectMapper) {
         this.workflowDefinitionApi = workflowDefinitionApi;
         this.objectMapper = objectMapper;
