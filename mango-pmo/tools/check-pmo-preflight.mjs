@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const preflightPath = path.join(__dirname, 'pmo-preflight.mjs');
-const agentsPath = path.resolve(__dirname, '..', '..', 'AGENTS.md');
 
 const cases = [
   {
@@ -68,7 +66,6 @@ const cases = [
 ];
 
 const failures = [];
-const agentsText = fs.existsSync(agentsPath) ? fs.readFileSync(agentsPath, 'utf8') : '';
 
 for (const item of cases) {
   const result = spawnSync('node', [preflightPath, ...item.args, '--json'], {
@@ -88,18 +85,6 @@ for (const item of cases) {
     if (!hasPath) {
       failures.push(`${item.name}: expected mustRead ${expectedPath}`);
     }
-  }
-}
-
-for (const lowRiskText of ['简单问答', '只读定位', 'git pull --ff-only', 'git fetch', 'git remote update', '本地运维']) {
-  if (!agentsText.includes(lowRiskText)) {
-    failures.push(`AGENTS.md should keep low-risk no-PMO boundary: ${lowRiskText}`);
-  }
-}
-
-for (const escalationText of ['解决冲突', '修复问题', '形成交付结论']) {
-  if (!agentsText.includes(escalationText)) {
-    failures.push(`AGENTS.md should keep escalation boundary after low-risk operations: ${escalationText}`);
   }
 }
 

@@ -50,10 +50,36 @@ function assertNoLongTermRuleLanguage(file, failures) {
 const failures = [];
 
 assertIncludes('AGENTS.md', [
+  '只做入口和路由',
+  '[mango-pmo/rules/00-dev-flow.md]',
+  '[mango-pmo/rules/06-document-assets.md]',
+  '[mango-pmo/rules/08-capability-docs.md]',
+  'node mango-pmo/tools/pmo-preflight.mjs'
+], failures);
+assertNotIncludes('AGENTS.md', [
+  '以下情况必须执行',
+  '以下情况不需要执行',
+  '开工回显',
+  '交付报告',
   'PMO preflight 的首要目的不是审批命令',
-  '完整触发边界见 [Mango PMO 总流程]',
+  '简单问答、概念解释、使用说明',
   'git pull --ff-only',
-  '低风险操作过程中需要人工改文件、解决冲突、修复问题或形成交付结论'
+  '解决冲突、修复问题或形成交付结论'
+], failures);
+
+assertIncludes('mango-docs/README.md', [
+  'Mango 能力地图',
+  '业务接入场景手册',
+  '文档资产归档边界',
+  'mango-pmo'
+], failures);
+assertNotIncludes('mango-docs/README.md', [
+  '只放：',
+  '不放：',
+  '规范统一放：',
+  '规范\n- 流程',
+  'Agent 定义',
+  'Skill 规则'
 ], failures);
 
 assertIncludes('mango-pmo/rules/00-dev-flow.md', [

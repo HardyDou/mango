@@ -74,7 +74,7 @@ create table biz_contract_attachment (
 );
 ```
 
-## 5. 投产检查项
+## 5. 业务场景验收点
 
 | 类别 | 检查项 |
 |------|--------|

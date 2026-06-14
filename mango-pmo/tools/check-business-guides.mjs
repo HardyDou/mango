@@ -10,7 +10,7 @@ const selfTest = args.includes('--self-test');
 const guideChecks = [
   {
     file: 'mango-docs/guides/business-integration/file-upload-form.md',
-    sections: ['阅读顺序', '接入检查点', '投产检查项', '最小闭环', '常见失败', '验证命令', '关联规则'],
+    sections: ['阅读顺序', '接入检查点', '业务场景验收点', '最小闭环', '常见失败', '验证命令', '关联规则'],
     text: [
       'File 后端 README',
       'File Components README',
@@ -22,7 +22,8 @@ const guideChecks = [
       '后端代码文件引用规则',
       '前端文件上传与回显规则',
       'pnpm -F @mango/file build'
-    ]
+    ],
+    forbiddenText: ['投产检查项']
   },
   {
     file: 'mango-docs/guides/business-integration/workflow-business-approval.md',
@@ -99,7 +100,7 @@ function hasSection(text, section) {
   return new RegExp(`^##\\s+(?:\\d+\\.\\s*)?${escapeRegExp(section)}\\s*$`, 'm').test(text);
 }
 
-function validateGuide({ file, sections, text }) {
+function validateGuide({ file, sections, text, forbiddenText = [] }) {
   const failures = [];
   if (!fs.existsSync(path.join(root, file))) {
     return [`${file}: missing guide file`];
@@ -113,6 +114,11 @@ function validateGuide({ file, sections, text }) {
   for (const expected of text) {
     if (!body.includes(expected)) {
       failures.push(`${file}: missing expected text "${expected}"`);
+    }
+  }
+  for (const forbidden of forbiddenText) {
+    if (body.includes(forbidden)) {
+      failures.push(`${file}: should not contain "${forbidden}"`);
     }
   }
   for (const pattern of forbiddenRulePatterns) {
@@ -133,7 +139,8 @@ function runSelfTest() {
   const valid = validateGuide({
     file: 'mango-docs/guides/business-integration/file-upload-form.md',
     sections: ['阅读顺序'],
-    text: ['MUpload']
+    text: ['MUpload'],
+    forbiddenText: ['not-real-forbidden-marker']
   });
   const invalid = validateGuide({
     file: 'mango-docs/guides/business-integration/file-upload-form.md',
