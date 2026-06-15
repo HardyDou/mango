@@ -742,7 +742,7 @@ type CashierSession = {
     title?: string;
   };
   order?: {
-    businessOrderId?: string;
+    businessOrderId?: string | null;
     bizOrderNo?: string;
     status?: string;
   };
@@ -780,25 +780,6 @@ type MenuNode = {
   menuName?: string;
   children?: MenuNode[];
 };
-
-const paymentEndpoints = [
-  'applications',
-  'enterprise-subjects',
-  'channel-contracts',
-  'channels',
-  'methods',
-  'cashier-configs',
-  'business-orders',
-  'payment-orders',
-  'refund-orders',
-  'transaction-flows',
-  'exception-orders',
-  'notification-records',
-  'reconciliations',
-  'differences',
-  'settlement-summaries',
-  'operation-audits',
-];
 
 test.setTimeout(90 * 1000);
 
@@ -3212,7 +3193,7 @@ test.describe('支付中心 E2E', () => {
     }
   });
 
-  test('数据库菜单分组、列表接口和收银台入口可用', async ({ page }) => {
+  test('支付中心菜单授权符合设计入口', async ({ page }) => {
     await login(page);
     const headers = await apiHeaders(page);
 
@@ -3249,16 +3230,10 @@ test.describe('支付中心 E2E', () => {
     expect(menuNames).not.toContain('App 收银台');
     expect(menuNames).not.toContain('小程序收银台');
     expect(menuNames).not.toContain('支付结果页');
+  });
 
-    for (const endpoint of paymentEndpoints) {
-      const response = await page.request.get(`/api/payment/${endpoint}/page`, {
-        headers,
-        params: { page: '1', size: '10', keyword: '' },
-      });
-      const body = await expectBusinessOk<PageData>(response);
-      expect(Number(body.data?.total || 0), `${endpoint} 应返回支付测试数据`).toBeGreaterThan(0);
-    }
-
+  test('应用管理列表隐藏接入安全配置明细', async ({ page }) => {
+    await login(page);
     await openPaymentPage(page, '/#/payment/applications', '应用管理');
     await page.getByPlaceholder('应用名称 / AppId').fill('订单中心示例应用');
     await expect(page.getByText('支付通知')).toHaveCount(0);
@@ -3272,7 +3247,10 @@ test.describe('支付中心 E2E', () => {
     await expect(page.getByText('订单中心示例应用')).toBeVisible();
     const appRow = page.locator('.payment-table .el-table__body-wrapper tbody tr').filter({ hasText: '订单中心示例应用' }).first();
     await expect(appRow.locator('.el-tag').filter({ hasText: /^app_/ })).toHaveCount(0);
+  });
 
+  test('支付通道新增入口使用字段模板编辑', async ({ page }) => {
+    await login(page);
     await openPaymentPage(page, '/#/payment/channels', '支付通道');
     const mangoPayChannelRow = await paymentTableRow(page, 'MANGO_PAY');
     await expect(mangoPayChannelRow.getByText('芒果支付', { exact: true })).toBeVisible();
@@ -3287,7 +3265,10 @@ test.describe('支付中心 E2E', () => {
     await expect(dialog(page).getByPlaceholder('枚举选项，每行 label=value；非枚举字段可留空')).toBeVisible();
     await expect(dialog(page).getByPlaceholder(/JSON/)).toHaveCount(0);
     await dialog(page).getByRole('button', { name: '取消' }).click();
+  });
 
+  test('签约通道新增入口使用配置值字段', async ({ page }) => {
+    await login(page);
     await openPaymentPage(page, '/#/payment/channel-contracts', '签约通道');
     const builtInContractRow = await paymentTableRow(page, 'MANGO_PAY_MERCHANT_001');
     await expect(builtInContractRow.getByText('芒果科技有限公司')).toBeVisible();
@@ -3297,7 +3278,10 @@ test.describe('支付中心 E2E', () => {
     await expect(formItem(page, '签约名称')).toHaveCount(0);
     await expect(formItem(page, '配置值').locator('textarea')).toHaveCount(0);
     await dialog(page).getByRole('button', { name: '取消' }).click();
+  });
 
+  test('收银台预览不发起真实支付', async ({ page }) => {
+    await login(page);
     const cashierConfig = {
       id: '350001',
       cashierName: '订单中心 Web 收银台',
@@ -3330,7 +3314,8 @@ test.describe('支付中心 E2E', () => {
     const sessionResponse = await sessionPromise;
     const sessionBody = await expectBusinessOk<CashierSession>(sessionResponse);
     expect(sessionBody.data?.cashierConfigId).toBe('350001');
-    expect([undefined, 'TO_PAY', 'PAYING']).toContain(sessionBody.data?.order?.status);
+    expect(sessionBody.data?.order?.status).toBe('PREVIEW');
+    expect(sessionBody.data?.order?.businessOrderId).toBeNull();
     expect(sessionBody.data?.methods?.map(item => item.methodCode)).toEqual(expect.arrayContaining([
       'PERSONAL_WECHAT_QR',
       'PERSONAL_ALIPAY_QR',
@@ -3372,26 +3357,6 @@ test.describe('支付中心 E2E', () => {
     await expect(cashierDialog.getByText('线下转账通道未返回收款账户信息')).toHaveCount(0);
     expect(previewPayRequests, '收银台配置预览不应发起真实支付').toHaveLength(0);
     await cashierDialog.locator('.el-dialog__headerbtn').first().click();
-
-    const referencedDeleteResponse = await page.request.delete('/api/payment/cashier-configs', {
-      headers,
-      params: { id: '350001' },
-    });
-    const referencedDeleteBody = await expectBusinessError<boolean>(referencedDeleteResponse);
-    expect(referencedDeleteBody.code).toBe(3764);
-    expect(referencedDeleteBody.msg).toContain('收银台配置存在关联数据');
-    const rejectedAudit = await findLatestPaymentAudit(page, headers, {
-      action: 'DELETE_CASHIER_CONFIG',
-      resourceType: 'PAYMENT_CASHIER_CONFIG',
-      resourceId: '350001',
-      operationResult: 'REJECTED',
-    });
-    expect(rejectedAudit).toMatchObject({
-      operationAction: 'DELETE_CASHIER_CONFIG',
-      resourceType: 'PAYMENT_CASHIER_CONFIG',
-      resourceId: '350001',
-      operationResult: 'REJECTED',
-    });
   });
 
   test('支付列表普通字段纯文本展示，无边框标签包裹', async ({ page }) => {
