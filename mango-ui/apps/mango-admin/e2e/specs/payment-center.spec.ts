@@ -1547,7 +1547,7 @@ function channelCodeOptionText(channelCode: string) {
 }
 
 async function findChannelCapability(page: Page, headers: Record<string, string>, channelId: string, methodCode: string) {
-  const response = await page.request.get('/api/payment/channel-capabilities/page', {
+  const response = await page.request.get('/api/payment/channels/capabilities/page', {
     headers,
     params: { page: '1', size: '50', channelId, keyword: methodCode },
   });
@@ -7197,7 +7197,7 @@ test.describe('支付中心 E2E', () => {
     const deletedChannel = await findChannelByCode(page, headers, channelCode);
     expect(deletedChannel).toBeUndefined();
 
-    const deletedCapabilityResponse = await page.request.get('/api/payment/channel-capabilities/page', {
+    const deletedCapabilityResponse = await page.request.get('/api/payment/channels/capabilities/page', {
       headers,
       params: { page: '1', size: '50', channelId: createdChannelId, keyword: 'PERSONAL_WECHAT_QR' },
     });

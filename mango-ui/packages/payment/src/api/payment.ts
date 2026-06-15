@@ -1133,7 +1133,7 @@ export const paymentChannelContractApi = {
       .then(data => fromBackendPageResult<PaymentChannelBillSource>(data, params)),
   saveBillSource: (data: SavePaymentChannelBillSourceCommand) => post<PaymentChannelBillSource>('/payment/channel-contracts/bill-sources', data),
 };
-export const paymentChannelCapabilityApi = createPaymentResourceApi<PaymentChannelCapability>('/payment/channel-capabilities');
+export const paymentChannelCapabilityApi = createPaymentReadonlyResourceApi<PaymentChannelCapability>('/payment/channels/capabilities');
 export const paymentMethodApi = {
   ...createPaymentResourceApi<PaymentMethod>('/payment/methods'),
   categories: () => get<PaymentMethodCategory[]>('/payment/methods/categories'),
