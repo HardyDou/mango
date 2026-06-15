@@ -1,0 +1,14 @@
+{
+  "name": "@mango/docs-site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:stage": "node .vitepress/stage-public-docs.mjs",
+    "docs:build": "npm run docs:stage && vitepress build .vitepress/public-src",
+    "docs:dev": "npm run docs:stage && vitepress dev .vitepress/public-src --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4"
+  }
+}
