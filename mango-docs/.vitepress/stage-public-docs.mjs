@@ -82,7 +82,6 @@ const publicDocs = [
   'mango-ui/packages/file/src/components/README.md',
   'mango-ui/packages/job/README.md',
   'mango-ui/packages/job/src/views/README.md',
-  'mango-ui/packages/mango-cli/README.md',
   'mango-ui/packages/notice/README.md',
   'mango-ui/packages/numgen/README.md',
   'mango-ui/packages/payment/README.md',
