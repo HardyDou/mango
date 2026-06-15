@@ -71,27 +71,29 @@
 
 ## 6. 前端与 CLI 能力
 
-| 能力 | 包 | README | 验证入口 |
-|------|----|--------|----------|
-| 单体管理端 | `@mango/admin` | [README](../../mango-ui/packages/admin/README.md) | [验证方式](../../mango-ui/packages/admin/README.md#10-验证方式) |
-| 页面注册表 | `@mango/admin-pages` | [README](../../mango-ui/packages/admin-pages/README.md) | [验证方式](../../mango-ui/packages/admin-pages/README.md#10-验证方式) |
-| Shell | `@mango/admin-shell` | [README](../../mango-ui/packages/admin-shell/README.md) | [验证方式](../../mango-ui/packages/admin-shell/README.md#10-验证方式) |
-| API Schema | `@mango/api-schema` | [README](../../mango-ui/packages/api-schema/README.md) | [验证方式](../../mango-ui/packages/api-schema/README.md#10-验证方式) |
-| 应用运行时 | `@mango/app-runtime` | [README](../../mango-ui/packages/app-runtime/README.md) | [验证方式](../../mango-ui/packages/app-runtime/README.md#10-验证方式) |
-| 认证前端 | `@mango/auth` | [README](../../mango-ui/packages/auth/README.md) | [验证方式](../../mango-ui/packages/auth/README.md#10-验证方式) |
-| 日历前端 | `@mango/calendar` | [README](../../mango-ui/packages/calendar/README.md) | [验证方式](../../mango-ui/packages/calendar/README.md#10-验证方式) |
-| 公共组件 | `@mango/common` | [README](../../mango-ui/packages/common/README.md) | [验证方式](../../mango-ui/packages/common/README.md#10-验证方式) |
-| 文件前端 | `@mango/file` | [README](../../mango-ui/packages/file/README.md) | [验证方式](../../mango-ui/packages/file/README.md#10-验证方式) |
-| 任务前端 | `@mango/job` | [README](../../mango-ui/packages/job/README.md) | [验证方式](../../mango-ui/packages/job/README.md#10-验证方式) |
-| CLI | `@mango/cli` | [README](../../mango-ui/packages/mango-cli/README.md) | [验证方式](../../mango-ui/packages/mango-cli/README.md#10-验证方式) |
-| 通知前端 | `@mango/notice` | [README](../../mango-ui/packages/notice/README.md) | [验证方式](../../mango-ui/packages/notice/README.md#10-验证方式) |
-| 编号前端 | `@mango/numgen` | [README](../../mango-ui/packages/numgen/README.md) | [验证方式](../../mango-ui/packages/numgen/README.md#10-验证方式) |
-| 支付前端 | `@mango/payment` | [README](../../mango-ui/packages/payment/README.md) | [验证方式](../../mango-ui/packages/payment/README.md#10-验证方式) |
-| RBAC API | `@mango/rbac` | [README](../../mango-ui/packages/rbac/README.md) | [验证方式](../../mango-ui/packages/rbac/README.md#10-验证方式) |
-| 系统前端 | `@mango/system` | [README](../../mango-ui/packages/system/README.md) | [验证方式](../../mango-ui/packages/system/README.md#10-验证方式) |
-| 模板前端 | `@mango/template` | [README](../../mango-ui/packages/template/README.md) | [验证方式](../../mango-ui/packages/template/README.md#10-验证方式) |
-| 工作流前端 | `@mango/workflow` | [README](../../mango-ui/packages/workflow/README.md) | [验证方式](../../mango-ui/packages/workflow/README.md#10-验证方式) |
-| 工作流示例 | `@mango/workflow-business-example` | [README](../../mango-ui/packages/workflow-business-example/README.md) | [验证方式](../../mango-ui/packages/workflow-business-example/README.md#10-验证方式) |
+Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pages` 的包不适合作为官网、营销站、C 端门户的页面组件直接集成；这类站点只应评估 `通用能力`、`混合能力` 或 CLI，并单独确认样式、依赖、接口和权限边界。
+
+| 能力 | 包 | 适用端 / 集成形态 | 官网类站点建议 | README | 验证入口 |
+|------|----|-------------------|----------------|--------|----------|
+| 单体管理端 | `@mango/admin` | Admin Shell，后台应用聚合入口 | 不使用 | [README](../../mango-ui/packages/admin/README.md) | [验证方式](../../mango-ui/packages/admin/README.md#10-验证方式) |
+| 后台 Shell | `@mango/admin-shell` | Admin Shell，后台布局、菜单、路由和运行时 | 不使用，除非官网就是内部后台 | [README](../../mango-ui/packages/admin-shell/README.md) | [验证方式](../../mango-ui/packages/admin-shell/README.md#10-验证方式) |
+| 页面注册表 | `@mango/admin-pages` | Admin Pages，后台页面注册和 component key 映射 | 不使用 | [README](../../mango-ui/packages/admin-pages/README.md) | [验证方式](../../mango-ui/packages/admin-pages/README.md#10-验证方式) |
+| 认证前端 | `@mango/auth` | Admin Pages，后台登录、用户与认证页面 | 不直接复用官网登录页 | [README](../../mango-ui/packages/auth/README.md) | [验证方式](../../mango-ui/packages/auth/README.md#10-验证方式) |
+| 日历前端 | `@mango/calendar` | Admin Pages，后台日历管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/calendar/README.md) | [验证方式](../../mango-ui/packages/calendar/README.md#10-验证方式) |
+| 任务前端 | `@mango/job` | Admin Pages，后台任务管理页面 | 不使用 | [README](../../mango-ui/packages/job/README.md) | [验证方式](../../mango-ui/packages/job/README.md#10-验证方式) |
+| 通知前端 | `@mango/notice` | Admin Pages，后台通知管理页面 | 不直接复用整页 | [README](../../mango-ui/packages/notice/README.md) | [验证方式](../../mango-ui/packages/notice/README.md#10-验证方式) |
+| 编号前端 | `@mango/numgen` | Admin Pages，后台编号规则管理页面 | 不使用 | [README](../../mango-ui/packages/numgen/README.md) | [验证方式](../../mango-ui/packages/numgen/README.md#10-验证方式) |
+| 支付前端 | `@mango/payment` | Admin Pages，后台支付配置、订单和对账页面 | 不直接复用后台管理页；收银台另按业务评估 | [README](../../mango-ui/packages/payment/README.md) | [验证方式](../../mango-ui/packages/payment/README.md#10-验证方式) |
+| RBAC API | `@mango/rbac` | Admin Pages/API，后台菜单、权限和页面注册辅助 | 不使用后台页面；API 封装需按权限模型评估 | [README](../../mango-ui/packages/rbac/README.md) | [验证方式](../../mango-ui/packages/rbac/README.md#10-验证方式) |
+| 系统前端 | `@mango/system` | Admin Pages，后台系统配置页面与组件 | 不直接复用整页 | [README](../../mango-ui/packages/system/README.md) | [验证方式](../../mango-ui/packages/system/README.md#10-验证方式) |
+| 模板前端 | `@mango/template` | Admin Pages，后台模板管理页面 | 不使用 | [README](../../mango-ui/packages/template/README.md) | [验证方式](../../mango-ui/packages/template/README.md#10-验证方式) |
+| 工作流前端 | `@mango/workflow` | Admin Pages，后台流程设计、审批和运行页面 | 不直接复用整页；表单/流程组件需单独评估 | [README](../../mango-ui/packages/workflow/README.md) | [验证方式](../../mango-ui/packages/workflow/README.md#10-验证方式) |
+| 工作流示例 | `@mango/workflow-business-example` | Example，后台业务审批示例 | 不作为生产站点依赖 | [README](../../mango-ui/packages/workflow-business-example/README.md) | [验证方式](../../mango-ui/packages/workflow-business-example/README.md#10-验证方式) |
+| API Schema | `@mango/api-schema` | 通用能力，接口类型和 schema | 可评估使用 | [README](../../mango-ui/packages/api-schema/README.md) | [验证方式](../../mango-ui/packages/api-schema/README.md#10-验证方式) |
+| 应用运行时 | `@mango/app-runtime` | 通用/运行时能力，应用装配基础 | 可评估使用，但需确认是否绑定后台运行模型 | [README](../../mango-ui/packages/app-runtime/README.md) | [验证方式](../../mango-ui/packages/app-runtime/README.md#10-验证方式) |
+| 公共组件 | `@mango/common` | 通用能力，请求、消息、选择器、编辑器等 | 可评估使用，需核对 Element Plus、主题和后台依赖 | [README](../../mango-ui/packages/common/README.md) | [验证方式](../../mango-ui/packages/common/README.md#10-验证方式) |
+| 文件前端 | `@mango/file` | 混合能力，包含后台页面和上传/预览组件 | 只评估组件级能力，不直接复用后台页面 | [README](../../mango-ui/packages/file/README.md) | [验证方式](../../mango-ui/packages/file/README.md#10-验证方式) |
+| CLI | `@mango/cli` | 开发工具，项目生成、模块追加和 PMO baseline 同步 | 可用于生成项目，不是运行时组件 | [README](../../mango-ui/packages/mango-cli/README.md) | [验证方式](../../mango-ui/packages/mango-cli/README.md#10-验证方式) |
 
 ## 7. 后端装配与工具
 
