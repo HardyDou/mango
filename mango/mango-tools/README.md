@@ -26,6 +26,25 @@
 
 工具配置来自 Maven 插件参数和项目结构。
 
+`mango:check` 支持 PR 级质量门禁参数：
+
+- `-Dmango.check.gate=all`：默认模式，任何问题都会使检查失败。
+- `-Dmango.check.gate=no-new-violations`：只把变更文件中的非 baseline 问题作为新增违规。
+- `-Dmango.check.changedFiles=<path1,path2>`：显式传入 PR 变更文件。
+- `-Dmango.check.baseRef=<ref>`：未传 `changedFiles` 时，通过 `git diff <ref>...HEAD` 解析变更文件。
+- `-Dmango.check.baselineFile=<report.json>`：传入历史 JSON 报告，匹配到的 issue 计入存量问题。
+- `-Dmango.check.staticFailurePolicy=block|report`：静态分析委托失败时阻断，或记录为 `INCONCLUSIVE` 报告项。
+
+PR 检查推荐输出 JSON 报告：
+
+```bash
+mvn -f mango/pom.xml mango:check -Drule=all \
+  -Dmango.check.gate=no-new-violations \
+  -Dmango.check.baseRef=origin/main \
+  -Doutput=json \
+  -DreportFile=target/mango-check-report.json
+```
+
 ## 7. 对外接口 / 扩展点
 
 Maven plugin goals，例如 `mango:check`、`mango:gen-module`、`mango:gen-crud`。

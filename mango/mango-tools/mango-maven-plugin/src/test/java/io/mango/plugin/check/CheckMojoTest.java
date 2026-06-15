@@ -103,6 +103,110 @@ class CheckMojoTest {
     }
 
     @Test
+    void checkNaming_noNewViolationsWithHistoricalIssue_passes() throws Exception {
+        // given
+        Path pomFile = tempDir.resolve("mango-demo/pom.xml");
+        Files.createDirectories(pomFile.getParent());
+        Files.writeString(pomFile, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <artifactId>mangoDemoCore</artifactId>
+                </project>
+                """);
+        Path reportFile = tempDir.resolve("target/no-new-report.json");
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "gate", "no-new-violations");
+        setField(mojo, "changedFiles", "mango-demo/src/main/java/io/mango/demo/NewService.java");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "reportFile", reportFile.toString());
+        setField(mojo, "session", null);
+
+        // when & then
+        assertDoesNotThrow(() -> mojo.execute());
+        String report = Files.readString(reportFile);
+        assertTrue(report.contains("\"gateStatus\" : \"PASS\""));
+        assertTrue(report.contains("\"newIssueCount\" : 0"));
+        assertTrue(report.contains("\"baselineIssueCount\" : 1"));
+    }
+
+    @Test
+    void checkNaming_noNewViolationsWithChangedIssue_fails() throws Exception {
+        // given
+        Path pomFile = tempDir.resolve("mango-demo/pom.xml");
+        Files.createDirectories(pomFile.getParent());
+        Files.writeString(pomFile, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <artifactId>mangoDemoCore</artifactId>
+                </project>
+                """);
+        Path reportFile = tempDir.resolve("target/no-new-failed-report.json");
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "gate", "no-new-violations");
+        setField(mojo, "changedFiles", "mango-demo/pom.xml");
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "reportFile", reportFile.toString());
+        setField(mojo, "session", null);
+
+        // when & then
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+        assertTrue(exception.getMessage().contains("newIssues=1"));
+        String report = Files.readString(reportFile);
+        assertTrue(report.contains("\"gateStatus\" : \"FAIL\""));
+        assertTrue(report.contains("\"newIssueCount\" : 1"));
+    }
+
+    @Test
+    void checkNaming_noNewViolationsWithBaselineFingerprint_passes() throws Exception {
+        // given
+        Path pomFile = tempDir.resolve("mango-demo/pom.xml");
+        Files.createDirectories(pomFile.getParent());
+        Files.writeString(pomFile, """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <project>
+                    <artifactId>mangoDemoCore</artifactId>
+                </project>
+                """);
+        Path baselineFile = tempDir.resolve("target/baseline.json");
+        Files.createDirectories(baselineFile.getParent());
+        Files.writeString(baselineFile, """
+                {
+                  "issues" : [ {
+                    "type" : "NAMING",
+                    "severity" : "MAJOR",
+                    "file" : "%s",
+                    "line" : 3,
+                    "description" : "Mango module artifactId must use kebab-case: mangoDemoCore",
+                    "rule" : "NAMING",
+                    "reference" : "naming-rules.md",
+                    "source" : "mango-check"
+                  } ]
+                }
+                """.formatted(pomFile.toString().replace("\\", "\\\\")));
+        Path reportFile = tempDir.resolve("target/no-new-baseline-report.json");
+
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "rule", "naming");
+        setField(mojo, "gate", "no-new-violations");
+        setField(mojo, "changedFiles", "mango-demo/pom.xml");
+        setField(mojo, "baselineFile", baselineFile.toString());
+        setField(mojo, "baseDir", tempDir.toString());
+        setField(mojo, "reportFile", reportFile.toString());
+        setField(mojo, "session", null);
+
+        // when & then
+        assertDoesNotThrow(() -> mojo.execute());
+        String report = Files.readString(reportFile);
+        assertTrue(report.contains("\"gateStatus\" : \"PASS\""));
+        assertTrue(report.contains("\"newIssueCount\" : 0"));
+        assertTrue(report.contains("\"baseline\" : true"));
+    }
+
+    @Test
     void checkMethodLength_genericRule_reportsUnsupported() throws Exception {
         // given - create a file with a long method
         Path javaFile = tempDir.resolve("TestService.java");
@@ -286,6 +390,54 @@ class CheckMojoTest {
         assertInstanceOf(MojoExecutionException.class, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains("timed out after 1s"));
         assertTrue(exception.getCause().getMessage().contains("pmd:check"));
+    }
+
+    @Test
+    void recordStaticFailure_withReportPolicy_recordsToolFailure() throws Exception {
+        // given
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "staticFailurePolicy", "report");
+        CheckMojo.CheckResult result = new CheckMojo.CheckResult();
+        result.staticFailurePolicy = "report";
+        setField(mojo, "result", result);
+
+        Method method = CheckMojo.class.getDeclaredMethod(
+                "recordStaticFailure", String.class, MojoExecutionException.class);
+        method.setAccessible(true);
+
+        // when
+        boolean recorded = (boolean) method.invoke(mojo, "spotbugs:spotbugs",
+                new MojoExecutionException("timed out"));
+
+        // then
+        assertTrue(recorded);
+        assertEquals(1, result.toolFailures.size());
+        assertEquals("spotbugs:spotbugs", result.toolFailures.get(0).goal);
+        assertEquals("timed out", result.toolFailures.get(0).message);
+    }
+
+    @Test
+    void finalizeResult_withReportPolicyAndToolFailure_reportsInconclusive() throws Exception {
+        // given
+        CheckMojo mojo = new CheckMojo();
+        setField(mojo, "gate", "all");
+        setField(mojo, "baseDir", tempDir.toString());
+        CheckMojo.CheckResult result = new CheckMojo.CheckResult();
+        result.staticFailurePolicy = "report";
+        result.addToolFailure("spotbugs:spotbugs", "timed out");
+        setField(mojo, "result", result);
+
+        Method method = CheckMojo.class.getDeclaredMethod("finalizeResult");
+        method.setAccessible(true);
+
+        // when
+        assertDoesNotThrow(() -> method.invoke(mojo));
+
+        // then
+        assertTrue(result.passed);
+        assertEquals("INCONCLUSIVE", result.gateStatus);
+        assertEquals(1, result.toolFailureCount);
+        assertTrue(result.gateMessages.contains("static analysis has reported tool failure(s)"));
     }
 
     @Test

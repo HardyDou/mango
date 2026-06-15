@@ -24,6 +24,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -149,6 +150,36 @@ public class CheckMojo extends AbstractMojo {
     private long staticTimeoutSeconds;
 
     /**
+     * Gate mode: all, no-new-violations.
+     */
+    @Parameter(property = "mango.check.gate", defaultValue = "all")
+    private String gate;
+
+    /**
+     * Comma-separated changed files used by no-new-violations gate.
+     */
+    @Parameter(property = "mango.check.changedFiles")
+    private String changedFiles;
+
+    /**
+     * Git base ref used to resolve changed files when changedFiles is not provided.
+     */
+    @Parameter(property = "mango.check.baseRef")
+    private String baseRef;
+
+    /**
+     * Optional previous mango:check JSON report for baseline comparison.
+     */
+    @Parameter(property = "mango.check.baselineFile")
+    private String baselineFile;
+
+    /**
+     * Static-analysis delegation failure policy: block, report.
+     */
+    @Parameter(property = "mango.check.staticFailurePolicy", defaultValue = "block")
+    private String staticFailurePolicy;
+
+    /**
      * Retained for backward-compatible tests and configuration migration.
      * Generic method-length checks are delegated to PMD/P3C/Checkstyle.
      */
@@ -179,6 +210,8 @@ public class CheckMojo extends AbstractMojo {
 
         getLog().info("Running Mango Check - rule: " + rule);
         result = new CheckResult();
+        result.gate = normalizeGate();
+        result.staticFailurePolicy = normalizeStaticFailurePolicy();
 
         switch (rule.toLowerCase(Locale.ROOT)) {
             case "duplicate", "method-length", "class-length", "complexity" -> unsupportedGenericRule(rule);
@@ -222,6 +255,8 @@ public class CheckMojo extends AbstractMojo {
             default -> getLog().warn("Unknown rule: " + rule);
         }
 
+        finalizeResult();
+
         if ("json".equalsIgnoreCase(output)) {
             outputJson();
         } else {
@@ -233,7 +268,10 @@ public class CheckMojo extends AbstractMojo {
         }
 
         if (!result.passed) {
-            throw new MojoExecutionException("Check failed: " + result.issues.size() + " issue(s) found");
+            throw new MojoExecutionException("Check failed: gateStatus=" + result.gateStatus
+                    + ", newIssues=" + result.newIssues.size()
+                    + ", issues=" + result.issues.size()
+                    + ", toolFailures=" + result.toolFailures.size());
         }
 
         getLog().info("Check completed. " + result.issues.size() + " issue(s) found.");
@@ -297,8 +335,24 @@ public class CheckMojo extends AbstractMojo {
             getLog().info("Aggregated static analysis scope: " + String.join(",", reactorProjects));
         }
         for (String goal : goals) {
-            invokeSingleGoal(mavenExecutable, rootPath, goal, reactorProjects);
+            try {
+                invokeSingleGoal(mavenExecutable, rootPath, goal, reactorProjects);
+            } catch (MojoExecutionException e) {
+                if (recordStaticFailure(goal, e)) {
+                    continue;
+                }
+                throw e;
+            }
         }
+    }
+
+    private boolean recordStaticFailure(String goal, MojoExecutionException exception) {
+        if (!shouldReportStaticFailure()) {
+            return false;
+        }
+        result.addToolFailure(goal, exception.getMessage());
+        getLog().warn("Static-analysis delegation reported but did not block: " + goal);
+        return true;
     }
 
     private void invokeSingleGoal(File mavenExecutable, Path rootPath, String goal,
@@ -2583,10 +2637,264 @@ public class CheckMojo extends AbstractMojo {
         return !key.contains("#{" + token);
     }
 
+    private void finalizeResult() throws MojoExecutionException {
+        result.totalIssueCount = result.issues.size();
+        result.toolFailureCount = result.toolFailures.size();
+        result.issuesBySource = countIssuesByField("source");
+        result.issuesByRule = countIssuesByField("rule");
+
+        if (isNoNewViolationsGate()) {
+            Set<String> changedFileSet = resolveChangedFiles();
+            result.changedFiles.addAll(changedFileSet);
+            Set<String> baselineFingerprints = loadBaselineFingerprints();
+            for (Issue issue : result.issues) {
+                issue.fingerprint = fingerprint(issue);
+                issue.inChangedFiles = isChangedIssue(issue, changedFileSet);
+                issue.baseline = baselineFingerprints.contains(issue.fingerprint);
+                if (issue.inChangedFiles && !issue.baseline) {
+                    result.newIssues.add(issue);
+                } else {
+                    result.baselineIssues.add(issue);
+                }
+            }
+            result.newIssueCount = result.newIssues.size();
+            result.baselineIssueCount = result.baselineIssues.size();
+            result.passed = result.newIssues.isEmpty() && !hasBlockingToolFailure();
+            result.gateStatus = result.passed ? "PASS" : "FAIL";
+            if (changedFileSet.isEmpty()) {
+                result.gateStatus = "INCONCLUSIVE";
+                result.passed = false;
+                result.addGateMessage("no-new-violations gate requires changed files; set "
+                        + "-Dmango.check.changedFiles or -Dmango.check.baseRef");
+            }
+            if (hasBlockingToolFailure()) {
+                result.gateStatus = "INCONCLUSIVE";
+                result.addGateMessage("static analysis has blocking tool failure(s)");
+            }
+            if (hasReportedToolFailure()) {
+                result.addGateMessage("static analysis has reported tool failure(s)");
+                if (result.passed) {
+                    result.gateStatus = "INCONCLUSIVE";
+                }
+            }
+            return;
+        }
+
+        result.newIssues.addAll(result.issues);
+        result.newIssueCount = result.newIssues.size();
+        result.baselineIssueCount = 0;
+        result.passed = result.issues.isEmpty() && !hasBlockingToolFailure();
+        result.gateStatus = result.passed ? "PASS" : "FAIL";
+        if (hasReportedToolFailure()) {
+            result.addGateMessage("static analysis has reported tool failure(s)");
+            if (result.passed) {
+                result.gateStatus = "INCONCLUSIVE";
+            }
+        }
+    }
+
+    private boolean isNoNewViolationsGate() {
+        return "no-new-violations".equalsIgnoreCase(result.gate);
+    }
+
+    private String normalizeGate() {
+        if (gate == null || gate.isBlank()) {
+            return "all";
+        }
+        String normalized = gate.trim().toLowerCase(Locale.ROOT);
+        if ("no-new-violations".equals(normalized) || "all".equals(normalized)) {
+            return normalized;
+        }
+        getLog().warn("Unknown mango.check.gate: " + gate + "; fallback to all");
+        return "all";
+    }
+
+    private String normalizeStaticFailurePolicy() {
+        if (staticFailurePolicy == null || staticFailurePolicy.isBlank()) {
+            return "block";
+        }
+        String normalized = staticFailurePolicy.trim().toLowerCase(Locale.ROOT);
+        if ("report".equals(normalized) || "block".equals(normalized)) {
+            return normalized;
+        }
+        getLog().warn("Unknown mango.check.staticFailurePolicy: " + staticFailurePolicy + "; fallback to block");
+        return "block";
+    }
+
+    private boolean shouldReportStaticFailure() {
+        return "report".equalsIgnoreCase(result.staticFailurePolicy);
+    }
+
+    private boolean hasBlockingToolFailure() {
+        return !result.toolFailures.isEmpty() && !shouldReportStaticFailure();
+    }
+
+    private boolean hasReportedToolFailure() {
+        return !result.toolFailures.isEmpty() && shouldReportStaticFailure();
+    }
+
+    private Set<String> resolveChangedFiles() throws MojoExecutionException {
+        LinkedHashSet<String> files = new LinkedHashSet<>();
+        if (changedFiles != null && !changedFiles.isBlank()) {
+            for (String changedFile : changedFiles.split(",")) {
+                String normalized = normalizePath(changedFile);
+                if (!normalized.isBlank()) {
+                    files.add(normalized);
+                }
+            }
+            return files;
+        }
+        if (baseRef == null || baseRef.isBlank()) {
+            return files;
+        }
+        Path rootPath = resolveBasePath();
+        if (rootPath == null) {
+            return files;
+        }
+        List<String> command = List.of("git", "diff", "--name-only", baseRef.trim() + "...HEAD");
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.directory(rootPath.toFile());
+        processBuilder.redirectErrorStream(true);
+        try {
+            Process process = processBuilder.start();
+            String output = readProcessOutput(process.getInputStream());
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                result.addGateMessage("failed to resolve changed files from " + baseRef + ": " + output.trim());
+                return files;
+            }
+            for (String line : output.split("\\R")) {
+                String normalized = normalizePath(line);
+                if (!normalized.isBlank()) {
+                    files.add(normalized);
+                }
+            }
+            return files;
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to resolve changed files from git diff", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MojoExecutionException("Interrupted while resolving changed files from git diff", e);
+        }
+    }
+
+    private Set<String> loadBaselineFingerprints() throws MojoExecutionException {
+        LinkedHashSet<String> fingerprints = new LinkedHashSet<>();
+        if (baselineFile == null || baselineFile.isBlank()) {
+            return fingerprints;
+        }
+        Path baselinePath = Paths.get(baselineFile);
+        if (!baselinePath.isAbsolute()) {
+            Path rootPath = resolveBasePath();
+            if (rootPath != null) {
+                baselinePath = rootPath.resolve(baselinePath);
+            }
+        }
+        if (!Files.exists(baselinePath)) {
+            result.addGateMessage("baseline file does not exist: " + baselinePath);
+            return fingerprints;
+        }
+        try {
+            CheckResult baseline = objectMapper.readValue(baselinePath.toFile(), CheckResult.class);
+            if (baseline.issues != null) {
+                for (Issue issue : baseline.issues) {
+                    fingerprints.add(issue.fingerprint == null || issue.fingerprint.isBlank()
+                            ? fingerprint(issue) : issue.fingerprint);
+                }
+            }
+            return fingerprints;
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to read mango check baseline: " + baselinePath, e);
+        }
+    }
+
+    private boolean isChangedIssue(Issue issue, Set<String> changedFileSet) {
+        if (changedFileSet.isEmpty()) {
+            return false;
+        }
+        String issueFile = normalizeIssueFile(issue.file);
+        if (issueFile.isBlank()) {
+            return true;
+        }
+        for (String changedFile : changedFileSet) {
+            if (issueFile.equals(changedFile) || issueFile.endsWith("/" + changedFile)
+                    || changedFile.endsWith("/" + issueFile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String fingerprint(Issue issue) {
+        return String.join("|",
+                safeLower(issue.source),
+                safeLower(issue.rule),
+                normalizeIssueFile(issue.file),
+                Integer.toString(issue.line),
+                normalizeFingerprintText(issue.description));
+    }
+
+    private String normalizeFingerprintText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return normalizeWhitespace(value).toLowerCase(Locale.ROOT);
+    }
+
+    private String safeLower(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeIssueFile(String file) {
+        String normalized = normalizePath(file);
+        Path rootPath = resolveBasePath();
+        if (rootPath == null || normalized.isBlank()) {
+            return normalized;
+        }
+        String root = normalizePath(rootPath.toAbsolutePath().normalize().toString());
+        if (normalized.startsWith(root + "/")) {
+            return normalized.substring(root.length() + 1);
+        }
+        return normalized;
+    }
+
+    private String normalizePath(String path) {
+        if (path == null) {
+            return "";
+        }
+        String normalized = path.trim().replace('\\', '/');
+        while (normalized.startsWith("./")) {
+            normalized = normalized.substring(2);
+        }
+        return normalized;
+    }
+
+    private Map<String, Integer> countIssuesByField(String fieldName) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (Issue issue : result.issues) {
+            String key = "source".equals(fieldName) ? issue.source : issue.rule;
+            if (key == null || key.isBlank()) {
+                key = "unknown";
+            }
+            counts.merge(key, 1, Integer::sum);
+        }
+        return counts;
+    }
+
     private void outputText() {
         getLog().info("=== Check Result ===");
-        getLog().info("Status: " + (result.passed ? "PASSED" : "FAILED"));
+        getLog().info("Status: " + result.gateStatus);
+        getLog().info("Gate: " + result.gate);
         getLog().info("Issues: " + result.issues.size());
+        getLog().info("New issues: " + result.newIssues.size());
+        getLog().info("Baseline issues: " + result.baselineIssues.size());
+        getLog().info("Tool failures: " + result.toolFailures.size());
+        for (String message : result.gateMessages) {
+            getLog().warn("  [GATE] " + message);
+        }
+        for (ToolFailure failure : result.toolFailures) {
+            getLog().warn("  [TOOL][" + failure.goal + "] " + failure.message);
+        }
 
         for (Issue issue : result.issues) {
             getLog().warn("  [" + issue.severity + "][" + issue.source + "] " + issue.description);
@@ -2629,14 +2937,39 @@ public class CheckMojo extends AbstractMojo {
         public String rule;
         public String reference;
         public String source;
+        public String fingerprint;
+        public boolean inChangedFiles;
+        public boolean baseline;
 
         Issue() {
         }
     }
 
+    public static class ToolFailure {
+        public String goal;
+        public String message;
+
+        ToolFailure() {
+        }
+    }
+
     public static class CheckResult {
         public boolean passed = true;
+        public String gate = "all";
+        public String gateStatus = "PASS";
+        public String staticFailurePolicy = "block";
+        public int totalIssueCount;
+        public int newIssueCount;
+        public int baselineIssueCount;
+        public int toolFailureCount;
+        public List<String> changedFiles = new ArrayList<>();
+        public List<String> gateMessages = new ArrayList<>();
         public List<Issue> issues = new ArrayList<>();
+        public List<Issue> newIssues = new ArrayList<>();
+        public List<Issue> baselineIssues = new ArrayList<>();
+        public List<ToolFailure> toolFailures = new ArrayList<>();
+        public Map<String, Integer> issuesBySource = new LinkedHashMap<>();
+        public Map<String, Integer> issuesByRule = new LinkedHashMap<>();
 
         void addIssue(String type, String severity, String file, int line, String description,
                       String rule, String reference, String source) {
@@ -2651,6 +2984,17 @@ public class CheckMojo extends AbstractMojo {
             issue.source = source;
             issues.add(issue);
             passed = false;
+        }
+
+        void addToolFailure(String goal, String message) {
+            ToolFailure failure = new ToolFailure();
+            failure.goal = goal;
+            failure.message = message;
+            toolFailures.add(failure);
+        }
+
+        void addGateMessage(String message) {
+            gateMessages.add(message);
         }
     }
 
