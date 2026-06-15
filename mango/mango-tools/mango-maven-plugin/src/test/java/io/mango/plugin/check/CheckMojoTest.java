@@ -1,5 +1,7 @@
 package io.mango.plugin.check;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -397,7 +399,7 @@ class CheckMojoTest {
         // given
         CheckMojo mojo = new CheckMojo();
         setField(mojo, "staticFailurePolicy", "report");
-        CheckMojo.CheckResult result = new CheckMojo.CheckResult();
+        CheckResult result = new CheckResult();
         result.staticFailurePolicy = "report";
         setField(mojo, "result", result);
 
@@ -419,25 +421,23 @@ class CheckMojoTest {
     @Test
     void finalizeResult_withReportPolicyAndToolFailure_reportsInconclusive() throws Exception {
         // given
-        CheckMojo mojo = new CheckMojo();
-        setField(mojo, "gate", "all");
-        setField(mojo, "baseDir", tempDir.toString());
-        CheckMojo.CheckResult result = new CheckMojo.CheckResult();
-        result.staticFailurePolicy = "report";
+        CheckResult result = new CheckResult();
         result.addToolFailure("spotbugs:spotbugs", "timed out");
-        setField(mojo, "result", result);
-
-        Method method = CheckMojo.class.getDeclaredMethod("finalizeResult");
-        method.setAccessible(true);
+        CheckGateFinalizer finalizer = new CheckGateFinalizer(objectMapper(),
+                new CheckGateOptions(tempDir, null, null, null, "all", "report"));
 
         // when
-        assertDoesNotThrow(() -> method.invoke(mojo));
+        assertDoesNotThrow(() -> finalizer.finalizeResult(result));
 
         // then
         assertTrue(result.passed);
         assertEquals("INCONCLUSIVE", result.gateStatus);
         assertEquals(1, result.toolFailureCount);
         assertTrue(result.gateMessages.contains("static analysis has reported tool failure(s)"));
+    }
+
+    private ObjectMapper objectMapper() {
+        return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     }
 
     @Test
