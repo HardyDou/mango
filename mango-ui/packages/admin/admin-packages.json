@@ -10,6 +10,10 @@
       "style": "@mango/admin-shell/style.css"
     },
     {
+      "name": "@mango/grid-layout",
+      "style": "@mango/grid-layout/style.css"
+    },
+    {
       "name": "@mango/auth",
       "style": "@mango/auth/style.css"
     },

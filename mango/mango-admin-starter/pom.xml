@@ -124,6 +124,10 @@
             <artifactId>mango-calendar-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.mango.platform.gridlayout</groupId>
+            <artifactId>mango-grid-layout-starter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.mango.platform.numgen</groupId>
             <artifactId>mango-numgen-starter</artifactId>
         </dependency>

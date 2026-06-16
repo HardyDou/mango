@@ -19,6 +19,7 @@ const externalPackages = [
   '@mango/common/utils/theme',
   '@mango/common/utils/menuTree',
   '@mango/file',
+  '@mango/grid-layout',
   '@mango/rbac',
   '@mango/workflow',
   'element-plus',

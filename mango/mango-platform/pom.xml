@@ -31,6 +31,7 @@
         <module>mango-workflow</module>
         <module>mango-domain</module>
         <module>mango-calendar</module>
+        <module>mango-grid-layout</module>
         <module>mango-job</module>
         <module>mango-numgen</module>
         <module>mango-payment</module>

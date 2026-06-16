@@ -37,6 +37,7 @@
 | 业务域 Domain | `mango/mango-platform/mango-domain` | [README](../../mango/mango-platform/mango-domain/README.md) | [README](../../mango/mango-platform/mango-domain/README.md) |
 | 文件 File | `mango/mango-platform/mango-file` | [README](../../mango/mango-platform/mango-file/README.md) | [README](../../mango/mango-platform/mango-file/README.md) |
 | 文件预览 File Preview | `mango/mango-platform/mango-file-preview` | [README](../../mango/mango-platform/mango-file-preview/README.md) | [README](../../mango/mango-platform/mango-file-preview/README.md) |
+| 自定义栅格布局 Grid Layout | `mango/mango-platform/mango-grid-layout` | [README](../../mango/mango-platform/mango-grid-layout/README.md) | [README](../../mango/mango-platform/mango-grid-layout/README.md) |
 | 身份 Identity | `mango/mango-platform/mango-identity` | [README](../../mango/mango-platform/mango-identity/README.md) | [README](../../mango/mango-platform/mango-identity/README.md) |
 | 任务调度 Job | `mango/mango-platform/mango-job` | [README](../../mango/mango-platform/mango-job/README.md) | [README](../../mango/mango-platform/mango-job/README.md) |
 | 通知 Notice | `mango/mango-platform/mango-notice` | [README](../../mango/mango-platform/mango-notice/README.md) | [README](../../mango/mango-platform/mango-notice/README.md) |
@@ -93,6 +94,7 @@ Mango 前端包默认服务管理后台。标记为 `Admin Shell` 或 `Admin Pag
 | 应用运行时 | `@mango/app-runtime` | 通用/运行时能力，应用装配基础 | 可评估使用，但需确认是否绑定后台运行模型 | [README](../../mango-ui/packages/app-runtime/README.md) | [README](../../mango-ui/packages/app-runtime/README.md) |
 | 公共组件 | `@mango/common` | 通用能力，请求、消息、选择器、编辑器等 | 可评估使用，需核对 Element Plus、主题和后台依赖 | [README](../../mango-ui/packages/common/README.md) | [README](../../mango-ui/packages/common/README.md) |
 | 文件前端 | `@mango/file` | 混合能力，包含后台页面和上传/预览组件 | 只评估组件级能力，不直接复用后台页面 | [README](../../mango-ui/packages/file/README.md) | [README](../../mango-ui/packages/file/README.md) |
+| 自定义栅格布局前端 | `@mango/grid-layout` | 通用能力，自定义栅格展示与编辑器 | 可评估使用，需确认 Element Plus、主题和个人布局接口边界 | [README](../../mango-ui/packages/grid-layout/README.md) | [README](../../mango-ui/packages/grid-layout/README.md) |
 | CLI | `@mango/cli` | 开发工具，项目生成、模块追加和 PMO baseline 同步 | 可用于生成项目，不是运行时组件 | [README](../../mango-ui/packages/mango-cli/README.md) | [README](../../mango-ui/packages/mango-cli/README.md) |
 
 ## 7. 后端装配与工具
