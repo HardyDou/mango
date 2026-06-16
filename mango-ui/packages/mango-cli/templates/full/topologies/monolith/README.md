@@ -5,21 +5,28 @@
 
 核心判断：业务 app 依赖本地 `<module>-starter`，不依赖 `<module>-starter-remote`。
 
-## 2. 适用场景
-- 当前阶段只需要一个后端进程交付。
-- 业务模块和平台模块共用同一个 Spring Boot app、数据源、事务边界和 Flyway 执行入口。
-- 开发团队更重视启动简单、调试直接和部署成本低。
-- 前端后台直接消费同一个后端 API base URL。
-- 业务模块未来可能拆分，但当前不需要独立扩缩容或独立发布。
+## 2. 功能清单
 
-## 3. 边界说明
-- 模块需要独立发布、独立扩缩容、独立数据库账号或独立运维窗口。
-- 调用方必须通过 Feign 或网关访问某个业务服务。
-- 不同业务模块之间有明确服务自治边界。
-- 希望用 `<module>-starter-remote` 在同一个 app 内调用本地模块；这会增加不必要的远程调用复杂度。
-- 需要验证跨服务认证、租户透传、超时、重试和降级策略。
+| 能力 | 使用入口 | 说明 |
+|------|----------|------|
+| 单后端进程 | `backend/app` | 平台 starter 和业务 starter 都由同一个 Spring Boot app 承载。 |
+| 本地业务依赖 | `<module>-starter` | app 直接依赖本地业务模块 starter。 |
+| 统一数据库和 Flyway | `application.yml` | 平台和业务 migration 由同一个 app 执行。 |
+| 前端本地代理 | `/api` proxy | 前端后台访问同一个后端 API base URL。 |
+| 菜单权限同步 | resource manifest | 随 starter 扫描并同步菜单、页面和按钮资源。 |
 
-## 4. 模块组成
+## 3. 能力边界
+
+| 选择单体 | 不适合单体 |
+|----------|------------|
+| 当前只需要一个后端进程交付。 | 模块需要独立发布、独立扩缩容、独立数据库账号或独立运维窗口。 |
+| 业务模块和平台模块共用数据源、事务边界和 Flyway 入口。 | 调用方必须通过 Feign 或网关访问某个业务服务。 |
+| 前端后台直接消费同一个后端 API base URL。 | 不同业务模块之间已有明确服务自治边界。 |
+| 更重视启动简单、调试直接和部署成本低。 | 需要验证跨服务认证、租户透传、超时、重试和降级策略。 |
+
+单体 app 不应依赖 `<module>-starter-remote`。remote starter 是微服务调用方依赖，不是本地模块依赖。
+
+## 4. 模块入口
 单体模式的后端边界：
 
 - `backend/app` 是唯一运行 app。
@@ -130,7 +137,6 @@ mango module add order --aggregate sales-order --project-dir .
 - [模块菜单规范](../../business-pmo/mango-baseline/rules/backend/11-module-menu.md)
 - [前端开发流程](../../business-pmo/mango-baseline/rules/frontend/05-dev-flow.md)
 
-## 13. 历史资料
 - [项目 README](../../README.md)
 - [Business PMO README](../../business-pmo/README.md)
 - [微服务拓扑说明](../microservice/README.md)

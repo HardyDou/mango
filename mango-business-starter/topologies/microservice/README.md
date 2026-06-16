@@ -15,21 +15,15 @@
 | 需要验证认证头、租户上下文、trace、超时、重试和降级 | CLI / 模板 / 生成产物 |
 | 前端后台要连真实网关 API，而不是只连本地单体进程 | CLI / 模板 / 生成产物 |
 
-## 3. 适用场景
-- 业务模块需要独立部署、独立发布或独立扩缩容。
-- 调用方需要通过 Feign、网关或统一 API 入口访问业务服务。
-- 菜单、权限、API 资源由服务提供方随 starter 同步。
-- 需要验证认证头、租户上下文、trace、超时、重试和降级。
-- 前端后台要连真实网关 API，而不是只连本地单体进程。
 
-## 4. 边界说明
+## 3. 能力边界
 - 业务项目只需要一个后端进程交付。
 - 模块之间共享同一事务边界或大量直接访问对方表。
 - 调用方必须依赖提供方 `core`、Mapper、Entity 或 ServiceImpl 才能完成业务。
 - 没有服务注册、网关、配置、日志和发布平台准备。
 - 只是为了拆分而拆分，服务边界和数据归属还没设计清楚。
 
-## 5. 模块组成
+## 4. 模块入口
 服务提供方接入：
 
 - 依赖 `<module>-starter`。
@@ -49,7 +43,7 @@
 - API base URL 应指向网关或统一 API 入口。
 - 菜单能打开只说明页面注册成功，接口还要单独验证鉴权和租户透传。
 
-## 6. 接入方式
+## 5. 接入方式
 生成业务模块：
 
 ```bash
@@ -84,7 +78,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 服务调用方 app | `<module>-starter-remote` | `<module>-starter`、`<module>-core` |
 | 前端后台 app | `@<project>/<module>`、`@<project>/<module>-api` | 指向 Mango 源码的相对路径依赖 |
 
-## 7. 配置说明
+## 6. 配置说明
 拓扑说明目录自身没有运行时配置。微服务配置分散在生成后的业务项目、服务提供方、调用方和网关中。
 
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
@@ -98,7 +92,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 网关配置 | route、prefix、header 透传 | 项目自定 | 前端到服务路由 | 影响 API 可达性和鉴权 | 网关配置 |
 | 前端配置 | API base URL | 项目自定 | 后台请求入口 | 指向网关或统一 API 入口 | 前端 app 配置 |
 
-## 8. API 与扩展
+## 7. API 与扩展
 | 扩展点 | 提供方 | 调用方 | 说明 |
 |--------|--------|--------|------|
 | `<module>-api` | 定义接口契约 | 编译期依赖 | Command、Query、VO、API 方法 |
@@ -108,7 +102,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 前端页面包 | 管理后台依赖 | 管理后台依赖 | 注册页面 component key |
 | resource manifest | 提供方同步 | 不同步 | 菜单、页面、按钮权限归提供方 |
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
 |------|------|------------|-----------------|----------|----------|
 | 提供方 Flyway | `<module>-core/src/main/resources/db/migration/<module>` | 业务表，默认包含 `tenant_id` 和审计字段 | Flyway version | 提供方服务启动 | Flyway history、业务表 |
@@ -119,7 +113,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 
 调用方不要通过依赖 `core` 共享提供方表结构。跨服务读取应通过 API、事件、同步表或专门的数据集成方案设计。
 
-## 10. 管理入口
+## 9. 管理入口
 | 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
 |-------------|---------------|--------|----------|-----------------|--------------|
 | 提供方业务页面 | `<module>/<aggregate>/index` | `<module>:<aggregate>:create`、`view`、`update`、`delete` | 提供方 `resource-manifest.json` | 模板不直接授予角色 | 提供方 Controller / Service |
@@ -132,7 +126,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 - 页面 component key 与资源清单一致。
 - 用户拿到角色授权后才能看到菜单并调用接口。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 先设计服务边界、数据库归属和 API 契约。
 2. 生成业务模块，并把提供方 app 接入 `<module>-starter`。
 3. 调用方 app 接入 `<module>-starter-remote`，补服务发现、Feign 或网关配置。
@@ -141,7 +135,7 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 6. 做 remote 契约测试、网关链路测试、前端 E2E 和权限租户验收。
 7. 在业务模块 README 和交付台账中登记验证命令、证据和未覆盖风险。
 
-## 12. 问题排查
+## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | 调用方依赖了 `core` | API 契约没有抽清楚 | 改为依赖 `<module>-starter-remote` |
@@ -151,14 +145,14 @@ mango module add order --aggregate sales-order --aggregate-name 销售订单 --m
 | 菜单显示但接口 403 | 只有菜单资源，没有接口权限或角色授权 | 查授权中心权限码和后端校验 |
 | 数据串租 | 网关或调用方没有透传租户上下文 | 补租户透传和服务端租户断言 |
 
-## 13. 相关文档
+## 12. 相关文档
 - [开发流程规范](../../business-pmo/mango-baseline/rules/00-dev-flow.md)
 - [后端模块规范](../../business-pmo/mango-baseline/rules/backend/05-module.md)
 - [后端 API 规范](../../business-pmo/mango-baseline/rules/backend/03-api.md)
 - [后端安全规范](../../business-pmo/mango-baseline/rules/backend/06-security.md)
 - [交付契约规范](../../business-pmo/mango-baseline/rules/01-delivery-contract.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [Business Starter README](../../README.md)
 - [Business PMO README](../../business-pmo/README.md)
 - [单体拓扑说明](../monolith/README.md)

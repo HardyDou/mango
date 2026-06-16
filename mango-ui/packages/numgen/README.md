@@ -1,44 +1,41 @@
 # @mango/numgen
 
 ## 1. 概览
-`@mango/numgen` 提供编号生成管理前端页面和 API 封装，用于维护生成器、规则、规则段、版本发布、预览、取号和取号历史。
 
-本包属于 `admin-pages` 配套能力，依赖后端 `mango-numgen`。
+`@mango/numgen` 是编号生成的管理后台前端包，配套后端 `mango-numgen` 使用。
+
+它提供：
+
+- 编号规则管理页面。
+- 生成器、规则版本、规则片段、生成历史的前端 API 封装。
+- 单个取号、批量取号和规则预览的前端调用封装。
+
+它不是通用业务组件，也不适合官网、C 端页面直接集成。普通业务页面如需取号，优先通过业务后端调用 `mango-numgen`，由后端负责和业务保存流程一起处理唯一约束、重试和幂等。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 管理业务单据编号规则 | 前端注册 / 组件 / API 封装 |
-| 配置文本、日期、参数、序列、表达式等编号段 | 前端注册 / 组件 / API 封装 |
-| 发布规则版本并预览生成结果 | 前端注册 / 组件 / API 封装 |
-| 查询取号历史、失败原因和业务键 | 前端注册 / 组件 / API 封装 |
-| 业务页面需要调用后端取号接口 | 前端注册 / 组件 / API 封装 |
+| 能力 | 说明 |
+|------|------|
+| 生成器管理 | 创建、编辑、删除、启停编号生成器。 |
+| 规则版本管理 | 创建规则版本、编辑草稿、发布版本、查看历史版本。 |
+| 规则片段编辑 | 支持 `TEXT`、`DATE`、`PARAM`、`SEQ`、`EXPR` 片段。 |
+| 编号预览 | 按当前规则和动态参数预览编号。 |
+| 手工取号 | 在管理页面按生成器取一个或批量取多个编号。 |
+| 历史查询 | 查询生成历史、结果编号、业务键、状态和错误信息。 |
+| API 封装 | 导出 `numgenApi` 和 TypeScript 类型。 |
 
-## 3. 适用场景
-- 管理业务单据编号规则。
-- 配置文本、日期、参数、序列、表达式等编号段。
-- 发布规则版本并预览生成结果。
-- 查询取号历史、失败原因和业务键。
-- 业务页面需要调用后端取号接口。
+## 3. 集成形态
 
-## 4. 边界说明
-- 不负责后端并发取号、唯一约束和幂等。
-- 不替代业务单据表上的唯一索引。
-- 不负责编号规则的领域审批流程。
-- 不初始化菜单、权限和默认编号规则。
+| 形态 | 是否支持 | 说明 |
+|------|----------|------|
+| `admin-shell` | 否 | 不提供管理后台壳、登录态、菜单运行时。 |
+| `admin-pages` | 是 | 通过 `registerMangoNumgenAdminPages` 注册编号规则页面。 |
+| `business-component` | 否 | 不提供可嵌入普通业务页面的通用组件。 |
+| `api-client` | 是 | 导出 `numgenApi`，封装后端 `/numgen/**` 接口。 |
 
-## 5. 模块组成
-本包包含：
+## 4. 接入方式
 
-- `NumgenView`：编号管理页面。
-- `registerMangoNumgenAdminPages`：页面注册函数。
-- `numgenApi`：生成器、规则、规则段、历史、取号 API。
-
-后端负责规则存储、版本发布、序列并发控制和取号幂等。
-
-## 6. 接入方式
-安装：
+安装依赖：
 
 ```bash
 pnpm add @mango/numgen
@@ -52,7 +49,94 @@ import { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
 registerMangoNumgenAdminPages();
 ```
 
-业务取号：
+页面注册后可被以下 component key 打开：
+
+```text
+platform/numgen/index
+numgen/index
+```
+
+后端菜单种子中的历史 component 是 `@/views/numgen/index.vue`。实际运行时要确保菜单 component 能映射到上面的页面 key。
+
+## 5. 快速开始
+
+1. 后端启用 `mango-numgen`，并执行 numgen、authorization 相关 migration。
+2. 管理后台安装并注册 `@mango/numgen/admin-pages`。
+3. 给角色授权 `numgen:manage:list`；需要维护规则时再授权 `numgen:manage:write`。
+4. 打开 `/data/numgen` 编号规则菜单。
+5. 创建生成器和规则版本，编辑规则片段。
+6. 预览编号，确认格式后发布规则。
+7. 业务后端调用 `NumgenApi` 取号，业务表用唯一索引兜底。
+
+## 6. 配置说明
+
+本包没有独立运行时配置文件。页面行为由三类输入决定：
+
+| 输入 | 来源 | 影响 |
+|------|------|------|
+| 页面注册 | `registerMangoNumgenAdminPages` | 决定菜单 component 能否打开页面。 |
+| 菜单权限 | authorization migration / 角色授权 | 决定用户能否看到菜单和维护规则。 |
+| 编号规则 | 后端 `mango-numgen` 数据表 | 决定取号格式、发布版本和历史记录。 |
+
+包依赖：
+
+| 类型 | 依赖 |
+|------|------|
+| dependencies | `@mango/admin-pages`、`@mango/api-schema`、`@mango/common`、`@element-plus/icons-vue` |
+| peerDependencies | `vue`、`element-plus` |
+
+## 7. API 与扩展
+
+### 7.1 导出对象
+
+| 导出 | 用途 |
+|------|------|
+| `NumgenView` | 编号规则管理页。 |
+| `registerMangoNumgenAdminPages` | 注册 admin-pages 页面。 |
+| `numgenApi` | 前端 API 调用封装。 |
+
+### 7.2 页面 key
+
+| key | 页面 |
+|-----|------|
+| `platform/numgen/index` | 编号规则管理页 |
+| `numgen/index` | 编号规则管理页 |
+
+### 7.3 常用 API
+
+| API | 后端路径 | 用途 |
+|-----|----------|------|
+| `numgenApi.pageGenerators` | `/numgen/generators/page` | 查询生成器分页。 |
+| `numgenApi.createGenerator` | `/numgen/generators` | 新增生成器。 |
+| `numgenApi.updateGenerator` | `/numgen/generators` | 修改生成器。 |
+| `numgenApi.updateGeneratorStatus` | `/numgen/generators/status` | 启停生成器。 |
+| `numgenApi.deleteGenerator` | `/numgen/generators` | 删除生成器。 |
+| `numgenApi.pageRules` / `pageVersions` | `/numgen/rules/page` | 查询规则版本分页。 |
+| `numgenApi.createRule` / `createVersion` | `/numgen/rules` | 新增规则版本。 |
+| `numgenApi.updateRule` / `updateVersion` | `/numgen/rules` | 修改规则版本。 |
+| `numgenApi.publishRule` / `publishVersion` | `/numgen/rules/publish` | 发布规则版本。 |
+| `numgenApi.previewRule` / `previewVersion` | `/numgen/rules/preview` | 预览编号。 |
+| `numgenApi.pageSegments` | `/numgen/segments/page` | 查询规则片段。 |
+| `numgenApi.createSegment` | `/numgen/segments` | 新增规则片段。 |
+| `numgenApi.updateSegment` | `/numgen/segments` | 修改规则片段。 |
+| `numgenApi.deleteSegment` | `/numgen/segments` | 删除规则片段。 |
+| `numgenApi.pageHistories` | `/numgen/histories/page` | 查询生成历史。 |
+| `numgenApi.nextValue` | `/numgen/next` | 生成一个编号。 |
+| `numgenApi.batchValue` | `/numgen/batch` | 批量生成编号。 |
+
+### 7.4 常用类型
+
+| 类型 | 关键字段 |
+|------|----------|
+| `NumgenGenerator` | `id`、`genKey`、`genName`、`domainCode`、`status`、`currentRuleVersion`、`currentPublishStatus`、`hasUnpublishedChanges` |
+| `NumgenRule` / `NumgenVersion` | `id`、`genKey`、`ruleName`、`version`、`status`、`publishStatus`、`versionState` |
+| `NumgenRuleSegment` | `ruleId`、`sortOrder`、`segmentType`、`segmentName`、`literalValue`、`variableKey`、`dateFormat`、`seqWidth`、`padChar`、`sequenceScope` |
+| `NumgenHistory` | `genKey`、`ruleVersion`、`resultNo`、`bizKey`、`inputDigest`、`costMillis`、`status`、`errorMessage` |
+| `NumgenNextRequest` | `genKey`、`params` |
+| `NumgenBatchRequest` | `genKey`、`count`、`params` |
+| `NumgenPreviewRequest` | `genKey`、`count`、`params` |
+
+业务前端直接取号示例：
 
 ```ts
 import { numgenApi } from '@mango/numgen';
@@ -63,85 +147,42 @@ const no = await numgenApi.nextValue({
 });
 ```
 
-菜单 component key：
+## 8. 数据与初始化
 
-```text
-platform/numgen/index
-numgen/index
-```
+本包不创建数据库表，也不初始化菜单权限。它依赖后端完成以下初始化：
 
-## 7. 配置说明
-本包没有运行时配置文件。行为由后端规则和 API 参数决定。
+| 数据 | 初始化来源 | 前端用途 |
+|------|------------|----------|
+| 编号生成表 | `mango-numgen` migration | 展示和维护生成器、规则、片段、序列和历史。 |
+| 支付域默认编号 | `mango-numgen` migration | 支付模块开箱使用支付编号规则。 |
+| 菜单与权限 | `mango-authorization` migration | 提供 `/data/numgen` 菜单和 `numgen:manage:*` 权限。 |
+| 前端模块运行策略 | `mango-authorization` migration | 让管理后台知道 `mango-numgen` 的前端页面来源。 |
 
-| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
-|----------|------------|--------|------|----------|----------|
-| `registerMangoNumgenAdminPages` | `moduleCode` | `mango-numgen` | 页面归属模块 | 和后端菜单匹配 | `admin-pages.ts` |
-| 页面注册 | `component` | `platform/numgen/index`、`numgen/index` | 编号管理页 key | 菜单打开页面 | `admin-pages.ts` |
-| `NumgenGenerator` | `genKey` | 无 | 生成器编码 | 业务取号主键 | `api/numgen.ts` |
-| `NumgenGenerator` | `domainCode` | 可选 | 所属领域 | 规则归类 | `api/numgen.ts` |
-| `NumgenRule` | `version` | 后端生成 | 规则版本 | 发布和历史追踪 | `api/numgen.ts` |
-| `NumgenRuleSegment` | `segmentType` | 无 | `TEXT`、`DATE`、`PARAM`、`SEQ`、`EXPR` | 决定编号段计算方式 | `api/numgen.ts` |
-| `NumgenRuleSegment` | `seqWidth`、`padChar` | 可选 | 序列宽度和补位 | 影响序列格式 | `api/numgen.ts` |
-| `NumgenNextRequest` | `genKey` | 无 | 取号生成器 | 决定使用哪套规则 | `api/numgen.ts` |
-| `NumgenNextRequest` | `params` | 可选 | 取号参数 | PARAM/EXPR 段使用 | `api/numgen.ts` |
-| `NumgenBatchRequest` | `count` | 无 | 批量取号数量 | 返回多个编号 | `api/numgen.ts` |
+## 9. 管理入口
 
-## 8. API 与扩展
-| 导出 | 用途 |
-|------|------|
-| `NumgenView` | 编号管理页 |
-| `registerMangoNumgenAdminPages` | 注册管理页 |
-| `numgenApi.pageGenerators`、`createGenerator`、`updateGenerator` | 生成器管理 |
-| `numgenApi.pageRules`、`createRule`、`updateRule`、`publishRule` | 规则管理和发布 |
-| `numgenApi.pageSegments`、`createSegment`、`updateSegment` | 规则段管理 |
-| `numgenApi.previewRule`、`previewVersion` | 预览编号 |
-| `numgenApi.pageHistories` | 取号历史 |
-| `numgenApi.nextValue` | 单个取号 |
-| `numgenApi.batchValue` | 批量取号 |
+| 菜单 | 路由 | 权限码 | 页面 key |
+|------|------|--------|----------|
+| 编号规则 | `/data/numgen` | `numgen:manage:list` | `platform/numgen/index` / `numgen/index` |
+| 编号规则维护 | 无独立页面 | `numgen:manage:write` | 同编号规则页面 |
 
-## 9. 数据与初始化
-本包不包含数据库 migration。依赖后端 `mango-numgen` 初始化表和资源。
+页面可见但操作失败时，分别检查：
 
-| 类型 | 后端来源 | 前端消费 | 排查入口 |
-|------|----------|----------|----------|
-| 生成器 | mango-numgen | 生成器列表和取号 | 创建后可查询 |
-| 规则版本 | mango-numgen | 规则配置、发布和预览 | 发布后可取号 |
-| 规则段 | mango-numgen | 规则段编辑 | 预览结果符合段顺序 |
-| 序列状态 | mango-numgen | 取号 | 并发下不重复 |
-| 取号历史 | mango-numgen | 历史列表 | 取号后有记录 |
-| 菜单权限 | authorization / numgen resource | 页面入口和按钮权限 | 菜单可见、接口可用 |
+- 角色是否有 `numgen:manage:list` 和 `numgen:manage:write`。
+- 后端 `/numgen/**` 接口是否已由部署应用提供。
+- 当前管理后台是否执行了 `registerMangoNumgenAdminPages()`。
 
-## 10. 管理入口
-| 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
-|-------------|---------------|--------|----------|-----------------|--------------|
-| 编号管理 | `platform/numgen/index` 或 `numgen/index` | 后端 numgen 模块定义 | 后端 resource / migration | 角色授权 | numgen admin API |
+## 10. 问题排查
 
-业务取号接口也必须做权限、租户和幂等校验；前端页面只负责配置和调用。
+| 问题 | 优先检查 |
+|------|----------|
+| 菜单能看到但页面打不开 | 是否注册 `@mango/numgen/admin-pages`，菜单 component 是否能映射到 `platform/numgen/index` 或 `numgen/index`。 |
+| 页面请求 404 | 后端是否启用 `mango-numgen-starter`，网关是否转发 `/numgen/**`。 |
+| 页面请求 403 | 当前角色是否拥有 `numgen:manage:list` 或 `numgen:manage:write`。 |
+| 发布后取号格式没变 | 后端规则缓存 TTL、当前生效版本、发布状态。 |
+| 参数片段为空 | 预览或取号时 `params` 是否传入规则片段的 `variableKey`。 |
+| 编号重复 | 这不是前端问题；检查业务表唯一索引、后端取号链路和 KV 后端。 |
 
-## 11. 快速开始
-1. 后端启用 `mango-numgen`。
-2. 前端注册 `@mango/numgen/admin-pages`。
-3. 后端初始化菜单权限并授权。
-4. 创建生成器和规则段。
-5. 发布规则并预览。
-6. 业务页面或后端调用取号接口。
-7. 校验唯一约束、并发不重复、取号历史和租户隔离。
+## 11. 相关文档
 
-## 12. 问题排查
-| 问题 | 原因 | 处理方式 |
-|------|------|----------|
-| 取号失败 | 规则未发布或 genKey 错误 | 查生成器和规则状态 |
-| 编号重复 | 业务表缺唯一约束或后端序列配置错误 | 后端补唯一约束和并发测试 |
-| PARAM 段为空 | 取号 params 没传对应变量 | 检查规则段 variableKey |
-| 页面打不开 | component key 没注册 | 调用 `registerMangoNumgenAdminPages` |
-| 接口 403 | 角色缺编号权限 | 查 authorization 授权 |
-
-## 13. 相关文档
-- [前端代码规范](../../../mango-pmo/rules/frontend/01-vue-code.md)
-- [前端测试规范](../../../mango-pmo/rules/frontend/04-test.md)
+- [后端编号生成模块](../../../mango/mango-platform/mango-numgen/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [后端 Numgen](../../../mango/mango-platform/mango-numgen/README.md)
-
-## 14. 历史资料
-- [Mango UI README](../../README.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)

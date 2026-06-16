@@ -14,21 +14,24 @@
 | `mango-baseline/tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
 | 项目根 `AGENTS.md` | Agent 入口，只路由到 baseline，不复制长期规则正文 |
 
-## 2. 适用场景
-- 业务仓脱离 Mango 源码后执行 preflight。
-- 正式需求、设计、开发、验证、发布、提交前确认必须阅读的规则。
-- 校验交付契约、交付台账和验收证据。
-- 记录业务项目自有计划、设计、证据和例外说明。
-- 通过 `mango pmo sync` 同步 Mango baseline 升级。
+## 2. 功能清单
 
-## 3. 边界说明
+| 能力 | 使用入口 | 说明 |
+|------|----------|------|
+| 规则路由 | `mango-baseline/tools/pmo-preflight.mjs` | 按 role、phase、task、paths 输出 Must read。 |
+| 交付契约检查 | `delivery-contract-check.mjs` | 校验设计说明和交付台账。 |
+| 验收证据检查 | `acceptance-evidence-check.mjs` | 校验验收证据表和弱表达。 |
+| baseline 快照 | `mango-baseline/rules`、`agents`、`templates` | 业务仓脱离 Mango 源码后仍能读取规则。 |
+| baseline 同步 | `mango pmo sync` | 从 CLI 模板同步 baseline、入口和兼容脚本。 |
+
+## 3. 能力边界
 - 不作为 Mango 主仓长期规范源；长期规范仍由 Mango PMO 维护。
 - 普通业务需求不直接修改 `mango-baseline/**`。
 - 不保存业务源码、运行时配置、数据库 migration 或菜单权限资源。
 - 不替代业务模块 README、业务设计文档、测试报告和发布 runbook。
 - 不用来堆放临时日志、大文件截图或未归档运行产物。
 
-## 4. 模块组成
+## 4. 模块入口
 `business-pmo/mango-baseline` 是可同步快照，业务项目自有文档应放在 baseline 外，例如 `business-docs/plans`、`business-docs/evidence` 或项目自定义 PMO 目录。
 
 边界要求：
@@ -156,7 +159,6 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 - [交付质量门禁](./mango-baseline/rules/05-ai-delivery-quality.md)
 - [文档资产规范](./mango-baseline/rules/06-document-assets.md)
 
-## 13. 历史资料
 - [Mango Baseline README](./mango-baseline/README.md)
 - [交付契约模板](./mango-baseline/templates/delivery-contract.md)
 - [验收证据模板](./mango-baseline/templates/acceptance-evidence.md)

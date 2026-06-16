@@ -13,27 +13,21 @@
 | 多实例部署下，需要把消息转发到用户所在节点 | Maven 依赖 / starter / Java API |
 | 客户端需要向服务端发送业务消息，并由本地或远程 receiver 处理 | Maven 依赖 / starter / Java API |
 
-## 3. 适用场景
-- Web 管理端或业务客户端需要实时接收通知、进度、状态变更。
-- 客户端环境不稳定，需要 WebSocket / SSE / Polling 协商和降级。
-- 服务端需要按 USER、CLIENT、CONNECTION、GROUP、TENANT、BROADCAST 投递。
-- 多实例部署下，需要把消息转发到用户所在节点。
-- 客户端需要向服务端发送业务消息，并由本地或远程 receiver 处理。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不理解业务消息语义，不负责业务权限判断。
 - 不替代离线消息中心、IM 历史消息库或完整消息队列。
 - 不替代业务订阅关系模型；GROUP 只表示实时投递分组。
 - 不自动保证消息幂等，业务 listener 和 receiver 必须自己处理重复消息。
 
-## 5. 模块组成
+## 4. 模块入口
 - `mango-infra-realtime-api`：实时消息 DTO、发布 API、上行 API、receiver API、listener 注解。
 - `mango-infra-realtime-core`：session、presence、subscription、publish、protocol adapter、inbound forward。
 - `mango-infra-realtime-support`：上行 listener 扫描和调用。
 - `mango-infra-realtime-starter`：本地实时服务、HTTP/SSE/WebSocket/Polling endpoint、outbox dispatcher。
 - `mango-infra-realtime-starter-remote`：业务服务远程接入 realtime 服务，提供 Feign client 和 receiver 自动注册。
 
-## 6. 接入方式
+## 5. 接入方式
 实时服务端：
 
 ```xml
@@ -79,7 +73,7 @@ public void onMessage(RealtimeInboundMessage message) {
 }
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 配置前缀：`mango.infra.realtime`。
 
 ### 基础与协议
@@ -176,7 +170,7 @@ mango:
         mode: LOCAL_REMOTE
 ```
 
-## 8. API 与扩展
+## 7. API 与扩展
 - API：`RealtimeApi`、`RealtimeOutboundApi`、`RealtimeInboundApi`、`RealtimeInboundReceiverApi`。
 - 注解：`@RealtimeInboundMessageListener`。
 - 发布服务：`IRealtimePublishService`、`IRealtimeReliablePublishService`。
@@ -200,34 +194,34 @@ mango:
 | `/_realtime/messages/outbound` | 节点间下行转发。 |
 | `/_realtime/messages/inbound` | 远程业务服务接收上行消息。 |
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 本模块没有独立 SQL migration、Runner 或 Initializer。presence 和可靠投递依赖 `mango-infra-kv`：
 
 - presence 需要支持 sorted set 的 KV store。
 - realtime outbox 需要 `mango.kv.capability.outbox=true` 注册 `IOutboxStore` 和 `IOutboxPublisher`。
 - JDBC KV store 场景需要执行 KV 模块的 `infra_kv_entry` migration。
 
-## 10. 管理入口
+## 9. 管理入口
 本模块不创建管理菜单和权限。实时消息 DTO 支持 tenant 上下文和 TENANT target，但这只是投递维度；业务发布方和上行 listener 必须校验当前用户是否有权向目标用户、群组或租户发送消息。
 
-## 11. 快速开始
+## 10. 快速开始
 1. realtime 服务接入 starter，并配置 Redis KV store。
 2. 前端先调用 negotiate，再按返回能力选择 WebSocket、SSE 或 Polling。
 3. 服务端发布消息时明确 target type、tenant id、user id 或 group id。
 4. 需要上行消息时，业务服务接入 remote starter，声明 `@RealtimeInboundMessageListener`。
 5. 所有 listener 入口先校验租户、用户和业务权限，再处理业务动作。
 
-## 12. 问题排查
+## 11. 问题排查
 - 启动失败提示 presence requires sorted set：改用 Redis KV store，Memory/JDBC 不一定满足 sorted set 需求。
 - 客户端连不上：先调 negotiate，再检查 CORS、allowed origins、网关是否支持 WebSocket/SSE。
 - 消息只在本节点可见：检查 presence KV、node service name、outbound endpoint 和跨节点网络。
 - 上行消息没处理：检查 `inbound.enabled`、`inbound.mode`、listener 注解类型和 receiver 注册。
 - 可靠投递不生效：检查 realtime outbox 和 KV outbox 两层开关。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)

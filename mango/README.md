@@ -5,19 +5,14 @@
 
 业务开发者主要通过这里判断：能力模块在哪里、接入哪个 starter、单体还是微服务怎么装配、配置写在哪里、初始化数据由谁负责、交付前跑哪些验证。
 
-## 2. 适用场景
-- 开发或维护 Mango 后端平台能力、基础设施能力和业务能力。
-- 新业务模块需要引用 Mango 后端公共能力。
-- 业务项目需要选择单体或微服务部署拓扑。
-- 需要查找后端模块 README、PMO 规范、Maven 插件和验证命令。
 
-## 3. 边界说明
+## 2. 能力边界
 - 不在根工程直接写业务 Controller、Service、Mapper 或 migration。
 - 不把业务配置硬编码进根 `pom.xml`。
 - 不在 app 层实现领域规则；app 只负责部署装配。
 - 不把 README 当成长期规范源，长期规则以 `mango-pmo/rules/**` 为准。
 
-## 4. 模块组成
+## 3. 模块入口
 后端目录按职责分层：
 
 | 目录 | 职责 | 业务接入时关注点 |
@@ -33,7 +28,7 @@
 
 平台能力一般采用 `api`、`core`、`starter`、`starter-remote` 拆分：服务提供方引入本地 `starter`，服务调用方引入 `starter-remote`。
 
-## 5. 接入方式
+## 4. 接入方式
 业务项目推荐优先用 `mango-business-starter` 或 CLI 生成工程，再按模块 README 接入能力。
 
 单体装配：
@@ -73,7 +68,7 @@ mvn -f mango/pom.xml mango:gen-module -Dname=demo
 mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_record
 ```
 
-## 6. 配置说明
+## 5. 配置说明
 根工程只管理 Maven 版本和模块清单，运行时配置在具体 app 的 `application.yml` 或环境文件中。
 
 | 配置位置 | 关键配置 | 含义 |
@@ -89,7 +84,7 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 
 具体配置字段以对应模块 README 和 app `application.yml` 为准。
 
-## 7. API 与扩展
+## 6. API 与扩展
 根工程本身不暴露业务 API，扩展点由各模块提供：
 
 - Web 和统一异常：`mango-infra-web`。
@@ -100,7 +95,7 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 - 系统字典、配置、租户、日志：`mango-system`。
 - 文件、预览、模板、工作流、支付等按各模块 README 接入。
 
-## 8. 数据与初始化
+## 7. 数据与初始化
 根工程不直接拥有业务表。数据库结构、菜单、权限、字典、租户、种子数据由各能力模块的 migration、Runner 或 Initializer 提供。
 
 接入新模块时重点确认：
@@ -110,7 +105,7 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 - 菜单资源写入 authorization 的菜单和权限表。
 - 初始化逻辑是幂等的，重复启动不会重复插入脏数据。
 
-## 9. 管理入口
+## 8. 管理入口
 根工程不配置具体菜单。菜单、权限、租户由 `mango-authorization`、`mango-system` 和各业务模块 migration 协作初始化。
 
 业务开发新增后端能力时要同时登记：
@@ -120,7 +115,7 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 - 租户字段是否需要进入表结构和查询条件。
 - 初始化菜单和权限是否包含在 migration 或初始化器中。
 
-## 10. 快速开始
+## 9. 快速开始
 1. 通过 PMO preflight 读取本次任务需要遵守的规则。
 2. 在能力地图中确认要接入的 Mango 模块。
 3. 阅读目标模块 README，确认 starter、配置、API、migration、菜单和权限。
@@ -129,14 +124,14 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 6. 启动 app，验证 health、登录、菜单、权限和目标业务接口。
 7. 为新增模块补 README 和验收命令，避免能力信息丢失。
 
-## 11. 问题排查
+## 10. 问题排查
 - 启动后表不存在：检查 app 是否引入 starter、Flyway 模块开关是否打开、数据库是否连接到正确库。
 - 菜单看不到：检查 authorization 菜单初始化、角色授权、租户应用绑定和前端页面 key。
 - 接口 401 或 403：检查认证 token、公开路径、`@Permission`、角色权限和网关鉴权。
 - 本地端口冲突：优先通过 `.env.development` 或启动参数修改端口。
 - 业务逻辑写到 app 层：应移动到业务模块的 core/starter，app 只保留部署装配。
 
-## 12. 相关文档
+## 11. 相关文档
 - [后端代码规范](../mango-pmo/rules/backend/01-code.md)
 - [后端 API 规范](../mango-pmo/rules/backend/03-api.md)
 - [后端模块规范](../mango-pmo/rules/backend/05-module.md)
@@ -145,7 +140,7 @@ mvn -f mango/pom.xml mango:gen-crud -Dmodule=demo -Dentity=Demo -Dtable=demo_rec
 - [后端测试规范](../mango-pmo/rules/backend/08-test.md)
 - [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
 
-## 13. 历史资料
+## 12. 补充资料
 - [Mango 能力地图](../mango-docs/capabilities/README.md)
 - [App 拓扑 README](./mango-app/README.md)
 - [Admin Starter README](./mango-admin-starter/README.md)

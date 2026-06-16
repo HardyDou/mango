@@ -13,21 +13,25 @@
 - `mango.dev.json`：本地开发工作区 manifest。
 - `scripts`：兼容入口，实际执行委托给全局 `mango` CLI。
 
-## 2. 适用场景
-- 业务团队基于 Mango 快速启动一个管理后台项目。
-- 本地同时启动后端和前端，并让前端通过 `/api` 代理访问后端。
-- 使用 Mango 平台能力：认证、授权、系统、文件、模板、通知、编号、日历、工作流和 job。
-- 在业务项目内继续使用 `mango module add` 生成业务模块。
-- 让业务仓库脱离 Mango 源码后仍能执行 PMO preflight 和交付检查。
+## 2. 功能清单
 
-## 3. 边界说明
+| 能力 | 使用入口 | 说明 |
+|------|----------|------|
+| 后端业务应用 | `backend/app` | full preset 默认依赖 `io.mango:mango-admin-starter`。 |
+| 前端管理后台 | `frontend` | full preset 默认使用 `@mango/admin/full` 和 `@mango/admin/style-full.css`。 |
+| 本地开发编排 | `mango.dev.json`、`scripts/dev-workspace.sh` | 后端、前端启动、日志、状态和停止。 |
+| 平台能力接入 | 后端 starter、前端 `@mango/*` 包 | 认证、授权、系统、文件、模板、通知、编号、日历、工作流、job 等。 |
+| 业务模块生成 | `mango module add` | 在业务项目内生成 backend module 和 frontend package。 |
+| PMO baseline | `business-pmo`、`AGENTS.md` | 脱离 Mango 源码后执行 preflight 和交付检查。 |
+
+## 3. 能力边界
 - 不作为生产部署脚本；`mango start` 和 `scripts/dev-workspace.sh` 只面向本地开发。
 - 不替代业务项目的数据库初始化 runbook、部署 runbook、E2E 和性能基准。
 - 不默认启用 seed 数据；seed 需要显式环境变量和依赖确认。
 - 不允许前端 dev proxy 指向任意主机；模板只允许本机后端代理。
 - 不自动生成业务领域代码；业务模块需通过 `mango module add` 或人工开发。
 
-## 4. 模块组成
+## 4. 模块入口
 模板负责生成可运行的业务项目骨架和默认 Mango 平台依赖。生成后：
 
 - 平台能力由 Mango starter 和 `@mango/*` 包提供。
@@ -220,7 +224,6 @@ full preset 会启用授权、身份、组织、系统等平台模块的 migrati
 - [单体拓扑说明](./topologies/monolith/README.md)
 - [微服务拓扑说明](./topologies/microservice/README.md)
 
-## 13. 历史资料
 - [生成项目 PMO baseline](./business-pmo/mango-baseline/README.md)
 - [交付契约示例](./business-docs/plans/example-contract.md)
 - [交付台账示例](./business-docs/plans/example-ledger.md)

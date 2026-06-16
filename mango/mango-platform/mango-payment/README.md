@@ -1,82 +1,155 @@
-# mango-payment
+# 支付 Payment
 
 ## 1. 概览
-`mango-payment` 是 Mango 支付中心后端模块，提供支付应用、企业主体、支付方式、支付通道、通道签约、收银台、业务订单、支付订单、退款、流水、通知、对账、结算、线下收款和线下退款能力。
+
+`mango-payment` 是 Mango 的统一支付中心，提供支付应用、企业主体、支付方式、支付通道、通道签约、收银台、业务订单、支付订单、退款、通知、对账、结算、线下收款和异常处理能力。
+
+业务开发接入时分三类：
+
+- 后端只调用支付能力时，依赖 `mango-payment-api`。
+- 支付中心应用需要提供管理接口、收银台、开放接口、通道回调和调度能力时，启用 `mango-payment-starter`。
+- 管理后台或收银台页面使用 `@mango/payment`。其中管理页面属于 `admin-pages`，收银台组件 `PaymentCashier` 可用于 Mango 后台或业务支付页，但依赖 Mango 支付接口和请求封装。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 平台需要统一接入多支付通道，并通过支付方式、通道能力和签约配置完成路由 | Maven 依赖 / HTTP API / Java API |
-| 业务系统需要创建业务订单、拉起收银台、发起支付、退款、查单、查退款和关闭订单 | Maven 依赖 / HTTP API / Java API |
-| 财务或运营需要查看流水、通知、对账批次、差异处理、结算汇总和操作审计 | Maven 依赖 / HTTP API / Java API |
-| 线下收款、线下退款、银行流水导入和支付异常处理需要纳入同一支付域 | Maven 依赖 / HTTP API / Java API |
+| 能力 | 说明 | 常用入口 |
+|------|------|----------|
+| 支付应用 | 给业务系统分配 `appId`、密钥、签名算法、白名单和通知策略 | `PaymentApplicationApi`、`/payment/applications` |
+| 企业主体 | 维护收款主体、银行账户、执照文件和主体状态 | `PaymentEnterpriseSubjectApi`、`/payment/enterprise-subjects` |
+| 支付方式 | 维护微信、支付宝、网银、线下转账等方式及收银台展示分组 | `PaymentMethodApi`、`/payment/methods` |
+| 支付通道 | 维护通道、能力矩阵、签约字段模板和账单获取方式 | `PaymentChannelApi`、`PaymentChannelContractApi` |
+| 收银台 | 按应用、主体、支付方式和路由规则生成付款人可用支付入口 | `PaymentCashierApi`、`PaymentCashier` |
+| 业务订单 | 创建业务支付单，承载金额、标题、过期时间、通知地址和返回地址 | `PaymentBusinessOrderApi`、`PaymentOpenApi` |
+| 支付订单 | 发起支付、查单、同步状态、生成支付流水 | `PaymentOrderApi` |
+| 退款 | 发起退款审批、生成退款订单、查询通道退款状态 | `PaymentRefundApprovalApi`、`PaymentRefundOrderApi` |
+| 通知 | 记录并补偿投递支付结果、退款结果等业务通知 | `PaymentNotificationRecordApi` |
+| 对账 | 导入通道账单、获取账单、生成本地核对批次和差异 | `PaymentReconciliationApi`、`PaymentDifferenceApi` |
+| 结算 | 生成、确认、作废结算汇总 | `PaymentSettlementSummaryApi` |
+| 线下收款 | 提交转账凭证、导入银行流水、确认匹配、发起线下退款 | `PaymentOfflineCollectionApi` |
+| 异常处理 | 查看重复支付、状态不一致、通知失败等异常单并处理 | `PaymentExceptionOrderApi` |
+| 观测和安全 | 查看支付健康快照，重加密敏感字段 | `PaymentObservabilityApi`、`PaymentSecurityApi` |
 
-## 3. 适用场景
-- 平台需要统一接入多支付通道，并通过支付方式、通道能力和签约配置完成路由。
-- 业务系统需要创建业务订单、拉起收银台、发起支付、退款、查单、查退款和关闭订单。
-- 财务或运营需要查看流水、通知、对账批次、差异处理、结算汇总和操作审计。
-- 线下收款、线下退款、银行流水导入和支付异常处理需要纳入同一支付域。
+## 3. 后端接入
 
-## 4. 边界说明
-- 不直接保存银行卡、证书明文、私钥明文或外部支付账号敏感资料。
-- 不替代外部支付机构的商户开户、资质审核和通道开通流程。
-- 不把业务域订单生命周期完全迁移到支付中心；业务域仍负责自己的商品、合同、履约和售后语义。
-- 不依赖手工改库完成通道、菜单、权限或编号初始化。
-
-## 5. 模块组成
-- `mango-payment-api` 提供支付业务码、Command、Query、VO 和模块 API。
-- `mango-payment-core` 提供领域模型、Mapper、Service、通道适配、Flyway 迁移、状态流和编号生成适配。
-- `mango-payment-starter` 提供自动配置、Web Controller、调度入口和模块声明。
-- `mango-payment-starter-remote` 提供远程调用依赖装配入口。
-
-支付中心依赖 `mango-numgen` 生成平台编号，依赖 `mango-authorization` 初始化菜单和权限，依赖 `mango-workflow` 支撑退款审批，依赖 `mango-file` 保存证书或凭据类文件。
-
-## 6. 接入方式
-Maven 依赖：
+业务模块调用支付接口时依赖 API：
 
 ```xml
 <dependency>
-  <groupId>io.mango</groupId>
-  <artifactId>mango-payment-starter</artifactId>
+    <groupId>io.mango.platform.payment</groupId>
+    <artifactId>mango-payment-api</artifactId>
 </dependency>
 ```
 
-应用侧启用 starter 后，随模块加载 Flyway migration、Controller、通道适配器、通知调度和退款审批初始化能力。微服务场景按应用拓扑接入 `mango-payment-starter-remote`。
+支付中心服务端应用启用 starter：
 
-## 7. 配置说明
-支付中心运行配置由 starter 配置、数据库通道配置和签约配置共同决定。starter 配置前缀：`mango.payment`。
+```xml
+<dependency>
+    <groupId>io.mango.platform.payment</groupId>
+    <artifactId>mango-payment-starter</artifactId>
+</dependency>
+```
 
-| 配置项 | 类型 | 默认值 | 含义 |
-|--------|------|--------|------|
-| `enabled` | boolean | `true` | 是否启用支付中心自动配置。`PaymentAutoConfiguration` 使用该开关，缺省开启。 |
-| `notification.dispatch.enabled` | boolean | `true` | 是否启动支付通知补偿调度器。 |
-| `notification.dispatch.interval-millis` | long | `60000` | 通知补偿调度间隔。 |
-| `notification.dispatch.initial-delay-millis` | long | `30000` | 应用启动后首次通知补偿延迟。 |
-| `notification.dispatch.tenant-limit` | int | `20` | 单轮最多扫描的租户数量。 |
-| `notification.dispatch.batch-size` | int | `20` | 单轮每租户最多处理的通知记录数量。 |
-| `observability.channel-failure-rate-threshold` | decimal | `0.1000` | 通道失败率告警阈值。 |
-| `observability.payment-success-rate-minimum` | decimal | `0.9500` | 支付成功率最低阈值。 |
-| `observability.refund-success-rate-minimum` | decimal | `0.9500` | 退款成功率最低阈值。 |
-| `observability.payment-backlog-threshold` | long | `100` | 支付积压告警阈值。 |
-| `observability.callback-failure-threshold` | long | `1` | 回调失败告警阈值。 |
-| `observability.notification-failure-threshold` | long | `1` | 通知失败告警阈值。 |
-| `observability.refund-failure-threshold` | long | `1` | 退款失败告警阈值。 |
-| `observability.difference-threshold` | long | `1` | 对账差异告警阈值。 |
-| `observability.unhandled-exception-threshold` | long | `1` | 未处理异常单告警阈值。 |
-| `observability.expiring-certificate-threshold` | long | `1` | 即将过期证书数量告警阈值。 |
-| `observability.certificate-warning-days` | int | `30` | 证书到期提前预警天数。 |
-| `workflow.refund-approval.initializer.enabled` | boolean | `false` | 是否启动退款审批流程定义初始化。 |
-| `workflow.refund-approval.initializer.system-tenant-id` | long | 空 | 初始化流程定义使用的系统租户 ID。 |
-| `workflow.refund-approval.initializer.system-user-id` | long | 空 | 初始化流程定义使用的系统用户 ID。 |
-| `workflow.refund-approval.initializer.principal-name` | string | 空 | 初始化流程定义使用的操作者名称。 |
-| `workflow.refund-approval.initializer.realm` | string | `INTERNAL` | 初始化上下文登录域。 |
-| `workflow.refund-approval.initializer.actor-type` | string | `INTERNAL_USER` | 初始化上下文操作者类型。 |
-| `workflow.refund-approval.initializer.party-type` | string | `INTERNAL_ORG` | 初始化上下文主体类型。 |
-| `workflow.refund-approval.initializer.party-id` | long | 空 | 初始化上下文主体 ID。 |
-| `workflow.refund-approval.initializer.app-code` | string | 空 | 初始化上下文应用编码。 |
+微服务调用方只需要远程调用装配时依赖 remote starter：
 
-配置示例：
+```xml
+<dependency>
+    <groupId>io.mango.platform.payment</groupId>
+    <artifactId>mango-payment-starter-remote</artifactId>
+</dependency>
+```
+
+常用后端 API：
+
+| API | 用法 |
+|-----|------|
+| `PaymentOpenApi` | 面向业务系统创建订单、查询订单、获取收银台、支付、退款、查询退款和获取支付凭证。 |
+| `PaymentBusinessOrderApi` | 后台创建业务订单、分页查询、查看详情和订单状态字典。 |
+| `PaymentCashierApi` | 查询收银台会话、提交支付、查询支付结果、同步支付结果、提交线下转账凭证。 |
+| `PaymentOrderApi` | 分页查询支付订单、查看详情、查询状态字典、主动同步通道状态。 |
+| `PaymentRefundApprovalApi` | 创建退款审批、查询审批列表和状态。 |
+| `PaymentRefundOrderApi` | 查询退款订单、主动查询通道退款状态。 |
+| `PaymentReconciliationApi` | 导入对账、生成虚拟通道账单、本地订单核对、账单源和账单获取批次。 |
+| `PaymentNotificationRecordApi` | 查询通知记录、重试通知、投递到期通知。 |
+| `PaymentTaskApi` | 处理超时未支付订单、查询处理中订单，通常由任务调度调用。 |
+
+## 4. 前端接入
+
+管理后台接入页面和 API：
+
+```ts
+import {
+  PaymentApplicationView,
+  PaymentChannelView,
+  PaymentChannelContractView,
+  PaymentCashierConfigView,
+  PaymentBusinessOrderView,
+  PaymentOrderView,
+  PaymentRefundOrderView,
+  PaymentReconciliationView,
+  PaymentDifferenceView,
+  PaymentCashier,
+  paymentApi,
+} from '@mango/payment';
+import '@mango/payment/style.css';
+```
+
+自动登记支付管理页面时，从 `@mango/payment` 的 `admin-pages` 子入口导入 `registerMangoPaymentAdminPages`，然后在管理后台启动阶段调用一次。
+
+前端能力标识：
+
+| 标识 | 内容 |
+|------|------|
+| `admin-pages` | 支付应用、主体、通道、签约、支付方式、收银台配置、订单、退款、对账、结算、审计等管理页面。 |
+| `business-component` | `PaymentCashier`，用于展示支付方式、二维码、跳转材料、支付结果和线下转账凭证提交。 |
+| `api-client` | `paymentApi` 及类型定义，封装 `/payment/**`、`/openapi/pay/**` 和收银台接口。 |
+
+`@mango/payment` 依赖 `@mango/admin-pages`、`@mango/common`、`@mango/file`、`@mango/api-schema`、`element-plus`、`vue`、`vue-router` 和 `qrcode`。
+
+## 5. 快速开始
+
+1. 支付中心应用引入 `mango-payment-starter`，确认 `payment` migration 已执行。
+2. 后台创建或确认支付应用，拿到 `appId` 和应用密钥；开放接口调用方使用它做签名。
+3. 创建企业主体，并维护主体银行账户、执照文件等资料。
+4. 启用支付方式、支付通道、通道能力和签约配置；签约字段里维护商户号、应用号、证书文件、密钥引用、网关地址和回调地址。
+5. 配置收银台，绑定应用、主体、可用支付方式、默认支付方式、展示顺序、返回地址和收银台路径。
+6. 配置路由规则，按应用、主体、支付方式、终端和金额命中签约能力。
+7. 业务系统通过 `PaymentOpenApi.createOrder` 或 `POST /openapi/pay/orders` 创建业务订单，再通过收银台或开放支付接口发起支付。
+8. 支付成功后通过通道回调、主动查单或通知补偿推进状态；业务系统接收通知后回写自己的业务单据状态。
+
+## 6. 配置说明
+
+YAML 配置前缀：`mango.payment`。
+
+| 配置项 | 默认值 | 含义 |
+|--------|--------|------|
+| `enabled` | `true` | 是否启用支付自动配置。关闭后不注册 payment mapper、service、controller 和 workflow 初始化器。 |
+| `notification.dispatch.enabled` | `true` | 是否启用支付通知补偿调度器。 |
+| `notification.dispatch.interval-millis` | `60000` | 通知补偿调度间隔。 |
+| `notification.dispatch.initial-delay-millis` | `30000` | 应用启动后首次调度延迟。 |
+| `notification.dispatch.tenant-limit` | `20` | 单轮最多扫描的租户数量。 |
+| `notification.dispatch.batch-size` | `20` | 单轮每租户最多处理的通知数量。 |
+| `observability.channel-failure-rate-threshold` | `0.1000` | 通道失败率告警阈值。 |
+| `observability.payment-success-rate-minimum` | `0.9500` | 支付成功率最低阈值。 |
+| `observability.refund-success-rate-minimum` | `0.9500` | 退款成功率最低阈值。 |
+| `observability.payment-backlog-threshold` | `100` | 支付积压告警阈值。 |
+| `observability.callback-failure-threshold` | `1` | 回调失败告警阈值。 |
+| `observability.notification-failure-threshold` | `1` | 通知失败告警阈值。 |
+| `observability.refund-failure-threshold` | `1` | 退款失败告警阈值。 |
+| `observability.difference-threshold` | `1` | 对账差异告警阈值。 |
+| `observability.unhandled-exception-threshold` | `1` | 未处理异常单告警阈值。 |
+| `observability.expiring-certificate-threshold` | `1` | 即将过期证书数量告警阈值。 |
+| `observability.certificate-warning-days` | `30` | 证书到期提前预警天数。 |
+| `workflow.refund-approval.initializer.enabled` | `false` | 是否启动退款审批流程定义初始化。 |
+| `workflow.refund-approval.initializer.system-tenant-id` | 空 | 初始化流程定义使用的系统租户 ID。 |
+| `workflow.refund-approval.initializer.system-user-id` | 空 | 初始化流程定义使用的系统用户 ID。 |
+| `workflow.refund-approval.initializer.principal-name` | 空 | 初始化流程定义使用的操作者名称。 |
+| `workflow.refund-approval.initializer.realm` | `INTERNAL` | 初始化上下文登录域。 |
+| `workflow.refund-approval.initializer.actor-type` | `INTERNAL_USER` | 初始化上下文操作者类型。 |
+| `workflow.refund-approval.initializer.party-type` | `INTERNAL_ORG` | 初始化上下文主体类型。 |
+| `workflow.refund-approval.initializer.party-id` | 空 | 初始化上下文主体 ID。 |
+| `workflow.refund-approval.initializer.app-code` | 空 | 初始化上下文应用编码。 |
+
+示例：
 
 ```yaml
 mango:
@@ -97,147 +170,165 @@ mango:
           app-code: internal-admin
 ```
 
-数据库配置边界：
+运行时配置主要在数据库里维护：支付应用密钥、通道能力、签约配置、收银台配置、路由规则、账单获取源和证书文件引用。
 
-- 通道、通道能力、签约字段模板、路由规则、菜单权限和编号规则通过 Flyway 初始化。
-- 商户号、应用号、证书文件、密钥引用、网关地址和回调地址通过支付签约配置维护。
-- 证书和文件类配置保存文件中心 ID，敏感字段需要加密存储并脱敏展示。
+## 7. API 与扩展
 
-## 8. API 与扩展
-模块 API 覆盖：
+管理端常用接口：
 
-- `PaymentApplicationApi`
-- `PaymentBusinessOrderApi`
-- `PaymentCashierApi`
-- `PaymentCashierConfigApi`
-- `PaymentChannelApi`
-- `PaymentChannelCallbackApi`
-- `PaymentChannelContractApi`
-- `PaymentMethodApi`
-- `PaymentMethodRouteApi`
-- `PaymentEnterpriseSubjectApi`
-- `PaymentOrderApi`
-- `PaymentRefundOrderApi`
-- `PaymentRefundApprovalApi`
-- `PaymentReconciliationApi`
-- `PaymentTransactionFlowApi`
-- `PaymentExceptionOrderApi`
-- `PaymentObservabilityApi`
-- `PaymentDifferenceApi`
-- `PaymentSettlementSummaryApi`
-- `PaymentOfflineCollectionApi`
-- `PaymentOfflineRefundApi`
-- `PaymentNotificationRecordApi`
-- `PaymentOperationAuditApi`
-- `PaymentOpenApi`
-- `PaymentSecurityApi`
-- `PaymentTaskApi`
-- `MangoPayVirtualPaymentApi`
+| 能力 | 接口 |
+|------|------|
+| 支付应用 | `GET /payment/applications/page`、`GET /payment/applications/detail`、`POST /payment/applications`、`PUT /payment/applications`、`DELETE /payment/applications` |
+| 企业主体 | `GET /payment/enterprise-subjects/page`、`GET /payment/enterprise-subjects/detail`、`POST /payment/enterprise-subjects`、`PUT /payment/enterprise-subjects`、`DELETE /payment/enterprise-subjects` |
+| 支付通道 | `GET /payment/channels/page`、`GET /payment/channels/detail`、`POST /payment/channels`、`PUT /payment/channels`、`DELETE /payment/channels`、`GET /payment/channels/capabilities/page` |
+| 通道签约 | `GET /payment/channel-contracts/page`、`GET /payment/channel-contracts/detail`、`POST /payment/channel-contracts`、`PUT /payment/channel-contracts`、`DELETE /payment/channel-contracts` |
+| 证书管理 | `GET /payment/channel-contracts/certificates/expiring`、`POST /payment/channel-contracts/certificates/rotate` |
+| 支付方式 | `GET /payment/methods/page`、`GET /payment/methods/categories`、`GET /payment/methods/detail`、`POST /payment/methods`、`PUT /payment/methods`、`DELETE /payment/methods` |
+| 收银台配置 | `GET /payment/cashier-configs/page`、`GET /payment/cashier-configs/detail`、`POST /payment/cashier-configs`、`PUT /payment/cashier-configs`、`DELETE /payment/cashier-configs` |
+| 业务订单 | `GET /payment/business-orders/page`、`GET /payment/business-orders/detail`、`GET /payment/business-orders/statuses`、`POST /payment/business-orders` |
+| 支付订单 | `GET /payment/payment-orders/page`、`GET /payment/payment-orders/detail`、`GET /payment/payment-orders/statuses`、`POST /payment/payment-orders/sync-status` |
+| 退款审批 | `GET /payment/refund-approvals/page`、`GET /payment/refund-approvals/detail`、`GET /payment/refund-approvals/statuses`、`POST /payment/refund-approvals` |
+| 退款订单 | `GET /payment/refund-orders/page`、`GET /payment/refund-orders/detail`、`GET /payment/refund-orders/statuses`、`POST /payment/refund-orders/query-channel` |
+| 交易流水 | `GET /payment/transaction-flows/page`、`GET /payment/transaction-flows/detail` |
+| 通知记录 | `GET /payment/notification-records/page`、`GET /payment/notification-records/detail`、`GET /payment/notification-records/statuses`、`POST /payment/notification-records/retry` |
+| 对账 | `GET /payment/reconciliations/page`、`GET /payment/reconciliations/detail`、`GET /payment/reconciliations/statuses`、`POST /payment/reconciliations/import` |
+| 差异处理 | `GET /payment/differences/page`、`GET /payment/differences/detail`、`GET /payment/differences/statuses`、`GET /payment/differences/actions`、`POST /payment/differences/handle` |
+| 结算汇总 | `GET /payment/settlement-summaries/page`、`GET /payment/settlement-summaries/detail`、`GET /payment/settlement-summaries/statuses`、`POST /payment/settlement-summaries/generate`、`POST /payment/settlement-summaries/confirm`、`POST /payment/settlement-summaries/void` |
+| 观测 | `GET /payment/observability/snapshot` |
+| 安全 | `POST /payment/security/sensitive-fields/reencrypt` |
+| 调度任务 | `POST /payment/tasks/expire-open-orders`、`POST /payment/tasks/query-processing-orders` |
 
-扩展点包括通道支付适配器、通道回调适配器、账单获取或解析能力、支付方式路由规则、退款审批流程定义和通知调度。
+付款人和开放接口：
 
-## 9. 数据与初始化
-`mango-payment-core` 包含 `db/migration/payment` Flyway 脚本，用于初始化支付应用、通道、能力、签约、订单、退款、流水、通知、对账、结算、线下收款、线下退款、虚拟支付和相关约束。
+| 能力 | 接口 |
+|------|------|
+| 收银台会话 | `GET /payment/cashier/session` |
+| 收银台支付 | `POST /payment/cashier/pay` |
+| 支付结果 | `GET /payment/cashier/pay-result` |
+| 同步支付结果 | `POST /payment/cashier/pay-result/sync` |
+| 提交线下转账凭证 | `POST /payment/cashier/offline-collections/transfer-voucher` |
+| 创建开放订单 | `POST /openapi/pay/orders` |
+| 查询开放订单 | `GET /openapi/pay/orders/{bizOrderNo}` |
+| 获取开放收银台 | `POST /openapi/pay/orders/{bizOrderNo}/cashier` |
+| 开放支付 | `POST /openapi/pay/orders/{bizOrderNo}/pay` |
+| 查询支付订单 | `GET /openapi/pay/payment-orders/{payOrderNo}` |
+| 开放退款 | `POST /openapi/pay/refunds` |
+| 查询退款 | `GET /openapi/pay/refunds/{bizRefundNo}` |
+| 获取支付凭证 | `GET /openapi/pay/receipts/{bizOrderNo}` |
 
-关联初始化数据分布在：
+常用入参对象：
 
-- `mango-authorization`：支付中心菜单、页面资源和操作权限。
-- `mango-domain`：`PAYMENT` 业务域。
-- `mango-numgen`：支付订单、退款、流水、通知、对账和线下单据编号生成器。
-- `mango-job`：支付通道账单获取任务。
+| 对象 | 用途 |
+|------|------|
+| `CreatePaymentBusinessOrderCommand` | 后台创建业务订单。 |
+| `PaymentOpenRequestCommand` | 开放接口统一请求壳，承载应用、签名、时间戳、随机串和业务 payload。 |
+| `PaymentCashierPayCommand` | 收银台提交支付方式、订单、终端和付款材料。 |
+| `CreatePaymentRefundApprovalCommand` | 发起退款审批。 |
+| `QueryPaymentRefundOrderCommand` | 主动查询通道退款结果。 |
+| `ImportPaymentReconciliationCommand` | 导入对账批次。 |
+| `HandlePaymentDifferenceCommand` | 处理对账差异。 |
+| `ConfirmOfflineCollectionCommand` | 确认线下收款。 |
+| `SubmitOfflineTransferVoucherCommand` | 付款人提交线下转账凭证。 |
 
-退款审批流程定义由 `PaymentRefundApprovalWorkflowDefinitionInitializer` 在应用启动期初始化；它写入 workflow 流程定义，供退款审批入口引用。
+接入新支付通道时，通常需要补齐：
 
-## 10. 管理入口
-支付中心菜单和操作权限由 `mango-authorization` migration 初始化。后端接口按当前登录态、租户上下文、应用、主体、签约通道和权限码控制访问范围；前端页面 key 需要与 `@mango/payment` 注册的页面 key 保持一致。
+1. migration 固化通道、通道能力、签约字段模板、默认签约、路由规则和必要权限。
+2. 通道适配器实现支付、查单、退款、查退款、关单、账单获取或账单解析。
+3. 回调入口接入 `PaymentChannelCallbackApi`，提交通道回调命令。
+4. 对账接入账单获取源或文件导入。
+5. 记录请求摘要、响应摘要、通道交易号、通道退款号和错误原因，保证管理端能定位问题。
 
-## 11. 快速开始
-业务方先创建支付应用、企业主体、支付方式、通道和签约配置，再配置收银台和路由规则。业务下单时创建业务订单，前端拉起收银台，支付中心生成支付订单并调用通道，通道回调或主动查单推进支付状态，业务方通过通知记录或开放接口同步结果。
+不要用固定成功、mock 报文或手工改库替代真实支付、回调、查单、退款和对账链路。
 
-最小验收断言：业务订单可创建，收银台可展示可用支付方式，支付订单可进入通道，支付成功后业务订单和支付订单状态一致，退款可按权限发起并产生退款流水，对账能生成批次和差异结果。
+## 8. 数据与初始化
 
-## 12. 问题排查
-- 支付方式不显示：检查支付方式状态、收银台配置、企业主体、签约能力和路由规则。
-- 通道返回签名错误：检查签约字段、证书文件、回调地址、网关地址和适配器签名算法。
-- 回调未推进状态：检查公网回调入口、通道回调路由、验签结果、幂等记录和统一状态流日志。
-- 编号不连续：确认对应 `genKey`、日期分组和租户上下文是否符合 `mango-numgen` 规则。
-- 对账无结果：检查账单获取任务、导入文件、通道交易号、支付流水和对账批次状态。
+Flyway 路径：`mango-payment-core/src/main/resources/db/migration/payment`。
 
-## 13. 相关文档
-- [后端代码规范](../../../mango-pmo/rules/backend/01-code.md)
-- [模块菜单规范](../../../mango-pmo/rules/backend/11-module-menu.md)
-- [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)
-- [AI 交付质量](../../../mango-pmo/rules/05-ai-delivery-quality.md)
+核心表按用途分组：
+
+| 分组 | 表 |
+|------|----|
+| 基础配置 | `payment_application`、`payment_enterprise_subject`、`payment_subject_bank_account`、`payment_method`、`payment_method_category` |
+| 通道和签约 | `payment_channel`、`payment_channel_capability`、`payment_channel_field_template`、`payment_channel_contract`、`payment_channel_contract_value`、`payment_channel_contract_capability`、`payment_channel_certificate_rotation_record` |
+| 收银台和路由 | `payment_cashier_config`、`payment_method_route_rule`、`payment_method_route_rule_item` |
+| 订单和流水 | `payment_business_order`、`payment_order`、`payment_refund_order`、`payment_transaction_flow`、`payment_order_status_flow` |
+| 通知和异常 | `payment_notification_record`、`payment_exception_order`、`payment_operation_audit` |
+| 对账和结算 | `payment_reconciliation`、`payment_difference`、`payment_settlement_summary`、`payment_channel_bill_detail`、`payment_channel_bill_source`、`payment_channel_bill_fetch_batch` |
+| 线下收款 | `payment_offline_collection`、`payment_offline_collection_voucher`、`payment_offline_bank_statement_batch`、`payment_offline_bank_statement_item`、`payment_offline_collection_match`、`payment_offline_refund_process` |
+| 开放接口和虚拟通道 | `payment_openapi_nonce`、`payment_virtual_channel_payment`、`payment_mango_pay_scenario_control` |
+
+初始化内容包括：
+
+- 支付基础表、通道能力、支付方式分类、收银台配置、路由规则、虚拟通道、富友通道配置和线下收款相关表。
+- 支付编号规则依赖 `mango-numgen`，不要在业务代码或前端拼接订单号。
+- 支付菜单、页面资源和按钮权限由 `mango-authorization` 的资源能力维护。
+- `module.properties` 登记 `module-name=mango-payment`、`module-path=/payment`，供模块资源扫描使用。
+- `PaymentRefundApprovalWorkflowDefinitionInitializer` 是应用启动时的退款审批流程定义初始化入口；只有开启 `workflow.refund-approval.initializer.enabled` 并补齐系统租户、用户和操作者配置后才会执行。
+
+平台自生成编号统一通过 `mango-numgen`：
+
+| 业务对象 | 字段 | genKey | 前缀 |
+|----------|------|--------|------|
+| 业务订单 | `biz_order_no` | `PAY_BIZ_ORDER_NO` | `BO` |
+| 支付订单 | `pay_order_no` | `PAY_ORDER_NO` | `PO` |
+| 退款订单 | `refund_order_no` | `PAY_REFUND_ORDER_NO` | `RO` |
+| 业务退款号 | `biz_refund_no` | `PAY_BIZ_REFUND_NO` | `BR` |
+| 退款审批 | `approval_no` | `PAY_REFUND_APPROVAL_NO` | `RA` |
+| 支付流水 | `flow_no` | `PAY_FLOW_NO` | `PF` |
+| 退款流水 | `flow_no` | `PAY_REFUND_FLOW_NO` | `RF` |
+| 通知记录 | `notification_no` | `PAY_NOTIFY_NO` | `NT` |
+| 对账批次 | `reconciliation_no` / `batch_no` | `PAY_RECON_BATCH_NO` | `RC` |
+| 对账差异 | `difference_no` | `PAY_DIFF_NO` | `DF` |
+| 异常订单 | `exception_no` | `PAY_EXCEPTION_NO` | `EX` |
+| 线下收款单 | `offline_collection_no` | `PAY_OFFLINE_COLLECTION_NO` | `OC` |
+| 线下退款单 | `offline_refund_no` | `PAY_OFFLINE_REFUND_NO` | `OF` |
+| 芒果支付虚拟付款单 | `virtual_payment_no` | `PAY_MANGO_VIRTUAL_NO` | `MP` |
+
+`channel_trade_no` 和 `channel_refund_no` 以外部通道返回为准，不由平台生成。
+
+## 9. 管理入口
+
+前端页面 key 由支付管理页面注册函数 `registerMangoPaymentAdminPages` 注册：
+
+| 页面 | page key |
+|------|----------|
+| 支付应用 | `payment/applications/index` |
+| 企业主体 | `payment/enterprise-subjects/index` |
+| 通道签约 | `payment/channel-contracts/index` |
+| 支付通道 | `payment/channels/index` |
+| 支付方式 | `payment/methods/index` |
+| 收银台配置 | `payment/cashier-configs/index` |
+| 业务订单 | `payment/business-orders/index` |
+| 支付订单 | `payment/payment-orders/index` |
+| 线下收款 | `payment/offline-collections/index` |
+| 线下退款 | `payment/offline-refunds/index` |
+| 退款订单 | `payment/refund-orders/index` |
+| 退款审批 | `payment/refund-approvals/index` |
+| 交易流水 | `payment/transaction-flows/index` |
+| 异常订单 | `payment/exception-orders/index` |
+| 通知记录 | `payment/notification-records/index` |
+| 对账批次 | `payment/reconciliations/index` |
+| 对账差异 | `payment/differences/index` |
+| 结算汇总 | `payment/settlement-summaries/index` |
+| 操作审计 | `payment/operation-audits/index` |
+| 收银台 | `payment/cashier/index` |
+| 支付结果 | `payment/gateway-result/index` |
+
+权限码按资源命名，例如 `payment:application:list`、`payment:channel-contract:add`、`payment:payment-order:sync-status`、`payment:difference:handle`、`payment:task:expire-open-orders`。新增页面或按钮时，菜单、页面 key 和权限码需要在授权资源中保持一致。
+
+## 10. 问题排查
+
+- 收银台没有支付方式：检查收银台配置的 `methodCodes`、企业主体、签约能力、路由规则、金额区间和支付方式状态。
+- 支付通道调用失败：检查签约字段、商户号、应用号、证书文件、网关地址、回调地址和适配器错误摘要。
+- 回调没有推进订单状态：检查公网回调地址、通道回调路由、验签结果、通道交易号、幂等记录和支付订单状态。
+- 业务系统没收到通知：检查 `payment_notification_record` 状态、通知地址、应用通知策略和 `mango.payment.notification.dispatch.*` 是否启用。
+- 退款发起不了：检查支付订单是否可退、可退金额、退款审批状态、通道是否支持退款。
+- 对账没有数据：检查账单获取源、账单获取批次、导入文件、通道交易号和支付流水。
+- 编号异常：检查对应 `genKey` 是否初始化、租户上下文是否正确，不要在业务侧自行拼接编号。
+- 证书即将过期没有提醒：检查签约能力的 `certificateExpireTime` 和 `observability.certificate-warning-days`。
+
+## 11. 相关文档
+
+- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-
-## 14. 历史资料
-- [支付边界与台账](../../../mango-docs/plans/2026-05-25-payment-app-cashier-boundary-ledger.md)
-- [支付交付台账](../../../mango-docs/plans/2026-05-25-payment-delivery-ledger.md)
-- [支付生产就绪](../../../mango-docs/plans/2026-05-25-payment-production-readiness.md)
-- [支付 Sprint 01](../../../mango-docs/plans/2026-05-25-payment-sprint-01.md)
-- [支付交付证据汇总](../../../mango-docs/plans/evidence/payment-delivery-evidence-summary.md)
-- [支付富友收银台 E2E 证据](../../../mango-docs/evidence/2026-06-12-payment-fuiou-cashier-e2e.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
-
-## 15. 支付通道接入规约
-
-接入新的外部支付通道时，长期代码和交付约束以 `mango-pmo` 为准，本节只说明支付模块接入步骤和交付物。
-
-接入顺序：
-
-1. 资料确认：确认通道产品、支付方式、终端类型、扫码模式、网银模式、退款、查单、关单、账单、对账、回调方式、测试账号和测试金额。
-2. 能力建模：形成通道能力矩阵，明确支付方式、终端、物料类型、退款、查单、关单、账单和对账能力。
-3. 签约字段建模：只把商户需要维护的接入资料放入字段模板，例如商户号、机构号、AppId、公钥、私钥、证书、API Key、网关地址和回调地址。
-4. 数据固化：通过 Flyway 固化通道、能力、签约字段模板、默认测试签约配置、路由能力、权限和菜单数据。
-5. 适配器实现：通道适配器负责发起支付、查单、退款、查退款、关单、账单获取或账单解析。
-6. 统一回调：公网回调入口先进入统一通道路由，再由对应通道回调适配器完成验签和解析。
-7. 统一结果推进：回调、主动查单和对账补偿只提交通道结果；状态、副作用、通知和审计由统一领域服务推进。
-8. 异常可诊断：失败记录需要定位通道、租户、签约、订单、请求摘要、响应摘要和原始异常。
-9. 真实验收：开放支付方式需要完成真实下单或官方测试金额验收，覆盖支付物料、回调、主动查单、退款、退款查单、账单和对账。
-10. 证据归档：保存订单号、退款单号、通道交易号、对账批次、请求摘要、响应摘要、回调样本、日志摘要和页面截图。
-
-通道能力矩阵模板：
-
-| 支付方式 | 终端 | 物料类型 | 支付 | 查单 | 退款 | 查退款 | 关单 | 账单 | 对账 | 说明 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 例如 PERSONAL_WECHAT_QR | WEB | QR | 是 | 是 | 是 | 是 | 按通道文档 | 是 | 是 | 微信扫码主扫 |
-
-不得声明完成的情况：
-
-- 只有页面配置，没有真实通道接口调用。
-- 只有适配器代码，没有 Flyway 固化通道、能力和字段模板。
-- 只跑通支付，不验证退款、查单、回调和对账。
-- 使用固定成功、mock、临时报文或手工改库替代真实链路。
-- 回调、查单、退款或对账失败时无法从日志或记录定位根因。
-- 配置表单要求商户理解协议实现细节，例如 XML、JSON、RSA、SM2、接口模式或内部接口路径。
-
-## 16. 编号规范
-
-支付中心所有平台自生成编号统一通过 `mango-numgen` 生成。业务 Service 不自行拼接 `时间戳 + 随机数`，也不在 Controller、Service 或前端写死编号。
-
-通用格式：
-
-```text
-业务前缀 + yyyyMMdd + 8 位日内递增序号
-```
-
-编号清单：
-
-| 业务对象 | 字段 | genKey | 前缀 | 生成责任 |
-| --- | --- | --- | --- | --- |
-| 业务订单 | `biz_order_no` | `PAY_BIZ_ORDER_NO` | `BO` | 后台或内部创建时由 payment 生成；开放接口传入时由业务方负责 |
-| 支付订单 | `pay_order_no` | `PAY_ORDER_NO` | `PO` | payment 生成 |
-| 退款订单 | `refund_order_no` | `PAY_REFUND_ORDER_NO` | `RO` | payment 生成 |
-| 业务退款号 | `biz_refund_no` | `PAY_BIZ_REFUND_NO` | `BR` | 后台或审批发起且未传入时由 payment 生成；开放接口传入时由业务方负责 |
-| 退款审批 | `approval_no` | `PAY_REFUND_APPROVAL_NO` | `RA` | 后台退款审批生成 |
-| 支付流水 | `flow_no` | `PAY_FLOW_NO` | `PF` | payment 支付状态流或资金流水生成 |
-| 退款流水 | `flow_no` | `PAY_REFUND_FLOW_NO` | `RF` | payment 退款状态流生成 |
-| 通知记录 | `notification_no` | `PAY_NOTIFY_NO` | `NT` | payment 通知生成 |
-| 对账批次 | `reconciliation_no` / `batch_no` | `PAY_RECON_BATCH_NO` | `RC` | 对账导入生成 |
-| 对账差异 | `difference_no` | `PAY_DIFF_NO` | `DF` | 对账差异生成 |
-| 异常订单 | `exception_no` | `PAY_EXCEPTION_NO` | `EX` | 重复支付或异常处理生成 |
-| 线下收款单 | `offline_collection_no` | `PAY_OFFLINE_COLLECTION_NO` | `OC` | 线下收款通道生成 |
-| 线下退款单 | `offline_refund_no` | `PAY_OFFLINE_REFUND_NO` | `OF` | 线下退款通道生成 |
-| 芒果支付虚拟付款单 | `virtual_payment_no` | `PAY_MANGO_VIRTUAL_NO` | `MP` | 芒果支付通道生成 |
-
-`channel_trade_no` 和 `channel_refund_no` 以外部通道返回为准，不由平台编号生成。
+- [文档资产边界](../../../mango-pmo/rules/06-document-assets.md)

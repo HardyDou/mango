@@ -1,64 +1,50 @@
 # @mango/rbac
 
 ## 1. 概览
-`@mango/rbac` 提供 Mango 管理后台的授权、用户、角色、菜单、菜单包、应用、组织、岗位和权限管理页面，以及对应 API 封装。
 
-本包属于 `admin-pages` 配套能力，依赖后端 `mango-authorization`、`mango-identity` 和 `mango-org`。
+`@mango/rbac` 是 Mango 管理后台的授权管理前端包，提供应用、菜单、菜单包、角色、用户、组织、岗位和权限资源页面，并导出对应 API 封装。
+
+集成形态：
+
+| 标识 | 说明 |
+|------|------|
+| `admin-pages` | 授权、用户、组织和岗位管理页面，通常由 `@mango/admin-pages` 默认注册。 |
+| `api-client` | authorization、identity、org、post 相关 API 封装。 |
+
+它不做后端鉴权判定，也不会初始化菜单、角色、用户或组织。前端只展示和提交管理操作，最终权限、租户和数据范围由后端校验。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 管理 internal-admin 等应用的菜单、菜单包和页面资源 | 前端注册 / 组件 / API 封装 |
-| 给角色分配菜单和权限 | 前端注册 / 组件 / API 封装 |
-| 管理用户、组织、岗位和用户组织关系 | 前端注册 / 组件 / API 封装 |
-| 管理前端应用、模块绑定和运行策略 | 前端注册 / 组件 / API 封装 |
-| 业务页面需要查询角色、菜单、用户、组织或岗位数据 | 前端注册 / 组件 / API 封装 |
+| 能力 | 使用入口 | 后端依赖 |
+|------|----------|----------|
+| 应用管理 | `AppView`、`appApi` | `mango-authorization` |
+| 应用模块绑定和运行策略 | `appModuleApi` | `mango-authorization`、`@mango/app-runtime` |
+| 菜单和按钮资源 | `MenuView`、`menuApi` | `mango-authorization` |
+| 菜单包 | `MenuPackageView`、`menuPackageApi` | `mango-authorization` |
+| 角色和菜单授权 | `RoleView`、`roleApi` | `mango-authorization` |
+| 用户管理 | `UserView`、`userApi` | `mango-identity` |
+| 组织和成员 | `OrgView`、`orgApi` | `mango-org` |
+| 岗位管理 | `PostView`、`postApi` | `mango-org` |
+| 权限资源查看 | `PermissionView` | `mango-authorization` |
 
-## 3. 适用场景
-- 管理 `internal-admin` 等应用的菜单、菜单包和页面资源。
-- 给角色分配菜单和权限。
-- 管理用户、组织、岗位和用户组织关系。
-- 管理前端应用、模块绑定和运行策略。
-- 业务页面需要查询角色、菜单、用户、组织或岗位数据。
+## 3. 接入方式
 
-## 4. 边界说明
-- 不负责后端鉴权判定。
-- 不初始化菜单和权限资源。
-- 不替代业务模块自己的 resource manifest。
-- 不负责登录、token 签发和租户上下文创建。
-
-## 5. 模块组成
-本包包含管理页面和 API：
-
-| 能力 | 页面 | API |
-|------|------|-----|
-| 应用 | `AppView` | `appApi`、`appModuleApi` |
-| 菜单 | `MenuView` | `menuApi` |
-| 菜单包 | `MenuPackageView` | `menuPackageApi` |
-| 角色 | `RoleView` | `roleApi` |
-| 用户 | `UserView` | `userApi` |
-| 组织 | `OrgView` | `orgApi` |
-| 岗位 | `PostView` | `postApi` |
-| 权限 | `PermissionView` | 权限页面内接口 |
-
-默认页面注册由 `@mango/admin-pages` 的 `registerDefaultAdminPages` 完成，本包自身没有单独 `admin-pages` export。
-
-## 6. 接入方式
-安装：
+开发依赖：
 
 ```bash
 pnpm add @mango/rbac
 ```
 
-引入样式和页面：
+宿主应用需要提供 Vue、Vue Router、Element Plus，并接入 `@mango/common` 请求上下文。部署时需要启用 authorization、identity、org 后端能力。
+
+引入页面和样式：
 
 ```ts
 import '@mango/rbac/style.css';
-import { MenuView, RoleView, UserView, appApi, menuApi, roleApi } from '@mango/rbac';
+import { AppView, MenuView, RoleView, UserView } from '@mango/rbac';
 ```
 
-默认页面注册：
+Mango Admin 默认页面注册通常由 `@mango/admin-pages` 完成：
 
 ```ts
 import { registerDefaultAdminPages } from '@mango/admin-pages';
@@ -66,92 +52,118 @@ import { registerDefaultAdminPages } from '@mango/admin-pages';
 registerDefaultAdminPages();
 ```
 
-## 7. 配置说明
-本包没有运行时配置文件。主要行为由 API 参数、后端资源和 `@mango/admin-pages` 默认页面注册控制。
+直接调用 API：
 
-| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
-|----------|------------|--------|------|----------|----------|
-| `AuthorizationApp` | `appCode` | 无 | 应用编码 | 菜单和授权边界 | `api/app.ts` |
-| `AuthorizationApp` | `appType`、`deployMode`、`entryUrl` | 可选 | 前端运行方式 | 影响 runtime 策略 | `api/app.ts` |
-| `AppModuleBinding` | `appCode`、`moduleCode` | 无 | 应用模块绑定 | 决定模块菜单同步 | `appModuleApi` |
-| `SysMenuVO` | `menuType` | 无 | 目录、菜单、按钮 | Shell 路由过滤和按钮权限 | `api/menu.ts` |
-| `SysMenuVO` | `moduleCode`、`component` | 可选 | 页面归属和页面 key | 菜单打开页面 | `api/menu.ts` |
-| `RoleVO` | `appCode`、`realm`、`actorType` | 无 | 角色作用域 | 决定授权对象范围 | `api/role.ts` |
-| `IdentityUserVO` | `realm`、`actorType`、`partyType`、`partyId` | 可选 | 登录身份上下文 | 影响用户绑定 | `api/user.ts` |
-| `OrgTreeParams` | `parentId`、`type`、`includeDisabled` | 可选 | 组织树过滤 | 影响组织选择 | `api/org.ts` |
+```ts
+import { menuApi, roleApi, userApi } from '@mango/rbac';
 
-## 8. API 与扩展
-| 导出 | 用途 |
+const menus = await menuApi.tree({ appCode: 'internal-admin' });
+await roleApi.assignMenus(roleId, menuIds);
+const users = await userApi.page({ pageNum: 1, pageSize: 20 });
+```
+
+## 4. 配置说明
+
+`@mango/rbac` 没有独立运行时配置文件。主要行为由宿主请求配置、菜单 component key、API 参数和后端数据决定。
+
+| 配置位置 | 字段 | 含义 |
+|----------|------|------|
+| 宿主应用 | API baseURL / 代理 | 决定 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 请求转发目标。 |
+| authorization 应用 | `appCode` | 应用授权边界，管理端通常是 `internal-admin`。 |
+| 菜单数据 | `component` | 必须匹配前端页面 key，Shell 才能打开页面。 |
+| 菜单数据 | `menuType` | 区分目录、菜单、按钮。 |
+| 角色数据 | `realm`、`actorType` | 角色作用域。 |
+| 用户数据 | `realm`、`actorType`、`partyType`、`partyId` | 登录身份上下文。 |
+| 组织查询 | `parentId`、`type`、`includeDisabled` | 组织树过滤条件。 |
+
+## 5. API 与扩展
+
+页面导出：
+
+| 导出 | 默认页面 key | 管理能力 |
+|------|--------------|----------|
+| `AppView` | `system/app/index` | 应用管理。 |
+| `MenuView` | `system/menu/index` | 菜单和按钮资源管理。 |
+| `MenuPackageView` | `system/menu-package/index` | 菜单包管理。 |
+| `RoleView` | `system/role/index` | 角色和菜单授权。 |
+| `UserView` | `system/user/index` | 用户、企微同步、外部身份绑定。 |
+| `OrgView` | `system/org/index` | 组织树和组织成员。 |
+| `PostView` | `system/post/index` | 岗位管理。 |
+| `PermissionView` | `system/permission/index` | 权限资源查看。 |
+
+主要 API：
+
+| API | 主要接口 | 能力 |
+|-----|----------|------|
+| `appApi` | `/authorization/apps` | 应用列表、详情、创建、更新、删除、运行时应用。 |
+| `appModuleApi` | `/authorization/app-modules` | 应用模块绑定、同步菜单、运行策略。 |
+| `menuApi` | `/authorization/menus` | 用户菜单、菜单树、详情、创建、更新、删除。 |
+| `menuPackageApi` | `/authorization/menu-packages` | 菜单包 CRUD。 |
+| `roleApi` | `/authorization/roles` | 角色 CRUD、角色菜单、可分配菜单、主体角色绑定。 |
+| `userApi` | `/identity/users/page` | 用户分页、详情、创建、更新、删除、重置密码、企微同步、外部身份绑定。 |
+| `orgApi` | `/org/tree` | 组织树、子节点、详情、成员、负责人。 |
+| `postApi` | `/post/page` | 岗位分页、详情、创建、更新、删除。 |
+
+常用返回字段：
+
+| 数据 | 字段 |
 |------|------|
-| `AppView` | 应用管理 |
-| `MenuView` | 菜单管理 |
-| `MenuPackageView` | 菜单包管理 |
-| `RoleView` | 角色管理和菜单授权 |
-| `UserView` | 用户管理 |
-| `OrgView` | 组织管理 |
-| `PostView` | 岗位管理 |
-| `PermissionView` | 权限资源查看 |
-| `appApi`、`appModuleApi` | 应用和模块绑定 |
-| `menuApi` | 菜单 CRUD 和用户菜单 |
-| `menuPackageApi` | 菜单包 |
-| `roleApi` | 角色、角色菜单、主体角色绑定 |
-| `userApi` | 用户、企微同步、外部身份绑定 |
-| `orgApi` | 组织树和组织成员 |
-| `postApi` | 岗位 |
+| 应用 | `appCode`、`appName`、`appType`、`deployMode`、`entryUrl` |
+| 菜单 | `id`、`parentId`、`menuType`、`path`、`component`、`perms`、`moduleCode` |
+| 角色 | `id`、`roleName`、`roleCode`、`appCode`、`realm`、`actorType` |
+| 用户 | `userId`、`username`、`nickname`、`status`、`tenantId` |
+| 组织 | `id`、`name`、`parentId`、`sort`、`children` |
+| 岗位 | `id`、`postCode`、`postName`、`sort`、`status` |
 
-## 9. 数据与初始化
-本包不包含数据库 migration。依赖后端初始化：
+## 6. 数据与初始化
 
-| 类型 | 后端来源 | 前端消费 | 排查入口 |
-|------|----------|----------|----------|
-| 应用 | authorization | 应用管理、菜单接口 | 应用列表有 `internal-admin` |
-| 菜单和按钮 | authorization / resource manifest | 菜单管理、Shell 菜单 | 菜单树可加载 |
-| 角色和授权 | authorization | 角色管理 | 分配菜单后用户可见 |
-| 用户身份 | identity | 用户管理和登录 | 用户列表和登录可用 |
-| 组织岗位 | org | 组织、岗位、用户组织关系 | 组织树和岗位列表可用 |
+`@mango/rbac` 不包含 migration。接入前要确认：
 
-## 10. 管理入口
-默认页面 key：
-
-| 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
-|-------------|---------------|--------|----------|-----------------|--------------|
-| 菜单包 | `system/menu-package/index` | authorization 定义 | 后端初始化 | 角色授权 | authorization |
-| 菜单管理 | `system/menu/index` | authorization 定义 | 后端初始化 | 角色授权 | authorization |
-| 角色管理 | `system/role/index` | authorization 定义 | 后端初始化 | 角色授权 | authorization |
-| 用户管理 | `system/user/index` | identity / authorization 定义 | 后端初始化 | 角色授权 | identity |
-| 组织管理 | `system/org/index` | org / authorization 定义 | 后端初始化 | 角色授权 | org |
-| 岗位管理 | `system/post/index` | org / authorization 定义 | 后端初始化 | 角色授权 | org |
-| 应用管理 | `system/app/index` | authorization 定义 | 后端初始化 | 角色授权 | authorization |
-| 权限资源 | `system/permission/index` | authorization 定义 | 后端初始化 | 角色授权 | authorization |
-
-前端只展示授权结果；接口权限、租户和组织数据范围由后端校验。
-
-## 11. 快速开始
-1. 后端启用 authorization、identity、org。
-2. 初始化 `internal-admin` 应用、菜单和角色。
-3. 前端引入 `@mango/rbac/style.css`。
-4. 调用 `registerDefaultAdminPages`。
-5. 给测试用户分配角色和菜单。
-6. 登录后台验证菜单、页面、按钮、接口权限和租户隔离。
-
-## 12. 问题排查
-| 问题 | 原因 | 处理方式 |
+| 数据 | 来源 | 前端消费 |
 |------|------|----------|
-| 菜单为空 | 应用、菜单或角色授权缺失 | 查 authorization 菜单接口 |
-| 页面空白 | 默认页面未注册或 component key 不一致 | 查 `registerDefaultAdminPages` |
-| 用户列表为空 | identity 没有用户或无权限 | 查 identity 数据和接口权限 |
-| 组织树为空 | org 未初始化 | 查组织数据 |
-| 授权后不生效 | 用户 session 仍是旧权限 | 重新登录或刷新用户权限 |
+| 应用 | `mango-authorization` | 应用管理、登录授权边界。 |
+| 菜单和按钮 | authorization resource manifest 或初始化脚本 | 菜单管理、Shell 菜单、按钮权限。 |
+| 菜单包 | `mango-authorization` | 租户授权和菜单套餐。 |
+| 角色和授权 | `mango-authorization` | 角色管理、角色菜单、主体角色。 |
+| 用户和身份 | `mango-identity` | 用户管理、登录、外部身份绑定。 |
+| 组织和岗位 | `mango-org` | 组织管理、岗位管理、用户组织关系。 |
 
-## 13. 相关文档
-- [前端代码规范](../../../mango-pmo/rules/frontend/01-vue-code.md)
-- [前端测试规范](../../../mango-pmo/rules/frontend/04-test.md)
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+业务模块菜单和权限应该由对应模块的 resource manifest 或后端初始化流程入库，不应该在前端手工补假数据。
+
+## 7. 管理入口
+
+菜单的 component 字段应与上面的默认页面 key 保持一致。访问控制分两层：
+
+| 层级 | 说明 |
+|------|------|
+| 前端展示 | Shell 根据用户菜单和按钮权限决定显示哪些入口。 |
+| 后端校验 | 每个 `/authorization/**`、`/identity/**`、`/org/**`、`/post/**` 接口继续校验登录态、租户、角色和数据范围。 |
+
+## 8. 快速开始
+
+1. 后端启用 authorization、identity、org。
+2. 初始化 `internal-admin` 应用、基础菜单、角色、管理员用户和组织。
+3. 前端引入 `@mango/rbac/style.css`。
+4. 调用 `registerDefaultAdminPages()` 或手工把页面 key 映射到导出组件。
+5. 给测试用户分配角色和菜单。
+6. 登录后确认菜单、页面、按钮和接口权限一致。
+
+## 9. 问题排查
+
+| 问题 | 常见原因 | 处理方式 |
+|------|----------|----------|
+| 菜单为空 | 应用、菜单、角色授权或用户角色缺失 | 查 `/authorization/menus/user`。 |
+| 页面空白 | 页面未注册或 component key 不一致 | 对照默认页面 key 和注册入口。 |
+| 用户列表为空 | identity 没有用户或当前账号无权限 | 查 `/identity/users/page` 和接口权限。 |
+| 组织树为空 | org 数据未初始化或租户过滤无数据 | 查 `/org/tree`。 |
+| 授权后不生效 | 用户仍使用旧 token 或旧菜单缓存 | 重新登录并刷新菜单。 |
+| 按钮隐藏但接口还能调 | 只做了前端隐藏，没有后端权限 | 检查后端 authorization 资源和接口鉴权。 |
+
+## 10. 相关文档
+
 - [后端 Authorization](../../../mango/mango-platform/mango-authorization/README.md)
 - [后端 Identity](../../../mango/mango-platform/mango-identity/README.md)
 - [后端 Org](../../../mango/mango-platform/mango-org/README.md)
-
-## 14. 历史资料
 - [RBAC 页面说明](./src/views/README.md)
-- [Mango UI README](../../README.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+- [@mango/admin-pages](../admin-pages/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

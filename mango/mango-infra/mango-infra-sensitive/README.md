@@ -12,24 +12,19 @@
 | 管理端在特定权限下允许查看原文，其余场景统一脱敏 | Maven 依赖 / starter / Java API |
 | 需要通过 ISensitiveWordProvider 扩展敏感词 allow/deny 词库 | Maven 依赖 / starter / Java API |
 
-## 3. 适用场景
-- API 响应中的手机号、证件号、邮箱、银行卡、密码、密钥、IPv4、车牌、URL query 参数需要脱敏。
-- JSON 字符串中指定 key 的值需要递归脱敏。
-- 管理端在特定权限下允许查看原文，其余场景统一脱敏。
-- 需要通过 `ISensitiveWordProvider` 扩展敏感词 allow/deny 词库。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不替代权限判断和租户隔离。
 - 不替代数据库加密、密钥管理和传输层加密。
 - 不自动处理日志输出；日志打印对象前仍要避免输出原文。
 - 不负责敏感词词库管理页面和审核流程。
 
-## 5. 模块组成
+## 4. 模块入口
 - `mango-infra-sensitive-api`：`@Sensitive`、`SensitiveType`、masking SPI、敏感词 provider SPI、临时关闭脱敏上下文。
 - `mango-infra-sensitive-core`：脱敏算法、JSON key 脱敏、Jackson serializer、敏感词 customizer。
 - `mango-infra-sensitive-starter`：注册 Jackson module、masking service、runtime initializer、敏感词引擎。
 
-## 6. 接入方式
+## 5. 接入方式
 ```xml
 <dependency>
     <groupId>io.mango.infra.sensitive</groupId>
@@ -58,7 +53,7 @@ public class UserProfileVO {
 String json = SensitiveMaskingContext.getWithoutMasking(() -> objectMapper.writeValueAsString(vo));
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 配置前缀：`mango.sensitive`。
 
 | 配置 | 默认值 | 含义 |
@@ -90,7 +85,7 @@ mango:
       enable-url-check: true
 ```
 
-## 8. API 与扩展
+## 7. API 与扩展
 - `@Sensitive`：字段或 getter 注解，支持 `type`、`prefixNoMaskLen`、`suffixNoMaskLen`、`maskStr`、`keys`、`fuzzy`。
 - `SensitiveType`：内置 CUSTOM、CUSTOMER、CHINESE_NAME、ID_CARD、FIXED_PHONE、MOBILE_PHONE、ADDRESS、EMAIL、BANK_CARD、PASSWORD、KEY、IPV4、CAR_LICENSE、QUERY_PARAM、JSON。
 - `ISensitiveMaskingService`：判断当前字段是否需要脱敏。
@@ -111,29 +106,29 @@ public class PermissionRawAccessProvider implements ISensitiveRawAccessProvider 
 }
 ```
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 无数据库 migration、无 Runner、无业务初始化数据。`SensitiveAutoConfiguration` 会在启动时通过 `InitializingBean` 把 `ISensitiveMaskingService` 写入 `SensitiveMaskingRuntime`，该初始化必须保持幂等。
 
-## 10. 管理入口
+## 9. 管理入口
 本模块不创建菜单和权限。`masking.raw-authority` 只是权限标识字符串，是否拥有该权限由业务提供的 `ISensitiveRawAccessProvider` 判断。租户隔离仍由业务查询和授权模块负责。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 接入 starter。
 2. 在响应 DTO 的敏感字段上加 `@Sensitive`，不要只在实体类上依赖隐式处理。
 3. 需要原文查看时，实现 `ISensitiveRawAccessProvider` 并配置 `masking.raw-authority`。
 4. 需要敏感词时，实现 `ISensitiveWordProvider` 提供词库。
 5. 写接口响应序列化测试和权限差异测试。
 
-## 12. 问题排查
+## 11. 问题排查
 - 字段没脱敏：检查字段类型是否为字符串或 getter 输出，Jackson 是否注册了 `SensitiveJacksonModule`。
 - 有权限仍脱敏：检查 `ISensitiveRawAccessProvider` 是否是 Spring Bean，判断的 authority 是否和配置一致。
 - JSON 脱敏不生效：确认字段值是合法 JSON 字符串，`keys` 和 `fuzzy` 配置是否匹配。
 - 日志仍输出原文：本模块只管 Jackson 响应序列化，日志输出要单独脱敏或避免打印原文。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端安全规范](../../../mango-pmo/rules/backend/06-security.md)
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [能力地图](../../../mango-docs/capabilities/README.md)
