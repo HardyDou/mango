@@ -111,9 +111,10 @@ assertIncludes('mango-pmo/rules/08-capability-docs.md', ['# 能力说明维护�
 assertIncludes('mango-docs/capabilities/README.md', [
   '本文只做能力索引，不复制规范正文',
   '正式交付规则以 preflight 输出和 `mango-pmo/rules/**` 为准',
-  '[验证方式](../../mango/mango-platform/mango-auth/README.md#10-验证方式)'
+  '[Auth README](../../mango/mango-platform/mango-auth/README.md)',
+  '排障入口'
 ], failures);
-assertNotIncludes('mango-docs/capabilities/README.md', ['必须', '禁止'], failures);
+assertNotIncludes('mango-docs/capabilities/README.md', ['必须', '禁止', '验证方式'], failures);
 
 for (const entryReadme of ['README.md', 'mango/README.md', 'mango-ui/README.md', 'mango-business-starter/README.md']) {
   assertNoLongTermRuleLanguage(entryReadme, failures);
@@ -150,11 +151,12 @@ for (const guide of walkMarkdown('mango-docs/guides')) {
 }
 
 assertIncludes('mango-pmo/templates/module-readme.md', [
-  '## 1. 能力定位',
-  '## 4. 模块边界',
-  '## 10. 验证方式',
-  '## 13. 关联 PMO 规则'
+  '## 1. 概览',
+  '## 3. 接入方式',
+  '## 10. 问题排查',
+  '## 11. 相关文档'
 ], failures);
+assertNotIncludes('mango-pmo/templates/module-readme.md', ['## 10. 验证方式', '质量检查'], failures);
 
 assertIncludes('.github/pull_request_template.md', [
   '## PMO / Scope',

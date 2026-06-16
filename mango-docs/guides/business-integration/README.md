@@ -23,7 +23,18 @@
 | [按钮权限不显示排障](./permission-button-troubleshooting.md) | 菜单可见但新增、编辑、删除按钮不显示 | Authorization、Access、RBAC Frontend |
 | [租户字典配置为空排障](./tenant-dict-config-empty.md) | 业务下拉、字典、配置或基础数据为空 | Identity、Org、System、Seed |
 
-## 4. 关联入口
+## 4. 新场景登记门禁
+
+新增业务接入场景时，README 需要说清楚：
+
+- 业务目标是什么，哪些模块参与。
+- 后端需要引入哪些 starter 或 remote starter。
+- 前端需要引入哪些包，是否只适用于管理后台。
+- 配置项在哪里配置，默认值是什么。
+- 菜单、权限、租户、初始化数据由谁负责。
+- 最小验收闭环是什么，失败时先查哪张表或哪个接口。
+
+## 5. 关联入口
 
 - [Mango 能力地图](../../capabilities/README.md)
 - [业务项目开发指南](../../designs/business-project-development-guide.md)

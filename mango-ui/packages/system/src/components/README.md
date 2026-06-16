@@ -1,108 +1,121 @@
-# System Components
+# @mango/system Components
 
-## 1. 入口定位
+## 1. 概览
+本入口说明 `@mango/system` 导出的复用组件：`ParticipantSelector`、`DomainSelector` 和 `DomainSideTree`。它们是后台业务页面组件，适合管理端、流程配置、模板配置和业务数据筛选，不适合官网或 C 端页面直接使用。
 
-本入口说明 `@mango/system` 的复用选择器组件：参与人选择器、业务域选择器和业务域侧边树。它们用于业务页面选择用户、组织范围、角色、岗位或业务域。
-
-## 2. 公开导出
-
+## 2. 功能清单
 来自 `@mango/system`：
 
 - `ParticipantSelector`
 - `DomainSelector`
 - `DomainSideTree`
-- `ParticipantOrgTreeOption`
-- `ParticipantSelectorLoading`
 - `ParticipantSelectorValue`
 - `ParticipantTargetOption`
+- `ParticipantOrgTreeOption`
+- `ParticipantSelectorLoading`
 - `ParticipantType`
 
-## 3. 使用场景
-
-- 工作流节点配置选择用户、部门范围、角色或岗位。
-- 业务表单选择参与人、处理人、抄送对象或授权对象。
-- 按业务域筛选模板、流程、配置或业务数据。
-- 后台列表页通过业务域树进行左侧过滤。
+## 3. 适用场景
+- 工作流节点配置选择用户、组织范围、角色或岗位。
+- 业务表单选择处理人、审批人、抄送人或授权对象。
+- 模板、流程、配置或业务数据按业务域过滤。
+- 后台列表左侧展示业务域树，并显示每个业务域下的数据数量。
 
 ## 4. 接入方式
-
 ```ts
-import { ParticipantSelector, DomainSelector, DomainSideTree } from '@mango/system';
+import {
+  DomainSelector,
+  DomainSideTree,
+  ParticipantSelector,
+  type ParticipantSelectorValue,
+} from '@mango/system';
 import '@mango/system/style.css';
 ```
 
 参与人选择：
 
 ```vue
-<ParticipantSelector v-model="participants" />
-```
+<script setup lang="ts">
+import { ref } from 'vue';
+import { ParticipantSelector, type ParticipantSelectorValue } from '@mango/system';
 
-`ParticipantSelectorValue` 结构：
-
-```ts
-const participants = ref({
+const participants = ref<ParticipantSelectorValue>({
   userIds: ['10001'],
-  orgIds: ['20001'],
+  orgIds: [],
   roleIds: ['30001'],
-  postIds: ['40001'],
+  postIds: [],
 });
+</script>
+
+<template>
+  <ParticipantSelector
+    v-model="participants"
+    :role-options="roleOptions"
+    :post-options="postOptions"
+    :org-tree-options="orgTreeOptions"
+    @ensure-roles="loadRoles"
+    @ensure-posts="loadPosts"
+    @ensure-orgs="loadOrgs"
+  />
+</template>
 ```
 
-候选项结构：
+未传 `userOptions` 时，组件打开用户页签会读取 `/identity/users/page` 前 200 条用户；角色、岗位和组织候选项需要调用方通过 props 或 `ensure-*` 事件提供。
 
-```ts
-const userOptions = [
-  { label: '张三 / zhangsan', value: '10001' },
-];
-
-const orgTreeOptions = [
-  {
-    label: '研发中心',
-    value: '20001',
-    children: [{ label: '平台组', value: '20002' }],
-  },
-];
-```
-
-外部加载候选项：
+业务域下拉：
 
 ```vue
-<ParticipantSelector
-  v-model="participants"
-  :user-options="userOptions"
-  :role-options="roleOptions"
-  :post-options="postOptions"
-  :org-tree-options="orgTreeOptions"
-  :target-loading="targetLoading"
-  @ensure-users="loadUsers"
-  @ensure-roles="loadRoles"
-  @ensure-posts="loadPosts"
-  @ensure-orgs="loadOrgs"
-/>
-```
-
-未传 `userOptions` 时，用户页签会按 `/identity/users/page` 加载前 200 条用户；角色、岗位、组织候选项由调用方通过 `ensure-*` 事件加载。
-
-业务域选择：
-
-```vue
-<DomainSelector v-model="domainId" />
+<DomainSelector v-model="domainId" clearable />
 ```
 
 业务域侧边树：
 
 ```vue
-<DomainSideTree v-model="domainCode" @change="loadRows" />
+<DomainSideTree
+  v-model="domainCode"
+  :counts="domainCounts"
+  @change="loadRows"
+  @loaded="cacheDomains"
+/>
 ```
 
-## 5. Props / 参数 / 事件
+## 5. 参数与事件
+`ParticipantSelectorValue`：
+
+```ts
+interface ParticipantSelectorValue {
+  userIds?: string[];
+  orgIds?: string[];
+  roleIds?: string[];
+  postIds?: string[];
+}
+```
+
+候选项：
+
+```ts
+const roleOptions = [{ label: '财务审批人', value: 'role_finance' }];
+const orgTreeOptions = [
+  {
+    label: '研发中心',
+    value: 'org_rd',
+    children: [{ label: '平台组', value: 'org_platform' }],
+  },
+];
+```
 
 `ParticipantSelector` props：
 
-- `modelValue`：`ParticipantSelectorValue`。
-- `userOptions`、`roleOptions`、`postOptions`、`orgTreeOptions`：候选数据。
-- `targetLoading`：候选数据加载态。
-- `placeholder`、`searchPlaceholder`。
+| prop | 含义 |
+|------|------|
+| `modelValue` | 当前选中的用户、组织、角色、岗位 id 集合。 |
+| `userOptions` | 用户候选项；不传时组件会读 `/identity/users/page`。 |
+| `roleOptions` | 角色候选项。 |
+| `postOptions` | 岗位候选项。 |
+| `orgTreeOptions` | 组织树候选项。 |
+| `targetLoading` | 各候选数据加载态。 |
+| `placeholder` | 已选区域空态文案。 |
+| `searchPlaceholder` | 候选项搜索框文案。 |
 
 `ParticipantSelector` 事件：
 
@@ -114,31 +127,40 @@ const orgTreeOptions = [
 
 `DomainSelector` props：
 
-- `modelValue`
-- `multiple`
-- `clearable`
-- `disabled`
-- `checkStrictly`
-- `placeholder`
+| prop | 默认值 | 含义 |
+|------|--------|------|
+| `modelValue` | `undefined` | 选中的业务域 id，`multiple` 为 true 时是 id 数组。 |
+| `multiple` | `false` | 是否多选。 |
+| `clearable` | `true` | 是否可清空。 |
+| `disabled` | `false` | 是否禁用。 |
+| `checkStrictly` | `true` | 父子节点是否不联动。 |
+| `placeholder` | `请选择业务域` | 占位文案。 |
 
 `DomainSelector` 事件：
 
 - `update:modelValue`
 - `change`
 
+`DomainSelector` 暴露：
+
+- `reload()`：重新读取启用业务域树。
+- `options`：当前业务域树。
+
 `DomainSideTree` props：
 
-- `modelValue`
-- `title`
-- `subtitle`
-- `allLabel`
-- `allCode`
-- `allCount`
-- `counts`
-- `options`
-- `searchable`
-- `searchPlaceholder`
-- `showAll`
+| prop | 默认值 | 含义 |
+|------|--------|------|
+| `modelValue` | 空字符串 | 选中的业务域 code。 |
+| `title` | `业务域` | 侧边树标题。 |
+| `subtitle` | 空字符串 | 副标题。 |
+| `allLabel` | `全部` | 全部节点文案。 |
+| `allCode` | `ALL` | 全部节点 code。 |
+| `allCount` | 未设置 | 全部节点数量。 |
+| `counts` | `{}` | 按业务域 code 展示数量。 |
+| `options` | 未设置 | 外部传入业务域树；未传时读取后端启用树。 |
+| `searchable` | `true` | 是否展示搜索框。 |
+| `searchPlaceholder` | `请输入业务域名称` | 搜索框文案。 |
+| `showAll` | `true` | 是否展示全部节点。 |
 
 `DomainSideTree` 事件：
 
@@ -147,45 +169,34 @@ const orgTreeOptions = [
 - `loaded`
 
 ## 6. 后端依赖
+- `DomainSelector` 和 `DomainSideTree` 使用 `domainApi.enabledTree()`，接口为 `/domain/domains/enabled-tree`。
+- `ParticipantSelector` 默认用户候选接口为 `/identity/users/page`。
+- 角色、岗位和组织候选数据通常来自 `mango-authorization`、`mango-org` 和业务方封装的 API。
+- 权限和租户过滤由后端完成，组件只消费已经返回的数据。
 
-- 后端模块：`mango-platform/mango-system`、`mango-platform/mango-identity`、`mango-platform/mango-org`、`mango-platform/mango-authorization`。
-- `DomainSelector` 和 `DomainSideTree` 使用 `domainApi.enabledTree()`，对应业务域启用树接口。
-- `ParticipantSelector` 可使用外部传入候选项，也可在打开用户页签时通过 `@mango/common` 请求用户分页数据。
+## 7. 权限与数据边界
+- 选择器返回 id 或 code，不代表最终授权成功。
+- 业务提交时由后端校验当前用户是否能选择这些用户、组织、角色、岗位或业务域。
+- 多租户场景下，候选项应由后端按租户过滤后再传入组件。
+- 组织、角色、岗位名称回显依赖候选项；已选 id 不在候选项内时，组件只能显示原始值或空状态。
 
-## 7. 权限 / 租户 / 数据边界
+## 8. 快速开始
 
-- 业务域、用户、组织、角色、岗位候选数据由后端按租户和权限过滤。
-- 选择器只返回 id/code 集合，不代表最终授权结果。
-- 调用方提交业务数据时仍由后端接口校验权限、租户和数据归属。
+1. 在后台业务页面引入 `@mango/system/style.css` 和需要的选择组件。
+2. 参与人选择优先由业务页面传入用户、角色、岗位和组织候选项；未传用户候选时组件会读取 `/identity/users/page`。
+3. 业务域下拉或侧边树依赖 `/domain/domains/enabled-tree`，提交时保存业务需要的 id 或 code。
+4. 业务接口收到选择结果后继续校验权限、租户和数据范围。
 
-## 8. 验证方式
+## 9. 问题排查
+- 参与人候选为空：检查调用方是否传入角色、岗位、组织候选项；用户候选还要检查 `/identity/users/page`。
+- 已选名称不回显：检查候选项是否包含已选 id。
+- 业务域树为空：检查 `mango-domain` 后端、业务域状态和接口权限。
+- 选择后业务提交失败：继续检查业务接口权限、租户和数据范围，而不是只看前端选择器。
 
-```bash
-pnpm -F @mango/system build
-```
-
-页面验收入口：
-
-- 系统业务域管理页面。
-- 使用 `ParticipantSelector` 的流程或业务配置页面。
-
-最小断言：
-
-- `ParticipantSelector` 能选择并回显用户、部门范围、角色和岗位。
-- `DomainSelector` 能加载启用业务域树并回写 id。
-- `DomainSideTree` 能加载业务域树、搜索并触发 `change`。
-
-## 9. 常见问题
-
-- 参与人名称不回显时，检查传入候选项是否包含已选 id。
-- 业务域树为空时，检查后端业务域是否启用。
-- 选择器返回值正确但业务提交失败时，继续检查业务接口权限和租户。
-
-## 10. 关联文档
-
+## 10. 相关文档
 - [@mango/system README](../../README.md)
 - [System 后端 README](../../../../../mango/mango-platform/mango-system/README.md)
+- [Domain 后端 README](../../../../../mango/mango-platform/mango-domain/README.md)
 - [Identity 后端 README](../../../../../mango/mango-platform/mango-identity/README.md)
 - [Org 后端 README](../../../../../mango/mango-platform/mango-org/README.md)
-- [能力地图](../../../../../mango-docs/capabilities/README.md)
 - [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)

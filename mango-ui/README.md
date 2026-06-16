@@ -1,280 +1,116 @@
 # Mango UI
 
-`mango-ui` 是 Mango 管理后台前端 Monorepo。当前同时支持单体入口和 Wujie 微前端入口：
+## 1. 概览
+`mango-ui` 是 Mango 管理后台前端 Monorepo，承载单体后台、微前端 Shell、子应用和可发布前端能力包。
 
-- 单体入口 `apps/mango-admin`：默认交付形态，所有业务模块本地打包。
-- 微前端 Shell `apps/mango-admin-shell`：主应用，负责登录态、菜单、权限、主题、TagsView、布局和运行配置。
-- 子应用 `apps/mango-admin-rbac-app`、`apps/mango-admin-workflow-app`：业务页面运行单元，被 Shell 挂载时只渲染页面内容。
+核心形态：
 
-后端的逻辑应用、菜单、权限、租户和业务接口不因为前端部署形态变化而变化。单体、混合、微前端组合由前端静态运行配置控制。
+| 形态 | 入口 | 用途 |
+|------|------|------|
+| 单体后台 | `apps/mango-admin` | 默认交付形态，所有页面本地打包 |
+| 微前端 Shell | `apps/mango-admin-shell` | 登录、布局、菜单、权限、主题、TagsView、运行配置 |
+| 子应用 | `apps/mango-admin-rbac-app`、`apps/mango-admin-workflow-app` | 被 Shell 挂载的页面运行单元 |
+| 能力包 | `packages/*` | 管理端页面、公共组件、API 类型、runtime、CLI |
 
-## 目录结构
+前端部署形态不改变后端菜单、权限、租户和业务接口。单体、混合、微前端由前端 runtime config 决定。
+
+## 2. 适用场景
+- 开发 Mango 管理后台页面和公共组件。
+- 发布 `@mango/admin`、`@mango/admin-shell`、`@mango/admin-pages` 等前端能力包。
+- 业务后台通过 `@mango/admin` 或 `@mango/admin-shell` 组装管理端。
+- 验证单体、混合、微前端部署组合。
+- 调试后端菜单 component key 和前端页面注册关系。
+
+## 3. 边界说明
+- 不作为官网、营销站、内容站或 C 端站点模板。
+- 不负责后端 resource manifest、菜单、权限和租户数据入库。
+- 不替代业务模块 README；业务包仍要说明页面、接口、权限和配置。
+- 不在前端绕过后端权限和租户校验。
+
+## 4. 模块组成
+前端包分层：
+
+| 层级 | 包 / 应用 | 说明 |
+|------|-----------|------|
+| 管理入口 | `@mango/admin` | 聚合 Shell、默认页面和样式，业务项目优先使用 |
+| Shell | `@mango/admin-shell` | 管理后台壳、菜单、runtime、微前端挂载 |
+| 页面注册 | `@mango/admin-pages` | `moduleCode + component` 到页面 loader 的注册表 |
+| Runtime | `@mango/app-runtime` | runtime config、Wujie、微前端生命周期协议 |
+| 公共基础 | `@mango/common`、`@mango/api-schema` | 请求、组件、hooks、类型 |
+| 管理页面包 | `@mango/rbac`、`@mango/system`、`@mango/file`、`@mango/workflow` 等 | 管理端页面和 API 调用 |
+| CLI | `@mango/cli` | 项目初始化、模块生成、dev workspace |
+
+依赖方向：
 
 ```text
-mango-ui/
-├── apps/
-│   ├── mango-admin/              # 单体管理后台入口
-│   ├── mango-admin-shell/        # 微前端主应用 Shell
-│   ├── mango-admin-rbac-app/     # RBAC 子应用
-│   └── mango-admin-workflow-app/ # Workflow 子应用
-├── packages/
-│   ├── admin-pages/              # 统一页面注册表，单体/Shell/子应用共用
-│   ├── app-runtime/              # runtime-config、Wujie adapter、生命周期协议
-│   ├── auth/                     # 登录、个人中心、修改密码等认证能力包
-│   ├── common/                   # 公共组件、hooks、utils、theme、公共 API
-│   ├── file/                     # 文件能力页面包
-│   ├── rbac/                     # 用户、角色、菜单、组织、应用等权限能力页面包
-│   ├── system/                   # 系统管理能力页面包
-│   └── workflow/                 # 工作流能力页面包
-├── docs/
-│   └── micro-frontend-runtime.md # 微前端运行说明
-├── deploy/nginx/                 # 生产部署 nginx 示例
-├── scripts/                      # 本地微前端启动/预览脚本
-└── pnpm-workspace.yaml
+apps/* -> packages/*
+admin -> admin-shell + admin-pages + platform page packages
+admin-shell -> admin-pages + app-runtime + common + auth
+page packages -> common + api-schema + admin-pages
+common -> api-schema
 ```
 
-## 核心模型
-
-- 逻辑应用：`internal-admin`，表示管理后台授权边界。
-- 能力模块：`mango-authorization`、`mango-system`、`mango-workflow`、`mango-file` 等，贡献菜单和业务页面能力。
-- 主应用 Shell：读取当前用户在 `internal-admin` 下的菜单树，统一管理导航和页面分发。
-- 子应用：只负责业务页面渲染，不拥有主导航、登录页、主题设置、TagsView。
-- 页面运行策略：由前端 `runtime-config.json` 决定模块本地渲染还是远程加载。
-
-菜单和权限仍来自后端。不要为了切换单体/微前端去改数据库菜单、权限或后端接口。
-
-## 规范入口
-
-长期前端规则只维护在 `mango-pmo/rules/frontend/**`。本 README 只说明 `mango-ui` 使用入口和模块定位。
-
-- [Vue 代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
-- [Element Plus UI 规范](../mango-pmo/rules/frontend/02-element-plus-ui.md)
-- [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md)
-- [前端测试规范](../mango-pmo/rules/frontend/04-test.md)
-- [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)
-- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
-- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
-
-模块能力入口见 [Mango 能力地图](../mango-docs/capabilities/README.md#6-前端与-cli-能力) 和各 `packages/*/README.md`。
-
-## 选择哪种形态
-
-默认优先使用单体入口。微前端入口用于验证模块独立开发、独立部署和按配置组合交付。
-
-| 场景 | 推荐入口 | 说明 |
-| --- | --- | --- |
-| 日常业务页面开发 | `mango-admin` 单体 | 启动最少，和默认交付一致 |
-| 调整 Shell、主题、菜单、TagsView | `mango-admin-shell` | 需要验证主应用框架行为 |
-| 开发 RBAC 独立运行单元 | `mango-admin-rbac-app` + Shell | 子应用独立调试，最终由 Shell 挂载 |
-| 开发 Workflow 独立运行单元 | `mango-admin-workflow-app` + Shell | 子应用独立调试，最终由 Shell 挂载 |
-| 验证混合部署 | Shell + runtime-config | 不改后端和数据库，只改前端静态配置 |
-
-## 单体方式使用
-
-单体方式是默认交付形态：`apps/mango-admin` 自己承载登录、布局、菜单、主题、TagsView 和全部业务页面。
-
-安装依赖：
+## 5. 接入方式
+安装：
 
 ```bash
-pnpm install
+pnpm -C mango-ui install
 ```
 
-启动：
+单体启动：
 
 ```bash
 pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
 ```
 
-访问：
-
-```text
-http://127.0.0.1:5175
-```
-
-如果要代理到指定后端：
+指定后端：
 
 ```bash
-VITE_ADMIN_PROXY_PATH=http://127.0.0.1:5555 \
-pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
+VITE_ADMIN_PROXY_PATH=http://127.0.0.1:5555 pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
 ```
 
-构建：
-
-```bash
-pnpm -C mango-ui --filter mango-admin build
-```
-
-使用说明：
-
-- 单体入口可以直接使用 `@mango/rbac`、`@mango/system`、`@mango/workflow`、`@mango/file` 等业务包。
-- 业务页面放置和页面注册规则见 [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md) 和 [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)。
-- 页面注册表用法见 [@mango/admin-pages](./packages/admin-pages/README.md)。
-
-## 微前端方式使用
-
-微前端方式由 Shell 统一承载后台框架，RBAC、Workflow 等模块可按配置改为远程子应用。
-
-启动全部微前端开发服务：
+微前端启动：
 
 ```bash
 pnpm -C mango-ui dev:micro
 ```
 
-默认服务：
+默认端口：
 
-```text
-Shell:    http://127.0.0.1:5176
-RBAC:     http://127.0.0.1:5181
-Workflow: http://127.0.0.1:5182
+| 服务 | 地址 |
+|------|------|
+| 单体后台 | `http://127.0.0.1:5175` |
+| Shell | `http://127.0.0.1:5176` |
+| RBAC 子应用 | `http://127.0.0.1:5181` |
+| Workflow 子应用 | `http://127.0.0.1:5182` |
+
+业务项目接入前端能力通常使用：
+
+```ts
+import { createMangoAdminApp } from '@mango/admin';
+import '@mango/admin/style.css';
 ```
 
-如果要指定后端：
+需要定制 Shell 时才直接使用：
 
-```bash
-VITE_ADMIN_PROXY_PATH=http://127.0.0.1:5555 pnpm -C mango-ui dev:micro
+```ts
+import { createMangoAdminApp } from '@mango/admin-shell';
+import '@mango/admin-shell/style.css';
 ```
 
-如果要让同事通过局域网访问，dev server 监听 `0.0.0.0`。当前微前端脚本和子应用 Vite 配置已按 `0.0.0.0` 监听，可用你的局域网 IP 访问：
+## 6. 配置说明
+| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
+|----------|------------|--------|------|----------|----------|
+| 环境变量 | `VITE_ADMIN_PROXY_PATH` | 应用默认值 | 本地后端代理目标 | 开发态 API 请求转发 | app Vite config |
+| Shell runtime config | `profile` | `monolith` | 单体、混合或微前端 | 控制模块本地或远程 | `@mango/app-runtime` |
+| Shell runtime config | `modules.<module>.mode` | `local` | 模块加载方式 | local 或 micro | `@mango/admin-shell` |
+| Shell runtime config | `modules.<module>.entry` | 模块默认值 | 远程子应用入口 | Wujie 加载地址 | `@mango/admin-shell` |
+| 环境变量 | `VITE_MANGO_ALLOWED_REMOTE_ORIGINS` | 开发态本地域名 | 远程 entry 白名单 | 生产类环境安全门禁 | `runtimeConfig.ts` |
+| 环境变量 | `VITE_MANGO_ALLOW_HTTP_REMOTE_ENTRIES` | `false` | 是否允许 HTTP entry | 生产类环境默认不开放 | `runtimeConfig.ts` |
+| 环境变量 | `VITE_MANGO_DEPLOY_ENV` | Vite mode | 部署环境 | 控制开发中心和 fail closed | `runtimeConfig.ts` |
+| `package.json` | `scripts.dev:micro` | 已配置 | 启动 Shell 和子应用 | 微前端本地调试 | 根 package scripts |
 
-```text
-http://192.168.x.x:5176
-```
-
-跨域域名联调建议配置 hosts：
-
-```text
-127.0.0.1 a.mango.io
-127.0.0.1 b.mango.io
-127.0.0.1 c.mango.io
-```
-
-然后访问：
-
-```text
-Shell:    http://a.mango.io:5176
-RBAC:     http://b.mango.io:5181
-Workflow: http://c.mango.io:5182
-```
-
-微前端构建：
-
-```bash
-pnpm -C mango-ui build:micro
-```
-
-微前端 E2E：
-
-```bash
-pnpm -C mango-ui dev:micro
-PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
-```
-
-使用说明：
-
-- Shell 是微前端形态的正式访问入口；子应用端口用于研发调试。
-- Shell 承载菜单、权限、主题、TagsView 和登录态；子应用渲染当前业务页面。
-- 业务接口通过 Shell `/api` 代理进入后端。
-
-## 运行配置
-
-微前端 Shell 优先读取 `apps/mango-admin-shell/public/runtime-config.json`，其次读取环境变量，默认是 `monolith`。
-
-示例：
-
-```json
-{
-  "profile": "hybrid",
-  "modules": {
-    "mango-authorization": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-rbac-app",
-      "entry": "http://b.mango.io:5181/"
-    },
-    "mango-system": {
-      "mode": "local",
-      "runtimeCode": "mango-admin-system-local"
-    },
-    "mango-workflow": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-workflow-app",
-      "entry": "http://c.mango.io:5182/"
-    }
-  }
-}
-```
-
-配置含义：
-
-- `profile=monolith`：全部本地渲染，不请求子应用。
-- `profile=hybrid`：部分模块本地，部分模块远程。
-- `profile=micro`：已拆模块远程，未拆模块可以继续本地。
-- 远程入口白名单和 HTTPS 要求见 [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)。
-- 切换部署形态只替换前端静态配置，不改后端、不改数据库。
-
-详细说明见 [微前端运行说明](./docs/micro-frontend-runtime.md)。
-
-## 典型使用流程
-
-### 本地开发单体业务页面
-
-1. 在对应业务包开发页面，例如 `packages/rbac` 或 `packages/workflow`。
-2. 在 `packages/admin-pages/src/defaults.ts` 注册页面。
-3. 启动单体：
-
-```bash
-pnpm -C mango-ui --filter mango-admin dev -- --host 0.0.0.0 --port 5175
-```
-
-4. 登录 `http://127.0.0.1:5175` 验证菜单和页面。
-5. 构建验证：
-
-```bash
-pnpm -C mango-ui --filter mango-admin build
-```
-
-### 本地开发微前端业务页面
-
-1. 在业务包开发页面。
-2. 在 `packages/admin-pages` 注册页面。
-3. 启动微前端：
-
-```bash
-pnpm -C mango-ui dev:micro
-```
-
-4. 独立打开子应用端口做页面调试：
-
-```text
-RBAC:     http://127.0.0.1:5181
-Workflow: http://127.0.0.1:5182
-```
-
-5. 打开 Shell 做真实挂载验证：
-
-```text
-http://127.0.0.1:5176
-```
-
-6. 确认点击菜单时由 Shell 挂载子应用，子应用不显示主导航。
-
-### 切换单体/混合/微前端组合
-
-只改 `apps/mango-admin-shell/public/runtime-config.json` 或部署态同名静态文件。
-
-全部本地渲染：
-
-```json
-{
-  "profile": "monolith",
-  "modules": {
-    "mango-authorization": { "mode": "local" },
-    "mango-system": { "mode": "local" },
-    "mango-workflow": { "mode": "local" }
-  }
-}
-```
-
-RBAC/Workflow 远程，System 本地：
+runtime config 例子：
 
 ```json
 {
@@ -297,165 +133,75 @@ RBAC/Workflow 远程，System 本地：
 }
 ```
 
-切换后刷新 Shell 即可验证，不需要改后端、不需要改数据库、不需要改菜单。
+## 7. API 与扩展
+| 扩展点 | 包 | 适用对象 | 说明 |
+|--------|----|----------|------|
+| `createMangoAdminApp` | `@mango/admin` | 业务后台 | 推荐入口，聚合默认管理能力 |
+| `createMangoAdminApp` | `@mango/admin-shell` | Shell 定制 | 直接组装管理后台壳 |
+| `registerModulePages` | `@mango/admin-pages` | 页面包 | 注册 component key 到 loader |
+| `runtime config` | `@mango/app-runtime` | Shell / 子应用 | 控制本地和远程模块加载 |
+| `request` | `@mango/common` | 所有页面包 | 统一 API base URL、401、错误处理 |
+| `admin-pages` export | 管理页面包 | Shell / admin | 向统一页面注册表贡献页面 |
+| `style.css` | 各包 | 宿主应用 | 引入包样式 |
 
-## 生产部署方式
+前端组件区分：
 
-### 单体生产部署
+| 类型 | 标识 | 适用范围 |
+|------|------|----------|
+| `admin-shell` 配套 | `@mango/admin-shell`、runtime、menu、stores | Mango 管理后台壳 |
+| `admin-pages` 配套 | `@mango/rbac`、`@mango/system`、`@mango/file` 等页面包 | Mango 管理后台页面 |
+| 公共基础组件 | `@mango/common` 部分组件 | 可复用，但仍需检查依赖 Element Plus、Pinia、请求封装 |
 
-构建：
+官网或普通网站不要直接集成 `admin-pages` 页面包。
 
-```bash
-pnpm -C mango-ui --filter mango-admin build
-```
+## 8. 数据与初始化
+前端没有数据库 migration。前端依赖后端已经初始化的数据：
 
-部署产物：
+| 类型 | 后端来源 | 前端消费方式 | 验证方式 |
+|------|----------|--------------|----------|
+| 应用 | authorization app | `appCode=internal-admin` | 菜单接口返回 |
+| 菜单 | authorization menu | Shell 渲染路由和导航 | 菜单树显示 |
+| 权限 | authorization permission | 页面按钮展示、接口后端校验 | 角色授权和接口 403 |
+| 租户 | identity / system / context | 请求头、用户上下文、后端过滤 | 不串租 |
+| 字典、区域、组织 | system / org | `@mango/common` API 和组件 | 下拉、树、选择器可用 |
 
-```text
-apps/mango-admin/dist
-```
-
-nginx 只需要代理单体静态资源和后端 `/api`：
-
-```text
-https://admin.example.com      -> apps/mango-admin/dist
-https://admin.example.com/api  -> mango-backend
-```
-
-### 微前端生产部署
-
-构建：
-
-```bash
-VITE_MANGO_ALLOWED_REMOTE_ORIGINS=https://rbac.example.com,https://workflow.example.com \
-pnpm -C mango-ui build:micro
-```
-
-部署产物：
-
-```text
-admin.example.com    -> apps/mango-admin-shell/dist
-rbac.example.com     -> apps/mango-admin-rbac-app/dist
-workflow.example.com -> apps/mango-admin-workflow-app/dist
-```
-
-Shell 代理业务接口：
+## 9. 管理入口
+菜单打开链路：
 
 ```text
-https://admin.example.com/api -> mango-backend
+后端 resource manifest / migration -> authorization 菜单接口 -> Shell menuHost -> admin-pages registry -> Vue page
 ```
 
-Shell 发布 `runtime-config.json`：
+需要对齐的字段：
 
-```json
-{
-  "profile": "hybrid",
-  "modules": {
-    "mango-authorization": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-rbac-app",
-      "entry": "https://rbac.example.com/"
-    },
-    "mango-system": {
-      "mode": "local"
-    },
-    "mango-workflow": {
-      "mode": "micro",
-      "runtimeCode": "mango-admin-workflow-app",
-      "entry": "https://workflow.example.com/"
-    }
-  }
-}
-```
+| 字段 | 说明 |
+|------|------|
+| `appCode` | 管理后台应用，当前为 `internal-admin` |
+| `moduleCode` | 模块编码，例如 `mango-authorization`、`mango-system`、业务模块 code |
+| `component` | 页面 key，例如 `system/user/index`、`order/sales-order/index` |
+| `path` | 前端路由路径 |
+| `permissionCode` | 后端接口和按钮权限使用 |
 
-生产部署检查点见 [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md) 和 [微前端运行说明](./docs/micro-frontend-runtime.md)。
+前端可以隐藏按钮，但不能把隐藏按钮当成权限控制。所有写操作、查询范围和租户隔离都要由后端接口校验。
 
-## 开发中心菜单
-
-`开发中心` 是前端开发态菜单，只在 `import.meta.env.DEV` 下追加：
-
-```text
-开发中心
-└── 组件库
-    ├── 富文本编辑器
-    ├── 代码编辑器
-    ├── 文件上传
-    ├── 数据图表
-    ├── 功能指令
-    └── 示例页面
-```
-
-使用说明：
-
-- 开发中心菜单来自前端开发态追加，不写入后端菜单表。
-- 开发中心承载组件库、示例页和调试页。
-- 页面注册入口见 [@mango/admin-pages](./packages/admin-pages/README.md)。
-
-## 页面注册入口
-
-所有业务页面都通过 `packages/admin-pages` 统一注册：
-
-```text
-moduleCode + componentPath -> page loader
-```
-
-使用入口：
-
-- 页面注册表说明见 [@mango/admin-pages](./packages/admin-pages/README.md)。
-- 页面放置、注册和复用规则见 [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md)。
-- Monorepo 依赖边界见 [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)。
-
-## 主应用与子应用职责
-
-Shell 负责：
-
-- 登录态和退出跳转
-- 用户菜单树和权限上下文
-- 顶部、左侧、TagsView、主题
-- runtime-config 加载与诊断
-- Wujie 子应用挂载、卸载、错误边界
-- `/api` 业务接口代理入口
-
-子应用负责：
-
-- 当前业务页面渲染
-- 使用 Shell 注入的 token、tenantId、userInfo、permissions、theme、request
-- 暴露统一 `mount(container, runtime)` 和 `unmount()` 协议
-
-## 包边界入口
-
-依赖方向：
-
-```text
-apps/* -> packages/*
-packages/rbac|system|workflow|file|auth -> packages/common|api-schema|app-runtime
-packages/common -> packages/api-schema
-```
-
-包边界、组件归属、共享类型、样式和临时代码处理见：
-
-- [前端代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
-- [组件开发规范](../mango-pmo/rules/frontend/03-component-development.md)
-- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
-
-## 构建和验证
-
+## 10. 质量检查
 单体构建：
 
 ```bash
 pnpm -C mango-ui --filter mango-admin build
 ```
 
+Shell 构建和测试：
+
+```bash
+pnpm -C mango-ui --filter @mango/admin-shell test
+pnpm -C mango-ui --filter mango-admin-shell build
+```
+
 微前端构建：
 
 ```bash
 pnpm -C mango-ui build:micro
-```
-
-Shell 构建：
-
-```bash
-pnpm -C mango-ui --filter mango-admin-shell build
 ```
 
 微前端 E2E：
@@ -465,29 +211,43 @@ pnpm -C mango-ui dev:micro
 PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
 ```
 
-页面、菜单、Shell 和子应用验收口径见 [前端测试规范](../mango-pmo/rules/frontend/04-test.md)。
-
-## 提交前检查
-
-改动范围对应的检查入口：
+README 门禁：
 
 ```bash
-pnpm -C mango-ui --filter mango-admin build
-pnpm -C mango-ui --filter mango-admin-shell build
-pnpm -C mango-ui build:micro
+node mango-pmo/tools/audit-module-readmes.mjs
+node mango-pmo/tools/audit-readme-source-facts.mjs
 ```
 
-如果改了微前端运行逻辑，补充：
+## 11. 快速开始
+1. 后端模块初始化菜单、权限和 API 资源。
+2. 前端业务包实现页面并调用 `registerModulePages`。
+3. 后台入口引入业务包，执行页面注册函数。
+4. Shell 登录后请求 `internal-admin` 菜单。
+5. 点击菜单，确认 `moduleCode + component` 能找到页面 loader。
+6. 页面调用真实后端 API，验证按钮权限、接口权限和租户数据。
+7. 执行构建、E2E 和交付台账登记。
 
-```bash
-PLAYWRIGHT_USE_EXTERNAL_WEBSERVER=true pnpm -C mango-ui test:micro --project=chromium
-```
+## 12. 问题排查
+| 问题 | 原因 | 处理方式 |
+|------|------|----------|
+| 菜单不显示 | 后端未授权、appCode 不一致或 feature 被关闭 | 查 authorization 菜单接口和 Shell 配置 |
+| 菜单空白 | component key 没注册 | 查 `@mango/admin-pages` 注册表 |
+| 本地能用，生产远程加载失败 | entry 不在 allowlist 或 HTTP 默认不开放 | 配置 `VITE_MANGO_ALLOWED_REMOTE_ORIGINS` 和 HTTPS |
+| 官网想复用后台页面包 | admin-pages 页面强依赖管理后台上下文 | 只抽取真正公共组件，避免引入后台壳 |
+| 按钮隐藏但接口仍可调用 | 前端隐藏不是权限控制 | 后端接口补权限校验 |
 
-提交前规则见 [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)。
-
-## 相关文档
-
-- [微前端运行说明](./docs/micro-frontend-runtime.md)
-- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
+## 13. 相关文档
 - [前端代码规范](../mango-pmo/rules/frontend/01-vue-code.md)
-- [全局研发流程](../mango-pmo/rules/00-dev-flow.md)
+- [Element Plus UI 规范](../mango-pmo/rules/frontend/02-element-plus-ui.md)
+- [前端组件规范](../mango-pmo/rules/frontend/03-component-development.md)
+- [前端测试规范](../mango-pmo/rules/frontend/04-test.md)
+- [前端开发流程](../mango-pmo/rules/frontend/05-dev-flow.md)
+- [Monorepo 架构规范](../mango-pmo/rules/frontend/06-monorepo-architecture.md)
+- [能力说明维护规范](../mango-pmo/rules/08-capability-docs.md)
+
+## 14. 历史资料
+- [微前端运行说明](./docs/micro-frontend-runtime.md)
+- [Mango 能力地图](../mango-docs/capabilities/README.md)
+- [@mango/admin-pages](./packages/admin-pages/README.md)
+- [@mango/admin-shell](./packages/admin-shell/README.md)
+- [@mango/admin](./packages/admin/README.md)
