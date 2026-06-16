@@ -20,19 +20,14 @@
 | 业务后台需要压缩 PDF、合并 PDF、加水印或导出文档 | Maven 依赖 / starter / Java API |
 | 平台模块需要统一 Aspose license 装载方式 | Maven 依赖 / starter / Java API |
 
-## 3. 适用场景
-- 模板模块需要把模板和变量渲染为文档。
-- 文件预览需要把 Office、PDF、图片等转换成预览引擎可处理的格式。
-- 业务后台需要压缩 PDF、合并 PDF、加水印或导出文档。
-- 平台模块需要统一 Aspose license 装载方式。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不提供 HTTP 上传、下载、预览入口。
 - 不保存转换结果到 `mango-file`。
 - 不校验文件归属、租户、菜单、按钮或接口权限。
 - 不替业务模块决定转换后的文件生命周期和清理策略。
 
-## 5. 模块组成
+## 4. 模块入口
 子模块：
 
 - `mango-infra-fileproc-api`：`RenderApi`、`ConvertApi`、`AsposeLicenseApi`、命令、枚举和 VO。
@@ -45,7 +40,7 @@
 - `RenderCommand` 只描述渲染输入、变量、变量定义、目标格式和目标路径。
 - 两个命令都不包含文件中心 ID、存储位置、权限或租户信息。调用方必须先完成业务鉴权，再把输入交给 fileproc。
 
-## 6. 接入方式
+## 5. 接入方式
 启用渲染、转换和 Aspose：
 
 ```xml
@@ -85,7 +80,7 @@ RenderResultVO result = renderApi.render(RenderCommand.builder()
         .build());
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 ### 6.1 渲染
 
 前缀：`mango.fileproc.render`。
@@ -162,7 +157,7 @@ mango:
 
 默认 license 文件位置是 `mango-infra-fileproc-core/src/main/resources/aspose/license.xml`。资源目录下还有单独 README 说明 license 资产。
 
-## 8. API 与扩展
+## 7. API 与扩展
 公开 API：
 
 - `RenderApi`：`render()`、`supportedFormats()`、`mergePdf()`、`addPdfWatermark()`、`compressPdf()`、`compressPdfToTarget()`。
@@ -180,7 +175,7 @@ mango:
 - 新增渲染器实现 `IRenderProvider`，注册为 Spring Bean 后进入 `RenderRegistry`。
 - 替换默认能力时提供同名或同类型 Bean，自动配置使用 `@ConditionalOnMissingBean`。
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 本模块无独立数据库、migration、菜单和默认业务数据。
 
 初始化来自 Spring Boot 自动配置：
@@ -191,7 +186,7 @@ mango:
 
 模块元数据位于 `mango-infra-fileproc-starter/src/main/resources/META-INF/mango/module.properties`。
 
-## 10. 管理入口
+## 9. 管理入口
 本模块没有菜单和权限码。
 
 调用方必须在调用前完成：
@@ -201,26 +196,26 @@ mango:
 - 下载、预览、导出或生成文件的业务权限校验。
 - 输出文件是否写回 `mango-file` 的生命周期决策。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 业务模块先按自己的权限和租户规则读取源文件或模板。
 2. 根据文件类型选择 `RenderApi` 或 `ConvertApi`。
 3. 传入 `InputStream` 或本地 `sourcePath`，并设置 `sourceFormat`、`targetFormat`、`fileName`。
 4. 验证返回的 `contentType`、文件名、输出流或目标路径。
 5. 如果需要进入文件中心，再调用 `mango-file` 保存转换结果并建立业务关系。
 
-## 12. 问题排查
+## 11. 问题排查
 - Office 转 PDF 失败：检查 `office-home`、`office-ports`、LibreOffice 安装路径和进程权限。
 - Aspose 输出有水印或限制：检查 `mango.fileproc.aspose.*-license-location` 和 license 是否匹配产品。
 - PDF 操作提示不支持：检查 `mango.fileproc.render.pdf-operations-enabled` 和 `AsposeLicenseApi` 是否存在。
 - 转换结果未写入文件中心：这是调用方职责，需要用 `mango-file` 另行保存。
 - 多租户文件被串用：fileproc 不识别租户，调用前必须由业务模块校验。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [能力地图](../../../mango-docs/capabilities/README.md)
 - [Aspose license 说明](./mango-infra-fileproc-core/src/main/resources/aspose/README.md)
 - [Mango File Preview](../../mango-platform/mango-file-preview/README.md)

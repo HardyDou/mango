@@ -21,21 +21,24 @@ Source:
 | `tools/acceptance-evidence-check.mjs` | 校验验收证据表 |
 | `templates/**` | 交付契约和验收证据模板 |
 
-## 2. 适用场景
-- 业务仓正式需求、设计、开发、验证、发布和治理前执行规则路由。
-- Agent 交付前确认必须读取的 baseline 文件。
-- 业务设计和交付台账需要校验固定列、状态和覆盖项。
-- 页面、接口、权限、数据、E2E 验收需要校验证据质量。
-- Mango baseline 升级时整体同步规则和工具。
+## 2. 功能清单
 
-## 3. 边界说明
+| 能力 | 使用入口 | 说明 |
+|------|----------|------|
+| preflight | `tools/pmo-preflight.mjs` | 正式任务前输出必须阅读的规则文件。 |
+| 交付契约检查 | `tools/delivery-contract-check.mjs` | 校验设计说明、交付台账、覆盖项和状态。 |
+| 验收证据检查 | `tools/acceptance-evidence-check.mjs` | 校验证据表列、行数和弱表达。 |
+| 规则索引 | `rules/index.json` | 维护 role、phase、bundle、keyword、path 路由。 |
+| 交付模板 | `templates/delivery-contract.md`、`templates/acceptance-evidence.md` | 复制到 `business-docs` 后填写。 |
+
+## 3. 能力边界
 - 不作为业务需求、业务设计、业务证据的存放目录。
 - 不随普通业务需求手改规则和工具。
 - 不替代 Mango 主仓 `mango-pmo` 的长期规范源。
 - 不直接初始化数据库、菜单、权限、租户或业务数据。
 - 不代替后端测试、前端构建、E2E、性能基准或发布检查。
 
-## 4. 模块组成
+## 4. 模块入口
 baseline 是快照，不是业务工作区。业务项目可以读取和执行它，但不应在普通业务任务中修改它。
 
 边界：
@@ -178,7 +181,6 @@ node business-pmo/mango-baseline/tools/acceptance-evidence-check.mjs \
 - [交付质量门禁](./rules/05-ai-delivery-quality.md)
 - [文档资产规范](./rules/06-document-assets.md)
 
-## 13. 历史资料
 - [Business PMO README](../README.md)
 - [交付契约模板](./templates/delivery-contract.md)
 - [验收证据模板](./templates/acceptance-evidence.md)

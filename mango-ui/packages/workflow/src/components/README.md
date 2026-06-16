@@ -1,46 +1,37 @@
 # @mango/workflow Components
 
+本入口说明 `@mango/workflow` 的公共组件和业务扩展点。业务开发者主要用它做三件事：渲染动态表单、展示流程轨迹、把业务申请页和审批页注册给 workflow。
+
 ## 1. 概览
-本入口说明 `@mango/workflow` 的运行时表单、流程轨迹和业务申请/审批注册扩展点。业务开发接入工作流时，核心不是复制页面，而是把业务组件注册到流程定义中的 key。
+
+这里的能力都属于 `business-component`，可以被业务后台页面复用。它不提供菜单注册；菜单和页面注册请使用包根目录 README 中的 `admin-pages` 入口。
 
 ## 2. 功能清单
-来自 `@mango/workflow`：
 
-- `RuntimeFormRenderer`
-- `WorkflowProgressTree`
-- `WorkflowApprovalTimeline`
-- `WorkflowNodeTimeline`
-- `parseRuntimeForm`
-- `createDefaultVariables`
-- `parseWorkflowFormConfig`
-- `customApplyRouteOf`
-- `registerBusinessApplyComponent`
-- `registerBusinessApplyComponents`
-- `resolveBusinessApplyRegistration`
-- `registerBusinessApprovalComponent`
-- `registerBusinessApprovalComponents`
-- `resolveBusinessApprovalRegistration`
-- `resolveBusinessApprovalComponent`
-- `collectBusinessApprovalVariables`
-- `collectBusinessApprovalComment`
-- `businessTypeOf`
-- `applyIdOf`
-- `businessPermissionsOf`
+| 能力 | 导出 |
+|------|------|
+| 动态表单渲染 | `RuntimeFormRenderer` |
+| 解析动态表单 JSON | `parseRuntimeForm()` |
+| 生成表单默认变量 | `createDefaultVariables()` |
+| 解析流程表单配置 | `parseWorkflowFormConfig()` |
+| 解析自定义申请路由 | `customApplyRouteOf()` |
+| 注册业务申请组件 | `registerBusinessApplyComponent()`、`registerBusinessApplyComponents()` |
+| 解析业务申请组件 | `resolveBusinessApplyRegistration()` |
+| 注册业务审批组件 | `registerBusinessApprovalComponent()`、`registerBusinessApprovalComponents()` |
+| 解析业务审批组件 | `resolveBusinessApprovalRegistration()`、`resolveBusinessApprovalComponent()` |
+| 采集审批变量和意见 | `collectBusinessApprovalVariables()`、`collectBusinessApprovalComment()` |
+| 解析任务变量 | `businessTypeOf()`、`applyIdOf()`、`businessPermissionsOf()` |
+| 展示审批进度 | `WorkflowProgressTree` |
+| 展示审批时间线 | `WorkflowApprovalTimeline`、`WorkflowNodeTimeline` |
 
-页面注册入口来自 `@mango/workflow/admin-pages` 的 `registerMangoWorkflowAdminPages()`。
+## 3. 接入方式
 
-## 3. 适用场景
-- 动态表单模式下，用 `RuntimeFormRenderer` 渲染流程表单。
-- 自定义申请模式下，业务包注册申请页，工作流发起页按 `applyPageKey` 打开。
-- 任务详情页按业务 key 渲染业务审批组件，并在动作提交前采集变量和意见。
-- 业务页面展示流程节点进度、审批记录和轨迹。
-
-## 4. 接入方式
-运行时表单：
+动态表单：
 
 ```vue
 <script setup lang="ts">
-import { RuntimeFormRenderer, parseRuntimeForm, createDefaultVariables } from '@mango/workflow';
+import { reactive } from 'vue';
+import { RuntimeFormRenderer, createDefaultVariables, parseRuntimeForm } from '@mango/workflow';
 
 const { fields } = parseRuntimeForm(definition.formJson);
 const model = reactive(createDefaultVariables(fields));
@@ -58,6 +49,9 @@ const model = reactive(createDefaultVariables(fields));
 注册业务申请页：
 
 ```ts
+import { registerBusinessApplyComponent } from '@mango/workflow';
+import ExpenseApplyView from './ExpenseApplyView.vue';
+
 registerBusinessApplyComponent('workflow.expense.apply', {
   title: '费用报销申请',
   component: ExpenseApplyView,
@@ -67,6 +61,9 @@ registerBusinessApplyComponent('workflow.expense.apply', {
 注册业务审批页：
 
 ```ts
+import { registerBusinessApprovalComponent } from '@mango/workflow';
+import ExpenseApprovalView from './ExpenseApprovalView.vue';
+
 registerBusinessApprovalComponent('workflow.expense.approve.finance', {
   component: ExpenseApprovalView,
   commentMode: 'BUSINESS_FORM',
@@ -82,27 +79,78 @@ registerBusinessApprovalComponent('workflow.expense.approve.finance', {
 });
 ```
 
-业务申请组件会收到 `BusinessApplyContext`，审批组件会收到 `BusinessApprovalContext`。具体 props 由任务详情容器传入业务组件。
+## 4. 参数与事件
 
-## 5. 参数与事件
 `RuntimeFormRenderer` props：
 
-| prop | 含义 |
+| prop | 类型 | 含义 |
+|------|------|------|
+| `fields` | `RuntimeFormField[]` | 表单字段，通常来自 `parseRuntimeForm()`。 |
+| `model` | `Record<string, any>` | 表单变量对象。 |
+| `readonly` | `boolean` | 是否整体只读。 |
+| `labelWidth` | `string` | 表单标签宽度，默认 `96px`。 |
+| `permissions` | `Record<string, 'HIDDEN' \| 'READONLY' \| 'EDITABLE'>` | 字段级权限。 |
+
+`RuntimeFormField` 常用字段：
+
+| 字段 | 含义 |
 |------|------|
-| `fields` | `RuntimeFormField[]`，由 `parseRuntimeForm()` 或业务方生成。 |
-| `model` | 表单变量对象。 |
-| `readonly` | 整体只读。 |
-| `labelWidth` | 标签宽度。 |
-| `permissions` | 字段级权限，支持 `HIDDEN`、`READONLY`、`EDITABLE`。 |
+| `key` | 字段 key，对应 `model` 中的变量名。 |
+| `label` | 字段标题。 |
+| `type` | 字段类型。 |
+| `placeholder` | 占位提示。 |
+| `readonly` | 字段只读。 |
+| `options` | select、radio、checkbox 等选项。 |
+| `treeOptions` | treeSelect、cascader 等树形选项。 |
+| `props` | 透传配置。 |
+| `rules` | 表单校验规则。 |
+| `defaultValue` | 默认值。 |
+| `children` | 容器字段子字段。 |
 
-`RuntimeFormField` 支持的主要类型：
+支持的字段类型：
 
-- 输入：`input`、`textarea`、`password`、`number`。
-- 选择：`select`、`radio`、`checkbox`、`switch`、`cascader`、`treeSelect`、`transfer`。
-- 日期时间：`date`、`daterange`、`time`、`timerange`、`datetime`、`datetimerange`。
-- 展示和布局：`alert`、`text`、`html`、`divider`、`tag`、`image`、`button`、`container`。
-- 业务类型：`systemUser`、`systemOrg`、`systemDept`、`systemPost`、`systemRole`、`systemDict`、`businessType`、`signature`、`serialNo`。
-- 文件：`upload`、`imageUpload`。
+```text
+input
+textarea
+password
+number
+select
+radio
+checkbox
+switch
+date
+daterange
+time
+timerange
+datetime
+datetimerange
+rate
+slider
+color
+cascader
+treeSelect
+transfer
+upload
+imageUpload
+editor
+systemUser
+systemOrg
+systemDept
+systemPost
+systemRole
+systemDict
+businessType
+signature
+serialNo
+alert
+text
+html
+divider
+tag
+image
+button
+container
+```
 
 `BusinessApplyRegistration`：
 
@@ -115,11 +163,11 @@ registerBusinessApprovalComponent('workflow.expense.approve.finance', {
 
 | 字段 | 含义 |
 |------|------|
-| `definitionId` | 流程定义 id。 |
+| `definitionId` | 流程定义 ID。 |
 | `definitionKey` | 流程定义 key。 |
 | `applyPageKey` | 当前申请组件 key。 |
 | `definition` | 流程定义详情。 |
-| `query` | 路由查询参数。 |
+| `query` | 当前路由查询参数。 |
 
 `BusinessApprovalRegistration`：
 
@@ -142,9 +190,9 @@ registerBusinessApprovalComponent('workflow.expense.approve.finance', {
 |------|------|
 | `businessType` | 业务类型。 |
 | `businessKey` | 业务主键。 |
-| `applyId` | 业务申请记录 id。 |
-| `processInstanceId` | 流程实例 id。 |
-| `taskId` | 当前任务 id。 |
+| `applyId` | 业务申请记录 ID。 |
+| `processInstanceId` | 流程实例 ID。 |
+| `taskId` | 当前任务 ID。 |
 | `taskDefinitionKey` | 当前节点 key。 |
 | `nodeName` | 当前节点名称。 |
 | `nodeExtension` | 节点扩展配置。 |
@@ -153,33 +201,55 @@ registerBusinessApprovalComponent('workflow.expense.approve.finance', {
 | `permissions` | 字段权限。 |
 | `records` | 审批记录。 |
 
-## 6. 后端依赖
-- 后端模块：`mango-platform/mango-workflow`。
-- 用户候选项：`/identity/users/page`。
-- 业务域候选项：`/domain/domains/enabled-tree`。
-- 流程接口：`/workflow/categories`、`/workflow/definitions`、`/workflow/templates`、`/workflow/tasks`、`/workflow/processes`、`/workflow/business-applies`。
-- 文件字段依赖 `@mango/file` 和后端 `mango-file`。
+## 5. 后端依赖
 
-## 7. 权限与数据边界
-- 字段权限只影响前端渲染，后端仍按动作和业务变量做校验。
+| 能力 | 后端依赖 |
+|------|----------|
+| 流程定义、流程实例、任务、业务申请 | `mango-workflow`。 |
+| 用户候选项 | `/identity/users/page`。 |
+| 业务域候选项 | `/domain/domains/enabled-tree`。 |
+| 流程接口 | `/workflow/categories`、`/workflow/definitions`、`/workflow/templates`、`/workflow/tasks`、`/workflow/processes`、`/workflow/business-applies`。 |
+| 文件字段 | `@mango/file` 和后端 `mango-file`。 |
+
+## 6. 权限与数据边界
+
+- `permissions` 只影响前端渲染，不替代后端校验。
 - 业务组件注册 key 不是权限码，不能作为访问控制依据。
-- 待办、已办、抄送、任务详情和动作提交由后端按用户、租户、候选人和流程实例状态校验。
-- 自定义申请页保存业务数据时，应由业务后端写入业务主表并校验数据权限。
+- 待办、已办、抄送、任务详情和动作提交由后端按当前用户、租户、候选人和流程实例状态校验。
+- 自定义申请页保存业务数据时，应调用业务后端写入业务主表，并由业务后端校验数据权限。
 
-## 8. 快速开始
+## 7. 快速开始
 
-1. 动态表单流程使用 `parseRuntimeForm()` 解析定义，再用 `RuntimeFormRenderer` 渲染字段。
-2. 自定义申请页在业务包启动时调用 `registerBusinessApplyComponent(applyPageKey, registration)`。
-3. 自定义审批页调用 `registerBusinessApprovalComponent(approvalPageKey, registration)`，按节点采集变量和意见。
-4. 后端任务动作提交时仍要校验候选人、租户、流程状态和业务数据权限。
+1. 动态表单流程使用 `parseRuntimeForm()` 解析流程定义 `formJson`，再用 `RuntimeFormRenderer` 渲染字段。
+2. 需要默认值时，用 `createDefaultVariables(fields)` 创建变量对象。
+3. 自定义申请页在业务包启动时调用 `registerBusinessApplyComponent(applyPageKey, registration)`。
+4. 自定义审批页调用 `registerBusinessApprovalComponent(approvePageKey, registration)`，按动作采集变量和意见。
+5. 审批详情需要字段权限时，从任务变量里读取 `businessPermissions`，再传给 `RuntimeFormRenderer`。
 
-## 9. 问题排查
-- 任务详情找不到业务组件：检查业务包是否在 Shell 启动前注册，流程变量中的业务 key 是否一致。
-- 审批意见没有提交：检查 `commentMode` 和 `collectComment`。
-- 字段明明只读但仍被提交：前端只控制交互，后端需要按节点权限过滤或拒绝变量。
-- 动态表单字段不显示：检查 `formJson` 是否是合法 JSON，字段类型是否在 `RuntimeFormFieldType` 范围内。
+## 8. 问题排查
 
-## 10. 相关文档
+**动态表单字段不显示**
+
+检查 `formJson` 是否是合法 JSON，字段类型是否在 `RuntimeFormFieldType` 范围内。`parseRuntimeForm()` 会把不支持的字段放进 `unsupported`。
+
+**任务详情找不到业务组件**
+
+检查业务包是否已经注册组件，流程定义或任务变量里的 key 是否和注册 key 一致。
+
+**审批意见没有提交**
+
+检查 `commentMode` 和 `collectComment()`。如果意见在业务表单里，需要设置 `commentMode: 'BUSINESS_FORM'` 并实现 `collectComment()`。
+
+**按钮文案或显隐不符合业务节点**
+
+检查节点动作配置和 `getActionOverrides()`。最终可见按钮由节点动作配置和业务覆盖配置共同决定。
+
+**字段只读但仍被提交**
+
+前端只控制交互。后端排障时检查节点权限过滤和变量变更校验，确认只读字段没有被业务接口写入。
+
+## 9. 相关文档
+
 - [@mango/workflow README](../../README.md)
 - [Workflow 后端 README](../../../../../mango/mango-platform/mango-workflow/README.md)
 - [@mango/file 组件 README](../../../file/src/components/README.md)

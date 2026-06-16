@@ -5,21 +5,28 @@
 
 核心判断：调用方不能依赖对方 `<module>-core`。
 
-## 2. 适用场景
-- 业务模块需要独立部署、独立扩缩容或独立发布。
-- 调用方通过 Feign 或网关访问业务服务。
-- 需要验证认证、租户、链路追踪、超时、重试和降级。
-- 菜单、权限、API 资源需要按服务提供方同步。
-- 前端后台需要连接真实网关 API，而不是只连本地单体后端。
+## 2. 功能清单
 
-## 3. 边界说明
-- 当前只需要一个后端进程交付。
-- 模块之间大量共享事务和数据库表，尚未完成服务边界设计。
-- 调用方必须依赖业务模块 `core` 才能调用；这说明 API 边界还没抽出来。
-- 没有服务注册、配置中心、网关、日志和发布平台准备。
-- 只是为了“看起来像微服务”而拆分。
+| 能力 | 使用入口 | 说明 |
+|------|----------|------|
+| 服务提供方 | `<module>-starter` | 暴露 Controller、资源清单、AutoConfiguration 和本服务 migration。 |
+| 服务调用方 | `<module>-starter-remote` | 只通过 API 契约和远程 client 调用提供方。 |
+| 契约共享 | `<module>-api` | Command、Query、VO、API 方法。 |
+| 网关访问 | API base URL / gateway route | 前端通过网关访问后端服务。 |
+| 资源同步 | 提供方 resource manifest | 菜单、权限、API 资源由服务提供方同步。 |
 
-## 4. 模块组成
+## 3. 能力边界
+
+| 选择微服务 | 不适合微服务 |
+|------------|--------------|
+| 业务模块需要独立部署、扩缩容或发布。 | 当前只需要一个后端进程交付。 |
+| 调用方通过 Feign 或网关访问业务服务。 | 模块之间大量共享事务和数据库表。 |
+| 需要验证认证、租户、trace、超时、重试和降级。 | API 边界没抽出来，调用方必须依赖提供方 `core`。 |
+| 菜单、权限、API 资源按服务提供方同步。 | 没有服务注册、配置中心、网关、日志和发布平台准备。 |
+
+不要为了“看起来像微服务”拆分。没有服务边界、数据库归属和 API 契约时，先用单体。
+
+## 4. 模块入口
 服务提供方：
 
 - 依赖 `<module>-starter`。
@@ -131,7 +138,6 @@ mango init {{projectKebab}} --preset {{preset}} --topology microservice
 - [后端安全规范](../../business-pmo/mango-baseline/rules/backend/06-security.md)
 - [交付契约规范](../../business-pmo/mango-baseline/rules/01-delivery-contract.md)
 
-## 13. 历史资料
 - [项目 README](../../README.md)
 - [Business PMO README](../../business-pmo/README.md)
 - [单体拓扑说明](../monolith/README.md)

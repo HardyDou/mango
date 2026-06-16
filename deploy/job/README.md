@@ -11,19 +11,14 @@
 
 业务开发写任务处理器时先看 `mango-job` 模块 README；部署、联调和生产运维再看本文。
 
-## 2. 适用场景
-- 单体应用中同时运行 JobCenter 和内嵌 Worker。
-- 多个应用节点共享同一个 `mango_job` 数据库并共同调度。
-- 独立 JobCenter 负责调度，业务服务作为远程 Worker 注册并执行任务。
-- 需要给 Job 模块单独配置数据源、扫描参数、Worker 地址、失败告警和日志保留策略。
 
-## 3. 边界说明
+## 2. 能力边界
 - 不部署 PowerJob Server，不创建 PowerJob 内部表。
 - 不替代 `MangoJobHandler` 的业务实现、业务幂等和业务事务设计。
 - 不负责通知渠道配置，失败告警真正发送依赖 `mango-notice`。
 - 不作为 DBA 审批流程，生产清理 SQL 必须走企业维护任务或 DBA 流程。
 
-## 4. 部署模式
+## 3. 部署模式
 
 Mango Job 当前只使用 Mango Native Job Engine。活跃交付中已经移除 PowerJob 运行时集成。
 
@@ -37,7 +32,7 @@ Mango Job 当前只使用 Mango Native Job Engine。活跃交付中已经移除 
 
 任务定义不随部署布局变化。业务代码只实现 Mango `MangoJobHandler`。
 
-## 5. 接入方式
+## 4. 接入方式
 ### 5.1 JobCenter 或单体应用
 
 提供管理接口、调度扫描、数据库治理模型的进程引入：
@@ -68,7 +63,7 @@ Mango Job 当前只使用 Mango Native Job Engine。活跃交付中已经移除 
 - `mango.job.native.job-center-address`
 - `mango.job.native.job-center-feign-url`
 
-## 6. 配置文件和启动方式
+## 5. 配置文件和启动方式
 
 外部配置文件：
 
@@ -92,7 +87,7 @@ scripts/dev-workspace.sh backend
 
 `application-job-native.yml` 会把 `mango.persistence.modules.mango-job.datasource` 指向 `job` 数据源。未提供 `MANGO_JOB_DB_*` 时会回退到主库 `MANGO_DB_*`。
 
-## 7. 配置说明
+## 6. 配置说明
 ### 7.1 数据库配置
 
 | 环境变量 | 配置项 | 默认值 | 含义 |
@@ -129,7 +124,7 @@ Mango Job 治理表由 Flyway 在 `mango_job` 模块路径下维护。Mango Job 
 
 更多 handler 归属字段、API 字段和管理接口见 [mango-job 配置说明](../../mango/mango-platform/mango-job/README.md#8-配置说明)。
 
-## 8. 集群规则
+## 7. 集群规则
 
 - 所有 JobCenter 节点必须共享同一个 `mango_job` 数据库。
 - 不要让同一套部署的节点指向彼此隔离的 Job 数据库。
@@ -138,7 +133,7 @@ Mango Job 治理表由 Flyway 在 `mango_job` 模块路径下维护。Mango Job 
 - 远程 Worker 必须先注册应用编码、地址、通信方式和 handler 能力，才能接收任务。
 - 生产启用关键定时任务前，必须验证 Cron 稳定性、重启恢复、Worker 过期和日志保留。
 
-## 9. 管理入口
+## 8. 管理入口
 菜单和按钮资源由 `mango-job-starter/src/main/resources/META-INF/mango/resource-manifest.json` 描述，并通过 Mango 模块资源初始化流程入库。
 
 管理入口：
@@ -151,7 +146,7 @@ Mango Job 治理表由 Flyway 在 `mango_job` 模块路径下维护。Mango Job 
 
 调度器和 Worker 自动注册使用 `mango.job.native.scheduler-tenant-id` 构造系统上下文，默认租户是 `1`。业务任务执行时仍要由 handler 自己保证业务数据的租户边界和幂等。
 
-## 10. 告警集成
+## 9. 告警集成
 
 Mango Job 在存在启用规则时，通过 `mango-notice` 发送失败执行告警。
 
@@ -192,7 +187,7 @@ values
 
 生产就绪必须做一次预发失败任务测试，确认通知发送记录以及目标站内信、短信、邮件或企业微信通道。
 
-## 11. 监控
+## 10. 监控
 
 在专用 Micrometer 指标补齐前，生产监控基于 `mango_job` 数据库和应用日志。
 
@@ -213,7 +208,7 @@ values
 - 包含 `未找到可执行任务的 Worker` 的派发失败
 - `mango_job_schedule_cursor`、`mango_job_instance`、`mango_job_attempt`、`mango_job_log_chunk` 相关数据库错误
 
-## 12. 日志保留
+## 11. 日志保留
 
 当前原生执行日志存储在：
 
@@ -244,7 +239,7 @@ limit 1000;
 
 以上 SQL 只是运维参考。生产清理必须通过平台 DBA 任务或已审批维护任务执行。
 
-## 13. 回滚
+## 12. 回滚
 
 代码回滚：
 
@@ -268,7 +263,7 @@ limit 1000;
 - 如果旧版本不能理解当前 Job 模型，回滚前先暂停关键任务定义。
 - 前进修复后，对比 `mango_job_schedule_cursor.last_fire_time`、近期 `mango_job_instance` 和业务幂等键，再恢复关键调度。
 
-## 14. 发布前确认
+## 13. 发布前确认
 后端模块测试：
 
 ```bash
@@ -285,7 +280,7 @@ mvn -f mango/pom.xml -pl mango-platform/mango-job -am test
 - 关闭 `MANGO_JOB_SCHEDULER_ENABLED=false` 后，不再自动扫描到期任务。
 - 配置失败告警后，失败任务能在 `mango-notice` 产生发送记录。
 
-## 15. 相关文档
+## 14. 相关文档
 - [Mango Job 模块 README](../../mango/mango-platform/mango-job/README.md)
 - [Job 前端 README](../../mango-ui/packages/job/README.md)
 - [Notice 模块 README](../../mango/mango-platform/mango-notice/README.md)

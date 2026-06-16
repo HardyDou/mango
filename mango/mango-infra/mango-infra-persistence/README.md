@@ -38,16 +38,8 @@
 | 非 Web 任务、定时任务或测试环境需要显式配置默认租户 | Maven 依赖 / starter / Java API |
 | 管理端资源需要复用标准导入导出入口，但 Excel 解析实现由其他模块提供 | Maven 依赖 / starter / Java API |
 
-## 3. 适用场景
-- 业务模块新增 MySQL 或兼容 JDBC 的业务表。
-- 业务实体需要统一 Long 雪花主键、审计字段和租户字段。
-- 单表或薄业务逻辑资源需要快速实现 CRUD API。
-- 模块需要在启动时自动执行自己的 Flyway migration。
-- 应用需要把不同模块路由到不同数据库。
-- 非 Web 任务、定时任务或测试环境需要显式配置默认租户。
-- 管理端资源需要复用标准导入导出入口，但 Excel 解析实现由其他模块提供。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不替代业务领域建模、复杂聚合查询、跨聚合事务和业务校验。
 - 不提供 Excel 实现本身；`web-starter` 只定义 `ExcelAdapter` 接口和 Controller 调用流程。
 - 不自动实现数据范围过滤；`DataScopeProvider` 是扩展契约，`MangoCrudServiceImpl.applyDataScope()` 需要业务服务覆写。
@@ -55,7 +47,7 @@
 - 不提供菜单和按钮权限资源；业务模块仍要通过自己的 resource manifest 或 authorization 初始化。
 - 不建议在一个 Spring 事务中切换数据源；路由数据源会直接拒绝。
 
-## 5. 模块组成
+## 4. 模块入口
 `api` 只放业务可依赖的轻量契约；`starter` 负责运行时持久化装配；`web-starter` 负责标准 HTTP CRUD 外壳。
 
 业务模块自己负责：
@@ -66,7 +58,7 @@
 - 数据范围、复杂查询、业务唯一性和业务事务。
 - 导入导出行模型、业务校验和 Excel 具体实现依赖。
 
-## 6. 接入方式
+## 5. 接入方式
 只使用实体、查询注解、分页模型和契约：
 
 ```xml
@@ -96,7 +88,7 @@
 
 只引入 `api` 不会注册 MyBatis-Plus 插件、Flyway、审计填充、多数据源和 Controller。业务应用要让能力生效，至少需要运行时引入 `mango-infra-persistence-starter`。
 
-## 7. 配置说明
+## 6. 配置说明
 ### 6.1 最小单库配置
 
 如果应用已经用 Spring Boot 或 Druid 提供单个 `DataSource`，可以只配置 Spring 数据源，Mango 会复用这个 `DataSource`：
@@ -279,7 +271,7 @@ mango:
 
 starter 会注册一个 `_noop` Flyway bean，避免 Spring Boot 默认 Flyway 把所有模块脚本合并到一个 history table 中执行。
 
-## 8. API 与扩展
+## 7. API 与扩展
 ### 7.1 实体和分页模型
 
 | 类型 | 字段 / 行为 |
@@ -541,7 +533,7 @@ try (PersistenceDataSourceContext.Scope ignored = PersistenceDataSourceContext.u
 - 同一个实际 Spring 事务内第一次拿到连接后，不能再切换到别的数据源；否则抛出 `Cannot switch Mango datasource inside one transaction`。
 - 需要跨库写入时，不要依赖这个模块提供分布式事务；应拆分事务边界或使用业务补偿。
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 本模块自身没有生产业务表 migration；业务模块必须在自己的模块下维护 migration。
 
 推荐路径：
@@ -571,7 +563,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 
 菜单、按钮和 API 权限不是 persistence 初始化的内容。业务模块如果提供管理页面，需要在自己的 resource manifest 或 authorization 初始化逻辑中登记菜单、按钮权限和 API 资源。
 
-## 10. 管理入口
+## 9. 管理入口
 本模块不注册菜单和按钮权限。它只影响数据库层面的租户和审计。
 
 租户行为：
@@ -597,7 +589,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 - 平台全局表、字典表、资源表通常应该加入租户排除；普通业务表不应加入。
 - 如果业务接口要做按钮权限校验，需要在 Web、安全或 authorization 层声明，不由 persistence 处理。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 引入 `mango-infra-persistence-starter`；需要标准 Controller 时再引入 `mango-infra-persistence-web-starter`。
 2. 配置应用 `DataSource`，或配置 `mango.persistence.datasources` 多数据源。
 3. 为业务模块创建 `db/migration/<module>/V1__init.sql`，表里包含 `id`、审计字段和 `tenant_id`。
@@ -608,7 +600,7 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 8. 给管理页面登记菜单、按钮权限和 API 权限；这一步属于业务模块自己的 authorization 资源初始化。
 9. 本地验证 Flyway、审计填充、租户隔离、分页查询和 Schema 校验。
 
-## 12. 问题排查
+## 11. 问题排查
 **启动时报 `Missing tenant context for tenant-isolated SQL`**
 
 当前 SQL 命中了租户拦截器，但上下文里没有租户。Web 请求要检查认证和上下文写入；定时任务或测试可配置 `mango.persistence.mybatis-plus.tenant.default-tenant-id`；全局表要加入 `mybatis-plus.tenant.excluded-tables`。
@@ -633,11 +625,11 @@ src/main/resources/db/migration/<module>/V2__add_xxx.sql
 
 `BaseCrudController` 只是提供入口。导出需要 Service 实现 `ExportableService`，导入需要 Service 实现 `ImportableService`，并且容器里必须有 `ExcelAdapter` bean。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [持久化规范](../../../mango-pmo/rules/backend/07-persistence.md)
 - [交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)

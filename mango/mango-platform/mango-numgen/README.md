@@ -1,41 +1,61 @@
 # 编号生成 Numgen
 
 ## 1. 概览
-`mango-numgen` 提供租户内业务编号生成能力：维护编号生成器、规则版本、规则片段、序列和生成历史，并对外提供单个取号、批量取号、规则校验和规则预览。
 
-主要使用者是订单、合同、支付、对账、退款、线下收款、工单等需要稳定业务编号的模块。
+`mango-numgen` 是 Mango 的业务编号生成能力，用来统一生成订单号、退款号、对账批次号、工单号、合同号等业务编号。
+
+它对外提供两类能力：
+
+- 业务取号：按 `genKey` 生成单个编号或批量编号。
+- 编号规则管理：维护生成器、规则版本、规则片段、序列状态和生成历史。
+
+业务侧使用时要注意两点：
+
+- `numgen` 返回的是编号字符串，不负责保存业务单据。
+- 业务表仍然必须给最终编号字段建唯一约束；`numgen` 不替代业务唯一性兜底，也不承诺编号连续无空洞。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 业务需要统一生成单据号、订单号、流水号、批次号 | Maven 依赖 / HTTP API / Java API |
-| 编号格式需要由管理端维护，例如前缀、日期、业务参数和流水号组合 | Maven 依赖 / HTTP API / Java API |
-| 多实例并发取号时需要用 KV 锁和数据库唯一约束保证不重复 | Maven 依赖 / HTTP API / Java API |
-| 需要记录每次编号生成历史，方便追踪生成规则和输入参数 | Maven 依赖 / HTTP API / Java API |
+| 能力 | 说明 | 使用入口 |
+|------|------|----------|
+| 单个取号 | 根据 `genKey` 和动态参数返回一个编号 | `NumgenApi.nextValue` / `POST /numgen/next` |
+| 批量取号 | 一次返回多个编号，`count` 范围为 1-1000 | `NumgenApi.batchValue` / `POST /numgen/batch` |
+| 规则校验 | 保存或发布前校验规则片段是否可用 | `NumgenApi.validateRule` / `POST /numgen/rules/validate` |
+| 生成器管理 | 维护业务编号键、名称、业务域和启停状态 | 管理接口 / 前端编号规则页面 |
+| 规则版本管理 | 维护规则版本、发布状态和历史版本 | 管理接口 / 前端编号规则页面 |
+| 规则片段管理 | 支持固定文本、日期、参数、序列和表达式片段 | 管理接口 / 前端编号规则页面 |
+| 序列查询 | 查看当前序列值和分组范围 | 管理接口 / 前端编号规则页面 |
+| 生成历史 | 查询生成结果、规则版本、业务键、输入摘要和失败原因 | 管理接口 / 前端编号规则页面 |
 
-## 3. 适用场景
-- 业务需要统一生成单据号、订单号、流水号、批次号。
-- 编号格式需要由管理端维护，例如前缀、日期、业务参数和流水号组合。
-- 多实例并发取号时需要用 KV 锁和数据库唯一约束保证不重复。
-- 需要记录每次编号生成历史，方便追踪生成规则和输入参数。
+## 3. 后端接入
 
-## 4. 边界说明
-- 不替代业务表唯一约束；业务表仍必须对最终编号建唯一键。
-- 不保证编号连续无空洞；失败、事务回滚或并发竞争都可能造成序列跳号。
-- 不负责业务实体保存，只返回编号字符串。
-- 不适合拿来生成密码、token、密钥等安全随机值。
+### 3.1 开发依赖
 
-## 5. 模块组成
-- `mango-numgen-api`：`NumgenApi`、生成器、规则、片段、序列、历史 API 和 DTO。
-- `mango-numgen-core`：规则渲染、序列分配、KV 锁、Mapper、历史记录和支付编号种子。
-- `mango-numgen-starter`：注册 `NumgenAutoConfiguration` 和 HTTP Controller。
-- `mango-numgen-starter-remote`：注册 `NumgenFeignClient`，供微服务远程取号。
+业务模块只需要面向 API 契约编码时，引入 `mango-numgen-api`：
 
-调用方负责选择 `genKey`、传入规则所需参数，并在保存业务数据时用数据库唯一约束兜底。
+```xml
+<dependency>
+    <groupId>io.mango.platform.numgen</groupId>
+    <artifactId>mango-numgen-api</artifactId>
+</dependency>
+```
 
-## 6. 接入方式
-提供编号服务的应用引入 starter：
+业务代码优先依赖 `NumgenApi`：
+
+```java
+import io.mango.numgen.api.NumgenApi;
+import io.mango.numgen.api.command.NumgenNextCommand;
+
+NumgenNextCommand command = new NumgenNextCommand();
+command.setGenKey("ORDER_NO");
+command.getParams().put("orgCode", "HQ");
+
+String orderNo = numgenApi.nextValue(command).getData();
+```
+
+### 3.2 部署依赖
+
+提供编号生成能力的应用启用 starter：
 
 ```xml
 <dependency>
@@ -44,7 +64,7 @@
 </dependency>
 ```
 
-只做远程消费的服务引入 remote starter：
+微服务中只远程消费编号能力的应用启用 remote starter：
 
 ```xml
 <dependency>
@@ -53,104 +73,216 @@
 </dependency>
 ```
 
-业务代码优先注入 `NumgenApi`，调用 `nextValue` 或 `batchValue`。
-
-## 7. 配置说明
-配置前缀：`mango.numgen.kv`。
-
-| 配置项 | 类型 | 默认值 | 含义 |
-|--------|------|--------|------|
-| `rule-cache-ttl-seconds` | long | `300` | 生效规则表达式缓存秒数。规则发布后要关注缓存刷新或等待 TTL。 |
-| `allocation-lock-ttl-seconds` | long | `10` | 序列分配分布式锁 TTL，防止多实例并发分配同一序列。 |
-
-配置示例：
+`mango-numgen-starter` 默认随应用启用；需要关闭时配置：
 
 ```yaml
 mango:
   numgen:
+    enabled: false
+```
+
+## 4. 前端接入
+
+管理后台使用 `@mango/numgen`，它是 `admin-pages` 页面插件和前端 API 封装，不是官网、C 端页面或普通业务页面组件。
+
+```ts
+import { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
+
+registerMangoNumgenAdminPages();
+```
+
+菜单打开页面时使用以下 component key：
+
+```text
+platform/numgen/index
+numgen/index
+```
+
+业务前端如果必须直接取号，可使用 `@mango/numgen` 暴露的 `numgenApi`。更推荐由业务后端取号并和业务单据保存放在同一个业务流程里处理唯一约束、重试和幂等。
+
+```ts
+import { numgenApi } from '@mango/numgen';
+
+const orderNo = await numgenApi.nextValue({
+  genKey: 'ORDER_NO',
+  params: { orgCode: 'HQ' },
+});
+```
+
+## 5. 快速开始
+
+1. 确认部署应用已启用 `mango-numgen-starter`，数据库 migration 已执行。
+2. 在编号规则管理页创建生成器，填写 `genKey`、`genName`、`domainCode` 和启停状态。
+3. 创建规则版本，按顺序配置规则片段。
+4. 使用预览能力确认样例编号符合业务格式。
+5. 发布规则版本。
+6. 业务保存单据前调用 `NumgenApi.nextValue` 或 `NumgenApi.batchValue` 获取编号。
+7. 业务表对编号字段建立唯一索引；唯一冲突时按业务策略重试或提示。
+
+## 6. 配置说明
+
+YAML 配置用于控制编号能力是否启用，以及规则缓存和序列分配锁的时间。
+
+```yaml
+mango:
+  numgen:
+    enabled: true
     kv:
       rule-cache-ttl-seconds: 300
       allocation-lock-ttl-seconds: 10
 ```
 
-KV 能力来自 `mango-infra-kv`。如果业务高并发取号，先验收 KV 后端可用，再做并发压测。
+## 7. YAML 配置字段
 
-## 8. API 与扩展
-业务取号接口：
+| 配置项 | 默认值 | 含义 |
+|--------|--------|------|
+| `mango.numgen.enabled` | `true` | 是否启用本应用内的编号生成 starter。 |
+| `mango.numgen.kv.rule-cache-ttl-seconds` | `300` | 生效规则缓存秒数。规则发布后如果短时间内仍看到旧格式，先看这个 TTL。 |
+| `mango.numgen.kv.allocation-lock-ttl-seconds` | `10` | 序列分配锁 TTL。高并发取号时需要确保 KV 后端可用。 |
 
-| 方法 | 路径 | 用途 |
+## 8. 运行时配置字段
+
+运行时规则在编号规则页面维护，核心字段如下。
+
+### 8.1 生成器字段
+
+| 字段 | 含义 | 约束 |
 |------|------|------|
-| POST | `/numgen/next` | 按 `genKey` 生成一个编号。 |
-| POST | `/numgen/batch` | 批量生成编号。 |
-| POST | `/numgen/rules/validate` | 校验规则片段是否合法。 |
+| `genKey` | 编号规则键，业务取号时传入 | 必填，最长 128 字符 |
+| `genName` | 编号名称 | 必填，最长 128 字符 |
+| `domainCode` | 业务域编码，例如 `PAYMENT` | 必填，最长 64 字符 |
+| `status` | 生成器状态 | `1` 启用，`0` 停用 |
 
-管理接口：
+### 8.2 规则字段
 
-| 根路径 | 用途 |
-|--------|------|
-| `/numgen/generators` | 生成器分页、详情、新增、修改、启停、删除。 |
-| `/numgen/rules` | 规则分页、详情、新增、修改、启停、删除、发布、预览。 |
-| `/numgen/segments` | 规则片段分页、详情、新增、修改、删除。 |
-| `/numgen/sequences` | 序列分页查询。 |
-| `/numgen/histories` | 生成历史分页查询。 |
+| 字段 | 含义 | 约束 |
+|------|------|------|
+| `genKey` | 归属生成器 | 必填 |
+| `ruleName` | 规则名称 | 必填，最长 128 字符 |
+| `version` | 规则版本 | 未传时按后端规则处理 |
+| `status` | 规则状态 | `1` 启用，`0` 停用 |
+| `publishStatus` | 发布状态 | `1` 生效中，`0` 未生效 |
 
-规则片段支持：
+### 8.3 规则片段字段
 
-| 片段类型 | 必填字段 | 含义 |
+| 字段 | 含义 | 约束 |
+|------|------|------|
+| `ruleId` | 归属规则 ID | 必填 |
+| `sortOrder` | 片段顺序 | 必填，从 1 开始 |
+| `segmentType` | 片段类型 | `TEXT`、`DATE`、`PARAM`、`SEQ`、`EXPR` |
+| `segmentName` | 片段名称 | 必填，最长 128 字符 |
+| `literalValue` | 固定文本或表达式文本，支持 `${参数ID}` 占位符 | 最长 128 字符 |
+| `variableKey` | 参数片段读取的参数 key | 最长 128 字符 |
+| `dateFormat` | 日期格式 | 最长 64 字符 |
+| `seqWidth` | 序列宽度 | 1-20 |
+| `padChar` | 序列补位字符 | 单字符 |
+| `sequenceScope` | 是否参与流水分组 | `1` 参与，`0` 不参与 |
+
+片段常用组合：
+
+| 片段类型 | 常用字段 | 说明 |
 |----------|----------|------|
-| `TEXT` | `literal_value` | 固定文本，支持 `${变量名}` 替换。 |
-| `EXPR` | `literal_value` | 当前实现按文本表达式处理，同样支持 `${变量名}` 替换。 |
-| `DATE` | `date_format` | 使用 Java `DateTimeFormatter` 格式化当前时间。 |
-| `PARAM` | `variable_key` | 从取号请求参数读取值，缺失会失败。 |
-| `SEQ` | `seq_width` | 序列号，按宽度和 `pad_char` 补齐。 |
+| `TEXT` | `literalValue` | 固定前缀，例如 `PO`。 |
+| `DATE` | `dateFormat`、`sequenceScope` | 日期片段，例如 `yyyyMMdd`；参与流水分组后可按日期重置序列。 |
+| `PARAM` | `variableKey`、`sequenceScope` | 从取号请求 `params` 读取值。 |
+| `SEQ` | `seqWidth`、`padChar` | 流水号，例如 8 位补零。 |
+| `EXPR` | `literalValue` | 表达式文本，支持参数占位符。 |
 
-`sequence_scope = 1` 的非 `SEQ` 片段会参与流水分组。例如日期片段参与分组时，每天独立递增。
+## 9. 请求与返回字段
 
-## 9. 数据与初始化
-Flyway 路径：`mango-numgen-core/src/main/resources/db/migration/numgen`。
+### 9.1 业务取号
 
-核心表：
+| 方法 | 路径 | 入参 | 返回 |
+|------|------|------|------|
+| `POST` | `/numgen/next` | `genKey`、`params` | 单个编号字符串 |
+| `POST` | `/numgen/batch` | `genKey`、`count`、`params` | 编号字符串数组 |
+| `POST` | `/numgen/rules/validate` | `genKey`、`ruleName`、`segments` | 规则校验结果 |
 
-| 表 | 用途 |
-|----|------|
-| `numgen_generator` | 生成器定义，`tenant_id + gen_key + del_flag` 唯一。 |
-| `numgen_rule` | 规则版本，记录生效版本和发布状态。 |
-| `numgen_rule_segment` | 规则片段，按 `sort_order` 拼接。 |
-| `numgen_sequence` | 当前序列值，`tenant_id + gen_key + rule_version` 唯一。 |
-| `numgen_history` | 每次生成结果、规则版本、业务键、输入摘要和耗时。 |
+`params` 是动态参数 Map，`PARAM` 片段和带占位符的文本片段会读取这里的值。
 
-初始化脚本：
+### 9.2 管理接口
 
-- `V1__init_numgen.sql` 创建核心表并兼容早期模型字段。
-- `V2__numgen_domain.sql` 给生成器补 `domain_code` 并默认写 `NUMGEN`。
-- `V6__payment_number_generators.sql` 初始化支付域编号生成器，租户为 `1`，规则为“前缀 + 日期 yyyyMMdd + 8 位日内序号”。
+| 能力 | 路径 |
+|------|------|
+| 生成器分页、详情、新增、修改、启停、删除 | `/numgen/generators/**` |
+| 规则分页、详情、新增、修改、启停、删除、发布、预览 | `/numgen/rules/**` |
+| 规则片段分页、详情、新增、修改、删除 | `/numgen/segments/**` |
+| 序列分页查询 | `/numgen/sequences/page` |
+| 历史分页查询 | `/numgen/histories/page` |
 
-支付域内置 `genKey` 包括 `PAY_ORDER_NO`、`PAY_REFUND_ORDER_NO`、`PAY_RECON_BATCH_NO`、`PAY_DIFF_NO`、`PAY_OFFLINE_COLLECTION_NO` 等，完整清单以 SQL 和 payment README 为准。
+### 9.3 常用返回字段
+
+| 返回对象 | 字段 | 含义 |
+|----------|------|------|
+| `NumgenGeneratorVO` | `id`、`genKey`、`genName`、`domainCode`、`status` | 生成器基础信息 |
+| `NumgenGeneratorVO` | `currentRuleVersion`、`currentPublishStatus`、`hasUnpublishedChanges` | 当前发布版本和是否有未发布修改 |
+| `NumgenRuleVO` | `id`、`genKey`、`ruleName`、`version`、`status`、`publishStatus`、`versionState` | 规则版本信息 |
+| `NumgenRuleSegmentVO` | `sortOrder`、`segmentType`、`literalValue`、`variableKey`、`dateFormat`、`seqWidth`、`padChar`、`sequenceScope` | 规则片段配置 |
+| `NumgenPreviewVO` | `genKey`、`ruleVersion`、`segments`、`values` | 预览片段和预览编号 |
 
 ## 10. 管理入口
-编号表都有 `tenant_id`。同一个 `genKey` 可在不同租户下存在不同规则和序列。
 
-当前 numgen Controller 未声明细粒度 `@ApiAccess` 权限码；如果接入管理菜单，需要在 authorization 中为生成器、规则、片段、序列和历史页面配置菜单权限，并限制只有管理员能修改规则。业务取号接口通常由服务端调用，不应直接暴露给无权限前端。
+授权基线会初始化编号规则菜单：
 
-## 11. 快速开始
-1. 创建生成器，确定 `genKey` 和 `domainCode`。
-2. 创建规则版本，配置 `TEXT`、`DATE`、`PARAM`、`SEQ` 等片段。
-3. 调用规则预览，确认样例编号符合业务格式。
-4. 发布规则。
-5. 业务保存单据前调用 `NumgenApi.nextValue` 获取编号。
-6. 保存业务表时对编号字段建唯一约束，失败时按业务策略重试或提示。
+| 菜单 | 路由 | component | 权限码 |
+|------|------|-----------|--------|
+| 编号规则 | `/data/numgen` | `@/views/numgen/index.vue` | `numgen:manage:list` |
+| 编号规则查询 | 无页面路由 | 无 | `numgen:manage:list` |
+| 编号规则维护 | 无页面路由 | 无 | `numgen:manage:write` |
+
+前端运行时注册的页面 key 是 `platform/numgen/index` 和 `numgen/index`。如果菜单可见但页面打不开，先检查前端是否注册 `@mango/numgen/admin-pages`，再检查菜单 component 与运行时页面 key 的映射。
+
+## 11. 数据与初始化
+
+编号生成表由 `mango-numgen-core/src/main/resources/db/migration/numgen` 初始化。
+
+| 脚本 | 内容 |
+|------|------|
+| `V1__init_numgen.sql` | 创建 `numgen_generator`、`numgen_rule`、`numgen_rule_segment`、`numgen_sequence`、`numgen_history`。 |
+| `V2__numgen_domain.sql` | 给生成器补充 `domain_code`，默认值为 `NUMGEN`。 |
+| `V6__payment_number_generators.sql` | 初始化支付域编号生成器，租户为 `1`，编号格式为“前缀 + 日期 yyyyMMdd + 8 位日内序列”。 |
+
+支付域内置 `genKey` 包括：
+
+```text
+PAY_BIZ_ORDER_NO
+PAY_ORDER_NO
+PAY_REFUND_ORDER_NO
+PAY_BIZ_REFUND_NO
+PAY_REFUND_APPROVAL_NO
+PAY_FLOW_NO
+PAY_REFUND_FLOW_NO
+PAY_FEE_FLOW_NO
+PAY_ADJUST_FLOW_NO
+PAY_NOTIFY_NO
+PAY_RECON_BATCH_NO
+PAY_DIFF_NO
+PAY_QUERY_NO
+PAY_REFUND_QUERY_NO
+PAY_EXCEPTION_NO
+PAY_OFFLINE_COLLECTION_NO
+PAY_OFFLINE_REFUND_NO
+PAY_OFFLINE_BANK_BATCH_NO
+PAY_MANGO_VIRTUAL_NO
+PAY_MANGO_SCENARIO_NO
+```
+
+菜单、权限和前端模块运行策略由授权基线初始化，入口在 `mango-authorization-core/src/main/resources/db/migration/authorization/V1__init_authorization.sql`。
 
 ## 12. 问题排查
-- 编号重复：先检查业务表唯一约束、KV 锁、租户上下文和是否绕过 `NumgenApi` 手工拼号。
-- 编号不连续：这是允许的，不应把连续性作为业务正确性依据。
-- 规则发布后格式没变：检查规则缓存 TTL、当前规则版本和发布状态。
-- 缺少参数：`PARAM` 片段要求请求参数里存在对应 `variable_key`。
-- 日期没有每日重置：确认日期片段设置了 `sequence_scope = 1`。
+
+| 问题 | 优先检查 |
+|------|----------|
+| 取号返回规则不存在 | `genKey` 是否正确，生成器和规则是否启用，规则是否已发布。 |
+| `PARAM` 片段取不到值 | 取号请求 `params` 是否包含规则片段的 `variableKey`。 |
+| 发布后仍是旧格式 | `mango.numgen.kv.rule-cache-ttl-seconds`，当前生效版本和发布状态。 |
+| 编号重复 | 业务表唯一索引、是否绕过 `NumgenApi` 手工拼号、KV 后端是否可用。 |
+| 编号不连续 | 这是允许结果；失败、重试、事务回滚和并发竞争都可能造成跳号。 |
+| 每天没有重新从 1 开始 | 日期片段是否设置 `sequenceScope = 1`。 |
+| 管理页面无入口 | 授权基线是否执行，角色是否拥有 `numgen:manage:list`，前端是否注册 `@mango/numgen/admin-pages`。 |
 
 ## 13. 相关文档
-- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [AI 交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
-## 14. 历史资料
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+- [前端编号生成包](../../../mango-ui/packages/numgen/README.md)
+- [支付模块](../mango-payment/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

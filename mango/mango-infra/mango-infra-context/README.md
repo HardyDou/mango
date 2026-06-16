@@ -11,22 +11,18 @@
 | 业务代码需要把租户、用户、trace 信息带入异步任务 | Maven 依赖 / starter / Java API |
 | 业务模块需要按 Mango 统一请求头透传上下文 | Maven 依赖 / starter / Java API |
 
-## 3. 适用场景
-- Controller、Filter、Feign、Job、领域事件订阅者需要读取当前请求上下文。
-- 业务代码需要把租户、用户、trace 信息带入异步任务。
-- 业务模块需要按 Mango 统一请求头透传上下文。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不负责认证、登录态解析、JWT 签发或 token 校验。
 - 不负责权限判断、菜单授权、API 资源策略。
 - 不直接实现数据库租户过滤；持久化层只可把这里的 tenant id 作为输入事实。
 
-## 5. 模块组成
+## 4. 模块入口
 - `mango-infra-context-core`：提供 `MangoContextSnapshot`、`MangoContextHolder`、`MangoContextHeaders`。
 - `mango-infra-context-starter`：提供自动配置、`TaskDecorator`、`mangoContextExecutor` 和上下文包装工具。
 - 请求头读取由 `mango-infra-web` 完成；Feign 透传由 `mango-infra-feign` 完成。
 
-## 6. 接入方式
+## 5. 接入方式
 只使用上下文 API：
 
 ```xml
@@ -66,7 +62,7 @@ try {
 }
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 配置前缀：`mango.context`。自动配置类为 `ContextPropagationAutoConfiguration`。
 
 | 配置 | 默认值 | 含义 |
@@ -94,34 +90,34 @@ mango:
       queue-capacity: 2000
 ```
 
-## 8. API 与扩展
+## 7. API 与扩展
 - `MangoContextSnapshot`：不可变上下文快照，字段包括 request、trace、tenant、user、member、principal、realm、actor、party、app 和 client ip。
 - `MangoContextHolder`：基于 `TransmittableThreadLocal` 的上下文持有器，提供 `get`、`set`、`update`、`clear` 和常用字段读取方法。
 - `MangoContextHeaders`：统一请求头常量，包含 `X-Mango-Request-Id`、`X-Mango-Trace-Id`、`X-Mango-Tenant-Id`、`X-Mango-User-Id`、`X-Mango-Member-Id` 等。
 - `MangoContextTaskDecorator`：包装异步任务，提交时捕获上下文，执行后恢复原上下文。
 - `TtlExecutorDecorator`、`MangoContextExecutors`：用于包装自定义 `Executor`，让非默认线程池也能传播上下文。
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 无数据库 migration、无 Runner、无 Initializer、无初始化数据。
 
-## 10. 管理入口
+## 9. 管理入口
 本模块不创建菜单和权限。tenant id 只是运行时上下文字段，不等同于租户隔离策略；业务模块、授权模块和持久化模块必须分别做权限判断和租户过滤。
 
-## 11. 快速开始
+## 10. 快速开始
 1. Web 应用接入 `mango-infra-web-starter`，入口请求头转为 `MangoContextSnapshot`。
 2. 业务代码通过 `MangoContextHolder` 获取 tenant id、user id、trace id。
 3. 有异步逻辑时使用 `mangoContextExecutor`，或用 `TtlExecutorDecorator` 包装自有线程池。
 4. Feign 调用接入 `mango-infra-feign-starter`，把 `MangoContextHeaders` 对应请求头透传给下游。
 
-## 12. 问题排查
+## 11. 问题排查
 - 异步任务拿不到上下文：先确认任务是否提交到受托管线程池；自建线程池需要包装。
 - 下游服务拿不到 tenant/user：检查入口 Web filter 是否写入上下文，Feign 拦截器是否启用，请求头是否被网关清理。
 - 串请求污染：所有手工 `set` 场景必须在 `finally` 中 `clear` 或恢复旧快照。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [能力地图](../../../mango-docs/capabilities/README.md)

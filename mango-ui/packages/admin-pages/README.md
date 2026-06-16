@@ -1,163 +1,145 @@
 # @mango/admin-pages
 
-## 1. 概览
-`@mango/admin-pages` 是 Mango 管理后台的页面注册表。后端菜单返回 `moduleCode` 和 `component` 后，Shell 或单体入口通过本包找到对应 Vue 页面 loader。
+`@mango/admin-pages` 是 Mango 管理后台的本地页面注册表。菜单从后端返回 `moduleCode` 和 `component` 后，Admin Shell 通过这个包找到对应 Vue 页面并渲染。
 
-本包属于 `admin-shell` 配套插件，不是官网、营销站或普通前台站点组件库。
+## 1. 概览
+
+这个包属于 `admin-shell` 配套能力，不是业务页面组件库。业务模块要把自己的管理页面接入 Mango Admin 时，通常写一个 `admin-pages` 子入口，并调用这里的 `registerModulePages()`。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 平台能力包向管理后台登记页面 | 前端注册 / 组件 / API 封装 |
-| 业务页面包把自己的 component key 注册给 Shell | 前端注册 / 组件 / API 封装 |
-| 单体入口和微前端 Shell 复用同一套页面解析逻辑 | 前端注册 / 组件 / API 封装 |
-| 开发中心页面、隐藏路由、账号页面和默认平台页面需要统一注册 | 前端注册 / 组件 / API 封装 |
+| 能力 | 入口 |
+|------|------|
+| 注册模块页面 | `registerModulePages()` |
+| 注册单个页面 | `registerPage()` |
+| 注册 Shell 内置页面 | `registerShellPages()` |
+| 按菜单 component 找页面 loader | `getPageLoader()` |
+| 从 component 或 path 反查模块 | `resolvePageModuleCode()` |
+| 注册隐藏动态路由 | `getRegisteredPageRoutes()` |
+| 注册默认系统页面 | `registerDefaultAdminPages()` |
+| 控制内置能力集合 | `resolveMangoAdminFeatures()` |
+| 注册通知铃铛提供方 | `registerMangoNoticeBellProvider()` |
 
-## 3. 适用场景
-- 平台能力包向管理后台登记页面。
-- 业务页面包把自己的 component key 注册给 Shell。
-- 单体入口和微前端 Shell 复用同一套页面解析逻辑。
-- 开发中心页面、隐藏路由、账号页面和默认平台页面需要统一注册。
+## 3. 接入方式
 
-## 4. 边界说明
-- 不负责页面布局、登录态、菜单拉取和路由渲染。
-- 不负责后端菜单、权限、租户和资源入库。
-- 不提供通用网站页面组件。
-- 不替代 `@mango/admin-shell` 或 `@mango/admin`。
-
-## 5. 模块组成
-本包只维护前端页面 key 到 loader 的映射。
-
-边界：
-
-- `registerModulePages` 写入页面注册表。
-- `getPageLoader` 按 `moduleCode` 和 `component` 查找 loader。
-- `getRegisteredPageRoutes` 输出包内登记的隐藏路由。
-- 默认平台页面来自 `registerDefaultAdminPages`，依赖 `@mango/auth`、`@mango/rbac`、`@mango/system`。
-- 权限判断和租户隔离必须由后端接口兜底。
-
-## 6. 接入方式
-安装依赖：
-
-```bash
-pnpm add @mango/admin-pages
-```
-
-业务页面包注册：
+业务前端包通常提供一个 `admin-pages` 子入口：
 
 ```ts
-import { registerModulePages } from '@mango/admin-pages';
+import { registerModulePages } from '@mango/admin-pages/core';
 
-export function registerRbacPages() {
+let registered = false;
+
+export function registerExampleAdminPages() {
+  if (registered) {
+    return;
+  }
+  registered = true;
   registerModulePages({
-    moduleCode: 'mango-authorization',
+    moduleCode: 'mango-system',
     pages: {
-      'system/user/index': () => import('@mango/rbac').then(m => m.UserView),
+      'system/dict/index': () => import('@mango/system').then(m => m.DictView),
     },
-    routes: [
-      {
-        path: '/system/user',
-        component: 'system/user/index',
-        menuName: '用户管理',
-        menuCode: 'system:user',
-        visible: 0,
-        keepAlive: 1,
-      },
-    ],
   });
 }
 ```
 
-后台入口调用：
+Admin Shell 启动时调用注册函数：
 
 ```ts
-import { registerRbacPages } from '@mango/rbac';
+import { registerExampleAdminPages } from './admin-pages';
 
-registerRbacPages();
+registerExampleAdminPages();
 ```
 
-后端菜单中的字段要对齐：
+后端菜单的 `component` 可以写成 `@/views/system/dict/index.vue`、`views/system/dict/index.vue` 或 `system/dict/index`。注册表会归一化为 `system/dict/index`。
 
-| 后端菜单字段 | 前端注册值 |
-|--------------|------------|
-| `moduleCode` | `mango-authorization` |
-| `component` | `system/user/index` |
-| `path` | `/system/user` |
+## 4. 配置说明
 
-## 7. 配置说明
-本包没有运行时配置文件。行为由注册函数入参决定。
+页面注册配置：
 
-| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
-|----------|------------|--------|------|----------|----------|
-| `MangoPageRegistry` | `moduleCode` | 无 | 模块编码 | 和后端菜单 `moduleCode` 匹配 | `registerModulePages` |
-| `MangoPageRegistry` | `pages` | 无 | component 到 loader 映射 | 决定菜单能否加载页面 | `registerModulePages` |
-| `MangoPageRegistry` | `routes` | 空 | 隐藏路由列表 | Shell 生成未入菜单的可跳转路由 | `getRegisteredPageRoutes` |
-| `MangoPageRoute` | `path` | 无 | 前端路由路径 | 自动补齐前导斜线 | `normalizePageRoute` |
-| `MangoPageRoute` | `component` | 无 | 页面 component key | 会去掉 `@/`、`src/`、`views/` 和 `.vue` | `normalizeComponentPath` |
-| `MangoPageRoute` | `visible` | `0` | 是否在菜单显示 | 隐藏路由默认不显示 | `normalizePageRoute` |
-| `MangoPageRoute` | `keepAlive` | `0` | 是否缓存 | Shell 生成 route meta | `normalizePageRoute` |
-| `registerDefaultAdminPages` | `features` | 全量启用 | 平台能力开关 | 控制 authorization、system 等默认页是否注册 | `features.ts` |
-
-## 8. API 与扩展
-| 导出 | 用途 |
+| 字段 | 含义 |
 |------|------|
-| `registerModulePages(registry)` | 批量注册模块页面和隐藏路由 |
-| `registerPage(moduleCode, component, loader)` | 注册单个页面 |
-| `registerShellPages(loaders)` | 注册首页和 404 |
-| `getPageLoader(moduleCode, component)` | Shell 根据菜单取页面 loader |
-| `resolvePageModuleCode(component, path)` | 根据 component 或 path 反推 moduleCode |
-| `getRegisteredPageRoutes(moduleCodes)` | 取已注册隐藏路由 |
-| `registerDefaultAdminPages(options)` | 注册默认平台页面 |
-| `features` | 管理端能力开关解析 |
-| `notice` | 通知能力页面注册入口 |
-| `dev-pages`、`dev-component-pages` | 开发中心页面注册入口 |
+| `moduleCode` | 模块编码，需要和后端菜单的 `moduleCode` 或模块归属一致。 |
+| `pages` | 页面 key 到异步 loader 的映射。 |
+| `routes` | 可选隐藏路由，适合详情页、弹出式页面和非菜单页。 |
 
-`package.json` 还导出 `./core`、`./defaults`、`./features`、`./notice`、`./dev-pages` 和 `./dev-component-pages`。
+隐藏路由配置：
 
-## 9. 数据与初始化
-本包不包含数据库 migration。菜单、权限、租户和资源入库由后端模块处理。
+| 字段 | 默认值 | 含义 |
+|------|--------|------|
+| `path` | 无 | 路由 path。 |
+| `component` | 无 | 页面 key。 |
+| `menuName` | 空 | 路由展示名。 |
+| `menuCode` | 空 | 权限码或路由编码。 |
+| `icon` | 空 | 图标。 |
+| `sort` | 空 | 排序。 |
+| `visible` | `0` | 是否可见。 |
+| `keepAlive` | `0` | 是否缓存。 |
 
-| 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
-|------|------|------------|-----------------|----------|----------|
-| 页面注册 | 前端包注册函数 | component loader | `moduleCode + component` | 前端入口执行注册函数 | `getPageLoader` |
-| 隐藏路由 | `routes` 参数 | 非菜单路由 | `moduleCode + path` | Shell 加载菜单时追加 | `getRegisteredPageRoutes` |
-| 默认平台页 | `registerDefaultAdminPages` | auth、rbac、system 页面 | moduleCode + component | Shell 或 admin 入口初始化 | 菜单路由和页面加载 |
+默认能力配置：
 
-## 10. 管理入口
-前端页面注册必须和后端菜单一致：
+| 配置 | 含义 |
+|------|------|
+| `features: 'core'` | 只注册 authorization、system。 |
+| `features: 'full'` | 注册 core 和 workflow、file、template、notice、numgen、calendar、job。 |
+| `features: string[]` | core 永远启用，数组内能力额外启用。 |
+| `features: Record<string, boolean>` | core 永远启用，值为 `true` 的能力额外启用。 |
 
-| 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
-|-------------|---------------|--------|----------|-----------------|--------------|
-| 个人中心 | `profile/index` | 用户登录态 | Shell 隐藏路由 | 当前登录用户 | auth 接口 |
-| 修改密码 | `password/index` | 用户登录态 | Shell 隐藏路由 | 当前登录用户 | auth 接口 |
-| RBAC 页面 | `system/user/index` 等 | 后端定义 | authorization 初始化 | 角色授权 | authorization 接口 |
-| 业务页面 | 业务模块自己的 component key | 业务定义 | 业务 resource manifest | 角色授权 | 业务 Controller / Service |
+## 5. API 与扩展
 
-本包不做按钮权限或租户过滤。按钮显示可以读前端权限上下文，但后端接口必须再次校验。
+| API | 作用 |
+|-----|------|
+| `normalizeComponentPath(componentPath)` | 去掉 `@/`、`src/`、`views/`、`.vue`，得到页面 key。 |
+| `registerModulePages(registry)` | 注册一个模块的一组页面和隐藏路由。 |
+| `registerPage(moduleCode, component, loader)` | 注册单个页面。 |
+| `registerShellPages(loaders)` | 注册首页和 404 等 Shell 内置页面。 |
+| `getPageLoader(moduleCode, component)` | 优先按模块查找页面 loader；未传模块时全局查找。 |
+| `resolvePageModuleCode(component, path)` | 根据菜单 component 或 path 推断模块编码。 |
+| `getRegisteredPageRoutes(moduleCodes)` | 读取已注册的隐藏路由。 |
+| `registerDefaultAdminPages(options)` | 注册 Mango 内置 authorization、system 页面和自定义 registries。 |
+| `registerMangoNoticeBellProvider(provider)` | 注册通知铃铛组件和提醒配置读取函数。 |
+| `getMangoNoticeBellProvider()` | 获取通知铃铛提供方。 |
 
-## 11. 快速开始
-1. 在业务页面包中实现页面组件。
-2. 导出 `register<Module>Pages()`。
-3. 调用 `registerModulePages` 登记 `moduleCode`、`pages` 和必要的 `routes`。
-4. 在后台入口调用业务注册函数。
-5. 后端 resource manifest 或菜单初始化写入同一个 component key。
-6. 登录后台打开菜单，验证页面加载、接口鉴权和租户数据。
+## 6. 数据与初始化
 
-## 12. 问题排查
-| 问题 | 原因 | 处理方式 |
-|------|------|----------|
-| 菜单打开空白 | component key 没注册或 moduleCode 不一致 | 对比后端菜单和 `registerModulePages` |
-| 本地能打开，Shell 不能打开 | 入口没有调用业务注册函数 | 在 admin app 初始化前注册业务页面 |
-| 隐藏详情页 404 | 没传 `routes` | 在 `MangoPageRegistry.routes` 中登记隐藏路由 |
-| 权限绕过 | 只做了前端按钮隐藏 | 后端接口补权限和租户校验 |
+这个包不访问数据库，也不写菜单数据。菜单、按钮和权限由后端模块 migration 或初始化逻辑写入 `authorization_menu`。
 
-## 13. 相关文档
-- [前端代码规范](../../../mango-pmo/rules/frontend/01-vue-code.md)
-- [前端组件规范](../../../mango-pmo/rules/frontend/03-component-development.md)
-- [前端测试规范](../../../mango-pmo/rules/frontend/04-test.md)
+运行时数据来源：
+
+| 数据 | 来源 |
+|------|------|
+| 菜单树 | Admin Shell 请求 `/authorization/menus/user`。 |
+| 页面 loader | 各前端包调用 `registerModulePages()` 写入内存注册表。 |
+| 隐藏路由 | 各前端包注册 `routes`。 |
+| 默认系统页面 | `registerDefaultAdminPages()` 注册。 |
+
+## 7. 管理入口
+
+这个包本身没有管理页面。它服务于所有 Mango Admin 管理入口：后端菜单 `component` 最终必须能匹配到已注册页面 key。
+
+## 8. 快速开始
+
+1. 在业务前端包中新增 `admin-pages` 子入口。
+2. 调用 `registerModulePages()` 注册页面 key。
+3. 确保后端菜单 `moduleCode` 和 `component` 能匹配注册项。
+4. 在 Shell 启动时调用业务包注册函数。
+5. 打开菜单时，Shell 会用 `getPageLoader()` 加载页面。
+
+## 9. 问题排查
+
+**菜单打开后是 404**
+
+检查后端菜单 `component` 归一化后是否等于注册的页面 key，例如 `@/views/system/dict/index.vue` 会变成 `system/dict/index`。
+
+**同一个页面注册多次**
+
+注册函数应使用本地 `registered` 标记保证幂等。重复注册同一个 key 会覆盖旧 loader。
+
+**隐藏详情页无法访问**
+
+确认注册 `routes` 时 `path` 以 `/` 开头或能被自动补齐，`component` 能匹配 `pages` 中的页面 key。
+
+## 10. 相关文档
+
+- [Admin Shell README](../admin-shell/README.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-
-## 14. 历史资料
-- [Mango UI README](../../README.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)

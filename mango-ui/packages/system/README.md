@@ -1,63 +1,52 @@
 # @mango/system
 
 ## 1. 概览
-`@mango/system` 是 Mango 系统管理前端包，提供字典、参数配置、租户、公共路径、地区、业务域、登录日志、操作日志和系统事件运维页面，并导出业务域选择、参与人选择等业务页面可复用组件。
 
-这个包解决的是后台业务开发中“如何读取和维护系统基础数据”的问题。后端数据和接口分别来自 `mango-system`、`mango-domain`、`mango-identity`、`mango-org`、`mango-authorization` 和 `mango-infra-event`。
+`@mango/system` 是 Mango 系统管理前端包，提供字典、系统配置、租户、公共路径、地区、业务域、登录日志、操作日志、系统事件页面，并导出业务域选择和参与人选择等后台业务组件。
+
+集成形态：
+
+| 标识 | 说明 |
+|------|------|
+| `admin-pages` | 系统管理、租户、日志、业务域和事件运维页面。 |
+| `business-component` | `DomainSelector`、`DomainSideTree`、`ParticipantSelector` 可被后台业务页面复用。 |
+| `api-client` | system、domain、event、public path 相关 API 封装。 |
+
+它不是官网或 C 端站点组件库。页面和组件默认使用 Mango Admin 的请求、登录态、租户、权限和 Element Plus 样式。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 在 Mango Admin 中使用字典、系统配置、租户、地区、业务域和日志管理页面 | 前端注册 / 组件 / API 封装 |
-| 业务页面读取字典、系统配置、租户列表、地区树或业务域树 | 前端注册 / 组件 / API 封装 |
-| 在流程、模板、配置类页面中复用 ParticipantSelector 选择用户、组织、角色和岗位 | 前端注册 / 组件 / API 封装 |
-| 在业务列表中复用 DomainSelector 或 DomainSideTree 做业务域筛选 | 前端注册 / 组件 / API 封装 |
-| 运维排查事件 outbox 时使用 SystemEventView | 前端注册 / 组件 / API 封装 |
+| 能力 | 使用入口 | 后端依赖 |
+|------|----------|----------|
+| 字典类型和字典数据 | `DictView`、`dictTypeApi`、`dictDataApi` | `mango-system` |
+| 系统配置和参数 | `ConfigView`、`configApi`、`paramApi` | `mango-system` |
+| 租户 | `TenantView`、`tenantApi` | `mango-system`、`mango-authorization` |
+| 公共路径 | `PublicPathView`、public path API | BFF permission / authorization |
+| 地区 | `AreaView`、`areaApi` | `mango-system` |
+| 业务域 | `DomainView`、`domainApi`、`DomainSelector`、`DomainSideTree` | `mango-domain` |
+| 登录日志和操作日志 | `LoginLogView`、`OperationLogView`、log API | `mango-system` |
+| 系统事件 outbox | `SystemEventView`、`systemEventApi` | `mango-infra-event` |
+| 参与人选择 | `ParticipantSelector` | identity、org、authorization |
 
-## 3. 适用场景
-- 在 Mango Admin 中使用字典、系统配置、租户、地区、业务域和日志管理页面。
-- 业务页面读取字典、系统配置、租户列表、地区树或业务域树。
-- 在流程、模板、配置类页面中复用 `ParticipantSelector` 选择用户、组织、角色和岗位。
-- 在业务列表中复用 `DomainSelector` 或 `DomainSideTree` 做业务域筛选。
-- 运维排查事件 outbox 时使用 `SystemEventView`。
+## 3. 接入方式
 
-## 4. 边界说明
-- 不负责系统表、租户、字典、地区或业务域的后端初始化。
-- 不实现事件发布、消费、重试和 outbox 存储；`/system/events` 属于后端 `mango-infra-event`。
-- 不作为官网、营销页或 C 端前台组件库。
-- 不绕过后端权限、租户和数据范围校验。
+开发依赖：
 
-## 5. 模块组成
-本包只提供 Vue 页面、复用组件、API 封装和样式，不改变后端接口契约。
-
-边界拆分：
-
-- `mango-system`：字典、系统配置、租户、地区、登录日志、操作日志。
-- `mango-domain`：业务域管理和启用业务域树。
-- `mango-infra-event`：系统事件页面使用的事件查询、详情和重试接口。
-- `mango-identity`、`mango-org`、`mango-authorization`：参与人选择器和租户菜单包授权所需的用户、组织、岗位、角色、菜单和菜单包数据。
-
-## 6. 接入方式
-依赖包：
-
-```json
-{
-  "dependencies": {
-    "@mango/system": "1.0.7"
-  }
-}
+```bash
+pnpm add @mango/system
 ```
 
-页面和 API 引入：
+宿主应用需要提供 Vue、Vue Router、Element Plus，并接入 `@mango/common` 请求上下文。部署时根据使用页面启用 system、domain、identity、org、authorization、infra-event 后端能力。
+
+引入页面、组件和样式：
 
 ```ts
 import {
-  AreaView,
   ConfigView,
   DictView,
-  DomainView,
-  TenantView,
+  DomainSelector,
+  DomainSideTree,
+  ParticipantSelector,
   dictDataApi,
   domainApi,
   tenantApi,
@@ -65,107 +54,142 @@ import {
 import '@mango/system/style.css';
 ```
 
-业务组件引入：
+读取字典和业务域：
 
 ```ts
-import { DomainSelector, DomainSideTree, ParticipantSelector } from '@mango/system';
+const statusOptions = await dictDataApi.options('order_status');
+const domains = await domainApi.enabledTree();
 ```
 
-`@mango/system` 当前没有独立 `admin-pages` 注册入口；Mango Admin 默认页面注册在 `@mango/admin-pages` 中维护。业务项目自行接入时，需要把菜单 component 映射到导出的页面组件。
+复用业务域组件：
 
-## 7. 配置说明
-本包没有独立 Vite 环境变量。配置来自宿主应用请求层、菜单注册、后端数据和组件 props。
+```vue
+<script setup lang="ts">
+import { DomainSelector } from '@mango/system';
+import '@mango/system/style.css';
+</script>
 
-| 配置位置 | 字段 / 参数 | 含义 |
-|----------|-------------|------|
+<template>
+  <DomainSelector v-model="domainId" clearable />
+</template>
+```
+
+## 4. 配置说明
+
+本包没有独立 Vite 环境变量。配置来自宿主请求层、页面注册、后端数据和组件 props。
+
+| 配置位置 | 字段 | 含义 |
+|----------|------|------|
 | 宿主应用 | API baseURL / 代理 | 决定 `/system/**`、`/domain/**`、`/bff/permission/**` 请求转发目标。 |
-| `@mango/admin-pages` | 页面 key | 默认注册 system 页面 component 映射。 |
-| `DomainSelector` | `multiple`、`clearable`、`disabled`、`checkStrictly`、`placeholder` | 控制业务域树选择方式。 |
-| `DomainSideTree` | `options`、`counts`、`showAll`、`searchable`、`allCode` | 控制左侧业务域树数据来源、数量展示和筛选。 |
-| `ParticipantSelector` | `userOptions`、`roleOptions`、`postOptions`、`orgTreeOptions`、`targetLoading` | 控制参与人候选项。用户候选项未传时组件会读取 `/identity/users/page` 前 200 条。 |
+| 页面注册 | 页面 key | Mango Admin 默认页面通常由 `@mango/admin-pages` 注册。 |
+| `DomainSelector` | `multiple`、`clearable`、`disabled`、`checkStrictly`、`placeholder` | 控制业务域下拉选择。 |
+| `DomainSideTree` | `options`、`counts`、`showAll`、`searchable`、`allCode` | 控制左侧业务域树、数量和筛选。 |
+| `ParticipantSelector` | `userOptions`、`roleOptions`、`postOptions`、`orgTreeOptions`、`targetLoading` | 控制参与人候选项。 |
 
-后端系统配置通过 `configApi.byGroup(group)` 读取，字典选项通过 `dictDataApi.options(typeCode)` 读取；这些不是前端构建配置，而是后端数据。
+系统配置和字典是后端数据，不是前端构建配置。业务页面要通过 `configApi.byGroup(group)`、`dictDataApi.options(typeCode)` 读取。
 
-## 8. API 与扩展
+## 5. API 与扩展
+
 页面导出：
 
-| 导出 | 页面能力 | 默认页面 key |
-|------|----------|--------------|
-| `DictView` | 字典类型和字典数据管理 | `system/dict/index` |
-| `OperationLogView` | 操作日志查询和清理 | `system/operation-log/index` |
-| `LoginLogView` | 登录日志、登录统计和清理 | `system/login-log/index` |
-| `TenantView` | 租户维护、状态切换、菜单包授权 | `system/tenant/index` |
-| `ConfigView` | 系统配置管理和分组查询 | `system/config/index` |
-| `PublicPathView` | 公共路径维护 | `system/public-path/index` |
-| `AreaView` | 地区树管理 | `system/area/index` |
-| `DomainView` | 业务域树管理 | `system/domain/index` |
-| `SystemEventView` | 事件 outbox 查询、详情和重试 | `system/event/index` |
-
-API 导出：
-
-- `dictTypeApi`、`dictDataApi`：`/system/dict/type/**`、`/system/dict/data/**`。
-- `configApi`、`paramApi`：`/system/config/**`。
-- `tenantApi`：`/system/tenant/**`。
-- `areaApi`：`/system/area/**`。
-- `loginLogApi`、`operationLogApi`：`/system/log/login/**`、`/system/log/operation/**`。
-- `publicPath` 方法：`/bff/permission/public-path`。
-- `domainApi`：`/domain/domains/**`。
-- `systemEventApi`：`/system/events`、`/system/events/detail`、`/system/events/reconsume`。
+| 导出 | 默认页面 key | 管理能力 |
+|------|--------------|----------|
+| `DictView` | `system/dict/index` | 字典类型和字典数据。 |
+| `OperationLogView` | `system/operation-log/index` | 操作日志查询和清理。 |
+| `LoginLogView` | `system/login-log/index` | 登录日志、统计和清理。 |
+| `TenantView` | `system/tenant/index` | 租户维护、状态切换、菜单包授权。 |
+| `ConfigView` | `system/config/index` | 系统配置管理和分组查询。 |
+| `PublicPathView` | `system/public-path/index` | 公共路径维护。 |
+| `AreaView` | `system/area/index` | 地区树管理。 |
+| `DomainView` | `system/domain/index` | 业务域树管理。 |
+| `SystemEventView` | `system/event/index` | 事件 outbox 查询、详情和重试。 |
 
 组件导出：
 
-- `ParticipantSelector`
-- `DomainSelector`
-- `DomainSideTree`
-- `ParticipantSelectorValue`
-- `ParticipantTargetOption`
-- `ParticipantOrgTreeOption`
-- `ParticipantSelectorLoading`
-- `ParticipantType`
+| 导出 | 用途 |
+|------|------|
+| `ParticipantSelector` | 选择用户、部门范围、角色、岗位组合。 |
+| `DomainSelector` | 业务域树下拉选择，返回业务域 id。 |
+| `DomainSideTree` | 后台列表左侧业务域树，返回业务域 code。 |
+| `ParticipantSelectorValue` 等类型 | 参与人选择器类型。 |
 
-## 9. 数据与初始化
-本包不包含数据库 migration。
+主要 API：
 
-| 数据 | 初始化来源 |
-|------|------------|
-| 字典、系统配置、租户、地区、登录日志、操作日志 | 后端 `mango-system`。 |
-| 业务域 | 后端 `mango-domain`。 |
-| 菜单、菜单包、租户授权 | 后端 `mango-authorization`，租户页面通过 `@mango/rbac` 的 `menuApi` 和 `menuPackageApi` 协作。 |
-| 用户、组织、岗位、角色 | 后端 `mango-identity`、`mango-org`、`mango-authorization`。 |
-| 系统事件 | 后端 `mango-infra-event` outbox 数据。 |
+| API | 主要接口 | 能力 |
+|-----|----------|------|
+| `dictTypeApi` | `/system/dict/type/list` | 字典类型列表、详情、创建、更新、删除。 |
+| `dictDataApi` | `/system/dict/data/list`、`/system/dict/data/options` | 字典数据维护和选项读取。 |
+| `configApi` | `/system/config/list`、`/system/config/type` | 系统配置 CRUD、按组读取、分组列表。 |
+| `paramApi` | `/system/config/list`、`/system/config/value` | 参数维护和值更新。 |
+| `tenantApi` | `/system/tenant/list` | 租户 CRUD 和状态切换。 |
+| `areaApi` | `/system/area/tree`、`/system/area/children` | 地区树、子节点、详情、维护。 |
+| public path API | `/bff/permission/public-path` | 公共路径增删改查。 |
+| `domainApi` | `/domain/domains/page`、`/domain/domains/enabled-tree` | 业务域分页、树、启用树、详情、编码查询、状态切换。 |
+| `loginLogApi` | `/system/log/login/list` | 登录日志查询、详情、清理、统计。 |
+| `operationLogApi` | `/system/log/operation/list` | 操作日志查询、详情、清理。 |
+| `systemEventApi` | `/system/events` | 事件分页、详情和重新消费。 |
 
-## 10. 管理入口
-前端只负责页面展示和 component 映射。系统配置、租户、公共路径、日志、业务域和事件操作都必须由后端按登录态、租户上下文、角色授权和数据范围校验。
+常用返回字段：
 
-注意事项：
+| 数据 | 字段 |
+|------|------|
+| 字典选项 | `label`、`value`、`sort`、`status` |
+| 系统配置 | `id`、`configKey`、`configValue`、`configType`、`group` |
+| 租户 | `id`、`tenantCode`、`tenantName`、`status` |
+| 业务域 | `id`、`domainCode`、`domainShortCode`、`domainName`、`children` |
+| 系统事件 | `messageId`、`eventType`、`status`、`retryCount`、`createTime` |
 
-- 租户页面会读取菜单包和菜单树，依赖 `@mango/rbac` 及 authorization 后端。
-- 公共路径页面维护的是权限绕过路径，应只给平台管理员。
-- 事件重试会影响消息消费，应只给运维或平台管理员。
-- 业务域选择器返回 id 或 code 只是前端筛选条件，业务提交时仍由业务后端校验。
+## 6. 数据与初始化
 
-## 11. 快速开始
-1. 后端启用 `mango-system`，按业务需要启用 `mango-domain` 和 `mango-infra-event`。
-2. 前端引入 `@mango/system/style.css`，按菜单 component 映射页面组件。
-3. 业务页面读取字典、配置、地区、租户或业务域 API，而不是硬编码枚举。
-4. 需要选择用户、组织、角色、岗位时使用 `ParticipantSelector`，并明确候选项来自后端接口。
-5. 验证无权限账号无法访问系统配置、租户授权、公共路径和事件重试。
+`@mango/system` 不包含 migration。页面和组件依赖后端数据：
 
-## 12. 问题排查
-- 字典为空：检查后端字典初始化和 `typeCode` 是否正确。
-- 租户列表为空：检查 `mango-system` 租户数据和当前账号权限。
-- 租户授权菜单树为空：检查 authorization 菜单、菜单包和 `internal-admin` 应用数据。
-- 业务域树为空：检查 `mango-domain` 是否启用，业务域状态是否为启用。
-- 事件页面为空：检查 `mango-infra-event` 是否启用 outbox，以及当前环境是否产生事件。
-- 参与人名称不回显：检查传入候选项是否包含已选 id；组件不会凭空反查所有角色、岗位和组织名称。
+| 数据 | 来源 | 前端消费 |
+|------|------|----------|
+| 字典、配置、租户、地区、日志 | `mango-system` | 系统管理页面、字典和配置 API。 |
+| 业务域 | `mango-domain` | 业务域页面、`DomainSelector`、`DomainSideTree`。 |
+| 菜单、菜单包、租户授权 | `mango-authorization`、`@mango/rbac` API | 租户菜单包授权。 |
+| 用户、组织、岗位、角色 | `mango-identity`、`mango-org`、`mango-authorization` | `ParticipantSelector` 候选项。 |
+| 系统事件 | `mango-infra-event` outbox | 事件运维页面。 |
 
-## 13. 相关文档
-- [前端模块规范](../../../mango-pmo/rules/frontend/01-vue-code.md)
-- [前端测试规范](../../../mango-pmo/rules/frontend/04-test.md)
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+## 7. 管理入口
 
-## 14. 历史资料
+系统类页面通常只给平台管理员或运维角色。特别注意：
+
+| 入口 | 风险 |
+|------|------|
+| 系统配置 | 可能影响全局业务开关。 |
+| 租户 | 可能影响租户状态和菜单授权。 |
+| 公共路径 | 可能绕过接口权限，必须严格授权。 |
+| 操作日志和登录日志清理 | 会删除审计数据。 |
+| 系统事件重试 | 会触发消息重新消费，可能改变业务状态。 |
+
+前端选择器返回 id 或 code 只是业务提交参数，最终仍由业务后端校验权限、租户和数据范围。
+
+## 8. 快速开始
+
+1. 后端启用 `mango-system`，按需启用 `mango-domain`、`mango-infra-event`、identity、org、authorization。
+2. 前端安装 `@mango/system`，引入 `@mango/system/style.css`。
+3. 用 `@mango/admin-pages` 默认注册系统页面，或手工把页面 key 映射到导出组件。
+4. 业务页面通过 `dictDataApi.options()`、`configApi.byGroup()`、`domainApi.enabledTree()` 读取基础数据。
+5. 需要业务域筛选时使用 `DomainSelector` 或 `DomainSideTree`。
+6. 需要选择用户、组织、角色、岗位时使用 `ParticipantSelector` 并准备候选项。
+
+## 9. 问题排查
+
+| 问题 | 常见原因 | 处理方式 |
+|------|----------|----------|
+| 字典为空 | `typeCode` 错误、字典未初始化或无权限 | 查 `/system/dict/data/options`。 |
+| 配置读取为空 | 分组或配置 key 不一致 | 查 `/system/config/type`。 |
+| 租户授权菜单树为空 | 菜单包、菜单或 appCode 缺失 | 查 authorization 菜单和菜单包。 |
+| 业务域树为空 | `mango-domain` 未启用、无启用业务域或无权限 | 查 `/domain/domains/enabled-tree`。 |
+| 事件页面为空 | 当前环境没有 outbox 事件或后端未启用 event | 查 `/system/events`。 |
+| 参与人名称不回显 | 候选项里没有已选 id | 给组件传入包含已选项的候选数据。 |
+
+## 10. 相关文档
+
 - [System 后端 README](../../../mango/mango-platform/mango-system/README.md)
 - [Domain 后端 README](../../../mango/mango-platform/mango-domain/README.md)
 - [Event 后端 README](../../../mango/mango-infra/mango-infra-event/README.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+- [@mango/system Components](./src/components/README.md)
+- [@mango/rbac](../rbac/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

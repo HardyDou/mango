@@ -22,19 +22,14 @@
 | 业务仓需要在本仓保存业务计划、设计、证据和例外记录 | CLI / 模板 / 生成产物 |
 | 业务仓升级 Mango baseline 时同步规则、Agent 和工具 | CLI / 模板 / 生成产物 |
 
-## 3. 适用场景
-- 生成业务项目后执行 PMO preflight。
-- 业务需求、设计、开发、验证和发布需要交付契约和台账。
-- 业务仓需要在本仓保存业务计划、设计、证据和例外记录。
-- 业务仓升级 Mango baseline 时同步规则、Agent 和工具。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不作为 Mango 长期规范源。
 - 不随普通业务需求直接修改 `mango-baseline/**`。
 - 不保存业务源码、数据库 migration、菜单权限资源或运行时配置。
 - 不替代业务模块 README、业务设计文档和测试报告。
 
-## 5. 模块组成
+## 4. 模块入口
 `business-pmo/mango-baseline` 是可同步快照；业务自有文档放在 baseline 外，例如 `business-docs/plans` 和 `business-docs/evidence`。
 
 边界要求：
@@ -44,7 +39,7 @@
 - Agent 每次正式交付前读取 preflight 输出的 Must read 文件原文。
 - 规则冲突或例外写入业务交付记录，不在 baseline 里临时改规则绕过。
 
-## 6. 接入方式
+## 5. 接入方式
 preflight：
 
 ```bash
@@ -73,7 +68,7 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
   --mode verify
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 本目录没有运行时配置。工具参数和 `rules/index.json` 是配置入口。
 
 | 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
@@ -88,7 +83,7 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 | delivery 参数 | `--require` | 空 | 必须覆盖的条目 | 同时检查设计和台账 | `checkRequiredItems` |
 | delivery 参数 | `--scan` | 空 | 扫描路径 | 检查禁用词 | `checkForbidden` |
 
-## 8. API 与扩展
+## 7. API 与扩展
 | 扩展点 | 可扩展内容 | 约束 |
 |--------|------------|------|
 | `mango-baseline/rules/index.json` | role、phase、bundle、keyword、path 路由 | baseline 升级任务中维护 |
@@ -97,7 +92,7 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 | `mango-baseline/templates/delivery-contract.md` | 交付契约模板 | 复制到 `business-docs` 后填写 |
 | `business-docs/**` | 业务设计、计划、台账、证据 | 业务团队维护 |
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 本目录不包含数据库 migration。初始化内容是模板生成的规则、工具和 README。
 
 | 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
@@ -106,17 +101,17 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 | 业务计划示例 | `business-docs/plans` | example contract 和 ledger | 文件路径 | 生成业务项目 | delivery check 能解析 |
 | Agent 入口 | 项目根 `AGENTS.md` | 规则路由入口 | 文件路径 | 生成业务项目 | 人工检查入口指向本仓 baseline |
 
-## 10. 管理入口
+## 9. 管理入口
 本目录不提供菜单、权限资源或租户数据。涉及菜单、权限和租户时，preflight 会根据任务和路径命中后端模块、数据库、安全或前端规则；实际资源在业务模块的 migration、resource manifest、授权配置和验收证据中登记。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 需求开始前执行 preflight，按输出读取 Must read 文件原文。
 2. 创建设计说明和交付台账，并用 `delivery-contract-check.mjs --mode plan` 检查列和覆盖项。
 3. 开发过程中把证据和例外写入 `business-docs`。
 4. 交付前执行 `delivery-contract-check.mjs --mode verify`，确认状态为 `DONE` 或有明确 `EXCEPTION`。
 5. 最终回复列出实际加载的 baseline 文件、验证命令、未验证项和 PMO 例外。
 
-## 12. 问题排查
+## 11. 问题排查
 | 问题 | 原因 | 处理方式 |
 |------|------|----------|
 | Must read 不符合预期 | `--task` 和 `--paths` 太空泛 | 写清任务关键词和影响路径 |
@@ -125,12 +120,12 @@ node business-pmo/mango-baseline/tools/delivery-contract-check.mjs \
 | 禁用词扫描失败 | 代码或文档仍有临时实现标记 | 删除临时实现或登记明确例外 |
 | 普通需求改了 baseline | 把规则当成业务文档改了 | 还原 baseline，业务说明放入 `business-docs` |
 
-## 13. 相关文档
+## 12. 相关文档
 - [开发流程规范](./mango-baseline/rules/00-dev-flow.md)
 - [交付契约规范](./mango-baseline/rules/01-delivery-contract.md)
 - [AI 编码红线](./mango-baseline/rules/03-ai-coding-redlines.md)
 - [开发环境规范](./mango-baseline/rules/02-dev-environment.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [Mango Baseline README](./mango-baseline/README.md)
 - [交付契约模板](./mango-baseline/templates/delivery-contract.md)

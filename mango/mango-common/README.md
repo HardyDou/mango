@@ -15,20 +15,14 @@
 | 列表接口使用 PageQuery 和 PageResult&lt;T&gt; | Maven 依赖 / HTTP API / Java API |
 | 业务断言使用 Require，避免到处手写异常 | Maven 依赖 / HTTP API / Java API |
 
-## 3. 适用场景
-- Controller 返回统一 `R<T>`。
-- Service 或校验逻辑抛出 `BizException`。
-- 模块自定义错误码实现 `BizCode`。
-- 列表接口使用 `PageQuery` 和 `PageResult<T>`。
-- 业务断言使用 `Require`，避免到处手写异常。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不放业务实体、VO、DTO 或业务枚举。
 - 不放 Spring Bean、AutoConfiguration、ControllerAdvice、Filter、Interceptor。
 - 不放数据库、Redis、租户、登录上下文、地区规则、文件或支付等技术/业务实现。
 - 不放只服务某个模块的工具类。
 
-## 5. 模块组成
+## 4. 模块入口
 `mango-common` 只提供跨模块稳定 Java 契约。技术实现放到 `mango-infra`，平台业务事实放到 `mango-platform`，业务私有对象放到业务模块自己的 `api` 或 `core`。
 
 当前核心包：
@@ -38,7 +32,7 @@
 - `io.mango.common.po`
 - `io.mango.common.vo`
 
-## 6. 接入方式
+## 5. 接入方式
 Maven 依赖：
 
 ```xml
@@ -78,7 +72,7 @@ import io.mango.common.vo.PageResult;
 PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.getSize());
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 无运行时配置项。
 
 `PageQuery` 有内置分页约束：
@@ -89,7 +83,7 @@ PageResult<OrderVO> result = PageResult.of(rows, total, query.getPage(), query.g
 | `size` | `10` | 小于等于 0 时按 10 处理。 |
 | 最大 `size` | `500` | 超过 500 时按 500 处理。 |
 
-## 8. API 与扩展
+## 7. API 与扩展
 | 类型 | 能力 |
 |------|------|
 | `R<T>` | 统一返回体，字段为 `code`、`success`、`msg`、`data`。 |
@@ -112,13 +106,13 @@ public enum OrderCode implements BizCode {
 }
 ```
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 无数据库、migration、Runner 或 Initializer。
 
-## 10. 管理入口
+## 9. 管理入口
 无菜单、权限和租户能力。它只提供公共 Java 契约，不能用于绕过权限、登录或租户校验。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 业务模块依赖 `mango-common`。
 2. Controller 返回 `R<T>` 或由统一 Web 层包装。
 3. 查询对象继承或组合 `PageQuery`。
@@ -126,17 +120,17 @@ public enum OrderCode implements BizCode {
 5. 业务异常使用 `BizException` 或 `Require`。
 6. 模块级错误码实现 `BizCode`，不要复用 HTTP 状态码表达业务细分错误。
 
-## 12. 问题排查
+## 11. 问题排查
 - 是否可以把业务 DTO 放 common：不可以，放业务模块 api。
 - 是否可以在 common 加 Spring 工具：不可以，放 infra。
 - 为什么 `PageResult` 会复制 list：避免外部直接修改内部状态。
 - 为什么 `PageQuery` 最大 500：保护列表接口，避免无上限分页拖垮数据库。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)
 - [后端 API 规范](../../mango-pmo/rules/backend/03-api.md)
 - [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [Mango 后端根 README](../README.md)
 - [Mango 能力地图](../../mango-docs/capabilities/README.md)

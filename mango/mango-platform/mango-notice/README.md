@@ -1,45 +1,65 @@
 # 通知 Notice
 
 ## 1. 概览
-`mango-notice` 提供统一通知中心能力：业务通知类型、发布配置版本、渠道模板、渠道配置、通知任务、发送记录、站内信、接收账户、接收偏好和失败重试。
 
-主要使用者是需要给用户发送站内信、短信、邮件、企业微信、钉钉或微信公众号通知的业务模块。
+`mango-notice` 是 Mango 的统一通知中心，用来把业务事件转换成站内信、短信、邮件、企业微信、钉钉、微信公众号等渠道通知。
+
+业务模块使用它时只需要关心：
+
+- 用哪个 `bizType` 表示这类通知。
+- 通知发给谁。
+- 模板需要哪些参数。
+- 通知失败后业务是否需要补偿或人工处理。
+
+`mango-notice` 不产生业务事件，也不替代 IM 聊天系统。订单创建、审批完成、任务失败等事件仍由业务模块触发。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 业务希望用一个 bizType 发送多渠道通知，并通过模板渲染标题和内容 | Maven 依赖 / HTTP API / Java API |
-| 管理员需要维护通知业务类型、渠道模板、渠道账号和通知设置 | Maven 依赖 / HTTP API / Java API |
-| 业务需要记录每个接收人、每个渠道的发送结果，并支持失败重试、人工成功、忽略失败 | Maven 依赖 / HTTP API / Java API |
-| 用户需要维护自己的短信、邮件、企微等接收账户和接收偏好 | Maven 依赖 / HTTP API / Java API |
-| 站内信需要落库，前端需要查询未读数、列表、详情、已读和删除 | Maven 依赖 / HTTP API / Java API |
+| 能力 | 说明 | 使用入口 |
+|------|------|----------|
+| 业务通知发送 | 按 `bizType`、接收人和模板参数创建通知任务 | `NoticeApi.send` / `POST /notice/send` |
+| 站内信快捷发送 | 管理端或业务端直接发送站内信 | `NoticeApi.sendSiteMessage` / `POST /notice/site/messages` |
+| 业务类型管理 | 定义消息 Key、名称、业务域、模板参数和发送策略 | `/notice/business-types/**` |
+| 配置版本发布 | 维护草稿、生效版本、历史版本 | `/notice/business-types/{id}/config-*` |
+| 渠道模板 | 为站内信、短信、邮件等渠道配置标题和内容模板 | `/notice/business-types/{id}/channel-templates/**` |
+| 渠道配置 | 保存第三方账号、Webhook、Secret、签名等配置 | `/notice/channels/**` |
+| 任务和发送记录 | 查询任务、每个接收人每个渠道的发送结果 | `/notice/tasks`、`/notice/records` |
+| 失败处理 | 支持单条/批量重试、人工成功、忽略失败 | `/notice/records/**` |
+| 接收账户 | 维护用户手机号、邮箱、企业微信 ID 等接收账户 | `/notice/recipient-accounts/**` |
+| 接收偏好 | 维护用户或范围级渠道开关 | `/notice/receive-preferences` |
+| 我的站内信 | 查询未读数、列表、详情、已读和删除 | `/notice/site/my/**` |
 
-## 3. 适用场景
-- 业务希望用一个 `bizType` 发送多渠道通知，并通过模板渲染标题和内容。
-- 管理员需要维护通知业务类型、渠道模板、渠道账号和通知设置。
-- 业务需要记录每个接收人、每个渠道的发送结果，并支持失败重试、人工成功、忽略失败。
-- 用户需要维护自己的短信、邮件、企微等接收账户和接收偏好。
-- 站内信需要落库，前端需要查询未读数、列表、详情、已读和删除。
+## 3. 后端接入
 
-## 4. 边界说明
-- 不产生业务事件；订单创建、审批完成、任务失败等事件由业务模块触发。
-- 不保证第三方账号、签名、模板审核一定可用；外部服务错误会记录到发送结果里。
-- 不替代 IM 长连接聊天系统；站内信是通知消息，不是实时会话。
-- 不负责用户手机号、邮箱、企微 ID 的主数据维护，只读取或保存通知接收账户。
+### 3.1 开发依赖
 
-## 5. 模块组成
-- `mango-notice-api`：`NoticeApi`、发送命令、配置命令、查询对象、VO 和枚举。
-- `mango-notice-core`：通知业务、渠道、任务、发送记录、站内信、接收偏好、设置和 outbox 调度逻辑。
-- `mango-notice-support`：`NoticeChannelSender` SPI 和渠道发送命令、结果模型。
-- `mango-notice-starter`：`NoticeAutoConfiguration`、`NoticeOutboxAutoConfiguration`、`NoticeProperties`、`NoticeOutboxWorker`。
-- `mango-notice-starter-remote`：`NoticeFeignClient`，供微服务远程发送通知。
-- 渠道模块：`mango-notice-channel-site`、`email`、`sms`、`wecom`、`dingtalk`、`wechat-official`。
+业务模块只需要面向通知 API 编码时，引入 `mango-notice-api`：
 
-业务模块负责定义通知业务编码、准备模板参数、选择接收人，并处理“通知失败后业务是否回滚”的策略。
+```xml
+<dependency>
+    <groupId>io.mango.platform.notice</groupId>
+    <artifactId>mango-notice-api</artifactId>
+</dependency>
+```
 
-## 6. 接入方式
-提供通知中心接口和任务执行的服务引入 starter：
+业务代码优先依赖 `NoticeApi`：
+
+```java
+import io.mango.notice.api.NoticeApi;
+import io.mango.notice.api.command.SendNoticeCommand;
+
+SendNoticeCommand command = new SendNoticeCommand();
+command.setBizType("JOB_EXECUTION_FAILED");
+command.setBizId("job-1001");
+command.getParams().put("jobName", "daily-settle");
+command.setUserId(1001L);
+
+noticeApi.send(command);
+```
+
+### 3.2 部署依赖
+
+提供通知中心接口和任务执行能力的应用启用 starter：
 
 ```xml
 <dependency>
@@ -48,7 +68,16 @@
 </dependency>
 ```
 
-按需引入渠道模块：
+微服务中只远程调用通知中心的应用启用 remote starter：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.notice</groupId>
+    <artifactId>mango-notice-starter-remote</artifactId>
+</dependency>
+```
+
+按需引入渠道模块。没有引入对应渠道模块时，只保存渠道配置不会产生实际投递能力。
 
 ```xml
 <dependency>
@@ -65,32 +94,47 @@
 </dependency>
 ```
 
-只做远程发送的服务引入 remote starter：
+## 4. 前端接入
 
-```xml
-<dependency>
-    <groupId>io.mango.platform.notice</groupId>
-    <artifactId>mango-notice-starter-remote</artifactId>
-</dependency>
+通知前端能力在 `@mango/notice`：
+
+- `admin-pages`：通知业务配置、渠道管理、发送消息、任务、记录、重试、站内信、全局设置、接收设置页面。
+- `admin-shell`：管理后台顶部通知铃铛。
+- `client`：客户端铃铛、消息中心、接收设置组件。
+- `realtime`：通知实时订阅、桌面通知、声音和语音提醒工具。
+
+注册管理页面：
+
+```ts
+import { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
+
+registerMangoNoticeAdminPages();
 ```
 
-业务代码优先注入 `NoticeApi`，调用 `send(SendNoticeCommand)`。
+注册 Shell 通知铃铛：
 
-## 7. 配置说明
-配置前缀：`mango.notice`。
+```ts
+import { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 
-| 配置项 | 类型 | 默认值 | 含义 |
-|--------|------|--------|------|
-| `outbox.enabled` | boolean | `true` | 是否注册通知 outbox 分发器相关 Bean。 |
-| `outbox.dispatch-enabled` | boolean | `true` | 是否启动本地 `NoticeOutboxWorker` 后台轮询。关闭后可由外部调度触发 dispatcher。 |
-| `outbox.worker-id` | string | `notice-outbox-worker` | outbox claim 使用的 worker 标识，也会用于线程名。 |
-| `outbox.batch-size` | int | `50` | 每次从 outbox claim 的消息数；小于等于 0 时不会处理消息。 |
-| `outbox.max-attempts` | int | `3` | 单条 outbox 消息最大处理次数，超过后会终止等待重试记录。 |
-| `outbox.retry-delay-seconds` | long | `60` | 分发失败或仍有待重试记录时，下次可处理时间延迟秒数。 |
-| `outbox.initial-delay-millis` | long | `1000` | worker 启动后第一次调度延迟。 |
-| `outbox.fixed-delay-millis` | long | `1000` | worker 两次调度之间的固定延迟。 |
+registerMangoNoticeAdminShell();
+```
 
-配置示例：
+业务前端如果只是读取站内信或未读数，使用 `@mango/notice` 的 API 封装即可。业务通知发送更推荐由业务后端调用 `NoticeApi`，这样可以和业务事务、幂等键、失败补偿放在同一条链路里处理。
+
+## 5. 快速开始
+
+1. 部署通知中心应用，启用 `mango-notice-starter`、`mango-infra-kv` outbox 和需要的渠道模块。
+2. 执行 notice、authorization、system、identity、org 等相关 migration。
+3. 在通知管理页创建业务类型，例如 `JOB_EXECUTION_FAILED`。
+4. 保存业务配置草稿，定义模板参数、默认优先级、幂等策略，并发布。
+5. 保存渠道模板，例如站内信标题、站内信内容、邮件标题、邮件内容。
+6. 保存渠道配置，例如站内信内置渠道、邮件账号、短信 provider 配置。
+7. 业务后端调用 `NoticeApi.send`，传入 `bizType`、`bizId`、接收人和 `params`。
+8. 在任务、发送记录、站内信列表里确认发送结果。
+
+## 6. 配置说明
+
+YAML 只配置通知 outbox 分发行为。渠道账号、签名、模板 ID、Webhook、Secret 等运行时配置保存在 `notice_channel_config.config_json`，通过通知渠道管理页面维护。
 
 ```yaml
 mango:
@@ -98,125 +142,178 @@ mango:
     outbox:
       enabled: true
       dispatch-enabled: true
-      worker-id: notice-1
+      worker-id: notice-outbox-worker
       batch-size: 50
       max-attempts: 3
       retry-delay-seconds: 60
+      initial-delay-millis: 1000
+      fixed-delay-millis: 1000
 ```
 
-渠道账号、签名、模板 ID、Webhook、Secret 等不是 YAML 配置，而是通过 `/notice/channels` 保存到 `notice_channel_config.config_json`。不同渠道模块读取自己的 `channelConfigJson`。
+## 7. YAML 配置字段
 
-## 8. API 与扩展
+| 配置项 | 默认值 | 含义 |
+|--------|--------|------|
+| `mango.notice.outbox.enabled` | `true` | 是否注册通知 outbox dispatcher。 |
+| `mango.notice.outbox.dispatch-enabled` | `true` | 是否启动本地 `NoticeOutboxWorker` 后台轮询。 |
+| `mango.notice.outbox.worker-id` | `notice-outbox-worker` | claim outbox 消息的 worker 标识。 |
+| `mango.notice.outbox.batch-size` | `50` | 每次 claim 的消息数量，小于等于 0 时不会处理消息。 |
+| `mango.notice.outbox.max-attempts` | `3` | 单条 outbox 消息最大处理次数。 |
+| `mango.notice.outbox.retry-delay-seconds` | `60` | 分发失败或仍有待重试记录时，下次处理延迟秒数。 |
+| `mango.notice.outbox.initial-delay-millis` | `1000` | worker 启动后第一次执行延迟。 |
+| `mango.notice.outbox.fixed-delay-millis` | `1000` | worker 两次执行之间的固定延迟。 |
+
+## 8. 运行时配置字段
+
+### 8.1 发送通知字段
+
+| 字段 | 含义 |
+|------|------|
+| `bizType` | 通知业务类型，必填。 |
+| `bizId` | 业务对象 ID，用于追踪和幂等。 |
+| `params` | 模板参数 Map。 |
+| `channelTypes` | 本次指定发送渠道；为空时按业务类型启用模板发送。 |
+| `recipients` | 明确接收人列表，可传用户 ID、手机号、邮箱、企微 ID、钉钉 ID 等。 |
+| `recipientTargets` | 接收目标，支持 `USER`、`ORG`、`POST`、`ROLE`。 |
+| `userId` / `userIds` | 单用户或批量用户快捷发送字段。 |
+| `recipientRuleCode` | 接收人规则编码。 |
+| `title` / `content` | 未配置业务模板时用于直接发送。 |
+| `attachmentFileIds` | 附件文件 ID 列表，只传文件中心标识。 |
+| `priority` | 通知优先级，默认 `NORMAL`。 |
+| `sendMode` | 发送模式，默认 `IMMEDIATE`。 |
+| `scheduledTime` | 定时发送时间。 |
+| `idempotentKey` | 幂等键。 |
+
+### 8.2 接收人字段
+
+| 字段 | 含义 |
+|------|------|
+| `userId` | 接收用户 ID。 |
+| `recipientName` | 接收人名称。 |
+| `mobile` | 手机号。 |
+| `email` | 邮箱。 |
+| `wechatOpenid` | 微信 openid。 |
+| `wecomUserId` | 企业微信用户 ID。 |
+| `dingtalkUserId` | 钉钉用户 ID。 |
+| `externalId` | 外部联系人标识。 |
+
+### 8.3 渠道与模板
+
+| 配置 | 含义 |
+|------|------|
+| 业务类型 | 定义通知业务 Key、名称、业务域、参数 schema、默认优先级和幂等策略。 |
+| 配置版本 | 业务类型的草稿、生效和历史配置。 |
+| 渠道模板 | 每个渠道的标题模板、内容模板和发布状态。 |
+| 渠道配置 | provider、账号、Secret、Webhook、签名、模板 ID、限流等 JSON 配置。 |
+| 接收账户 | 用户手机号、邮箱、企微 ID、钉钉 ID 等接收地址。 |
+| 接收偏好 | 用户或范围级渠道开关。 |
+
+## 9. 请求与返回字段
+
 HTTP 根路径：`/notice`。
 
 | 分类 | 接口 | 权限 | 用途 |
 |------|------|------|------|
 | 发送 | `POST /notice/send` | `notice:task:create` | 按业务类型发送通知。 |
-| 发送 | `POST /notice/site/messages` | `notice:site:create` | 管理端快捷发送站内信。 |
-| 业务配置 | `/notice/business-types/**` | `notice:business:*` | 维护业务类型、发布配置版本和渠道模板。 |
-| 渠道配置 | `GET /notice/channels` | `notice:channel:view` | 查询渠道配置。 |
-| 渠道配置 | `POST /notice/channels` | `notice:channel:create` | 保存渠道配置。 |
-| 渠道配置 | `DELETE /notice/channels` | `notice:channel:delete` | 删除渠道配置。 |
-| 内部接口 | `GET /notice/internal/wecom-login-config` | INTERNAL | 认证服务读取企微扫码登录配置。 |
-| 任务记录 | `GET /notice/tasks` | `notice:task:view` | 查询通知任务。 |
-| 发送记录 | `GET /notice/records` | `notice:record:view` | 查询每个接收人、每个渠道的发送记录。 |
-| 失败处理 | `/notice/records/**` | `notice:retry:edit` | 重试、批量重试、人工成功、忽略失败。 |
-| 设置 | `GET/PUT /notice/settings` | `notice:setting:*` | 读取和保存通知设置。 |
-| 接收账户 | `/notice/recipient-accounts/**` | `notice:receive-setting:*` | 维护用户短信、邮件、企微等接收账户。 |
+| 站内信 | `POST /notice/site/messages` | `notice:site:create` | 快捷发送站内信。 |
+| 业务类型 | `/notice/business-types/**` | `notice:business:*` | 维护业务类型、配置版本和渠道模板。 |
+| 渠道配置 | `/notice/channels/**` | `notice:channel:*` | 查询、保存、删除渠道配置。 |
+| 内部配置 | `GET /notice/internal/wecom-login-config` | INTERNAL | 认证服务读取企微扫码登录配置。 |
+| 任务 | `GET /notice/tasks` | `notice:task:view` | 查询通知任务。 |
+| 发送记录 | `GET /notice/records` | `notice:record:view` | 查询发送记录。 |
+| 失败处理 | `/notice/records/**` | `notice:retry:edit` | 重试、人工成功、忽略失败。 |
+| 设置 | `GET /notice/settings`、`PUT /notice/settings` | `notice:setting:*` | 读取和保存通知设置。 |
+| 接收账户 | `/notice/recipient-accounts/**` | `notice:receive-setting:*` | 维护接收账户。 |
 | 企业微信 | `POST /notice/wecom/users/sync` | `system:user:add` | 同步企微用户映射。 |
-| 接收偏好 | `GET/PUT /notice/receive-preferences` | `notice:receive-setting:*` | 维护用户或范围级接收偏好。 |
-| 站内信 | `/notice/site/my/**` | `notice:site:*` | 查询我的站内信、未读数、已读和删除。 |
+| 接收偏好 | `GET /notice/receive-preferences`、`PUT /notice/receive-preferences` | `notice:receive-setting:*` | 维护接收偏好。 |
+| 我的站内信 | `/notice/site/my/**` | `notice:site:*` | 未读数、列表、详情、已读和删除。 |
 
-Java 契约：
+常用返回对象：
 
-- `NoticeApi.send`：业务发送入口。
-- `NoticeApi.sendSiteMessage`：站内信快捷发送。
-- `NoticeChannelSender`：扩展新渠道时实现 `channelType()` 和 `send(ChannelSendCommand)`。
-- `ChannelSendCommand`：包含任务、发送记录、接收人、手机号、邮箱、企微 ID、标题、内容、附件、业务类型、业务 ID、模板参数、渠道配置 JSON 等。
-- `ChannelSendResult`：返回成功、第三方消息 ID、失败码、失败原因、是否可重试和响应快照。
-
-## 9. 数据与初始化
-Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
-
-核心表：
-
-| 表 | 用途 |
-|----|------|
-| `notice_business_type` | 通知业务类型定义。 |
-| `notice_business_config_version` | 业务发送配置版本，支持草稿、生效和历史版本。 |
-| `notice_business_channel_template` | 业务在不同渠道下的模板。 |
-| `notice_channel_config` | 渠道账号和 provider 配置。 |
-| `notice_task` | 通知任务主表。 |
-| `notice_recipient` | 任务接收人快照。 |
-| `notice_send_record` | 每个接收人、每个渠道的发送记录。 |
-| `notice_site_message` | 站内信消息。 |
-| `notice_retry_log` | 重试日志。 |
-| `notice_callback_log` | 第三方回调日志。 |
-| `notice_setting` | 通知设置。 |
-| `notice_audit_log` | 操作审计。 |
-| `notice_recipient_account` | 用户接收账户。 |
-| `notice_receive_preference` | 接收偏好。 |
-| `notice_wecom_sync_mapping` | 企业微信同步映射。 |
-
-初始化数据：
-
-- `V5__notice_builtin_site_channel.sql` 和 `V8__notice_builtin_site_channel_default_tenant.sql` 初始化内置站内信渠道。
-- `V9__notice_receive_preference.sql` 和 `V10__seed_admin_recipient_account.sql` 初始化接收账户相关数据。
-- `V11__seed_email_rich_templates.sql` 初始化邮件富文本模板。
-- `V13__notice_business_domain.sql` 接入通知业务域。
-- `V14__seed_job_site_message.sql` 初始化定时任务站内信业务类型、配置版本和渠道模板。
-
-发送任务通过 `mango-infra-kv` 的 outbox 存储异步分发；`NoticeOutboxDispatcher` claim 消息后调用 `noticeService.executeTask(taskId)`，并按失败情况 ack 或 nack。
+| 返回对象 | 含义 |
+|----------|------|
+| `NoticeSendResultVO` | 发送入口返回结果。 |
+| `NoticeTaskVO` | 通知任务。 |
+| `NoticeSendRecordVO` | 每个接收人、每个渠道的发送记录。 |
+| `NoticeSiteMessageVO` | 站内信消息。 |
+| `NoticeUnreadCountVO` | 未读数量。 |
+| `NoticeBusinessTypeVO` | 通知业务类型。 |
+| `NoticeBusinessConfigVersionVO` | 业务配置版本。 |
+| `NoticeChannelTemplateVO` | 渠道模板。 |
+| `NoticeChannelConfigVO` | 渠道配置。 |
+| `NoticeRecipientAccountVO` | 接收账户。 |
+| `NoticeReceivePreferenceVO` | 接收偏好。 |
 
 ## 10. 管理入口
-通知中心接口显式接入 `@ApiAccess` 权限码，管理菜单必须覆盖以下能力组：
 
-- `notice:business:view`
-- `notice:business:create`
-- `notice:business:edit`
-- `notice:business:delete`
-- `notice:business:enable`
-- `notice:business:publish`
-- `notice:channel:view`
-- `notice:channel:create`
-- `notice:channel:delete`
-- `notice:task:create`
-- `notice:task:view`
-- `notice:record:view`
-- `notice:retry:edit`
-- `notice:setting:view`
-- `notice:setting:edit`
-- `notice:receive-setting:view`
-- `notice:receive-setting:edit`
-- `notice:site:create`
-- `notice:site:view`
-- `notice:site:edit`
-- `notice:site:delete`
+通知中心接口使用 `@ApiAccess` 绑定权限码，菜单和角色授权至少覆盖以下能力：
+
+```text
+notice:business:view
+notice:business:create
+notice:business:edit
+notice:business:delete
+notice:business:enable
+notice:business:publish
+notice:channel:view
+notice:channel:create
+notice:channel:delete
+notice:task:create
+notice:task:view
+notice:record:view
+notice:retry:edit
+notice:setting:view
+notice:setting:edit
+notice:receive-setting:view
+notice:receive-setting:edit
+notice:site:create
+notice:site:view
+notice:site:edit
+notice:site:delete
+```
 
 企微用户同步接口复用 `system:user:add`。
 
-通知数据按租户和当前用户隔离。站内信用户侧接口通过当前登录用户过滤；outbox 分发时会从消息 header 或任务表恢复 `tenant_id`，确保异步执行仍在正确租户上下文里。
+前端页面由 `@mango/notice/admin-pages` 注册。菜单 component 需要映射到对应页面 key，例如 `notice/business-config/index`、`notice/channel/index`、`notice/record/index`、`notice/site-message/index`。
 
-## 11. 快速开始
-1. 引入 `mango-notice-starter` 和需要的渠道模块。
-2. 在通知中心创建业务类型，例如 `JOB_EXECUTION_FAILED`。
-3. 保存业务配置草稿，定义参数 schema、默认优先级和幂等策略，并发布。
-4. 为站内信、短信、邮件等渠道保存模板并发布。
-5. 保存渠道配置，例如站内信内置渠道、短信 provider 配置、邮件 provider 配置。
-6. 业务发生事件时调用 `NoticeApi.send`，传入 `bizType`、`bizId`、接收人和模板参数。
-7. 验收 `notice_task`、`notice_send_record`、站内信或第三方发送结果。
+## 11. 数据与初始化
+
+Flyway 路径：`mango-notice-core/src/main/resources/db/migration/notice`。
+
+| 脚本 | 内容 |
+|------|------|
+| `V1__init_notice_site_message.sql` | 初始化通知业务、任务、记录、站内信等基础表。 |
+| `V2__notice_business_config_version.sql` | 增加业务配置版本。 |
+| `V3__notice_send_record_biz_context.sql` | 补充发送记录业务上下文字段。 |
+| `V4__notice_definition_channel_route.sql` | 增加定义和渠道路由相关字段。 |
+| `V5__notice_builtin_site_channel.sql` | 初始化内置站内信渠道。 |
+| `V6__notice_site_channel_sound_text.sql` | 补充站内信声音文本。 |
+| `V7__notice_task_recipient_targets_snapshot.sql` | 增加接收目标快照。 |
+| `V8__notice_builtin_site_channel_default_tenant.sql` | 为默认租户补内置站内信渠道。 |
+| `V9__notice_receive_preference.sql` | 初始化接收偏好表。 |
+| `V10__seed_admin_recipient_account.sql` | 初始化管理员接收账户。 |
+| `V11__seed_email_rich_templates.sql` | 初始化邮件富文本模板。 |
+| `V12__notice_wecom_sync_mapping.sql` | 初始化企微同步映射表。 |
+| `V13__notice_business_domain.sql` | 通知业务类型接入业务域。 |
+| `V14__seed_job_site_message.sql` | 初始化定时任务站内信业务类型、配置版本和渠道模板。 |
+
+核心表包括 `notice_business_type`、`notice_business_config_version`、`notice_business_channel_template`、`notice_channel_config`、`notice_task`、`notice_recipient`、`notice_send_record`、`notice_site_message`、`notice_retry_log`、`notice_callback_log`、`notice_setting`、`notice_recipient_account`、`notice_receive_preference`、`notice_wecom_sync_mapping`。
+
+通知异步分发依赖 `mango-infra-kv` outbox。部署时要确认 outbox 存储可用，否则任务可能创建成功但不会被后台 worker 分发。
 
 ## 12. 问题排查
-- 任务创建了但没有发送：检查 `mango.notice.outbox.enabled`、`dispatch-enabled`、outbox 表和 worker 日志。
-- 第三方渠道失败：先看 `notice_send_record.fail_code`、`fail_reason`、`response_snapshot`，再查渠道配置 JSON。
-- 站内信未出现：确认已引入 `mango-notice-channel-site`，业务配置和渠道模板已发布。
-- 用户收不到短信或邮件：检查 `notice_recipient_account` 是否有对应手机号或邮箱，接收偏好是否关闭该渠道。
-- 重试无效：确认记录状态属于失败、等待重试或最终失败，并且未超过最大重试次数。
+
+| 问题 | 优先检查 |
+|------|----------|
+| 任务创建了但没有发送 | `mango.notice.outbox.enabled`、`dispatch-enabled`、outbox 存储、worker 日志。 |
+| 站内信未出现 | 是否引入 `mango-notice-channel-site`，业务配置和站内信渠道模板是否已发布。 |
+| 第三方渠道失败 | `notice_send_record` 的失败码、失败原因、请求快照、响应快照和渠道配置 JSON。 |
+| 用户收不到短信或邮件 | `notice_recipient_account` 是否有手机号或邮箱，接收偏好是否关闭渠道。 |
+| 重试无效 | 记录状态是否允许重试，是否超过最大重试次数。 |
+| 管理页面 403 | 角色是否有对应 `notice:*` 权限。 |
+| 铃铛未显示或未读数不变 | 前端是否注册 `@mango/notice/admin-shell`，站内信接口是否可访问。 |
 
 ## 13. 相关文档
-- [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
-- [AI 交付质量门禁](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 
-## 14. 历史资料
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+- [前端通知包](../../../mango-ui/packages/notice/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

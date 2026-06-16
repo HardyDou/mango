@@ -1,208 +1,220 @@
 # @mango/common
 
 ## 1. 概览
-`@mango/common` 是 Mango 前端公共基础包，提供请求封装、session、消息、菜单树、权限函数、主题、实时通信、公共 API、hooks 和通用 Vue 组件。
 
-本包是公共能力包，但很多组件依赖 Element Plus、Pinia、Vue Router、Mango 后端接口和管理端上下文。官网或普通网站复用前必须逐项确认依赖。
+`@mango/common` 是 Mango 前端公共基础包，提供请求封装、session、菜单和权限工具、主题工具、实时通信、公共 API、Vue hooks 和管理端通用组件。
+
+集成形态：
+
+| 标识 | 说明 |
+|------|------|
+| `admin-shell` | request、session、菜单树、TagsView、权限函数、主题、实时通信等后台底座工具。 |
+| `business-component` | 分页、字典、组织、用户、区域、验证码、编辑器、图表等后台业务页面组件。 |
+| `api-client` | 上传、验证码、组织、地区、字典等公共接口封装。 |
+
+这个包不是无依赖的官网组件库。它依赖 Vue、Element Plus、Pinia、Vue Router、Mango 请求响应格式、登录 token、租户头和若干后端平台能力。官网、营销页或 C 端站点要复用时，优先只引入明确需要的工具或组件，不建议全量接入。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
-|------|----------|
-| 管理后台页面需要统一请求、token、租户头和错误处理 | 前端注册 / 组件 / API 封装 |
-| 业务页面需要字典、组织、区域、上传、验证码等公共 API | 前端注册 / 组件 / API 封装 |
-| 管理端需要分页、字典展示、树选择、组织选择、用户选择、图表、编辑器等通用组件 | 前端注册 / 组件 / API 封装 |
-| Shell、页面包和业务包需要共享菜单树、TagsView、权限判断和主题工具 | 前端注册 / 组件 / API 封装 |
-| 实时消息、SSE 或 WebSocket 需要统一 client 和 Vue hook | 前端注册 / 组件 / API 封装 |
+| 能力 | 使用入口 | 说明 |
+|------|----------|------|
+| 统一请求 | `request`、`get`、`post`、`put`、`del` | baseURL、token、租户头、refresh token、错误提示、原始响应。 |
+| Session | `Session` | 保存 token、refresh token、过期时间、用户信息和租户。 |
+| API 加密 | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt` | 按环境变量启用 SM2 或 BFF 透传。 |
+| 菜单和权限 | `buildMenuTree`、权限函数、TagsView 工具 | 给管理后台菜单、按钮权限和标签页使用。 |
+| 公共 API | `uploadFile`、captcha、org、area、dict API | 连接 file、captcha、org、system 后端。 |
+| 通用组件 | `Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面复用组件。 |
+| hooks | `useTitle`、`useDict`、`useECharts`、`useLocale` | 页面标题、字典、图表和语言相关能力。 |
+| 实时通信 | `useRealtime`、`SSE`、`Websocket` | SSE/WebSocket client 和组件。 |
+| 主题和消息 | `mangoMessage`、theme 工具、主题 CSS | 管理端统一提示和主题样式。 |
 
-## 3. 适用场景
-- 管理后台页面需要统一请求、token、租户头和错误处理。
-- 业务页面需要字典、组织、区域、上传、验证码等公共 API。
-- 管理端需要分页、字典展示、树选择、组织选择、用户选择、图表、编辑器等通用组件。
-- Shell、页面包和业务包需要共享菜单树、TagsView、权限判断和主题工具。
-- 实时消息、SSE 或 WebSocket 需要统一 client 和 Vue hook。
+## 3. 接入方式
 
-## 4. 边界说明
-- 不负责后端接口实现。
-- 不负责页面注册；页面 key 归 `@mango/admin-pages` 管。
-- 不负责菜单、权限、租户和字典数据初始化。
-- 不适合在不引入 Element Plus 和 Mango 请求上下文的站点里直接全量使用。
-
-## 5. 模块组成
-本包包含：
-
-| 类别 | 入口 | 说明 |
-|------|------|------|
-| 请求 | `utils/request` | axios 实例、base URL、token、租户头、refresh token、错误处理 |
-| Session | `utils/storage` | token、refresh token、过期时间、用户信息 |
-| 安全 | `utils/apiCrypto` | BFF 模式透传、非 BFF 模式 SM2 加密 |
-| 菜单/权限 | `utils/menuTree`、`utils/authFunction`、`utils/tagsView` | 菜单树、权限函数、标签页工具 |
-| UI 工具 | `utils/message`、`utils/theme`、`utils/iconConfig` | 消息、主题、图标 |
-| 公共 API | `api/upload`、`api/captcha`、`api/org`、`api/area`、`api/dict` | 后端公共接口封装 |
-| hooks | `useTitle`、`useDict`、`useECharts`、`useLocale` | Vue hooks |
-| 组件 | `Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 管理端通用组件 |
-| 实时 | `utils/realtime`、`SSE`、`Websocket` | SSE/WebSocket client 和组件 |
-
-## 6. 接入方式
-安装：
+开发依赖：
 
 ```bash
 pnpm add @mango/common
 ```
 
-样式：
+宿主应用需要提供 peer 依赖：
+
+```bash
+pnpm add vue vue-router pinia element-plus vue-i18n
+```
+
+引入样式：
 
 ```ts
 import '@mango/common/style.css';
 import '@mango/common/theme/index.css';
 ```
 
-请求：
+配置请求：
 
 ```ts
-import { get, post, setRequestBaseUrl, registerUnauthorizedHandler } from '@mango/common';
+import { get, registerUnauthorizedHandler, setRequestBaseUrl } from '@mango/common';
 
 setRequestBaseUrl('/api');
 registerUnauthorizedHandler(() => {
   window.location.hash = '/login';
 });
 
-const users = await get('/authorization/users', {
-  params: { page: 1, size: 20 },
+const rows = await get('/system/dict/data/options', {
+  params: { typeCode: 'order_status' },
 });
 ```
 
-组件：
+使用组件：
 
-```ts
-import { Pagination, DictSelect, OrgSelector } from '@mango/common';
+```vue
+<script setup lang="ts">
+import { DictSelect, OrgSelector, Pagination } from '@mango/common';
+import '@mango/common/style.css';
+</script>
 ```
 
-## 7. 配置说明
-### 6.1 RequestConfig
+部署时没有单独的 `@mango/common` 后端 starter。它调用的接口来自业务已经启用的后端模块，例如 file、captcha、org、system、auth。
 
-| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
-|----------|------------|--------|------|----------|----------|
-| request | `baseURL` | `/api` 或 Wujie runtime `apiBaseUrl` | API 前缀 | 所有请求默认前缀 | `resolveApiBaseUrl` |
-| `setRequestBaseUrl` | `baseURL` | 无 | 手动设置 API 前缀 | 修改 axios defaults | `setRequestBaseUrl` |
-| `registerUnauthorizedHandler` | handler | hash 到 login | 401 处理 | Shell 统一退出登录 | `registerUnauthorizedHandler` |
-| `RequestConfig` | `loading` | 可选 | 是否显示全局 loading | 当前只计数，未显示 UI | `showLoading` |
-| `RequestConfig` | `ignoreToken` | `false` | 是否不带 token | 登录、刷新 token 可用 | `handleToken` |
-| `RequestConfig` | `retry` | 可选 | 请求重试次数 | 当前未实现通用重试 | 类型保留 |
-| `RequestConfig` | `rawResponse` | `false` | 返回 AxiosResponse | 文件下载等场景 | 响应拦截器 |
-| `RequestConfig` | `skipRefreshToken` | `false` | 跳过刷新 token | 避免刷新接口递归 | `shouldRefreshToken` |
-| `RequestConfig` | `silentError` | `false` | 静默错误提示 | 不弹全局错误消息 | 响应拦截器 |
+## 4. 配置说明
+
+请求配置：
+
+| 配置位置 | 字段 | 默认值 | 含义 |
+|----------|------|--------|------|
+| `setRequestBaseUrl(baseURL)` | `baseURL` | `/api` 或 Wujie runtime `apiBaseUrl` | 设置 axios 默认 API 前缀。 |
+| `registerUnauthorizedHandler(handler)` | handler | hash 跳转 `/login` | 统一 401 处理。 |
+| `RequestConfig` | `ignoreToken` | `false` | 不附加 Authorization，登录和公开接口可用。 |
+| `RequestConfig` | `rawResponse` | `false` | 返回 AxiosResponse，文件下载等场景使用。 |
+| `RequestConfig` | `skipRefreshToken` | `false` | 禁止当前请求触发 refresh token。 |
+| `RequestConfig` | `silentError` | `false` | 失败时不弹全局错误提示。 |
+| `RequestConfig` | `loading` | 可选 | 参与内部 loading 计数，当前不直接展示 UI。 |
+| `RequestConfig` | `retry` | 可选 | 类型保留，当前没有通用自动重试。 |
 
 请求头：
 
 | Header | 来源 | 含义 |
 |--------|------|------|
-| `Authorization` | `Session.getToken()` | Bearer token |
-| `X-Mango-Tenant-Id` | userInfo 或 Session tenantId | 当前租户 |
-| `TENANT-ID` | userInfo 或 Session tenantId | 兼容租户头 |
+| `Authorization` | `Session.getToken()` | Bearer token。 |
+| `X-Mango-Tenant-Id` | `userInfo.tenantId` 或 Session `tenantId` | 当前租户。 |
+| `TENANT-ID` | `userInfo.tenantId` 或 Session `tenantId` | 兼容租户头。 |
 
-### 6.2 API Crypto
+API 加密环境变量：
 
-| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
-|----------|------------|--------|------|----------|----------|
-| 环境变量 | `VITE_API_ENC_ENABLED` | `false` | 是否启用 API 加密 | `wrapRequest`、SM2 函数 | `apiCrypto.ts` |
-| 环境变量 | `VITE_IS_BFF` | `true` | 是否 BFF 模式 | BFF 模式透传 | `isBffMode` |
-| 环境变量 | `VITE_SM2_PUBLIC_KEY` | 空 | SM2 公钥 | 非 BFF 模式加密 | `sm2Encrypt` |
+| 变量 | 默认值 | 含义 |
+|------|--------|------|
+| `VITE_API_ENC_ENABLED` | `false` | 是否启用 API 加密包装。 |
+| `VITE_IS_BFF` | `true` | BFF 模式下前端透传，非 BFF 模式可用 SM2。 |
+| `VITE_SM2_PUBLIC_KEY` | 空 | 非 BFF 模式 SM2 加密公钥。 |
 
-BFF 模式下前端透传 JSON，由 BFF 层处理加密。非 BFF 模式且配置公钥时，前端用 SM2 加密。
+开发 mock：
 
-## 8. API 与扩展
-### 7.1 请求和工具
+| 变量 | 影响 |
+|------|------|
+| `VITE_USE_MOCK=true` | `getAreaTree()`、`getOrgTree()` 在 dev 环境返回本地 mock 树。 |
+
+## 5. API 与扩展
+
+请求和工具导出：
 
 | 导出 | 用途 |
 |------|------|
-| `request` | axios 实例 |
-| `get`、`post`、`put`、`del` | 常用请求方法 |
-| `setRequestBaseUrl` | 设置 API base URL |
-| `registerUnauthorizedHandler` | 注册 401 处理 |
-| `normalizeApiPayload` | 把明确 ID 数值兜底转字符串 |
-| `Session` | token、refresh token、用户信息存储 |
-| `mangoMessage` | Element Plus 消息封装 |
-| `wrapRequest`、`sm2Encrypt`、`sm2Decrypt` | API 加密工具 |
-| `useRealtime` | 实时连接 hook |
+| `request` | axios 实例。 |
+| `get`、`post`、`put`、`del` | 常用请求方法，默认返回后端包裹体中的 `data`。 |
+| `setRequestBaseUrl` | 设置 API baseURL。 |
+| `registerUnauthorizedHandler` | 注册未授权处理。 |
+| `normalizeApiPayload` | 把明确 ID 字段中的 number 兜底转成字符串。 |
+| `Session` | token、refresh token、用户信息和租户存储。 |
+| `mangoMessage` | Element Plus 消息封装。 |
+| `useRealtime` | 实时连接 hook。 |
 
-### 7.2 公共组件
+公共 API：
+
+| 函数 | HTTP 接口 | 说明 |
+|------|-----------|------|
+| `uploadFile(file)` | `POST /file/files` | 上传普通附件，`purpose=attachment`。 |
+| `uploadImage(file)` | `POST /file/files` | 上传图片，`purpose=image`。 |
+| `uploadExcel(file)` | `POST /file/files` | 上传 Excel，`purpose=excel`。 |
+| `uploadMultiple(files)` | `POST /file/files/batch` | 批量上传。 |
+| `getUploadedFileDetail(id)` | `GET /file/files/detail` | 查询文件详情。 |
+| `downloadUploadedFile(id)` | `GET /file/files/download` | 下载文件，返回原始 blob response。 |
+| `getCaptchaTypes()` | `GET /captcha/types` | 查询验证码类型和存储。 |
+| `generateArithmetic()` | `GET /captcha/arithmetic` | 生成算术验证码。 |
+| `generateBlockPuzzle()` | `GET /captcha/block-puzzle` | 生成拼图验证码。 |
+| `generateClickWord()` | `GET /captcha/click-word` | 生成点选验证码。 |
+| `generateBehavior()` | `GET /captcha/behavior` | 生成行为验证码。 |
+| `verifyCaptcha(request)` | `POST /captcha/verify` | 校验验证码。 |
+| `sendSms(mobile)` | `POST /auth/captcha/send` | 发送登录短信验证码。 |
+| `sendEmail(email)` | `POST /auth/captcha/send` | 发送登录邮箱验证码。 |
+| `getOrgTree(params)` | `GET /org/tree` | 组织树。 |
+| `getAreaTree(params)` | `GET /system/area/tree` 或 `GET /system/area/children` | 地区树或子节点。 |
+| `listDictOptions(typeCode)` | `GET /system/dict/data/options` | 字典选项。 |
+
+组件导出：
 
 | 组件 | 能力 |
 |------|------|
-| `Pagination` | 分页器 |
-| `IconSelector` | 图标选择 |
-| `DictTag`、`DictSelect` | 字典展示和选择 |
-| `RightToolbar` | 列表工具栏 |
-| `FormCreate` | 表单创建器封装 |
-| `Sign` | 签名组件 |
-| `OrgSelector`、`UserSelector` | 组织和用户选择 |
-| `TreeSelect` | 树选择 |
-| `CaptchaSelector` 及各 Captcha 组件 | 验证码 |
-| `Chat` | 聊天 UI |
-| `ChinaArea` | 行政区域选择 |
-| `CodeEditor`、`Editor` | 代码和富文本编辑 |
-| `ECharts` | 图表 |
-| `SSE`、`Websocket` | 实时通信组件 |
+| `Pagination` | 分页器。 |
+| `DictSelect`、`DictTag` | 字典选择和展示。 |
+| `OrgSelector`、`UserSelector` | 组织和用户选择。 |
+| `CaptchaSelector`、各验证码组件 | 验证码展示和交互。 |
+| `ChinaArea` | 行政区域选择。 |
+| `IconSelector`、`TreeSelect`、`RightToolbar` | 管理端通用选择和工具栏。 |
+| `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`ECharts` | 表单、签名、代码、富文本和图表。 |
+| `SSE`、`Websocket`、`Chat` | 实时通信和聊天 UI。 |
 
-### 7.3 公共 API
+## 6. 数据与初始化
 
-| API 包 | 用途 |
+`@mango/common` 不创建后端数据。组件和 API 能否返回数据，取决于后端模块是否已初始化：
+
+| 数据 | 后端来源 | 前端消费 |
+|------|----------|----------|
+| token、用户、租户 | auth、identity、system | request 请求头、Session、权限函数。 |
+| 字典 | system 字典 | `DictSelect`、`DictTag`、`useDict`、`listDictOptions()`。 |
+| 组织 | org | `OrgSelector`、`getOrgTree()`。 |
+| 地区 | system area | `ChinaArea`、`getAreaTree()`。 |
+| 文件 | file | 上传、下载、文件详情 API。 |
+| 验证码 | captcha、auth | 登录验证码和二次校验。 |
+| 实时连接 | realtime 后端或业务服务 | `useRealtime`、`SSE`、`Websocket`。 |
+
+## 7. 管理入口
+
+本包不注册菜单，也不写权限资源。它提供的权限函数只用于前端展示控制，接口访问必须由后端再次校验。
+
+接入管理后台时至少确认：
+
+| 检查项 | 说明 |
 |--------|------|
-| `api/upload` | 上传相关接口 |
-| `api/captcha` | 验证码接口 |
-| `api/org` | 组织接口 |
-| `api/area` | 区域接口 |
-| `api/dict` | 字典接口 |
+| token | 登录后 `Session` 中存在 access token。 |
+| 租户 | `userInfo.tenantId` 或 Session `tenantId` 能写入租户头。 |
+| baseURL | `/api` 或运行时 `apiBaseUrl` 能转发到后端。 |
+| 数据权限 | 公共选择器返回的数据已经由后端按租户和权限过滤。 |
 
-## 9. 数据与初始化
-本包不包含数据库 migration。它依赖后端已经初始化的公共数据。
+## 8. 快速开始
 
-| 类型 | 后端来源 | 前端消费 | 排查入口 |
-|------|----------|----------|----------|
-| 字典 | system 字典表 | `DictSelect`、`DictTag`、`useDict` | 字典下拉有数据 |
-| 组织 | org / identity | `OrgSelector`、组织 API | 组织树可加载 |
-| 用户 | identity | `UserSelector` | 用户选择可搜索 |
-| 区域 | system area | `ChinaArea`、区域 API | 省市区可选择 |
-| 文件 | file 模块 | 上传 API | 上传成功并返回文件 ID |
-| 验证码 | captcha 模块 | Captcha 组件 | 校验通过 |
-
-## 10. 管理入口
-本包不写菜单和权限数据，但请求层会自动带 token 和租户头。业务接入要验证：
-
-- 当前用户 session 中有 token。
-- 当前租户在 `userInfo.tenantId` 或 Session `tenantId` 中。
-- 后端接口识别 `X-Mango-Tenant-Id` 或 `TENANT-ID`。
-- 前端权限函数只用于展示，后端接口必须再次校验。
-- 公共选择器的数据范围不能跨租户。
-
-## 11. 快速开始
 1. 安装 `@mango/common` 和 peer 依赖。
-2. 引入样式和主题。
-3. 设置 API base URL。
-4. 注册 401 处理。
-5. 页面按需使用公共组件、公共 API 和 hooks。
-6. 后端准备字典、组织、用户、区域、文件、验证码等数据。
-7. 执行构建、单测和真实接口联调。
+2. 引入 `@mango/common/style.css` 和主题 CSS。
+3. 调用 `setRequestBaseUrl()` 设置 API 前缀。
+4. 调用 `registerUnauthorizedHandler()` 接入登录页跳转。
+5. 登录成功后写入 token、refresh token、用户和租户信息。
+6. 在页面中按需使用公共 API、hooks 和组件。
 
-## 12. 问题排查
-| 问题 | 原因 | 处理方式 |
-|------|------|----------|
-| 请求没带 token | 未登录或 `ignoreToken=true` | 检查 Session 和请求配置 |
-| 租户头缺失 | userInfo 和 Session 没有 tenantId | 登录后写入租户上下文 |
-| 大 ID 精度丢失 | 页面或 API 包把 ID 当 number | 使用 `ApiId` 和字符串 |
-| 字典下拉为空 | 后端字典未初始化或接口权限不足 | 查 system 字典和权限 |
-| 官网引入后构建变重 | 全量 common 依赖管理端库 | 只抽取必要工具或拆更小公共包 |
-| 加密没生效 | BFF 模式默认透传或未配置公钥 | 检查 `VITE_API_ENC_ENABLED`、`VITE_IS_BFF`、`VITE_SM2_PUBLIC_KEY` |
+## 9. 问题排查
 
-## 13. 相关文档
-- [前端代码规范](../../../mango-pmo/rules/frontend/01-vue-code.md)
-- [Element Plus UI 规范](../../../mango-pmo/rules/frontend/02-element-plus-ui.md)
-- [前端组件规范](../../../mango-pmo/rules/frontend/03-component-development.md)
-- [前端测试规范](../../../mango-pmo/rules/frontend/04-test.md)
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+| 问题 | 常见原因 | 处理方式 |
+|------|----------|----------|
+| 请求没有 token | 未登录、Session 未写入或 `ignoreToken=true` | 检查登录保存逻辑和请求配置。 |
+| 租户头缺失 | userInfo 和 Session 都没有 tenantId | 登录后写入租户上下文。 |
+| 401 后没有跳登录 | 没注册 unauthorized handler | 调用 `registerUnauthorizedHandler()`。 |
+| 文件下载拿到 JSON | 后端返回业务错误而不是 blob | 看 JSON 中 `message` 或 `msg`，排查文件权限。 |
+| 字典、组织、地区为空 | 后端数据未初始化或权限不足 | 分别检查 system、org 和接口权限。 |
+| 官网引入后体积过大 | 全量 common 带管理端组件和依赖 | 改为按子路径引入，或拆出站点专用轻量组件。 |
+| 大 ID 精度问题 | 业务把 id 当 number 继续运算 | ID 字段按字符串处理，使用 `ApiId`。 |
 
-## 14. 历史资料
-- [Mango UI README](../../README.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+## 10. 相关文档
+
 - [@mango/api-schema](../api-schema/README.md)
+- [后端 File](../../../mango/mango-platform/mango-file/README.md)
+- [后端 Captcha](../../../mango/mango-platform/mango-captcha/README.md)
+- [后端 System](../../../mango/mango-platform/mango-system/README.md)
+- [后端 Org](../../../mango/mango-platform/mango-org/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)

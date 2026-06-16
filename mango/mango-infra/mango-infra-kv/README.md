@@ -12,26 +12,21 @@
 | infra-event、realtime、内部调用 nonce 等基础设施需要共享 KV 能力 | Maven 依赖 / starter / Java API |
 | 需要 Outbox store / publisher 支撑可靠投递 | Maven 依赖 / starter / Java API |
 
-## 3. 适用场景
-- 业务需要轻量 key-value 存储，并希望可在 memory、Redis、JDBC 间切换。
-- 业务方法需要用注解快速接入缓存、分布式锁、限流和幂等。
-- infra-event、realtime、内部调用 nonce 等基础设施需要共享 KV 能力。
-- 需要 Outbox store / publisher 支撑可靠投递。
 
-## 4. 边界说明
+## 3. 能力边界
 - 不替代业务主数据库，不适合承载强关系、复杂查询和长期业务数据。
 - 不替代专业消息队列。
 - 不自动保证跨租户隔离；key 设计必须包含业务域和必要上下文。
 - store 创建和 capability 创建是两步，选择 Redis store 不代表自动启用缓存、锁、限流等能力。
 
-## 5. 模块组成
+## 4. 模块入口
 - `mango-infra-kv-api`：store、capability、Outbox、注解和上下文契约。
 - `mango-infra-kv-core`：Memory/Redis/JDBC store、capability 实现、AOP、key namespace、Outbox store。
 - `mango-infra-kv-starter`：Redis、store、capability、Outbox 自动配置。
 
 业务模块负责 key 语义、TTL、幂等窗口、并发冲突处理和降级策略。
 
-## 6. 接入方式
+## 5. 接入方式
 ```xml
 <dependency>
     <groupId>io.mango.infra.kv</groupId>
@@ -67,7 +62,7 @@ public void handleCallback(CallbackRequest request) {
 }
 ```
 
-## 7. 配置说明
+## 6. 配置说明
 主配置前缀：`mango.kv`。Redis 连接兼容前缀：`mango.redis`。
 
 ### Store
@@ -157,7 +152,7 @@ mango:
     port: 6379
 ```
 
-## 8. API 与扩展
+## 7. API 与扩展
 - Store：`IKvStore`、`IKvSortedSet`。
 - Capability：`ICache`、`ILocker`、`ICounter`、`IRateLimiter`、`IIdempotent`、`ITokenStore`、`IIdGenerator`。
 - 支撑：`ISerializer`、`IConverter`、`KvContext`、`KvContextContributor`。
@@ -173,7 +168,7 @@ mango:
 
 key 表达式支持 SpEL 模板，例如 `order:#{#orderId}`、`user:#{#req.headers['X-Tenant']}:#{#userId}`。
 
-## 9. 数据与初始化
+## 8. 数据与初始化
 Flyway 路径：`mango-infra-kv-core/src/main/resources/db/migration/kv`。
 
 `V1__init_kv.sql` 创建 `infra_kv_entry`，包含：
@@ -183,27 +178,27 @@ Flyway 路径：`mango-infra-kv-core/src/main/resources/db/migration/kv`。
 
 JDBC store 依赖该表。Redis 和 Memory store 不需要 SQL 初始化。
 
-## 10. 管理入口
+## 9. 管理入口
 本模块不创建菜单和权限。租户隔离靠 key 设计、`KvContextContributor` 或业务调用方传入 tenant id 实现。不要把多租户共享 key 写成全局常量。
 
-## 11. 快速开始
+## 10. 快速开始
 1. 选择 store：本地开发可 memory，生产优先 Redis；需要数据库持久化时使用 JDBC。
 2. 按需开启 capability，不要为了“方便”一次性打开全部能力。
 3. 设计 key：包含业务域、租户、用户或请求幂等键。
 4. 对写接口使用幂等时，明确 mark-before 语义是否符合业务重试要求。
 5. 需要可靠事件或 realtime outbox 时，同时开启 KV outbox 和对应上层模块 outbox。
 
-## 12. 问题排查
+## 11. 问题排查
 - 已配置 Redis 但仍是 memory：检查是否存在 `RedissonClient`，以及 `store.type` 是否为 `redis` 或 `auto`。
 - 注解不生效：检查 `capability.enabled` 和对应单项开关是否开启。
 - 幂等后不能重试失败请求：当前 `@Idempotent` 是执行前标记，需要业务侧按窗口过期或新 key 重试。
 - JDBC store 报表不存在：执行 `db/migration/kv` 下的 Flyway migration。
 - Outbox 重复投递：消费者必须按 message id 或业务键幂等。
 
-## 13. 相关文档
+## 12. 相关文档
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [持久化规范](../../../mango-pmo/rules/backend/07-persistence.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史资料
+## 13. 补充资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)

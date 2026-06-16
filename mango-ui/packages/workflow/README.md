@@ -1,58 +1,60 @@
 # @mango/workflow
 
-## 1. 概览
-`@mango/workflow` 是 Mango 工作流前端包，提供流程分类、流程定义、模板、发起流程、待办、已办、抄送、任务详情、运行时表单和业务自定义申请/审批组件注册能力。
+`@mango/workflow` 是 Mango 审批流前端包。它提供管理后台页面、业务可复用组件和 workflow HTTP API 封装，用于接入后端 `mango-workflow`。
 
-它面向后台业务开发者：用现成页面管理流程，用注册扩展点把业务申请单和审批详情接入流程任务。流程引擎、流程实例、任务流转和业务状态回写由后端 `mango-workflow` 承担。
+## 1. 概览
+
+这个包包含三类集成形态：
+
+| 标识 | 内容 | 适合谁使用 |
+|------|------|------------|
+| `admin-pages` | 流程定义、流程模板、任务列表、任务详情、发起流程、自定义申请页面。 | Mango Admin 或业务后台。 |
+| `business-component` | 运行时表单、审批进度、审批时间线、业务申请组件注册、业务审批组件注册。 | 需要在业务页面中嵌入审批能力的前端模块。 |
+| `api-client` | workflow 后端接口封装和 TypeScript 类型。 | 需要直接调用 workflow 接口的前端代码。 |
+
+`admin-pages` 适配 Mango 管理后台，不适合作为官网、门户站点的通用页面组件。官网类项目如果只需要展示审批进度，应优先使用 `business-component` 中的轨迹组件或自行封装展示层。
 
 ## 2. 功能清单
 
-| 能力 | 常用入口 |
+| 能力 | 使用方式 |
 |------|----------|
-| 在 Mango Admin 中维护流程分类、流程定义、流程模板和节点配置 | 前端注册 / 组件 / API 封装 |
-| 业务后台展示发起流程、待办、已办、我发起的、抄送和任务详情页面 | 前端注册 / 组件 / API 封装 |
-| 使用动态表单模式渲染流程表单字段 | 前端注册 / 组件 / API 封装 |
-| 使用自定义页面模式，把业务申请页和审批详情页注册到 workflow | 前端注册 / 组件 / API 封装 |
-| 在业务列表中查询某条业务数据的最新流程进度或历史流程 | 前端注册 / 组件 / API 封装 |
+| 注册流程管理页面 | 调用 `registerMangoWorkflowAdminPages()`。 |
+| 管理流程定义和流程模板 | 使用注册后的页面 key 和后端 workflow 接口。 |
+| 展示待办、已办、抄送和任务详情 | 使用任务列表页、任务详情页或 `workflowApi`。 |
+| 发起流程 | 使用发起流程页、自定义申请页或 `workflowApi.startProcess()`。 |
+| 渲染动态表单 | 使用 `RuntimeFormRenderer`、`parseRuntimeForm()`、`createDefaultVariables()`。 |
+| 接入业务自定义申请页 | 使用 `registerBusinessApplyComponent()`。 |
+| 接入业务自定义审批页 | 使用 `registerBusinessApprovalComponent()`。 |
+| 展示审批进度和审批记录 | 使用 `WorkflowProgressTree`、`WorkflowApprovalTimeline`、`WorkflowNodeTimeline`。 |
 
-## 3. 适用场景
-- 在 Mango Admin 中维护流程分类、流程定义、流程模板和节点配置。
-- 业务后台展示发起流程、待办、已办、我发起的、抄送和任务详情页面。
-- 使用动态表单模式渲染流程表单字段。
-- 使用自定义页面模式，把业务申请页和审批详情页注册到 workflow。
-- 在业务列表中查询某条业务数据的最新流程进度或历史流程。
+## 3. 集成形态
 
-## 4. 边界说明
-- 不实现 Flowable 或后端流程引擎。
-- 不保存业务申请单主数据；示例包中的本地数据只用于演示。
-- 不替代业务模块自己的领域校验、状态机和数据权限。
-- 不负责菜单、权限、租户、流程定义和模板初始化。
+`admin-pages`：
 
-## 5. 模块组成
-本包只提供 Vue 页面、运行时组件、API 封装、页面注册入口和业务组件注册表。
+- 依赖 `@mango/admin-pages` 的页面注册机制。
+- 页面 key 需要和后端菜单 `component` 或前端动态路由匹配。
+- 页面数据来自后端 `mango-workflow`、`mango-identity`、`mango-domain`、`mango-file` 等接口。
 
-后端边界：
+`business-component`：
 
-- `mango-workflow`：流程分类、定义、模板、任务、流程实例、业务申请进度。
-- `mango-identity`：用户候选项。
-- `mango-system`：租户、业务域相关数据。
-- `mango-domain`：流程分类和定义可绑定的业务域树。
-- `mango-file`：流程图标、上传字段和附件预览。
+- 可被业务后台页面复用。
+- 业务申请和业务审批组件通过 key 注册，流程定义中的 `applyPageKey`、`approvePageKey` 决定运行时加载哪个组件。
+- 组件注册不是权限控制；权限仍由后端任务接口和业务接口校验。
 
-业务模块边界：业务申请表、审批详情、业务变量采集、动作前后钩子、业务状态回写由业务包自己实现，并通过本包注册。
+`api-client`：
 
-## 6. 接入方式
-依赖包：
+- 从 `@mango/workflow` 导出 workflow API 类型和请求函数。
+- 请求基于 `@mango/common` 的 request 工具。
 
-```json
-{
-  "dependencies": {
-    "@mango/workflow": "1.0.9"
-  }
-}
+## 4. 接入方式
+
+安装依赖：
+
+```bash
+pnpm add @mango/workflow
 ```
 
-注册工作流页面：
+注册管理后台页面：
 
 ```ts
 import { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
@@ -61,23 +63,27 @@ import '@mango/workflow/style.css';
 registerMangoWorkflowAdminPages();
 ```
 
-注册业务申请页和审批页：
+注册业务申请页：
 
 ```ts
-import {
-  registerBusinessApplyComponent,
-  registerBusinessApprovalComponent,
-} from '@mango/workflow';
+import { registerBusinessApplyComponent } from '@mango/workflow';
 import ContractApplyView from './ContractApplyView.vue';
-import ContractApprovalView from './ContractApprovalView.vue';
 
 registerBusinessApplyComponent('contract.apply', {
   title: '合同申请',
   component: ContractApplyView,
 });
+```
+
+注册业务审批页：
+
+```ts
+import { registerBusinessApprovalComponent } from '@mango/workflow';
+import ContractApprovalView from './ContractApprovalView.vue';
 
 registerBusinessApprovalComponent('contract.approve', {
   component: ContractApprovalView,
+  commentMode: 'BUSINESS_FORM',
   collectVariables: context => ({
     approvedAmount: context.variables.approvedAmount,
   }),
@@ -93,114 +99,159 @@ import { workflowApi } from '@mango/workflow';
 const progress = await workflowApi.businessApplyLatestProgress('contract', contractId);
 ```
 
-## 7. 配置说明
-本包没有独立 Vite 环境变量。配置来自页面注册、流程定义表单 JSON、节点扩展配置、业务组件注册和后端 API。
+## 5. 快速开始
 
-| 配置位置 | 字段 / 参数 | 含义 |
-|----------|-------------|------|
+1. 后端应用启用 `mango-workflow-starter`，并完成 workflow 菜单和权限初始化。
+2. 前端应用安装 `@mango/workflow`，在管理后台启动阶段调用 `registerMangoWorkflowAdminPages()`。
+3. 在流程定义页面维护流程定义，表单使用动态表单或自定义页面。
+4. 动态表单流程直接由 `RuntimeFormRenderer` 渲染。
+5. 自定义申请流程在业务包启动阶段调用 `registerBusinessApplyComponent(applyPageKey, registration)`。
+6. 自定义审批流程调用 `registerBusinessApprovalComponent(approvePageKey, registration)`。
+7. 业务列表需要审批状态时，调用 `workflowApi.businessApplyLatestProgressBatch()` 或后端业务接口聚合结果。
+
+## 6. 配置说明
+
+本包没有独立环境变量。可配置内容来自页面注册、流程定义表单 JSON 和业务组件注册。
+
+| 配置位置 | 字段或参数 | 含义 |
+|----------|------------|------|
 | `registerMangoWorkflowAdminPages()` | 无入参 | 幂等注册 `mango-workflow` 页面 key 和动态路由。 |
-| 流程定义 `formJson` | `mode` | `DYNAMIC_FORM` 使用运行时表单；`CUSTOM_PAGE` 使用业务自定义申请页。 |
-| 流程定义 `formJson.customConfig` | `submitPath` | 自定义申请页路由。 |
-| 流程定义 `formJson.customConfig` | `viewPath` | 自定义查看页路由。 |
-| 流程定义 `formJson.customConfig` | `applyPageKey` | `registerBusinessApplyComponent()` 使用的申请组件 key。 |
-| 流程定义 `formJson.customConfig` | `approvePageKey` | `registerBusinessApprovalComponent()` 使用的审批组件 key。 |
-| 节点变量 | `businessType` / `bizType` | 任务详情解析业务审批组件的业务类型。 |
-| 节点变量 | `applyId` / `workflowApplyId` / `businessApplyId` / `snapshotId` | 任务详情解析业务申请记录 id。 |
-| 节点变量 | `businessPermissions` | 字段级权限，支持 `HIDDEN`、`READONLY`、`EDITABLE`。 |
+| 流程定义 `formJson.mode` | `DYNAMIC_FORM` | 使用动态表单渲染。 |
+| 流程定义 `formJson.mode` | `CUSTOM_PAGE` | 使用业务自定义申请页或审批页。 |
+| 流程定义 `formJson.customConfig.submitPath` | 路由 path | 自定义申请页路由。 |
+| 流程定义 `formJson.customConfig.viewPath` | 路由 path | 自定义查看页路由。 |
+| 流程定义 `formJson.customConfig.applyPageKey` | 注册 key | 匹配 `registerBusinessApplyComponent()`。 |
+| 流程定义 `formJson.customConfig.approvePageKey` | 注册 key | 匹配 `registerBusinessApprovalComponent()`。 |
+| 任务变量 `businessType` 或 `bizType` | 字符串 | 任务详情解析业务类型。 |
+| 任务变量 `applyId`、`workflowApplyId`、`businessApplyId`、`snapshotId` | 字符串 | 任务详情解析业务申请记录 ID。 |
+| 任务变量 `businessPermissions` | 字段权限对象 | 字段级权限，支持 `HIDDEN`、`READONLY`、`EDITABLE`。 |
 
-`parseWorkflowFormConfig()` 兼容旧数组式表单 JSON，也支持对象结构；非法 JSON 会退回空的动态表单配置。
+`parseWorkflowFormConfig()` 支持数组式表单 JSON，也支持包含 `mode`、`rules`、`fields`、`customConfig` 的对象结构。非法 JSON 会按空动态表单处理。
 
-## 8. API 与扩展
+## 7. API 与扩展
+
 页面注册入口：
 
-- `registerMangoWorkflowAdminPages()`
+| 导出 | 来源 | 作用 |
+|------|------|------|
+| `registerMangoWorkflowAdminPages()` | `@mango/workflow/admin-pages` | 注册 workflow 管理页面和动态路由。 |
 
 页面 key：
 
-| 页面 key | 能力 |
+| 页面 key | 用途 |
 |----------|------|
-| `workflow/definition/index` | 流程定义和设计器。 |
-| `system/workflow-definition/index` | 流程定义兼容页面 key。 |
-| `workflow/template/index` | 流程模板。 |
-| `workflow-template/index` | 流程模板兼容页面 key。 |
+| `workflow/definition/index` | 流程定义管理。 |
+| `system/workflow-definition/index` | 流程定义兼容入口。 |
+| `workflow/template/index` | 流程模板管理。 |
+| `workflow-template/index` | 流程模板兼容入口。 |
 | `workflow/task/todo/index` | 待办任务。 |
-| `workflow/task/initiated/index` | 我发起的流程。 |
+| `workflow/task/initiated/index` | 已发起任务入口。 |
 | `workflow/task/done/index` | 已办任务。 |
 | `workflow/task/copied/index` | 抄送任务。 |
-| `workflow/task-list/index` | 任务列表兼容页面 key。 |
+| `workflow/task-list/index` | 通用任务列表。 |
 | `workflow/task/detail/index` | 任务详情。 |
 | `workflow/start-process/index` | 发起流程。 |
 | `workflow/custom-apply/index` | 自定义申请容器页。 |
 
 组件导出：
 
-- `RuntimeFormRenderer`
-- `WorkflowProgressTree`
-- `WorkflowApprovalTimeline`
-- `WorkflowNodeTimeline`
+| 导出 | 标识 | 作用 |
+|------|------|------|
+| `WorkflowDefinitionView` | `admin-pages` | 流程定义管理页面。 |
+| `WorkflowTemplateView` | `admin-pages` | 流程模板管理页面。 |
+| `WorkflowTaskListView` | `admin-pages` | 任务列表页面。 |
+| `WorkflowTaskDetailView` | `admin-pages` | 任务详情页面。 |
+| `WorkflowStartProcessView` | `admin-pages` | 发起流程页面。 |
+| `WorkflowCustomApplyView` | `admin-pages` | 自定义申请容器页面。 |
+| `RuntimeFormRenderer` | `business-component` | 动态表单渲染组件。 |
+| `WorkflowProgressTree` | `business-component` | 审批进度树。 |
+| `WorkflowApprovalTimeline` | `business-component` | 审批时间线。 |
+| `WorkflowNodeTimeline` | `business-component` | 节点时间线。 |
 
 业务扩展导出：
 
-- `registerBusinessApplyComponent()`、`registerBusinessApplyComponents()`
-- `resolveBusinessApplyRegistration()`
-- `registerBusinessApprovalComponent()`、`registerBusinessApprovalComponents()`
-- `resolveBusinessApprovalRegistration()`、`resolveBusinessApprovalComponent()`
-- `collectBusinessApprovalVariables()`、`collectBusinessApprovalComment()`
-- `businessTypeOf()`、`applyIdOf()`、`businessPermissionsOf()`
+| 导出 | 作用 |
+|------|------|
+| `registerBusinessApplyComponent()`、`registerBusinessApplyComponents()` | 注册一个或多个业务申请组件。 |
+| `resolveBusinessApplyRegistration()` | 按 key 查询业务申请组件注册信息。 |
+| `registerBusinessApprovalComponent()`、`registerBusinessApprovalComponents()` | 注册一个或多个业务审批组件。 |
+| `resolveBusinessApprovalRegistration()`、`resolveBusinessApprovalComponent()` | 按 key 查询业务审批组件注册信息。 |
+| `collectBusinessApprovalVariables()` | 动作提交前采集业务审批变量。 |
+| `collectBusinessApprovalComment()` | 动作提交前采集审批意见。 |
+| `businessTypeOf()` | 从任务变量解析业务类型。 |
+| `applyIdOf()` | 从任务变量解析申请 ID。 |
+| `businessPermissionsOf()` | 从任务变量解析字段权限。 |
 
-主要 API：
+主要 API 封装：
 
-- 分类和定义：`categoriesPage()`、`categoriesList()`、`definitionsPage()`、`definitionDetail()`、`deployDefinition()`、`nodeCatalog()`。
-- 模板：`templatesPage()`、`createTemplateFromDefinition()`、`createDefinitionFromTemplate()`、`importTemplates()`、`pushTemplates()`。
-- 任务：`todoTasks()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()`。
-- 动作：`completeTask()`、`rejectTask()`、`saveTask()`、`transferTask()`、`addSignTask()`、`claimTask()`、`unclaimTask()`、`readCopiedTask()`。
-- 流程实例：`startProcess()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()`。
-- 业务申请：`businessAppliesPage()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyByProcessInstance()`。
-- 候选项：`users()`、`tenants()`、`enabledDomains()`。
+| 分类 | 方法 |
+|------|------|
+| 分类和定义 | `categoriesPage()`、`categoriesList()`、`definitionDetail()`、`definitionsPage()`、`saveDefinition()`、`updateDefinition()`、`deleteDefinition()`、`deployDefinition()`、`nodeCatalog()` |
+| 模板 | `templatesPage()`、`templateDetail()`、`saveTemplate()`、`deleteTemplate()`、`createTemplateFromDefinition()`、`createDefinitionFromTemplate()`、`importTemplates()`、`pushTemplates()` |
+| 任务 | `todoTasks()`、`initiatedTasks()`、`doneTasks()`、`copiedTasks()`、`taskDetail()` |
+| 动作 | `completeTask()`、`rejectTask()`、`saveTask()`、`transferTask()`、`addSignTask()`、`claimTask()`、`unclaimTask()`、`readCopiedTask()` |
+| 流程实例 | `startProcess()`、`initiatedProcesses()`、`processHistoryByBusinessKey()`、`processDetail()` |
+| 业务申请 | `createBusinessApply()`、`businessAppliesPage()`、`businessApplyDetail()`、`businessApplyHistory()`、`businessApplyLatestProgress()`、`businessApplyLatestProgressBatch()`、`businessApplyByProcessInstance()` |
+| 候选项 | `users()`、`tenants()`、`enabledDomains()` |
 
-## 9. 数据与初始化
-本包不包含数据库 migration。
+## 8. 数据与初始化
+
+这个前端包不包含数据库 migration，也不初始化菜单。
 
 | 数据 | 来源 |
 |------|------|
 | 流程分类、定义、版本、模板、任务、业务申请记录 | 后端 `mango-workflow`。 |
-| 菜单和权限 | 后端 `mango-authorization`。 |
-| 用户、组织、角色、岗位候选项 | 后端 `mango-identity`、`mango-org`、`mango-authorization`。 |
-| 业务域 | 后端 `mango-domain`。 |
-| 流程图标、上传字段、附件 | 后端 `mango-file`。 |
+| workflow 菜单和权限 | 后端 migration 写入 `authorization_menu`。 |
+| 用户候选项 | 后端 `/identity/users/page`。 |
+| 业务域候选项 | 后端 `/domain/domains/enabled-tree`。 |
+| 文件上传、图片上传、附件预览 | `@mango/file` 和后端 `mango-file`。 |
 
-## 10. 管理入口
-前端页面 key 必须与 authorization 菜单 component 一致。任务列表、任务详情和动作提交由后端按当前用户、候选人、任务归属、租户和流程实例状态校验。
+## 9. 管理入口
 
-业务组件注册不是权限控制。即使前端注册了某个审批组件，后端仍必须校验：
+后端默认写入的菜单 component 是：
 
-- 当前用户是否能查看任务。
-- 当前用户是否能执行完成、驳回、转办、加签、签收和退签。
-- 当前租户是否能访问流程定义和业务数据。
-- 业务变量和业务状态变更是否合法。
+| 菜单 | 后端菜单 component | 前端页面 key |
+|------|-------------------|--------------|
+| 流程模板 | `@/views/workflow/template/index.vue` | `workflow/template/index` |
+| 流程定义 | `@/views/workflow/definition/index.vue` | `workflow/definition/index` |
 
-## 11. 快速开始
-1. 后端启用 `mango-workflow`，准备流程菜单权限。
-2. 前端启动时调用 `registerMangoWorkflowAdminPages()`。
-3. 业务包实现申请组件和审批组件，调用 `registerBusinessApplyComponent()`、`registerBusinessApprovalComponent()`。
-4. 流程定义中把 `formJson.mode` 设置为 `CUSTOM_PAGE`，并配置 `applyPageKey`、`approvePageKey`。
-5. 发起流程时业务组件保存业务申请单，并调用后端流程启动接口或让工作流页面提交 `startProcess()`。
-6. 审批详情组件通过 `context.variables` 和 `context.permissions` 渲染字段，提交前用 `collectVariables` 和 `collectComment` 回传审批变量和意见。
-7. 验证不同节点的字段权限、动作权限和业务状态回写。
+`registerMangoWorkflowAdminPages()` 还注册两个动态路由：
 
-## 12. 问题排查
-- 发起流程列表为空：检查流程定义状态、发布状态、分类状态和租户权限。
-- 自定义申请页打不开：检查 `formJson.customConfig.submitPath` 和 `applyPageKey`，以及业务包是否在 Shell 启动阶段注册。
-- 任务详情找不到业务审批组件：检查 `businessType`、`approvePageKey`、注册 key 和业务包加载顺序。
-- 字段权限不生效：检查节点变量 `businessPermissions` 是否按任务节点 key 输出 `HIDDEN`、`READONLY`、`EDITABLE`。
-- 上传字段不可用：检查 `@mango/file` 样式、后端文件服务和字段类型配置。
+| 路由 | 页面 key | 权限码 |
+|------|----------|--------|
+| `/workflow/task/detail` | `workflow/task/detail/index` | `workflow:task:detail` |
+| `/workflow/custom-apply` | `workflow/custom-apply/index` | `workflow:custom-apply` |
 
-## 13. 相关文档
-- [前端模块规范](../../../mango-pmo/rules/frontend/01-vue-code.md)
-- [前端测试规范](../../../mango-pmo/rules/frontend/04-test.md)
-- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
+常用权限码来自后端 workflow 菜单和按钮权限，例如 `workflow:definition:list`、`workflow:definition:deploy`、`workflow:template:list`、`workflow:task:list`、`workflow:task:complete`。
 
-## 14. 历史资料
+## 10. 问题排查
+
+**菜单打开后提示页面不存在**
+
+确认已经调用 `registerMangoWorkflowAdminPages()`，并引入 `@mango/workflow/style.css`。
+
+**发起流程列表为空**
+
+检查后端流程定义是否已发布，当前租户是否有可用定义，当前账号是否有流程定义或发起流程权限。
+
+**自定义申请页打不开**
+
+检查流程定义 `formJson.mode` 是否为 `CUSTOM_PAGE`，`customConfig.applyPageKey` 是否和 `registerBusinessApplyComponent()` 的 key 一致。
+
+**任务详情找不到业务审批组件**
+
+检查 `approvePageKey`、任务变量中的 `businessType`，以及业务包是否已经执行 `registerBusinessApprovalComponent()`。
+
+**字段权限不生效**
+
+检查任务变量 `businessPermissions` 是否按字段 key 输出 `HIDDEN`、`READONLY`、`EDITABLE`。前端字段权限只控制渲染，提交后的业务校验仍应由后端完成。
+
+**上传或图片字段不可用**
+
+确认前端安装并打包了 `@mango/file`，后端启用了 `mango-file`，表单字段类型为 `upload` 或 `imageUpload`。
+
+## 11. 相关文档
+
 - [Workflow 后端 README](../../../mango/mango-platform/mango-workflow/README.md)
 - [@mango/workflow 组件 README](src/components/README.md)
-- [Mango 能力地图](../../../mango-docs/capabilities/README.md)
+- [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
