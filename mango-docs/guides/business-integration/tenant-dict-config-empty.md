@@ -69,4 +69,5 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #166 工作台自定义布局新增 `@mango/grid-layout` 和 `mango-grid-layout`，个人布局按当前登录租户和用户隔离保存；不改变租户字典、组织、用户、系统配置的公开 API、配置、权限、租户、页面和运行时行为。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变租户字典、组织、用户、系统配置的公开 API、配置、权限、租户、页面和运行时行为。
