@@ -278,7 +278,7 @@
     "capabilityDocs": {
       "roles": ["pm", "tech-lead", "dev", "qa", "pmo"],
       "paths": ["mango-docs/capabilities/**", "mango/**/README.md", "mango-ui/packages/**/README.md", "mango-business-starter/**/README.md", "mango/**/src", "mango/**/src/**", "mango-ui/packages/**/src", "mango-ui/packages/**/src/**", "mango-business-starter/**", "mango-ui/packages/mango-cli/**"],
-      "keywords": ["能力说明", "能力地图", "模块 README", "capability", "capabilities", "README", "starter", "模板", "CLI", "公开能力", "接入方式", "配置项", "菜单", "权限", "验收方式"],
+      "keywords": ["能力说明", "能力地图", "模块 README", "capability", "capabilities", "README", "starter", "模板", "CLI", "公开能力", "接入方式", "配置项", "菜单", "权限", "排障入口", "生效确认"],
       "include": ["process.capabilityDocs", "process.documentAssets"]
     },
     "devEnvironment": {

@@ -1,31 +1,82 @@
 # Mango Native Job Deployment
 
-## Modes
+## 1. 概览
+`deploy/job` 是 Mango 原生任务调度的部署配置说明，配套后端能力模块 [mango-job](../../mango/mango-platform/mango-job/README.md) 使用。
 
-Mango Job uses Mango Native Job Engine only. PowerJob runtime integration has been removed from the active delivery.
+这里说明三件事：
 
-Supported runtime layouts:
+- JobCenter、内嵌 Worker、远程 Worker 应该怎么部署。
+- `deploy/job/application-job-native.yml` 暴露了哪些数据库和运行时配置。
+- 生产环境如何监控、告警、保留执行日志和回滚。
 
-- `monolith-embedded`: JobCenter and embedded Worker run in the same Mango application process and use `IN_MEMORY` dispatch.
-- `monolith-cluster`: multiple Mango application nodes run JobCenter and embedded Worker. Scheduling windows are protected by database cursor CAS and idempotency keys.
-- `jobcenter-remote-worker`: JobCenter runs in one Mango service, and worker services register through Mango internal APIs and execute through `HTTP_INTERNAL`.
+业务开发写任务处理器时先看 `mango-job` 模块 README；部署、联调和生产运维再看本文。
 
-Task definitions do not change when the deployment layout changes. Business code only implements Mango `MangoJobHandler`.
+## 2. 适用场景
+- 单体应用中同时运行 JobCenter 和内嵌 Worker。
+- 多个应用节点共享同一个 `mango_job` 数据库并共同调度。
+- 独立 JobCenter 负责调度，业务服务作为远程 Worker 注册并执行任务。
+- 需要给 Job 模块单独配置数据源、扫描参数、Worker 地址、失败告警和日志保留策略。
 
-## Database
+## 3. 边界说明
+- 不部署 PowerJob Server，不创建 PowerJob 内部表。
+- 不替代 `MangoJobHandler` 的业务实现、业务幂等和业务事务设计。
+- 不负责通知渠道配置，失败告警真正发送依赖 `mango-notice`。
+- 不作为 DBA 审批流程，生产清理 SQL 必须走企业维护任务或 DBA 流程。
 
-Mango Job governance tables are managed by Mango Flyway in `mango_job`.
+## 4. 部署模式
 
-Recommended layouts:
+Mango Job 当前只使用 Mango Native Job Engine。活跃交付中已经移除 PowerJob 运行时集成。
 
-- `mango` + `mango_job`: default for production and private deployments.
-- `primary` fallback: development or explicitly accepted small deployments only.
+支持的运行布局：
 
-Mango Job does not create or manage PowerJob internal tables.
+| 模式 | 适用 | 关键配置 |
+|------|------|----------|
+| `monolith-embedded` | 单体、本地开发、小规模私有部署 | JobCenter 和 embedded Worker 在同一个 Mango 应用进程，`embedded-worker-enabled=true`，`transport=IN_MEMORY`。 |
+| `monolith-cluster` | 多个 Mango 应用节点共同承载任务 | 所有节点共享同一个 `mango_job` 数据库；调度窗口由数据库游标 CAS 和幂等键保护。 |
+| `jobcenter-remote-worker` | 独立调度中心 + 业务 Worker 服务 | JobCenter 开启 scheduler；Worker 配置 `worker-address` 和 `job-center-address` 后通过 Mango 内部接口注册，并由 `HTTP_INTERNAL` 执行。 |
 
-## Mango Configuration
+任务定义不随部署布局变化。业务代码只实现 Mango `MangoJobHandler`。
 
-Use the native sample as an external config file:
+## 5. 接入方式
+### 5.1 JobCenter 或单体应用
+
+提供管理接口、调度扫描、数据库治理模型的进程引入：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.job</groupId>
+    <artifactId>mango-job-starter</artifactId>
+</dependency>
+```
+
+单体内嵌 Worker 同样使用 `mango-job-starter`，并保持 `mango.job.native.embedded-worker-enabled=true`。
+
+### 5.2 远程 Worker
+
+只执行任务、不承载 Job 管理页面和调度扫描的业务服务引入：
+
+```xml
+<dependency>
+    <groupId>io.mango.platform.job</groupId>
+    <artifactId>mango-job-starter-remote</artifactId>
+</dependency>
+```
+
+远程 Worker 需要实现 `MangoJobHandler`，并配置：
+
+- `mango.job.native.worker-address`
+- `mango.job.native.job-center-address`
+- `mango.job.native.job-center-feign-url`
+
+## 6. 配置文件和启动方式
+
+外部配置文件：
+
+```text
+deploy/job/application-job-native.yml
+```
+
+本地或运维脚本可通过 `SPRING_CONFIG_ADDITIONAL_LOCATION` 加载：
 
 ```bash
 SPRING_CONFIG_ADDITIONAL_LOCATION=file:deploy/job/application-job-native.yml \
@@ -39,78 +90,93 @@ MANGO_JOB_PROBE_ENABLED=true \
 scripts/dev-workspace.sh backend
 ```
 
-## Runtime Parameters
+`application-job-native.yml` 会把 `mango.persistence.modules.mango-job.datasource` 指向 `job` 数据源。未提供 `MANGO_JOB_DB_*` 时会回退到主库 `MANGO_DB_*`。
 
-| Environment | Property | Default | Applies to | Notes |
-|---|---|---:|---|---|
-| `MANGO_JOB_EMBEDDED_WORKER_ENABLED` | `mango.job.native.embedded-worker-enabled` | `true` | JobCenter process | Enable in-process `IN_MEMORY` Worker for monolith layouts. Set `false` for pure JobCenter. |
-| `MANGO_JOB_TRANSPORT` | `mango.job.native.transport` | `IN_MEMORY` | JobCenter process | Default dispatch transport. Worker address still takes precedence when it is `embedded://`, legacy `in-memory://`, or `http(s)://`. |
-| `MANGO_JOB_SCHEDULER_ENABLED` | `mango.job.native.scheduler-enabled` | `true` | JobCenter process | Disable on pure Worker nodes. |
-| `MANGO_JOB_SCAN_INTERVAL_MILLIS` | `mango.job.native.scan-interval-millis` | `5000` | JobCenter process | Scheduler scan interval. |
-| `MANGO_JOB_SCHEDULER_TENANT_ID` | `mango.job.native.scheduler-tenant-id` | `1` | JobCenter process | Tenant context used by the scheduler thread. |
-| `MANGO_JOB_SCAN_LIMIT` | `mango.job.native.scan-limit` | `50` | JobCenter process | Max due cursors scanned per tick. |
-| `MANGO_JOB_LEASE_SECONDS` | `mango.job.native.lease-seconds` | `300` | JobCenter process | Attempt lease seconds. Must be longer than normal dispatch latency. |
-| `MANGO_JOB_WORKER_ADDRESS` | `mango.job.native.worker-address` | empty | Worker process | Optional for embedded workers; when empty Mango generates `embedded://{ip}:{server.port}`. Required for remote Worker registration, for example `http://worker-a:8080`. |
-| `MANGO_JOB_CENTER_ADDRESS` | `mango.job.native.job-center-address` | empty | Remote Worker process | Required when Worker must register to an external JobCenter. |
-| `MANGO_JOB_WORKER_HEARTBEAT_INTERVAL_MILLIS` | `mango.job.native.worker-heartbeat-interval-millis` | `15000` | Remote Worker process | Worker registration heartbeat interval. |
-| `MANGO_JOB_PROBE_ENABLED` | `mango.job.probe.enabled` | `true` | Job process | Enables built-in probe handler so a default embedded worker is visible after startup. Set `false` when the process must only expose business handlers. |
+## 7. 配置说明
+### 7.1 数据库配置
 
-## Cluster Rules
+| 环境变量 | 配置项 | 默认值 | 含义 |
+|----------|--------|--------|------|
+| `MANGO_DB_URL` | `mango.persistence.datasources.primary.url` | 无 | Mango 主库 JDBC URL。 |
+| `MANGO_DB_USERNAME` | `mango.persistence.datasources.primary.username` | 无 | Mango 主库用户名。 |
+| `MANGO_DB_PASSWORD` | `mango.persistence.datasources.primary.password` | 无 | Mango 主库密码。 |
+| `MANGO_JOB_DB_URL` | `mango.persistence.datasources.job.url` | `${MANGO_DB_URL}` | Job 独立库 JDBC URL。 |
+| `MANGO_JOB_DB_USERNAME` | `mango.persistence.datasources.job.username` | `${MANGO_DB_USERNAME}` | Job 独立库用户名。 |
+| `MANGO_JOB_DB_PASSWORD` | `mango.persistence.datasources.job.password` | `${MANGO_DB_PASSWORD}` | Job 独立库密码。 |
 
-- All JobCenter nodes must share the same `mango_job` database.
-- Do not point nodes in one deployment to isolated Job databases.
-- Embedded workers are allowed on multiple nodes. Their stable identity address is `embedded://{ip}:{server.port}` and dispatch stays in the current JVM.
-- The scheduler uses shared database cursors and idempotency controls so one task instance is leased by one runtime only.
-- Remote workers must register their app code, address, transport and handler capabilities before receiving tasks.
-- Production deployments must verify Cron stability, restart recovery, Worker expiration and log retention before enabling critical scheduled tasks.
+推荐数据库布局：
 
-## Monitoring
+- `mango` + `mango_job`：生产和私有部署默认方案。
+- `primary` fallback：仅用于开发环境，或明确接受的小型部署。
 
-Mango Job production monitoring must be based on the `mango_job` database and application logs until dedicated Micrometer meters are added.
+Mango Job 治理表由 Flyway 在 `mango_job` 模块路径下维护。Mango Job 不创建、不管理 PowerJob 内部表。
 
-Recommended checks:
+### 7.2 Job 运行参数
 
-| Metric | Query or source | Alert suggestion |
-|---|---|---|
-| Due cursor backlog | `select count(*) from mango_job_schedule_cursor where next_fire_time <= now() and (lock_until is null or lock_until < now());` | Greater than `scan-limit * 3` for 5 minutes. |
-| Scheduler delay | `select timestampdiff(second, min(next_fire_time), now()) from mango_job_schedule_cursor where next_fire_time <= now();` | Greater than twice the expected schedule interval for critical tasks. |
-| Running instance backlog | `select count(*) from mango_job_instance where status in ('WAITING','DISPATCHED','RUNNING');` | Continuous growth for 10 minutes. |
-| Failure rate | `select count(*) from mango_job_instance where status = 'FAILED' and trigger_time >= date_sub(now(), interval 10 minute);` | Non-zero for critical tasks, or sudden increase over baseline. |
-| Expired Worker count | `select count(*) from mango_job_worker_snapshot where status = 'EXPIRED';` | Any critical app Worker expired for two heartbeat windows. |
-| Log write health | `select count(*) from mango_job_log_index where last_fetched_at >= date_sub(now(), interval 10 minute);` plus application error logs | No recent log index for active tasks, or SQL insert errors for `mango_job_log_chunk`. |
+| 环境变量 | 配置项 | 默认值 | 作用进程 | 含义 |
+|----------|--------|--------|----------|------|
+| `MANGO_JOB_EMBEDDED_WORKER_ENABLED` | `mango.job.native.embedded-worker-enabled` | `true` | JobCenter | 是否启用同进程 `IN_MEMORY` Worker。纯 JobCenter 设为 `false`。 |
+| `MANGO_JOB_TRANSPORT` | `mango.job.native.transport` | `IN_MEMORY` | JobCenter | 默认派发通道。Worker 地址为 `embedded://`、历史 `in-memory://` 或 `http(s)://` 时地址会优先生效。 |
+| `MANGO_JOB_SCHEDULER_ENABLED` | `mango.job.native.scheduler-enabled` | `true` | JobCenter | 是否开启调度扫描。纯 Worker 节点设为 `false`。 |
+| `MANGO_JOB_SCAN_INTERVAL_MILLIS` | `mango.job.native.scan-interval-millis` | `5000` | JobCenter | 调度扫描间隔，单位毫秒。 |
+| `MANGO_JOB_SCHEDULER_TENANT_ID` | `mango.job.native.scheduler-tenant-id` | `1` | JobCenter | 调度线程使用的租户上下文。 |
+| `MANGO_JOB_SCAN_LIMIT` | `mango.job.native.scan-limit` | `50` | JobCenter | 每次最多扫描的到期游标数。 |
+| `MANGO_JOB_LEASE_SECONDS` | `mango.job.native.lease-seconds` | `300` | JobCenter | attempt 租约秒数，必须长于正常派发耗时。 |
+| `MANGO_JOB_WORKER_ADDRESS` | `mango.job.native.worker-address` | 空 | Worker | 当前 Worker 对外执行地址。内嵌 Worker 可为空；远程 Worker 必填，例如 `http://worker-a:8080`。 |
+| `MANGO_JOB_CENTER_ADDRESS` | `mango.job.native.job-center-address` | 空 | 远程 Worker | Worker 注册目标 JobCenter 地址。 |
+| `MANGO_JOB_WORKER_HEARTBEAT_INTERVAL_MILLIS` | `mango.job.native.worker-heartbeat-interval-millis` | `15000` | Worker | Worker 注册和心跳间隔。 |
+| `MANGO_JOB_PROBE_ENABLED` | `mango.job.probe.enabled` | `true` | Job 进程 | 是否注册内置探测 handler。生产只暴露业务 handler 时设为 `false`。 |
 
-Application log alerts should include:
+更多 handler 归属字段、API 字段和管理接口见 [mango-job 配置说明](../../mango/mango-platform/mango-job/README.md#8-配置说明)。
 
-- `Mango native job tick failed`
-- dispatch failures containing `未找到可执行任务的 Worker`
-- database errors on `mango_job_schedule_cursor`, `mango_job_instance`, `mango_job_attempt`, `mango_job_log_chunk`
+## 8. 集群规则
 
-## Alarm Integration
+- 所有 JobCenter 节点必须共享同一个 `mango_job` 数据库。
+- 不要让同一套部署的节点指向彼此隔离的 Job 数据库。
+- 多个节点可以同时启用 embedded Worker；稳定身份地址为 `embedded://{ip}:{server.port}`，派发仍在当前 JVM 执行。
+- 调度器使用共享数据库游标和幂等控制，一个任务实例只能被一个运行时租约持有。
+- 远程 Worker 必须先注册应用编码、地址、通信方式和 handler 能力，才能接收任务。
+- 生产启用关键定时任务前，必须验证 Cron 稳定性、重启恢复、Worker 过期和日志保留。
 
-Mango Job sends failed execution alarms through `mango-notice` when an enabled rule exists.
+## 9. 管理入口
+菜单和按钮资源由 `mango-job-starter/src/main/resources/META-INF/mango/resource-manifest.json` 描述，并通过 Mango 模块资源初始化流程入库。
 
-Rules can be maintained from Mango Admin:
+管理入口：
+
+```text
+平台能力 -> 任务管理
+```
+
+部署层不直接创建菜单。菜单不可见时先检查 `mango-job-starter` 是否引入、资源 manifest 是否被扫描、当前角色是否绑定任务管理权限。
+
+调度器和 Worker 自动注册使用 `mango.job.native.scheduler-tenant-id` 构造系统上下文，默认租户是 `1`。业务任务执行时仍要由 handler 自己保证业务数据的租户边界和幂等。
+
+## 10. 告警集成
+
+Mango Job 在存在启用规则时，通过 `mango-notice` 发送失败执行告警。
+
+规则可在 Mango Admin 维护：
 
 ```text
 平台能力 -> 任务管理 -> 告警规则
 ```
 
-The page supports task-level rules and app-level default rules. It stores only Job alarm routing fields in `mango_job_alarm_rule`; notice templates, recipient rules and third-party channels remain owned by `mango-notice`.
+页面支持任务级规则和应用级默认规则。`mango_job_alarm_rule` 只保存 Job 告警路由字段；通知模板、接收人规则和第三方渠道仍由 `mango-notice` 负责。
 
-Required `mango_job_alarm_rule` fields:
+`mango_job_alarm_rule` 关键字段：
 
-| Field | Value |
-|---|---|
-| `tenant_id` | Tenant that owns the job definition. |
-| `app_code` | Job application code, for example `mango-job`. |
-| `job_id` | Specific job definition ID. Leave `null` for an app-level failed-instance rule. |
-| `alarm_type` | `INSTANCE_FAILED`. |
-| `notice_scene_code` | Failed-instance notice business key. Current value must be `job.instance.failed`; Mango Job maps this to `SendNoticeCommand.bizType`. |
-| `notice_template_code` | Notice template code. Current SITE template is `job.instance.failed.site`; Mango Job passes it in notice params as `noticeTemplateCode`. |
-| `notice_params` | Optional JSON. Supported keys are `userId`, `userIds`, and `recipientRuleCode`. |
-| `enabled` | `1` to enable the rule. |
+| 字段 | 值 |
+|------|----|
+| `tenant_id` | 任务定义所属租户。 |
+| `app_code` | Job 应用编码，例如 `mango-job`。 |
+| `job_id` | 指定任务定义 ID；应用级失败规则可留空。 |
+| `alarm_type` | 当前使用 `INSTANCE_FAILED`。 |
+| `notice_scene_code` | 失败实例通知业务键。当前值为 `job.instance.failed`，Mango Job 会映射为 `SendNoticeCommand.bizType`。 |
+| `notice_template_code` | 通知模板编码。当前 SITE 模板为 `job.instance.failed.site`，Mango Job 会放入通知参数 `noticeTemplateCode`。 |
+| `notice_params` | 可选 JSON，支持 `userId`、`userIds`、`recipientRuleCode`。 |
+| `enabled` | `1` 表示启用。 |
 
-Example:
+示例：
 
 ```sql
 insert into mango_job_alarm_rule
@@ -122,28 +188,49 @@ values
    '{"recipientRuleCode":"jobDuty"}', 1, now(), now());
 ```
 
-Notice templates, recipient rules and third-party channels are configured in `mango-notice`. The seeded Mango SITE message template is in `mango/mango-platform/mango-notice/mango-notice-core/src/main/resources/db/migration/notice/V14__seed_job_site_message.sql`, and the notice business domain display name is `定时任务`.
+通知业务类型、模板、接收人规则和第三方渠道在 `mango-notice` 配置。Job 失败站内信模板种子位于 `mango/mango-platform/mango-notice/mango-notice-core/src/main/resources/db/migration/notice/V14__seed_job_site_message.sql`，通知业务域显示名为 `定时任务`。
 
-Production readiness requires a pre-production failed-job test that verifies the notice send record and the target system message, SMS, email or enterprise WeCom channel.
+生产就绪必须做一次预发失败任务测试，确认通知发送记录以及目标站内信、短信、邮件或企业微信通道。
 
-## Log Retention
+## 11. 监控
 
-Current native execution logs are stored in:
+在专用 Micrometer 指标补齐前，生产监控基于 `mango_job` 数据库和应用日志。
+
+推荐检查：
+
+| 指标 | 查询或来源 | 告警建议 |
+|------|------------|----------|
+| 到期游标积压 | `select count(*) from mango_job_schedule_cursor where next_fire_time <= now() and (lock_until is null or lock_until < now());` | 连续 5 分钟大于 `scan-limit * 3`。 |
+| 调度延迟 | `select timestampdiff(second, min(next_fire_time), now()) from mango_job_schedule_cursor where next_fire_time <= now();` | 关键任务超过预期调度间隔的 2 倍。 |
+| 运行实例积压 | `select count(*) from mango_job_instance where status in ('WAITING','DISPATCHED','RUNNING');` | 连续 10 分钟增长。 |
+| 失败率 | `select count(*) from mango_job_instance where status = 'FAILED' and trigger_time >= date_sub(now(), interval 10 minute);` | 关键任务非零，或较基线突增。 |
+| 过期 Worker | `select count(*) from mango_job_worker_snapshot where status = 'EXPIRED';` | 关键应用 Worker 连续两个心跳窗口过期。 |
+| 日志写入健康 | `select count(*) from mango_job_log_index where last_fetched_at >= date_sub(now(), interval 10 minute);` 加应用错误日志 | 活跃任务没有近期日志索引，或 `mango_job_log_chunk` 写入报错。 |
+
+应用日志告警应覆盖：
+
+- `Mango native job tick failed`
+- 包含 `未找到可执行任务的 Worker` 的派发失败
+- `mango_job_schedule_cursor`、`mango_job_instance`、`mango_job_attempt`、`mango_job_log_chunk` 相关数据库错误
+
+## 12. 日志保留
+
+当前原生执行日志存储在：
 
 - `mango_job_log_index`
 - `mango_job_log_chunk`
 - `mango_job_operation_log`
 
-Retention policy for production:
+生产保留策略：
 
-- The current UI reads the latest 1000 log chunks for one execution instance. Jobs that can produce more lines must also write business evidence to the enterprise log platform or file center.
-- Keep execution log chunks for at least 30 days by default.
-- Keep operation logs for at least 180 days by default.
-- Keep failed-instance logs for at least 90 days when storage budget allows.
-- Before deleting chunks, retain `mango_job_log_index` rows with an archive marker in `error_summary` or export logs to the enterprise log platform.
-- Run deletion in small batches during low traffic windows. Do not delete by full table scan in business hours.
+- 当前 UI 读取单个执行实例最新 1000 个 log chunk。输出更多日志的任务必须同时把业务证据写入企业日志平台或文件中心。
+- 默认至少保留执行 log chunk 30 天。
+- 默认至少保留操作日志 180 天。
+- 存储预算允许时，失败实例日志至少保留 90 天。
+- 删除 chunk 前，应保留 `mango_job_log_index` 行并在 `error_summary` 写入归档标记，或把日志导出到企业日志平台。
+- 低峰小批量删除，业务高峰期不要做全表扫描删除。
 
-Suggested cleanup predicates:
+参考清理谓词：
 
 ```sql
 delete from mango_job_log_chunk
@@ -155,28 +242,51 @@ where created_at < date_sub(now(), interval 180 day)
 limit 1000;
 ```
 
-The above SQL is an operations reference. Production cleanup should be executed through the platform DBA job or an approved maintenance task.
+以上 SQL 只是运维参考。生产清理必须通过平台 DBA 任务或已审批维护任务执行。
 
-## Rollback
+## 13. 回滚
 
-Code rollback:
+代码回滚：
 
-- Roll back the application image or package to the previous version.
-- Set `MANGO_JOB_SCHEDULER_ENABLED=false` before rollback if scheduled tasks are creating incorrect executions.
-- Keep `mango_job` database untouched during first rollback so execution facts remain auditable.
+- 回滚应用镜像或发布包到上一版本。
+- 如果调度任务正在产生错误执行，先设置 `MANGO_JOB_SCHEDULER_ENABLED=false`。
+- 首次回滚时保留 `mango_job` 数据库，保证执行事实可审计。
 
-Menu rollback:
+菜单回滚：
 
-- Disable the `平台能力/任务管理` menu entries through the authorization module if UI access must be hidden.
-- Do not delete menu rows in production unless the release rollback checklist explicitly includes authorization data rollback.
+- 如果只需要隐藏 UI 入口，通过授权模块禁用 `平台能力/任务管理` 菜单。
+- 生产环境不要直接删除菜单行，除非发布回滚清单明确包含授权数据回滚。
 
-Database rollback:
+数据库回滚：
 
-- Flyway migrations are forward-only in Mango. Do not modify executed migration files.
-- If `V4__native_job_engine_foundation.sql` has executed, roll back application code only; keep tables for audit and future forward fix.
-- Destructive rollback of Job tables is allowed only before production traffic or after an explicit data retention approval.
+- Mango Flyway migration 是前进式。不要修改已经执行过的 migration 文件。
+- 如果 `V4__native_job_engine_foundation.sql` 已执行，优先只回滚应用代码，保留表用于审计和后续前进修复。
+- 只有在生产流量进入前，或获得明确数据保留审批后，才允许破坏性回滚 Job 表。
 
-Task recovery after rollback:
+任务恢复：
 
-- Pause critical task definitions before rolling back if the previous version cannot understand the current Job model.
-- After forward fix, compare `mango_job_schedule_cursor.last_fire_time`, recent `mango_job_instance` rows, and business idempotency keys before re-enabling critical schedules.
+- 如果旧版本不能理解当前 Job 模型，回滚前先暂停关键任务定义。
+- 前进修复后，对比 `mango_job_schedule_cursor.last_fire_time`、近期 `mango_job_instance` 和业务幂等键，再恢复关键调度。
+
+## 14. 发布前确认
+后端模块测试：
+
+```bash
+mvn -f mango/pom.xml -pl mango-platform/mango-job -am test
+```
+
+部署链路确认：
+
+- 使用 `deploy/job/application-job-native.yml` 启动后，`mango.persistence.modules.mango-job.datasource` 指向预期数据源。
+- `mango_job` 数据库完成 Flyway migration，核心表 `mango_job_definition`、`mango_job_schedule_cursor`、`mango_job_worker_snapshot`、`mango_job_instance`、`mango_job_log_chunk` 存在。
+- 单体内嵌模式下，Worker 页面能看到 `embedded://{ip}:{port}` Worker。
+- 远程 Worker 模式下，Worker 调用 JobCenter 注册成功，JobCenter 能派发到 `/job/internal/workers/execute`。
+- 新建 `MANUAL` 或示例 probe 任务后，手动触发能生成 instance、attempt、log index 和 log chunk。
+- 关闭 `MANGO_JOB_SCHEDULER_ENABLED=false` 后，不再自动扫描到期任务。
+- 配置失败告警后，失败任务能在 `mango-notice` 产生发送记录。
+
+## 15. 相关文档
+- [Mango Job 模块 README](../../mango/mango-platform/mango-job/README.md)
+- [Job 前端 README](../../mango-ui/packages/job/README.md)
+- [Notice 模块 README](../../mango/mango-platform/mango-notice/README.md)
+- [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)

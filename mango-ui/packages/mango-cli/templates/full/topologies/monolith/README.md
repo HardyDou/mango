@@ -1,85 +1,136 @@
 # Monolith Topology
 
-## 1. 能力定位
+## 1. 概览
+`topologies/monolith` 说明生成业务项目在单体模式下的接入方式。单体模式只有一个后端 app 承载 Mango 平台 starter 和业务模块 starter，前端后台通过本地 `/api` 代理访问这个后端。
 
-`topologies/monolith` 说明 Mango 业务项目的单体部署拓扑模板，定义单体后端应用、业务模块 starter、前端后台应用和本地页面注册方式。
+核心判断：业务 app 依赖本地 `<module>-starter`，不依赖 `<module>-starter-remote`。
 
 ## 2. 适用场景
+- 当前阶段只需要一个后端进程交付。
+- 业务模块和平台模块共用同一个 Spring Boot app、数据源、事务边界和 Flyway 执行入口。
+- 开发团队更重视启动简单、调试直接和部署成本低。
+- 前端后台直接消费同一个后端 API base URL。
+- 业务模块未来可能拆分，但当前不需要独立扩缩容或独立发布。
 
-- 业务项目希望一个后端进程交付。
-- 业务 app 直接依赖本地业务模块 starter，例如 `<module>-starter`。
-- 前端后台 app 直接依赖业务页面包。
-- 开发和部署复杂度优先低于服务拆分诉求。
+## 3. 边界说明
+- 模块需要独立发布、独立扩缩容、独立数据库账号或独立运维窗口。
+- 调用方必须通过 Feign 或网关访问某个业务服务。
+- 不同业务模块之间有明确服务自治边界。
+- 希望用 `<module>-starter-remote` 在同一个 app 内调用本地模块；这会增加不必要的远程调用复杂度。
+- 需要验证跨服务认证、租户透传、超时、重试和降级策略。
 
-## 3. 不适用场景
+## 4. 模块组成
+单体模式的后端边界：
 
-- 不适合需要独立扩缩容、独立发布或独立数据库治理的模块。
-- 单体 app 不应依赖业务模块的 remote starter，例如 `<module>-starter-remote`。
-- 不替代未来微服务拆分设计。
+- `backend/app` 是唯一运行 app。
+- `backend/app/pom.xml` 依赖平台 starter 和业务 `<module>-starter`。
+- `<module>-starter` 聚合该业务模块的 API、core、Controller、resource manifest 和 AutoConfiguration。
+- `<module>-starter-remote` 只为未来微服务调用方准备，单体运行时不用。
 
-## 4. 模块边界
+前端边界：
 
-单体后端 app 聚合平台 starter 和业务 starter，统一暴露 HTTP API。业务模块仍保持 `api/core/starter/starter-remote` 分层，以便未来拆分；单体运行时只接入本地 starter。
+- `frontend/src/main.ts` 注册 Mango 平台页面和业务页面包。
+- `frontend/vite.config.ts` 把 `/api` 代理到本机后端。
+- 菜单 component key 必须和前端 page registry 一致。
 
 ## 5. 接入方式
-
-生成项目时选择单体拓扑：
-
-```bash
-mango init <project> --preset full --topology monolith
-```
-
-后端 app 依赖 `mango-admin-starter` 和业务模块 starter。前端后台 app 依赖 `@mango/admin` 和业务页面包。
-
-## 6. 配置项
-
-拓扑模板自身没有运行时配置项。生成后的配置由单体后端 `application.yml`、前端 `.env`、`mango.dev.json` 和本地 `.mango` 配置承载。
-
-## 7. 对外接口 / 扩展点
-
-- 后端本地 starter 暴露业务 Controller。
-- 前端业务包注册页面 key，例如 `<module>/<aggregate>/index`。
-- 后续如拆分微服务，可启用 `starter-remote` 给调用方使用。
-
-## 8. 数据库 / 初始化数据
-
-拓扑说明不包含数据库 migration。单体 app 启动时执行平台模块和业务模块 Flyway migration。
-
-## 9. 菜单 / 权限 / 租户
-
-单体模式下，菜单和权限资源仍归 authorization 管理。业务页面 key 需要与菜单配置一致，租户边界由后端上下文和持久化层控制。
-
-## 10. 验证方式
-
-代表性验证：
+生成单体项目：
 
 ```bash
-mvn -pl backend -am test
-pnpm -F <admin-app> build
+mango init {{projectKebab}} --preset {{preset}} --topology monolith
 ```
 
-浏览器验收：菜单 component key，例如 `<module>/<aggregate>/index`，可加载并能访问单体后端 API。
+本地启动：
 
-## 11. 业务接入最小闭环
+```bash
+scripts/dev-workspace.sh init
+mango validate
+mango plan
+mango start
+```
 
-单体首验顺序：在业务项目根目录执行 PMO preflight；后端运行 `mvn -pl backend -am test` 并启动单体 app；前端运行后台应用 build 或 dev；登录后台后打开菜单 component key，例如 `<module>/<aggregate>/index`，确认请求命中单体后端。
+新增业务模块：
 
-断言覆盖：单体 app 只依赖本地 starter，菜单可见且页面不空白，CRUD API 带当前用户和租户上下文，误接 `starter-remote` 时在依赖审查中失败。
+```bash
+mango module add order --aggregate sales-order --project-dir .
+```
 
-## 12. 常见问题
+单体依赖检查：
 
-- 单体中误接 `starter-remote` 会引入不必要的远程调用复杂度。
-- 页面注册 key 和菜单配置不一致会导致菜单打开空白。
-- 单体拆分前应先确认 API 契约、数据库边界和远程调用方。
+| 位置 | 应有内容 | 不应出现 |
+|------|----------|----------|
+| `backend/pom.xml` | `<module>modules/<module></module>` | 无关服务模块 |
+| `backend/app/pom.xml` | `<module>-starter` | `<module>-starter-remote` |
+| `application.yml` | `<module>.enabled: true` | 未启用的业务 Flyway 模块 |
+| `frontend/package.json` | 业务页面包和 API 包 | 指向 Mango 源码的相对路径依赖 |
+| `frontend/src/main.ts` | `register<Module>Pages()` | 重复注册或缺失注册 |
 
-## 13. 关联 PMO 规则
+## 6. 配置说明
+| 配置入口 | 字段 / Key | 默认值 | 含义 | 影响行为 | 源码入口 |
+|----------|------------|--------|------|----------|----------|
+| `mango.dev.json` | `groups.default` | 后端 app、前端 app | 单体默认启动顺序 | `mango start` 同时启动后端和前端 | `mango.dev.json` |
+| `mango.dev.json` | 后端 app `type` | `spring-boot-maven` | 后端启动类型 | 使用 Spring Boot Maven plugin | `mango.dev.json` |
+| `mango.dev.json` | 前端 app `type` | `vite` | 前端启动类型 | 使用 NPM dev script | `mango.dev.json` |
+| `.mango/dev-workspace.env` | `MANGO_BACKEND_PORT` | `5555` | 单体后端端口 | 前端 proxy 目标 | `scripts/dev-workspace.sh` |
+| `.mango/dev-workspace.env` | `MANGO_FRONTEND_PORT` | `5176` | 前端端口 | Vite dev server | `scripts/dev-workspace.sh` |
+| `frontend/src/main.ts` | `apiBaseUrl` | `/api` | 前端 API base URL | Vite dev proxy 转发到后端 | `frontend/src/main.ts` |
+| `frontend/vite.config.ts` | `/api` proxy | `http://127.0.0.1:5555` | 本地代理目标 | 只允许本机 host | `vite.config.ts` |
+| `application.yml` | `mango.persistence.flyway.modules.*.enabled` | 平台模块 true | 平台 migration 开关 | 后端启动执行平台表和基础数据 | `application.yml` |
+| `application.yml` | `business-flyway-modules` | 由 CLI 追加 | 业务 migration 开关 | 后端启动执行业务表 | `application.yml` |
 
+## 7. API 与扩展
+| 扩展点 | 单体用法 | 说明 |
+|--------|----------|------|
+| `<module>-starter` | app 直接依赖 | 暴露业务 Controller、资源清单和 AutoConfiguration |
+| `<module>-api` | 被 starter 和前端契约间接引用 | 定义 Command、Query、VO、API |
+| `<module>-core` | 被 starter 本地依赖 | 承载 Entity、Mapper、Service、Flyway |
+| `<module>-starter-remote` | 不接入 | 只给微服务调用方使用 |
+| 前端页面包 | app 直接依赖并注册 | 提供 component key |
+| resource manifest | 随 starter 被扫描 | 初始化菜单和权限资源 |
+
+## 8. 数据与初始化
+| 类型 | 位置 | 初始化内容 | 幂等键 / 唯一键 | 生效时机 | 排查入口 |
+|------|------|------------|-----------------|----------|----------|
+| 平台 Flyway | `application.yml` 平台 module 开关 | Mango 平台表和基础数据 | Flyway version | 单体 app 启动 | Flyway history、启动日志 |
+| 业务 Flyway | `business-flyway-modules` managed block | 业务模块表 | module code、Flyway version | `mango module add` 后下次启动 | 业务表存在 |
+| 菜单权限资源 | 业务 `<module>-starter` resource manifest | 菜单、页面、按钮权限 | appCode、moduleCode、menuCode、permissionCode | 资源同步 starter 启动 | 菜单树和权限码 |
+
+单体模式共用一个数据库连接。业务模块如果需要独立库或独立 schema，应按微服务或独立部署重新设计。
+
+## 9. 管理入口
+| 菜单 / 页面 | component key | 权限码 | 入库来源 | 默认套餐 / 角色 | 后端校验入口 |
+|-------------|---------------|--------|----------|-----------------|--------------|
+| 平台页面 | Mango 平台包登记 | 平台模块定义 | 平台 migration 或 resource manifest | 平台模块或 seed 定义 | 平台 Controller / Service |
+| 业务页面 | `<module>/<aggregate>/index` | `<module>:<aggregate>:create`、`view`、`update`、`delete` | 业务 resource manifest | 业务授权流程定义 | 业务 Controller / Service |
+
+租户边界在单体 app 内统一处理。业务 Entity 继承租户基类时，要验证新增、查询、分页、详情、更新和删除都带当前租户上下文。
+
+## 10. 快速开始
+1. 运行 preflight，读取后端模块、数据库、前端和交付规则。
+2. 用 `mango module add` 生成业务模块。
+3. 确认 app 依赖 `<module>-starter`，不依赖 `<module>-starter-remote`。
+4. 启动后端，确认平台和业务 Flyway 都执行成功。
+5. 登录后台，确认菜单显示、component key 能加载页面。
+6. 执行 CRUD 链路，确认请求命中单体后端并带认证、权限和租户上下文。
+7. 完成后端测试、前端构建、E2E 和验收证据登记。
+
+## 11. 问题排查
+| 问题 | 原因 | 处理方式 |
+|------|------|----------|
+| 单体 app 引入 remote starter | 混淆本地依赖和远程调用依赖 | app 改依赖 `<module>-starter` |
+| 页面菜单打开空白 | component key 与前端 registry 不一致 | 检查 resource manifest 和 `register<Module>Pages()` |
+| API 404 | Controller path、Vite proxy 或菜单路径不一致 | 用 `mango plan` 和浏览器 network 排查 |
+| 业务表没创建 | business Flyway module 未启用 | 检查 `application.yml` managed block |
+| 租户数据串租 | 只建了 `tenant_id` 字段，未验证查询过滤 | 补租户上下文测试和数据权限断言 |
+
+## 12. 相关文档
 - [开发流程规范](../../business-pmo/mango-baseline/rules/00-dev-flow.md)
 - [后端模块规范](../../business-pmo/mango-baseline/rules/backend/05-module.md)
-- [前端模块规范](../../business-pmo/mango-baseline/rules/frontend/01-vue-code.md)
-- [交付契约规范](../../business-pmo/mango-baseline/rules/01-delivery-contract.md)
+- [数据库规范](../../business-pmo/mango-baseline/rules/backend/04-db.md)
+- [模块菜单规范](../../business-pmo/mango-baseline/rules/backend/11-module-menu.md)
+- [前端开发流程](../../business-pmo/mango-baseline/rules/frontend/05-dev-flow.md)
 
-## 14. 历史设计 / 交付记录
-
-- [Business Starter README](../../README.md)
+## 13. 历史资料
+- [项目 README](../../README.md)
 - [Business PMO README](../../business-pmo/README.md)
+- [微服务拓扑说明](../microservice/README.md)

@@ -1,37 +1,67 @@
 # Mango Auth
 
-## 1. 能力定位
-
-`mango-auth` 提供认证能力，负责登录、刷新 token、注销、token 校验、企微登录入口和 Spring Security 认证接入。主要使用者是平台认证服务、业务应用 starter 和需要远程调用认证服务的业务模块。
+## 1. 概览
+`mango-auth` 是 Mango 的认证模块，负责用户名密码登录、登录前机构选择、access token / refresh token 签发、刷新、注销、校验、当前用户信息和企业微信扫码登录入口。它生成认证事实，但不保存账号主数据，也不维护菜单和权限。
 
 代码事实：
 
-- 聚合模块 `io.mango.platform.auth:mango-auth`。
-- 子模块包括 `mango-auth-api`、`mango-auth-core`、`mango-auth-starter`、`mango-auth-starter-remote`。
-- 本地 HTTP Controller 路径为 `/auth`。
-- 远程 Feign Client 服务名为 `mango-auth`，路径为 `/auth`。
+- Maven 聚合模块：`io.mango.platform.auth:mango-auth`。
+- 子模块：`mango-auth-api`、`mango-auth-core`、`mango-auth-starter`、`mango-auth-starter-remote`。
+- 本地 HTTP 路径：`/auth`。
+- Remote starter Feign 服务名：`mango-auth`，路径 `/auth`。
+- 登录默认应用编码：`internal-admin`。
 
-## 2. 适用场景
+## 2. 功能清单
 
-- 用户名密码登录并签发 access token / refresh token。
-- access token 校验、refresh token 换发、logout 注销。
-- 通过 `AuthUserProvider` 读取 `mango-identity` 的认证用户事实。
-- 接入验证码、登录租户选择、反重放、签名和幂等保护。
-- 微服务模块通过 `mango-auth-starter-remote` 调用认证服务。
+| 能力 | 常用入口 |
+|------|----------|
+| 管理后台或业务应用使用用户名、密码、机构和应用入口登录 | Maven 依赖 / HTTP API / Java API |
+| 登录页先校验用户名密码，再列出可登录机构 | Maven 依赖 / HTTP API / Java API |
+| 使用 refresh token 换发新的 access token / refresh token | Maven 依赖 / HTTP API / Java API |
+| 用户退出后让旧 token 进入撤销状态 | Maven 依赖 / HTTP API / Java API |
+| 通过企业微信 code 换取已绑定 Mango 用户并签发 token | Maven 依赖 / HTTP API / Java API |
+| 需要对请求时间戳、nonce、幂等键或签名做统一防重放校验 | Maven 依赖 / HTTP API / Java API |
+| 微服务模块通过 remote starter 调用认证服务 | Maven 依赖 / HTTP API / Java API |
 
-## 3. 不适用场景
+## 3. 适用场景
+- 管理后台或业务应用使用用户名、密码、机构和应用入口登录。
+- 登录页先校验用户名密码，再列出可登录机构。
+- 使用 refresh token 换发新的 access token / refresh token。
+- 用户退出后让旧 token 进入撤销状态。
+- 通过企业微信 code 换取已绑定 Mango 用户并签发 token。
+- 需要对请求时间戳、nonce、幂等键或签名做统一防重放校验。
+- 微服务模块通过 remote starter 调用认证服务。
 
-- 不保存账号主数据，账号资料归属 `mango-identity`。
-- 不维护角色、菜单、权限码和接口资源，授权归属 `mango-authorization`。
-- 不替代边界入口访问控制，外部入口统一由 `mango-access` 承担。
-- 不在 README 中复制 token、密码、权限等长期安全规则。
+## 4. 边界说明
+- 不保存账号、密码哈希、成员和外部身份绑定；这些属于 `mango-identity`。
+- 不维护角色、菜单、权限码和接口访问策略；这些属于 `mango-authorization`。
+- 不承担边界入口拦截；外部入口由 `mango-access` 或 Spring Security filter chain 消费 token 和授权策略。
+- 不创建租户、组织、角色或菜单默认数据。
 
-## 4. 模块边界
+## 5. 模块组成
+登录链路依赖四类外部事实：
 
-`mango-auth` 的边界是“认证事实生成和验证”。登录成功后的授权快照来自 `mango-authorization`，用户密码和状态来自 `mango-identity`，验证码能力来自 `mango-captcha`，短期状态和幂等能力可依赖 `mango-infra-kv`。
+- `AuthUserProvider` 从 `mango-identity` 读取 `realm + username` 对应用户、密码哈希和状态。
+- `LoginTenantProvider` 返回用户可登录机构，并提供 `memberId`、`tenantId`、`tenantCode`、`tenantName`。
+- `ITokenProvider` 由 `mango-authorization-support` 提供 JJWT 实现，负责签发和校验 token。
+- `IAuthorizationProvider` 从 `mango-authorization` 加载角色和权限快照，写入登录响应。
 
-## 5. 接入方式
+登录成功后 token claim 会携带：
 
+- `username`
+- `realm`
+- `actorType`
+- `partyType`
+- `partyId`
+- `memberId`
+- `tenantId`
+- `tenantCode`
+- `tenantName`
+- `appCode`
+
+后续 `mango-access` 和业务服务依赖这些 claim 建立请求上下文。
+
+## 6. 接入方式
 认证服务本地接入：
 
 ```xml
@@ -41,7 +71,7 @@
 </dependency>
 ```
 
-远程调用接入：
+微服务远程调用接入：
 
 ```xml
 <dependency>
@@ -50,7 +80,7 @@
 </dependency>
 ```
 
-只使用契约模型时依赖：
+只使用契约对象和 Java API：
 
 ```xml
 <dependency>
@@ -59,73 +89,177 @@
 </dependency>
 ```
 
-## 6. 配置项
+本地认证服务还需要装配：
 
-已发现配置前缀：
+- `AuthUserProvider` 或 `IdentityUserApi`。
+- `LoginTenantProvider`。
+- `IAuthorizationProvider`。
+- `ITokenProvider`。
+- `PasswordEncoder`。
+- 可选 `CaptchaApi`、`NoticeApi`、`SysLoginLogApi`、`IpLocationResolver`、`IKvStore`。
 
-- `mango.auth.security`：认证安全配置，来源 `AuthSecurityProperties`。
-- `mango.auth.anti-replay`：反重放配置，来源 `AntiReplayProperties`。
+## 7. 配置说明
+### 6.1 Spring Security 放行路径
 
-配置字段以对应 `@ConfigurationProperties` 类为准。
+配置前缀：`mango.auth.security`。
 
-## 7. 对外接口 / 扩展点
+| 配置项 | 默认值 | 作用 |
+|--------|--------|------|
+| `mango.auth.security.permit-paths` | 空列表 | Spring Security 层直接匿名放行的 Ant 路径 |
+
+示例：
+
+```yaml
+mango:
+  auth:
+    security:
+      permit-paths:
+        - /auth/login
+        - /auth/refresh
+        - /auth/captcha/send
+```
+
+说明：`AuthController` 已通过 `@ApiAccess` 声明访问模式；这里控制的是 Spring Security filter chain 的放行匹配。不要用它替代 authorization 资源策略验收。
+
+### 6.2 JWT
+
+JJWT 实现在 `JjwtTokenServiceImpl`，配置前缀来自 `mango.security.jwt`。
+
+| 配置项 | 默认值 | 作用 |
+|--------|--------|------|
+| `mango.security.jwt.secret` | 无，必填 | JWT HMAC 密钥，UTF-8 字节长度必须至少 32 |
+| `mango.jwt.secret` | 无 | 历史兼容密钥；仅当新配置为空时使用 |
+| `mango.security.jwt.access-token-validity` | `7200` | access token 有效期，单位秒 |
+| `mango.security.jwt.refresh-token-validity` | `604800` | refresh token 有效期，单位秒 |
+
+示例：
+
+```yaml
+mango:
+  security:
+    jwt:
+      secret: "replace-with-at-least-32-byte-secret"
+      access-token-validity: 7200
+      refresh-token-validity: 604800
+```
+
+如果存在 `IKvStore`，refresh token 刷新时会记录 `jwt:refresh:jti:<jti>`，防止同一个 refresh token 被重复使用；如果没有 `IKvStore`，启动日志会提示 refresh token replay protection disabled。
+
+### 6.3 反重放、幂等和签名
+
+配置前缀：`mango.auth.anti-replay`。
+
+| 配置项 | 默认值 | 作用 |
+|--------|--------|------|
+| `mango.auth.anti-replay.app-secrets` | 空 map | appKey 到 secret 的映射；SM2/RSA 使用 Base64 公钥，MD5 使用密钥 |
+| `mango.auth.anti-replay.default-secret` | 空 | 默认签名密钥 |
+| `mango.auth.anti-replay.allow-fallback` | `false` | 未找到 appKey 时是否允许使用默认密钥 |
+
+请求头：
+
+| 请求头 | 行为 |
+|--------|------|
+| `X-Request-Timestamp` | 可选；存在时必须是毫秒时间戳，和服务端时间差不能超过 5 分钟 |
+| `X-Replay-Nonce` | 可选；存在时通过 `ReplayGuard` 占用 `replay:<nonce>`，TTL 10 分钟 |
+| `X-Idempotency-Key` | 可选；POST/PUT/DELETE 存在时通过 `IdempotencyGuard` 占用 `idem:<key>`，TTL 24 小时 |
+| `X-Sign-Algorithm` | 和 `X-App-Key`、`X-Sign` 同时存在时触发签名校验，支持 `SM2`、`RSA`、`MD5` |
+| `X-App-Key` | 签名应用标识，用于查 `app-secrets` |
+| `X-Sign` | 请求签名 |
+
+示例：
+
+```yaml
+mango:
+  auth:
+    anti-replay:
+      app-secrets:
+        admin-web: "replace-with-md5-secret-or-base64-public-key"
+      allow-fallback: false
+```
+
+签名待签字符串由 `appKey`、`secret`、`timestamp`、`body` 按 key 字典序拼接。只有三个签名请求头都存在时才校验签名；仅配置密钥不会自动要求所有请求必须签名。
+
+## 8. API 与扩展
+HTTP 接口：
+
+| 方法 | 路径 | 访问模式 | 说明 |
+|------|------|----------|------|
+| POST | `/auth/login` | PUBLIC | 用户名密码登录，成功后返回 token 并写入 `MANGO_TOKEN` HttpOnly Cookie |
+| POST | `/auth/login-institutions` | PUBLIC | 登录前查询账号可进入的启用机构 |
+| POST | `/auth/wecom/login` | PUBLIC | 企业微信扫码或工作台 code 登录 |
+| GET | `/auth/wecom/login-config` | PUBLIC | 按 `tenantId` 查询企微扫码登录公开配置 |
+| POST | `/auth/refresh` | PUBLIC | 使用 refresh token 换发 token |
+| POST | `/auth/logout` | LOGIN | 注销当前 token，并清理浏览器 Cookie |
+| POST | `/auth/validate` | LOGIN | 校验 access token 是否有效且未撤销 |
+| GET | `/auth/info` | LOGIN | 根据 access token 返回当前用户、角色和权限 |
+| POST | `/auth/captcha/send` | PUBLIC | 调用 `CaptchaApi` 发送短信或邮件验证码 |
+
+主要入参：
+
+| 对象 | 必填字段 | 关键可选字段 |
+|------|----------|--------------|
+| `LoginCommand` | `username`、`password` | `tenantId` 或 `tenantCode` 至少传一个；`realm`、`actorType`、`partyType`、`partyId`、`appCode`、`captchaCode`、`captchaKey` |
+| `LoginTenantOptionsCommand` | `username`、`password` | `realm`、`appCode` |
+| `RefreshTokenCommand` | `refreshToken` | 可带 `Bearer ` 前缀 |
+| `LogoutCommand` | `token` | 也可用 `Authorization` 请求头传入 |
+| `ValidateTokenCommand` | `token` | 可带 `Bearer ` 前缀 |
+| `WecomLoginCommand` | `code` | `channelConfigId`、`tenantId`、`tenantCode`、`appCode` |
+
+扩展点：
 
 - `AuthApi`：认证 Java API。
 - `CaptchaConfigService`：验证码配置 SPI。
-- `LoginTenantProvider`：登录租户选择 SPI。
-- `AuthController` 运行时 HTTP 路径 `/auth`，包含 `/login`、`/login-institutions`、`/wecom/login`、`/wecom/login-config`、`/refresh`、`/logout`、`/validate`、`/info`、`/captcha/send`。
-- `AuthFeignClient` 是 remote starter 适配层，业务代码优先依赖 `AuthApi` 契约。
-- 主要命令对象包括 `LoginCommand`、`LoginTenantOptionsCommand`、`LogoutCommand`、`RefreshTokenCommand`、`ValidateTokenCommand`、`WecomLoginCommand`、`CaptchaSendRequest`。
+- `LoginTenantProvider`：登录机构选择 SPI，登录时必须能按用户和机构返回启用成员。
+- `AppSecretProvider`：签名密钥提供者，默认使用 `mango.auth.anti-replay` 配置。
+- `TokenRevocationService`：注销和刷新后撤销旧 token 的扩展点。
 
-## 8. 数据库 / 初始化数据
+## 9. 数据与初始化
+本模块没有独立 Flyway migration。
 
-本模块未发现独立 Flyway migration。账号数据由 `mango-identity` 初始化，权限和菜单数据由 `mango-authorization` 初始化。
+认证链路依赖的数据来源：
 
-## 9. 菜单 / 权限 / 租户
+- 账号、密码哈希、状态、登录域来自 `mango-identity` 的 `identity_user`。
+- 可登录机构和成员来自 `tenant_member`。
+- 外部身份绑定来自 `identity_external_binding`。
+- 应用入口、角色、菜单、权限和成员角色绑定来自 `mango-authorization`。
+- refresh replay 和反重放使用 `IKvStore`，key 分别包含 `jwt:refresh:jti:`、`replay:`、`idem:`。
 
-本模块不提供独立管理菜单。登录时可携带 `realm`、`actorType`、`partyType`、`partyId`、`appCode` 等身份上下文；可选租户选择能力由 `LoginTenantProvider` 扩展。
+## 10. 管理入口
+`mango-auth` 不提供管理菜单。
 
-## 10. 验证方式
+登录时必须明确机构上下文：
 
-最小验证命令：
+- `tenantId` 和 `tenantCode` 至少传一个。
+- 后端通过 `LoginTenantProvider` 校验当前用户是否有该机构启用成员。
+- `memberId` 是后续权限快照主体，缺失会导致登录失败或权限为空。
+- `appCode` 为空时默认 `internal-admin`。
 
-```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-auth -am test
-```
+登录成功后 `LoginVO.roles` 和 `LoginVO.permissions` 来自 `IAuthorizationProvider.load`，不是 auth 自己计算。权限为空时应优先检查角色菜单和授权绑定，而不是修改 auth。
 
-该命令只验证 auth 模块及依赖的测试覆盖；完整登录闭环还需要准备 `mango-identity` 的真实账号、`mango-authorization` 的应用入口和授权关系，并按需接入 `mango-captcha` / `mango-infra-kv` 验证验证码、反重放和登录失败策略。
+## 11. 快速开始
+业务应用做登录接入时，最小顺序是：
 
-代表性接口验收：
+1. 在 identity 中创建用户，确认 `realm + username` 唯一、密码哈希正确、状态为 1。
+2. 为用户建立 `tenant_member`，并能通过 `LoginTenantProvider` 查询到启用机构。
+3. 在 authorization 中建立应用入口、角色和成员角色绑定。
+4. 配置 `mango.security.jwt.secret`。
+5. 调用 `/auth/login-institutions` 让用户选择机构。
+6. 调用 `/auth/login`，后续请求使用 `Authorization: Bearer <accessToken>`。
+7. 使用 `/auth/info` 校验角色和权限是否符合预期。
 
-- `POST /auth/login` 返回 access token 和 refresh token。
-- `GET /auth/info` 可按 Authorization header 或 cookie 中的 token 返回当前登录信息。
-- `POST /auth/login-institutions` 可返回登录前可选机构。
-- `POST /auth/captcha/send` 可触发验证码发送链路。
-- `GET /auth/wecom/login-config` 和 `POST /auth/wecom/login` 覆盖企微登录配置和登录入口。
-- `POST /auth/refresh` 可换发 token。
-- `POST /auth/validate` 能识别有效和无效 token。
-- `POST /auth/logout` 后旧 token 不应继续通过校验。
-- 反重放和登录失败锁定需要结合 `mango.auth.anti-replay`、`mango.auth.security` 配置做集成验收。
+## 12. 问题排查
+- 启动失败提示 JWT secret：配置 `mango.security.jwt.secret`，长度至少 32 字节。
+- 登录提示机构必选：`LoginCommand` 中传 `tenantId` 或 `tenantCode`。
+- 登录后权限为空：检查 authorization 的角色、菜单、权限和成员角色绑定。
+- refresh token 重复刷新失败：这是 replay protection 行为，应使用最新 refresh token。
+- 企微登录提示未绑定：先通过 identity 外部身份接口绑定 `WECOM + corpId + externalUserId`。
+- 防重放请求被拒：检查客户端时间、nonce 是否重复、签名密钥和算法是否匹配。
 
-## 11. 业务接入最小闭环
-
-业务应用接入 auth 时，先接入 `mango-auth-starter` 或 remote starter，并确认 identity 已存在可登录用户、authorization 已存在应用入口和授权关系。最小登录链路是调用 `POST /auth/login`，请求中提供登录域、用户名、密码和需要的 `appCode`；后续请求通过 Authorization header 或受信 cookie 传递 access token。
-
-需要验证码时先调用 `/auth/captcha/send` 或 captcha 图形/行为接口，再把验证码 key 和答案放入登录命令。验收断言覆盖：正确账号可登录并刷新 token，错误密码触发失败策略，logout 后旧 token 失效，缺失或错误 `appCode` 不应得到错误授权快照。
-
-## 12. 常见问题
-
-- 登录失败先确认 `mango-identity` 中账号状态、密码哈希和登录域是否匹配。
-- 权限为空先检查 `mango-authorization` 的角色、权限和应用入口绑定，而不是修改 auth。
-- 验证码链路异常时检查 `CaptchaConfigService` 和 `mango-captcha` 接入。
-
-## 13. 关联 PMO 规则
-
+## 13. 相关文档
 - [后端 API 规范](../../../mango-pmo/rules/backend/03-api.md)
 - [后端安全规范](../../../mango-pmo/rules/backend/06-security.md)
 - [后端模块规范](../../../mango-pmo/rules/backend/05-module.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史设计 / 交付记录
-
+## 14. 历史资料
 - [Mango 能力地图](../../../mango-docs/capabilities/README.md)

@@ -1,25 +1,30 @@
 # mango-payment
 
-## 1. 能力定位
-
+## 1. 概览
 `mango-payment` 是 Mango 支付中心后端模块，提供支付应用、企业主体、支付方式、支付通道、通道签约、收银台、业务订单、支付订单、退款、流水、通知、对账、结算、线下收款和线下退款能力。
 
-## 2. 适用场景
+## 2. 功能清单
 
+| 能力 | 常用入口 |
+|------|----------|
+| 平台需要统一接入多支付通道，并通过支付方式、通道能力和签约配置完成路由 | Maven 依赖 / HTTP API / Java API |
+| 业务系统需要创建业务订单、拉起收银台、发起支付、退款、查单、查退款和关闭订单 | Maven 依赖 / HTTP API / Java API |
+| 财务或运营需要查看流水、通知、对账批次、差异处理、结算汇总和操作审计 | Maven 依赖 / HTTP API / Java API |
+| 线下收款、线下退款、银行流水导入和支付异常处理需要纳入同一支付域 | Maven 依赖 / HTTP API / Java API |
+
+## 3. 适用场景
 - 平台需要统一接入多支付通道，并通过支付方式、通道能力和签约配置完成路由。
 - 业务系统需要创建业务订单、拉起收银台、发起支付、退款、查单、查退款和关闭订单。
 - 财务或运营需要查看流水、通知、对账批次、差异处理、结算汇总和操作审计。
 - 线下收款、线下退款、银行流水导入和支付异常处理需要纳入同一支付域。
 
-## 3. 不适用场景
-
+## 4. 边界说明
 - 不直接保存银行卡、证书明文、私钥明文或外部支付账号敏感资料。
 - 不替代外部支付机构的商户开户、资质审核和通道开通流程。
 - 不把业务域订单生命周期完全迁移到支付中心；业务域仍负责自己的商品、合同、履约和售后语义。
 - 不依赖手工改库完成通道、菜单、权限或编号初始化。
 
-## 4. 模块边界
-
+## 5. 模块组成
 - `mango-payment-api` 提供支付业务码、Command、Query、VO 和模块 API。
 - `mango-payment-core` 提供领域模型、Mapper、Service、通道适配、Flyway 迁移、状态流和编号生成适配。
 - `mango-payment-starter` 提供自动配置、Web Controller、调度入口和模块声明。
@@ -27,8 +32,7 @@
 
 支付中心依赖 `mango-numgen` 生成平台编号，依赖 `mango-authorization` 初始化菜单和权限，依赖 `mango-workflow` 支撑退款审批，依赖 `mango-file` 保存证书或凭据类文件。
 
-## 5. 接入方式
-
+## 6. 接入方式
 Maven 依赖：
 
 ```xml
@@ -40,16 +44,66 @@ Maven 依赖：
 
 应用侧启用 starter 后，随模块加载 Flyway migration、Controller、通道适配器、通知调度和退款审批初始化能力。微服务场景按应用拓扑接入 `mango-payment-starter-remote`。
 
-## 6. 配置项
+## 7. 配置说明
+支付中心运行配置由 starter 配置、数据库通道配置和签约配置共同决定。starter 配置前缀：`mango.payment`。
 
-支付中心运行配置由 starter 配置、数据库通道配置和签约配置共同决定：
+| 配置项 | 类型 | 默认值 | 含义 |
+|--------|------|--------|------|
+| `enabled` | boolean | `true` | 是否启用支付中心自动配置。`PaymentAutoConfiguration` 使用该开关，缺省开启。 |
+| `notification.dispatch.enabled` | boolean | `true` | 是否启动支付通知补偿调度器。 |
+| `notification.dispatch.interval-millis` | long | `60000` | 通知补偿调度间隔。 |
+| `notification.dispatch.initial-delay-millis` | long | `30000` | 应用启动后首次通知补偿延迟。 |
+| `notification.dispatch.tenant-limit` | int | `20` | 单轮最多扫描的租户数量。 |
+| `notification.dispatch.batch-size` | int | `20` | 单轮每租户最多处理的通知记录数量。 |
+| `observability.channel-failure-rate-threshold` | decimal | `0.1000` | 通道失败率告警阈值。 |
+| `observability.payment-success-rate-minimum` | decimal | `0.9500` | 支付成功率最低阈值。 |
+| `observability.refund-success-rate-minimum` | decimal | `0.9500` | 退款成功率最低阈值。 |
+| `observability.payment-backlog-threshold` | long | `100` | 支付积压告警阈值。 |
+| `observability.callback-failure-threshold` | long | `1` | 回调失败告警阈值。 |
+| `observability.notification-failure-threshold` | long | `1` | 通知失败告警阈值。 |
+| `observability.refund-failure-threshold` | long | `1` | 退款失败告警阈值。 |
+| `observability.difference-threshold` | long | `1` | 对账差异告警阈值。 |
+| `observability.unhandled-exception-threshold` | long | `1` | 未处理异常单告警阈值。 |
+| `observability.expiring-certificate-threshold` | long | `1` | 即将过期证书数量告警阈值。 |
+| `observability.certificate-warning-days` | int | `30` | 证书到期提前预警天数。 |
+| `workflow.refund-approval.initializer.enabled` | boolean | `false` | 是否启动退款审批流程定义初始化。 |
+| `workflow.refund-approval.initializer.system-tenant-id` | long | 空 | 初始化流程定义使用的系统租户 ID。 |
+| `workflow.refund-approval.initializer.system-user-id` | long | 空 | 初始化流程定义使用的系统用户 ID。 |
+| `workflow.refund-approval.initializer.principal-name` | string | 空 | 初始化流程定义使用的操作者名称。 |
+| `workflow.refund-approval.initializer.realm` | string | `INTERNAL` | 初始化上下文登录域。 |
+| `workflow.refund-approval.initializer.actor-type` | string | `INTERNAL_USER` | 初始化上下文操作者类型。 |
+| `workflow.refund-approval.initializer.party-type` | string | `INTERNAL_ORG` | 初始化上下文主体类型。 |
+| `workflow.refund-approval.initializer.party-id` | long | 空 | 初始化上下文主体 ID。 |
+| `workflow.refund-approval.initializer.app-code` | string | 空 | 初始化上下文应用编码。 |
+
+配置示例：
+
+```yaml
+mango:
+  payment:
+    enabled: true
+    notification:
+      dispatch:
+        enabled: true
+        interval-millis: 60000
+        batch-size: 20
+    workflow:
+      refund-approval:
+        initializer:
+          enabled: true
+          system-tenant-id: 1
+          system-user-id: 1
+          principal-name: system
+          app-code: internal-admin
+```
+
+数据库配置边界：
 
 - 通道、通道能力、签约字段模板、路由规则、菜单权限和编号规则通过 Flyway 初始化。
 - 商户号、应用号、证书文件、密钥引用、网关地址和回调地址通过支付签约配置维护。
 - 证书和文件类配置保存文件中心 ID，敏感字段需要加密存储并脱敏展示。
 
-## 7. 对外接口 / 扩展点
-
+## 8. API 与扩展
 模块 API 覆盖：
 
 - `PaymentApplicationApi`
@@ -82,8 +136,7 @@ Maven 依赖：
 
 扩展点包括通道支付适配器、通道回调适配器、账单获取或解析能力、支付方式路由规则、退款审批流程定义和通知调度。
 
-## 8. 数据库 / 初始化数据
-
+## 9. 数据与初始化
 `mango-payment-core` 包含 `db/migration/payment` Flyway 脚本，用于初始化支付应用、通道、能力、签约、订单、退款、流水、通知、对账、结算、线下收款、线下退款、虚拟支付和相关约束。
 
 关联初始化数据分布在：
@@ -93,50 +146,31 @@ Maven 依赖：
 - `mango-numgen`：支付订单、退款、流水、通知、对账和线下单据编号生成器。
 - `mango-job`：支付通道账单获取任务。
 
-## 9. 菜单 / 权限 / 租户
+退款审批流程定义由 `PaymentRefundApprovalWorkflowDefinitionInitializer` 在应用启动期初始化；它写入 workflow 流程定义，供退款审批入口引用。
 
+## 10. 管理入口
 支付中心菜单和操作权限由 `mango-authorization` migration 初始化。后端接口按当前登录态、租户上下文、应用、主体、签约通道和权限码控制访问范围；前端页面 key 需要与 `@mango/payment` 注册的页面 key 保持一致。
 
-## 10. 验证方式
-
-后端单元和契约测试：
-
-```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-payment -am test
-```
-
-相关编号、权限、工作流和文件能力变更时，追加对应模块测试：
-
-```bash
-mvn -f mango/pom.xml -pl mango-platform/mango-numgen,mango-platform/mango-authorization,mango-platform/mango-workflow,mango-platform/mango-file -am test
-```
-
-真实链路验收至少覆盖：创建业务订单、路由命中签约通道、拉起支付、接收回调、主动查单、发起退款、查退款、获取或导入账单、生成对账批次、识别差异、生成通知和审计记录。
-
-## 11. 业务接入最小闭环
-
+## 11. 快速开始
 业务方先创建支付应用、企业主体、支付方式、通道和签约配置，再配置收银台和路由规则。业务下单时创建业务订单，前端拉起收银台，支付中心生成支付订单并调用通道，通道回调或主动查单推进支付状态，业务方通过通知记录或开放接口同步结果。
 
 最小验收断言：业务订单可创建，收银台可展示可用支付方式，支付订单可进入通道，支付成功后业务订单和支付订单状态一致，退款可按权限发起并产生退款流水，对账能生成批次和差异结果。
 
-## 12. 常见问题
-
+## 12. 问题排查
 - 支付方式不显示：检查支付方式状态、收银台配置、企业主体、签约能力和路由规则。
 - 通道返回签名错误：检查签约字段、证书文件、回调地址、网关地址和适配器签名算法。
 - 回调未推进状态：检查公网回调入口、通道回调路由、验签结果、幂等记录和统一状态流日志。
 - 编号不连续：确认对应 `genKey`、日期分组和租户上下文是否符合 `mango-numgen` 规则。
 - 对账无结果：检查账单获取任务、导入文件、通道交易号、支付流水和对账批次状态。
 
-## 13. 关联 PMO 规则
-
+## 13. 相关文档
 - [后端代码规范](../../../mango-pmo/rules/backend/01-code.md)
 - [模块菜单规范](../../../mango-pmo/rules/backend/11-module-menu.md)
 - [AI 编码红线](../../../mango-pmo/rules/03-ai-coding-redlines.md)
 - [AI 交付质量](../../../mango-pmo/rules/05-ai-delivery-quality.md)
 - [能力说明维护规范](../../../mango-pmo/rules/08-capability-docs.md)
 
-## 14. 历史设计 / 交付记录
-
+## 14. 历史资料
 - [支付边界与台账](../../../mango-docs/plans/2026-05-25-payment-app-cashier-boundary-ledger.md)
 - [支付交付台账](../../../mango-docs/plans/2026-05-25-payment-delivery-ledger.md)
 - [支付生产就绪](../../../mango-docs/plans/2026-05-25-payment-production-readiness.md)

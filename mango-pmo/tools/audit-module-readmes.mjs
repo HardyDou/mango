@@ -7,34 +7,39 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const args = process.argv.slice(2);
 const selfTest = args.includes('--self-test');
 
-const requiredSections = [
-  '能力定位',
-  '适用场景',
-  '不适用场景',
-  '模块边界',
-  '接入方式',
-  '配置项',
-  '对外接口 / 扩展点',
-  '数据库 / 初始化数据',
-  '菜单 / 权限 / 租户',
-  '验证方式',
-  '业务接入最小闭环',
-  '常见问题',
-  '关联 PMO 规则',
-  '历史设计 / 交付记录'
+const requiredSectionGroups = [
+  { name: '概览', anyOf: ['概览'] },
+  { name: '功能清单', anyOf: ['功能清单'] },
+  { name: '接入方式', anyOf: ['接入方式', '后端接入', '前端接入'] },
+  { name: '配置说明', anyOf: ['配置说明', 'YAML 配置字段', '运行时配置字段'] },
+  { name: 'API 与扩展', anyOf: ['API 与扩展', '接口与扩展', '后端接入', '前端接入', '返回字段'] },
+  { name: '数据与初始化', anyOf: ['数据与初始化'] },
+  { name: '管理入口', anyOf: ['管理入口'] },
+  { name: '快速开始', anyOf: ['快速开始'] },
+  { name: '问题排查', anyOf: ['问题排查'] },
+  { name: '相关文档', anyOf: ['相关文档'] }
 ];
 
-const frontendEntrySections = [
-  '入口定位',
-  '公开导出',
-  '使用场景',
-  '接入方式',
-  'Props / 参数 / 事件',
-  '后端依赖',
-  '权限 / 租户 / 数据边界',
-  '验证方式',
-  '常见问题',
-  '关联文档'
+const frontendEntrySectionGroups = [
+  { name: '概览', anyOf: ['概览'] },
+  { name: '功能清单', anyOf: ['功能清单'] },
+  { name: '接入方式', anyOf: ['接入方式'] },
+  { name: '参数与事件', anyOf: ['参数与事件'] },
+  { name: '后端依赖', anyOf: ['后端依赖'] },
+  { name: '权限与数据边界', anyOf: ['权限与数据边界'] },
+  { name: '快速开始', anyOf: ['快速开始'] },
+  { name: '问题排查', anyOf: ['问题排查'] },
+  { name: '相关文档', anyOf: ['相关文档'] }
+];
+
+const managementViewSectionGroups = [
+  { name: '概览', anyOf: ['概览'] },
+  { name: '功能清单', anyOf: ['功能清单'] },
+  { name: '页面入口', anyOf: ['页面入口'] },
+  { name: '后端依赖', anyOf: ['后端依赖'] },
+  { name: '管理入口', anyOf: ['管理入口'] },
+  { name: '问题排查', anyOf: ['问题排查'] },
+  { name: '相关文档', anyOf: ['相关文档'] }
 ];
 
 const moduleRoots = [
@@ -57,19 +62,11 @@ const topLevelReadmes = [
   'mango-business-starter/topologies/monolith/README.md'
 ];
 
-const frontendEntryReadmes = [
-  'mango-ui/packages/auth/src/views/README.md',
-  'mango-ui/packages/file/src/components/README.md',
-  'mango-ui/packages/job/src/views/README.md',
-  'mango-ui/packages/rbac/src/views/README.md',
-  'mango-ui/packages/system/src/components/README.md',
-  'mango-ui/packages/workflow/src/components/README.md'
-];
-
 const ignoredDirs = new Set(['node_modules', 'target', 'dist', 'templates']);
 const placeholderPattern = /\bTODO\b|\bTBD\b|待补充|待完善/;
 const backtickedCommandPattern = /^`(?:pnpm|mvn|node|npm|npx|git|gh)\b.*`$/gm;
 const packageScriptPattern = /^pnpm\s+-F\s+(@mango\/[^\s]+)\s+([a-z][\w:-]*)\b/gm;
+const sourceFileExtensions = new Set(['.java', '.ts', '.tsx', '.vue', '.json', '.sql', '.yml', '.yaml', '.properties', '.xml']);
 
 function walk(dir, results = []) {
   if (!fs.existsSync(dir)) return results;
@@ -215,41 +212,72 @@ function packageScriptIssues(text) {
   return issues;
 }
 
-function requiredSectionsFor(readmePath) {
-  return frontendEntryReadmes.includes(readmePath) ? frontendEntrySections : requiredSections;
+function requiredSectionGroupsFor(readmePath) {
+  if (isDetailedFrontendEntryReadme(readmePath)) {
+    return frontendEntrySectionGroups;
+  }
+  if (isManagementViewReadme(readmePath)) {
+    return managementViewSectionGroups;
+  }
+  return requiredSectionGroups;
 }
 
 function docTypeFor(readmePath) {
-  return frontendEntryReadmes.includes(readmePath) ? 'frontend-entry' : 'module';
+  if (isDetailedFrontendEntryReadme(readmePath)) {
+    return 'frontend-entry';
+  }
+  if (isManagementViewReadme(readmePath)) {
+    return 'management-view';
+  }
+  return 'module';
+}
+
+function isDetailedFrontendEntryReadme(readmePath) {
+  return readmePath.startsWith('mango-ui/packages/') && readmePath.endsWith('/src/components/README.md');
+}
+
+function isManagementViewReadme(readmePath) {
+  return readmePath.startsWith('mango-ui/packages/') && readmePath.endsWith('/src/views/README.md');
 }
 
 function auditText(readmePath, text) {
-  const missing = requiredSectionsFor(readmePath).filter((section) => !hasSection(text, section));
+  const missing = requiredSectionGroupsFor(readmePath)
+    .filter((group) => !group.anyOf.some((section) => hasSection(text, section)))
+    .map((group) => group.name);
   const hasPlaceholder = placeholderPattern.test(text);
   const commandFormatIssues = [...text.matchAll(backtickedCommandPattern)].map((match) => match[0]);
   const missingPackageScripts = packageScriptIssues(text);
-  const validation = extractSection(text, '验证方式');
-  const pmoRules = extractSection(text, docTypeFor(readmePath) === 'frontend-entry' ? '关联文档' : '关联 PMO 规则');
-  const validationEmpty = !validation || validation === '-' || validation.length < 8;
-  const pmoRuleLinks = markdownLinks(pmoRules).filter((href) => {
+  const docType = docTypeFor(readmePath);
+  const relatedDocs = extractSection(text, '相关文档');
+  const emptySections = requiredSectionGroupsFor(readmePath)
+    .filter((group) => group.anyOf.some((section) => hasSection(text, section)))
+    .filter((group) => {
+      const content = group.anyOf.map((section) => extractSection(text, section)).find(Boolean) || '';
+      return isEffectivelyEmpty(content);
+    })
+    .map((group) => group.name);
+  const relatedLinks = markdownLinks(relatedDocs).filter((href) => {
     return href.includes('mango-pmo/rules/') ||
       href.includes('mango-baseline/rules/') ||
       href.startsWith('./rules/') ||
-      href.startsWith('rules/');
+      href.startsWith('rules/') ||
+      href.includes('mango-docs/');
   });
-  const missingPmoRuleLinks = pmoRuleLinks.length === 0;
+  const missingRelatedLinks = relatedLinks.length === 0;
   const brokenLinks = markdownLinks(text).filter((href) => !linkTargetExists(readmePath, href));
+  const sourceRegistrationIssues = registrationIssues(readmePath, text);
   return {
     readmePath,
-    docType: docTypeFor(readmePath),
+    docType,
     priority: priorityFor(readmePath),
     missing,
     hasPlaceholder,
     commandFormatIssues,
     missingPackageScripts,
-    validationEmpty,
-    missingPmoRuleLinks,
-    brokenLinks
+    emptySections,
+    missingRelatedLinks,
+    brokenLinks,
+    sourceRegistrationIssues
   };
 }
 
@@ -263,95 +291,264 @@ function auditReadme(readmePath) {
       hasPlaceholder: false,
       commandFormatIssues: [],
       missingPackageScripts: [],
-      validationEmpty: true,
-      missingPmoRuleLinks: true,
-      brokenLinks: []
+      emptySections: [],
+      missingRelatedLinks: true,
+      brokenLinks: [],
+      sourceRegistrationIssues: []
     };
   }
   return auditText(readmePath, read(readmePath));
 }
 
 function rowHasFailure(row) {
-  return row.missing.length > 0 || row.hasPlaceholder || row.commandFormatIssues.length > 0 || row.missingPackageScripts.length > 0 || row.validationEmpty || row.missingPmoRuleLinks || row.brokenLinks.length > 0;
+  return row.missing.length > 0 ||
+    row.hasPlaceholder ||
+    row.commandFormatIssues.length > 0 ||
+    row.missingPackageScripts.length > 0 ||
+    row.emptySections.length > 0 ||
+    row.missingRelatedLinks ||
+    row.brokenLinks.length > 0 ||
+    row.sourceRegistrationIssues.length > 0;
 }
 
 function printRows(rows) {
-  console.log('| Priority | Type | README | Missing sections | Placeholder | Command format | Package scripts | Validation | PMO links | Broken links |');
-  console.log('|----------|------|--------|------------------|-------------|----------------|-----------------|------------|-----------|--------------|');
+  console.log('| Priority | Type | README | Missing sections | Empty sections | Placeholder | Command format | Package scripts | Related links | Broken links | Source registration |');
+  console.log('|----------|------|--------|------------------|----------------|-------------|----------------|-----------------|-----------|--------------|---------------------|');
   for (const row of rows) {
-    console.log(`| ${row.priority} | ${row.docType} | \`${row.readmePath}\` | ${row.missing.length ? row.missing.join(', ') : 'None'} | ${row.hasPlaceholder ? 'Yes' : 'No'} | ${row.commandFormatIssues.length ? row.commandFormatIssues.join('<br>') : 'OK'} | ${row.missingPackageScripts.length ? row.missingPackageScripts.join('<br>') : 'OK'} | ${row.validationEmpty ? 'Empty' : 'OK'} | ${row.missingPmoRuleLinks ? 'Missing' : 'OK'} | ${row.brokenLinks.length ? row.brokenLinks.join(', ') : 'None'} |`);
+    console.log(`| ${row.priority} | ${row.docType} | \`${row.readmePath}\` | ${row.missing.length ? row.missing.join(', ') : 'None'} | ${row.emptySections.length ? row.emptySections.join(', ') : 'None'} | ${row.hasPlaceholder ? 'Yes' : 'No'} | ${row.commandFormatIssues.length ? row.commandFormatIssues.join('<br>') : 'OK'} | ${row.missingPackageScripts.length ? row.missingPackageScripts.join('<br>') : 'OK'} | ${row.missingRelatedLinks ? 'Missing' : 'OK'} | ${row.brokenLinks.length ? row.brokenLinks.join(', ') : 'None'} | ${row.sourceRegistrationIssues.length ? row.sourceRegistrationIssues.join('<br>') : 'OK'} |`);
   }
+}
+
+function isEffectivelyEmpty(text) {
+  const normalized = text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\|[-:\s|]+\|/g, '')
+    .replace(/[*_\-\s`|:。；，,.]/g, '')
+    .trim();
+  return normalized.length < 4;
+}
+
+function registrationIssues(readmePath, text) {
+  const issues = [];
+  if (docTypeFor(readmePath) === 'management-view') {
+    const capabilities = extractSection(text, '功能清单');
+    const pageEntrypoints = extractSection(text, '页面入口');
+    const menuPermissions = extractSection(text, '管理入口');
+    if (!hasManagementCapabilityContent(capabilities)) {
+      issues.push('management-capabilities');
+    }
+    if (!hasPageKeyContent(pageEntrypoints)) {
+      issues.push('page-entrypoints');
+    }
+    if (!hasMenuPermissionContent(menuPermissions)) {
+      issues.push('menu-permissions');
+    }
+    return issues;
+  }
+
+  if (!readmePath.startsWith('mango/mango-platform/') && !readmePath.startsWith('mango/mango-infra/')) {
+    return issues;
+  }
+
+  const moduleRoot = moduleRootForBackendReadme(readmePath);
+  if (!moduleRoot || !fs.existsSync(path.join(root, moduleRoot))) {
+    return issues;
+  }
+
+  const source = collectModuleSource(moduleRoot);
+  const databaseSection = extractSection(text, '数据与初始化');
+  const menuSection = extractSection(text, '管理入口');
+  const quickStartSection = extractSection(text, '快速开始');
+
+  if (source.hasMigration && !hasMigrationContent(databaseSection)) {
+    issues.push('migration-initialization');
+  }
+  if (source.hasInitializer && !hasInitializerContent(databaseSection)) {
+    issues.push('runtime-initializer');
+  }
+  if (source.hasResourceManifest && !hasResourceManifestContent(databaseSection + '\n' + menuSection)) {
+    issues.push('resource-manifest');
+  }
+  if ((source.hasPermissionCodes || source.hasResourceManifest) && !hasMenuPermissionContent(menuSection)) {
+    issues.push('menu-permission-registry');
+  }
+  return issues;
+}
+
+function moduleRootForBackendReadme(readmePath) {
+  const segments = readmePath.split('/');
+  if (segments.length < 4 || segments[3] !== 'README.md') {
+    return null;
+  }
+  return segments.slice(0, 3).join('/');
+}
+
+function collectModuleSource(moduleRoot) {
+  const absoluteRoot = path.join(root, moduleRoot);
+  const result = {
+    hasMigration: false,
+    hasInitializer: false,
+    hasResourceManifest: false,
+    hasPermissionCodes: false
+  };
+  for (const file of walkSourceFiles(absoluteRoot)) {
+    const relativeFile = path.relative(root, file).split(path.sep).join('/');
+    const text = fs.readFileSync(file, 'utf8');
+    if (/\/src\/main\/resources\/db\/migration\//.test(relativeFile)) {
+      result.hasMigration = true;
+    }
+    if (/\/META-INF\/mango\/resource-manifest(?:s\/[^/]+)?\.json$/.test(relativeFile)) {
+      result.hasResourceManifest = true;
+    }
+    if (isRuntimeInitializer(relativeFile, text)) {
+      result.hasInitializer = true;
+    }
+    if (/@ApiAccess\s*\([\s\S]{0,240}\bpermission\s*=|@PreAuthorize|hasAuthority|hasPermission|permissionCode|permissions"\s*:/.test(text)) {
+      result.hasPermissionCodes = true;
+    }
+  }
+  return result;
+}
+
+function isRuntimeInitializer(relativeFile, text) {
+  if (/\/src\/test\//.test(relativeFile)) {
+    return false;
+  }
+  if (/\b(ApplicationRunner|CommandLineRunner)\b|implements\s+SmartInitializingSingleton/.test(text)) {
+    return true;
+  }
+  if (!/@PostConstruct|\bInitializingBean\b/.test(text)) {
+    return false;
+  }
+  return /(?:Initializer|Bootstrap|Seeder|Registrar|Importer|Sync|Loader|Startup|Provision)/.test(relativeFile);
+}
+
+function walkSourceFiles(dir, results = []) {
+  if (!fs.existsSync(dir)) return results;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (ignoredDirs.has(entry.name)) {
+      continue;
+    }
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'test') {
+        continue;
+      }
+      walkSourceFiles(fullPath, results);
+    } else if (sourceFileExtensions.has(path.extname(entry.name))) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+function hasManagementCapabilityContent(text) {
+  return /管理|维护|查询|新增|编辑|删除|启用|停用|配置|审批|同步|导入|导出|上传|下载|预览|登录|认证|注销|密码|个人资料/.test(text) && text.length >= 20;
+}
+
+function hasPageKeyContent(text) {
+  return /`[a-z][a-z0-9-]+\/[a-z0-9-\/]+\/index`/.test(text) ||
+    /`\/[a-z][a-z0-9-\/:]*`/.test(text) ||
+    /component key|页面 key|路由|页面入口/.test(text);
+}
+
+function hasMigrationContent(text) {
+  return /db\/migration|Flyway|migration|V\d+__|数据表|默认数据|初始化数据|种子数据/.test(text);
+}
+
+function hasInitializerContent(text) {
+  return /Runner|Importer|Initializer|启动初始化|启动时|应用启动|初始化器|幂等/.test(text);
+}
+
+function hasResourceManifestContent(text) {
+  return /META-INF\/mango\/resource-manifest|resource[- ]manifest|资源清单|moduleCode|menuCode|appCode/.test(text);
+}
+
+function hasMenuPermissionContent(text) {
+  return /权限码|permission|permissions|菜单|component|component key|页面 key|roleCodes|packageCodes|租户|tenant/.test(text);
 }
 
 function runSelfTest() {
   const valid = `# Demo
 
-## 1. 能力定位
+## 1. 概览
 text
-## 2. 适用场景
+## 2. 功能清单
 text
-## 3. 不适用场景
+## 3. 适用场景
 text
-## 4. 模块边界
+## 4. 边界说明
 text
 ## 5. 接入方式
 text
-## 6. 配置项
+## 6. 配置说明
 text
-## 7. 对外接口 / 扩展点
+## 7. API 与扩展
 text
-## 8. 数据库 / 初始化数据
+## 8. 数据与初始化
+migration 菜单 权限 SQL
+## 9. 管理入口
+菜单 component key 权限 permission tenant
+## 10. 快速开始
+migration 菜单 权限 初始化 接口 页面
+## 11. 问题排查
 text
-## 9. 菜单 / 权限 / 租户
-text
-## 10. 验证方式
-\`\`\`bash
-node mango-pmo/tools/audit-module-readmes.mjs
-\`\`\`
-## 业务接入最小闭环
-text
-## 11. 常见问题
-text
-## 12. 关联 PMO 规则
+## 12. 相关文档
 - [能力说明维护规范](mango-pmo/rules/08-capability-docs.md)
-## 13. 历史设计 / 交付记录
-text
 `;
-  const invalid = valid.replace('## 10. 验证方式\n```bash\nnode mango-pmo/tools/audit-module-readmes.mjs\n```', '## 10. 验证方式\n-');
+  const invalid = valid.replace('## 10. 快速开始\nmigration 菜单 权限 初始化 接口 页面', '## 10. 快速开始\n-');
   const validFrontendEntry = `# Demo Frontend Entry
 
-## 1. 入口定位
+## 1. 概览
 text
-## 2. 公开导出
+## 2. 功能清单
 text
-## 3. 使用场景
+## 3. 适用场景
 text
 ## 4. 接入方式
 text
-## 5. Props / 参数 / 事件
+## 5. 参数与事件
 text
 ## 6. 后端依赖
 text
-## 7. 权限 / 租户 / 数据边界
+## 7. 权限与数据边界
 text
-## 8. 验证方式
-\`\`\`bash
-node mango-pmo/tools/audit-module-readmes.mjs
-\`\`\`
-## 9. 常见问题
+## 8. 快速开始
 text
-## 10. 关联文档
+## 9. 问题排查
+text
+## 10. 相关文档
+- [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)
+`;
+  const validManagementView = `# Demo Views
+
+## 1. 概览
+后台管理页面入口。
+## 2. 功能清单
+支持用户查询、新增、编辑、删除和启用停用管理。
+## 3. 页面入口
+- \`demo/user/index\`
+- \`/login\`
+## 4. 后端依赖
+- API 前缀：\`/demo/users\`。
+## 5. 管理入口
+- 菜单 component key 使用 \`demo/user/index\`，权限码为 \`demo:user:list\`，租户由后端校验。
+## 6. 问题排查
+菜单空白先查 component key。
+## 7. 相关文档
 - [能力说明维护规范](../../../../../mango-pmo/rules/08-capability-docs.md)
 `;
   const cases = [
     { name: 'valid template passes', text: valid, valid: true },
     { name: 'valid frontend entry passes', path: 'mango-ui/packages/file/src/components/README.md', text: validFrontendEntry, valid: true },
-    { name: 'frontend entry missing section fails', path: 'mango-ui/packages/file/src/components/README.md', text: validFrontendEntry.replace('## 5. Props / 参数 / 事件\ntext\n', ''), valid: false },
-    { name: 'empty validation fails', text: invalid, valid: false },
+    { name: 'valid management view passes', path: 'mango-ui/packages/demo/src/views/README.md', text: validManagementView, valid: true },
+    { name: 'management view missing capability fails', path: 'mango-ui/packages/demo/src/views/README.md', text: validManagementView.replace('支持用户查询、新增、编辑、删除和启用停用管理。', 'text'), valid: false },
+    { name: 'frontend entry missing section fails', path: 'mango-ui/packages/file/src/components/README.md', text: validFrontendEntry.replace('## 5. 参数与事件\ntext\n', ''), valid: false },
+    { name: 'empty quick start fails', text: invalid, valid: false },
     { name: 'placeholder fails', text: `${valid}\nTODO`, valid: false },
-    { name: 'backticked command fails', text: valid.replace('node mango-pmo/tools/audit-module-readmes.mjs', '`node mango-pmo/tools/audit-module-readmes.mjs`'), valid: false },
-    { name: 'missing package script fails', text: valid.replace('node mango-pmo/tools/audit-module-readmes.mjs', 'pnpm -F @mango/api-schema build'), valid: false },
-    { name: 'missing PMO link fails', text: valid.replace('mango-pmo/rules/08-capability-docs.md', 'README.md'), valid: false },
+    { name: 'backticked command fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', '`node mango-pmo/tools/audit-module-readmes.mjs`'), valid: false },
+    { name: 'missing package script fails', text: valid.replace('migration 菜单 权限 初始化 接口 页面', 'pnpm -F @mango/api-schema build'), valid: false },
+    { name: 'missing related link fails', text: valid.replace('mango-pmo/rules/08-capability-docs.md', 'README.md'), valid: false },
     { name: 'broken link fails', text: valid.replace('mango-pmo/rules/08-capability-docs.md', 'missing.md'), valid: false }
   ];
   const failures = [];
@@ -376,9 +573,6 @@ if (selfTest) {
 
 function managedModuleReadmes() {
   const readmes = new Set(topLevelReadmes);
-  for (const entryReadme of frontendEntryReadmes) {
-    readmes.add(entryReadme);
-  }
   for (const moduleRoot of moduleRoots) {
     if (!fs.existsSync(path.join(root, moduleRoot))) {
       continue;

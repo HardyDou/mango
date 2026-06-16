@@ -1,41 +1,67 @@
 # Mango Tools
 
-## 1. 能力定位
+## 1. 概览
+`mango-tools` 提供 Mango 后端开发期工具，当前核心是 `mango-maven-plugin`。它用于质量检查、模块脚手架、CRUD 脚手架和权限资源生成。
 
-提供 Mango 后端构建工具和 Maven 插件。
+主要使用者是 Mango 维护者、业务模块开发者、CI 门禁和 AI Agent。
 
-主要使用者：Mango 维护者、Mango 开发者、业务开发者和 AI Agent。
+## 2. 功能清单
 
-## 2. 适用场景
+| 能力 | 常用入口 |
+|------|----------|
+| PR 需要执行 Mango 后端质量检查 | Maven 依赖 / HTTP API / Java API |
+| 新增平台模块或业务模块时生成标准目录和基础文件 | Maven 依赖 / HTTP API / Java API |
+| 快速生成 CRUD API、实体、Mapper、Service、Controller 等脚手架 | Maven 依赖 / HTTP API / Java API |
+| 根据接口或资源生成权限数据草稿 | Maven 依赖 / HTTP API / Java API |
 
-需要生成模块、生成 CRUD、执行代码/迁移/权限规则检查时使用。
+## 3. 适用场景
+- PR 需要执行 Mango 后端质量检查。
+- 新增平台模块或业务模块时生成标准目录和基础文件。
+- 快速生成 CRUD API、实体、Mapper、Service、Controller 等脚手架。
+- 根据接口或资源生成权限数据草稿。
 
-## 3. 不适用场景
+## 4. 边界说明
+- 不作为业务运行时依赖。
+- 不替代真实业务建模、权限设计、README 和测试。
+- 不保证生成代码可直接生产发布；生成后必须人工补齐业务逻辑和验收。
 
-不作为业务运行时依赖。
+## 5. 模块组成
+- `mango-tools`：Maven 聚合模块。
+- `mango-maven-plugin`：Maven 插件，goalPrefix 为 `mango`。
+- 插件代码读取项目源码、migration、报告文件和 Git 变更，不写运行时数据库。
 
-## 4. 模块边界
+## 6. 接入方式
+在 Mango reactor 中直接调用：
 
-当前包含 `mango-maven-plugin`；工具只服务开发、检查和生成。
+```bash
+mvn -f mango/pom.xml mango:check
+```
 
-## 5. 接入方式
+或者在模块构建中使用插件 goal：
 
-在 Maven 命令中调用 `mango:*` goal。
+```bash
+mvn -f mango/pom.xml mango:gen-module
+mvn -f mango/pom.xml mango:gen-crud
+mvn -f mango/pom.xml mango:gen-permission
+```
 
-## 6. 配置项
+具体参数以对应 Mojo 源码和 PMO 规则为准。
 
-工具配置来自 Maven 插件参数和项目结构。
+## 7. 配置说明
+`mango:check` 常用参数：
 
-`mango:check` 支持 PR 级质量门禁参数：
+| 参数 | 示例 | 含义 |
+|------|------|------|
+| `rule` | `-Drule=all` | 检查规则范围。 |
+| `output` | `-Doutput=json` | 输出格式。 |
+| `reportFile` | `-DreportFile=target/mango-check-report.json` | JSON 报告路径。 |
+| `mango.check.gate` | `all` 或 `no-new-violations` | `all` 阻断所有问题；`no-new-violations` 只阻断新增问题。 |
+| `mango.check.changedFiles` | `path1,path2` | 显式指定变更文件。 |
+| `mango.check.baseRef` | `origin/main` | 未传 `changedFiles` 时用 Git diff 解析变更。 |
+| `mango.check.baselineFile` | `target/baseline.json` | 存量问题基线报告。 |
+| `mango.check.staticFailurePolicy` | `block` 或 `report` | 静态分析委托失败时阻断或只报告。 |
 
-- `-Dmango.check.gate=all`：默认模式，任何问题都会使检查失败。
-- `-Dmango.check.gate=no-new-violations`：只把变更文件中的非 baseline 问题作为新增违规。
-- `-Dmango.check.changedFiles=<path1,path2>`：显式传入 PR 变更文件。
-- `-Dmango.check.baseRef=<ref>`：未传 `changedFiles` 时，通过 `git diff <ref>...HEAD` 解析变更文件。
-- `-Dmango.check.baselineFile=<report.json>`：传入历史 JSON 报告，匹配到的 issue 计入存量问题。
-- `-Dmango.check.staticFailurePolicy=block|report`：静态分析委托失败时阻断，或记录为 `INCONCLUSIVE` 报告项。
-
-PR 检查推荐输出 JSON 报告：
+PR 检查推荐命令：
 
 ```bash
 mvn -f mango/pom.xml mango:check -Drule=all \
@@ -45,38 +71,40 @@ mvn -f mango/pom.xml mango:check -Drule=all \
   -DreportFile=target/mango-check-report.json
 ```
 
-## 7. 对外接口 / 扩展点
+## 8. API 与扩展
+当前 Maven goals：
 
-Maven plugin goals，例如 `mango:check`、`mango:gen-module`、`mango:gen-crud`。
+| Goal | Mojo | 用途 |
+|------|------|------|
+| `mango:check` | `CheckMojo` | 执行 Mango 后端质量检查和 PR 门禁。 |
+| `mango:gen-module` | `GenModuleMojo` | 生成模块脚手架。 |
+| `mango:gen-crud` | `GenCrudMojo` | 生成 CRUD 脚手架。 |
+| `mango:gen-permission` | `GenPermissionMojo` | 生成权限资源草稿。 |
 
-## 8. 数据库 / 初始化数据
+`CheckMojo` 当前仍较大，复杂度偏高，是既有技术债；后续拆分时应保持参数兼容和报告格式兼容。
 
-无生产数据库；生成和检查 migration 时只读取项目文件。
+## 9. 数据与初始化
+无生产数据库。工具可能读取 migration 和权限资源文件，但不直接连接生产库，也不授予运行时权限。
 
-## 9. 菜单 / 权限 / 租户
+## 10. 管理入口
+工具可生成或检查菜单、权限、API 资源相关文件；真正的菜单入库、角色授权和租户隔离仍由 `mango-authorization`、Flyway migration 和业务初始化流程负责。
 
-可检查权限码、路径参数和 schema 规则，但不授予运行时权限。
+## 11. 快速开始
+1. 使用 `gen-module` 或 `gen-crud` 生成初稿。
+2. 补齐业务模型、Controller 权限、migration、README、能力地图和测试。
+3. 执行 `mango:check`。
+4. 检查生成文件是否符合 PMO 模板和模块边界。
 
-## 10. 验证方式
+## 12. 问题排查
+- `mango:check` 报存量问题：PR 模式使用 `no-new-violations` 和 baseline，但不能把新增问题放进 baseline。
+- 生成代码编译不过：脚手架只提供结构，业务字段、依赖和 mapper 仍要补齐。
+- 生成权限后页面仍无按钮：还需要菜单资源入库、角色授权和前端按钮权限接入。
 
-```bash
-mvn -f mango/pom.xml -pl mango-tools/mango-maven-plugin -am test
-```
-
-## 11. 业务接入最小闭环
-
-开发者用工具生成模块或执行检查后，仍要补齐模块 README、能力地图和真实测试。
-
-## 12. 常见问题
-
-生成结果只是脚手架，不能替代业务实现和验收。
-
-## 13. 关联 PMO 规则
-
+## 13. 相关文档
 - [后端模块规范](../../mango-pmo/rules/backend/05-module.md)
+- [模块菜单规范](../../mango-pmo/rules/backend/11-module-menu.md)
 - [能力说明维护规范](../../mango-pmo/rules/08-capability-docs.md)
 - [AI 交付质量门禁](../../mango-pmo/rules/05-ai-delivery-quality.md)
 
-## 14. 历史设计 / 交付记录
-
-- [能力地图](../../mango-docs/capabilities/README.md)
+## 14. 历史资料
+- [Mango 能力地图](../../mango-docs/capabilities/README.md)

@@ -150,7 +150,7 @@ const publicDocSet = new Set(publicDocs.map(normalizePath));
 
 const sidebar = [
   {
-    text: '首页',
+    text: '开始',
     collapsed: false,
     items: [
       { text: '文档首页', link: '/' },
@@ -160,21 +160,67 @@ const sidebar = [
     ]
   },
   {
-    text: '架构设计',
+    text: '示例场景',
     collapsed: false,
     items: [
-      { text: 'Mango 整体架构', link: '/mango-docs/mango-architecture-design' },
-      { text: '后端架构边界总计划', link: '/mango-docs/mango-backend-architecture-boundary-refactor-master-plan' },
-      { text: '租户模型调研', link: '/mango-docs/tenant-model-research-guarantee-business' },
-      { text: '业务项目开发说明', link: '/mango-docs/designs/business-project-development-guide' },
-      { text: 'Mango 能力使用指南', link: '/mango-docs/designs/mango-capability-usage-guide-for-ai' },
-      { text: '领域事件透明投递', link: '/mango-docs/designs/mango-domain-event-transparent-delivery-design' },
-      { text: '文件预览集成', link: '/mango-docs/designs/mango-file集成file-preview方案' },
-      { text: '多数据源底座', link: '/mango-docs/designs/mango-multi-datasource-foundation-design' },
-      { text: '原生 Job Engine', link: '/mango-docs/designs/mango-native-job-engine-design' },
-      { text: '历史 Job 设计', link: '/mango-docs/designs/mango-job-design' },
-      { text: '通知中心', link: '/mango-docs/designs/mango-notice多渠道通知中心设计说明书' },
-      { text: '统一支付系统', link: '/mango-docs/designs/统一支付系统设计说明书' }
+      { text: '业务接入总览', link: '/mango-docs/guides/business-integration/README' },
+      { text: '文件上传表单', link: '/mango-docs/guides/business-integration/file-upload-form' },
+      { text: '业务审批接入', link: '/mango-docs/guides/business-integration/workflow-business-approval' },
+      { text: '菜单页面打不开排障', link: '/mango-docs/guides/business-integration/rbac-menu-page-troubleshooting' },
+      { text: '按钮权限不显示排障', link: '/mango-docs/guides/business-integration/permission-button-troubleshooting' },
+      { text: '租户字典配置为空排障', link: '/mango-docs/guides/business-integration/tenant-dict-config-empty' }
+    ]
+  },
+  {
+    text: '基础能力',
+    collapsed: true,
+    items: [
+      {
+        text: '基础设施',
+        collapsed: false,
+        items: [
+          { text: 'Context 上下文', link: '/mango/mango-infra/mango-infra-context/README' },
+          { text: 'Crypto 加密', link: '/mango/mango-infra/mango-infra-crypto/README' },
+          { text: 'Doc 文档', link: '/mango/mango-infra/mango-infra-doc/README' },
+          { text: 'Event 事件', link: '/mango/mango-infra/mango-infra-event/README' },
+          { text: 'Feign', link: '/mango/mango-infra/mango-infra-feign/README' },
+          { text: 'Fileproc 文件处理', link: '/mango/mango-infra/mango-infra-fileproc/README' },
+          { text: 'Aspose License', link: '/mango/mango-infra/mango-infra-fileproc/mango-infra-fileproc-core/src/main/resources/aspose/README' },
+          { text: 'IP Location', link: '/mango/mango-infra/mango-infra-ip-location/README' },
+          { text: 'KV', link: '/mango/mango-infra/mango-infra-kv/README' },
+          { text: 'Log 日志', link: '/mango/mango-infra/mango-infra-log/README' },
+          { text: 'Module 模块服务', link: '/mango/mango-infra/mango-infra-module/README' },
+          { text: 'Persistence 持久化', link: '/mango/mango-infra/mango-infra-persistence/README' },
+          { text: 'Realtime 实时', link: '/mango/mango-infra/mango-infra-realtime/README' },
+          { text: 'Sensitive 敏感数据', link: '/mango/mango-infra/mango-infra-sensitive/README' },
+          { text: 'Infra Test', link: '/mango/mango-infra/mango-infra-test/README' },
+          { text: 'Web', link: '/mango/mango-infra/mango-infra-web/README' }
+        ]
+      },
+      {
+        text: '公共与装配',
+        collapsed: true,
+        items: [
+          { text: 'Common 前端公共组件', link: '/mango-ui/packages/common/README' },
+          { text: 'Admin Starter', link: '/mango/mango-admin-starter/README' },
+          { text: 'App 应用拓扑', link: '/mango/mango-app/README' },
+          { text: 'Common 后端公共契约', link: '/mango/mango-common/README' },
+          { text: 'Extension 可选扩展', link: '/mango/mango-extension/README' },
+          { text: 'Parent Maven Parent', link: '/mango/mango-parent/README' },
+          { text: 'Tools 构建工具', link: '/mango/mango-tools/README' }
+        ]
+      },
+      {
+        text: '业务项目基线',
+        collapsed: true,
+        items: [
+          { text: 'Business Starter', link: '/mango-business-starter/README' },
+          { text: 'Business PMO', link: '/mango-business-starter/business-pmo/README' },
+          { text: 'Baseline', link: '/mango-business-starter/business-pmo/mango-baseline/README' },
+          { text: '单体拓扑', link: '/mango-business-starter/topologies/monolith/README' },
+          { text: '微服务拓扑', link: '/mango-business-starter/topologies/microservice/README' }
+        ]
+      }
     ]
   },
   {
@@ -257,67 +303,21 @@ const sidebar = [
     ]
   },
   {
-    text: '基础能力',
-    collapsed: true,
-    items: [
-      {
-        text: '基础设施',
-        collapsed: false,
-        items: [
-          { text: 'Context 上下文', link: '/mango/mango-infra/mango-infra-context/README' },
-          { text: 'Crypto 加密', link: '/mango/mango-infra/mango-infra-crypto/README' },
-          { text: 'Doc 文档', link: '/mango/mango-infra/mango-infra-doc/README' },
-          { text: 'Event 事件', link: '/mango/mango-infra/mango-infra-event/README' },
-          { text: 'Feign', link: '/mango/mango-infra/mango-infra-feign/README' },
-          { text: 'Fileproc 文件处理', link: '/mango/mango-infra/mango-infra-fileproc/README' },
-          { text: 'Aspose License', link: '/mango/mango-infra/mango-infra-fileproc/mango-infra-fileproc-core/src/main/resources/aspose/README' },
-          { text: 'IP Location', link: '/mango/mango-infra/mango-infra-ip-location/README' },
-          { text: 'KV', link: '/mango/mango-infra/mango-infra-kv/README' },
-          { text: 'Log 日志', link: '/mango/mango-infra/mango-infra-log/README' },
-          { text: 'Module 模块服务', link: '/mango/mango-infra/mango-infra-module/README' },
-          { text: 'Persistence 持久化', link: '/mango/mango-infra/mango-infra-persistence/README' },
-          { text: 'Realtime 实时', link: '/mango/mango-infra/mango-infra-realtime/README' },
-          { text: 'Sensitive 敏感数据', link: '/mango/mango-infra/mango-infra-sensitive/README' },
-          { text: 'Infra Test', link: '/mango/mango-infra/mango-infra-test/README' },
-          { text: 'Web', link: '/mango/mango-infra/mango-infra-web/README' }
-        ]
-      },
-      {
-        text: '公共与装配',
-        collapsed: true,
-        items: [
-          { text: 'Common 前端公共组件', link: '/mango-ui/packages/common/README' },
-          { text: 'Admin Starter', link: '/mango/mango-admin-starter/README' },
-          { text: 'App 应用拓扑', link: '/mango/mango-app/README' },
-          { text: 'Common 后端公共契约', link: '/mango/mango-common/README' },
-          { text: 'Extension 可选扩展', link: '/mango/mango-extension/README' },
-          { text: 'Parent Maven Parent', link: '/mango/mango-parent/README' },
-          { text: 'Tools 构建工具', link: '/mango/mango-tools/README' }
-        ]
-      },
-      {
-        text: '业务项目基线',
-        collapsed: true,
-        items: [
-          { text: 'Business Starter', link: '/mango-business-starter/README' },
-          { text: 'Business PMO', link: '/mango-business-starter/business-pmo/README' },
-          { text: 'Baseline', link: '/mango-business-starter/business-pmo/mango-baseline/README' },
-          { text: '单体拓扑', link: '/mango-business-starter/topologies/monolith/README' },
-          { text: '微服务拓扑', link: '/mango-business-starter/topologies/microservice/README' }
-        ]
-      }
-    ]
-  },
-  {
-    text: '场景示例',
+    text: '架构设计',
     collapsed: false,
     items: [
-      { text: '业务接入总览', link: '/mango-docs/guides/business-integration/README' },
-      { text: '文件上传表单', link: '/mango-docs/guides/business-integration/file-upload-form' },
-      { text: '业务审批接入', link: '/mango-docs/guides/business-integration/workflow-business-approval' },
-      { text: '菜单页面打不开排障', link: '/mango-docs/guides/business-integration/rbac-menu-page-troubleshooting' },
-      { text: '按钮权限不显示排障', link: '/mango-docs/guides/business-integration/permission-button-troubleshooting' },
-      { text: '租户字典配置为空排障', link: '/mango-docs/guides/business-integration/tenant-dict-config-empty' }
+      { text: 'Mango 整体架构', link: '/mango-docs/mango-architecture-design' },
+      { text: '后端架构边界总计划', link: '/mango-docs/mango-backend-architecture-boundary-refactor-master-plan' },
+      { text: '租户模型调研', link: '/mango-docs/tenant-model-research-guarantee-business' },
+      { text: '业务项目开发说明', link: '/mango-docs/designs/business-project-development-guide' },
+      { text: 'Mango 能力使用指南', link: '/mango-docs/designs/mango-capability-usage-guide-for-ai' },
+      { text: '领域事件透明投递', link: '/mango-docs/designs/mango-domain-event-transparent-delivery-design' },
+      { text: '文件预览集成', link: '/mango-docs/designs/mango-file集成file-preview方案' },
+      { text: '多数据源底座', link: '/mango-docs/designs/mango-multi-datasource-foundation-design' },
+      { text: '原生 Job Engine', link: '/mango-docs/designs/mango-native-job-engine-design' },
+      { text: '历史 Job 设计', link: '/mango-docs/designs/mango-job-design' },
+      { text: '通知中心', link: '/mango-docs/designs/mango-notice多渠道通知中心设计说明书' },
+      { text: '统一支付系统', link: '/mango-docs/designs/统一支付系统设计说明书' }
     ]
   },
   {
@@ -430,6 +430,28 @@ const sidebar = [
   }
 ];
 
+const sidebarOrder = [
+  '开始',
+  '示例场景',
+  '基础能力',
+  '平台能力',
+  '架构设计',
+  'PMO 规范与模板'
+];
+
+const orderedSidebar = sidebar
+  .map((item, sourceIndex) => ({
+    item,
+    sourceIndex,
+    order: sidebarOrder.indexOf(item.text)
+  }))
+  .sort((left, right) => {
+    const leftOrder = left.order === -1 ? sidebarOrder.length : left.order;
+    const rightOrder = right.order === -1 ? sidebarOrder.length : right.order;
+    return leftOrder === rightOrder ? left.sourceIndex - right.sourceIndex : leftOrder - rightOrder;
+  })
+  .map(({ item }) => item);
+
 const config = `import { defineConfig } from 'vitepress';
 
 export default defineConfig({
@@ -440,13 +462,14 @@ export default defineConfig({
   ignoreDeadLinks: [/^https?:\\/\\//],
   themeConfig: {
     nav: [
-      { text: '首页', link: '/' },
-      { text: '架构设计', link: '/mango-docs/mango-architecture-design' },
+      { text: '开始', link: '/' },
+      { text: '示例场景', link: '/mango-docs/guides/business-integration/README' },
+      { text: '基础能力', link: '/mango/mango-infra/mango-infra-context/README' },
       { text: '平台能力', link: '/mango-docs/capabilities/README' },
-      { text: '场景示例', link: '/mango-docs/guides/business-integration/README' },
+      { text: '架构设计', link: '/mango-docs/mango-architecture-design' },
       { text: 'PMO 规范', link: '/mango-pmo/rules/00-dev-flow' }
     ],
-    sidebar: ${JSON.stringify(sidebar, null, 6)},
+    sidebar: ${JSON.stringify(orderedSidebar, null, 6)},
     search: {
       provider: 'local'
     },
@@ -464,16 +487,16 @@ const index = `# Mango Docs
 
 Mango 是面向 AI Agent 和业务开发者的 Java Spring Boot 业务开发底座，目标是把后端模块、前端后台、权限菜单、初始化数据、PMO 流程和验证规则沉淀成可复用能力，让业务需求可以按统一边界快速落地。
 
-这份公开文档用于说明 Mango 的整体架构、能力边界、接入方式和开发规范。左侧菜单按阅读习惯组织为首页、架构设计、平台能力、基础能力、场景示例和 PMO 规范。
+这份公开文档用于说明 Mango 的能力边界、接入方式、基础能力和架构设计。左侧菜单按阅读习惯组织为开始、示例场景、基础能力、平台能力、架构设计和 PMO 规范。
 
 ## 推荐入口
 
 | 分类 | 适合场景 | 入口 |
 |------|----------|------|
-| 架构设计 | 了解 Mango 定位、架构边界、模块设计和关键取舍 | [Mango 整体架构](./mango-docs/mango-architecture-design.md) |
+| 示例场景 | 按业务场景接入或排障 | [业务接入场景手册](./mango-docs/guides/business-integration/README.md) |
+| 基础能力 | 查持久化、事件、KV、Web、装配和业务基线 | [Context 上下文](./mango/mango-infra/mango-infra-context/README.md) |
 | 平台能力 | 定位认证、授权、文件、支付、工作流等能力 README | [Mango 能力地图](./mango-docs/capabilities/README.md) |
-| 基础能力 | 查持久化、事件、KV、Web、装配和业务基线 | [多数据源底座](./mango-docs/designs/mango-multi-datasource-foundation-design.md) |
-| 场景示例 | 按业务场景接入或排障 | [业务接入场景手册](./mango-docs/guides/business-integration/README.md) |
+| 架构设计 | 了解 Mango 定位、架构边界、模块设计和关键取舍 | [Mango 整体架构](./mango-docs/mango-architecture-design.md) |
 | PMO 规范 | 查后端、前端、API、UI、交付和文档规范 | [Mango PMO 总流程](./mango-pmo/rules/00-dev-flow.md) |
 
 ## 发布边界
@@ -485,7 +508,7 @@ const docsIndex = `# Mango 业务开发文档
 
 Mango 是面向 AI Agent 和业务开发者的 Java Spring Boot 业务开发底座，提供后端平台模块、前端后台能力、业务项目基线和 PMO 交付规范。
 
-这里是 Mango 面向业务开发者的公开文档入口，用于快速定位架构设计、能力说明、业务接入场景和规范来源。
+这里是 Mango 面向业务开发者的公开文档入口，用于快速定位使用说明、业务接入场景、基础能力、平台能力和架构设计。
 
 ## 推荐阅读
 
