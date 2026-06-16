@@ -66,6 +66,7 @@
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.6",
     "@mango/common": "1.0.8",
+    "@mango/grid-layout": "1.0.0",
     "@mango/rbac": "1.0.6",
     "element-plus": "2.14.1",
     "@mango/file": "1.0.9",
@@ -74,6 +75,7 @@
   },
   "peerDependencies": {
     "@mango/file": "1.0.9",
+    "@mango/grid-layout": "1.0.0",
     "@mango/notice": "1.0.9",
     "@mango/workflow": "1.0.9",
     "pinia": "2.0.32",
@@ -89,6 +91,9 @@
       "optional": true
     },
     "@mango/file": {
+      "optional": true
+    },
+    "@mango/grid-layout": {
       "optional": true
     }
   },

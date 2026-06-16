@@ -137,6 +137,8 @@ mango:
           ignore-missing-migrations: true
         domain:
           enabled: true
+        grid-layout:
+          enabled: true
   ip-location:
     enabled: true
     provider: ip2region

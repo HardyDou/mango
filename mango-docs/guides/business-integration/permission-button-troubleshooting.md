@@ -65,4 +65,5 @@ pnpm -F @mango/admin-shell build
 
 ## 8. 变更影响记录
 
+- PR #166 工作台自定义布局新增 `@mango/grid-layout` 和 `mango-grid-layout`，布局组件不接管按钮权限判断；不改变按钮权限的公开 API、配置、权限码、租户、页面和运行时行为。
 - PR #153 Maven revision 支持只调整构建和发布版本解析，不改变按钮权限的公开 API、配置、权限、租户、页面和运行时行为。

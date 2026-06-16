@@ -478,6 +478,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.mango.platform.gridlayout</groupId>
+                <artifactId>mango-grid-layout-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.mango.platform.numgen</groupId>
                 <artifactId>mango-numgen-starter</artifactId>
                 <version>${project.version}</version>
