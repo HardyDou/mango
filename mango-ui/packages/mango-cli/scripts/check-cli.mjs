@@ -99,6 +99,7 @@ try {
     '@mango/auth': readReleasedPackageVersion('@mango/auth'),
     '@mango/calendar': readReleasedPackageVersion('@mango/calendar'),
     '@mango/common': readReleasedPackageVersion('@mango/common'),
+    '@mango/grid-layout': readReleasedPackageVersion('@mango/grid-layout'),
     '@mango/file': readReleasedPackageVersion('@mango/file'),
     '@mango/job': readReleasedPackageVersion('@mango/job'),
     '@mango/notice': readReleasedPackageVersion('@mango/notice'),

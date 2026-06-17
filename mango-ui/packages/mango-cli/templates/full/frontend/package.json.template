@@ -21,6 +21,7 @@
     "@mango/app-runtime": "{{mangoAppRuntimeVersion}}",
     "@mango/auth": "{{mangoAuthVersion}}",
     "@mango/common": "{{mangoCommonVersion}}",
+    "@mango/grid-layout": "{{mangoGridLayoutVersion}}",
     "@mango/rbac": "{{mangoRbacVersion}}",
     "@mango/system": "{{mangoSystemVersion}}",
 {{frontendModuleDependencies}}

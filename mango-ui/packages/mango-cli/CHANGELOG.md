@@ -1,5 +1,24 @@
 # @mango/cli Changelog
 
+## 1.0.32 - 2026-06-17
+
+### New
+
+- Updated generated admin project release locks for the Workbench custom grid layout release:
+  - @mango/admin@1.0.19
+  - @mango/admin-shell@1.0.18
+  - @mango/grid-layout@1.0.0
+- New generated admin projects now include `@mango/grid-layout` as a core frontend dependency.
+
+### Upgrade Notes
+
+- Upgrade CLI before creating new business admin projects so generated dependency locks include the workbench grid layout package.
+- Existing business projects should add or upgrade `@mango/grid-layout@1.0.0` together with `@mango/admin@1.0.19` and `@mango/admin-shell@1.0.18`.
+
+### Verification
+
+- `pnpm --filter @mango/cli test`
+
 ## 1.0.31 - 2026-06-12
 
 ### New
