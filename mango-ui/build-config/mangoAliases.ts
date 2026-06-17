@@ -123,6 +123,13 @@ const PACKAGE_ENTRIES: PackageEntry[] = [
     },
   },
   {
+    name: 'payment',
+    entries: {
+      '.': 'src/index.ts',
+      'admin-pages': 'src/admin-pages.ts',
+    },
+  },
+  {
     name: 'template',
     entries: {
       '.': 'src/index.ts',
@@ -156,6 +163,7 @@ const STYLE_PACKAGES = [
   'job',
   'calendar',
   'numgen',
+  'payment',
   'template',
   'notice',
 ];

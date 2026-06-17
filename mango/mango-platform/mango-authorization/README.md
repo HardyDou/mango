@@ -20,8 +20,10 @@
 | 菜单管理 | 保存目录、菜单、按钮权限、页面 key、路由、运行类型和可见状态 |
 | 资源清单 | 从 `META-INF/mango/resource-manifest.json` 或 `resource-manifests/*.json` 批量注册模块菜单和权限 |
 | 角色授权 | 管理角色、成员角色绑定、角色菜单授权 |
+| 数据权限 | 按角色配置资源级数据范围，解析当前成员生效范围 |
 | 用户菜单 | 按当前成员授权快照返回可见菜单树 |
 | 授权快照 | 为 `mango-auth` 返回 roles 和 permissions，为 `mango-access` 做权限码匹配 |
+| 角色数据权限 | 为 `mango-infra-persistence` 提供 `DataScopeProvider`，业务查询可显式应用数据范围 |
 | 前端运行时 | 返回应用 runtime descriptor 和模块运行策略 |
 
 ## 3. 后端接入
@@ -205,6 +207,8 @@ mango:
 | GET/POST/PUT/DELETE | `/authorization/roles` | 角色管理 |
 | POST | `/authorization/roles/subjects` | 给主体分配角色 |
 | POST | `/authorization/roles/menus` | 给角色分配菜单 |
+| GET/POST/DELETE | `/authorization/data-scopes/roles` | 查询、保存、删除角色数据权限 |
+| GET | `/authorization/data-scopes/effective` | 查询当前成员在资源上的生效数据权限 |
 | GET/POST/PUT/DELETE | `/authorization/apps` | 应用入口管理 |
 | GET/POST/DELETE | `/authorization/app-modules` | 应用模块绑定管理 |
 | POST | `/authorization/app-modules/resource-manifests/register` | 手动注册模块资源清单 |
@@ -218,11 +222,42 @@ mango:
 |-----|------|
 | `ApiResourceApi` | 注册 API 资源、查询访问决策、刷新缓存 |
 | `AppModuleApi` | 注册模块资源清单、模块绑定和运行策略 |
+| `DataScopeApi` | 管理角色数据权限、查询当前成员生效数据范围 |
 | `MenuApi` | 菜单树、用户菜单和菜单管理 |
 | `RoleApi` | 角色、主体角色和角色菜单授权 |
 | `AuthorizationApi` | 查询授权快照 |
 | `IAuthorizationProvider` | 运行时加载角色码和权限码 |
 | `AuthorityContributor` | 扩展授权快照贡献来源 |
+
+### 8.1 角色数据权限
+
+数据权限只按角色配置，不提供个人数据权限，也不提供岗位数据权限。用户侧通过“成员主部门 + 角色绑定”动态生效，避免为每个部门复制一套角色。
+
+范围模式：
+
+| 模式 | 含义 | 典型用途 |
+|------|------|----------|
+| `ALL` | 当前租户内全部数据 | 租户管理员、平台运营角色 |
+| `SELF` | 当前登录用户创建的数据 | 普通员工只看本人数据 |
+| `SELF_ORG` | 当前成员主部门数据 | 部门管理员看本部门数据 |
+| `SELF_ORG_AND_CHILDREN` | 当前成员主部门及下级部门数据 | 大部门负责人看部门树数据 |
+| `ORG` | 指定组织集合数据 | 固定组织授权，不随用户主部门变化 |
+
+管理端配置路径：
+
+1. 角色管理：进入 `/#/system/role`，在角色行点击“数据权限”。
+2. 数据资源：在表格新增行里从树形选择器选择资源。页面只展示 list 类资源，通常和业务列表查询权限码一致，例如 `workflow:definition:list`。
+3. 数据范围：选择“全部 / 本人 / 本人部门 / 本人部门及下级 / 指定组织”，保存后立即按角色生效。
+4. 用户配置：进入成员管理，把用户加入部门并设置“主部门”，再在“分配成员角色”里选择角色。
+
+部门管理员的推荐配置是：只维护一个可复用角色，例如 `部门管理员`；该角色的数据权限选择 `SELF_ORG` 或 `SELF_ORG_AND_CHILDREN`。不同部门的管理员分配同一个角色，系统按每个成员自己的主部门解析数据范围。
+
+业务查询生效链路：
+
+1. 业务列表或查询资源使用稳定权限码作为 `resourceCode`。
+2. 业务 Service 调用 `DataScopeApplier`，传入表名和 `created_by`、`org_id`、`tenant_id` 映射。
+3. 授权中心按当前成员角色解析 `EffectiveDataScopeVO`。
+4. persistence 应用器追加本人或组织条件；缺少必要字段时 fail-fast。
 
 ## 9. 资源清单
 
@@ -376,6 +411,7 @@ mango-authorization-core/src/main/resources/db/migration/authorization
 | `authorization_role` | 角色 |
 | `authorization_role_menu` | 角色菜单授权 |
 | `authorization_subject_role` | 成员或主体绑定角色 |
+| `authorization_role_data_scope` | 角色数据权限 |
 | `authorization_menu_package` | 菜单套餐 |
 | `authorization_menu_package_item` | 套餐包含菜单 |
 | `frontend_app_registry` | 前端运行单元注册 |

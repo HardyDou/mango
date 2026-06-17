@@ -134,7 +134,7 @@ public class PersistenceProperties {
          * 必须存在的字段。
          */
         private List<String> requiredColumns = new ArrayList<>(
-                List.of("created_by", "created_at", "updated_by", "updated_at", "tenant_id"));
+                List.of("created_by", "created_at", "updated_by", "updated_at", "tenant_id", "org_id"));
 
         /**
          * 不参与校验的表名，支持以 * 结尾的前缀匹配。

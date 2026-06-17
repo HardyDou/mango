@@ -21,6 +21,7 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
     private static final String UPDATED_AT = "updatedAt";
     private static final String UPDATE_TIME = "updateTime";
     private static final String TENANT_ID = "tenantId";
+    private static final String ORG_ID = "orgId";
 
     private final PersistenceContextProvider contextProvider;
 
@@ -39,6 +40,7 @@ public class PersistenceAuditMetaObjectHandler implements MetaObjectHandler {
         setIfEmpty(metaObject, UPDATED_AT, nowFor(metaObject, UPDATED_AT));
         setIfEmpty(metaObject, UPDATE_TIME, nowFor(metaObject, UPDATE_TIME));
         setTenant(metaObject, context.tenantId());
+        setIfEmpty(metaObject, ORG_ID, context.orgId());
     }
 
     @Override

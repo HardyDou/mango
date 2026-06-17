@@ -103,7 +103,7 @@ public class CheckMojo extends AbstractMojo {
     private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile(
             "(?is)create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?(?:`?([a-zA-Z0-9_]+)`?\\.)?`?([a-zA-Z0-9_]+)`?\\s*\\(");
     private static final List<String> REQUIRED_PERSISTENCE_COLUMNS = List.of(
-            "created_by", "created_at", "updated_by", "updated_at", "tenant_id");
+            "created_by", "created_at", "updated_by", "updated_at", "tenant_id", "org_id");
     private static final Set<String> DEFAULT_PERSISTENCE_EXCLUDED_TABLES = Set.of(
             "flyway_schema_history", "databasechangelog", "databasechangeloglock",
             "kv_record", "infra_kv_entry", "sys_login_log", "sys_operation_log");

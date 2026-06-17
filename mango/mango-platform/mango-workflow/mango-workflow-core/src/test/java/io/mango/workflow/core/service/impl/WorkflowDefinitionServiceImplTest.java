@@ -1,12 +1,15 @@
 package io.mango.workflow.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.common.result.R;
 import io.mango.common.vo.PageResult;
 import io.mango.domain.api.DomainApi;
 import io.mango.domain.api.vo.DomainVO;
+import io.mango.infra.persistence.api.scope.DataScopeApplier;
+import io.mango.infra.persistence.api.scope.DataScopeMapping;
 import io.mango.workflow.api.command.EnsureWorkflowDefinitionCommand;
 import io.mango.workflow.api.enums.WorkflowDefinitionStatus;
 import io.mango.workflow.api.query.WorkflowDefinitionPageQuery;
@@ -31,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -60,12 +64,15 @@ class WorkflowDefinitionServiceImplTest {
     private RepositoryService repositoryService;
     @Mock
     private WorkflowDesignerBpmnConverter bpmnConverter;
+    @Mock
+    private ObjectProvider<DataScopeApplier> dataScopeApplierProvider;
 
     private WorkflowDefinitionServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(dataScopeApplierProvider.getIfAvailable()).thenReturn(new TestDataScopeApplier());
         service = new WorkflowDefinitionServiceImpl(
                 definitionMapper,
                 categoryMapper,
@@ -74,7 +81,53 @@ class WorkflowDefinitionServiceImplTest {
                 domainApi,
                 repositoryService,
                 bpmnConverter,
-                new ObjectMapper());
+                new ObjectMapper(),
+                dataScopeApplierProvider);
+    }
+
+    @Test
+    void page_shouldApplyDataScopeToWorkflowDefinitionList() {
+        Page<WorkflowDefinition> page = new Page<>(1, 10);
+        page.setRecords(List.of());
+        page.setTotal(0);
+        when(definitionMapper.selectPage(any(Page.class), any(Wrapper.class))).thenReturn(page);
+
+        WorkflowDefinitionPageQuery query = new WorkflowDefinitionPageQuery();
+        query.setPage(1);
+        query.setSize(10);
+        query.setKeyword("审批");
+        query.setDomainCode("PAYMENT");
+
+        R<PageResult<WorkflowDefinitionVO>> result = service.page(query);
+
+        assertThat(result.isSuccess()).isTrue();
+        ArgumentCaptor<Wrapper<WorkflowDefinition>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(definitionMapper).selectPage(any(Page.class), wrapperCaptor.capture());
+        String sqlSegment = wrapperCaptor.getValue().getSqlSegment();
+        assertThat(sqlSegment)
+                .contains("definition_name", "definition_key", "domain_code", "org_id", "created_by")
+                .contains("updated_time");
+    }
+
+    @Test
+    void get_shouldApplyDataScopeToWorkflowDefinitionDetail() {
+        WorkflowDefinition definition = new WorkflowDefinition();
+        definition.setId(1001L);
+        definition.setCategoryId(10L);
+        definition.setDomainCode("PAYMENT");
+        definition.setDefinitionName("合同用印审批");
+        definition.setDefinitionKey("contract_seal_approval");
+        definition.setStatus(WorkflowDefinitionStatus.DRAFT.name());
+        when(definitionMapper.selectOne(any(Wrapper.class))).thenReturn(definition);
+
+        R<WorkflowDefinitionVO> result = service.get(1001L);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getData().getId()).isEqualTo(1001L);
+        ArgumentCaptor<Wrapper<WorkflowDefinition>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(definitionMapper).selectOne(wrapperCaptor.capture());
+        String sqlSegment = wrapperCaptor.getValue().getSqlSegment();
+        assertThat(sqlSegment).contains("id", "org_id", "created_by");
     }
 
     @Test
@@ -134,6 +187,10 @@ class WorkflowDefinitionServiceImplTest {
         assertThat(vo.getProcessDefinitionId()).isEqualTo("proc-published");
         assertThat(vo.getCategoryName()).isEqualTo("通用流程");
         assertThat(vo.getHasUnpublishedChanges()).isFalse();
+        ArgumentCaptor<Wrapper<WorkflowDefinition>> wrapperCaptor = ArgumentCaptor.forClass(Wrapper.class);
+        verify(definitionMapper).selectPage(any(Page.class), wrapperCaptor.capture());
+        assertThat(wrapperCaptor.getValue().getSqlSegment())
+                .contains("status", "published_version_no", "process_definition_id", "org_id", "created_by");
     }
 
     @Test
@@ -174,7 +231,9 @@ class WorkflowDefinitionServiceImplTest {
     @Test
     void ensurePublished_missingDefinition_createsCategoryAndDefinitionThenDeploys() {
         when(categoryMapper.selectOne(any(Wrapper.class))).thenReturn(null);
-        when(definitionMapper.selectOne(any(Wrapper.class))).thenReturn(null);
+        WorkflowDefinition createdDefinition = insertedDefinition();
+        createdDefinition.setId(3001L);
+        when(definitionMapper.selectOne(any(Wrapper.class))).thenReturn(null, createdDefinition);
         when(domainApi.detailByCode("PAYMENT")).thenReturn(R.ok(enabledDomain()));
         when(categoryMapper.selectById(2001L)).thenAnswer(invocation -> {
             WorkflowCategory category = new WorkflowCategory();
@@ -193,11 +252,6 @@ class WorkflowDefinitionServiceImplTest {
             definition.setId(3001L);
             return 1;
         }).when(definitionMapper).insert(any(WorkflowDefinition.class));
-        when(definitionMapper.selectById(3001L)).thenAnswer(invocation -> {
-            WorkflowDefinition definition = insertedDefinition();
-            definition.setId(invocation.getArgument(0));
-            return definition;
-        });
         when(versionMapper.selectOne(any(Wrapper.class))).thenReturn(null);
         doAnswer(invocation -> {
             WorkflowDefinitionVersion version = invocation.getArgument(0);
@@ -281,5 +335,18 @@ class WorkflowDefinitionServiceImplTest {
         definition.setFormJson("{\"mode\":\"CUSTOM\"}");
         definition.setStatus(WorkflowDefinitionStatus.DRAFT.name());
         return definition;
+    }
+
+    private static class TestDataScopeApplier implements DataScopeApplier {
+
+        @Override
+        public <T> void apply(QueryWrapper<T> wrapper, String resourceCode, DataScopeMapping mapping) {
+            assertThat(resourceCode).isEqualTo("workflow:definition:list");
+            assertThat(mapping.orgField()).isEqualTo("org_id");
+            assertThat(mapping.selfField()).isEqualTo("created_by");
+            wrapper.and(condition -> condition.in(mapping.orgField(), List.of(100L, 200L))
+                    .or()
+                    .eq(mapping.selfField(), 9001L));
+        }
     }
 }

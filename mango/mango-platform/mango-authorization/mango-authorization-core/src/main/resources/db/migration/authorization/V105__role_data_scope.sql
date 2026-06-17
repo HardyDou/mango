@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS `authorization_role_data_scope` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `tenant_id` bigint NOT NULL DEFAULT '1' COMMENT '租户ID',
+  `app_code` varchar(64) NOT NULL DEFAULT 'internal-admin' COMMENT '应用编码',
+  `role_id` bigint NOT NULL COMMENT '角色ID',
+  `resource_code` varchar(128) NOT NULL COMMENT '资源编码',
+  `scope_mode` varchar(32) NOT NULL DEFAULT 'SELF' COMMENT '数据范围模式: ALL/SELF/SELF_ORG/SELF_ORG_AND_CHILDREN/ORG',
+  `scope_values` json DEFAULT NULL COMMENT '范围值 JSON 数组',
+  `include_children` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否包含下级组织',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态: 0-禁用, 1-启用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人 ID',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_authorization_role_data_scope_role_resource` (`tenant_id`,`app_code`,`role_id`,`resource_code`),
+  KEY `idx_authorization_role_data_scope_role` (`role_id`),
+  KEY `idx_authorization_role_data_scope_resource` (`tenant_id`,`app_code`,`resource_code`),
+  KEY `idx_authorization_role_data_scope_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='角色数据权限配置表';

@@ -145,6 +145,7 @@ class GenCrudMojoTest {
         assertTrue(content.contains("`updated_by` bigint"));
         assertTrue(content.contains("`updated_at` datetime"));
         assertTrue(content.contains("`tenant_id` varchar(64)"));
+        assertTrue(content.contains("`org_id` bigint"));
     }
 
     @Test

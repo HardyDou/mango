@@ -1417,6 +1417,7 @@ class CheckMojoTest {
                     `updated_by` bigint DEFAULT NULL,
                     `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
                     PRIMARY KEY (`id`)
                 );
                 """);
@@ -1463,6 +1464,7 @@ class CheckMojoTest {
                     `updated_by` bigint DEFAULT NULL,
                     `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
                     PRIMARY KEY (`user_id`)
                 );
                 """);
@@ -1488,6 +1490,7 @@ class CheckMojoTest {
                     `updated_by` bigint DEFAULT NULL,
                     `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `tenant_id` varchar(64) NOT NULL DEFAULT 'default',
+                    `org_id` bigint DEFAULT NULL,
                     PRIMARY KEY (`id`)
                 );
                 """);

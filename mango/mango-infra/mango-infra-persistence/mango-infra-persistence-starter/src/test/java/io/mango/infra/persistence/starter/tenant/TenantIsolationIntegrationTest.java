@@ -59,18 +59,19 @@ class TenantIsolationIntegrationTest {
                     created_by BIGINT,
                     created_at TIMESTAMP,
                     updated_by BIGINT,
-                    updated_at TIMESTAMP
+                    updated_at TIMESTAMP,
+                    org_id BIGINT
                 )
                 """);
         jdbcTemplate.update("""
-                INSERT INTO tenant_demo (id, name, status, tenant_id, created_by, created_at, updated_by, updated_at)
+                INSERT INTO tenant_demo (id, name, status, tenant_id, created_by, created_at, updated_by, updated_at, org_id)
                 VALUES
-                  (1001, 'alpha', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (1002, 'beta', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP),
-                  (2001, 'alpha-other', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+                  (1001, 'alpha', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (1002, 'beta', 1, 'tenant-a', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 3003),
+                  (2001, 'alpha-other', 1, 'tenant-b', 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, 9009)
                 """);
         MangoContextHolder.set(MangoContextSnapshot.empty()
-                .withSecurity(9001L, "tenant-a", "tester", "default", "USER", "USER", 9001L, "test"));
+                .withSecurity(9001L, "tenant-a", "tester", "default", "USER", "org", 3003L, "test"));
     }
 
     @AfterEach
@@ -112,7 +113,7 @@ class TenantIsolationIntegrationTest {
         assertThat(tenantDemoMapper.insert(entity)).isEqualTo(1);
 
         Map<String, Object> row = jdbcTemplate.queryForMap("""
-                SELECT tenant_id, created_by, created_at, updated_by, updated_at
+                SELECT tenant_id, created_by, created_at, updated_by, updated_at, org_id
                 FROM tenant_demo
                 WHERE id = 3001
                 """);
@@ -121,6 +122,7 @@ class TenantIsolationIntegrationTest {
         assertThat(row.get("CREATED_AT")).isNotNull();
         assertThat(row.get("UPDATED_BY")).isEqualTo(9001L);
         assertThat(row.get("UPDATED_AT")).isNotNull();
+        assertThat(row.get("ORG_ID")).isEqualTo(3003L);
     }
 
     @Test

@@ -20,6 +20,31 @@ export interface RoleVO {
   permissionIds?: ApiId[];
 }
 
+export type DataScopeMode = 'ALL' | 'SELF' | 'SELF_ORG' | 'SELF_ORG_AND_CHILDREN' | 'ORG';
+
+export interface RoleDataScopeVO {
+  id?: ApiId;
+  tenantId?: ApiId;
+  appCode?: string;
+  roleId: ApiId;
+  resourceCode: string;
+  scopeMode: DataScopeMode;
+  scopeValues?: string[];
+  includeChildren?: boolean;
+  status?: number;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export interface SaveRoleDataScopeCommand {
+  roleId: ApiId;
+  resourceCode: string;
+  scopeMode: DataScopeMode;
+  scopeValues?: string[];
+  includeChildren?: boolean;
+  status?: number;
+}
+
 export const roleApi = {
   list: () => get<RoleVO[]>('/authorization/roles'),
   detail: (id: ApiId) => get<RoleVO>('/authorization/roles/detail', { params: { id } }),
@@ -39,4 +64,9 @@ export const roleApi = {
     partyId?: ApiId;
     roleIds: ApiId[];
   }) => post<boolean>('/authorization/roles/subjects', data),
+  getDataScopes: (roleId: ApiId) => get<RoleDataScopeVO[]>('/authorization/data-scopes/roles', { params: { roleId } }),
+  saveDataScope: (data: SaveRoleDataScopeCommand) => post<boolean>('/authorization/data-scopes/roles', data),
+  deleteDataScope: (roleId: ApiId, resourceCode: string) => del<boolean>('/authorization/data-scopes/roles', {
+    params: { roleId, resourceCode },
+  }),
 };

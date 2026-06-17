@@ -103,6 +103,14 @@
               link
               type="primary"
               size="small"
+              @click="handleDataScopes(row)"
+            >
+              数据权限
+            </el-button>
+            <el-button
+              link
+              type="primary"
+              size="small"
               @click="handleEdit(row)"
             >
               编辑
@@ -260,6 +268,187 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="dataScopeDialogVisible"
+      title="角色数据权限"
+      width="920px"
+    >
+      <div class="assign-header">
+        <span>{{ currentRole?.roleName }}</span>
+        <el-tag
+          v-if="currentRole?.roleCode"
+          effect="plain"
+        >
+          {{ currentRole.roleCode }}
+        </el-tag>
+      </div>
+      <div class="data-scope-toolbar">
+        <el-button
+          type="primary"
+          plain
+          :disabled="!!editingDataScopeKey"
+          @click="addDataScope"
+        >
+          新增数据权限
+        </el-button>
+      </div>
+      <el-table
+        v-loading="dataScopeLoading"
+        :data="dataScopeTableRows"
+        border
+        size="small"
+        :row-key="dataScopeRowKey"
+        class="data-scope-table"
+      >
+        <el-table-column
+          prop="resourceCode"
+          label="数据资源"
+          min-width="340"
+        >
+          <template #default="{ row }">
+            <el-tree-select
+              v-if="isEditingDataScope(row) && isNewDataScopeRow(row)"
+              v-model="dataScopeEditRow.resourceCode"
+              :data="dataScopeResourceTree"
+              :loading="dataScopeResourceLoading"
+              filterable
+              clearable
+              check-strictly
+              default-expand-all
+              node-key="value"
+              :props="dataScopeResourceTreeProps"
+              class="form-select"
+              placeholder="请选择数据资源"
+              data-test="data-scope-resource-tree"
+            />
+            <div
+              v-else
+              class="data-resource-cell"
+            >
+              <span>{{ dataScopeResourceName(row.resourceCode) }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="scopeMode"
+          label="范围"
+          width="360"
+        >
+          <template #default="{ row }">
+            <el-segmented
+              v-if="isEditingDataScope(row)"
+              v-model="dataScopeEditRow.scopeMode"
+              :options="dataScopeModeOptions"
+            />
+            <span v-else>
+              {{ dataScopeModeLabel(row.scopeMode) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="scopeValues"
+          label="范围值"
+          min-width="170"
+        >
+          <template #default="{ row }">
+            <el-tree-select
+              v-if="isEditingDataScope(row) && dataScopeEditRow.scopeMode === 'ORG'"
+              v-model="dataScopeEditRow.scopeValues"
+              :data="orgTreeData"
+              multiple
+              check-strictly
+              filterable
+              clearable
+              node-key="id"
+              :props="{ label: 'orgName', children: 'children', value: 'id' }"
+              class="form-select"
+              placeholder="请选择组织范围"
+            />
+            <span v-else-if="isEditingDataScope(row)">
+              -
+            </span>
+            <span v-else>
+              {{ row.scopeValues?.join(', ') || '-' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="120"
+        >
+          <template #default="{ row }">
+            <el-switch
+              v-if="isEditingDataScope(row)"
+              v-model="dataScopeEditRow.status"
+              :active-value="1"
+              :inactive-value="0"
+              active-text="启用"
+              inactive-text="停用"
+            />
+            <DictTag
+              v-else
+              dict-code="sys_normal_disable"
+              :value="row.status"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="130"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <template v-if="isEditingDataScope(row)">
+              <el-button
+                link
+                type="primary"
+                size="small"
+                :loading="dataScopeSubmitLoading"
+                data-test="data-scope-row-save"
+                @click="saveDataScopeEditRow"
+              >
+                保存
+              </el-button>
+              <el-button
+                link
+                size="small"
+                :disabled="dataScopeSubmitLoading"
+                @click="cancelDataScopeEdit"
+              >
+                取消
+              </el-button>
+            </template>
+            <template v-else>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                :disabled="!!editingDataScopeKey"
+                @click="editDataScope(row)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                link
+                type="danger"
+                size="small"
+                :disabled="!!editingDataScopeKey"
+                @click="deleteDataScope(row)"
+              >
+                删除
+              </el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="dataScopeDialogVisible = false">
+          关闭
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -272,8 +461,35 @@ import { useDict } from '@mango/common/hooks/useDict';
 import { formatDate } from '@mango/common/utils/formatTime';
 import { Session } from '@mango/common/utils/storage';
 import { appApi, type AppLoginContext, type AuthorizationApp } from '../../api/app';
-import { roleApi, type RoleVO } from '../../api/role';
+import { roleApi, type DataScopeMode, type RoleDataScopeVO, type RoleVO } from '../../api/role';
 import type { SysMenuVO } from '../../api/menu';
+import { orgApi, type SysOrg } from '../../api/org';
+
+interface DataScopeResourceOption {
+  code: string;
+  name: string;
+  label: string;
+  menuName: string;
+}
+
+interface DataScopeResourceTreeNode {
+  value: string;
+  label: string;
+  name: string;
+  code?: string;
+  disabled?: boolean;
+  children?: DataScopeResourceTreeNode[];
+}
+
+interface DataScopeEditRow {
+  resourceCode: string;
+  scopeMode: DataScopeMode;
+  scopeValues: string[];
+  status: number;
+  isNew: boolean;
+}
+
+type DataScopeTableRow = RoleDataScopeVO | DataScopeEditRow;
 
 const { options: roleTypeOptions } = useDict('authorization_role_type');
 const { options: statusOptions } = useDict('sys_normal_disable');
@@ -293,6 +509,29 @@ const assignSubmitLoading = ref(false);
 const currentRole = ref<RoleVO>();
 const assignableMenus = ref<SysMenuVO[]>([]);
 const menuTreeRef = ref<TreeInstance>();
+const dataScopeDialogVisible = ref(false);
+const dataScopeLoading = ref(false);
+const dataScopeSubmitLoading = ref(false);
+const dataScopeResourceLoading = ref(false);
+const dataScopes = ref<RoleDataScopeVO[]>([]);
+const orgTreeData = ref<SysOrg[]>([]);
+const dataScopeResourceOptions = ref<DataScopeResourceOption[]>([]);
+const dataScopeResourceTree = ref<DataScopeResourceTreeNode[]>([]);
+const editingDataScopeKey = ref('');
+const dataScopeResourceTreeProps = {
+  label: 'label',
+  children: 'children',
+  value: 'value',
+  disabled: 'disabled',
+};
+
+const dataScopeModeOptions = [
+  { label: '全部', value: 'ALL' },
+  { label: '本人', value: 'SELF' },
+  { label: '本人部门', value: 'SELF_ORG' },
+  { label: '本人部门及下级', value: 'SELF_ORG_AND_CHILDREN' },
+  { label: '指定组织', value: 'ORG' },
+];
 
 const form = reactive<RoleVO>({
   roleId: undefined,
@@ -316,9 +555,24 @@ const rules: FormRules = {
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 };
 
+const dataScopeEditRow = reactive<DataScopeEditRow>({
+  resourceCode: '',
+  scopeMode: 'SELF',
+  scopeValues: [],
+  status: 1,
+  isNew: false,
+});
+
 const currentAppContexts = computed(() => {
   const app = appOptions.value.find((item) => item.appCode === form.appCode);
   return app?.loginContexts?.filter((item) => item.status === 1) || [];
+});
+
+const dataScopeTableRows = computed<DataScopeTableRow[]>(() => {
+  if (dataScopeEditRow.isNew) {
+    return [dataScopeEditRow, ...dataScopes.value];
+  }
+  return dataScopes.value;
 });
 
 async function loadData() {
@@ -356,7 +610,7 @@ function resetForm() {
 
 async function loadAppOptions() {
   try {
-    const apps = await appApi.list();
+    const apps = await appApi.runtime();
     if (apps.length > 0) {
       return apps;
     }
@@ -523,6 +777,225 @@ async function handleAssignSubmit() {
   }
 }
 
+async function handleDataScopes(row: RoleVO) {
+  if (!row.roleId) return;
+  currentRole.value = row;
+  dataScopeDialogVisible.value = true;
+  resetDataScopeEditRow();
+  await Promise.all([
+    loadDataScopes(),
+    loadDataScopeResources(row.appCode),
+    loadOrgTree(),
+  ]);
+}
+
+async function loadDataScopes() {
+  if (!currentRole.value?.roleId) return;
+  dataScopeLoading.value = true;
+  try {
+    dataScopes.value = await roleApi.getDataScopes(currentRole.value.roleId);
+  } catch (error) {
+    console.error('加载数据权限失败:', error);
+  } finally {
+    dataScopeLoading.value = false;
+  }
+}
+
+async function loadOrgTree() {
+  if (orgTreeData.value.length > 0) return;
+  try {
+    orgTreeData.value = await orgApi.tree({ parentId: '0', includeDisabled: true });
+  } catch (error) {
+    console.error('加载组织树失败:', error);
+  }
+}
+
+async function loadDataScopeResources(appCode?: string) {
+  dataScopeResourceLoading.value = true;
+  try {
+    const menus = await roleApi.getAssignableMenus(appCode);
+    dataScopeResourceOptions.value = buildDataScopeResourceOptions(menus);
+    dataScopeResourceTree.value = buildDataScopeResourceTree(menus);
+  } catch (error) {
+    dataScopeResourceOptions.value = [];
+    dataScopeResourceTree.value = [];
+    console.error('加载数据资源失败:', error);
+  } finally {
+    dataScopeResourceLoading.value = false;
+  }
+}
+
+function buildDataScopeResourceOptions(menus: SysMenuVO[] = []): DataScopeResourceOption[] {
+  const optionMap = new Map<string, DataScopeResourceOption>();
+  const visit = (items: SysMenuVO[]) => {
+    items.forEach((item) => {
+      splitPermissions(item.permissions).forEach((code) => {
+        if (isListResourceCode(code) && !optionMap.has(code)) {
+          const name = `${listResourceName(item.menuName)} / ${code}`;
+          optionMap.set(code, {
+            code,
+            name,
+            label: name,
+            menuName: item.menuName,
+          });
+        }
+      });
+      visit(item.children || []);
+    });
+  };
+  visit(menus);
+  return Array.from(optionMap.values()).sort((left, right) => left.code.localeCompare(right.code));
+}
+
+function buildDataScopeResourceTree(menus: SysMenuVO[] = []): DataScopeResourceTreeNode[] {
+  const usedResourceCodes = new Set<string>();
+  const buildNodes = (items: SysMenuVO[]): DataScopeResourceTreeNode[] => {
+    return items
+      .map((item) => {
+        const children = buildNodes(item.children || []);
+        const listResourceCode = splitPermissions(item.permissions)
+          .find((code) => isListResourceCode(code) && !usedResourceCodes.has(code));
+        if (listResourceCode) {
+          usedResourceCodes.add(listResourceCode);
+        }
+        if (children.length === 0 && !listResourceCode) {
+          return undefined;
+        }
+        return {
+          value: listResourceCode || `menu:${item.menuId}`,
+          label: listResourceCode ? `${listResourceName(item.menuName)} / ${listResourceCode}` : item.menuName,
+          name: listResourceCode ? listResourceName(item.menuName) : item.menuName,
+          code: listResourceCode,
+          disabled: !listResourceCode,
+          children,
+        };
+      })
+      .filter((item): item is DataScopeResourceTreeNode => Boolean(item));
+  };
+  return buildNodes(menus);
+}
+
+function splitPermissions(permissions?: string) {
+  return (permissions || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function isListResourceCode(code: string) {
+  return code.endsWith(':list');
+}
+
+function listResourceName(menuName: string) {
+  const normalizedName = menuName
+    .replace(/^查询/, '')
+    .replace(/管理列表$/, '列表')
+    .replace(/管理$/, '');
+  return normalizedName.endsWith('列表') ? normalizedName : `${normalizedName}列表`;
+}
+
+function dataScopeResourceName(resourceCode?: string) {
+  if (!resourceCode) return '-';
+  const option = dataScopeResourceOptions.value.find((item) => item.code === resourceCode);
+  return option?.name || resourceCode;
+}
+
+function dataScopeRowKey(row: DataScopeTableRow) {
+  return isNewDataScopeRow(row) ? '__new__' : row.resourceCode;
+}
+
+function isEditingDataScope(row: DataScopeTableRow) {
+  return editingDataScopeKey.value === dataScopeRowKey(row);
+}
+
+function isNewDataScopeRow(row: DataScopeTableRow): row is DataScopeEditRow {
+  return 'isNew' in row && row.isNew;
+}
+
+function resetDataScopeEditRow() {
+  Object.assign(dataScopeEditRow, {
+    resourceCode: '',
+    scopeMode: 'SELF',
+    scopeValues: [],
+    status: 1,
+    isNew: false,
+  });
+  editingDataScopeKey.value = '';
+}
+
+function addDataScope() {
+  Object.assign(dataScopeEditRow, {
+    resourceCode: '',
+    scopeMode: 'SELF_ORG',
+    scopeValues: [],
+    status: 1,
+    isNew: true,
+  });
+  editingDataScopeKey.value = '__new__';
+}
+
+function editDataScope(row: RoleDataScopeVO) {
+  Object.assign(dataScopeEditRow, {
+    resourceCode: row.resourceCode,
+    scopeMode: row.scopeMode || 'SELF',
+    scopeValues: row.scopeValues || [],
+    status: row.status ?? 1,
+    isNew: false,
+  });
+  editingDataScopeKey.value = row.resourceCode;
+}
+
+function cancelDataScopeEdit() {
+  resetDataScopeEditRow();
+}
+
+async function deleteDataScope(row: RoleDataScopeVO) {
+  if (!currentRole.value?.roleId) return;
+  await ElMessageBox.confirm(`确认删除资源「${row.resourceCode}」的数据权限配置?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  });
+  await roleApi.deleteDataScope(currentRole.value.roleId, row.resourceCode);
+  ElMessage.success('删除成功');
+  await loadDataScopes();
+  resetDataScopeEditRow();
+}
+
+async function saveDataScopeEditRow() {
+  if (!currentRole.value?.roleId) return;
+  if (!dataScopeEditRow.resourceCode) {
+    ElMessage.warning('请选择数据资源');
+    return;
+  }
+  if (!dataScopeEditRow.scopeMode) {
+    ElMessage.warning('请选择数据范围');
+    return;
+  }
+  dataScopeSubmitLoading.value = true;
+  try {
+    await roleApi.saveDataScope({
+      roleId: currentRole.value.roleId,
+      resourceCode: dataScopeEditRow.resourceCode,
+      scopeMode: dataScopeEditRow.scopeMode,
+      scopeValues: dataScopeEditRow.scopeMode === 'ORG' ? dataScopeEditRow.scopeValues.map(String) : [],
+      includeChildren: dataScopeEditRow.scopeMode === 'SELF_ORG_AND_CHILDREN',
+      status: dataScopeEditRow.status,
+    });
+    ElMessage.success('保存成功');
+    await loadDataScopes();
+    resetDataScopeEditRow();
+  } catch (error) {
+    console.error('保存数据权限失败:', error);
+  } finally {
+    dataScopeSubmitLoading.value = false;
+  }
+}
+
+function dataScopeModeLabel(mode: DataScopeMode) {
+  return dataScopeModeOptions.find((item) => item.value === mode)?.label || mode;
+}
+
 onMounted(() => {
   loadData();
 });
@@ -549,4 +1022,26 @@ onMounted(() => {
   gap: 8px;
   margin-bottom: 12px;
 }
+
+.data-scope-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.data-scope-table {
+  width: 100%;
+}
+
+.data-scope-table :deep(.el-segmented) {
+  width: 330px;
+}
+
+.data-resource-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.4;
+}
+
 </style>

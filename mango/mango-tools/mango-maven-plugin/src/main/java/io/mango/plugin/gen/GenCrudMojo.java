@@ -326,8 +326,10 @@ public class GenCrudMojo extends AbstractMojo {
                         + "  `updated_by` bigint DEFAULT NULL COMMENT '更新人 ID',\n"
                         + "  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\n"
                         + "  `tenant_id` varchar(64) NOT NULL DEFAULT 'default' COMMENT '租户标识',\n"
+                        + "  `org_id` bigint DEFAULT NULL COMMENT '所属组织 ID',\n"
                         + "  PRIMARY KEY (`id`),\n"
-                        + "  KEY `idx_" + tableName + "_tenant_id` (`tenant_id`)\n"
+                        + "  KEY `idx_" + tableName + "_tenant_id` (`tenant_id`),\n"
+                        + "  KEY `idx_" + tableName + "_org_id` (`org_id`)\n"
                         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='" + toPascalCase(entity) + "';\n";
         Files.writeString(dir.resolve("V1__init_" + tableName + ".sql"), content);
     }
