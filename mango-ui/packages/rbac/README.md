@@ -35,7 +35,7 @@
 pnpm add @mango/rbac
 ```
 
-宿主应用需要提供 Vue、Vue Router、Element Plus，并接入 `@mango/common` 请求上下文。部署时需要启用 authorization、identity、org 后端能力。
+宿主应用需要提供 Vue、Vue Router、Element Plus，并接入 `@mango/common` 请求上下文和公共组件样式。部署时需要启用 authorization、identity、org 后端能力。
 
 引入页面和样式：
 
@@ -133,6 +133,8 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 ## 7. 管理入口
 
 菜单的 component 字段应与上面的默认页面 key 保持一致。角色管理的「分配权限」弹框直接展示后端可分配菜单树，后端返回的按钮节点会与菜单节点一起展示，供角色按需勾选授权。
+
+应用管理的新增和编辑应用弹框使用 `@mango/common` 的 `MangoDialog` 作为弹框外壳，表单字段、提交参数和 `appApi` 调用保持不变。该弹框接入只统一顶部、内容滚动区和底部按钮区样式，不改变应用管理页面 key、菜单权限、按钮权限、后端接口或数据结构。
 
 访问控制分两层：
 
