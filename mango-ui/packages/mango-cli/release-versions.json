@@ -3,14 +3,15 @@
     "mangoBackend": "1.0.0-SNAPSHOT"
   },
   "npm": {
-    "@mango/admin": "1.0.18",
+    "@mango/admin": "1.0.19",
     "@mango/admin-pages": "1.0.8",
-    "@mango/admin-shell": "1.0.17",
+    "@mango/admin-shell": "1.0.18",
     "@mango/app-runtime": "1.0.2",
     "@mango/auth": "1.0.6",
     "@mango/calendar": "1.0.9",
     "@mango/common": "1.0.8",
     "@mango/file": "1.0.9",
+    "@mango/grid-layout": "1.0.0",
     "@mango/job": "1.0.1",
     "@mango/notice": "1.0.9",
     "@mango/numgen": "1.0.9",

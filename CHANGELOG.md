@@ -1,5 +1,48 @@
 # Mango Changelog
 
+## v2026.06.17-grid-layout-workbench - 2026-06-17
+
+### New
+
+- Added custom Workbench grid layout support, including edit mode, widget removal, save, reset to default, refresh persistence, and per-user layout APIs.
+- Added the `@mango/grid-layout@1.0.0` frontend package with reusable grid layout components, designer APIs, styles, and usage documentation.
+- Added backend Grid Layout Maven modules on the Mango `1.0.0-SNAPSHOT` line for personal layout persistence.
+- Updated generated admin projects to lock and install `@mango/grid-layout@1.0.0` with the refreshed admin package set.
+
+### Fixed
+
+- Completed `@mango/admin-shell` public README contract coverage for feature registrars, runtime modules, menu contract, theme, i18n, directives, migration guidance, and compatibility.
+- Bumped admin package versions so the new workbench layout dependency can be published without overwriting existing npm versions.
+
+### Published Packages
+
+- `@mango/grid-layout@1.0.0`
+- `@mango/admin-shell@1.0.18`
+- `@mango/admin@1.0.19`
+- `@mango/cli@1.0.32`
+- Backend Maven artifacts remain on the Mango `1.0.0-SNAPSHOT` line, including:
+  - `io.mango.platform.gridlayout:mango-grid-layout`
+  - `io.mango.platform.gridlayout:mango-grid-layout-api`
+  - `io.mango.platform.gridlayout:mango-grid-layout-core`
+  - `io.mango.platform.gridlayout:mango-grid-layout-starter`
+
+### Upgrade Notes
+
+- Existing business projects should refresh backend Mango `1.0.0-SNAPSHOT` dependencies from the Maven repository.
+- Frontend consumers using Mango Admin should upgrade to `@mango/admin@1.0.19` and `@mango/admin-shell@1.0.18`.
+- Generated or manually maintained admin projects should include `@mango/grid-layout@1.0.0` and import the admin style entry that includes grid layout styles.
+- Upgrade `@mango/cli` to `1.0.32` before creating new business projects so generated frontend dependencies include the grid layout package lock.
+
+### Verification
+
+- `pnpm -F @mango/grid-layout build`
+- `pnpm -F @mango/admin-shell test`
+- `pnpm -F @mango/admin-shell build`
+- `pnpm -F @mango/admin build`
+- `pnpm -F @mango/cli test`
+- `mvn -f mango/pom.xml -pl mango-platform/mango-grid-layout/mango-grid-layout-core -am test`
+- `node mango-pmo/tools/delivery-contract-check.mjs --design mango-docs/designs/mango-grid-layout-workbench-design.md --ledger mango-docs/plans/2026-06-15-grid-layout-workbench-delivery-ledger.md --mode verify`
+
 ## v2026.06.13-payment-platform - 2026-06-13
 
 ### New

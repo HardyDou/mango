@@ -114,8 +114,6 @@ admin.mount();
 
 | 子入口 | 内容 |
 |--------|------|
-| 子入口 | 内容 |
-|--------|------|
 | `runtime` | 运行时页面挂载。 |
 | `menu` | 菜单加载和菜单路由转换。 |
 | `stores` | 用户、布局、主题、偏好等 store。 |
@@ -123,6 +121,45 @@ admin.mount();
 | `home` | 首页组件。 |
 | `dev-pages` | 开发中心页面注册。 |
 | `dev-base-pages` | 基础能力开发页注册。 |
+
+### Feature Registrars
+
+`featureRegistrars` 用于把能力包的页面注册到 Shell。推荐由业务入口集中传入，例如 `registerMangoWorkflowAdminPages`、`registerMangoFileAdminPages`。注册函数只声明前端页面，不负责创建后端菜单；菜单仍以授权中心返回的数据为准。
+
+### Runtime Modules
+
+`modules` 用于声明运行时模块加载方式，结构来自 `@mango/app-runtime`。本地页面优先使用已注册的 page loader；微前端页面需要在运行时配置中声明 entry、activeRule 和隔离策略。
+
+### Menu Contract
+
+Shell 只消费后端授权菜单。菜单 `component` 会归一化后匹配 `@mango/admin-pages` 注册的页面 key；匹配失败时显示 404，不会自动推断业务包路径。后端菜单、前端注册 key、能力开关必须保持一致。
+
+### Theme
+
+主题状态由 Shell store 管理，当前包含布局偏好、主题色和侧边栏状态。业务项目应通过 Shell 暴露的 store 或配置入口调整主题，不应直接依赖 Shell 内部组件路径。
+
+### I18n
+
+Shell 安装 `vue-i18n` 并提供基础文案。能力包可以在自身注册流程中补充本地文案；业务应用需要复用同一个 i18n 实例，避免重复安装多个互不相通的实例。
+
+### Directives
+
+Shell 会安装管理端基础指令和权限相关运行时。业务包新增指令时应在自身入口显式安装，避免把业务私有指令写入 Shell。
+
+### Migration From App-Local Shell Code
+
+从应用内 Shell 代码迁移时，先把入口替换为 `createMangoAdminApp()`，再把本地路由迁移为 `@mango/admin-pages` 注册项，把菜单来源切回后端授权菜单。迁移期间不要继续引用 `apps/*` 私有路径。
+
+### Compatibility Matrix
+
+| 依赖 | 兼容版本 |
+|------|----------|
+| Vue | `3.5.13` |
+| Vue Router | `^4.1.6` |
+| Pinia | `2.0.32` |
+| Element Plus | `2.14.1` |
+| `@mango/common` | 与 `@mango/cli` 的 `release-versions.json` 保持一致 |
+| `@mango/grid-layout` | `1.0.0` |
 
 运行时菜单请求：
 

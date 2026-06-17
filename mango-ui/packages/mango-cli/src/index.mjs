@@ -27,6 +27,7 @@ const defaultVersions = {
   mangoCalendar: readReleasedMangoPackageVersion('calendar', '1.0.6'),
   mangoCommon: readReleasedMangoPackageVersion('common', '1.0.7'),
   mangoFile: readReleasedMangoPackageVersion('file', '1.0.6'),
+  mangoGridLayout: readReleasedMangoPackageVersion('grid-layout', '1.0.0'),
   mangoJob: readReleasedMangoPackageVersion('job', '1.0.0'),
   mangoNotice: readReleasedMangoPackageVersion('notice', '1.0.6'),
   mangoNumgen: readReleasedMangoPackageVersion('numgen', '1.0.6'),
@@ -61,6 +62,7 @@ const CORE_FRONTEND_PACKAGES = [
   { name: '@mango/app-runtime', versionKey: 'mangoAppRuntime' },
   { name: '@mango/auth', versionKey: 'mangoAuth' },
   { name: '@mango/common', versionKey: 'mangoCommon' },
+  { name: '@mango/grid-layout', versionKey: 'mangoGridLayout' },
   { name: '@mango/rbac', versionKey: 'mangoRbac' },
   { name: '@mango/system', versionKey: 'mangoSystem' },
 ];
@@ -468,6 +470,7 @@ function buildVariables(options) {
     mangoCalendarVersion: defaultVersions.mangoCalendar,
     mangoCommonVersion: defaultVersions.mangoCommon,
     mangoFileVersion: defaultVersions.mangoFile,
+    mangoGridLayoutVersion: defaultVersions.mangoGridLayout,
     mangoJobVersion: defaultVersions.mangoJob,
     mangoNoticeVersion: defaultVersions.mangoNotice,
     mangoNumgenVersion: defaultVersions.mangoNumgen,
