@@ -21,7 +21,7 @@
 | 应用模块绑定和运行策略 | `appModuleApi` | `mango-authorization`、`@mango/app-runtime` |
 | 菜单和按钮资源 | `MenuView`、`menuApi` | `mango-authorization` |
 | 菜单包 | `MenuPackageView`、`menuPackageApi` | `mango-authorization` |
-| 角色、菜单授权和数据权限 | `RoleView`、`roleApi` | `mango-authorization` |
+| 角色、菜单/按钮授权和数据权限 | `RoleView`、`roleApi` | `mango-authorization` |
 | 用户管理 | `UserView`、`userApi` | `mango-identity` |
 | 组织和成员 | `OrgView`、`orgApi` | `mango-org` |
 | 岗位管理 | `PostView`、`postApi` | `mango-org` |
@@ -35,7 +35,7 @@
 pnpm add @mango/rbac
 ```
 
-宿主应用需要提供 Vue、Vue Router、Element Plus，并接入 `@mango/common` 请求上下文。部署时需要启用 authorization、identity、org 后端能力。
+宿主应用需要提供 Vue、Vue Router、Element Plus，并接入 `@mango/common` 请求上下文和公共组件样式。部署时需要启用 authorization、identity、org 后端能力。
 
 引入页面和样式：
 
@@ -91,7 +91,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | `AppView` | `system/app/index` | 应用管理。 |
 | `MenuView` | `system/menu/index` | 菜单和按钮资源管理。 |
 | `MenuPackageView` | `system/menu-package/index` | 菜单包管理。 |
-| `RoleView` | `system/role/index` | 角色和菜单授权。 |
+| `RoleView` | `system/role/index` | 角色和菜单/按钮授权。 |
 | `UserView` | `system/user/index` | 用户、企微同步、外部身份绑定。 |
 | `OrgView` | `system/org/index` | 组织树和组织成员。 |
 | `PostView` | `system/post/index` | 岗位管理。 |
@@ -150,7 +150,11 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 
 ## 7. 管理入口
 
-菜单的 component 字段应与上面的默认页面 key 保持一致。访问控制分两层：
+菜单的 component 字段应与上面的默认页面 key 保持一致。角色管理的「分配权限」弹框直接展示后端可分配菜单树，后端返回的按钮节点会与菜单节点一起展示，供角色按需勾选授权。
+
+应用管理的新增和编辑应用弹框使用 `@mango/common` 的 `MangoDialog` 作为弹框外壳，表单字段、提交参数和 `appApi` 调用保持不变。该弹框接入只统一顶部、内容滚动区和底部按钮区样式，不改变应用管理页面 key、菜单权限、按钮权限、后端接口或数据结构。
+
+访问控制分两层：
 
 | 层级 | 说明 |
 |------|------|
@@ -175,6 +179,7 @@ const users = await userApi.page({ pageNum: 1, pageSize: 20 });
 | 用户列表为空 | identity 没有用户或当前账号无权限 | 查 `/identity/users/page` 和接口权限。 |
 | 组织树为空 | org 数据未初始化或租户过滤无数据 | 查 `/org/tree`。 |
 | 授权后不生效 | 用户仍使用旧 token 或旧菜单缓存 | 重新登录并刷新菜单。 |
+| 角色授权弹框看不到按钮节点 | 后端可分配菜单树未返回按钮节点，或按钮资源未挂到对应菜单下 | 查 `roleApi.getAssignableMenus` 对应接口返回和按钮资源父子关系。 |
 | 按钮隐藏但接口还能调 | 只做了前端隐藏，没有后端权限 | 检查后端 authorization 资源和接口鉴权。 |
 
 ## 10. 相关文档

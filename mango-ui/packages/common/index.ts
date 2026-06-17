@@ -69,6 +69,12 @@ export type {
   UserSelectorProps,
 } from './components/UserSelector/types';
 export { default as TreeSelect } from './components/TreeSelect/index.vue';
+export { default as MangoDialog } from './components/MangoDialog/index.vue';
+export type {
+  MangoDialogEmits,
+  MangoDialogFooterAlign,
+  MangoDialogProps,
+} from './components/MangoDialog/types';
 export { default as CaptchaSelector } from './components/Captcha/index.vue';
 export { default as ArithmeticCaptcha } from './components/Captcha/ArithmeticCaptcha.vue';
 export { default as BlockPuzzleCaptcha } from './components/Captcha/BlockPuzzleCaptcha.vue';

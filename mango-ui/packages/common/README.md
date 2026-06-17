@@ -23,7 +23,7 @@
 | API 加密 | `wrapRequest`、`sm2Encrypt`、`sm2Decrypt` | 按环境变量启用 SM2 或 BFF 透传。 |
 | 菜单和权限 | `buildMenuTree`、权限函数、TagsView 工具 | 给管理后台菜单、按钮权限和标签页使用。 |
 | 公共 API | `uploadFile`、captcha、org、area、dict API | 连接 file、captcha、org、system 后端。 |
-| 通用组件 | `Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面复用组件。 |
+| 通用组件 | `MangoDialog`、`Pagination`、`DictSelect`、`OrgSelector`、`UserSelector` 等 | 后台页面复用组件。 |
 | hooks | `useTitle`、`useDict`、`useECharts`、`useLocale` | 页面标题、字典、图表和语言相关能力。 |
 | 实时通信 | `useRealtime`、`SSE`、`Websocket` | SSE/WebSocket client 和组件。 |
 | 主题和消息 | `mangoMessage`、theme 工具、主题 CSS | 管理端统一提示和主题样式。 |
@@ -71,6 +71,36 @@ const rows = await get('/system/dict/data/options', {
 import { DictSelect, OrgSelector, Pagination } from '@mango/common';
 import '@mango/common/style.css';
 </script>
+```
+
+使用通用弹框：
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { MangoDialog } from '@mango/common';
+import '@mango/common/style.css';
+
+const visible = ref(false);
+</script>
+
+<template>
+  <MangoDialog
+    v-model="visible"
+    title="新增应用"
+    width="720px"
+    footer-align="right"
+  >
+    <template #default>
+      弹框内容
+    </template>
+
+    <template #footer>
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary">确定</el-button>
+    </template>
+  </MangoDialog>
+</template>
 ```
 
 部署时没有单独的 `@mango/common` 后端 starter。它调用的接口来自业务已经启用的后端模块，例如 file、captcha、org、system、auth。
@@ -154,6 +184,7 @@ API 加密环境变量：
 | 组件 | 能力 |
 |------|------|
 | `Pagination` | 分页器。 |
+| `MangoDialog` | 管理端通用弹框外壳，统一标题区、关闭按钮、内容滚动区和底部按钮区。 |
 | `DictSelect`、`DictTag` | 字典选择和展示。 |
 | `OrgSelector`、`UserSelector` | 组织和用户选择。 |
 | `CaptchaSelector`、各验证码组件 | 验证码展示和交互。 |
@@ -161,6 +192,23 @@ API 加密环境变量：
 | `IconSelector`、`TreeSelect`、`RightToolbar` | 管理端通用选择和工具栏。 |
 | `FormCreate`、`Sign`、`CodeEditor`、`Editor`、`ECharts` | 表单、签名、代码、富文本和图表。 |
 | `SSE`、`Websocket`、`Chat` | 实时通信和聊天 UI。 |
+
+`MangoDialog` 组件：
+
+| 类型 | 名称 | 说明 |
+|------|------|------|
+| props | `modelValue` | 弹框显示状态，支持 `v-model`。 |
+| props | `title` | 标题文本，也可通过 `title` slot 覆盖。 |
+| props | `width` | 弹框宽度，语义与 Element Plus Dialog 一致，默认 `50%`。 |
+| props | `showHeader` | 是否展示完整顶部标题区，默认 `true`。 |
+| props | `showClose` | 是否展示关闭按钮，默认 `true`。 |
+| props | `footerAlign` | 底部插槽对齐方式，支持 `left`、`center`、`right`，默认 `right`。 |
+| props | `destroyOnClose` | 关闭后是否销毁内容，默认 `false`。 |
+| emits | `update:modelValue`、`open`、`opened`、`close`、`closed` | 透出弹框显示状态和 Element Plus Dialog 生命周期事件。 |
+| slots | `default` | 内容区域。内容区独立滚动，弹框最大高度为视口高度的 90%。 |
+| slots | `title` | 自定义标题内容。 |
+| slots | `headerExtra` | 标题右侧扩展区域。 |
+| slots | `footer` | 底部按钮区域。未传入时不渲染底部。 |
 
 ## 6. 数据与初始化
 
