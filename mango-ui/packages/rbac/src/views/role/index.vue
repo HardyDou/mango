@@ -487,7 +487,7 @@ async function handleAssignMenus(row: RoleVO) {
       roleApi.getAssignableMenus(row.appCode),
       roleApi.getMenuIds(row.roleId),
     ]);
-    assignableMenus.value = pruneAssignableMenuTree(menus);
+    assignableMenus.value = menus;
     await nextTick();
     menuTreeRef.value?.setCheckedKeys(checkedMenuIds, false);
   } catch (error) {
@@ -495,15 +495,6 @@ async function handleAssignMenus(row: RoleVO) {
   } finally {
     assignLoading.value = false;
   }
-}
-
-function pruneAssignableMenuTree(menus: SysMenuVO[] = []): SysMenuVO[] {
-  return menus
-    .filter((item) => item.menuType !== 3)
-    .map((item) => ({
-      ...item,
-      children: pruneAssignableMenuTree(item.children || []),
-    }));
 }
 
 async function handleAssignSubmit() {
