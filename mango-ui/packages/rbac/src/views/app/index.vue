@@ -160,10 +160,11 @@
       </el-table>
     </el-card>
 
-    <el-dialog
+    <MangoDialog
       v-model="dialogVisible"
       :title="form.appId ? '编辑应用' : '新增应用'"
       width="min(640px, 92vw)"
+      destroy-on-close
     >
       <el-form
         ref="formRef"
@@ -417,7 +418,7 @@
           确定
         </el-button>
       </template>
-    </el-dialog>
+    </MangoDialog>
 
     <IconSelector
       ref="iconSelectorRef"
@@ -606,6 +607,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import DictSelect from '@mango/common/components/DictSelect/index.vue';
 import DictTag from '@mango/common/components/DictTag/index.vue';
 import IconSelector from '@mango/common/components/IconSelector/index.vue';
+import MangoDialog from '@mango/common/components/MangoDialog/index.vue';
 import { useDict } from '@mango/common/hooks/useDict';
 import {
   appApi,
