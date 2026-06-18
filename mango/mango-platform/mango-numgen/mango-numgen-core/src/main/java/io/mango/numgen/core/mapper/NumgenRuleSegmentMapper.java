@@ -19,4 +19,6 @@ public interface NumgenRuleSegmentMapper extends BaseMapper<NumgenRuleSegment> {
             ORDER BY sort_order ASC, id ASC
             """)
     List<NumgenRuleSegment> selectByRuleId(@Param("ruleId") Long ruleId, @Param("tenantId") Long tenantId);
+
+    int physicalDeleteByRuleId(@Param("ruleId") Long ruleId);
 }
