@@ -6,6 +6,7 @@ export { registerMangoJobAdminPages } from '@mango/job/admin-pages';
 export { registerMangoNoticeAdminPages } from '@mango/notice/admin-pages';
 export { registerMangoNoticeAdminShell } from '@mango/notice/admin-shell';
 export { registerMangoNumgenAdminPages } from '@mango/numgen/admin-pages';
+export { registerMangoPaymentAdminPages } from '@mango/payment/admin-pages';
 export { registerMangoTemplateAdminPages } from '@mango/template/admin-pages';
 export { registerMangoWorkflowAdminPages } from '@mango/workflow/admin-pages';
 export { registerMangoWorkflowBusinessExampleAdminPages } from '@mango/workflow-business-example/admin-pages';

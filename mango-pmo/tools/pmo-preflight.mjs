@@ -221,6 +221,61 @@ function bundleMatches(bundle, args) {
   return keywordHit || pathHit;
 }
 
+const frontendAdminModuleStyleCheck = {
+  id: 'frontend-admin-module-style-governance',
+  commands: ['pnpm admin:styles:check', 'pnpm admin:module-styles:check'],
+  reason: '前端官方模块、@mango/admin/full、CLI 模块清单或 admin 样式聚合可能变化'
+};
+
+const frontendAdminModuleStylePaths = [
+  'mango-ui/packages/admin/**',
+  'mango-ui/packages/mango-cli/**',
+  'mango-ui/packages/*/style.css',
+  'mango-ui/packages/*/package.json',
+  'mango-ui/packages/*/src/**/admin-pages*',
+  'mango-ui/scripts/generate-package-styles.mjs',
+  'mango-ui/scripts/check-admin-module-style-governance.mjs',
+  'mango-ui/apps/mango-admin/src/main.ts',
+  'mango-ui/package.json'
+];
+
+const frontendAdminModuleStyleKeywords = [
+  '@mango/admin/full',
+  'admin full',
+  'full preset',
+  'style-full',
+  'admin-packages',
+  'generated-package-styles',
+  'module-styles',
+  '官方模块',
+  '业务模块',
+  '模块样式',
+  '样式聚合',
+  '样式丢失',
+  'header 样式',
+  'header样式',
+  '微前端',
+  '单体',
+  'mango-cli',
+  'cli 模块',
+  'CLI 模块'
+];
+
+function collectRequiredChecks(args) {
+  const inputPaths = splitPaths(args.paths);
+  const task = normalizeText(args.task);
+  const pathHit = inputPaths.some((inputPath) =>
+    frontendAdminModuleStylePaths.some((pattern) => pathMatches(inputPath, pattern)),
+  );
+  const keywordHit = frontendAdminModuleStyleKeywords.some((keyword) => task.includes(normalizeText(keyword)));
+
+  if (!pathHit && !keywordHit) {
+    return [];
+  }
+
+  return [frontendAdminModuleStyleCheck];
+}
+
 function addRule(result, index, key, source) {
   const rule = index.rules[key];
   if (!rule) {
@@ -245,6 +300,7 @@ function buildResult(index, args) {
     paths: splitPaths(args.paths),
     workspacePolicy: classifyWorkspacePolicy(args),
     mustRead: [],
+    requiredChecks: collectRequiredChecks(args),
     errors: [],
     seen: new Set()
   };
@@ -304,6 +360,14 @@ function printText(result) {
   result.mustRead.forEach((item, index) => {
     console.log(`${index + 1}. ${item.path} - ${item.reason}`);
   });
+  if (result.requiredChecks.length > 0) {
+    console.log('');
+    console.log('Required checks:');
+    result.requiredChecks.forEach((item) => {
+      console.log(`- ${item.reason}`);
+      item.commands.forEach((command) => console.log(`  ${command}`));
+    });
+  }
   if (result.errors.length > 0) {
     console.log('');
     console.log('Errors:');

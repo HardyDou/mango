@@ -12,6 +12,7 @@ const externalPackages = [
   '@mango/notice/admin-pages',
   '@mango/notice/admin-shell',
   '@mango/numgen/admin-pages',
+  '@mango/payment/admin-pages',
   '@mango/template/admin-pages',
   '@mango/workflow/admin-pages',
   '@mango/workflow-business-example/admin-pages',

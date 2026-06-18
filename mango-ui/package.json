@@ -10,6 +10,7 @@
     "build:micro": "pnpm admin:styles && pnpm -F mango-admin-shell build && pnpm -F mango-admin-rbac-app build && pnpm -F mango-admin-workflow-app build && pnpm -F mango-admin-template-app build",
     "admin:styles": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css",
     "admin:styles:check": "node ./scripts/generate-package-styles.mjs --root . --manifest ./packages/admin/admin-packages.json --package ./packages/admin/package.json --out ./packages/admin/generated-package-styles.css --check",
+    "admin:module-styles:check": "node ./scripts/check-admin-module-style-governance.mjs",
     "test:micro": "node_modules/.pnpm/node_modules/.bin/playwright test --config apps/mango-admin-shell/playwright.config.ts",
     "lint": "pnpm -r lint",
     "publish:pkg": "node ./scripts/publish-package.mjs",
