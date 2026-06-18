@@ -89,11 +89,6 @@ CREATE TABLE IF NOT EXISTS `file_storage_config` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件存储配置表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-LOCK TABLES `file_storage_config` WRITE;
-/*!40000 ALTER TABLE `file_storage_config` DISABLE KEYS */;
-INSERT INTO `file_storage_config` (`id`, `tenant_id`, `config_name`, `storage_type`, `endpoint`, `public_endpoint`, `region`, `bucket_name`, `access_key`, `secret_key`, `path_style_access`, `ssl_enabled`, `active`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`) VALUES (1,1,'本地默认存储','LOCAL',NULL,NULL,NULL,'local',NULL,NULL,0,0,1,1,'系统默认本地文件存储',NULL,'2026-05-10 00:04:24','2026-05-10 00:04:24',NULL,'2026-05-10 00:04:24','2026-05-10 00:04:24');
-/*!40000 ALTER TABLE `file_storage_config` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -252,24 +247,6 @@ SET `menu_code` = REPLACE(`menu_code`, 'system:file-storage', 'file:storage-conf
     `updated_at` = NOW()
 WHERE `id` BETWEEN 23001 AND 23007;
 
-INSERT INTO `file_storage_config` (`id`, `tenant_id`, `config_name`, `storage_type`, `endpoint`, `public_endpoint`, `region`, `bucket_name`, `access_key`, `secret_key`, `path_style_access`, `ssl_enabled`, `active`, `status`, `remark`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
-VALUES
-(2,1,'MinIO 本地联调','MINIO','http://127.0.0.1:9000','http://file.mango.io:9000','us-east-1','mango-file','minioadmin','minioadmin',1,0,0,1,'本地 Docker Compose MinIO 示例配置。启动 mango-file/docker-compose.yml 后可设为默认验证对象存储。',NULL,NOW(),NOW(),NULL,NOW(),NOW())
-ON DUPLICATE KEY UPDATE
-`storage_type` = VALUES(`storage_type`),
-`endpoint` = VALUES(`endpoint`),
-`public_endpoint` = VALUES(`public_endpoint`),
-`region` = VALUES(`region`),
-`bucket_name` = VALUES(`bucket_name`),
-`access_key` = VALUES(`access_key`),
-`secret_key` = VALUES(`secret_key`),
-`path_style_access` = VALUES(`path_style_access`),
-`ssl_enabled` = VALUES(`ssl_enabled`),
-`status` = VALUES(`status`),
-`remark` = VALUES(`remark`),
-`updated_time` = NOW(),
-`updated_at` = NOW();
-
 INSERT IGNORE INTO `authorization_menu_package_item` (`id`, `tenant_id`, `package_id`, `menu_id`, `sort`) VALUES
 (1097,1,1,28,97),
 (1098,1,1,22,98),
@@ -326,12 +303,6 @@ CREATE TABLE IF NOT EXISTS `file_settings` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_file_settings_tenant` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件中心运行时配置表';
-
-INSERT INTO `file_settings` (`id`, `tenant_id`, `max_size`, `allowed_extensions`, `blocked_extensions`, `instant_upload_enabled`, `direct_upload_enabled`, `direct_upload_expire_seconds`, `access_token_enabled`, `access_token_expire_seconds`, `preview_provider_url`, `preview_expire_seconds`, `preview_external_extensions`, `created_by`, `created_time`, `created_at`, `updated_by`, `updated_time`, `updated_at`)
-VALUES
-(1,1,104857600,NULL,'exe,bat,cmd,sh,jar',1,0,900,0,600,NULL,600,'doc,docx,xls,xlsx,xlsm,ppt,pptx,odt,ods,odp,ofd,wps,et,dps,csv,txt,zip,rar,7z,eml,msg',NULL,NOW(),NOW(),NULL,NOW(),NOW())
-ON DUPLICATE KEY UPDATE
-`updated_time` = `updated_time`;
 
 INSERT INTO `authorization_menu` (`id`, `tenant_id`, `app_code`, `parent_id`, `menu_type`, `menu_name`, `menu_code`, `path`, `icon`, `component`, `sort`, `status`, `visible`, `keep_alive`, `embedded`, `redirect`, `permissions`, `create_by`, `update_by`, `create_time`, `update_time`, `remark`, `del_flag`, `created_by`, `created_at`, `updated_by`, `updated_at`)
 VALUES

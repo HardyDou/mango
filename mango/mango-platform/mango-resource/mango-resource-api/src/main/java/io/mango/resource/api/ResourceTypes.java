@@ -16,6 +16,8 @@ public final class ResourceTypes {
     public static final String SEQUENCE_RULE = "SEQUENCE_RULE";
     public static final String PRINT_TEMPLATE = "PRINT_TEMPLATE";
     public static final String AI_PROMPT = "AI_PROMPT";
+    public static final String FILE_STORAGE_CONFIG = "FILE_STORAGE_CONFIG";
+    public static final String FILE_SETTINGS = "FILE_SETTINGS";
 
     private ResourceTypes() {
     }

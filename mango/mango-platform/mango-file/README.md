@@ -387,7 +387,76 @@ mango:
 | `preview.expire-seconds` | `600` | 预览地址有效期。 |
 | `preview.external-extensions` | 文档和压缩包扩展名 | 交给预览服务处理的扩展名。 |
 
-## 8. 运行时配置字段
+## 8. 资源注入
+
+文件中心默认存储配置和默认运行时配置通过 `mango-resource` 注入，不在 Flyway 中写业务配置数据。资源文件放在：
+
+```text
+mango-file-starter/src/main/resources/META-INF/mango/resources/file-common-storage.yml
+```
+
+### 8.1 FILE_STORAGE_CONFIG
+
+`FILE_STORAGE_CONFIG` 落库到 `file_storage_config`，按 `configName` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `id` | `STRING` | 是 | 资源稳定 ID，使用雪花 ID 字符串。 |
+| `version` | `INT` | 是 | 资源版本，声明内容升级时递增。 |
+| `biz-key` | `STRING` | 是 | 资源业务键，例如 `file.storage.local-default`。 |
+| `target-module` | `STRING` | 是 | 固定为 `file`。 |
+| `storageConfigId` | `LONG` | 否 | 存储配置稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `configName` | `STRING` | 是 | 存储配置名称，全局唯一。 |
+| `storageType` | `STRING` | 是 | `LOCAL`、`MINIO`、`AWS_S3`、`ALIYUN_OSS`、`TENCENT_COS`、`QINIU_KODO`。 |
+| `endpoint` | `STRING` | 否 | 接入地址。 |
+| `publicEndpoint` | `STRING` | 否 | 公开访问地址。 |
+| `region` | `STRING` | 否 | 区域。 |
+| `bucketName` | `STRING` | 是 | 存储桶名称。 |
+| `storagePath` | `STRING` | 否 | 存储路径前缀，默认空字符串。 |
+| `accessKey` | `STRING` | 否 | 访问密钥 AccessKey。 |
+| `secretKey` | `STRING` | 否 | 访问密钥 SecretKey。 |
+| `pathStyleAccess` | `INT` | 否 | 是否使用 Path Style 访问，默认 `0`。 |
+| `sslEnabled` | `INT` | 否 | 是否启用 HTTPS，默认 `0`。 |
+| `active` | `INT` | 否 | 是否默认启用，默认 `0`。 |
+| `status` | `INT` | 否 | `1` 启用，`0` 停用，默认 `1`。 |
+| `remark` | `STRING` | 否 | 备注。 |
+
+### 8.2 FILE_SETTINGS
+
+`FILE_SETTINGS` 落库到 `file_settings`，按 `tenantId` 合并更新。
+
+| 字段 | 类型 | 必填 | 含义 |
+|------|------|------|------|
+| `settingsId` | `LONG` | 否 | 文件中心配置稳定 ID，不填时使用资源 ID。 |
+| `tenantId` | `LONG` | 否 | 租户 ID，默认 `1`。 |
+| `maxSize` | `LONG` | 否 | 单文件最大大小，默认 `104857600`。 |
+| `allowedExtensions` | `STRING` | 否 | 允许上传扩展名，逗号分隔；为空表示不限制。 |
+| `blockedExtensions` | `STRING` | 否 | 禁止上传扩展名，默认 `exe,bat,cmd,sh,jar`。 |
+| `defaultAccessLevel` | `STRING` | 否 | 默认访问级别，默认 `PRIVATE`。 |
+| `duplicateNameStrategy` | `STRING` | 否 | 重名处理策略，默认 `REJECT`。 |
+| `duplicateCheckDirectoryScoped` | `INT` | 否 | 是否按目录隔离重名，默认 `1`。 |
+| `objectNameStrategy` | `STRING` | 否 | 对象命名策略，默认 `DATE_UUID`。 |
+| `instantUploadEnabled` | `INT` | 否 | 是否启用秒传，默认 `1`。 |
+| `instantUploadScope` | `STRING` | 否 | 秒传匹配范围，默认 `TENANT`。 |
+| `contentTypeCheckEnabled` | `INT` | 否 | 是否校验 MIME 类型，默认 `1`。 |
+| `allowedContentTypes` | `STRING` | 否 | 允许上传 MIME，逗号分隔；为空表示不限制。 |
+| `blockedContentTypes` | `STRING` | 否 | 禁止上传 MIME。 |
+| `directUploadEnabled` | `INT` | 否 | 是否启用客户端直传，默认 `0`。 |
+| `directUploadExpireSeconds` | `LONG` | 否 | 直传签名有效期，默认 `900`。 |
+| `accessTokenEnabled` | `INT` | 否 | 是否启用限时访问令牌，默认 `0`。 |
+| `publicReadRequiresToken` | `INT` | 否 | 公开读取是否仍要求签名访问，默认 `0`。 |
+| `accessMode` | `STRING` | 否 | 文件访问模式，默认 `PROXY`。 |
+| `accessTokenExpireSeconds` | `LONG` | 否 | 访问令牌有效期，默认 `600`。 |
+| `previewProviderUrl` | `STRING` | 否 | 外部预览服务地址。 |
+| `previewExpireSeconds` | `LONG` | 否 | 预览访问有效期，默认 `600`。 |
+| `previewExternalExtensions` | `STRING` | 否 | 外部预览扩展名，逗号分隔。 |
+| `archiveRetainEnabled` | `INT` | 否 | 是否保留归档记录，默认 `1`。 |
+| `archiveRetainDays` | `INT` | 否 | 归档记录保留天数，默认 `180`。 |
+| `archiveRestoreEnabled` | `INT` | 否 | 是否允许恢复归档，默认 `0`。 |
+| `physicalDeleteEnabled` | `INT` | 否 | 是否删除物理对象，默认 `0`。 |
+
+## 9. 运行时配置字段
 
 接口：
 
@@ -426,11 +495,11 @@ mango:
 | `archiveRestoreEnabled` | `false` | 是否允许恢复归档记录。 |
 | `physicalDeleteEnabled` | `false` | 归档/删除且引用数为 0 时是否删除物理对象。 |
 
-## 9. 返回字段
+## 10. 返回字段
 
 README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 
-### 9.1 `FileRecordVO`
+### 10.1 `FileRecordVO`
 
 | 字段 | 含义 | 业务是否应入库 |
 |------|------|----------------|
@@ -441,7 +510,7 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 | `url` / `previewUrl` / `downloadUrl` | 运行时访问地址。 | 不要入库 |
 | `directPreviewUrl` / `directDownloadUrl` | 对象存储直连地址。 | 不要入库 |
 
-### 9.2 `FilePreviewVO`
+### 10.2 `FilePreviewVO`
 
 | 字段 | 含义 |
 |------|------|
@@ -454,7 +523,7 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 | `directPreviewUrl` / `directDownloadUrl` | 直连地址。 |
 | `directPreviewExpireSeconds` / `directDownloadExpireSeconds` | 直连地址有效期。 |
 
-## 10. 管理入口
+## 11. 管理入口
 
 | 管理能力 | 菜单 component | 前端页面 key | 入口权限 |
 |----------|----------------|--------------|----------|
@@ -471,7 +540,7 @@ README 只列业务常用字段，完整接口字段以 OpenAPI 为准。
 | 存储配置 | `file:storage-configs:list`、`file:storage-configs:query`、`file:storage-configs:add`、`file:storage-configs:edit`、`file:storage-configs:delete`、`file:storage-configs:active`、`file:storage-configs:test` |
 | 文件配置 | `file:settings:query`、`file:settings:edit` |
 
-## 11. 数据与初始化
+## 12. 数据与初始化
 
 Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 
@@ -479,13 +548,12 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 |-----------|------------|-----------------|
 | `V1__init_file.sql` | `file_record`、`file_storage_config`、`file_settings`、`file_directory`、`file_object`、`file_hash_mapping`、`file_upload_session`、`file_upload_part` | 表级 `CREATE TABLE IF NOT EXISTS`、`file_storage_config.config_name`、`file_settings.tenant_id` |
 | `V1__init_file.sql` | 文件管理、存储配置、文件配置菜单和按钮权限 | `sys_menu.menu_code`、`permissions` |
-| `V5__default_local_storage_active.sql` | 激活默认本地存储配置 | 默认存储配置记录 |
 
-默认本地存储记录写入 `file_storage_config`，名称为“本地默认存储”，类型为 `LOCAL`，bucket 为 `local`。运行时文件配置写入 `file_settings`，按 `tenant_id` 唯一；当前租户没有配置时，`GET /file/settings` 会返回 YAML 默认值和 `defaultConfig=true`。
+默认本地存储、MinIO 本地联调配置和默认文件中心运行时配置通过 `mango-resource` 注入，资源文件是 `file-common-storage.yml`。运行时文件配置写入 `file_settings`，按 `tenant_id` 唯一；当前租户没有配置时，`GET /file/settings` 会返回 YAML 默认值和 `defaultConfig=true`。
 
 文件菜单和权限目前由 file migration 写入 `sys_menu`，component 指向 `@/views/file/**/index.vue`，前端页面 key 使用 `file/files/index`、`file/storage-configs/index`、`file/settings/index`。
 
-## 12. 问题排查
+## 13. 问题排查
 
 - 上传被拒绝：先查 `GET /file/settings` 返回的 `maxSize`、扩展名和 MIME 黑白名单，再查前端 `MUpload` 的 `fmt`、`size`、`sizes`。
 - 秒传没有命中：确认运行时配置 `instantUploadEnabled=true`，客户端初始化分片上传时传了 `fileHash`，并确认 `instantUploadScope` 是否按租户或全局匹配。
@@ -494,7 +562,7 @@ Flyway 路径：`mango-file-core/src/main/resources/db/migration/file`。
 - 页面空白或按钮不可见：检查 authorization 菜单 component 是否是 `file/files/index`、`file/storage-configs/index`、`file/settings/index`，并确认账号拥有对应 `file:*` 权限码。
 - 业务表里出现对象存储地址：应改为保存 `fileId` 或业务附件关系；`url`、`previewUrl`、`downloadUrl` 只用于当前页面即时展示。
 
-## 13. 相关文档
+## 14. 相关文档
 
 - [@mango/file 前端包](../../../mango-ui/packages/file/README.md)
 - [@mango/file 组件](../../../mango-ui/packages/file/src/components/README.md)
