@@ -28,10 +28,6 @@
     {
       "name": "@mango/job",
       "style": "@mango/job/style.css"
-    },
-    {
-      "name": "@mango/payment",
-      "style": "@mango/payment/style.css"
     }
   ]
 }

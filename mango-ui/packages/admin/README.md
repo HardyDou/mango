@@ -88,7 +88,9 @@ import '@mango/admin/style-full.css';
 
 这个包不写数据库、菜单或权限。它依赖各后端模块初始化菜单和权限，依赖各前端能力包注册页面。
 
-样式聚合由 `admin-packages.json` 控制，目前包含：
+样式聚合由 `admin-modules.json` 作为唯一配置源生成，`admin-packages.json`、`style-full.css` 和 `full` 子入口均来自该配置。修改官方 admin 模块、样式入口或 full 注册项时，先更新 `admin-modules.json`，再运行样式生成和检查命令，禁止手工改生成文件。
+
+默认样式入口 `style.css` 只聚合核心管理后台依赖；全量入口 `style-full.css` 会额外聚合官方 full 模块样式。当前默认样式包含：
 
 ```text
 @mango/common

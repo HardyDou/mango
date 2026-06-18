@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "defaultPackages": [
+    {
+      "code": "common",
+      "packageName": "@mango/common",
+      "style": "@mango/common/style.css"
+    },
+    {
+      "code": "admin-shell",
+      "packageName": "@mango/admin-shell",
+      "style": "@mango/admin-shell/style.css"
+    },
+    {
+      "code": "grid-layout",
+      "packageName": "@mango/grid-layout",
+      "style": "@mango/grid-layout/style.css"
+    },
+    {
+      "code": "auth",
+      "packageName": "@mango/auth",
+      "style": "@mango/auth/style.css"
+    },
+    {
+      "code": "rbac",
+      "packageName": "@mango/rbac",
+      "style": "@mango/rbac/style.css"
+    },
+    {
+      "code": "system",
+      "packageName": "@mango/system",
+      "style": "@mango/system/style.css"
+    },
+    {
+      "code": "job",
+      "packageName": "@mango/job",
+      "style": "@mango/job/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoJobAdminPages",
+          "import": "@mango/job/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoJob",
+      "cliOptional": false
+    }
+  ],
+  "fullPackages": [
+    {
+      "code": "file",
+      "packageName": "@mango/file",
+      "style": "@mango/file/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoFileAdminPages",
+          "import": "@mango/file/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoFile"
+    },
+    {
+      "code": "template",
+      "packageName": "@mango/template",
+      "style": "@mango/template/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoTemplateAdminPages",
+          "import": "@mango/template/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoTemplate"
+    },
+    {
+      "code": "notice",
+      "packageName": "@mango/notice",
+      "style": "@mango/notice/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoNoticeAdminPages",
+          "import": "@mango/notice/admin-pages"
+        },
+        {
+          "name": "registerMangoNoticeAdminShell",
+          "import": "@mango/notice/admin-shell"
+        }
+      ],
+      "cliVersionKey": "mangoNotice"
+    },
+    {
+      "code": "numgen",
+      "packageName": "@mango/numgen",
+      "style": "@mango/numgen/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoNumgenAdminPages",
+          "import": "@mango/numgen/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoNumgen"
+    },
+    {
+      "code": "calendar",
+      "packageName": "@mango/calendar",
+      "style": "@mango/calendar/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoCalendarAdminPages",
+          "import": "@mango/calendar/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoCalendar"
+    },
+    {
+      "code": "payment",
+      "packageName": "@mango/payment",
+      "style": "@mango/payment/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoPaymentAdminPages",
+          "import": "@mango/payment/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoPayment"
+    },
+    {
+      "code": "workflow",
+      "packageName": "@mango/workflow",
+      "style": "@mango/workflow/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoWorkflowAdminPages",
+          "import": "@mango/workflow/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoWorkflow"
+    },
+    {
+      "code": "workflow-example",
+      "packageName": "@mango/workflow-business-example",
+      "style": "@mango/workflow-business-example/style.css",
+      "registrars": [
+        {
+          "name": "registerMangoWorkflowBusinessExampleAdminPages",
+          "import": "@mango/workflow-business-example/admin-pages"
+        }
+      ],
+      "cliVersionKey": "mangoWorkflowBusinessExample"
+    }
+  ]
+}

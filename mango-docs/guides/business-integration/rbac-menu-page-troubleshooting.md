@@ -74,6 +74,7 @@ pnpm -F @mango/admin-shell build
 
 ## 9. 变更影响记录
 
+- PR #174 将 `@mango/admin` 默认样式、full 样式和 full registrar 聚合收敛到 `admin-modules.json` 生成，并修复 payment 样式作用域；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定和菜单运行时加载。排查菜单可见但页面样式缺失或异常时，需要确认应用入口使用 `@mango/admin/style.css` 或 `@mango/admin/style-full.css`，并执行 `pnpm admin:styles:check`、`pnpm admin:module-styles:check` 验证聚合文件未漂移。
 - PR #173 Payment 模块接入 `@mango/admin/full`、admin 样式聚合和 mango-cli 可选模块清单；不改变菜单页面 component key、页面注册、角色授权、按钮权限、租户绑定和菜单运行时加载。排查页面可见但样式缺失时，需要同时确认目标 package 是否在 admin 样式聚合链或微前端自身入口中引入。
 - PR #171 新增角色数据权限配置入口，角色页面增加行内数据权限配置；不改变菜单页面 component key、页面注册、菜单运行时加载和租户绑定。排查菜单可见但列表数据为空时，需要同时确认角色是否配置了限制性数据权限。
 - PR #170 新增 `@mango/common` 的 `MangoDialog` 并在应用管理页面替换新增/编辑弹框外壳，只影响弹框布局和内容滚动体验；不改变菜单页面 component key、页面注册、菜单运行时加载、角色授权、按钮权限、租户绑定和菜单页面排障路径。
