@@ -38,6 +38,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
     private static final int UNPUBLISHED = 0;
     private static final int NOT_DELETED = 0;
     private static final int DELETED = 1;
+    private static final String DEFAULT_DOMAIN_CODE = "NUMGEN";
     private static final String VERSION_STATE_ACTIVE = "ACTIVE";
     private static final String VERSION_STATE_HISTORY = "HISTORY";
     private static final String VERSION_STATE_DRAFT = "DRAFT";
@@ -272,7 +273,7 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
                     fieldLong(resource, "ruleId", false, generatorId + 10000L),
                     requiredText(resource, "genKey").trim(),
                     requiredText(resource, "genName").trim(),
-                    defaultText(fieldText(resource, "domainCode", false), resource.getModuleCode()).toUpperCase(),
+                    resolveDomainCode(resource),
                     requiredText(resource, "ruleName").trim(),
                     ruleVersion,
                     normalizeStatus(fieldInt(resource, "status", false, ENABLED)),
@@ -288,6 +289,11 @@ public class NumgenSequenceRuleResourceHandler implements ResourceHandler {
         private boolean isActive() {
             return publishStatus == PUBLISHED && VERSION_STATE_ACTIVE.equals(versionState);
         }
+    }
+
+    private static String resolveDomainCode(ResourceDeclaration resource) {
+        return defaultText(defaultText(fieldText(resource, "domainCode", false), resource.getModuleCode()),
+                DEFAULT_DOMAIN_CODE).toUpperCase();
     }
 
     private record SegmentPayload(Long id, Integer sortOrder, String segmentType, String segmentName,

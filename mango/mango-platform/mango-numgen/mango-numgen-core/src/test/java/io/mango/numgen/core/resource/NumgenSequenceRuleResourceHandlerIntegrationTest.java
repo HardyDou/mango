@@ -1,6 +1,9 @@
 package io.mango.numgen.core.resource;
 
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mango.infra.persistence.starter.PersistenceMybatisPlusAutoConfiguration;
 import io.mango.numgen.core.mapper.NumgenGeneratorMapper;
 import io.mango.numgen.core.mapper.NumgenRuleMapper;
@@ -22,6 +25,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +107,48 @@ class NumgenSequenceRuleResourceHandlerIntegrationTest {
         assertThat(count("numgen_generator")).isZero();
         assertThat(count("numgen_rule")).isZero();
         assertThat(count("numgen_rule_segment")).isZero();
+    }
+
+    @Test
+    void paymentYamlSequenceRulesCreateExpectedGeneratorsRulesAndSegments() throws Exception {
+        List<ResourceDeclaration> declarations = loadPaymentSequenceRuleDeclarations();
+
+        for (ResourceDeclaration declaration : declarations) {
+            handler.upsert(declaration);
+        }
+
+        assertThat(declarations).hasSize(20);
+        assertThat(count("numgen_generator")).isEqualTo(20);
+        assertThat(count("numgen_rule")).isEqualTo(20);
+        assertThat(count("numgen_rule_segment")).isEqualTo(60);
+        assertThat(stringValue("numgen_generator", "gen_key", "id = 900000000001"))
+                .isEqualTo("PAY_BIZ_ORDER_NO");
+        assertThat(stringValue("numgen_generator", "domain_code", "id = 900000000001"))
+                .isEqualTo("PAYMENT");
+        assertThat(intValue("numgen_generator", "current_rule_version", "id = 900000000001")).isEqualTo(1);
+        assertThat(stringValue("numgen_rule", "version_state", "id = 900000010001"))
+                .isEqualTo("ACTIVE");
+        assertThat(stringValue("numgen_rule_segment", "literal_value", "id = 900000020011"))
+                .isEqualTo("BO");
+        assertThat(intValue("numgen_rule_segment", "sequence_scope", "id = 900000020012")).isOne();
+        assertThat(intValue("numgen_rule_segment", "seq_width", "id = 900000020013")).isEqualTo(8);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ResourceDeclaration> loadPaymentSequenceRuleDeclarations() throws Exception {
+        Path path = Path.of("../../mango-payment/mango-payment-starter/src/main/resources/META-INF/mango/resources/payment-common-numgen.yml");
+        ObjectMapper objectMapper = new ObjectMapper(new com.fasterxml.jackson.dataformat.yaml.YAMLFactory());
+        MapNode root = objectMapper.readValue(path.toFile(), MapNode.class);
+        ResourceNode resource = root.mango().resource();
+        List<ResourceDeclaration> declarations =
+                ((List<ResourceDeclaration>) resource.declarations().get(ResourceTypes.SEQUENCE_RULE));
+        for (ResourceDeclaration declaration : declarations) {
+            declaration.setResourceType(ResourceTypes.SEQUENCE_RULE);
+            declaration.setModuleCode(resource.moduleCode());
+            declaration.setModuleName(resource.moduleName());
+            declaration.setSource(path.toString());
+        }
+        return declarations;
     }
 
     private ResourceDeclaration sequenceRuleDeclaration(String prefix, String name, int ruleVersion) {
@@ -253,5 +299,19 @@ class NumgenSequenceRuleResourceHandlerIntegrationTest {
             NumgenRuleSegmentMapper.class
     })
     static class TestConfig {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record MapNode(MangoNode mango) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record MangoNode(ResourceNode resource) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ResourceNode(@JsonAlias("module-code") String moduleCode,
+                        @JsonAlias("module-name") String moduleName,
+                        Map<String, List<ResourceDeclaration>> declarations) {
     }
 }
