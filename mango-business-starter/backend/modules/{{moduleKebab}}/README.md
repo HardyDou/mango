@@ -10,9 +10,9 @@
 
 | Mango 能力 | 本模块使用位置 | 文档入口 |
 |------------|----------------|----------|
-| Persistence 持久化 | Entity、Mapper、Service、Controller、Flyway migration | Mango 文档站 -> 能力地图 -> Persistence 持久化 |
-| Authorization 授权资源 | `resource-manifest.json` 菜单和按钮权限 | Mango 文档站 -> 能力地图 -> Authorization 授权 |
-| Admin Pages 页面注册 | 前端 `register{{modulePascal}}Pages()` 和 component key | Mango 文档站 -> 能力地图 -> Admin Pages |
+| Persistence 持久化 | Entity、Mapper、Service、Controller、Flyway migration | `mango-docs/capabilities/README.md` -> Persistence 持久化；源码说明见 `mango/mango-infra/mango-infra-persistence/README.md`；业务规范见 `business-pmo/mango-baseline/rules/backend/07-persistence.md` |
+| Authorization 授权资源 | `resource-manifest.json` 菜单和按钮权限 | `mango-docs/capabilities/README.md` -> Authorization 授权；源码说明见 Mango 授权模块 README |
+| Admin Pages 页面注册 | 前端 `register{{modulePascal}}Pages()` 和 component key | `mango-docs/capabilities/README.md` -> Admin Pages；源码说明见 `mango-ui/packages/admin-pages/README.md` |
 | Business PMO baseline | 业务开发、验证和交付前 preflight | `business-pmo/mango-baseline/README.md` |
 
 ## 3. 模块组成

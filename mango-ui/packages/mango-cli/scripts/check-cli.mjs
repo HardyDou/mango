@@ -443,7 +443,9 @@ try {
     'Persistence 持久化',
     'Authorization 授权资源',
     'Admin Pages 页面注册',
-    'Mango 文档站 -> 能力地图',
+    'mango-docs/capabilities/README.md',
+    'mango/mango-infra/mango-infra-persistence/README.md',
+    'business-pmo/mango-baseline/rules/backend/07-persistence.md',
   ]) {
     if (!moduleReadme.includes(expected)) {
       throw new Error(`module add README missing capability documentation entry: ${expected}`);
@@ -485,6 +487,15 @@ try {
   );
   if (!moduleController.includes('extends BaseCrudController') || !moduleController.includes('@RequestMapping("/contract/seals")')) {
     throw new Error('module add did not generate standard CRUD controller');
+  }
+  const moduleMigration = readFileSync(
+    join(customRoot, 'backend/modules/contract/contract-core/src/main/resources/db/migration/contract/V1__init_contract.sql'),
+    'utf8',
+  );
+  for (const expected of ['tenant_id', 'org_id', 'created_by', 'created_at', 'updated_by', 'updated_at']) {
+    if (!moduleMigration.includes(expected)) {
+      throw new Error(`module add migration missing persistence baseline field: ${expected}`);
+    }
   }
   const moduleApi = readFileSync(join(customRoot, 'frontend/packages/contract-api/src/api.ts'), 'utf8');
   if (moduleApi.includes('@mango/common/utils/request')) {

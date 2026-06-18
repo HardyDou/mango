@@ -78,7 +78,15 @@ const requiredFiles = [
 const contentChecks = [
   {
     file: 'backend/modules/{{moduleKebab}}/README.md',
-    patterns: ['Mango 能力入口', 'Persistence 持久化', 'Authorization 授权资源', 'Admin Pages 页面注册', 'Mango 文档站 -> 能力地图'],
+    patterns: [
+      'Mango 能力入口',
+      'Persistence 持久化',
+      'Authorization 授权资源',
+      'Admin Pages 页面注册',
+      'mango-docs/capabilities/README.md',
+      'mango/mango-infra/mango-infra-persistence/README.md',
+      'business-pmo/mango-baseline/rules/backend/07-persistence.md',
+    ],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-api/src/main/java/{{basePackagePath}}/{{modulePackage}}/api/{{modulePascal}}Api.java',
@@ -91,6 +99,10 @@ const contentChecks = [
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/java/{{basePackagePath}}/{{modulePackage}}/core/service/impl/{{aggregatePascal}}Service.java',
     patterns: ['extends MangoCrudServiceImpl<{{aggregatePascal}}Mapper, {{aggregatePascal}}Entity>', 'toVO({{aggregatePascal}}Entity entity)'],
+  },
+  {
+    file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-core/src/main/resources/db/migration/{{moduleKebab}}/V1__init_{{moduleKebab}}.sql',
+    patterns: ['tenant_id', 'org_id', 'created_by', 'created_at', 'updated_by', 'updated_at'],
   },
   {
     file: 'backend/modules/{{moduleKebab}}/{{moduleKebab}}-starter/src/main/java/{{basePackagePath}}/{{modulePackage}}/starter/controller/{{modulePascal}}Controller.java',
