@@ -52,6 +52,10 @@ public class MenuCommand implements Serializable {
     private String redirect;
     @Schema(description = "权限编码")
     private String permissions;
+    @Schema(description = "按钮类型：TABLE-表格按钮，NON_TABLE-非表格按钮")
+    private String buttonType;
+    @Schema(description = "按钮展示规则表达式")
+    private String buttonDisplayRule;
     @Schema(description = "创建人")
     private String createBy;
     @Schema(description = "更新人")

@@ -162,6 +162,8 @@ public class MenuServiceImpl implements IMenuService {
         vo.setEmbedded(menu.getEmbedded());
         vo.setRedirect(menu.getRedirect());
         vo.setPermissions(menu.getPermissions());
+        vo.setButtonType(menu.getButtonType());
+        vo.setButtonDisplayRule(menu.getButtonDisplayRule());
 
         // 构造前端路由元信息。
         MenuVO.MenuMeta meta = new MenuVO.MenuMeta();
@@ -433,6 +435,8 @@ public class MenuServiceImpl implements IMenuService {
         if (menu.getEmbedded() != null) wrapper.set(Menu::getEmbedded, menu.getEmbedded());
         if (menu.getRedirect() != null) wrapper.set(Menu::getRedirect, menu.getRedirect());
         if (menu.getPermissions() != null) wrapper.set(Menu::getPermissions, menu.getPermissions());
+        if (menu.getButtonType() != null) wrapper.set(Menu::getButtonType, menu.getButtonType());
+        if (menu.getButtonDisplayRule() != null) wrapper.set(Menu::getButtonDisplayRule, menu.getButtonDisplayRule());
         if (menu.getRemark() != null) wrapper.set(Menu::getRemark, menu.getRemark());
         // createBy、createTime、delFlag 不在普通更新中修改。
 

@@ -31,6 +31,8 @@ public class MenuVO {
     private Integer embedded;
     private String redirect;
     private String permissions;
+    private String buttonType;
+    private String buttonDisplayRule;
     private String createBy;
     private String updateBy;
     private LocalDateTime createTime;

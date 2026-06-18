@@ -7,6 +7,7 @@ import io.mango.authorization.api.IAuthorizationProvider;
 import io.mango.auth.api.command.LoginCommand;
 import io.mango.auth.api.command.LoginTenantOptionsCommand;
 import io.mango.auth.api.spi.LoginTenantProvider;
+import io.mango.auth.api.vo.ButtonDisplayRuleVO;
 import io.mango.auth.api.vo.LoginTenantVO;
 import io.mango.auth.api.vo.LoginVO;
 import io.mango.auth.api.vo.WecomLoginConfigVO;
@@ -286,9 +287,20 @@ public class AuthServiceImpl implements IAuthService {
             var snapshot = authorizationProvider.load(query);
             response.setRoles(snapshot.roleCodes().stream().toList());
             response.setPermissions(snapshot.permissionCodes().stream().toList());
+            response.setButtonRules(snapshot.buttonRules().stream()
+                    .map(this::toLoginButtonRule)
+                    .toList());
         } finally {
             MangoContextHolder.set(previous);
         }
+    }
+
+    private ButtonDisplayRuleVO toLoginButtonRule(io.mango.authorization.api.vo.ButtonDisplayRuleVO source) {
+        ButtonDisplayRuleVO target = new ButtonDisplayRuleVO();
+        target.setCode(source.getCode());
+        target.setButtonType(source.getButtonType());
+        target.setDisplayRule(source.getDisplayRule());
+        return target;
     }
 
     private LoginVO buildLoginVO(AuthUserInfo user, IdentityContext identityContext,
