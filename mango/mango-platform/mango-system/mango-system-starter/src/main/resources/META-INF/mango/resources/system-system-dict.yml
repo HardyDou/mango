@@ -1,0 +1,500 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: system
+    module-name: 系统
+    declarations:
+      SYSTEM_DICT:
+        - id: "2026061800500000001"
+          version: 1
+          biz-key: system.dict.user-sex
+          name: 用户性别字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 1
+            dictType:
+              type: STRING
+              value: sys_user_sex
+            dictName:
+              type: STRING
+              value: 用户性别
+            domainCode:
+              type: STRING
+              value: COMMON
+            items:
+              type: LIST
+              value:
+                - id: 1
+                  label: 男
+                  value: "0"
+                  sort: 1
+                  status: 1
+                - id: 2
+                  label: 女
+                  value: "1"
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000002"
+          version: 1
+          biz-key: system.dict.normal-disable
+          name: 系统开关字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 2
+            dictType:
+              type: STRING
+              value: sys_normal_disable
+            dictName:
+              type: STRING
+              value: 系统开关
+            domainCode:
+              type: STRING
+              value: COMMON
+            items:
+              type: LIST
+              value:
+                - id: 3
+                  label: 启用
+                  value: "1"
+                  sort: 1
+                  status: 1
+                - id: 4
+                  label: 禁用
+                  value: "0"
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000003"
+          version: 1
+          biz-key: system.dict.login-type
+          name: 登录类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 3
+            dictType:
+              type: STRING
+              value: sys_login_type
+            dictName:
+              type: STRING
+              value: 登录类型
+            domainCode:
+              type: STRING
+              value: COMMON
+            items:
+              type: LIST
+              value:
+                - id: 5
+                  label: 账号密码
+                  value: username
+                  sort: 1
+                  status: 1
+                - id: 6
+                  label: 手机号
+                  value: mobile
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000004"
+          version: 1
+          biz-key: system.dict.param-type
+          name: 系统参数类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 12
+            dictType:
+              type: STRING
+              value: system_param_type
+            dictName:
+              type: STRING
+              value: 系统参数类型
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 系统参数管理类型
+            items:
+              type: LIST
+              value:
+                - id: 120
+                  label: 系统参数
+                  value: "1"
+                  sort: 1
+                  status: 1
+                - id: 121
+                  label: 应用参数
+                  value: "2"
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000005"
+          version: 1
+          biz-key: system.dict.config-type
+          name: 系统配置类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 13
+            dictType:
+              type: STRING
+              value: system_config_type
+            dictName:
+              type: STRING
+              value: 系统配置类型
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 系统配置分组类型
+            items:
+              type: LIST
+              value:
+                - id: 130
+                  label: 系统
+                  value: system
+                  sort: 1
+                  status: 1
+                - id: 131
+                  label: 业务
+                  value: business
+                  sort: 2
+                  status: 1
+                - id: 132
+                  label: 安全
+                  value: security
+                  sort: 3
+                  status: 1
+                - id: 133
+                  label: 功能
+                  value: feature
+                  sort: 4
+                  status: 1
+                - id: 134
+                  label: 上传
+                  value: upload
+                  sort: 5
+                  status: 1
+                - id: 135
+                  label: 邮件
+                  value: email
+                  sort: 6
+                  status: 1
+                - id: 136
+                  label: 短信
+                  value: sms
+                  sort: 7
+                  status: 1
+        - id: "2026061800500000006"
+          version: 1
+          biz-key: system.dict.login-status
+          name: 登录状态字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 15
+            dictType:
+              type: STRING
+              value: sys_login_status
+            dictName:
+              type: STRING
+              value: 登录状态
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 登录日志状态
+            items:
+              type: LIST
+              value:
+                - id: 150
+                  label: 成功
+                  value: "1"
+                  sort: 1
+                  status: 1
+                - id: 151
+                  label: 失败
+                  value: "0"
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000007"
+          version: 1
+          biz-key: system.dict.operation-status
+          name: 操作状态字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 16
+            dictType:
+              type: STRING
+              value: sys_operation_status
+            dictName:
+              type: STRING
+              value: 操作状态
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 操作日志状态
+            items:
+              type: LIST
+              value:
+                - id: 160
+                  label: 正常
+                  value: "1"
+                  sort: 1
+                  status: 1
+                - id: 161
+                  label: 异常
+                  value: "0"
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000008"
+          version: 1
+          biz-key: system.dict.area-type
+          name: 行政区划类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 18
+            dictType:
+              type: STRING
+              value: area_type
+            dictName:
+              type: STRING
+              value: 行政区划类型
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 行政区划级别类型
+            items:
+              type: LIST
+              value:
+                - id: 180
+                  label: 国家
+                  value: country
+                  sort: 1
+                  status: 1
+                - id: 181
+                  label: 省份
+                  value: province
+                  sort: 2
+                  status: 1
+                - id: 182
+                  label: 城市
+                  value: city
+                  sort: 3
+                  status: 1
+                - id: 183
+                  label: 区县
+                  value: district
+                  sort: 4
+                  status: 1
+                - id: 184
+                  label: 街道
+                  value: street
+                  sort: 5
+                  status: 1
+        - id: "2026061800500000009"
+          version: 1
+          biz-key: system.dict.area-status
+          name: 行政区划状态字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 19
+            dictType:
+              type: STRING
+              value: area_status
+            dictName:
+              type: STRING
+              value: 行政区划状态
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 行政区划状态
+            items:
+              type: LIST
+              value:
+                - id: 190
+                  label: 未生效
+                  value: "0"
+                  sort: 1
+                  status: 1
+                - id: 191
+                  label: 生效
+                  value: "1"
+                  sort: 2
+                  status: 1
+        - id: "2026061800500000010"
+          version: 1
+          biz-key: system.dict.institution-type
+          name: 机构类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 30
+            dictType:
+              type: STRING
+              value: institution_type
+            dictName:
+              type: STRING
+              value: 机构类型
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 机构主体分类
+            items:
+              type: LIST
+              value:
+                - id: 300
+                  label: 平台运营方
+                  value: PLATFORM
+                  sort: 1
+                  status: 1
+                  remark: 平台自身运营和代维主体
+                - id: 301
+                  label: 企业机构
+                  value: ENTERPRISE
+                  sort: 2
+                  status: 1
+                  remark: 普通企业机构
+                - id: 302
+                  label: 担保机构
+                  value: GUARANTEE
+                  sort: 3
+                  status: 1
+                  remark: 融资性或非融资性担保机构
+                - id: 303
+                  label: 金融机构
+                  value: FINANCIAL
+                  sort: 4
+                  status: 1
+                  remark: 银行等金融机构
+                - id: 304
+                  label: 客户企业
+                  value: CUSTOMER_ENTERPRISE
+                  sort: 5
+                  status: 1
+                  remark: 申请业务的客户企业
+        - id: "2026061800500000011"
+          version: 1
+          biz-key: system.dict.institution-capability
+          name: 机构能力字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 31
+            dictType:
+              type: STRING
+              value: institution_capability
+            dictName:
+              type: STRING
+              value: 机构能力
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 机构空间开通能力
+            items:
+              type: LIST
+              value:
+                - id: 310
+                  label: 平台管理
+                  value: PLATFORM_ADMIN
+                  sort: 1
+                  status: 1
+                  remark: 平台级运营管理
+                - id: 311
+                  label: 系统管理
+                  value: SYSTEM_ADMIN
+                  sort: 2
+                  status: 1
+                  remark: 系统基础配置管理
+                - id: 312
+                  label: 权限管理
+                  value: AUTH_ADMIN
+                  sort: 3
+                  status: 1
+                  remark: 应用、菜单、角色、成员权限管理
+                - id: 313
+                  label: 组织管理
+                  value: ORG_ADMIN
+                  sort: 4
+                  status: 1
+                  remark: 组织、岗位、成员组织关系管理
+                - id: 314
+                  label: 流程管理
+                  value: WORKFLOW
+                  sort: 5
+                  status: 1
+                  remark: 审批流程配置与执行
+        - id: "2026061800500000012"
+          version: 1
+          biz-key: system.dict.institution-status
+          name: 机构状态字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 32
+            dictType:
+              type: STRING
+              value: institution_status
+            dictName:
+              type: STRING
+              value: 机构状态
+            domainCode:
+              type: STRING
+              value: COMMON
+            remark:
+              type: STRING
+              value: 机构生命周期状态
+            items:
+              type: LIST
+              value:
+                - id: 320
+                  label: 启用
+                  value: "1"
+                  sort: 1
+                  status: 1
+                  remark: 允许登录与访问
+                - id: 321
+                  label: 禁用
+                  value: "0"
+                  sort: 2
+                  status: 1
+                  remark: 临时停用，不允许登录与访问
+                - id: 322
+                  label: 冻结
+                  value: "2"
+                  sort: 3
+                  status: 1
+                  remark: 风控冻结，不允许登录与访问
+                - id: 323
+                  label: 归档
+                  value: "9"
+                  sort: 4
+                  status: 1
+                  remark: 生命周期结束，不允许登录与访问

@@ -1,0 +1,46 @@
+mango:
+  resource:
+    schema-version: 1
+    module-code: org
+    module-name: 组织
+    declarations:
+      SYSTEM_DICT:
+        - id: "2026061800600000001"
+          version: 1
+          biz-key: org.dict.org-type
+          name: 组织类型字典
+          target-module: system
+          fields:
+            typeId:
+              type: LONG
+              value: 17
+            dictType:
+              type: STRING
+              value: org_type
+            dictName:
+              type: STRING
+              value: 组织类型
+            domainCode:
+              type: STRING
+              value: ORG
+            remark:
+              type: STRING
+              value: 组织架构节点类型
+            items:
+              type: LIST
+              value:
+                - id: 170
+                  label: 公司
+                  value: company
+                  sort: 1
+                  status: 1
+                - id: 171
+                  label: 部门
+                  value: department
+                  sort: 2
+                  status: 1
+                - id: 172
+                  label: 岗位
+                  value: position
+                  sort: 3
+                  status: 1

@@ -22,6 +22,7 @@ import io.mango.resource.core.sync.ResourceContentHasher;
 import io.mango.resource.core.sync.ResourceRegistryLock;
 import io.mango.resource.core.sync.ResourceRegistryRepository;
 import io.mango.resource.core.sync.ResourceRegistrySyncService;
+import io.mango.resource.support.declaration.FileResourceProvider;
 import io.mango.system.core.mapper.DictDataMapper;
 import io.mango.system.core.mapper.DictTypeMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +129,34 @@ class SystemDictResourceHandlerIntegrationTest {
         assertThat(intValue("sys_dict_data", "status", "id = 100")).isZero();
         assertThat(stringValue("resource_registry", "status", "resource_id = '2026061800100000001'"))
                 .isEqualTo("REMOVED");
+    }
+
+    @Test
+    void syncClasspathDictResources_withSystemAndOrgDeclarations_writesDictsThroughResourceRegistry() {
+        ResourceRegistryProperties properties = new ResourceRegistryProperties();
+        properties.setLocations(List.of(
+                Path.of("../mango-system-starter/src/main/resources/META-INF/mango/resources/system-system-dict.yml")
+                        .toUri().toString(),
+                Path.of("../../mango-org/mango-org-starter/src/main/resources/META-INF/mango/resources/org-system-dict.yml")
+                        .toUri().toString()
+        ));
+        ResourceDeclarationLoader loader = new ResourceDeclarationLoader(new ObjectMapper(), properties);
+        FileResourceProvider fileProvider = new FileResourceProvider(loader);
+        provider.setDeclarations(fileProvider.provide());
+
+        syncService.sync();
+
+        assertThat(count("resource_registry")).isEqualTo(13);
+        assertThat(count("sys_dict_type")).isEqualTo(13);
+        assertThat(count("sys_dict_data")).isEqualTo(43);
+        assertThat(stringValue("sys_dict_type", "dict_name", "dict_type = 'sys_user_sex'"))
+                .isEqualTo("用户性别");
+        assertThat(stringValue("sys_dict_type", "domain_code", "dict_type = 'org_type'"))
+                .isEqualTo("ORG");
+        assertThat(stringValue("sys_dict_data", "dict_label", "id = 170"))
+                .isEqualTo("公司");
+        assertThat(stringValue("resource_registry", "module_code", "resource_id = '2026061800600000001'"))
+                .isEqualTo("org");
     }
 
     private ResourceDeclaration dictDeclaration(int version, String dictName, List<Map<String, Object>> items) {
